@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type {
+  InventoryCommerceSummary,
   InventorySaleSource,
   InventorySaleSummary,
   InventorySalesPeriod,
@@ -18,6 +19,11 @@ type SalesPeriodProductRow = { period_id: string; product_id: string };
 type PeriodSalesRpcRow = {
   sale: InventorySaleSummary | null;
   total_count: number | null;
+};
+
+type InventorySaleReference = {
+  id: string;
+  source: InventorySaleSource;
 };
 
 const SALES_PERIOD_SELECT =
@@ -391,6 +397,75 @@ async function getSaleProductIds({
   ] as string[];
 }
 
+async function validateSalesExist({
+  sales,
+  sbAdmin,
+  wsId,
+}: {
+  sales: InventorySaleReference[];
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const uniqueSales = [
+    ...new Map(
+      sales.map((sale) => [`${sale.source}:${sale.id}`, sale])
+    ).values(),
+  ];
+  const sources = ['finance_invoice', 'checkout_session'] as const;
+  const results = await Promise.all(
+    sources.map(async (source) => {
+      const ids = uniqueSales
+        .filter((sale) => sale.source === source)
+        .map((sale) => sale.id);
+      if (ids.length === 0) return [];
+      const query =
+        source === 'finance_invoice'
+          ? sbAdmin.from('finance_invoices')
+          : privateInventory(sbAdmin).from('inventory_checkout_sessions');
+      const { data, error } = await query
+        .select('id')
+        .eq('ws_id', wsId)
+        .in('id', ids);
+      if (error) throw error;
+      return (data ?? []).map((row) => `${source}:${row.id}`);
+    })
+  );
+  const found = new Set(results.flat());
+  if (found.size !== uniqueSales.length) {
+    throw new Error('One or more inventory sales were not found');
+  }
+  return uniqueSales;
+}
+
+async function validatePeriodEligibility({
+  period,
+  sales,
+  sbAdmin,
+}: {
+  period: InventorySalesPeriod;
+  sales: InventorySaleReference[];
+  sbAdmin: TypedSupabaseClient;
+}) {
+  if (period.product_scope === 'all') return;
+  const periodProductIds = new Set(period.product_ids);
+  const productIdSets = await Promise.all(
+    sales.map((sale) =>
+      getSaleProductIds({
+        saleId: sale.id,
+        saleSource: sale.source,
+        sbAdmin,
+      })
+    )
+  );
+  const eligible = productIdSets.every((saleProductIds) =>
+    period.product_scope === 'allowlist'
+      ? saleProductIds.length > 0 &&
+        saleProductIds.every((productId) => periodProductIds.has(productId))
+      : saleProductIds.every((productId) => !periodProductIds.has(productId))
+  );
+  if (!eligible) throw new InventorySalesPeriodProductRuleError();
+}
+
 export async function setInventorySalePeriod({
   actorId,
   periodId,
@@ -449,6 +524,123 @@ export async function setInventorySalePeriod({
   );
   if (error) throw error;
   return period;
+}
+
+export async function setInventorySalesPeriodBulk({
+  actorId,
+  periodId,
+  sales,
+  sbAdmin,
+  wsId,
+}: {
+  actorId: string;
+  periodId: string | null;
+  sales: InventorySaleReference[];
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const uniqueSales = await validateSalesExist({ sales, sbAdmin, wsId });
+  const assignments = privateInventory(sbAdmin).from(
+    'inventory_sales_period_assignments' as never
+  );
+
+  if (periodId === null) {
+    await Promise.all(
+      (['finance_invoice', 'checkout_session'] as const).map(async (source) => {
+        const ids = uniqueSales
+          .filter((sale) => sale.source === source)
+          .map((sale) => sale.id);
+        if (ids.length === 0) return;
+        const { error } = await assignments
+          .delete()
+          .eq('ws_id', wsId)
+          .eq('sale_source', source)
+          .in('sale_id', ids);
+        if (error) throw error;
+      })
+    );
+    return null;
+  }
+
+  const period = await getPeriodWithCount({ periodId, sbAdmin, wsId });
+  if (!period) return null;
+  await validatePeriodEligibility({ period, sales: uniqueSales, sbAdmin });
+
+  const assignedAt = new Date().toISOString();
+  const { error } = await assignments.upsert(
+    uniqueSales.map((sale) => ({
+      assigned_at: assignedAt,
+      assigned_by: actorId,
+      period_id: periodId,
+      sale_id: sale.id,
+      sale_source: sale.source,
+      ws_id: wsId,
+    })) as never,
+    { onConflict: 'ws_id,sale_source,sale_id' }
+  );
+  if (error) throw error;
+  return period;
+}
+
+export async function listInventoryCommerceSales({
+  limit = 50,
+  offset = 0,
+  periodId = null,
+  sbAdmin,
+  unassignedOnly = false,
+  wsId,
+}: {
+  limit?: number;
+  offset?: number;
+  periodId?: string | null;
+  sbAdmin: TypedSupabaseClient;
+  unassignedOnly?: boolean;
+  wsId: string;
+}) {
+  const { data, error } = await privateInventory(sbAdmin).rpc(
+    'list_inventory_commerce_sales' as never,
+    {
+      p_limit: limit,
+      p_offset: offset,
+      p_period_id: periodId,
+      p_unassigned_only: unassignedOnly,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as PeriodSalesRpcRow[];
+  return {
+    count: Number(rows[0]?.total_count ?? 0),
+    data: rows
+      .map((row) => row.sale)
+      .filter((sale): sale is InventorySaleSummary => Boolean(sale)),
+  };
+}
+
+export async function getInventoryCommerceSummary({
+  currency,
+  periodId = null,
+  sbAdmin,
+  unassignedOnly = false,
+  wsId,
+}: {
+  currency: string;
+  periodId?: string | null;
+  sbAdmin: TypedSupabaseClient;
+  unassignedOnly?: boolean;
+  wsId: string;
+}) {
+  const { data, error } = await privateInventory(sbAdmin).rpc(
+    'get_inventory_commerce_summary' as never,
+    {
+      p_currency: currency,
+      p_period_id: periodId,
+      p_unassigned_only: unassignedOnly,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw error;
+  return data as unknown as InventoryCommerceSummary;
 }
 
 export async function listInventorySalesForPeriod({

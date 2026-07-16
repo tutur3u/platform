@@ -1045,7 +1045,19 @@
         "visibility": "Visibility"
       },
       "commerce": {
+        "amountDescription": "Review the amount, quantity, and period without leaving the list.",
+        "amountDetails": "Sale snapshot",
         "attributedRevenue": "Attributed revenue",
+        "bulk": {
+          "apply": "Apply period",
+          "clear": "Clear selection",
+          "selectAll": "Select {count} visible sales",
+          "selected": "{count, plural, one {# sale selected} other {# sales selected}}",
+          "selectSale": "Select sale",
+          "targetPeriod": "Choose a period",
+          "updateError": "Could not update the selected sales",
+          "updateSuccess": "Updated {count, plural, one {# sale} other {# sales}}"
+        },
         "cancelSquare": "Cancel terminal",
         "categoryLabel": "Category",
         "creator": "Created by {name}",
@@ -1058,6 +1070,7 @@
         "emptyDescriptions": {
           "revenueShare": "Revenue share earnings will appear here after finalized sales include eligible stock rows."
         },
+        "endOfSales": "All matching sales are loaded",
         "items": "{count, plural, one {# item} other {# items}}",
         "lineItems": "Line items",
         "metrics": {
@@ -1066,9 +1079,9 @@
           "reserved": "Reserved",
           "reservedDescription": "Live holds that may need follow-up",
           "revenue": "Sales revenue",
-          "revenueDescription": "Finalized sales total loaded for this tab",
+          "revenueDescription": "Finalized revenue for this filter in workspace currency",
           "sales": "Sales",
-          "salesDescription": "Finalized sale records"
+          "salesDescription": "Finalized sale records for this filter"
         },
         "owner": "Owner: {name}",
         "ownersLabel": "Owners",
@@ -1124,7 +1137,7 @@
           "grossProfit": "Est. gross profit",
           "margin": "Est. gross margin",
           "noProductData": "No completed product sales yet.",
-          "otherCurrenciesExcluded": "{count, plural, one {# loaded sale in another currency is excluded from this workspace-currency summary.} other {# loaded sales in other currencies are excluded from this workspace-currency summary.}}",
+          "otherCurrenciesExcluded": "{count, plural, one {# sale in another currency is excluded from this workspace-currency summary.} other {# sales in other currencies are excluded from this workspace-currency summary.}}",
           "product": "Product",
           "profit": "Est. profit",
           "revenue": "Revenue",

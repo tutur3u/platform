@@ -2,16 +2,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authorizeInventoryWorkspace: vi.fn(),
+  connection: vi.fn(),
   createAdminClient: vi.fn(),
-  getInventorySales: vi.fn(),
   getInventorySalesPeriod: vi.fn(),
-  getSalesPeriodAssignments: vi.fn(),
-  isInventoryRealtimeEnabled: vi.fn(),
-  listCompletedCheckoutSales: vi.fn(),
-  listInventorySalesForPeriod: vi.fn(),
-  serverError: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  isInventoryRealtimeEnabled: vi.fn(),
+  listInventoryCommerceSales: vi.fn(),
 }));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, connection: mocks.connection };
+});
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
@@ -21,46 +23,21 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getWorkspaceConfig: (...args: unknown[]) => mocks.getWorkspaceConfig(...args),
 }));
 
-vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    error: (...args: Parameters<typeof mocks.serverError>) =>
-      mocks.serverError(...args),
-  },
-}));
-
 vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
-  authorizeInventoryWorkspace: (
-    ...args: Parameters<typeof mocks.authorizeInventoryWorkspace>
-  ) => mocks.authorizeInventoryWorkspace(...args),
-}));
-
-vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
-  listCompletedCheckoutSales: (
-    ...args: Parameters<typeof mocks.listCompletedCheckoutSales>
-  ) => mocks.listCompletedCheckoutSales(...args),
+  authorizeInventoryWorkspace: (...args: unknown[]) =>
+    mocks.authorizeInventoryWorkspace(...args),
 }));
 
 vi.mock('@tuturuuu/inventory-core/realtime', () => ({
-  isInventoryRealtimeEnabled: (
-    ...args: Parameters<typeof mocks.isInventoryRealtimeEnabled>
-  ) => mocks.isInventoryRealtimeEnabled(...args),
-}));
-
-vi.mock('@tuturuuu/inventory-core/sales-rpc', () => ({
-  getInventorySales: (...args: Parameters<typeof mocks.getInventorySales>) =>
-    mocks.getInventorySales(...args),
+  isInventoryRealtimeEnabled: (...args: unknown[]) =>
+    mocks.isInventoryRealtimeEnabled(...args),
 }));
 
 vi.mock('@tuturuuu/inventory-core/sales-periods', () => ({
-  getInventorySalesPeriod: (
-    ...args: Parameters<typeof mocks.getInventorySalesPeriod>
-  ) => mocks.getInventorySalesPeriod(...args),
-  getSalesPeriodAssignments: (
-    ...args: Parameters<typeof mocks.getSalesPeriodAssignments>
-  ) => mocks.getSalesPeriodAssignments(...args),
-  listInventorySalesForPeriod: (
-    ...args: Parameters<typeof mocks.listInventorySalesForPeriod>
-  ) => mocks.listInventorySalesForPeriod(...args),
+  getInventorySalesPeriod: (...args: unknown[]) =>
+    mocks.getInventorySalesPeriod(...args),
+  listInventoryCommerceSales: (...args: unknown[]) =>
+    mocks.listInventoryCommerceSales(...args),
 }));
 
 function permissionsWith(granted: string[]) {
@@ -77,9 +54,7 @@ async function listSales(search = '') {
     new Request(
       `http://localhost/api/v1/workspaces/ws-alias/inventory/sales${search}`
     ),
-    {
-      params: Promise.resolve({ wsId: 'ws-alias' }),
-    }
+    { params: Promise.resolve({ wsId: 'ws-alias' }) }
   );
 }
 
@@ -97,186 +72,103 @@ describe('inventory sales route', () => {
     });
     mocks.isInventoryRealtimeEnabled.mockResolvedValue(true);
     mocks.getWorkspaceConfig.mockResolvedValue('VND');
-    mocks.getSalesPeriodAssignments.mockResolvedValue(new Map());
     mocks.getInventorySalesPeriod.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
       name: 'Summer 2026',
     });
-    mocks.listInventorySalesForPeriod.mockResolvedValue({
-      count: 1,
+    mocks.listInventoryCommerceSales.mockResolvedValue({
+      count: 2,
       data: [
         {
           completed_at: '2026-06-04T00:00:00.000Z',
           created_at: '2026-06-04T00:00:00.000Z',
-          customer_name: 'Summer customer',
-          id: 'summer-sale',
+          customer_name: 'Invoice sale',
+          id: '11111111-1111-4111-8111-111111111112',
           items_count: 1,
           paid_amount: 4000,
           source: 'finance_invoice',
           total_quantity: 1,
         },
-      ],
-    });
-    mocks.getInventorySales.mockResolvedValue({
-      count: 2,
-      data: [
-        {
-          completed_at: '2026-06-01T00:00:00.000Z',
-          created_at: '2026-06-01T00:00:00.000Z',
-          customer_name: 'Invoice old',
-          id: 'invoice-old',
-          items_count: 1,
-          paid_amount: 1000,
-          total_quantity: 1,
-        },
-        {
-          completed_at: '2026-06-04T00:00:00.000Z',
-          created_at: '2026-06-04T00:00:00.000Z',
-          customer_name: 'Invoice new',
-          id: 'invoice-new',
-          items_count: 1,
-          paid_amount: 4000,
-          total_quantity: 1,
-        },
-      ],
-    });
-    mocks.listCompletedCheckoutSales.mockResolvedValue({
-      count: 2,
-      data: [
         {
           completed_at: '2026-06-03T00:00:00.000Z',
           created_at: '2026-06-03T00:00:00.000Z',
           currency: 'USD',
-          customer_name: 'Checkout one',
-          id: 'checkout-one',
+          customer_name: 'Checkout sale',
+          id: '11111111-1111-4111-8111-111111111113',
           items_count: 2,
           paid_amount: 3000,
-          public_token: 'order-one',
           source: 'checkout_session',
           total_quantity: 2,
         },
-        {
-          completed_at: '2026-06-02T00:00:00.000Z',
-          created_at: '2026-06-02T00:00:00.000Z',
-          currency: 'USD',
-          customer_name: 'Checkout two',
-          id: 'checkout-two',
-          items_count: 1,
-          paid_amount: 2000,
-          public_token: 'order-two',
-          source: 'checkout_session',
-          total_quantity: 1,
-        },
       ],
     });
   });
 
-  it('merges finance invoice and checkout session sales before paginating', async () => {
+  it('uses the authoritative mixed-source RPC and Finance currency', async () => {
     const response = await listSales('?limit=2&offset=1');
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      count: 4,
-      data: [
-        {
-          id: 'checkout-one',
-          source: 'checkout_session',
-        },
-        {
-          id: 'checkout-two',
-          source: 'checkout_session',
-        },
-      ],
-      realtime_enabled: true,
-    });
-    expect(mocks.getInventorySales).toHaveBeenCalledWith({
-      limit: 3,
-      offset: 0,
-      sbAdmin: { id: 'admin' },
-      wsId: 'ws-real',
-    });
-    expect(mocks.listCompletedCheckoutSales).toHaveBeenCalledWith({
-      limit: 3,
-      offset: 0,
-      sbAdmin: { id: 'admin' },
-      wsId: 'ws-real',
-    });
-  });
-
-  it('marks finance rows as finance invoice sales', async () => {
-    const response = await listSales('?limit=1');
     const payload = await response.json();
 
+    expect(response.status).toBe(200);
+    expect(payload).toMatchObject({
+      count: 2,
+      realtime_enabled: true,
+      workspace_currency: 'VND',
+    });
     expect(payload.data[0]).toMatchObject({
       currency: 'VND',
-      id: 'invoice-new',
       source: 'finance_invoice',
+    });
+    expect(mocks.listInventoryCommerceSales).toHaveBeenCalledWith({
+      limit: 2,
+      offset: 1,
+      periodId: undefined,
+      sbAdmin: { id: 'admin' },
+      unassignedOnly: false,
+      wsId: 'ws-real',
     });
   });
 
-  it('returns the Finance workspace currency with every page', async () => {
-    const response = await listSales('?limit=1');
+  it('filters accurately to sales without a period', async () => {
+    const response = await listSales('?unassigned=true');
 
-    await expect(response.json()).resolves.toMatchObject({
-      workspace_currency: 'VND',
-    });
-    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
-      'ws-real',
-      'DEFAULT_CURRENCY'
+    expect(response.status).toBe(200);
+    expect(mocks.listInventoryCommerceSales).toHaveBeenCalledWith(
+      expect.objectContaining({ periodId: undefined, unassignedOnly: true })
     );
   });
 
-  it('filters the mixed-source feed by a sales period', async () => {
+  it('validates a period before requesting its sales', async () => {
     const periodId = '11111111-1111-4111-8111-111111111111';
     const response = await listSales(`?period_id=${periodId}`);
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      count: 1,
-      data: [
-        {
-          id: 'summer-sale',
-          period: { id: periodId, name: 'Summer 2026' },
-        },
-      ],
-    });
-    expect(mocks.listInventorySalesForPeriod).toHaveBeenCalledWith({
-      limit: 50,
-      offset: 0,
+    expect(mocks.getInventorySalesPeriod).toHaveBeenCalledWith({
       periodId,
       sbAdmin: { id: 'admin' },
       wsId: 'ws-real',
     });
-    expect(mocks.getInventorySales).not.toHaveBeenCalled();
-    expect(mocks.listCompletedCheckoutSales).not.toHaveBeenCalled();
+    expect(mocks.listInventoryCommerceSales).toHaveBeenCalledWith(
+      expect.objectContaining({ periodId, unassignedOnly: false })
+    );
   });
 
-  it('returns a controlled error when period enrichment fails', async () => {
-    mocks.getSalesPeriodAssignments.mockRejectedValueOnce(
-      new Error('period lookup failed')
-    );
+  it('rejects conflicting period filters', async () => {
+    const periodId = '11111111-1111-4111-8111-111111111111';
+    const response = await listSales(`?period_id=${periodId}&unassigned=true`);
 
-    const response = await listSales('?limit=1');
-
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Failed to fetch inventory sales',
-    });
+    expect(response.status).toBe(400);
+    expect(mocks.listInventoryCommerceSales).not.toHaveBeenCalled();
   });
 
   it('rejects users without sales permissions', async () => {
     mocks.authorizeInventoryWorkspace.mockResolvedValue({
       ok: true,
-      value: {
-        permissions: permissionsWith([]),
-        wsId: 'ws-real',
-      },
+      value: { permissions: permissionsWith([]), wsId: 'ws-real' },
     });
 
     const response = await listSales();
 
     expect(response.status).toBe(403);
-    expect(mocks.getInventorySales).not.toHaveBeenCalled();
-    expect(mocks.listCompletedCheckoutSales).not.toHaveBeenCalled();
+    expect(mocks.listInventoryCommerceSales).not.toHaveBeenCalled();
   });
 });

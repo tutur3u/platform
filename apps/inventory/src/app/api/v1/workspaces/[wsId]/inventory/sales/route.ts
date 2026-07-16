@@ -1,23 +1,24 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
-import { listCompletedCheckoutSales } from '@tuturuuu/inventory-core/commerce/checkouts';
 import { canViewInventorySales } from '@tuturuuu/inventory-core/permissions';
 import { isInventoryRealtimeEnabled } from '@tuturuuu/inventory-core/realtime';
 import {
   getInventorySalesPeriod,
-  getSalesPeriodAssignments,
-  listInventorySalesForPeriod,
+  listInventoryCommerceSales,
 } from '@tuturuuu/inventory-core/sales-periods';
-import { getInventorySales } from '@tuturuuu/inventory-core/sales-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
   period_id: z.uuid().optional(),
+  unassigned: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 interface Params {
@@ -50,13 +51,6 @@ type InventorySaleListItem = {
   wallet_name?: string | null;
 };
 
-function saleTimestamp(sale: InventorySaleListItem) {
-  const timestamp = sale.completed_at ?? sale.created_at;
-  if (!timestamp) return 0;
-  const date = new Date(timestamp);
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-}
-
 function normalizeFinanceSale(
   sale: Omit<InventorySaleListItem, 'source'> & {
     source?: InventorySaleListItem['source'];
@@ -72,6 +66,7 @@ function normalizeFinanceSale(
 }
 
 export async function GET(req: Request, { params }: Params) {
+  await connection();
   const { wsId: id } = await params;
   const authorization = await authorizeInventoryWorkspace(req, id);
   if (!authorization.ok) return authorization.response;
@@ -93,122 +88,58 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { limit, offset, period_id: periodId } = parsed.data;
-  if (periodId) {
-    try {
-      const [period, sales, realtimeEnabled, configuredCurrency] =
-        await Promise.all([
-          getInventorySalesPeriod({ periodId, sbAdmin, wsId }),
-          listInventorySalesForPeriod({
-            limit,
-            offset,
-            periodId,
-            sbAdmin,
-            wsId,
-          }),
-          isInventoryRealtimeEnabled(wsId),
-          getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-        ]);
-      if (!period) {
-        return NextResponse.json(
-          { message: 'Period not found' },
-          { status: 404 }
-        );
-      }
-      const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
-      return NextResponse.json({
-        count: sales.count,
-        data: sales.data.map((sale) => ({
-          ...(sale.source === 'finance_invoice'
-            ? normalizeFinanceSale(sale, workspaceCurrency)
-            : sale),
-          period,
-        })),
-        realtime_enabled: realtimeEnabled,
-        workspace_currency: workspaceCurrency,
-      });
-    } catch (error) {
-      console.error('Error fetching inventory sales for period', error);
+  const {
+    limit,
+    offset,
+    period_id: periodId,
+    unassigned: unassignedOnly,
+  } = parsed.data;
+  if (periodId && unassignedOnly) {
+    return NextResponse.json(
+      { message: 'Choose either a period or unassigned sales' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const [period, sales, realtimeEnabled, configuredCurrency] =
+      await Promise.all([
+        periodId
+          ? getInventorySalesPeriod({ periodId, sbAdmin, wsId })
+          : Promise.resolve(null),
+        listInventoryCommerceSales({
+          limit,
+          offset,
+          periodId,
+          sbAdmin,
+          unassignedOnly,
+          wsId,
+        }),
+        isInventoryRealtimeEnabled(wsId),
+        getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      ]);
+    if (periodId && !period) {
       return NextResponse.json(
-        { message: 'Failed to fetch inventory sales' },
-        { status: 500 }
+        { message: 'Period not found' },
+        { status: 404 }
       );
     }
-  }
-
-  const windowLimit = limit + offset;
-  const [
-    financeSalesResult,
-    checkoutSalesResult,
-    realtimeEnabled,
-    configuredCurrency,
-  ] = await Promise.all([
-    getInventorySales<InventorySaleListItem>({
-      limit: windowLimit,
-      offset: 0,
-      sbAdmin,
-      wsId,
-    })
-      .then((data) => ({ data, error: null }))
-      .catch((error) => ({ data: null, error })),
-    listCompletedCheckoutSales({
-      limit: windowLimit,
-      offset: 0,
-      sbAdmin,
-      wsId,
-    })
-      .then((data) => ({ data, error: null }))
-      .catch((error) => ({ data: null, error })),
-    isInventoryRealtimeEnabled(wsId),
-    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-  ]);
-
-  const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
-
-  if (financeSalesResult.error || checkoutSalesResult.error) {
-    console.error('Error fetching inventory sales', {
-      checkoutSalesError: checkoutSalesResult.error,
-      financeSalesError: financeSalesResult.error,
+    const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
+    return NextResponse.json({
+      count: sales.count,
+      data: sales.data.map((sale) =>
+        sale.source === 'finance_invoice'
+          ? normalizeFinanceSale(sale, workspaceCurrency)
+          : sale
+      ),
+      realtime_enabled: realtimeEnabled,
+      workspace_currency: workspaceCurrency,
     });
-    return NextResponse.json(
-      { message: 'Failed to fetch inventory sales' },
-      { status: 500 }
-    );
-  }
-
-  const merged = [
-    ...(financeSalesResult.data?.data ?? []).map((sale) =>
-      normalizeFinanceSale(sale, workspaceCurrency)
-    ),
-    ...(checkoutSalesResult.data?.data ?? []),
-  ]
-    .sort((a, b) => saleTimestamp(b) - saleTimestamp(a))
-    .slice(offset, offset + limit);
-  let data: InventorySaleListItem[];
-  try {
-    const assignments = await getSalesPeriodAssignments({
-      sales: merged,
-      sbAdmin,
-      wsId,
-    });
-    data = merged.map((sale) => ({
-      ...sale,
-      period: assignments.get(`${sale.source}:${sale.id}`) ?? null,
-    }));
   } catch (error) {
-    console.error('Error fetching inventory sales period assignments', error);
+    console.error('Error fetching inventory sales', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sales' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({
-    data,
-    count:
-      (financeSalesResult.data?.count ?? 0) +
-      (checkoutSalesResult.data?.count ?? 0),
-    realtime_enabled: realtimeEnabled,
-    workspace_currency: workspaceCurrency,
-  });
 }

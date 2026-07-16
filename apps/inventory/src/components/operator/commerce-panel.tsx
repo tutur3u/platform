@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   InventoryCheckoutSession,
+  InventoryCommerceSummary,
   InventoryProductSummary,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
@@ -31,6 +32,7 @@ export function CommercePanel({
   query,
   revenueShares,
   sales,
+  salesSummary,
   salesCount,
   salesPeriods,
   fetchNextSalesPage,
@@ -51,6 +53,7 @@ export function CommercePanel({
   query: string;
   revenueShares: InventoryRevenueShareEarning[];
   sales: InventorySaleSummary[];
+  salesSummary?: InventoryCommerceSummary;
   salesCount: number;
   salesPeriods: InventorySalesPeriod[];
   fetchNextSalesPage: () => unknown;
@@ -73,13 +76,6 @@ export function CommercePanel({
   const completed = checkouts.filter(
     (row) => row.status === 'completed'
   ).length;
-  const workspaceCurrencySales = sales.filter(
-    (sale) => !sale.currency || sale.currency === workspaceCurrency
-  );
-  const salesTotal = workspaceCurrencySales.reduce(
-    (total, row) => total + row.paid_amount,
-    0
-  );
 
   const commerceTabs = [
     { icon: CreditCard, label: tabsT('checkouts'), value: 'checkouts' },
@@ -108,13 +104,13 @@ export function CommercePanel({
           description={t('metrics.salesDescription')}
           icon={User}
           label={t('metrics.sales')}
-          value={salesCount}
+          value={salesSummary?.salesCount ?? salesCount}
         />
         <OperatorMetricCard
           description={t('metrics.revenueDescription')}
           icon={CircleDollarSign}
           label={t('metrics.revenue')}
-          value={money(salesTotal, workspaceCurrency)}
+          value={money(salesSummary?.revenue, workspaceCurrency)}
         />
       </div>
       <Tabs
@@ -157,10 +153,7 @@ export function CommercePanel({
               />
               <ProfitSummaryPanel
                 currency={workspaceCurrency}
-                excludedCurrencyCount={
-                  sales.length - workspaceCurrencySales.length
-                }
-                sales={workspaceCurrencySales}
+                summary={salesSummary}
                 wsId={wsId}
               />
               <SaleRows

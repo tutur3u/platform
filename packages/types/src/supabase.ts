@@ -13468,6 +13468,15 @@ export type Database = {
         Args: { p_public_token: string };
         Returns: Json;
       };
+      get_inventory_commerce_summary: {
+        Args: {
+          p_currency: string;
+          p_period_id?: string;
+          p_unassigned_only?: boolean;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       get_inventory_cost_profile: {
         Args: { p_profile_id: string; p_ws_id: string };
         Returns: Json;
@@ -14081,6 +14090,19 @@ export type Database = {
         };
         Returns: {
           checkout: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_commerce_sales: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_period_id?: string;
+          p_unassigned_only?: boolean;
+          p_ws_id: string;
+        };
+        Returns: {
+          sale: Json;
           total_count: number;
         }[];
       };

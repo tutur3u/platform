@@ -2,6 +2,7 @@
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
+  getInventoryCommerceSummary,
   getInventoryCostingAnalytics,
   getInventoryOverview,
   getInventoryPolarSettings,
@@ -24,6 +25,7 @@ import type {
   InventoryCommerceTab,
   InventoryOperatorView,
 } from './operator-types';
+import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 
 export function useInventoryData(
   wsId: string,
@@ -127,13 +129,33 @@ export function useInventoryData(
       listInventorySales(wsId, {
         limit: 24,
         offset: pageParam,
-        period_id: filters.period || undefined,
+        period_id:
+          filters.period && filters.period !== UNASSIGNED_SALES_PERIOD_FILTER
+            ? filters.period
+            : undefined,
+        unassigned:
+          filters.period === UNASSIGNED_SALES_PERIOD_FILTER || undefined,
       }),
     getNextPageParam: (lastPage, pages) => {
       const loaded = pages.reduce((count, page) => count + page.data.length, 0);
-      return loaded < lastPage.count ? loaded : undefined;
+      return lastPage.data.length > 0 && loaded < lastPage.count
+        ? loaded
+        : undefined;
     },
     queryKey: ['inventory', wsId, 'sales', filters.period],
+  });
+  const commerceSummary = useQuery({
+    enabled: view === 'commerce' && commerceTab === 'sales',
+    queryFn: () =>
+      getInventoryCommerceSummary(wsId, {
+        period_id:
+          filters.period && filters.period !== UNASSIGNED_SALES_PERIOD_FILTER
+            ? filters.period
+            : undefined,
+        unassigned:
+          filters.period === UNASSIGNED_SALES_PERIOD_FILTER || undefined,
+      }),
+    queryKey: ['inventory', wsId, 'commerce-summary', filters.period],
   });
   const salesPeriods = useQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
@@ -209,6 +231,7 @@ export function useInventoryData(
     batches,
     bundles,
     checkouts,
+    commerceSummary,
     costingAnalytics,
     costingProfiles,
     filters,

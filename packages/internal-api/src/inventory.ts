@@ -1292,6 +1292,7 @@ export type InventoryOffsetListQuery = {
 
 export type InventorySalesListQuery = InventoryOffsetListQuery & {
   period_id?: string;
+  unassigned?: boolean;
 };
 
 export type InventoryOrderHistoryQuery = InventoryOffsetListQuery & {
@@ -1593,6 +1594,16 @@ export type InventorySalesListResponse =
     realtime_enabled?: boolean;
     workspace_currency: string;
   };
+
+export type InventoryCommerceSummary = {
+  currency: string;
+  estimatedGrossMarginPercentage: number;
+  estimatedGrossProfit: number;
+  excludedCurrencyCount: number;
+  revenue: number;
+  salesCount: number;
+  unitsSold: number;
+};
 
 export type InventoryProductFormOptionsResponse = {
   categories: ProductCategory[];
@@ -2478,6 +2489,20 @@ export function listInventorySales(
   );
 }
 
+export function getInventoryCommerceSummary(
+  wsId: string,
+  query?: Pick<InventorySalesListQuery, 'period_id' | 'unassigned'>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryCommerceSummary>(
+    workspaceInventoryPath(wsId, '/sales/summary'),
+    {
+      cache: 'no-store',
+      query: asQuery(query),
+    }
+  );
+}
+
 export function listInventorySalesPeriods(
   wsId: string,
   query?: { include_archived?: boolean },
@@ -2560,6 +2585,24 @@ export function setInventorySalePeriod(
       method: 'PUT',
     }
   );
+}
+
+export function setInventorySalesPeriodBulk(
+  wsId: string,
+  payload: {
+    period_id: string | null;
+    sales: Array<{ id: string; source: InventorySaleSource }>;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventorySalesPeriod | null;
+    updated: number;
+  }>(workspaceInventoryPath(wsId, '/sales/bulk-period'), {
+    body: JSON.stringify(payload),
+    headers: jsonHeaders(options?.defaultHeaders),
+    method: 'PUT',
+  });
 }
 
 export type InventoryProductSalesRow = {

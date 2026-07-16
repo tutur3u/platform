@@ -255,7 +255,9 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'checkouts'
       ? data.checkouts.isPending || data.checkouts.isFetching
       : view === 'commerce' && commerceTab === 'sales'
-        ? data.sales.isPending || data.salesPeriods.isPending
+        ? data.sales.isPending ||
+          data.salesPeriods.isPending ||
+          data.commerceSummary.isPending
         : view === 'commerce' && commerceTab === 'revenue-share'
           ? data.revenueShares.isPending || data.revenueShares.isFetching
           : false;
@@ -400,6 +402,7 @@ export function InventoryOperatorClient({
               revenueShares={data.revenueShares.data?.data ?? []}
               sales={sales}
               salesCount={data.sales.data?.pages[0]?.count ?? sales.length}
+              salesSummary={data.commerceSummary.data}
               salesPeriods={data.salesPeriods.data?.data ?? []}
               fetchNextSalesPage={() => data.sales.fetchNextPage()}
               hasNextSalesPage={data.sales.hasNextPage}

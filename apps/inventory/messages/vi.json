@@ -1045,7 +1045,19 @@
         "visibility": "Hiển thị"
       },
       "commerce": {
+        "amountDescription": "Xem nhanh số tiền, số lượng và giai đoạn mà không rời khỏi danh sách.",
+        "amountDetails": "Tóm tắt bán hàng",
         "attributedRevenue": "Doanh thu ghi nhận",
+        "bulk": {
+          "apply": "Áp dụng giai đoạn",
+          "clear": "Bỏ lựa chọn",
+          "selectAll": "Chọn {count} doanh số đang hiển thị",
+          "selected": "Đã chọn {count} doanh số",
+          "selectSale": "Chọn doanh số",
+          "targetPeriod": "Chọn giai đoạn",
+          "updateError": "Không thể cập nhật các doanh số đã chọn",
+          "updateSuccess": "Đã cập nhật {count} doanh số"
+        },
         "cancelSquare": "Hủy trên terminal",
         "categoryLabel": "Danh mục",
         "creator": "Tạo bởi {name}",
@@ -1058,6 +1070,7 @@
         "emptyDescriptions": {
           "revenueShare": "Thu nhập chia doanh thu sẽ xuất hiện tại đây sau khi doanh số đã hoàn tất có dòng tồn kho đủ điều kiện."
         },
+        "endOfSales": "Đã tải tất cả doanh số phù hợp",
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "lineItems": "Sản phẩm trong hóa đơn",
         "metrics": {
@@ -1066,9 +1079,9 @@
           "reserved": "Đã giữ",
           "reservedDescription": "Lượt giữ hàng đang cần theo dõi",
           "revenue": "Doanh thu bán hàng",
-          "revenueDescription": "Tổng doanh số đã hoàn tất đang tải trong tab này",
+          "revenueDescription": "Doanh thu đã hoàn tất theo bộ lọc và tiền tệ không gian làm việc",
           "sales": "Doanh số",
-          "salesDescription": "Bản ghi doanh số đã hoàn tất"
+          "salesDescription": "Bản ghi doanh số đã hoàn tất theo bộ lọc"
         },
         "owner": "Chủ sở hữu: {name}",
         "ownersLabel": "Chủ sở hữu",
@@ -1124,7 +1137,7 @@
           "grossProfit": "Lợi nhuận gộp ước tính",
           "margin": "Biên lợi nhuận gộp ước tính",
           "noProductData": "Chưa có sản phẩm nào được bán.",
-          "otherCurrenciesExcluded": "{count, plural, one {# doanh số đã tải bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.} other {# doanh số đã tải bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.}}",
+          "otherCurrenciesExcluded": "{count, plural, one {# doanh số bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.} other {# doanh số bằng tiền tệ khác không được tính trong tóm tắt theo tiền tệ không gian làm việc.}}",
           "product": "Sản phẩm",
           "profit": "Lợi nhuận ước tính",
           "revenue": "Doanh thu",

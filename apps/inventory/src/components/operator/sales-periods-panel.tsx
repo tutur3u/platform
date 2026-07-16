@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   CalendarDays,
+  CalendarOff,
   Pencil,
   Plus,
   RotateCcw,
@@ -39,10 +40,11 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
+import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
 
 const ALL_PERIODS = '__all__';
-const NO_PERIOD = '__none__';
+export const NO_PERIOD = '__none__';
 
 export function SalesPeriodsPanel({
   fetchNextProductsPage,
@@ -107,6 +109,12 @@ export function SalesPeriodsPanel({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_PERIODS}>{t('all')}</SelectItem>
+            <SelectItem value={UNASSIGNED_SALES_PERIOD_FILTER}>
+              <span className="inline-flex items-center gap-2">
+                <CalendarOff className="h-3.5 w-3.5" />
+                {t('unassigned')}
+              </span>
+            </SelectItem>
             {periods.map((period) => (
               <SelectItem key={period.id} value={period.id}>
                 {period.name} · {period.sale_count}
@@ -344,6 +352,9 @@ export function SalePeriodPicker({
     onSuccess: () => {
       toast.success(t('assignedSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'sales'] });
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'commerce-summary'],
+      });
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'sales-periods'],
       });

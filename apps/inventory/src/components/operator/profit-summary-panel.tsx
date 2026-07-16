@@ -3,33 +3,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { CircleDollarSign, Coins, Package, Percent } from '@tuturuuu/icons';
 import {
-  getInventoryCostingAnalytics,
-  type InventorySaleSummary,
+  type InventoryCommerceSummary,
   listInventoryCostProfiles,
   listInventorySalesByProduct,
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { money } from './operator-format';
-import { buildProductPnl, computeProfitSummary } from './operator-pnl';
+import { buildProductPnl } from './operator-pnl';
 
 export function ProfitSummaryPanel({
   currency,
-  excludedCurrencyCount,
-  sales,
+  summary,
   wsId,
 }: {
   currency: string;
-  excludedCurrencyCount: number;
-  sales: InventorySaleSummary[];
+  summary?: InventoryCommerceSummary;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.commerce.pnl');
-  const analytics = useQuery({
-    queryFn: () => getInventoryCostingAnalytics(wsId),
-    queryKey: ['inventory', wsId, 'costing-analytics'],
-  });
-
   const salesByProduct = useQuery({
     queryFn: () => listInventorySalesByProduct(wsId),
     queryKey: ['inventory', wsId, 'sales-by-product'],
@@ -39,10 +31,6 @@ export function ProfitSummaryPanel({
     queryKey: ['inventory', wsId, 'costing', 'pnl'],
   });
 
-  const summary = computeProfitSummary(
-    sales,
-    analytics.data?.averageMarginPercentage
-  );
   const productRows = buildProductPnl(
     salesByProduct.data?.data ?? [],
     costProfiles.data?.data ?? []
@@ -55,9 +43,11 @@ export function ProfitSummaryPanel({
         <p className="mt-1 text-muted-foreground text-xs leading-5">
           {t('description')}
         </p>
-        {excludedCurrencyCount > 0 ? (
+        {(summary?.excludedCurrencyCount ?? 0) > 0 ? (
           <p className="mt-1 text-muted-foreground text-xs leading-5">
-            {t('otherCurrenciesExcluded', { count: excludedCurrencyCount })}
+            {t('otherCurrenciesExcluded', {
+              count: summary?.excludedCurrencyCount ?? 0,
+            })}
           </p>
         ) : null}
       </div>
@@ -65,25 +55,27 @@ export function ProfitSummaryPanel({
         <OperatorMetricCard
           icon={CircleDollarSign}
           label={t('revenue')}
-          value={money(summary.revenue, currency)}
+          value={money(summary?.revenue, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}
           icon={Coins}
           label={t('grossProfit')}
-          tone={summary.estGrossProfit > 0 ? 'success' : 'default'}
-          value={money(summary.estGrossProfit, currency)}
+          tone={
+            (summary?.estimatedGrossProfit ?? 0) > 0 ? 'success' : 'default'
+          }
+          value={money(summary?.estimatedGrossProfit, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}
           icon={Percent}
           label={t('margin')}
-          value={`${summary.marginPercentage}%`}
+          value={`${summary?.estimatedGrossMarginPercentage ?? 0}%`}
         />
         <OperatorMetricCard
           icon={Package}
           label={t('units')}
-          value={summary.unitsSold}
+          value={summary?.unitsSold ?? 0}
         />
       </div>
       {productRows.length > 0 ? (
