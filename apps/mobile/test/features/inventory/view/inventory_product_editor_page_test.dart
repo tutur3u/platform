@@ -1,4 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/category.dart';
@@ -7,6 +8,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -58,6 +60,13 @@ class _FakeFinanceRepository extends FinanceRepository {
       TransactionCategory(id: 'finance_1', name: 'Booth sales'),
       TransactionCategory(id: 'finance_2', name: 'Special drinks'),
     ];
+  }
+}
+
+class _FailingFinanceRepository extends FinanceRepository {
+  @override
+  Future<List<TransactionCategory>> getCategories(String wsId) async {
+    throw const ApiException(message: 'Rate limited', statusCode: 429);
   }
 }
 
@@ -114,6 +123,38 @@ void main() {
       expect(find.text('Bob'), findsWidgets);
       expect(find.text('Coffee'), findsWidgets);
       expect(find.text('Special drinks'), findsWidgets);
+    });
+
+    testWidgets('keeps the product form usable when an optional lookup fails', (
+      tester,
+    ) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 1200);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: InventoryProductEditorPage(
+            inventoryRepository: inventoryRepository,
+            financeRepository: _FailingFinanceRepository(),
+            settingsRepository: settingsRepository,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Product name'), findsWidgets);
+      expect(
+        find.textContaining('Some product options could not be loaded'),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.textContaining('ApiException'), findsNothing);
     });
   });
 }

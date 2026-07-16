@@ -90,6 +90,19 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       _error = null;
     });
 
+    Future<T> loadOptional<T>(
+      Future<T> future,
+      T fallback,
+      String label,
+    ) async {
+      try {
+        return await future;
+      } on Object catch (error, stackTrace) {
+        debugPrint('Inventory sales $label load failed: $error\n$stackTrace');
+        return fallback;
+      }
+    }
+
     try {
       final results = await Future.wait<dynamic>([
         _inventoryRepository.getSales(
@@ -97,8 +110,16 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
           limit: _pageSize,
           periodId: _selectedPeriodId,
         ),
-        _inventoryRepository.getSalesPeriods(wsId),
-        _financeRepository.getWorkspaceDefaultCurrency(wsId),
+        loadOptional(
+          _inventoryRepository.getSalesPeriods(wsId),
+          <InventorySalesPeriod>[],
+          'periods',
+        ),
+        loadOptional(
+          _financeRepository.getWorkspaceDefaultCurrency(wsId),
+          'VND',
+          'currency',
+        ),
         _permissionsRepository.getPermissions(wsId: wsId),
       ]);
 

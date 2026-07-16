@@ -62,7 +62,7 @@ void main() {
     }
     await tester.pumpAndSettle();
 
-    final labels = <String>['Tasks', 'Calendar', 'Finance'];
+    final labels = <String>['Tasks', 'Chat', 'Calendar', 'Finance'];
 
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
@@ -81,6 +81,13 @@ void main() {
     expect(find.text('Choose a tool to open.'), findsNothing);
     expect(find.text('Open'), findsNothing);
     expect(find.byType(TextField), findsNothing);
+    expect(
+      find.text(
+        'Keep team conversations, direct messages, files, '
+        'and AI chats together.',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Apps hub shows enabled experimental apps after core apps', (
@@ -146,6 +153,7 @@ void main() {
 
     final labels = <String>[
       'Tasks',
+      'Chat',
       'Calendar',
       'Finance',
       'Timer',

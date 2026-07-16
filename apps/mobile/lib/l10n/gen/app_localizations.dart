@@ -1471,6 +1471,12 @@ abstract class AppLocalizations {
   /// **'See your agenda, upcoming events, and calendar views.'**
   String get appsHubCalendarDescription;
 
+  /// No description provided for @appsHubChatDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep team conversations, direct messages, files, and AI chats together.'**
+  String get appsHubChatDescription;
+
   /// No description provided for @appsHubCmsDescription.
   ///
   /// In en, this message translates to:
@@ -7087,6 +7093,12 @@ abstract class AppLocalizations {
   /// **'Each row represents a unit, warehouse, quantity, threshold, and price.'**
   String get inventoryProductInventorySubtitle;
 
+  /// No description provided for @inventoryProductOptionsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Some product options could not be loaded. You can keep editing and retry to restore the missing choices.'**
+  String get inventoryProductOptionsUnavailable;
+
   /// No description provided for @inventoryProductManufacturer.
   ///
   /// In en, this message translates to:
@@ -7386,6 +7398,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New period'**
   String get inventorySalesPeriodCreate;
+
+  /// No description provided for @inventorySalesPeriodOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open sales periods'**
+  String get inventorySalesPeriodOpen;
 
   /// No description provided for @inventorySalesPeriodCreateTitle.
   ///

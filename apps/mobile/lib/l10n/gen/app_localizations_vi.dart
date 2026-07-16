@@ -719,6 +719,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubCalendarDescription => 'Xem lịch làm việc, sự kiện sắp tới và các chế độ xem lịch.';
 
   @override
+  String get appsHubChatDescription => 'Tập trung trò chuyện nhóm, tin nhắn trực tiếp, tệp và chat AI tại một nơi.';
+
+  @override
   String get appsHubCmsDescription => 'Quản lý bộ sưu tập CMS, mục nội dung, hàng đợi và xuất bản.';
 
   @override
@@ -3631,6 +3634,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryProductInventorySubtitle => 'Mỗi dòng đại diện cho đơn vị, kho, số lượng, ngưỡng và giá bán.';
 
   @override
+  String get inventoryProductOptionsUnavailable => 'Không thể tải một số tùy chọn sản phẩm. Bạn vẫn có thể chỉnh sửa và thử lại để khôi phục các lựa chọn còn thiếu.';
+
+  @override
   String get inventoryProductManufacturer => 'Nhà sản xuất';
 
   @override
@@ -3785,6 +3791,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodCreate => 'Giai đoạn mới';
+
+  @override
+  String get inventorySalesPeriodOpen => 'Mở giai đoạn bán hàng';
 
   @override
   String get inventorySalesPeriodCreateTitle => 'Tạo giai đoạn bán hàng';

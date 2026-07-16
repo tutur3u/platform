@@ -719,6 +719,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubCalendarDescription => 'See your agenda, upcoming events, and calendar views.';
 
   @override
+  String get appsHubChatDescription => 'Keep team conversations, direct messages, files, and AI chats together.';
+
+  @override
   String get appsHubCmsDescription => 'Manage CMS collections, entries, queues, and publishing.';
 
   @override
@@ -3655,6 +3658,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductInventorySubtitle => 'Each row represents a unit, warehouse, quantity, threshold, and price.';
 
   @override
+  String get inventoryProductOptionsUnavailable => 'Some product options could not be loaded. You can keep editing and retry to restore the missing choices.';
+
+  @override
   String get inventoryProductManufacturer => 'Manufacturer';
 
   @override
@@ -3809,6 +3815,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodCreate => 'New period';
+
+  @override
+  String get inventorySalesPeriodOpen => 'Open sales periods';
 
   @override
   String get inventorySalesPeriodCreateTitle => 'Create sales period';

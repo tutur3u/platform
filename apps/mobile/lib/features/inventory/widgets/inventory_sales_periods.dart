@@ -91,10 +91,10 @@ class InventorySalesPeriodBar extends StatelessWidget {
                       size: 20,
                     ),
                   ),
-                IconButton(
-                  tooltip: l10n.inventorySalesPeriodCreate,
+                shad.PrimaryButton(
                   onPressed: onCreate,
-                  icon: const Icon(Icons.add_circle_outline_rounded, size: 21),
+                  leading: const Icon(Icons.add_rounded, size: 17),
+                  child: Text(l10n.inventorySalesPeriodCreate),
                 ),
               ],
             ],

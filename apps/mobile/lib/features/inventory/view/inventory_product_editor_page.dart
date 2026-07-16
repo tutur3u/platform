@@ -66,6 +66,7 @@ class _InventoryProductEditorPageState
   String? _financeCategoryId;
 
   String? _formError;
+  bool _hasUnavailableOptions = false;
   String? _nameError;
   String? _categoryError;
   String? _ownerError;
@@ -113,14 +114,44 @@ class _InventoryProductEditorPageState
       _formError = null;
     });
 
+    var hasUnavailableOptions = false;
+
+    Future<T> loadOptional<T>(Future<T> future, T fallback) async {
+      try {
+        return await future;
+      } on Object catch (error, stackTrace) {
+        hasUnavailableOptions = true;
+        debugPrint('Inventory product option load failed: $error\n$stackTrace');
+        return fallback;
+      }
+    }
+
     try {
       final results = await Future.wait<dynamic>([
-        _inventoryRepository.getProductCategories(wsId),
-        _inventoryRepository.getManufacturers(wsId),
-        _inventoryRepository.getOwners(wsId),
-        _inventoryRepository.getProductUnits(wsId),
-        _inventoryRepository.getProductWarehouses(wsId),
-        _financeRepository.getCategories(wsId),
+        loadOptional(
+          _inventoryRepository.getProductCategories(wsId),
+          <InventoryLookupItem>[],
+        ),
+        loadOptional(
+          _inventoryRepository.getManufacturers(wsId),
+          <InventoryLookupItem>[],
+        ),
+        loadOptional(
+          _inventoryRepository.getOwners(wsId),
+          <InventoryOwner>[],
+        ),
+        loadOptional(
+          _inventoryRepository.getProductUnits(wsId),
+          <InventoryLookupItem>[],
+        ),
+        loadOptional(
+          _inventoryRepository.getProductWarehouses(wsId),
+          <InventoryLookupItem>[],
+        ),
+        loadOptional(
+          _financeRepository.getCategories(wsId),
+          <TransactionCategory>[],
+        ),
         if (widget.productId != null)
           _inventoryRepository.getProduct(wsId, widget.productId!)
         else
@@ -177,13 +208,20 @@ class _InventoryProductEditorPageState
         _units = units;
         _warehouses = warehouses;
         _financeCategories = financeCategories;
+        _hasUnavailableOptions = hasUnavailableOptions;
         _loading = false;
       });
-    } on Exception catch (error) {
+    } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _formError = error.toString();
+        _formError = error.message;
+      });
+    } on Exception {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _formError = context.l10n.commonSomethingWentWrong;
       });
     }
   }
@@ -202,11 +240,19 @@ class _InventoryProductEditorPageState
     required List<InventoryOwner> owners,
     required List<TransactionCategory> financeCategories,
   }) async {
-    final results = await Future.wait<String?>([
-      _settingsRepository.getLastInventoryProductOwner(wsId),
-      _settingsRepository.getLastInventoryProductCategory(wsId),
-      _settingsRepository.getLastInventoryProductFinanceCategory(wsId),
-    ]);
+    List<String?> results;
+    try {
+      results = await Future.wait<String?>([
+        _settingsRepository.getLastInventoryProductOwner(wsId),
+        _settingsRepository.getLastInventoryProductCategory(wsId),
+        _settingsRepository.getLastInventoryProductFinanceCategory(wsId),
+      ]);
+    } on Object catch (error, stackTrace) {
+      debugPrint(
+        'Inventory product remembered selections failed: $error\n$stackTrace',
+      );
+      return;
+    }
 
     final rememberedOwnerId = results[0];
     final rememberedCategoryId = results[1];
@@ -665,6 +711,16 @@ class _InventoryProductEditorPageState
                   stockRowsLabel: '${_rows.length}',
                 ),
                 const shad.Gap(12),
+                if (_hasUnavailableOptions) ...[
+                  _InventoryInlineAlertCard(
+                    message: l10n.inventoryProductOptionsUnavailable,
+                    color: FinancePalette.of(context).accent,
+                    icon: Icons.cloud_off_outlined,
+                    actionLabel: l10n.commonRetry,
+                    onAction: _load,
+                  ),
+                  const shad.Gap(12),
+                ],
                 if (_formError?.trim().isNotEmpty ?? false) ...[
                   _InventoryInlineAlertCard(
                     message: _formError!,
@@ -910,51 +966,55 @@ class _InventoryDraftPreviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  size: 20,
-                  color: accent,
-                ),
-              ),
-              const shad.Gap(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 390;
+              final identity = Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    if (subtitle.trim().isNotEmpty) ...[
-                      const shad.Gap(4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.xSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+                    child: Icon(
+                      Icons.inventory_2_outlined,
+                      size: 20,
+                      color: accent,
+                    ),
+                  ),
+                  const shad.Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.typography.small.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const shad.Gap(12),
-              Column(
+                        if (subtitle.trim().isNotEmpty) ...[
+                          const shad.Gap(4),
+                          Text(
+                            subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.typography.xSmall.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              );
+              final value = Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
@@ -974,8 +1034,28 @@ class _InventoryDraftPreviewCard extends StatelessWidget {
                     color: theme.colorScheme.mutedForeground,
                   ),
                 ],
-              ),
-            ],
+              );
+
+              if (compact) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    identity,
+                    const shad.Gap(12),
+                    Align(alignment: Alignment.centerRight, child: value),
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: identity),
+                  const shad.Gap(12),
+                  value,
+                ],
+              );
+            },
           ),
           const shad.Gap(10),
           Wrap(
@@ -1055,11 +1135,15 @@ class _InventoryInlineAlertCard extends StatelessWidget {
     required this.message,
     required this.color,
     required this.icon,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String message;
   final Color color;
   final IconData icon;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -1084,6 +1168,13 @@ class _InventoryInlineAlertCard extends StatelessWidget {
               ),
             ),
           ),
+          if (actionLabel != null && onAction != null) ...[
+            const shad.Gap(8),
+            shad.GhostButton(
+              onPressed: onAction,
+              child: Text(actionLabel!),
+            ),
+          ],
         ],
       ),
     );

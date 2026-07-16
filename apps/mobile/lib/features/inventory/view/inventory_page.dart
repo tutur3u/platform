@@ -151,6 +151,14 @@ class _InventoryPageState extends State<InventoryPage> {
                           child: Text(l10n.inventoryCreateProduct),
                         ),
                         shad.SecondaryButton(
+                          onPressed: () => context.go(Routes.inventorySales),
+                          leading: const Icon(
+                            Icons.calendar_view_month_outlined,
+                            size: 17,
+                          ),
+                          child: Text(l10n.inventorySalesPeriodOpen),
+                        ),
+                        shad.SecondaryButton(
                           onPressed: () => context.go(Routes.inventoryManage),
                           child: Text(l10n.inventoryManageLabel),
                         ),

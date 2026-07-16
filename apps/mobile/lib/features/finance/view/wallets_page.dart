@@ -12,6 +12,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
 import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -424,6 +425,20 @@ class _WalletsViewState extends State<_WalletsView> {
         _loadedWorkspaceId = wsId;
         _error = null;
       });
+    } on ApiException catch (error) {
+      if (!mounted || requestToken != _currentWalletsRequestToken) {
+        return;
+      }
+      if (resolvedWallets != null || hasVisibleData) {
+        setState(() => _error = null);
+      } else {
+        final message = error.message.trim();
+        setState(
+          () => _error = message.isEmpty || message == 'Request failed'
+              ? context.l10n.commonSomethingWentWrong
+              : message,
+        );
+      }
     } on Exception {
       if (!mounted || requestToken != _currentWalletsRequestToken) {
         return;

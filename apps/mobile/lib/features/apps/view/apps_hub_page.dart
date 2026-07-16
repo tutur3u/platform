@@ -265,6 +265,7 @@ String _moduleDescription(BuildContext context, String moduleId) {
   return switch (moduleId) {
     'habits' => context.l10n.appsHubHabitsDescription,
     'tasks' => context.l10n.appsHubTasksDescription,
+    'chat' => context.l10n.appsHubChatDescription,
     'calendar' => context.l10n.appsHubCalendarDescription,
     'cms' => context.l10n.appsHubCmsDescription,
     'finance' => context.l10n.appsHubFinanceDescription,
