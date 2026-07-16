@@ -30,6 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Dedicated control surface for Tuturuuu infrastructure operations.',
         vi: 'Be mat dieu khien rieng cho van hanh ha tang Tuturuuu.',
       },
+      indexable: false,
+      keywords: [
+        'infrastructure operations',
+        'observability',
+        'deployment management',
+        'system administration',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

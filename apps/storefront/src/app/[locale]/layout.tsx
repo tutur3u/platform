@@ -31,6 +31,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Browse workspace storefronts, manage a cart, and complete checkout through supported providers.',
         vi: 'Duyệt cửa hàng của workspace, quản lý giỏ hàng và hoàn tất thanh toán qua các nhà cung cấp được hỗ trợ.',
       },
+      indexable: true,
+      keywords: [
+        'online storefront',
+        'ecommerce checkout',
+        'workspace commerce',
+        'online store',
+      ],
       name: siteConfig.name,
       ogImage: siteConfig.ogImage,
       url: siteConfig.url,

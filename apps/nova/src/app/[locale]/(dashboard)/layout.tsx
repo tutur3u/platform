@@ -9,6 +9,8 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
@@ -20,6 +22,10 @@ import {
 } from '@/lib/app-session';
 import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
+
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default async function RootLayout({
   children,

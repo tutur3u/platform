@@ -32,6 +32,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Time tracking with timer, session history, analytics, and approval workflows.',
         vi: 'Theo dõi thời gian với bộ hẹn giờ, lịch sử phiên, phân tích và quy trình phê duyệt.',
       },
+      indexable: false,
+      keywords: [
+        'time tracking',
+        'timesheets',
+        'work analytics',
+        'approval workflows',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

@@ -36,6 +36,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Visual kanban boards with drag-and-drop, real-time collaboration, and AI workflows.',
         vi: 'Bảng kanban trực quan với kéo-thả, cộng tác thời gian thực và quy trình AI.',
       },
+      indexable: false,
+      keywords: [
+        'kanban boards',
+        'task management',
+        'project collaboration',
+        'AI workflows',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

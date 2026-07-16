@@ -2,7 +2,7 @@ import '@tuturuuu/ui/globals.css';
 
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
-import { font } from '@tuturuuu/utils/common/nextjs';
+import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
@@ -16,21 +16,32 @@ import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
-export const metadata: Metadata = {
-  description:
-    'Central Tuturuuu app gateway for opening workspace, productivity, operations, learning, and AI apps.',
-  metadataBase: new URL(BASE_URL),
-  title: {
-    default: 'Tuturuuu Apps',
-    template: '%s | Tuturuuu Apps',
-  },
-};
-
 interface Props {
   children: ReactNode;
   params: Promise<{
     locale: string;
   }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  return generateCommonMetadata({
+    config: {
+      description: {
+        en: 'Central Tuturuuu app gateway for opening workspace, productivity, operations, learning, and AI apps.',
+        vi: 'Cổng ứng dụng Tuturuuu để mở các công cụ workspace, năng suất, vận hành, học tập và AI.',
+      },
+      indexable: true,
+      keywords: [
+        'Tuturuuu apps',
+        'workspace apps',
+        'productivity platform',
+        'business applications',
+      ],
+      name: 'Tuturuuu Apps',
+      url: BASE_URL,
+    },
+    params,
+  });
 }
 
 export function generateStaticParams() {

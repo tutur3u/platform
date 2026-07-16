@@ -96,6 +96,7 @@ export function createLegacyRootLayoutHead(
       description,
       imageUrl: appShellSiteConfig.ogImage,
       locale,
+      openGraphLocale: locale === 'vi' ? 'vi_VN' : 'en_US',
       title: appShellSiteConfig.name,
     },
     {
@@ -104,21 +105,43 @@ export function createLegacyRootLayoutHead(
           href,
           rel: 'stylesheet',
         })),
-        { href: '/favicon.ico', rel: 'icon' },
-        { href: '/favicon-16x16.png', rel: 'shortcut icon' },
-        { href: '/apple-touch-icon.png', rel: 'apple-touch-icon' },
-        { href: '/manifest.webmanifest', rel: 'manifest' },
+        { href: 'https://tuturuuu.com/favicon.ico', rel: 'icon' },
+        {
+          href: 'https://tuturuuu.com/favicon-16x16.png',
+          rel: 'shortcut icon',
+        },
+        {
+          href: 'https://tuturuuu.com/apple-touch-icon.png',
+          rel: 'apple-touch-icon',
+        },
       ],
       meta: [
         { content: appShellSiteConfig.name, name: 'application-name' },
+        {
+          content:
+            'Tuturuuu, business management platform, AI productivity, team collaboration, workflow automation, workspace management',
+          name: 'keywords',
+        },
+        { content: 'Tuturuuu', name: 'author' },
+        { content: 'Tuturuuu', name: 'publisher' },
+        { content: 'origin-when-cross-origin', name: 'referrer' },
+        {
+          content:
+            'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+          name: 'robots',
+        },
         { content: appShellSiteConfig.name, property: 'og:site_name' },
         { content: 'website', property: 'og:type' },
-        { content: appShellSiteConfig.url, property: 'og:url' },
+        {
+          content: locale === 'vi' ? 'en_US' : 'vi_VN',
+          property: 'og:locale:alternate',
+        },
         { content: 'summary_large_image', name: 'twitter:card' },
         { content: appShellSiteConfig.name, name: 'twitter:title' },
         { content: description, name: 'twitter:description' },
         { content: appShellSiteConfig.ogImage, name: 'twitter:image' },
         { content: '@tuturuuu', name: 'twitter:creator' },
+        { content: '@tuturuuu', name: 'twitter:site' },
         { content: 'yes', name: 'apple-mobile-web-app-capable' },
         { content: 'default', name: 'apple-mobile-web-app-status-bar-style' },
         {

@@ -4,9 +4,15 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
+
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 function normalizeNextPath(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;

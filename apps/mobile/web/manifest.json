@@ -1,11 +1,11 @@
 {
-  "name": "Tuturuuu",
+  "name": "Tuturuuu Mobile",
   "short_name": "Tuturuuu",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0175C2",
   "theme_color": "#0175C2",
-  "description": "Tuturuuu Mobile Application",
+  "description": "Access Tuturuuu workspaces, tasks, calendars, finance, inventory, learning, and AI tools from one mobile app.",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [

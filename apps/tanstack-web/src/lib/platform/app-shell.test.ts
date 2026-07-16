@@ -71,7 +71,7 @@ describe('app shell compatibility helpers', () => {
       href: '/assets/app.css',
       rel: 'stylesheet',
     });
-    expect(head.links).toContainEqual({
+    expect(head.links).not.toContainEqual({
       href: '/manifest.webmanifest',
       rel: 'manifest',
     });
@@ -81,15 +81,16 @@ describe('app shell compatibility helpers', () => {
       name: 'description',
     });
     expect(head.meta).toContainEqual({
-      content: 'vi',
+      content: 'vi_VN',
       property: 'og:locale',
     });
     expect(head.meta).toContainEqual({
       content: 'telephone=no',
       name: 'format-detection',
     });
-    expect(head.meta).not.toContainEqual({
-      content: 'noindex,nofollow',
+    expect(head.meta).toContainEqual({
+      content:
+        'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
       name: 'robots',
     });
   });

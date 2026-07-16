@@ -6,10 +6,16 @@ import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
 } from '@tuturuuu/satellite/workspace-invitation';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { TeachWorkspaceShell } from '@/components/teach-workspace-shell';
 import { redirect } from '@/i18n/navigation';
+
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 export default async function TeachWorkspaceLayout({
   children,

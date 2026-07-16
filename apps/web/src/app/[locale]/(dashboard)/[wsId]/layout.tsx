@@ -1,6 +1,8 @@
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -27,6 +29,10 @@ interface LayoutProps {
   }>;
   children: ReactNode;
 }
+
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
 
 async function createPersonalWorkspacePrompt(
   eligibleWorkspaces: { id: string; name: string | null }[]

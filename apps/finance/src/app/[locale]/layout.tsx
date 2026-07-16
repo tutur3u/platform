@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Track expenses, manage budgets, and gain financial insights powered by AI.',
         vi: 'Theo dõi chi tiêu, quản lý ngân sách và phân tích tài chính với AI.',
       },
+      indexable: false,
+      keywords: [
+        'expense tracking',
+        'budget management',
+        'financial analytics',
+        'workspace finance',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Manage workspace files, folders, previews, and storage links in Tuturuuu Drive.',
         vi: 'Quản lý tệp, thư mục, bản xem trước và liên kết lưu trữ trong Tuturuuu Drive.',
       },
+      indexable: false,
+      keywords: [
+        'cloud storage',
+        'file management',
+        'workspace drive',
+        'secure file sharing',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

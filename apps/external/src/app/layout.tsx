@@ -1,6 +1,6 @@
 import { QueryProvider } from '@/providers/query-provider';
 import '@tuturuuu/ui/globals.css';
-import type { Metadata } from 'next';
+import { createCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 
@@ -14,10 +14,23 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: 'Tuturuuu SDK Example',
-  description: 'Example application demonstrating the Tuturuuu SDK',
-};
+export const metadata = createCommonMetadata({
+  config: {
+    description: {
+      en: 'Reference application demonstrating secure integrations with the Tuturuuu SDK and workspace APIs.',
+    },
+    indexable: false,
+    keywords: [
+      'Tuturuuu SDK',
+      'workspace API',
+      'integration example',
+      'developer reference',
+    ],
+    name: 'Tuturuuu SDK Example',
+    url: 'https://tuturuuu.com',
+  },
+  locale: 'en',
+});
 
 export default function RootLayout({
   children,

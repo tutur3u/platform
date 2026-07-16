@@ -30,6 +30,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Take control of your workflow, supercharged by AI.',
         vi: 'Quản lý công việc của bạn, siêu tốc độ cùng AI.',
       },
+      indexable: false,
+      keywords: [
+        'meeting scheduler',
+        'availability planner',
+        'collaborative scheduling',
+        'meeting coordination',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

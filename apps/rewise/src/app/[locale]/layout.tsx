@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: "Life's easier with Rewise, supercharged by AI.",
         vi: 'Cuộc sống dễ dàng hơn với Rewise, siêu tốc độ cùng AI.',
       },
+      indexable: false,
+      keywords: [
+        'AI assistant',
+        'knowledge workspace',
+        'personal productivity',
+        'intelligent workflows',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

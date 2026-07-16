@@ -62,6 +62,7 @@
     "./hooks/*": "./src/hooks/*.ts",
     "./*": "./src/*.ts",
     "./common/scan": "./src/common/scan.tsx",
+    "./common/metadata": "./src/common/metadata.ts",
     "./common/nextjs": "./src/common/nextjs.tsx",
     "./permissions": "./src/permissions.tsx",
     "./editor": "./src/editor/index.ts",

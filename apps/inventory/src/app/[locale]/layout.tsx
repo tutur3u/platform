@@ -33,6 +33,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Manage inventory, stock movements, bundles, checkout readiness, and payment audit trails.',
         vi: 'Quản lý kho hàng, biến động tồn kho, combo, trạng thái sẵn sàng checkout và nhật ký kiểm toán thanh toán.',
       },
+      indexable: false,
+      keywords: [
+        'inventory management',
+        'stock control',
+        'retail operations',
+        'checkout management',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

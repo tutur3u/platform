@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'AI-powered calendar with smart scheduling, time tracking, and workspace collaboration.',
         vi: 'Lịch thông minh với AI hỗ trợ lên lịch, theo dõi thời gian và cộng tác workspace.',
       },
+      indexable: false,
+      keywords: [
+        'AI calendar',
+        'smart scheduling',
+        'team calendar',
+        'time tracking',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,

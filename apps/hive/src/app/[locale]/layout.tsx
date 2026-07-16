@@ -4,6 +4,7 @@ import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
+import { generateCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
@@ -33,27 +34,24 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale } = await params;
-  const description =
-    locale === 'vi'
-      ? 'Hive là phòng thí nghiệm voxel của Tuturuuu dành cho mô phỏng xã hội, NPC dùng AI và nghiên cứu hành vi tác tử.'
-      : 'Hive is Tuturuuu’s voxel research engine for social simulation, AI NPCs, and agentic behavior experiments.';
-
-  return {
-    title: {
-      default: 'Hive',
-      template: '%s - Hive',
-    },
-    metadataBase: new URL(BASE_URL),
-    description,
-    openGraph: {
-      description,
-      siteName: 'Hive',
-      title: 'Hive',
-      type: 'website',
+  return generateCommonMetadata({
+    config: {
+      description: {
+        en: 'Hive is Tuturuuu’s voxel research engine for social simulation, AI NPCs, and agentic behavior experiments.',
+        vi: 'Hive là phòng thí nghiệm voxel của Tuturuuu dành cho mô phỏng xã hội, NPC dùng AI và nghiên cứu hành vi tác tử.',
+      },
+      indexable: false,
+      keywords: [
+        'social simulation',
+        'AI NPCs',
+        'agentic behavior',
+        'voxel research',
+      ],
+      name: 'Tuturuuu Hive',
       url: BASE_URL,
     },
-  };
+    params,
+  });
 }
 
 export const viewport: Viewport = {

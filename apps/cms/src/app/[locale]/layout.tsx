@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Manage Tuturuuu CMS content, preview delivery, and control workspace publishing from a dedicated editorial workspace.',
         vi: 'Quản lý nội dung Tuturuuu CMS, xem trước phân phối và điều khiển xuất bản workspace từ một không gian biên tập chuyên dụng.',
       },
+      indexable: false,
+      keywords: [
+        'content management system',
+        'headless CMS',
+        'content publishing',
+        'editorial workflow',
+      ],
       name: siteConfig.name,
       url: siteConfig.url,
       ogImage: siteConfig.ogImage,
@@ -41,10 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     params,
   });
 
-  return {
-    ...metadata,
-    manifest: undefined,
-  };
+  return metadata;
 }
 
 export function generateStaticParams() {

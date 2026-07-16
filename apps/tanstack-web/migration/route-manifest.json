@@ -30,12 +30,12 @@
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 6,
+        "legacyNext": 7,
         "migrated": 47,
-        "percentComplete": 88.68,
-        "remaining": 6,
+        "percentComplete": 87.04,
+        "remaining": 7,
         "terminal": 47,
-        "total": 53,
+        "total": 54,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 50,
+        "legacyNext": 51,
         "migrated": 148,
-        "percentComplete": 75,
-        "remaining": 50,
+        "percentComplete": 74.63,
+        "remaining": 51,
         "terminal": 150,
-        "total": 200,
+        "total": 201,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 549,
+      "legacyNext": 550,
       "migrated": 219,
-      "percentComplete": 29.71,
-      "remaining": 549,
+      "percentComplete": 29.67,
+      "remaining": 550,
       "terminal": 232,
-      "total": 781,
+      "total": 782,
       "unknownStatus": 0
     }
   },
@@ -5611,6 +5611,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale:apps/web/src/app/[locale]/(auth)/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale:apps/web/src/app/[locale]/(marketing)/(landing)/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -7450,7 +7459,7 @@
   "summary": {
     "apiRoutes": 569,
     "cronRoutes": 7,
-    "layouts": 53,
+    "layouts": 54,
     "pages": 144,
     "routeHandlers": 581,
     "methodCounts": {
@@ -7462,6 +7471,6 @@
       "DELETE": 100,
       "OPTIONS": 23
     },
-    "total": 781
+    "total": 782
   }
 }

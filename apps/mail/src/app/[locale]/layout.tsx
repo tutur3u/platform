@@ -34,6 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         en: 'Send and receive Tuturuuu team mailboxes for exact @tuturuuu.com accounts.',
         vi: 'Gửi và nhận hộp thư nhóm Tuturuuu cho các tài khoản chính xác @tuturuuu.com.',
       },
+      indexable: false,
+      keywords: [
+        'team email',
+        'shared mailbox',
+        'workspace email',
+        'business email',
+      ],
       name: siteConfig.name,
       ogImage: siteConfig.ogImage,
       url: siteConfig.url,
