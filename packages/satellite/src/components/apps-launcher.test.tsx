@@ -126,7 +126,7 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('grid-cols-1');
     expect(launcherGrid?.className).toContain('sm:grid-cols-2');
     expect(launcherGrid?.className).toContain('lg:grid-cols-3');
-    expect(launcherGrid?.className).toContain('xl:grid-cols-4');
+    expect(launcherGrid?.className).not.toContain('xl:grid-cols-4');
 
     fireEvent.click(closeButton);
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -209,6 +209,11 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard.getAttribute('target')).toBe('_blank');
     expect(financeCard.getAttribute('rel')).toBe('noopener noreferrer');
     expect(financeCard?.className).toContain('flex');
+    expect(financeCard?.className).toContain('flex-col');
+    expect(financeCard?.className).toContain('items-center');
+    expect(financeCard?.className).toContain('justify-center');
+    expect(financeCard?.className).toContain('text-center');
+    expect(financeCard?.className).toContain('min-h-36');
     expect(financeCard?.className).toContain('cursor-pointer');
     expect(financeCard?.className).toContain('hover:-translate-y-px');
     expect(financeCard?.className).toContain('focus-visible:ring-2');
@@ -220,17 +225,31 @@ describe('AppsLauncherDialog', () => {
     const financeIcon = financeCard.querySelector(
       '[data-slot="app-card-icon"]'
     );
+    expect(financeIcon?.className).toContain('size-14');
+    expect(financeIcon?.className).toContain('rounded-2xl');
     expect(financeIcon?.className).toContain('text-dynamic-green');
+    expect(financeIcon?.querySelector('svg')?.getAttribute('class')).toContain(
+      'size-7'
+    );
+    expect(
+      financeCard.querySelector('[data-slot="app-card-title"]')?.className
+    ).toContain('text-base');
     expect(
       financeCard.querySelector('[data-slot="app-card-description"]')
         ?.textContent
     ).toBe('Manage wallets, transactions, invoices, and budgets.');
+    expect(
+      financeCard.querySelector('[data-slot="app-card-description"]')?.className
+    ).toContain('text-center');
     expect(
       document.querySelectorAll('[data-slot="app-card-description"]')
     ).toHaveLength(LAUNCHABLE_APPS.length);
     expect(
       financeCard.querySelector('[data-slot="app-card-affordance"]')
     ).toBeTruthy();
+    expect(
+      financeCard.querySelector('[data-slot="app-card-affordance"]')?.className
+    ).toContain('absolute');
     const tasksCard = screen.getByRole('link', { name: 'Tasks' });
     expect(tasksCard.className).toContain('border-border/70');
     expect(
