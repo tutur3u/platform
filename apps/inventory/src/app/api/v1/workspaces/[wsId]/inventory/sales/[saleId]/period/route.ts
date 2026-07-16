@@ -1,6 +1,9 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { canUpdateInventorySales } from '@tuturuuu/inventory-core/permissions';
-import { setInventorySalePeriod } from '@tuturuuu/inventory-core/sales-periods';
+import {
+  InventorySalesPeriodProductRuleError,
+  setInventorySalePeriod,
+} from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -67,6 +70,12 @@ export async function PUT(request: Request, { params }: Params) {
     }
     return NextResponse.json({ data });
   } catch (error) {
+    if (error instanceof InventorySalesPeriodProductRuleError) {
+      return NextResponse.json(
+        { message: 'This sale does not match the period product rules' },
+        { status: 422 }
+      );
+    }
     console.error('Failed to assign inventory sale period', error);
     return NextResponse.json(
       { message: 'Failed to assign inventory sale period' },

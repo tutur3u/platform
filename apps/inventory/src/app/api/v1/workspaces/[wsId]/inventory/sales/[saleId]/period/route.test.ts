@@ -5,12 +5,14 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   financeMaybeSingle: vi.fn(),
   setPeriod: vi.fn(),
+  ProductRuleError: class InventorySalesPeriodProductRuleError extends Error {},
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
   authorizeInventoryWorkspace: (...args: unknown[]) => mocks.authorize(...args),
 }));
 vi.mock('@tuturuuu/inventory-core/sales-periods', () => ({
+  InventorySalesPeriodProductRuleError: mocks.ProductRuleError,
   setInventorySalePeriod: (...args: unknown[]) => mocks.setPeriod(...args),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -81,6 +83,31 @@ describe('inventory sale period assignment', () => {
       saleSource: 'finance_invoice',
       sbAdmin: expect.any(Object),
       wsId: 'ws-real',
+    });
+  });
+
+  it('rejects a sale that does not match the period product rules', async () => {
+    mocks.setPeriod.mockRejectedValueOnce(new mocks.ProductRuleError());
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      new Request('http://localhost/sale/period', {
+        body: JSON.stringify({
+          period_id: '11111111-1111-4111-8111-111111111111',
+          source: 'finance_invoice',
+        }),
+        method: 'PUT',
+      }),
+      {
+        params: Promise.resolve({
+          saleId: '22222222-2222-4222-8222-222222222222',
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      message: 'This sale does not match the period product rules',
     });
   });
 });

@@ -1568,6 +1568,21 @@
     "inventorySalesPeriodNotesPlaceholder": "Thông tin tùy chọn cho đội ngũ",
     "inventorySalesPeriodNameRequired": "Nhập tên giai đoạn.",
     "inventorySalesPeriodDateInvalid": "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.",
+    "inventorySalesPeriodProductRules": "Điều kiện sản phẩm",
+    "inventorySalesPeriodProductRulesDescription": "Chọn doanh số sản phẩm nào có thể được đưa vào giai đoạn này.",
+    "inventorySalesPeriodScopeAll": "Tất cả sản phẩm",
+    "inventorySalesPeriodScopeAllowlist": "Chỉ sản phẩm đã chọn",
+    "inventorySalesPeriodScopeBlocklist": "Tất cả trừ sản phẩm đã chọn",
+    "inventorySalesPeriodSearchProducts": "Tìm sản phẩm",
+    "inventorySalesPeriodProductsRequired": "Chọn ít nhất một sản phẩm cho quy tắc này.",
+    "inventorySalesPeriodProductsSelected": "Đã chọn {count}",
+    "@inventorySalesPeriodProductsSelected": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "inventorySalesPeriodNoDate": "Không có ngày",
     "inventorySalesPeriodArchived": "Đã lưu trữ giai đoạn bán hàng.",
     "inventorySalesPeriodRestored": "Đã khôi phục giai đoạn bán hàng.",

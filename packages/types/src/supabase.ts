@@ -4671,6 +4671,112 @@ export type Database = {
           },
         ];
       };
+      inventory_sales_period_assignments: {
+        Row: {
+          assigned_at: string;
+          assigned_by: string | null;
+          period_id: string;
+          sale_id: string;
+          sale_source: string;
+          ws_id: string;
+        };
+        Insert: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          period_id: string;
+          sale_id: string;
+          sale_source: string;
+          ws_id: string;
+        };
+        Update: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          period_id?: string;
+          sale_id?: string;
+          sale_source?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_sales_period_assignments_period_fkey';
+            columns: ['period_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      inventory_sales_period_products: {
+        Row: {
+          created_at: string;
+          period_id: string;
+          product_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          period_id: string;
+          product_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          period_id?: string;
+          product_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_sales_period_products_period_fkey';
+            columns: ['period_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_sales_periods';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      inventory_sales_periods: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          ends_at: string | null;
+          id: string;
+          name: string;
+          product_scope: string;
+          starts_at: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          ends_at?: string | null;
+          id?: string;
+          name: string;
+          product_scope?: string;
+          starts_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          ends_at?: string | null;
+          id?: string;
+          name?: string;
+          product_scope?: string;
+          starts_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       inventory_settlement_ledger_entries: {
         Row: {
           amount: number;
@@ -14002,6 +14108,18 @@ export type Database = {
         };
         Returns: {
           earning: Json;
+          total_count: number;
+        }[];
+      };
+      list_inventory_sales_for_period: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_period_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          sale: Json;
           total_count: number;
         }[];
       };

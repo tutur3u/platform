@@ -10,10 +10,15 @@ const mocks = vi.hoisted(() => ({
   listCompletedCheckoutSales: vi.fn(),
   listInventorySalesForPeriod: vi.fn(),
   serverError: vi.fn(),
+  getWorkspaceConfig: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspaceConfig: (...args: unknown[]) => mocks.getWorkspaceConfig(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -91,6 +96,7 @@ describe('inventory sales route', () => {
       },
     });
     mocks.isInventoryRealtimeEnabled.mockResolvedValue(true);
+    mocks.getWorkspaceConfig.mockResolvedValue('VND');
     mocks.getSalesPeriodAssignments.mockResolvedValue(new Map());
     mocks.getInventorySalesPeriod.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
@@ -202,9 +208,22 @@ describe('inventory sales route', () => {
     const payload = await response.json();
 
     expect(payload.data[0]).toMatchObject({
+      currency: 'VND',
       id: 'invoice-new',
       source: 'finance_invoice',
     });
+  });
+
+  it('returns the Finance workspace currency with every page', async () => {
+    const response = await listSales('?limit=1');
+
+    await expect(response.json()).resolves.toMatchObject({
+      workspace_currency: 'VND',
+    });
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      'ws-real',
+      'DEFAULT_CURRENCY'
+    );
   });
 
   it('filters the mixed-source feed by a sales period', async () => {

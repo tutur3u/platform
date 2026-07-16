@@ -314,6 +314,8 @@ class InventoryRepository {
     String? description,
     DateTime? startsAt,
     DateTime? endsAt,
+    String productScope = 'all',
+    List<String> productIds = const [],
   }) async {
     final response = await _api.postJson(
       InventoryEndpoints.salesPeriods(wsId),
@@ -322,6 +324,8 @@ class InventoryRepository {
         'description': description,
         'starts_at': _dateOnly(startsAt),
         'ends_at': _dateOnly(endsAt),
+        'product_scope': productScope,
+        'product_ids': productScope == 'all' ? <String>[] : productIds,
       },
     );
     return InventorySalesPeriod.fromJson(
@@ -336,6 +340,8 @@ class InventoryRepository {
     String? description,
     DateTime? startsAt,
     DateTime? endsAt,
+    String? productScope,
+    List<String>? productIds,
     String? status,
   }) async {
     final isContentUpdate = name != null;
@@ -346,6 +352,8 @@ class InventoryRepository {
         if (isContentUpdate) 'description': description,
         if (isContentUpdate) 'starts_at': _dateOnly(startsAt),
         if (isContentUpdate) 'ends_at': _dateOnly(endsAt),
+        if (productScope != null) 'product_scope': productScope,
+        if (productIds != null) 'product_ids': productIds,
         if (status != null) 'status': status,
       },
     );

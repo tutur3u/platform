@@ -9,8 +9,10 @@ import {
   RotateCcw,
 } from '@tuturuuu/icons';
 import type {
+  InventoryProductSummary,
   InventorySaleSummary,
   InventorySalesPeriod,
+  InventorySalesPeriodProductScope,
 } from '@tuturuuu/internal-api/inventory';
 import {
   createInventorySalesPeriod,
@@ -37,18 +39,27 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
+import { SalesPeriodProductRules } from './sales-period-product-rules';
 
 const ALL_PERIODS = '__all__';
 const NO_PERIOD = '__none__';
 
 export function SalesPeriodsPanel({
+  fetchNextProductsPage,
+  hasNextProductsPage,
+  isFetchingNextProductsPage,
   onSelect,
   periods,
+  products,
   selectedPeriodId,
   wsId,
 }: {
+  fetchNextProductsPage: () => unknown;
+  hasNextProductsPage: boolean;
+  isFetchingNextProductsPage: boolean;
   onSelect: (periodId: string) => void;
   periods: InventorySalesPeriod[];
+  products: InventoryProductSummary[];
   selectedPeriodId: string;
   wsId: string;
 }) {
@@ -104,7 +115,15 @@ export function SalesPeriodsPanel({
           </SelectContent>
         </Select>
         {selected ? (
-          <SalesPeriodDialog key={selected.id} period={selected} wsId={wsId} />
+          <SalesPeriodDialog
+            fetchNextProductsPage={fetchNextProductsPage}
+            hasNextProductsPage={hasNextProductsPage}
+            isFetchingNextProductsPage={isFetchingNextProductsPage}
+            key={selected.id}
+            period={selected}
+            products={products}
+            wsId={wsId}
+          />
         ) : null}
         {selected ? (
           <Button
@@ -122,17 +141,32 @@ export function SalesPeriodsPanel({
             {selected.status === 'active' ? t('archive') : t('restore')}
           </Button>
         ) : null}
-        <SalesPeriodDialog key="create" wsId={wsId} />
+        <SalesPeriodDialog
+          fetchNextProductsPage={fetchNextProductsPage}
+          hasNextProductsPage={hasNextProductsPage}
+          isFetchingNextProductsPage={isFetchingNextProductsPage}
+          key="create"
+          products={products}
+          wsId={wsId}
+        />
       </div>
     </section>
   );
 }
 
 function SalesPeriodDialog({
+  fetchNextProductsPage,
+  hasNextProductsPage,
+  isFetchingNextProductsPage,
   period,
+  products,
   wsId,
 }: {
+  fetchNextProductsPage: () => unknown;
+  hasNextProductsPage: boolean;
+  isFetchingNextProductsPage: boolean;
   period?: InventorySalesPeriod;
+  products: InventoryProductSummary[];
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.commerce.periods');
@@ -142,6 +176,11 @@ function SalesPeriodDialog({
   const [description, setDescription] = useState(period?.description ?? '');
   const [startsAt, setStartsAt] = useState(period?.starts_at ?? '');
   const [endsAt, setEndsAt] = useState(period?.ends_at ?? '');
+  const [productScope, setProductScope] =
+    useState<InventorySalesPeriodProductScope>(period?.product_scope ?? 'all');
+  const [productIds, setProductIds] = useState<string[]>(
+    period?.product_ids ?? []
+  );
   const isEditing = Boolean(period);
   const mutation = useMutation({
     mutationFn: () =>
@@ -150,12 +189,16 @@ function SalesPeriodDialog({
             description: description.trim() || null,
             ends_at: endsAt || null,
             name: name.trim(),
+            product_ids: productScope === 'all' ? [] : productIds,
+            product_scope: productScope,
             starts_at: startsAt || null,
           })
         : createInventorySalesPeriod(wsId, {
             description: description.trim() || null,
             ends_at: endsAt || null,
             name: name.trim(),
+            product_ids: productScope === 'all' ? [] : productIds,
+            product_scope: productScope,
             starts_at: startsAt || null,
           }),
     onError: () => toast.error(t('saveError')),
@@ -167,6 +210,8 @@ function SalesPeriodDialog({
         setDescription('');
         setStartsAt('');
         setEndsAt('');
+        setProductScope('all');
+        setProductIds([]);
       }
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'sales-periods'],
@@ -212,6 +257,16 @@ function SalesPeriodDialog({
                 value={name}
               />
             </label>
+            <SalesPeriodProductRules
+              fetchNextPage={fetchNextProductsPage}
+              hasNextPage={hasNextProductsPage}
+              isFetchingNextPage={isFetchingNextProductsPage}
+              onProductIdsChange={setProductIds}
+              onScopeChange={setProductScope}
+              productIds={productIds}
+              products={products}
+              scope={productScope}
+            />
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm">
                 <span className="font-medium">{t('startsAt')}</span>
@@ -252,6 +307,7 @@ function SalesPeriodDialog({
               disabled={
                 !name.trim() ||
                 Boolean(startsAt && endsAt && startsAt > endsAt) ||
+                (productScope !== 'all' && productIds.length === 0) ||
                 mutation.isPending
               }
               type="submit"

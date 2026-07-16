@@ -1015,12 +1015,19 @@
       "commerce": {
         "attributedRevenue": "Attributed revenue",
         "cancelSquare": "Cancel terminal",
+        "categoryLabel": "Category",
+        "creator": "Created by {name}",
+        "creatorLabel": "Creator",
+        "customer": "Customer: {name}",
+        "customerLabel": "Customer",
+        "details": "Details",
         "earnedAmount": "Earned amount",
         "empty": "No commerce records yet",
         "emptyDescriptions": {
           "revenueShare": "Revenue share earnings will appear here after finalized sales include eligible stock rows."
         },
         "items": "{count, plural, one {# item} other {# items}}",
+        "lineItems": "Line items",
         "metrics": {
           "completed": "Completed",
           "completedDescription": "Checkout sessions finalized in this view",
@@ -1031,6 +1038,8 @@
           "sales": "Sales",
           "salesDescription": "Finalized sale records"
         },
+        "owner": "Owner: {name}",
+        "ownersLabel": "Owners",
         "periods": {
           "all": "All periods",
           "archive": "Archive",
@@ -1048,15 +1057,27 @@
           "editDescription": "Update the period name, dates, and team notes.",
           "editTitle": "Edit sales period",
           "endsAt": "End date",
+          "loadingProducts": "Loading products…",
+          "loadMoreProducts": "Load more products",
           "name": "Name",
           "namePlaceholder": "Summer 2026 or TuCon 2026",
+          "noProducts": "No matching products",
           "notes": "Notes",
           "notesPlaceholder": "Optional context for your team",
+          "productRules": "Product eligibility",
+          "productRulesDescription": "Control which product sales can be assigned to this period.",
+          "productsSelected": "{count} selected",
           "restore": "Restore",
           "restoredSuccess": "Sales period restored",
           "save": "Save changes",
           "saveError": "Could not save the sales period",
           "saving": "Saving…",
+          "scopeAll": "All products",
+          "scopeAllowlist": "Only selected products",
+          "scopeAllowlistDescription": "A sale can join this period only when every line uses a selected product.",
+          "scopeBlocklist": "All except selected products",
+          "scopeBlocklistDescription": "Sales containing any selected product cannot join this period.",
+          "searchProducts": "Search products",
           "startsAt": "Start date",
           "title": "Sales periods",
           "unassigned": "No period",
@@ -1071,6 +1092,7 @@
           "grossProfit": "Est. gross profit",
           "margin": "Est. gross margin",
           "noProductData": "No completed product sales yet.",
+          "otherCurrenciesExcluded": "{count, plural, one {# loaded sale in another currency is excluded from this workspace-currency summary.} other {# loaded sales in other currencies are excluded from this workspace-currency summary.}}",
           "product": "Product",
           "profit": "Est. profit",
           "revenue": "Revenue",
@@ -1079,9 +1101,11 @@
           "units": "Units sold"
         },
         "productsLabel": "{count, plural, one {# product} other {# products}}",
+        "quantity": "Qty {count}",
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "saleFallback": "Invoice {id}",
         "sendSquare": "Send to terminal",
         "source": {
           "checkout": "Checkout",
@@ -1100,7 +1124,8 @@
           "revenueShare": "Revenue share",
           "sales": "Sales"
         },
-        "unitsLabel": "{count, plural, one {# unit} other {# units}}"
+        "unitsLabel": "{count, plural, one {# unit} other {# units}}",
+        "walletLabel": "Wallet"
       },
       "costing": {
         "addProfitShare": "Add profit share",

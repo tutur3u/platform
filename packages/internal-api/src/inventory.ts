@@ -1082,12 +1082,19 @@ export type InventorySaleSource = 'checkout_session' | 'finance_invoice';
 
 export type InventorySalesPeriodStatus = 'active' | 'archived';
 
+export type InventorySalesPeriodProductScope =
+  | 'all'
+  | 'allowlist'
+  | 'blocklist';
+
 export type InventorySalesPeriod = {
   created_at: string;
   description: string | null;
   ends_at: string | null;
   id: string;
   name: string;
+  product_ids: string[];
+  product_scope: InventorySalesPeriodProductScope;
   sale_count: number;
   starts_at: string | null;
   status: InventorySalesPeriodStatus;
@@ -1099,6 +1106,8 @@ export type InventorySalesPeriodPayload = {
   description?: string | null;
   ends_at?: string | null;
   name: string;
+  product_ids?: string[];
+  product_scope?: InventorySalesPeriodProductScope;
   starts_at?: string | null;
 };
 
@@ -1578,6 +1587,12 @@ export type InventoryListResponse<T> = {
   data: T[];
   count: number;
 };
+
+export type InventorySalesListResponse =
+  InventoryListResponse<InventorySaleSummary> & {
+    realtime_enabled?: boolean;
+    workspace_currency: string;
+  };
 
 export type InventoryProductFormOptionsResponse = {
   categories: ProductCategory[];
@@ -2454,12 +2469,13 @@ export function listInventorySales(
   query?: InventorySalesListQuery,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<
-    InventoryListResponse<InventorySaleSummary>
-  >(workspaceInventoryPath(wsId, '/sales'), {
-    cache: 'no-store',
-    query: asQuery(query),
-  });
+  return getInternalApiClient(options).json<InventorySalesListResponse>(
+    workspaceInventoryPath(wsId, '/sales'),
+    {
+      cache: 'no-store',
+      query: asQuery(query),
+    }
+  );
 }
 
 export function listInventorySalesPeriods(

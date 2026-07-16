@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   InventoryCheckoutSession,
+  InventoryProductSummary,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
   InventorySalesPeriod,
@@ -22,6 +23,7 @@ import { LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
 import { SalesPeriodsPanel } from './sales-periods-panel';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 export function CommercePanel({
   checkouts,
@@ -29,7 +31,15 @@ export function CommercePanel({
   query,
   revenueShares,
   sales,
+  salesCount,
   salesPeriods,
+  fetchNextSalesPage,
+  fetchNextProductsPage,
+  hasNextProductsPage,
+  hasNextSalesPage,
+  isFetchingNextProductsPage,
+  isFetchingNextSalesPage,
+  products,
   selectedPeriodId,
   setPeriodId,
   setTab,
@@ -41,7 +51,15 @@ export function CommercePanel({
   query: string;
   revenueShares: InventoryRevenueShareEarning[];
   sales: InventorySaleSummary[];
+  salesCount: number;
   salesPeriods: InventorySalesPeriod[];
+  fetchNextSalesPage: () => unknown;
+  fetchNextProductsPage: () => unknown;
+  hasNextProductsPage: boolean;
+  hasNextSalesPage: boolean;
+  isFetchingNextProductsPage: boolean;
+  isFetchingNextSalesPage: boolean;
+  products: InventoryProductSummary[];
   selectedPeriodId: string;
   setPeriodId: (periodId: string) => void;
   setTab: (tab: InventoryCommerceTab) => void;
@@ -50,12 +68,18 @@ export function CommercePanel({
 }) {
   const t = useTranslations('inventory.operator.commerce');
   const tabsT = useTranslations('inventory.operator.commerce.tabs');
+  const workspaceCurrency = useWorkspaceCurrency();
   const reserved = checkouts.filter((row) => row.status === 'reserved').length;
   const completed = checkouts.filter(
     (row) => row.status === 'completed'
   ).length;
-  const salesTotal = sales.reduce((total, row) => total + row.paid_amount, 0);
-  const salesCurrency = sales.find((row) => row.currency)?.currency ?? 'USD';
+  const workspaceCurrencySales = sales.filter(
+    (sale) => !sale.currency || sale.currency === workspaceCurrency
+  );
+  const salesTotal = workspaceCurrencySales.reduce(
+    (total, row) => total + row.paid_amount,
+    0
+  );
 
   const commerceTabs = [
     { icon: CreditCard, label: tabsT('checkouts'), value: 'checkouts' },
@@ -84,13 +108,13 @@ export function CommercePanel({
           description={t('metrics.salesDescription')}
           icon={User}
           label={t('metrics.sales')}
-          value={sales.length}
+          value={salesCount}
         />
         <OperatorMetricCard
           description={t('metrics.revenueDescription')}
           icon={CircleDollarSign}
           label={t('metrics.revenue')}
-          value={money(salesTotal, salesCurrency)}
+          value={money(salesTotal, workspaceCurrency)}
         />
       </div>
       <Tabs
@@ -122,16 +146,31 @@ export function CommercePanel({
           ) : (
             <div className="grid gap-3">
               <SalesPeriodsPanel
+                fetchNextProductsPage={fetchNextProductsPage}
+                hasNextProductsPage={hasNextProductsPage}
+                isFetchingNextProductsPage={isFetchingNextProductsPage}
                 onSelect={setPeriodId}
                 periods={salesPeriods}
+                products={products}
                 selectedPeriodId={selectedPeriodId}
                 wsId={wsId}
               />
-              <ProfitSummaryPanel sales={sales} wsId={wsId} />
+              <ProfitSummaryPanel
+                currency={workspaceCurrency}
+                excludedCurrencyCount={
+                  sales.length - workspaceCurrencySales.length
+                }
+                sales={workspaceCurrencySales}
+                wsId={wsId}
+              />
               <SaleRows
+                fetchNextPage={fetchNextSalesPage}
+                hasNextPage={hasNextSalesPage}
+                isFetchingNextPage={isFetchingNextSalesPage}
                 periods={salesPeriods}
                 query={query}
                 rows={sales}
+                workspaceCurrency={workspaceCurrency}
                 wsId={wsId}
               />
             </div>

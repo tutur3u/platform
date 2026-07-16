@@ -465,6 +465,8 @@ class InventorySalesPeriod extends Equatable {
     this.description,
     this.startsAt,
     this.endsAt,
+    this.productScope = 'all',
+    this.productIds = const [],
   });
 
   factory InventorySalesPeriod.fromJson(Map<String, dynamic> json) =>
@@ -478,6 +480,13 @@ class InventorySalesPeriod extends Equatable {
             ? 'active'
             : _asString(json['status']),
         saleCount: (json['sale_count'] as num?)?.toInt() ?? 0,
+        productScope: _asString(json['product_scope']).isEmpty
+            ? 'all'
+            : _asString(json['product_scope']),
+        productIds: (json['product_ids'] as List<dynamic>? ?? const <dynamic>[])
+            .map(_asString)
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false),
       );
 
   final String id;
@@ -487,6 +496,8 @@ class InventorySalesPeriod extends Equatable {
   final DateTime? endsAt;
   final String status;
   final int saleCount;
+  final String productScope;
+  final List<String> productIds;
 
   bool get isArchived => status == 'archived';
 
@@ -499,6 +510,8 @@ class InventorySalesPeriod extends Equatable {
     endsAt,
     status,
     saleCount,
+    productScope,
+    productIds,
   ];
 }
 
@@ -518,6 +531,7 @@ class InventorySaleSummary extends Equatable {
     this.categoryName,
     this.customerName,
     this.creatorName,
+    this.currency,
     this.period,
   });
 
@@ -541,6 +555,7 @@ class InventorySaleSummary extends Equatable {
         categoryName: json['category_name'] as String?,
         customerName: json['customer_name'] as String?,
         creatorName: json['creator_name'] as String?,
+        currency: json['currency'] as String?,
         period: json['period'] is Map
             ? InventorySalesPeriod.fromJson(
                 Map<String, dynamic>.from(json['period'] as Map),
@@ -562,6 +577,7 @@ class InventorySaleSummary extends Equatable {
   final String? categoryName;
   final String? customerName;
   final String? creatorName;
+  final String? currency;
   final InventorySalesPeriod? period;
 
   @override
@@ -580,6 +596,7 @@ class InventorySaleSummary extends Equatable {
     categoryName,
     customerName,
     creatorName,
+    currency,
     period,
   ];
 }

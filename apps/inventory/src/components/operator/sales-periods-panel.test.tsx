@@ -13,6 +13,9 @@ describe('SalesPeriodsPanel', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={queryClient}>
         <SalesPeriodsPanel
+          fetchNextProductsPage={() => undefined}
+          hasNextProductsPage={false}
+          isFetchingNextProductsPage={false}
           onSelect={() => undefined}
           periods={[
             {
@@ -21,6 +24,8 @@ describe('SalesPeriodsPanel', () => {
               ends_at: '2026-07-31',
               id: 'period-1',
               name: 'TuCon 2026',
+              product_ids: [],
+              product_scope: 'all',
               sale_count: 4,
               starts_at: '2026-07-01',
               status: 'active',
@@ -28,6 +33,7 @@ describe('SalesPeriodsPanel', () => {
               ws_id: 'ws-1',
             },
           ]}
+          products={[]}
           selectedPeriodId="period-1"
           wsId="ws-1"
         />

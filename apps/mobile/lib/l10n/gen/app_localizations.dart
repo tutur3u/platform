@@ -7507,6 +7507,54 @@ abstract class AppLocalizations {
   /// **'The end date must be on or after the start date.'**
   String get inventorySalesPeriodDateInvalid;
 
+  /// No description provided for @inventorySalesPeriodProductRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Product eligibility'**
+  String get inventorySalesPeriodProductRules;
+
+  /// No description provided for @inventorySalesPeriodProductRulesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which product sales can join this period.'**
+  String get inventorySalesPeriodProductRulesDescription;
+
+  /// No description provided for @inventorySalesPeriodScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All products'**
+  String get inventorySalesPeriodScopeAll;
+
+  /// No description provided for @inventorySalesPeriodScopeAllowlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Only selected products'**
+  String get inventorySalesPeriodScopeAllowlist;
+
+  /// No description provided for @inventorySalesPeriodScopeBlocklist.
+  ///
+  /// In en, this message translates to:
+  /// **'All except selected products'**
+  String get inventorySalesPeriodScopeBlocklist;
+
+  /// No description provided for @inventorySalesPeriodSearchProducts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search products'**
+  String get inventorySalesPeriodSearchProducts;
+
+  /// No description provided for @inventorySalesPeriodProductsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one product for this rule.'**
+  String get inventorySalesPeriodProductsRequired;
+
+  /// No description provided for @inventorySalesPeriodProductsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String inventorySalesPeriodProductsSelected(int count);
+
   /// No description provided for @inventorySalesPeriodNoDate.
   ///
   /// In en, this message translates to:

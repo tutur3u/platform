@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import {
   getInventoryCostingAnalytics,
   getInventoryOverview,
@@ -57,10 +57,14 @@ export function useInventoryData(
     ].includes(view),
     queryFn: () =>
       listInventoryProducts(wsId, {
-        pageSize: 50,
-        q: filters.q,
+        pageSize: view === 'commerce' ? 100 : 50,
+        q: view === 'commerce' ? undefined : filters.q,
         status:
-          status === 'active' || status === 'archived' ? status : undefined,
+          view === 'commerce'
+            ? 'all'
+            : status === 'active' || status === 'archived'
+              ? status
+              : undefined,
       }),
     queryKey: ['inventory', wsId, 'products', filters.q, filters.status],
   });
@@ -116,19 +120,40 @@ export function useInventoryData(
     queryFn: () => getInventoryCostingAnalytics(wsId),
     queryKey: ['inventory', wsId, 'costing-analytics'],
   });
-  const sales = useQuery({
+  const sales = useInfiniteQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
-    queryFn: () =>
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       listInventorySales(wsId, {
-        limit: 50,
+        limit: 24,
+        offset: pageParam,
         period_id: filters.period || undefined,
       }),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((count, page) => count + page.data.length, 0);
+      return loaded < lastPage.count ? loaded : undefined;
+    },
     queryKey: ['inventory', wsId, 'sales', filters.period],
   });
   const salesPeriods = useQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
     queryFn: () => listInventorySalesPeriods(wsId, { include_archived: true }),
     queryKey: ['inventory', wsId, 'sales-periods'],
+  });
+  const periodProducts = useInfiniteQuery({
+    enabled: view === 'commerce' && commerceTab === 'sales',
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      listInventoryProducts(wsId, {
+        page: pageParam,
+        pageSize: 50,
+        status: 'all',
+      }),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((count, page) => count + page.data.length, 0);
+      return loaded < lastPage.count ? pages.length + 1 : undefined;
+    },
+    queryKey: ['inventory', wsId, 'sales-period-products'],
   });
   const promotions = useQuery({
     enabled: view === 'promotions',
@@ -190,6 +215,7 @@ export function useInventoryData(
     formOptions,
     overview,
     polarSettings,
+    periodProducts,
     products,
     promotions,
     revenueShares,

@@ -1567,6 +1567,21 @@
     "inventorySalesPeriodNotesPlaceholder": "Optional context for your team",
     "inventorySalesPeriodNameRequired": "Enter a period name.",
     "inventorySalesPeriodDateInvalid": "The end date must be on or after the start date.",
+    "inventorySalesPeriodProductRules": "Product eligibility",
+    "inventorySalesPeriodProductRulesDescription": "Choose which product sales can join this period.",
+    "inventorySalesPeriodScopeAll": "All products",
+    "inventorySalesPeriodScopeAllowlist": "Only selected products",
+    "inventorySalesPeriodScopeBlocklist": "All except selected products",
+    "inventorySalesPeriodSearchProducts": "Search products",
+    "inventorySalesPeriodProductsRequired": "Choose at least one product for this rule.",
+    "inventorySalesPeriodProductsSelected": "{count} selected",
+    "@inventorySalesPeriodProductsSelected": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
     "inventorySalesPeriodNoDate": "No date",
     "inventorySalesPeriodArchived": "Sales period archived.",
     "inventorySalesPeriodRestored": "Sales period restored.",

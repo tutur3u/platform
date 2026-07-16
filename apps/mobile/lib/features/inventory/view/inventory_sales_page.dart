@@ -444,10 +444,10 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _InventorySaleCard(
                                 sale: sale,
-                                currency: _currency,
+                                currency: sale.currency ?? _currency,
                                 onTap: () => _openSaleDetail(
                                   saleId: sale.id,
-                                  currency: _currency,
+                                  currency: sale.currency ?? _currency,
                                   canUpdateSales: _canUpdateSales,
                                   canDeleteSales: _canDeleteSales,
                                 ),

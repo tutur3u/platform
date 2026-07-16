@@ -12,10 +12,18 @@ describe('CommercePanel', () => {
     const html = renderToStaticMarkup(
       <CommercePanel
         checkouts={[]}
+        fetchNextProductsPage={() => undefined}
+        fetchNextSalesPage={() => undefined}
+        hasNextProductsPage={false}
+        hasNextSalesPage={false}
+        isFetchingNextProductsPage={false}
+        isFetchingNextSalesPage={false}
         isLoading
+        products={[]}
         query=""
         revenueShares={[]}
         sales={[]}
+        salesCount={0}
         salesPeriods={[]}
         selectedPeriodId=""
         setPeriodId={() => undefined}

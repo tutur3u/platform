@@ -20,6 +20,8 @@ void main() {
           'ends_at': '2026-08-09',
           'status': 'active',
           'sale_count': 42,
+          'product_scope': 'allowlist',
+          'product_ids': <String>['product-1', 'product-2'],
         },
       });
 
@@ -27,6 +29,8 @@ void main() {
       expect(sale.period?.name, 'TuCon 2026');
       expect(sale.period?.saleCount, 42);
       expect(sale.period?.startsAt, DateTime(2026, 8, 8));
+      expect(sale.period?.productScope, 'allowlist');
+      expect(sale.period?.productIds, ['product-1', 'product-2']);
     });
 
     test('builds period-aware inventory API paths', () {
