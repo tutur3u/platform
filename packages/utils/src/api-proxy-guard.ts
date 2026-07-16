@@ -763,7 +763,7 @@ function looksLikeWorkspaceApiKey(token: string): boolean {
   return /^ttr_[A-Za-z0-9_-]+$/.test(token);
 }
 
-function hasAuthenticatedBearerToken(headers: Headers): boolean {
+export function hasAuthenticatedBearerToken(headers: Headers): boolean {
   const authHeader = headers.get('authorization');
   if (!authHeader) {
     return false;

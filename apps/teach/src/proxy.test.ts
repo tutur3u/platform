@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consumeVerifyTokenRequest: vi.fn(),
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasAuthenticatedBearerToken: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
@@ -34,6 +35,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedBearerToken: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedBearerToken>
+  ) => mocks.hasAuthenticatedBearerToken(...args),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -70,6 +74,7 @@ describe('Teach proxy local auth API guard', () => {
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
   });

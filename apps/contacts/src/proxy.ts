@@ -10,7 +10,10 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedBearerToken,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -222,12 +225,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const appSessionRefresh = isLocalAuthApi
-      ? null
-      : await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'contacts',
-        });
+    const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
+    const appSessionRefresh =
+      isLocalAuthApi || hasBearerApiSession
+        ? null
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'contacts',
+          });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return clearSupabaseAuthCookies(

@@ -1,5 +1,4 @@
 import { match } from '@formatjs/intl-localematcher';
-import { getBearerAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -19,7 +18,10 @@ import {
   getUserConfig,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedBearerToken,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
@@ -104,9 +106,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    const hasBearerAppSession = Boolean(getBearerAppCoordinationToken(req));
+    const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || hasBearerAppSession
+      isLocalAuthApi || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',

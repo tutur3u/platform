@@ -29,6 +29,19 @@ localization changes.
   Local verification must prove the Android AAB build, while iOS IPA
   verification requires full Xcode before it can be claimed.
 
+## API Origins And Authentication
+
+- Mobile uses Supabase access-token Bearer authentication against both the
+  platform and registered satellite origins. A satellite proxy must let a
+  syntactically valid bearer credential reach route-level authentication
+  instead of requiring a browser app-session cookie first. Use
+  `hasAuthenticatedBearerToken(request.headers)` from
+  `@tuturuuu/utils/api-proxy-guard` only as an edge pass-through signal; route
+  handlers remain responsible for validating the token and authorization.
+- Keep `scripts/check-mobile-api-mappings.js` aligned with every configured
+  mobile satellite origin. It verifies canonical route ownership and ensures
+  each satellite proxy preserves bearer-authenticated mobile API access.
+
 ## Overlays And Shell
 
 - Do not call `shad.openDrawer`, `shad.showDialog` for full-screen content, or

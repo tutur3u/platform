@@ -6,6 +6,7 @@ const {
   collectApiPaths,
   collectConfiguredMobileApiApps,
   collectMobileApiPaths,
+  findSatelliteProxyBearerGaps,
   findUnconfiguredSatelliteOwners,
   findUnmappedMobileApiPaths,
   normalizeMobilePath,
@@ -98,6 +99,24 @@ test('reports mobile routes whose sole satellite owner has no configured host', 
       configuredApps: new Set(),
     }),
     ['/api/v1/workspaces/:*/tasks => tasks']
+  );
+});
+
+test('reports satellite proxies that block bearer-authenticated mobile APIs', () => {
+  assert.deepEqual(
+    findSatelliteProxyBearerGaps({
+      configuredApps: new Set(['tasks', 'inventory']),
+      proxySources: new Map([
+        [
+          'tasks',
+          'const bearer = hasAuthenticatedBearerToken(request.headers);',
+        ],
+        ['inventory', 'const appSessionRefresh = refreshAppSession();'],
+      ]),
+    }),
+    [
+      'inventory: proxy must pass bearer-authenticated mobile API requests to route auth',
+    ]
   );
 });
 

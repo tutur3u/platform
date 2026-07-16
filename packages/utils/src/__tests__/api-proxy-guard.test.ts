@@ -1663,6 +1663,23 @@ describe('guardApiProxyRequest', () => {
     ).toBe(false);
   });
 
+  it('detects bearer credentials that route handlers can authenticate', async () => {
+    const { hasAuthenticatedBearerToken } = await import(
+      '../api-proxy-guard.js'
+    );
+
+    expect(
+      hasAuthenticatedBearerToken(
+        new Headers({ authorization: 'Bearer header.payload.signature' })
+      )
+    ).toBe(true);
+    expect(
+      hasAuthenticatedBearerToken(
+        new Headers({ authorization: 'Bearer malformed-token' })
+      )
+    ).toBe(false);
+  });
+
   it('enforces anonymous IP blocks for cookie-looking browser requests', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');

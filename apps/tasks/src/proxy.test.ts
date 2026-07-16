@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     getRequestHeadersWithResponseCookies: vi.fn(),
     getUserConfig: vi.fn(),
     guardApiProxyRequest: vi.fn(),
+    hasAuthenticatedBearerToken: vi.fn(),
     hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
@@ -82,6 +83,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedBearerToken: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedBearerToken>
+  ) => mocks.hasAuthenticatedBearerToken(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -111,6 +115,10 @@ describe('Tasks proxy auth mode', () => {
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(new Headers());
     mocks.getUserConfig.mockResolvedValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockImplementation(
+      (headers: Headers) =>
+        headers.get('authorization') === 'Bearer ttr_app_access'
+    );
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
     mocks.withForwardedInternalApiAuth.mockReturnValue({
@@ -154,6 +162,26 @@ describe('Tasks proxy auth mode', () => {
       {
         headers: {
           authorization: 'Bearer ttr_app_access',
+        },
+      }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:tasks:api',
+    });
+  });
+
+  it('lets mobile Supabase bearer API requests reach route auth without Tasks refresh', async () => {
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.com/api/v1/workspaces/personal/task-boards',
+      {
+        headers: {
+          authorization: 'Bearer header.payload.signature',
         },
       }
     );

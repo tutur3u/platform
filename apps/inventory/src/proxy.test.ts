@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   consumeVerifyTokenRequest: vi.fn(),
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
+  hasAuthenticatedBearerToken: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
@@ -38,6 +39,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedBearerToken: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedBearerToken>
+  ) => mocks.hasAuthenticatedBearerToken(...args),
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -73,6 +77,7 @@ describe('Inventory proxy storefront access', () => {
   beforeEach(() => {
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
   });
 
@@ -201,6 +206,37 @@ describe('Inventory proxy storefront access', () => {
       request,
       guardResponse
     );
+  });
+
+  it('passes mobile Supabase bearer requests through to inventory route auth', async () => {
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(true);
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/inventory/overview',
+      { headers: { authorization: 'Bearer header.payload.signature' } }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:inventory:api',
+    });
+  });
+
+  it('passes cron-secret requests through to inventory route auth', async () => {
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/cron/inventory/checkout-expiry',
+      { headers: { authorization: 'Bearer cron-secret' } }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+      prefixBase: 'proxy:inventory:api',
+    });
   });
 
   it.each([

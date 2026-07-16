@@ -13,7 +13,10 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
-import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import {
+  guardApiProxyRequest,
+  hasAuthenticatedBearerToken,
+} from '@tuturuuu/utils/api-proxy-guard';
 import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -23,6 +26,7 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const ROUTE_AUTH_CRON_API_PREFIX = '/api/cron/';
 const LOCALE_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
   path: '/',
@@ -134,9 +138,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    const isRouteAuthCronApi = request.nextUrl.pathname.startsWith(
+      ROUTE_AUTH_CRON_API_PREFIX
+    );
+    const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
     const isPublicStorefrontApi = isPublicStorefrontApiRequest(request);
     const shouldRefreshAppSession =
       !isLocalAuthApi &&
+      !isRouteAuthCronApi &&
+      !hasBearerApiSession &&
       (!isPublicStorefrontApi || hasApiSessionCredentials(request));
     const appSessionRefresh = shouldRefreshAppSession
       ? await refreshAppSessionForRequest(request, {

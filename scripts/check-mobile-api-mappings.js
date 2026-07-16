@@ -168,6 +168,27 @@ function findUnconfiguredSatelliteOwners({
   return failures.sort();
 }
 
+function findSatelliteProxyBearerGaps({ configuredApps, proxySources }) {
+  const failures = [];
+  for (const appName of configuredApps) {
+    const source = proxySources.get(appName);
+    if (!source) {
+      failures.push(`${appName}: missing src/proxy.ts`);
+      continue;
+    }
+
+    if (
+      !source.includes('hasAuthenticatedBearerToken') ||
+      !/hasAuthenticatedBearerToken\([^)]*\.headers\)/u.test(source)
+    ) {
+      failures.push(
+        `${appName}: proxy must pass bearer-authenticated mobile API requests to route auth`
+      );
+    }
+  }
+  return failures.sort();
+}
+
 function validateMobileOriginRouting({ rootDir = ROOT_DIR, mobilePaths }) {
   const originSource = fs.readFileSync(
     path.join(rootDir, MOBILE_API_ORIGINS),
@@ -184,6 +205,18 @@ function validateMobileOriginRouting({ rootDir = ROOT_DIR, mobilePaths }) {
     routesByApp,
     configuredApps,
   });
+  const proxySources = new Map(
+    [...configuredApps].map((appName) => {
+      const proxyPath = path.join(rootDir, 'apps', appName, 'src/proxy.ts');
+      return [
+        appName,
+        fs.existsSync(proxyPath) ? fs.readFileSync(proxyPath, 'utf8') : null,
+      ];
+    })
+  );
+  errors.push(
+    ...findSatelliteProxyBearerGaps({ configuredApps, proxySources })
+  );
 
   if (!clientSource.includes('ApiConfig.baseUrlForPath(path)')) {
     errors.push(
@@ -275,6 +308,7 @@ module.exports = {
   collectConfiguredMobileApiApps,
   findUnmappedMobileApiPaths,
   findUnconfiguredSatelliteOwners,
+  findSatelliteProxyBearerGaps,
   normalizeClientPath,
   normalizeMobilePath,
   routeFileToApiPath,

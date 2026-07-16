@@ -21,6 +21,7 @@ const mocks = vi.hoisted(() => {
     getCurrentUserDefaultWorkspace: vi.fn(),
     getRequestHeadersWithResponseCookies: vi.fn(),
     guardApiProxyRequest: vi.fn(),
+    hasAuthenticatedBearerToken: vi.fn(),
     hasSupportedSupabaseAuthCookie: vi.fn(),
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
@@ -79,6 +80,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+  hasAuthenticatedBearerToken: (
+    ...args: Parameters<typeof mocks.hasAuthenticatedBearerToken>
+  ) => mocks.hasAuthenticatedBearerToken(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -118,6 +122,7 @@ describe('Calendar proxy verify-token handoff', () => {
 
   it('refreshes product APIs in Supabase-first mode', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);
+    mocks.hasAuthenticatedBearerToken.mockReturnValue(false);
     const request = new NextRequest(
       'https://calendar.tuturuuu.com/api/v1/calendar/events'
     );
