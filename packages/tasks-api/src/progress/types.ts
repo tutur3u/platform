@@ -129,6 +129,7 @@ export interface TaskLeaderboardMember {
   status: 'active' | 'left';
   value?: number;
   rank?: number;
+  sparkline?: number[];
   team?: TaskLeaderboardTeam | null;
 }
 
@@ -154,6 +155,8 @@ export interface TaskLeaderboard {
   teams?: TaskLeaderboardTeam[];
   rankings?: TaskLeaderboardMember[];
   teamTotals?: Array<TaskLeaderboardTeam & { value: number }>;
+  /** Whether the current viewer is an active member. */
+  joined?: boolean;
 }
 
 export interface SchemaUnavailableResponse {

@@ -1,7 +1,16 @@
 import { type UseMutationResult, useMutation } from '@tanstack/react-query';
-import { Copy, Crown, Medal, Sparkles, Trophy, Users } from '@tuturuuu/icons';
+import {
+  Copy,
+  Crown,
+  LogOut,
+  Medal,
+  Sparkles,
+  Trophy,
+  Users,
+} from '@tuturuuu/icons';
 import {
   joinTaskLeaderboard,
+  leaveTaskLeaderboard,
   type TaskLeaderboard,
   type TaskLeaderboardMember,
   type TaskProgressMetric,
@@ -11,9 +20,45 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { MiniSparkline } from '@tuturuuu/ui/tasks/progress/mini-sparkline';
 import { cn } from '@tuturuuu/utils/format';
 import type { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+function LeaveButton({
+  joinCode,
+  onLeft,
+  t,
+  wsId,
+}: {
+  joinCode: string;
+  onLeft: () => void;
+  t: Translate;
+  wsId: string;
+}) {
+  const mutation = useMutation({
+    mutationFn: () => leaveTaskLeaderboard(wsId, { join_code: joinCode }),
+    onSuccess: (response) => {
+      if (response.ok) {
+        toast.success(t('leaderboards.left'));
+        onLeft();
+      }
+    },
+  });
+  return (
+    <Button
+      className="gap-1.5"
+      disabled={mutation.isPending}
+      onClick={() => mutation.mutate()}
+      size="sm"
+      type="button"
+      variant="ghost"
+    >
+      <LogOut className="size-3.5" />
+      {t('leaderboards.leave')}
+    </Button>
+  );
+}
 
 type Translate = ReturnType<typeof useTranslations>;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -253,20 +298,30 @@ export function LeaderboardsPanel(props: {
                           : leaderboard.description || leaderboard.metric?.name}
                       </div>
                     </div>
-                    {!leaderboard.automatic && leaderboard.join_code ? (
-                      <Button
-                        className="gap-1.5"
-                        onClick={() => copyCode(leaderboard.join_code)}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                      >
-                        <Copy className="size-3.5" />
-                        <span className="font-mono text-xs">
-                          {leaderboard.join_code}
-                        </span>
-                      </Button>
-                    ) : null}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {leaderboard.joined && leaderboard.join_code ? (
+                        <LeaveButton
+                          joinCode={leaderboard.join_code}
+                          onLeft={onJoined}
+                          t={t}
+                          wsId={wsId}
+                        />
+                      ) : null}
+                      {!leaderboard.automatic && leaderboard.join_code ? (
+                        <Button
+                          className="gap-1.5"
+                          onClick={() => copyCode(leaderboard.join_code)}
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          <Copy className="size-3.5" />
+                          <span className="font-mono text-xs">
+                            {leaderboard.join_code}
+                          </span>
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
 
                   <Podium
@@ -279,14 +334,20 @@ export function LeaderboardsPanel(props: {
                     <div className="space-y-1.5">
                       {rankings.slice(3, 10).map((member) => (
                         <div
-                          className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm"
+                          className="flex items-center justify-between gap-3 rounded-md border px-3 py-1.5 text-sm"
                           key={member.id}
                         >
-                          <span className="text-muted-foreground">
+                          <span className="min-w-0 flex-1 truncate text-muted-foreground">
                             #{member.rank}{' '}
                             {member.display_name || member.user_id}
                           </span>
-                          <strong className="tabular-nums">
+                          {member.sparkline && member.sparkline.length > 0 ? (
+                            <MiniSparkline
+                              className="shrink-0 opacity-70"
+                              data={member.sparkline}
+                            />
+                          ) : null}
+                          <strong className="shrink-0 tabular-nums">
                             {Number(member.value ?? 0).toLocaleString()}
                           </strong>
                         </div>
