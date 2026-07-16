@@ -1119,18 +1119,18 @@ describe('web proxy api handling', () => {
         'https://tools.tuturuuu.localhost/random?utm_source=e2e&tag=a&tag=b',
       url: 'http://localhost/tools/random?utm_source=e2e&tag=a&tag=b',
     },
-  ])('redirects public marketing alias $url before auth', async ({
-    expectedLocation,
-    url,
-  }) => {
-    const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest(url));
+  ])(
+    'redirects public marketing alias $url before auth',
+    async ({ expectedLocation, url }) => {
+      const { proxy } = await import('../proxy');
+      const response = await proxy(new NextRequest(url));
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(expectedLocation);
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-    expect(mocks.authProxy).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(expectedLocation);
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    }
+  );
 
   it('redirects old workspace mail dashboard routes to the mail app before auth', async () => {
     const { proxy } = await import('../proxy');
@@ -1193,18 +1193,18 @@ describe('web proxy api handling', () => {
         'https://contacts.tuturuuu.localhost/personal/posts?stage=pending_approval',
       url: 'http://localhost/en/personal/posts?stage=pending_approval',
     },
-  ])('redirects old workspace satellite route $url to its app before auth', async ({
-    expectedLocation,
-    url,
-  }) => {
-    const { proxy } = await import('../proxy');
-    const response = await proxy(new NextRequest(url));
+  ])(
+    'redirects old workspace satellite route $url to its app before auth',
+    async ({ expectedLocation, url }) => {
+      const { proxy } = await import('../proxy');
+      const response = await proxy(new NextRequest(url));
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(expectedLocation);
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-    expect(mocks.authProxy).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(expectedLocation);
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    }
+  );
 
   it('returns a direct 404 for reserved root tilde routes', async () => {
     const { proxy } = await import('../proxy');

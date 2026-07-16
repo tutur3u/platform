@@ -52,14 +52,15 @@ const contactsOwnedRouteFiles = [
 ] as const;
 
 describe('Contacts user-group API ownership', () => {
-  it.each(
-    contactsOwnedRouteFiles
-  )('serves %s locally from the shared users-core handler', (relativePath) => {
-    const routePath = resolve(import.meta.dirname, relativePath);
-    const source = readFileSync(routePath, 'utf8');
+  it.each(contactsOwnedRouteFiles)(
+    'serves %s locally from the shared users-core handler',
+    (relativePath) => {
+      const routePath = resolve(import.meta.dirname, relativePath);
+      const source = readFileSync(routePath, 'utf8');
 
-    expect(source).toContain('@tuturuuu/users-core/routes/');
-  });
+      expect(source).toContain('@tuturuuu/users-core/routes/');
+    }
+  );
 
   it('serves attendance reads and saves from Contacts', () => {
     const routePath = resolve(
@@ -88,12 +89,15 @@ describe('Contacts user-group API ownership', () => {
     ['../users/audit-logs/route.ts', ['GET']],
     ['../users/audit-logs/backfill/route.ts', ['POST']],
     ['../users/[userId]/linked-promotions/route.ts', ['GET', 'POST', 'DELETE']],
-  ] as const)('exports the expected CRUD methods from %s', (relativePath, methods) => {
-    const routePath = resolve(import.meta.dirname, relativePath);
-    const source = readFileSync(routePath, 'utf8');
+  ] as const)(
+    'exports the expected CRUD methods from %s',
+    (relativePath, methods) => {
+      const routePath = resolve(import.meta.dirname, relativePath);
+      const source = readFileSync(routePath, 'utf8');
 
-    for (const method of methods) {
-      expect(source).toMatch(new RegExp(`\\b${method}\\b`, 'u'));
+      for (const method of methods) {
+        expect(source).toMatch(new RegExp(`\\b${method}\\b`, 'u'));
+      }
     }
-  });
+  );
 });

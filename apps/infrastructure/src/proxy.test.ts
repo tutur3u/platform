@@ -224,17 +224,20 @@ describe('Infra proxy', () => {
       'localized',
       'https://infrastructure.tuturuuu.com/en/verify-token?token=copy-token&nextUrl=%2Fpersonal',
     ],
-  ])('consumes %s verify-token requests before page auth redirects', async (_label, url) => {
-    const verifyResponse = NextResponse.redirect(
-      'https://infrastructure.tuturuuu.com/personal'
-    );
-    mocks.consumeVerifyTokenRequest.mockResolvedValue(verifyResponse);
+  ])(
+    'consumes %s verify-token requests before page auth redirects',
+    async (_label, url) => {
+      const verifyResponse = NextResponse.redirect(
+        'https://infrastructure.tuturuuu.com/personal'
+      );
+      mocks.consumeVerifyTokenRequest.mockResolvedValue(verifyResponse);
 
-    const request = new NextRequest(url);
+      const request = new NextRequest(url);
 
-    const response = await proxy(request);
+      const response = await proxy(request);
 
-    expect(response).toBe(verifyResponse);
-    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-  });
+      expect(response).toBe(verifyResponse);
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    }
+  );
 });

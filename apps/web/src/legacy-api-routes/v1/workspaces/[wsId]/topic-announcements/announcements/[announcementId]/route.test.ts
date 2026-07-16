@@ -79,22 +79,22 @@ function params() {
 }
 
 describe('topic announcement DELETE route', () => {
-  it.each([
-    'draft',
-    'queued',
-  ])('soft-cancels %s announcements and clears pending delivery state', async (existingStatus) => {
-    const { updateChain } = setupAccess({ existingStatus });
+  it.each(['draft', 'queued'])(
+    'soft-cancels %s announcements and clears pending delivery state',
+    async (existingStatus) => {
+      const { updateChain } = setupAccess({ existingStatus });
 
-    const response = await DELETE(new Request('http://localhost'), params());
+      const response = await DELETE(new Request('http://localhost'), params());
 
-    expect(response.status).toBe(204);
-    expect(updateChain.update).toHaveBeenCalledWith({
-      last_error: null,
-      scheduled_send_at: null,
-      status: 'cancelled',
-      updated_by: 'user-1',
-    });
-  });
+      expect(response.status).toBe(204);
+      expect(updateChain.update).toHaveBeenCalledWith({
+        last_error: null,
+        scheduled_send_at: null,
+        status: 'cancelled',
+        updated_by: 'user-1',
+      });
+    }
+  );
 
   it('rejects sent announcements', async () => {
     const { sbAdmin } = setupAccess({ existingStatus: 'sent' });

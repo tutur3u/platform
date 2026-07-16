@@ -112,6 +112,7 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     },
     experimental: {
       ...experimentalConfig,
+      useTypeScriptCli: true,
       turbopackFileSystemCacheForBuild:
         experimentalConfig.turbopackFileSystemCacheForBuild ?? true,
       turbopackRustReactCompiler:

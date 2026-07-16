@@ -18,7 +18,7 @@
     "serwist": "^10.0.0-preview.14"
   },
   "peerDependencies": {
-    "next": ">=16.3.0-preview.5",
+    "next": ">=16.3.0-preview.6",
     "react": ">=19.2.7"
   },
   "devDependencies": {
@@ -28,7 +28,7 @@
     "react": "^19.2.7",
     "typescript": "7.0.2",
     "vitest": "^4.1.10",
-    "next": "^16.3.0-preview.5"
+    "next": "^16.3.0-preview.6"
   },
   "exports": {
     "./worker": "./src/worker/index.ts",

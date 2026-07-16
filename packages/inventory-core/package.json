@@ -22,7 +22,7 @@
     "@tuturuuu/turnstile": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.3.0-preview.5",
+    "next": "^16.3.0-preview.6",
     "postgres": "^3.4.9",
     "server-only": "^0.0.1",
     "zod": "^4.4.3"

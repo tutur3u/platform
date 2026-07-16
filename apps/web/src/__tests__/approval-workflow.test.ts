@@ -38,20 +38,19 @@ describe('Post Approval Workflow', () => {
         can_remove_approval: false,
         expected: false,
       },
-    ])('should return $expected when post state is revocable=$can_remove_approval status=$status', ({
-      status,
-      can_remove_approval,
-      expected,
-    }) => {
-      const mockPost = {
-        id: 'post-1',
-        post_approval_status: status,
-        can_remove_approval,
-        title: 'Test Post',
-      };
+    ])(
+      'should return $expected when post state is revocable=$can_remove_approval status=$status',
+      ({ status, can_remove_approval, expected }) => {
+        const mockPost = {
+          id: 'post-1',
+          post_approval_status: status,
+          can_remove_approval,
+          title: 'Test Post',
+        };
 
-      expect(canRemoveApproval(mockPost)).toBe(expected);
-    });
+        expect(canRemoveApproval(mockPost)).toBe(expected);
+      }
+    );
   });
 
   describe('Report Export Guard', () => {

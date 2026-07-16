@@ -359,59 +359,61 @@ describe('product inventory route', () => {
   it.each([
     { expectedDelta: 3, nextAmount: 8 },
     { expectedDelta: -2, nextAmount: 3 },
-  ])('attaches context to a $expectedDelta quantity movement', async ({
-    expectedDelta,
-    nextAmount,
-  }) => {
-    const mocks = createInventoryAdminClient({
-      existingInventory: [
-        {
-          product_id: PRODUCT_ID,
-          unit_id: UNIT_ID,
-          warehouse_id: WAREHOUSE_ID,
-          amount: 5,
-          min_amount: 1,
-          price: 100,
-        },
-      ],
-    });
-    createAdminClientMock.mockResolvedValue(mocks.client);
-    validateInventoryItemWorkspaceRelationsMock.mockResolvedValue({ ok: true });
-
-    const { PATCH } = await import('./route');
-    const response = await PATCH(
-      new Request('http://localhost/inventory', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          changeContext: {
-            beneficiaryId: BENEFICIARY_ID,
-            note: '  Cycle count adjustment  ',
+  ])(
+    'attaches context to a $expectedDelta quantity movement',
+    async ({ expectedDelta, nextAmount }) => {
+      const mocks = createInventoryAdminClient({
+        existingInventory: [
+          {
+            product_id: PRODUCT_ID,
+            unit_id: UNIT_ID,
+            warehouse_id: WAREHOUSE_ID,
+            amount: 5,
+            min_amount: 1,
+            price: 100,
           },
-          inventory: [
-            {
-              unit_id: UNIT_ID,
-              warehouse_id: WAREHOUSE_ID,
-              amount: nextAmount,
-              min_amount: 1,
-              price: 100,
-            },
-          ],
-        }),
-      }),
-      { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
-    );
+        ],
+      });
+      createAdminClientMock.mockResolvedValue(mocks.client);
+      validateInventoryItemWorkspaceRelationsMock.mockResolvedValue({
+        ok: true,
+      });
 
-    expect(response.status).toBe(200);
-    expect(mocks.stockChangeQuery.insert).toHaveBeenCalledWith({
-      amount: expectedDelta,
-      beneficiary_id: BENEFICIARY_ID,
-      creator_id: 'workspace-user-1',
-      note: 'Cycle count adjustment',
-      product_id: PRODUCT_ID,
-      unit_id: UNIT_ID,
-      warehouse_id: WAREHOUSE_ID,
-    });
-  });
+      const { PATCH } = await import('./route');
+      const response = await PATCH(
+        new Request('http://localhost/inventory', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            changeContext: {
+              beneficiaryId: BENEFICIARY_ID,
+              note: '  Cycle count adjustment  ',
+            },
+            inventory: [
+              {
+                unit_id: UNIT_ID,
+                warehouse_id: WAREHOUSE_ID,
+                amount: nextAmount,
+                min_amount: 1,
+                price: 100,
+              },
+            ],
+          }),
+        }),
+        { params: Promise.resolve({ productId: PRODUCT_ID, wsId: 'personal' }) }
+      );
+
+      expect(response.status).toBe(200);
+      expect(mocks.stockChangeQuery.insert).toHaveBeenCalledWith({
+        amount: expectedDelta,
+        beneficiary_id: BENEFICIARY_ID,
+        creator_id: 'workspace-user-1',
+        note: 'Cycle count adjustment',
+        product_id: PRODUCT_ID,
+        unit_id: UNIT_ID,
+        warehouse_id: WAREHOUSE_ID,
+      });
+    }
+  );
 
   it('ignores movement context for a price-only change', async () => {
     const mocks = createInventoryAdminClient({

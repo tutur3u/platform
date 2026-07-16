@@ -12,17 +12,17 @@ describe('approvals utils', () => {
     { status: undefined, expected: '' },
     { status: null, expected: '' },
     { status: 'UNKNOWN' as string, expected: '' },
-  ])('maps status "$status" to expected color token', ({
-    status,
-    expected,
-  }) => {
-    const result = getStatusColorClasses(
-      status as ApprovalStatus | undefined | null
-    );
-    if (expected === '') {
-      expect(result).toBe('');
-    } else {
-      expect(result).toContain(expected);
+  ])(
+    'maps status "$status" to expected color token',
+    ({ status, expected }) => {
+      const result = getStatusColorClasses(
+        status as ApprovalStatus | undefined | null
+      );
+      if (expected === '') {
+        expect(result).toBe('');
+      } else {
+        expect(result).toContain(expected);
+      }
     }
-  });
+  );
 });

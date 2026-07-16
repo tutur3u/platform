@@ -460,32 +460,33 @@ describe('workspace user platform link repair route', () => {
     });
   });
 
-  it.each(
-    skipScenarios
-  )('skips single-row repair for $name', async (scenario) => {
-    const admin = createAdminClient({
-      links: scenario.links,
-      members: scenario.members,
-      privateDetails: scenario.privateDetails,
-      workspaceUsers: scenario.workspaceUsers,
-    });
-    createAdminClientMock.mockResolvedValue(admin.client);
+  it.each(skipScenarios)(
+    'skips single-row repair for $name',
+    async (scenario) => {
+      const admin = createAdminClient({
+        links: scenario.links,
+        members: scenario.members,
+        privateDetails: scenario.privateDetails,
+        workspaceUsers: scenario.workspaceUsers,
+      });
+      createAdminClientMock.mockResolvedValue(admin.client);
 
-    const response = await callPost({ workspaceUserId: VIRTUAL_USER_ID });
-    const json = await response.json();
+      const response = await callPost({ workspaceUserId: VIRTUAL_USER_ID });
+      const json = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(admin.insertedLinks).toHaveLength(0);
-    expect(json.skipped).toEqual([
-      expect.objectContaining({
-        reason: scenario.expectedReason,
-        workspaceUserId: VIRTUAL_USER_ID,
-      }),
-    ]);
-    expect(json.summary).toMatchObject({
-      linked: 0,
-      scanned: 1,
-      skipped: 1,
-    });
-  });
+      expect(response.status).toBe(200);
+      expect(admin.insertedLinks).toHaveLength(0);
+      expect(json.skipped).toEqual([
+        expect.objectContaining({
+          reason: scenario.expectedReason,
+          workspaceUserId: VIRTUAL_USER_ID,
+        }),
+      ]);
+      expect(json.summary).toMatchObject({
+        linked: 0,
+        scanned: 1,
+        skipped: 1,
+      });
+    }
+  );
 });

@@ -147,20 +147,23 @@ describe('Mail proxy auth handoff', () => {
     );
   });
 
-  it.each([
-    '/api/v1/webhooks/mail/cloudflare',
-    '/api/v1/webhooks/mail/ses',
-  ])('lets the signed provider webhook bypass session auth: %s', async (path) => {
-    const request = new NextRequest(`https://mail.tuturuuu.localhost${path}`, {
-      method: 'POST',
-    });
+  it.each(['/api/v1/webhooks/mail/cloudflare', '/api/v1/webhooks/mail/ses'])(
+    'lets the signed provider webhook bypass session auth: %s',
+    async (path) => {
+      const request = new NextRequest(
+        `https://mail.tuturuuu.localhost${path}`,
+        {
+          method: 'POST',
+        }
+      );
 
-    const response = await proxy(request);
+      const response = await proxy(request);
 
-    expect(response.headers.get('x-middleware-next')).toBe('1');
-    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-  });
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
 
   it('does not bypass session auth for nearby webhook paths', async () => {
     const request = new NextRequest(

@@ -17,7 +17,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "next": "^16.3.0-preview.5",
+    "next": "^16.3.0-preview.6",
     "next-intl": "^4.13.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
@@ -34,7 +34,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^29.1.1",
-    "postcss": "^8.5.17",
+    "postcss": "^8.5.19",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   },

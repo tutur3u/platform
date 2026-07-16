@@ -202,24 +202,26 @@ describe('TaskPropertiesSection', () => {
       triggerLabel: 'common.assignees',
       targetPlaceholder: 'common.search_members',
     },
-  ])('switches from priority to $triggerLabel and keeps the target popover open', async ({
-    targetPlaceholder,
-    triggerLabel,
-  }) => {
-    renderTaskPropertiesSection();
+  ])(
+    'switches from priority to $triggerLabel and keeps the target popover open',
+    async ({ targetPlaceholder, triggerLabel }) => {
+      renderTaskPropertiesSection();
 
-    fireEvent.click(screen.getByLabelText('common.priority'));
-    expect(screen.getByText('tasks.priority_critical')).toBeInTheDocument();
+      fireEvent.click(screen.getByLabelText('common.priority'));
+      expect(screen.getByText('tasks.priority_critical')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText(triggerLabel));
+      fireEvent.click(screen.getByLabelText(triggerLabel));
 
-    await waitFor(() =>
-      expect(screen.getByPlaceholderText(targetPlaceholder)).toBeInTheDocument()
-    );
-    expect(
-      screen.queryByText('tasks.priority_critical')
-    ).not.toBeInTheDocument();
-  });
+      await waitFor(() =>
+        expect(
+          screen.getByPlaceholderText(targetPlaceholder)
+        ).toBeInTheDocument()
+      );
+      expect(
+        screen.queryByText('tasks.priority_critical')
+      ).not.toBeInTheDocument();
+    }
+  );
 
   it('closes the priority popover after selecting a priority', () => {
     const props = renderTaskPropertiesSection();

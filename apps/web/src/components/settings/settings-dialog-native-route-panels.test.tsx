@@ -21,23 +21,21 @@ vi.mock('./settings-dialog-native-admin-panels', () => ({
 }));
 
 describe('SettingsDialogNativeRoutePanels', () => {
-  it.each([
-    'integrations',
-    'api_keys',
-    'secrets',
-    'workspace_reports',
-  ])('renders a native panel for %s', (activeTab) => {
-    render(
-      <SettingsDialogNativeRoutePanels
-        activeTab={activeTab}
-        currentUserEmail="ada@example.com"
-        setActiveTab={() => undefined}
-        wsId="ws_1"
-      />
-    );
+  it.each(['integrations', 'api_keys', 'secrets', 'workspace_reports'])(
+    'renders a native panel for %s',
+    (activeTab) => {
+      render(
+        <SettingsDialogNativeRoutePanels
+          activeTab={activeTab}
+          currentUserEmail="ada@example.com"
+          setActiveTab={() => undefined}
+          wsId="ws_1"
+        />
+      );
 
-    expect(
-      screen.getByTestId(`native-settings-panel-${activeTab}`)
-    ).toBeVisible();
-  });
+      expect(
+        screen.getByTestId(`native-settings-panel-${activeTab}`)
+      ).toBeVisible();
+    }
+  );
 });

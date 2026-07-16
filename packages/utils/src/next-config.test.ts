@@ -17,6 +17,7 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.allowedDevOrigins).toContain('tuturuuu.localhost');
     expect(config.cacheComponents).toBe(true);
     expect(config.partialPrefetching).toBe(true);
+    expect(config.experimental?.useTypeScriptCli).toBe(true);
     expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(true);
     expect(config.experimental?.turbopackRustReactCompiler).toBe(true);
     expect(config.images?.remotePatterns).toEqual(
@@ -198,6 +199,7 @@ describe('createTuturuuuNextConfig', () => {
         cpus: 2,
         turbopackFileSystemCacheForBuild: false,
         turbopackRustReactCompiler: false,
+        useTypeScriptCli: false,
       },
       typescript: {
         ignoreBuildErrors: false,
@@ -211,6 +213,7 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.experimental?.cpus).toBe(2);
     expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(false);
     expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
+    expect(config.experimental?.useTypeScriptCli).toBe(true);
     expect(config.typescript?.ignoreBuildErrors).toBe(false);
   });
 

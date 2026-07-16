@@ -43,7 +43,7 @@ jobs:
         run: |
           # Capture biome format output and exit code
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.5.3 format . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.4 format . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -129,7 +129,7 @@ jobs:
         run: |
           # Capture biome lint output and exit code
           set +e
-          biome_output=$(npx --yes @biomejs/biome@2.5.3 lint . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.4 lint . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -203,7 +203,7 @@ jobs:
           node-version: 24
 
       - name: Apply Biome format
-        run: npx --yes @biomejs/biome@2.5.3 format --write .
+        run: npx --yes @biomejs/biome@2.5.4 format --write .
 
       - name: Check for changes
         id: git-check

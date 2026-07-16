@@ -133,30 +133,27 @@ describe('blue-green monitoring requests route', () => {
     });
   });
 
-  it.each([
-    'all',
-    '0',
-    '-1',
-    '31',
-    '1.5',
-  ])('rejects unsafe request archive timeframe %s before reading logs', async (timeframeDays) => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
-      ok: true,
-      user: {
-        id: 'user-1',
-      },
-    });
+  it.each(['all', '0', '-1', '31', '1.5'])(
+    'rejects unsafe request archive timeframe %s before reading logs',
+    async (timeframeDays) => {
+      authorizeInfrastructureViewerMock.mockResolvedValue({
+        ok: true,
+        user: {
+          id: 'user-1',
+        },
+      });
 
-    const response = await GET(
-      createTestRequest(`?timeframeDays=${encodeURIComponent(timeframeDays)}`)
-    );
+      const response = await GET(
+        createTestRequest(`?timeframeDays=${encodeURIComponent(timeframeDays)}`)
+      );
 
-    expect(response.status).toBe(400);
-    expect(readBlueGreenMonitoringRequestArchiveMock).not.toHaveBeenCalled();
-    await expect(response.json()).resolves.toEqual({
-      message: 'timeframeDays must be an integer between 1 and 30',
-    });
-  });
+      expect(response.status).toBe(400);
+      expect(readBlueGreenMonitoringRequestArchiveMock).not.toHaveBeenCalled();
+      await expect(response.json()).resolves.toEqual({
+        message: 'timeframeDays must be an integer between 1 and 30',
+      });
+    }
+  );
 
   it('passes request archive filters to the archive reader', async () => {
     authorizeInfrastructureViewerMock.mockResolvedValue({

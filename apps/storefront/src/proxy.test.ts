@@ -120,24 +120,27 @@ describe('Storefront proxy', () => {
     'https://storefront.tuturuuu.com/orders',
     'https://storefront.tuturuuu.com/studio-store/orders',
     'https://storefront.tuturuuu.com/store/studio-store/orders',
-  ])('redirects order history pages to login when unauthenticated: %s', async (url) => {
-    mocks.refreshAppSessionForRequest.mockResolvedValue({
-      error: 'Missing app session',
-      ok: false,
-    });
-    mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
-    mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
-    const request = new NextRequest(url);
+  ])(
+    'redirects order history pages to login when unauthenticated: %s',
+    async (url) => {
+      mocks.refreshAppSessionForRequest.mockResolvedValue({
+        error: 'Missing app session',
+        ok: false,
+      });
+      mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
+      mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+      const request = new NextRequest(url);
 
-    const response = await proxy(request);
+      const response = await proxy(request);
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      `https://storefront.tuturuuu.com/login?next=${encodeURIComponent(
-        new URL(url).pathname
-      )}`
-    );
-  });
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        `https://storefront.tuturuuu.com/login?next=${encodeURIComponent(
+          new URL(url).pathname
+        )}`
+      );
+    }
+  );
 
   it('keeps public order token pages reachable', async () => {
     const request = new NextRequest(

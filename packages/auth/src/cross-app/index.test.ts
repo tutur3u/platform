@@ -261,18 +261,21 @@ describe('verifyRouteToken', () => {
     'https://evil.test/dashboard',
     '//evil.test/dashboard',
     '/\t//evil.test/dashboard',
-  ])('falls back when no token is supplied with unsafe nextUrl %s', async (nextUrl) => {
-    const router = createMockRouter();
+  ])(
+    'falls back when no token is supplied with unsafe nextUrl %s',
+    async (nextUrl) => {
+      const router = createMockRouter();
 
-    await verifyRouteToken({
-      router,
-      searchParams: searchParamsWithNextUrl(nextUrl),
-      token: null,
-    });
+      await verifyRouteToken({
+        router,
+        searchParams: searchParamsWithNextUrl(nextUrl),
+        token: null,
+      });
 
-    expect(router.push).toHaveBeenCalledWith('/');
-    expect(router.refresh).toHaveBeenCalled();
-  });
+      expect(router.push).toHaveBeenCalledWith('/');
+      expect(router.refresh).toHaveBeenCalled();
+    }
+  );
 
   it('falls back after successful verification with an unsafe nextUrl', async () => {
     const router = createMockRouter();

@@ -97,14 +97,17 @@ describe('Mind chat file routes', () => {
         rateLimitKind: 'read',
       },
     ],
-  ])('accepts Mind and Chat app-session auth for %s', async (_, loadRoute, expectedOptions) => {
-    await loadRoute();
+  ])(
+    'accepts Mind and Chat app-session auth for %s',
+    async (_, loadRoute, expectedOptions) => {
+      await loadRoute();
 
-    expect(mocks.withSessionAuth).toHaveBeenCalledWith(
-      expect.any(Function),
-      expectedOptions
-    );
-  });
+      expect(mocks.withSessionAuth).toHaveBeenCalledWith(
+        expect.any(Function),
+        expectedOptions
+      );
+    }
+  );
 
   it('normalizes upload-url workspaces with the authenticated app-session context', async () => {
     const createSignedUploadUrl = vi.fn().mockResolvedValue({

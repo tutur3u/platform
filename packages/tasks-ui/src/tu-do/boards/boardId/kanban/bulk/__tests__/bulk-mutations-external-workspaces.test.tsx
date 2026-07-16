@@ -210,35 +210,38 @@ describe('bulk mutations with personal external tasks', () => {
         updates: { estimation_points: 5 },
       },
     ],
-  ])('groups %s updates by each task source workspace', async (_, run, operation) => {
-    const result = await renderBulkOperations();
-    const expectedOperation =
-      typeof operation === 'function' ? operation() : operation;
+  ])(
+    'groups %s updates by each task source workspace',
+    async (_, run, operation) => {
+      const result = await renderBulkOperations();
+      const expectedOperation =
+        typeof operation === 'function' ? operation() : operation;
 
-    await act(async () => {
-      await run(result);
-    });
+      await act(async () => {
+        await run(result);
+      });
 
-    expect(mockBulkWorkspaceTasks).toHaveBeenCalledTimes(2);
-    expect(mockBulkWorkspaceTasks).toHaveBeenNthCalledWith(
-      1,
-      'personal-ws',
-      {
-        taskIds: ['local-task'],
-        operation: expectedOperation,
-      },
-      expect.anything()
-    );
-    expect(mockBulkWorkspaceTasks).toHaveBeenNthCalledWith(
-      2,
-      'source-ws',
-      {
-        taskIds: ['external-task'],
-        operation: expectedOperation,
-      },
-      expect.anything()
-    );
-  });
+      expect(mockBulkWorkspaceTasks).toHaveBeenCalledTimes(2);
+      expect(mockBulkWorkspaceTasks).toHaveBeenNthCalledWith(
+        1,
+        'personal-ws',
+        {
+          taskIds: ['local-task'],
+          operation: expectedOperation,
+        },
+        expect.anything()
+      );
+      expect(mockBulkWorkspaceTasks).toHaveBeenNthCalledWith(
+        2,
+        'source-ws',
+        {
+          taskIds: ['external-task'],
+          operation: expectedOperation,
+        },
+        expect.anything()
+      );
+    }
+  );
 
   it('updates mounted full-task caches during optimistic priority updates', async () => {
     const result = await renderBulkOperations();

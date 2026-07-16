@@ -18,7 +18,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.20",
-    "next": "^16.3.0-preview.5",
+    "next": "^16.3.0-preview.6",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"

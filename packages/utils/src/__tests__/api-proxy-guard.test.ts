@@ -1752,35 +1752,35 @@ describe('guardApiProxyRequest', () => {
     );
   });
 
-  it.each([
-    '/api/v1/auth/otp/send',
-    '/api/v1/auth/mobile/send-otp',
-  ])('uses a classroom-friendly OTP send bucket for %s', async (path) => {
-    vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
-    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
-    mocks.redis.mockReturnValue({});
-    mocks.extractIp.mockReturnValue('1.2.3.4');
-    mocks.isBlocked.mockResolvedValue(null);
-    mocks.limit.mockResolvedValueOnce({
-      success: false,
-      limit: 30,
-      remaining: 0,
-      reset: Date.now() + 15_000,
-    });
+  it.each(['/api/v1/auth/otp/send', '/api/v1/auth/mobile/send-otp'])(
+    'uses a classroom-friendly OTP send bucket for %s',
+    async (path) => {
+      vi.stubEnv('NODE_ENV', 'production');
+      vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+      vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+      mocks.redis.mockReturnValue({});
+      mocks.extractIp.mockReturnValue('1.2.3.4');
+      mocks.isBlocked.mockResolvedValue(null);
+      mocks.limit.mockResolvedValueOnce({
+        success: false,
+        limit: 30,
+        remaining: 0,
+        reset: Date.now() + 15_000,
+      });
 
-    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
-      await import('../api-proxy-guard.js');
-    clearApiProxyGuardLimiterCache();
+      const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+        await import('../api-proxy-guard.js');
+      clearApiProxyGuardLimiterCache();
 
-    const response = await guardApiProxyRequest(makeRequest(path, 'POST'), {
-      prefixBase: 'proxy:test:api',
-    });
+      const response = await guardApiProxyRequest(makeRequest(path, 'POST'), {
+        prefixBase: 'proxy:test:api',
+      });
 
-    expect(response?.status).toBe(429);
-    expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
-    expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-send');
-  });
+      expect(response?.status).toBe(429);
+      expect(response?.headers.get('X-RateLimit-Limit')).toBe('30');
+      expect(response?.headers.get('X-RateLimit-Policy')).toBe('otp-send');
+    }
+  );
 
   it('uses a classroom-friendly bucket for cross-app return handoffs', async () => {
     vi.stubEnv('NODE_ENV', 'production');

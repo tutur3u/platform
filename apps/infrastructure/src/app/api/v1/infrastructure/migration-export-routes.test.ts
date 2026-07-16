@@ -78,53 +78,51 @@ describe.each([
     table: 'external_user_monthly_reports_workspace_view',
     wsColumn: 'user_ws_id',
   },
-])('$path infrastructure migration export route', ({
-  importRoute,
-  path,
-  table,
-  wsColumn,
-}) => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-  });
-
-  it('rejects unauthorized requests before creating an admin client', async () => {
-    deny(401);
-
-    const { GET } = await importRoute();
-    const response = await GET(createRequest(path));
-
-    expect(response.status).toBe(401);
-    expect(mocks.authorizeInfrastructureMigrationExport).toHaveBeenCalledWith(
-      expect.any(Request),
-      RAW_WORKSPACE_ID
-    );
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-  });
-
-  it('queries private data only for the authorized normalized workspace', async () => {
-    allow();
-    const selectClient = createSingleTableClient([{ id: 'row-1' }]);
-    mocks.createAdminClient.mockResolvedValue(selectClient.client);
-
-    const { GET } = await importRoute();
-    const response = await GET(createRequest(path));
-
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      count: 1,
-      data: [{ id: 'row-1' }],
+])(
+  '$path infrastructure migration export route',
+  ({ importRoute, path, table, wsColumn }) => {
+    beforeEach(() => {
+      vi.resetModules();
+      vi.clearAllMocks();
     });
-    expect(selectClient.schema).toHaveBeenCalledWith('private');
-    expect(selectClient.from).toHaveBeenCalledWith(table);
-    expect(selectClient.eq).toHaveBeenCalledWith(
-      wsColumn,
-      NORMALIZED_WORKSPACE_ID
-    );
-    expect(selectClient.range).toHaveBeenCalledWith(2, 4);
-  });
-});
+
+    it('rejects unauthorized requests before creating an admin client', async () => {
+      deny(401);
+
+      const { GET } = await importRoute();
+      const response = await GET(createRequest(path));
+
+      expect(response.status).toBe(401);
+      expect(mocks.authorizeInfrastructureMigrationExport).toHaveBeenCalledWith(
+        expect.any(Request),
+        RAW_WORKSPACE_ID
+      );
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    });
+
+    it('queries private data only for the authorized normalized workspace', async () => {
+      allow();
+      const selectClient = createSingleTableClient([{ id: 'row-1' }]);
+      mocks.createAdminClient.mockResolvedValue(selectClient.client);
+
+      const { GET } = await importRoute();
+      const response = await GET(createRequest(path));
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        count: 1,
+        data: [{ id: 'row-1' }],
+      });
+      expect(selectClient.schema).toHaveBeenCalledWith('private');
+      expect(selectClient.from).toHaveBeenCalledWith(table);
+      expect(selectClient.eq).toHaveBeenCalledWith(
+        wsColumn,
+        NORMALIZED_WORKSPACE_ID
+      );
+      expect(selectClient.range).toHaveBeenCalledWith(2, 4);
+    });
+  }
+);
 
 describe('user-coupons infrastructure migration export route', () => {
   beforeEach(() => {

@@ -38,18 +38,18 @@ describe('storefront management access', () => {
     });
   });
 
-  it.each([
-    [{ joined: false }],
-    [null],
-  ])('hides management for inaccessible workspaces', async (workspace) => {
-    await expect(
-      resolveInventoryStorefrontManageHref({
-        storefront,
-        user: { id: 'user-1' },
-        workspaceLookup: vi.fn().mockResolvedValue(workspace),
-      })
-    ).resolves.toBeNull();
-  });
+  it.each([[{ joined: false }], [null]])(
+    'hides management for inaccessible workspaces',
+    async (workspace) => {
+      await expect(
+        resolveInventoryStorefrontManageHref({
+          storefront,
+          user: { id: 'user-1' },
+          workspaceLookup: vi.fn().mockResolvedValue(workspace),
+        })
+      ).resolves.toBeNull();
+    }
+  );
 
   it('fails closed without disrupting public browsing', async () => {
     await expect(

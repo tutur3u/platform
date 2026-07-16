@@ -115,33 +115,33 @@ describe('inventory Square webhook route', () => {
     });
   });
 
-  it.each([
-    'catalog.version.updated',
-    'inventory.count.updated',
-  ])('defers a safe Square-to-Tuturuuu sync for %s', async (eventType) => {
-    mocks.processInventorySquareWebhook.mockResolvedValue({
-      environment: 'production',
-      eventType,
-    });
-    const { POST } = await import('./route');
-    const response = await POST(
-      new Request(
-        'https://web.example.com/api/v1/inventory/square/webhook/workspace-1',
-        { body: JSON.stringify({ type: eventType }), method: 'POST' }
-      ),
-      params()
-    );
+  it.each(['catalog.version.updated', 'inventory.count.updated'])(
+    'defers a safe Square-to-Tuturuuu sync for %s',
+    async (eventType) => {
+      mocks.processInventorySquareWebhook.mockResolvedValue({
+        environment: 'production',
+        eventType,
+      });
+      const { POST } = await import('./route');
+      const response = await POST(
+        new Request(
+          'https://web.example.com/api/v1/inventory/square/webhook/workspace-1',
+          { body: JSON.stringify({ type: eventType }), method: 'POST' }
+        ),
+        params()
+      );
 
-    expect(response.status).toBe(200);
-    expect(mocks.waitUntil).toHaveBeenCalledOnce();
-    const callback = mocks.waitUntil.mock.calls[0]?.[0];
-    await callback?.();
-    expect(mocks.syncInventorySquareCatalog).toHaveBeenCalledWith({
-      direction: 'from_square',
-      userId: null,
-      wsId: 'workspace-1',
-    });
-  });
+      expect(response.status).toBe(200);
+      expect(mocks.waitUntil).toHaveBeenCalledOnce();
+      const callback = mocks.waitUntil.mock.calls[0]?.[0];
+      await callback?.();
+      expect(mocks.syncInventorySquareCatalog).toHaveBeenCalledWith({
+        direction: 'from_square',
+        userId: null,
+        wsId: 'workspace-1',
+      });
+    }
+  );
 
   it('does not schedule a catalog sync for payment events', async () => {
     const { POST } = await import('./route');

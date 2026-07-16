@@ -89,20 +89,19 @@ describe('Square catalog sync route', () => {
     expect(mocks.sync).not.toHaveBeenCalled();
   });
 
-  it.each([
-    'from_square',
-    'to_square',
-    'bidirectional',
-  ] as const)('runs %s sync with the authorized actor', async (direction) => {
-    const { POST } = await import('./route');
-    const response = await POST(request('POST', { direction }), params);
-    expect(response.status).toBe(200);
-    expect(mocks.sync).toHaveBeenCalledWith({
-      direction,
-      userId: 'user-1',
-      wsId: 'workspace-1',
-    });
-  });
+  it.each(['from_square', 'to_square', 'bidirectional'] as const)(
+    'runs %s sync with the authorized actor',
+    async (direction) => {
+      const { POST } = await import('./route');
+      const response = await POST(request('POST', { direction }), params);
+      expect(response.status).toBe(200);
+      expect(mocks.sync).toHaveBeenCalledWith({
+        direction,
+        userId: 'user-1',
+        wsId: 'workspace-1',
+      });
+    }
+  );
 
   it('rejects unsupported directions before provider access', async () => {
     const { POST } = await import('./route');

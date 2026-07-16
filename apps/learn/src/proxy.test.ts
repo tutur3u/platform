@@ -101,32 +101,35 @@ describe('Learn proxy local auth API guard', () => {
     '/api/auth/logout',
     '/api/auth/refresh-app-session',
     '/api/auth/verify-app-token',
-  ])('returns guard responses for %s before local route handling', async (pathname) => {
-    const guardResponse = NextResponse.json(
-      { error: 'Payload Too Large' },
-      { status: 413 }
-    );
-    mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
-    const request = new NextRequest(`https://learn.tuturuuu.com${pathname}`, {
-      body: '{}',
-      headers: { 'content-length': '524289' },
-      method: 'POST',
-    });
+  ])(
+    'returns guard responses for %s before local route handling',
+    async (pathname) => {
+      const guardResponse = NextResponse.json(
+        { error: 'Payload Too Large' },
+        { status: 413 }
+      );
+      mocks.guardApiProxyRequest.mockResolvedValue(guardResponse);
+      const request = new NextRequest(`https://learn.tuturuuu.com${pathname}`, {
+        body: '{}',
+        headers: { 'content-length': '524289' },
+        method: 'POST',
+      });
 
-    const response = await proxy(request);
+      const response = await proxy(request);
 
-    expect(response.status).toBe(413);
-    await expect(response.json()).resolves.toEqual({
-      error: 'Payload Too Large',
-    });
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:learn:api',
-    });
-    expect(mocks.clearSupabaseAuthCookies).toHaveBeenCalledWith(
-      request,
-      guardResponse
-    );
-  });
+      expect(response.status).toBe(413);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Payload Too Large',
+      });
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
+        prefixBase: 'proxy:learn:api',
+      });
+      expect(mocks.clearSupabaseAuthCookies).toHaveBeenCalledWith(
+        request,
+        guardResponse
+      );
+    }
+  );
 
   it('continues to local auth API routes when the guard allows the request', async () => {
     mocks.guardApiProxyRequest.mockResolvedValue(null);

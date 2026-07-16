@@ -928,45 +928,45 @@ describe('app token exchange route', () => {
     await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
   });
 
-  it.each([
-    'yoola',
-    'shiraoki',
-  ])('returns pending invite details for %s workspace-scoped app exchange', async (appId) => {
-    mockRegisteredApp(['external-projects:*'], appId);
-    mocks.createAdminClient.mockResolvedValue(
-      createAdminClientMock({
-        appAdapter: appId,
-        pendingDirectInvite: true,
-        workspaceMember: false,
-        workspacePermissions: [],
-      })
-    );
+  it.each(['yoola', 'shiraoki'])(
+    'returns pending invite details for %s workspace-scoped app exchange',
+    async (appId) => {
+      mockRegisteredApp(['external-projects:*'], appId);
+      mocks.createAdminClient.mockResolvedValue(
+        createAdminClientMock({
+          appAdapter: appId,
+          pendingDirectInvite: true,
+          workspaceMember: false,
+          workspacePermissions: [],
+        })
+      );
 
-    const response = await POST(
-      createExchangeRequest({
-        appId,
-        appSecret: 'ttr_app_secret_test',
-        requestedScopes: ['external-projects:*'],
-        token: 'valid-cross-app-token',
-        workspaceId,
-      })
-    );
+      const response = await POST(
+        createExchangeRequest({
+          appId,
+          appSecret: 'ttr_app_secret_test',
+          requestedScopes: ['external-projects:*'],
+          token: 'valid-cross-app-token',
+          workspaceId,
+        })
+      );
 
-    expect(response.status).toBe(403);
-    const body = (await response.json()) as {
-      code?: string;
-      invitation?: {
-        role?: string;
-        source?: string;
+      expect(response.status).toBe(403);
+      const body = (await response.json()) as {
+        code?: string;
+        invitation?: {
+          role?: string;
+          source?: string;
+          workspaceId?: string;
+          workspaceName?: string | null;
+        };
+        invitationActionToken?: string;
+        invitationUrl?: string;
         workspaceId?: string;
-        workspaceName?: string | null;
       };
-      invitationActionToken?: string;
-      invitationUrl?: string;
-      workspaceId?: string;
-    };
-    expectPendingInvitationAction(body, appId);
-  });
+      expectPendingInvitationAction(body, appId);
+    }
+  );
 
   it('rejects external-project app exchanges when the app does not match the workspace adapter', async () => {
     mockRegisteredApp(['external-projects:*']);
@@ -1012,29 +1012,29 @@ describe('app token exchange route', () => {
     });
   });
 
-  it.each([
-    'external-projects:read',
-    'external-projects:publish',
-  ])('allows publish-only linked workspace access for %s app scope', async (requestedScope) => {
-    mockRegisteredApp([requestedScope]);
-    mocks.createAdminClient.mockResolvedValue(
-      createAdminClientMock({
-        workspacePermissions: ['publish_external_projects'],
-      })
-    );
+  it.each(['external-projects:read', 'external-projects:publish'])(
+    'allows publish-only linked workspace access for %s app scope',
+    async (requestedScope) => {
+      mockRegisteredApp([requestedScope]);
+      mocks.createAdminClient.mockResolvedValue(
+        createAdminClientMock({
+          workspacePermissions: ['publish_external_projects'],
+        })
+      );
 
-    const response = await POST(
-      createExchangeRequest({
-        appId: 'yoola',
-        appSecret: 'ttr_app_secret_test',
-        requestedScopes: [requestedScope],
-        token: 'valid-cross-app-token',
-        workspaceId,
-      })
-    );
+      const response = await POST(
+        createExchangeRequest({
+          appId: 'yoola',
+          appSecret: 'ttr_app_secret_test',
+          requestedScopes: [requestedScope],
+          token: 'valid-cross-app-token',
+          workspaceId,
+        })
+      );
 
-    expect(response.status).toBe(200);
-  });
+      expect(response.status).toBe(200);
+    }
+  );
 
   it('rejects publish-only linked workspace access for manage app scopes', async () => {
     mockRegisteredApp(['external-projects:*']);

@@ -15,15 +15,12 @@ describe('devbox agent traffic gate', () => {
     ).toBe(false);
   });
 
-  it.each([
-    '1',
-    'true',
-    'TRUE',
-    'yes',
-    'on',
-  ])('allows agent poll and heartbeat when %s is configured', (value) => {
-    expect(
-      isDevboxAgentApiEnabled({ [DEVBOX_AGENT_API_ENABLED_ENV]: value })
-    ).toBe(true);
-  });
+  it.each(['1', 'true', 'TRUE', 'yes', 'on'])(
+    'allows agent poll and heartbeat when %s is configured',
+    (value) => {
+      expect(
+        isDevboxAgentApiEnabled({ [DEVBOX_AGENT_API_ENABLED_ENV]: value })
+      ).toBe(true);
+    }
+  );
 });

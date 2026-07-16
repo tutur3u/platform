@@ -68,17 +68,17 @@ describe('TaskNameInput', () => {
     vi.restoreAllMocks();
   });
 
-  it.each([
-    'fullscreen',
-    'compact',
-  ] as const)('places the initial %s title caret at the end', (variant) => {
-    const { input } = renderTaskNameInput({ variant });
-    const expectedCursorPosition = 'APIs for Agent Pi'.length;
+  it.each(['fullscreen', 'compact'] as const)(
+    'places the initial %s title caret at the end',
+    (variant) => {
+      const { input } = renderTaskNameInput({ variant });
+      const expectedCursorPosition = 'APIs for Agent Pi'.length;
 
-    expect(input).toHaveFocus();
-    expect(input).toHaveProperty('selectionStart', expectedCursorPosition);
-    expect(input).toHaveProperty('selectionEnd', expectedCursorPosition);
-  });
+      expect(input).toHaveFocus();
+      expect(input).toHaveProperty('selectionStart', expectedCursorPosition);
+      expect(input).toHaveProperty('selectionEnd', expectedCursorPosition);
+    }
+  );
 
   it('defers focusing the description editor after Enter', () => {
     const { focusEditor, targetEditorCursorRef, input } = renderTaskNameInput();

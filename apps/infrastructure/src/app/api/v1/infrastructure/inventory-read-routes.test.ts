@@ -61,84 +61,85 @@ const routes = [
   },
 ];
 
-describe.each(routes)('$table infrastructure read route', ({
-  importRoute,
-  table,
-  wsColumn,
-}) => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('requires inventory workspace authorization before using the admin client', async () => {
-    mocks.authorizeInventoryWorkspace.mockResolvedValue({
-      ok: false,
-      response: Response.json({ message: 'Unauthorized' }, { status: 401 }),
+describe.each(routes)(
+  '$table infrastructure read route',
+  ({ importRoute, table, wsColumn }) => {
+    beforeEach(() => {
+      vi.clearAllMocks();
     });
 
-    const { GET } = await importRoute();
-    const response = await GET(
-      new Request('https://app.example.com/api?ws_id=victim-ws')
-    );
+    it('requires inventory workspace authorization before using the admin client', async () => {
+      mocks.authorizeInventoryWorkspace.mockResolvedValue({
+        ok: false,
+        response: Response.json({ message: 'Unauthorized' }, { status: 401 }),
+      });
 
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Unauthorized',
-    });
-    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
-      expect.any(Request),
-      'victim-ws'
-    );
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-  });
+      const { GET } = await importRoute();
+      const response = await GET(
+        new Request('https://app.example.com/api?ws_id=victim-ws')
+      );
 
-  it('queries private inventory data only for the authorized normalized workspace', async () => {
-    const selectClient = createSelectClient([{ id: 'row-1' }]);
-    mocks.createAdminClient.mockResolvedValue(selectClient.client);
-    mocks.authorizeInventoryWorkspace.mockResolvedValue({
-      ok: true,
-      value: {
-        permissions: permissionsWith(['view_inventory_catalog']),
-        userId: 'user-1',
-        wsId: 'normalized-ws',
-      },
+      expect(response.status).toBe(401);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Unauthorized',
+      });
+      expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
+        expect.any(Request),
+        'victim-ws'
+      );
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
     });
 
-    const { GET } = await importRoute();
-    const response = await GET(
-      new Request('https://app.example.com/api?ws_id=personal&offset=2&limit=3')
-    );
+    it('queries private inventory data only for the authorized normalized workspace', async () => {
+      const selectClient = createSelectClient([{ id: 'row-1' }]);
+      mocks.createAdminClient.mockResolvedValue(selectClient.client);
+      mocks.authorizeInventoryWorkspace.mockResolvedValue({
+        ok: true,
+        value: {
+          permissions: permissionsWith(['view_inventory_catalog']),
+          userId: 'user-1',
+          wsId: 'normalized-ws',
+        },
+      });
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      count: 1,
-      data: [{ id: 'row-1' }],
+      const { GET } = await importRoute();
+      const response = await GET(
+        new Request(
+          'https://app.example.com/api?ws_id=personal&offset=2&limit=3'
+        )
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        count: 1,
+        data: [{ id: 'row-1' }],
+      });
+      expect(selectClient.schema).toHaveBeenCalledWith('private');
+      expect(selectClient.from).toHaveBeenCalledWith(table);
+      expect(selectClient.eq).toHaveBeenCalledWith(wsColumn, 'normalized-ws');
+      expect(selectClient.range).toHaveBeenCalledWith(2, 4);
     });
-    expect(selectClient.schema).toHaveBeenCalledWith('private');
-    expect(selectClient.from).toHaveBeenCalledWith(table);
-    expect(selectClient.eq).toHaveBeenCalledWith(wsColumn, 'normalized-ws');
-    expect(selectClient.range).toHaveBeenCalledWith(2, 4);
-  });
 
-  it('rejects authorized workspace members without inventory read permissions', async () => {
-    mocks.authorizeInventoryWorkspace.mockResolvedValue({
-      ok: true,
-      value: {
-        permissions: permissionsWith([]),
-        userId: 'user-1',
-        wsId: 'normalized-ws',
-      },
+    it('rejects authorized workspace members without inventory read permissions', async () => {
+      mocks.authorizeInventoryWorkspace.mockResolvedValue({
+        ok: true,
+        value: {
+          permissions: permissionsWith([]),
+          userId: 'user-1',
+          wsId: 'normalized-ws',
+        },
+      });
+
+      const { GET } = await importRoute();
+      const response = await GET(
+        new Request('https://app.example.com/api?ws_id=personal')
+      );
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Insufficient permissions to view inventory',
+      });
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
     });
-
-    const { GET } = await importRoute();
-    const response = await GET(
-      new Request('https://app.example.com/api?ws_id=personal')
-    );
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Insufficient permissions to view inventory',
-    });
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-  });
-});
+  }
+);

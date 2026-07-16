@@ -1567,23 +1567,24 @@ task_name: Prepare handoff
     );
   });
 
-  it.each([
-    ['--help'],
-    ['-h'],
-    ['help'],
-  ])('prints global help for %s', async (...args) => {
-    const write = vi
-      .spyOn(process.stdout, 'write')
-      .mockImplementation(() => true);
+  it.each([['--help'], ['-h'], ['help']])(
+    'prints global help for %s',
+    async (...args) => {
+      const write = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
 
-    await runCli(args);
+      await runCli(args);
 
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('Scoped help:'));
-    expect(write).toHaveBeenCalledWith(
-      expect.stringContaining('ttr tasks --help')
-    );
-    expect(write).toHaveBeenCalledWith(expect.stringContaining('  upgrade'));
-  });
+      expect(write).toHaveBeenCalledWith(
+        expect.stringContaining('Scoped help:')
+      );
+      expect(write).toHaveBeenCalledWith(
+        expect.stringContaining('ttr tasks --help')
+      );
+      expect(write).toHaveBeenCalledWith(expect.stringContaining('  upgrade'));
+    }
+  );
 
   it.each([
     ['upgrade', '--help'],

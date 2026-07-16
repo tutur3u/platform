@@ -157,20 +157,23 @@ describe('workspace boards/[boardId] route', () => {
     ['PUT', PUT, undefined],
     ['PATCH', PATCH, { restore: true }],
     ['DELETE', DELETE, undefined],
-  ] as const)('rejects %s for a workspace member without manage_projects', async (method, handler, body) => {
-    getPermissionsMock.mockResolvedValueOnce({
-      containsPermission: (permission: string) =>
-        permission !== 'manage_projects',
-    });
+  ] as const)(
+    'rejects %s for a workspace member without manage_projects',
+    async (method, handler, body) => {
+      getPermissionsMock.mockResolvedValueOnce({
+        containsPermission: (permission: string) =>
+          permission !== 'manage_projects',
+      });
 
-    const response = await handler(createRequest(method, body), routeContext);
+      const response = await handler(createRequest(method, body), routeContext);
 
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      error: "You don't have permission to perform this operation",
-    });
-    expect(createAdminClientMock).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        error: "You don't have permission to perform this operation",
+      });
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps soft-delete admin mutations scoped to the workspace', async () => {
     const response = await PUT(createRequest('PUT'), routeContext);

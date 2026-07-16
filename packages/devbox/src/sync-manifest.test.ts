@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { createSyncManifest, validateSyncPath } from './sync-manifest';
 
 describe('devbox sync manifest', () => {
-  it.each([
-    'src/index.ts',
-    'packages/sdk/src/cli/index.ts',
-    'README.md',
-  ])('accepts workspace-relative path %s', (path) => {
-    expect(validateSyncPath(path)).toBe(path);
-  });
+  it.each(['src/index.ts', 'packages/sdk/src/cli/index.ts', 'README.md'])(
+    'accepts workspace-relative path %s',
+    (path) => {
+      expect(validateSyncPath(path)).toBe(path);
+    }
+  );
 
   it.each([
     '/etc/passwd',

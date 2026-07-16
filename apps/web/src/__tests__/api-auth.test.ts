@@ -945,46 +945,45 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'mail' });
   });
 
-  it.each([
-    'chat',
-    'inventory',
-    'mail',
-  ] as const)('should accept %s app-session auth for current-user bootstrap APIs', async (targetApp) => {
-    const { token } = createAppSessionToken({
-      email: `${targetApp}@example.com`,
-      targetApp,
-      userId: `${targetApp}-user-1`,
-    });
-    const request = new Request(
-      'http://localhost:3000/api/v1/users/me/default-workspace',
-      {
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-        method: 'GET',
-      }
-    ) as unknown as NextRequest;
-
-    const result = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
-    });
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      await expect(result.supabase.auth.getUser()).resolves.toEqual({
-        data: {
-          user: expect.objectContaining({ id: `${targetApp}-user-1` }),
-        },
-        error: null,
+  it.each(['chat', 'inventory', 'mail'] as const)(
+    'should accept %s app-session auth for current-user bootstrap APIs',
+    async (targetApp) => {
+      const { token } = createAppSessionToken({
+        email: `${targetApp}@example.com`,
+        targetApp,
+        userId: `${targetApp}-user-1`,
       });
-      expect(result.user.id).toBe(`${targetApp}-user-1`);
-      expect(result.user.email).toBe(`${targetApp}@example.com`);
-      expect(result.supabase).toBe(mockAdminClient);
+      const request = new Request(
+        'http://localhost:3000/api/v1/users/me/default-workspace',
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+          method: 'GET',
+        }
+      ) as unknown as NextRequest;
+
+      const result = await resolveSessionAuthContext(request, {
+        allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        await expect(result.supabase.auth.getUser()).resolves.toEqual({
+          data: {
+            user: expect.objectContaining({ id: `${targetApp}-user-1` }),
+          },
+          error: null,
+        });
+        expect(result.user.id).toBe(`${targetApp}-user-1`);
+        expect(result.user.email).toBe(`${targetApp}@example.com`);
+        expect(result.supabase).toBe(mockAdminClient);
+      }
+      expect(mockGetUser).not.toHaveBeenCalled();
+      expect(mockCreateClient).not.toHaveBeenCalled();
+      expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
     }
-    expect(mockGetUser).not.toHaveBeenCalled();
-    expect(mockCreateClient).not.toHaveBeenCalled();
-    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
-  });
+  );
 
   it('should reject app-session auth that misses configured target and scope', async () => {
     const { token } = createAppSessionToken({
