@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/calendar_event_deduplication.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
 import 'package:mobile/features/calendar/calendar_cache.dart';
 
@@ -94,10 +95,8 @@ class CalendarCubit extends Cubit<CalendarState> {
       forceRefresh: forceRefresh,
       tags: [_cacheTag, 'workspace:$wsId', 'module:calendar'],
       fetch: () async {
-        final events = await calendarRepository.getEvents(
-          wsId,
-          start: start,
-          end: end,
+        final events = deduplicateCalendarEvents(
+          await calendarRepository.getEvents(wsId, start: start, end: end),
         );
         return {
           'selectedDate': center.toIso8601String(),
@@ -217,7 +216,9 @@ class CalendarCubit extends Cubit<CalendarState> {
       final start = targetRange.start;
       final end = targetRange.end;
 
-      final events = await _repo.getEvents(wsId, start: start, end: end);
+      final events = deduplicateCalendarEvents(
+        await _repo.getEvents(wsId, start: start, end: end),
+      );
 
       final nextState = state.copyWith(
         status: CalendarStatus.loaded,
@@ -284,16 +285,13 @@ class CalendarCubit extends Cubit<CalendarState> {
         end: newEnd,
       );
 
-      // Deduplicate by ID (edges may overlap).
-      final existingIds = state.events.map((e) => e.id).toSet();
-      final uniqueNew = moreEvents
-          .where((e) => !existingIds.contains(e.id))
-          .toList();
-
       emit(
         _storeAndReturn(
           state.copyWith(
-            events: [...state.events, ...uniqueNew],
+            events: deduplicateCalendarEvents([
+              ...state.events,
+              ...moreEvents,
+            ]),
             fetchedRange: DateTimeRange(start: range.start, end: newEnd),
             isLoadingMore: false,
           ),
@@ -364,7 +362,11 @@ class CalendarCubit extends Cubit<CalendarState> {
 
       // Optimistic add.
       emit(
-        _storeAndReturn(state.copyWith(events: [...state.events, newEvent])),
+        _storeAndReturn(
+          state.copyWith(
+            events: deduplicateCalendarEvents([...state.events, newEvent]),
+          ),
+        ),
       );
     } on Exception catch (e) {
       emit(state.copyWith(error: e.toString()));
@@ -484,10 +486,11 @@ class CalendarCubit extends Cubit<CalendarState> {
       focusedMonth: json['focusedMonth'] != null
           ? DateTime.tryParse(json['focusedMonth'] as String)
           : null,
-      events: ((json['events'] as List<dynamic>?) ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map(CalendarEvent.fromJson)
-          .toList(growable: false),
+      events: deduplicateCalendarEvents(
+        ((json['events'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(CalendarEvent.fromJson),
+      ),
       fetchedRange: fetchedRange,
     );
   }

@@ -119,6 +119,23 @@ extension _ShellPageNavigation on _ShellPageState {
     );
   }
 
+  Widget _buildCompactNavIcon({
+    required IconData icon,
+    required String semanticLabel,
+    required int itemIndex,
+    double iconSize = _ShellPageState._navIconSize,
+  }) {
+    return _buildAnimatedNavElement(
+      itemIndex: itemIndex,
+      slotDelay: 0,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        child: ExcludeSemantics(child: Icon(icon, size: iconSize)),
+      ),
+    );
+  }
+
   Widget _buildAssistantNavIcon({
     required String semanticLabel,
     required int itemIndex,
@@ -148,8 +165,9 @@ extension _ShellPageNavigation on _ShellPageState {
   List<shad.NavigationItem> _buildMiniAppNavItems(
     BuildContext context,
     AppModule module,
-    List<MiniAppNavItem> miniNavItems,
-  ) {
+    List<MiniAppNavItem> miniNavItems, {
+    required bool showCompactLabels,
+  }) {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
       fontSize: 12,
@@ -169,14 +187,15 @@ extension _ShellPageNavigation on _ShellPageState {
         spacing: miniItemSpacing,
         alignment: Alignment.center,
         marginAlignment: Alignment.center,
-        label: isCompact
+        label: isCompact && showCompactLabels
             ? _buildNavLabel(l10n.navBack, miniLabelStyle, itemIndex: 0)
             : null,
         child: isCompact
-            ? _buildAnimatedNavElement(
+            ? _buildCompactNavIcon(
+                icon: Icons.chevron_left,
+                semanticLabel: l10n.navBack,
                 itemIndex: 0,
-                slotDelay: 0,
-                child: const Icon(Icons.chevron_left, size: miniIconSize),
+                iconSize: miniIconSize,
               )
             : _buildHorizontalNavItem(
                 icon: Icons.chevron_left,
@@ -190,7 +209,7 @@ extension _ShellPageNavigation on _ShellPageState {
         (entry) => shad.NavigationItem(
           key: _miniNavKey(module.id, entry.$2.id),
           spacing: miniItemSpacing,
-          label: isCompact
+          label: isCompact && showCompactLabels
               ? _buildAnimatedNavElement(
                   itemIndex: entry.$1 + 1,
                   slotDelay: 0.08,
@@ -204,10 +223,11 @@ extension _ShellPageNavigation on _ShellPageState {
                 )
               : null,
           child: isCompact
-              ? _buildAnimatedNavElement(
+              ? _buildCompactNavIcon(
+                  icon: entry.$2.icon,
+                  semanticLabel: entry.$2.label(l10n),
                   itemIndex: entry.$1 + 1,
-                  slotDelay: 0,
-                  child: Icon(entry.$2.icon, size: miniIconSize),
+                  iconSize: miniIconSize,
                 )
               : _buildHorizontalNavItem(
                   icon: entry.$2.icon,
@@ -270,8 +290,9 @@ extension _ShellPageNavigation on _ShellPageState {
   List<shad.NavigationItem> _buildInjectedMiniNavItems(
     BuildContext context,
     ShellMiniNavRegistration registration,
-    bool useDirectCallbacks,
-  ) {
+    bool useDirectCallbacks, {
+    required bool showCompactLabels,
+  }) {
     final theme = shad.Theme.of(context);
     final labelStyle = theme.typography.p.copyWith(
       fontSize: 12,
@@ -298,7 +319,7 @@ extension _ShellPageNavigation on _ShellPageState {
                     }
                   }
                 : null,
-            label: isCompact
+            label: isCompact && showCompactLabels
                 ? _buildAnimatedNavElement(
                     itemIndex: entry.$1,
                     slotDelay: 0.08,
@@ -312,10 +333,11 @@ extension _ShellPageNavigation on _ShellPageState {
                   )
                 : null,
             child: isCompact
-                ? _buildAnimatedNavElement(
+                ? _buildCompactNavIcon(
+                    icon: item.icon,
+                    semanticLabel: item.label,
                     itemIndex: entry.$1,
-                    slotDelay: 0,
-                    child: Icon(item.icon, size: miniIconSize),
+                    iconSize: miniIconSize,
                   )
                 : _buildHorizontalNavItem(
                     icon: item.icon,

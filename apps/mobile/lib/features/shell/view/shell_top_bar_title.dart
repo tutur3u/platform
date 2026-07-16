@@ -10,9 +10,14 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ShellTopBarTitle extends StatelessWidget {
-  const ShellTopBarTitle({required this.matchedLocation, super.key});
+  const ShellTopBarTitle({
+    required this.matchedLocation,
+    this.fallbackTitle,
+    super.key,
+  });
 
   final String matchedLocation;
+  final String? fallbackTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +26,7 @@ class ShellTopBarTitle extends StatelessWidget {
 
     if (titleOverrideCubit == null) {
       return _ShellTopBarTitleContent(
-        title: config.title,
+        title: fallbackTitle ?? config.title,
         showLeadingBrand: true,
       );
     }
@@ -36,7 +41,10 @@ class ShellTopBarTitle extends StatelessWidget {
           previous.canEditTitleForLocation(matchedLocation) !=
               current.canEditTitleForLocation(matchedLocation),
       builder: (context, state) {
-        final title = state.resolveForLocation(matchedLocation) ?? config.title;
+        final title =
+            state.resolveForLocation(matchedLocation) ??
+            fallbackTitle ??
+            config.title;
         return _ShellTopBarTitleContent(
           title: title,
           showLeadingBrand: state.showLeadingBrandForLocation(matchedLocation),

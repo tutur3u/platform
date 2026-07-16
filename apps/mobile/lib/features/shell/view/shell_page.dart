@@ -86,6 +86,7 @@ class _ShellPageState extends State<ShellPage>
     'mobile/shell_back',
   );
   static const double _compactMiniBackButtonMinWidth = 68;
+  static const int _maxLabeledCompactNavItems = 4;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;

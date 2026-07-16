@@ -122,6 +122,37 @@ void main() {
       expect(cachedCubit.state.events.single.id, 'event-2');
     });
 
+    test(
+      'deduplicates imported copies but keeps distinct event times',
+      () async {
+        final startAt = DateTime(2026, 3, 25, 9);
+        final original = _event(id: 'source-1', startAt: startAt);
+        final duplicate = original.copyWith(
+          id: 'source-2',
+          createdAt: startAt.add(const Duration(minutes: 1)),
+        );
+        final later = original.copyWith(
+          id: 'source-3',
+          startAt: startAt.add(const Duration(hours: 2)),
+          endAt: startAt.add(const Duration(hours: 3)),
+        );
+        when(
+          () => repository.getEvents(
+            'ws-1',
+            start: any(named: 'start'),
+            end: any(named: 'end'),
+          ),
+        ).thenAnswer((_) async => [original, duplicate, later]);
+
+        await cubit.loadEvents('ws-1');
+
+        expect(cubit.state.events.map((event) => event.id), [
+          'source-1',
+          'source-3',
+        ]);
+      },
+    );
+
     test('uses target workspace cache after switching workspaces', () async {
       when(
         () => repository.getEvents(

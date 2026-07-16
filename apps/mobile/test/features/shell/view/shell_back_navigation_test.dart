@@ -161,6 +161,29 @@ GoRouter _buildRouter({
             builder: (context, state) => const _RoutePage(label: 'finance'),
           ),
           GoRoute(
+            path: Routes.inventory,
+            builder: (context, state) => const _RoutePage(label: 'inventory'),
+          ),
+          GoRoute(
+            path: Routes.inventoryProducts,
+            builder: (context, state) =>
+                const _RoutePage(label: 'inventory-products'),
+          ),
+          GoRoute(
+            path: Routes.inventorySales,
+            builder: (context, state) =>
+                const _RoutePage(label: 'inventory-sales'),
+          ),
+          GoRoute(
+            path: Routes.inventoryManage,
+            builder: (context, state) =>
+                const _RoutePage(label: 'inventory-manage'),
+          ),
+          GoRoute(
+            path: Routes.storefronts,
+            builder: (context, state) => const _RoutePage(label: 'storefronts'),
+          ),
+          GoRoute(
             path: Routes.wallets,
             builder: (context, state) => const _RoutePage(label: 'wallets'),
           ),
@@ -566,10 +589,50 @@ void main() {
       final l10n = AppLocalizations.of(shellContext);
 
       expect(find.text(l10n.navBack), findsOneWidget);
-      expect(find.text(l10n.taskPortfolioProjectsTab), findsOneWidget);
+      expect(find.text(l10n.taskPortfolioProjectsTab), findsNWidgets(2));
       expect(find.text(l10n.taskPortfolioInitiativesTab), findsOneWidget);
       expect(find.text(l10n.taskBoardsTitle), findsNothing);
     });
+
+    testWidgets(
+      'compact mini-nav hides labels above four items and titles the selection',
+      (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        final router = _buildRouter(initialLocation: Routes.inventorySales);
+        addTearDown(router.dispose);
+
+        await tester.pumpWidget(
+          _buildTestApp(
+            router: router,
+            appTabCubit: appTabCubit,
+            authCubit: authCubit,
+            workspaceCubit: workspaceCubit,
+            shellProfileCubit: shellProfileCubit,
+          ),
+        );
+        await _pumpForTransitions(tester);
+
+        final shellContext = tester.element(find.byType(ShellPage));
+        final l10n = AppLocalizations.of(shellContext);
+
+        expect(find.text(l10n.inventorySalesLabel), findsOneWidget);
+        expect(find.text(l10n.navBack), findsNothing);
+        expect(find.text(l10n.inventoryProductsLabel), findsNothing);
+        expect(find.text(l10n.inventoryManageLabel), findsNothing);
+        expect(find.text(l10n.storefrontTitle), findsNothing);
+        expect(find.bySemanticsLabel(l10n.navBack), findsOneWidget);
+        expect(
+          find.bySemanticsLabel(l10n.inventoryProductsLabel),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('system back from mini-app root goes to apps picker', (
       tester,
@@ -1185,7 +1248,7 @@ void main() {
       await _pumpForTransitions(tester);
       await tester.pumpAndSettle();
 
-      expect(_textDataCount(tester, 'Alpha nav'), 1);
+      expect(_textDataCount(tester, 'Alpha nav'), 2);
       expect(_textDataCount(tester, 'Beta nav'), 0);
       expect(_textDataFontSizes(tester, 'Alpha nav'), contains(10));
 
@@ -1194,7 +1257,7 @@ void main() {
       await tester.pump();
 
       expect(_textDataCount(tester, 'Alpha nav'), 1);
-      expect(_textDataCount(tester, 'Beta nav'), 1);
+      expect(_textDataCount(tester, 'Beta nav'), 2);
       expect(_textDataCount(tester, 'Gamma nav'), 1);
       expect(_textDataCount(tester, 'Delta nav'), 1);
       expect(
@@ -1246,7 +1309,7 @@ void main() {
       await _pumpForTransitions(tester);
 
       expect(_textDataCount(tester, 'Alpha nav'), 0);
-      expect(_textDataCount(tester, 'Beta nav'), 1);
+      expect(_textDataCount(tester, 'Beta nav'), 2);
       expect(_textDataCount(tester, 'Gamma nav'), 1);
       expect(_textDataCount(tester, 'Delta nav'), 1);
     });

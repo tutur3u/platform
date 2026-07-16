@@ -356,9 +356,12 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Estimations'), findsOneWidget);
-      expect(find.text('Labels'), findsOneWidget);
-      expect(find.text('Projects'), findsOneWidget);
-      expect(find.text('Initiatives'), findsOneWidget);
+      expect(find.text('Labels'), findsNothing);
+      expect(find.text('Projects'), findsNothing);
+      expect(find.text('Initiatives'), findsNothing);
+      expect(find.bySemanticsLabel('Labels'), findsOneWidget);
+      expect(find.bySemanticsLabel('Projects'), findsOneWidget);
+      expect(find.bySemanticsLabel('Initiatives'), findsOneWidget);
       expect(find.text('Boards'), findsNothing);
       expect(
         shellMiniNavCubit.state
@@ -378,6 +381,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
       expect(tester.takeException(), isNull);
+      expect(find.text('Projects'), findsOneWidget);
       expect(
         shellMiniNavCubit.state
             .resolveForLocation(Routes.taskPlanning)
@@ -396,6 +400,7 @@ void main() {
       );
       await _pumpForTransitions(tester);
       expect(tester.takeException(), isNull);
+      expect(find.text('Initiatives'), findsOneWidget);
       expect(
         shellMiniNavCubit.state
             .resolveForLocation(Routes.taskPlanning)

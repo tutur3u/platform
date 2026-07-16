@@ -231,6 +231,13 @@ extension _ShellPageLayout on _ShellPageState {
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
     final isCompact = context.isCompact;
+    final compactMiniItemCount = useInjectedMiniNav
+        ? injectedMiniNavRegistration.items.length
+        : activeModule != null
+        ? activeMiniNavItems.length + 1
+        : 0;
+    final showCompactMiniLabels =
+        compactMiniItemCount <= _ShellPageState._maxLabeledCompactNavItems;
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
@@ -242,9 +249,15 @@ extension _ShellPageLayout on _ShellPageState {
             context,
             injectedMiniNavRegistration,
             isCompact,
+            showCompactLabels: showCompactMiniLabels,
           )
         : activeModule != null
-        ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
+        ? _buildMiniAppNavItems(
+            context,
+            activeModule,
+            activeMiniNavItems,
+            showCompactLabels: showCompactMiniLabels,
+          )
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
@@ -379,7 +392,13 @@ extension _ShellPageLayout on _ShellPageState {
         : 0.0;
 
     return shad.Scaffold(
-      headers: [_buildAppBar(context)],
+      headers: [
+        _buildAppBar(
+          context,
+          activeModule: activeModule,
+          injectedMiniNavRegistration: injectedMiniNavRegistration,
+        ),
+      ],
       footers: showBottomNav && isCompact
           ? [SafeArea(top: false, child: navigationBar)]
           : const [],
@@ -438,6 +457,9 @@ extension _ShellPageLayout on _ShellPageState {
       context,
       activeModule,
       activeMiniNavItems,
+      showCompactLabels:
+          activeMiniNavItems.length + 1 <=
+          _ShellPageState._maxLabeledCompactNavItems,
     );
     final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
@@ -572,7 +594,16 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
-  shad.AppBar _buildAppBar(BuildContext context) {
+  shad.AppBar _buildAppBar(
+    BuildContext context, {
+    AppModule? activeModule,
+    ShellMiniNavRegistration? injectedMiniNavRegistration,
+  }) {
+    final selectedTitle = _selectedMiniNavTitle(
+      context,
+      activeModule: activeModule,
+      injectedMiniNavRegistration: injectedMiniNavRegistration,
+    );
     return shad.AppBar(
       height: mobileSectionAppBarHeight,
       padding: mobileSectionAppBarPadding,
@@ -583,9 +614,39 @@ extension _ShellPageLayout on _ShellPageState {
       child: SizedBox(
         width: double.infinity,
         child: RepaintBoundary(
-          child: ShellTopBarTitle(matchedLocation: widget.matchedLocation),
+          child: ShellTopBarTitle(
+            matchedLocation: widget.matchedLocation,
+            fallbackTitle: selectedTitle,
+          ),
         ),
       ),
+    );
+  }
+
+  String? _selectedMiniNavTitle(
+    BuildContext context, {
+    AppModule? activeModule,
+    ShellMiniNavRegistration? injectedMiniNavRegistration,
+  }) {
+    if (injectedMiniNavRegistration != null) {
+      for (final item in injectedMiniNavRegistration.items) {
+        if (item.selected) {
+          return item.label;
+        }
+      }
+    }
+
+    if (activeModule == null) {
+      return null;
+    }
+
+    final items = activeModule.miniAppNavItemsFor(context);
+    if (items.isEmpty) {
+      return activeModule.label(context.l10n);
+    }
+
+    return items[_miniSelectedIndex(widget.matchedLocation, items)].label(
+      context.l10n,
     );
   }
 }
