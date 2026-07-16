@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, ExternalLink, X } from '@tuturuuu/icons';
+import { X } from '@tuturuuu/icons';
 import {
   Dialog,
   DialogClose,
@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import type {
   LaunchableApp,
   LaunchableWorkspace,
@@ -19,8 +18,9 @@ import {
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import { useTranslations } from 'next-intl';
-import { type CSSProperties, useRef } from 'react';
-import { type AppOpenMode, AppsLauncherCatalog } from './apps-launcher-catalog';
+import { type CSSProperties, useRef, useState } from 'react';
+import { AppsLauncherCatalog } from './apps-launcher-catalog';
+import { AppsLauncherToolbar, LauncherMark } from './apps-launcher-controls';
 import { useAppsLauncherOpenMode } from './apps-launcher-preference';
 
 interface AppsLauncherDialogProps {
@@ -37,6 +37,7 @@ export function AppsLauncherDialog({
   const t = useTranslations('command_launcher');
   const commonT = useTranslations('common');
   const [openMode, setOpenMode] = useAppsLauncherOpenMode();
+  const [query, setQuery] = useState('');
   const dialogContentRef = useRef<HTMLDivElement>(null);
   const appNames: Record<string, string> = {
     apps: t('app_names.apps'),
@@ -64,6 +65,37 @@ export function AppsLauncherDialog({
     tools: t('app_names.tools'),
     track: t('app_names.track'),
   };
+  const appDescriptions: Record<string, string> = {
+    apps: t('app_descriptions.apps'),
+    calendar: t('app_descriptions.calendar'),
+    chat: t('app_descriptions.chat'),
+    cms: t('app_descriptions.cms'),
+    contacts: t('app_descriptions.contacts'),
+    docs: t('app_descriptions.docs'),
+    drive: t('app_descriptions.drive'),
+    finance: t('app_descriptions.finance'),
+    hive: t('app_descriptions.hive'),
+    inventory: t('app_descriptions.inventory'),
+    learn: t('app_descriptions.learn'),
+    mail: t('app_descriptions.mail'),
+    meet: t('app_descriptions.meet'),
+    mind: t('app_descriptions.mind'),
+    nova: t('app_descriptions.nova'),
+    pay: t('app_descriptions.pay'),
+    platform: t('app_descriptions.platform'),
+    rewise: t('app_descriptions.rewise'),
+    shortener: t('app_descriptions.shortener'),
+    storefront: t('app_descriptions.storefront'),
+    tasks: t('app_descriptions.tasks'),
+    teach: t('app_descriptions.teach'),
+    tools: t('app_descriptions.tools'),
+    track: t('app_descriptions.track'),
+  };
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) setQuery('');
+    onOpenChange(nextOpen);
+  }
 
   function resolveUrl(app: LaunchableApp) {
     return resolveLaunchableAppUrl({
@@ -83,20 +115,20 @@ export function AppsLauncherDialog({
   } as CSSProperties;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="flex max-w-none flex-col gap-0 overflow-hidden border-border/70 bg-background p-0 sm:max-w-none sm:rounded-xl"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           dialogContentRef.current
-            ?.querySelector<HTMLElement>('[data-slot="app-card"]')
+            ?.querySelector<HTMLElement>('[data-slot="apps-launcher-search"]')
             ?.focus();
         }}
         ref={dialogContentRef}
         showCloseButton={false}
         style={dialogStyle}
       >
-        <DialogHeader className="grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b bg-muted/20 px-3 py-2.5 text-left sm:px-4">
+        <DialogHeader className="grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-muted/20 px-3 py-2.5 text-left sm:px-4">
           <div className="flex min-w-0 items-center gap-3">
             <LauncherMark />
             <div className="min-w-0">
@@ -109,14 +141,7 @@ export function AppsLauncherDialog({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
-            <OpenModeControl
-              currentLabel={t('open_here')}
-              label={t('open_options')}
-              mode={openMode}
-              newLabel={t('open_in_new_tab')}
-              onModeChange={setOpenMode}
-            />
+          <div className="flex shrink-0 items-center">
             <DialogClose className="flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="size-3.5" />
               <span className="sr-only">{commonT('close')}</span>
@@ -124,87 +149,36 @@ export function AppsLauncherDialog({
           </div>
         </DialogHeader>
 
+        <AppsLauncherToolbar
+          currentLabel={t('open_current_tab')}
+          mode={openMode}
+          newLabel={t('open_new_tab')}
+          onModeChange={setOpenMode}
+          onQueryChange={setQuery}
+          openModeLabel={t('open_apps_in')}
+          openOptionsLabel={t('open_options')}
+          query={query}
+          searchLabel={t('search_apps')}
+        />
+
         <div
           className="min-h-0 w-full flex-1 overflow-hidden"
           data-slot="apps-launcher-body"
         >
           <AppsLauncherCatalog
             apps={LAUNCHABLE_APPS}
+            emptyDescription={t('no_apps_found_description')}
+            emptyTitle={t('no_apps_found')}
+            getAppDescription={(app) => appDescriptions[app.slug] ?? app.title}
             getAppUrl={resolveUrl}
             getAppTitle={(app) => appNames[app.slug] ?? app.title}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
-            onOpen={() => onOpenChange(false)}
+            onOpen={() => handleOpenChange(false)}
             openMode={openMode}
+            query={query}
           />
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function LauncherMark() {
-  return (
-    <div
-      aria-hidden="true"
-      className="grid size-9 shrink-0 grid-cols-2 gap-1 rounded-xl border bg-background p-1.5 shadow-xs"
-      data-slot="apps-launcher-mark"
-    >
-      <span className="rounded-[4px] bg-dynamic-blue" />
-      <span className="rounded-[4px] bg-dynamic-green" />
-      <span className="rounded-[4px] bg-dynamic-orange" />
-      <span className="rounded-[4px] bg-dynamic-purple" />
-    </div>
-  );
-}
-
-function OpenModeControl({
-  currentLabel,
-  label,
-  mode,
-  newLabel,
-  onModeChange,
-}: {
-  currentLabel: string;
-  label: string;
-  mode: AppOpenMode;
-  newLabel: string;
-  onModeChange: (mode: AppOpenMode) => void;
-}) {
-  return (
-    <div
-      className="flex shrink-0 items-center"
-      data-slot="apps-launcher-open-mode"
-    >
-      <ToggleGroup
-        aria-label={label}
-        className="gap-1 rounded-lg border bg-background/80 p-0.5"
-        onValueChange={(value) => {
-          if (value === 'current-tab' || value === 'new-tab') {
-            onModeChange(value);
-          }
-        }}
-        type="single"
-        value={mode}
-      >
-        <ToggleGroupItem
-          aria-label={currentLabel}
-          className="data-[selected=true]:!border-foreground/20 data-[selected=true]:!bg-foreground data-[selected=true]:!text-background h-7 min-w-7 gap-1.5 rounded-md border border-transparent px-2 text-muted-foreground text-xs data-[selected=true]:shadow-xs"
-          data-selected={mode === 'current-tab'}
-          value="current-tab"
-        >
-          <ArrowRight className="size-3.5" />
-          <span className="hidden sm:inline">{currentLabel}</span>
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          aria-label={newLabel}
-          className="data-[selected=true]:!border-foreground/20 data-[selected=true]:!bg-foreground data-[selected=true]:!text-background h-7 min-w-7 gap-1.5 rounded-md border border-transparent px-2 text-muted-foreground text-xs data-[selected=true]:shadow-xs"
-          data-selected={mode === 'new-tab'}
-          value="new-tab"
-        >
-          <ExternalLink className="size-3.5" />
-          <span className="hidden sm:inline">{newLabel}</span>
-        </ToggleGroupItem>
-      </ToggleGroup>
-    </div>
   );
 }

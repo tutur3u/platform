@@ -1,112 +1,14 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
-import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppsLauncherDialog } from './apps-launcher';
 import {
-  APP_OPEN_MODE_PREFERENCE_KEY,
-  getAppsLauncherPreferenceCookieOptions,
-} from './apps-launcher-preference';
+  renderAppsLauncherDialog as renderDialog,
+  setupAppsLauncherTestEnvironment,
+  teardownAppsLauncherTestEnvironment,
+} from './apps-launcher-test-utils';
 
-const appNames = Object.fromEntries(
-  LAUNCHABLE_APPS.map((app) => [
-    app.slug,
-    app.slug === 'platform' ? 'Workspace Platform' : app.title,
-  ])
-);
-const localStorageValues = new Map<string, string>();
-const localStorageMock = {
-  clear: () => localStorageValues.clear(),
-  getItem: (key: string) => localStorageValues.get(key) ?? null,
-  key: (index: number) => [...localStorageValues.keys()][index] ?? null,
-  get length() {
-    return localStorageValues.size;
-  },
-  removeItem: (key: string) => localStorageValues.delete(key),
-  setItem: (key: string, value: string) => localStorageValues.set(key, value),
-} satisfies Storage;
-
-const messages = {
-  common: {
-    close: 'Close',
-  },
-  command_launcher: {
-    aliases_slot: 'Also matches: {aliases}',
-    apps: 'Apps',
-    apps_description: 'Open another Tuturuuu app from this workspace.',
-    apps_count: '{count, plural, one {# app} other {# apps}}',
-    app_names: appNames,
-    app_categories: {
-      ai: 'AI',
-      all: 'All',
-      core: 'Core',
-      developer: 'Developer',
-      learning: 'Learning',
-      miscellaneous: 'Miscellaneous',
-      operations: 'Operations',
-      productivity: 'Productivity',
-    },
-    app_category_descriptions: {
-      ai: 'AI apps for assistants, simulations, and creative thinking.',
-      all: 'Every routable Tuturuuu app available from this launcher.',
-      core: 'Core entrypoints for the Tuturuuu workspace platform.',
-      developer: 'Developer utilities, gateways, and technical tools.',
-      learning: 'Learning apps for courses, practice, and teaching.',
-      miscellaneous: 'Miscellaneous apps for docs, utilities, and shortcuts.',
-      operations: 'Operations apps for money, inventory, and commerce.',
-      productivity:
-        'Productivity apps for schedule, tasks, messages, and meetings.',
-    },
-    current_workspace: 'Current workspace',
-    default_destination: 'Default app home',
-    open_here: 'Open here',
-    open_in_new_tab: 'Open in new tab',
-    open_options: 'Open options',
-    workspace_destination: '{workspace} workspace',
-  },
-};
-
-function renderDialog() {
-  const onOpenChange = vi.fn();
-
-  render(
-    <NextIntlClientProvider locale="en" messages={messages}>
-      <AppsLauncherDialog
-        currentWorkspace={{
-          id: 'personal-id',
-          name: 'Personal Space',
-          personal: true,
-        }}
-        onOpenChange={onOpenChange}
-        open
-      />
-    </NextIntlClientProvider>
-  );
-
-  return { onOpenChange };
-}
-
-beforeEach(() => {
-  localStorageValues.clear();
-  // biome-ignore lint/suspicious/noDocumentCookie: Reset the client preference between JSDOM tests.
-  document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=; Max-Age=0; path=/`;
-  Object.defineProperty(window, 'localStorage', {
-    configurable: true,
-    value: localStorageMock,
-  });
-});
-
-afterEach(() => {
-  cleanup();
-  vi.restoreAllMocks();
-  window.localStorage.clear();
-});
+beforeEach(setupAppsLauncherTestEnvironment);
+afterEach(teardownAppsLauncherTestEnvironment);
 
 describe('AppsLauncherDialog', () => {
   it('renders the shared launchable app catalog in a bounded dialog', () => {
@@ -183,6 +85,8 @@ describe('AppsLauncherDialog', () => {
     expect(
       screen.getByRole('radiogroup', { name: 'Open options' }).className
     ).toContain('gap-1');
+    expect(screen.getByText('Open apps in')).toBeTruthy();
+    expect(screen.getByRole('searchbox', { name: 'Search apps' })).toBeTruthy();
     const closeButton = screen.getByRole('button', { name: 'Close' });
     expect(
       document
@@ -221,20 +125,19 @@ describe('AppsLauncherDialog', () => {
     expect(launcherGrid?.className).toContain('w-full');
     expect(launcherGrid?.className).toContain('grid-cols-1');
     expect(launcherGrid?.className).toContain('sm:grid-cols-2');
-    expect(launcherGrid?.className).toContain('md:grid-cols-3');
-    expect(launcherGrid?.className).toContain('lg:grid-cols-4');
-    expect(launcherGrid?.className).toContain('xl:grid-cols-5');
+    expect(launcherGrid?.className).toContain('lg:grid-cols-3');
+    expect(launcherGrid?.className).toContain('xl:grid-cols-4');
 
     fireEvent.click(closeButton);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('focuses the first app instead of the open-mode control', async () => {
+  it('focuses app search when the dialog opens', async () => {
     renderDialog();
 
     await waitFor(() => {
       expect(document.activeElement).toBe(
-        screen.getByRole('link', { name: 'Workspace Platform' })
+        screen.getByRole('searchbox', { name: 'Search apps' })
       );
     });
   });
@@ -290,7 +193,7 @@ describe('AppsLauncherDialog', () => {
     ]);
   });
 
-  it('renders compact app cards without category filter tabs', () => {
+  it('renders descriptive app cards with calmer category accents', () => {
     renderDialog();
 
     expect(screen.getByText('Finance')).toBeTruthy();
@@ -310,24 +213,36 @@ describe('AppsLauncherDialog', () => {
     expect(financeCard?.className).toContain('hover:-translate-y-px');
     expect(financeCard?.className).toContain('focus-visible:ring-2');
     expect(financeCard?.className).toContain('motion-reduce:transition-none');
-    expect(financeCard?.className).toContain('border-dynamic-green/50');
-    expect(financeCard?.className).toContain('bg-dynamic-green/5');
+    expect(financeCard?.className).toContain('border-border/70');
+    expect(financeCard?.className).toContain('bg-card/40');
+    expect(financeCard?.className).not.toContain('border-dynamic-green/50');
     expect(financeCard?.className).not.toContain('grid-cols-');
     const financeIcon = financeCard.querySelector(
       '[data-slot="app-card-icon"]'
     );
     expect(financeIcon?.className).toContain('text-dynamic-green');
     expect(
+      financeCard.querySelector('[data-slot="app-card-description"]')
+        ?.textContent
+    ).toBe('Manage wallets, transactions, invoices, and budgets.');
+    expect(
+      document.querySelectorAll('[data-slot="app-card-description"]')
+    ).toHaveLength(LAUNCHABLE_APPS.length);
+    expect(
       financeCard.querySelector('[data-slot="app-card-affordance"]')
     ).toBeTruthy();
     const tasksCard = screen.getByRole('link', { name: 'Tasks' });
-    expect(tasksCard.className).toContain('border-dynamic-blue/50');
-    expect(screen.getByRole('link', { name: 'Learn' }).className).toContain(
-      'border-dynamic-orange/50'
-    );
-    expect(screen.getByRole('link', { name: 'Hive' }).className).toContain(
-      'border-dynamic-cyan/50'
-    );
+    expect(tasksCard.className).toContain('border-border/70');
+    expect(
+      screen
+        .getByRole('link', { name: 'Learn' })
+        .querySelector('[data-slot="app-card-icon"]')?.className
+    ).toContain('text-dynamic-orange');
+    expect(
+      screen
+        .getByRole('link', { name: 'Hive' })
+        .querySelector('[data-slot="app-card-icon"]')?.className
+    ).toContain('text-dynamic-cyan');
     expect(
       document.querySelector('[data-slot="app-card-affordance"]')
     ).toBeTruthy();
@@ -373,6 +288,31 @@ describe('AppsLauncherDialog', () => {
     expect(screen.getByText('Shortener')).toBeTruthy();
   });
 
+  it('filters by app name, description, and aliases with a helpful empty state', () => {
+    renderDialog();
+
+    const search = screen.getByRole('searchbox', { name: 'Search apps' });
+    fireEvent.change(search, { target: { value: 'Money' } });
+
+    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Tasks' })).toBeNull();
+    expect(
+      document.querySelectorAll('[data-slot="apps-launcher-section"]')
+    ).toHaveLength(1);
+
+    fireEvent.change(search, { target: { value: 'budgets' } });
+    expect(screen.getByRole('link', { name: 'Finance' })).toBeTruthy();
+
+    fireEvent.change(search, { target: { value: 'not-a-tuturuuu-app' } });
+    expect(screen.getByText('No apps found')).toBeTruthy();
+    expect(
+      screen.getByText('Try a different app name or keyword.')
+    ).toBeTruthy();
+    expect(
+      document.querySelector('[data-slot="apps-launcher-empty"]')
+    ).toBeTruthy();
+  });
+
   it('renders new-tab links by default and closes on card click', () => {
     const open = vi.fn();
     vi.stubGlobal('open', open);
@@ -387,94 +327,5 @@ describe('AppsLauncherDialog', () => {
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(open).not.toHaveBeenCalled();
-  });
-
-  it('persists the selected app opening mode in a shared cookie', async () => {
-    renderDialog();
-
-    const currentTab = screen.getByRole('radio', { name: 'Open here' });
-    const newTab = screen.getByRole('radio', { name: 'Open in new tab' });
-    expect(newTab.getAttribute('data-state')).toBe('on');
-    expect(newTab.getAttribute('data-selected')).toBe('true');
-    expect(newTab.className).toContain('data-[selected=true]:!bg-foreground');
-    expect(currentTab.getAttribute('data-state')).toBe('off');
-    expect(currentTab.getAttribute('data-selected')).toBe('false');
-
-    fireEvent.click(currentTab);
-
-    const financeCard = screen.getByRole('link', { name: 'Finance' });
-    expect(financeCard.getAttribute('target')).toBeNull();
-    expect(financeCard.getAttribute('rel')).toBeNull();
-    expect(currentTab.getAttribute('data-state')).toBe('on');
-    expect(currentTab.getAttribute('data-selected')).toBe('true');
-    expect(newTab.getAttribute('data-selected')).toBe('false');
-    expect(document.cookie).toContain(
-      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
-    );
-
-    cleanup();
-    renderDialog();
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
-      ).toBeNull();
-      expect(
-        screen
-          .getByRole('radio', { name: 'Open here' })
-          .getAttribute('data-state')
-      ).toBe('on');
-    });
-
-    fireEvent.click(screen.getByRole('radio', { name: 'Open in new tab' }));
-    expect(
-      screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
-    ).toBe('_blank');
-  });
-
-  it('shares the open-mode cookie across Tuturuuu subdomains', () => {
-    expect(
-      getAppsLauncherPreferenceCookieOptions(
-        'https://tasks.tuturuuu.com/personal'
-      )
-    ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
-    expect(
-      getAppsLauncherPreferenceCookieOptions(
-        'https://contacts.tuturuuu.com/personal'
-      )
-    ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
-    expect(
-      getAppsLauncherPreferenceCookieOptions(
-        'http://finance.tuturuuu.localhost:7808/personal'
-      )
-    ).toMatchObject({ domain: '.tuturuuu.localhost', secure: false });
-    expect(
-      getAppsLauncherPreferenceCookieOptions(
-        'https://platform-git-feature.vercel.app/personal'
-      )
-    ).not.toHaveProperty('domain');
-  });
-
-  it('migrates the previous local preference into the shared cookie', async () => {
-    window.localStorage.setItem(
-      APP_OPEN_MODE_PREFERENCE_KEY,
-      JSON.stringify('current-tab')
-    );
-
-    renderDialog();
-
-    await waitFor(() => {
-      expect(
-        screen
-          .getByRole('radio', { name: 'Open here' })
-          .getAttribute('data-state')
-      ).toBe('on');
-    });
-    expect(document.cookie).toContain(
-      `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab`
-    );
-    expect(
-      window.localStorage.getItem(APP_OPEN_MODE_PREFERENCE_KEY)
-    ).toBeNull();
   });
 });
