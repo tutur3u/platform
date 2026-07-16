@@ -3,10 +3,14 @@ import 'server-only';
 import { getWorkspaceDefaultCurrency } from '../../workspace-currency';
 import {
   buildSquarePhysicalCountChanges,
+  createSquareCatalogSyncSummary,
   decideSquareCatalogSync,
+  describeSquareSyncError,
   hasSquareDeleteInstruction,
+  type InventorySquareCatalogSyncSummary,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
+  resolveSquareWholeUnitStock,
   type SquareCatalogSyncDirection,
   squareAmountToInventoryPrice,
   squareSyncHash,
@@ -15,6 +19,7 @@ import {
   applySquareVariationToLocal,
   findOrCreateImportCategory,
   findOrCreatePrivateNamedRow,
+  findReusableSquareImportProduct,
   loadLinks,
   loadLocalCatalog,
   loadLocalSnapshot,
@@ -39,40 +44,7 @@ import { loadSettingsRow } from './settings-store';
 import type { SquareCatalogObject, SquareEnvironment } from './types';
 import { SQUARE_CATALOG_OAUTH_SCOPES } from './types';
 
-export type InventorySquareCatalogSyncSummary = {
-  conflicts: number;
-  direction: SquareCatalogSyncDirection;
-  environment: SquareEnvironment;
-  inventoryPulled: number;
-  inventoryPushed: number;
-  itemsCreated: number;
-  itemsPulled: number;
-  itemsPushed: number;
-  preservedRemoteDeletions: number;
-  skipped: number;
-  variationsPulled: number;
-  variationsPushed: number;
-};
-
-function emptySummary(
-  direction: SquareCatalogSyncDirection,
-  environment: SquareEnvironment
-): InventorySquareCatalogSyncSummary {
-  return {
-    conflicts: 0,
-    direction,
-    environment,
-    inventoryPulled: 0,
-    inventoryPushed: 0,
-    itemsCreated: 0,
-    itemsPulled: 0,
-    itemsPushed: 0,
-    preservedRemoteDeletions: 0,
-    skipped: 0,
-    variationsPulled: 0,
-    variationsPushed: 0,
-  };
-}
+export type { InventorySquareCatalogSyncSummary } from './catalog-sync-contract';
 
 function chunks<T>(values: T[], size: number) {
   const result: T[][] = [];
@@ -259,7 +231,15 @@ async function pullFromSquare({
     }
 
     const itemLinks = linksByItem.get(item.id) ?? [];
-    let productId = itemLinks[0]?.product_id;
+    let productId =
+      itemLinks[0]?.product_id ??
+      (await findReusableSquareImportProduct({
+        categoryId,
+        name: item.item_data?.name || 'Square item',
+        ownerId,
+        wsId,
+      })) ??
+      undefined;
     const productExistedBeforeSync = Boolean(productId);
     let importedItem = false;
     const variations = item.item_data?.variations ?? [];
@@ -284,15 +264,19 @@ async function pullFromSquare({
       }
 
       const link = linksByVariation.get(variation.id);
-      const amount = counts.get(variation.id) ?? 0;
+      const remoteAmount = counts.get(variation.id) ?? 0;
       const priceCurrency =
         variation.item_variation_data?.price_money?.currency ?? currency;
       const priceMajor = squareAmountToInventoryPrice(
         variation.item_variation_data?.price_money?.amount ?? 0,
         priceCurrency
       );
-      const squareHash = squareVariationHash(item, variation, amount);
+      const squareHash = squareVariationHash(item, variation, remoteAmount);
       const local = link ? await loadLocalSnapshot(link) : null;
+      const stock = resolveSquareWholeUnitStock({
+        currentAmount: local?.stock.amount ?? null,
+        remoteAmount,
+      });
       const sku = variation.item_variation_data?.sku ?? '';
       const rawVariationName = variation.item_variation_data?.name || 'Default';
       const variationName =
@@ -341,7 +325,7 @@ async function pullFromSquare({
           wsId,
         }));
       const syncedProductId = await applySquareVariationToLocal({
-        amount,
+        amount: stock.amount,
         categoryId,
         currency: priceCurrency,
         item,
@@ -355,7 +339,7 @@ async function pullFromSquare({
       });
       productId = syncedProductId;
       const localHash = localVariationHash({
-        amount,
+        amount: stock.amount,
         description: item.item_data?.description ?? null,
         name: item.item_data?.name || 'Square item',
         price: priceMajor,
@@ -364,6 +348,7 @@ async function pullFromSquare({
       });
       await upsertLink({
         environment,
+        last_error: stock.error,
         local_hash: localHash,
         product_id: syncedProductId,
         square_hash: squareHash,
@@ -374,14 +359,18 @@ async function pullFromSquare({
         square_variation_id: variation.id,
         square_variation_name: variationName,
         square_variation_version: variation.version ?? null,
-        status: 'active',
+        status: stock.error ? 'error' : 'active',
         sync_origin: link?.sync_origin ?? 'square',
         unit_id: unitId,
         warehouse_id: link?.warehouse_id ?? warehouseId,
         ws_id: wsId,
       });
       summary.variationsPulled += 1;
-      summary.inventoryPulled += 1;
+      if (stock.error) {
+        summary.conflicts += 1;
+      } else {
+        summary.inventoryPulled += 1;
+      }
       importedItem = true;
     }
     if (importedItem) {
@@ -636,7 +625,10 @@ export async function syncInventorySquareCatalog({
       );
     }
   }
-  const summary = emptySummary(direction, context.environment);
+  const summary = createSquareCatalogSyncSummary(
+    direction,
+    context.environment
+  );
   await markSyncState({
     direction,
     environment: context.environment,
@@ -684,8 +676,7 @@ export async function syncInventorySquareCatalog({
     await markSyncState({
       direction,
       environment: context.environment,
-      errorMessage:
-        error instanceof Error ? error.message : 'Square sync failed',
+      errorMessage: describeSquareSyncError(error),
       status: 'error',
       summary,
       userId,

@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildSquarePhysicalCountChanges,
   decideSquareCatalogSync,
+  describeSquareSyncError,
   hasSquareDeleteInstruction,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
+  resolveSquareWholeUnitStock,
+  selectUnlinkedSquareImportProduct,
   squareAmountToInventoryPrice,
   squareSyncHash,
 } from './catalog-sync-contract';
@@ -87,6 +90,56 @@ describe('Square catalog sync contract', () => {
   it('clamps invalid negative catalog prices at the provider boundary', () => {
     expect(inventoryPriceToSquareAmount(-1, 'USD')).toBe(0);
     expect(squareAmountToInventoryPrice(-100, 'USD')).toBe(0);
+  });
+
+  it('preserves whole-unit stock without modification', () => {
+    expect(
+      resolveSquareWholeUnitStock({ currentAmount: 4, remoteAmount: 12 })
+    ).toEqual({ amount: 12, error: null });
+  });
+
+  it('keeps existing stock for fractional Square counts and requests review', () => {
+    expect(
+      resolveSquareWholeUnitStock({ currentAmount: 4, remoteAmount: 13.51 })
+    ).toEqual({
+      amount: 4,
+      error:
+        'Square reported non-whole stock (13.51). Tuturuuu kept its value until an operator reviews the count.',
+    });
+  });
+
+  it('fails closed at zero for a new fractional Square stock row', () => {
+    expect(
+      resolveSquareWholeUnitStock({ currentAmount: null, remoteAmount: 0.5 })
+    ).toEqual({
+      amount: 0,
+      error:
+        'Square reported non-whole stock (0.5). Tuturuuu set it to 0 until an operator reviews the count.',
+    });
+  });
+
+  it('extracts provider and database messages for private sync observability', () => {
+    expect(describeSquareSyncError({ message: 'Invalid provider value' })).toBe(
+      'Invalid provider value'
+    );
+    expect(describeSquareSyncError({ code: 'UNKNOWN' })).toBe(
+      'Square sync failed'
+    );
+  });
+
+  it('reuses only an unlinked prior Square import', () => {
+    expect(
+      selectUnlinkedSquareImportProduct({
+        candidateIds: ['linked-product', 'orphan-product'],
+        linkedProductIds: ['linked-product'],
+      })
+    ).toBe('orphan-product');
+    expect(
+      selectUnlinkedSquareImportProduct({
+        candidateIds: ['linked-product'],
+        linkedProductIds: ['linked-product'],
+      })
+    ).toBeNull();
   });
 
   it('keeps unknown remote variations when updating a linked item', () => {

@@ -3,6 +3,7 @@ import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   type SquareCatalogSyncDirection,
+  selectUnlinkedSquareImportProduct,
   squareAmountToInventoryPrice,
 } from './catalog-sync-contract';
 import { getPrivateAdmin, type SupabaseErrorLike } from './settings-store';
@@ -215,6 +216,49 @@ export async function findOrCreatePrivateNamedRow({
     throw new Error(error?.message ?? `Failed to create ${table}`);
   }
   return data.id;
+}
+
+export async function findReusableSquareImportProduct({
+  categoryId,
+  name,
+  ownerId,
+  wsId,
+}: {
+  categoryId: string;
+  name: string;
+  ownerId: string;
+  wsId: string;
+}) {
+  const sbAdmin = await createAdminClient();
+  const { data: candidates, error: candidateError } = await sbAdmin
+    .from('workspace_products')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('category_id', categoryId)
+    .eq('owner_id', ownerId)
+    .eq('name', name)
+    .or('archived.is.null,archived.eq.false')
+    .order('id', { ascending: true })
+    .limit(10);
+  if (candidateError) throw candidateError;
+  const candidateIds = (candidates ?? []).map((candidate) => candidate.id);
+  if (candidateIds.length === 0) return null;
+
+  const privateAdmin = sbAdmin.schema('private');
+  const { data: links, error: linkError } = (await privateAdmin
+    .from('inventory_square_catalog_links' as never)
+    .select('product_id')
+    .in('product_id', candidateIds)) as {
+    data: Array<{ product_id: string }> | null;
+    error: SupabaseErrorLike;
+  };
+  if (linkError) {
+    throw new Error(linkError.message ?? 'Failed to inspect Square links');
+  }
+  return selectUnlinkedSquareImportProduct({
+    candidateIds,
+    linkedProductIds: (links ?? []).map((link) => link.product_id),
+  });
 }
 
 export async function loadLocalSnapshot(link: SquareCatalogLinkRow) {

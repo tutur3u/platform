@@ -119,7 +119,9 @@ export function SquareSyncObservabilityPanel({ wsId }: { wsId: string }) {
             <RefreshCw className="size-5 text-muted-foreground" />
             <p className="font-medium text-sm">{t('emptyTitle')}</p>
             <p className="max-w-lg text-muted-foreground text-xs leading-5">
-              {t('emptyDescription')}
+              {t('emptyDescription', {
+                environment: t(`environmentName.${activeEnvironment}`),
+              })}
             </p>
           </div>
         ) : (

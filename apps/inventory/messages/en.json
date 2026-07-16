@@ -1883,7 +1883,9 @@
         "nextSteps": {
           "connectSandbox": "Connect a Square Sandbox account first. Sandbox terminal tests do not move real money.",
           "importCatalog": "Import the Square Sandbox catalog to create visible product links before testing transactions.",
+          "importProductionCatalog": "Import the Production catalog from Square before handoff. This creates Tuturuuu links without changing or deleting Square records.",
           "monitor": "Connections and tests are in place. Monitor transaction evidence and resolve any sync conflicts before launch.",
+          "pairProductionTerminal": "Production credentials, webhook, location, and catalog links are prepared. Pair and select the customer's physical Square Terminal to finish setup.",
           "prepareProduction": "Sandbox evidence is present. Review the Production checklist without changing the active environment yet.",
           "runTerminalTest": "Run one successful and one cancelled Sandbox Terminal checkout, then verify the event trail here."
         },
@@ -2319,6 +2321,7 @@
           "description": "Keep products, variations, prices, and on-hand quantities aligned. Choose one direction or let Tuturuuu detect non-conflicting changes on both sides.",
           "editToSync": "Choose the compact edit button above to enable catalog sync actions.",
           "error": "Square catalog sync failed.",
+          "lastError": "Last error: {error}",
           "lastRun": "Last run {date}",
           "metrics": {
             "conflicts": "Needs review",
@@ -2361,12 +2364,16 @@
       "squareObservability": {
         "countExplanation": "Why counts can differ: one product import can update both its Square variation and its stock count. Five linked products can therefore appear as ten imported changes.",
         "description": "See every Tuturuuu product linked to a Square item variation, where it came from, and whether it needs attention.",
-        "emptyDescription": "Connect Sandbox, enable sync actions, and choose Import from Square. The imported products will appear here with their Square item and variation IDs.",
+        "emptyDescription": "Connect {environment}, enable sync actions, and choose Import from Square. The imported products will appear here with their Square item and variation IDs.",
         "emptyTitle": "No visible Square links yet",
         "enableActions": "Enable sync actions",
         "environment": {
           "production": "Production data",
           "sandbox": "Sandbox data"
+        },
+        "environmentName": {
+          "production": "Production",
+          "sandbox": "Sandbox"
         },
         "linkedDescription": "{count, plural, =0 {No Square variations are linked yet} one {# Square variation is linked} other {# Square variations are linked}}.",
         "linkedRows": "{count} link rows",

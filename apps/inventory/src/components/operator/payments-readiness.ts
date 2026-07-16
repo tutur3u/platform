@@ -8,6 +8,8 @@ import type {
 export type PaymentsNextStep =
   | 'connectSandbox'
   | 'importCatalog'
+  | 'importProductionCatalog'
+  | 'pairProductionTerminal'
   | 'runTerminalTest'
   | 'prepareProduction'
   | 'monitor';
@@ -21,11 +23,32 @@ export function getPaymentsNextStep({
   squareSettings?: InventorySquareSettings;
   squareSync?: InventorySquareCatalogSyncState | null;
 }): PaymentsNextStep {
+  const activeEnvironment = squareSettings?.environment ?? 'sandbox';
+  const activeLinks =
+    squareSync?.environment === activeEnvironment ? squareSync.links : [];
+  if (activeEnvironment === 'production') {
+    const productionConnection = squareSettings?.connections.find(
+      (connection) => connection.environment === 'production'
+    );
+    if (
+      productionConnection?.status !== 'ready' ||
+      !squareSettings?.locationId
+    ) {
+      return 'prepareProduction';
+    }
+    if (activeLinks.length === 0) return 'importProductionCatalog';
+    if (squareSettings.readiness.issues.includes('device_missing')) {
+      return 'pairProductionTerminal';
+    }
+    if (!squareSettings.readiness.ready) return 'prepareProduction';
+    return 'monitor';
+  }
+
   const sandboxConnection = squareSettings?.connections.find(
     (connection) => connection.environment === 'sandbox'
   );
   if (sandboxConnection?.status !== 'ready') return 'connectSandbox';
-  if ((squareSync?.links.length ?? 0) === 0) return 'importCatalog';
+  if (activeLinks.length === 0) return 'importCatalog';
   if (!checkouts.some((checkout) => checkout.squareEnvironment === 'sandbox')) {
     return 'runTerminalTest';
   }
@@ -45,22 +68,23 @@ export function getPaymentReadinessScore({
   squareSettings?: InventorySquareSettings;
   squareSync?: InventorySquareCatalogSyncState | null;
 }) {
+  const activeEnvironment = squareSettings?.environment ?? 'sandbox';
+  const activeConnection = squareSettings?.connections.find(
+    (connection) => connection.environment === activeEnvironment
+  );
+  const activeLinks =
+    squareSync?.environment === activeEnvironment ? squareSync.links : [];
   const signals = [
     (polarSettings?.integrations ?? []).some(
       (integration) => integration.status === 'ready'
     ),
-    squareSettings?.connections.some(
-      (connection) =>
-        connection.environment === 'sandbox' && connection.status === 'ready'
-    ) ?? false,
+    activeConnection?.status === 'ready',
     Boolean(squareSettings?.locationId),
-    Boolean(squareSettings?.sandboxDeviceId || squareSettings?.deviceId),
-    Boolean(
-      squareSettings?.connections.some(
-        (connection) => connection.webhookSignatureKeyLast4
-      )
-    ),
-    (squareSync?.links.length ?? 0) > 0,
+    activeEnvironment === 'production'
+      ? Boolean(squareSettings?.deviceId)
+      : Boolean(squareSettings?.sandboxDeviceId),
+    Boolean(activeConnection?.webhookSignatureKeyLast4),
+    activeLinks.length > 0,
   ];
   return {
     completed: signals.filter(Boolean).length,

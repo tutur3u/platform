@@ -65,6 +65,9 @@ describe('SquareSettingsPanel', () => {
       "environment ?? settings.data?.environment ?? 'sandbox'"
     );
     expect(source).toContain('environment: selectedEnvironment');
+    expect(source).toContain("'square-locations', selectedEnvironment");
+    expect(source).toContain("'square-devices', selectedEnvironment");
+    expect(source).toContain('activeRoutingSettings?.locationId');
     expect(source).toContain('item.environment === selectedEnvironment');
     expect(source).toContain('<SquareProductionSetupGuide');
     expect(cardsSource).toContain(
@@ -118,5 +121,7 @@ describe('SquareSettingsPanel', () => {
     expect(source).toContain("'bidirectional'");
     expect(source).toContain('<AlertDialog');
     expect(source).toContain("t('safetyDescription')");
+    expect(source).toContain('onSettled: () =>');
+    expect(source).toContain("t('lastError'");
   });
 });

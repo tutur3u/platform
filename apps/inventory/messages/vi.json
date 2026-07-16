@@ -1883,7 +1883,9 @@
         "nextSteps": {
           "connectSandbox": "Hãy kết nối tài khoản Square Sandbox trước. Kiểm thử thiết bị Sandbox không làm phát sinh tiền thật.",
           "importCatalog": "Nhập danh mục Square Sandbox để tạo liên kết sản phẩm hiển thị trước khi kiểm thử giao dịch.",
+          "importProductionCatalog": "Nhập danh mục Production từ Square trước khi bàn giao. Thao tác này tạo liên kết Tuturuuu mà không thay đổi hoặc xóa bản ghi Square.",
           "monitor": "Kết nối và kiểm thử đã sẵn sàng. Theo dõi bằng chứng giao dịch và xử lý mọi xung đột đồng bộ trước khi ra mắt.",
+          "pairProductionTerminal": "Thông tin Production, webhook, địa điểm và liên kết danh mục đã được chuẩn bị. Hãy ghép nối và chọn Square Terminal vật lý của khách hàng để hoàn tất thiết lập.",
           "prepareProduction": "Đã có bằng chứng Sandbox. Hãy xem danh sách kiểm tra Production mà chưa thay đổi môi trường đang hoạt động.",
           "runTerminalTest": "Chạy một giao dịch Terminal Sandbox thành công và một giao dịch bị hủy, sau đó xác minh dấu vết sự kiện tại đây."
         },
@@ -2319,6 +2321,7 @@
           "description": "Giữ sản phẩm, biến thể, giá và số lượng tồn kho đồng nhất. Chọn một chiều hoặc để Tuturuuu phát hiện các thay đổi không xung đột ở cả hai phía.",
           "editToSync": "Chọn nút chỉnh sửa nhỏ phía trên để bật các thao tác đồng bộ danh mục.",
           "error": "Đồng bộ danh mục Square thất bại.",
+          "lastError": "Lỗi gần nhất: {error}",
           "lastRun": "Lần chạy gần nhất {date}",
           "metrics": {
             "conflicts": "Cần xem lại",
@@ -2361,12 +2364,16 @@
       "squareObservability": {
         "countExplanation": "Vì sao số lượng có thể khác nhau: một lần nhập sản phẩm có thể cập nhật cả biến thể Square và số lượng tồn kho. Do đó năm sản phẩm đã liên kết có thể hiển thị thành mười thay đổi được nhập.",
         "description": "Xem từng sản phẩm Tuturuuu được liên kết với biến thể mặt hàng Square, nguồn gốc và trạng thái cần xử lý.",
-        "emptyDescription": "Kết nối Sandbox, bật thao tác đồng bộ và chọn Nhập từ Square. Sản phẩm được nhập sẽ xuất hiện tại đây cùng mã mặt hàng và biến thể Square.",
+        "emptyDescription": "Kết nối {environment}, bật thao tác đồng bộ và chọn Nhập từ Square. Sản phẩm được nhập sẽ xuất hiện tại đây cùng mã mặt hàng và biến thể Square.",
         "emptyTitle": "Chưa có liên kết Square hiển thị",
         "enableActions": "Bật thao tác đồng bộ",
         "environment": {
           "production": "Dữ liệu Production",
           "sandbox": "Dữ liệu Sandbox"
+        },
+        "environmentName": {
+          "production": "Production",
+          "sandbox": "Sandbox"
         },
         "linkedDescription": "{count, plural, =0 {Chưa có biến thể Square nào được liên kết} other {# biến thể Square đã được liên kết}}.",
         "linkedRows": "{count} dòng liên kết",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, ShieldCheck } from '@tuturuuu/icons';
+import { RefreshCw, ShieldCheck, TriangleAlert } from '@tuturuuu/icons';
 import {
   getInventorySquareCatalogSyncState,
   type InventorySquareCatalogSyncDirection,
@@ -52,11 +52,12 @@ export function SquareCatalogSyncCard({
       syncInventorySquareCatalog(wsId, direction),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('error')),
-    onSuccess: (summary) => {
-      toast.success(summary.conflicts > 0 ? t('partialSuccess') : t('success'));
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'square-catalog-sync'],
-      });
+      }),
+    onSuccess: (summary) => {
+      toast.success(summary.conflicts > 0 ? t('partialSuccess') : t('success'));
     },
   });
   const summary = sync.data ?? state.data?.lastSummary;
@@ -109,6 +110,16 @@ export function SquareCatalogSyncCard({
           </div>
         </div>
       </div>
+
+      {status === 'error' && state.data?.lastError ? (
+        <div
+          className="flex items-start gap-2 border-destructive/30 border-b bg-destructive/5 px-4 py-3 text-destructive text-xs leading-5"
+          role="alert"
+        >
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+          <p>{t('lastError', { error: state.data.lastError })}</p>
+        </div>
+      ) : null}
 
       {summary ? (
         <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 xl:grid-cols-6">

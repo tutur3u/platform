@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { majorToMinor, minorToMajor } from '@tuturuuu/utils/money';
-import type { SquareCatalogObject } from './types';
+import type { SquareCatalogObject, SquareEnvironment } from './types';
 
 export type SquareCatalogSyncDirection =
   | 'bidirectional'
@@ -8,6 +8,41 @@ export type SquareCatalogSyncDirection =
   | 'to_square';
 
 export type SquareCatalogSyncDecision = 'conflict' | 'noop' | 'pull' | 'push';
+
+export type InventorySquareCatalogSyncSummary = {
+  conflicts: number;
+  direction: SquareCatalogSyncDirection;
+  environment: SquareEnvironment;
+  inventoryPulled: number;
+  inventoryPushed: number;
+  itemsCreated: number;
+  itemsPulled: number;
+  itemsPushed: number;
+  preservedRemoteDeletions: number;
+  skipped: number;
+  variationsPulled: number;
+  variationsPushed: number;
+};
+
+export function createSquareCatalogSyncSummary(
+  direction: SquareCatalogSyncDirection,
+  environment: SquareEnvironment
+): InventorySquareCatalogSyncSummary {
+  return {
+    conflicts: 0,
+    direction,
+    environment,
+    inventoryPulled: 0,
+    inventoryPushed: 0,
+    itemsCreated: 0,
+    itemsPulled: 0,
+    itemsPushed: 0,
+    preservedRemoteDeletions: 0,
+    skipped: 0,
+    variationsPulled: 0,
+    variationsPushed: 0,
+  };
+}
 
 export type LocalSquareVariation = {
   amount: number | null;
@@ -19,6 +54,51 @@ export type LocalSquareVariation = {
   tempId: string;
   unitName: string;
 };
+
+export function describeSquareSyncError(error: unknown) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error &&
+          typeof error === 'object' &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : '';
+  return message.trim().slice(0, 500) || 'Square sync failed';
+}
+
+export function resolveSquareWholeUnitStock({
+  currentAmount,
+  remoteAmount,
+}: {
+  currentAmount: number | null;
+  remoteAmount: number;
+}) {
+  if (Number.isSafeInteger(remoteAmount)) {
+    return { amount: remoteAmount, error: null };
+  }
+
+  const preservedAmount = Number.isSafeInteger(currentAmount)
+    ? currentAmount
+    : 0;
+  const resolution = currentAmount == null ? 'set it to 0' : 'kept its value';
+  return {
+    amount: preservedAmount,
+    error: `Square reported non-whole stock (${remoteAmount}). Tuturuuu ${resolution} until an operator reviews the count.`,
+  };
+}
+
+export function selectUnlinkedSquareImportProduct({
+  candidateIds,
+  linkedProductIds,
+}: {
+  candidateIds: string[];
+  linkedProductIds: string[];
+}) {
+  const linked = new Set(linkedProductIds);
+  return candidateIds.find((id) => !linked.has(id)) ?? null;
+}
 
 export function inventoryPriceToSquareAmount(
   priceMajor: number,

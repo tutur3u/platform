@@ -2,9 +2,18 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SquareAppCredentialRow } from './app-credentials-store';
 import type { SquareConnectionRow } from './connection-store';
 import { computeReadiness } from './settings';
-import type { SquareSettingsRow } from './settings-store';
+import {
+  mergeSquareSettingsRow,
+  type SquareSettingsRow,
+} from './settings-contract';
 
 vi.mock('server-only', () => ({}));
+vi.mock('./app-credentials-store', () => ({
+  hasUsableSquareAppCredentials: (row: SquareAppCredentialRow | undefined) =>
+    Boolean(row?.application_id && row.application_secret_encrypted),
+}));
+vi.mock('./connection-store', () => ({}));
+vi.mock('./settings-store', () => ({}));
 
 const settings: SquareSettingsRow = {
   device_id: 'device-1',
@@ -99,6 +108,50 @@ describe('Square readiness', () => {
     ).toEqual({
       issues: [],
       ready: true,
+    });
+  });
+});
+
+describe('Square environment routing', () => {
+  it('preserves routing defaults while saving the same environment', () => {
+    expect(mergeSquareSettingsRow({ current: settings, payload: {} })).toEqual(
+      settings
+    );
+  });
+
+  it('clears location and physical device defaults when environments change', () => {
+    expect(
+      mergeSquareSettingsRow({
+        current: settings,
+        payload: { environment: 'production' },
+      })
+    ).toEqual({
+      ...settings,
+      device_id: null,
+      device_name: null,
+      environment: 'production',
+      location_id: null,
+      location_name: null,
+    });
+  });
+
+  it('accepts explicit routing for the new environment and preserves the sandbox simulator', () => {
+    expect(
+      mergeSquareSettingsRow({
+        current: { ...settings, sandbox_device_id: 'sandbox-simulator' },
+        payload: {
+          deviceId: 'production-device',
+          deviceName: 'Front counter',
+          environment: 'production',
+          locationId: 'production-location',
+          locationName: 'Retail store',
+        },
+      })
+    ).toMatchObject({
+      device_id: 'production-device',
+      environment: 'production',
+      location_id: 'production-location',
+      sandbox_device_id: 'sandbox-simulator',
     });
   });
 });

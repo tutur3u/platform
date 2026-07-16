@@ -54,15 +54,19 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
     (item) =>
       item.environment === selectedEnvironment && item.status === 'ready'
   );
+  const activeRoutingSettings =
+    settings.data?.environment === selectedEnvironment
+      ? settings.data
+      : undefined;
   const locations = useQuery({
-    enabled: hasReadyConnection,
+    enabled: hasReadyConnection && Boolean(activeRoutingSettings),
     queryFn: () => listInventorySquareLocations(wsId),
-    queryKey: ['inventory', wsId, 'square-locations'],
+    queryKey: ['inventory', wsId, 'square-locations', selectedEnvironment],
   });
   const devices = useQuery({
-    enabled: hasReadyConnection,
+    enabled: hasReadyConnection && Boolean(activeRoutingSettings),
     queryFn: () => listInventorySquareDevices(wsId),
-    queryKey: ['inventory', wsId, 'square-devices'],
+    queryKey: ['inventory', wsId, 'square-devices', selectedEnvironment],
   });
 
   const environmentOptions = environments.map((value) => ({
@@ -140,12 +144,12 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   const defaultsMutation = useMutation({
     mutationFn: () =>
       updateInventorySquareSettings(wsId, {
-        deviceId: deviceId || settings.data?.deviceId || null,
+        deviceId: deviceId || activeRoutingSettings?.deviceId || null,
         environment: selectedEnvironment,
-        locationId: locationId || settings.data?.locationId || null,
+        locationId: locationId || activeRoutingSettings?.locationId || null,
         locationName:
           locations.data?.data.find((item) => item.id === locationId)?.name ??
-          settings.data?.locationName ??
+          activeRoutingSettings?.locationName ??
           null,
         sandboxDeviceId:
           sandboxDeviceId || settings.data?.sandboxDeviceId || null,
@@ -168,7 +172,8 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
   const deviceCodeMutation = useMutation({
     mutationFn: () =>
       createInventorySquareDeviceCode(wsId, {
-        locationId: locationId || settings.data?.locationId || undefined,
+        locationId:
+          locationId || activeRoutingSettings?.locationId || undefined,
         name: deviceCodeName || undefined,
       }),
     onError: (error) =>
@@ -279,13 +284,13 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
               settings.data?.sandboxDeviceId ?? 'device:sandbox'
             }
             saveDefaultsPending={defaultsMutation.isPending}
-            selectedDeviceId={settings.data?.deviceId ?? ''}
+            selectedDeviceId={activeRoutingSettings?.deviceId ?? ''}
             selectedDevicePlaceholder={
-              settings.data?.deviceName ?? t('devicePlaceholder')
+              activeRoutingSettings?.deviceName ?? t('devicePlaceholder')
             }
-            selectedLocationId={settings.data?.locationId ?? ''}
+            selectedLocationId={activeRoutingSettings?.locationId ?? ''}
             selectedLocationPlaceholder={
-              settings.data?.locationName ?? t('locationPlaceholder')
+              activeRoutingSettings?.locationName ?? t('locationPlaceholder')
             }
             setDeviceCodeName={setDeviceCodeName}
             setDeviceId={setDeviceId}

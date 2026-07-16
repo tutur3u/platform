@@ -13,18 +13,23 @@ describe('payment readiness', () => {
       getPaymentsNextStep({
         checkouts: [],
         squareSettings: {
+          environment: 'sandbox',
           connections: [{ environment: 'sandbox', status: 'ready' }],
         } as never,
-        squareSync: { links: [] } as never,
+        squareSync: { environment: 'sandbox', links: [] } as never,
       })
     ).toBe('importCatalog');
     expect(
       getPaymentsNextStep({
         checkouts: [],
         squareSettings: {
+          environment: 'sandbox',
           connections: [{ environment: 'sandbox', status: 'ready' }],
         } as never,
-        squareSync: { links: [{ productId: 'product-1' }] } as never,
+        squareSync: {
+          environment: 'sandbox',
+          links: [{ productId: 'product-1' }],
+        } as never,
       })
     ).toBe('runTerminalTest');
   });
@@ -34,9 +39,13 @@ describe('payment readiness', () => {
       getPaymentsNextStep({
         checkouts: [{ squareEnvironment: 'sandbox' }] as never,
         squareSettings: {
+          environment: 'sandbox',
           connections: [{ environment: 'sandbox', status: 'ready' }],
         } as never,
-        squareSync: { links: [{ productId: 'product-1' }] } as never,
+        squareSync: {
+          environment: 'sandbox',
+          links: [{ productId: 'product-1' }],
+        } as never,
       })
     ).toBe('prepareProduction');
   });
@@ -48,6 +57,7 @@ describe('payment readiness', () => {
           integrations: [{ status: 'ready' }],
         } as never,
         squareSettings: {
+          environment: 'sandbox',
           connections: [
             {
               environment: 'sandbox',
@@ -58,8 +68,40 @@ describe('payment readiness', () => {
           locationId: 'location-1',
           sandboxDeviceId: 'device-1',
         } as never,
-        squareSync: { links: [{ productId: 'product-1' }] } as never,
+        squareSync: {
+          environment: 'sandbox',
+          links: [{ productId: 'product-1' }],
+        } as never,
       })
     ).toEqual({ completed: 6, percent: 100, total: 6 });
+  });
+
+  it('keeps Production gated until the physical terminal is paired', () => {
+    const squareSettings = {
+      connections: [
+        {
+          environment: 'production',
+          status: 'ready',
+          webhookSignatureKeyLast4: '1234',
+        },
+      ],
+      deviceId: null,
+      environment: 'production',
+      locationId: 'production-location',
+      readiness: { issues: ['device_missing'], ready: false },
+    } as never;
+    const squareSync = {
+      environment: 'production',
+      links: [{ productId: 'product-1' }],
+    } as never;
+
+    expect(
+      getPaymentsNextStep({ checkouts: [], squareSettings, squareSync })
+    ).toBe('pairProductionTerminal');
+    expect(getPaymentReadinessScore({ squareSettings, squareSync })).toEqual({
+      completed: 4,
+      percent: 67,
+      total: 6,
+    });
   });
 });

@@ -1,21 +1,18 @@
 import 'server-only';
 
-import type {
-  InventorySquareEnvironment,
-  InventorySquareSettingsPayload,
-} from '@tuturuuu/internal-api/inventory';
+import type { InventorySquareSettingsPayload } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  mergeSquareSettingsRow,
+  type SquareSettingsRow,
+} from './settings-contract';
+
+export {
+  mergeSquareSettingsRow,
+  type SquareSettingsRow,
+} from './settings-contract';
 
 export type SupabaseErrorLike = { message?: string } | null;
-
-export type SquareSettingsRow = {
-  device_id: string | null;
-  device_name: string | null;
-  environment: InventorySquareEnvironment;
-  location_id: string | null;
-  location_name: string | null;
-  sandbox_device_id: string | null;
-};
 
 export async function getPrivateAdmin() {
   return (await createAdminClient()).schema('private');
@@ -62,30 +59,13 @@ export async function upsertSettings({
   wsId: string;
 }) {
   const current = await loadSettingsRow(wsId);
+  const next = mergeSquareSettingsRow({ current, payload });
   const privateAdmin = await getPrivateAdmin();
   const { error } = (await privateAdmin
     .from('inventory_square_settings' as never)
     .upsert(
       {
-        device_id:
-          payload.deviceId === undefined ? current.device_id : payload.deviceId,
-        device_name:
-          payload.deviceName === undefined
-            ? current.device_name
-            : payload.deviceName,
-        environment: payload.environment ?? current.environment,
-        location_id:
-          payload.locationId === undefined
-            ? current.location_id
-            : payload.locationId,
-        location_name:
-          payload.locationName === undefined
-            ? current.location_name
-            : payload.locationName,
-        sandbox_device_id:
-          payload.sandboxDeviceId === undefined
-            ? current.sandbox_device_id
-            : payload.sandboxDeviceId,
+        ...next,
         updated_at: new Date().toISOString(),
         updated_by: userId,
         ws_id: wsId,
