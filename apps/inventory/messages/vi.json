@@ -2073,6 +2073,84 @@
           "complete": "Đã lưu và nhận diện",
           "eyebrow": "Thiết lập POS Square",
           "inProgress": "Đang thiết lập",
+          "launch": {
+            "automaticChecks": "Kiểm tra kết nối và thiết bị",
+            "description": "Hoàn tất các kiểm tra kết nối được phát hiện, chuẩn bị và ghép nối Terminal, sau đó thực hiện một giao dịch thật có kiểm soát khi chủ cửa hàng có mặt. Không có bước nào tại đây tự động tạo khoản thu.",
+            "details": {
+              "activate": {
+                "one": "Đặt Storefront dự kiến sang thanh toán Square Terminal và xác nhận sản phẩm được liên kết với cùng workspace Inventory.",
+                "three": "Mở đồng thời Tuturuuu Payments và Square Dashboard để nhân viên có thể so sánh hai hệ thống ngay lập tức.",
+                "title": "Kích hoạt quy trình bán hàng",
+                "two": "Tạo một sản phẩm kiểm tra giá trị thấp, tên rõ ràng với tồn kho, thuế, tiền tệ và người chịu trách nhiệm hoàn tiền đã biết."
+              },
+              "pair": {
+                "one": "Chọn Production, kết nối đúng người bán, chọn địa điểm Square của quầy rồi bật chỉnh sửa trên trang Thanh toán này.",
+                "three": "Chờ Square báo thiết bị đã ghép nối, làm mới danh sách thiết bị, chọn làm mặc định và lưu.",
+                "title": "Ghép nối Terminal từ Tuturuuu",
+                "two": "Trong cài đặt Terminal, đặt tên thiết bị và tạo mã ghép nối. Nhập mã trên Terminal vật lý trong vòng năm phút."
+              },
+              "prepare": {
+                "one": "Yêu cầu chủ tài khoản Square xác nhận doanh nghiệp pháp lý, tài khoản ngân hàng, tiền tệ, thuế, tiền tip và cài đặt biên lai trong Square.",
+                "three": "Dùng Wi-Fi hoặc Ethernet ổn định không có trang đăng nhập bắt buộc và chuẩn bị kết nối dự phòng đã được kiểm tra.",
+                "title": "Chuẩn bị thiết bị và tài khoản cửa hàng",
+                "two": "Bật Terminal, cài đặt bản cập nhật, sạc pin và lắp giấy biên lai trước khi mở quầy."
+              },
+              "recover": {
+                "one": "Mã ghép nối hết hạn: tạo mã mới trong Tuturuuu. Không thay bằng mã thiết bị từ Square Dashboard.",
+                "three": "Thanh toán đang chờ hoặc không chắc chắn: dừng thử lại, kiểm tra bằng chứng giao dịch Tuturuuu và Square Payments rồi đối soát trước khi nhận thanh toán khác.",
+                "title": "Khôi phục an toàn khi có điều bất thường",
+                "two": "Không có lời nhắc thanh toán: xác nhận Terminal đang trực tuyến, ghép với đúng người bán và địa điểm, đồng thời được lưu làm thiết bị mặc định của workspace."
+              },
+              "verify": {
+                "one": "Nhận phê duyệt rõ ràng từ chủ cửa hàng, tạo đơn trong Tuturuuu, gửi một lần và hoàn tất thanh toán trên Terminal. Không nhấp đúp hoặc thử lại yêu cầu đang chờ.",
+                "three": "Xác nhận tồn kho đã giữ được trừ đúng một lần và giao dịch tài chính được ghi đúng một lần. Làm theo quy trình hoàn tiền đã được chủ cửa hàng phê duyệt nếu cần đảo giao dịch kiểm tra.",
+                "title": "Thực hiện và xác minh một thanh toán thật",
+                "two": "Đối chiếu trạng thái hoàn tất, số tiền, tiền tệ, địa điểm, ID thanh toán Square và biên lai giữa Tuturuuu và Square."
+              }
+            },
+            "eyebrow": "Ra mắt quầy thanh toán vật lý",
+            "firstSale": {
+              "blockedDescription": "Hoàn tất kết nối Production và ghép nối thiết bị ở trên trước khi mở danh sách kiểm tra thanh toán thật.",
+              "readyDescription": "Tất cả kiểm tra Production tự động đã sẵn sàng. Xem danh sách an toàn được chủ cửa hàng phê duyệt trước khi thu tiền.",
+              "title": "Cổng kiểm tra giao dịch thật đầu tiên"
+            },
+            "links": {
+              "network": "Yêu cầu mạng của Square",
+              "pairing": "Hướng dẫn ghép nối chính thức",
+              "setup": "Thiết lập Square Terminal",
+              "title": "Tài liệu thiết lập",
+              "tuturuuu": "Hướng dẫn khách hàng Tuturuuu"
+            },
+            "onlineRequirement": "Giữ Terminal trực tuyến cho quy trình thanh toán kết nối của Tuturuuu. Xử lý ngoại tuyến của Square không nằm trong lộ trình ra mắt đã xác minh này.",
+            "pairingWarning": "Quan trọng: chỉ dùng mã ghép nối do Tuturuuu tạo. Mã thiết bị từ Square Dashboard không tương thích với ghép nối Terminal API.",
+            "stages": {
+              "connect": {
+                "description": "Cấp quyền người bán, lưu khóa webhook và chọn địa điểm thật.",
+                "title": "Kết nối Production"
+              },
+              "hardware": {
+                "description": "Cấp nguồn, cập nhật, kết nối và lắp giấy biên lai trước khi ghép nối.",
+                "title": "Chuẩn bị quầy"
+              },
+              "pair": {
+                "description": "Tạo mã ghép nối ngắn hạn trong Tuturuuu và nhập mã trên thiết bị.",
+                "title": "Ghép nối Terminal này"
+              },
+              "verify": {
+                "description": "Dùng một sản phẩm giá trị thấp đã được phê duyệt và xác minh thanh toán, biên lai cùng tồn kho.",
+                "title": "Xác minh giao dịch đầu tiên"
+              }
+            },
+            "status": {
+              "blocked": "Hoàn tất bước trước",
+              "complete": "Đã phát hiện sẵn sàng",
+              "inProgress": "Đang chuẩn bị ra mắt",
+              "manual": "Xác nhận tại quầy",
+              "needsAction": "Cần thực hiện",
+              "ready": "Sẵn sàng kiểm tra có kiểm soát"
+            },
+            "title": "Lộ trình đến thanh toán trực tiếp an toàn đầu tiên"
+          },
           "needsAction": "Cần bạn thực hiện",
           "openSquareGuide": "Mở hướng dẫn Square",
           "production": {
@@ -2094,7 +2172,8 @@
             "realMoneyWarning": "Thanh toán thực tế có thể di chuyển tiền thật và phát sinh phí xử lý Square. Tuturuuu sẽ không tự động bắt đầu kiểm tra này.",
             "review": "Xem kiểm tra an toàn",
             "title": "Trước đơn hàng thực tế đầu tiên",
-            "understood": "Tôi hiểu"
+            "understood": "Tôi hiểu",
+            "verifyBothSides": "Sau khi thanh toán, hãy xác minh cùng số tiền và trạng thái trong Tuturuuu, Square Dashboard và biên lai in hoặc điện tử trước khi phục vụ khách hàng tiếp theo."
           },
           "sandbox": {
             "description": "Thực hành toàn bộ quy trình với dữ liệu thử nghiệm và trình mô phỏng của Square trước khi cấu hình quầy thật.",

@@ -2073,6 +2073,84 @@
           "complete": "Saved and detected",
           "eyebrow": "Square POS setup",
           "inProgress": "Setup in progress",
+          "launch": {
+            "automaticChecks": "Connection and device checks",
+            "description": "Complete the detected connection checks, prepare and pair the Terminal, then run one controlled live sale with the store owner present. Nothing here creates a charge automatically.",
+            "details": {
+              "activate": {
+                "one": "Set the intended Storefront to Square Terminal checkout and confirm its products are linked to the same Inventory workspace.",
+                "three": "Keep Tuturuuu Payments and the Square Dashboard open together so the operator can compare both systems immediately.",
+                "title": "Activate the selling workflow",
+                "two": "Create one clearly named, low-value test item with known stock, tax, currency, and refund ownership."
+              },
+              "pair": {
+                "one": "Choose Production, connect the correct seller, select the counter's Square location, then enable editing in this Payments page.",
+                "three": "Wait for Square to report the device as paired, refresh the device list, select it as the default, and save.",
+                "title": "Pair the Terminal from Tuturuuu",
+                "two": "In Terminal settings, name the device and create a pairing code. Enter it on the physical Terminal within five minutes."
+              },
+              "prepare": {
+                "one": "Have the Square account owner confirm the legal business, bank account, currency, taxes, tips, and receipt settings in Square.",
+                "three": "Use reliable Wi-Fi or Ethernet without a captive login page, and prepare a tested backup connection.",
+                "title": "Prepare the hardware and store account",
+                "two": "Power the Terminal, install updates, charge it, and load receipt paper before opening the counter."
+              },
+              "recover": {
+                "one": "Expired pairing code: create a new code in Tuturuuu. Never substitute a device code from Square Dashboard.",
+                "three": "Pending or uncertain payment: stop retrying, check Tuturuuu transaction evidence and Square Payments, then reconcile before taking another payment.",
+                "title": "Recover safely when something looks wrong",
+                "two": "No payment prompt: confirm the Terminal is online, paired to the selected seller and location, and saved as this workspace's default device."
+              },
+              "verify": {
+                "one": "Get explicit owner approval, create the order in Tuturuuu, send it once, and complete payment on the Terminal. Do not double-click or retry a pending request.",
+                "three": "Confirm reserved stock was consumed exactly once and the finance sale was booked once. Follow the owner's approved refund process if the test must be reversed.",
+                "title": "Run and verify one live payment",
+                "two": "Match the completed status, amount, currency, location, Square payment ID, and receipt across Tuturuuu and Square."
+              }
+            },
+            "eyebrow": "Physical counter launch",
+            "firstSale": {
+              "blockedDescription": "Finish the Production connection and device pairing above before opening the live-payment checklist.",
+              "readyDescription": "All automatic Production checks are ready. Review the owner-approved safety checklist before charging.",
+              "title": "First live sale gate"
+            },
+            "links": {
+              "network": "Square network requirements",
+              "pairing": "Official pairing guide",
+              "setup": "Set up Square Terminal",
+              "title": "Setup documentation",
+              "tuturuuu": "Tuturuuu customer guide"
+            },
+            "onlineRequirement": "Keep the Terminal online for Tuturuuu's connected checkout flow. Square offline processing is not part of this verified launch path.",
+            "pairingWarning": "Important: use only the pairing code created by Tuturuuu. Square Dashboard device codes are not compatible with Terminal API pairing.",
+            "stages": {
+              "connect": {
+                "description": "Authorize the seller, save the webhook key, and select the real location.",
+                "title": "Connect Production"
+              },
+              "hardware": {
+                "description": "Power, update, connect, and load receipt paper before pairing.",
+                "title": "Prepare the counter"
+              },
+              "pair": {
+                "description": "Create the short-lived pairing code in Tuturuuu and enter it on the device.",
+                "title": "Pair this Terminal"
+              },
+              "verify": {
+                "description": "Use one approved low-value item and verify payment, receipt, and stock.",
+                "title": "Prove the first sale"
+              }
+            },
+            "status": {
+              "blocked": "Finish earlier steps",
+              "complete": "Detected as ready",
+              "inProgress": "Launch preparation",
+              "manual": "Confirm at the counter",
+              "needsAction": "Action required",
+              "ready": "Ready for a controlled test"
+            },
+            "title": "Your path to the first safe in-person payment"
+          },
           "needsAction": "Needs your attention",
           "openSquareGuide": "Open Square guide",
           "production": {
@@ -2094,7 +2172,8 @@
             "realMoneyWarning": "A production checkout can move real money and incur Square processing fees. Tuturuuu will not start this test automatically.",
             "review": "Review the safety check",
             "title": "Before the first live order",
-            "understood": "I understand"
+            "understood": "I understand",
+            "verifyBothSides": "After payment, verify the same amount and status in Tuturuuu, the Square Dashboard, and the printed or digital receipt before serving another customer."
           },
           "sandbox": {
             "description": "Practice the complete workflow with Square test data and the simulator before configuring the physical counter.",

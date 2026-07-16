@@ -10,6 +10,9 @@ Use Square Terminal API for countertop terminal payments; the
 opens the mobile Square Point of Sale app and is not the right integration for
 driving physical terminals from Tuturuuu.
 
+For a store-owner-friendly walkthrough, use
+[Set up a physical Square POS](/platform/applications/inventory-square-pos).
+
 <Warning>
   Never paste Square access tokens, OAuth secrets, webhook signature keys, or
   device identifiers into source, docs, or chat. Store workspace credentials
@@ -116,8 +119,10 @@ notification URL so signature validation uses the same value.
 6. Select a Square location.
 7. Pair or select a terminal:
    - Production: create a device pairing code, enter it on the physical Square
-     Terminal, then select the paired device. The pairing request uses Square's
-     `TERMINAL_API` product type.
+     Terminal within five minutes, then select the paired device. The pairing
+     request uses Square's `TERMINAL_API` product type. Create this code inside
+     Tuturuuu; device codes from Square Dashboard are not compatible with
+     Terminal API pairing.
    - Sandbox: use Square's sandbox terminal device id when device listing is not
      available.
 8. Set a storefront's checkout mode to `Square Terminal`.
@@ -130,6 +135,11 @@ key, location, device, and environment all match. OAuth-backed connections also
 require saved workspace Square app credentials so refresh can continue without
 deployment secrets. Storefront checkout returns a configuration error instead of
 reserving stock when Square is not ready.
+
+The verified Tuturuuu launch path requires reliable connectivity. Square lists
+Terminal API offline payments as an opt-in beta capability, but Tuturuuu does
+not currently certify or depend on that flow. Operators should restore the
+network and reconcile any uncertain checkout before retrying.
 
 ## Hardware-free verification
 

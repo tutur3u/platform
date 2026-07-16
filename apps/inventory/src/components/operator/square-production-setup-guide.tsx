@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  CheckCircle2,
-  ExternalLink,
-  ShieldCheck,
-  SquareTerminal,
-} from '@tuturuuu/icons';
+import { CheckCircle2, ExternalLink, ShieldCheck } from '@tuturuuu/icons';
 import type {
   InventorySquareEnvironment,
   InventorySquareSettings,
@@ -18,18 +13,10 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
+import { SquareFirstPaymentDialog } from './square-production-launch-dialog';
+import { SquareProductionLaunchGuide } from './square-production-launch-guide';
 import { getSquareSetupProgress } from './square-setup-progress';
 
 const SQUARE_DOCS = {
@@ -74,6 +61,11 @@ export function SquareProductionSetupGuide({
       : null,
   });
   const defaultStep = progress.firstIncompleteId ?? 'device';
+  const connectionReady = progress.steps
+    .filter((step) => step.id !== 'device')
+    .every((step) => step.complete);
+  const deviceReady =
+    progress.steps.find((step) => step.id === 'device')?.complete ?? false;
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
@@ -173,50 +165,17 @@ export function SquareProductionSetupGuide({
           <p className="mt-2 text-muted-foreground text-sm leading-6">
             {t(`${environment}.safety`)}
           </p>
-          <GoLiveSafetyDialog />
+          <div className="mt-4">
+            <SquareFirstPaymentDialog fullWidth />
+          </div>
         </aside>
       </div>
+      {environment === 'production' ? (
+        <SquareProductionLaunchGuide
+          connectionReady={connectionReady}
+          deviceReady={deviceReady}
+        />
+      ) : null}
     </section>
-  );
-}
-
-function GoLiveSafetyDialog() {
-  const t = useTranslations('inventory.operator.square.guide.safety');
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button className="mt-4 w-full" size="sm" variant="outline">
-          <SquareTerminal className="size-4" />
-          {t('review')}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t('dialogTitle')}</DialogTitle>
-          <DialogDescription>{t('dialogDescription')}</DialogDescription>
-        </DialogHeader>
-        <ol className="grid gap-3">
-          {(['approval', 'item', 'terminal', 'receipt'] as const).map(
-            (item, index) => (
-              <li className="flex gap-3 text-sm leading-6" key={item}>
-                <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 font-mono text-xs">
-                  {index + 1}
-                </span>
-                <span>{t(`checks.${item}`)}</span>
-              </li>
-            )
-          )}
-        </ol>
-        <div className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm leading-6">
-          {t('realMoneyWarning')}
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button">{t('understood')}</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
