@@ -1,15 +1,25 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getTranslations } from 'next-intl/server';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import ModelsClient from './models-client';
 import { MODELS_PAGE_SIZE } from './models-constants';
 
-export async function generateMetadata() {
+interface MetadataProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: MetadataProps) {
+  const { locale } = await params;
   const t = await getTranslations('marketing-models');
 
-  return {
-    title: t('title'),
-    description: t('subtitle'),
-  };
+  return getMarketingMetadata(
+    {
+      title: t('title'),
+      description: t('subtitle'),
+      pathname: '/models',
+    },
+    locale
+  );
 }
 
 export default async function ModelsPage() {

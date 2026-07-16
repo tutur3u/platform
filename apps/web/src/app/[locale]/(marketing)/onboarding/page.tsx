@@ -6,6 +6,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import {
   getCurrentUser,
   getUserDefaultWorkspace,
@@ -19,6 +20,7 @@ import OnboardingFlow from './onboarding-flow';
 export const metadata: Metadata = {
   title: 'Onboarding with Tuturuuu',
   description: 'Guide new teammates through getting started with Tuturuuu.',
+  robots: NO_INDEX_ROBOTS,
 };
 
 interface OnboardingPageProps {

@@ -28,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     image: storefront?.heroImageUrl || storefront?.coverImageUrl || undefined,
     indexable: Boolean(storefront),
     locale,
+    localePrefix: 'never',
     pathname: `/${storeSlug}`,
     siteName: storefront?.name ?? siteConfig.name,
     title: storefront?.name ?? 'Storefront unavailable',

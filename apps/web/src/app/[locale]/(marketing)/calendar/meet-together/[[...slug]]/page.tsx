@@ -1,3 +1,4 @@
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
@@ -5,6 +6,7 @@ export const metadata: Metadata = {
   title: 'Meet Together Calendar',
   description:
     'Explore calendar templates and resources for Meet Together events.',
+  robots: NO_INDEX_ROBOTS,
 };
 
 export default async function LegacyMeetTogetherPage(props: {
@@ -13,6 +15,5 @@ export default async function LegacyMeetTogetherPage(props: {
   }>;
 }) {
   const { slug } = await props.params;
-  console.log('slug', slug);
   redirect(`/meet-together${slug ? `/${slug.join('/')}` : ''}`);
 }

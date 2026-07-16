@@ -3,7 +3,7 @@ import type { WorkspaceDocument } from '@tuturuuu/types';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { siteConfig } from '@/constants/configs';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
 interface Props {
   params: Promise<{
@@ -59,34 +59,21 @@ export const generateMetadata = async ({
 
   const title = `${documentTitle} - ${locale === 'vi' ? viTitle : enTitle}`;
 
+  const metadata = getMarketingMetadata(
+    {
+      title,
+      description,
+      imageAlt: `${title} - Tuturuuu`,
+      pathname: `/documents/${documentId}`,
+    },
+    locale
+  );
+
   return {
-    title: {
-      default: title,
-      template: `%s - ${title}`,
-    },
-    description,
+    ...metadata,
     openGraph: {
+      ...metadata.openGraph,
       type: 'article',
-      locale,
-      url: siteConfig.url,
-      title,
-      description,
-      siteName: siteConfig.name,
-      images: [
-        {
-          url: siteConfig.ogImage,
-          width: 1200,
-          height: 630,
-          alt: `${title} - ${siteConfig.name}`,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [siteConfig.ogImage],
-      creator: '@tuturuuu',
     },
   };
 };

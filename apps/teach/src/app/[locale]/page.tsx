@@ -19,6 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : 'Plan courses, manage classrooms, and follow learner progress with the focused Tuturuuu educator portal.',
     indexable: true,
     locale,
+    localePrefix: 'never',
     pathname: '/',
     siteName: 'Teach',
     title: isVietnamese
