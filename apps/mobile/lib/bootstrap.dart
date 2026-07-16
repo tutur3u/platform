@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -42,6 +43,7 @@ Future<void> bootstrap(
   builder,
 ) async {
   WidgetsFlutterBinding.ensureInitialized();
+  ApiConfig.configure(appFlavor);
 
   final settingsRepository = SettingsRepository();
   shad.ThemeMode initialThemeMode;

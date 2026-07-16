@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
-import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/task.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
@@ -25,7 +24,7 @@ import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 /// Repository for task operations.
 class TaskRepository {
   TaskRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _apiClient = apiClient ?? ApiClient(baseUrl: ApiConfig.tasksBaseUrl),
+    : _apiClient = apiClient ?? ApiClient(),
       _httpClient = httpClient ?? http.Client();
 
   final ApiClient _apiClient;

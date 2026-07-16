@@ -1,30 +1,47 @@
 import 'dart:io' show Platform;
 
+import 'package:mobile/core/config/api_origins.dart';
+import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/env.dart';
 
 /// API endpoint constants ported from apps/native/lib/config/api.ts.
 class ApiConfig {
   const ApiConfig._();
 
-  /// Base URL with Android emulator localhost rewriting.
-  static String get baseUrl {
-    var url = Env.apiBaseUrl.replaceAll(RegExp(r'/$'), '');
+  static ApiOrigins _origins = _originsFor(AppFlavor.development);
 
-    // Android emulator maps localhost → 10.0.2.2
-    if (Platform.isAndroid && url.contains('localhost')) {
-      url = url.replaceAll('localhost', '10.0.2.2');
-    }
-
-    return url;
+  static void configure(AppFlavor flavor) {
+    _origins = _originsFor(flavor);
   }
 
-  static String get tasksBaseUrl {
-    var url = Env.tasksApiBaseUrl.replaceAll(RegExp(r'/$'), '');
+  static ApiOrigins _originsFor(AppFlavor flavor) => ApiOrigins.forFlavor(
+    flavor,
+    platformOverride: Env.apiBaseUrl,
+    financeOverride: Env.financeApiBaseUrl,
+    inventoryOverride: Env.inventoryApiBaseUrl,
+    tasksOverride: Env.tasksApiBaseUrl,
+    contactsOverride: Env.contactsApiBaseUrl,
+    calendarOverride: Env.calendarApiBaseUrl,
+    teachOverride: Env.teachApiBaseUrl,
+    trackOverride: Env.trackApiBaseUrl,
+    infrastructureOverride: Env.infrastructureApiBaseUrl,
+  );
 
+  /// Base URL with Android emulator localhost rewriting.
+  static String get baseUrl {
+    return _forDevice(_origins.urlFor(ApiOrigin.platform));
+  }
+
+  static String get tasksBaseUrl =>
+      _forDevice(_origins.urlFor(ApiOrigin.tasks));
+
+  static String baseUrlForPath(String path) =>
+      _forDevice(_origins.baseUrlForPath(path));
+
+  static String _forDevice(String url) {
     if (Platform.isAndroid && url.contains('localhost')) {
-      url = url.replaceAll('localhost', '10.0.2.2');
+      return url.replaceAll('localhost', '10.0.2.2');
     }
-
     return url;
   }
 }

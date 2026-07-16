@@ -105,7 +105,7 @@ jobs:
 
       - name: Archive macOS app bundle
         run: |
-          app_path="$(find build/macos/Build/Products/Release -maxdepth 1 -type d -name '*.app' -print -quit)"
+          app_path="$(find build/macos/Build/Products -maxdepth 2 -type d -name '*.app' -print -quit)"
           test -n "$app_path"
           ditto -c -k --sequesterRsrc --keepParent "$app_path" "$RUNNER_TEMP/macos-dev-app.zip"
 

@@ -4,7 +4,9 @@ const test = require('node:test');
 const {
   canonicalizeRoute,
   collectApiPaths,
+  collectConfiguredMobileApiApps,
   collectMobileApiPaths,
+  findUnconfiguredSatelliteOwners,
   findUnmappedMobileApiPaths,
   normalizeMobilePath,
   routeFileToApiPath,
@@ -68,10 +70,42 @@ test('reports only paths without a canonical API owner', () => {
   );
 });
 
+test('extracts configured production satellite origins', () => {
+  assert.deepEqual(
+    [
+      ...collectConfiguredMobileApiApps(`
+      'https://tasks.tuturuuu.com'
+      'https://inventory.tuturuuu.com'
+    `),
+    ],
+    ['tasks', 'inventory']
+  );
+});
+
+test('reports mobile routes whose sole satellite owner has no configured host', () => {
+  const routesByApp = new Map([
+    ['tasks', new Set(['/api/v1/workspaces/:*/tasks'])],
+    ['web', new Set(['/api/v1/workspaces/:*/members'])],
+  ]);
+
+  assert.deepEqual(
+    findUnconfiguredSatelliteOwners({
+      mobilePaths: new Set([
+        '/api/v1/workspaces/:*/tasks',
+        '/api/v1/workspaces/:*/members',
+      ]),
+      routesByApp,
+      configuredApps: new Set(),
+    }),
+    ['/api/v1/workspaces/:*/tasks => tasks']
+  );
+});
+
 test('all checked-in mobile API paths have a canonical owner', () => {
   const result = validateMobileApiMappings();
   assert.ok(result.mobilePaths.size >= 100);
   assert.deepEqual(result.unmapped, []);
   assert.ok(result.cliSdkPaths.size >= 20);
   assert.deepEqual(result.unmappedCliSdk, []);
+  assert.deepEqual(result.originRouting.errors, []);
 });

@@ -34,6 +34,30 @@ function readWorkflowYaml(workflowName) {
   return JSON.parse(workflowJson);
 }
 
+test('mobile Apple workflows use stable generic build destinations', () => {
+  const iosSource = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/mobile-build-ios.yaml'),
+    'utf8'
+  );
+  const macosSource = fs.readFileSync(
+    path.join(repoRoot, '.github/workflows/mobile-build-macos.yaml'),
+    'utf8'
+  );
+
+  assert.doesNotMatch(iosSource, /SIMULATOR_UDID|simctl boot/u);
+  assert.match(
+    iosSource,
+    /flutter build ios .* --simulator\s*$/mu,
+    "iOS CI should target Flutter's generic simulator destination"
+  );
+  assert.match(
+    macosSource,
+    /find build\/macos\/Build\/Products -maxdepth 2 .* -name '\*\.app'/u,
+    'macOS CI should find flavor-specific Release-* product directories'
+  );
+  assert.doesNotMatch(macosSource, /Build\/Products\/Release -maxdepth/u);
+});
+
 function githubExpression(expression) {
   return `${String.fromCharCode(36)}{{ ${expression} }}`;
 }

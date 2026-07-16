@@ -21,7 +21,30 @@ class Env {
 
   static const tasksApiBaseUrl = String.fromEnvironment(
     'TASKS_API_BASE_URL',
-    defaultValue: 'http://localhost:7809',
+  );
+
+  static const financeApiBaseUrl = String.fromEnvironment(
+    'FINANCE_API_BASE_URL',
+  );
+
+  static const inventoryApiBaseUrl = String.fromEnvironment(
+    'INVENTORY_API_BASE_URL',
+  );
+
+  static const contactsApiBaseUrl = String.fromEnvironment(
+    'CONTACTS_API_BASE_URL',
+  );
+
+  static const calendarApiBaseUrl = String.fromEnvironment(
+    'CALENDAR_API_BASE_URL',
+  );
+
+  static const teachApiBaseUrl = String.fromEnvironment('TEACH_API_BASE_URL');
+
+  static const trackApiBaseUrl = String.fromEnvironment('TRACK_API_BASE_URL');
+
+  static const infrastructureApiBaseUrl = String.fromEnvironment(
+    'INFRASTRUCTURE_API_BASE_URL',
   );
 
   static const turnstileSiteKey = String.fromEnvironment('TURNSTILE_SITE_KEY');
@@ -58,6 +81,5 @@ class Env {
   static bool get isConfigured =>
       supabaseAnonKey.isNotEmpty && supabaseUrl.isNotEmpty;
 
-  static bool get isDevelopment =>
-      apiBaseUrl.contains('localhost') || tasksApiBaseUrl.contains('localhost');
+  static bool get isDevelopment => apiBaseUrl.contains('localhost');
 }

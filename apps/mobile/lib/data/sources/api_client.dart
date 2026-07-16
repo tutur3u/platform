@@ -12,12 +12,16 @@ import 'package:mobile/data/sources/supabase_client.dart';
 /// Ported from apps/native/lib/api/client.ts.
 class ApiClient {
   ApiClient({String? baseUrl, http.Client? httpClient})
-    : _baseUrl = (baseUrl ?? ApiConfig.baseUrl).replaceAll(RegExp(r'/$'), ''),
+    : _baseUrl = baseUrl?.replaceAll(RegExp(r'/$'), ''),
       _client = httpClient ?? http.Client();
 
   final http.Client _client;
-  final String _baseUrl;
+  final String? _baseUrl;
   static const int _expiryBufferMs = 60 * 1000;
+
+  Uri _url(String path) => Uri.parse(
+    '${_baseUrl ?? ApiConfig.baseUrlForPath(path)}$path',
+  );
 
   Future<void> _ensureValidSession({bool forceRefresh = false}) async {
     final session = supabase.auth.currentSession;
@@ -93,7 +97,7 @@ class ApiClient {
     String path, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.get(
@@ -113,7 +117,7 @@ class ApiClient {
     String path, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.get(
@@ -157,7 +161,7 @@ class ApiClient {
     Object? body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.post(
@@ -182,7 +186,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.patch(
@@ -207,7 +211,7 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.delete(
@@ -232,7 +236,7 @@ class ApiClient {
     Map<String, dynamic> body, {
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final response = await _performRequest(
       () async => _client.put(
@@ -254,7 +258,7 @@ class ApiClient {
     String accept = 'application/octet-stream',
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     return _performStreamedRequest(() async {
       final request = http.Request('GET', url)
@@ -272,7 +276,7 @@ class ApiClient {
     String accept = 'application/octet-stream',
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     return _performStreamedRequest(() async {
       final request = http.Request(method, url)
@@ -295,7 +299,7 @@ class ApiClient {
     List<ApiMultipartFile> files = const [],
     bool requiresAuth = true,
   }) async {
-    final url = Uri.parse('$_baseUrl$path');
+    final url = _url(path);
 
     final streamedResponse = await _performStreamedRequest(() async {
       final request = http.MultipartRequest(method, url)

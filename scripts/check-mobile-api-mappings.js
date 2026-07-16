@@ -5,6 +5,8 @@ const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const MOBILE_API_CONFIG = 'apps/mobile/lib/core/config/api_config.dart';
+const MOBILE_API_ORIGINS = 'apps/mobile/lib/core/config/api_origins.dart';
+const MOBILE_API_CLIENT = 'apps/mobile/lib/data/sources/api_client.dart';
 const CLI_SDK_DIRECTORY = 'packages/sdk/src';
 const ROUTE_MANIFEST = 'apps/tanstack-web/migration/route-manifest.json';
 
@@ -116,6 +118,81 @@ function collectOwnedApiRoutes({ rootDir = ROOT_DIR } = {}) {
   return routes;
 }
 
+function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
+  const routesByApp = new Map();
+  const appsDir = path.join(rootDir, 'apps');
+
+  for (const appName of fs.readdirSync(appsDir)) {
+    const routes = new Set();
+    for (const filePath of walkRouteFiles(
+      path.join(appsDir, appName, 'src/app/api')
+    )) {
+      const route = routeFileToApiPath(filePath);
+      if (route) routes.add(canonicalizeRoute(route));
+    }
+    if (routes.size > 0) routesByApp.set(appName, routes);
+  }
+
+  return routesByApp;
+}
+
+function collectConfiguredMobileApiApps(source) {
+  return new Set(
+    [...source.matchAll(/https:\/\/([a-z0-9-]+)\.tuturuuu\.com/gu)].map(
+      (match) => match[1]
+    )
+  );
+}
+
+function findUnconfiguredSatelliteOwners({
+  mobilePaths,
+  routesByApp,
+  configuredApps,
+}) {
+  const failures = [];
+  for (const route of mobilePaths) {
+    const canonicalRoute = canonicalizeRoute(route);
+    const owners = [...routesByApp.entries()]
+      .filter(([, routes]) => routes.has(canonicalRoute))
+      .map(([appName]) => appName)
+      .sort();
+
+    if (
+      owners.length > 0 &&
+      !owners.includes('web') &&
+      !owners.some((owner) => configuredApps.has(owner))
+    ) {
+      failures.push(`${route} => ${owners.join(', ')}`);
+    }
+  }
+  return failures.sort();
+}
+
+function validateMobileOriginRouting({ rootDir = ROOT_DIR, mobilePaths }) {
+  const originSource = fs.readFileSync(
+    path.join(rootDir, MOBILE_API_ORIGINS),
+    'utf8'
+  );
+  const clientSource = fs.readFileSync(
+    path.join(rootDir, MOBILE_API_CLIENT),
+    'utf8'
+  );
+  const routesByApp = collectOwnedApiRoutesByApp({ rootDir });
+  const configuredApps = collectConfiguredMobileApiApps(originSource);
+  const errors = findUnconfiguredSatelliteOwners({
+    mobilePaths,
+    routesByApp,
+    configuredApps,
+  });
+
+  if (!clientSource.includes('ApiConfig.baseUrlForPath(path)')) {
+    errors.push(
+      'ApiClient must resolve default requests through ApiConfig.baseUrlForPath(path).'
+    );
+  }
+  return { configuredApps, errors, routesByApp };
+}
+
 function findUnmappedMobileApiPaths({ mobilePaths, ownedRoutes }) {
   return [...mobilePaths]
     .filter((route) => !ownedRoutes.has(canonicalizeRoute(route)))
@@ -127,6 +204,7 @@ function validateMobileApiMappings({ rootDir = ROOT_DIR } = {}) {
   const mobilePaths = collectMobileApiPaths(source);
   const cliSdkPaths = collectCliSdkApiPaths({ rootDir });
   const ownedRoutes = collectOwnedApiRoutes({ rootDir });
+  const originRouting = validateMobileOriginRouting({ rootDir, mobilePaths });
   return {
     mobilePaths,
     cliSdkPaths,
@@ -136,6 +214,7 @@ function validateMobileApiMappings({ rootDir = ROOT_DIR } = {}) {
       mobilePaths: cliSdkPaths,
       ownedRoutes,
     }),
+    originRouting,
     sharedClientPaths: new Set(
       [...mobilePaths].filter((route) => cliSdkPaths.has(route))
     ),
@@ -170,8 +249,17 @@ function main() {
     );
     process.exit(1);
   }
+  if (result.originRouting.errors.length > 0) {
+    console.error('Mobile API origin routing check failed:');
+    for (const error of result.originRouting.errors)
+      console.error(`- ${error}`);
+    console.error(
+      'Add the satellite production origin and route policy before shipping a migrated API.'
+    );
+    process.exit(1);
+  }
   console.log(
-    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes (${result.sharedClientPaths.size} exact overlaps).`
+    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes across ${result.originRouting.configuredApps.size} mobile satellite origins (${result.sharedClientPaths.size} exact overlaps).`
   );
 }
 
@@ -183,9 +271,13 @@ module.exports = {
   collectCliSdkApiPaths,
   collectMobileApiPaths,
   collectOwnedApiRoutes,
+  collectOwnedApiRoutesByApp,
+  collectConfiguredMobileApiApps,
   findUnmappedMobileApiPaths,
+  findUnconfiguredSatelliteOwners,
   normalizeClientPath,
   normalizeMobilePath,
   routeFileToApiPath,
+  validateMobileOriginRouting,
   validateMobileApiMappings,
 };

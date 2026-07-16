@@ -100,24 +100,8 @@ jobs:
           </plist>
           EOF
 
-      - name: Boot iOS simulator (required for xcodebuild destination on CI)
-        run: |
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c "
-          import json, sys
-          d = json.load(sys.stdin)
-          for runtimes in d.get('devices', {}).values():
-            for dev in runtimes:
-              if 'iPhone' in dev.get('name', '') and dev.get('isAvailable'):
-                print(dev['udid'])
-                sys.exit(0)
-          sys.exit(1)
-          ")
-          echo "Booting simulator $DEVICE"
-          xcrun simctl boot "$DEVICE" || true
-          echo "SIMULATOR_UDID=$DEVICE" >> $GITHUB_ENV
-
       - name: Build iOS (development flavor, simulator)
-        run: flutter build ios --flavor development --target lib/main_development.dart --simulator -d ${{ env.SIMULATOR_UDID }}
+        run: flutter build ios --flavor development --target lib/main_development.dart --simulator
 
       - name: Archive iOS app bundle
         run: ditto -c -k --sequesterRsrc --keepParent build/ios/iphonesimulator/Runner.app "$RUNNER_TEMP/ios-dev-app.zip"
