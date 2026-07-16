@@ -3823,6 +3823,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySalesPeriodCreate => 'New period';
 
   @override
+  String get inventorySalesPeriodEdit => 'Edit';
+
+  @override
   String get inventorySalesPeriodOpen => 'Open sales periods';
 
   @override
@@ -3830,6 +3833,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodCreateDescription => 'Group sales into a season, convention, campaign, or operating window.';
+
+  @override
+  String get inventorySalesPeriodEditTitle => 'Edit sales period';
+
+  @override
+  String get inventorySalesPeriodEditDescription => 'Update the period name, dates, and team notes.';
+
+  @override
+  String get inventorySalesPeriodSave => 'Save changes';
+
+  @override
+  String get inventorySalesPeriodUpdated => 'Sales period updated.';
 
   @override
   String get inventorySalesPeriodName => 'Name';
@@ -3872,6 +3887,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodAssignmentHelp => 'Use a season or event period to group this sale in reports.';
+
+  @override
+  String get inventoryCheckoutOptionsUnavailable => 'Some checkout choices could not be refreshed. Existing periods stay available; retry to restore missing wallets, categories, products, or periods.';
 
   @override
   String get inventorySaveProduct => 'Save product';

@@ -22,17 +22,32 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 Future<T?> showInventoryCheckoutPage<T>(
   BuildContext context, {
   InventorySaleDetail? sale,
+  List<InventorySalesPeriod> initialSalesPeriods = const [],
 }) {
   return showFinanceFullscreenModal<T>(
     context: context,
-    builder: (context) => InventoryCheckoutPage(sale: sale),
+    builder: (context) => InventoryCheckoutPage(
+      sale: sale,
+      initialSalesPeriods: initialSalesPeriods,
+    ),
   );
 }
 
 class InventoryCheckoutPage extends StatefulWidget {
-  const InventoryCheckoutPage({this.sale, super.key});
+  const InventoryCheckoutPage({
+    this.sale,
+    this.initialSalesPeriods = const [],
+    this.inventoryRepository,
+    this.financeRepository,
+    this.settingsRepository,
+    super.key,
+  });
 
   final InventorySaleDetail? sale;
+  final List<InventorySalesPeriod> initialSalesPeriods;
+  final InventoryRepository? inventoryRepository;
+  final FinanceRepository? financeRepository;
+  final SettingsRepository? settingsRepository;
 
   @override
   State<InventoryCheckoutPage> createState() => _InventoryCheckoutPageState();
@@ -50,6 +65,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   late final TextEditingController _noteController;
   bool _loading = true;
   bool _saving = false;
+  bool _hasUnavailableOptions = false;
   int _activeTab = _tabBrowse;
   List<InventoryProduct> _products = const [];
   List<Wallet> _wallets = const [];
@@ -67,12 +83,13 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
   @override
   void initState() {
     super.initState();
-    _inventoryRepository = InventoryRepository();
-    _financeRepository = FinanceRepository();
-    _settingsRepository = SettingsRepository();
+    _inventoryRepository = widget.inventoryRepository ?? InventoryRepository();
+    _financeRepository = widget.financeRepository ?? FinanceRepository();
+    _settingsRepository = widget.settingsRepository ?? SettingsRepository();
     _searchController = TextEditingController();
     _titleController = TextEditingController(text: widget.sale?.notice ?? '');
     _noteController = TextEditingController(text: widget.sale?.note ?? '');
+    _salesPeriods = widget.initialSalesPeriods;
     _periodId = widget.sale?.period?.id;
     unawaited(_load());
   }
@@ -89,16 +106,53 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
     final wsId = _wsId;
     if (wsId == null) return;
     setState(() => _loading = true);
+
+    var hasUnavailableOptions = false;
+    Future<T> loadOptional<T>(
+      Future<T> future,
+      T fallback,
+      String label,
+    ) async {
+      try {
+        return await future;
+      } on Object catch (error, stackTrace) {
+        hasUnavailableOptions = true;
+        debugPrint(
+          'Inventory checkout $label load failed: $error\n$stackTrace',
+        );
+        return fallback;
+      }
+    }
+
     try {
-      final lastCategoryId = await _settingsRepository.getLastIncomeCategory(
-        wsId,
+      final lastCategoryId = await loadOptional(
+        _settingsRepository.getLastIncomeCategory(wsId),
+        null,
+        'remembered category',
       );
       final results = await Future.wait<dynamic>([
-        _inventoryRepository.getProductOptions(wsId),
-        _financeRepository.getWallets(wsId),
-        _financeRepository.getCategories(wsId),
-        _inventoryRepository.getSalesPeriods(wsId),
+        loadOptional(
+          _inventoryRepository.getProductOptions(wsId),
+          _products,
+          'products',
+        ),
+        loadOptional(
+          _financeRepository.getWallets(wsId),
+          _wallets,
+          'wallets',
+        ),
+        loadOptional(
+          _financeRepository.getCategories(wsId),
+          _categories,
+          'categories',
+        ),
+        loadOptional(
+          _inventoryRepository.getSalesPeriods(wsId),
+          _salesPeriods,
+          'sales periods',
+        ),
       ]);
+      if (!mounted) return;
       setState(() {
         _products = results[0] as List<InventoryProduct>;
         _wallets = results[1] as List<Wallet>;
@@ -106,6 +160,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             .where((item) => !(item.isExpense ?? false))
             .toList(growable: false);
         _salesPeriods = results[3] as List<InventorySalesPeriod>;
+        _hasUnavailableOptions = hasUnavailableOptions;
         _walletId =
             widget.sale?.walletId ??
             _walletId ??
@@ -422,6 +477,10 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             ],
           ),
           const shad.Gap(16),
+          if (_hasUnavailableOptions) ...[
+            _CheckoutOptionsAlert(onRetry: _load),
+            const shad.Gap(16),
+          ],
           _CheckoutTabSelector(
             browseLabel: l10n.inventoryCheckoutBrowseTab,
             cartLabel: l10n.inventoryCheckoutCartTab,
@@ -641,6 +700,67 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
             ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _CheckoutOptionsAlert extends StatelessWidget {
+  const _CheckoutOptionsAlert({required this.onRetry});
+
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = shad.Theme.of(context);
+    final accent = FinancePalette.of(context).accent;
+    return FinancePanel(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final message = Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.cloud_off_outlined, color: accent, size: 18),
+              ),
+              const shad.Gap(10),
+              Expanded(
+                child: Text(
+                  context.l10n.inventoryCheckoutOptionsUnavailable,
+                  style: theme.typography.small.copyWith(
+                    color: theme.colorScheme.mutedForeground,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          );
+          final retry = shad.OutlineButton(
+            onPressed: onRetry,
+            size: shad.ButtonSize.small,
+            leading: const Icon(Icons.refresh_rounded, size: 16),
+            child: Text(context.l10n.commonRetry),
+          );
+          if (constraints.maxWidth < 430) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [message, const shad.Gap(10), retry],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: message),
+              const shad.Gap(12),
+              retry,
+            ],
+          );
+        },
       ),
     );
   }

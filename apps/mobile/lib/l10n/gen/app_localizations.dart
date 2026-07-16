@@ -7411,6 +7411,12 @@ abstract class AppLocalizations {
   /// **'New period'**
   String get inventorySalesPeriodCreate;
 
+  /// No description provided for @inventorySalesPeriodEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get inventorySalesPeriodEdit;
+
   /// No description provided for @inventorySalesPeriodOpen.
   ///
   /// In en, this message translates to:
@@ -7428,6 +7434,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Group sales into a season, convention, campaign, or operating window.'**
   String get inventorySalesPeriodCreateDescription;
+
+  /// No description provided for @inventorySalesPeriodEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit sales period'**
+  String get inventorySalesPeriodEditTitle;
+
+  /// No description provided for @inventorySalesPeriodEditDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the period name, dates, and team notes.'**
+  String get inventorySalesPeriodEditDescription;
+
+  /// No description provided for @inventorySalesPeriodSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get inventorySalesPeriodSave;
+
+  /// No description provided for @inventorySalesPeriodUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales period updated.'**
+  String get inventorySalesPeriodUpdated;
 
   /// No description provided for @inventorySalesPeriodName.
   ///
@@ -7512,6 +7542,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use a season or event period to group this sale in reports.'**
   String get inventorySalesPeriodAssignmentHelp;
+
+  /// No description provided for @inventoryCheckoutOptionsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Some checkout choices could not be refreshed. Existing periods stay available; retry to restore missing wallets, categories, products, or periods.'**
+  String get inventoryCheckoutOptionsUnavailable;
 
   /// No description provided for @inventorySaveProduct.
   ///

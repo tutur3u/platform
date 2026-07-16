@@ -332,11 +332,22 @@ class InventoryRepository {
   Future<InventorySalesPeriod> updateSalesPeriod({
     required String wsId,
     required String periodId,
+    String? name,
+    String? description,
+    DateTime? startsAt,
+    DateTime? endsAt,
     String? status,
   }) async {
+    final isContentUpdate = name != null;
     final response = await _api.patchJson(
       InventoryEndpoints.salesPeriod(wsId, periodId),
-      {if (status != null) 'status': status},
+      {
+        if (name != null) 'name': name,
+        if (isContentUpdate) 'description': description,
+        if (isContentUpdate) 'starts_at': _dateOnly(startsAt),
+        if (isContentUpdate) 'ends_at': _dateOnly(endsAt),
+        if (status != null) 'status': status,
+      },
     );
     return InventorySalesPeriod.fromJson(
       Map<String, dynamic>.from(response['data'] as Map),

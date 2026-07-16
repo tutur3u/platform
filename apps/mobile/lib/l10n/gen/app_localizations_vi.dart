@@ -3799,6 +3799,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySalesPeriodCreate => 'Giai đoạn mới';
 
   @override
+  String get inventorySalesPeriodEdit => 'Chỉnh sửa';
+
+  @override
   String get inventorySalesPeriodOpen => 'Mở giai đoạn bán hàng';
 
   @override
@@ -3806,6 +3809,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodCreateDescription => 'Nhóm doanh số theo mùa, sự kiện, chiến dịch hoặc khoảng vận hành.';
+
+  @override
+  String get inventorySalesPeriodEditTitle => 'Chỉnh sửa giai đoạn bán hàng';
+
+  @override
+  String get inventorySalesPeriodEditDescription => 'Cập nhật tên, ngày và ghi chú nội bộ của giai đoạn.';
+
+  @override
+  String get inventorySalesPeriodSave => 'Lưu thay đổi';
+
+  @override
+  String get inventorySalesPeriodUpdated => 'Đã cập nhật giai đoạn bán hàng.';
 
   @override
   String get inventorySalesPeriodName => 'Tên';
@@ -3848,6 +3863,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventorySalesPeriodAssignmentHelp => 'Dùng mùa hoặc sự kiện để nhóm giao dịch này trong báo cáo.';
+
+  @override
+  String get inventoryCheckoutOptionsUnavailable => 'Không thể làm mới một số lựa chọn thanh toán. Các giai đoạn hiện có vẫn dùng được; hãy thử lại để khôi phục ví, danh mục, sản phẩm hoặc giai đoạn còn thiếu.';
 
   @override
   String get inventorySaveProduct => 'Lưu sản phẩm';

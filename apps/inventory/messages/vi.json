@@ -1044,6 +1044,9 @@
           "createdSuccess": "Đã tạo giai đoạn bán hàng",
           "createTitle": "Tạo giai đoạn bán hàng",
           "description": "So sánh và rà soát doanh số theo mùa, sự kiện hoặc chiến dịch.",
+          "edit": "Chỉnh sửa",
+          "editDescription": "Cập nhật tên, ngày và ghi chú nội bộ của giai đoạn.",
+          "editTitle": "Chỉnh sửa giai đoạn bán hàng",
           "endsAt": "Ngày kết thúc",
           "name": "Tên",
           "namePlaceholder": "Hè 2026 hoặc TuCon 2026",
@@ -1051,11 +1054,13 @@
           "notesPlaceholder": "Thông tin tùy chọn cho đội ngũ",
           "restore": "Khôi phục",
           "restoredSuccess": "Đã khôi phục giai đoạn bán hàng",
+          "save": "Lưu thay đổi",
           "saveError": "Không thể lưu giai đoạn bán hàng",
           "saving": "Đang lưu…",
           "startsAt": "Ngày bắt đầu",
           "title": "Giai đoạn bán hàng",
-          "unassigned": "Chưa có giai đoạn"
+          "unassigned": "Chưa có giai đoạn",
+          "updatedSuccess": "Đã cập nhật giai đoạn bán hàng"
         },
         "pnl": {
           "byProduct": "Theo sản phẩm",

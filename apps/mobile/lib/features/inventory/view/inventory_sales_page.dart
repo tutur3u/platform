@@ -112,7 +112,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
         ),
         loadOptional(
           _inventoryRepository.getSalesPeriods(wsId),
-          <InventorySalesPeriod>[],
+          _salesPeriods,
           'periods',
         ),
         loadOptional(
@@ -250,6 +250,10 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     if (period == null || !mounted) return;
     setState(() {
       _selectedPeriodId = period.id;
+      _salesPeriods = [
+        period,
+        ..._salesPeriods.where((item) => item.id != period.id),
+      ];
       _sales = const [];
     });
     await _loadInitial();
@@ -259,12 +263,17 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     final wsId = _wsId;
     if (wsId == null) return;
     try {
-      await _inventoryRepository.updateSalesPeriod(
+      final updated = await _inventoryRepository.updateSalesPeriod(
         wsId: wsId,
         periodId: period.id,
         status: period.isArchived ? 'active' : 'archived',
       );
       if (!mounted) return;
+      setState(() {
+        _salesPeriods = _salesPeriods
+            .map((item) => item.id == updated.id ? updated : item)
+            .toList(growable: false);
+      });
       showInventoryToast(
         context,
         period.isArchived
@@ -279,8 +288,30 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     }
   }
 
+  Future<void> _editSalesPeriod(InventorySalesPeriod period) async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    final updated = await showInventorySalesPeriodEditor(
+      context: context,
+      repository: _inventoryRepository,
+      wsId: wsId,
+      period: period,
+    );
+    if (updated == null || !mounted) return;
+    showInventoryToast(context, context.l10n.inventorySalesPeriodUpdated);
+    setState(() {
+      _salesPeriods = _salesPeriods
+          .map((item) => item.id == updated.id ? updated : item)
+          .toList(growable: false);
+    });
+    await _loadInitial();
+  }
+
   Future<void> _openCheckout() async {
-    final created = await showInventoryCheckoutPage<bool>(context);
+    final created = await showInventoryCheckoutPage<bool>(
+      context,
+      initialSalesPeriods: _salesPeriods,
+    );
     if (created == true && mounted) {
       await _loadInitial();
     }
@@ -366,6 +397,8 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
                           onChanged: (periodId) =>
                               unawaited(_selectPeriod(periodId)),
                           onCreate: () => unawaited(_createSalesPeriod()),
+                          onEdit: (period) =>
+                              unawaited(_editSalesPeriod(period)),
                           onToggleArchive: (period) =>
                               unawaited(_togglePeriodArchive(period)),
                         ),
@@ -614,6 +647,7 @@ class _InventorySaleDetailDialogState
     final updated = await showInventoryCheckoutPage<InventorySaleDetail>(
       context,
       sale: sale,
+      initialSalesPeriods: sale.period == null ? const [] : [sale.period!],
     );
 
     if (updated != null && mounted) {

@@ -1044,6 +1044,9 @@
           "createdSuccess": "Sales period created",
           "createTitle": "Create sales period",
           "description": "Compare and review sales by season, convention, or campaign.",
+          "edit": "Edit",
+          "editDescription": "Update the period name, dates, and team notes.",
+          "editTitle": "Edit sales period",
           "endsAt": "End date",
           "name": "Name",
           "namePlaceholder": "Summer 2026 or TuCon 2026",
@@ -1051,11 +1054,13 @@
           "notesPlaceholder": "Optional context for your team",
           "restore": "Restore",
           "restoredSuccess": "Sales period restored",
+          "save": "Save changes",
           "saveError": "Could not save the sales period",
           "saving": "Saving…",
           "startsAt": "Start date",
           "title": "Sales periods",
-          "unassigned": "No period"
+          "unassigned": "No period",
+          "updatedSuccess": "Sales period updated"
         },
         "pnl": {
           "byProduct": "By product",

@@ -1,7 +1,13 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Archive, CalendarDays, Plus, RotateCcw } from '@tuturuuu/icons';
+import {
+  Archive,
+  CalendarDays,
+  Pencil,
+  Plus,
+  RotateCcw,
+} from '@tuturuuu/icons';
 import type {
   InventorySaleSummary,
   InventorySalesPeriod,
@@ -98,6 +104,9 @@ export function SalesPeriodsPanel({
           </SelectContent>
         </Select>
         {selected ? (
+          <SalesPeriodDialog key={selected.id} period={selected} wsId={wsId} />
+        ) : null}
+        {selected ? (
           <Button
             disabled={lifecycleMutation.isPending}
             onClick={() => lifecycleMutation.mutate(selected)}
@@ -113,36 +122,52 @@ export function SalesPeriodsPanel({
             {selected.status === 'active' ? t('archive') : t('restore')}
           </Button>
         ) : null}
-        <CreateSalesPeriodDialog wsId={wsId} />
+        <SalesPeriodDialog key="create" wsId={wsId} />
       </div>
     </section>
   );
 }
 
-function CreateSalesPeriodDialog({ wsId }: { wsId: string }) {
+function SalesPeriodDialog({
+  period,
+  wsId,
+}: {
+  period?: InventorySalesPeriod;
+  wsId: string;
+}) {
   const t = useTranslations('inventory.operator.commerce.periods');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
+  const [name, setName] = useState(period?.name ?? '');
+  const [description, setDescription] = useState(period?.description ?? '');
+  const [startsAt, setStartsAt] = useState(period?.starts_at ?? '');
+  const [endsAt, setEndsAt] = useState(period?.ends_at ?? '');
+  const isEditing = Boolean(period);
   const mutation = useMutation({
     mutationFn: () =>
-      createInventorySalesPeriod(wsId, {
-        description: description.trim() || null,
-        ends_at: endsAt || null,
-        name: name.trim(),
-        starts_at: startsAt || null,
-      }),
+      period
+        ? updateInventorySalesPeriod(wsId, period.id, {
+            description: description.trim() || null,
+            ends_at: endsAt || null,
+            name: name.trim(),
+            starts_at: startsAt || null,
+          })
+        : createInventorySalesPeriod(wsId, {
+            description: description.trim() || null,
+            ends_at: endsAt || null,
+            name: name.trim(),
+            starts_at: startsAt || null,
+          }),
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
-      toast.success(t('createdSuccess'));
+      toast.success(t(isEditing ? 'updatedSuccess' : 'createdSuccess'));
       setOpen(false);
-      setName('');
-      setDescription('');
-      setStartsAt('');
-      setEndsAt('');
+      if (!isEditing) {
+        setName('');
+        setDescription('');
+        setStartsAt('');
+        setEndsAt('');
+      }
       queryClient.invalidateQueries({
         queryKey: ['inventory', wsId, 'sales-periods'],
       });
@@ -152,15 +177,23 @@ function CreateSalesPeriodDialog({ wsId }: { wsId: string }) {
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button size="sm" type="button">
-          <Plus className="h-4 w-4" />
-          {t('create')}
+        <Button
+          size="sm"
+          type="button"
+          variant={isEditing ? 'outline' : 'default'}
+        >
+          {isEditing ? (
+            <Pencil className="h-4 w-4" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
+          {t(isEditing ? 'edit' : 'create')}
         </Button>
       </DialogTrigger>
       <OperatorDialogContent size="sm">
         <OperatorDialogHeader
-          description={t('createDescription')}
-          title={t('createTitle')}
+          description={t(isEditing ? 'editDescription' : 'createDescription')}
+          title={t(isEditing ? 'editTitle' : 'createTitle')}
         />
         <form
           className="flex min-h-0 flex-1 flex-col"
@@ -223,7 +256,9 @@ function CreateSalesPeriodDialog({ wsId }: { wsId: string }) {
               }
               type="submit"
             >
-              {mutation.isPending ? t('saving') : t('create')}
+              {mutation.isPending
+                ? t('saving')
+                : t(isEditing ? 'save' : 'create')}
             </Button>
           </OperatorDialogFooter>
         </form>
