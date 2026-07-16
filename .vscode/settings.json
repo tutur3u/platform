@@ -76,7 +76,7 @@
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
   "workbench.editor.customLabels.patterns": {
     "**/app/**/page.tsx": "${dirname} - Page",
     "**/app/**/layout.tsx": "${dirname} - Layout",
@@ -93,17 +93,10 @@
   ],
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
-  "codeQL.githubDatabase.update": "never",
-  "codeQL.githubDatabase.download": "never",
-  "IDX.aI.enableInlineCompletion": true,
-  "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "js/ts.experimental.useTsgo": true,
   "cSpell.words": ["Tuturuuu", "tuturuuu"],
   "python-envs.defaultEnvManager": "ms-python.python:venv",
   "python-envs.defaultPackageManager": "ms-python.python:pip",
-  "python-envs.pythonProjects": [],
-  "vitest.disableWorkspaceWarning": true,
-  "chatgpt.openOnStartup": true,
-  "typescript.native-preview.tsdk": "node_modules/@typescript/native-preview"
+  "python-envs.pythonProjects": []
 }
