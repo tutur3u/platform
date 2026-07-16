@@ -56,6 +56,10 @@ describe('SquareSettingsPanel', () => {
       join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
       'utf8'
     );
+    const cardsSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-cards.tsx'),
+      'utf8'
+    );
 
     expect(source).toContain(
       "environment ?? settings.data?.environment ?? 'sandbox'"
@@ -63,6 +67,9 @@ describe('SquareSettingsPanel', () => {
     expect(source).toContain('environment: selectedEnvironment');
     expect(source).toContain('item.environment === selectedEnvironment');
     expect(source).toContain('<SquareProductionSetupGuide');
+    expect(cardsSource).toContain(
+      "tokenLast4\n    ? readinessIssues.join(', ') || t('ready')\n    : t('notConfigured')"
+    );
   });
 
   it('is consolidated under the shared payment settings surface', () => {

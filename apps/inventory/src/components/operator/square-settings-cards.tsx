@@ -360,6 +360,9 @@ export function SquareWebhookCard({
   webhookUrl: string;
 }) {
   const t = useTranslations('inventory.operator.square');
+  const readinessSummary = tokenLast4
+    ? readinessIssues.join(', ') || t('ready')
+    : t('notConfigured');
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -384,14 +387,14 @@ export function SquareWebhookCard({
       </div>
       <p className="mt-3 text-muted-foreground text-xs">
         {t('readiness', {
-          issues: readinessIssues.join(', ') || t('ready'),
+          issues: readinessSummary,
         })}
       </p>
-      <p className="mt-2 text-muted-foreground text-xs">
-        {tokenLast4
-          ? t('tokenEnding', { last4: tokenLast4 })
-          : t('notConfigured')}
-      </p>
+      {tokenLast4 ? (
+        <p className="mt-2 text-muted-foreground text-xs">
+          {t('tokenEnding', { last4: tokenLast4 })}
+        </p>
+      ) : null}
     </div>
   );
 }
