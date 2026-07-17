@@ -33,7 +33,7 @@ const updateBundleSchema = z.object({
       title: z.string().trim().min(1).max(160).optional(),
     })
     .default({}),
-  expectedUpdatedAt: z.string().datetime(),
+  expectedUpdatedAt: z.string().datetime({ offset: true }),
   relations: z.array(
     z.object({
       definitionId: z.string().uuid(),
