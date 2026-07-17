@@ -34,6 +34,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { chunkManagedAssetImportIds } from '@/lib/external-projects/managed-asset-import-limits';
 import { useExternalProjectLivePreview } from '../../../external-projects/use-external-project-live-preview';
 import { optimizeEpmMediaUpload } from '../../epm-media-upload';
 import type { EpmStrings } from '../../epm-strings';
@@ -1212,23 +1213,28 @@ export function EntryDetailClient({
 
   const importExternalAssetsMutation = useMutation({
     mutationFn: async (assetIds: string[]) => {
-      let job = await createWorkspaceExternalProjectManagedAssetImportJob(
-        workspaceId,
-        assetIds
-      );
-      while (!['completed', 'failed'].includes(job.status)) {
-        job = await processWorkspaceExternalProjectManagedAssetImportJob(
+      for (const assetIdChunk of chunkManagedAssetImportIds(assetIds)) {
+        let job = await createWorkspaceExternalProjectManagedAssetImportJob(
           workspaceId,
-          job.id
+          assetIdChunk
         );
-        if (job.status === 'running') {
-          await new Promise((resolve) => setTimeout(resolve, 250));
+
+        while (!['completed', 'failed'].includes(job.status)) {
+          job = await processWorkspaceExternalProjectManagedAssetImportJob(
+            workspaceId,
+            job.id
+          );
+          if (job.status === 'running') {
+            await new Promise((resolve) => setTimeout(resolve, 250));
+          }
+        }
+
+        if (job.status !== 'completed') {
+          throw new Error(
+            `Managed media import ended with status ${job.status}`
+          );
         }
       }
-      if (job.status !== 'completed') {
-        throw new Error(`Managed media import ended with status ${job.status}`);
-      }
-      return job;
     },
     onSuccess: async () => {
       setSelectedAssetIds([]);

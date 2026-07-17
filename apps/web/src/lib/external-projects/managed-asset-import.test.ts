@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  createManagedAssetPinnedLookup,
   isPrivateNetworkAddress,
   resolveSafeManagedAssetAddress,
 } from './managed-asset-url-policy';
@@ -41,6 +42,36 @@ describe('managed external-project asset import SSRF guard', () => {
     );
 
     expect(address).toEqual({ address: '1.1.1.1', family: 4 });
+  });
+
+  it('returns an address array when Node requests an all-address lookup', () => {
+    const callback = vi.fn();
+    const address = { address: '1.1.1.1', family: 4 } as const;
+
+    createManagedAssetPinnedLookup(address)(
+      'assets.example.com',
+      { all: true },
+      callback
+    );
+
+    expect(callback).toHaveBeenCalledWith(null, [address]);
+  });
+
+  it('returns a single address and family for a standard Node lookup', () => {
+    const callback = vi.fn();
+    const address = { address: '1.1.1.1', family: 4 } as const;
+
+    createManagedAssetPinnedLookup(address)(
+      'assets.example.com',
+      { all: false },
+      callback
+    );
+
+    expect(callback).toHaveBeenCalledWith(
+      null,
+      address.address,
+      address.family
+    );
   });
 
   it('normalizes brackets before resolving a public IPv6 literal', async () => {

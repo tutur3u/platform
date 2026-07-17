@@ -6,6 +6,10 @@ import type { ExternalProjectImportJob, Json } from '@tuturuuu/types';
 import { fetch as undiciFetch } from 'undici';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
+  MAX_MANAGED_ASSET_IMPORT_JOB_ASSETS,
+  sanitizeManagedAssetImportFailureMessage,
+} from './managed-asset-import-limits';
+import {
   closeManagedAssetDispatcher,
   createManagedAssetPinnedDispatcher,
   resolveSafeManagedAssetAddress,
@@ -179,6 +183,14 @@ export async function createManagedAssetImportJob(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const assetIds = [...new Set(payload.assetIds)];
+  if (
+    assetIds.length === 0 ||
+    assetIds.length > MAX_MANAGED_ASSET_IMPORT_JOB_ASSETS
+  ) {
+    throw new ManagedAssetImportValidationError(
+      `Managed asset import jobs must contain between 1 and ${MAX_MANAGED_ASSET_IMPORT_JOB_ASSETS} unique assets`
+    );
+  }
   const { data: assets, error: assetError } = await admin
     .from('workspace_external_project_assets')
     .select('id')
@@ -331,10 +343,11 @@ export async function processManagedAssetImportJob(
         } catch (importError) {
           failures.push({
             assetId,
-            message:
+            message: sanitizeManagedAssetImportFailureMessage(
               importError instanceof Error
                 ? importError.message
-                : String(importError),
+                : String(importError)
+            ),
           });
         }
       })

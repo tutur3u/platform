@@ -1,6 +1,6 @@
 import type { LookupAddress } from 'node:dns';
 import { lookup } from 'node:dns/promises';
-import { isIP } from 'node:net';
+import { isIP, type LookupFunction } from 'node:net';
 import { Agent, type Dispatcher } from 'undici';
 
 export type ManagedAssetResolver = (
@@ -68,17 +68,21 @@ export async function resolveSafeManagedAssetAddress(
 export function createManagedAssetPinnedDispatcher(record: LookupAddress) {
   return new Agent({
     connect: {
-      lookup: ((
-        _hostname: string,
-        _options: unknown,
-        callback: (
-          error: NodeJS.ErrnoException | null,
-          address: string,
-          family: number
-        ) => void
-      ) => callback(null, record.address, record.family)) as never,
+      lookup: createManagedAssetPinnedLookup(record),
     },
   });
+}
+
+export function createManagedAssetPinnedLookup(
+  record: LookupAddress
+): LookupFunction {
+  return (_hostname, options, callback) => {
+    if (options.all) {
+      callback(null, [record]);
+      return;
+    }
+    callback(null, record.address, record.family);
+  };
 }
 
 export async function closeManagedAssetDispatcher(dispatcher: Dispatcher) {
