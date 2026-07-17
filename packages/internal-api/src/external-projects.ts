@@ -9,7 +9,9 @@ import type {
   ExternalProjectFieldDefinition,
   ExternalProjectFieldScope,
   ExternalProjectFieldType,
+  ExternalProjectImportJob,
   ExternalProjectImportReport,
+  ExternalProjectRelationDefinition,
   ExternalProjectStudioData,
   ExternalProjectSummary,
   ExternalProjectWorkspaceBindingSummary,
@@ -92,6 +94,74 @@ type WorkspaceExternalProjectFieldDefinitionPayload = {
   options?: string[];
   sort_order?: number;
 };
+
+export type WorkspaceExternalProjectRelationDefinitionPayload = {
+  cardinality: 'one' | 'many';
+  inverseLabel?: string | null;
+  isRequired?: boolean;
+  key: string;
+  label: string;
+  sortOrder?: number;
+  sourceCollectionId: string;
+  targetCollectionIds: string[];
+};
+
+type WorkspaceExternalProjectEntryBundleEntryPayload = {
+  collectionId?: string;
+  metadata?: Json;
+  profileData?: Json;
+  scheduledFor?: string | null;
+  slug?: string;
+  sortOrder?: number;
+  stableSourceId?: string | null;
+  status?: ExternalProjectEntry['status'];
+  subtitle?: string | null;
+  summary?: string | null;
+  title?: string;
+};
+
+type WorkspaceExternalProjectEntryBundleBasePayload = {
+  blocks: Array<{
+    blockType: string;
+    content: Json;
+    id?: string;
+    sortOrder?: number;
+    stableSourceId?: string | null;
+    title?: string | null;
+  }>;
+  relations: Array<{
+    definitionId: string;
+    metadata?: Json;
+    sortOrder?: number;
+    toEntryId: string;
+  }>;
+};
+
+export type WorkspaceExternalProjectEntryBundleCreatePayload =
+  WorkspaceExternalProjectEntryBundleBasePayload & {
+    entry: WorkspaceExternalProjectEntryBundleEntryPayload & {
+      collectionId: string;
+      slug: string;
+      title: string;
+    };
+  };
+
+export type WorkspaceExternalProjectEntryBundleUpdatePayload =
+  WorkspaceExternalProjectEntryBundleBasePayload & {
+    entry: WorkspaceExternalProjectEntryBundleEntryPayload;
+    expectedUpdatedAt: string;
+  };
+
+export type WorkspaceExternalProjectEntryBundle = {
+  blocks: ExternalProjectBlock[];
+  entry: ExternalProjectEntry;
+  relations: Array<Record<string, unknown>>;
+};
+
+export type WorkspaceExternalProjectRelationDefinition =
+  ExternalProjectRelationDefinition & {
+    targetCollectionIds: string[];
+  };
 
 type ExternalProjectUploadUrlResponse = {
   archivePath?: string;
@@ -624,6 +694,64 @@ export async function deleteWorkspaceExternalProjectFieldDefinition(
   );
 }
 
+export async function listWorkspaceExternalProjectRelationDefinitions(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectRelationDefinition[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/relation-definitions`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function createWorkspaceExternalProjectRelationDefinition(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectRelationDefinitionPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectRelationDefinition>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/relation-definitions`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWorkspaceExternalProjectRelationDefinition(
+  workspaceId: string,
+  relationDefinitionId: string,
+  payload: Partial<WorkspaceExternalProjectRelationDefinitionPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectRelationDefinition>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/relation-definitions/${encodePathSegment(relationDefinitionId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectRelationDefinition(
+  workspaceId: string,
+  relationDefinitionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/relation-definitions/${encodePathSegment(relationDefinitionId)}`,
+    { cache: 'no-store', method: 'DELETE' }
+  );
+}
+
 export async function updateWorkspaceExternalProjectCollection(
   workspaceId: string,
   collectionId: string,
@@ -766,6 +894,47 @@ export async function deleteWorkspaceExternalProjectAsset(
       cache: 'no-store',
       method: 'DELETE',
     }
+  );
+}
+
+export async function createWorkspaceExternalProjectManagedAssetImportJob(
+  workspaceId: string,
+  assetIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectImportJob>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/import-jobs`,
+    {
+      body: JSON.stringify({ assetIds }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function getWorkspaceExternalProjectManagedAssetImportJob(
+  workspaceId: string,
+  jobId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectImportJob>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/import-jobs/${encodePathSegment(jobId)}`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function processWorkspaceExternalProjectManagedAssetImportJob(
+  workspaceId: string,
+  jobId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectImportJob>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets/import-jobs/${encodePathSegment(jobId)}/process`,
+    { cache: 'no-store', method: 'POST' }
   );
 }
 
@@ -1012,6 +1181,23 @@ export async function createWorkspaceExternalProjectEntry(
   );
 }
 
+export async function createWorkspaceExternalProjectEntryBundle(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectEntryBundleCreatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectEntryBundle>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/bundle`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
 export async function updateWorkspaceExternalProjectEntry(
   workspaceId: string,
   entryId: string,
@@ -1030,6 +1216,24 @@ export async function updateWorkspaceExternalProjectEntry(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function updateWorkspaceExternalProjectEntryBundle(
+  workspaceId: string,
+  entryId: string,
+  payload: WorkspaceExternalProjectEntryBundleUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceExternalProjectEntryBundle>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/${encodePathSegment(entryId)}/bundle`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
     }
   );
 }

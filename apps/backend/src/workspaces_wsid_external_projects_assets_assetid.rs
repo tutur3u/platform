@@ -40,6 +40,8 @@ use crate::{
 
 const ENABLED_SECRET: &str = "EXTERNAL_PROJECT_ENABLED";
 const CANONICAL_ID_SECRET: &str = "EXTERNAL_PROJECT_CANONICAL_ID";
+const ASSET_REDIRECT_CACHE_CONTROL: &str =
+    "public, max-age=300, s-maxage=518400, stale-while-revalidate=43200";
 
 // ---------------------------------------------------------------------------
 // Row models
@@ -157,7 +159,13 @@ async fn get_asset_response(
 
     // Published + source_url: mirror `NextResponse.redirect(asset.source_url, { status: 307 })`.
     if let Some(source_url) = asset.source_url.filter(|url| !url.is_empty()) {
-        return Some(redirect_307(&source_url));
+        let is_http = url::Url::parse(&source_url)
+            .ok()
+            .is_some_and(|url| matches!(url.scheme(), "http" | "https"));
+        if !is_http {
+            return Some(error_json(404, "Asset not available"));
+        }
+        return Some(redirect_307(&source_url, ws_id, asset_id));
     }
 
     // Published + storage_path: requires a provider-specific signed read URL
@@ -312,8 +320,8 @@ fn error_json(status: u16, message: &str) -> BackendResponse {
     no_store_response(json_response(status, json!({ "error": message })))
 }
 
-fn redirect_307(url: &str) -> BackendResponse {
-    let mut response = no_store_response(BackendResponse {
+fn redirect_307(url: &str, ws_id: &str, asset_id: &str) -> BackendResponse {
+    let mut response = BackendResponse {
         allow: None,
         body: Value::Null,
         body_empty: true,
@@ -322,8 +330,17 @@ fn redirect_307(url: &str) -> BackendResponse {
         content_type: None,
         headers: Vec::new(),
         status: 307,
-    });
+    };
+    response.cache_control = Some(ASSET_REDIRECT_CACHE_CONTROL);
     response.headers.push(("location", url.to_owned()));
+    response.headers.push((
+        "vercel-cdn-cache-control",
+        "max-age=518400, stale-while-revalidate=43200".to_owned(),
+    ));
+    response.headers.push((
+        "vercel-cache-tag",
+        format!("external-project-workspace-{ws_id},external-project-asset-{asset_id}"),
+    ));
     response
 }
 
@@ -413,7 +430,7 @@ mod tests {
 
     #[test]
     fn redirect_307_sets_location_header() {
-        let response = redirect_307("https://example.com/image.png");
+        let response = redirect_307("https://example.com/image.png", "ws1", "asset1");
         assert_eq!(response.status, 307);
         assert!(
             response.headers.iter().any(
@@ -422,6 +439,7 @@ mod tests {
             "expected location header to be set"
         );
         assert!(response.body_empty, "redirect body should be empty");
+        assert_eq!(response.cache_control, Some(ASSET_REDIRECT_CACHE_CONTROL));
     }
 
     #[test]

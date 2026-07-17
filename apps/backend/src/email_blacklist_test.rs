@@ -77,6 +77,7 @@ fn request_with_method(path: &'static str, method: &'static str) -> BackendReque
         authorization: Some("Bearer caller-access-token"),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path,

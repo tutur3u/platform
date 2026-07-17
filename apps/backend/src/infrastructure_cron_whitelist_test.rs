@@ -68,6 +68,7 @@ fn request(
         authorization: Some("Bearer browser-access-token"),
         body_text,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path,

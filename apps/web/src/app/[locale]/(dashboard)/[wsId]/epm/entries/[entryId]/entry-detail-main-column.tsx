@@ -54,6 +54,7 @@ type EntryDetailMainColumnProps = {
   onCoverInputClick: () => void;
   onDeleteSelectedMedia: () => void;
   onDeleteSingleAsset: (assetId: string) => void;
+  onImportSelectedExternalMedia: () => void;
   onDescriptionChange: (content: JSONContent | null) => void;
   onOpenPreview: () => void;
   onSaveAssetCaption: (assetId: string) => void;
@@ -67,6 +68,7 @@ type EntryDetailMainColumnProps = {
   saveCoverPending: boolean;
   selectedAssetCount: number;
   selectedAssetIds: string[];
+  selectedExternalAssetCount: number;
   setAsCoverPending: boolean;
   strings: EpmStrings;
   subtitle: string;
@@ -95,6 +97,7 @@ export function EntryDetailMainColumn({
   onCoverInputClick,
   onDeleteSelectedMedia,
   onDeleteSingleAsset,
+  onImportSelectedExternalMedia,
   onDescriptionChange,
   onOpenPreview,
   onSaveAssetCaption,
@@ -108,6 +111,7 @@ export function EntryDetailMainColumn({
   saveCoverPending,
   selectedAssetCount,
   selectedAssetIds,
+  selectedExternalAssetCount,
   setAsCoverPending,
   strings,
   subtitle,
@@ -340,6 +344,21 @@ export function EntryDetailMainColumn({
                   : strings.bulkRemoveMediaAction}
               </Button>
             ) : null}
+            {selectedExternalAssetCount > 0 ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={mediaProcessing}
+                onClick={onImportSelectedExternalMedia}
+              >
+                {mediaProcessing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                )}
+                {strings.importExternalAssetsAction}
+              </Button>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
@@ -395,6 +414,13 @@ export function EntryDetailMainColumn({
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="outline">
                         {index === 0 ? strings.coverBadge : strings.assetsLabel}
+                      </Badge>
+                      <Badge
+                        variant={asset.source_url ? 'secondary' : 'outline'}
+                      >
+                        {asset.source_url
+                          ? strings.externalAssetLabel
+                          : strings.managedAssetLabel}
                       </Badge>
                       <div className="flex items-center gap-2">
                         {index !== 0 ? (

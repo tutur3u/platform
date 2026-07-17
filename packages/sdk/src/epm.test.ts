@@ -737,7 +737,6 @@ describe('EpmClient', () => {
             writing: [],
           },
           reference: {
-            cofiSamples: [],
             entityTags: [],
             mediaAssets: [],
             moodboards: [],

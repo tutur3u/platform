@@ -433,6 +433,7 @@ mod tests {
             authorization: Some("Bearer browser-access-token"),
             body_text: None,
             cookie: None,
+            if_none_match: None,
             method,
             origin: None,
             path: ABUSE_INTELLIGENCE_PATH,

@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 492,
+        "legacyNext": 499,
         "migrated": 66,
-        "percentComplete": 13.53,
-        "remaining": 492,
+        "percentComplete": 13.37,
+        "remaining": 499,
         "terminal": 77,
-        "total": 569,
+        "total": 576,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 499,
+        "legacyNext": 506,
         "migrated": 71,
-        "percentComplete": 14.11,
-        "remaining": 499,
+        "percentComplete": 13.95,
+        "remaining": 506,
         "terminal": 82,
-        "total": 581,
+        "total": 588,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 550,
+      "legacyNext": 557,
       "migrated": 219,
-      "percentComplete": 29.67,
-      "remaining": 550,
+      "percentComplete": 29.4,
+      "remaining": 557,
       "terminal": 232,
-      "total": 782,
+      "total": 789,
       "unknownStatus": 0
     }
   },
@@ -3069,6 +3069,33 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/assets/import-jobs",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId/process:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/process/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/assets/import-jobs/:jobId/process",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/process/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/external-projects/assets/upload-url:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/upload-url/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -3141,6 +3168,15 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/entries/:entryId/bundle:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route.ts",
+      "kind": "api",
+      "methods": ["PUT"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/entries/:entryId/bundle",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/bundle/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/external-projects/entries/:entryId/duplicate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate/route.ts",
       "kind": "api",
       "methods": ["POST"],
@@ -3173,6 +3209,15 @@
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/entries/bulk",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/bulk/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/entries/bundle:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/bundle/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/entries/bundle",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/entries/bundle/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -3281,6 +3326,24 @@
       "methods": ["GET", "PUT"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/members/roles/default",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/roles/default/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/relation-definitions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/route.ts",
+      "kind": "api",
+      "methods": ["GET", "POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/relation-definitions",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/relation-definitions/:relationDefinitionId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/[relationDefinitionId]/route.ts",
+      "kind": "api",
+      "methods": ["PATCH", "DELETE"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/relation-definitions/:relationDefinitionId",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/relation-definitions/[relationDefinitionId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7457,20 +7520,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 569,
+    "apiRoutes": 576,
     "cronRoutes": 7,
     "layouts": 54,
     "pages": 144,
-    "routeHandlers": 581,
+    "routeHandlers": 588,
     "methodCounts": {
-      "GET": 295,
+      "GET": 297,
       "HEAD": 1,
-      "POST": 286,
-      "PUT": 53,
-      "PATCH": 60,
-      "DELETE": 100,
+      "POST": 290,
+      "PUT": 54,
+      "PATCH": 61,
+      "DELETE": 101,
       "OPTIONS": 23
     },
-    "total": 782
+    "total": 789
   }
 }

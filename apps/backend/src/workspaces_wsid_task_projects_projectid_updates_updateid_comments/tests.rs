@@ -71,6 +71,7 @@ fn request() -> BackendRequest<'static> {
         authorization: Some("Bearer user-token"),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method: "GET",
         origin: None,
         path: "/api/v1/workspaces/ws-1/task-projects/project-1/updates/update-1/comments",

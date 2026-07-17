@@ -93,6 +93,7 @@ pub struct BackendRequest<'a> {
     pub authorization: Option<&'a str>,
     pub body_text: Option<&'a str>,
     pub cookie: Option<&'a str>,
+    pub if_none_match: Option<&'a str>,
     pub method: &'a str,
     pub origin: Option<&'a str>,
     pub path: &'a str,

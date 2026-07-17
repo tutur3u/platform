@@ -36,7 +36,6 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
   'character-relationships',
   'character-factions',
   'character-locations',
-  'character-worlds',
   'portfolio-art',
   'portfolio-writing',
   'portfolio-games',
@@ -44,7 +43,6 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
   'commission-addons',
   'commission-styles',
   'commission-pictures',
-  'commission-service-addons',
   'commission-blacklist',
   'blog-posts',
   'heaven-space-passages',
@@ -56,10 +54,8 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
   'event-participants',
   'event-factions',
   'tags',
-  'entity-tags',
   'moodboards',
   'media-assets',
-  'cofi-samples',
 ] as const;
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {

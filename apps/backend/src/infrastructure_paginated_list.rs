@@ -300,6 +300,7 @@ mod tests {
             authorization: Some("Bearer caller-access-token"),
             body_text: None,
             cookie: None,
+            if_none_match: None,
             method: "GET",
             origin: None,
             path: TEST_PATH,

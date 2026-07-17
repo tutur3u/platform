@@ -30589,6 +30589,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'workspace_external_project_entries_ws_collection_fkey';
+            columns: ['ws_id', 'collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
             foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -30707,7 +30714,9 @@ export type Database = {
           from_entry_id: string;
           id: string;
           metadata: Json;
+          relation_definition_id: string | null;
           relation_type: string;
+          sort_order: number;
           to_entry_id: string;
           ws_id: string;
         };
@@ -30716,7 +30725,9 @@ export type Database = {
           from_entry_id: string;
           id?: string;
           metadata?: Json;
+          relation_definition_id?: string | null;
           relation_type: string;
+          sort_order?: number;
           to_entry_id: string;
           ws_id: string;
         };
@@ -30725,11 +30736,20 @@ export type Database = {
           from_entry_id?: string;
           id?: string;
           metadata?: Json;
+          relation_definition_id?: string | null;
           relation_type?: string;
+          sort_order?: number;
           to_entry_id?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_definition_fkey';
+            columns: ['ws_id', 'relation_definition_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_relation_definitions';
+            referencedColumns: ['ws_id', 'id'];
+          },
           {
             foreignKeyName: 'workspace_external_project_entry_relations_from_entry_id_fkey';
             columns: ['from_entry_id'];
@@ -30738,11 +30758,25 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'workspace_external_project_entry_relations_from_workspace_fkey';
+            columns: ['ws_id', 'from_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
             foreignKeyName: 'workspace_external_project_entry_relations_to_entry_id_fkey';
             columns: ['to_entry_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_external_project_entries';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_entry_relations_to_workspace_fkey';
+            columns: ['ws_id', 'to_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_entries';
+            referencedColumns: ['ws_id', 'id'];
           },
           {
             foreignKeyName: 'workspace_external_project_entry_relations_ws_id_fkey';
@@ -31189,6 +31223,185 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      workspace_external_project_relation_definition_targets: {
+        Row: {
+          created_at: string;
+          id: string;
+          relation_definition_id: string;
+          target_collection_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          relation_definition_id: string;
+          target_collection_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          relation_definition_id?: string;
+          target_collection_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targe_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targe_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targe_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targe_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targets_collecti';
+            columns: ['ws_id', 'target_collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definition_targets_definiti';
+            columns: ['ws_id', 'relation_definition_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_relation_definitions';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      workspace_external_project_relation_definitions: {
+        Row: {
+          cardinality: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          inverse_label: string | null;
+          is_required: boolean;
+          key: string;
+          label: string;
+          sort_order: number;
+          source_collection_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          cardinality?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          inverse_label?: string | null;
+          is_required?: boolean;
+          key: string;
+          label: string;
+          sort_order?: number;
+          source_collection_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          cardinality?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          inverse_label?: string | null;
+          is_required?: boolean;
+          key?: string;
+          label?: string;
+          sort_order?: number;
+          source_collection_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_relation_definitions_ws_source_fkey';
+            columns: ['ws_id', 'source_collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['ws_id', 'id'];
           },
         ];
       };
@@ -39470,6 +39683,15 @@ export type Database = {
         Args: { p_module_group_id: string; p_module_ids: string[] };
         Returns: undefined;
       };
+      replace_workspace_external_project_relation_definition_targets: {
+        Args: {
+          p_actor_id: string;
+          p_definition_id: string;
+          p_target_collection_ids: string[];
+          p_ws_id: string;
+        };
+        Returns: string[];
+      };
       reserve_fixed_ai_credits: {
         Args: {
           p_amount: number;
@@ -39981,6 +40203,18 @@ export type Database = {
       upsert_realtime_log_aggregations: {
         Args: { p_logs: Json };
         Returns: undefined;
+      };
+      upsert_workspace_external_project_entry_bundle: {
+        Args: {
+          p_actor_id: string;
+          p_blocks?: Json;
+          p_entry: Json;
+          p_entry_id?: string;
+          p_expected_updated_at?: string;
+          p_relations?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       upsert_workspace_subscription_error: {
         Args: {

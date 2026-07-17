@@ -224,10 +224,6 @@ function normalizeExocorpseLoadingDataUrls(
       ),
     },
     reference: {
-      cofiSamples: normalizeExocorpseEntriesUrls(
-        payload.reference.cofiSamples,
-        apiBaseUrl
-      ),
       entityTags: normalizeExocorpseEntriesUrls(
         payload.reference.entityTags,
         apiBaseUrl

@@ -96,6 +96,7 @@ fn request_with_bearer(access_token: &'static str) -> BackendRequest<'static> {
         authorization: Some(access_token),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method: "GET",
         origin: None,
         path: BUDGET_STATUS_PATH,

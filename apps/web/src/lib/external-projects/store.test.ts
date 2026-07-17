@@ -390,7 +390,10 @@ describe('external project store cleanup', () => {
 
         if (
           table === 'workspace_external_project_blocks' ||
-          table === 'workspace_external_project_assets'
+          table === 'workspace_external_project_assets' ||
+          table === 'workspace_external_project_relation_definitions' ||
+          table === 'workspace_external_project_relation_definition_targets' ||
+          table === 'workspace_external_project_entry_relations'
         ) {
           return {
             select: vi.fn(() =>

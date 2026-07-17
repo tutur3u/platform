@@ -6,7 +6,7 @@ use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::extract::State;
 use axum::http::header::{
-    ALLOW, AUTHORIZATION, CACHE_CONTROL, CONTENT_TYPE, COOKIE, HOST, ORIGIN, REFERER,
+    ALLOW, AUTHORIZATION, CACHE_CONTROL, CONTENT_TYPE, COOKIE, HOST, IF_NONE_MATCH, ORIGIN, REFERER,
 };
 use axum::http::{HeaderValue, Request, Response, StatusCode};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -53,6 +53,11 @@ async fn handle(State(state): State<NativeState>, request: Request<Body>) -> Res
         .get(COOKIE)
         .and_then(|value| value.to_str().ok())
         .map(str::to_owned);
+    let if_none_match = parts
+        .headers
+        .get(IF_NONE_MATCH)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
     let origin = parts
         .headers
         .get(ORIGIN)
@@ -78,6 +83,7 @@ async fn handle(State(state): State<NativeState>, request: Request<Body>) -> Res
             authorization: authorization.as_deref(),
             body_text: body_text.as_deref(),
             cookie: cookie.as_deref(),
+            if_none_match: if_none_match.as_deref(),
             method: &method,
             origin: origin.as_deref(),
             path: &path,

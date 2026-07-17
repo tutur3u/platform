@@ -105,6 +105,8 @@ export type EpmStrings = {
   focusWorkflow: string;
   fullscreenAction: string;
   importAction: string;
+  importExternalAssetsAction: string;
+  importExternalAssetsSuccessToast: string;
   importHint: string;
   loadingPreviewLabel: string;
   metadataLabel: string;
@@ -137,6 +139,8 @@ export type EpmStrings = {
   markdownPreviewLabel: string;
   markdownWriteLabel: string;
   mediaProcessingLabel: string;
+  externalAssetLabel: string;
+  managedAssetLabel: string;
   navigationTitleDescription: string;
   navigationTitleLabel: string;
   publishAction: string;
@@ -149,6 +153,9 @@ export type EpmStrings = {
   renderedLabel: string;
   replaceCoverAction: string;
   removeMediaAction: string;
+  relationsDescription: string;
+  relationsSaveSuccessToast: string;
+  relationsTitle: string;
   saveAction: string;
   saveCoverAction: string;
   saveMediaDetailsAction: string;
@@ -324,10 +331,16 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     focusWorkflow: t('epm.focus_workflow'),
     fullscreenAction: t('epm.fullscreen_action'),
     importAction: t('epm.import_action'),
+    importExternalAssetsAction: t('epm.import_external_assets_action'),
+    importExternalAssetsSuccessToast: t(
+      'epm.import_external_assets_success_toast'
+    ),
     importHint: t('epm.import_hint'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
     metadataLabel: t('epm.metadata_label'),
     mediaProcessingLabel: t('epm.media_processing_label'),
+    externalAssetLabel: t('epm.external_asset_label'),
+    managedAssetLabel: t('epm.managed_asset_label'),
     navigationTitleDescription: t('epm.navigation_title_description'),
     navigationTitleLabel: t('epm.navigation_title_label'),
     missingLeadImageLabel: t('epm.missing_lead_image_label'),
@@ -368,6 +381,9 @@ export function buildEpmStrings(t: (key: any) => string): EpmStrings {
     renderedLabel: t('epm.rendered_label'),
     replaceCoverAction: t('epm.replace_cover_action'),
     removeMediaAction: t('epm.remove_media_action'),
+    relationsDescription: t('epm.relations_description'),
+    relationsSaveSuccessToast: t('epm.relations_save_success_toast'),
+    relationsTitle: t('epm.relations_title'),
     saveAction: t('epm.save_action'),
     saveCoverAction: t('epm.save_cover_action'),
     saveMediaDetailsAction: t('epm.save_media_details_action'),

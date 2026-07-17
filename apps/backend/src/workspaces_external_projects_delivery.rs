@@ -21,6 +21,12 @@ use crate::{
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
 };
 
+mod loading;
+#[cfg(test)]
+mod tests;
+
+use loading::{as_json_object_value, build_loading_data};
+
 const PATH_PREFIX: &str = "/api/v1/workspaces/";
 const PATH_SUFFIX: &str = "/external-projects/delivery";
 
@@ -29,6 +35,8 @@ const EXTERNAL_PROJECT_CANONICAL_ID_SECRET: &str = "EXTERNAL_PROJECT_CANONICAL_I
 
 const UNAVAILABLE_MESSAGE: &str = "External project delivery unavailable for this workspace";
 const FAILURE_MESSAGE: &str = "Failed to build external project delivery payload";
+const PUBLIC_DELIVERY_CACHE_CONTROL: &str =
+    "public, max-age=0, s-maxage=86400, stale-while-revalidate=43200";
 
 pub(crate) async fn handle_workspaces_external_projects_delivery_route(
     config: &BackendConfig,
@@ -44,7 +52,7 @@ pub(crate) async fn handle_workspaces_external_projects_delivery_route(
     }
 
     Some(match request.method {
-        "GET" => delivery_response(config, ws_id, outbound).await,
+        "GET" => delivery_response(config, ws_id, request.if_none_match, outbound).await,
         method => no_store_response(method_not_allowed(method, "GET")),
     })
 }
@@ -52,6 +60,7 @@ pub(crate) async fn handle_workspaces_external_projects_delivery_route(
 async fn delivery_response(
     config: &BackendConfig,
     ws_id: &str,
+    if_none_match: Option<&str>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
     let contact_data = &config.contact_data;
@@ -67,7 +76,7 @@ async fn delivery_response(
     }
 
     match build_delivery_payload(contact_data, outbound, ws_id, &binding).await {
-        Ok(payload) => no_store_response(json_response(200, payload)),
+        Ok(payload) => public_delivery_response(payload, ws_id, if_none_match),
         Err(()) => error_response(500, FAILURE_MESSAGE),
     }
 }
@@ -269,18 +278,41 @@ async fn build_delivery_payload(
 
     let blocks = list_blocks(contact_data, outbound, ws_id, &entry_ids).await?;
     let assets = list_assets(contact_data, outbound, ws_id, &entry_ids).await?;
+    let relations = list_relations(contact_data, outbound, ws_id).await?;
+    let relation_definitions = list_relation_definitions(contact_data, outbound, ws_id).await?;
 
-    let collections_payload =
-        build_collections_payload(ws_id, &collections, &entries, &blocks, &assets);
+    let collections_payload = build_collections_payload(
+        ws_id,
+        &collections,
+        &entries,
+        &blocks,
+        &assets,
+        &relations,
+        &relation_definitions,
+    );
     let loading_data = build_loading_data(adapter, &collections_payload);
+    let latest_update = latest_delivery_update(
+        &collections,
+        &entries,
+        &blocks,
+        &assets,
+        &relations,
+        &relation_definitions,
+    );
+    let revision = latest_update
+        .as_deref()
+        .map(digits_only)
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "empty".to_owned());
 
     Ok(json!({
         "adapter": adapter,
         "canonicalProjectId": canonical_id,
         "collections": collections_payload,
-        "generatedAt": generated_at(),
+        "generatedAt": latest_update.unwrap_or_else(|| "1970-01-01T00:00:00.000Z".to_owned()),
         "loadingData": loading_data,
         "profileData": profile_data,
+        "revision": revision,
         "workspaceId": ws_id,
     }))
 }
@@ -291,7 +323,13 @@ fn build_collections_payload(
     entries: &[Value],
     blocks: &[Value],
     assets: &[Value],
+    relations: &[Value],
+    relation_definitions: &[Value],
 ) -> Vec<Value> {
+    let published_entry_ids: std::collections::HashSet<&str> = entries
+        .iter()
+        .filter_map(|entry| entry.get("id").and_then(Value::as_str))
+        .collect();
     collections
         .iter()
         .map(|collection| {
@@ -314,11 +352,37 @@ fn build_collections_payload(
                         .filter(|block| block.get("entry_id").and_then(Value::as_str) == entry_id)
                         .cloned()
                         .collect();
+                    let entry_relations: Vec<Value> = relations
+                        .iter()
+                        .filter(|relation| {
+                            relation.get("from_entry_id").and_then(Value::as_str) == entry_id
+                                && relation
+                                    .get("to_entry_id")
+                                    .and_then(Value::as_str)
+                                    .is_some_and(|id| published_entry_ids.contains(id))
+                        })
+                        .filter_map(|relation| {
+                            let definition_id = relation
+                                .get("relation_definition_id")
+                                .and_then(Value::as_str)?;
+                            let definition = relation_definitions.iter().find(|definition| {
+                                definition.get("id").and_then(Value::as_str) == Some(definition_id)
+                            })?;
+                            Some(json!({
+                                "definitionId": definition_id,
+                                "id": relation.get("id").cloned().unwrap_or(Value::Null),
+                                "key": definition.get("key").cloned().unwrap_or(Value::Null),
+                                "metadata": relation.get("metadata").cloned().unwrap_or_else(|| json!({})),
+                                "to_entry_id": relation.get("to_entry_id").cloned().unwrap_or(Value::Null),
+                            }))
+                        })
+                        .collect();
 
                     // `{ ...entry, assets, blocks }` (full entry row preserved).
                     let mut obj = as_object(entry);
                     obj.insert("assets".to_owned(), Value::Array(entry_assets));
                     obj.insert("blocks".to_owned(), Value::Array(entry_blocks));
+                    obj.insert("relations".to_owned(), Value::Array(entry_relations));
                     Value::Object(obj)
                 })
                 .collect();
@@ -334,24 +398,21 @@ fn build_collections_payload(
 /// Mirror the `assets.map(...)` projection plus `buildDeliveryAssetUrl`.
 fn build_delivery_asset(ws_id: &str, asset: &Value) -> Value {
     let id = asset.get("id").and_then(Value::as_str);
-    let source_url = asset
-        .get("source_url")
+    let asset_revision = asset
+        .get("updated_at")
         .and_then(Value::as_str)
-        .filter(|value| !value.is_empty());
-
-    // buildDeliveryAssetUrl (no transform in delivery payload).
-    let asset_url = match (source_url, id) {
-        (Some(source), _) => Some(source.to_owned()),
-        (None, Some(id)) => Some(format!(
-            "/api/v1/workspaces/{ws_id}/external-projects/assets/{id}"
-        )),
-        (None, None) => None,
-    };
+        .map(digits_only)
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "0".to_owned());
+    let asset_url = id.map(|id| {
+        format!("/api/v1/workspaces/{ws_id}/external-projects/assets/{id}?v={asset_revision}")
+    });
 
     json!({
         "alt_text": asset.get("alt_text").cloned().unwrap_or(Value::Null),
         "asset_type": asset.get("asset_type").cloned().unwrap_or(Value::Null),
         "assetUrl": asset_url,
+        "assetRevision": asset_revision,
         "block_id": asset.get("block_id").cloned().unwrap_or(Value::Null),
         "entry_id": asset.get("entry_id").cloned().unwrap_or(Value::Null),
         "id": asset.get("id").cloned().unwrap_or(Value::Null),
@@ -359,215 +420,7 @@ fn build_delivery_asset(ws_id: &str, asset: &Value) -> Value {
         "sort_order": asset.get("sort_order").cloned().unwrap_or(Value::Null),
         "source_url": asset.get("source_url").cloned().unwrap_or(Value::Null),
         "storage_path": asset.get("storage_path").cloned().unwrap_or(Value::Null),
-    })
-}
-
-// --- Loading data ------------------------------------------------------------
-
-fn build_loading_data(adapter: &str, collections: &[Value]) -> Value {
-    if adapter == "yoola" {
-        return build_yoola_loading_data(collections);
-    }
-
-    // Generic adapter loading data.
-    let mut sections = Map::new();
-    for collection in collections {
-        let slug = collection
-            .get("slug")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let entry_count = collection
-            .get("entries")
-            .and_then(Value::as_array)
-            .map(|entries| entries.len())
-            .unwrap_or(0);
-        sections.insert(
-            slug.to_owned(),
-            json!({
-                "collectionType": collection.get("collection_type").cloned().unwrap_or(Value::Null),
-                "entryCount": entry_count,
-                "title": collection.get("title").cloned().unwrap_or(Value::Null),
-            }),
-        );
-    }
-
-    json!({
-        "adapter": adapter,
-        "sections": Value::Object(sections),
-    })
-}
-
-fn build_yoola_loading_data(collections: &[Value]) -> Value {
-    let empty: Vec<Value> = Vec::new();
-    let collection_entries = |slug: &str| -> &[Value] {
-        collections
-            .iter()
-            .find(|collection| collection.get("slug").and_then(Value::as_str) == Some(slug))
-            .and_then(|collection| collection.get("entries"))
-            .and_then(Value::as_array)
-            .map(Vec::as_slice)
-            .unwrap_or(&empty)
-    };
-
-    // Artworks.
-    let artworks: Vec<Value> = collection_entries("artworks")
-        .iter()
-        .map(build_yoola_artwork)
-        .collect();
-
-    let mut artwork_by_slug: Map<String, Value> = Map::new();
-    for artwork in &artworks {
-        if let Some(slug) = artwork.get("slug").and_then(Value::as_str) {
-            artwork_by_slug.insert(slug.to_owned(), artwork.clone());
-        }
-    }
-
-    // Lore capsules.
-    let lore_capsules: Vec<Value> = collection_entries("lore-capsules")
-        .iter()
-        .map(|entry| build_yoola_lore_capsule(entry, &artwork_by_slug))
-        .collect();
-
-    // Singleton sections (slug -> section item).
-    let mut singleton_sections: Map<String, Value> = Map::new();
-    for entry in collection_entries("singleton-sections") {
-        let slug = entry
-            .get("slug")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .to_owned();
-        singleton_sections.insert(slug, build_yoola_section(entry));
-    }
-
-    // artworksByCategory.
-    let mut artworks_by_category: Map<String, Value> = Map::new();
-    for artwork in &artworks {
-        let category = artwork
-            .get("category")
-            .and_then(Value::as_str)
-            .unwrap_or("UNCATEGORIZED")
-            .to_owned();
-        if !artworks_by_category.contains_key(&category) {
-            artworks_by_category.insert(category.clone(), Value::Array(Vec::new()));
-        }
-        if let Some(Value::Array(bucket)) = artworks_by_category.get_mut(&category) {
-            bucket.push(artwork.clone());
-        }
-    }
-
-    // Configured artwork categories filtered by availability.
-    let available_categories: std::collections::HashSet<String> = artworks_by_category
-        .keys()
-        .map(|category| category.to_lowercase())
-        .collect();
-    let gallery_profile = singleton_sections
-        .get("gallery")
-        .and_then(|section| section.get("profileData"))
-        .map(as_json_object_value)
-        .unwrap_or_else(|| Value::Object(Map::new()));
-    let configured_categories: Vec<Value> =
-        normalize_string_array(gallery_profile.get("categoryOptions"))
-            .into_iter()
-            .filter(|category| available_categories.contains(&category.to_lowercase()))
-            .map(Value::String)
-            .collect();
-
-    let featured_artwork = artworks.first().cloned().unwrap_or(Value::Null);
-
-    json!({
-        "adapter": "yoola",
-        "artworkCategories": configured_categories,
-        "artworks": artworks,
-        "artworksByCategory": Value::Object(artworks_by_category),
-        "featuredArtwork": featured_artwork,
-        "loreCapsules": lore_capsules,
-        "singletonSections": Value::Object(singleton_sections),
-    })
-}
-
-fn build_yoola_artwork(entry: &Value) -> Value {
-    let profile = json_object_field(entry, "profile_data");
-    let assets = entry.get("assets").and_then(Value::as_array);
-    let lead_asset = assets.and_then(|assets| {
-        assets
-            .iter()
-            .find(|asset| asset.get("asset_type").and_then(Value::as_str) == Some("image"))
-    });
-
-    json!({
-        "altText": lead_asset
-            .and_then(|asset| asset.get("alt_text"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "assetId": lead_asset
-            .and_then(|asset| asset.get("id"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "assetUrl": lead_asset
-            .and_then(|asset| asset.get("assetUrl"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "caption": find_asset_caption(lead_asset),
-        "category": as_string(profile.get("category")),
-        "entryId": entry.get("id").cloned().unwrap_or(Value::Null),
-        "height": as_nullable_number(profile.get("height")),
-        "label": as_string(profile.get("label")),
-        "note": as_string(profile.get("note")),
-        "orientation": as_string(profile.get("orientation")),
-        "rarity": as_string(profile.get("rarity")),
-        "slug": entry.get("slug").cloned().unwrap_or(Value::Null),
-        "summary": entry.get("summary").cloned().unwrap_or(Value::Null),
-        "title": entry.get("title").cloned().unwrap_or(Value::Null),
-        "width": as_nullable_number(profile.get("width")),
-        "year": as_string(profile.get("year")),
-    })
-}
-
-fn build_yoola_lore_capsule(entry: &Value, artwork_by_slug: &Map<String, Value>) -> Value {
-    let profile = json_object_field(entry, "profile_data");
-    let artwork_slug = profile
-        .get("artworkSlug")
-        .and_then(Value::as_str)
-        .filter(|value| !value.is_empty());
-    let artwork_entry = artwork_slug.and_then(|slug| artwork_by_slug.get(slug));
-    let markdown = find_markdown_block_markdown(entry);
-
-    json!({
-        "artworkAssetUrl": artwork_entry
-            .and_then(|artwork| artwork.get("assetUrl"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "artworkEntryId": artwork_entry
-            .and_then(|artwork| artwork.get("entryId"))
-            .cloned()
-            .unwrap_or(Value::Null),
-        "bodyMarkdown": markdown.clone(),
-        "channel": as_string(profile.get("channel")),
-        "date": as_string(profile.get("date")),
-        "entryId": entry.get("id").cloned().unwrap_or(Value::Null),
-        "excerptMarkdown": markdown,
-        "metadata": json_object_field(entry, "metadata"),
-        "profileData": Value::Object(profile.clone()),
-        "slug": entry.get("slug").cloned().unwrap_or(Value::Null),
-        "status": as_string(profile.get("status")),
-        "subtitle": entry.get("subtitle").cloned().unwrap_or(Value::Null),
-        "summary": entry.get("summary").cloned().unwrap_or(Value::Null),
-        "tags": as_string_array(profile.get("tags")),
-        "teaser": as_string(profile.get("teaser")),
-        "title": entry.get("title").cloned().unwrap_or(Value::Null),
-    })
-}
-
-fn build_yoola_section(entry: &Value) -> Value {
-    json!({
-        "bodyMarkdown": find_markdown_block_markdown(entry),
-        "entryId": entry.get("id").cloned().unwrap_or(Value::Null),
-        "metadata": json_object_field(entry, "metadata"),
-        "profileData": Value::Object(json_object_field(entry, "profile_data")),
-        "slug": entry.get("slug").cloned().unwrap_or(Value::Null),
-        "subtitle": entry.get("subtitle").cloned().unwrap_or(Value::Null),
-        "summary": entry.get("summary").cloned().unwrap_or(Value::Null),
-        "title": entry.get("title").cloned().unwrap_or(Value::Null),
+        "updated_at": asset.get("updated_at").cloned().unwrap_or(Value::Null),
     })
 }
 
@@ -657,6 +510,38 @@ async fn list_assets(
     fetch_rows(contact_data, outbound, &url).await
 }
 
+async fn list_relations(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    ws_id: &str,
+) -> Result<Vec<Value>, ()> {
+    let Some(url) = contact_data.rest_url(
+        "workspace_external_project_entry_relations",
+        &[
+            ("select", "*".to_owned()),
+            ("ws_id", format!("eq.{ws_id}")),
+            ("order", "sort_order.asc,created_at.asc".to_owned()),
+        ],
+    ) else {
+        return Err(());
+    };
+    fetch_rows(contact_data, outbound, &url).await
+}
+
+async fn list_relation_definitions(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    ws_id: &str,
+) -> Result<Vec<Value>, ()> {
+    let Some(url) = contact_data.rest_url(
+        "workspace_external_project_relation_definitions",
+        &[("select", "*".to_owned()), ("ws_id", format!("eq.{ws_id}"))],
+    ) else {
+        return Err(());
+    };
+    fetch_rows(contact_data, outbound, &url).await
+}
+
 async fn fetch_rows(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
@@ -694,146 +579,94 @@ fn as_object(value: &Value) -> Map<String, Value> {
     value.as_object().cloned().unwrap_or_default()
 }
 
-/// `asJsonObject`: object passthrough, otherwise `{}`.
-fn as_json_object_value(value: &Value) -> Value {
-    if value.is_object() {
-        value.clone()
-    } else {
-        Value::Object(Map::new())
-    }
+fn digits_only(value: &str) -> String {
+    value.chars().filter(char::is_ascii_digit).collect()
 }
 
-/// Read a field of `entry` as a JSON object map (or empty map).
-fn json_object_field(entry: &Value, key: &str) -> Map<String, Value> {
-    entry
-        .get(key)
-        .and_then(Value::as_object)
-        .cloned()
-        .unwrap_or_default()
-}
-
-/// `asString`: non-empty trimmed string -> the original string, else null.
-fn as_string(value: Option<&Value>) -> Value {
-    match value.and_then(Value::as_str) {
-        Some(text) if !text.trim().is_empty() => Value::String(text.to_owned()),
-        _ => Value::Null,
-    }
-}
-
-/// `asNullableNumber`: finite number -> number, else null.
-fn as_nullable_number(value: Option<&Value>) -> Value {
-    match value {
-        Some(Value::Number(number)) if number.as_f64().is_some_and(f64::is_finite) => {
-            Value::Number(number.clone())
-        }
-        _ => Value::Null,
-    }
-}
-
-/// `asStringArray`: array of strings (drops non-strings).
-fn as_string_array(value: Option<&Value>) -> Value {
-    let items: Vec<Value> = value
-        .and_then(Value::as_array)
-        .map(|array| {
-            array
-                .iter()
-                .filter(|item| item.is_string())
-                .cloned()
-                .collect()
+fn latest_delivery_update(
+    collections: &[Value],
+    entries: &[Value],
+    blocks: &[Value],
+    assets: &[Value],
+    relations: &[Value],
+    definitions: &[Value],
+) -> Option<String> {
+    collections
+        .iter()
+        .chain(entries)
+        .chain(blocks)
+        .chain(assets)
+        .chain(relations)
+        .chain(definitions)
+        .filter_map(|row| {
+            row.get("updated_at")
+                .or_else(|| row.get("created_at"))
+                .and_then(Value::as_str)
         })
-        .unwrap_or_default();
-    Value::Array(items)
+        .max()
+        .map(str::to_owned)
 }
 
-/// `normalizeStringArray`: trim, drop empties, dedupe (preserving first-seen).
-fn normalize_string_array(value: Option<&Value>) -> Vec<String> {
-    let mut seen = std::collections::HashSet::new();
-    let mut result = Vec::new();
-    if let Some(array) = value.and_then(Value::as_array) {
-        for item in array {
-            if let Some(text) = item.as_str() {
-                let trimmed = text.trim();
-                if !trimmed.is_empty() && seen.insert(trimmed.to_owned()) {
-                    result.push(trimmed.to_owned());
+fn public_delivery_response(
+    payload: Value,
+    ws_id: &str,
+    if_none_match: Option<&str>,
+) -> BackendResponse {
+    let revision = payload
+        .get("revision")
+        .and_then(Value::as_str)
+        .unwrap_or("empty")
+        .to_owned();
+    let mut cache_tags = vec![format!("external-project-workspace-{ws_id}")];
+    if let Some(collections) = payload.get("collections").and_then(Value::as_array) {
+        for collection in collections {
+            if let Some(entries) = collection.get("entries").and_then(Value::as_array) {
+                for entry in entries {
+                    if let Some(assets) = entry.get("assets").and_then(Value::as_array) {
+                        for asset in assets {
+                            if let Some(id) = asset.get("id").and_then(Value::as_str) {
+                                let tag = format!("external-project-asset-{id}");
+                                if cache_tags.len() < 128 && !cache_tags.contains(&tag) {
+                                    cache_tags.push(tag);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    result
-}
-
-/// `findAssetCaption`: asset.metadata.caption as string-or-null.
-fn find_asset_caption(asset: Option<&Value>) -> Value {
-    let metadata = asset
-        .and_then(|asset| asset.get("metadata"))
-        .and_then(Value::as_object);
-    as_string(metadata.and_then(|metadata| metadata.get("caption")))
-}
-
-/// `findMarkdownBlockMarkdown`: first markdown block's `content.markdown`.
-fn find_markdown_block_markdown(entry: &Value) -> Value {
-    let Some(blocks) = entry.get("blocks").and_then(Value::as_array) else {
-        return Value::Null;
+    let etag = format!("W/\"{revision}\"");
+    let not_modified = if_none_match.is_some_and(|value| if_none_match_matches(value, &etag));
+    let mut response = if not_modified {
+        let mut response = json_response(304, Value::Null);
+        response.body_empty = true;
+        response.content_type = None;
+        response
+    } else {
+        json_response(200, payload)
     };
-
-    let markdown_block = blocks.iter().find(|block| {
-        block.get("block_type").and_then(Value::as_str) == Some("markdown")
-            && block
-                .get("content")
-                .and_then(Value::as_object)
-                .and_then(|content| content.get("markdown"))
-                .is_some_and(Value::is_string)
-    });
-
-    let content = markdown_block
-        .and_then(|block| block.get("content"))
-        .and_then(Value::as_object);
-    as_string(content.and_then(|content| content.get("markdown")))
+    response.cache_control = Some(PUBLIC_DELIVERY_CACHE_CONTROL);
+    response.headers.push(("etag", etag));
+    response.headers.push((
+        "vercel-cdn-cache-control",
+        "max-age=86400, stale-while-revalidate=43200".to_owned(),
+    ));
+    response
+        .headers
+        .push(("vercel-cache-tag", cache_tags.join(",")));
+    response
 }
 
-// --- Misc --------------------------------------------------------------------
-
-/// Mirrors `new Date().toISOString()`.
-fn generated_at() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_millis())
-        .unwrap_or(0);
-    format_iso8601_millis(now)
-}
-
-/// Format milliseconds-since-epoch as an ISO 8601 UTC string with millis,
-/// matching `new Date().toISOString()`. Mirrors the proven helpers in
-/// `auth_mfa_mobile_approvals.rs` / `hive_ai_credits.rs`.
-fn format_iso8601_millis(unix_millis: u128) -> String {
-    let unix_millis = unix_millis as i64;
-    let seconds = unix_millis.div_euclid(1_000);
-    let millis = unix_millis.rem_euclid(1_000);
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-
-    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{millis:03}Z")
-}
-
-fn civil_from_days(days_since_unix_epoch: i64) -> (i64, i64, i64) {
-    let days = days_since_unix_epoch + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-
-    (year + if month <= 2 { 1 } else { 0 }, month, day)
+fn if_none_match_matches(header_value: &str, response_etag: &str) -> bool {
+    let normalized_response = response_etag
+        .trim()
+        .strip_prefix("W/")
+        .unwrap_or(response_etag.trim());
+    header_value.split(',').any(|candidate| {
+        let candidate = candidate.trim();
+        candidate == "*" || candidate.strip_prefix("W/").unwrap_or(candidate) == normalized_response
+    })
 }
 
 fn delivery_ws_id(path: &str) -> Option<&str> {

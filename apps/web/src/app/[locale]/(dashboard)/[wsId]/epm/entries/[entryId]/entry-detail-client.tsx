@@ -6,9 +6,11 @@ import {
   createWorkspaceExternalProjectAsset,
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectEntry,
+  createWorkspaceExternalProjectManagedAssetImportJob,
   deleteWorkspaceExternalProjectAsset,
   deleteWorkspaceExternalProjectEntry,
   duplicateWorkspaceExternalProjectEntry,
+  processWorkspaceExternalProjectManagedAssetImportJob,
   publishWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectAsset,
   updateWorkspaceExternalProjectBlock,
@@ -41,6 +43,7 @@ import { EntryDetailHeader } from './entry-detail-header';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
 import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
+import { EntryDetailRelationsCard } from './entry-detail-relations-card';
 import {
   buildEntryFormState,
   type FeaturedEntryEditorConfig,
@@ -219,6 +222,16 @@ export function EntryDetailClient({
   const imageAssets = useMemo(
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
+  );
+  const selectedExternalAssetIds = useMemo(
+    () =>
+      imageAssets
+        .filter(
+          (asset) =>
+            selectedAssetIds.includes(asset.id) && Boolean(asset.source_url)
+        )
+        .map((asset) => asset.id),
+    [imageAssets, selectedAssetIds]
   );
   const markdownBlock = useMemo(
     () =>
@@ -1197,6 +1210,33 @@ export function EntryDetailClient({
     },
   });
 
+  const importExternalAssetsMutation = useMutation({
+    mutationFn: async (assetIds: string[]) => {
+      let job = await createWorkspaceExternalProjectManagedAssetImportJob(
+        workspaceId,
+        assetIds
+      );
+      while (!['completed', 'failed'].includes(job.status)) {
+        job = await processWorkspaceExternalProjectManagedAssetImportJob(
+          workspaceId,
+          job.id
+        );
+        if (job.status === 'running') {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+      }
+      if (job.status !== 'completed') {
+        throw new Error(`Managed media import ended with status ${job.status}`);
+      }
+      return job;
+    },
+    onSuccess: async () => {
+      setSelectedAssetIds([]);
+      await refreshStudioFromBackend();
+      toast.success(strings.importExternalAssetsSuccessToast);
+    },
+  });
+
   const deleteAssetsMutation = useMutation({
     mutationFn: async (assetIds: string[]) =>
       Promise.all(
@@ -1521,6 +1561,7 @@ export function EntryDetailClient({
     uploadMediaMutation.isPending ||
     saveCoverMutation.isPending ||
     saveAssetCaptionMutation.isPending ||
+    importExternalAssetsMutation.isPending ||
     deleteAssetsMutation.isPending ||
     setAsCoverMutation.isPending;
   const saveProcessing =
@@ -1633,6 +1674,9 @@ export function EntryDetailClient({
           onCoverInputClick={() => coverInputRef.current?.click()}
           onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
           onDeleteSingleAsset={deleteSingleAsset}
+          onImportSelectedExternalMedia={() =>
+            importExternalAssetsMutation.mutate(selectedExternalAssetIds)
+          }
           onDescriptionChange={setDescriptionContent}
           onOpenPreview={() => setPreviewOpen(true)}
           onSaveAssetCaption={(assetId) =>
@@ -1658,6 +1702,7 @@ export function EntryDetailClient({
           saveCoverPending={saveCoverMutation.isPending}
           selectedAssetCount={selectedAssetCount}
           selectedAssetIds={selectedAssetIds}
+          selectedExternalAssetCount={selectedExternalAssetIds.length}
           setAsCoverPending={setAsCoverMutation.isPending}
           strings={strings}
           subtitle={entryForm.subtitle}
@@ -1763,6 +1808,19 @@ export function EntryDetailClient({
             )
           }
           pairedArtworkSlug={pairedArtworkSlug}
+          relationsCard={
+            <EntryDetailRelationsCard
+              blocks={blocks}
+              definitions={studio?.relationDefinitions ?? []}
+              entries={entries}
+              entry={activeEntry}
+              onSaved={refreshStudioFromBackend}
+              relations={studio?.relations ?? []}
+              strings={strings}
+              targets={studio?.relationDefinitionTargets ?? []}
+              workspaceId={workspaceId}
+            />
+          }
           strings={strings}
           supportsPairedVisual={supportsPairedVisual}
           tagCreateOpen={tagCreateOpen}

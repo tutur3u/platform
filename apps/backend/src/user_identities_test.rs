@@ -92,6 +92,7 @@ fn request(method: &'static str) -> BackendRequest<'static> {
         authorization: None,
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path: USER_IDENTITIES_PATH,

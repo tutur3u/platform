@@ -21,6 +21,7 @@ fn request(method: &'static str, path: &'static str) -> BackendRequest<'static> 
         authorization: None,
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path,
@@ -182,6 +183,7 @@ fn request_with_cookie(
 ) -> BackendRequest<'static> {
     BackendRequest {
         cookie: Some(Box::leak(cookie.into_boxed_str())),
+        if_none_match: None,
         url: Some("https://tanstack.tuturuuu.localhost/contact"),
         ..request(method, path)
     }
@@ -270,6 +272,7 @@ fn browser_recovery_request(
         authorization: None,
         body_text: None,
         cookie,
+        if_none_match: None,
         method: "POST",
         origin,
         path: BROWSER_STATE_RECOVERY_PATH,
