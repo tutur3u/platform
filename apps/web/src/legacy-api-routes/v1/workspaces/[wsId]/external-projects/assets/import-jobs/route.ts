@@ -6,9 +6,13 @@ import {
   createManagedAssetImportJob,
   ManagedAssetImportValidationError,
 } from '@/lib/external-projects/managed-asset-import';
+import { MAX_MANAGED_ASSET_IMPORT_JOB_ASSETS } from '@/lib/external-projects/managed-asset-import-limits';
 
 const schema = z.object({
-  assetIds: z.array(z.string().uuid()).min(1).max(500),
+  assetIds: z
+    .array(z.string().uuid())
+    .min(1)
+    .max(MAX_MANAGED_ASSET_IMPORT_JOB_ASSETS),
 });
 const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
