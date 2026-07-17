@@ -227,10 +227,14 @@ async function importAsset(
     .eq('ws_id', workspaceId)
     .eq('id', assetId)
     .single();
-  if (error || !asset?.source_url || !asset.entry_id) {
+  if (error || !asset?.entry_id) {
     throw new Error(
       error?.message ?? 'External asset or owning entry is missing'
     );
+  }
+  if (!asset.source_url) {
+    if (asset.storage_path) return;
+    throw new Error('External asset has no importable source URL');
   }
   const { data: entry, error: entryError } = await admin
     .from('workspace_external_project_entries')
@@ -357,9 +361,16 @@ export async function processManagedAssetImportJob(
     })
     .eq('ws_id', workspaceId)
     .eq('id', job.id)
+    .eq('status', 'running')
+    .eq('started_at', claimedAt.toISOString())
     .select('*')
-    .single();
+    .maybeSingle();
   if (updateError) throw new Error(updateError.message);
+  if (!updated) {
+    const current = await getManagedAssetImportJob(workspaceId, jobId, admin);
+    if (!current) throw new Error('Managed asset import job not found');
+    return current;
+  }
 
   await invalidateWorkspaceExternalProjectCache(workspaceId, pending);
   return updated;
