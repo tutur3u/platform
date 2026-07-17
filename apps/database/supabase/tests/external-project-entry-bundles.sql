@@ -70,27 +70,24 @@ select ok(
   'service role can invoke the bundle RPC'
 );
 select ok(
-  has_table_privilege(
-    'service_role',
-    'public.workspace_external_project_relation_definitions',
-    'select, insert, update, delete'
-  ),
+  has_table_privilege('service_role', 'public.workspace_external_project_relation_definitions', 'select')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definitions', 'insert')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definitions', 'update')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definitions', 'delete'),
   'service role can manage relation definitions for protected delivery APIs'
 );
 select ok(
-  has_table_privilege(
-    'service_role',
-    'public.workspace_external_project_relation_definition_targets',
-    'select, insert, update, delete'
-  ),
+  has_table_privilege('service_role', 'public.workspace_external_project_relation_definition_targets', 'select')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definition_targets', 'insert')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definition_targets', 'update')
+    and has_table_privilege('service_role', 'public.workspace_external_project_relation_definition_targets', 'delete'),
   'service role can manage relation definition targets for protected delivery APIs'
 );
 select ok(
-  has_table_privilege(
-    'service_role',
-    'public.workspace_external_project_entry_relations',
-    'select, insert, update, delete'
-  ),
+  has_table_privilege('service_role', 'public.workspace_external_project_entry_relations', 'select')
+    and has_table_privilege('service_role', 'public.workspace_external_project_entry_relations', 'insert')
+    and has_table_privilege('service_role', 'public.workspace_external_project_entry_relations', 'update')
+    and has_table_privilege('service_role', 'public.workspace_external_project_entry_relations', 'delete'),
   'service role can manage entry relations for protected delivery APIs'
 );
 select ok(
