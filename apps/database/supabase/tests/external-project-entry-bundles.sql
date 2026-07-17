@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(26);
+select plan(29);
 
 select has_table(
   'public',
@@ -68,6 +68,30 @@ select ok(
     'execute'
   ),
   'service role can invoke the bundle RPC'
+);
+select ok(
+  has_table_privilege(
+    'service_role',
+    'public.workspace_external_project_relation_definitions',
+    'select, insert, update, delete'
+  ),
+  'service role can manage relation definitions for protected delivery APIs'
+);
+select ok(
+  has_table_privilege(
+    'service_role',
+    'public.workspace_external_project_relation_definition_targets',
+    'select, insert, update, delete'
+  ),
+  'service role can manage relation definition targets for protected delivery APIs'
+);
+select ok(
+  has_table_privilege(
+    'service_role',
+    'public.workspace_external_project_entry_relations',
+    'select, insert, update, delete'
+  ),
+  'service role can manage entry relations for protected delivery APIs'
 );
 select ok(
   (
