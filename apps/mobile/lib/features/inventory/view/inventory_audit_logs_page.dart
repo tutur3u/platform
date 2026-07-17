@@ -57,7 +57,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
     super.dispose();
   }
 
-  Future<void> _loadInitial() async {
+  Future<void> _loadInitial({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
@@ -71,7 +71,11 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
     });
 
     try {
-      final result = await _repository.getAuditLogs(wsId, limit: _pageSize);
+      final result = await _repository.getAuditLogs(
+        wsId,
+        limit: _pageSize,
+        forceRefresh: forceRefresh,
+      );
 
       if (!mounted || requestToken != _requestToken) {
         return;
@@ -191,7 +195,9 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                     title: context.l10n.commonSomethingWentWrong,
                     body: _error ?? context.l10n.inventoryAuditLabel,
                     action: shad.SecondaryButton(
-                      onPressed: () => unawaited(_loadInitial()),
+                      onPressed: () => unawaited(
+                        _loadInitial(forceRefresh: true),
+                      ),
                       child: Text(context.l10n.commonRetry),
                     ),
                   ),
@@ -202,7 +208,7 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: RefreshIndicator(
-                onRefresh: _loadInitial,
+                onRefresh: () => _loadInitial(forceRefresh: true),
                 child: ListView(
                   controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),

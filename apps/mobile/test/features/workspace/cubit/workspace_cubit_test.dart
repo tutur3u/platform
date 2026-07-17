@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
@@ -97,6 +99,34 @@ void main() {
         verifyNever(() => repository.readCachedWorkspaces());
         verify(() => repository.getWorkspaces()).called(1);
         verify(() => repository.getDefaultWorkspace()).called(1);
+      },
+    );
+
+    test(
+      'keeps a user selection made while a workspace refresh is in flight',
+      () async {
+        final remoteWorkspaces = Completer<List<Workspace>>();
+        when(
+          () => repository.getWorkspaces(),
+        ).thenAnswer((_) => remoteWorkspaces.future);
+        when(
+          () => repository.loadSelectedWorkspace(),
+        ).thenAnswer((_) async => personalWorkspace);
+        when(
+          () => repository.saveSelectedWorkspace(teamWorkspace),
+        ).thenAnswer((_) async {});
+        when(
+          () => repository.getMobileHiddenModuleIds(teamWorkspace.id),
+        ).thenAnswer((_) async => const []);
+
+        final refresh = cubit.loadWorkspaces(forceRefresh: true);
+        await Future<void>.delayed(Duration.zero);
+
+        await cubit.selectWorkspace(teamWorkspace);
+        remoteWorkspaces.complete(const [personalWorkspace, teamWorkspace]);
+        await refresh;
+
+        expect(cubit.state.currentWorkspace, teamWorkspace);
       },
     );
   });

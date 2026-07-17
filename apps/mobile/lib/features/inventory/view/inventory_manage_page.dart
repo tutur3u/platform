@@ -53,35 +53,55 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     super.dispose();
   }
 
-  void _reload() {
+  Future<void> _reload({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) return;
+    final future = _loadData(wsId, forceRefresh: forceRefresh);
     setState(() {
-      _future = _loadData(wsId);
+      _future = future;
     });
+    await future;
   }
 
-  Future<_InventoryManageData> _loadData(String wsId) async {
+  Future<_InventoryManageData> _loadData(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     final results = await Future.wait<dynamic>([
       _loadManageCollection(
         'owners',
-        () => _inventoryRepository.getOwners(wsId),
+        () => _inventoryRepository.getOwners(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
       ),
       _loadManageCollection(
         'manufacturers',
-        () => _inventoryRepository.getManufacturers(wsId),
+        () => _inventoryRepository.getManufacturers(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
       ),
       _loadManageCollection(
         'product categories',
-        () => _inventoryRepository.getProductCategories(wsId),
+        () => _inventoryRepository.getProductCategories(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
       ),
       _loadManageCollection(
         'product units',
-        () => _inventoryRepository.getProductUnits(wsId),
+        () => _inventoryRepository.getProductUnits(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
       ),
       _loadManageCollection(
         'product warehouses',
-        () => _inventoryRepository.getProductWarehouses(wsId),
+        () => _inventoryRepository.getProductWarehouses(
+          wsId,
+          forceRefresh: forceRefresh,
+        ),
       ),
       _loadManageCollection(
         'finance categories',
@@ -167,7 +187,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
         if (!mounted) {
           return;
         }
-        _reload();
+        unawaited(_reload(forceRefresh: true));
         showInventoryToast(context, confirmLabel);
       });
     }
@@ -180,7 +200,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _reload(),
+        listener: (context, state) => unawaited(_reload()),
         child: FutureBuilder<_InventoryManageData>(
           future: _future,
           builder: (context, snapshot) {
@@ -196,7 +216,9 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                   title: l10n.commonSomethingWentWrong,
                   body: snapshot.error?.toString() ?? l10n.inventoryManageLabel,
                   action: shad.SecondaryButton(
-                    onPressed: _reload,
+                    onPressed: () => unawaited(
+                      _reload(forceRefresh: true),
+                    ),
                     child: Text(l10n.commonRetry),
                   ),
                 ),
@@ -208,7 +230,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: RefreshIndicator(
-                onRefresh: () async => _reload(),
+                onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
                     16,

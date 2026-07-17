@@ -22,12 +22,18 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _FakeInventoryRepository extends InventoryRepository {
   @override
-  Future<List<InventoryLookupItem>> getManufacturers(String wsId) async {
+  Future<List<InventoryLookupItem>> getManufacturers(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     return const [InventoryLookupItem(id: 'manufacturer_1', name: 'Acme')];
   }
 
   @override
-  Future<List<InventoryLookupItem>> getProductCategories(String wsId) async {
+  Future<List<InventoryLookupItem>> getProductCategories(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     return const [
       InventoryLookupItem(id: 'category_1', name: 'Tea'),
       InventoryLookupItem(id: 'category_2', name: 'Coffee'),
@@ -35,7 +41,10 @@ class _FakeInventoryRepository extends InventoryRepository {
   }
 
   @override
-  Future<List<InventoryOwner>> getOwners(String wsId) async {
+  Future<List<InventoryOwner>> getOwners(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     return const [
       InventoryOwner(id: 'owner_1', name: 'Alice'),
       InventoryOwner(id: 'owner_2', name: 'Bob'),
@@ -43,12 +52,18 @@ class _FakeInventoryRepository extends InventoryRepository {
   }
 
   @override
-  Future<List<InventoryLookupItem>> getProductUnits(String wsId) async {
+  Future<List<InventoryLookupItem>> getProductUnits(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     return const [InventoryLookupItem(id: 'unit_1', name: 'Cup')];
   }
 
   @override
-  Future<List<InventoryLookupItem>> getProductWarehouses(String wsId) async {
+  Future<List<InventoryLookupItem>> getProductWarehouses(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
     return const [InventoryLookupItem(id: 'warehouse_1', name: 'Front booth')];
   }
 }

@@ -346,7 +346,10 @@ class _InventoryProductEditorPageState
     if (!mounted || name == null || name.trim().isEmpty) return;
 
     await _inventoryRepository.createManufacturer(wsId, name.trim());
-    final manufacturers = await _inventoryRepository.getManufacturers(wsId);
+    final manufacturers = await _inventoryRepository.getManufacturers(
+      wsId,
+      forceRefresh: true,
+    );
     if (!mounted) return;
 
     final created = manufacturers.where((item) => item.name == name.trim());

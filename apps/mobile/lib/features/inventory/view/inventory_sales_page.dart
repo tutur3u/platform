@@ -77,7 +77,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     super.dispose();
   }
 
-  Future<void> _loadInitial() async {
+  Future<void> _loadInitial({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
@@ -109,9 +109,13 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
           wsId,
           limit: _pageSize,
           periodId: _selectedPeriodId,
+          forceRefresh: forceRefresh,
         ),
         loadOptional(
-          _inventoryRepository.getSalesPeriods(wsId),
+          _inventoryRepository.getSalesPeriods(
+            wsId,
+            forceRefresh: forceRefresh,
+          ),
           _salesPeriods,
           'periods',
         ),
@@ -256,7 +260,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       ];
       _sales = const [];
     });
-    await _loadInitial();
+    await _loadInitial(forceRefresh: true);
   }
 
   Future<void> _togglePeriodArchive(InventorySalesPeriod period) async {
@@ -280,7 +284,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
             ? context.l10n.inventorySalesPeriodRestored
             : context.l10n.inventorySalesPeriodArchived,
       );
-      await _loadInitial();
+      await _loadInitial(forceRefresh: true);
     } on Exception catch (error) {
       if (mounted) {
         showInventoryToast(context, error.toString(), destructive: true);
@@ -304,7 +308,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
           .map((item) => item.id == updated.id ? updated : item)
           .toList(growable: false);
     });
-    await _loadInitial();
+    await _loadInitial(forceRefresh: true);
   }
 
   Future<void> _openCheckout() async {
@@ -313,7 +317,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
       initialSalesPeriods: _salesPeriods,
     );
     if (created == true && mounted) {
-      await _loadInitial();
+      await _loadInitial(forceRefresh: true);
     }
   }
 
@@ -338,7 +342,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
     );
 
     if (changed == true && mounted) {
-      await _loadInitial();
+      await _loadInitial(forceRefresh: true);
     }
   }
 
@@ -364,7 +368,9 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
 
             if (_error != null && _sales.isEmpty) {
               return _InventorySalesError(
-                onRetry: () => unawaited(_loadInitial()),
+                onRetry: () => unawaited(
+                  _loadInitial(forceRefresh: true),
+                ),
               );
             }
 
@@ -379,7 +385,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
               child: Stack(
                 children: [
                   RefreshIndicator(
-                    onRefresh: _loadInitial,
+                    onRefresh: () => _loadInitial(forceRefresh: true),
                     child: ListView(
                       controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),

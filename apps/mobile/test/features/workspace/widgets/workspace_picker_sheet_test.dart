@@ -145,5 +145,60 @@ void main() {
       expect(find.byType(EditableText), findsNothing);
       expect(find.text('Design'), findsOneWidget);
     });
+
+    testWidgets('selects the workspace represented by a filtered result', (
+      tester,
+    ) async {
+      const exocorpseWorkspace = Workspace(
+        id: 'ws_exocorpse',
+        name: 'Exocorpse',
+      );
+      const state = WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [freeWorkspace, exocorpseWorkspace, proWorkspace],
+        currentWorkspace: freeWorkspace,
+      );
+      when(() => workspaceCubit.state).thenReturn(state);
+      whenListen(
+        workspaceCubit,
+        const Stream<WorkspaceState>.empty(),
+        initialState: state,
+      );
+      when(
+        () => workspaceCubit.selectWorkspace(exocorpseWorkspace),
+      ).thenAnswer((_) async {});
+
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => showWorkspacePickerSheet(context),
+                child: const Text('Open picker'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open picker'));
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.tap(find.byIcon(Icons.search_rounded).first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(EditableText), 'Exocorpse');
+      await tester.pumpAndSettle();
+      final exocorpseResult = find.ancestor(
+        of: find.text('Exocorpse').last,
+        matching: find.byType(InkWell),
+      );
+      await tester.tap(exocorpseResult.first);
+      await tester.pumpAndSettle();
+
+      verify(
+        () => workspaceCubit.selectWorkspace(exocorpseWorkspace),
+      ).called(1);
+      verifyNever(() => workspaceCubit.selectWorkspace(freeWorkspace));
+    });
   });
 }

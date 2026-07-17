@@ -48,24 +48,11 @@ class InventoryHeroCard extends StatelessWidget {
     final theme = shad.Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: palette.subtleBorder),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: palette.heroGradient,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
-            ),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        color: theme.colorScheme.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.subtleBorder.withValues(alpha: 0.8)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,13 +62,13 @@ class InventoryHeroCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: palette.accent.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(18),
+                    color: palette.accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, size: 26, color: palette.accent),
+                  child: Icon(icon, size: 22, color: palette.accent),
                 ),
                 const shad.Gap(14),
                 Expanded(
@@ -91,7 +78,7 @@ class InventoryHeroCard extends StatelessWidget {
                       Text(
                         title,
                         style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       if (subtitle?.trim().isNotEmpty ?? false) ...[
@@ -127,10 +114,74 @@ class InventoryHeroCard extends StatelessWidget {
           ],
           if (child != null) ...[const shad.Gap(18), child!],
           if (actions.isNotEmpty) ...[
-            const shad.Gap(18),
+            const shad.Gap(16),
             Wrap(spacing: 10, runSpacing: 10, children: actions),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class InventoryActionTile extends StatelessWidget {
+  const InventoryActionTile({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.primary = false,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = FinancePalette.of(context);
+    final theme = shad.Theme.of(context);
+    final foreground = primary
+        ? theme.colorScheme.primaryForeground
+        : theme.colorScheme.foreground;
+    final background = primary
+        ? theme.colorScheme.primary
+        : theme.colorScheme.muted.withValues(alpha: 0.36);
+
+    return SizedBox(
+      width: 148,
+      height: 48,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(14),
+              border: primary ? null : Border.all(color: palette.subtleBorder),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: foreground),
+                const shad.Gap(8),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.typography.small.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -169,7 +220,7 @@ class InventoryOverviewSkeleton extends StatelessWidget {
       32 + MediaQuery.paddingOf(context).bottom,
     ),
     children: const [
-      FinanceSkeletonBlock(height: 248, radius: 28),
+      FinanceSkeletonBlock(height: 210, radius: 20),
       shad.Gap(24),
       FinanceSkeletonBlock(height: 22, width: 180, radius: 8),
       shad.Gap(12),

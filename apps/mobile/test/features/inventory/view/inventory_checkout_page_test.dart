@@ -22,12 +22,16 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _CheckoutInventoryRepository extends InventoryRepository {
   @override
-  Future<List<InventoryProduct>> getProductOptions(String wsId) async => [];
+  Future<List<InventoryProduct>> getProductOptions(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => [];
 
   @override
   Future<List<InventorySalesPeriod>> getSalesPeriods(
     String wsId, {
     bool includeArchived = true,
+    bool forceRefresh = false,
   }) async => const [
     InventorySalesPeriod(
       id: 'period-1',

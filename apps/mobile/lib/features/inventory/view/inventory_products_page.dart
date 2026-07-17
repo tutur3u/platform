@@ -73,7 +73,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
     super.dispose();
   }
 
-  Future<void> _loadInitial() async {
+  Future<void> _loadInitial({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) {
       return;
@@ -93,6 +93,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
           wsId,
           query: _searchController.text,
           pageSize: _pageSize,
+          forceRefresh: forceRefresh,
         ),
         _financeRepository.getWorkspaceDefaultCurrency(wsId),
         _permissionsRepository.getPermissions(wsId: wsId),
@@ -207,7 +208,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
       productId: productId,
     );
     if (saved == true && mounted) {
-      await _loadInitial();
+      await _loadInitial(forceRefresh: true);
     }
   }
 
@@ -226,7 +227,9 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
 
             if (_error != null && _products.isEmpty) {
               return _InventoryProductsError(
-                onRetry: () => unawaited(_loadInitial()),
+                onRetry: () => unawaited(
+                  _loadInitial(forceRefresh: true),
+                ),
               );
             }
 
@@ -242,7 +245,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
               child: Stack(
                 children: [
                   RefreshIndicator(
-                    onRefresh: _loadInitial,
+                    onRefresh: () => _loadInitial(forceRefresh: true),
                     child: ListView(
                       controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),

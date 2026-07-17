@@ -41,12 +41,17 @@ class _InventoryPageState extends State<InventoryPage> {
     unawaited(Future<void>.delayed(Duration.zero, _reload));
   }
 
-  void _reload() {
+  Future<void> _reload({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) return;
+    final future = _repository.getOverview(
+      wsId,
+      forceRefresh: forceRefresh,
+    );
     setState(() {
-      _future = _repository.getOverview(wsId);
+      _future = future;
     });
+    await future;
   }
 
   @override
@@ -61,7 +66,7 @@ class _InventoryPageState extends State<InventoryPage> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (previous, current) =>
             previous.currentWorkspace?.id != current.currentWorkspace?.id,
-        listener: (context, state) => _reload(),
+        listener: (context, state) => unawaited(_reload()),
         child: FutureBuilder<InventoryOverview>(
           future: _future,
           builder: (context, snapshot) {
@@ -76,7 +81,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
             if (snapshot.hasError || !snapshot.hasData) {
               return _InventoryErrorView(
-                onRetry: _reload,
+                onRetry: () => unawaited(_reload(forceRefresh: true)),
                 body: snapshot.error?.toString(),
               );
             }
@@ -87,7 +92,7 @@ class _InventoryPageState extends State<InventoryPage> {
             return ResponsiveWrapper(
               maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
               child: RefreshIndicator(
-                onRefresh: () async => _reload(),
+                onRefresh: () => _reload(forceRefresh: true),
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -129,43 +134,45 @@ class _InventoryPageState extends State<InventoryPage> {
                         ),
                       ],
                       actions: [
-                        shad.PrimaryButton(
+                        InventoryActionTile(
+                          icon: Icons.point_of_sale_rounded,
+                          primary: true,
+                          label: l10n.inventoryCheckoutTitle,
                           onPressed: () async {
                             final result =
                                 await showInventoryCheckoutPage<bool>(context);
                             if (result == true && mounted) {
-                              _reload();
+                              await _reload(forceRefresh: true);
                             }
                           },
-                          child: Text(l10n.inventoryCheckoutTitle),
                         ),
-                        shad.SecondaryButton(
+                        InventoryActionTile(
+                          icon: Icons.add_box_outlined,
+                          label: l10n.inventoryCreateProduct,
                           onPressed: () async {
                             final result =
                                 await showInventoryProductEditorPage<bool>(
                                   context,
                                 );
                             if (result == true && mounted) {
-                              _reload();
+                              await _reload(forceRefresh: true);
                             }
                           },
-                          child: Text(l10n.inventoryCreateProduct),
                         ),
-                        shad.SecondaryButton(
+                        InventoryActionTile(
                           onPressed: () => context.go(Routes.inventorySales),
-                          leading: const Icon(
-                            Icons.calendar_view_month_outlined,
-                            size: 17,
-                          ),
-                          child: Text(l10n.inventorySalesPeriodOpen),
+                          icon: Icons.calendar_view_month_outlined,
+                          label: l10n.inventorySalesPeriodOpen,
                         ),
-                        shad.SecondaryButton(
+                        InventoryActionTile(
                           onPressed: () => context.go(Routes.inventoryManage),
-                          child: Text(l10n.inventoryManageLabel),
+                          icon: Icons.tune_rounded,
+                          label: l10n.inventoryManageLabel,
                         ),
-                        shad.SecondaryButton(
+                        InventoryActionTile(
                           onPressed: () => context.go(Routes.storefronts),
-                          child: Text(l10n.storefrontTitle),
+                          icon: Icons.storefront_outlined,
+                          label: l10n.storefrontTitle,
                         ),
                       ],
                     ),

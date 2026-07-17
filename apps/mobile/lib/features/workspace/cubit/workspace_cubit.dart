@@ -14,6 +14,8 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       super(const WorkspaceState());
 
   final WorkspaceRepository _repo;
+  int _loadRequestToken = 0;
+  int _selectionRevision = 0;
 
   /// Loads workspaces and resolves the default workspace.
   ///
@@ -23,17 +25,24 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   /// 3. SharedPreferences cache for the current session workspace
   /// 4. Auto-select if only one workspace exists
   Future<void> loadWorkspaces({bool forceRefresh = false}) async {
+    final requestToken = ++_loadRequestToken;
+    final selectionRevisionAtStart = _selectionRevision;
     final cached = forceRefresh
         ? const CacheReadResult<List<Workspace>>(state: CacheEntryState.missing)
         : await _repo.readCachedWorkspaces();
     final hasCachedWorkspaces = cached.hasValue && cached.data != null;
 
     if (hasCachedWorkspaces) {
+      final cachedState = await _buildResolvedState(
+        cached.data!,
+        status: WorkspaceStatus.loaded,
+        includeServerDefault: false,
+      );
+      if (!_isCurrentLoad(requestToken)) return;
       emit(
-        await _buildResolvedState(
-          cached.data!,
-          status: WorkspaceStatus.loaded,
-          includeServerDefault: false,
+        _preserveNewerSelection(
+          cachedState,
+          selectionRevisionAtStart: selectionRevisionAtStart,
         ),
       );
 
@@ -47,17 +56,23 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
     try {
       final workspaces = await _repo.getWorkspaces();
+      final resolvedState = await _buildResolvedState(
+        workspaces,
+        status: WorkspaceStatus.loaded,
+        includeServerDefault: true,
+      );
+      if (!_isCurrentLoad(requestToken)) return;
       emit(
-        await _buildResolvedState(
-          workspaces,
-          status: WorkspaceStatus.loaded,
-          includeServerDefault: true,
+        _preserveNewerSelection(
+          resolvedState,
+          selectionRevisionAtStart: selectionRevisionAtStart,
         ),
       );
 
       // Load limits in background (non-blocking)
       unawaited(_loadLimits());
     } on Exception catch (e) {
+      if (!_isCurrentLoad(requestToken)) return;
       if (hasCachedWorkspaces) {
         return;
       }
@@ -67,6 +82,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
   /// Selects the active workspace for the current device/session.
   Future<void> selectWorkspace(Workspace workspace) async {
+    _selectionRevision += 1;
     emit(
       state.copyWith(currentWorkspace: workspace, hiddenModuleIds: const []),
     );
@@ -123,6 +139,8 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
   /// Clears workspace selection (on logout).
   Future<void> clearWorkspaces() async {
+    _selectionRevision += 1;
+    _loadRequestToken += 1;
     await _repo.clearSelectedWorkspace();
     emit(const WorkspaceState());
   }
@@ -187,6 +205,31 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       return;
     }
     emit(state.copyWith(hiddenModuleIds: hiddenModuleIds));
+  }
+
+  bool _isCurrentLoad(int requestToken) {
+    return !isClosed && requestToken == _loadRequestToken;
+  }
+
+  WorkspaceState _preserveNewerSelection(
+    WorkspaceState resolvedState, {
+    required int selectionRevisionAtStart,
+  }) {
+    if (selectionRevisionAtStart == _selectionRevision) {
+      return resolvedState;
+    }
+
+    final selectedId = state.currentWorkspace?.id;
+    if (selectedId == null) return resolvedState;
+    final selectedWorkspace = resolvedState.workspaces
+        .where((workspace) => workspace.id == selectedId)
+        .firstOrNull;
+    if (selectedWorkspace == null) return resolvedState;
+
+    return resolvedState.copyWith(
+      currentWorkspace: selectedWorkspace,
+      hiddenModuleIds: state.hiddenModuleIds,
+    );
   }
 
   Future<List<String>> _getMobileHiddenModuleIds(String wsId) async {
