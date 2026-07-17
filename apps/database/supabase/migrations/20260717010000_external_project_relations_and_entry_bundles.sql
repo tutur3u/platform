@@ -152,11 +152,12 @@ BEGIN
   IF NOT public.can_manage_workspace_external_projects(p_ws_id, p_actor_id) THEN
     RAISE EXCEPTION 'manage external projects permission required' USING ERRCODE = '42501';
   END IF;
-  IF NOT EXISTS (
-    SELECT 1
-    FROM public.workspace_external_project_relation_definitions
-    WHERE ws_id = p_ws_id AND id = p_definition_id
-  ) THEN
+  PERFORM 1
+  FROM public.workspace_external_project_relation_definitions
+  WHERE ws_id = p_ws_id AND id = p_definition_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'relation definition not found' USING ERRCODE = 'P0002';
   END IF;
 

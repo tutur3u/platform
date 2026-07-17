@@ -113,7 +113,6 @@ type WorkspaceExternalProjectEntryBundleEntryPayload = {
   scheduledFor?: string | null;
   slug?: string;
   sortOrder?: number;
-  sourceAdapter?: ExternalProjectEntry['source_adapter'];
   stableSourceId?: string | null;
   status?: ExternalProjectEntry['status'];
   subtitle?: string | null;

@@ -54,7 +54,8 @@ export async function resolveSafeManagedAssetAddress(
     throw new Error('Asset source credentials are not allowed');
   }
 
-  const addresses = await resolveHost(url.hostname);
+  const hostname = url.hostname.replace(/^\[|\]$/g, '');
+  const addresses = await resolveHost(hostname);
   if (
     addresses.length === 0 ||
     addresses.some((result) => isPrivateNetworkAddress(result.address))
@@ -81,7 +82,7 @@ export function createManagedAssetPinnedDispatcher(record: LookupAddress) {
 }
 
 export async function closeManagedAssetDispatcher(dispatcher: Dispatcher) {
-  await dispatcher.close().catch(() => null);
+  await dispatcher.destroy().catch(() => null);
 }
 
 async function resolveManagedAssetHost(hostname: string) {

@@ -43,6 +43,20 @@ describe('managed external-project asset import SSRF guard', () => {
     expect(address).toEqual({ address: '1.1.1.1', family: 4 });
   });
 
+  it('normalizes brackets before resolving a public IPv6 literal', async () => {
+    let resolvedHostname = '';
+    const address = await resolveSafeManagedAssetAddress(
+      new URL('https://[2606:4700:4700::1111]/file.png'),
+      async (hostname) => {
+        resolvedHostname = hostname;
+        return [{ address: hostname, family: 6 }];
+      }
+    );
+
+    expect(resolvedHostname).toBe('2606:4700:4700::1111');
+    expect(address).toEqual({ address: '2606:4700:4700::1111', family: 6 });
+  });
+
   it('rejects a hostname when any resolved address is private', async () => {
     await expect(
       resolveSafeManagedAssetAddress(

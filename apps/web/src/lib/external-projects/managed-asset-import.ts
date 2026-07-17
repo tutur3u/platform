@@ -17,6 +17,7 @@ const MAX_REDIRECTS = 4;
 const IMPORT_TIMEOUT_MS = 15_000;
 const IMPORT_BATCH_SIZE = 5;
 const IMPORT_CONCURRENCY = 3;
+const IMPORT_LEASE_MS = 5 * 60 * 1000;
 
 type ImportFailure = { assetId: string; message: string };
 type ManagedAssetImportReport = {
@@ -288,16 +289,20 @@ export async function processManagedAssetImportJob(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const claimedAt = new Date();
+  const staleBefore = new Date(claimedAt.getTime() - IMPORT_LEASE_MS);
   const { data: job, error } = await admin
     .from('workspace_external_project_import_jobs')
     .update({
-      started_at: new Date().toISOString(),
+      started_at: claimedAt.toISOString(),
       status: 'running',
     })
     .eq('ws_id', workspaceId)
     .eq('id', jobId)
     .eq('source_reference', 'managed-assets')
-    .in('status', ['queued', 'failed'])
+    .or(
+      `status.in.(queued,failed),and(status.eq.running,started_at.lt.${staleBefore.toISOString()})`
+    )
     .select('*')
     .maybeSingle();
   if (error) throw new Error(error.message);
