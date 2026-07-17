@@ -20,6 +20,7 @@ import {
   findOrCreateImportCategory,
   findOrCreatePrivateNamedRow,
   findReusableSquareImportProduct,
+  inventoryCentLevelPricesReady,
   loadLinks,
   loadLocalCatalog,
   loadLocalSnapshot,
@@ -180,7 +181,10 @@ async function pullFromSquare({
     accessToken,
     environment,
   });
-  const links = await loadLinks(wsId, environment);
+  const [centLevelPricesReady, links] = await Promise.all([
+    inventoryCentLevelPricesReady(),
+    loadLinks(wsId, environment),
+  ]);
   const linksByVariation = new Map(
     links.map((link) => [link.square_variation_id, link])
   );
@@ -274,7 +278,9 @@ async function pullFromSquare({
         remoteAmount,
       });
       const price = resolveSquareInventoryPrice({
+        centLevelPricesReady,
         currency: priceCurrency,
+        currentPrice: local?.stock.price ?? null,
         remoteAmountMinor:
           variation.item_variation_data?.price_money?.amount ?? 0,
       });

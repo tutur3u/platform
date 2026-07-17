@@ -122,7 +122,9 @@ describe('Square catalog sync contract', () => {
   it('preserves an exact whole-unit Square price', () => {
     expect(
       resolveSquareInventoryPrice({
+        centLevelPricesReady: false,
         currency: 'USD',
+        currentPrice: 20,
         remoteAmountMinor: 2500,
       })
     ).toEqual({ error: null, price: 25 });
@@ -131,7 +133,9 @@ describe('Square catalog sync contract', () => {
   it('preserves USD cents from Square in the inventory price', () => {
     expect(
       resolveSquareInventoryPrice({
+        centLevelPricesReady: true,
         currency: 'USD',
+        currentPrice: 12,
         remoteAmountMinor: 1351,
       })
     ).toEqual({ error: null, price: 13.51 });
@@ -140,10 +144,27 @@ describe('Square catalog sync contract', () => {
   it('preserves three-decimal currency prices from Square', () => {
     expect(
       resolveSquareInventoryPrice({
+        centLevelPricesReady: true,
         currency: 'BHD',
+        currentPrice: null,
         remoteAmountMinor: 1234,
       })
     ).toEqual({ error: null, price: 1.234 });
+  });
+
+  it('holds fractional prices until the database confirms decimal storage', () => {
+    expect(
+      resolveSquareInventoryPrice({
+        centLevelPricesReady: false,
+        currency: 'USD',
+        currentPrice: 12,
+        remoteAmountMinor: 1351,
+      })
+    ).toEqual({
+      error:
+        'Square reported a non-whole USD price (13.51). Tuturuuu kept its value until an operator reviews the price.',
+      price: 12,
+    });
   });
 
   it('extracts provider and database messages for private sync observability', () => {

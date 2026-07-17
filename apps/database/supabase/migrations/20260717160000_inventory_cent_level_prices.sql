@@ -44,6 +44,30 @@ alter table public.finance_invoices
   alter column total_diff type numeric(30, 6) using total_diff::numeric,
   alter column paid_amount type numeric(30, 6) using paid_amount::numeric;
 
+-- The application can deploy before this migration reaches every environment.
+-- Let the Square importer prove that exact decimal storage is available before
+-- it writes a fractional major-unit price; a missing RPC safely means "not yet".
+create or replace function public.inventory_cent_level_prices_ready()
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog
+as $$
+  select exists (
+    select 1
+    from pg_attribute
+    where attrelid = 'private.inventory_products'::regclass
+      and attname = 'price'
+      and atttypid = 'numeric'::regtype
+      and not attisdropped
+  );
+$$;
+
+revoke all on function public.inventory_cent_level_prices_ready() from public;
+grant execute on function public.inventory_cent_level_prices_ready()
+  to service_role;
+
 create trigger update_wallet_transaction_amount
 after update of price, total_diff on public.finance_invoices
 for each row execute function update_wallet_transaction_amount();

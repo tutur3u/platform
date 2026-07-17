@@ -4,7 +4,12 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(9);
+select plan(10);
+
+select ok(
+  public.inventory_cent_level_prices_ready(),
+  'capability probe confirms exact decimal inventory price storage'
+);
 
 select col_type_is(
   'private',

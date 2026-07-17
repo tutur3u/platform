@@ -47,6 +47,18 @@ export type LocalStockRow = {
 export type LocalUnitRow = { id: string; name: string };
 export type LocalWarehouseRow = { id: string; name: string };
 
+export async function inventoryCentLevelPricesReady() {
+  const sbAdmin = await createAdminClient();
+  const { data, error } = (await sbAdmin.rpc(
+    'inventory_cent_level_prices_ready' as never
+  )) as {
+    data: boolean | null;
+    error: SupabaseErrorLike;
+  };
+
+  return !error && data === true;
+}
+
 export async function loadLinks(wsId: string, environment: SquareEnvironment) {
   const privateAdmin = await getPrivateAdmin();
   const { data, error } = (await privateAdmin
