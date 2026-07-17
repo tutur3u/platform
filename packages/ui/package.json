@@ -70,7 +70,7 @@
     "@tiptap/extension-horizontal-rule": "3.27.4",
     "@tiptap/extension-image": "3.27.4",
     "@tiptap/extension-link": "3.27.4",
-    "@tiptap/extension-list": "3.27.4",
+    "@tiptap/extension-list": "3.28.0",
     "@tiptap/extension-node-range": "3.27.4",
     "@tiptap/extension-placeholder": "3.27.4",
     "@tiptap/extension-strike": "3.27.4",
