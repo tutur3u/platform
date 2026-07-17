@@ -17,17 +17,11 @@ extension _ShellPageNavigation on _ShellPageState {
       shad.NavigationItem(
         key: _ShellPageState._homeKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact
-            ? _buildNavLabel(l10n.navHome, labelStyle, itemIndex: 0)
-            : null,
         child: isCompact
-            ? _buildAnimatedNavElement(
+            ? _buildCompactNavIcon(
+                icon: Icons.home_outlined,
+                semanticLabel: l10n.navHome,
                 itemIndex: 0,
-                slotDelay: 0,
-                child: const Icon(
-                  Icons.home_outlined,
-                  size: _ShellPageState._navIconSize,
-                ),
               )
             : _buildHorizontalNavItem(
                 icon: Icons.home_outlined,
@@ -47,17 +41,11 @@ extension _ShellPageNavigation on _ShellPageState {
       shad.NavigationItem(
         key: _ShellPageState._appsKey,
         spacing: _ShellPageState._navItemSpacing,
-        label: isCompact
-            ? _buildNavLabel(l10n.navApps, labelStyle, itemIndex: 2)
-            : null,
         child: isCompact
-            ? _buildAnimatedNavElement(
+            ? _buildCompactNavIcon(
+                icon: Icons.apps_outlined,
+                semanticLabel: l10n.navApps,
                 itemIndex: 2,
-                slotDelay: 0,
-                child: const Icon(
-                  Icons.apps_outlined,
-                  size: _ShellPageState._navIconSize,
-                ),
               )
             : _buildHorizontalNavItem(
                 icon: Icons.apps_outlined,
@@ -174,9 +162,7 @@ extension _ShellPageNavigation on _ShellPageState {
     );
     final l10n = context.l10n;
     final isCompact = context.isCompact;
-    final miniLabelStyle = labelStyle.copyWith(
-      fontSize: _ShellPageState._miniNavLabelFontSize,
-    );
+    final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
     const miniIconSize = _ShellPageState._miniNavIconSize;
 
@@ -298,9 +284,7 @@ extension _ShellPageNavigation on _ShellPageState {
       fontWeight: FontWeight.w600,
     );
     final isCompact = context.isCompact;
-    final miniLabelStyle = labelStyle.copyWith(
-      fontSize: _ShellPageState._miniNavLabelFontSize,
-    );
+    final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
     const miniIconSize = _ShellPageState._miniNavIconSize;
 

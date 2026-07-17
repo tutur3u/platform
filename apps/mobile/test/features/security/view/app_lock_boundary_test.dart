@@ -59,54 +59,55 @@ void main() {
       expect(find.text('Sensitive workspace'), findsOneWidget);
     });
 
-    testWidgets('centers the lock card and unlock action on phone screens', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'centers the lock gate and automatically requests biometric unlock',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final appLockCubit = _MockAppLockCubit();
-      when(
-        () => appLockCubit.unlock(reason: any(named: 'reason')),
-      ).thenAnswer((_) async => true);
+        final appLockCubit = _MockAppLockCubit();
+        when(
+          () => appLockCubit.unlock(reason: any(named: 'reason')),
+        ).thenAnswer((_) async => true);
 
-      await _pumpBoundary(
-        tester,
-        authState: _authenticatedState(),
-        appLockState: const AppLockState(
-          enabled: true,
-          locked: true,
-          hasLoaded: true,
-        ),
-        appLockCubit: appLockCubit,
-      );
+        await _pumpBoundary(
+          tester,
+          authState: _authenticatedState(),
+          appLockState: const AppLockState(
+            enabled: true,
+            locked: true,
+            hasLoaded: true,
+          ),
+          appLockCubit: appLockCubit,
+        );
 
-      expect(find.text('Tuturuuu is locked'), findsOneWidget);
-      expect(find.text('Protected on this device'), findsOneWidget);
-      expect(tester.takeException(), isNull);
+        expect(find.text('Tuturuuu is locked'), findsOneWidget);
+        expect(find.text('Protected on this device'), findsNothing);
+        expect(find.byIcon(Icons.lock_outline_rounded), findsOneWidget);
+        expect(tester.takeException(), isNull);
 
-      final cardRect = tester.getRect(
-        find.byKey(const ValueKey('app-lock-card')),
-      );
-      final buttonRect = tester.getRect(
-        find.byKey(const ValueKey('app-lock-unlock-button')),
-      );
-      final buttonContentRect = tester.getRect(
-        find.byKey(const ValueKey('app-lock-unlock-content')),
-      );
+        final cardRect = tester.getRect(
+          find.byKey(const ValueKey('app-lock-card')),
+        );
+        final buttonRect = tester.getRect(
+          find.byKey(const ValueKey('app-lock-unlock-button')),
+        );
+        final buttonContentRect = tester.getRect(
+          find.byKey(const ValueKey('app-lock-unlock-content')),
+        );
 
-      expect(cardRect.center.dx, closeTo(195, 0.1));
-      expect(cardRect.center.dy, closeTo(422, 0.1));
-      expect(buttonRect.center.dx, closeTo(195, 0.1));
-      expect(buttonContentRect.center.dx, closeTo(buttonRect.center.dx, 0.1));
+        expect(cardRect.center.dx, closeTo(195, 0.1));
+        expect(cardRect.center.dy, closeTo(422, 0.1));
+        expect(buttonRect.center.dx, closeTo(195, 0.1));
+        expect(buttonContentRect.center.dx, closeTo(buttonRect.center.dx, 0.1));
 
-      await tester.tap(find.text('Unlock'));
-      verify(
-        () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
-      ).called(1);
-    });
+        verify(
+          () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
+        ).called(1);
+      },
+    );
 
     testWidgets('keeps the unlock action reachable on compact screens', (
       tester,
@@ -133,6 +134,10 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
+      verify(
+        () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
+      ).called(1);
+      clearInteractions(appLockCubit);
       await tester.ensureVisible(find.text('Unlock'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unlock'));

@@ -555,10 +555,52 @@ void main() {
       router.go(Routes.tasks);
       await _pumpForTransitions(tester);
 
-      expect(find.text(l10n.navBack), findsOneWidget);
-      expect(find.text(l10n.taskBoardsTitle), findsOneWidget);
-      expect(find.text(l10n.taskPlanningTitle), findsOneWidget);
+      final compactNavItems = tester.widgetList<shad.NavigationItem>(
+        find.byType(shad.NavigationItem),
+      );
+
+      expect(compactNavItems, isNotEmpty);
+      expect(compactNavItems.every((item) => item.label == null), isTrue);
+      expect(find.text(l10n.navBack), findsNothing);
+      expect(find.text(l10n.taskBoardsTitle), findsNothing);
+      expect(find.text(l10n.taskPlanningTitle), findsNothing);
       expect(find.text(l10n.taskPortfolioTitle), findsNothing);
+    });
+
+    testWidgets('compact bottom navigation uses icon-only reduced chrome', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.apps);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final footerRect = tester.getRect(
+        find.byKey(const ValueKey('compact-shell-footer')),
+      );
+      final compactNavItems = tester.widgetList<shad.NavigationItem>(
+        find.byType(shad.NavigationItem),
+      );
+
+      expect(footerRect.height, 52);
+      expect(compactNavItems, hasLength(3));
+      expect(compactNavItems.every((item) => item.label == null), isTrue);
     });
 
     testWidgets('rapid nested navigation does not reuse outgoing nav keys', (
@@ -628,9 +670,9 @@ void main() {
       final shellContext = tester.element(find.byType(ShellPage));
       final l10n = AppLocalizations.of(shellContext);
 
-      expect(find.text(l10n.navBack), findsOneWidget);
-      expect(find.text(l10n.taskPortfolioProjectsTab), findsNWidgets(2));
-      expect(find.text(l10n.taskPortfolioInitiativesTab), findsOneWidget);
+      expect(find.text(l10n.navBack), findsNothing);
+      expect(find.text(l10n.taskPortfolioProjectsTab), findsOneWidget);
+      expect(find.text(l10n.taskPortfolioInitiativesTab), findsNothing);
       expect(find.text(l10n.taskBoardsTitle), findsNothing);
     });
 
@@ -1288,18 +1330,17 @@ void main() {
       await _pumpForTransitions(tester);
       await tester.pumpAndSettle();
 
-      expect(_textDataCount(tester, 'Alpha nav'), 2);
+      expect(_textDataCount(tester, 'Alpha nav'), 1);
       expect(_textDataCount(tester, 'Beta nav'), 0);
-      expect(_textDataFontSizes(tester, 'Alpha nav'), contains(10));
 
       showAlternateItems.value = true;
       await tester.pump();
       await tester.pump();
 
-      expect(_textDataCount(tester, 'Alpha nav'), 1);
-      expect(_textDataCount(tester, 'Beta nav'), 2);
-      expect(_textDataCount(tester, 'Gamma nav'), 1);
-      expect(_textDataCount(tester, 'Delta nav'), 1);
+      expect(_textDataCount(tester, 'Alpha nav'), 0);
+      expect(_textDataCount(tester, 'Beta nav'), 1);
+      expect(_textDataCount(tester, 'Gamma nav'), 0);
+      expect(_textDataCount(tester, 'Delta nav'), 0);
       expect(
         _nearestFadeOpacitiesForIcon(
           tester,
@@ -1349,9 +1390,9 @@ void main() {
       await _pumpForTransitions(tester);
 
       expect(_textDataCount(tester, 'Alpha nav'), 0);
-      expect(_textDataCount(tester, 'Beta nav'), 2);
-      expect(_textDataCount(tester, 'Gamma nav'), 1);
-      expect(_textDataCount(tester, 'Delta nav'), 1);
+      expect(_textDataCount(tester, 'Beta nav'), 1);
+      expect(_textDataCount(tester, 'Gamma nav'), 0);
+      expect(_textDataCount(tester, 'Delta nav'), 0);
     });
   });
 }
@@ -1361,14 +1402,6 @@ int _textDataCount(WidgetTester tester, String value) {
       .widgetList<Text>(find.byType(Text, skipOffstage: false))
       .where((widget) => widget.data == value)
       .length;
-}
-
-List<double?> _textDataFontSizes(WidgetTester tester, String value) {
-  return tester
-      .widgetList<Text>(find.byType(Text, skipOffstage: false))
-      .where((widget) => widget.data == value)
-      .map((widget) => widget.style?.fontSize)
-      .toList(growable: false);
 }
 
 List<double> _nearestFadeOpacitiesForIcon(WidgetTester tester, IconData icon) {

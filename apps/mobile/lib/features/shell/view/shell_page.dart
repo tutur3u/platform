@@ -68,10 +68,9 @@ class _ShellPageState extends State<ShellPage>
   static const double _assistantNavIconSize = 38;
   static const double _navItemSpacing = 2;
   static const double _miniNavIconSize = 20;
-  static const double _miniNavLabelFontSize = 10;
   static const double _miniNavItemSpacing = 1;
   static const double _floatingNavMinItemWidth = 96;
-  static const double _compactBottomNavHeight = 60;
+  static const double _compactBottomNavHeight = 52;
   static const Duration _exitConfirmationWindow = Duration(seconds: 2);
   static const Duration _assistantSpinDuration = Duration(milliseconds: 680);
   static const Duration _navSwitcherDuration = Duration(milliseconds: 320);
@@ -81,8 +80,7 @@ class _ShellPageState extends State<ShellPage>
   static const MethodChannel _androidBackChannel = MethodChannel(
     'mobile/shell_back',
   );
-  static const double _compactMiniBackButtonMinWidth = 68;
-  static const int _maxLabeledCompactNavItems = 4;
+  static const double _compactMiniBackButtonMinWidth = 52;
 
   final Stopwatch _tapStopwatch = Stopwatch();
   int? _lastTabIndex;

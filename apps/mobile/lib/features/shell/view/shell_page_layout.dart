@@ -165,6 +165,23 @@ extension _ShellPageLayout on _ShellPageState {
     );
   }
 
+  Widget _buildCompactFooter({
+    required BuildContext context,
+    required Widget navigationBar,
+  }) {
+    final systemBottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomPadding = systemBottomInset <= 0
+        ? 0.0
+        : (systemBottomInset * 0.42).clamp(10.0, 16.0);
+
+    return Container(
+      key: const ValueKey('compact-shell-footer'),
+      color: shad.Theme.of(context).colorScheme.background,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      child: navigationBar,
+    );
+  }
+
   Widget _buildBodyWithFloatingNav({
     required Widget body,
     required Widget navigationBar,
@@ -231,13 +248,6 @@ extension _ShellPageLayout on _ShellPageState {
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
     final isCompact = context.isCompact;
-    final compactMiniItemCount = useInjectedMiniNav
-        ? injectedMiniNavRegistration.items.length
-        : activeModule != null
-        ? activeMiniNavItems.length + 1
-        : 0;
-    final showCompactMiniLabels =
-        compactMiniItemCount <= _ShellPageState._maxLabeledCompactNavItems;
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
@@ -249,14 +259,14 @@ extension _ShellPageLayout on _ShellPageState {
             context,
             injectedMiniNavRegistration,
             isCompact,
-            showCompactLabels: showCompactMiniLabels,
+            showCompactLabels: false,
           )
         : activeModule != null
         ? _buildMiniAppNavItems(
             context,
             activeModule,
             activeMiniNavItems,
-            showCompactLabels: showCompactMiniLabels,
+            showCompactLabels: false,
           )
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
@@ -406,7 +416,12 @@ extension _ShellPageLayout on _ShellPageState {
         ),
       ],
       footers: showBottomNav && isCompact
-          ? [SafeArea(top: false, child: navigationBar)]
+          ? [
+              _buildCompactFooter(
+                context: context,
+                navigationBar: navigationBar,
+              ),
+            ]
           : const [],
       child: showBottomNav && !isCompact
           ? _buildBodyWithFloatingNav(
@@ -463,9 +478,7 @@ extension _ShellPageLayout on _ShellPageState {
       context,
       activeModule,
       activeMiniNavItems,
-      showCompactLabels:
-          activeMiniNavItems.length + 1 <=
-          _ShellPageState._maxLabeledCompactNavItems,
+      showCompactLabels: false,
     );
     final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
     final globalSelectedKey = _selectedKeyForLocation(widget.matchedLocation);
@@ -592,7 +605,12 @@ extension _ShellPageLayout on _ShellPageState {
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact
-          ? [SafeArea(top: false, child: navigationBar)]
+          ? [
+              _buildCompactFooter(
+                context: context,
+                navigationBar: navigationBar,
+              ),
+            ]
           : const [],
       child: showBottomNav && !isCompact
           ? _buildBodyWithFloatingNav(

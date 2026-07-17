@@ -10,7 +10,7 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-class AppLockBoundary extends StatelessWidget {
+class AppLockBoundary extends StatefulWidget {
   const AppLockBoundary({
     required this.child,
     this.excluded = false,
@@ -21,14 +21,49 @@ class AppLockBoundary extends StatelessWidget {
   final bool excluded;
 
   @override
+  State<AppLockBoundary> createState() => _AppLockBoundaryState();
+}
+
+class _AppLockBoundaryState extends State<AppLockBoundary> {
+  bool _requestedAutomaticUnlock = false;
+
+  void _unlock(AppLocalizations l10n) {
+    unawaited(
+      context.read<AppLockCubit>().unlock(reason: l10n.appLockUnlockReason),
+    );
+  }
+
+  void _requestAutomaticUnlock(AppLockState appLockState) {
+    if (_requestedAutomaticUnlock ||
+        appLockState.status != AppLockStatus.idle) {
+      return;
+    }
+
+    _requestedAutomaticUnlock = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final currentState = context.read<AppLockCubit>().state;
+      if (!currentState.enabled ||
+          !currentState.locked ||
+          currentState.status != AppLockStatus.idle) {
+        return;
+      }
+      _unlock(context.l10n);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authStatus = context.select<AuthCubit, AuthStatus>(
       (cubit) => cubit.state.status,
     );
     final appLockState = context.watch<AppLockCubit>().state;
 
-    if (authStatus != AuthStatus.authenticated || excluded) {
-      return child;
+    if (authStatus != AuthStatus.authenticated || widget.excluded) {
+      _requestedAutomaticUnlock = false;
+      return widget.child;
     }
 
     if (!appLockState.hasLoaded ||
@@ -37,24 +72,20 @@ class AppLockBoundary extends StatelessWidget {
     }
 
     if (!appLockState.enabled || !appLockState.locked) {
-      return child;
+      _requestedAutomaticUnlock = false;
+      return widget.child;
     }
 
     final l10n = context.l10n;
+    _requestAutomaticUnlock(appLockState);
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        child,
+        widget.child,
         AppLockGate(
           authenticating: appLockState.status == AppLockStatus.authenticating,
-          onUnlock: () {
-            unawaited(
-              context.read<AppLockCubit>().unlock(
-                reason: l10n.appLockUnlockReason,
-              ),
-            );
-          },
+          onUnlock: () => _unlock(l10n),
         ),
       ],
     );

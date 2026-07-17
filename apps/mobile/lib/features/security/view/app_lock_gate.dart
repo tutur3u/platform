@@ -30,37 +30,26 @@ class AppLockGate extends StatelessWidget {
       ),
       child: ColoredBox(
         color: colorScheme.background,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            const _LockBackdrop(),
-            SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 400),
-                            child: _LockCard(
-                              authenticating: authenticating,
-                              onUnlock: onUnlock,
-                            ),
-                          ),
-                        ),
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      child: _LockCard(
+                        authenticating: authenticating,
+                        onUnlock: onUnlock,
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -82,67 +71,21 @@ class _LockCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final l10n = context.l10n;
 
-    return Container(
+    return Padding(
       key: const ValueKey('app-lock-card'),
-      padding: const EdgeInsets.fromLTRB(28, 30, 28, 26),
-      decoration: BoxDecoration(
-        color: colorScheme.card.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.22),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.12),
-            blurRadius: 40,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Center(child: _BrandLockMark()),
-          const SizedBox(height: 24),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.verified_user_outlined,
-                    size: 15,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 7),
-                  Flexible(
-                    child: Text(
-                      l10n.appLockProtectedDevice,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.typography.xSmall.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 18),
+          const Center(child: _MinimalLockMark()),
+          const SizedBox(height: 28),
           Text(
             l10n.appLockLockedTitle,
             textAlign: TextAlign.center,
             style: theme.typography.h2.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.6,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 10),
@@ -154,7 +97,7 @@ class _LockCard extends StatelessWidget {
               height: 1.45,
             ),
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 28),
           SizedBox(
             key: const ValueKey('app-lock-unlock-button'),
             width: double.infinity,
@@ -192,82 +135,25 @@ class _LockCard extends StatelessWidget {
   }
 }
 
-class _BrandLockMark extends StatelessWidget {
-  const _BrandLockMark();
+class _MinimalLockMark extends StatelessWidget {
+  const _MinimalLockMark();
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = shad.Theme.of(context).colorScheme;
 
-    return SizedBox.square(
-      dimension: 88,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(17),
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.24),
-              ),
-            ),
-            child: Image.asset('assets/logos/transparent.png'),
-          ),
-          Positioned(
-            right: -5,
-            bottom: -5,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: colorScheme.primary,
-                shape: BoxShape.circle,
-                border: Border.all(color: colorScheme.card, width: 3),
-              ),
-              child: Icon(
-                Icons.lock_rounded,
-                size: 17,
-                color: colorScheme.primaryForeground,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LockBackdrop extends StatelessWidget {
-  const _LockBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-
-    return DecoratedBox(
+    return Container(
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(-0.7, -0.65),
-          radius: 1.25,
-          colors: [
-            colorScheme.primary.withValues(alpha: 0.18),
-            colorScheme.background.withValues(alpha: 0),
-          ],
-        ),
+        color: colorScheme.muted.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colorScheme.border),
       ),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: const Alignment(0.85, 0.9),
-            radius: 1.15,
-            colors: [
-              colorScheme.primary.withValues(alpha: 0.1),
-              colorScheme.background.withValues(alpha: 0),
-            ],
-          ),
-        ),
+      child: Icon(
+        Icons.lock_outline_rounded,
+        size: 28,
+        color: colorScheme.foreground,
       ),
     );
   }
