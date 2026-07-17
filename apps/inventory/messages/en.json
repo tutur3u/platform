@@ -1495,7 +1495,7 @@
           "minAmount": "We’ll flag this product as low when stock reaches this number.",
           "owner": "The person or brand accountable for this product.",
           "polarEnvironment": "Which Polar account this storefront checks out against. Use Sandbox for testing (no real charges) and Production for live sales. Connect the matching token in the Polar hub.",
-          "price": "What a customer pays for one unit.",
+          "price": "What a customer pays for one unit. Decimal prices such as 8.10 are supported.",
           "pricingMode": "Fixed price charges the bundle price; selected items charges the selected stock rows and applies category discounts.",
           "retail": "The price you intend to sell one unit for. Drives the profit estimate.",
           "revenueSharePartner": "Talent or partner attributed to this exact stock row for merchandise revenue splits.",
@@ -2125,6 +2125,7 @@
         "applicationSecretPlaceholder": "Square application secret",
         "appSecretEnding": "Application secret ending in {last4}",
         "cancelEditing": "Stop editing",
+        "configureNextStep": "Set up this step",
         "connectOAuth": "Connect OAuth",
         "copyWebhook": "Copy URL",
         "createDeviceCode": "Create pairing code",
@@ -2143,6 +2144,7 @@
         "environmentLabel": "Environment",
         "guide": {
           "complete": "Saved and detected",
+          "configureStep": "Configure in Tuturuuu",
           "eyebrow": "Square POS setup",
           "inProgress": "Setup in progress",
           "launch": {
@@ -2156,7 +2158,7 @@
                 "two": "Create one clearly named, low-value test item with known stock, tax, currency, and refund ownership."
               },
               "pair": {
-                "one": "Choose Production, connect the correct seller, select the counter's Square location, then enable editing in this Payments page.",
+                "one": "Choose Production, connect the correct seller, then open the Location & terminal dialog from this Payments page.",
                 "three": "Wait for Square to report the device as paired, refresh the device list, select it as the default, and save.",
                 "title": "Pair the Terminal from Tuturuuu",
                 "two": "In Terminal settings, name the device and create a pairing code. Enter it on the physical Terminal within five minutes."
@@ -2283,13 +2285,15 @@
         },
         "locationLabel": "Location",
         "locationPlaceholder": "Choose a location",
+        "nextStepBadge": "Next setup step",
+        "nextStepDescription": "Open the focused setup dialog, complete only this step, then return here to see the readiness check update.",
         "notConfigured": "No Square token saved",
         "oauthError": "Could not start Square OAuth.",
         "oauthRedirectLabel": "OAuth redirect URL",
         "oauthRedirectPlaceholder": "Defaults to this app's Square OAuth callback URL",
         "oauthRequiresAppCredentials": "Save an application ID and secret before connecting OAuth.",
         "readiness": "Readiness: {issues}",
-        "readOnlyHint": "Connection details are read-only until you choose edit.",
+        "readOnlyHint": "Connection details stay read-only here. All changes open in a focused, reviewable dialog.",
         "ready": "ready",
         "sandboxDeviceLabel": "Sandbox device ID",
         "saveAppCredentials": "Save app credentials",
@@ -2299,6 +2303,14 @@
         "saveSuccess": "Square settings saved.",
         "saving": "Saving...",
         "selectedEnvironment": "Selected: {environment}",
+        "settingsDialogDescription": "Update {environment} in focused sections. Secrets stay masked after saving, and no payment is created from this dialog.",
+        "settingsDialogTitle": "Configure Square",
+        "settingsProgress": "{completed}/{total} ready",
+        "settingsTabs": {
+          "application": "App & OAuth",
+          "connection": "Connection & webhook",
+          "terminal": "Location & terminal"
+        },
         "settingsTitle": "Square connection settings",
         "summaryApplication": "Square application",
         "summaryConnection": "Connection",
@@ -2310,6 +2322,12 @@
             "to_square": "Publish to Square"
           },
           "cancel": "Not now",
+          "changes": {
+            "bidirectional": "Tuturuuu compares both systems, applies non-conflicting changes, and pauses overlapping edits for review.",
+            "from_square": "Tuturuuu reads Square catalog and inventory data and creates or updates matching local records. Square is not changed.",
+            "to_square": "Tuturuuu publishes eligible local products, variations, prices, and stock to Square without deleting existing Square objects."
+          },
+          "changesTitle": "What this run changes",
           "confirm": {
             "bidirectional": "Compare both catalogs, import changes made in Square, and publish non-conflicting Tuturuuu changes. If both sides changed, Tuturuuu pauses that item for review.",
             "from_square": "Import Square items, variations, prices, and physical stock into Tuturuuu. Existing Square records stay untouched.",
@@ -2319,10 +2337,14 @@
           "confirmTitle": "Review catalog sync",
           "connectFirst": "Connect and validate this Square environment before syncing.",
           "description": "Keep products, variations, prices, and on-hand quantities aligned. Choose one direction or let Tuturuuu detect non-conflicting changes on both sides.",
+          "dialogDescription": "Choose one direction, review exactly what changes, and start the sync only when you are ready.",
+          "dialogTitle": "Manage Square catalog sync",
           "editToSync": "Choose the compact edit button above to enable catalog sync actions.",
           "error": "Square catalog sync failed.",
           "lastError": "Last error: {error}",
           "lastRun": "Last run {date}",
+          "manage": "Manage sync",
+          "manageHint": "Sync actions live in a guided dialog so the direction and safety boundary are always visible before anything changes.",
           "metrics": {
             "conflicts": "Needs review",
             "created": "Products created",
@@ -2333,9 +2355,14 @@
             "stock": "Stock rows changed",
             "variations": "Variations changed"
           },
+          "noDeletes": "No Square deletions",
           "partialSuccess": "Sync completed with items that need review.",
+          "protectionsTitle": "Safety protections",
+          "recommended": "Recommended",
+          "reviewConflicts": "Conflicts pause for review",
           "safetyDescription": "Tuturuuu never deletes or archives Square catalog objects. Square-only variations are preserved, and Square deletions are marked for review without deleting local data.",
           "safetyTitle": "Non-destructive by design",
+          "startAction": "Start: {action}",
           "status": {
             "error": "Needs attention",
             "idle": "Not synced",
@@ -2344,7 +2371,8 @@
             "success": "Up to date"
           },
           "success": "Square catalog sync completed.",
-          "title": "Catalog and stock sync"
+          "title": "Catalog and stock sync",
+          "writesToSquare": "Writes to Square"
         },
         "terminalDescription": "Use a paired device in production. In sandbox, paste Square's sandbox terminal device ID.",
         "terminalTitle": "Terminal routing",
@@ -2364,7 +2392,7 @@
       "squareObservability": {
         "countExplanation": "Why counts can differ: one product import can update both its Square variation and its stock count. Five linked products can therefore appear as ten imported changes.",
         "description": "See every Tuturuuu product linked to a Square item variation, where it came from, and whether it needs attention.",
-        "emptyDescription": "Connect {environment}, enable sync actions, and choose Import from Square. The imported products will appear here with their Square item and variation IDs.",
+        "emptyDescription": "Connect {environment}, open Manage sync, and choose Import from Square. Imported products will appear here with their Square item and variation IDs.",
         "emptyTitle": "No visible Square links yet",
         "enableActions": "Enable sync actions",
         "environment": {
@@ -2374,6 +2402,13 @@
         "environmentName": {
           "production": "Production",
           "sandbox": "Sandbox"
+        },
+        "filterEmpty": "Nothing in this view needs attention.",
+        "filters": {
+          "all": "All",
+          "errors": "Errors",
+          "linked": "Linked",
+          "review": "Review"
         },
         "linkedDescription": "{count, plural, =0 {No Square variations are linked yet} one {# Square variation is linked} other {# Square variations are linked}}.",
         "linkedRows": "{count} link rows",
@@ -2385,11 +2420,42 @@
           "square": "Imported from Square",
           "tuturuuu": "Published from Tuturuuu"
         },
+        "priceReviewRow": "This safe hold predates cent-level support. Re-import to apply Square’s exact price without changing Square.",
+        "priceReviewSummaryDescription": "The Square connection worked and the products were linked. These rows were safely held by the previous whole-dollar model; Tuturuuu now supports their exact cent-level prices and can import them on the next run.",
+        "priceReviewSummaryTitle": "{count, plural, one {# legacy price is ready to retry} other {# legacy prices are ready to retry}} — not connection failures",
+        "retryExactPrices": "Re-import exact prices",
+        "review": {
+          "close": "Close",
+          "description": "Review the legacy safe hold, then re-import the exact Square price.",
+          "identifiersTitle": "Technical identifiers",
+          "priceDescription": "This link was created before Tuturuuu supported sub-unit inventory prices. The importer safely preserved the prior local value instead of rounding Square’s price.",
+          "priceTitle": "Square price detected",
+          "resolutionDescription": "Tuturuuu now stores the exact price. Start a fresh import from Square and this legacy hold will clear automatically.",
+          "resolutionTitle": "Apply the exact price",
+          "retryImport": "Review import options",
+          "safeDescription": "The product and variation are already linked. The earlier run made no Square update and created no payment; retrying Import from Square remains read-only on Square.",
+          "safeTitle": "Your Square data is safe",
+          "squareItem": "Square item ID",
+          "squareVariation": "Square variation ID",
+          "steps": {
+            "one": "Confirm the exact Square price shown here ({price}).",
+            "three": "After the run, this row becomes Linked with the exact price preserved in Tuturuuu.",
+            "two": "Open the sync dialog and choose Import from Square. This reads Square without publishing or deleting anything."
+          },
+          "tabs": {
+            "explanation": "What happened",
+            "resolve": "Resolve"
+          },
+          "title": "Retry exact Square price",
+          "unknownPrice": "Unknown"
+        },
+        "reviewPrice": "Review & retry",
         "status": {
-          "active": "Linked",
           "conflict": "Review conflict",
-          "error": "Sync error",
-          "remote_deleted": "Square deletion preserved"
+          "linked": "Linked",
+          "price_retry": "Ready to retry",
+          "remote_deleted": "Square deletion preserved",
+          "sync_error": "Sync error"
         },
         "title": "Square catalog observability",
         "tuturuuu": "Tuturuuu product",

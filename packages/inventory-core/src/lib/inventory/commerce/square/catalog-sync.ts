@@ -10,7 +10,7 @@ import {
   type InventorySquareCatalogSyncSummary,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
-  resolveSquareWholeUnitPrice,
+  resolveSquareInventoryPrice,
   resolveSquareWholeUnitStock,
   type SquareCatalogSyncDirection,
   squareSyncHash,
@@ -273,9 +273,8 @@ async function pullFromSquare({
         currentAmount: local?.stock.amount ?? null,
         remoteAmount,
       });
-      const price = resolveSquareWholeUnitPrice({
+      const price = resolveSquareInventoryPrice({
         currency: priceCurrency,
-        currentPrice: local?.stock.price ?? null,
         remoteAmountMinor:
           variation.item_variation_data?.price_money?.amount ?? 0,
       });

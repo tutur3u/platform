@@ -1,6 +1,11 @@
 'use client';
 
-import { CheckCircle2, ExternalLink, ShieldCheck } from '@tuturuuu/icons';
+import {
+  CheckCircle2,
+  ExternalLink,
+  Settings2,
+  ShieldCheck,
+} from '@tuturuuu/icons';
 import type {
   InventorySquareEnvironment,
   InventorySquareSettings,
@@ -17,7 +22,10 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { SquareFirstPaymentDialog } from './square-production-launch-dialog';
 import { SquareProductionLaunchGuide } from './square-production-launch-guide';
-import { getSquareSetupProgress } from './square-setup-progress';
+import {
+  getSquareSetupProgress,
+  type SquareSetupStepId,
+} from './square-setup-progress';
 
 const SQUARE_DOCS = {
   application: 'https://developer.squareup.com/apps',
@@ -29,11 +37,13 @@ const SQUARE_DOCS = {
 
 export function SquareProductionSetupGuide({
   environment,
+  onConfigureStep,
   onEnvironmentChange,
   settings,
   webhookUrl,
 }: {
   environment: InventorySquareEnvironment;
+  onConfigureStep: (step: SquareSetupStepId) => void;
   onEnvironmentChange: (environment: InventorySquareEnvironment) => void;
   settings?: InventorySquareSettings;
   webhookUrl: string;
@@ -142,16 +152,28 @@ export function SquareProductionSetupGuide({
                     {webhookUrl}
                   </code>
                 ) : null}
-                <Button asChild className="mt-3" size="sm" variant="outline">
-                  <a
-                    href={SQUARE_DOCS[step.id]}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    {t('openSquareGuide')}
-                    <ExternalLink className="size-3.5" />
-                  </a>
-                </Button>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {!step.complete ? (
+                    <Button
+                      onClick={() => onConfigureStep(step.id)}
+                      size="sm"
+                      type="button"
+                    >
+                      <Settings2 className="size-3.5" />
+                      {t('configureStep')}
+                    </Button>
+                  ) : null}
+                  <Button asChild size="sm" variant="outline">
+                    <a
+                      href={SQUARE_DOCS[step.id]}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {t('openSquareGuide')}
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
           ))}

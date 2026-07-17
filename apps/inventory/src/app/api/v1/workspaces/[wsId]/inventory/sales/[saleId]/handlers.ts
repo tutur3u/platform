@@ -178,7 +178,7 @@ export async function handlePutSale(req: Request, { params }: Params) {
     }
 
     nextCategoryId = categoryResolution.categoryId ?? null;
-    nextPaidAmount = Math.round(builtProducts.totalPaidAmount);
+    nextPaidAmount = builtProducts.totalPaidAmount;
 
     const previousAmounts = new Map<string, number>();
     for (const line of before.lines) {

@@ -67,7 +67,7 @@ flowchart LR
 | Product name and description | Catalog item name and description | Trimmed display data; review branding before Production publish |
 | Unit or sellable variant | Item variation | One product can have several variation links |
 | SKU | Variation SKU | Use stable, unique SKUs where possible |
-| Price and currency | Square Money amount and currency | Exact whole-major-unit prices import directly; fractional major-unit prices are preserved for review instead of rounded |
+| Price and currency | Square Money amount and currency | Exact sub-unit prices import directly, including USD 8.10 and three-decimal currencies such as BHD |
 | Warehouse stock row | Physical inventory count at selected location | The chosen Square location is part of the routing context; Tuturuuu Inventory stores whole-unit counts |
 | Link origin and last hashes | Link metadata in Tuturuuu | Supports conflict detection and observability |
 
@@ -76,14 +76,19 @@ human-readable amount in Tuturuuu; the integration converts it to Square's
 currency-aware integer Money representation. If USD 10.00 appears as USD 0.10
 or USD 1,000.00, stop and investigate before another sync.
 
-<Warning>
-  Square can report fractional prices or physical counts, while Tuturuuu's base
-  Inventory rows currently store whole major-currency units and whole stock
-  units. Import still creates the product and variation link, but it preserves
-  an existing local value or initializes a new value at zero and marks that
-  link **Sync error** for review. Tuturuuu does not round the Square value or
-  write anything back to Square automatically.
-</Warning>
+<Note>
+  Tuturuuu Inventory stores major-unit prices with exact decimal precision and
+  converts them to Square's currency-aware integer Money amount at the provider
+  boundary. Physical stock remains whole-unit inventory. A fractional stock
+  count is still held for review instead of rounded.
+</Note>
+
+<Accordion title="Why do older rows say Ready to retry?">
+  Those links were imported before cent-level Inventory prices were supported.
+  Square was not changed and the previous local price was preserved. Open
+  **Manage sync**, choose **Import from Square**, and run one read-only import.
+  Tuturuuu applies the exact Square price and clears the legacy hold.
+</Accordion>
 
 ## Safe first synchronization
 
@@ -137,6 +142,7 @@ actual relationships.
 | Status | Meaning | Safe next action |
 | --- | --- | --- |
 | **Linked** | The last known states agree | No action unless a new business change is approved |
+| **Ready to retry** | A legacy import safely held a cent-level Square price | Run **Import from Square** once; Square remains read-only and the exact price is applied locally |
 | **Review conflict** | Both sides changed since the last shared state | Compare Square and Tuturuuu, choose the authoritative value, then run one directional sync |
 | **Sync error** | A Square or validation request failed | Read the row error, fix credentials/data, and retry only that intended direction |
 | **Square deletion preserved** | The linked Square object is absent or deleted | Ask the owner whether to recreate/publish or intentionally leave it disconnected; do not delete the local product |

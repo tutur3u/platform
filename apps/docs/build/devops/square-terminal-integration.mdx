@@ -93,6 +93,10 @@ Catalog Batch Upsert and physical inventory counts, never calls a Square catalog
 delete endpoint, preserves Square-only variations when updating an item, and
 turns simultaneous edits into conflicts for operator review. A Square deletion
 marks the local link for review without deleting local product or stock data.
+Inventory base prices use exact decimal major units, so Square Money amounts
+round-trip at the currency exponent without rounding to whole dollars. Legacy
+fractional-price holds clear on the next Square-to-Tuturuuu import after the
+cent-level schema migration is applied.
 
 ## Workspace credentials
 
@@ -159,7 +163,9 @@ notification URL so signature validation uses the same value.
 
 ## Connect a workspace
 
-1. Open **Inventory → Payments → Connect & set up → Square POS**.
+1. Open **Inventory → Payments → Connect & set up → Square POS**. Configuration
+   changes open in a three-tab dialog; incomplete checklist steps deep-link to
+   the required tab.
 2. Choose `Sandbox` or `Production`.
 3. Save the Square Application ID and Application Secret for that environment.
    If Square is configured with a tunnel or canonical URL that differs from the

@@ -1,8 +1,8 @@
 import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 
 /**
- * Format a major-unit amount (whole dollars/units) as currency. Used for values
- * that are NOT stored in minor units — e.g. raw product prices and promotion
+ * Format an exact major-unit amount as currency. Used for values that are NOT
+ * stored in minor units — e.g. decimal Inventory product prices and promotion
  * values. For commerce money stored in minor units, use {@link money} instead.
  *
  * By default the fraction digits follow the currency's own standard (USD →

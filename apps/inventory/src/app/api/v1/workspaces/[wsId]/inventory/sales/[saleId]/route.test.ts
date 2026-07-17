@@ -352,6 +352,51 @@ describe('inventory sale detail route', () => {
     expect(adminClient.productStockChangesInsert).not.toHaveBeenCalled();
   });
 
+  it('preserves cent-level authoritative prices when updating sale lines', async () => {
+    const adminClient = createAdminClientMock({
+      inventoryRows: [
+        {
+          price: 8.1,
+          product_id: PRODUCT_ID,
+          unit_id: UNIT_ID,
+          warehouse_id: WAREHOUSE_ID,
+        },
+      ],
+    });
+    mocks.createAdminClient.mockResolvedValue(adminClient.client);
+
+    const { PUT } = await import('./route');
+    const response = await PUT(
+      new Request(
+        `https://app.example.com/api/v1/workspaces/${WS_ID}/inventory/sales/${SALE_ID}`,
+        {
+          body: JSON.stringify({
+            products: [
+              {
+                price: 1,
+                product_id: PRODUCT_ID,
+                quantity: 2,
+                unit_id: UNIT_ID,
+                warehouse_id: WAREHOUSE_ID,
+              },
+            ],
+          }),
+          method: 'PUT',
+        }
+      ),
+      { params: Promise.resolve({ saleId: SALE_ID, wsId: WS_ID }) }
+    );
+
+    if (!response) throw new Error('Expected inventory sale update response');
+    expect(response.status).toBe(200);
+    expect(adminClient.financeInvoiceProductInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ price: 8.1, product_id: PRODUCT_ID }),
+    ]);
+    expect(adminClient.financeInvoiceUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ paid_amount: 16.2, price: 16.2 })
+    );
+  });
+
   it('rejects sale lines without an exact inventory tuple before mutating', async () => {
     const adminClient = createAdminClientMock({
       inventoryRows: [],

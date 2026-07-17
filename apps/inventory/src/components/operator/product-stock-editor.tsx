@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { FormSection } from './operator-dialog-shell';
 import {
+  DecimalField,
   NumberField,
   SelectField,
   TextAreaField,
@@ -278,7 +279,7 @@ export function ProductStockEditor({
                     placeholder={t('placeholders.minAmount')}
                     value={row.minAmount}
                   />
-                  <NumberField
+                  <DecimalField
                     hint={t('hints.price')}
                     label={t('price')}
                     onChange={(price) =>

@@ -7,22 +7,36 @@ const inventoryRoot = process.cwd().endsWith('/apps/inventory')
   : join(process.cwd(), 'apps/inventory');
 
 describe('SquareSettingsPanel', () => {
-  it('keeps provider settings read-only until the compact edit control is used', () => {
+  it('keeps provider settings read-only and opens changes in a dialog', () => {
     const source = readFileSync(
       join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
       'utf8'
     );
-
-    expect(source).toContain(
-      'const [isEditing, setIsEditing] = useState(false)'
+    const editorSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-settings-editor-dialog.tsx'
+      ),
+      'utf8'
     );
+
+    expect(source).not.toContain('isEditing');
     expect(source).toContain('<SquareSettingsSummary');
+    expect(source).toContain('<SquareSettingsEditorDialog');
     expect(source).toContain("t('editSettings')");
+    expect(editorSource).toContain('<Dialog onOpenChange={closeDialog}');
+    expect(editorSource).toContain('<OperatorDialogTabs');
+    expect(editorSource).toContain("value: 'application'");
+    expect(editorSource).toContain("value: 'connection'");
+    expect(editorSource).toContain("value: 'terminal'");
   });
 
   it('saves workspace app credentials through the Square settings API payload', () => {
     const source = readFileSync(
-      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      join(
+        inventoryRoot,
+        'src/components/operator/square-settings-editor-dialog.tsx'
+      ),
       'utf8'
     );
 
@@ -38,7 +52,10 @@ describe('SquareSettingsPanel', () => {
 
   it('gates OAuth start on saved app credential metadata', () => {
     const source = readFileSync(
-      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      join(
+        inventoryRoot,
+        'src/components/operator/square-settings-editor-dialog.tsx'
+      ),
       'utf8'
     );
     const cardsSource = readFileSync(
@@ -53,7 +70,10 @@ describe('SquareSettingsPanel', () => {
 
   it('uses the environment selected in the form for connection state and defaults', () => {
     const source = readFileSync(
-      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      join(
+        inventoryRoot,
+        'src/components/operator/square-settings-editor-dialog.tsx'
+      ),
       'utf8'
     );
     const cardsSource = readFileSync(
@@ -61,15 +81,17 @@ describe('SquareSettingsPanel', () => {
       'utf8'
     );
 
-    expect(source).toContain(
-      "environment ?? settings.data?.environment ?? 'sandbox'"
-    );
-    expect(source).toContain('environment: selectedEnvironment');
-    expect(source).toContain("'square-locations', selectedEnvironment");
-    expect(source).toContain("'square-devices', selectedEnvironment");
+    expect(source).toContain('settings?.environment === environment');
+    expect(source).toContain('environment,');
+    expect(source).toContain("'square-locations', environment");
+    expect(source).toContain("'square-devices', environment");
     expect(source).toContain('activeRoutingSettings?.locationId');
-    expect(source).toContain('item.environment === selectedEnvironment');
-    expect(source).toContain('<SquareProductionSetupGuide');
+    expect(source).toContain('item.environment === environment');
+    const panelSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+    expect(panelSource).toContain('<SquareProductionSetupGuide');
     expect(cardsSource).toContain(
       "tokenLast4\n    ? readinessIssues.join(', ') || t('ready')\n    : t('notConfigured')"
     );
@@ -97,11 +119,11 @@ describe('SquareSettingsPanel', () => {
     expect(paymentSource).toContain('<SquareSettingsPanel');
   });
 
-  it('offers guarded pull, push, and non-destructive two-way catalog sync', () => {
+  it('offers guarded pull, push, and non-destructive two-way sync in a dialog', () => {
     const source = readFileSync(
       join(
         inventoryRoot,
-        'src/components/operator/square-catalog-sync-card.tsx'
+        'src/components/operator/square-catalog-sync-dialog.tsx'
       ),
       'utf8'
     );
@@ -114,14 +136,33 @@ describe('SquareSettingsPanel', () => {
     );
 
     expect(observabilitySource).toContain('<SquareCatalogSyncCard');
-    expect(observabilitySource).toContain('actionsEnabled={actionsEnabled}');
-    expect(observabilitySource).toContain('<CompactEditButton');
+    expect(observabilitySource).toContain('dialogOpen={syncDialogOpen}');
+    expect(observabilitySource).not.toContain('<CompactEditButton');
     expect(source).toContain("'from_square'");
     expect(source).toContain("'to_square'");
     expect(source).toContain("'bidirectional'");
-    expect(source).toContain('<AlertDialog');
+    expect(source).toContain('<OperatorDialogTabs');
+    expect(source).toContain('<Accordion');
     expect(source).toContain("t('safetyDescription')");
     expect(source).toContain('onSettled: () =>');
-    expect(source).toContain("t('lastError'");
+  });
+
+  it('guides every incomplete setup step into the matching settings tab', () => {
+    const panelSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+    const guideSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-production-setup-guide.tsx'
+      ),
+      'utf8'
+    );
+
+    expect(panelSource).toContain('EDITOR_TAB_BY_STEP');
+    expect(panelSource).toContain('onConfigureStep={openEditor}');
+    expect(guideSource).toContain('onConfigureStep(step.id)');
+    expect(guideSource).toContain("t('configureStep')");
   });
 });

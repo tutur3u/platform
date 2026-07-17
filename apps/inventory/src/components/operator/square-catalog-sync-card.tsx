@@ -1,67 +1,37 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, ShieldCheck, TriangleAlert } from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
 import {
-  getInventorySquareCatalogSyncState,
-  type InventorySquareCatalogSyncDirection,
-  syncInventorySquareCatalog,
-} from '@tuturuuu/internal-api/inventory';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
+  RefreshCw,
+  Settings2,
+  ShieldCheck,
+  TriangleAlert,
+} from '@tuturuuu/icons';
+import { getInventorySquareCatalogSyncState } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
-
-const directions: InventorySquareCatalogSyncDirection[] = [
-  'from_square',
-  'to_square',
-  'bidirectional',
-];
+import { SquareCatalogSyncDialog } from './square-catalog-sync-dialog';
 
 export function SquareCatalogSyncCard({
-  actionsEnabled,
   connected,
+  dialogOpen,
+  onDialogOpenChange,
   wsId,
 }: {
-  actionsEnabled: boolean;
   connected: boolean;
+  dialogOpen: boolean;
+  onDialogOpenChange: (open: boolean) => void;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.square.sync');
-  const queryClient = useQueryClient();
-  const [pendingDirection, setPendingDirection] =
-    useState<InventorySquareCatalogSyncDirection | null>(null);
   const state = useQuery({
     enabled: connected,
     queryFn: () => getInventorySquareCatalogSyncState(wsId),
     queryKey: ['inventory', wsId, 'square-catalog-sync'],
   });
-  const sync = useMutation({
-    mutationFn: (direction: InventorySquareCatalogSyncDirection) =>
-      syncInventorySquareCatalog(wsId, direction),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('error')),
-    onSettled: () =>
-      queryClient.invalidateQueries({
-        queryKey: ['inventory', wsId, 'square-catalog-sync'],
-      }),
-    onSuccess: (summary) => {
-      toast.success(summary.conflicts > 0 ? t('partialSuccess') : t('success'));
-    },
-  });
-  const summary = sync.data ?? state.data?.lastSummary;
-  const status = sync.isPending ? 'running' : state.data?.lastStatus;
+  const summary = state.data?.lastSummary;
+  const status = state.data?.lastStatus;
   const badgeVariant =
     status === 'success'
       ? 'success'
@@ -141,60 +111,26 @@ export function SquareCatalogSyncCard({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap gap-2 p-4">
-        {actionsEnabled
-          ? directions.map((direction) => (
-              <Button
-                disabled={!connected || sync.isPending}
-                key={direction}
-                onClick={() => setPendingDirection(direction)}
-                type="button"
-                variant={direction === 'bidirectional' ? 'default' : 'outline'}
-              >
-                <RefreshCw className={sync.isPending ? 'animate-spin' : ''} />
-                {t(`actions.${direction}`)}
-              </Button>
-            ))
-          : null}
-        {!actionsEnabled ? (
-          <p className="w-full text-muted-foreground text-xs">
-            {t('editToSync')}
-          </p>
-        ) : !connected ? (
-          <p className="w-full text-muted-foreground text-xs">
-            {t('connectFirst')}
-          </p>
-        ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <p className="max-w-2xl text-muted-foreground text-xs leading-5">
+          {connected ? t('manageHint') : t('connectFirst')}
+        </p>
+        <Button
+          onClick={() => onDialogOpenChange(true)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Settings2 className="size-4" />
+          {t('manage')}
+        </Button>
       </div>
-
-      <AlertDialog
-        onOpenChange={(open) => !open && setPendingDirection(null)}
-        open={pendingDirection !== null}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('confirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDirection
-                ? t(`confirm.${pendingDirection}`)
-                : t('confirmTitle')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="rounded-md border border-border bg-muted/30 p-3 text-muted-foreground text-xs">
-            {t('safetyDescription')}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (pendingDirection) sync.mutate(pendingDirection);
-              }}
-            >
-              {t('confirmAction')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SquareCatalogSyncDialog
+        connected={connected}
+        onOpenChange={onDialogOpenChange}
+        open={dialogOpen}
+        wsId={wsId}
+      />
     </div>
   );
 }

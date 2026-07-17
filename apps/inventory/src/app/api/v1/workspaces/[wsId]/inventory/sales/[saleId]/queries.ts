@@ -382,7 +382,7 @@ export async function buildUpdatedInvoiceProducts(
       warehouse_id: product.warehouse_id,
       warehouse: warehouseNameById.get(product.warehouse_id) ?? '',
       amount: product.quantity,
-      price: Math.round(Number(inventoryProduct?.price ?? 0)),
+      price: Number(inventoryProduct?.price ?? 0),
       owner_id: productInfo?.ownerId ?? null,
       owner_name: productInfo?.ownerName ?? '',
     };

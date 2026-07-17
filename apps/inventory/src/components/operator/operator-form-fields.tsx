@@ -103,6 +103,12 @@ export function NumberField(
   return <TextField {...props} inputMode="numeric" />;
 }
 
+export function DecimalField(
+  props: Omit<Parameters<typeof TextField>[0], 'inputMode'>
+) {
+  return <TextField {...props} inputMode="decimal" />;
+}
+
 /**
  * A color field that pairs a visual swatch/picker with a hex text input, so
  * non-technical operators can pick a brand color instead of guessing hex codes,

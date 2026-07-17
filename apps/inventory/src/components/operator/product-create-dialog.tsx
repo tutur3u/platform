@@ -24,6 +24,7 @@ import {
   OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
+  DecimalField,
   NumberField,
   SelectField,
   TextAreaField,
@@ -390,7 +391,7 @@ export function ProductCreateForm({
                         placeholder={t('placeholders.minAmount')}
                         value={form.minAmount}
                       />
-                      <NumberField
+                      <DecimalField
                         hint={t('hints.price')}
                         label={t('price')}
                         onChange={(price) =>

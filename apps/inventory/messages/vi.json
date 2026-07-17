@@ -1495,7 +1495,7 @@
           "minAmount": "Chúng tôi sẽ đánh dấu sản phẩm sắp hết khi tồn kho chạm mức này.",
           "owner": "Người hoặc thương hiệu chịu trách nhiệm cho sản phẩm này.",
           "polarEnvironment": "Cửa hàng thanh toán qua tài khoản Polar nào. Dùng Sandbox để thử nghiệm (không tính phí thật) và Production cho bán hàng thực tế. Kết nối token tương ứng trong trung tâm Polar.",
-          "price": "Số tiền khách trả cho một đơn vị.",
+          "price": "Số tiền khách trả cho một đơn vị. Hỗ trợ giá thập phân như 8,10.",
           "pricingMode": "Giá cố định giữ nguyên tổng combo; giá theo món đã chọn cho phép áp dụng khuyến mại như mua 2 tặng 1.",
           "retail": "Giá bạn dự định bán một đơn vị. Dùng để ước tính lợi nhuận.",
           "revenueSharePartner": "Đối tác hoặc talent được ghi nhận doanh thu từ dòng tồn kho này.",
@@ -2125,6 +2125,7 @@
         "applicationSecretPlaceholder": "Application secret Square",
         "appSecretEnding": "Application secret kết thúc bằng {last4}",
         "cancelEditing": "Dừng chỉnh sửa",
+        "configureNextStep": "Thiết lập bước này",
         "connectOAuth": "Kết nối OAuth",
         "copyWebhook": "Sao chép URL",
         "createDeviceCode": "Tạo mã ghép nối",
@@ -2143,6 +2144,7 @@
         "environmentLabel": "Môi trường",
         "guide": {
           "complete": "Đã lưu và nhận diện",
+          "configureStep": "Cấu hình trong Tuturuuu",
           "eyebrow": "Thiết lập POS Square",
           "inProgress": "Đang thiết lập",
           "launch": {
@@ -2156,7 +2158,7 @@
                 "two": "Tạo một sản phẩm kiểm tra giá trị thấp, tên rõ ràng với tồn kho, thuế, tiền tệ và người chịu trách nhiệm hoàn tiền đã biết."
               },
               "pair": {
-                "one": "Chọn Production, kết nối đúng người bán, chọn địa điểm Square của quầy rồi bật chỉnh sửa trên trang Thanh toán này.",
+                "one": "Chọn Production, kết nối đúng người bán rồi mở hộp thoại Địa điểm & terminal từ trang Thanh toán này.",
                 "three": "Chờ Square báo thiết bị đã ghép nối, làm mới danh sách thiết bị, chọn làm mặc định và lưu.",
                 "title": "Ghép nối Terminal từ Tuturuuu",
                 "two": "Trong cài đặt Terminal, đặt tên thiết bị và tạo mã ghép nối. Nhập mã trên Terminal vật lý trong vòng năm phút."
@@ -2283,13 +2285,15 @@
         },
         "locationLabel": "Địa điểm",
         "locationPlaceholder": "Chọn địa điểm",
+        "nextStepBadge": "Bước thiết lập tiếp theo",
+        "nextStepDescription": "Mở hộp thoại thiết lập đúng phần, chỉ hoàn tất bước này rồi quay lại để xem trạng thái sẵn sàng được cập nhật.",
         "notConfigured": "Chưa lưu token Square",
         "oauthError": "Không thể bắt đầu OAuth Square.",
         "oauthRedirectLabel": "URL chuyển hướng OAuth",
         "oauthRedirectPlaceholder": "Mặc định là URL callback OAuth Square của ứng dụng này",
         "oauthRequiresAppCredentials": "Lưu application ID và secret trước khi kết nối OAuth.",
         "readiness": "Sẵn sàng: {issues}",
-        "readOnlyHint": "Chi tiết kết nối ở chế độ chỉ đọc cho đến khi bạn chọn chỉnh sửa.",
+        "readOnlyHint": "Chi tiết kết nối luôn chỉ đọc tại đây. Mọi thay đổi mở trong hộp thoại tập trung để dễ kiểm tra.",
         "ready": "sẵn sàng",
         "sandboxDeviceLabel": "ID thiết bị sandbox",
         "saveAppCredentials": "Lưu thông tin ứng dụng",
@@ -2299,6 +2303,14 @@
         "saveSuccess": "Đã lưu cài đặt Square.",
         "saving": "Đang lưu...",
         "selectedEnvironment": "Đã chọn: {environment}",
+        "settingsDialogDescription": "Cập nhật {environment} theo từng phần rõ ràng. Thông tin bí mật được che sau khi lưu và hộp thoại này không tạo thanh toán.",
+        "settingsDialogTitle": "Cấu hình Square",
+        "settingsProgress": "Sẵn sàng {completed}/{total}",
+        "settingsTabs": {
+          "application": "Ứng dụng & OAuth",
+          "connection": "Kết nối & webhook",
+          "terminal": "Địa điểm & terminal"
+        },
         "settingsTitle": "Cài đặt kết nối Square",
         "summaryApplication": "Ứng dụng Square",
         "summaryConnection": "Kết nối",
@@ -2310,6 +2322,12 @@
             "to_square": "Đăng lên Square"
           },
           "cancel": "Để sau",
+          "changes": {
+            "bidirectional": "Tuturuuu so sánh hai hệ thống, áp dụng thay đổi không xung đột và tạm dừng các chỉnh sửa trùng nhau để xem xét.",
+            "from_square": "Tuturuuu đọc danh mục và tồn kho Square rồi tạo hoặc cập nhật bản ghi cục bộ phù hợp. Square không bị thay đổi.",
+            "to_square": "Tuturuuu đăng sản phẩm, biến thể, giá và tồn kho đủ điều kiện lên Square mà không xóa đối tượng Square hiện có."
+          },
+          "changesTitle": "Lần chạy này thay đổi gì",
           "confirm": {
             "bidirectional": "So sánh hai danh mục, nhập thay đổi từ Square và đăng các thay đổi không xung đột từ Tuturuuu. Nếu cả hai phía cùng thay đổi, Tuturuuu sẽ tạm dừng mục đó để xem xét.",
             "from_square": "Nhập sản phẩm, biến thể, giá và tồn kho thực tế từ Square vào Tuturuuu. Các bản ghi Square hiện có không bị thay đổi.",
@@ -2319,10 +2337,14 @@
           "confirmTitle": "Xem lại đồng bộ danh mục",
           "connectFirst": "Kết nối và xác thực môi trường Square này trước khi đồng bộ.",
           "description": "Giữ sản phẩm, biến thể, giá và số lượng tồn kho đồng nhất. Chọn một chiều hoặc để Tuturuuu phát hiện các thay đổi không xung đột ở cả hai phía.",
+          "dialogDescription": "Chọn một hướng, xem chính xác điều sẽ thay đổi và chỉ bắt đầu đồng bộ khi bạn đã sẵn sàng.",
+          "dialogTitle": "Quản lý đồng bộ danh mục Square",
           "editToSync": "Chọn nút chỉnh sửa nhỏ phía trên để bật các thao tác đồng bộ danh mục.",
           "error": "Đồng bộ danh mục Square thất bại.",
           "lastError": "Lỗi gần nhất: {error}",
           "lastRun": "Lần chạy gần nhất {date}",
+          "manage": "Quản lý đồng bộ",
+          "manageHint": "Các thao tác đồng bộ nằm trong hộp thoại có hướng dẫn để luôn hiển thị hướng và giới hạn an toàn trước khi thay đổi.",
           "metrics": {
             "conflicts": "Cần xem lại",
             "created": "Sản phẩm đã tạo",
@@ -2333,9 +2355,14 @@
             "stock": "Dòng tồn kho đã thay đổi",
             "variations": "Biến thể đã thay đổi"
           },
+          "noDeletes": "Không xóa dữ liệu Square",
           "partialSuccess": "Đồng bộ hoàn tất với một số mục cần xem lại.",
+          "protectionsTitle": "Biện pháp bảo vệ",
+          "recommended": "Khuyến nghị",
+          "reviewConflicts": "Xung đột được tạm dừng để xem xét",
           "safetyDescription": "Tuturuuu không bao giờ xóa hoặc lưu trữ đối tượng danh mục Square. Các biến thể chỉ có trên Square được giữ nguyên và thao tác xóa từ Square được đánh dấu để xem lại mà không xóa dữ liệu cục bộ.",
           "safetyTitle": "Thiết kế không phá hủy dữ liệu",
+          "startAction": "Bắt đầu: {action}",
           "status": {
             "error": "Cần xử lý",
             "idle": "Chưa đồng bộ",
@@ -2344,7 +2371,8 @@
             "success": "Đã cập nhật"
           },
           "success": "Đồng bộ danh mục Square hoàn tất.",
-          "title": "Đồng bộ danh mục và tồn kho"
+          "title": "Đồng bộ danh mục và tồn kho",
+          "writesToSquare": "Ghi vào Square"
         },
         "terminalDescription": "Dùng thiết bị đã ghép nối trong production. Trong sandbox, dán ID thiết bị terminal sandbox của Square.",
         "terminalTitle": "Điều hướng terminal",
@@ -2364,7 +2392,7 @@
       "squareObservability": {
         "countExplanation": "Vì sao số lượng có thể khác nhau: một lần nhập sản phẩm có thể cập nhật cả biến thể Square và số lượng tồn kho. Do đó năm sản phẩm đã liên kết có thể hiển thị thành mười thay đổi được nhập.",
         "description": "Xem từng sản phẩm Tuturuuu được liên kết với biến thể mặt hàng Square, nguồn gốc và trạng thái cần xử lý.",
-        "emptyDescription": "Kết nối {environment}, bật thao tác đồng bộ và chọn Nhập từ Square. Sản phẩm được nhập sẽ xuất hiện tại đây cùng mã mặt hàng và biến thể Square.",
+        "emptyDescription": "Kết nối {environment}, mở Quản lý đồng bộ và chọn Nhập từ Square. Sản phẩm được nhập sẽ xuất hiện tại đây cùng mã mặt hàng và biến thể Square.",
         "emptyTitle": "Chưa có liên kết Square hiển thị",
         "enableActions": "Bật thao tác đồng bộ",
         "environment": {
@@ -2374,6 +2402,13 @@
         "environmentName": {
           "production": "Production",
           "sandbox": "Sandbox"
+        },
+        "filterEmpty": "Không có mục nào trong chế độ xem này cần xử lý.",
+        "filters": {
+          "all": "Tất cả",
+          "errors": "Lỗi",
+          "linked": "Đã liên kết",
+          "review": "Xem lại"
         },
         "linkedDescription": "{count, plural, =0 {Chưa có biến thể Square nào được liên kết} other {# biến thể Square đã được liên kết}}.",
         "linkedRows": "{count} dòng liên kết",
@@ -2385,11 +2420,42 @@
           "square": "Được nhập từ Square",
           "tuturuuu": "Được xuất bản từ Tuturuuu"
         },
+        "priceReviewRow": "Lần giữ an toàn này có trước hỗ trợ giá lẻ. Nhập lại để áp dụng đúng giá Square mà không thay đổi Square.",
+        "priceReviewSummaryDescription": "Kết nối Square đã hoạt động và sản phẩm đã được liên kết. Các dòng này được mô hình giá nguyên trước đây giữ an toàn; Tuturuuu hiện hỗ trợ chính xác giá lẻ và có thể nhập ở lần chạy tiếp theo.",
+        "priceReviewSummaryTitle": "{count, plural, other {# giá cũ sẵn sàng thử lại}} — không phải lỗi kết nối",
+        "retryExactPrices": "Nhập lại đúng giá",
+        "review": {
+          "close": "Đóng",
+          "description": "Xem lần giữ an toàn cũ rồi nhập lại đúng giá Square.",
+          "identifiersTitle": "Mã định danh kỹ thuật",
+          "priceDescription": "Liên kết này được tạo trước khi Tuturuuu hỗ trợ giá tồn kho có phần lẻ. Trình nhập đã giữ giá cục bộ cũ thay vì làm tròn giá Square.",
+          "priceTitle": "Giá Square đã phát hiện",
+          "resolutionDescription": "Tuturuuu hiện lưu được giá chính xác. Bắt đầu lần nhập mới từ Square và trạng thái giữ cũ sẽ tự xóa.",
+          "resolutionTitle": "Áp dụng giá chính xác",
+          "retryImport": "Xem tùy chọn nhập",
+          "safeDescription": "Sản phẩm và biến thể đã được liên kết. Lần chạy trước không cập nhật Square hay tạo thanh toán; thử lại Nhập từ Square vẫn chỉ đọc phía Square.",
+          "safeTitle": "Dữ liệu Square của bạn an toàn",
+          "squareItem": "ID mặt hàng Square",
+          "squareVariation": "ID biến thể Square",
+          "steps": {
+            "one": "Xác nhận đúng giá Square hiển thị tại đây ({price}).",
+            "three": "Sau khi chạy, dòng này chuyển thành Đã liên kết với giá chính xác được lưu trong Tuturuuu.",
+            "two": "Mở hộp thoại đồng bộ và chọn Nhập từ Square. Thao tác này đọc Square mà không đăng hay xóa dữ liệu."
+          },
+          "tabs": {
+            "explanation": "Điều gì đã xảy ra",
+            "resolve": "Xử lý"
+          },
+          "title": "Thử lại đúng giá Square",
+          "unknownPrice": "Không rõ"
+        },
+        "reviewPrice": "Xem & thử lại",
         "status": {
-          "active": "Đã liên kết",
           "conflict": "Xem xung đột",
-          "error": "Lỗi đồng bộ",
-          "remote_deleted": "Đã giữ nguyên khi Square xóa"
+          "linked": "Đã liên kết",
+          "price_retry": "Sẵn sàng thử lại",
+          "remote_deleted": "Đã giữ nguyên khi Square xóa",
+          "sync_error": "Lỗi đồng bộ"
         },
         "title": "Khả năng quan sát danh mục Square",
         "tuturuuu": "Sản phẩm Tuturuuu",

@@ -6,7 +6,7 @@ import {
   hasSquareDeleteInstruction,
   inventoryPriceToSquareAmount,
   mergeSquareItemWithoutDeleting,
-  resolveSquareWholeUnitPrice,
+  resolveSquareInventoryPrice,
   resolveSquareWholeUnitStock,
   selectUnlinkedSquareImportProduct,
   squareAmountToInventoryPrice,
@@ -121,40 +121,29 @@ describe('Square catalog sync contract', () => {
 
   it('preserves an exact whole-unit Square price', () => {
     expect(
-      resolveSquareWholeUnitPrice({
+      resolveSquareInventoryPrice({
         currency: 'USD',
-        currentPrice: 20,
         remoteAmountMinor: 2500,
       })
     ).toEqual({ error: null, price: 25 });
   });
 
-  it('keeps an existing price when Square uses fractional major units', () => {
+  it('preserves USD cents from Square in the inventory price', () => {
     expect(
-      resolveSquareWholeUnitPrice({
+      resolveSquareInventoryPrice({
         currency: 'USD',
-        currentPrice: 12,
         remoteAmountMinor: 1351,
       })
-    ).toEqual({
-      error:
-        'Square reported a non-whole USD price (13.51). Tuturuuu kept its value until an operator reviews the price.',
-      price: 12,
-    });
+    ).toEqual({ error: null, price: 13.51 });
   });
 
-  it('fails closed at zero for a new fractional Square price', () => {
+  it('preserves three-decimal currency prices from Square', () => {
     expect(
-      resolveSquareWholeUnitPrice({
+      resolveSquareInventoryPrice({
         currency: 'BHD',
-        currentPrice: null,
         remoteAmountMinor: 1234,
       })
-    ).toEqual({
-      error:
-        'Square reported a non-whole BHD price (1.234). Tuturuuu set it to 0 until an operator reviews the price.',
-      price: 0,
-    });
+    ).toEqual({ error: null, price: 1.234 });
   });
 
   it('extracts provider and database messages for private sync observability', () => {

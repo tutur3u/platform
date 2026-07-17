@@ -51,10 +51,10 @@ Two boundaries convert explicitly:
 - Promotions (`workspace_promotions.value`) remain in major units (shared with
   finance invoices); `promotions-polar` multiplies by 100 at the Polar boundary.
 
-> Migrating from the previous whole-dollar storage: the
-> `..._inventory_commerce_minor_units` migration multiplies existing inventory
-> commerce amounts by each row's currency factor. Shared tables
-> (`inventory_products`, `workspace_promotions`, finance wallets) are left as-is.
+> Inventory base prices use exact decimal major units, while Storefront listing,
+> bundle, checkout, and Polar amounts use integer minor units. Convert only at
+> the explicit provider boundary; never manually multiply a saved Inventory
+> price before publishing it.
 
 ## Bundles and listings ↔ Polar products
 

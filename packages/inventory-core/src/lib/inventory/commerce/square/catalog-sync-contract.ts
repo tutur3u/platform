@@ -89,28 +89,16 @@ export function resolveSquareWholeUnitStock({
   };
 }
 
-export function resolveSquareWholeUnitPrice({
+export function resolveSquareInventoryPrice({
   currency,
-  currentPrice,
   remoteAmountMinor,
 }: {
   currency: string;
-  currentPrice: number | null;
   remoteAmountMinor: number;
 }) {
-  const remotePrice = squareAmountToInventoryPrice(remoteAmountMinor, currency);
-  if (Number.isSafeInteger(remotePrice)) {
-    return { error: null, price: remotePrice };
-  }
-
-  const preservedPrice =
-    typeof currentPrice === 'number' && Number.isSafeInteger(currentPrice)
-      ? currentPrice
-      : 0;
-  const resolution = currentPrice == null ? 'set it to 0' : 'kept its value';
   return {
-    error: `Square reported a non-whole ${currency} price (${remotePrice}). Tuturuuu ${resolution} until an operator reviews the price.`,
-    price: preservedPrice,
+    error: null,
+    price: squareAmountToInventoryPrice(remoteAmountMinor, currency),
   };
 }
 

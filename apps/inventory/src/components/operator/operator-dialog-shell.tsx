@@ -135,15 +135,21 @@ export type OperatorDialogTab = {
  */
 export function OperatorDialogTabs({
   defaultValue,
+  onValueChange,
   tabs,
+  value,
 }: {
   defaultValue?: string;
+  onValueChange?: (value: string) => void;
   tabs: OperatorDialogTab[];
+  value?: string;
 }) {
   return (
     <Tabs
       className="flex min-h-0 flex-1 flex-col gap-0"
       defaultValue={defaultValue ?? tabs[0]?.value}
+      onValueChange={onValueChange}
+      value={value}
     >
       <div className="shrink-0 overflow-x-auto border-border border-b px-6 py-2.5">
         <TabsList className="h-auto w-max gap-1 bg-transparent p-0">
