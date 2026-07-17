@@ -33,7 +33,7 @@
     "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-start": "^1.168.28",
     "@tanstack/react-table": "^8.21.3",
-    "@tiptap/react": "3.27.4",
+    "@tiptap/react": "3.28.0",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/offline": "workspace:*",

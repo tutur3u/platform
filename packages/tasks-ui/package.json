@@ -107,7 +107,7 @@
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/pm": "3.27.4",
-    "@tiptap/react": "3.27.4",
+    "@tiptap/react": "3.28.0",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
