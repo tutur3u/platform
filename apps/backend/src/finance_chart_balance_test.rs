@@ -96,6 +96,7 @@ fn request_with_bearer(access_token: &'static str, url: &'static str) -> Backend
         authorization: Some(access_token),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method: "GET",
         origin: None,
         path: BALANCE_CHART_PATH,

@@ -16,6 +16,7 @@ pub async fn main(mut request: Request, env: Env, _ctx: worker::Context) -> Resu
     let headers = request.headers();
     let authorization = headers.get("Authorization")?;
     let cookie = headers.get("Cookie")?;
+    let if_none_match = headers.get("If-None-Match")?;
     let origin = headers.get("Origin")?;
     let referer = headers.get("Referer")?;
     let request_id = headers
@@ -26,6 +27,7 @@ pub async fn main(mut request: Request, env: Env, _ctx: worker::Context) -> Resu
         authorization: authorization.as_deref(),
         content_length: content_length.as_deref(),
         cookie: cookie.as_deref(),
+        if_none_match: if_none_match.as_deref(),
         method: &method,
         origin: origin.as_deref(),
         path: &path,

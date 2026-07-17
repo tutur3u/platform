@@ -157,6 +157,7 @@ mod tests {
             authorization: None,
             body_text: None,
             cookie: None,
+            if_none_match: None,
             method,
             origin: None,
             path: AUTH_ME_PATH,
@@ -176,6 +177,7 @@ mod tests {
     fn request_with_cookie<'a>(cookie: &'a str) -> BackendRequest<'a> {
         BackendRequest {
             cookie: Some(cookie),
+            if_none_match: None,
             ..request("GET")
         }
     }

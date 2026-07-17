@@ -1,4 +1,4 @@
-import { after, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
@@ -27,17 +27,6 @@ export async function POST(
       parsedJobId,
       access.admin
     );
-    after(async () => {
-      if (job.status === 'queued') {
-        await processManagedAssetImportJob(
-          access.normalizedWorkspaceId,
-          parsedJobId,
-          access.admin
-        ).catch((error) =>
-          console.error('Managed asset import continuation failed', error)
-        );
-      }
-    });
     return NextResponse.json(job, { headers: privateHeaders });
   } catch (error) {
     if (error instanceof z.ZodError) {

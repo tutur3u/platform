@@ -141,13 +141,12 @@ export async function createWorkspaceExternalProjectRelationDefinition(
 
   if (error) throw new Error(error.message);
 
-  const targets = [...new Set(payload.targetCollectionIds)].map(
-    (targetCollectionId) => ({
-      relation_definition_id: definition.id,
-      target_collection_id: targetCollectionId,
-      ws_id: payload.workspaceId,
-    })
-  );
+  const targetCollectionIds = [...new Set(payload.targetCollectionIds)];
+  const targets = targetCollectionIds.map((targetCollectionId) => ({
+    relation_definition_id: definition.id,
+    target_collection_id: targetCollectionId,
+    ws_id: payload.workspaceId,
+  }));
   if (targets.length > 0) {
     const { error: targetError } = await admin
       .from('workspace_external_project_relation_definition_targets')
@@ -163,7 +162,7 @@ export async function createWorkspaceExternalProjectRelationDefinition(
   }
 
   await invalidateWorkspaceExternalProjectCache(payload.workspaceId);
-  return { ...definition, targetCollectionIds: payload.targetCollectionIds };
+  return { ...definition, targetCollectionIds };
 }
 
 export async function updateWorkspaceExternalProjectRelationDefinition(
@@ -208,31 +207,22 @@ export async function updateWorkspaceExternalProjectRelationDefinition(
     .eq('ws_id', payload.workspaceId)
     .eq('id', definitionId)
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  if (!definition) return null;
 
   if (payload.targetCollectionIds !== undefined) {
-    const { error: deleteError } = await admin
-      .from('workspace_external_project_relation_definition_targets')
-      .delete()
-      .eq('ws_id', payload.workspaceId)
-      .eq('relation_definition_id', definitionId);
-    if (deleteError) throw new Error(deleteError.message);
-
-    const targets = [...new Set(payload.targetCollectionIds)].map(
-      (targetCollectionId) => ({
-        relation_definition_id: definitionId,
-        target_collection_id: targetCollectionId,
-        ws_id: payload.workspaceId,
-      })
+    const { error: targetError } = await admin.rpc(
+      'replace_workspace_external_project_relation_definition_targets',
+      {
+        p_actor_id: payload.actorId,
+        p_definition_id: definitionId,
+        p_target_collection_ids: [...new Set(payload.targetCollectionIds)],
+        p_ws_id: payload.workspaceId,
+      }
     );
-    if (targets.length > 0) {
-      const { error: targetError } = await admin
-        .from('workspace_external_project_relation_definition_targets')
-        .insert(targets);
-      if (targetError) throw new Error(targetError.message);
-    }
+    if (targetError) throw new Error(targetError.message);
   }
 
   await invalidateWorkspaceExternalProjectCache(payload.workspaceId);

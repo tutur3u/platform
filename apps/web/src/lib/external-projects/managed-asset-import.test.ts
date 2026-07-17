@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { isPrivateNetworkAddress } from './managed-asset-url-policy';
+import {
+  isPrivateNetworkAddress,
+  resolveSafeManagedAssetAddress,
+} from './managed-asset-url-policy';
 
 describe('managed external-project asset import SSRF guard', () => {
   it.each([
@@ -9,7 +12,10 @@ describe('managed external-project asset import SSRF guard', () => {
     '127.0.0.1',
     '169.254.169.254',
     '172.16.0.1',
+    '192.0.0.8',
     '192.168.1.1',
+    '198.18.0.1',
+    '198.19.255.254',
     '224.0.0.1',
     '::',
     '::1',
@@ -27,4 +33,25 @@ describe('managed external-project asset import SSRF guard', () => {
       expect(isPrivateNetworkAddress(address)).toBe(false);
     }
   );
+
+  it('returns the validated address that must be pinned for the request', async () => {
+    const address = await resolveSafeManagedAssetAddress(
+      new URL('https://assets.example.com/file.png'),
+      async () => [{ address: '1.1.1.1', family: 4 }]
+    );
+
+    expect(address).toEqual({ address: '1.1.1.1', family: 4 });
+  });
+
+  it('rejects a hostname when any resolved address is private', async () => {
+    await expect(
+      resolveSafeManagedAssetAddress(
+        new URL('https://assets.example.com/file.png'),
+        async () => [
+          { address: '1.1.1.1', family: 4 },
+          { address: '169.254.169.254', family: 4 },
+        ]
+      )
+    ).rejects.toThrow('private or reserved');
+  });
 });

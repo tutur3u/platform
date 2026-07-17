@@ -74,6 +74,7 @@ fn request(path: &'static str, url: &'static str) -> BackendRequest<'static> {
         authorization: Some("Bearer caller-access-token"),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method: "GET",
         origin: None,
         path,

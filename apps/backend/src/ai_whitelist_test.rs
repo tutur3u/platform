@@ -85,6 +85,7 @@ fn request_with_bearer_method(
         authorization: Some("Bearer browser-access-token"),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path,

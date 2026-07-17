@@ -11,6 +11,10 @@ import {
   externalProjectAssetCacheTag,
   workspaceExternalProjectCacheTag,
 } from '@/lib/external-projects/cache';
+import {
+  ifNoneMatchMatches,
+  MAX_VERCEL_CACHE_TAGS,
+} from '@/lib/external-projects/http-cache';
 import { buildWorkspaceExternalProjectDeliveryPayload } from '@/lib/external-projects/store';
 
 const privateHeaders = {
@@ -66,22 +70,23 @@ export async function GET(
     );
 
     const etag = `W/"${payload.revision}"`;
+    const assetCacheTags = payload.collections.flatMap((collection) =>
+      collection.entries.flatMap((entry) =>
+        entry.assets.map((asset) => externalProjectAssetCacheTag(asset.id))
+      )
+    );
     const cacheTags = [
       workspaceExternalProjectCacheTag(wsId),
-      ...payload.collections.flatMap((collection) =>
-        collection.entries.flatMap((entry) =>
-          entry.assets.map((asset) => externalProjectAssetCacheTag(asset.id))
-        )
-      ),
+      ...[...new Set(assetCacheTags)].slice(0, MAX_VERCEL_CACHE_TAGS - 1),
     ];
     const publicHeaders = {
       'Cache-Control': EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
       ETag: etag,
       'Vercel-CDN-Cache-Control': 'max-age=86400, stale-while-revalidate=43200',
-      'Vercel-Cache-Tag': [...new Set(cacheTags)].join(','),
+      'Vercel-Cache-Tag': cacheTags.join(','),
     };
 
-    if (request.headers.get('if-none-match') === etag) {
+    if (ifNoneMatchMatches(request.headers.get('if-none-match'), etag)) {
       return new NextResponse(null, { headers: publicHeaders, status: 304 });
     }
 

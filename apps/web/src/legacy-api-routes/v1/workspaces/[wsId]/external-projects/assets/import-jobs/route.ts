@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
-import { createManagedAssetImportJob } from '@/lib/external-projects/managed-asset-import';
+import {
+  createManagedAssetImportJob,
+  ManagedAssetImportValidationError,
+} from '@/lib/external-projects/managed-asset-import';
 
 const schema = z.object({
   assetIds: z.array(z.string().uuid()).min(1).max(500),
@@ -43,21 +46,22 @@ export async function POST(
     );
     return NextResponse.json(job, { headers: privateHeaders, status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (
+      error instanceof z.ZodError ||
+      error instanceof ManagedAssetImportValidationError
+    ) {
       return NextResponse.json(
-        { details: error.flatten(), error: 'Invalid import job' },
+        {
+          ...(error instanceof z.ZodError ? { details: error.flatten() } : {}),
+          error: 'Invalid import job',
+        },
         { headers: privateHeaders, status: 400 }
       );
     }
     console.error('Failed to create managed asset import job', error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to create import job',
-      },
-      { headers: privateHeaders, status: 400 }
+      { error: 'Failed to create import job' },
+      { headers: privateHeaders, status: 500 }
     );
   }
 }

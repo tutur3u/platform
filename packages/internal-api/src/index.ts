@@ -508,6 +508,8 @@ export {
 } from './external-project-team';
 export type {
   ExternalProjectSyncManifest,
+  WorkspaceExternalProjectEntryBundleCreatePayload,
+  WorkspaceExternalProjectEntryBundleUpdatePayload,
   WorkspaceExternalProjectSyncApplyPayload,
   WorkspaceExternalProjectSyncApplyResult,
   WorkspaceExternalProjectSyncDiffPayload,
@@ -527,6 +529,7 @@ export {
   createWorkspaceExternalProjectBlock,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  createWorkspaceExternalProjectEntryBundle,
   createWorkspaceExternalProjectFieldDefinition,
   createWorkspaceExternalProjectManagedAssetImportJob,
   createWorkspaceExternalProjectRelationDefinition,

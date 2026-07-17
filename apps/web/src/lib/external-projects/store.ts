@@ -276,6 +276,7 @@ function getExternalProjectAssetRevision(updatedAt: string) {
 function getExternalProjectDeliveryRevision(
   collections: ExternalProjectCollection[],
   entries: ExternalProjectEntry[],
+  blocks: ExternalProjectBlock[],
   assets: ExternalProjectAsset[],
   relations: Array<{ created_at: string }>,
   definitions: ExternalProjectRelationDefinition[]
@@ -283,6 +284,7 @@ function getExternalProjectDeliveryRevision(
   const latest = [
     ...collections.map((item) => item.updated_at),
     ...entries.map((item) => item.updated_at),
+    ...blocks.map((item) => item.updated_at),
     ...assets.map((item) => item.updated_at),
     ...relations.map((item) => item.created_at),
     ...definitions.map((item) => item.updated_at),
@@ -3015,6 +3017,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
   const deliveryRevision = getExternalProjectDeliveryRevision(
     deliveryCollections,
     deliveryEntries,
+    blocks,
     assets,
     publicRelations,
     relationData.definitions

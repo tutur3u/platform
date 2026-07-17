@@ -101,6 +101,7 @@ export function EntryDetailRelationsCard({
             metadata:
               relations.find(
                 (relation) =>
+                  relation.from_entry_id === entry.id &&
                   relation.relation_definition_id === definition.id &&
                   relation.to_entry_id === toEntryId
               )?.metadata ?? {},

@@ -107,6 +107,7 @@ fn request(path: &'static str, url: &'static str, method: &'static str) -> Backe
         authorization: Some("Bearer user-access-token"),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path,

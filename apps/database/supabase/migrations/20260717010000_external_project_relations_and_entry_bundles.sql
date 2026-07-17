@@ -47,6 +47,15 @@ CREATE TABLE "public"."workspace_external_project_relation_definition_targets" (
 CREATE UNIQUE INDEX IF NOT EXISTS "workspace_external_project_entries_ws_id_key"
   ON "public"."workspace_external_project_entries" ("ws_id", "id");
 
+CREATE UNIQUE INDEX IF NOT EXISTS "workspace_external_project_collections_ws_id_key"
+  ON "public"."workspace_external_project_collections" ("ws_id", "id");
+
+ALTER TABLE "public"."workspace_external_project_entries"
+  ADD CONSTRAINT "workspace_external_project_entries_ws_collection_fkey"
+    FOREIGN KEY ("ws_id", "collection_id")
+    REFERENCES "public"."workspace_external_project_collections"("ws_id", "id")
+    ON DELETE CASCADE;
+
 ALTER TABLE "public"."workspace_external_project_entry_relations"
   ADD COLUMN "relation_definition_id" uuid,
   ADD COLUMN "sort_order" integer NOT NULL DEFAULT 0;
@@ -119,6 +128,116 @@ CREATE TRIGGER "workspace_external_project_relation_definitions_updated_at"
   BEFORE UPDATE ON "public"."workspace_external_project_relation_definitions"
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE OR REPLACE FUNCTION "public"."replace_workspace_external_project_relation_definition_targets"(
+  p_ws_id uuid,
+  p_definition_id uuid,
+  p_target_collection_ids uuid[],
+  p_actor_id uuid
+)
+RETURNS uuid[]
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_target_ids uuid[] := COALESCE(p_target_collection_ids, ARRAY[]::uuid[]);
+  v_distinct_count integer;
+BEGIN
+  IF p_actor_id IS NULL THEN
+    RAISE EXCEPTION 'authenticated actor is required' USING ERRCODE = '42501';
+  END IF;
+  IF auth.uid() IS NOT NULL AND auth.uid() <> p_actor_id THEN
+    RAISE EXCEPTION 'actor does not match authenticated user' USING ERRCODE = '42501';
+  END IF;
+  IF NOT public.can_manage_workspace_external_projects(p_ws_id, p_actor_id) THEN
+    RAISE EXCEPTION 'manage external projects permission required' USING ERRCODE = '42501';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.workspace_external_project_relation_definitions
+    WHERE ws_id = p_ws_id AND id = p_definition_id
+  ) THEN
+    RAISE EXCEPTION 'relation definition not found' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT count(DISTINCT target_id) INTO v_distinct_count
+  FROM unnest(v_target_ids) AS requested(target_id);
+
+  IF v_distinct_count <> (
+    SELECT count(*)
+    FROM public.workspace_external_project_collections collection
+    WHERE collection.ws_id = p_ws_id
+      AND collection.id IN (SELECT DISTINCT target_id FROM unnest(v_target_ids) AS requested(target_id))
+  ) THEN
+    RAISE EXCEPTION 'invalid relation target collection' USING ERRCODE = '23503';
+  END IF;
+
+  DELETE FROM public.workspace_external_project_relation_definition_targets
+  WHERE ws_id = p_ws_id AND relation_definition_id = p_definition_id;
+
+  INSERT INTO public.workspace_external_project_relation_definition_targets (
+    ws_id, relation_definition_id, target_collection_id
+  )
+  SELECT p_ws_id, p_definition_id, target_id
+  FROM (
+    SELECT DISTINCT target_id
+    FROM unnest(v_target_ids) AS requested(target_id)
+  ) deduplicated;
+
+  RETURN ARRAY(
+    SELECT target_collection_id
+    FROM public.workspace_external_project_relation_definition_targets
+    WHERE ws_id = p_ws_id AND relation_definition_id = p_definition_id
+    ORDER BY target_collection_id
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.replace_workspace_external_project_relation_definition_targets(
+  uuid, uuid, uuid[], uuid
+) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.replace_workspace_external_project_relation_definition_targets(
+  uuid, uuid, uuid[], uuid
+) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION "public"."touch_workspace_external_project_entry_from_child"()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  v_entry_id uuid;
+  v_ws_id uuid;
+BEGIN
+  IF TG_TABLE_NAME = 'workspace_external_project_entry_relations' THEN
+    v_entry_id := CASE
+      WHEN TG_OP = 'DELETE' THEN OLD.from_entry_id
+      ELSE NEW.from_entry_id
+    END;
+  ELSE
+    v_entry_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.entry_id ELSE NEW.entry_id END;
+  END IF;
+  v_ws_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.ws_id ELSE NEW.ws_id END;
+
+  UPDATE public.workspace_external_project_entries
+  SET updated_at = timezone('utc'::text, now())
+  WHERE ws_id = v_ws_id AND id = v_entry_id;
+
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER "workspace_external_project_blocks_touch_entry"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."workspace_external_project_blocks"
+  FOR EACH ROW EXECUTE FUNCTION public.touch_workspace_external_project_entry_from_child();
+
+CREATE TRIGGER "workspace_external_project_entry_relations_touch_entry"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."workspace_external_project_entry_relations"
+  FOR EACH ROW EXECUTE FUNCTION public.touch_workspace_external_project_entry_from_child();
+
 CREATE OR REPLACE FUNCTION "public"."upsert_workspace_external_project_entry_bundle"(
   p_ws_id uuid,
   p_actor_id uuid,
@@ -142,6 +261,7 @@ DECLARE
   v_definition public.workspace_external_project_relation_definitions%ROWTYPE;
   v_target_entry public.workspace_external_project_entries%ROWTYPE;
   v_relation_count integer;
+  v_collection_id uuid;
   v_now timestamp with time zone := timezone('utc'::text, now());
 BEGIN
   IF p_actor_id IS NULL THEN
@@ -167,13 +287,21 @@ BEGIN
   END IF;
 
   IF p_entry_id IS NULL THEN
+    v_collection_id := NULLIF(p_entry->>'collectionId', '')::uuid;
+    IF NOT EXISTS (
+      SELECT 1 FROM public.workspace_external_project_collections
+      WHERE ws_id = p_ws_id AND id = v_collection_id
+    ) THEN
+      RAISE EXCEPTION 'invalid entry collection' USING ERRCODE = '23503';
+    END IF;
+
     INSERT INTO public.workspace_external_project_entries (
       ws_id, collection_id, slug, title, subtitle, summary, status,
       scheduled_for, published_at, sort_order, profile_data, metadata,
       stable_source_id, source_adapter, created_by, updated_by
     ) VALUES (
       p_ws_id,
-      (p_entry->>'collectionId')::uuid,
+      v_collection_id,
       trim(p_entry->>'slug'),
       trim(p_entry->>'title'),
       NULLIF(p_entry->>'subtitle', ''),
@@ -200,6 +328,15 @@ BEGIN
     END IF;
     IF p_expected_updated_at IS NOT NULL AND v_entry.updated_at <> p_expected_updated_at THEN
       RAISE EXCEPTION 'entry update conflict' USING ERRCODE = '40001';
+    END IF;
+    IF p_entry ? 'collectionId' THEN
+      v_collection_id := NULLIF(p_entry->>'collectionId', '')::uuid;
+      IF NOT EXISTS (
+        SELECT 1 FROM public.workspace_external_project_collections
+        WHERE ws_id = p_ws_id AND id = v_collection_id
+      ) THEN
+        RAISE EXCEPTION 'invalid entry collection' USING ERRCODE = '23503';
+      END IF;
     END IF;
 
     UPDATE public.workspace_external_project_entries SET
@@ -325,6 +462,10 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'required relation is missing' USING ERRCODE = '23502';
   END IF;
+
+  SELECT * INTO v_entry
+  FROM public.workspace_external_project_entries
+  WHERE ws_id = p_ws_id AND id = v_entry.id;
 
   RETURN jsonb_build_object(
     'entry', to_jsonb(v_entry),

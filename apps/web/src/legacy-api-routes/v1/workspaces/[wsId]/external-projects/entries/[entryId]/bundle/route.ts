@@ -61,7 +61,9 @@ export async function PUT(
 
   try {
     const parsedEntryId = z.string().uuid().parse(entryId);
-    const payload = updateBundleSchema.parse(await request.json());
+    const payload = updateBundleSchema.parse(
+      await request.json().catch(() => null)
+    );
     const bundle = await upsertWorkspaceExternalProjectEntryBundle(
       {
         actorId: access.user.id,
@@ -103,6 +105,12 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Insufficient external project permissions' },
         { headers: privateHeaders, status: 403 }
+      );
+    }
+    if (message.startsWith('P0002:')) {
+      return NextResponse.json(
+        { error: 'Entry not found' },
+        { headers: privateHeaders, status: 404 }
       );
     }
     if (/^(23502|23503|23505|23514|22023):/.test(message)) {

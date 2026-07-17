@@ -98,6 +98,7 @@ fn request_with_bearer(authorization: &str) -> BackendRequest<'_> {
         authorization: Some(authorization),
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method: "GET",
         origin: None,
         path: SETTINGS_CONFIGS_PATH,

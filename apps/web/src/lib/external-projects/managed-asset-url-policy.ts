@@ -1,4 +1,11 @@
+import type { LookupAddress } from 'node:dns';
+import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
+import { Agent, type Dispatcher } from 'undici';
+
+export type ManagedAssetResolver = (
+  hostname: string
+) => Promise<LookupAddress[]>;
 
 function isPrivateIpv4(address: string) {
   const parts = address.split('.').map(Number);
@@ -34,4 +41,51 @@ export function isPrivateNetworkAddress(address: string) {
     normalized.startsWith('2001:db8:') ||
     normalized.startsWith('::ffff:')
   );
+}
+
+export async function resolveSafeManagedAssetAddress(
+  url: URL,
+  resolveHost: ManagedAssetResolver = resolveManagedAssetHost
+) {
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('Only HTTP(S) asset sources are allowed');
+  }
+  if (url.username || url.password) {
+    throw new Error('Asset source credentials are not allowed');
+  }
+
+  const addresses = await resolveHost(url.hostname);
+  if (
+    addresses.length === 0 ||
+    addresses.some((result) => isPrivateNetworkAddress(result.address))
+  ) {
+    throw new Error('Asset source resolves to a private or reserved address');
+  }
+  return addresses[0] as LookupAddress;
+}
+
+export function createManagedAssetPinnedDispatcher(record: LookupAddress) {
+  return new Agent({
+    connect: {
+      lookup: ((
+        _hostname: string,
+        _options: unknown,
+        callback: (
+          error: NodeJS.ErrnoException | null,
+          address: string,
+          family: number
+        ) => void
+      ) => callback(null, record.address, record.family)) as never,
+    },
+  });
+}
+
+export async function closeManagedAssetDispatcher(dispatcher: Dispatcher) {
+  await dispatcher.close().catch(() => null);
+}
+
+async function resolveManagedAssetHost(hostname: string) {
+  const ipVersion = isIP(hostname);
+  if (ipVersion) return [{ address: hostname, family: ipVersion }];
+  return lookup(hostname, { all: true, verbatim: true });
 }

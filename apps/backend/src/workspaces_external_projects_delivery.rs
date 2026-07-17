@@ -52,7 +52,7 @@ pub(crate) async fn handle_workspaces_external_projects_delivery_route(
     }
 
     Some(match request.method {
-        "GET" => delivery_response(config, ws_id, outbound).await,
+        "GET" => delivery_response(config, ws_id, request.if_none_match, outbound).await,
         method => no_store_response(method_not_allowed(method, "GET")),
     })
 }
@@ -60,6 +60,7 @@ pub(crate) async fn handle_workspaces_external_projects_delivery_route(
 async fn delivery_response(
     config: &BackendConfig,
     ws_id: &str,
+    if_none_match: Option<&str>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
     let contact_data = &config.contact_data;
@@ -75,7 +76,7 @@ async fn delivery_response(
     }
 
     match build_delivery_payload(contact_data, outbound, ws_id, &binding).await {
-        Ok(payload) => public_delivery_response(payload, ws_id),
+        Ok(payload) => public_delivery_response(payload, ws_id, if_none_match),
         Err(()) => error_response(500, FAILURE_MESSAGE),
     }
 }
@@ -293,6 +294,7 @@ async fn build_delivery_payload(
     let latest_update = latest_delivery_update(
         &collections,
         &entries,
+        &blocks,
         &assets,
         &relations,
         &relation_definitions,
@@ -584,6 +586,7 @@ fn digits_only(value: &str) -> String {
 fn latest_delivery_update(
     collections: &[Value],
     entries: &[Value],
+    blocks: &[Value],
     assets: &[Value],
     relations: &[Value],
     definitions: &[Value],
@@ -591,6 +594,7 @@ fn latest_delivery_update(
     collections
         .iter()
         .chain(entries)
+        .chain(blocks)
         .chain(assets)
         .chain(relations)
         .chain(definitions)
@@ -603,7 +607,11 @@ fn latest_delivery_update(
         .map(str::to_owned)
 }
 
-fn public_delivery_response(payload: Value, ws_id: &str) -> BackendResponse {
+fn public_delivery_response(
+    payload: Value,
+    ws_id: &str,
+    if_none_match: Option<&str>,
+) -> BackendResponse {
     let revision = payload
         .get("revision")
         .and_then(Value::as_str)
@@ -617,7 +625,10 @@ fn public_delivery_response(payload: Value, ws_id: &str) -> BackendResponse {
                     if let Some(assets) = entry.get("assets").and_then(Value::as_array) {
                         for asset in assets {
                             if let Some(id) = asset.get("id").and_then(Value::as_str) {
-                                cache_tags.push(format!("external-project-asset-{id}"));
+                                let tag = format!("external-project-asset-{id}");
+                                if cache_tags.len() < 128 && !cache_tags.contains(&tag) {
+                                    cache_tags.push(tag);
+                                }
                             }
                         }
                     }
@@ -625,12 +636,18 @@ fn public_delivery_response(payload: Value, ws_id: &str) -> BackendResponse {
             }
         }
     }
-    cache_tags.sort();
-    cache_tags.dedup();
-
-    let mut response = json_response(200, payload);
+    let etag = format!("W/\"{revision}\"");
+    let not_modified = if_none_match.is_some_and(|value| if_none_match_matches(value, &etag));
+    let mut response = if not_modified {
+        let mut response = json_response(304, Value::Null);
+        response.body_empty = true;
+        response.content_type = None;
+        response
+    } else {
+        json_response(200, payload)
+    };
     response.cache_control = Some(PUBLIC_DELIVERY_CACHE_CONTROL);
-    response.headers.push(("etag", format!("W/\"{revision}\"")));
+    response.headers.push(("etag", etag));
     response.headers.push((
         "vercel-cdn-cache-control",
         "max-age=86400, stale-while-revalidate=43200".to_owned(),
@@ -639,6 +656,17 @@ fn public_delivery_response(payload: Value, ws_id: &str) -> BackendResponse {
         .headers
         .push(("vercel-cache-tag", cache_tags.join(",")));
     response
+}
+
+fn if_none_match_matches(header_value: &str, response_etag: &str) -> bool {
+    let normalized_response = response_etag
+        .trim()
+        .strip_prefix("W/")
+        .unwrap_or(response_etag.trim());
+    header_value.split(',').any(|candidate| {
+        let candidate = candidate.trim();
+        candidate == "*" || candidate.strip_prefix("W/").unwrap_or(candidate) == normalized_response
+    })
 }
 
 fn delivery_ws_id(path: &str) -> Option<&str> {

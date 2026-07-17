@@ -26,6 +26,12 @@ export async function GET(
       z.string().uuid().parse(jobId),
       access.admin
     );
+    if (!job) {
+      return NextResponse.json(
+        { error: 'Managed asset import job not found' },
+        { headers: privateHeaders, status: 404 }
+      );
+    }
     return NextResponse.json(job, { headers: privateHeaders });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -36,8 +42,8 @@ export async function GET(
     }
     console.error('Failed to get managed asset import job', error);
     return NextResponse.json(
-      { error: 'Managed asset import job not found' },
-      { headers: privateHeaders, status: 404 }
+      { error: 'Failed to get managed asset import job' },
+      { headers: privateHeaders, status: 500 }
     );
   }
 }

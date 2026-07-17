@@ -101,6 +101,7 @@ fn request(method: &'static str, url: &'static str) -> BackendRequest<'static> {
         authorization: None,
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path: NOTIFICATIONS_UNREAD_COUNT_PATH,

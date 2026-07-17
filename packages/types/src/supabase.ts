@@ -30589,6 +30589,13 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'workspace_external_project_entries_ws_collection_fkey';
+            columns: ['ws_id', 'collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
             foreignKeyName: 'workspace_external_project_entries_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -39675,6 +39682,15 @@ export type Database = {
       reorder_workspace_course_modules_in_module_group: {
         Args: { p_module_group_id: string; p_module_ids: string[] };
         Returns: undefined;
+      };
+      replace_workspace_external_project_relation_definition_targets: {
+        Args: {
+          p_actor_id: string;
+          p_definition_id: string;
+          p_target_collection_ids: string[];
+          p_ws_id: string;
+        };
+        Returns: string[];
       };
       reserve_fixed_ai_credits: {
         Args: {

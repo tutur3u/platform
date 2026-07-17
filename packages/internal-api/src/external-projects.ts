@@ -106,7 +106,22 @@ export type WorkspaceExternalProjectRelationDefinitionPayload = {
   targetCollectionIds: string[];
 };
 
-export type WorkspaceExternalProjectEntryBundlePayload = {
+type WorkspaceExternalProjectEntryBundleEntryPayload = {
+  collectionId?: string;
+  metadata?: Json;
+  profileData?: Json;
+  scheduledFor?: string | null;
+  slug?: string;
+  sortOrder?: number;
+  sourceAdapter?: ExternalProjectEntry['source_adapter'];
+  stableSourceId?: string | null;
+  status?: ExternalProjectEntry['status'];
+  subtitle?: string | null;
+  summary?: string | null;
+  title?: string;
+};
+
+type WorkspaceExternalProjectEntryBundleBasePayload = {
   blocks: Array<{
     blockType: string;
     content: Json;
@@ -115,7 +130,6 @@ export type WorkspaceExternalProjectEntryBundlePayload = {
     stableSourceId?: string | null;
     title?: string | null;
   }>;
-  entry: Record<string, unknown>;
   relations: Array<{
     definitionId: string;
     metadata?: Json;
@@ -123,6 +137,21 @@ export type WorkspaceExternalProjectEntryBundlePayload = {
     toEntryId: string;
   }>;
 };
+
+export type WorkspaceExternalProjectEntryBundleCreatePayload =
+  WorkspaceExternalProjectEntryBundleBasePayload & {
+    entry: WorkspaceExternalProjectEntryBundleEntryPayload & {
+      collectionId: string;
+      slug: string;
+      title: string;
+    };
+  };
+
+export type WorkspaceExternalProjectEntryBundleUpdatePayload =
+  WorkspaceExternalProjectEntryBundleBasePayload & {
+    entry: WorkspaceExternalProjectEntryBundleEntryPayload;
+    expectedUpdatedAt: string;
+  };
 
 export type WorkspaceExternalProjectEntryBundle = {
   blocks: ExternalProjectBlock[];
@@ -1155,7 +1184,7 @@ export async function createWorkspaceExternalProjectEntry(
 
 export async function createWorkspaceExternalProjectEntryBundle(
   workspaceId: string,
-  payload: WorkspaceExternalProjectEntryBundlePayload,
+  payload: WorkspaceExternalProjectEntryBundleCreatePayload,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
@@ -1195,9 +1224,7 @@ export async function updateWorkspaceExternalProjectEntry(
 export async function updateWorkspaceExternalProjectEntryBundle(
   workspaceId: string,
   entryId: string,
-  payload: WorkspaceExternalProjectEntryBundlePayload & {
-    expectedUpdatedAt: string;
-  },
+  payload: WorkspaceExternalProjectEntryBundleUpdatePayload,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(19);
+select plan(26);
 
 select has_table(
   'public',
@@ -31,11 +31,27 @@ select ok(
   ),
   'entry relations have a workspace-safe relation definition foreign key'
 );
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'workspace_external_project_entries_ws_collection_fkey'
+      and conrelid = 'public.workspace_external_project_entries'::regclass
+      and contype = 'f'
+  ),
+  'entries have a workspace-safe collection foreign key'
+);
 select has_function(
   'public',
   'upsert_workspace_external_project_entry_bundle',
   array['uuid', 'uuid', 'jsonb', 'jsonb', 'jsonb', 'uuid', 'timestamp with time zone'],
   'entry bundle RPC exists'
+);
+select has_function(
+  'public',
+  'replace_workspace_external_project_relation_definition_targets',
+  array['uuid', 'uuid', 'uuid[]', 'uuid'],
+  'relation target replacement RPC exists'
 );
 select ok(
   has_function_privilege(
@@ -60,6 +76,18 @@ select ok(
     where oid = 'public.workspace_external_project_relation_definitions'::regclass
   ),
   'relation definitions use RLS'
+);
+select has_trigger(
+  'public',
+  'workspace_external_project_blocks',
+  'workspace_external_project_blocks_touch_entry',
+  'block mutations advance the parent entry edit token'
+);
+select has_trigger(
+  'public',
+  'workspace_external_project_entry_relations',
+  'workspace_external_project_entry_relations_touch_entry',
+  'relation mutations advance the parent entry edit token'
 );
 
 insert into auth.users (
@@ -166,6 +194,37 @@ values
     '40000000-0000-0000-0000-000000000002',
     '20000000-0000-0000-0000-000000000002'
   );
+
+select throws_ok(
+  $$select public.upsert_workspace_external_project_entry_bundle(
+    '10000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001',
+    '{"collectionId":"20000000-0000-0000-0000-000000000003","slug":"cross-collection","title":"Cross collection"}'::jsonb,
+    '[]'::jsonb, '[]'::jsonb
+  )$$,
+  '23503',
+  'invalid entry collection',
+  'cross-workspace entry collections are rejected'
+);
+select throws_ok(
+  $$select public.replace_workspace_external_project_relation_definition_targets(
+    '10000000-0000-0000-0000-000000000001',
+    '40000000-0000-0000-0000-000000000001',
+    array['20000000-0000-0000-0000-000000000003'::uuid],
+    '50000000-0000-0000-0000-000000000001'
+  )$$,
+  '23503',
+  'invalid relation target collection',
+  'cross-workspace relation target replacement is rejected'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.workspace_external_project_relation_definition_targets
+    where relation_definition_id = '40000000-0000-0000-0000-000000000001'
+  ),
+  1,
+  'failed target replacement preserves existing targets'
+);
 
 select lives_ok(
   $$select public.upsert_workspace_external_project_entry_bundle(

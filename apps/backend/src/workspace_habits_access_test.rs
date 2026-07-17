@@ -103,6 +103,7 @@ fn request(method: &'static str) -> BackendRequest<'static> {
         authorization: None,
         body_text: None,
         cookie: None,
+        if_none_match: None,
         method,
         origin: None,
         path: HABITS_ACCESS_PATH,

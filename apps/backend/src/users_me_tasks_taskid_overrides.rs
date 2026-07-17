@@ -219,6 +219,7 @@ mod tests {
             authorization: None,
             body_text: None,
             cookie: None,
+            if_none_match: None,
             method,
             origin: None,
             path,

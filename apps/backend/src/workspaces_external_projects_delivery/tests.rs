@@ -75,6 +75,7 @@ fn public_delivery_headers_match_the_next_cache_contract() {
             "revision": "20260717010203456"
         }),
         "workspace-one",
+        None,
     );
 
     assert_eq!(response.cache_control, Some(PUBLIC_DELIVERY_CACHE_CONTROL));
@@ -89,6 +90,19 @@ fn public_delivery_headers_match_the_next_cache_contract() {
     )));
     assert!(response.headers.contains(&(
         "vercel-cache-tag",
-        "external-project-asset-asset-one,external-project-workspace-workspace-one".to_owned()
+        "external-project-workspace-workspace-one,external-project-asset-asset-one".to_owned()
     )));
+}
+
+#[test]
+fn public_delivery_returns_not_modified_for_weak_or_listed_etags() {
+    let response = public_delivery_response(
+        json!({ "collections": [], "revision": "revision-one" }),
+        "workspace-one",
+        Some("\"other\", \"revision-one\""),
+    );
+
+    assert_eq!(response.status, 304);
+    assert!(response.body_empty);
+    assert_eq!(response.cache_control, Some(PUBLIC_DELIVERY_CACHE_CONTROL));
 }

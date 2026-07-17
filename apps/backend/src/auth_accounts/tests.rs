@@ -6,6 +6,7 @@ fn request_for_cookie<'a>(url: &'a str, cookie: &'a str) -> BackendRequest<'a> {
         authorization: None,
         body_text: None,
         cookie: Some(cookie),
+        if_none_match: None,
         method: "GET",
         origin: Some(url),
         path: AUTH_ACCOUNTS_PATH,

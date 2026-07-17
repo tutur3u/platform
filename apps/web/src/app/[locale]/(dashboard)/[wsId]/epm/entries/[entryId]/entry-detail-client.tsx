@@ -1216,15 +1216,14 @@ export function EntryDetailClient({
         workspaceId,
         assetIds
       );
-      for (
-        let batch = 0;
-        batch < 100 && !['completed', 'failed'].includes(job.status);
-        batch += 1
-      ) {
+      while (!['completed', 'failed'].includes(job.status)) {
         job = await processWorkspaceExternalProjectManagedAssetImportJob(
           workspaceId,
           job.id
         );
+        if (job.status === 'running') {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
       }
       if (job.status !== 'completed') {
         throw new Error(`Managed media import ended with status ${job.status}`);

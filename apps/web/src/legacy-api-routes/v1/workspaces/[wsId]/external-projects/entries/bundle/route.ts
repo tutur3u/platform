@@ -83,7 +83,9 @@ export async function POST(
   if (!access.ok) return access.response;
 
   try {
-    const payload = createBundleSchema.parse(await request.json());
+    const payload = createBundleSchema.parse(
+      await request.json().catch(() => null)
+    );
     const bundle = await upsertWorkspaceExternalProjectEntryBundle(
       {
         actorId: access.user.id,

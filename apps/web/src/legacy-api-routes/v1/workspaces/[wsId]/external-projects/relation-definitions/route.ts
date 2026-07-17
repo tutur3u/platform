@@ -65,7 +65,9 @@ export async function POST(
   if (!access.ok) return access.response;
 
   try {
-    const payload = relationDefinitionSchema.parse(await request.json());
+    const payload = relationDefinitionSchema.parse(
+      await request.json().catch(() => null)
+    );
     const definition = await createWorkspaceExternalProjectRelationDefinition(
       {
         actorId: access.user.id,

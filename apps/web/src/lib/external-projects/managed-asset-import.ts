@@ -1,11 +1,15 @@
 import { createHash } from 'node:crypto';
-import { lookup } from 'node:dns/promises';
 import { uploadWorkspaceStorageFileDirect } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { ExternalProjectImportJob, Json } from '@tuturuuu/types';
+import { fetch as undiciFetch } from 'undici';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
-import { isPrivateNetworkAddress } from './managed-asset-url-policy';
+import {
+  closeManagedAssetDispatcher,
+  createManagedAssetPinnedDispatcher,
+  resolveSafeManagedAssetAddress,
+} from './managed-asset-url-policy';
 
 type AdminDb = TypedSupabaseClient;
 const MAX_IMPORT_BYTES = 25 * 1024 * 1024;
@@ -22,24 +26,7 @@ type ManagedAssetImportReport = {
   total: number;
 };
 
-async function assertPublicHttpUrl(value: string) {
-  const url = new URL(value);
-  if (!['http:', 'https:'].includes(url.protocol)) {
-    throw new Error('Only HTTP(S) asset sources are allowed');
-  }
-  if (url.username || url.password) {
-    throw new Error('Asset source credentials are not allowed');
-  }
-
-  const addresses = await lookup(url.hostname, { all: true, verbatim: true });
-  if (
-    addresses.length === 0 ||
-    addresses.some((result) => isPrivateNetworkAddress(result.address))
-  ) {
-    throw new Error('Asset source resolves to a private or reserved address');
-  }
-  return url;
-}
+export class ManagedAssetImportValidationError extends Error {}
 
 function isAllowedContentType(value: string) {
   const type = value.split(';')[0]?.trim().toLowerCase() ?? '';
@@ -52,53 +39,85 @@ function isAllowedContentType(value: string) {
 }
 
 async function fetchManagedAsset(sourceUrl: string) {
-  let current = await assertPublicHttpUrl(sourceUrl);
+  let current = new URL(sourceUrl);
 
   for (let redirects = 0; redirects <= MAX_REDIRECTS; redirects += 1) {
-    const response = await fetch(current, {
-      cache: 'no-store',
-      headers: { Accept: 'image/*,audio/*,video/*,application/octet-stream' },
-      redirect: 'manual',
-      signal: AbortSignal.timeout(IMPORT_TIMEOUT_MS),
-    });
+    const address = await resolveSafeManagedAssetAddress(current);
+    const dispatcher = createManagedAssetPinnedDispatcher(address);
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location');
-      if (!location || redirects === MAX_REDIRECTS) {
-        throw new Error('Asset source exceeded the redirect limit');
+    try {
+      const response = await undiciFetch(current, {
+        dispatcher,
+        headers: { Accept: 'image/*,audio/*,video/*,application/octet-stream' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(IMPORT_TIMEOUT_MS),
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get('location');
+        if (!location || redirects === MAX_REDIRECTS) {
+          throw new Error('Asset source exceeded the redirect limit');
+        }
+        current = new URL(location, current);
+        continue;
       }
-      current = await assertPublicHttpUrl(
-        new URL(location, current).toString()
-      );
-      continue;
-    }
-    if (!response.ok) {
-      throw new Error(`Asset source returned HTTP ${response.status}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Asset source returned HTTP ${response.status}`);
+      }
 
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!isAllowedContentType(contentType)) {
-      throw new Error(
-        `Unsupported asset content type: ${contentType || 'unknown'}`
-      );
-    }
-    const contentLength = Number(response.headers.get('content-length'));
-    if (Number.isFinite(contentLength) && contentLength > MAX_IMPORT_BYTES) {
-      throw new Error('Asset exceeds the 25 MiB import limit');
-    }
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!isAllowedContentType(contentType)) {
+        throw new Error(
+          `Unsupported asset content type: ${contentType || 'unknown'}`
+        );
+      }
+      const contentLength = Number(response.headers.get('content-length'));
+      if (Number.isFinite(contentLength) && contentLength > MAX_IMPORT_BYTES) {
+        throw new Error('Asset exceeds the 25 MiB import limit');
+      }
 
-    const buffer = new Uint8Array(await response.arrayBuffer());
-    if (buffer.byteLength === 0 || buffer.byteLength > MAX_IMPORT_BYTES) {
-      throw new Error('Asset is empty or exceeds the 25 MiB import limit');
+      const buffer = await readLimitedAssetBody(response);
+      return {
+        buffer,
+        contentType: contentType.split(';')[0] ?? contentType,
+        finalUrl: current,
+      };
+    } finally {
+      await closeManagedAssetDispatcher(dispatcher);
     }
-    return {
-      buffer,
-      contentType: contentType.split(';')[0] ?? contentType,
-      finalUrl: current,
-    };
   }
 
   throw new Error('Asset source exceeded the redirect limit');
+}
+
+async function readLimitedAssetBody(
+  response: Awaited<ReturnType<typeof undiciFetch>>
+) {
+  if (!response.body) throw new Error('Asset source returned an empty body');
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > MAX_IMPORT_BYTES) {
+      await reader.cancel().catch(() => null);
+      throw new Error('Asset exceeds the 25 MiB import limit');
+    }
+    chunks.push(value);
+  }
+
+  if (total === 0) throw new Error('Asset source returned an empty body');
+  const buffer = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    buffer.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return buffer;
 }
 
 function safePathSegment(value: string, fallback: string) {
@@ -167,7 +186,7 @@ export async function createManagedAssetImportJob(
     .not('source_url', 'is', null);
   if (assetError) throw new Error(assetError.message);
   if ((assets ?? []).length !== assetIds.length) {
-    throw new Error(
+    throw new ManagedAssetImportValidationError(
       'Every selected asset must be an external asset in this workspace'
     );
   }
@@ -271,27 +290,28 @@ export async function processManagedAssetImportJob(
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { data: job, error } = await admin
     .from('workspace_external_project_import_jobs')
-    .select('*')
+    .update({
+      started_at: new Date().toISOString(),
+      status: 'running',
+    })
     .eq('ws_id', workspaceId)
     .eq('id', jobId)
     .eq('source_reference', 'managed-assets')
-    .single();
+    .in('status', ['queued', 'failed'])
+    .select('*')
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!job) {
+    const current = await getManagedAssetImportJob(workspaceId, jobId, admin);
+    if (!current) throw new Error('Managed asset import job not found');
+    return current;
+  }
 
   const report = parseReport(job.report);
   const processed = new Set(report.processedAssetIds);
   const pending = report.assetIds
     .filter((id) => !processed.has(id))
     .slice(0, IMPORT_BATCH_SIZE);
-  await admin
-    .from('workspace_external_project_import_jobs')
-    .update({
-      started_at: job.started_at ?? new Date().toISOString(),
-      status: 'running',
-    })
-    .eq('id', job.id)
-    .eq('ws_id', workspaceId);
-
   const failures: ImportFailure[] = [];
   for (let index = 0; index < pending.length; index += IMPORT_CONCURRENCY) {
     await Promise.all(
@@ -352,7 +372,7 @@ export async function getManagedAssetImportJob(
     .eq('ws_id', workspaceId)
     .eq('id', jobId)
     .eq('source_reference', 'managed-assets')
-    .single();
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return data;
 }
