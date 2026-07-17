@@ -17,6 +17,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/avatar_dropdown.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
@@ -555,9 +556,10 @@ void main() {
       router.go(Routes.tasks);
       await _pumpForTransitions(tester);
 
-      final compactNavItems = tester.widgetList<shad.NavigationItem>(
-        find.byType(shad.NavigationItem),
-      );
+      final compactNavItems = tester
+          .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
+          .children
+          .whereType<shad.NavigationItem>();
 
       expect(compactNavItems, isNotEmpty);
       expect(compactNavItems.every((item) => item.label == null), isTrue);
@@ -594,13 +596,70 @@ void main() {
       final footerRect = tester.getRect(
         find.byKey(const ValueKey('compact-shell-footer')),
       );
-      final compactNavItems = tester.widgetList<shad.NavigationItem>(
-        find.byType(shad.NavigationItem),
-      );
+      final compactNavItems = tester
+          .widget<CustomNavigationBar>(find.byType(CustomNavigationBar))
+          .children
+          .whereType<shad.NavigationItem>();
 
-      expect(footerRect.height, 52);
+      expect(footerRect.height, 54);
       expect(compactNavItems, hasLength(3));
       expect(compactNavItems.every((item) => item.label == null), isTrue);
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size,
+        27,
+      );
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size,
+        27,
+      );
+    });
+
+    testWidgets('six-item compact mini nav stays within a narrow viewport', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 720);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final router = _buildRouter(initialLocation: Routes.inventoryManage);
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        _buildTestApp(
+          router: router,
+          appTabCubit: appTabCubit,
+          authCubit: authCubit,
+          workspaceCubit: workspaceCubit,
+          shellProfileCubit: shellProfileCubit,
+        ),
+      );
+      await _pumpForTransitions(tester);
+
+      final navKeys = <Key>[
+        const ValueKey('back-to-root'),
+        const ValueKey('mini-nav-inventory-inventory_home'),
+        const ValueKey('mini-nav-inventory-inventory_products'),
+        const ValueKey('mini-nav-inventory-inventory_sales'),
+        const ValueKey('mini-nav-inventory-inventory_manage'),
+        const ValueKey('mini-nav-inventory-inventory_storefront'),
+      ];
+      final rects = navKeys
+          .map((key) => tester.getRect(find.byKey(key)))
+          .toList(growable: false);
+
+      expect(
+        rects.every((rect) => rect.left >= 0 && rect.right <= 320),
+        isTrue,
+      );
+      expect(
+        rects.map((rect) => rect.width).reduce((a, b) => a > b ? a : b) -
+            rects.map((rect) => rect.width).reduce((a, b) => a < b ? a : b),
+        lessThanOrEqualTo(2),
+      );
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('rapid nested navigation does not reuse outgoing nav keys', (

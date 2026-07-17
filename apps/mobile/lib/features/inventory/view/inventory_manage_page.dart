@@ -220,6 +220,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                     InventoryHeroCard(
                       title: l10n.inventoryManageLabel,
                       icon: Icons.tune_rounded,
+                      showHeader: false,
                       metrics: [
                         InventoryMetricTile(
                           label: l10n.inventoryManageOwners,

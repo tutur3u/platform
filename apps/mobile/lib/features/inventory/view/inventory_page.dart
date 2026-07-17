@@ -99,6 +99,7 @@ class _InventoryPageState extends State<InventoryPage> {
                     InventoryHeroCard(
                       title: l10n.inventoryTitle,
                       icon: Icons.inventory_2_outlined,
+                      showHeader: false,
                       metrics: [
                         InventoryMetricTile(
                           label: l10n.inventoryOverviewIncome,

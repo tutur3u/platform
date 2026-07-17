@@ -11,6 +11,7 @@ class CustomNavigationBar extends StatelessWidget {
     this.onSelected,
     this.expandItems = true,
     this.minItemWidth = 0,
+    this.compact = false,
   });
 
   final List<Widget> children;
@@ -18,6 +19,7 @@ class CustomNavigationBar extends StatelessWidget {
   final ValueChanged<Key?>? onSelected;
   final bool expandItems;
   final double minItemWidth;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,10 @@ class CustomNavigationBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: 4,
+        vertical: compact ? 2 : 4,
+      ),
       child: Row(
         mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
         children: List.generate(children.length, (index) {
@@ -46,11 +51,13 @@ class CustomNavigationBar extends StatelessWidget {
               right: isLast ? 0 : 2,
             ),
             child: _CustomNavItem(
+              key: itemKey,
               isFirst: isFirst,
               isLast: isLast,
               isSelected: isSelected,
               theme: theme,
               isDark: isDark,
+              compact: compact,
               onTap: () => onSelected?.call(itemKey),
               child: child,
             ),
@@ -78,7 +85,9 @@ class _CustomNavItem extends StatelessWidget {
     required this.isSelected,
     required this.theme,
     required this.isDark,
+    required this.compact,
     this.onTap,
+    super.key,
   });
 
   final Widget child;
@@ -87,6 +96,7 @@ class _CustomNavItem extends StatelessWidget {
   final bool isSelected;
   final shad.ThemeData theme;
   final bool isDark;
+  final bool compact;
   final VoidCallback? onTap;
 
   @override
@@ -101,15 +111,15 @@ class _CustomNavItem extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: _getBorderRadius(context),
+        borderRadius: _resolvedBorderRadius(context),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOutCubic,
           padding: EdgeInsetsDirectional.fromSTEB(
-            isFirst ? 6 : 12,
-            10,
-            isLast ? 6 : 12,
-            10,
+            compact ? 4 : (isFirst ? 6 : 12),
+            compact ? 6 : 10,
+            compact ? 4 : (isLast ? 6 : 12),
+            compact ? 6 : 10,
           ),
           decoration: BoxDecoration(
             color: isSelected
@@ -117,13 +127,16 @@ class _CustomNavItem extends StatelessWidget {
                       ? Colors.white.withValues(alpha: 0.12)
                       : Colors.black.withValues(alpha: 0.08))
                 : Colors.transparent,
-            borderRadius: _getBorderRadius(context),
+            borderRadius: _resolvedBorderRadius(context),
           ),
           child: Center(child: content),
         ),
       ),
     );
   }
+
+  BorderRadius _resolvedBorderRadius(BuildContext context) =>
+      compact ? BorderRadius.circular(14) : _getBorderRadius(context);
 
   BorderRadius _getBorderRadius(BuildContext context) {
     final isRtl = Directionality.of(context) == TextDirection.rtl;

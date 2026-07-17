@@ -22,6 +22,7 @@ extension _ShellPageNavigation on _ShellPageState {
                 icon: Icons.home_outlined,
                 semanticLabel: l10n.navHome,
                 itemIndex: 0,
+                iconSize: _ShellPageState._compactPrimaryNavIconSize,
               )
             : _buildHorizontalNavItem(
                 icon: Icons.home_outlined,
@@ -46,6 +47,7 @@ extension _ShellPageNavigation on _ShellPageState {
                 icon: Icons.apps_outlined,
                 semanticLabel: l10n.navApps,
                 itemIndex: 2,
+                iconSize: _ShellPageState._compactPrimaryNavIconSize,
               )
             : _buildHorizontalNavItem(
                 icon: Icons.apps_outlined,
@@ -164,7 +166,6 @@ extension _ShellPageNavigation on _ShellPageState {
     final isCompact = context.isCompact;
     final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
-    const miniIconSize = _ShellPageState._miniNavIconSize;
 
     return [
       shad.NavigationItem(
@@ -180,14 +181,12 @@ extension _ShellPageNavigation on _ShellPageState {
                 icon: Icons.chevron_left,
                 semanticLabel: l10n.navBack,
                 itemIndex: 0,
-                iconSize: miniIconSize,
               )
             : _buildHorizontalNavItem(
                 icon: Icons.chevron_left,
                 label: l10n.navBack,
                 style: miniLabelStyle,
                 itemIndex: 0,
-                iconSize: miniIconSize,
               ),
       ),
       ...miniNavItems.indexed.map(
@@ -212,14 +211,12 @@ extension _ShellPageNavigation on _ShellPageState {
                   icon: entry.$2.icon,
                   semanticLabel: entry.$2.label(l10n),
                   itemIndex: entry.$1 + 1,
-                  iconSize: miniIconSize,
                 )
               : _buildHorizontalNavItem(
                   icon: entry.$2.icon,
                   label: entry.$2.label(l10n),
                   style: miniLabelStyle,
                   itemIndex: entry.$1 + 1,
-                  iconSize: miniIconSize,
                 ),
         ),
       ),
@@ -286,7 +283,6 @@ extension _ShellPageNavigation on _ShellPageState {
     final isCompact = context.isCompact;
     final miniLabelStyle = labelStyle.copyWith(fontSize: 10);
     const miniItemSpacing = _ShellPageState._miniNavItemSpacing;
-    const miniIconSize = _ShellPageState._miniNavIconSize;
 
     return registration.items.indexed
         .map((entry) {
@@ -320,14 +316,12 @@ extension _ShellPageNavigation on _ShellPageState {
                     icon: item.icon,
                     semanticLabel: item.label,
                     itemIndex: entry.$1,
-                    iconSize: miniIconSize,
                   )
                 : _buildHorizontalNavItem(
                     icon: item.icon,
                     label: item.label,
                     style: miniLabelStyle,
                     itemIndex: entry.$1,
-                    iconSize: miniIconSize,
                   ),
           );
         })

@@ -29,6 +29,7 @@ class InventoryHeroCard extends StatelessWidget {
     this.metrics = const [],
     this.actions = const [],
     this.child,
+    this.showHeader = true,
     super.key,
   });
 
@@ -39,6 +40,7 @@ class InventoryHeroCard extends StatelessWidget {
   final List<Widget> metrics;
   final List<Widget> actions;
   final Widget? child;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -68,46 +70,59 @@ class InventoryHeroCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: palette.accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(18),
+          if (showHeader)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: palette.accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(icon, size: 26, color: palette.accent),
                 ),
-                child: Icon(icon, size: 26, color: palette.accent),
-              ),
-              const shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (subtitle?.trim().isNotEmpty ?? false) ...[
-                      const shad.Gap(4),
+                const shad.Gap(14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
-                        style: theme.typography.textSmall.copyWith(
-                          color: theme.colorScheme.mutedForeground,
+                        title,
+                        style: theme.typography.large.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
+                      if (subtitle?.trim().isNotEmpty ?? false) ...[
+                        const shad.Gap(4),
+                        Text(
+                          subtitle!,
+                          style: theme.typography.textSmall.copyWith(
+                            color: theme.colorScheme.mutedForeground,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
+                if (headerAction != null) ...[
+                  const shad.Gap(12),
+                  headerAction!,
+                ],
+              ],
+            )
+          else if (subtitle?.trim().isNotEmpty ?? false)
+            Text(
+              subtitle!,
+              style: theme.typography.p.copyWith(
+                color: theme.colorScheme.mutedForeground,
+                height: 1.45,
               ),
-              if (headerAction != null) ...[const shad.Gap(12), headerAction!],
-            ],
-          ),
+            ),
           if (metrics.isNotEmpty) ...[
-            const shad.Gap(18),
+            if (showHeader || (subtitle?.trim().isNotEmpty ?? false))
+              const shad.Gap(18),
             Wrap(spacing: 12, runSpacing: 12, children: metrics),
           ],
           if (child != null) ...[const shad.Gap(18), child!],

@@ -8,6 +8,7 @@ import 'package:mobile/data/repositories/storefront_repository.dart';
 import 'package:mobile/features/storefront/view/storefronts_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/helpers.dart';
@@ -76,7 +77,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Storefront'), findsOneWidget);
+    final pageContext = tester.element(find.byType(StorefrontsPage));
+    final l10n = AppLocalizations.of(pageContext);
+
+    expect(find.text(l10n.storefrontTitle), findsNothing);
+    expect(find.text(l10n.storefrontSubtitle), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -360));
+    await tester.pumpAndSettle();
+
     expect(find.text('Summer catalog'), findsOneWidget);
     expect(find.text('4 listings'), findsOneWidget);
     expect(tester.takeException(), isNull);

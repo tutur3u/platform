@@ -138,6 +138,7 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
                   title: l10n.storefrontTitle,
                   subtitle: l10n.storefrontSubtitle,
                   icon: Icons.storefront_outlined,
+                  showHeader: false,
                   metrics: [
                     InventoryMetricTile(
                       label: l10n.storefrontStores,
@@ -183,28 +184,21 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children:
-                        ['all', 'published', 'draft', 'paused', 'archived']
-                            .map(
-                              (status) => Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: ChoiceChip(
-                                  label: Text(
-                                    storefrontStatusLabel(l10n, status),
-                                  ),
-                                  selected: _status == status,
-                                  onSelected: (_) {
-                                    setState(() => _status = status);
-                                    unawaited(_reload());
-                                  },
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['all', 'published', 'draft', 'paused', 'archived']
+                      .map(
+                        (status) => ChoiceChip(
+                          label: Text(storefrontStatusLabel(l10n, status)),
+                          selected: _status == status,
+                          onSelected: (_) {
+                            setState(() => _status = status);
+                            unawaited(_reload());
+                          },
+                        ),
+                      )
+                      .toList(growable: false),
                 ),
                 const SizedBox(height: 18),
                 if (_loading && _storefronts.isEmpty)

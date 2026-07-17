@@ -275,17 +275,6 @@ extension _ShellPageLayout on _ShellPageState {
         (!widget.matchedLocation.startsWith(Routes.assistant) ||
             !assistantChrome.isFullscreen) &&
         !keyboardVisible;
-    final compactMiniItems = isMiniAppRoute && miniItems.isNotEmpty
-        ? <Widget>[
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: _ShellPageState._compactMiniBackButtonMinWidth,
-              ),
-              child: miniItems.first,
-            ),
-            ...miniItems.skip(1).map((item) => Expanded(child: item)),
-          ]
-        : const <Widget>[];
     final navVariantKey = ValueKey<String>(
       useInjectedMiniNav
           ? 'mini-nav-${injectedMiniNavRegistration.ownerId}'
@@ -306,29 +295,27 @@ extension _ShellPageLayout on _ShellPageState {
           : 'global-nav',
     );
     final navContent = isCompact
-        ? shad.NavigationBar(
+        ? CustomNavigationBar(
             key: navVariantKey,
             selectedKey: selectedKey,
-            padding: EdgeInsets.symmetric(
-              horizontal: isMiniAppRoute ? 4 : 8,
-              vertical: 4,
-            ),
-            onSelected: useInjectedMiniNav
-                ? null
-                : (key) => isMiniAppRoute
-                      ? _onMiniAppItemTapped(
-                          key,
-                          context,
-                          activeModule,
-                          activeMiniNavItems,
-                        )
-                      : _onItemTapped(
-                          _ShellPageState._indexForKey(key),
-                          context,
-                        ),
-            children: isMiniAppRoute
-                ? compactMiniItems
-                : globalItems.map((item) => Expanded(child: item)).toList(),
+            compact: true,
+            onSelected: (key) => useInjectedMiniNav
+                ? _onInjectedMiniNavItemTapped(
+                    key,
+                    injectedMiniNavRegistration,
+                  )
+                : isMiniAppRoute
+                ? _onMiniAppItemTapped(
+                    key,
+                    context,
+                    activeModule,
+                    activeMiniNavItems,
+                  )
+                : _onItemTapped(
+                    _ShellPageState._indexForKey(key),
+                    context,
+                  ),
+            children: isMiniAppRoute ? miniItems : globalItems,
           )
         : CustomNavigationBar(
             key: navVariantKey,
