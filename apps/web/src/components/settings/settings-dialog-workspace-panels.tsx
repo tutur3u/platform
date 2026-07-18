@@ -7,6 +7,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
+import InviteLinksSection from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section';
 import WorkspaceAvatarSettings from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/avatar';
 import BasicInfo from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/settings/basic-info';
 
@@ -144,6 +145,14 @@ export function WorkspaceMembersSettingsPanel({
           disabled={!canManageWorkspaceMembers}
           embedded
         />
+        {canManageWorkspaceMembers ? (
+          <InviteLinksSection
+            wsId={workspace.id}
+            canManageMembers
+            disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
+            embedded
+          />
+        ) : null}
         <StandardWorkspaceAccessPage
           disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
           initialContext={{

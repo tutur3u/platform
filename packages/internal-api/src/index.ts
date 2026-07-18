@@ -1828,6 +1828,15 @@ export {
   updateWorkspaceConfig,
 } from './workspace-configs';
 export {
+  createWorkspaceInviteLink,
+  deleteWorkspaceInviteLink,
+  getWorkspaceInviteLink,
+  listWorkspaceInviteLinks,
+  updateWorkspaceInviteLink,
+  type WorkspaceInviteLinkApiRow,
+  type WorkspaceInviteLinkPayload,
+} from './workspace-invite-links';
+export {
   type BackfillWorkspaceUserStatusChangesPayload,
   type BackfillWorkspaceUserStatusChangesResponse,
   backfillWorkspaceUserStatusChanges,

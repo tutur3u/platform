@@ -5,12 +5,25 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceMembersSettingsPanel } from './settings-dialog-workspace-panels';
 
-const { standardWorkspaceAccessMock, queryState } = vi.hoisted(() => ({
-  queryState: {
-    disableInvite: false,
-  },
-  standardWorkspaceAccessMock: vi.fn(),
-}));
+const { inviteLinksMock, standardWorkspaceAccessMock, queryState } = vi.hoisted(
+  () => ({
+    inviteLinksMock: vi.fn(),
+    queryState: {
+      disableInvite: false,
+    },
+    standardWorkspaceAccessMock: vi.fn(),
+  })
+);
+
+vi.mock(
+  '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section',
+  () => ({
+    default: (props: Record<string, unknown>) => {
+      inviteLinksMock(props);
+      return <div data-testid="invite-links-section" />;
+    },
+  })
+);
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: () => ({ data: { disableInvite: queryState.disableInvite } }),
@@ -79,6 +92,13 @@ describe('WorkspaceMembersSettingsPanel', () => {
     );
 
     expect(screen.getByTestId('standard-workspace-access-page')).toBeVisible();
+    expect(screen.getByTestId('invite-links-section')).toBeVisible();
+    expect(inviteLinksMock).toHaveBeenCalledWith({
+      canManageMembers: true,
+      disableInvite: true,
+      embedded: true,
+      wsId: 'ws_1',
+    });
     expect(standardWorkspaceAccessMock).toHaveBeenCalledWith(
       expect.objectContaining({
         disableInvite: true,
@@ -115,5 +135,24 @@ describe('WorkspaceMembersSettingsPanel', () => {
         },
       })
     );
+    expect(screen.getByTestId('invite-links-section')).toBeVisible();
+  });
+
+  it('does not expose invite links without member-management permission', () => {
+    render(
+      <WorkspaceMembersSettingsPanel
+        canManageWorkspaceMembers={false}
+        canManageWorkspaceRoles
+        currentUserEmail="ada@example.com"
+        isLoadingWorkspace={false}
+        workspace={workspace}
+        workspaceError={null}
+      />
+    );
+
+    expect(
+      screen.queryByTestId('invite-links-section')
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('standard-workspace-access-page')).toBeVisible();
   });
 });

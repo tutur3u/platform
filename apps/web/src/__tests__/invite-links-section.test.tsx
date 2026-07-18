@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import InviteLinksSection from '@/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section';
 
@@ -81,6 +81,13 @@ describe('InviteLinksSection', () => {
 
     expect(await screen.findByText(/CODE1/)).toBeTruthy();
     expect(await screen.findByText('2/10')).toBeTruthy(); // Uses count
+
+    fireEvent.click(screen.getByTitle('ws-invite-links.edit-link'));
+    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.getByDisplayValue('10')).toBeVisible();
+    expect(
+      screen.getAllByText('ws-members.invite_membership_member')
+    ).not.toHaveLength(0);
   });
 
   it('renders empty state when no links', async () => {
