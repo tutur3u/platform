@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -10,14 +11,20 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { roleId, wsId } = await params;
+  const access = await resolveWorkspaceRouteAccess(req, wsId, [
+    'manage_workspace_roles',
+  ]);
+  if (!access.ok) return access.response;
+
+  const supabase = await createAdminClient({ noCookie: true });
+  const resolvedWsId = access.permissions.wsId;
 
   const { data: role, error: roleError } = await supabase
     .from('workspace_roles')
     .select('id')
     .eq('id', roleId)
-    .eq('ws_id', wsId)
+    .eq('ws_id', resolvedWsId)
     .single();
 
   if (roleError || !role) {
@@ -55,8 +62,23 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const { roleId } = await params;
+  const { roleId, wsId } = await params;
+  const access = await resolveWorkspaceRouteAccess(req, wsId, [
+    'manage_workspace_roles',
+  ]);
+  if (!access.ok) return access.response;
+
+  const supabase = await createAdminClient({ noCookie: true });
+
+  const { data: role } = await supabase
+    .from('workspace_roles')
+    .select('id')
+    .eq('id', roleId)
+    .eq('ws_id', access.permissions.wsId)
+    .maybeSingle();
+  if (!role) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
 
   const data = (await req.json()) as {
     memberIds: string[];

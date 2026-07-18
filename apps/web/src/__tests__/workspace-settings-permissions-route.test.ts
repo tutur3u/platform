@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
+  const verifyHasSecrets = vi.fn();
   const verifySecret = vi.fn();
   const platformRoleMaybeSingle = vi.fn();
   const withSessionAuth = vi.fn(
@@ -60,6 +61,7 @@ const mocks = vi.hoisted(() => {
     platformRoleMaybeSingle,
     serverLogger,
     verifySecret,
+    verifyHasSecrets,
     withSessionAuth,
   };
 });
@@ -70,6 +72,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
   return {
     ...actual,
     getPermissions: mocks.getPermissions,
+    verifyHasSecrets: mocks.verifyHasSecrets,
     verifySecret: mocks.verifySecret,
   };
 });
@@ -126,12 +129,28 @@ async function callCheckRoute(
   );
 }
 
+async function callMemberSettingsRoute(wsId = 'ws-1') {
+  const { GET } = await import(
+    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/members/route'
+  );
+
+  return GET(
+    new NextRequest(
+      `http://localhost/api/v1/workspaces/${wsId}/settings/members`
+    ),
+    {
+      params: Promise.resolve({ wsId }),
+    }
+  );
+}
+
 describe('workspace settings permissions route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
 
     mocks.verifySecret.mockResolvedValue(false);
+    mocks.verifyHasSecrets.mockResolvedValue(false);
     mocks.platformRoleMaybeSingle.mockResolvedValue({
       data: null,
       error: null,
@@ -184,6 +203,45 @@ describe('workspace settings permissions route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ hasPermission: false });
+  });
+
+  it('threads the authenticated app-session principal through settings permission reads', async () => {
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    expect(mocks.getPermissions).toHaveBeenNthCalledWith(1, {
+      user: { email: 'agent@tuturuuu.com', id: 'user-1' },
+      wsId: 'ws-1',
+    });
+    expect(mocks.getPermissions).toHaveBeenNthCalledWith(2, {
+      user: { email: 'agent@tuturuuu.com', id: 'user-1' },
+      wsId: ROOT_WORKSPACE_ID,
+    });
+
+    vi.resetModules();
+    mocks.getPermissions.mockClear();
+    const checkResponse = await callCheckRoute();
+
+    expect(checkResponse.status).toBe(200);
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user: { email: 'agent@tuturuuu.com', id: 'user-1' },
+      wsId: 'ws-1',
+    });
+  });
+
+  it('threads the authenticated app-session principal through member settings reads', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      permissionsResult('ws-1', ['manage_workspace_members'])
+    );
+
+    const response = await callMemberSettingsRoute();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ disableInvite: false });
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user: { email: 'agent@tuturuuu.com', id: 'user-1' },
+      wsId: 'ws-1',
+    });
   });
 
   it('requires both manage_api_keys and the ENABLE_API_KEYS secret for API key settings', async () => {

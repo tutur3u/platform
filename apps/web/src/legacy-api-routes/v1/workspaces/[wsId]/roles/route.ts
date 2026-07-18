@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, TablesInsert, WorkspaceRole } from '@tuturuuu/types';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -14,19 +14,17 @@ type WorkspaceRolePermissionValue =
   Database['public']['Enums']['workspace_role_permission'];
 
 async function authorizeRolesRequest(req: Request, wsId: string) {
-  const permissions = await getPermissions({ wsId, request: req });
-
-  if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
+  const access = await resolveWorkspaceRouteAccess(req, wsId, [
+    'manage_workspace_roles',
+  ]);
+  if (!access.ok) {
     return {
-      error: NextResponse.json(
-        { message: 'Workspace role access denied' },
-        { status: 403 }
-      ),
+      error: access.response,
       permissions: null,
     };
   }
 
-  return { error: null, permissions };
+  return { error: null, permissions: access.permissions };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -44,7 +42,7 @@ export async function GET(req: Request, { params }: Params) {
   const start = (normalizedPage - 1) * normalizedPageSize;
   const end = start + normalizedPageSize - 1;
   const resolvedWsId = authorization.permissions.wsId;
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const rolesQuery = supabase
     .from('workspace_roles')
@@ -90,7 +88,7 @@ export async function POST(req: Request, { params }: Params) {
   const authorization = await authorizeRolesRequest(req, wsId);
   if (authorization.error) return authorization.error;
 
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const resolvedWsId = authorization.permissions.wsId;
 
   const data = (await req.json()) as WorkspaceRole;

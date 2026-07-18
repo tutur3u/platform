@@ -4,7 +4,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../../../../../users/me/session-auth';
 
 export const GET = withSessionAuth<{ wsId: string }>(
-  async (request, _context, { wsId }) => {
+  async (request, { user }, { wsId }) => {
     const url = new URL(request.url);
     const permission = url.searchParams.get('permission');
 
@@ -16,7 +16,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
     }
 
     try {
-      const permissions = await getPermissions({ wsId, request });
+      const permissions = await getPermissions({ user, wsId });
 
       if (!permissions) {
         return NextResponse.json(

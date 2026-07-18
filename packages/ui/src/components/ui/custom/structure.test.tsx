@@ -25,5 +25,9 @@ describe('Structure', () => {
     expect(container.querySelector('aside')).not.toBeInTheDocument();
     expect(container.querySelector('nav')).not.toBeInTheDocument();
     expect(container.querySelector('main')).toHaveClass('md:pl-0');
+    expect(screen.getByText('Page content').parentElement).toHaveClass(
+      'p-2',
+      'md:p-4'
+    );
   });
 });

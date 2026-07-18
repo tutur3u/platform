@@ -5,8 +5,8 @@ import type {
   TablesUpdate,
   WorkspaceRole,
 } from '@tuturuuu/types';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -19,19 +19,17 @@ type WorkspaceRolePermissionValue =
   Database['public']['Enums']['workspace_role_permission'];
 
 async function authorizeRoleRequest(req: Request, wsId: string) {
-  const permissions = await getPermissions({ wsId, request: req });
-
-  if (!permissions || permissions.withoutPermission('manage_workspace_roles')) {
+  const access = await resolveWorkspaceRouteAccess(req, wsId, [
+    'manage_workspace_roles',
+  ]);
+  if (!access.ok) {
     return {
-      error: NextResponse.json(
-        { message: 'Workspace role access denied' },
-        { status: 403 }
-      ),
+      error: access.response,
       permissions: null,
     };
   }
 
-  return { error: null, permissions };
+  return { error: null, permissions: access.permissions };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -39,7 +37,7 @@ export async function GET(req: Request, { params }: Params) {
   const authorization = await authorizeRoleRequest(req, wsId);
   if (authorization.error) return authorization.error;
 
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const resolvedWsId = authorization.permissions.wsId;
 
   const { data, error } = await supabase
@@ -71,7 +69,7 @@ export async function PUT(req: Request, { params }: Params) {
   const authorization = await authorizeRoleRequest(req, wsId);
   if (authorization.error) return authorization.error;
 
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const resolvedWsId = authorization.permissions.wsId;
 
   const data = (await req.json()) as WorkspaceRole;
@@ -130,7 +128,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const authorization = await authorizeRoleRequest(req, wsId);
   if (authorization.error) return authorization.error;
 
-  const supabase = await createAdminClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const resolvedWsId = authorization.permissions.wsId;
 
   const { error } = await supabase

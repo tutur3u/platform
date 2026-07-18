@@ -1,6 +1,12 @@
 'use client';
 
-import { ArrowLeft, ChevronDown, ChevronRight, Search } from '@tuturuuu/icons';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronRight,
+  Search,
+  X,
+} from '@tuturuuu/icons';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -395,18 +401,7 @@ export function SettingsDialogShell({
           </SidebarContent>
         </Sidebar>
         <main className="flex h-full flex-1 flex-col overflow-hidden bg-background">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 text-muted-foreground md:hidden"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">{t('settings.back_to_app')}</span>
-              </Button>
-            </DialogClose>
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-6">
             <div className="flex flex-1 items-center gap-2 md:flex-initial">
               {isMobile && (
                 <Drawer open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -510,8 +505,22 @@ export function SettingsDialogShell({
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 text-muted-foreground md:hidden"
+              >
+                <X
+                  className="h-4 w-4"
+                  data-testid="settings-mobile-close-icon"
+                />
+                <span className="sr-only">{t('common.close')}</span>
+              </Button>
+            </DialogClose>
           </header>
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-2 md:p-6">
             <div className="mx-auto w-full max-w-4xl space-y-6">
               {showContentHeader && (
                 <>

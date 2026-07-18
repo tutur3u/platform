@@ -79,6 +79,10 @@ function renderShell() {
 
 describe('SettingsDialogShell keyboard navigation', () => {
   beforeEach(() => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 1024,
+    });
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       addEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
@@ -103,6 +107,37 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(
       screen.getAllByRole('button', { name: 'settings.back_to_app' }).length
     ).toBeGreaterThan(0);
+  });
+
+  it('keeps the mobile selector first, closes with an X, and uses compact padding', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 375,
+    });
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      addEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+      matches: true,
+      media: query,
+      onchange: null,
+      removeEventListener: vi.fn(),
+    }));
+
+    renderShell();
+
+    const selector = screen.getByRole('combobox');
+    const closeIcon = screen.getByTestId('settings-mobile-close-icon');
+    const closeButton = closeIcon.closest('button');
+
+    expect(closeButton).toHaveAccessibleName('common.close');
+    expect(
+      selector.compareDocumentPosition(closeButton as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(closeButton?.parentElement).toHaveClass('px-2');
+    expect(
+      screen.getByTestId('active-tab').parentElement?.parentElement
+    ).toHaveClass('p-2', 'md:p-6');
   });
 
   it('keeps settings groups expanded by default', () => {

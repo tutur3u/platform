@@ -28,7 +28,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      childContainerClassName="mx-auto w-full max-w-[1500px] px-3 py-3 sm:px-4"
+      childContainerClassName="mx-auto w-full max-w-[1500px] md:px-4 md:py-3"
       defaultCollapsed={defaultCollapsed}
       links={links}
       upgradeExternal

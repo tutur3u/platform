@@ -29,9 +29,9 @@ async function resolveDiscordIntegrationAccess({
 }
 
 export const GET = withSessionAuth<{ wsId: string }>(
-  async (request, { supabase, user }, { wsId }) => {
+  async (_request, { supabase, user }, { wsId }) => {
     try {
-      const permissions = await getPermissions({ wsId, request });
+      const permissions = await getPermissions({ user, wsId });
 
       if (!permissions) {
         return NextResponse.json(
@@ -42,7 +42,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
 
       const [rootPermissions, apiKeysEnabled, discordAllowed] =
         await Promise.all([
-          getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
+          getPermissions({ user, wsId: ROOT_WORKSPACE_ID }),
           verifySecret({
             forceAdmin: true,
             name: 'ENABLE_API_KEYS',

@@ -58,7 +58,7 @@ export function Structure({
       actions={actions}
       brand={<InfraMark />}
       brandHref={`/${wsId}`}
-      childContainerClassName="mx-auto flex w-full max-w-7xl flex-col gap-8 px-1 py-2 sm:px-2"
+      childContainerClassName="mx-auto flex w-full max-w-7xl flex-col gap-8 md:px-2"
       collapsedBrand={<InfraMark collapsed />}
       defaultCollapsed={defaultCollapsed}
       links={links}
