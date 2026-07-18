@@ -40,6 +40,7 @@ import { money } from './operator-format';
 import { OverviewCharts } from './overview-charts';
 import { OverviewReadiness } from './overview-readiness';
 import { ProductCreateForm } from './product-management';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 function numberFromRecord(
   row: Record<string, unknown>,
@@ -160,6 +161,7 @@ export function OverviewPanel({
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.dashboard');
+  const workspaceCurrency = useWorkspaceCurrency();
   const readyPolarConnections = (polarSettings?.integrations ?? []).filter(
     (integration) => integration.status === 'ready'
   ).length;
@@ -273,7 +275,7 @@ export function OverviewPanel({
           description={t('itemsSold', { count: quantity ?? 0 })}
           icon={CircleDollarSign}
           label={t('kpis.revenue')}
-          value={money(revenue ?? 0)}
+          value={money(revenue ?? 0, workspaceCurrency)}
         />
         <OperatorMetricCard
           description={t('kpis.readinessDescription')}

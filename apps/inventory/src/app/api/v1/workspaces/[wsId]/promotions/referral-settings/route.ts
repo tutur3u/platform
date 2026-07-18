@@ -1,6 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const referralSettingsSchema = z.object({
@@ -15,15 +15,19 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  await connection();
+  const { wsId: rawWsId } = await params;
+  const access = await getReferralSettingsRouteContext(request, rawWsId);
 
-  if (!permissions || permissions.withoutPermission('view_inventory')) {
+  if (access.response) return access.response;
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (permissions.withoutPermission('view_inventory')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('workspace_settings')
     .select('*')
     .eq('ws_id', wsId)
@@ -41,14 +45,14 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const { wsId: rawWsId } = await params;
+  const access = await getReferralSettingsRouteContext(request, rawWsId);
 
-  if (
-    !permissions ||
-    permissions.withoutPermission('manage_workspace_settings')
-  ) {
+  if (access.response) return access.response;
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (permissions.withoutPermission('manage_workspace_settings')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
@@ -61,13 +65,13 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   const nextValues = parsed.data;
-  const { data: existingSettings } = await supabase
+  const { data: existingSettings } = await sbAdmin
     .from('workspace_settings')
     .select('referral_promotion_id')
     .eq('ws_id', wsId)
     .maybeSingle();
 
-  const { error } = await supabase.from('workspace_settings').upsert({
+  const { error } = await sbAdmin.from('workspace_settings').upsert({
     ws_id: wsId,
     ...nextValues,
   });
@@ -82,11 +86,11 @@ export async function PUT(request: Request, { params }: Params) {
 
   const previousPromoId = existingSettings?.referral_promotion_id ?? null;
   const nextPromoId = nextValues.referral_promotion_id ?? null;
-  const privateDb = supabase.schema('private');
+  const privateDb = sbAdmin.schema('private');
 
   if (previousPromoId && nextPromoId && previousPromoId !== nextPromoId) {
     try {
-      const { data: referredUsers, error: usersError } = await supabase
+      const { data: referredUsers, error: usersError } = await sbAdmin
         .from('workspace_users')
         .select('id')
         .eq('ws_id', wsId)
@@ -139,4 +143,17 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   return NextResponse.json({ message: 'success' });
+}
+
+async function getReferralSettingsRouteContext(
+  request: Request,
+  rawWsId: string
+) {
+  return getFinanceRouteContext(
+    request,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(request, {
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
+  );
 }

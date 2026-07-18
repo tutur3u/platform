@@ -23,6 +23,8 @@ import {
   INVENTORY_CHART_SECONDARY,
 } from './inventory-chart-colors';
 import { OperatorModuleCard } from './operator-dashboard-primitives';
+import { money } from './operator-format';
+import { useWorkspaceCurrency } from './workspace-currency';
 
 export function OverviewCharts({
   dashboard,
@@ -30,6 +32,7 @@ export function OverviewCharts({
   dashboard: InventoryDashboardSnapshot | null | undefined;
 }) {
   const t = useTranslations('inventory.operator.dashboard');
+  const workspaceCurrency = useWorkspaceCurrency();
   const trend = dashboard?.analytics.revenueTrend ?? [];
   const categoryMix = dashboard?.analytics.categoryMix.slice(0, 6) ?? [];
   const revenueConfig = {
@@ -64,7 +67,15 @@ export function OverviewCharts({
                 tickMargin={8}
               />
               <YAxis axisLine={false} tickLine={false} width={42} />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) =>
+                      money(Number(value), workspaceCurrency)
+                    }
+                  />
+                }
+              />
               <Area
                 dataKey="revenue"
                 fill="var(--color-revenue)"
@@ -96,7 +107,15 @@ export function OverviewCharts({
                 type="category"
                 width={96}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip
+                content={
+                  <ChartTooltipContent
+                    formatter={(value) =>
+                      money(Number(value), workspaceCurrency)
+                    }
+                  />
+                }
+              />
               <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
             </BarChart>
           </ChartContainer>

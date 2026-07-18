@@ -32,6 +32,7 @@ export function getInventoryNavigationItems({
       icon: 'overview',
       matchExact: true,
     },
+    null,
     {
       titleKey: 'analytics.title',
       href: `/${workspaceSlug}/analytics`,

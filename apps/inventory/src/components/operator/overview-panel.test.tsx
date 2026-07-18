@@ -3,10 +3,15 @@ import type { InventoryDashboardSnapshot } from '@tuturuuu/internal-api/inventor
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { OverviewPanel } from './overview-panel';
+import { WorkspaceCurrencyProvider } from './workspace-currency';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, params?: Record<string, unknown>) =>
     params?.count === undefined ? key : `${key}:${params.count}`,
+}));
+
+vi.mock('@tuturuuu/ui/hooks/use-workspace-config', () => ({
+  useWorkspaceConfig: () => ({ data: 'VND' }),
 }));
 
 const dashboard: InventoryDashboardSnapshot = {
@@ -90,20 +95,22 @@ describe('OverviewPanel', () => {
     const queryClient = new QueryClient();
     const html = renderToStaticMarkup(
       <QueryClientProvider client={queryClient}>
-        <OverviewPanel
-          bundles={[]}
-          dashboard={dashboard}
-          lowStock={[]}
-          polarSettings={{
-            integrations: [],
-            productionEnvironment: 'production',
-            testingEnvironment: 'sandbox',
-            wsId: 'ws-1',
-          }}
-          products={[]}
-          storefronts={[]}
-          wsId="ws-1"
-        />
+        <WorkspaceCurrencyProvider wsId="ws-1">
+          <OverviewPanel
+            bundles={[]}
+            dashboard={dashboard}
+            lowStock={[]}
+            polarSettings={{
+              integrations: [],
+              productionEnvironment: 'production',
+              testingEnvironment: 'sandbox',
+              wsId: 'ws-1',
+            }}
+            products={[]}
+            storefronts={[]}
+            wsId="ws-1"
+          />
+        </WorkspaceCurrencyProvider>
       </QueryClientProvider>
     );
 
@@ -114,6 +121,8 @@ describe('OverviewPanel', () => {
     expect(html).toContain('attention');
     expect(html).toContain('Acrylic Keychain');
     expect(html).toContain('actions.resolve_low_stock.label');
+    expect(html).toContain('120 ₫');
+    expect(html).not.toContain('$1.20');
     expect(html).not.toContain('noRisks');
   });
 });

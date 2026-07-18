@@ -7,7 +7,13 @@ describe('Inventory navigation', () => {
     const links = getInventoryNavigationItems({ workspaceSlug: 'acme' });
     const visibleLinks = links.filter((link) => link !== null);
 
-    expect(links.filter((link) => link === null)).toHaveLength(3);
+    expect(links.filter((link) => link === null)).toHaveLength(4);
+    expect(links.slice(0, 4)).toEqual([
+      expect.objectContaining({ href: '/acme' }),
+      null,
+      expect.objectContaining({ href: '/acme/analytics' }),
+      null,
+    ]);
     expect(visibleLinks[0]).toMatchObject({
       href: '/acme',
       matchExact: true,
