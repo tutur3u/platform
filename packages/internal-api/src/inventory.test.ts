@@ -10,6 +10,7 @@ import {
   createInventoryProduct,
   createInventoryProductCategory,
   createInventoryPromotion,
+  createInventorySale,
   createInventorySquareDeviceCode,
   createInventorySquareTerminalCheckout,
   createInventoryStorefront,
@@ -634,7 +635,7 @@ describe('inventory internal API helpers', () => {
     );
   });
 
-  it('routes sale detail, update, and delete through the inventory sale API', async () => {
+  it('routes sale create, detail, update, and delete through the inventory sale API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
         data: { id: 'sale_1' },
@@ -645,6 +646,22 @@ describe('inventory internal API helpers', () => {
       fetch: fetchMock as unknown as typeof fetch,
     };
 
+    const createPayload = {
+      category_id: 'category_1',
+      content: 'Counter sale',
+      products: [
+        {
+          category_id: 'category_1',
+          price: 8.1,
+          product_id: 'product_1',
+          quantity: 1,
+          unit_id: 'unit_1',
+          warehouse_id: 'warehouse_1',
+        },
+      ],
+      wallet_id: 'wallet_1',
+    };
+    await createInventorySale('ws_1', createPayload, options);
     await getInventorySale('ws_1', 'sale 1', options);
     await updateInventorySale(
       'ws_1',
@@ -656,11 +673,19 @@ describe('inventory internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
+      'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales',
+      expect.objectContaining({
+        body: JSON.stringify(createPayload),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
       expect.objectContaining({ cache: 'no-store' })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
+      3,
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
       expect.objectContaining({
         body: JSON.stringify({ note: 'Packed', wallet_id: 'wallet_1' }),
@@ -668,7 +693,7 @@ describe('inventory internal API helpers', () => {
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+      4,
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
       expect.objectContaining({ method: 'DELETE' })
     );

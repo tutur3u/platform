@@ -4,6 +4,7 @@ import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
+import { normalizeInvoiceStoredAmount } from '../amount';
 import {
   type CalculatedValues,
   getCalculatedInvoiceValuesFromRpc,
@@ -376,23 +377,26 @@ export async function POST(req: Request, { params }: Params) {
       workspaceUserId = workspaceUser?.virtual_user_id || null;
     }
 
-    // Round values first to avoid floating-point precision issues
-    const roundedTotal = Math.round(total);
-    const roundedRounding = Math.round(rounding_applied);
-    const roundedPrice = roundedTotal - roundedRounding;
+    // Finance invoice columns preserve up to six major-unit decimals. Normalize
+    // floating-point noise without discarding valid cent/sub-cent prices.
+    const storedTotal = normalizeInvoiceStoredAmount(total);
+    const storedRounding = normalizeInvoiceStoredAmount(rounding_applied);
+    const storedPrice = normalizeInvoiceStoredAmount(
+      storedTotal - storedRounding
+    );
 
     const invoiceData: any = {
       ws_id: wsId,
       customer_id: resolvedCustomerId,
-      price: roundedPrice, // Calculate from rounded values for consistency
-      total_diff: roundedRounding,
+      price: storedPrice,
+      total_diff: storedRounding,
       note: notes,
       notice: content,
       wallet_id,
       category_id: resolvedCategoryId,
       completed_at: new Date().toISOString(),
       valid_until: coverageRange.validUntil.toISOString(),
-      paid_amount: roundedTotal,
+      paid_amount: storedTotal,
       platform_creator_id: user.id,
     };
 
@@ -533,7 +537,7 @@ export async function POST(req: Request, { params }: Params) {
       unit_id: product.unit_id,
       warehouse_id: product.warehouse_id,
       amount: product.quantity,
-      price: Math.round(product.price),
+      price: product.price,
     }));
 
     const { error: invoiceProductsError } = await sbAdmin

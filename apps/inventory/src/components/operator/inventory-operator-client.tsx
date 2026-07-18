@@ -213,6 +213,7 @@ export function InventoryOperatorClient({
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
     view === 'commerce' && commerceTab === 'sales' ? data.salesPeriods : null,
+    view === 'commerce' && commerceTab === 'sales' ? data.formOptions : null,
     view === 'commerce' && commerceTab === 'revenue-share'
       ? data.revenueShares
       : null,
@@ -412,6 +413,7 @@ export function InventoryOperatorClient({
               isFetchingNextProductsPage={
                 data.periodProducts.isFetchingNextPage
               }
+              formOptions={data.formOptions.data}
               products={periodProducts}
               selectedPeriodId={data.filters.period}
               setPeriodId={(period) => {

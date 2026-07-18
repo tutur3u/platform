@@ -30,11 +30,30 @@ function createClient({ product = true, rows = [] as unknown[] } = {}) {
     range: vi.fn(async () => ({ data: rows, error: null })),
     select: vi.fn(() => historyQuery),
   };
+  const relationQuery = (data: unknown[]) => {
+    const query = {
+      eq: vi.fn(() => query),
+      in: vi.fn(async () => ({ data, error: null })),
+      select: vi.fn(() => query),
+    };
+    return query;
+  };
+  const unitQuery = relationQuery([{ id: 'unit-1', name: 'Box' }]);
+  const warehouseQuery = relationQuery([{ id: 'warehouse-1', name: 'Main' }]);
+  const peopleQuery = relationQuery([]);
   return {
-    from: vi.fn((table: string) =>
-      table === 'workspace_products' ? productQuery : historyQuery
-    ),
+    from: vi.fn((table: string) => {
+      if (table === 'workspace_products') return productQuery;
+      if (table === 'product_stock_changes') return historyQuery;
+      if (table === 'workspace_users') return peopleQuery;
+      throw new Error(`Unexpected table: ${table}`);
+    }),
     historyQuery,
+    schema: vi.fn(() => ({
+      from: vi.fn((table: string) =>
+        table === 'inventory_units' ? unitQuery : warehouseQuery
+      ),
+    })),
   };
 }
 

@@ -17,6 +17,7 @@ import type {
 } from '@tuturuuu/internal-api/inventory';
 import {
   createInventorySalesPeriod,
+  deleteInventorySalesPeriod,
   setInventorySalePeriod,
   updateInventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
@@ -40,6 +41,7 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
+import { LifecyclePanel } from './operator-lifecycle';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
 
@@ -226,6 +228,23 @@ function SalesPeriodDialog({
       });
     },
   });
+  const deleteMutation = useMutation({
+    mutationFn: () =>
+      period
+        ? deleteInventorySalesPeriod(wsId, period.id)
+        : Promise.resolve({ ok: false }),
+    onError: () => toast.error(t('deleteError')),
+    onSuccess: () => {
+      toast.success(t('deletedSuccess'));
+      setOpen(false);
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'sales-periods'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'commerce-summary'],
+      });
+    },
+  });
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
@@ -304,6 +323,19 @@ function SalesPeriodDialog({
                 value={description}
               />
             </label>
+            {period ? (
+              <LifecyclePanel
+                deleteDisabled={period.sale_count > 0}
+                deletePending={deleteMutation.isPending}
+                description={
+                  period.sale_count > 0
+                    ? t('deleteInUseDescription')
+                    : t('deleteDescription')
+                }
+                onDelete={() => deleteMutation.mutate()}
+                title={t('lifecycle')}
+              />
+            ) : null}
           </OperatorDialogBody>
           <OperatorDialogFooter>
             <DialogClose asChild>

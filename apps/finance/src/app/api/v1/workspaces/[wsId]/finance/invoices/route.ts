@@ -21,6 +21,7 @@ import {
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { normalizeInvoiceStoredAmount } from './amount';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
@@ -581,7 +582,9 @@ export async function POST(req: Request, { params }: Params) {
   const access = await getFinanceRouteContext(
     req,
     id,
-    await resolveFinanceRouteAuthContext(req)
+    await resolveFinanceRouteAuthContext(req, {
+      targetApp: ['finance', 'platform', 'inventory'],
+    })
   );
 
   if (access.response) {
@@ -822,16 +825,19 @@ export async function POST(req: Request, { params }: Params) {
       promotion,
     } = calculatedValues;
 
-    // Round values first to avoid floating-point precision issues
-    const roundedTotal = Math.round(total);
-    const roundedRounding = Math.round(rounding_applied);
-    const roundedPrice = roundedTotal - roundedRounding;
+    // Finance invoice columns preserve up to six major-unit decimals. Normalize
+    // floating-point noise without discarding valid cent/sub-cent prices.
+    const storedTotal = normalizeInvoiceStoredAmount(total);
+    const storedRounding = normalizeInvoiceStoredAmount(rounding_applied);
+    const storedPrice = normalizeInvoiceStoredAmount(
+      storedTotal - storedRounding
+    );
 
     const invoiceData: any = {
       ws_id: wsId,
       customer_id: resolvedCustomerId,
-      price: roundedPrice, // Calculate from rounded values for consistency
-      total_diff: roundedRounding, // Store the rounding applied
+      price: storedPrice,
+      total_diff: storedRounding,
       note: notes,
       notice: content,
       wallet_id,
@@ -840,7 +846,7 @@ export async function POST(req: Request, { params }: Params) {
       valid_until: new Date(
         Date.now() + 1000 * 60 * 60 * 24 * 30
       ).toISOString(),
-      paid_amount: roundedTotal, // Convert to integer
+      paid_amount: storedTotal,
       platform_creator_id: user.id, // Store the platform user ID who created the invoice
     };
 
@@ -962,7 +968,7 @@ export async function POST(req: Request, { params }: Params) {
         unit_id: product.unit_id,
         warehouse_id: product.warehouse_id,
         amount: product.quantity,
-        price: Math.round(product.price),
+        price: product.price,
         owner_id: productInfo?.ownerId ?? null,
         owner_name: productInfo?.ownerName ?? '',
       };
@@ -1089,7 +1095,7 @@ export async function POST(req: Request, { params }: Params) {
         customer_id: resolvedCustomerId,
         wallet_id,
         category_id: resolvedCategoryId,
-        paid_amount: roundedTotal,
+        paid_amount: storedTotal,
         products: invoiceProducts.map((product) => ({
           product_id: product.product_id,
           product_name: product.product_name,

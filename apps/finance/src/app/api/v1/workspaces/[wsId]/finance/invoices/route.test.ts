@@ -7,6 +7,7 @@ const mocks = {
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
+  resolveFinanceRouteAuthContext: vi.fn(),
   publicFrom: vi.fn(),
   privateFrom: vi.fn(),
   sbAdmin: {} as {
@@ -33,6 +34,11 @@ vi.mock('@tuturuuu/apis/finance/request-access', () => ({
   getFinanceRouteContext: (
     ...args: Parameters<typeof mocks.getFinanceRouteContext>
   ) => mocks.getFinanceRouteContext(...args),
+}));
+
+vi.mock('@tuturuuu/finance-core/route-auth', () => ({
+  resolveFinanceRouteAuthContext: (...args: unknown[]) =>
+    mocks.resolveFinanceRouteAuthContext(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -129,6 +135,9 @@ describe('invoice create route', () => {
         },
       },
     }));
+    mocks.resolveFinanceRouteAuthContext.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
     mocks.getUser.mockResolvedValue({
       data: {
         user: null,
@@ -311,6 +320,10 @@ describe('invoice create route', () => {
     );
 
     expect(response.status).toBe(403);
+    expect(mocks.resolveFinanceRouteAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      { targetApp: ['finance', 'platform', 'inventory'] }
+    );
     await expect(response.json()).resolves.toEqual({
       message:
         'Insufficient permissions to override the default wallet for new invoices',

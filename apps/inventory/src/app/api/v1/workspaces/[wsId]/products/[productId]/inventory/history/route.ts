@@ -56,14 +56,10 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { limit, offset } = parsedQuery.data;
-  const { data, error } = await sbAdmin
+  const { data: rawChanges, error } = await sbAdmin
     .from('product_stock_changes')
     .select(
-      `id, product_id, amount, beneficiary_id, creator_id, unit_id, warehouse_id, note, created_at,
-       warehouse:inventory_warehouses(id, name),
-       unit:inventory_units(id, name),
-       operator:workspace_users!product_stock_changes_creator_id_fkey(id, display_name, full_name, email),
-       beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(id, display_name, full_name, email)`
+      'id, product_id, amount, beneficiary_id, creator_id, unit_id, warehouse_id, note, created_at'
     )
     .eq('product_id', productId)
     .order('created_at', { ascending: false })
@@ -78,7 +74,68 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const rows = (data ?? []) as unknown as RawStockMovement[];
+  const changes = rawChanges ?? [];
+  const unitIds = [...new Set(changes.map((row) => row.unit_id))];
+  const warehouseIds = [...new Set(changes.map((row) => row.warehouse_id))];
+  const personIds = [
+    ...new Set(
+      changes.flatMap((row) =>
+        [row.creator_id, row.beneficiary_id].filter((id): id is string =>
+          Boolean(id)
+        )
+      )
+    ),
+  ];
+  const privateDb = sbAdmin.schema('private');
+  const [unitsResult, warehousesResult, peopleResult] = await Promise.all([
+    unitIds.length
+      ? privateDb
+          .from('inventory_units')
+          .select('id, name')
+          .eq('ws_id', wsId)
+          .in('id', unitIds)
+      : Promise.resolve({ data: [], error: null }),
+    warehouseIds.length
+      ? privateDb
+          .from('inventory_warehouses')
+          .select('id, name')
+          .eq('ws_id', wsId)
+          .in('id', warehouseIds)
+      : Promise.resolve({ data: [], error: null }),
+    personIds.length
+      ? sbAdmin
+          .from('workspace_users')
+          .select('id, display_name, full_name, email')
+          .eq('ws_id', wsId)
+          .in('id', personIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  const relationError =
+    unitsResult.error ?? warehousesResult.error ?? peopleResult.error;
+  if (relationError) {
+    console.error('Error fetching stock history relations', relationError);
+    return NextResponse.json(
+      { message: 'Error fetching stock history relations' },
+      { status: 500 }
+    );
+  }
+
+  const units = new Map((unitsResult.data ?? []).map((row) => [row.id, row]));
+  const warehouses = new Map(
+    (warehousesResult.data ?? []).map((row) => [row.id, row])
+  );
+  const people = new Map((peopleResult.data ?? []).map((row) => [row.id, row]));
+
+  const rows = changes.map((row) => ({
+    ...row,
+    beneficiary: row.beneficiary_id
+      ? (people.get(row.beneficiary_id) ?? null)
+      : null,
+    operator: people.get(row.creator_id) ?? null,
+    unit: units.get(row.unit_id) ?? null,
+    warehouse: warehouses.get(row.warehouse_id) ?? null,
+  })) as RawStockMovement[];
   const response: InventoryStockHistoryResponse = {
     data: rows.slice(0, limit).map(mapStockMovement),
     pagination: {

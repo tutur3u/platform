@@ -6,6 +6,7 @@ import {
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { redirect } from '@/i18n/navigation';
 
 export default async function DashboardEntryPage({
@@ -13,6 +14,7 @@ export default async function DashboardEntryPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  await connection();
   const { locale } = await params;
   const requestHeaders = await headers();
   const appSession = await getSatelliteAppSession('inventory');

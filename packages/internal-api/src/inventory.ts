@@ -1203,6 +1203,35 @@ export type InventorySaleUpdatePayload = {
   }>;
 };
 
+export type InventorySaleCreatePayload = {
+  category_id: string;
+  content: string;
+  notes?: string;
+  period_id?: string | null;
+  products: Array<{
+    category_id: string;
+    price: number;
+    product_id: string;
+    quantity: number;
+    unit_id: string;
+    warehouse_id: string;
+  }>;
+  wallet_id: string;
+};
+
+export type InventorySaleCreateResponse = {
+  data?: {
+    category_id?: string | null;
+    id?: string;
+    products_count?: number;
+    subtotal?: number;
+    total?: number;
+  };
+  invoice_id: string;
+  message: string;
+  period_assignment_warning?: string;
+};
+
 export type InventoryAuditLogSummary = {
   auditRecordId: string;
   eventKind: string;
@@ -1608,10 +1637,12 @@ export type InventoryCommerceSummary = {
 
 export type InventoryProductFormOptionsResponse = {
   categories: ProductCategory[];
+  defaultWalletId?: string | null;
   financeCategories: TransactionCategory[];
   manufacturers: InventoryManufacturer[];
   owners: InventoryOwner[];
   units: ProductUnit[];
+  wallets?: Array<{ id: string; name: string }>;
   warehouses: ProductWarehouse[];
 };
 
@@ -2000,13 +2031,13 @@ export function deleteInventoryProduct(
   productId: string,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<{ message: string }>(
-    workspacePath(wsId, `/products/${encodePathSegment(productId)}`),
-    {
-      headers: options?.defaultHeaders,
-      method: 'DELETE',
-    }
-  );
+  return getInternalApiClient(options).json<{
+    disposition: 'archived' | 'deleted';
+    message: string;
+  }>(workspacePath(wsId, `/products/${encodePathSegment(productId)}`), {
+    headers: options?.defaultHeaders,
+    method: 'DELETE',
+  });
 }
 
 export function updateInventoryProductInventory(
@@ -2632,6 +2663,21 @@ export function getInventorySale(
   return getInternalApiClient(options).json<{ data: InventorySaleDetail }>(
     workspaceInventoryPath(wsId, `/sales/${encodePathSegment(saleId)}`),
     { cache: 'no-store' }
+  );
+}
+
+export function createInventorySale(
+  wsId: string,
+  payload: InventorySaleCreatePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySaleCreateResponse>(
+    workspaceInventoryPath(wsId, '/sales'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
   );
 }
 

@@ -3,6 +3,7 @@ import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { majorToMinor } from '@tuturuuu/utils/money';
 import { getWorkspaceDefaultCurrency } from '../workspace-currency';
+import { getDefaultStorefrontSlug } from './auto-listing-slug';
 import { createStorefront, createStorefrontListing } from './repository';
 
 type DefaultStorefront = { currency: string; id: string };
@@ -43,7 +44,10 @@ export async function ensureDefaultStorefront(
   const storefront = await createStorefront(wsId, {
     currency,
     name: 'Storefront',
-    slug: 'store',
+    // Storefront slugs are public and globally unique. A constant `store`
+    // made product creation log a unique-key failure for every workspace after
+    // the first one, even though product creation itself continued.
+    slug: getDefaultStorefrontSlug(wsId),
     status: 'draft',
   } as never);
   return { currency: storefront.currency ?? currency, id: storefront.id };

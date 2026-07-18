@@ -477,6 +477,47 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
+    if (error.code === '23503') {
+      const { data: archivedProduct, error: archiveError } = await sbAdmin
+        .from('workspace_products')
+        .update({ archived: true })
+        .select('id')
+        .eq('id', productId)
+        .eq('ws_id', wsId)
+        .maybeSingle();
+
+      if (archiveError || !archivedProduct) {
+        console.error(
+          'Error archiving referenced workspace product',
+          archiveError
+        );
+        return NextResponse.json(
+          { message: 'Error archiving referenced workspace product' },
+          { status: 500 }
+        );
+      }
+
+      const actor = await getInventoryActorContext(req, wsId);
+      await createInventoryAuditLog(sbAdmin, {
+        wsId,
+        eventKind: 'updated',
+        entityKind: 'product',
+        entityId: productId,
+        entityLabel: product.name ?? productId,
+        summary: `Archived referenced product ${product.name ?? productId}`,
+        changedFields: ['archived'],
+        before: { archived: false },
+        after: { archived: true },
+        actor,
+      });
+
+      return NextResponse.json({
+        disposition: 'archived',
+        message:
+          'Product archived because completed sales or checkouts still reference it',
+      });
+    }
+
     console.error('Error deleting workspace product', error);
     return NextResponse.json(
       { message: 'Error deleting workspace product' },
@@ -499,5 +540,5 @@ export async function DELETE(req: Request, { params }: Params) {
     actor,
   });
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ disposition: 'deleted', message: 'success' });
 }

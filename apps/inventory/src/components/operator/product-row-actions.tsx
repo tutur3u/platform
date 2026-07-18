@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  Archive,
   Boxes,
   Calculator,
   History,
@@ -94,6 +95,7 @@ export function ProductEditDialog({
   const operatorText = useTranslations('inventory.operator');
   const queryClient = useQueryClient();
   const [details, setDetails] = useState(() => getInitialDetails(row));
+  const [activeTab, setActiveTab] = useState('details');
   const initialStockRows = useMemo(
     () => getInitialProductStockRows(row),
     [row]
@@ -130,6 +132,7 @@ export function ProductEditDialog({
   );
 
   const resetForm = () => {
+    setActiveTab('details');
     setDetails(getInitialDetails(row));
     setStockRows(getInitialProductStockRows(row));
     setStockChangeContext(emptyStockChangeContext);
@@ -194,8 +197,12 @@ export function ProductEditDialog({
   const deleteMutation = useMutation({
     mutationFn: () => deleteInventoryProduct(wsId, row.id),
     onError: () => toast.error(t('deleteError')),
-    onSuccess: () => {
-      toast.success(t('deleteSuccess'));
+    onSuccess: ({ disposition }) => {
+      toast.success(
+        disposition === 'archived'
+          ? t('deleteArchivedSuccess')
+          : t('deleteSuccess')
+      );
       onOpenChange(false);
       invalidateProducts(queryClient, wsId);
     },
@@ -223,6 +230,7 @@ export function ProductEditDialog({
           }}
         >
           <OperatorDialogTabs
+            onValueChange={setActiveTab}
             tabs={[
               {
                 content: (
@@ -456,28 +464,39 @@ export function ProductEditDialog({
                   </div>
                 ),
                 icon: <Calculator className="h-4 w-4" />,
-                label: t('tabs.coverage'),
+                label: t('tabs.lifecycle'),
                 value: 'coverage',
               },
             ]}
+            value={activeTab}
           />
-          <OperatorDialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="ghost">
-                {t('cancel')}
-              </Button>
-            </DialogClose>
+          <OperatorDialogFooter className="sm:justify-between">
             <Button
-              disabled={
-                !canSaveDetails ||
-                !stockSaveState.canSave ||
-                saveMutation.isPending
-              }
-              type="submit"
+              onClick={() => setActiveTab('coverage')}
+              type="button"
+              variant="outline"
             >
-              <Save className="h-4 w-4" />
-              {saveMutation.isPending ? t('saving') : t('save')}
+              <Archive className="h-4 w-4" />
+              {t('archiveOrRemove')}
             </Button>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <DialogClose asChild>
+                <Button type="button" variant="ghost">
+                  {t('cancel')}
+                </Button>
+              </DialogClose>
+              <Button
+                disabled={
+                  !canSaveDetails ||
+                  !stockSaveState.canSave ||
+                  saveMutation.isPending
+                }
+                type="submit"
+              >
+                <Save className="h-4 w-4" />
+                {saveMutation.isPending ? t('saving') : t('save')}
+              </Button>
+            </div>
           </OperatorDialogFooter>
         </form>
       </OperatorDialogContent>

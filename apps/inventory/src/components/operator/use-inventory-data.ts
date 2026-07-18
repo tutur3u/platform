@@ -198,15 +198,17 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'audits'],
   });
   const formOptions = useQuery({
-    enabled: [
-      'bundles',
-      'catalog',
-      'costing',
-      'overview',
-      'setup',
-      'stock',
-      'storefront',
-    ].includes(view),
+    enabled:
+      [
+        'bundles',
+        'catalog',
+        'costing',
+        'overview',
+        'setup',
+        'stock',
+        'storefront',
+      ].includes(view) ||
+      (view === 'commerce' && commerceTab === 'sales'),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
   });

@@ -1,7 +1,11 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
-import { canViewInventoryCatalog } from '@tuturuuu/inventory-core/permissions';
+import {
+  canCreateInventorySales,
+  canViewInventoryCatalog,
+} from '@tuturuuu/inventory-core/permissions';
 import { getInventoryProductFormOptions } from '@tuturuuu/inventory-core/product-rpc';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -16,17 +20,36 @@ export async function GET(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const { permissions, wsId } = authorization.value;
-  if (!canViewInventoryCatalog(permissions)) {
+  if (
+    !canViewInventoryCatalog(permissions) &&
+    !canCreateInventorySales(permissions)
+  ) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   try {
-    const data = await getInventoryProductFormOptions({
-      sbAdmin: await createAdminClient(),
-      wsId,
-    });
+    const sbAdmin = await createAdminClient();
+    const [data, walletsResult, defaultWalletId] = await Promise.all([
+      getInventoryProductFormOptions({
+        sbAdmin,
+        wsId,
+      }),
+      sbAdmin
+        .schema('private')
+        .from('workspace_wallets')
+        .select('id, name')
+        .eq('ws_id', wsId)
+        .order('name'),
+      getWorkspaceConfig(wsId, 'default_wallet_id'),
+    ]);
 
-    return NextResponse.json(data);
+    if (walletsResult.error) throw walletsResult.error;
+
+    return NextResponse.json({
+      ...data,
+      defaultWalletId,
+      wallets: walletsResult.data ?? [],
+    });
   } catch (error) {
     console.error('Error fetching inventory product form options', error);
     return NextResponse.json(

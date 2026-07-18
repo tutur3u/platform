@@ -21,7 +21,7 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
-import { money } from './operator-format';
+import { currency } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import { LoadingRows } from './operator-shell';
 import { useWorkspaceCurrency } from './workspace-currency';
@@ -133,7 +133,7 @@ export function SaleNoteDialog({
                       </div>
                     </div>
                     <p className="shrink-0 font-bold text-lg">
-                      {money(
+                      {currency(
                         detail.data.data.paid_amount,
                         detail.data.data.currency ?? workspaceCurrency
                       )}

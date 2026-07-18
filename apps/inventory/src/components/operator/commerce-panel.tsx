@@ -10,6 +10,7 @@ import {
 import type {
   InventoryCheckoutSession,
   InventoryCommerceSummary,
+  InventoryProductFormOptionsResponse,
   InventoryProductSummary,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
@@ -23,6 +24,7 @@ import { money } from './operator-format';
 import { LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
+import { SaleCreateDialog } from './sale-create-dialog';
 import { SalesPeriodsPanel } from './sales-periods-panel';
 import { useWorkspaceCurrency } from './workspace-currency';
 
@@ -37,6 +39,7 @@ export function CommercePanel({
   salesPeriods,
   fetchNextSalesPage,
   fetchNextProductsPage,
+  formOptions,
   hasNextProductsPage,
   hasNextSalesPage,
   isFetchingNextProductsPage,
@@ -58,6 +61,7 @@ export function CommercePanel({
   salesPeriods: InventorySalesPeriod[];
   fetchNextSalesPage: () => unknown;
   fetchNextProductsPage: () => unknown;
+  formOptions?: InventoryProductFormOptionsResponse;
   hasNextProductsPage: boolean;
   hasNextSalesPage: boolean;
   isFetchingNextProductsPage: boolean;
@@ -141,6 +145,15 @@ export function CommercePanel({
             <LoadingRows />
           ) : (
             <div className="grid gap-3">
+              <div className="flex justify-end">
+                <SaleCreateDialog
+                  options={formOptions}
+                  periods={salesPeriods}
+                  products={products}
+                  workspaceCurrency={workspaceCurrency}
+                  wsId={wsId}
+                />
+              </div>
               <SalesPeriodsPanel
                 fetchNextProductsPage={fetchNextProductsPage}
                 hasNextProductsPage={hasNextProductsPage}

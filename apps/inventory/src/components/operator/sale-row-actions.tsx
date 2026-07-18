@@ -26,7 +26,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { money } from './operator-format';
+import { currency, money } from './operator-format';
 import { NO_PERIOD } from './sales-periods-panel';
 
 export function SaleAmountPopover({
@@ -37,7 +37,10 @@ export function SaleAmountPopover({
   workspaceCurrency: string;
 }) {
   const t = useTranslations('inventory.operator.commerce');
-  const amount = money(sale.paid_amount, sale.currency ?? workspaceCurrency);
+  const amount =
+    sale.source === 'finance_invoice'
+      ? currency(sale.paid_amount, sale.currency ?? workspaceCurrency)
+      : money(sale.paid_amount, sale.currency ?? workspaceCurrency);
 
   return (
     <Popover>
