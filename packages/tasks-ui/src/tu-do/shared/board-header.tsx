@@ -105,8 +105,6 @@ const toolbarButtonClass =
 const toolbarComboboxClass =
   'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
-const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
-  'tuturuuu:settings-dialog-open-intent';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
@@ -233,7 +231,6 @@ export function BoardHeader({
 
   function openBoardSettings() {
     prefetchBoardSettings();
-    announceSettingsOpenIntent();
     const params = new URLSearchParams(searchParams.toString());
     params.set('settingsDialog', 'open');
     params.set('settingsTab', 'task_board');
@@ -261,24 +258,6 @@ export function BoardHeader({
       },
       staleTime: 30_000,
     });
-  }
-
-  function announceSettingsOpenIntent() {
-    if (typeof window === 'undefined') return;
-
-    window.dispatchEvent(
-      new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
-        detail: {
-          settingsBoardId: board.id,
-          settingsTab: 'task_board',
-        },
-      })
-    );
-  }
-
-  function handleBoardSettingsPointerDown() {
-    prefetchBoardSettings();
-    announceSettingsOpenIntent();
   }
 
   function handleSmartFocus() {
@@ -774,7 +753,7 @@ export function BoardHeader({
                 onFocus={prefetchBoardSettings}
                 onMouseEnter={prefetchBoardSettings}
                 onClick={openBoardSettings}
-                onPointerDown={handleBoardSettingsPointerDown}
+                onPointerDown={prefetchBoardSettings}
                 aria-label={t('ws-task-boards.actions.board_settings')}
               >
                 <Bolt className="h-3.5 w-3.5" />

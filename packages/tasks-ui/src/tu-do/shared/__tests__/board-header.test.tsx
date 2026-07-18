@@ -379,6 +379,29 @@ describe('BoardHeader', () => {
     );
   });
 
+  it('does not broadcast a second settings dialog open request', () => {
+    const handleSettingsIntent = vi.fn();
+    window.addEventListener(
+      'tuturuuu:settings-dialog-open-intent',
+      handleSettingsIntent
+    );
+
+    renderBoardHeader();
+
+    const settingsButton = screen.getByRole('button', {
+      name: 'ws-task-boards.actions.board_settings',
+    });
+    fireEvent.pointerDown(settingsButton);
+    fireEvent.click(settingsButton);
+
+    expect(handleSettingsIntent).not.toHaveBeenCalled();
+
+    window.removeEventListener(
+      'tuturuuu:settings-dialog-open-intent',
+      handleSettingsIntent
+    );
+  });
+
   it('renders a natural public title and hides member-only controls in read-only mode', () => {
     renderBoardHeader({
       publicView: true,
