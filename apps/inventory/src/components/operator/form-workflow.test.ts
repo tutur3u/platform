@@ -375,6 +375,15 @@ describe('Inventory operator form workflows', () => {
     expect(stockWorkspaceSource).toContain('<ResourceSection');
   });
 
+  it('resets bulk product edits before every dialog session', () => {
+    const bulkSource = source('product-bulk-actions.tsx');
+
+    expect(bulkSource).toContain('if (nextOpen) resetChanges();');
+    expect(bulkSource).toContain('setChangeQuantity(false)');
+    expect(bulkSource).toContain('setChangeWarehouse(false)');
+    expect(bulkSource).toContain('setChangeOwner(false)');
+  });
+
   it('supports direct storefront hero uploads in create and edit flows', () => {
     const createSource = source('storefront-form-step.tsx');
     const editSource = source('storefront-editor-dialog.tsx');

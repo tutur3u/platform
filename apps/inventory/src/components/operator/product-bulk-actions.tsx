@@ -143,6 +143,16 @@ function ProductBulkEditDialog({
   const canApply =
     selections.length > 0 &&
     (hasOwnerChange || hasQuantityChange || hasWarehouseChange);
+  const resetChanges = () => {
+    setActiveTab(view === 'stock' ? 'stock' : 'owner');
+    setChangeOwner(false);
+    setOwnerId('');
+    setChangeQuantity(false);
+    setQuantity('');
+    setUnlimitedStock(false);
+    setChangeWarehouse(false);
+    setWarehouseId('');
+  };
   const mutation = useMutation({
     mutationFn: async () => {
       const changes: ProductBulkChanges = {
@@ -288,7 +298,13 @@ function ProductBulkEditDialog({
   };
 
   return (
-    <Dialog onOpenChange={setOpen} open={open}>
+    <Dialog
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) resetChanges();
+        setOpen(nextOpen);
+      }}
+      open={open}
+    >
       <DialogTrigger asChild>
         <Button disabled={selections.length === 0} size="sm" type="button">
           <SlidersHorizontal className="h-4 w-4" />
