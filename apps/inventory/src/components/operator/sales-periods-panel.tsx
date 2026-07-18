@@ -80,8 +80,8 @@ export function SalesPeriodsPanel({
   });
 
   return (
-    <section className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.035] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-      <div className="flex min-w-0 items-start gap-3">
+    <section className="grid min-w-0 gap-2 rounded-lg border border-primary/20 bg-primary/[0.035] p-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-3 sm:rounded-xl sm:p-3">
+      <div className="hidden min-w-0 items-start gap-3 sm:flex">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
           <CalendarDays className="h-4 w-4" />
         </span>
@@ -92,10 +92,10 @@ export function SalesPeriodsPanel({
           </p>
         </div>
       </div>
-      <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
+      <div className="flex min-w-0 items-center gap-1.5 sm:flex-wrap sm:justify-end sm:gap-2">
         <SelectValueField
           allowEmpty={false}
-          className="col-span-2 w-full min-w-0 sm:col-span-1 sm:w-56 sm:flex-none"
+          className="w-full min-w-0 flex-1 sm:w-56 sm:flex-none"
           label={t('title')}
           onChange={(value) => onSelect(value === ALL_PERIODS ? '' : value)}
           options={[
@@ -126,7 +126,10 @@ export function SalesPeriodsPanel({
         ) : null}
         {selected ? (
           <Button
-            className="w-full touch-manipulation sm:w-auto"
+            aria-label={
+              selected.status === 'active' ? t('archive') : t('restore')
+            }
+            className="h-9 w-9 shrink-0 touch-manipulation sm:h-8 sm:w-auto"
             disabled={lifecycleMutation.isPending}
             onClick={() => lifecycleMutation.mutate(selected)}
             size="sm"
@@ -138,7 +141,9 @@ export function SalesPeriodsPanel({
             ) : (
               <RotateCcw className="h-4 w-4" />
             )}
-            {selected.status === 'active' ? t('archive') : t('restore')}
+            <span className="sr-only sm:not-sr-only">
+              {selected.status === 'active' ? t('archive') : t('restore')}
+            </span>
           </Button>
         ) : null}
         <SalesPeriodDialog
@@ -240,7 +245,8 @@ function SalesPeriodDialog({
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button
-          className="w-full touch-manipulation sm:w-auto"
+          aria-label={t(isEditing ? 'edit' : 'create')}
+          className="h-9 w-9 shrink-0 touch-manipulation sm:h-8 sm:w-auto"
           size="sm"
           type="button"
           variant={isEditing ? 'outline' : 'default'}
@@ -250,7 +256,9 @@ function SalesPeriodDialog({
           ) : (
             <Plus className="h-4 w-4" />
           )}
-          {t(isEditing ? 'edit' : 'create')}
+          <span className="sr-only sm:not-sr-only">
+            {t(isEditing ? 'edit' : 'create')}
+          </span>
         </Button>
       </DialogTrigger>
       <OperatorDialogContent size="sm">

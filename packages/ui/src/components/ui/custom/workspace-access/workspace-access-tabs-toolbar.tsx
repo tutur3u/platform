@@ -94,7 +94,7 @@ export function WorkspaceAccessTabsToolbar({
           <Input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={t('common.search')}
+            placeholder={t('ws-members.search_members')}
             className="pl-9"
           />
         </div>

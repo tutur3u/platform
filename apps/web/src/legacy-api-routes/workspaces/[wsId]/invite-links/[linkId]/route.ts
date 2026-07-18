@@ -1,9 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
 import { normalizeInviteLinkDetails } from '@/lib/workspace-invite-links';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -21,41 +20,18 @@ const UpdateInviteLinkSchema = z.object({
 // GET - Get invite link details including users who joined via this link
 export async function GET(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const member = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'You are not a member of this workspace' },
-        { status: 403 }
-      );
-    }
+    const access = await resolveWorkspaceRouteAccess(req, wsId);
+    if (!access.ok) return access.response;
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const resolvedWsId = access.permissions.wsId;
 
     // Fetch invite link with stats
-    const { data: inviteLink, error: linkError } = await supabase
+    const { data: inviteLink, error: linkError } = await sbAdmin
       .from('workspace_invite_links_with_stats')
       .select('*')
       .eq('id', linkId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .single();
 
     if (linkError || !inviteLink) {
@@ -66,7 +42,7 @@ export async function GET(req: Request, { params }: Params) {
     }
 
     // Fetch users who joined via this link
-    const { data: uses, error: usesError } = await supabase
+    const { data: uses, error: usesError } = await sbAdmin
       .from('workspace_invite_link_uses')
       .select(
         `
@@ -107,77 +83,26 @@ export async function GET(req: Request, { params }: Params) {
 // PATCH - Update invite link settings (max_uses, expires_at)
 export async function PATCH(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify user is a member of the workspace
-    const member = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'You are not a member of this workspace' },
-        { status: 403 }
-      );
-    }
-
-    // Check if user has manage_workspace_members permission via role membership
-    const { data: rolePermission } = await supabase
-      .from('workspace_role_members')
-      .select(
-        `
-        role_id,
-        workspace_role_permissions!inner (
-          permission,
-          enabled
-        )
-      `
-      )
-      .eq('user_id', user.id)
-      .eq('workspace_role_permissions.ws_id', wsId)
-      .eq('workspace_role_permissions.permission', 'manage_workspace_members')
-      .eq('workspace_role_permissions.enabled', true)
-      .maybeSingle();
-
-    // Also check workspace-wide default permissions
-    const { data: defaultPermission } = await supabase
-      .from('workspace_default_permissions')
-      .select('permission')
-      .eq('ws_id', wsId)
-      .eq('permission', 'manage_workspace_members')
-      .eq('member_type', 'MEMBER')
-      .eq('enabled', true)
-      .maybeSingle();
-
-    if (!rolePermission && !defaultPermission) {
+    const access = await resolveWorkspaceRouteAccess(req, wsId, [
+      'manage_workspace_members',
+    ]);
+    if (!access.ok) return access.response;
+    if (access.permissions.membershipType !== 'MEMBER') {
       return NextResponse.json(
         { error: 'You do not have permission to manage invite links' },
         { status: 403 }
       );
     }
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const resolvedWsId = access.permissions.wsId;
 
     // Verify the invite link exists and belongs to this workspace
-    const { data: existingLink, error: fetchError } = await supabase
+    const { data: existingLink, error: fetchError } = await sbAdmin
       .from('workspace_invite_links')
       .select('id, ws_id')
       .eq('id', linkId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .single();
 
     if (fetchError || !existingLink) {
@@ -200,8 +125,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const { maxUses, expiresAt, memberType } = validation.data;
 
-    // Update the invite link using user-scoped client (RLS enforced)
-    const { data: updatedLink, error: updateError } = await supabase
+    const { data: updatedLink, error: updateError } = await sbAdmin
       .from('workspace_invite_links')
       .update({
         max_uses: maxUses,
@@ -209,6 +133,7 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(memberType !== undefined ? { type: memberType } : {}),
       })
       .eq('id', linkId)
+      .eq('ws_id', resolvedWsId)
       .select()
       .single();
 
@@ -233,76 +158,26 @@ export async function PATCH(req: Request, { params }: Params) {
 // DELETE - Delete/revoke an invite link
 export async function DELETE(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient(req);
     const { wsId, linkId } = await params;
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const member = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'You are not a member of this workspace' },
-        { status: 403 }
-      );
-    }
-
-    // Check if user has manage_workspace_members permission via role membership
-    const { data: rolePermission } = await supabase
-      .from('workspace_role_members')
-      .select(
-        `
-        role_id,
-        workspace_role_permissions!inner (
-          permission,
-          enabled
-        )
-      `
-      )
-      .eq('user_id', user.id)
-      .eq('workspace_role_permissions.ws_id', wsId)
-      .eq('workspace_role_permissions.permission', 'manage_workspace_members')
-      .eq('workspace_role_permissions.enabled', true)
-      .maybeSingle();
-
-    // Also check workspace-wide default permissions
-    const { data: defaultPermission } = await supabase
-      .from('workspace_default_permissions')
-      .select('permission')
-      .eq('ws_id', wsId)
-      .eq('permission', 'manage_workspace_members')
-      .eq('member_type', 'MEMBER')
-      .eq('enabled', true)
-      .maybeSingle();
-
-    if (!rolePermission && !defaultPermission) {
+    const access = await resolveWorkspaceRouteAccess(req, wsId, [
+      'manage_workspace_members',
+    ]);
+    if (!access.ok) return access.response;
+    if (access.permissions.membershipType !== 'MEMBER') {
       return NextResponse.json(
         { error: 'You do not have permission to manage invite links' },
         { status: 403 }
       );
     }
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const resolvedWsId = access.permissions.wsId;
 
     // Verify the invite link exists and belongs to this workspace
-    const { data: existingLink, error: fetchError } = await supabase
+    const { data: existingLink, error: fetchError } = await sbAdmin
       .from('workspace_invite_links')
       .select('id, ws_id')
       .eq('id', linkId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .single();
 
     if (fetchError || !existingLink) {
@@ -312,11 +187,11 @@ export async function DELETE(req: Request, { params }: Params) {
       );
     }
 
-    // Delete the invite link using user-scoped client (RLS enforced)
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('workspace_invite_links')
       .delete()
-      .eq('id', linkId);
+      .eq('id', linkId)
+      .eq('ws_id', resolvedWsId);
 
     if (deleteError) {
       console.error('Failed to delete invite link:', deleteError);

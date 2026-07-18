@@ -20,13 +20,14 @@ import type {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { CheckoutRows, RevenueShareRows, SaleRows } from './commerce-rows';
+import { CheckoutRows, SaleRows } from './commerce-rows';
 import { OperatorAdvancedFilters } from './operator-advanced-filters';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab, InventoryFilters } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
+import { RevenueShareRows } from './revenue-share-rows';
 import { SaleCreateDialog } from './sale-create-dialog';
 import { SalesPeriodsPanel } from './sales-periods-panel';
 import { useWorkspaceCurrency } from './workspace-currency';
@@ -99,13 +100,25 @@ export function CommercePanel({
     <LoadingRows />
   ) : (
     <div className="grid gap-3">
-      <OperatorAdvancedFilters
-        filters={filters}
-        mode="sales"
-        options={formOptions}
-        sales={sales}
-        setFilters={setFilters}
-      />
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-1">
+        <SalesPeriodsPanel
+          fetchNextProductsPage={fetchNextProductsPage}
+          hasNextProductsPage={hasNextProductsPage}
+          isFetchingNextProductsPage={isFetchingNextProductsPage}
+          onSelect={setPeriodId}
+          periods={salesPeriods}
+          products={products}
+          selectedPeriodId={selectedPeriodId}
+          wsId={wsId}
+        />
+        <OperatorAdvancedFilters
+          filters={filters}
+          mode="sales"
+          options={formOptions}
+          sales={sales}
+          setFilters={setFilters}
+        />
+      </div>
       <div className="flex justify-stretch sm:justify-end">
         <SaleCreateDialog
           fetchNextProductsPage={fetchNextProductsPage}
@@ -119,16 +132,6 @@ export function CommercePanel({
           wsId={wsId}
         />
       </div>
-      <SalesPeriodsPanel
-        fetchNextProductsPage={fetchNextProductsPage}
-        hasNextProductsPage={hasNextProductsPage}
-        isFetchingNextProductsPage={isFetchingNextProductsPage}
-        onSelect={setPeriodId}
-        periods={salesPeriods}
-        products={products}
-        selectedPeriodId={selectedPeriodId}
-        wsId={wsId}
-      />
       <ProfitSummaryPanel
         currency={workspaceCurrency}
         summary={salesSummary}

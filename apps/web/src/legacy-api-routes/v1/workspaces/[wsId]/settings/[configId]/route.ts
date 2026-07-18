@@ -3,7 +3,9 @@ import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-aut
 import {
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   ENABLE_CMS_GAMES_CONFIG_ID,
+  ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
 } from '@tuturuuu/internal-api/workspace-configs';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import {
@@ -11,6 +13,7 @@ import {
   replaceWorkspaceDefaultIncludedGroupIds,
 } from '@/lib/workspace-default-included-groups';
 import { getWorkspaceConfig } from '@/lib/workspace-helper';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -38,6 +41,43 @@ function financeAuthTargetsForConfig(
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
+
+  if (id === ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID) {
+    const access = await resolveWorkspaceRouteAccess(req, rawWsId, [
+      'manage_workspace_members',
+    ]);
+    if (!access.ok) return access.response;
+
+    const { value } = await req.json();
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return NextResponse.json(
+        { message: 'Invalid workspace config value' },
+        { status: 400 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { error } = await sbAdmin
+      .from('workspace_configs')
+      .upsert({
+        id,
+        updated_at: new Date().toISOString(),
+        value: value ?? '',
+        ws_id: access.permissions.wsId,
+      })
+      .eq('ws_id', access.permissions.wsId)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error upserting guest self-join config:', error);
+      return NextResponse.json(
+        { message: error.message || 'Error upserting workspace config' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'success' });
+  }
 
   if (id === ENABLE_CMS_GAMES_CONFIG_ID) {
     const access = await requireWorkspaceExternalProjectAccess({
@@ -200,6 +240,18 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
+
+  if (id === ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID) {
+    const access = await resolveWorkspaceRouteAccess(req, rawWsId);
+    if (!access.ok) {
+      return NextResponse.json({}, { status: access.response.status });
+    }
+
+    const value = await getWorkspaceConfig(access.permissions.wsId, id);
+    if (value === null) return NextResponse.json({}, { status: 404 });
+
+    return NextResponse.json({ value });
+  }
 
   if (id === ENABLE_CMS_GAMES_CONFIG_ID) {
     const access = await requireWorkspaceExternalProjectAccess({

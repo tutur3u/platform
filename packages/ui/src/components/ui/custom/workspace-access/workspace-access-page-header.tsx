@@ -33,7 +33,7 @@ export function WorkspaceAccessPageHeader({
     {
       accent: 'text-dynamic-blue',
       icon: <Users className="h-4 w-4" />,
-      label: t('common.total'),
+      label: t('ws-members.total'),
       value: totalCount,
     },
     {

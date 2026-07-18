@@ -6667,7 +6667,9 @@
     "no_members_found": "No members found",
     "no_members_match": "No members match your search",
     "no_permissions": "No permissions assigned",
-    "pending_invitations": "Pending invitations"
+    "pending_invitations": "Pending invitations",
+    "search_members": "Search members",
+    "total": "Total"
   },
   "ws-polls": {
     "active": "Active",

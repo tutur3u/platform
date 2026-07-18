@@ -155,7 +155,7 @@ export function OperatorAdvancedFilters({
   );
 
   return (
-    <div className="min-w-0 rounded-lg border bg-card p-2">
+    <div className="min-w-0 md:rounded-lg md:border md:bg-card md:p-2">
       <div className="hidden items-end gap-2 md:grid md:grid-cols-[minmax(0,1fr)_auto]">
         {fields}
         <Button disabled={activeCount === 0} onClick={reset} variant="ghost">
@@ -166,15 +166,20 @@ export function OperatorAdvancedFilters({
       <Dialog>
         <DialogTrigger asChild>
           <Button
-            className="w-full justify-between md:hidden"
+            aria-label={t('title')}
+            className="relative h-10 w-10 shrink-0 md:hidden"
+            size="icon"
+            title={t('title')}
             variant="outline"
           >
-            <span className="inline-flex items-center gap-2">
-              <ListFilter className="h-4 w-4" />
-              {t('title')}
-            </span>
+            <ListFilter className="h-4 w-4" />
             {activeCount > 0 ? (
-              <Badge variant="secondary">{activeCount}</Badge>
+              <Badge
+                className="absolute -top-1.5 -right-1.5 h-5 min-w-5 justify-center px-1 text-[10px]"
+                variant="secondary"
+              >
+                {activeCount}
+              </Badge>
             ) : null}
           </Button>
         </DialogTrigger>

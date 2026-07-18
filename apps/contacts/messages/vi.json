@@ -6667,7 +6667,9 @@
     "no_members_found": "Không tìm thấy thành viên",
     "no_members_match": "Không có thành viên nào phù hợp với tìm kiếm của bạn",
     "no_permissions": "Chưa được gán quyền",
-    "pending_invitations": "Lời mời đang chờ"
+    "pending_invitations": "Lời mời đang chờ",
+    "search_members": "Tìm kiếm thành viên",
+    "total": "Tổng"
   },
   "ws-polls": {
     "active": "Đang hoạt động",

@@ -1,11 +1,16 @@
-import { ENABLE_CMS_GAMES_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
+import {
+  ENABLE_CMS_GAMES_CONFIG_ID,
+  ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+} from '@tuturuuu/internal-api/workspace-configs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getFinanceRouteContext: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  createAdminClient: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
   resolveFinanceRouteAuthContext: vi.fn(),
+  resolveWorkspaceRouteAccess: vi.fn(),
   serverLogger: {
     error: vi.fn(),
   },
@@ -23,6 +28,11 @@ vi.mock('@/lib/external-projects/access', () => ({
   ) => mocks.requireWorkspaceExternalProjectAccess(...args),
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
+}));
+
 vi.mock('@tuturuuu/finance-core/route-auth', () => ({
   resolveFinanceRouteAuthContext: (
     ...args: Parameters<typeof mocks.resolveFinanceRouteAuthContext>
@@ -36,6 +46,12 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 vi.mock('@/lib/workspace-helper', () => ({
   getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
     mocks.getWorkspaceConfig(...args),
+}));
+
+vi.mock('@/lib/workspace-route-access', () => ({
+  resolveWorkspaceRouteAccess: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceRouteAccess>
+  ) => mocks.resolveWorkspaceRouteAccess(...args),
 }));
 
 function createAdmin() {
@@ -280,5 +296,79 @@ describe('workspace settings route default wallet access', () => {
       value: '11111111-1111-4111-8111-111111111111',
       ws_id: 'normalized-ws',
     });
+  });
+});
+
+describe('workspace settings route guest self-join access', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: true,
+      permissions: { wsId: 'normalized-ws' },
+      user: { id: 'user-1' },
+    });
+    mocks.getWorkspaceConfig.mockResolvedValue('true');
+  });
+
+  it('reads guest self-join with the current satellite workspace session', async () => {
+    const { GET } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
+    );
+
+    const request = new Request(
+      `http://localhost/api/v1/workspaces/ws-1/settings/${ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID}`
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({
+        configId: ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+        wsId: 'ws-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ value: 'true' });
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      request,
+      'ws-1'
+    );
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      'normalized-ws',
+      ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID
+    );
+    expect(mocks.resolveFinanceRouteAuthContext).not.toHaveBeenCalled();
+  });
+
+  it('requires member management permission before updating guest self-join', async () => {
+    const admin = createAdmin();
+    mocks.createAdminClient.mockResolvedValue(admin.admin);
+    const { PUT } = await import(
+      '@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route'
+    );
+
+    const request = new Request(
+      `http://localhost/api/v1/workspaces/ws-1/settings/${ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID}`,
+      { body: JSON.stringify({ value: 'false' }), method: 'PUT' }
+    );
+    const response = await PUT(request, {
+      params: Promise.resolve({
+        configId: ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+        wsId: 'ws-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      request,
+      'ws-1',
+      ['manage_workspace_members']
+    );
+    expect(admin.upsert).toHaveBeenCalledWith({
+      id: ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+      updated_at: expect.any(String),
+      value: 'false',
+      ws_id: 'normalized-ws',
+    });
+    expect(mocks.resolveFinanceRouteAuthContext).not.toHaveBeenCalled();
   });
 });

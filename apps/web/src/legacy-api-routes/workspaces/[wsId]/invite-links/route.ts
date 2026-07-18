@@ -1,16 +1,9 @@
 import { canCreateInvitation } from '@tuturuuu/payment-core/seat-limits';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -27,42 +20,12 @@ const CreateInviteLinkSchema = z.object({
 // POST - Create a new invite link
 export async function POST(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient(req);
     const { wsId } = await params;
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify user is a member of the workspace
-    const member = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'You are not a member of this workspace' },
-        { status: 403 }
-      );
-    }
-
-    const permissions = await getPermissions({ wsId, request: req });
-
-    if (
-      permissions?.membershipType !== 'MEMBER' ||
-      permissions.withoutPermission('manage_workspace_members')
-    ) {
+    const access = await resolveWorkspaceRouteAccess(req, wsId, [
+      'manage_workspace_members',
+    ]);
+    if (!access.ok) return access.response;
+    if (access.permissions.membershipType !== 'MEMBER') {
       return NextResponse.json(
         { error: 'You do not have permission to manage invite links' },
         { status: 403 }
@@ -70,8 +33,8 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Block invite link creation for personal workspaces
-    const sbAdmin = await createAdminClient();
-    const resolvedWsId = permissions.wsId;
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const resolvedWsId = access.permissions.wsId;
 
     const { data: wsData } = await sbAdmin
       .from('workspaces')
@@ -141,7 +104,7 @@ export async function POST(req: Request, { params }: Params) {
         .insert({
           ws_id: resolvedWsId,
           code,
-          creator_id: user.id,
+          creator_id: access.user.id,
           max_uses: maxUses,
           expires_at: expiresAt,
           type: linkMemberType,
@@ -190,40 +153,16 @@ export async function POST(req: Request, { params }: Params) {
 // GET - List all invite links for the workspace
 export async function GET(req: Request, { params }: Params) {
   try {
-    const supabase = await createClient(req);
     const { wsId } = await params;
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const member = await verifyWorkspaceMembershipType({
-      wsId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'You are not a member of this workspace' },
-        { status: 403 }
-      );
-    }
+    const access = await resolveWorkspaceRouteAccess(req, wsId);
+    if (!access.ok) return access.response;
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     // Fetch invite links with stats
-    const { data: inviteLinks, error } = await supabase
+    const { data: inviteLinks, error } = await sbAdmin
       .from('workspace_invite_links_with_stats')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', access.permissions.wsId)
       .order('created_at', { ascending: false });
 
     if (error) {

@@ -4,18 +4,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   CheckCircle2,
+  CircleDollarSign,
   CreditCard,
   Loader2,
   MonitorSmartphone,
-  Percent,
+  Package,
   RotateCcw,
   ShieldCheck,
   User,
+  UserCheck,
+  Wallet,
 } from '@tuturuuu/icons';
 import type {
   InventoryCheckoutSession,
   InventoryProductSummary,
-  InventoryRevenueShareEarning,
   InventorySaleSummary,
   InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
@@ -41,13 +43,13 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import {
   CheckoutStatusBadge,
   formatDate,
   StatusBadge,
 } from './commerce-shared';
-import { money } from './operator-format';
+import { currency, money } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { groupInventorySalesByDate, localDateKey } from './sale-date-groups';
 import { SaleNoteDialog } from './sale-detail-panel';
@@ -374,7 +376,7 @@ export function SaleRows({
 
   return (
     <div className="grid min-w-0 gap-2">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
+      <div className="hidden min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2 sm:flex">
         <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
           <Checkbox
             checked={
@@ -405,12 +407,14 @@ export function SaleRows({
         ) : null}
       </div>
       {selectedRows.length > 0 ? (
-        <BulkSalesPeriodToolbar
-          clearSelection={() => setSelectedKeys(new Set())}
-          periods={periods}
-          sales={selectedRows}
-          wsId={wsId}
-        />
+        <div className="hidden sm:block">
+          <BulkSalesPeriodToolbar
+            clearSelection={() => setSelectedKeys(new Set())}
+            periods={periods}
+            sales={selectedRows}
+            wsId={wsId}
+          />
+        </div>
       ) : null}
       {dateGroups.map((group) => (
         <section className="grid gap-2" key={group.key}>
@@ -440,6 +444,9 @@ export function SaleRows({
               );
               const isCheckoutSale = row.source === 'checkout_session';
               const selectionKey = `${row.source}:${row.id}`;
+              const amount = isCheckoutSale
+                ? money(row.paid_amount, row.currency ?? workspaceCurrency)
+                : currency(row.paid_amount, row.currency ?? workspaceCurrency);
 
               return (
                 <AccordionItem
@@ -447,12 +454,12 @@ export function SaleRows({
                   key={selectionKey}
                   value={selectionKey}
                 >
-                  <div className="grid gap-3 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                    <div className="flex min-w-0 items-start gap-3">
+                  <div className="grid gap-2 p-2 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-3 sm:p-3">
+                    <div className="flex min-w-0 items-start gap-0 sm:gap-3">
                       <Checkbox
                         aria-label={t('commerce.bulk.selectSale')}
                         checked={selectedKeys.has(selectionKey)}
-                        className="mt-1"
+                        className="mt-1 hidden sm:flex"
                         onCheckedChange={(checked) => {
                           setSelectedKeys((current) => {
                             const next = new Set(current);
@@ -462,7 +469,7 @@ export function SaleRows({
                           });
                         }}
                       />
-                      <AccordionTrigger className="min-w-0 flex-1 gap-3 p-0 hover:no-underline">
+                      <AccordionTrigger className="min-w-0 flex-1 gap-2 p-0 hover:no-underline sm:gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             {isCheckoutSale ? (
@@ -485,8 +492,9 @@ export function SaleRows({
                               }
                             />
                           </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-                            <span>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground text-xs">
+                            <span className="inline-flex items-center gap-1">
+                              <Package className="h-3 w-3" />
                               {t('commerce.items', { count: row.items_count })}
                             </span>
                             {date ? (
@@ -501,36 +509,51 @@ export function SaleRows({
                               </span>
                             ) : null}
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-1.5">
+                          <div className="mt-1.5 flex flex-wrap gap-1">
+                            <SaleMetaBadge
+                              icon={<CircleDollarSign className="h-3 w-3" />}
+                              label={amount}
+                              title={t('commerce.amountDetails')}
+                            />
+                            {isCheckoutSale ? null : (
+                              <SaleMetaBadge
+                                icon={<Wallet className="h-3 w-3" />}
+                                label={
+                                  row.wallet_name ??
+                                  t('commerce.quickWallet.unassigned')
+                                }
+                                title={t('commerce.walletLabel')}
+                              />
+                            )}
                             {row.creator_name?.trim() ? (
-                              <StatusBadge
-                                value={t('commerce.creator', {
-                                  name: row.creator_name.trim(),
-                                })}
+                              <SaleMetaBadge
+                                icon={<User className="h-3 w-3" />}
+                                label={row.creator_name.trim()}
+                                title={t('commerce.creatorLabel')}
                               />
                             ) : null}
                             {(row.owners ?? [])
                               .filter((owner) => owner.trim())
                               .map((owner) => (
-                                <StatusBadge
+                                <SaleMetaBadge
+                                  icon={<UserCheck className="h-3 w-3" />}
                                   key={owner}
-                                  value={t('commerce.owner', {
-                                    name: owner.trim(),
-                                  })}
+                                  label={owner.trim()}
+                                  title={t('commerce.ownersLabel')}
                                 />
                               ))}
                             {row.customer_name?.trim() && row.notice?.trim() ? (
-                              <StatusBadge
-                                value={t('commerce.customer', {
-                                  name: row.customer_name.trim(),
-                                })}
+                              <SaleMetaBadge
+                                icon={<User className="h-3 w-3" />}
+                                label={row.customer_name.trim()}
+                                title={t('commerce.customerLabel')}
                               />
                             ) : null}
                           </div>
                         </div>
                       </AccordionTrigger>
                     </div>
-                    <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                    <div className="hidden min-w-0 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
                       <SalePeriodPicker
                         periods={periods}
                         sale={row}
@@ -552,7 +575,28 @@ export function SaleRows({
                       )}
                     </div>
                   </div>
-                  <AccordionContent className="border-t px-3 pt-3 pb-3 sm:pl-12">
+                  <AccordionContent className="border-t px-2 pt-2 pb-2 sm:px-3 sm:pt-3 sm:pb-3 sm:pl-12">
+                    <div className="mb-2 grid min-w-0 grid-cols-2 items-center gap-1.5 sm:hidden">
+                      <SalePeriodPicker
+                        periods={periods}
+                        sale={row}
+                        wsId={wsId}
+                      />
+                      {isCheckoutSale || wallets.length === 0 ? null : (
+                        <SaleQuickWalletPicker
+                          sale={row}
+                          wallets={wallets}
+                          wsId={wsId}
+                        />
+                      )}
+                      <SaleAmountPopover
+                        sale={row}
+                        workspaceCurrency={workspaceCurrency}
+                      />
+                      {isCheckoutSale ? null : (
+                        <SaleNoteDialog sale={row} wsId={wsId} />
+                      )}
+                    </div>
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <p className="font-semibold text-sm">
                         {t('commerce.lineItems')}
@@ -593,94 +637,22 @@ export function SaleRows({
   );
 }
 
-export function RevenueShareRows({
-  query,
-  rows,
+function SaleMetaBadge({
+  icon,
+  label,
+  title,
 }: {
-  query: string;
-  rows: InventoryRevenueShareEarning[];
+  icon: ReactNode;
+  label: string;
+  title: string;
 }) {
-  const t = useTranslations('inventory.operator.commerce');
-  const locale = useLocale();
-  const filteredRows = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return rows;
-
-    return rows.filter((row) =>
-      [
-        row.partnerName,
-        row.products.join(' '),
-        String(row.revenueShareBps),
-        String(row.earnedAmount),
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle))
-    );
-  }, [query, rows]);
-
-  if (filteredRows.length === 0) {
-    return (
-      <EmptyRow
-        description={t('emptyDescriptions.revenueShare')}
-        label={t('empty')}
-      />
-    );
-  }
-
   return (
-    <div className="grid gap-2">
-      {filteredRows.map((row) => {
-        const date = formatDate(row.lastSaleAt ?? row.firstSaleAt, locale);
-        return (
-          <article
-            className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
-            key={`${row.partnerId}:${row.revenueShareBps}:${row.currency}`}
-          >
-            <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2">
-                <Percent className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <p className="truncate font-medium">{row.partnerName}</p>
-                <StatusBadge
-                  value={t('splitLabel', { value: row.splitPercent })}
-                />
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-                <span>
-                  {t('unitsLabel', {
-                    count: Number(row.unitsSold),
-                  })}
-                </span>
-                <span>{t('productsLabel', { count: row.productCount })}</span>
-                {date ? (
-                  <span className="inline-flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {date}
-                  </span>
-                ) : null}
-              </div>
-              <p className="mt-1 line-clamp-1 text-muted-foreground text-xs">
-                {row.products.join(', ')}
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[320px]">
-              <div className="rounded-md border border-border bg-muted/20 px-3 py-2">
-                <p className="text-muted-foreground text-xs">
-                  {t('attributedRevenue')}
-                </p>
-                <p className="font-semibold">
-                  {money(row.attributedRevenue, row.currency)}
-                </p>
-              </div>
-              <div className="rounded-md border border-dynamic-green/25 bg-dynamic-green/10 px-3 py-2 text-dynamic-green">
-                <p className="text-xs">{t('earnedAmount')}</p>
-                <p className="font-semibold">
-                  {money(row.earnedAmount, row.currency)}
-                </p>
-              </div>
-            </div>
-          </article>
-        );
-      })}
-    </div>
+    <span
+      className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 font-medium text-[11px] text-foreground"
+      title={`${title}: ${label}`}
+    >
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <span className="max-w-36 truncate">{label}</span>
+    </span>
   );
 }

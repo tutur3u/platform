@@ -42,5 +42,7 @@ describe('SalesPeriodsPanel', () => {
 
     expect(html).toContain('edit');
     expect(html).toContain('archive');
+    expect(html).toContain('sr-only sm:not-sr-only');
+    expect(html).toContain('w-full min-w-0 flex-1');
   });
 });
