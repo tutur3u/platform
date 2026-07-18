@@ -231,7 +231,7 @@ function findAssetCaption(
   return asString(asJsonObject(asset?.metadata).caption);
 }
 
-function buildDeliveryAssetUrl(
+export function buildDeliveryAssetUrl(
   workspaceId: string,
   asset: {
     id: string;
@@ -269,7 +269,7 @@ function buildDeliveryAssetUrl(
   return `/api/v1/workspaces/${workspaceId}/external-projects/assets/${asset.id}${queryString ? `?${queryString}` : ''}`;
 }
 
-function getExternalProjectAssetRevision(updatedAt: string) {
+export function getExternalProjectAssetRevision(updatedAt: string) {
   return updatedAt.replace(/\D/g, '') || '0';
 }
 
@@ -296,7 +296,7 @@ function getExternalProjectDeliveryRevision(
   };
 }
 
-const EPM_IMAGE_PREVIEW_TRANSFORM = {
+export const EPM_IMAGE_PREVIEW_TRANSFORM = {
   width: 1600,
   height: 1600,
   quality: 82,
@@ -565,7 +565,7 @@ function buildExocorpseLoadingData(
   };
 }
 
-function buildExternalProjectLoadingData(
+export function buildExternalProjectLoadingData(
   adapter: WorkspaceExternalProjectBinding['adapter'],
   collections: ExternalProjectDeliveryCollection[]
 ): ExternalProjectLoadingData | null {
@@ -596,7 +596,7 @@ function buildExternalProjectLoadingData(
   };
 }
 
-async function listWorkspaceExternalProjectBlocksByEntryIds(
+export async function listWorkspaceExternalProjectBlocksByEntryIds(
   workspaceId: string,
   entryIds: string[],
   db: AdminDb
@@ -636,7 +636,7 @@ async function listWorkspaceExternalProjectBlocksByEntryIds(
   return blocks;
 }
 
-async function listWorkspaceExternalProjectAssetsByEntryIds(
+export async function listWorkspaceExternalProjectAssetsByEntryIds(
   workspaceId: string,
   entryIds: string[],
   db: AdminDb
@@ -825,6 +825,7 @@ export async function listWorkspaceExternalProjectFieldDefinitions(
   workspaceId: string,
   options: {
     collectionId?: string | null;
+    collectionIds?: string[];
     includeDisabled?: boolean;
   } = {},
   db?: AdminDb
@@ -847,6 +848,10 @@ export async function listWorkspaceExternalProjectFieldDefinitions(
             : query.eq('collection_id', options.collectionId as string);
       }
 
+      if (options.collectionIds) {
+        query = query.in('collection_id', options.collectionIds);
+      }
+
       if (!options.includeDisabled) {
         query = query.eq('is_enabled', true);
       }
@@ -860,6 +865,7 @@ export async function listWorkspaceExternalProjectEntries(
   workspaceId: string,
   options: {
     collectionId?: string;
+    collectionIds?: string[];
     includeDrafts?: boolean;
   } = {},
   db?: AdminDb
@@ -876,6 +882,10 @@ export async function listWorkspaceExternalProjectEntries(
 
     if (options.collectionId) {
       query = query.eq('collection_id', options.collectionId);
+    }
+
+    if (options.collectionIds) {
+      query = query.in('collection_id', options.collectionIds);
     }
 
     if (!options.includeDrafts) {

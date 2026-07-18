@@ -31,12 +31,14 @@ mod db;
 mod delivery;
 mod helpers;
 mod permissions;
+mod scope;
 
 use cms::*;
 use db::*;
 use delivery::*;
 use helpers::*;
 use permissions::*;
+use scope::*;
 
 pub(super) const ADMIN_PERMISSION: &str = "admin";
 pub(super) const INTERNAL_WORKSPACE_SLUG: &str = "internal";
@@ -183,6 +185,11 @@ async fn studio_response(
         return error_response(403, "Forbidden");
     }
 
+    let collection_slugs = match parse_collection_slugs(request.url) {
+        Ok(slugs) => slugs,
+        Err(()) => return error_response(400, "Invalid collectionSlugs query"),
+    };
+
     // ----- Load studio data (mirrors getWorkspaceExternalProjectStudioData) ----
 
     let collections = match list_rows(
@@ -198,13 +205,66 @@ async fn studio_response(
         Err(()) => return error_response(500, FAILED_MESSAGE),
     };
 
+    let relation_definitions = match list_rows(
+        contact_data,
+        outbound,
+        "workspace_external_project_relation_definitions",
+        &resolved_ws_id,
+        &[("order", "sort_order.asc,key.asc".to_owned())],
+    )
+    .await
+    {
+        Ok(rows) => rows,
+        Err(()) => return error_response(500, FAILED_MESSAGE),
+    };
+    let relation_definition_targets = match list_rows(
+        contact_data,
+        outbound,
+        "workspace_external_project_relation_definition_targets",
+        &resolved_ws_id,
+        &[],
+    )
+    .await
+    {
+        Ok(rows) => rows,
+        Err(()) => return error_response(500, FAILED_MESSAGE),
+    };
+    let all_relations = match list_rows(
+        contact_data,
+        outbound,
+        "workspace_external_project_entry_relations",
+        &resolved_ws_id,
+        &[("order", "sort_order.asc,created_at.asc".to_owned())],
+    )
+    .await
+    {
+        Ok(rows) => rows,
+        Err(()) => return error_response(500, FAILED_MESSAGE),
+    };
+    let scope = (!collection_slugs.is_empty()).then(|| {
+        StudioScope::from_rows(
+            &collection_slugs,
+            &collections,
+            &relation_definitions,
+            &relation_definition_targets,
+        )
+    });
+    let entry_scope_params = scope
+        .as_ref()
+        .map(|scope| vec![("collection_id", scope.collection_filter())])
+        .unwrap_or_default();
+
     // entries: includeDrafts => no status filter; ordered sort_order asc, created_at asc.
     let entries = match list_rows(
         contact_data,
         outbound,
         "workspace_external_project_entries",
         &resolved_ws_id,
-        &[("order", "sort_order.asc,created_at.asc".to_owned())],
+        &[
+            entry_scope_params.as_slice(),
+            &[("order", "sort_order.asc,created_at.asc".to_owned())],
+        ]
+        .concat(),
     )
     .await
     {
@@ -214,12 +274,20 @@ async fn studio_response(
 
     // fieldDefinitions: includeDisabled => no is_enabled filter, no collectionId
     // option (Object.hasOwn is false). Ordered sort_order asc, created_at asc.
+    let field_scope_params = scope
+        .as_ref()
+        .map(|scope| vec![("collection_id", scope.source_collection_filter())])
+        .unwrap_or_default();
     let field_definitions = match list_rows(
         contact_data,
         outbound,
         "workspace_external_project_field_definitions",
         &resolved_ws_id,
-        &[("order", "sort_order.asc,created_at.asc".to_owned())],
+        &[
+            field_scope_params.as_slice(),
+            &[("order", "sort_order.asc,created_at.asc".to_owned())],
+        ]
+        .concat(),
     )
     .await
     {
@@ -227,31 +295,47 @@ async fn studio_response(
         Err(()) => return error_response(500, FAILED_MESSAGE),
     };
 
-    let import_jobs = match list_recent_rows(
-        contact_data,
-        outbound,
-        "workspace_external_project_import_jobs",
-        &resolved_ws_id,
-    )
-    .await
-    {
-        Ok(rows) => rows,
-        Err(()) => return error_response(500, FAILED_MESSAGE),
+    let import_jobs = if scope.is_some() {
+        Vec::new()
+    } else {
+        match list_recent_rows(
+            contact_data,
+            outbound,
+            "workspace_external_project_import_jobs",
+            &resolved_ws_id,
+        )
+        .await
+        {
+            Ok(rows) => rows,
+            Err(()) => return error_response(500, FAILED_MESSAGE),
+        }
     };
-    let publish_events = match list_recent_rows(
-        contact_data,
-        outbound,
-        "workspace_external_project_publish_events",
-        &resolved_ws_id,
-    )
-    .await
-    {
-        Ok(rows) => rows,
-        Err(()) => return error_response(500, FAILED_MESSAGE),
+    let publish_events = if scope.is_some() {
+        Vec::new()
+    } else {
+        match list_recent_rows(
+            contact_data,
+            outbound,
+            "workspace_external_project_publish_events",
+            &resolved_ws_id,
+        )
+        .await
+        {
+            Ok(rows) => rows,
+            Err(()) => return error_response(500, FAILED_MESSAGE),
+        }
     };
 
     let entry_ids: Vec<String> = entries
         .iter()
+        .filter(|entry| {
+            scope.as_ref().is_none_or(|scope| {
+                entry
+                    .get("collection_id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| scope.source_collection_ids.contains(id))
+            })
+        })
         .filter_map(|entry| entry.get("id").and_then(Value::as_str).map(str::to_owned))
         .collect();
 
@@ -288,12 +372,50 @@ async fn studio_response(
 
     // loadingData: built from delivery collections (collection -> entries ->
     // {assets, blocks}). adapter is the first entry's source_adapter (or null).
+    let response_collections: Vec<Value> = collections
+        .into_iter()
+        .filter(|collection| {
+            scope
+                .as_ref()
+                .is_none_or(|scope| scope.includes_collection(collection))
+        })
+        .collect();
+    let response_relation_definitions: Vec<Value> = relation_definitions
+        .into_iter()
+        .filter(|definition| {
+            scope
+                .as_ref()
+                .is_none_or(|scope| scope.includes_definition(definition))
+        })
+        .collect();
+    let response_relation_definition_targets: Vec<Value> = relation_definition_targets
+        .into_iter()
+        .filter(|target| {
+            scope
+                .as_ref()
+                .is_none_or(|scope| scope.includes_target(target))
+        })
+        .collect();
+    let source_entry_ids: std::collections::HashSet<&str> =
+        entry_ids.iter().map(String::as_str).collect();
+    let relations: Vec<Value> = all_relations
+        .into_iter()
+        .filter(|relation| {
+            scope.as_ref().is_none_or(|_| {
+                relation
+                    .get("from_entry_id")
+                    .and_then(Value::as_str)
+                    .is_some_and(|id| source_entry_ids.contains(id))
+            })
+        })
+        .collect();
     let first_entry_source_adapter = entries
         .first()
         .and_then(|entry| entry.get("source_adapter"))
         .and_then(Value::as_str)
         .map(str::to_owned);
-    let delivery_collections = build_delivery_collections(&collections, &entries, &assets, &blocks);
+    let delivery_collections =
+        build_delivery_collections(&response_collections, &entries, &assets, &blocks);
     let loading_data =
         build_loading_data(first_entry_source_adapter.as_deref(), &delivery_collections);
 
@@ -305,19 +427,22 @@ async fn studio_response(
         "enabled": binding_enabled,
         "workspace_id": resolved_ws_id,
     });
-    let cms_capabilities = build_cms_capabilities(&binding, &collections);
+    let cms_capabilities = build_cms_capabilities(&binding, &response_collections);
 
     // Final payload: { binding, ...studio, cmsCapabilities }.
     let body = json!({
         "binding": binding,
         "assets": assets,
         "blocks": blocks,
-        "collections": collections,
+        "collections": response_collections,
         "entries": entries,
         "fieldDefinitions": field_definitions,
         "importJobs": import_jobs,
         "loadingData": loading_data,
         "publishEvents": publish_events,
+        "relationDefinitions": response_relation_definitions,
+        "relationDefinitionTargets": response_relation_definition_targets,
+        "relations": relations,
         "cmsCapabilities": cms_capabilities,
     });
 
