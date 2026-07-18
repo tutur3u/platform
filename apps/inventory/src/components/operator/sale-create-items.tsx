@@ -25,6 +25,31 @@ export type SaleStockOption = {
 
 export type SaleCartLine = SaleStockOption & { quantity: number };
 
+export function updateSaleCartQuantity(
+  lines: SaleCartLine[],
+  option: SaleStockOption,
+  requestedQuantity: number
+) {
+  const quantity = Math.max(
+    0,
+    Math.min(
+      Math.floor(requestedQuantity),
+      option.amount ?? Number.MAX_SAFE_INTEGER
+    )
+  );
+
+  if (quantity === 0) {
+    return lines.filter((line) => line.key !== option.key);
+  }
+
+  const existing = lines.some((line) => line.key === option.key);
+  return existing
+    ? lines.map((line) =>
+        line.key === option.key ? { ...line, quantity } : line
+      )
+    : [...lines, { ...option, quantity }];
+}
+
 export function CartEditor({
   currencyCode,
   lines,

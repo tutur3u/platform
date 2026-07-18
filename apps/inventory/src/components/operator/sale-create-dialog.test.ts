@@ -37,6 +37,18 @@ describe('SaleCreateDialog', () => {
     expect(dialogSource).toContain('<Pin');
   });
 
+  it('ships a mobile sale FAB and delegates compact item controls', () => {
+    const dialogSource = source();
+    const commerceSource = readFileSync(
+      resolve(operatorDirectory, 'commerce-panel.tsx'),
+      'utf8'
+    );
+
+    expect(dialogSource).toContain('mobileFab');
+    expect(dialogSource).toContain('<SaleProductPicker');
+    expect(commerceSource).toContain('mobileFab');
+  });
+
   it.each([
     ['en', 'Keep open'],
     ['vi', 'Giữ mở'],

@@ -348,10 +348,6 @@ async fn effective_workspace_permissions_for_user(
     let is_creator =
         membership_type == "MEMBER" && workspace.creator_id.as_deref() == Some(user_id);
 
-    if !is_creator && role_permissions.is_empty() && default_permissions.is_empty() {
-        return Ok(None);
-    }
-
     let mut permissions = Vec::new();
     extend_unique_permissions(&mut permissions, role_permissions);
     extend_unique_permissions(&mut permissions, default_permissions);
@@ -1213,6 +1209,46 @@ mod tests {
                 "https://project-ref.supabase.co/rest/v1/workspace_default_permissions?"
             )
         );
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_returns_read_only_flags_for_members_without_roles() {
+        let config = backend_config_with_contact_data();
+        let outbound =
+            RecordingOutboundClient::with_responses(successful_member_responses(r#"[]"#));
+
+        let response = handle_backend_request(
+            &config,
+            authorized_settings_permissions_request(),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "manage_subscription": false,
+                "manage_workspace_settings": false,
+                "manage_workspace_members": false,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn workspace_permission_check_returns_false_for_members_without_roles() {
+        let config = backend_config_with_contact_data();
+        let outbound =
+            RecordingOutboundClient::with_responses(successful_member_responses(r#"[]"#));
+
+        let response = handle_backend_request(
+            &config,
+            authorized_request("manage_workspace_roles"),
+            &outbound,
+        )
+        .await;
+
+        assert_permission_response(&response, false);
     }
 
     #[tokio::test]

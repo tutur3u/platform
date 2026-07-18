@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { getSaleStockOptions } from './sale-create-items';
+import {
+  getSaleStockOptions,
+  type SaleStockOption,
+  updateSaleCartQuantity,
+} from './sale-create-items';
+
+const option: SaleStockOption = {
+  amount: 3,
+  categoryId: null,
+  categoryName: null,
+  financeCategoryId: null,
+  imageUrl: null,
+  key: 'product-1:unit-1:warehouse-1',
+  price: 8.1,
+  productId: 'product-1',
+  productName: 'Demo product',
+  unitId: 'unit-1',
+  unitName: 'Each',
+  warehouseId: 'warehouse-1',
+  warehouseName: 'Counter',
+};
 
 describe('getSaleStockOptions', () => {
   it('keeps exact decimal prices and every sellable stock location', () => {
@@ -52,5 +72,17 @@ describe('getSaleStockOptions', () => {
         },
       ])
     ).toEqual([]);
+  });
+});
+
+describe('updateSaleCartQuantity', () => {
+  it('adds, updates, clamps, and removes a line from the item picker', () => {
+    const added = updateSaleCartQuantity([], option, 1);
+    expect(added).toEqual([{ ...option, quantity: 1 }]);
+
+    const clamped = updateSaleCartQuantity(added, option, 8);
+    expect(clamped[0]?.quantity).toBe(3);
+
+    expect(updateSaleCartQuantity(clamped, option, 0)).toEqual([]);
   });
 });

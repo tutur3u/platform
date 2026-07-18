@@ -111,6 +111,7 @@ export function CommercePanel({
           fetchNextProductsPage={fetchNextProductsPage}
           hasNextProductsPage={hasNextProductsPage}
           isFetchingNextProductsPage={isFetchingNextProductsPage}
+          mobileFab
           options={formOptions}
           periods={salesPeriods}
           products={products}

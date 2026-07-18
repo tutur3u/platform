@@ -12,13 +12,9 @@ import {
   CheckCircle2,
   CircleDollarSign,
   CreditCard,
-  Database,
-  Loader2,
   PackagePlus,
   Pin,
-  Plus,
   ReceiptText,
-  Search,
   ShoppingCart,
 } from '@tuturuuu/icons';
 import type {
@@ -30,13 +26,12 @@ import {
   createInventorySale,
   listInventoryProducts,
 } from '@tuturuuu/internal-api/inventory';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
-import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -52,8 +47,13 @@ import {
   getSaleStockOptions,
   type SaleCartLine,
   type SaleStockOption,
+  updateSaleCartQuantity,
 } from './sale-create-items';
-import { SaleProductImageDialog } from './sale-product-image-dialog';
+import {
+  SaleProductPicker,
+  type SaleProductSort,
+  sortSaleStockOptions,
+} from './sale-product-picker';
 import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
@@ -72,6 +72,7 @@ export function SaleCreateDialog({
   fetchNextProductsPage,
   hasNextProductsPage = false,
   isFetchingNextProductsPage = false,
+  mobileFab = false,
   workspaceCurrency,
   wsId,
 }: {
@@ -81,19 +82,18 @@ export function SaleCreateDialog({
   fetchNextProductsPage?: () => unknown;
   hasNextProductsPage?: boolean;
   isFetchingNextProductsPage?: boolean;
+  mobileFab?: boolean;
   workspaceCurrency: string;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.commerce.createSale');
-  const paginationT = useTranslations('inventory.operator.pagination');
-  const filtersT = useTranslations('inventory.operator.filters');
-  const hybridT = useTranslations('inventory.operator.hybridSearch');
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('items');
   const [query, setQuery] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
+  const [productSort, setProductSort] = useState<SaleProductSort>('name-asc');
   const [lines, setLines] = useState<SaleCartLine[]>([]);
   const [content, setContent] = useState('');
   const [notes, setNotes] = useState('');
@@ -135,18 +135,27 @@ export function SaleCreateDialog({
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return stockOptions.filter(
-      (option) =>
-        (!productCategoryFilter ||
-          option.categoryId === productCategoryFilter) &&
-        (!warehouseFilter || option.warehouseId === warehouseFilter) &&
-        (!needle ||
-          [option.productName, option.unitName, option.warehouseName]
-            .join(' ')
-            .toLowerCase()
-            .includes(needle))
+    return sortSaleStockOptions(
+      stockOptions.filter(
+        (option) =>
+          (!productCategoryFilter ||
+            option.categoryId === productCategoryFilter) &&
+          (!warehouseFilter || option.warehouseId === warehouseFilter) &&
+          (!needle ||
+            [option.productName, option.unitName, option.warehouseName]
+              .join(' ')
+              .toLowerCase()
+              .includes(needle))
+      ),
+      productSort
     );
-  }, [productCategoryFilter, query, stockOptions, warehouseFilter]);
+  }, [
+    productCategoryFilter,
+    productSort,
+    query,
+    stockOptions,
+    warehouseFilter,
+  ]);
   const productCategories = useMemo(
     () =>
       [
@@ -194,6 +203,7 @@ export function SaleCreateDialog({
     setQuery('');
     setProductCategoryFilter('');
     setWarehouseFilter('');
+    setProductSort('name-asc');
     setLines([]);
     setContent(t('defaultTitle'));
     setNotes('');
@@ -258,24 +268,8 @@ export function SaleCreateDialog({
     },
   });
 
-  const addLine = (option: SaleStockOption) => {
-    setLines((current) => {
-      const existing = current.find((line) => line.key === option.key);
-      if (existing) {
-        return current.map((line) =>
-          line.key === option.key
-            ? {
-                ...line,
-                quantity: Math.min(
-                  line.quantity + 1,
-                  option.amount ?? Number.MAX_SAFE_INTEGER
-                ),
-              }
-            : line
-        );
-      }
-      return [...current, { ...option, quantity: 1 }];
-    });
+  const setLineQuantity = (option: SaleStockOption, quantity: number) => {
+    setLines((current) => updateSaleCartQuantity(current, option, quantity));
     if (!categoryId && option.financeCategoryId) {
       setCategoryId(option.financeCategoryId);
     }
@@ -291,12 +285,19 @@ export function SaleCreateDialog({
     >
       <DialogTrigger asChild>
         <Button
-          className="w-full touch-manipulation sm:w-auto"
+          aria-label={t('trigger')}
+          className={cn(
+            'w-full touch-manipulation sm:w-auto',
+            mobileFab &&
+              'fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 h-14 w-14 rounded-full shadow-xl sm:static sm:h-8 sm:w-auto sm:rounded-md sm:shadow-none'
+          )}
           size="sm"
           type="button"
         >
           <ReceiptText className="h-4 w-4" />
-          {t('trigger')}
+          <span className={cn(mobileFab && 'sr-only sm:not-sr-only')}>
+            {t('trigger')}
+          </span>
         </Button>
       </DialogTrigger>
       <OperatorDialogContent mobileFullscreen size="lg">
@@ -317,127 +318,36 @@ export function SaleCreateDialog({
               {
                 badge: lines.length,
                 content: (
-                  <div className="grid min-w-0 gap-4">
-                    <section className="grid min-w-0 content-start gap-3">
-                      <div className="grid gap-1.5">
-                        <label className="relative flex items-center">
-                          <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            aria-label={t('search')}
-                            autoComplete="off"
-                            className="pr-10 pl-9"
-                            name="product-search"
-                            onChange={(event) => setQuery(event.target.value)}
-                            placeholder={t('search')}
-                            value={query}
-                          />
-                          {query && productSearch.status.isRefreshing ? (
-                            <Loader2 className="pointer-events-none absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />
-                          ) : null}
-                        </label>
-                        {query ? (
-                          <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
-                            <Badge className="gap-1" variant="outline">
-                              <Database className="h-3 w-3" />
-                              {productSearch.status.hasCompleteCache
-                                ? hybridT('allCached')
-                                : productSearch.status.isLocalFirst
-                                  ? hybridT('localFirst')
-                                  : productSearch.status.isRefreshing
-                                    ? hybridT('refreshing')
-                                    : hybridT('verified')}
-                            </Badge>
-                            <span>
-                              {hybridT('results', {
-                                count: productSearch.results.length,
-                              })}
-                            </span>
-                          </div>
-                        ) : null}
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <SelectField
-                          label={filtersT('category')}
-                          onChange={setProductCategoryFilter}
-                          options={productCategories}
-                          placeholder={filtersT('allCategories')}
-                          value={productCategoryFilter}
-                        />
-                        <SelectField
-                          label={filtersT('warehouse')}
-                          onChange={setWarehouseFilter}
-                          options={warehouses}
-                          placeholder={filtersT('allWarehouses')}
-                          value={warehouseFilter}
-                        />
-                      </div>
-                      <div className="grid gap-2 sm:max-h-[24rem] sm:overflow-y-auto sm:pr-1">
-                        {filteredOptions.map((option) => {
-                          const soldOut =
-                            option.amount !== null && option.amount <= 0;
-                          return (
-                            <div
-                              className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3"
-                              key={option.key}
-                            >
-                              <SaleProductImageDialog
-                                imageUrl={option.imageUrl}
-                                name={option.productName}
-                              />
-                              <div className="min-w-0">
-                                <p className="truncate font-medium text-sm">
-                                  {option.productName}
-                                </p>
-                                <p className="line-clamp-2 text-muted-foreground text-xs sm:truncate">
-                                  {option.unitName} · {option.warehouseName} ·{' '}
-                                  {option.amount === null
-                                    ? t('unlimited')
-                                    : t('available', { count: option.amount })}
-                                </p>
-                                <p className="mt-1 font-semibold text-sm sm:hidden">
-                                  {currency(option.price, workspaceCurrency)}
-                                </p>
-                              </div>
-                              <span className="hidden shrink-0 font-semibold text-sm sm:block">
-                                {currency(option.price, workspaceCurrency)}
-                              </span>
-                              <Button
-                                aria-label={t('addItem', {
-                                  name: option.productName,
-                                })}
-                                disabled={soldOut}
-                                className="h-10 w-10 touch-manipulation sm:h-9 sm:w-9"
-                                onClick={() => addLine(option)}
-                                size="icon"
-                                type="button"
-                                variant="outline"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          );
-                        })}
-                        {filteredOptions.length === 0 ? (
-                          <p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
-                            {t('emptyProducts')}
-                          </p>
-                        ) : null}
-                        {hasNextProductsPage ? (
-                          <Button
-                            className="w-full"
-                            disabled={isFetchingNextProductsPage}
-                            onClick={() => fetchNextProductsPage?.()}
-                            type="button"
-                            variant="outline"
-                          >
-                            {isFetchingNextProductsPage
-                              ? paginationT('loadingMore')
-                              : paginationT('loadMore')}
-                          </Button>
-                        ) : null}
-                      </div>
-                    </section>
-                  </div>
+                  <SaleProductPicker
+                    categories={productCategories}
+                    categoryFilter={productCategoryFilter}
+                    fetchNextPage={fetchNextProductsPage}
+                    hasNextPage={hasNextProductsPage}
+                    isFetchingNextPage={isFetchingNextProductsPage}
+                    isRefreshing={productSearch.status.isRefreshing}
+                    lines={lines}
+                    onCategoryFilterChange={setProductCategoryFilter}
+                    onQueryChange={setQuery}
+                    onQuantityChange={setLineQuantity}
+                    onSortChange={setProductSort}
+                    onWarehouseFilterChange={setWarehouseFilter}
+                    options={filteredOptions}
+                    query={query}
+                    searchState={
+                      productSearch.status.hasCompleteCache
+                        ? 'allCached'
+                        : productSearch.status.isLocalFirst
+                          ? 'localFirst'
+                          : productSearch.status.isRefreshing
+                            ? 'refreshing'
+                            : 'verified'
+                    }
+                    serverResultCount={productSearch.results.length}
+                    sort={productSort}
+                    warehouseFilter={warehouseFilter}
+                    warehouses={warehouses}
+                    workspaceCurrency={workspaceCurrency}
+                  />
                 ),
                 icon: <PackagePlus className="h-4 w-4" />,
                 label: t('itemsTab'),
