@@ -295,18 +295,18 @@ async fn authenticated_workspace_user(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> Option<AuthenticatedWorkspaceUser> {
-    if contact::request_has_app_session_token(request) {
-        if let Ok(identity) = contact::resolve_app_session_identity(
+    if contact::request_has_app_session_token(request)
+        && let Ok(identity) = contact::resolve_app_session_identity(
             config,
             request,
             contact::current_user_app_session_targets(),
-        ) && !identity.id.trim().is_empty()
-        {
-            return Some(AuthenticatedWorkspaceUser {
-                access_token: None,
-                id: identity.id,
-            });
-        }
+        )
+        && !identity.id.trim().is_empty()
+    {
+        return Some(AuthenticatedWorkspaceUser {
+            access_token: None,
+            id: identity.id,
+        });
     }
 
     let access_token = request_access_token_ignoring_app_sessions(request)?;
