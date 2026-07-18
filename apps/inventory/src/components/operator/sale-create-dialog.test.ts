@@ -33,11 +33,16 @@ describe('SaleCreateDialog', () => {
     expect(dialogSource).toContain('if (keepOpenAfterSale)');
     expect(dialogSource).toContain('reset();');
     expect(dialogSource).toContain('setOpen(false);');
+    expect(dialogSource).toContain('<CircleDollarSign');
+    expect(dialogSource).toContain('<Pin');
   });
 
-  it.each(['en', 'vi'] as const)('ships the compact option in %s', (locale) => {
+  it.each([
+    ['en', 'Keep open'],
+    ['vi', 'Giữ mở'],
+  ] as const)('ships the compact option in %s', (locale, expected) => {
     expect(
       messages(locale).inventory.operator.commerce.createSale.keepOpen
-    ).toEqual(expect.any(String));
+    ).toBe(expected);
   });
 });

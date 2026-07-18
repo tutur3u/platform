@@ -332,6 +332,44 @@ describe('invoice create route', () => {
     expect(mocks.getUser).not.toHaveBeenCalled();
   });
 
+  it('rejects promotions when operator-entered prices are requested', async () => {
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/finance/invoices', {
+        body: JSON.stringify({
+          content: 'Custom-price sale',
+          price_mode: 'custom',
+          products: [
+            {
+              category_id: 'category-1',
+              price: 80,
+              product_id: 'product-1',
+              quantity: 1,
+              unit_id: 'unit-1',
+              warehouse_id: 'warehouse-1',
+            },
+          ],
+          promotion_id: 'promotion-1',
+          wallet_id: 'wallet-other',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Custom invoice prices cannot be combined with promotions',
+    });
+    expect(mocks.privateFrom).not.toHaveBeenCalled();
+  });
+
   it('rejects wallets outside the normalized workspace before invoice creation', async () => {
     const { POST } = await import('./route');
 

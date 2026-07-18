@@ -21,7 +21,10 @@ import {
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { normalizeInvoiceStoredAmount } from './amount';
+import {
+  normalizeInvoiceStoredAmount,
+  resolveCustomInvoicePricing,
+} from './amount';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
@@ -75,6 +78,7 @@ interface CreateInvoiceRequest {
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
+  price_mode?: 'catalog' | 'custom';
 }
 
 async function validateInvoiceWallet({
@@ -614,6 +618,7 @@ export async function POST(req: Request, { params }: Params) {
       frontend_subtotal,
       frontend_discount_amount,
       frontend_total,
+      price_mode,
     }: CreateInvoiceRequest = await req.json();
 
     // Validate required fields
@@ -622,6 +627,18 @@ export async function POST(req: Request, { params }: Params) {
         {
           message: 'Missing required fields: products and wallet_id',
         },
+        { status: 400 }
+      );
+    }
+
+    const customPricing = resolveCustomInvoicePricing({
+      priceMode: price_mode,
+      products,
+      promotionId: promotion_id,
+    });
+    if (!customPricing.ok) {
+      return NextResponse.json(
+        { message: customPricing.message },
         { status: 400 }
       );
     }
@@ -803,29 +820,35 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // Calculate values through the private database RPC
+    // Catalog prices and promotions remain server-calculated by the private
+    // RPC. Manual Inventory sales explicitly opt into their operator-entered
+    // line prices after passing the same workspace and stock validation.
     let calculatedValues: CalculatedValues;
-    try {
-      calculatedValues = await getCalculatedInvoiceValuesFromRpc({
-        frontendValues: {
-          subtotal: frontend_subtotal,
-          discount_amount: frontend_discount_amount,
-          total: frontend_total,
-        },
-        isSubscriptionInvoice,
-        products,
-        promotionId: promotion_id,
-        supabase: sbAdmin,
-        wsId,
-      });
-    } catch (e) {
-      if ((e as any)?.code === 'PROMOTION_LIMIT_REACHED') {
-        return NextResponse.json(
-          { message: 'Promotion usage limit reached' },
-          { status: 400 }
-        );
+    if (customPricing.values) {
+      calculatedValues = customPricing.values;
+    } else {
+      try {
+        calculatedValues = await getCalculatedInvoiceValuesFromRpc({
+          frontendValues: {
+            subtotal: frontend_subtotal,
+            discount_amount: frontend_discount_amount,
+            total: frontend_total,
+          },
+          isSubscriptionInvoice,
+          products,
+          promotionId: promotion_id,
+          supabase: sbAdmin,
+          wsId,
+        });
+      } catch (e) {
+        if ((e as any)?.code === 'PROMOTION_LIMIT_REACHED') {
+          return NextResponse.json(
+            { message: 'Promotion usage limit reached' },
+            { status: 400 }
+          );
+        }
+        throw e;
       }
-      throw e;
     }
 
     const {

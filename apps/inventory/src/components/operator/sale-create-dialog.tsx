@@ -10,10 +10,12 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
+  CircleDollarSign,
   CreditCard,
   Database,
   Loader2,
   PackagePlus,
+  Pin,
   Plus,
   ReceiptText,
   Search,
@@ -576,20 +578,32 @@ export function SaleCreateDialog({
             value={tab}
           />
           <OperatorDialogFooter className="grid grid-cols-2 sm:flex">
-            <p className="col-span-2 flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-sm sm:mr-auto sm:block sm:bg-transparent sm:p-0">
-              {t('total', { amount: currency(total, workspaceCurrency) })}
-            </p>
-            <label className="col-span-2 flex w-fit cursor-pointer items-center gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5 text-muted-foreground text-xs">
-              <Checkbox
-                aria-label={t('keepOpen')}
-                checked={keepOpenAfterSale}
-                disabled={mutation.isPending}
-                onCheckedChange={(checked) =>
-                  setKeepOpenAfterSale(checked === true)
-                }
-              />
-              <span>{t('keepOpen')}</span>
-            </label>
+            <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/40 px-2.5 py-2 sm:mr-auto sm:w-auto sm:bg-transparent sm:p-0">
+              <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm tabular-nums">
+                <span className="sr-only">
+                  {t('total', {
+                    amount: currency(total, workspaceCurrency),
+                  })}
+                </span>
+                <CircleDollarSign className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span aria-hidden="true" className="truncate">
+                  {currency(total, workspaceCurrency)}
+                </span>
+              </p>
+              <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border bg-background/70 px-2 py-1 text-muted-foreground text-xs transition-colors hover:text-foreground">
+                <Checkbox
+                  aria-label={t('keepOpen')}
+                  checked={keepOpenAfterSale}
+                  className="h-4 w-4"
+                  disabled={mutation.isPending}
+                  onCheckedChange={(checked) =>
+                    setKeepOpenAfterSale(checked === true)
+                  }
+                />
+                <Pin className="h-3.5 w-3.5" />
+                <span>{t('keepOpen')}</span>
+              </label>
+            </div>
             <DialogClose asChild>
               <Button
                 className="hidden sm:inline-flex"

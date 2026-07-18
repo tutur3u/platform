@@ -1,6 +1,6 @@
 'use client';
 
-import { Package, Trash2 } from '@tuturuuu/icons';
+import { CircleDollarSign, Hash, Package, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -76,53 +76,65 @@ export function CartEditor({
             </Button>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              aria-label={t('quantity')}
-              inputMode="numeric"
-              max={line.amount ?? undefined}
-              min={1}
-              onChange={(event) =>
-                onChange(
-                  lines.map((item) =>
-                    item.key === line.key
-                      ? {
-                          ...item,
-                          quantity: Math.max(
-                            1,
-                            Math.min(
-                              Number(event.target.value) || 1,
-                              item.amount ?? Number.MAX_SAFE_INTEGER
-                            )
-                          ),
-                        }
-                      : item
+            <label className="grid gap-1 text-muted-foreground text-xs">
+              <span className="flex items-center gap-1">
+                <Hash className="h-3.5 w-3.5" />
+                {t('quantity')}
+              </span>
+              <Input
+                aria-label={t('quantity')}
+                inputMode="numeric"
+                max={line.amount ?? undefined}
+                min={1}
+                onChange={(event) =>
+                  onChange(
+                    lines.map((item) =>
+                      item.key === line.key
+                        ? {
+                            ...item,
+                            quantity: Math.max(
+                              1,
+                              Math.min(
+                                Number(event.target.value) || 1,
+                                item.amount ?? Number.MAX_SAFE_INTEGER
+                              )
+                            ),
+                          }
+                        : item
+                    )
                   )
-                )
-              }
-              step={1}
-              type="number"
-              value={line.quantity}
-            />
-            <Input
-              aria-label={t('unitPrice')}
-              inputMode="decimal"
-              min={0}
-              onChange={(event) =>
-                onChange(
-                  lines.map((item) =>
-                    item.key === line.key
-                      ? {
-                          ...item,
-                          price: Math.max(0, Number(event.target.value) || 0),
-                        }
-                      : item
+                }
+                step={1}
+                type="number"
+                value={line.quantity}
+              />
+            </label>
+            <label className="grid gap-1 text-muted-foreground text-xs">
+              <span className="flex items-center gap-1">
+                <CircleDollarSign className="h-3.5 w-3.5" />
+                {t('unitPrice')}
+              </span>
+              <Input
+                aria-label={t('unitPrice')}
+                inputMode="decimal"
+                min={0}
+                onChange={(event) =>
+                  onChange(
+                    lines.map((item) =>
+                      item.key === line.key
+                        ? {
+                            ...item,
+                            price: Math.max(0, Number(event.target.value) || 0),
+                          }
+                        : item
+                    )
                   )
-                )
-              }
-              step="0.01"
-              type="number"
-              value={line.price}
-            />
+                }
+                step="0.01"
+                type="number"
+                value={line.price}
+              />
+            </label>
           </div>
           <p className="text-right font-medium text-xs tabular-nums">
             {currency(line.price * line.quantity, currencyCode)}

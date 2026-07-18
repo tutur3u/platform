@@ -1042,6 +1042,7 @@ export interface CreateFinanceInvoicePayload {
   frontend_subtotal?: number;
   frontend_total?: number;
   notes?: string;
+  price_mode?: 'catalog' | 'custom';
   products: FinanceInvoiceProductPayload[];
   promotion_id?: string;
   wallet_id: string;

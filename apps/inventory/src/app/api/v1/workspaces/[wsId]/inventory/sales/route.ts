@@ -197,6 +197,7 @@ export async function POST(req: Request, { params }: Params) {
       {
         ...payload,
         customer_id: null,
+        price_mode: 'custom',
       },
       withForwardedInternalApiAuth(req.headers)
     );

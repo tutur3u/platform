@@ -251,6 +251,7 @@ describe('inventory sales route', () => {
       expect.objectContaining({
         content: 'Counter sale',
         customer_id: null,
+        price_mode: 'custom',
         products: [expect.objectContaining({ price: 8.1, quantity: 2 })],
       }),
       { defaultHeaders: { cookie: 'forwarded' } }
