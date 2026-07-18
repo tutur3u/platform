@@ -797,6 +797,10 @@ export type InventoryAnalyticsMetric = {
 export type InventoryAnalyticsResponse = {
   currency: string;
   generatedAt: string;
+  observability?: {
+    dataPoints: number;
+    queryDurationMs: number;
+  };
   range: {
     days: number;
     from: string;

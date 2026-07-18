@@ -46,6 +46,7 @@ describe('inventory analytics summary route', () => {
           data: {
             generatedAt: '2026-07-18T00:00:00Z',
             summary: { revenue: 25 },
+            trend: [{ date: '2026-07-18', revenue: 25, sales: 1 }],
           },
           error: null,
         }),
@@ -62,8 +63,19 @@ describe('inventory analytics summary route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       currency: 'USD',
+      observability: {
+        dataPoints: 1,
+        queryDurationMs: expect.any(Number),
+      },
       summary: { revenue: 25 },
     });
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('server-timing')).toMatch(
+      /^inventory-analytics;dur=\d+$/
+    );
+    expect(response.headers.get('x-inventory-analytics-generated-at')).toBe(
+      '2026-07-18T00:00:00Z'
+    );
     const client = await mocks.createAdminClient.mock.results[0]?.value;
     expect(client.schema).toHaveBeenCalledWith('private');
   });

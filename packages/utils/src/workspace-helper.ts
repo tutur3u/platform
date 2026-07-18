@@ -828,21 +828,13 @@ async function getPermissionsImpl({
 
   const isCreator =
     membershipType === 'MEMBER' && workspaceData.creator_id === userId;
-  const hasPermissions =
-    permissionsData.length > 0 || defaultData.length > 0 || isCreator;
-
   // if (DEV_MODE) {
   //   console.log('--------------------');
   //   console.log('Is creator', isCreator);
   //   console.log('Workspace permissions', permissionsData);
   //   console.log('Default permissions', defaultData);
-  //   console.log('Has permissions', hasPermissions);
   //   console.log('--------------------');
   // }
-
-  if (!isCreator && !hasPermissions) {
-    return null;
-  }
 
   const permissions = isCreator
     ? rolePermissions({

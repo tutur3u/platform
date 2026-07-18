@@ -275,6 +275,11 @@ export function SaleCreateDialog({
     },
   });
 
+  const submitSale = () => {
+    if (!canSubmit || mutation.isPending) return;
+    mutation.mutate();
+  };
+
   const setLineQuantity = (option: SaleStockOption, quantity: number) => {
     setLines((current) => updateSaleCartQuantity(current, option, quantity));
     if (!categoryId && option.financeCategoryId) {
@@ -313,13 +318,7 @@ export function SaleCreateDialog({
           mobileCollapsibleDescription
           title={t('title')}
         />
-        <form
-          className="flex min-h-0 flex-1 flex-col"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (canSubmit) mutation.mutate();
-          }}
-        >
+        <div className="flex min-h-0 flex-1 flex-col">
           <OperatorDialogTabs
             compactMobile
             onValueChange={setTab}
@@ -555,15 +554,16 @@ export function SaleCreateDialog({
                 aria-label={mutation.isPending ? t('creating') : t('create')}
                 className="h-9 w-9 shrink-0 touch-manipulation"
                 disabled={!canSubmit || mutation.isPending}
+                onClick={submitSale}
                 size="icon"
                 title={mutation.isPending ? t('creating') : t('create')}
-                type="submit"
+                type="button"
               >
                 <Save className="h-4 w-4" />
               </Button>
             )}
           </OperatorDialogFooter>
-        </form>
+        </div>
       </OperatorDialogContent>
     </Dialog>
   );

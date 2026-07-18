@@ -108,6 +108,24 @@ async function callRoute(wsId = 'ws-1') {
   );
 }
 
+async function callCheckRoute(
+  permission = 'manage_workspace_settings',
+  wsId = 'ws-1'
+) {
+  const { GET } = await import(
+    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route'
+  );
+
+  return GET(
+    new NextRequest(
+      `http://localhost/api/v1/workspaces/${wsId}/settings/permissions/check?permission=${permission}`
+    ),
+    {
+      params: Promise.resolve({ wsId }),
+    }
+  );
+}
+
 describe('workspace settings permissions route', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -140,6 +158,32 @@ describe('workspace settings permissions route', () => {
     expect(mocks.getPermissions).toHaveBeenCalledTimes(1);
     expect(mocks.verifySecret).not.toHaveBeenCalled();
     expect(mocks.platformRoleMaybeSingle).not.toHaveBeenCalled();
+  });
+
+  it('returns read-only flags for a workspace member without assigned permissions', async () => {
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(permissionsResult(wsId, []))
+    );
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      manage_subscription: false,
+      manage_workspace_members: false,
+      manage_workspace_settings: false,
+    });
+  });
+
+  it('returns false instead of denying a member permission check', async () => {
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(permissionsResult(wsId, []))
+    );
+
+    const response = await callCheckRoute();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ hasPermission: false });
   });
 
   it('requires both manage_api_keys and the ENABLE_API_KEYS secret for API key settings', async () => {

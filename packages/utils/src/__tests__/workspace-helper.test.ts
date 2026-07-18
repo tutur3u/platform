@@ -578,7 +578,7 @@ describe('getPermissions membership type gate', () => {
     );
   });
 
-  it('returns null when caller membership is GUEST without enabled guest defaults', async () => {
+  it('returns a read-only permission context for a guest without defaults', async () => {
     const membershipQuery = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -656,7 +656,14 @@ describe('getPermissions membership type gate', () => {
       wsId: '11111111-1111-4111-8111-111111111111',
     });
 
-    expect(permissions).toBeNull();
+    expect(permissions).toMatchObject({
+      membershipType: 'GUEST',
+      permissions: [],
+      wsId: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(permissions?.containsPermission('manage_workspace_settings')).toBe(
+      false
+    );
     expect(defaultPermissionsQuery.eq).toHaveBeenCalledWith(
       'member_type',
       'GUEST'

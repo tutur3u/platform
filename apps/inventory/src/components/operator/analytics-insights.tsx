@@ -21,8 +21,9 @@ export function AnalyticsInsights({
   ] as const;
   const maxFunnel = Math.max(1, ...funnel.map((entry) => entry[1]));
   return (
-    <div className="grid min-w-0 gap-3 xl:grid-cols-3">
+    <div className="grid min-w-0 gap-2 sm:gap-3 xl:grid-cols-3">
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('topProductsDescription')}
         icon={Package}
         title={t('topProducts')}
@@ -30,7 +31,7 @@ export function AnalyticsInsights({
         <div className="grid gap-2">
           {data.products.slice(0, 7).map((product, index) => (
             <div
-              className="grid grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-2 rounded-md border p-2 text-sm"
+              className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-md border p-2 text-xs sm:grid-cols-[1.5rem_minmax(0,1fr)_auto] sm:text-sm"
               key={`${product.productId ?? product.label}-${index}`}
             >
               <span className="text-center text-muted-foreground tabular-nums">
@@ -44,7 +45,7 @@ export function AnalyticsInsights({
                   {t('productUnits', { count: product.units })}
                 </span>
               </span>
-              <span className="font-medium tabular-nums">
+              <span className="max-w-28 truncate font-medium tabular-nums sm:max-w-none">
                 {currency(product.revenue, data.currency)}
               </span>
             </div>
@@ -53,11 +54,12 @@ export function AnalyticsInsights({
         </div>
       </OperatorModuleCard>
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('funnelDescription')}
         icon={ShoppingCart}
         title={t('storefrontFunnel')}
       >
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {funnel.map(([label, count]) => (
             <div className="grid gap-1.5" key={label}>
               <div className="flex items-center justify-between text-sm">
@@ -69,7 +71,7 @@ export function AnalyticsInsights({
               <Progress value={(count / maxFunnel) * 100} />
             </div>
           ))}
-          <p className="rounded-md bg-muted/40 p-3 text-sm">
+          <p className="rounded-md bg-muted/40 p-2.5 text-xs sm:p-3 sm:text-sm">
             {t('conversionSummary', {
               value: (data.storefrontFunnel.conversionRate * 100).toFixed(1),
             })}
@@ -77,6 +79,7 @@ export function AnalyticsInsights({
         </div>
       </OperatorModuleCard>
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('qualityDescription')}
         icon={TriangleAlert}
         title={t('catalogQuality')}
@@ -105,12 +108,44 @@ export function AnalyticsInsights({
         </div>
       </OperatorModuleCard>
       <OperatorModuleCard
-        className="xl:col-span-2"
+        className="gap-3 p-3 sm:gap-4 sm:p-4 xl:col-span-2"
         description={t('warehouseDescription')}
         icon={Boxes}
         title={t('warehouseHealth')}
       >
-        <div className="overflow-x-auto">
+        <div className="grid gap-2 sm:hidden">
+          {data.warehouses.map((warehouse) => (
+            <div
+              className="grid gap-2 rounded-md border p-2.5"
+              key={warehouse.id}
+            >
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="truncate font-medium text-sm">
+                  {warehouse.label}
+                </span>
+                <span className="shrink-0 font-semibold text-sm tabular-nums">
+                  {currency(warehouse.inventoryValue, data.currency)}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-[11px]">
+                <MobileWarehouseMetric
+                  label={t('products')}
+                  value={warehouse.products}
+                />
+                <MobileWarehouseMetric
+                  label={t('stockUnits')}
+                  value={warehouse.finiteStockUnits}
+                />
+                <MobileWarehouseMetric
+                  label={t('risk')}
+                  value={warehouse.lowStockRows}
+                />
+              </div>
+            </div>
+          ))}
+          {data.warehouses.length === 0 ? <Empty label={t('empty')} /> : null}
+        </div>
+        <div className="hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[36rem] text-left text-sm">
             <thead className="text-muted-foreground">
               <tr>
@@ -149,6 +184,7 @@ export function AnalyticsInsights({
         </div>
       </OperatorModuleCard>
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('periodDescription')}
         icon={Boxes}
         title={t('periodPerformance')}
@@ -156,7 +192,7 @@ export function AnalyticsInsights({
         <div className="grid gap-2">
           {data.periods.slice(0, 6).map((period) => (
             <div
-              className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm"
+              className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm sm:p-3"
               key={period.periodId ?? period.label}
             >
               <span className="min-w-0">
@@ -181,7 +217,7 @@ export function AnalyticsInsights({
 
 function QualityRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md border p-3 text-sm">
+    <div className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-xs sm:p-3 sm:text-sm">
       <span>{label}</span>
       <span className="font-semibold tabular-nums">
         {value.toLocaleString()}
@@ -189,6 +225,24 @@ function QualityRow({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
+
+function MobileWarehouseMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <span className="grid min-w-0 gap-0.5 rounded bg-muted/35 p-1.5">
+      <span className="truncate text-muted-foreground">{label}</span>
+      <span className="font-semibold tabular-nums">
+        {value.toLocaleString()}
+      </span>
+    </span>
+  );
+}
+
 function Empty({ label }: { label: string }) {
   return (
     <p className="rounded-lg border border-dashed p-5 text-center text-muted-foreground text-sm">

@@ -9,12 +9,14 @@ import type { ReactNode } from 'react';
 import { LoadingRows } from './operator-shell';
 
 export function OperatorMetricCard({
+  className,
   description,
   icon: Icon,
   label,
   tone = 'default',
   value,
 }: {
+  className?: string;
   description?: ReactNode;
   icon: LucideIcon;
   label: string;
@@ -22,7 +24,12 @@ export function OperatorMetricCard({
   value: ReactNode;
 }) {
   return (
-    <article className="grid min-h-24 min-w-0 gap-2 rounded-lg border border-border bg-card p-3 sm:min-h-28 sm:gap-3 sm:p-4">
+    <article
+      className={cn(
+        'grid min-h-24 min-w-0 gap-2 rounded-lg border border-border bg-card p-3 sm:min-h-28 sm:gap-3 sm:p-4',
+        className
+      )}
+    >
       <div className="flex min-w-0 items-center justify-between gap-3">
         <p className="truncate text-muted-foreground text-sm">{label}</p>
         <span

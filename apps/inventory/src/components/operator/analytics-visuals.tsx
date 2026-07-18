@@ -71,9 +71,11 @@ export function AnalyticsKpis({ data }: { data: InventoryAnalyticsResponse }) {
   const t = useTranslations('inventory.operator.analyticsCenter');
   const summary = data.summary;
   const previous = data.previousSummary;
+  const metricClassName = 'min-h-20 gap-1.5 p-2.5 sm:min-h-28 sm:gap-3 sm:p-4';
   return (
-    <div className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
+    <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
       <OperatorMetricCard
+        className={metricClassName}
         description={
           <Delta current={summary.revenue} previous={previous.revenue} />
         }
@@ -82,6 +84,7 @@ export function AnalyticsKpis({ data }: { data: InventoryAnalyticsResponse }) {
         value={currency(summary.revenue, data.currency)}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={
           <Delta current={summary.sales} previous={previous.sales} />
         }
@@ -90,36 +93,42 @@ export function AnalyticsKpis({ data }: { data: InventoryAnalyticsResponse }) {
         value={summary.sales.toLocaleString()}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('unitsDescription')}
         icon={Package}
         label={t('units')}
         value={summary.units.toLocaleString()}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('aovDescription')}
         icon={BarChart3}
         label={t('averageOrderValue')}
         value={currency(summary.averageOrderValue, data.currency)}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('estimatedDescription')}
         icon={TrendingUp}
         label={t('estimatedProfit')}
         value={currency(summary.estimatedGrossProfit ?? 0, data.currency)}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('inventoryValueDescription')}
         icon={Boxes}
         label={t('inventoryValue')}
         value={currency(summary.inventoryValue ?? 0, data.currency)}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('stockCoverageDescription')}
         icon={Package}
         label={t('stockCoverage')}
         value={`${data.quality.stockCoveragePercentage.toFixed(1)}%`}
       />
       <OperatorMetricCard
+        className={metricClassName}
         description={t('riskDescription')}
         icon={Boxes}
         label={t('stockRisk')}
@@ -168,14 +177,14 @@ export function AnalyticsCharts({
     label: weekdayNames[point.day - 1],
   }));
   return (
-    <div className="grid min-w-0 gap-3 xl:grid-cols-2">
+    <div className="grid min-w-0 gap-2 sm:gap-3 xl:grid-cols-2">
       <OperatorModuleCard
-        className="xl:col-span-2"
+        className="gap-3 p-3 sm:gap-4 sm:p-4 xl:col-span-2"
         description={t('trendDescription')}
         icon={TrendingUp}
         title={t('revenueTrend')}
       >
-        <ChartContainer className="h-72 w-full" config={revenueConfig}>
+        <ChartContainer className="h-56 w-full sm:h-72" config={revenueConfig}>
           <AreaChart accessibilityLayer data={trend}>
             <CartesianGrid vertical={false} />
             <XAxis
@@ -223,13 +232,14 @@ export function AnalyticsCharts({
         title={t('ownerMix')}
       />
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('channelDescription')}
         icon={BarChart3}
         title={t('channelMix')}
       >
         {data.channels.length ? (
-          <div className="grid items-center gap-4 sm:grid-cols-[11rem_minmax(0,1fr)]">
-            <ChartContainer className="h-44 w-full" config={barConfig}>
+          <div className="grid items-center gap-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4">
+            <ChartContainer className="h-40 w-full sm:h-44" config={barConfig}>
               <PieChart accessibilityLayer>
                 <Pie
                   data={data.channels}
@@ -284,11 +294,12 @@ export function AnalyticsCharts({
         )}
       </OperatorModuleCard>
       <OperatorModuleCard
+        className="gap-3 p-3 sm:gap-4 sm:p-4"
         description={t('weekdayDescription')}
         icon={BarChart3}
         title={t('weekdayDemand')}
       >
-        <ChartContainer className="h-64 w-full" config={unitConfig}>
+        <ChartContainer className="h-52 w-full sm:h-64" config={unitConfig}>
           <BarChart accessibilityLayer data={weekdays}>
             <CartesianGrid vertical={false} />
             <XAxis axisLine={false} dataKey="label" tickLine={false} />
@@ -325,12 +336,13 @@ function MetricBarCard({
   const t = useTranslations('inventory.operator.analyticsCenter');
   return (
     <OperatorModuleCard
+      className="gap-3 p-3 sm:gap-4 sm:p-4"
       description={description}
       icon={BarChart3}
       title={title}
     >
       {data.length ? (
-        <ChartContainer className="h-64 w-full" config={config}>
+        <ChartContainer className="h-52 w-full sm:h-64" config={config}>
           <BarChart accessibilityLayer data={data} layout="vertical">
             <CartesianGrid horizontal={false} />
             <XAxis axisLine={false} tickLine={false} type="number" />

@@ -67,6 +67,20 @@ describe('SaleCreateDialog', () => {
     expect(shellSource).toContain('sm:hidden');
   });
 
+  it('requires the explicit save control instead of implicit form submission', () => {
+    const dialogSource = source();
+
+    expect(dialogSource).not.toContain('<form');
+    expect(dialogSource).not.toContain('type="submit"');
+    expect(dialogSource).toContain('onClick={submitSale}');
+    expect(dialogSource).toContain(
+      'if (!canSubmit || mutation.isPending) return;'
+    );
+    expect(dialogSource).toContain(
+      'disabled={!canSubmit || mutation.isPending}'
+    );
+  });
+
   it.each([
     ['en', 'Keep open'],
     ['vi', 'Giữ mở'],

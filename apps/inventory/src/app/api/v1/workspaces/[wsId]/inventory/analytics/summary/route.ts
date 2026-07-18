@@ -36,6 +36,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId } = authorization.value;
     const sbAdmin = await createAdminClient();
+    const queryStartedAt = performance.now();
     const [{ data, error }, currency] = await Promise.all([
       sbAdmin.schema('private').rpc(
         'get_inventory_analytics' as never,
@@ -50,10 +51,32 @@ export async function GET(request: Request, { params }: Params) {
     if (error) throw error;
     if (!data) throw new Error('Inventory analytics returned no data');
 
-    return NextResponse.json({
-      ...(data as unknown as Omit<InventoryAnalyticsResponse, 'currency'>),
-      currency,
-    });
+    const snapshot = data as unknown as Omit<
+      InventoryAnalyticsResponse,
+      'currency' | 'observability'
+    >;
+    const queryDurationMs = Math.max(
+      0,
+      Math.round(performance.now() - queryStartedAt)
+    );
+
+    return NextResponse.json(
+      {
+        ...snapshot,
+        currency,
+        observability: {
+          dataPoints: snapshot.trend?.length ?? 0,
+          queryDurationMs,
+        },
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, no-store',
+          'Server-Timing': `inventory-analytics;dur=${queryDurationMs}`,
+          'X-Inventory-Analytics-Generated-At': snapshot.generatedAt,
+        },
+      }
+    );
   } catch (error) {
     console.error('Failed to load inventory analytics summary', error);
     return NextResponse.json(
