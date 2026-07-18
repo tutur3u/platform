@@ -182,6 +182,12 @@ export function SaleCreateDialog({
       ].map(([id, name]) => ({ id, name })),
     [stockOptions]
   );
+  const showUnitOnMobile =
+    hasNextProductsPage ||
+    new Set(stockOptions.map((option) => option.unitId)).size > 1;
+  const showWarehouseOnMobile =
+    hasNextProductsPage ||
+    new Set(stockOptions.map((option) => option.warehouseId)).size > 1;
   const total = lines.reduce(
     (sum, line) => sum + line.price * line.quantity,
     0
@@ -315,6 +321,7 @@ export function SaleCreateDialog({
           }}
         >
           <OperatorDialogTabs
+            compactMobile
             onValueChange={setTab}
             tabs={[
               {
@@ -346,6 +353,8 @@ export function SaleCreateDialog({
                     }
                     serverResultCount={productSearch.results.length}
                     sort={productSort}
+                    showUnitOnMobile={showUnitOnMobile}
+                    showWarehouseOnMobile={showWarehouseOnMobile}
                     warehouseFilter={warehouseFilter}
                     warehouses={warehouses}
                     workspaceCurrency={workspaceCurrency}
@@ -359,7 +368,7 @@ export function SaleCreateDialog({
                 badge: lines.length,
                 content: (
                   <div className="mx-auto grid w-full max-w-3xl gap-3">
-                    <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 text-sm">
+                    <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/20 p-2 text-sm sm:gap-3 sm:p-3">
                       <span className="text-muted-foreground">
                         {t('cartSummary', {
                           items: lines.length,
@@ -377,6 +386,8 @@ export function SaleCreateDialog({
                       currencyCode={workspaceCurrency}
                       lines={lines}
                       onChange={setLines}
+                      showUnitOnMobile={showUnitOnMobile}
+                      showWarehouseOnMobile={showWarehouseOnMobile}
                     />
                   </div>
                 ),
@@ -489,7 +500,7 @@ export function SaleCreateDialog({
             ]}
             value={tab}
           />
-          <OperatorDialogFooter className="flex-row items-center gap-2">
+          <OperatorDialogFooter className="flex-row items-center gap-1.5 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-2 sm:px-6 sm:py-4">
             <p className="mr-auto flex min-w-0 items-center gap-1.5 font-semibold text-sm tabular-nums">
               <span className="sr-only">
                 {t('total', {
@@ -517,7 +528,7 @@ export function SaleCreateDialog({
             {tabIndex > 0 ? (
               <Button
                 aria-label={t('back')}
-                className="shrink-0 touch-manipulation"
+                className="h-9 w-9 shrink-0 touch-manipulation"
                 onClick={() => setTab(SALE_TABS[tabIndex - 1] ?? 'items')}
                 size="icon"
                 title={t('back')}
@@ -530,7 +541,7 @@ export function SaleCreateDialog({
             {tab !== 'review' ? (
               <Button
                 aria-label={t('next')}
-                className="shrink-0 touch-manipulation"
+                className="h-9 w-9 shrink-0 touch-manipulation"
                 disabled={!canGoNext}
                 onClick={() => setTab(SALE_TABS[tabIndex + 1] ?? 'review')}
                 size="icon"
@@ -542,7 +553,7 @@ export function SaleCreateDialog({
             ) : (
               <Button
                 aria-label={mutation.isPending ? t('creating') : t('create')}
-                className="shrink-0 touch-manipulation"
+                className="h-9 w-9 shrink-0 touch-manipulation"
                 disabled={!canSubmit || mutation.isPending}
                 size="icon"
                 title={mutation.isPending ? t('creating') : t('create')}

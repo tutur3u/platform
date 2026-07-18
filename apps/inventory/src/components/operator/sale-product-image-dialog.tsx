@@ -21,7 +21,7 @@ export function SaleProductImageDialog({
   const t = useTranslations('inventory.operator.commerce.createSale');
   if (!imageUrl)
     return (
-      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md border bg-muted/40">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border bg-muted/40 sm:h-12 sm:w-12">
         <Package className="h-4 w-4 text-muted-foreground" />
       </div>
     );
@@ -30,7 +30,7 @@ export function SaleProductImageDialog({
       <DialogTrigger asChild>
         <button
           aria-label={t('previewImage', { name })}
-          className="group relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="group relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-12 sm:w-12"
           type="button"
         >
           {/* biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL. */}

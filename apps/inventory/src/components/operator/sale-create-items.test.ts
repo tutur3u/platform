@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   getSaleStockOptions,
@@ -84,5 +86,20 @@ describe('updateSaleCartQuantity', () => {
     expect(clamped[0]?.quantity).toBe(3);
 
     expect(updateSaleCartQuantity(clamped, option, 0)).toEqual([]);
+  });
+});
+
+describe('CartEditor', () => {
+  it('uses the shared localized currency input and compact mobile metadata', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, 'sale-create-items.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('<CurrencyInput');
+    expect(source).toContain('getCurrencyLocale(currencyCode)');
+    expect(source).toContain('getCurrencyFractionDigits(currencyCode)');
+    expect(source).toContain('showUnitOnMobile');
+    expect(source).toContain('showWarehouseOnMobile');
   });
 });

@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SaleStockOption } from './sale-create-items';
 import { sortSaleStockOptions } from './sale-product-picker';
@@ -37,5 +39,17 @@ describe('sortSaleStockOptions', () => {
     expect(
       sortSaleStockOptions(options, 'price-desc').map((item) => item.price)
     ).toEqual([4, 2]);
+  });
+
+  it('keeps redundant mobile metadata optional and unlimited stock compact', () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, 'sale-product-picker.tsx'),
+      'utf8'
+    );
+
+    expect(source).toContain('showUnitOnMobile');
+    expect(source).toContain('showWarehouseOnMobile');
+    expect(source).toContain('∞');
+    expect(source).toContain('sm:h-10');
   });
 });

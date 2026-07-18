@@ -63,6 +63,8 @@ export function SaleProductPicker({
   query,
   searchState,
   serverResultCount,
+  showUnitOnMobile,
+  showWarehouseOnMobile,
   sort,
   warehouseFilter,
   warehouses,
@@ -84,6 +86,8 @@ export function SaleProductPicker({
   query: string;
   searchState?: 'allCached' | 'localFirst' | 'refreshing' | 'verified';
   serverResultCount: number;
+  showUnitOnMobile: boolean;
+  showWarehouseOnMobile: boolean;
   sort: SaleProductSort;
   warehouseFilter: string;
   warehouses: PickerOption[];
@@ -103,14 +107,14 @@ export function SaleProductPicker({
   ];
 
   return (
-    <section className="grid min-w-0 content-start gap-3">
-      <div className="flex min-w-0 items-center gap-2">
+    <section className="grid min-w-0 content-start gap-2 sm:gap-3">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
         <label className="relative flex min-w-0 flex-1 items-center">
           <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
           <Input
             aria-label={t('search')}
             autoComplete="off"
-            className="pr-10 pl-9"
+            className="h-9 pr-10 pl-9 text-sm sm:h-10"
             name="product-search"
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder={t('search')}
@@ -125,7 +129,7 @@ export function SaleProductPicker({
             <Button
               aria-label={filtersT('title')}
               className={cn(
-                'relative h-10 w-10 shrink-0',
+                'relative h-9 w-9 shrink-0 sm:h-10 sm:w-10',
                 activeFilterCount &&
                   'border-primary/50 bg-primary/5 text-primary'
               )}
@@ -184,7 +188,7 @@ export function SaleProductPicker({
           <PopoverTrigger asChild>
             <Button
               aria-label={filtersT('sort')}
-              className="h-10 w-10 shrink-0"
+              className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
               size="icon"
               title={filtersT('sort')}
               type="button"
@@ -226,7 +230,7 @@ export function SaleProductPicker({
         </div>
       ) : null}
 
-      <div className="grid gap-2 sm:max-h-[24rem] sm:overflow-y-auto sm:pr-1">
+      <div className="grid gap-1.5 sm:max-h-[24rem] sm:gap-2 sm:overflow-y-auto sm:pr-1">
         {options.map((option) => {
           const quantity =
             lines.find((line) => line.key === option.key)?.quantity ?? 0;
@@ -236,7 +240,7 @@ export function SaleProductPicker({
           return (
             <div
               className={cn(
-                'grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3 transition-colors',
+                'grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border p-2 transition-colors sm:grid-cols-[3rem_minmax(0,1fr)_auto] sm:gap-3 sm:p-3',
                 quantity > 0 && 'border-primary/30 bg-primary/[0.03]'
               )}
               key={option.key}
@@ -249,21 +253,43 @@ export function SaleProductPicker({
                 <p className="truncate font-medium text-sm">
                   {option.productName}
                 </p>
-                <p className="line-clamp-2 text-muted-foreground text-xs sm:truncate">
+                <p className="truncate text-muted-foreground text-xs sm:hidden">
+                  {showUnitOnMobile ? (
+                    <>
+                      {option.unitName} <span aria-hidden="true">·</span>{' '}
+                    </>
+                  ) : null}
+                  {showWarehouseOnMobile ? (
+                    <>
+                      {option.warehouseName} <span aria-hidden="true">
+                        ·
+                      </span>{' '}
+                    </>
+                  ) : null}
+                  {option.amount === null ? (
+                    <span title={t('unlimited')}>
+                      <span aria-hidden="true">∞</span>
+                      <span className="sr-only">{t('unlimited')}</span>
+                    </span>
+                  ) : (
+                    t('available', { count: option.amount })
+                  )}
+                </p>
+                <p className="hidden truncate text-muted-foreground text-xs sm:block">
                   {option.unitName} · {option.warehouseName} ·{' '}
                   {option.amount === null
-                    ? t('unlimited')
+                    ? '∞'
                     : t('available', { count: option.amount })}
                 </p>
-                <p className="mt-1 font-semibold text-sm">
+                <p className="mt-0.5 font-semibold text-sm sm:mt-1">
                   {currency(option.price, workspaceCurrency)}
                 </p>
               </div>
               {quantity > 0 ? (
-                <div className="flex h-10 shrink-0 items-center overflow-hidden rounded-lg border bg-background shadow-xs">
+                <div className="flex h-9 shrink-0 items-center overflow-hidden rounded-lg border bg-background shadow-xs sm:h-10">
                   <Button
                     aria-label={t('decreaseItem', { name: option.productName })}
-                    className="h-10 w-9 rounded-none"
+                    className="h-9 w-8 rounded-none sm:h-10 sm:w-9"
                     onClick={() => onQuantityChange(option, quantity - 1)}
                     size="icon"
                     type="button"
@@ -280,7 +306,7 @@ export function SaleProductPicker({
                   </span>
                   <Button
                     aria-label={t('increaseItem', { name: option.productName })}
-                    className="h-10 w-9 rounded-none"
+                    className="h-9 w-8 rounded-none sm:h-10 sm:w-9"
                     disabled={atMaximum}
                     onClick={() => onQuantityChange(option, quantity + 1)}
                     size="icon"
@@ -293,7 +319,7 @@ export function SaleProductPicker({
               ) : (
                 <Button
                   aria-label={t('addItem', { name: option.productName })}
-                  className="h-10 w-10 touch-manipulation"
+                  className="h-9 w-9 touch-manipulation sm:h-10 sm:w-10"
                   disabled={soldOut}
                   onClick={() => onQuantityChange(option, 1)}
                   size="icon"

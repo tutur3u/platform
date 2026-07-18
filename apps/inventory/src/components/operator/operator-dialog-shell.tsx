@@ -176,11 +176,13 @@ export type OperatorDialogTab = {
  * the dialog `<form>` above `OperatorDialogFooter`.
  */
 export function OperatorDialogTabs({
+  compactMobile = false,
   defaultValue,
   onValueChange,
   tabs,
   value,
 }: {
+  compactMobile?: boolean;
   defaultValue?: string;
   onValueChange?: (value: string) => void;
   tabs: OperatorDialogTab[];
@@ -193,11 +195,21 @@ export function OperatorDialogTabs({
       onValueChange={onValueChange}
       value={value}
     >
-      <div className="shrink-0 overflow-x-auto overscroll-x-contain border-border border-b px-4 py-2.5 sm:px-6">
+      <div
+        className={cn(
+          'shrink-0 overflow-x-auto overscroll-x-contain border-border border-b sm:px-6',
+          compactMobile ? 'px-3 py-2 sm:py-2.5' : 'px-4 py-2.5'
+        )}
+      >
         <TabsList className="h-auto w-max gap-1 bg-transparent p-0">
           {tabs.map((tab) => (
             <TabsTrigger
-              className="min-h-10 touch-manipulation gap-1.5 rounded-md px-3 py-1.5 data-[state=active]:bg-muted sm:min-h-0"
+              className={cn(
+                'touch-manipulation gap-1.5 rounded-md data-[state=active]:bg-muted sm:min-h-0 sm:px-3 sm:py-1.5',
+                compactMobile
+                  ? 'min-h-9 px-2 py-1 text-xs sm:text-sm'
+                  : 'min-h-10 px-3 py-1.5'
+              )}
               key={tab.value}
               value={tab.value}
             >
@@ -216,7 +228,10 @@ export function OperatorDialogTabs({
       </div>
       {tabs.map((tab) => (
         <TabsContent
-          className="mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 focus-visible:outline-none sm:px-6 sm:py-5"
+          className={cn(
+            'mt-0 min-h-0 flex-1 overflow-y-auto overscroll-contain focus-visible:outline-none sm:px-6 sm:py-5',
+            compactMobile ? 'px-3 py-3' : 'px-4 py-4'
+          )}
           key={tab.value}
           value={tab.value}
         >

@@ -3,7 +3,10 @@
 import { CircleDollarSign, Hash, Package, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { CurrencyInput } from '@tuturuuu/ui/currency-input';
 import { Input } from '@tuturuuu/ui/input';
+import { getCurrencyLocale } from '@tuturuuu/utils/format';
+import { getCurrencyFractionDigits } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { currency } from './operator-format';
 
@@ -54,22 +57,26 @@ export function CartEditor({
   currencyCode,
   lines,
   onChange,
+  showUnitOnMobile,
+  showWarehouseOnMobile,
 }: {
   currencyCode: string;
   lines: SaleCartLine[];
   onChange: (lines: SaleCartLine[]) => void;
+  showUnitOnMobile: boolean;
+  showWarehouseOnMobile: boolean;
 }) {
   const t = useTranslations('inventory.operator.commerce.createSale');
   return (
-    <aside className="grid min-w-0 content-start gap-3 rounded-xl border bg-muted/15 p-3">
+    <aside className="grid min-w-0 content-start gap-2 rounded-xl border bg-muted/15 p-2 sm:gap-3 sm:p-3">
       <p className="font-semibold text-sm">{t('cart')}</p>
       {lines.map((line) => (
         <div
-          className="grid gap-2 rounded-lg border bg-background p-3"
+          className="grid gap-2 rounded-lg border bg-background p-2 sm:p-3"
           key={line.key}
         >
           <div className="flex min-w-0 items-start gap-2">
-            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40">
+            <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40 sm:h-10 sm:w-10">
               {line.imageUrl ? (
                 // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
                 <img
@@ -83,7 +90,14 @@ export function CartEditor({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-sm">{line.productName}</p>
-              <p className="truncate text-muted-foreground text-xs">
+              {showUnitOnMobile || showWarehouseOnMobile ? (
+                <p className="truncate text-muted-foreground text-xs sm:hidden">
+                  {showUnitOnMobile ? line.unitName : null}
+                  {showUnitOnMobile && showWarehouseOnMobile ? ' · ' : null}
+                  {showWarehouseOnMobile ? line.warehouseName : null}
+                </p>
+              ) : null}
+              <p className="hidden truncate text-muted-foreground text-xs sm:block">
                 {line.unitName} · {line.warehouseName}
               </p>
             </div>
@@ -92,7 +106,7 @@ export function CartEditor({
               onClick={() =>
                 onChange(lines.filter((item) => item.key !== line.key))
               }
-              className="h-10 w-10 touch-manipulation sm:h-9 sm:w-9"
+              className="h-8 w-8 touch-manipulation sm:h-9 sm:w-9"
               size="icon"
               type="button"
               variant="ghost"
@@ -104,10 +118,11 @@ export function CartEditor({
             <label className="grid gap-1 text-muted-foreground text-xs">
               <span className="flex items-center gap-1">
                 <Hash className="h-3.5 w-3.5" />
-                {t('quantity')}
+                <span className="sr-only sm:not-sr-only">{t('quantity')}</span>
               </span>
               <Input
                 aria-label={t('quantity')}
+                className="h-9 text-sm"
                 inputMode="numeric"
                 max={line.amount ?? undefined}
                 min={1}
@@ -137,26 +152,27 @@ export function CartEditor({
             <label className="grid gap-1 text-muted-foreground text-xs">
               <span className="flex items-center gap-1">
                 <CircleDollarSign className="h-3.5 w-3.5" />
-                {t('unitPrice')}
+                <span className="sr-only sm:not-sr-only">{t('unitPrice')}</span>
               </span>
-              <Input
+              <CurrencyInput
                 aria-label={t('unitPrice')}
-                inputMode="decimal"
-                min={0}
-                onChange={(event) =>
+                className="h-9 text-sm"
+                currencySuffix={currencyCode.toUpperCase()}
+                hideHelpers
+                locale={getCurrencyLocale(currencyCode)}
+                maximumFractionDigits={getCurrencyFractionDigits(currencyCode)}
+                onChange={(value) =>
                   onChange(
                     lines.map((item) =>
                       item.key === line.key
                         ? {
                             ...item,
-                            price: Math.max(0, Number(event.target.value) || 0),
+                            price: Math.max(0, value || 0),
                           }
                         : item
                     )
                   )
                 }
-                step="0.01"
-                type="number"
                 value={line.price}
               />
             </label>
