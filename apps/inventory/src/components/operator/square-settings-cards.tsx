@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Copy,
   KeyRound,
-  MonitorSmartphone,
   Settings2,
   Webhook,
 } from '@tuturuuu/icons';
@@ -234,118 +233,6 @@ export function SquareConnectionCard({
       >
         {saveTokenPending ? t('saving') : t('saveManual')}
       </Button>
-    </div>
-  );
-}
-
-export function SquareTerminalCard({
-  deviceCodeName,
-  deviceCodePending,
-  deviceId,
-  deviceOptions,
-  lastPairingCode,
-  locationId,
-  locationOptions,
-  onCreateDeviceCode,
-  onSaveDefaults,
-  sandboxDeviceId,
-  sandboxDevicePlaceholder,
-  saveDefaultsPending,
-  selectedDeviceId,
-  selectedDevicePlaceholder,
-  selectedLocationId,
-  selectedLocationPlaceholder,
-  setDeviceCodeName,
-  setDeviceId,
-  setLocationId,
-  setSandboxDeviceId,
-}: {
-  deviceCodeName: string;
-  deviceCodePending: boolean;
-  deviceId: string;
-  deviceOptions: SquareSelectOption[];
-  lastPairingCode: string | null;
-  locationId: string;
-  locationOptions: SquareSelectOption[];
-  onCreateDeviceCode: () => void;
-  onSaveDefaults: () => void;
-  sandboxDeviceId: string;
-  sandboxDevicePlaceholder: string;
-  saveDefaultsPending: boolean;
-  selectedDeviceId: string;
-  selectedDevicePlaceholder: string;
-  selectedLocationId: string;
-  selectedLocationPlaceholder: string;
-  setDeviceCodeName: (value: string) => void;
-  setDeviceId: (value: string) => void;
-  setLocationId: (value: string) => void;
-  setSandboxDeviceId: (value: string) => void;
-}) {
-  const t = useTranslations('inventory.operator.square');
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start gap-3">
-        <MonitorSmartphone className="mt-1 h-5 w-5 text-muted-foreground" />
-        <div>
-          <p className="font-semibold">{t('terminalTitle')}</p>
-          <p className="mt-1 text-muted-foreground text-sm">
-            {t('terminalDescription')}
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <SelectValueField
-          label={t('locationLabel')}
-          onChange={setLocationId}
-          options={locationOptions}
-          placeholder={selectedLocationPlaceholder}
-          value={locationId || selectedLocationId}
-        />
-        <SelectValueField
-          label={t('deviceLabel')}
-          onChange={setDeviceId}
-          options={deviceOptions}
-          placeholder={selectedDevicePlaceholder}
-          value={deviceId || selectedDeviceId}
-        />
-        <label className="grid gap-1 text-sm">
-          <span className="font-medium">{t('sandboxDeviceLabel')}</span>
-          <Input
-            onChange={(event) => setSandboxDeviceId(event.target.value)}
-            placeholder={sandboxDevicePlaceholder}
-            value={sandboxDeviceId}
-          />
-        </label>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button
-          disabled={saveDefaultsPending}
-          onClick={onSaveDefaults}
-          type="button"
-        >
-          {saveDefaultsPending ? t('saving') : t('saveDefaults')}
-        </Button>
-        <Input
-          className="h-10 max-w-xs"
-          onChange={(event) => setDeviceCodeName(event.target.value)}
-          placeholder={t('deviceCodeNamePlaceholder')}
-          value={deviceCodeName}
-        />
-        <Button
-          disabled={deviceCodePending}
-          onClick={onCreateDeviceCode}
-          type="button"
-          variant="outline"
-        >
-          {t('createDeviceCode')}
-        </Button>
-      </div>
-      {lastPairingCode ? (
-        <p className="mt-3 rounded-md border border-border bg-muted/30 px-3 py-2 font-mono text-sm">
-          {lastPairingCode}
-        </p>
-      ) : null}
     </div>
   );
 }

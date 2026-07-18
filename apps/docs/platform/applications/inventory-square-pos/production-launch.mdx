@@ -61,13 +61,17 @@ real seller, physical device, counter network, or receipt behavior.
 <Steps>
   <Step title="Open the Production setup">
     In the correct workspace, open **Payments → Connect & set up → Square POS**
-    and select **Production**. Read the connection and location summary before
-    enabling editing.
+    and select **Production**. Choose **Edit Square settings**, then open
+    **Location & terminal**. The dialog separates physical Production pairing
+    from the Sandbox simulator route and presents the four pairing steps in
+    order.
   </Step>
-  <Step title="Name the counter">
-    Use a durable name such as `Front counter`, `Convention booth A`, or
-    `Warehouse pickup`. The name should tell support which physical Terminal is
-    receiving an order.
+  <Step title="Choose the location and name the counter">
+    In step 1, choose the Square location that will receive this counter's
+    in-person payments. In step 2, use a durable name such as `Front counter`,
+    `Convention booth A`, or `Warehouse pickup`.
+
+    The name should tell support which physical Terminal is receiving an order.
   </Step>
   <Step title="Create the pairing code in Tuturuuu">
     Choose **Create pairing code**. Tuturuuu asks Square's Devices API for a code
@@ -79,14 +83,15 @@ real seller, physical device, counter network, or receipt behavior.
     </Warning>
   </Step>
   <Step title="Enter the code on the Terminal">
-    At the Terminal sign-in screen, choose the device-code option and enter the
-    Tuturuuu code within five minutes. If it expires, generate a new code in
-    Tuturuuu; do not keep retrying the old one.
+    Tuturuuu displays the code and its exact expiry. On the physical Terminal
+    sign-in screen, choose **Use a device code**, then enter the code before it
+    expires. If it expires, generate a new code in Tuturuuu; do not keep
+    retrying the old one.
   </Step>
   <Step title="Wait for paired status">
-    Square sends `device.code.paired`. Refresh the device list in Tuturuuu,
-    select the newly paired Terminal as the default, and save. The Production
-    setup should now show **5/5 checks complete**.
+    Square sends `device.code.paired`. In step 4, choose **Refresh terminals**,
+    select the newly paired Terminal, and choose **Save as default terminal**.
+    The Production setup should now show **5/5 checks complete**.
   </Step>
 </Steps>
 

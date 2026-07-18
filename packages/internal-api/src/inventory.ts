@@ -713,6 +713,7 @@ export type InventorySquareCatalogSyncDirection =
   | 'to_square';
 
 export type InventorySquareCatalogSyncSummary = {
+  centLevelPricesReady: boolean | null;
   conflicts: number;
   direction: InventorySquareCatalogSyncDirection;
   environment: InventorySquareEnvironment;

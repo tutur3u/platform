@@ -2127,8 +2127,10 @@
         "cancelEditing": "Dừng chỉnh sửa",
         "configureNextStep": "Thiết lập bước này",
         "connectOAuth": "Kết nối OAuth",
+        "copyPairingCode": "Sao chép mã",
         "copyWebhook": "Sao chép URL",
         "createDeviceCode": "Tạo mã ghép nối",
+        "creatingDeviceCode": "Đang tạo mã...",
         "description": "Kết nối Square, chọn địa điểm và gửi đơn đã giữ hàng tới Square Terminal vật lý.",
         "deviceCodeError": "Không thể tạo mã thiết bị.",
         "deviceCodeNamePlaceholder": "Terminal quầy trước",
@@ -2292,15 +2294,21 @@
         "oauthRedirectLabel": "URL chuyển hướng OAuth",
         "oauthRedirectPlaceholder": "Mặc định là URL callback OAuth Square của ứng dụng này",
         "oauthRequiresAppCredentials": "Lưu application ID và secret trước khi kết nối OAuth.",
+        "openTerminalPairingGuide": "Mở hướng dẫn ghép nối Square",
+        "pairingCodeExpires": "Nhập mã này trên Square Terminal vật lý trước {date}.",
         "readiness": "Sẵn sàng: {issues}",
         "readOnlyHint": "Chi tiết kết nối luôn chỉ đọc tại đây. Mọi thay đổi mở trong hộp thoại tập trung để dễ kiểm tra.",
         "ready": "sẵn sàng",
+        "refreshDevices": "Làm mới terminal",
         "sandboxDeviceLabel": "ID thiết bị sandbox",
+        "sandboxTerminalHelp": "Sandbox không ghép nối Terminal vật lý. Chọn địa điểm Sandbox, dán ID thiết bị mô phỏng Square Sandbox, rồi lưu tuyến diễn tập.",
         "saveAppCredentials": "Lưu thông tin ứng dụng",
         "saveDefaults": "Lưu mặc định",
         "saveError": "Không thể lưu cài đặt Square.",
         "saveManual": "Lưu token thủ công",
+        "saveSandboxRouting": "Lưu tuyến Sandbox",
         "saveSuccess": "Đã lưu cài đặt Square.",
+        "saveTerminalDefault": "Lưu làm terminal mặc định",
         "saving": "Đang lưu...",
         "selectedEnvironment": "Đã chọn: {environment}",
         "settingsDialogDescription": "Cập nhật {environment} theo từng phần rõ ràng. Thông tin bí mật được che sau khi lưu và hộp thoại này không tạo thanh toán.",
@@ -2357,6 +2365,8 @@
           },
           "noDeletes": "Không xóa dữ liệu Square",
           "partialSuccess": "Đồng bộ hoàn tất với một số mục cần xem lại.",
+          "priceCapabilityDescription": "Lần nhập gần nhất không thể xác minh khả năng cơ sở dữ liệu cần cho giá chính xác đến đơn vị lẻ. Square không bị thay đổi và các giá cục bộ liên quan được giữ an toàn. Hãy làm mới sau khi nâng cấp cơ sở dữ liệu, rồi nhập lại từ Square.",
+          "priceCapabilityTitle": "Không thể kiểm tra cơ sở dữ liệu cho giá chính xác",
           "protectionsTitle": "Biện pháp bảo vệ",
           "recommended": "Khuyến nghị",
           "reviewConflicts": "Xung đột được tạm dừng để xem xét",
@@ -2374,7 +2384,31 @@
           "title": "Đồng bộ danh mục và tồn kho",
           "writesToSquare": "Ghi vào Square"
         },
-        "terminalDescription": "Dùng thiết bị đã ghép nối trong production. Trong sandbox, dán ID thiết bị terminal sandbox của Square.",
+        "terminalDescription": "Thêm và ghép nối terminal vật lý theo quy trình production có hướng dẫn, hoặc cấu hình tuyến mô phỏng riêng trong Sandbox.",
+        "terminalEmpty": {
+          "description": "Sau khi nhập mã ghép nối trên Square Terminal vật lý, chọn Làm mới terminal. Thiết bị đã ghép nối sẽ xuất hiện khi Square báo về.",
+          "title": "Chưa tìm thấy terminal đã ghép nối"
+        },
+        "terminalSteps": {
+          "enterCode": {
+            "description": "Trên màn hình đăng nhập của Terminal vật lý, chọn Dùng mã thiết bị rồi nhập mã bên dưới.",
+            "empty": "Tạo mã ghép nối ở bước 2. Việc ghép nối không thu tiền và không tạo thanh toán.",
+            "title": "Nhập mã trên Square Terminal"
+          },
+          "location": {
+            "description": "Chọn địa điểm Square nơi thiết bị này nhận thanh toán trực tiếp.",
+            "title": "Chọn địa điểm bán hàng"
+          },
+          "name": {
+            "description": "Đặt tên quầy dễ nhận biết cho thiết bị, sau đó tạo mã ghép nối tạm thời.",
+            "locationRequired": "Chọn địa điểm trước khi tạo mã ghép nối.",
+            "title": "Đặt tên và thêm terminal mới"
+          },
+          "select": {
+            "description": "Sau khi ghép nối thành công trên thiết bị, làm mới danh sách, chọn terminal và lưu làm mặc định cho workspace.",
+            "title": "Chọn và lưu terminal đã ghép nối"
+          }
+        },
         "terminalTitle": "Điều hướng terminal",
         "title": "Square Terminal",
         "tokenEnding": "Token kết thúc bằng {last4}",
@@ -2420,6 +2454,8 @@
           "square": "Được nhập từ Square",
           "tuturuuu": "Được xuất bản từ Tuturuuu"
         },
+        "priceCapabilitySummaryDescription": "Lần nhập trước không thể gọi bước kiểm tra cơ sở dữ liệu cho giá chính xác của Tuturuuu, nên hệ thống giữ an toàn các giá cục bộ và không thay đổi Square. Hãy làm mới sau khi nâng cấp cơ sở dữ liệu, rồi nhập lại từ Square.",
+        "priceCapabilitySummaryTitle": "Kiểm tra cơ sở dữ liệu cho giá chính xác cần thử lại một lần",
         "priceReviewRow": "Lần giữ an toàn này có trước hỗ trợ giá lẻ. Nhập lại để áp dụng đúng giá Square mà không thay đổi Square.",
         "priceReviewSummaryDescription": "Kết nối Square đã hoạt động và sản phẩm đã được liên kết. Các dòng này được mô hình giá nguyên trước đây giữ an toàn; Tuturuuu hiện hỗ trợ chính xác giá lẻ và có thể nhập ở lần chạy tiếp theo.",
         "priceReviewSummaryTitle": "{count, plural, other {# giá cũ sẵn sàng thử lại}} — không phải lỗi kết nối",

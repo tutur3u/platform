@@ -2127,8 +2127,10 @@
         "cancelEditing": "Stop editing",
         "configureNextStep": "Set up this step",
         "connectOAuth": "Connect OAuth",
+        "copyPairingCode": "Copy code",
         "copyWebhook": "Copy URL",
         "createDeviceCode": "Create pairing code",
+        "creatingDeviceCode": "Creating code...",
         "description": "Connect Square, select a location, and send reserved orders to a physical Square Terminal.",
         "deviceCodeError": "Could not create device code.",
         "deviceCodeNamePlaceholder": "Front counter terminal",
@@ -2292,15 +2294,21 @@
         "oauthRedirectLabel": "OAuth redirect URL",
         "oauthRedirectPlaceholder": "Defaults to this app's Square OAuth callback URL",
         "oauthRequiresAppCredentials": "Save an application ID and secret before connecting OAuth.",
+        "openTerminalPairingGuide": "Open Square pairing guide",
+        "pairingCodeExpires": "Enter this code on the physical Square Terminal before {date}.",
         "readiness": "Readiness: {issues}",
         "readOnlyHint": "Connection details stay read-only here. All changes open in a focused, reviewable dialog.",
         "ready": "ready",
+        "refreshDevices": "Refresh terminals",
         "sandboxDeviceLabel": "Sandbox device ID",
+        "sandboxTerminalHelp": "Sandbox does not pair a physical Terminal. Choose the Sandbox location, paste a Square Sandbox simulator device ID, then save the rehearsal route.",
         "saveAppCredentials": "Save app credentials",
         "saveDefaults": "Save defaults",
         "saveError": "Could not save Square settings.",
         "saveManual": "Save manual token",
+        "saveSandboxRouting": "Save Sandbox route",
         "saveSuccess": "Square settings saved.",
+        "saveTerminalDefault": "Save as default terminal",
         "saving": "Saving...",
         "selectedEnvironment": "Selected: {environment}",
         "settingsDialogDescription": "Update {environment} in focused sections. Secrets stay masked after saving, and no payment is created from this dialog.",
@@ -2357,6 +2365,8 @@
           },
           "noDeletes": "No Square deletions",
           "partialSuccess": "Sync completed with items that need review.",
+          "priceCapabilityDescription": "The last import could not verify the database capability needed for exact cent-level prices. Square was not changed and affected local prices stayed safely held. Refresh after the database upgrade, then import from Square again.",
+          "priceCapabilityTitle": "Exact-price database check was unavailable",
           "protectionsTitle": "Safety protections",
           "recommended": "Recommended",
           "reviewConflicts": "Conflicts pause for review",
@@ -2374,7 +2384,31 @@
           "title": "Catalog and stock sync",
           "writesToSquare": "Writes to Square"
         },
-        "terminalDescription": "Use a paired device in production. In sandbox, paste Square's sandbox terminal device ID.",
+        "terminalDescription": "Add and pair a physical terminal with a guided production flow, or configure a separate simulator route in Sandbox.",
+        "terminalEmpty": {
+          "description": "After entering the pairing code on the physical Square Terminal, choose Refresh terminals. The paired device will appear here when Square reports it.",
+          "title": "No paired terminals found"
+        },
+        "terminalSteps": {
+          "enterCode": {
+            "description": "On the physical Terminal sign-in screen, choose Use a device code and enter the code below.",
+            "empty": "Create a pairing code in step 2. Nothing is charged and no checkout is created while pairing.",
+            "title": "Enter the code on Square Terminal"
+          },
+          "location": {
+            "description": "Choose the Square location where this device will take in-person payments.",
+            "title": "Choose the selling location"
+          },
+          "name": {
+            "description": "Give the device a recognizable counter name, then create a temporary pairing code.",
+            "locationRequired": "Choose a location before creating a pairing code.",
+            "title": "Name and add a new terminal"
+          },
+          "select": {
+            "description": "After pairing succeeds on the device, refresh this list, select the terminal, and save it as the workspace default.",
+            "title": "Select and save the paired terminal"
+          }
+        },
         "terminalTitle": "Terminal routing",
         "title": "Square Terminal",
         "tokenEnding": "Token ending in {last4}",
@@ -2420,6 +2454,8 @@
           "square": "Imported from Square",
           "tuturuuu": "Published from Tuturuuu"
         },
+        "priceCapabilitySummaryDescription": "The previous import could not call Tuturuuu's exact-price database check, so it safely kept these local prices and made no Square changes. Refresh after the database upgrade, then re-import from Square.",
+        "priceCapabilitySummaryTitle": "Exact-price database check needs one retry",
         "priceReviewRow": "This safe hold predates cent-level support. Re-import to apply Square’s exact price without changing Square.",
         "priceReviewSummaryDescription": "The Square connection worked and the products were linked. These rows were safely held by the previous whole-dollar model; Tuturuuu now supports their exact cent-level prices and can import them on the next run.",
         "priceReviewSummaryTitle": "{count, plural, one {# legacy price is ready to retry} other {# legacy prices are ready to retry}} — not connection failures",

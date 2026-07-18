@@ -56,6 +56,13 @@ export async function inventoryCentLevelPricesReady() {
     error: SupabaseErrorLike;
   };
 
+  if (error) {
+    console.warn(
+      'Square catalog sync could not verify cent-level inventory price support',
+      error.message ?? 'Unknown database capability probe error'
+    );
+  }
+
   return !error && data === true;
 }
 

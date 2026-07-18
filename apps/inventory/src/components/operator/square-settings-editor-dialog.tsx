@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { KeyRound, MonitorSmartphone, Settings2 } from '@tuturuuu/icons';
 import {
   createInventorySquareDeviceCode,
+  type InventorySquareDeviceCode,
   type InventorySquareEnvironment,
   type InventorySquareSettings,
   listInventorySquareDevices,
@@ -23,9 +24,9 @@ import {
 import {
   SquareAppCredentialsCard,
   SquareConnectionCard,
-  SquareTerminalCard,
   SquareWebhookCard,
 } from './square-settings-cards';
+import { SquareTerminalSettingsCard } from './square-terminal-settings-card';
 
 export type SquareSettingsEditorTab = 'application' | 'connection' | 'terminal';
 
@@ -64,7 +65,8 @@ export function SquareSettingsEditorDialog({
   const [deviceId, setDeviceId] = useState('');
   const [sandboxDeviceId, setSandboxDeviceId] = useState('');
   const [deviceCodeName, setDeviceCodeName] = useState('');
-  const [lastPairingCode, setLastPairingCode] = useState<string | null>(null);
+  const [lastDeviceCode, setLastDeviceCode] =
+    useState<InventorySquareDeviceCode | null>(null);
 
   const hasReadyConnection = (settings?.connections ?? []).some(
     (item) => item.environment === environment && item.status === 'ready'
@@ -189,7 +191,7 @@ export function SquareSettingsEditorDialog({
         error instanceof Error ? error.message : t('deviceCodeError')
       ),
     onSuccess: ({ data }) => {
-      setLastPairingCode(data.code);
+      setLastDeviceCode(data);
       toast.success(t('deviceCodeSuccess'));
       invalidateSquare();
     },
@@ -207,7 +209,7 @@ export function SquareSettingsEditorDialog({
       setDeviceId('');
       setSandboxDeviceId('');
       setDeviceCodeName('');
-      setLastPairingCode(null);
+      setLastDeviceCode(null);
     }
     onOpenChange(nextOpen);
   };
@@ -279,15 +281,18 @@ export function SquareSettingsEditorDialog({
             },
             {
               content: (
-                <SquareTerminalCard
+                <SquareTerminalSettingsCard
                   deviceCodeName={deviceCodeName}
                   deviceCodePending={deviceCodeMutation.isPending}
                   deviceId={deviceId}
                   deviceOptions={deviceOptions}
-                  lastPairingCode={lastPairingCode}
+                  devicesPending={devices.isFetching}
+                  environment={environment}
+                  lastDeviceCode={lastDeviceCode}
                   locationId={locationId}
                   locationOptions={locationOptions}
                   onCreateDeviceCode={() => deviceCodeMutation.mutate()}
+                  onRefreshDevices={() => devices.refetch()}
                   onSaveDefaults={() => defaultsMutation.mutate()}
                   sandboxDeviceId={sandboxDeviceId}
                   sandboxDevicePlaceholder={

@@ -91,6 +91,21 @@ export function SquareCatalogSyncCard({
         </div>
       ) : null}
 
+      {summary?.centLevelPricesReady === false ? (
+        <div
+          className="flex items-start gap-2 border-dynamic-orange/30 border-b bg-dynamic-orange/5 px-4 py-3 text-xs leading-5"
+          role="status"
+        >
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-dynamic-orange" />
+          <div>
+            <p className="font-medium">{t('priceCapabilityTitle')}</p>
+            <p className="mt-0.5 text-muted-foreground">
+              {t('priceCapabilityDescription')}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       {summary ? (
         <div className="grid grid-cols-2 gap-px bg-border sm:grid-cols-3 xl:grid-cols-6">
           {[

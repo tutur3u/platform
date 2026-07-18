@@ -10,6 +10,7 @@ export type SquareCatalogSyncDirection =
 export type SquareCatalogSyncDecision = 'conflict' | 'noop' | 'pull' | 'push';
 
 export type InventorySquareCatalogSyncSummary = {
+  centLevelPricesReady: boolean | null;
   conflicts: number;
   direction: SquareCatalogSyncDirection;
   environment: SquareEnvironment;
@@ -29,6 +30,7 @@ export function createSquareCatalogSyncSummary(
   environment: SquareEnvironment
 ): InventorySquareCatalogSyncSummary {
   return {
+    centLevelPricesReady: null,
     conflicts: 0,
     direction,
     environment,
@@ -42,6 +44,14 @@ export function createSquareCatalogSyncSummary(
     variationsPulled: 0,
     variationsPushed: 0,
   };
+}
+
+export function catalogSyncCompletionStatus(
+  summary: InventorySquareCatalogSyncSummary
+): 'partial' | 'success' {
+  return summary.conflicts > 0 || summary.centLevelPricesReady === false
+    ? 'partial'
+    : 'success';
 }
 
 export type LocalSquareVariation = {

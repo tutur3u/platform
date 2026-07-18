@@ -54,6 +54,8 @@ export function SquareSyncObservabilityPanel({ wsId }: { wsId: string }) {
     queryKey: ['inventory', wsId, 'square-catalog-sync'],
   });
   const state = syncState.data;
+  const priceCapabilityUnavailable =
+    state?.lastSummary?.centLevelPricesReady === false;
   const links = state?.links ?? [];
   const presentedLinks = links.map((link) => ({
     link,
@@ -123,10 +125,16 @@ export function SquareSyncObservabilityPanel({ wsId }: { wsId: string }) {
             <Info className="mt-0.5 size-5 shrink-0 text-dynamic-orange" />
             <div>
               <p className="font-semibold text-sm">
-                {t('priceReviewSummaryTitle', { count: counts.priceReviews })}
+                {priceCapabilityUnavailable
+                  ? t('priceCapabilitySummaryTitle')
+                  : t('priceReviewSummaryTitle', {
+                      count: counts.priceReviews,
+                    })}
               </p>
               <p className="mt-1 text-muted-foreground text-sm leading-6">
-                {t('priceReviewSummaryDescription')}
+                {priceCapabilityUnavailable
+                  ? t('priceCapabilitySummaryDescription')
+                  : t('priceReviewSummaryDescription')}
               </p>
             </div>
           </div>

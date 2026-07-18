@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildSquarePhysicalCountChanges,
+  catalogSyncCompletionStatus,
+  createSquareCatalogSyncSummary,
   decideSquareCatalogSync,
   describeSquareSyncError,
   hasSquareDeleteInstruction,
@@ -14,6 +16,18 @@ import {
 } from './catalog-sync-contract';
 
 describe('Square catalog sync contract', () => {
+  it('marks an unavailable cent-level database boundary for review', () => {
+    const summary = createSquareCatalogSyncSummary('from_square', 'production');
+
+    expect(summary.centLevelPricesReady).toBeNull();
+    expect(
+      catalogSyncCompletionStatus({
+        ...summary,
+        centLevelPricesReady: false,
+      })
+    ).toBe('partial');
+  });
+
   it('produces stable hashes regardless of object key order', () => {
     expect(squareSyncHash({ a: 1, b: 2 })).toBe(squareSyncHash({ b: 2, a: 1 }));
   });

@@ -165,4 +165,42 @@ describe('SquareSettingsPanel', () => {
     expect(guideSource).toContain('onConfigureStep(step.id)');
     expect(guideSource).toContain("t('configureStep')");
   });
+
+  it('guides terminal pairing from an empty device list to a saved default', () => {
+    const editorSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-settings-editor-dialog.tsx'
+      ),
+      'utf8'
+    );
+    const terminalSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-terminal-settings-card.tsx'
+      ),
+      'utf8'
+    ).concat(
+      readFileSync(
+        join(
+          inventoryRoot,
+          'src/components/operator/square-terminal-production-setup.tsx'
+        ),
+        'utf8'
+      )
+    );
+
+    expect(editorSource).toContain('lastDeviceCode');
+    expect(editorSource).toContain(
+      'onRefreshDevices={() => devices.refetch()}'
+    );
+    expect(editorSource).toContain('environment={environment}');
+    expect(terminalSource).toContain("environment === 'production'");
+    expect(terminalSource).toContain("t('terminalSteps.name.title')");
+    expect(terminalSource).toContain("t('terminalSteps.enterCode.title')");
+    expect(terminalSource).toContain("t('terminalSteps.select.title')");
+    expect(terminalSource).toContain("t('terminalEmpty.title')");
+    expect(terminalSource).toContain('lastDeviceCode.pairBy');
+    expect(terminalSource).toContain('onRefreshDevices');
+  });
 });

@@ -3,6 +3,7 @@ import 'server-only';
 import { getWorkspaceDefaultCurrency } from '../../workspace-currency';
 import {
   buildSquarePhysicalCountChanges,
+  catalogSyncCompletionStatus,
   createSquareCatalogSyncSummary,
   decideSquareCatalogSync,
   describeSquareSyncError,
@@ -185,6 +186,7 @@ async function pullFromSquare({
     inventoryCentLevelPricesReady(),
     loadLinks(wsId, environment),
   ]);
+  summary.centLevelPricesReady = centLevelPricesReady;
   const linksByVariation = new Map(
     links.map((link) => [link.square_variation_id, link])
   );
@@ -674,7 +676,7 @@ export async function syncInventorySquareCatalog({
       direction,
       environment: context.environment,
       latestTime,
-      status: summary.conflicts > 0 ? 'partial' : 'success',
+      status: catalogSyncCompletionStatus(summary),
       summary,
       userId,
       wsId,
