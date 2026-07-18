@@ -29,7 +29,7 @@ function getFallbackDefaultModels(tier: ProductTier) {
 }
 
 const AI_CREDITS_APP_SESSION_AUTH = {
-  targetApp: ['chat', 'mind', 'tasks'],
+  targetApp: ['chat', 'mind', 'pay', 'tasks'],
 } as const;
 
 async function resolveAiCreditsWorkspaceId({

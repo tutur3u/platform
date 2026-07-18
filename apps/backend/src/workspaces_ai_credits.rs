@@ -16,7 +16,7 @@ const PERSONAL_WORKSPACE_SLUG: &str = "personal";
 const ROOT_WORKSPACE_ID: &str = "00000000-0000-0000-0000-000000000000";
 
 // App-session targets allowed by the legacy route (`allowAppSessionAuth`).
-const AI_CREDITS_APP_SESSION_TARGETS: &[&str] = &["chat", "mind", "tasks"];
+const AI_CREDITS_APP_SESSION_TARGETS: &[&str] = &["chat", "mind", "pay", "tasks"];
 
 const RESOLVE_WORKSPACE_TIER_RPC: &str = "_resolve_workspace_tier";
 const GET_OR_CREATE_CREDIT_BALANCE_RPC: &str = "get_or_create_credit_balance";
@@ -124,7 +124,7 @@ async fn ai_credits_response(
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
     // Resolve the caller identity from a Supabase access token, or from an
-    // allowed app-session token (chat/mind/tasks), mirroring the legacy
+    // allowed app-session token (chat/mind/pay/tasks), mirroring the legacy
     // `withSessionAuth({ allowAppSessionAuth })` behavior.
     let Some(user_id) = resolve_user_id(config, request, outbound).await else {
         return message_response(401, "Unauthorized");

@@ -238,3 +238,58 @@ async fn chat_observability_accepts_chat_app_session_target() {
 fn chat_observability_path() -> &'static str {
     "/api/v1/workspaces/00000000-0000-0000-0000-000000000111/chat/conversations/ai-chat-chat-1/ai-observability"
 }
+
+#[tokio::test]
+async fn workspace_ai_credits_accepts_pay_app_session_target() {
+    let token = app_session_token(&app_session_claims(
+        "pay",
+        vec![APP_SESSION_SCOPE],
+        4_102_444_800,
+    ));
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+        outbound_response(200, r#""FREE""#),
+        outbound_response(
+            200,
+            r#"[{"id":"balance-1","total_allocated":1000,"total_used":250,"bonus_credits":100,"period_start":"2026-07-01","period_end":"2026-08-01"}]"#,
+        ),
+        outbound_response(200, "[]"),
+        outbound_response(200, "[]"),
+        outbound_response(200, r#"[{"amount":-50}]"#),
+    ]);
+
+    let response = handle_backend_request(
+        &backend_config_with_contact_data(),
+        request_with_bearer(
+            "GET",
+            "/api/v1/workspaces/00000000-0000-0000-0000-000000000222/ai/credits",
+            token,
+        ),
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 200);
+    assert_eq!(response.body["tier"], "FREE");
+    assert_eq!(response.body["remaining"], 850);
+    assert_eq!(response.body["dailyUsed"], 50);
+    assert_eq!(response.body["balanceScope"], "user");
+
+    let calls = outbound.calls();
+    assert_eq!(calls.len(), 6);
+    assert!(calls[0].url.contains("/rest/v1/workspace_members?"));
+    assert_eq!(
+        recorded_header(&calls[0], "Authorization"),
+        Some("Bearer test-service-role-secret")
+    );
+    assert!(
+        calls[1]
+            .url
+            .ends_with("/rest/v1/rpc/_resolve_workspace_tier")
+    );
+    assert!(
+        calls[2]
+            .url
+            .ends_with("/rest/v1/rpc/get_or_create_credit_balance")
+    );
+}
