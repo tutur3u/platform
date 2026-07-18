@@ -7,6 +7,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
+vi.mock('@tuturuuu/payment-core', () => ({
+  AiCreditsStatusError: class extends Error {},
+  getAiCreditsStatus: vi.fn(),
+}));
 
 import './route';
 
