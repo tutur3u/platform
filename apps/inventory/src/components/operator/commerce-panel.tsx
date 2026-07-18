@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { CheckoutRows, RevenueShareRows, SaleRows } from './commerce-rows';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
-import { money } from './operator-format';
+import { currency } from './operator-format';
 import { LoadingRows } from './operator-shell';
 import type { InventoryCommerceTab } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
@@ -114,7 +114,7 @@ export function CommercePanel({
           description={t('metrics.revenueDescription')}
           icon={CircleDollarSign}
           label={t('metrics.revenue')}
-          value={money(salesSummary?.revenue, workspaceCurrency)}
+          value={currency(salesSummary?.revenue, workspaceCurrency)}
         />
       </div>
       <Tabs

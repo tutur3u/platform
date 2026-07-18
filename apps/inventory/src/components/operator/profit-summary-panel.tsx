@@ -9,7 +9,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
-import { money } from './operator-format';
+import { currency as formatCurrency, money } from './operator-format';
 import { buildProductPnl } from './operator-pnl';
 
 export function ProfitSummaryPanel({
@@ -55,7 +55,7 @@ export function ProfitSummaryPanel({
         <OperatorMetricCard
           icon={CircleDollarSign}
           label={t('revenue')}
-          value={money(summary?.revenue, currency)}
+          value={formatCurrency(summary?.revenue, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}
@@ -64,7 +64,7 @@ export function ProfitSummaryPanel({
           tone={
             (summary?.estimatedGrossProfit ?? 0) > 0 ? 'success' : 'default'
           }
-          value={money(summary?.estimatedGrossProfit, currency)}
+          value={formatCurrency(summary?.estimatedGrossProfit, currency)}
         />
         <OperatorMetricCard
           description={t('estimated')}

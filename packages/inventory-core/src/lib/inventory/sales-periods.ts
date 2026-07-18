@@ -8,6 +8,7 @@ import type {
   InventorySalesPeriodProductScope,
 } from '@tuturuuu/internal-api/inventory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { summarizeInventorySales } from './commerce/summary';
 
 type SalesPeriodRow = Omit<InventorySalesPeriod, 'product_ids' | 'sale_count'>;
 type SalesPeriodAssignmentRow = {
@@ -630,17 +631,49 @@ export async function getInventoryCommerceSummary({
   unassignedOnly?: boolean;
   wsId: string;
 }) {
-  const { data, error } = await privateInventory(sbAdmin).rpc(
-    'get_inventory_commerce_summary' as never,
-    {
-      p_currency: currency,
-      p_period_id: periodId,
-      p_unassigned_only: unassignedOnly,
-      p_ws_id: wsId,
-    } as never
-  );
+  const pageSize = 100;
+  const [{ data, error }, firstPage] = await Promise.all([
+    privateInventory(sbAdmin).rpc(
+      'get_inventory_commerce_summary' as never,
+      {
+        p_currency: currency,
+        p_period_id: periodId,
+        p_unassigned_only: unassignedOnly,
+        p_ws_id: wsId,
+      } as never
+    ),
+    listInventoryCommerceSales({
+      limit: pageSize,
+      offset: 0,
+      periodId,
+      sbAdmin,
+      unassignedOnly,
+      wsId,
+    }),
+  ]);
   if (error) throw error;
-  return data as unknown as InventoryCommerceSummary;
+
+  const sales = [...firstPage.data];
+  for (let offset = sales.length; offset < firstPage.count; ) {
+    const page = await listInventoryCommerceSales({
+      limit: pageSize,
+      offset,
+      periodId,
+      sbAdmin,
+      unassignedOnly,
+      wsId,
+    });
+    if (page.data.length === 0) break;
+    sales.push(...page.data);
+    offset += page.data.length;
+  }
+
+  const rpcSummary = data as unknown as InventoryCommerceSummary;
+  return summarizeInventorySales({
+    currency,
+    marginPercentage: Number(rpcSummary?.estimatedGrossMarginPercentage ?? 0),
+    sales,
+  });
 }
 
 export async function listInventorySalesForPeriod({
