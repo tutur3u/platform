@@ -17,13 +17,6 @@ import { createInventorySale } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -34,6 +27,7 @@ import {
   OperatorDialogHeader,
   OperatorDialogTabs,
 } from './operator-dialog-shell';
+import { SelectField } from './operator-form-fields';
 import { currency } from './operator-format';
 import {
   CartEditor,
@@ -268,50 +262,43 @@ export function SaleCreateDialog({
                         value={content}
                       />
                     </label>
-                    <Select onValueChange={setWalletId} value={walletId}>
-                      <SelectTrigger aria-label={t('wallet')}>
-                        <SelectValue placeholder={t('chooseWallet')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(options?.wallets ?? []).map((wallet) => (
-                          <SelectItem key={wallet.id} value={wallet.id}>
-                            {wallet.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select onValueChange={setCategoryId} value={categoryId}>
-                      <SelectTrigger aria-label={t('category')}>
-                        <SelectValue placeholder={t('chooseCategory')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(options?.financeCategories ?? []).flatMap(
-                          (category) =>
-                            category.id ? (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ) : (
-                              []
-                            )
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <Select onValueChange={setPeriodId} value={periodId}>
-                      <SelectTrigger aria-label={t('period')}>
-                        <SelectValue placeholder={t('noPeriod')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t('noPeriod')}</SelectItem>
-                        {periods
-                          .filter((period) => period.status === 'active')
-                          .map((period) => (
-                            <SelectItem key={period.id} value={period.id}>
-                              {period.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <SelectField
+                      allowEmpty={false}
+                      label={t('wallet')}
+                      onChange={setWalletId}
+                      options={options?.wallets}
+                      placeholder={t('chooseWallet')}
+                      searchPlaceholder={t('chooseWallet')}
+                      value={walletId}
+                    />
+                    <SelectField
+                      allowEmpty={false}
+                      label={t('category')}
+                      onChange={setCategoryId}
+                      options={(options?.financeCategories ?? []).flatMap(
+                        (category) =>
+                          category.id
+                            ? [{ id: category.id, name: category.name }]
+                            : []
+                      )}
+                      placeholder={t('chooseCategory')}
+                      searchPlaceholder={t('chooseCategory')}
+                      value={categoryId}
+                    />
+                    <SelectField
+                      allowEmpty={false}
+                      label={t('period')}
+                      onChange={setPeriodId}
+                      options={[
+                        { id: 'none', name: t('noPeriod') },
+                        ...periods.filter(
+                          (period) => period.status === 'active'
+                        ),
+                      ]}
+                      placeholder={t('noPeriod')}
+                      searchPlaceholder={t('period')}
+                      value={periodId}
+                    />
                     <label className="grid gap-1.5 text-sm sm:col-span-2">
                       <span className="font-medium">{t('notes')}</span>
                       <Textarea

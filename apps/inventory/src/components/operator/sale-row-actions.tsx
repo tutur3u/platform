@@ -16,16 +16,10 @@ import { setInventorySalesPeriodBulk } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SelectField } from './operator-form-fields';
 import { currency, money } from './operator-format';
 import { NO_PERIOD } from './sales-periods-panel';
 
@@ -138,19 +132,16 @@ export function BulkSalesPeriodToolbar({
         <CheckCheck className="h-3.5 w-3.5" />
         {t('selected', { count: sales.length })}
       </Badge>
-      <Select onValueChange={setPeriodId} value={periodId}>
-        <SelectTrigger className="h-8 min-w-44 flex-1 sm:flex-none">
-          <SelectValue placeholder={t('targetPeriod')} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NO_PERIOD}>{periodsT('unassigned')}</SelectItem>
-          {periods.map((period) => (
-            <SelectItem key={period.id} value={period.id}>
-              {period.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <SelectField
+        allowEmpty={false}
+        className="min-w-44 flex-1 sm:flex-none"
+        label={t('targetPeriod')}
+        onChange={setPeriodId}
+        options={[{ id: NO_PERIOD, name: periodsT('unassigned') }, ...periods]}
+        placeholder={t('targetPeriod')}
+        searchPlaceholder={t('targetPeriod')}
+        value={periodId}
+      />
       <Button
         className="h-8"
         disabled={mutation.isPending}

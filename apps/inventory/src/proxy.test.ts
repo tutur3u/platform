@@ -199,9 +199,10 @@ describe('Inventory proxy storefront access', () => {
     const response = await proxy(request);
 
     expect(response.status).toBe(413);
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:inventory:api',
-    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ prefixBase: 'proxy:inventory:api' })
+    );
     expect(mocks.clearSupabaseAuthCookies).toHaveBeenCalledWith(
       request,
       guardResponse
@@ -219,9 +220,10 @@ describe('Inventory proxy storefront access', () => {
 
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:inventory:api',
-    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ prefixBase: 'proxy:inventory:api' })
+    );
   });
 
   it('passes cron-secret requests through to inventory route auth', async () => {
@@ -234,9 +236,10 @@ describe('Inventory proxy storefront access', () => {
 
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:inventory:api',
-    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ prefixBase: 'proxy:inventory:api' })
+    );
   });
 
   it.each([
@@ -265,9 +268,10 @@ describe('Inventory proxy storefront access', () => {
 
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:inventory:api',
-    });
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ prefixBase: 'proxy:inventory:api' })
+    );
   });
 
   it('keeps non-POST Polar webhook API requests gated', async () => {
@@ -339,9 +343,70 @@ describe('Inventory proxy storefront access', () => {
       sessionMode: 'supabase-first',
       targetApp: 'inventory',
     });
-    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(request, {
-      prefixBase: 'proxy:inventory:api',
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ prefixBase: 'proxy:inventory:api' })
+    );
+  });
+
+  it('isolates workspace sales CRUD from unrelated Inventory mutations', async () => {
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/inventory/sales/sale-1',
+      { method: 'PATCH' }
+    );
+
+    await proxy(request);
+
+    const options = mocks.guardApiProxyRequest.mock.calls.at(-1)?.[1];
+    const policy = options?.additionalRoutePolicies?.[0];
+    const productRequest = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/inventory/products/product-1',
+      { method: 'PATCH' }
+    );
+
+    expect(policy).toMatchObject({
+      key: 'inventory-sales',
+      rateLimits: {
+        get: [],
+        mutate: [
+          { duration: '1 m', limit: 60, window: 'minute' },
+          { duration: '1 h', limit: 600, window: 'hour' },
+          { duration: '1 d', limit: 5000, window: 'day' },
+        ],
+      },
     });
+    expect(policy?.matches(request)).toBe(true);
+    expect(policy?.matches(productRequest)).toBe(false);
+  });
+
+  it('gives product and stock-row CRUD a dedicated bulk-safe mutation budget', async () => {
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/products/product-1/inventory',
+      { method: 'PATCH' }
+    );
+
+    await proxy(request);
+
+    const options = mocks.guardApiProxyRequest.mock.calls.at(-1)?.[1];
+    const policy = options?.additionalRoutePolicies?.[1];
+    const saleRequest = new NextRequest(
+      'https://inventory.tuturuuu.com/api/v1/workspaces/ws-1/inventory/sales/sale-1',
+      { method: 'PATCH' }
+    );
+
+    expect(policy).toMatchObject({
+      key: 'inventory-product-crud',
+      rateLimits: {
+        get: [],
+        mutate: [
+          { duration: '1 m', limit: 180, window: 'minute' },
+          { duration: '1 h', limit: 1200, window: 'hour' },
+          { duration: '1 d', limit: 10_000, window: 'day' },
+        ],
+      },
+    });
+    expect(policy?.matches(request)).toBe(true);
+    expect(policy?.matches(saleRequest)).toBe(false);
   });
 
   it('keeps unrelated API routes gated when app-session refresh fails', async () => {

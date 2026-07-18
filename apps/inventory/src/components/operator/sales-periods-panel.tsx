@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
   CalendarDays,
-  CalendarOff,
   Pencil,
   Plus,
   RotateCcw,
@@ -24,13 +23,6 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
@@ -41,6 +33,7 @@ import {
   OperatorDialogFooter,
   OperatorDialogHeader,
 } from './operator-dialog-shell';
+import { SelectValueField } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
@@ -100,30 +93,26 @@ export function SalesPeriodsPanel({
         </div>
       </div>
       <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
-        <Select
-          onValueChange={(value) =>
-            onSelect(value === ALL_PERIODS ? '' : value)
-          }
+        <SelectValueField
+          allowEmpty={false}
+          className="min-w-44 flex-1 sm:w-56 sm:flex-none"
+          label={t('title')}
+          onChange={(value) => onSelect(value === ALL_PERIODS ? '' : value)}
+          options={[
+            { label: t('all'), value: ALL_PERIODS },
+            {
+              label: t('unassigned'),
+              value: UNASSIGNED_SALES_PERIOD_FILTER,
+            },
+            ...periods.map((period) => ({
+              label: `${period.name} · ${period.sale_count}`,
+              value: period.id,
+            })),
+          ]}
+          placeholder={t('all')}
+          searchPlaceholder={t('title')}
           value={selectedPeriodId || ALL_PERIODS}
-        >
-          <SelectTrigger className="h-9 min-w-44 flex-1 sm:w-56 sm:flex-none">
-            <SelectValue placeholder={t('all')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_PERIODS}>{t('all')}</SelectItem>
-            <SelectItem value={UNASSIGNED_SALES_PERIOD_FILTER}>
-              <span className="inline-flex items-center gap-2">
-                <CalendarOff className="h-3.5 w-3.5" />
-                {t('unassigned')}
-              </span>
-            </SelectItem>
-            {periods.map((period) => (
-              <SelectItem key={period.id} value={period.id}>
-                {period.name} · {period.sale_count}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
         {selected ? (
           <SalesPeriodDialog
             fetchNextProductsPage={fetchNextProductsPage}
@@ -394,25 +383,22 @@ export function SalePeriodPicker({
   });
 
   return (
-    <Select
+    <SelectValueField
+      allowEmpty={false}
+      className="min-w-36 max-w-52"
       disabled={mutation.isPending}
-      onValueChange={(value) => mutation.mutate(value)}
+      label={t('assignmentLabel')}
+      onChange={(value) => mutation.mutate(value)}
+      options={[
+        { label: t('unassigned'), value: NO_PERIOD },
+        ...periods.map((period) => ({
+          label: period.name,
+          value: period.id,
+        })),
+      ]}
+      placeholder={t('unassigned')}
+      searchPlaceholder={t('assignmentLabel')}
       value={sale.period?.id ?? NO_PERIOD}
-    >
-      <SelectTrigger
-        aria-label={t('assignmentLabel')}
-        className="h-8 w-auto min-w-36 max-w-52 text-xs"
-      >
-        <SelectValue placeholder={t('unassigned')} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={NO_PERIOD}>{t('unassigned')}</SelectItem>
-        {periods.map((period) => (
-          <SelectItem key={period.id} value={period.id}>
-            {period.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    />
   );
 }

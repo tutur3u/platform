@@ -14,6 +14,7 @@ import {
   updateInventoryUnit,
   updateInventoryWarehouse,
 } from '@tuturuuu/internal-api/inventory';
+import { Accordion } from '@tuturuuu/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
@@ -104,11 +105,14 @@ export function StockWorkspacePanel({
               {t('warehousesDescription')}
             </p>
           </div>
-          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+          <Accordion
+            className="grid min-w-0 gap-3 lg:grid-cols-2"
+            type="multiple"
+          >
             {configs.map((config) => (
               <ResourceSection config={config} key={config.key} wsId={wsId} />
             ))}
-          </div>
+          </Accordion>
         </div>
       </TabsContent>
     </Tabs>

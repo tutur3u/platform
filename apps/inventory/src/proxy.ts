@@ -13,6 +13,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import type { ProxyRoutePolicy } from '@tuturuuu/utils/api-proxy-guard';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
@@ -41,6 +42,36 @@ const PUBLIC_POLAR_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/polar\/webhook\/[^/]+\/?$/u;
 const PUBLIC_SQUARE_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/square\/webhook(?:\/[^/]+)?\/?$/u;
+const INVENTORY_SALES_API_PATTERN =
+  /^\/api\/v1\/workspaces\/[^/]+\/inventory\/sales(?:\/|$)/u;
+const INVENTORY_PRODUCT_CRUD_API_PATTERN =
+  /^\/api\/v1\/workspaces\/[^/]+\/products\/[^/]+(?:\/inventory)?\/?$/u;
+const INVENTORY_SALES_ROUTE_POLICY = {
+  key: 'inventory-sales',
+  matches: (request: NextRequest) =>
+    INVENTORY_SALES_API_PATTERN.test(request.nextUrl.pathname),
+  rateLimits: {
+    get: [],
+    mutate: [
+      { duration: '1 m', limit: 60, window: 'minute' },
+      { duration: '1 h', limit: 600, window: 'hour' },
+      { duration: '1 d', limit: 5000, window: 'day' },
+    ],
+  },
+} satisfies ProxyRoutePolicy;
+const INVENTORY_PRODUCT_CRUD_ROUTE_POLICY = {
+  key: 'inventory-product-crud',
+  matches: (request: NextRequest) =>
+    INVENTORY_PRODUCT_CRUD_API_PATTERN.test(request.nextUrl.pathname),
+  rateLimits: {
+    get: [],
+    mutate: [
+      { duration: '1 m', limit: 180, window: 'minute' },
+      { duration: '1 h', limit: 1200, window: 'hour' },
+      { duration: '1 d', limit: 10_000, window: 'day' },
+    ],
+  },
+} satisfies ProxyRoutePolicy;
 
 function setLocaleCookie(
   response: NextResponse,
@@ -165,6 +196,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     const guardResponse = await guardApiProxyRequest(request, {
+      additionalRoutePolicies: [
+        INVENTORY_SALES_ROUTE_POLICY,
+        INVENTORY_PRODUCT_CRUD_ROUTE_POLICY,
+      ],
       prefixBase: 'proxy:inventory:api',
     });
 

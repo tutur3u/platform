@@ -188,6 +188,7 @@ export function SelectField({
   className,
   createText,
   creatingText,
+  disabled,
   emptyText,
   hint,
   label,
@@ -204,6 +205,7 @@ export function SelectField({
   className?: string;
   createText?: string;
   creatingText?: string;
+  disabled?: boolean;
   emptyText?: string;
   hint?: string;
   label: string;
@@ -278,6 +280,7 @@ export function SelectField({
         className="min-w-0"
         createText={createText}
         creatingText={creatingText}
+        disabled={disabled}
         emptyText={emptyText}
         onChange={(nextValue) =>
           onChange(typeof nextValue === 'string' ? nextValue : '')
@@ -297,6 +300,7 @@ export function SelectValueField({
   actions,
   allowEmpty = true,
   className,
+  disabled,
   emptyText,
   hint,
   label,
@@ -309,6 +313,7 @@ export function SelectValueField({
   actions?: ComboboxAction[];
   allowEmpty?: boolean;
   className?: string;
+  disabled?: boolean;
   emptyText?: string;
   hint?: string;
   label: string;
@@ -341,6 +346,7 @@ export function SelectValueField({
       <Combobox
         actions={actions}
         className="min-w-0"
+        disabled={disabled}
         emptyText={emptyText}
         onChange={(nextValue) =>
           onChange(typeof nextValue === 'string' ? nextValue : '')

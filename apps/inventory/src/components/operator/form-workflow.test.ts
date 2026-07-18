@@ -324,6 +324,15 @@ describe('Inventory operator form workflows', () => {
       'inventory.operator.forms.stockRowDescription',
       'inventory.operator.forms.stockRowTitle',
       'inventory.operator.forms.stockRow',
+      'inventory.operator.productBulk.apply',
+      'inventory.operator.productBulk.duplicateTargetError',
+      'inventory.operator.productBulk.edit',
+      'inventory.operator.productBulk.ownerToggle',
+      'inventory.operator.productBulk.quantityToggle',
+      'inventory.operator.productBulk.selectAll',
+      'inventory.operator.productBulk.selected',
+      'inventory.operator.productBulk.unlimited',
+      'inventory.operator.productBulk.warehouseToggle',
       'inventory.operator.stockWorkspace.tabs.stock',
       'inventory.operator.stockWorkspace.tabs.warehouses',
       'inventory.operator.stockWorkspace.warehousesDescription',
@@ -347,12 +356,23 @@ describe('Inventory operator form workflows', () => {
 
     expect(productsSource).toContain("view === 'stock'");
     expect(productsSource).toContain('toStockTableRows');
+    expect(productsSource).toContain('ProductBulkToolbar');
     expect(productsSource).toContain("t('columns.readiness')");
     expect(productsSource).toContain("t('columns.coverage')");
     expect(productsSource).toContain("t('columns.available')");
     expect(rowsSource).toContain('OperationsTable');
     expect(rowsSource).toContain('getStorefrontColumns');
     expect(rowsSource).toContain('getBundleColumns');
+  });
+
+  it('renders stock setup resources inside their required accordion provider', () => {
+    const stockWorkspaceSource = source('stock-workspace-panel.tsx');
+
+    expect(stockWorkspaceSource).toContain(
+      "import { Accordion } from '@tuturuuu/ui/accordion'"
+    );
+    expect(stockWorkspaceSource).toContain('<Accordion');
+    expect(stockWorkspaceSource).toContain('<ResourceSection');
   });
 
   it('supports direct storefront hero uploads in create and edit flows', () => {

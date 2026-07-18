@@ -8,15 +8,9 @@ import type {
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SelectValueField } from './operator-form-fields';
 
 export function SalesPeriodProductRules({
   fetchNextPage,
@@ -60,21 +54,21 @@ export function SalesPeriodProductRules({
           </p>
         </div>
       </div>
-      <Select
-        onValueChange={(value) =>
+      <SelectValueField
+        allowEmpty={false}
+        label={t('productRules')}
+        onChange={(value) =>
           onScopeChange(value as InventorySalesPeriodProductScope)
         }
+        options={[
+          { label: t('scopeAll'), value: 'all' },
+          { label: t('scopeAllowlist'), value: 'allowlist' },
+          { label: t('scopeBlocklist'), value: 'blocklist' },
+        ]}
+        placeholder={t('scopeAll')}
+        searchPlaceholder={t('productRules')}
         value={scope}
-      >
-        <SelectTrigger className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t('scopeAll')}</SelectItem>
-          <SelectItem value="allowlist">{t('scopeAllowlist')}</SelectItem>
-          <SelectItem value="blocklist">{t('scopeBlocklist')}</SelectItem>
-        </SelectContent>
-      </Select>
+      />
       {scope === 'all' ? null : (
         <div className="grid gap-2">
           <div className="flex items-center gap-2">

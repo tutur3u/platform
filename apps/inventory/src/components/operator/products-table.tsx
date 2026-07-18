@@ -15,6 +15,7 @@ import type {
   InventoryProductSummary,
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -29,6 +30,10 @@ import {
   numberOrZero,
   stockAmountFromRecords,
 } from './operator-stock';
+import {
+  type ProductBulkSelection,
+  ProductBulkToolbar,
+} from './product-bulk-actions';
 import { ProductEditDialog } from './product-row-actions';
 import {
   type ProductBadge,
@@ -48,6 +53,7 @@ type ProductTableRow = {
   badges: ProductBadge[];
   id: string;
   inventory: Record<string, unknown>;
+  inventoryIndex: number | null;
   isLowStock: boolean;
   product: InventoryProductSummary;
   stockState: ReturnType<typeof getInventoryStockState>;
@@ -72,6 +78,7 @@ export function ProductsTable({
   ) as OperatorTranslator;
   const wsCurrency = useWorkspaceCurrency();
   const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   if (rows.length === 0) return <EmptyRow label={t('empty')} />;
 
@@ -79,15 +86,46 @@ export function ProductsTable({
     view === 'stock'
       ? rows.flatMap((product) => toStockTableRows(product, costingProfiles, t))
       : rows.map((product) => toProductTableRow(product, costingProfiles, t));
+  const selectedRows = tableRows.filter((row) => selectedIds.has(row.id));
+  const bulkSelections: ProductBulkSelection[] = selectedRows.map((row) => ({
+    inventoryIndex: row.inventoryIndex,
+    key: row.id,
+    product: row.product,
+  }));
   const columns = getProductTableColumns({
     currencyCode: wsCurrency,
+    isSelected: (id) => selectedIds.has(id),
     onEdit: setEditing,
+    onSelect: (id, selected) => {
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        if (selected) next.add(id);
+        else next.delete(id);
+        return next;
+      });
+    },
     t,
     view,
   });
 
   return (
-    <>
+    <div className="grid min-w-0 gap-3">
+      <ProductBulkToolbar
+        allSelected={
+          tableRows.length > 0 && selectedRows.length === tableRows.length
+        }
+        formOptions={formOptions}
+        onClear={() => setSelectedIds(new Set())}
+        onSelectAll={(selected) =>
+          setSelectedIds(
+            selected ? new Set(tableRows.map((row) => row.id)) : new Set()
+          )
+        }
+        selections={bulkSelections}
+        totalCount={tableRows.length}
+        view={view}
+        wsId={wsId}
+      />
       <OperationsTable
         ariaLabel={
           view === 'stock' ? t('views.stock.title') : t('views.catalog.title')
@@ -115,18 +153,22 @@ export function ProductsTable({
           wsId={wsId}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 
 function getProductTableColumns({
   currencyCode,
+  isSelected,
   onEdit,
+  onSelect,
   t,
   view,
 }: {
   currencyCode: string;
+  isSelected: (id: string) => boolean;
   onEdit: (product: InventoryProductSummary) => void;
+  onSelect: (id: string, selected: boolean) => void;
   t: OperatorTranslator;
   view: string;
 }): OperationsTableColumn<ProductTableRow>[] {
@@ -154,7 +196,14 @@ function getProductTableColumns({
         className: 'w-[26rem]',
         header: t('columns.item'),
         key: 'item',
-        render: ({ product }) => <ProductIdentity product={product} />,
+        render: (row) => (
+          <SelectableProductIdentity
+            onSelect={onSelect}
+            row={row}
+            selected={isSelected(row.id)}
+            selectLabel={t('productBulk.selectRow')}
+          />
+        ),
         sortValue: ({ product }) => product.name,
       },
       {
@@ -222,7 +271,14 @@ function getProductTableColumns({
       className: 'w-[28rem]',
       header: t('columns.item'),
       key: 'item',
-      render: ({ product }) => <ProductIdentity product={product} />,
+      render: (row) => (
+        <SelectableProductIdentity
+          onSelect={onSelect}
+          row={row}
+          selected={isSelected(row.id)}
+          selectLabel={t('productBulk.selectRow')}
+        />
+      ),
       sortValue: ({ product }) => product.name,
     },
     {
@@ -299,6 +355,7 @@ function toProductTableRow(
   t: OperatorTranslator,
   options?: {
     inventory?: Record<string, unknown>;
+    inventoryIndex?: number | null;
     rowId?: string;
     stock?: Record<string, unknown>;
   }
@@ -362,6 +419,7 @@ function toProductTableRow(
     ],
     id: options?.rowId ?? product.id,
     inventory,
+    inventoryIndex: options?.inventoryIndex ?? null,
     isLowStock,
     product,
     stockState,
@@ -378,6 +436,7 @@ function toStockTableRows(
   return inventoryRows.map((inventory, index) =>
     toProductTableRow(product, costingProfiles, t, {
       inventory,
+      inventoryIndex: product.inventory?.length ? index : null,
       rowId: [
         product.id,
         stringField(inventory, 'warehouse_id') ?? 'missing-warehouse',
@@ -386,6 +445,31 @@ function toStockTableRows(
       ].join(':'),
       stock: product.stock?.[index],
     })
+  );
+}
+
+function SelectableProductIdentity({
+  onSelect,
+  row,
+  selected,
+  selectLabel,
+}: {
+  onSelect: (id: string, selected: boolean) => void;
+  row: ProductTableRow;
+  selected: boolean;
+  selectLabel: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <Checkbox
+        aria-label={`${selectLabel}: ${row.product.name}`}
+        checked={selected}
+        onCheckedChange={(checked) => onSelect(row.id, Boolean(checked))}
+      />
+      <div className="min-w-0 flex-1">
+        <ProductIdentity product={row.product} />
+      </div>
+    </div>
   );
 }
 

@@ -26,16 +26,27 @@ describe('Payments route migration', () => {
     expect(source).toMatch(/redirect\(`\/\$\{wsId\}\/payments`\)/u);
   });
 
-  it('keeps provider changes read-only until the operator explicitly unlocks them', () => {
-    const source = readFileSync(
+  it('keeps provider changes inside the guarded sync dialog', () => {
+    const observabilitySource = readFileSync(
       join(
         inventoryRoot,
         'src/components/operator/square-sync-observability-panel.tsx'
       ),
       'utf8'
     );
-    expect(source).toContain('useState(false)');
-    expect(source).toContain('setActionsEnabled((value) => !value)');
-    expect(source).toContain('actionsEnabled={actionsEnabled}');
+    const dialogSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-catalog-sync-dialog.tsx'
+      ),
+      'utf8'
+    );
+
+    expect(observabilitySource).toContain('dialogOpen={syncDialogOpen}');
+    expect(observabilitySource).toContain(
+      'onDialogOpenChange={setSyncDialogOpen}'
+    );
+    expect(dialogSource).toContain('<OperatorDialogTabs');
+    expect(dialogSource).toContain("t('safetyDescription')");
   });
 });
