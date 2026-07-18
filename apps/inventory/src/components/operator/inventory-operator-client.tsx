@@ -22,6 +22,7 @@ import { CommercePanel } from './commerce-panel';
 import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import { InventoryGuidance } from './inventory-guidance';
+import { OperatorAdvancedFilters } from './operator-advanced-filters';
 import {
   InfiniteListFooter,
   LoadingRows,
@@ -37,6 +38,7 @@ import type {
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
 import { PaymentsHubPanel } from './payments-hub-panel';
+import { filterInventoryProducts } from './product-filters';
 import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
@@ -61,7 +63,7 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = ['checkouts', 'sales', 'revenue-share'] as const;
+const commerceTabs = ['checkouts', 'cart', 'sales', 'revenue-share'] as const;
 const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
@@ -84,7 +86,16 @@ export function InventoryOperatorClient({
     ? (tabValue as InventoryCatalogTab)
     : 'products';
   const data = useInventoryData(wsId, view, { catalogTab, commerceTab });
-  const products = data.products.data?.pages.flatMap((page) => page.data) ?? [];
+  const loadedProducts =
+    data.products.data?.pages.flatMap((page) => page.data) ?? [];
+  const products = useMemo(
+    () =>
+      filterInventoryProducts(loadedProducts, {
+        ownerId: data.filters.productOwner,
+        warehouseId: data.filters.productWarehouse,
+      }),
+    [data.filters.productOwner, data.filters.productWarehouse, loadedProducts]
+  );
   const categories =
     data.categories.data?.pages.flatMap((page) => page.data) ?? [];
   const periodProducts =
@@ -135,7 +146,9 @@ export function InventoryOperatorClient({
     if (
       view === 'promotions' ||
       (view === 'commerce' &&
-        (commerceTab === 'sales' || commerceTab === 'revenue-share'))
+        (commerceTab === 'cart' ||
+          commerceTab === 'sales' ||
+          commerceTab === 'revenue-share'))
     ) {
       return [all];
     }
@@ -217,8 +230,15 @@ export function InventoryOperatorClient({
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
     view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
-    view === 'commerce' && commerceTab === 'sales' ? data.salesPeriods : null,
-    view === 'commerce' && commerceTab === 'sales' ? data.formOptions : null,
+    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+      ? data.salesPeriods
+      : null,
+    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+      ? data.periodProducts
+      : null,
+    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+      ? data.formOptions
+      : null,
     view === 'commerce' && commerceTab === 'revenue-share'
       ? data.revenueShares
       : null,
@@ -257,13 +277,19 @@ export function InventoryOperatorClient({
   const commerceLoading =
     view === 'commerce' && commerceTab === 'checkouts'
       ? data.checkouts.isPending || data.checkouts.isFetching
-      : view === 'commerce' && commerceTab === 'sales'
-        ? data.sales.isPending ||
-          data.salesPeriods.isPending ||
-          data.commerceSummary.isPending
-        : view === 'commerce' && commerceTab === 'revenue-share'
-          ? data.revenueShares.isPending || data.revenueShares.isFetching
-          : false;
+      : view === 'commerce' && commerceTab === 'cart'
+        ? data.periodProducts.isPending ||
+          data.formOptions.isPending ||
+          data.salesPeriods.isPending
+        : view === 'commerce' && commerceTab === 'sales'
+          ? data.sales.isPending ||
+            data.salesPeriods.isPending ||
+            data.commerceSummary.isPending ||
+            data.periodProducts.isPending ||
+            data.formOptions.isPending
+          : view === 'commerce' && commerceTab === 'revenue-share'
+            ? data.revenueShares.isPending || data.revenueShares.isFetching
+            : false;
 
   const headerActions =
     view === 'storefront' ? (
@@ -292,6 +318,15 @@ export function InventoryOperatorClient({
             statusOptions={statusOptions}
           />
         ) : null}
+        {((view === 'stock' && tabValue !== 'warehouses') ||
+          (view === 'catalog' && catalogTab === 'products')) && (
+          <OperatorAdvancedFilters
+            filters={data.filters}
+            mode="products"
+            options={data.formOptions.data}
+            setFilters={data.setFilters}
+          />
+        )}
         <div className="grid gap-4">
           {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
           {isError ? (
@@ -449,8 +484,10 @@ export function InventoryOperatorClient({
                 data.periodProducts.isFetchingNextPage
               }
               formOptions={data.formOptions.data}
+              filters={data.filters}
               products={periodProducts}
               selectedPeriodId={data.filters.period}
+              setFilters={data.setFilters}
               setPeriodId={(period) => {
                 void data.setFilters({ period });
               }}

@@ -14,6 +14,18 @@ describe('CommercePanel', () => {
         checkouts={[]}
         fetchNextProductsPage={() => undefined}
         fetchNextSalesPage={() => undefined}
+        filters={{
+          productCategory: '',
+          productOwner: '',
+          productSort: 'created-desc',
+          productWarehouse: '',
+          q: '',
+          saleCategory: '',
+          saleCreator: '',
+          saleSort: 'date-desc',
+          saleWarehouse: '',
+          status: 'all',
+        }}
         hasNextProductsPage={false}
         hasNextSalesPage={false}
         isFetchingNextProductsPage={false}
@@ -27,6 +39,7 @@ describe('CommercePanel', () => {
         salesPeriods={[]}
         selectedPeriodId=""
         setPeriodId={() => undefined}
+        setFilters={() => undefined}
         setTab={() => undefined}
         tab="sales"
         wsId="ws-1"
@@ -34,6 +47,7 @@ describe('CommercePanel', () => {
     );
 
     expect(html).toContain('checkouts');
+    expect(html).toContain('cart');
     expect(html).toContain('sales');
     expect(html).not.toContain('promotions');
     expect(html).toContain('revenueShare');

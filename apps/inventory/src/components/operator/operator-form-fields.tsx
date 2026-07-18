@@ -1,6 +1,15 @@
 'use client';
 
-import { Info } from '@tuturuuu/icons';
+import {
+  AlignLeft,
+  CircleDollarSign,
+  Hash,
+  Info,
+  ListFilter,
+  Palette,
+  SlidersHorizontal,
+  TextCursorInput,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
@@ -47,9 +56,18 @@ export function HintIcon({ hint }: { hint: string }) {
  * forms approachable for non-technical operators without cluttering the layout
  * with permanent helper text.
  */
-export function FieldLabel({ hint, label }: { hint?: string; label: string }) {
+export function FieldLabel({
+  hint,
+  icon: Icon,
+  label,
+}: {
+  hint?: string;
+  icon?: typeof Info;
+  label: string;
+}) {
   return (
     <span className="flex items-center gap-1.5 font-medium">
+      {Icon ? <Icon className="h-3.5 w-3.5 text-muted-foreground" /> : null}
       {label}
       {hint ? <HintIcon hint={hint} /> : null}
     </span>
@@ -60,8 +78,10 @@ export function TextField({
   className,
   disabled,
   hint,
+  icon = TextCursorInput,
   inputMode,
   label,
+  maxLength,
   onChange,
   placeholder,
   value,
@@ -69,6 +89,7 @@ export function TextField({
   className?: string;
   disabled?: boolean;
   hint?: string;
+  icon?: typeof Info;
   inputMode?:
     | 'decimal'
     | 'email'
@@ -78,17 +99,19 @@ export function TextField({
     | 'text'
     | 'url';
   label: string;
+  maxLength?: number;
   onChange: (value: string) => void;
   placeholder: string;
   value: string;
 }) {
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <FieldLabel hint={hint} label={label} />
+      <FieldLabel hint={hint} icon={icon} label={label} />
       <Input
         className="h-10"
         disabled={disabled}
         inputMode={inputMode}
+        maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         value={value}
@@ -100,13 +123,13 @@ export function TextField({
 export function NumberField(
   props: Omit<Parameters<typeof TextField>[0], 'inputMode'>
 ) {
-  return <TextField {...props} inputMode="numeric" />;
+  return <TextField icon={Hash} {...props} inputMode="numeric" />;
 }
 
 export function DecimalField(
   props: Omit<Parameters<typeof TextField>[0], 'inputMode'>
 ) {
-  return <TextField {...props} inputMode="decimal" />;
+  return <TextField icon={CircleDollarSign} {...props} inputMode="decimal" />;
 }
 
 /**
@@ -131,7 +154,7 @@ export function ColorField({
 }) {
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <FieldLabel hint={hint} label={label} />
+      <FieldLabel hint={hint} icon={Palette} label={label} />
       <div className="flex min-w-0 items-center gap-2">
         <ColorPicker
           aria-label={label}
@@ -170,7 +193,7 @@ export function TextAreaField({
 }) {
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <FieldLabel hint={hint} label={label} />
+      <FieldLabel hint={hint} icon={AlignLeft} label={label} />
       <Textarea
         className="min-h-20"
         maxLength={maxLength}
@@ -274,7 +297,7 @@ export function SelectField({
 
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <FieldLabel hint={hint} label={label} />
+      <FieldLabel hint={hint} icon={ListFilter} label={label} />
       <Combobox
         actions={actions}
         className="min-w-0"
@@ -342,7 +365,7 @@ export function SelectValueField({
 
   return (
     <label className={cn('grid min-w-0 gap-1 text-sm', className)}>
-      <FieldLabel hint={hint} label={label} />
+      <FieldLabel hint={hint} icon={ListFilter} label={label} />
       <Combobox
         actions={actions}
         className="min-w-0"
@@ -384,7 +407,10 @@ export function ToggleField({
         checked={checked}
         onCheckedChange={(nextChecked) => onChange(nextChecked === true)}
       />
-      <span className="flex-1">{children}</span>
+      <span className="flex min-w-0 flex-1 items-center gap-1.5">
+        <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        {children}
+      </span>
       {hint ? <HintIcon hint={hint} /> : null}
     </label>
   );

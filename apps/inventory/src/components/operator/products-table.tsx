@@ -87,7 +87,22 @@ export function ProductsTable({
   const [editing, setEditing] = useState<InventoryProductSummary | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
-  if (rows.length === 0) return <EmptyRow label={t('empty')} />;
+  if (rows.length === 0) {
+    return (
+      <div className="grid gap-3">
+        <EmptyRow label={t('empty')} />
+        {pagination?.hasNextPage ? (
+          <InfiniteListFooter
+            hasNextPage
+            isFetchingNextPage={pagination.isFetchingNextPage}
+            loadedCount={0}
+            onLoadMore={pagination.fetchNextPage}
+            totalCount={pagination.totalCount}
+          />
+        ) : null}
+      </div>
+    );
+  }
 
   const tableRows =
     view === 'stock'

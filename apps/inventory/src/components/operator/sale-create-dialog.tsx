@@ -6,9 +6,11 @@ import {
   ArrowRight,
   CheckCircle2,
   CreditCard,
+  Package,
   PackagePlus,
   Plus,
   ReceiptText,
+  Search,
 } from '@tuturuuu/icons';
 import type {
   InventoryProductFormOptionsResponse,
@@ -20,7 +22,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import {
@@ -29,7 +30,7 @@ import {
   OperatorDialogHeader,
   OperatorDialogTabs,
 } from './operator-dialog-shell';
-import { SelectField } from './operator-form-fields';
+import { SelectField, TextAreaField, TextField } from './operator-form-fields';
 import { currency } from './operator-format';
 import {
   CartEditor,
@@ -44,21 +45,31 @@ export function SaleCreateDialog({
   options,
   periods,
   products,
+  fetchNextProductsPage,
+  hasNextProductsPage = false,
+  isFetchingNextProductsPage = false,
   workspaceCurrency,
   wsId,
 }: {
   options?: InventoryProductFormOptionsResponse;
   periods: InventorySalesPeriod[];
   products: InventoryProductSummary[];
+  fetchNextProductsPage?: () => unknown;
+  hasNextProductsPage?: boolean;
+  isFetchingNextProductsPage?: boolean;
   workspaceCurrency: string;
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.commerce.createSale');
+  const paginationT = useTranslations('inventory.operator.pagination');
+  const filtersT = useTranslations('inventory.operator.filters');
   const queryClient = useQueryClient();
   const stockOptions = useMemo(() => getSaleStockOptions(products), [products]);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('items');
   const [query, setQuery] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('');
+  const [warehouseFilter, setWarehouseFilter] = useState('');
   const [lines, setLines] = useState<SaleCartLine[]>([]);
   const [content, setContent] = useState('');
   const [notes, setNotes] = useState('');
@@ -68,15 +79,43 @@ export function SaleCreateDialog({
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return needle
-      ? stockOptions.filter((option) =>
+    return stockOptions.filter(
+      (option) =>
+        (!productCategoryFilter ||
+          option.categoryId === productCategoryFilter) &&
+        (!warehouseFilter || option.warehouseId === warehouseFilter) &&
+        (!needle ||
           [option.productName, option.unitName, option.warehouseName]
             .join(' ')
             .toLowerCase()
-            .includes(needle)
-        )
-      : stockOptions;
-  }, [query, stockOptions]);
+            .includes(needle))
+    );
+  }, [productCategoryFilter, query, stockOptions, warehouseFilter]);
+  const productCategories = useMemo(
+    () =>
+      [
+        ...new Map(
+          stockOptions.flatMap((option) =>
+            option.categoryId
+              ? [[option.categoryId, option.categoryName ?? option.categoryId]]
+              : []
+          )
+        ),
+      ].map(([id, name]) => ({ id, name })),
+    [stockOptions]
+  );
+  const warehouses = useMemo(
+    () =>
+      [
+        ...new Map(
+          stockOptions.map((option) => [
+            option.warehouseId,
+            option.warehouseName,
+          ])
+        ),
+      ].map(([id, name]) => ({ id, name })),
+    [stockOptions]
+  );
   const total = lines.reduce(
     (sum, line) => sum + line.price * line.quantity,
     0
@@ -93,6 +132,8 @@ export function SaleCreateDialog({
     const categories = options?.financeCategories ?? [];
     setTab('items');
     setQuery('');
+    setProductCategoryFilter('');
+    setWarehouseFilter('');
     setLines([]);
     setContent(t('defaultTitle'));
     setNotes('');
@@ -214,24 +255,56 @@ export function SaleCreateDialog({
                 content: (
                   <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
                     <section className="grid min-w-0 content-start gap-3">
-                      <Input
-                        aria-label={t('search')}
-                        autoComplete="off"
-                        name="product-search"
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder={t('search')}
-                        value={query}
-                      />
+                      <label className="relative flex items-center">
+                        <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          aria-label={t('search')}
+                          autoComplete="off"
+                          className="pl-9"
+                          name="product-search"
+                          onChange={(event) => setQuery(event.target.value)}
+                          placeholder={t('search')}
+                          value={query}
+                        />
+                      </label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <SelectField
+                          label={filtersT('category')}
+                          onChange={setProductCategoryFilter}
+                          options={productCategories}
+                          placeholder={filtersT('allCategories')}
+                          value={productCategoryFilter}
+                        />
+                        <SelectField
+                          label={filtersT('warehouse')}
+                          onChange={setWarehouseFilter}
+                          options={warehouses}
+                          placeholder={filtersT('allWarehouses')}
+                          value={warehouseFilter}
+                        />
+                      </div>
                       <div className="grid gap-2 sm:max-h-[24rem] sm:overflow-y-auto sm:pr-1">
                         {filteredOptions.map((option) => {
                           const soldOut =
                             option.amount !== null && option.amount <= 0;
                           return (
                             <div
-                              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3"
+                              className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3"
                               key={option.key}
                             >
-                              <div className="min-w-0 flex-1">
+                              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40">
+                                {option.imageUrl ? (
+                                  // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
+                                  <img
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                    src={option.imageUrl}
+                                  />
+                                ) : (
+                                  <Package className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
                                 <p className="truncate font-medium text-sm">
                                   {option.productName}
                                 </p>
@@ -269,6 +342,19 @@ export function SaleCreateDialog({
                             {t('emptyProducts')}
                           </p>
                         ) : null}
+                        {hasNextProductsPage ? (
+                          <Button
+                            className="w-full"
+                            disabled={isFetchingNextProductsPage}
+                            onClick={() => fetchNextProductsPage?.()}
+                            type="button"
+                            variant="outline"
+                          >
+                            {isFetchingNextProductsPage
+                              ? paginationT('loadingMore')
+                              : paginationT('loadMore')}
+                          </Button>
+                        ) : null}
                       </div>
                     </section>
                     <CartEditor
@@ -285,16 +371,14 @@ export function SaleCreateDialog({
               {
                 content: (
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="grid gap-1.5 text-sm sm:col-span-2">
-                      <span className="font-medium">{t('saleName')}</span>
-                      <Input
-                        autoComplete="off"
-                        maxLength={500}
-                        name="sale-name"
-                        onChange={(event) => setContent(event.target.value)}
-                        value={content}
-                      />
-                    </label>
+                    <TextField
+                      className="sm:col-span-2"
+                      label={t('saleName')}
+                      maxLength={500}
+                      onChange={setContent}
+                      placeholder={t('defaultTitle')}
+                      value={content}
+                    />
                     <SelectField
                       allowEmpty={false}
                       label={t('wallet')}
@@ -332,17 +416,14 @@ export function SaleCreateDialog({
                       searchPlaceholder={t('period')}
                       value={periodId}
                     />
-                    <label className="grid gap-1.5 text-sm sm:col-span-2">
-                      <span className="font-medium">{t('notes')}</span>
-                      <Textarea
-                        autoComplete="off"
-                        maxLength={2000}
-                        name="sale-notes"
-                        onChange={(event) => setNotes(event.target.value)}
-                        placeholder={t('notesPlaceholder')}
-                        value={notes}
-                      />
-                    </label>
+                    <TextAreaField
+                      className="sm:col-span-2"
+                      label={t('notes')}
+                      maxLength={2000}
+                      onChange={setNotes}
+                      placeholder={t('notesPlaceholder')}
+                      value={notes}
+                    />
                     {!(options?.wallets?.length ?? 0) ||
                     !(options?.financeCategories?.length ?? 0) ? (
                       <p className="rounded-lg border border-dashed p-3 text-muted-foreground text-sm sm:col-span-2">

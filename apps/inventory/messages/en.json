@@ -1075,6 +1075,7 @@
           "updateSuccess": "Updated {count, plural, one {# sale} other {# sales}}"
         },
         "cancelSquare": "Cancel terminal",
+        "cartDescription": "Build an in-person order with live stock, then review revenue routing before recording the sale.",
         "categoryLabel": "Category",
         "createSale": {
           "addItem": "Add {name}",
@@ -1132,9 +1133,13 @@
         "emptyDescriptions": {
           "revenueShare": "Revenue share earnings will appear here after finalized sales include eligible stock rows."
         },
+        "emptyLineItems": "No sold items are attached to this record.",
         "endOfSales": "All matching sales are loaded",
+        "expandHint": "Grouped by product",
         "items": "{count, plural, one {# item} other {# items}}",
         "lineItems": "Line items",
+        "lineItemsError": "Sold items could not be loaded.",
+        "loadingLineItems": "Loading sold items…",
         "metrics": {
           "completed": "Completed",
           "completedDescription": "Checkout sessions finalized in this view",
@@ -1229,6 +1234,7 @@
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
+        "retryLineItems": "Retry",
         "saleFallback": "Invoice {id}",
         "sendSquare": "Send to terminal",
         "source": {
@@ -1243,6 +1249,7 @@
           "reserved": "Reserved"
         },
         "tabs": {
+          "cart": "Cart",
           "checkouts": "Checkouts",
           "label": "Commerce view",
           "revenueShare": "Revenue share",
@@ -1435,6 +1442,28 @@
         "revenueShare": "Partner revenue share earnings will appear after completed merchandise sales.",
         "sales": "Completed checkout and invoice sales will appear here.",
         "storefronts": "Create a storefront, customize its theme, then publish listings for buyers."
+      },
+      "filters": {
+        "allCategories": "All categories",
+        "allCreators": "All creators",
+        "allOwners": "All owners",
+        "allWarehouses": "All warehouses",
+        "amountHigh": "Highest revenue",
+        "amountLow": "Lowest revenue",
+        "category": "Category",
+        "clear": "Clear",
+        "creator": "Creator",
+        "description": "Narrow this view without losing your place.",
+        "done": "Done",
+        "nameAsc": "Name A–Z",
+        "nameDesc": "Name Z–A",
+        "newest": "Newest first",
+        "oldest": "Oldest first",
+        "owner": "Owner",
+        "quantityHigh": "Most units",
+        "sort": "Sort",
+        "title": "Filters and sorting",
+        "warehouse": "Warehouse"
       },
       "forms": {
         "accentColor": "Accent color",

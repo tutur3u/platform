@@ -38,8 +38,16 @@ export function useInventoryData(
   }
 ) {
   const [filters, setFilters] = useQueryStates({
+    productCategory: parseAsString.withDefault(''),
+    productOwner: parseAsString.withDefault(''),
+    productSort: parseAsString.withDefault('created-desc'),
+    productWarehouse: parseAsString.withDefault(''),
     q: parseAsString.withDefault(''),
     period: parseAsString.withDefault(''),
+    saleCategory: parseAsString.withDefault(''),
+    saleCreator: parseAsString.withDefault(''),
+    saleSort: parseAsString.withDefault('date-desc'),
+    saleWarehouse: parseAsString.withDefault(''),
     status: parseAsString.withDefault('all'),
   });
   const status = filters.status === 'all' ? undefined : filters.status;
@@ -60,9 +68,12 @@ export function useInventoryData(
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       listInventoryProducts(wsId, {
+        categoryId: filters.productCategory || undefined,
         page: pageParam,
-        pageSize: 50,
+        pageSize: filters.productOwner || filters.productWarehouse ? 1000 : 50,
         q: filters.q,
+        sortBy: filters.productSort.startsWith('name-') ? 'name' : 'created_at',
+        sortOrder: filters.productSort.endsWith('-asc') ? 'asc' : 'desc',
         status:
           status === 'active' || status === 'archived' ? status : undefined,
       }),
@@ -70,7 +81,18 @@ export function useInventoryData(
       const loaded = pages.reduce((count, page) => count + page.data.length, 0);
       return loaded < lastPage.count ? pages.length + 1 : undefined;
     },
-    queryKey: ['inventory', wsId, 'products', view, filters.q, filters.status],
+    queryKey: [
+      'inventory',
+      wsId,
+      'products',
+      view,
+      filters.q,
+      filters.status,
+      filters.productCategory,
+      filters.productOwner,
+      filters.productSort,
+      filters.productWarehouse,
+    ],
   });
   const categories = useInfiniteQuery({
     enabled: view === 'catalog' && catalogTab === 'categories',
@@ -146,7 +168,13 @@ export function useInventoryData(
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       listInventorySales(wsId, {
-        limit: 24,
+        limit:
+          filters.q ||
+          filters.saleCategory ||
+          filters.saleCreator ||
+          filters.saleWarehouse
+            ? 100
+            : 24,
         offset: pageParam,
         period_id:
           filters.period && filters.period !== UNASSIGNED_SALES_PERIOD_FILTER
@@ -161,7 +189,16 @@ export function useInventoryData(
         ? loaded
         : undefined;
     },
-    queryKey: ['inventory', wsId, 'sales', filters.period],
+    queryKey: [
+      'inventory',
+      wsId,
+      'sales',
+      filters.period,
+      filters.q,
+      filters.saleCategory,
+      filters.saleCreator,
+      filters.saleWarehouse,
+    ],
   });
   const commerceSummary = useQuery({
     enabled: view === 'commerce' && commerceTab === 'sales',
@@ -177,12 +214,16 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'commerce-summary', filters.period],
   });
   const salesPeriods = useQuery({
-    enabled: view === 'commerce' && commerceTab === 'sales',
+    enabled:
+      view === 'commerce' &&
+      (commerceTab === 'cart' || commerceTab === 'sales'),
     queryFn: () => listInventorySalesPeriods(wsId, { include_archived: true }),
     queryKey: ['inventory', wsId, 'sales-periods'],
   });
   const periodProducts = useInfiniteQuery({
-    enabled: view === 'commerce' && commerceTab === 'sales',
+    enabled:
+      view === 'commerce' &&
+      (commerceTab === 'cart' || commerceTab === 'sales'),
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       listInventoryProducts(wsId, {
@@ -227,7 +268,8 @@ export function useInventoryData(
         'storefront',
       ].includes(view) ||
       (view === 'catalog' && catalogTab === 'products') ||
-      (view === 'commerce' && commerceTab === 'sales'),
+      (view === 'commerce' &&
+        (commerceTab === 'cart' || commerceTab === 'sales')),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
   });

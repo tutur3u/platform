@@ -1075,6 +1075,7 @@
           "updateSuccess": "Đã cập nhật {count} doanh số"
         },
         "cancelSquare": "Hủy trên terminal",
+        "cartDescription": "Tạo đơn hàng trực tiếp từ tồn kho, sau đó rà soát nơi ghi doanh thu trước khi ghi nhận bán hàng.",
         "categoryLabel": "Danh mục",
         "createSale": {
           "addItem": "Thêm {name}",
@@ -1132,9 +1133,13 @@
         "emptyDescriptions": {
           "revenueShare": "Thu nhập chia doanh thu sẽ xuất hiện tại đây sau khi doanh số đã hoàn tất có dòng tồn kho đủ điều kiện."
         },
+        "emptyLineItems": "Bản ghi này không có sản phẩm đã bán.",
         "endOfSales": "Đã tải tất cả doanh số phù hợp",
+        "expandHint": "Đã nhóm theo sản phẩm",
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "lineItems": "Sản phẩm trong hóa đơn",
+        "lineItemsError": "Không thể tải sản phẩm đã bán.",
+        "loadingLineItems": "Đang tải sản phẩm đã bán…",
         "metrics": {
           "completed": "Hoàn tất",
           "completedDescription": "Phiên checkout đã hoàn tất trong chế độ xem này",
@@ -1229,6 +1234,7 @@
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
+        "retryLineItems": "Thử lại",
         "saleFallback": "Hóa đơn {id}",
         "sendSquare": "Gửi tới terminal",
         "source": {
@@ -1243,6 +1249,7 @@
           "reserved": "Đang giữ chỗ"
         },
         "tabs": {
+          "cart": "Giỏ hàng",
           "checkouts": "Checkout",
           "label": "Chế độ thương mại",
           "revenueShare": "Chia doanh thu",
@@ -1435,6 +1442,28 @@
         "revenueShare": "Khoản chia doanh thu theo đối tác sẽ xuất hiện sau khi bán hàng hoàn tất.",
         "sales": "Doanh số checkout và hóa đơn đã hoàn tất sẽ xuất hiện tại đây.",
         "storefronts": "Tạo cửa hàng, tùy chỉnh giao diện rồi xuất bản listing cho người mua."
+      },
+      "filters": {
+        "allCategories": "Tất cả danh mục",
+        "allCreators": "Tất cả người tạo",
+        "allOwners": "Tất cả chủ sở hữu",
+        "allWarehouses": "Tất cả kho",
+        "amountHigh": "Doanh thu cao nhất",
+        "amountLow": "Doanh thu thấp nhất",
+        "category": "Danh mục",
+        "clear": "Xóa bộ lọc",
+        "creator": "Người tạo",
+        "description": "Thu hẹp chế độ xem mà không mất vị trí hiện tại.",
+        "done": "Xong",
+        "nameAsc": "Tên A–Z",
+        "nameDesc": "Tên Z–A",
+        "newest": "Mới nhất trước",
+        "oldest": "Cũ nhất trước",
+        "owner": "Chủ sở hữu",
+        "quantityHigh": "Nhiều sản phẩm nhất",
+        "sort": "Sắp xếp",
+        "title": "Bộ lọc và sắp xếp",
+        "warehouse": "Kho"
       },
       "forms": {
         "accentColor": "Màu nhấn",

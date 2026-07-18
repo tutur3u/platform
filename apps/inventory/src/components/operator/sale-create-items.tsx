@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from '@tuturuuu/icons';
+import { Package, Trash2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -9,7 +9,10 @@ import { currency } from './operator-format';
 
 export type SaleStockOption = {
   amount: number | null;
+  categoryId: string | null;
+  categoryName: string | null;
   financeCategoryId: string | null;
+  imageUrl: string | null;
   key: string;
   price: number;
   productId: string;
@@ -41,9 +44,24 @@ export function CartEditor({
           key={line.key}
         >
           <div className="flex min-w-0 items-start gap-2">
-            <p className="min-w-0 flex-1 truncate font-medium text-sm">
-              {line.productName}
-            </p>
+            <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40">
+              {line.imageUrl ? (
+                // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
+                <img
+                  alt=""
+                  className="h-full w-full object-cover"
+                  src={line.imageUrl}
+                />
+              ) : (
+                <Package className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium text-sm">{line.productName}</p>
+              <p className="truncate text-muted-foreground text-xs">
+                {line.unitName} · {line.warehouseName}
+              </p>
+            </div>
             <Button
               aria-label={t('removeItem', { name: line.productName })}
               onClick={() =>
@@ -133,7 +151,10 @@ export function getSaleStockOptions(
       return [
         {
           amount: typeof raw.amount === 'number' ? raw.amount : null,
+          categoryId: product.category_id ?? null,
+          categoryName: product.category ?? null,
           financeCategoryId: product.finance_category_id ?? null,
+          imageUrl: product.avatar_url ?? null,
           key: `${product.id}:${unitId}:${warehouseId}`,
           price: typeof raw.price === 'number' ? raw.price : 0,
           productId: product.id,

@@ -6,6 +6,7 @@ describe('getSaleStockOptions', () => {
     expect(
       getSaleStockOptions([
         {
+          avatar_url: '/api/media/demo-product.webp',
           finance_category_id: 'category-1',
           id: 'product-1',
           inventory: [
@@ -25,6 +26,7 @@ describe('getSaleStockOptions', () => {
       expect.objectContaining({
         amount: 4,
         financeCategoryId: 'category-1',
+        imageUrl: '/api/media/demo-product.webp',
         price: 8.1,
         unitName: 'Each',
         warehouseName: 'Counter',

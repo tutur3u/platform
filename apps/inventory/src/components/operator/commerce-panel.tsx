@@ -5,6 +5,7 @@ import {
   CreditCard,
   Percent,
   ShieldCheck,
+  ShoppingCart,
   User,
 } from '@tuturuuu/icons';
 import type {
@@ -19,10 +20,11 @@ import type {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { CheckoutRows, RevenueShareRows, SaleRows } from './commerce-rows';
+import { OperatorAdvancedFilters } from './operator-advanced-filters';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
 import { LoadingRows } from './operator-shell';
-import type { InventoryCommerceTab } from './operator-types';
+import type { InventoryCommerceTab, InventoryFilters } from './operator-types';
 import { ProfitSummaryPanel } from './profit-summary-panel';
 import { SaleCreateDialog } from './sale-create-dialog';
 import { SalesPeriodsPanel } from './sales-periods-panel';
@@ -40,6 +42,7 @@ export function CommercePanel({
   fetchNextSalesPage,
   fetchNextProductsPage,
   formOptions,
+  filters,
   hasNextProductsPage,
   hasNextSalesPage,
   isFetchingNextProductsPage,
@@ -47,6 +50,7 @@ export function CommercePanel({
   products,
   selectedPeriodId,
   setPeriodId,
+  setFilters,
   setTab,
   tab,
   wsId,
@@ -62,6 +66,7 @@ export function CommercePanel({
   fetchNextSalesPage: () => unknown;
   fetchNextProductsPage: () => unknown;
   formOptions?: InventoryProductFormOptionsResponse;
+  filters: InventoryFilters;
   hasNextProductsPage: boolean;
   hasNextSalesPage: boolean;
   isFetchingNextProductsPage: boolean;
@@ -69,6 +74,7 @@ export function CommercePanel({
   products: InventoryProductSummary[];
   selectedPeriodId: string;
   setPeriodId: (periodId: string) => void;
+  setFilters: (value: Partial<InventoryFilters>) => unknown;
   setTab: (tab: InventoryCommerceTab) => void;
   tab: InventoryCommerceTab;
   wsId: string;
@@ -83,6 +89,7 @@ export function CommercePanel({
 
   const commerceTabs = [
     { icon: CreditCard, label: tabsT('checkouts'), value: 'checkouts' },
+    { icon: ShoppingCart, label: tabsT('cart'), value: 'cart' },
     { icon: ShieldCheck, label: tabsT('sales'), value: 'sales' },
     { icon: Percent, label: tabsT('revenueShare'), value: 'revenue-share' },
   ] as const;
@@ -124,7 +131,7 @@ export function CommercePanel({
       >
         <TabsList
           aria-label={tabsT('label')}
-          className="grid h-auto w-full grid-cols-3 gap-1 p-1"
+          className="grid h-auto w-full grid-cols-4 gap-1 p-1"
         >
           {commerceTabs.map(({ icon: Icon, label, value }) => (
             <TabsTrigger
@@ -144,13 +151,52 @@ export function CommercePanel({
             <CheckoutRows rows={checkouts} wsId={wsId} />
           )}
         </TabsContent>
+        <TabsContent value="cart">
+          {isLoading ? (
+            <LoadingRows />
+          ) : (
+            <div className="grid min-h-64 place-items-center rounded-xl border border-dashed bg-muted/15 p-5 text-center sm:p-8">
+              <div className="grid max-w-md justify-items-center gap-3">
+                <span className="grid h-12 w-12 place-items-center rounded-xl border bg-background shadow-sm">
+                  <ShoppingCart className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 className="font-semibold text-lg">{tabsT('cart')}</h2>
+                  <p className="mt-1 text-muted-foreground text-sm leading-6">
+                    {t('cartDescription')}
+                  </p>
+                </div>
+                <SaleCreateDialog
+                  fetchNextProductsPage={fetchNextProductsPage}
+                  hasNextProductsPage={hasNextProductsPage}
+                  isFetchingNextProductsPage={isFetchingNextProductsPage}
+                  options={formOptions}
+                  periods={salesPeriods}
+                  products={products}
+                  workspaceCurrency={workspaceCurrency}
+                  wsId={wsId}
+                />
+              </div>
+            </div>
+          )}
+        </TabsContent>
         <TabsContent value="sales">
           {isLoading ? (
             <LoadingRows />
           ) : (
             <div className="grid gap-3">
+              <OperatorAdvancedFilters
+                filters={filters}
+                mode="sales"
+                options={formOptions}
+                sales={sales}
+                setFilters={setFilters}
+              />
               <div className="flex justify-stretch sm:justify-end">
                 <SaleCreateDialog
+                  fetchNextProductsPage={fetchNextProductsPage}
+                  hasNextProductsPage={hasNextProductsPage}
+                  isFetchingNextProductsPage={isFetchingNextProductsPage}
                   options={formOptions}
                   periods={salesPeriods}
                   products={products}
@@ -178,8 +224,14 @@ export function CommercePanel({
                 hasNextPage={hasNextSalesPage}
                 isFetchingNextPage={isFetchingNextSalesPage}
                 periods={salesPeriods}
+                products={products}
                 query={query}
                 rows={sales}
+                saleCategory={filters.saleCategory}
+                saleCreator={filters.saleCreator}
+                saleSort={filters.saleSort}
+                saleWarehouse={filters.saleWarehouse}
+                financeCategories={formOptions?.financeCategories ?? []}
                 wallets={formOptions?.wallets ?? []}
                 workspaceCurrency={workspaceCurrency}
                 wsId={wsId}

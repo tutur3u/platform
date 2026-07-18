@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   CheckCircle2,
@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   InventoryCheckoutSession,
+  InventoryProductSummary,
   InventoryRevenueShareEarning,
   InventorySaleSummary,
   InventorySalesPeriod,
@@ -23,6 +24,12 @@ import {
   createInventorySquareTerminalCheckout,
   releaseInventoryCheckout,
 } from '@tuturuuu/internal-api/inventory';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -44,6 +51,8 @@ import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { groupInventorySalesByDate, localDateKey } from './sale-date-groups';
 import { SaleNoteDialog } from './sale-detail-panel';
+import { filterAndSortInventorySales } from './sale-filters';
+import { loadInventorySaleLines, SaleLineItems } from './sale-line-items';
 import {
   BulkSalesPeriodToolbar,
   SaleAmountPopover,
@@ -218,8 +227,14 @@ export function SaleRows({
   hasNextPage,
   isFetchingNextPage,
   periods,
+  products,
   query,
   rows,
+  financeCategories,
+  saleCategory,
+  saleCreator,
+  saleSort,
+  saleWarehouse,
   wallets,
   workspaceCurrency,
   wsId,
@@ -228,8 +243,14 @@ export function SaleRows({
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   periods: InventorySalesPeriod[];
+  products: InventoryProductSummary[];
   query: string;
   rows: InventorySaleSummary[];
+  financeCategories: Array<{ id?: string | null; name?: string }>;
+  saleCategory: string;
+  saleCreator: string;
+  saleSort: string;
+  saleWarehouse: string;
   wallets: Array<{ id: string; name: string }>;
   workspaceCurrency: string;
   wsId: string;
@@ -237,6 +258,37 @@ export function SaleRows({
   const t = useTranslations('inventory.operator');
   const locale = useLocale();
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const warehouseMatches = useQuery({
+    enabled: Boolean(saleWarehouse),
+    queryFn: async () => {
+      const matches = new Set<string>();
+      let cursor = 0;
+      const workers = Array.from(
+        { length: Math.min(3, rows.length) },
+        async () => {
+          while (cursor < rows.length) {
+            const sale = rows[cursor];
+            cursor += 1;
+            if (!sale) continue;
+            const lines = await loadInventorySaleLines(wsId, sale);
+            if (lines.some((line) => line.warehouse_id === saleWarehouse)) {
+              matches.add(`${sale.source}:${sale.id}`);
+            }
+          }
+        }
+      );
+      await Promise.all(workers);
+      return matches;
+    },
+    queryKey: [
+      'inventory',
+      wsId,
+      'sale-warehouse-filter',
+      saleWarehouse,
+      rows.map((sale) => `${sale.source}:${sale.id}`).join(','),
+    ],
+    staleTime: 60_000,
+  });
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -255,24 +307,28 @@ export function SaleRows({
     [fetchNextPage, hasNextPage, isFetchingNextPage]
   );
   const filteredRows = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return rows;
-
-    return rows.filter((row) =>
-      [
-        row.creator_name,
-        row.customer_name,
-        row.id,
-        row.notice,
-        row.owners?.join(' '),
-        row.completed_at,
-        row.created_at,
-        String(row.paid_amount),
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(needle))
-    );
-  }, [query, rows]);
+    const categoryName = financeCategories.find(
+      (category) => category.id === saleCategory
+    )?.name;
+    return filterAndSortInventorySales({
+      categoryName,
+      creator: saleCreator,
+      query,
+      rows,
+      sort: saleSort,
+      warehouseId: saleWarehouse,
+      warehouseMatches: warehouseMatches.data,
+    });
+  }, [
+    financeCategories,
+    query,
+    rows,
+    saleCategory,
+    saleCreator,
+    saleSort,
+    saleWarehouse,
+    warehouseMatches.data,
+  ]);
   const selectedRows = useMemo(
     () => rows.filter((row) => selectedKeys.has(`${row.source}:${row.id}`)),
     [rows, selectedKeys]
@@ -294,7 +350,25 @@ export function SaleRows({
 
   if (filteredRows.length === 0) {
     return (
-      <EmptyRow description={t('emptyDescriptions.sales')} label={t('empty')} />
+      <div className="grid gap-3">
+        <EmptyRow
+          description={t('emptyDescriptions.sales')}
+          label={t('empty')}
+        />
+        {hasNextPage ? (
+          <Button
+            className="w-full sm:mx-auto sm:w-auto"
+            disabled={isFetchingNextPage}
+            onClick={() => fetchNextPage()}
+            type="button"
+            variant="outline"
+          >
+            {isFetchingNextPage
+              ? t('pagination.loadingMore')
+              : t('pagination.loadMore')}
+          </Button>
+        ) : null}
+      </div>
     );
   }
 
@@ -358,112 +432,146 @@ export function SaleRows({
             </Badge>
             <div className="h-px flex-1 bg-border" />
           </div>
-          {group.rows.map((row) => {
-            const date = formatDate(row.completed_at ?? row.created_at, locale);
-            const isCheckoutSale = row.source === 'checkout_session';
-            const selectionKey = `${row.source}:${row.id}`;
+          <Accordion className="grid gap-2" type="multiple">
+            {group.rows.map((row) => {
+              const date = formatDate(
+                row.completed_at ?? row.created_at,
+                locale
+              );
+              const isCheckoutSale = row.source === 'checkout_session';
+              const selectionKey = `${row.source}:${row.id}`;
 
-            return (
-              <article
-                className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                key={selectionKey}
-              >
-                <div className="flex min-w-0 items-start gap-3">
-                  <Checkbox
-                    aria-label={t('commerce.bulk.selectSale')}
-                    checked={selectedKeys.has(selectionKey)}
-                    className="mt-0.5"
-                    onCheckedChange={(checked) => {
-                      setSelectedKeys((current) => {
-                        const next = new Set(current);
-                        if (checked) next.add(selectionKey);
-                        else next.delete(selectionKey);
-                        return next;
-                      });
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      {isCheckoutSale ? (
-                        <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      ) : (
-                        <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                      <p className="min-w-0 flex-1 truncate font-medium">
-                        {row.notice?.trim() ||
-                          row.customer_name?.trim() ||
-                          t('commerce.saleFallback', {
-                            id: row.id.slice(0, 8),
-                          })}
-                      </p>
-                      <StatusBadge
-                        value={
-                          isCheckoutSale
-                            ? t('commerce.source.checkout')
-                            : t('commerce.source.finance')
-                        }
+              return (
+                <AccordionItem
+                  className="overflow-hidden rounded-lg border border-border bg-card"
+                  key={selectionKey}
+                  value={selectionKey}
+                >
+                  <div className="grid gap-3 p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Checkbox
+                        aria-label={t('commerce.bulk.selectSale')}
+                        checked={selectedKeys.has(selectionKey)}
+                        className="mt-1"
+                        onCheckedChange={(checked) => {
+                          setSelectedKeys((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(selectionKey);
+                            else next.delete(selectionKey);
+                            return next;
+                          });
+                        }}
                       />
+                      <AccordionTrigger className="min-w-0 flex-1 gap-3 p-0 hover:no-underline">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
+                            {isCheckoutSale ? (
+                              <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                            <p className="min-w-0 flex-1 truncate font-medium">
+                              {row.notice?.trim() ||
+                                row.customer_name?.trim() ||
+                                t('commerce.saleFallback', {
+                                  id: row.id.slice(0, 8),
+                                })}
+                            </p>
+                            <StatusBadge
+                              value={
+                                isCheckoutSale
+                                  ? t('commerce.source.checkout')
+                                  : t('commerce.source.finance')
+                              }
+                            />
+                          </div>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+                            <span>
+                              {t('commerce.items', { count: row.items_count })}
+                            </span>
+                            {date ? (
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {date}
+                              </span>
+                            ) : null}
+                            {isCheckoutSale && row.public_token ? (
+                              <span className="font-mono">
+                                {row.public_token}
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {row.creator_name?.trim() ? (
+                              <StatusBadge
+                                value={t('commerce.creator', {
+                                  name: row.creator_name.trim(),
+                                })}
+                              />
+                            ) : null}
+                            {(row.owners ?? [])
+                              .filter((owner) => owner.trim())
+                              .map((owner) => (
+                                <StatusBadge
+                                  key={owner}
+                                  value={t('commerce.owner', {
+                                    name: owner.trim(),
+                                  })}
+                                />
+                              ))}
+                            {row.customer_name?.trim() && row.notice?.trim() ? (
+                              <StatusBadge
+                                value={t('commerce.customer', {
+                                  name: row.customer_name.trim(),
+                                })}
+                              />
+                            ) : null}
+                          </div>
+                        </div>
+                      </AccordionTrigger>
                     </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-                      <span>
-                        {t('commerce.items', { count: row.items_count })}
-                      </span>
-                      {date ? (
-                        <span className="inline-flex items-center gap-1">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {date}
-                        </span>
-                      ) : null}
-                      {isCheckoutSale && row.public_token ? (
-                        <span className="font-mono">{row.public_token}</span>
-                      ) : null}
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {row.creator_name?.trim() ? (
-                        <StatusBadge
-                          value={t('commerce.creator', {
-                            name: row.creator_name.trim(),
-                          })}
+                    <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                      <SalePeriodPicker
+                        periods={periods}
+                        sale={row}
+                        wsId={wsId}
+                      />
+                      {isCheckoutSale || wallets.length === 0 ? null : (
+                        <SaleQuickWalletPicker
+                          sale={row}
+                          wallets={wallets}
+                          wsId={wsId}
                         />
-                      ) : null}
-                      {(row.owners ?? [])
-                        .filter((owner) => owner.trim())
-                        .map((owner) => (
-                          <StatusBadge
-                            key={owner}
-                            value={t('commerce.owner', { name: owner.trim() })}
-                          />
-                        ))}
-                      {row.customer_name?.trim() && row.notice?.trim() ? (
-                        <StatusBadge
-                          value={t('commerce.customer', {
-                            name: row.customer_name.trim(),
-                          })}
-                        />
-                      ) : null}
+                      )}
+                      <SaleAmountPopover
+                        sale={row}
+                        workspaceCurrency={workspaceCurrency}
+                      />
+                      {isCheckoutSale ? null : (
+                        <SaleNoteDialog sale={row} wsId={wsId} />
+                      )}
                     </div>
                   </div>
-                </div>
-                <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
-                  <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
-                  {isCheckoutSale || wallets.length === 0 ? null : (
-                    <SaleQuickWalletPicker
+                  <AccordionContent className="border-t px-3 pt-3 pb-3 sm:pl-12">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="font-semibold text-sm">
+                        {t('commerce.lineItems')}
+                      </p>
+                      <span className="text-muted-foreground text-xs">
+                        {t('commerce.expandHint')}
+                      </span>
+                    </div>
+                    <SaleLineItems
+                      products={products}
                       sale={row}
-                      wallets={wallets}
+                      workspaceCurrency={workspaceCurrency}
                       wsId={wsId}
                     />
-                  )}
-                  <SaleAmountPopover
-                    sale={row}
-                    workspaceCurrency={workspaceCurrency}
-                  />
-                  {isCheckoutSale ? null : (
-                    <SaleNoteDialog sale={row} wsId={wsId} />
-                  )}
-                </div>
-              </article>
-            );
-          })}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         </section>
       ))}
       {hasNextPage ? (

@@ -150,20 +150,20 @@ async function getPeriodWithCount({
   if (error) throw error;
   if (!data) return null;
 
-  const [{ count, error: countError }, productRows] = await Promise.all([
-    privateInventory(sbAdmin)
-      .from('inventory_sales_period_assignments' as never)
-      .select('sale_id', { count: 'exact', head: true })
-      .eq('ws_id', wsId)
-      .eq('period_id', periodId),
+  const [visibleSales, productRows] = await Promise.all([
+    listInventoryCommerceSales({
+      limit: 1,
+      periodId,
+      sbAdmin,
+      wsId,
+    }),
     getPeriodProducts({ periodIds: [periodId], sbAdmin, wsId }),
   ]);
-  if (countError) throw countError;
   const [period] = attachPeriodProducts(
     [data as unknown as SalesPeriodRow],
     productRows
   );
-  return period ? { ...period, sale_count: count ?? 0 } : null;
+  return period ? { ...period, sale_count: visibleSales.count } : null;
 }
 
 export async function listInventorySalesPeriods({
@@ -183,32 +183,29 @@ export async function listInventorySalesPeriods({
     .order('created_at', { ascending: false });
   if (!includeArchived) periodsQuery = periodsQuery.eq('status', 'active');
 
-  const [{ data: periods, error: periodsError }, assignmentsResult] =
-    await Promise.all([
-      periodsQuery,
-      privateInventory(sbAdmin)
-        .from('inventory_sales_period_assignments' as never)
-        .select('period_id')
-        .eq('ws_id', wsId),
-    ]);
+  const { data: periods, error: periodsError } = await periodsQuery;
   if (periodsError) throw periodsError;
-  if (assignmentsResult.error) throw assignmentsResult.error;
 
   const rows = (periods ?? []) as unknown as SalesPeriodRow[];
-  const productRows = await getPeriodProducts({
-    periodIds: rows.map((period) => period.id),
-    sbAdmin,
-    wsId,
-  });
-  const counts = new Map<string, number>();
-  for (const assignment of (assignmentsResult.data ?? []) as Array<{
-    period_id: string;
-  }>) {
-    counts.set(
-      assignment.period_id,
-      (counts.get(assignment.period_id) ?? 0) + 1
-    );
-  }
+  const [productRows, visibleCounts] = await Promise.all([
+    getPeriodProducts({
+      periodIds: rows.map((period) => period.id),
+      sbAdmin,
+      wsId,
+    }),
+    Promise.all(
+      rows.map(async (period) => {
+        const sales = await listInventoryCommerceSales({
+          limit: 1,
+          periodId: period.id,
+          sbAdmin,
+          wsId,
+        });
+        return [period.id, sales.count] as const;
+      })
+    ),
+  ]);
+  const counts = new Map(visibleCounts);
   return attachPeriodProducts(rows, productRows).map((period) => ({
     ...period,
     sale_count: counts.get(period.id) ?? 0,

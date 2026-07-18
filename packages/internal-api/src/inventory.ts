@@ -1135,6 +1135,7 @@ export type InventorySaleSummary = {
 };
 
 export type InventorySaleLine = {
+  product_image_url?: string | null;
   product_id: string;
   product_name: string;
   owner_id: string | null;
