@@ -49,6 +49,24 @@ describe('SaleCreateDialog', () => {
     expect(commerceSource).toContain('mobileFab');
   });
 
+  it('keeps the mobile header and footer compact without duplicate close actions', () => {
+    const dialogSource = source();
+    const shellSource = readFileSync(
+      resolve(operatorDirectory, 'operator-dialog-shell.tsx'),
+      'utf8'
+    );
+
+    expect(dialogSource).toContain(
+      'bottom-[calc(1rem+env(safe-area-inset-bottom))]'
+    );
+    expect(dialogSource).toContain('mobileCollapsibleDescription');
+    expect(dialogSource).toContain('size="icon"');
+    expect(dialogSource).toContain('<Save');
+    expect(dialogSource).not.toContain('DialogClose');
+    expect(shellSource).toContain('<Accordion');
+    expect(shellSource).toContain('sm:hidden');
+  });
+
   it.each([
     ['en', 'Keep open'],
     ['vi', 'Giữ mở'],

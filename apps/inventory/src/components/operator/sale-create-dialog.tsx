@@ -15,6 +15,7 @@ import {
   PackagePlus,
   Pin,
   ReceiptText,
+  Save,
   ShoppingCart,
 } from '@tuturuuu/icons';
 import type {
@@ -28,7 +29,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -289,7 +290,7 @@ export function SaleCreateDialog({
           className={cn(
             'w-full touch-manipulation sm:w-auto',
             mobileFab &&
-              'fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 h-14 w-14 rounded-full shadow-xl sm:static sm:h-8 sm:w-auto sm:rounded-md sm:shadow-none'
+              'fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 h-14 w-14 rounded-full shadow-xl sm:static sm:h-8 sm:w-auto sm:rounded-md sm:shadow-none'
           )}
           size="sm"
           type="button"
@@ -303,6 +304,7 @@ export function SaleCreateDialog({
       <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('description')}
+          mobileCollapsibleDescription
           title={t('title')}
         />
         <form
@@ -487,81 +489,66 @@ export function SaleCreateDialog({
             ]}
             value={tab}
           />
-          <OperatorDialogFooter className="grid grid-cols-2 sm:flex">
-            <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-lg bg-muted/40 px-2.5 py-2 sm:mr-auto sm:w-auto sm:bg-transparent sm:p-0">
-              <p className="flex min-w-0 items-center gap-1.5 font-semibold text-sm tabular-nums">
-                <span className="sr-only">
-                  {t('total', {
-                    amount: currency(total, workspaceCurrency),
-                  })}
-                </span>
-                <CircleDollarSign className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span aria-hidden="true" className="truncate">
-                  {currency(total, workspaceCurrency)}
-                </span>
-              </p>
-              <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border bg-background/70 px-2 py-1 text-muted-foreground text-xs transition-colors hover:text-foreground">
-                <Checkbox
-                  aria-label={t('keepOpen')}
-                  checked={keepOpenAfterSale}
-                  className="h-4 w-4"
-                  disabled={mutation.isPending}
-                  onCheckedChange={(checked) =>
-                    setKeepOpenAfterSale(checked === true)
-                  }
-                />
-                <Pin className="h-3.5 w-3.5" />
-                <span>{t('keepOpen')}</span>
-              </label>
-            </div>
-            <DialogClose asChild>
-              <Button
-                className="hidden sm:inline-flex"
-                type="button"
-                variant="ghost"
-              >
-                {t('cancel')}
-              </Button>
-            </DialogClose>
+          <OperatorDialogFooter className="flex-row items-center gap-2">
+            <p className="mr-auto flex min-w-0 items-center gap-1.5 font-semibold text-sm tabular-nums">
+              <span className="sr-only">
+                {t('total', {
+                  amount: currency(total, workspaceCurrency),
+                })}
+              </span>
+              <CircleDollarSign className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span aria-hidden="true" className="truncate">
+                {currency(total, workspaceCurrency)}
+              </span>
+            </p>
+            <label className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md border bg-background/70 px-2 py-1 text-muted-foreground text-xs transition-colors hover:text-foreground">
+              <Checkbox
+                aria-label={t('keepOpen')}
+                checked={keepOpenAfterSale}
+                className="h-4 w-4"
+                disabled={mutation.isPending}
+                onCheckedChange={(checked) =>
+                  setKeepOpenAfterSale(checked === true)
+                }
+              />
+              <Pin className="h-3.5 w-3.5" />
+              <span>{t('keepOpen')}</span>
+            </label>
             {tabIndex > 0 ? (
               <Button
-                className="w-full touch-manipulation"
+                aria-label={t('back')}
+                className="shrink-0 touch-manipulation"
                 onClick={() => setTab(SALE_TABS[tabIndex - 1] ?? 'items')}
+                size="icon"
+                title={t('back')}
                 type="button"
                 variant="outline"
               >
                 <ArrowLeft className="h-4 w-4" />
-                {t('back')}
               </Button>
-            ) : (
-              <DialogClose asChild>
-                <Button
-                  className="w-full touch-manipulation sm:hidden"
-                  type="button"
-                  variant="ghost"
-                >
-                  {t('cancel')}
-                </Button>
-              </DialogClose>
-            )}
+            ) : null}
             {tab !== 'review' ? (
               <Button
-                className="w-full touch-manipulation"
+                aria-label={t('next')}
+                className="shrink-0 touch-manipulation"
                 disabled={!canGoNext}
                 onClick={() => setTab(SALE_TABS[tabIndex + 1] ?? 'review')}
+                size="icon"
+                title={t('next')}
                 type="button"
               >
-                {t('next')}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button
-                className="w-full touch-manipulation"
+                aria-label={mutation.isPending ? t('creating') : t('create')}
+                className="shrink-0 touch-manipulation"
                 disabled={!canSubmit || mutation.isPending}
+                size="icon"
+                title={mutation.isPending ? t('creating') : t('create')}
                 type="submit"
               >
-                <ReceiptText className="h-4 w-4" />
-                {mutation.isPending ? t('creating') : t('create')}
+                <Save className="h-4 w-4" />
               </Button>
             )}
           </OperatorDialogFooter>

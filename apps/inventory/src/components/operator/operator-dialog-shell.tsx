@@ -1,6 +1,12 @@
 'use client';
 
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import {
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -63,11 +69,13 @@ export function OperatorDialogHeader({
   children,
   className,
   description,
+  mobileCollapsibleDescription = false,
   title,
 }: {
   children?: ReactNode;
   className?: string;
   description?: ReactNode;
+  mobileCollapsibleDescription?: boolean;
   title: ReactNode;
 }) {
   return (
@@ -77,12 +85,37 @@ export function OperatorDialogHeader({
         className
       )}
     >
-      <DialogTitle className="text-lg">{title}</DialogTitle>
-      {description ? (
-        <DialogDescription className="leading-6">
-          {description}
-        </DialogDescription>
-      ) : null}
+      {mobileCollapsibleDescription && description ? (
+        <>
+          <Accordion className="sm:hidden" collapsible type="single">
+            <AccordionItem className="border-0" value="description">
+              <AccordionTrigger className="py-0 pr-0 text-left hover:no-underline">
+                <DialogTitle className="text-lg">{title}</DialogTitle>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-0">
+                <DialogDescription className="leading-6">
+                  {description}
+                </DialogDescription>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+          <div className="hidden sm:grid sm:gap-1.5">
+            <DialogTitle className="text-lg">{title}</DialogTitle>
+            <DialogDescription className="leading-6">
+              {description}
+            </DialogDescription>
+          </div>
+        </>
+      ) : (
+        <>
+          <DialogTitle className="text-lg">{title}</DialogTitle>
+          {description ? (
+            <DialogDescription className="leading-6">
+              {description}
+            </DialogDescription>
+          ) : null}
+        </>
+      )}
       {children}
     </DialogHeader>
   );
