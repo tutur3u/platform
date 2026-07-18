@@ -770,6 +770,106 @@ export type InventoryStorefrontAnalytics = {
   conversionRate: number;
 };
 
+export type InventoryAnalyticsSummary = {
+  revenue: number;
+  sales: number;
+  units: number;
+  averageOrderValue: number;
+  estimatedGrossProfit?: number;
+  estimatedGrossMarginPercentage?: number;
+  sellThroughPercentage?: number;
+  inventoryValue?: number;
+  finiteStockUnits?: number;
+  activeProducts?: number;
+  stockedProducts?: number;
+  lowStockRows?: number;
+  outOfStockRows?: number;
+  unlimitedStockRows?: number;
+};
+
+export type InventoryAnalyticsMetric = {
+  label: string;
+  revenue: number;
+  sales: number;
+  units?: number;
+};
+
+export type InventoryAnalyticsResponse = {
+  currency: string;
+  generatedAt: string;
+  range: {
+    days: number;
+    from: string;
+    to: string;
+    previousFrom: string;
+    previousTo: string;
+  };
+  summary: InventoryAnalyticsSummary;
+  previousSummary: InventoryAnalyticsSummary;
+  trend: Array<{
+    date: string;
+    previousDate: string;
+    revenue: number;
+    sales: number;
+    units: number;
+    previousRevenue: number;
+    previousSales: number;
+    previousUnits: number;
+  }>;
+  categoryMix: InventoryAnalyticsMetric[];
+  ownerMix: InventoryAnalyticsMetric[];
+  channels: InventoryAnalyticsMetric[];
+  weekdays: Array<{ day: number; revenue: number; sales: number }>;
+  products: Array<{
+    productId: string | null;
+    label: string;
+    imageUrl: string | null;
+    revenue: number;
+    units: number;
+    sales: number;
+    finiteStock: number;
+    unlimitedStockRows: number;
+  }>;
+  warehouses: Array<{
+    id: string;
+    label: string;
+    products: number;
+    stockRows: number;
+    unlimitedStockRows: number;
+    finiteStockUnits: number;
+    inventoryValue: number;
+    lowStockRows: number;
+    outOfStockRows: number;
+  }>;
+  periods: Array<{
+    periodId: string | null;
+    label: string;
+    revenue: number;
+    sales: number;
+  }>;
+  storefrontFunnel: {
+    views: number;
+    addToCart: number;
+    checkoutStarted: number;
+    checkoutCreated: number;
+    completed: number;
+    conversionRate: number;
+  };
+  quality: {
+    productsWithoutImages: number;
+    productsWithoutStock: number;
+    productsWithUnlimitedStock: number;
+    stockCoveragePercentage: number;
+  };
+};
+
+export type InventoryStorefrontBulkImportResult = {
+  created: number;
+  eligible: number;
+  skippedExisting: number;
+  skippedWithoutStock: number;
+};
+
 export type InventoryPolarProductSyncSummary = {
   listings: InventoryPolarSyncStatusCounts;
   bundles: InventoryPolarSyncStatusCounts;
@@ -2937,6 +3037,25 @@ export function createInventoryStorefrontListing(
   );
 }
 
+export function bulkImportInventoryStorefrontListings(
+  wsId: string,
+  storefrontId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryStorefrontBulkImportResult;
+  }>(
+    workspaceInventoryPath(
+      wsId,
+      `/storefronts/${encodePathSegment(storefrontId)}/listings/bulk-import`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'POST',
+    }
+  );
+}
+
 export function updateInventoryStorefrontListing(
   wsId: string,
   storefrontId: string,
@@ -3311,6 +3430,17 @@ export function getInventoryStorefrontAnalytics(
   return getInternalApiClient(options).json<InventoryStorefrontAnalytics>(
     workspaceInventoryPath(wsId, `/analytics${suffix}`),
     { cache: 'no-store' }
+  );
+}
+
+export function getInventoryAnalytics(
+  wsId: string,
+  query?: { days?: number },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryAnalyticsResponse>(
+    workspaceInventoryPath(wsId, '/analytics/summary'),
+    { cache: 'no-store', query: asQuery(query) }
   );
 }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  bulkImportInventoryStorefrontListings,
   cancelInventorySquareTerminalCheckout,
   createInventoryBatch,
   createInventoryBundle,
@@ -30,6 +31,7 @@ import {
   deleteInventorySupplier,
   deleteInventoryUnit,
   deleteInventoryWarehouse,
+  getInventoryAnalytics,
   getInventoryCostingAnalytics,
   getInventoryOverview,
   getInventoryProductStockHistory,
@@ -77,6 +79,30 @@ function createJsonResponse(data: unknown) {
 }
 
 describe('inventory internal API helpers', () => {
+  it('routes analytics and safe storefront bulk import through workspace APIs', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ data: {} }));
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    };
+
+    await getInventoryAnalytics('ws 1', { days: 90 }, options);
+    await bulkImportInventoryStorefrontListings('ws 1', 'store 1', options);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/analytics/summary?days=90',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/workspaces/ws%201/inventory/storefronts/store%201/listings/bulk-import',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
   it('loads the protected dashboard overview through the workspace API', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

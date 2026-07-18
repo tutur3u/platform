@@ -6,11 +6,11 @@ import {
   ArrowRight,
   CheckCircle2,
   CreditCard,
-  Package,
   PackagePlus,
   Plus,
   ReceiptText,
   Search,
+  ShoppingCart,
 } from '@tuturuuu/icons';
 import type {
   InventoryProductFormOptionsResponse,
@@ -38,8 +38,9 @@ import {
   type SaleCartLine,
   type SaleStockOption,
 } from './sale-create-items';
+import { SaleProductImageDialog } from './sale-product-image-dialog';
 
-const SALE_TABS = ['items', 'payment', 'review'] as const;
+const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
 
 export function SaleCreateDialog({
   options,
@@ -125,7 +126,11 @@ export function SaleCreateDialog({
   );
   const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
   const canGoNext =
-    tab === 'items' ? lines.length > 0 : tab === 'payment' ? canSubmit : false;
+    tab === 'items' || tab === 'cart'
+      ? lines.length > 0
+      : tab === 'payment'
+        ? canSubmit
+        : false;
 
   const reset = () => {
     const wallets = options?.wallets ?? [];
@@ -253,7 +258,7 @@ export function SaleCreateDialog({
               {
                 badge: lines.length,
                 content: (
-                  <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                  <div className="grid min-w-0 gap-4">
                     <section className="grid min-w-0 content-start gap-3">
                       <label className="relative flex items-center">
                         <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
@@ -292,18 +297,10 @@ export function SaleCreateDialog({
                               className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3"
                               key={option.key}
                             >
-                              <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-md border bg-muted/40">
-                                {option.imageUrl ? (
-                                  // biome-ignore lint/performance/noImgElement: workspace media can be a signed first-party URL.
-                                  <img
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                    src={option.imageUrl}
-                                  />
-                                ) : (
-                                  <Package className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </div>
+                              <SaleProductImageDialog
+                                imageUrl={option.imageUrl}
+                                name={option.productName}
+                              />
                               <div className="min-w-0">
                                 <p className="truncate font-medium text-sm">
                                   {option.productName}
@@ -357,6 +354,30 @@ export function SaleCreateDialog({
                         ) : null}
                       </div>
                     </section>
+                  </div>
+                ),
+                icon: <PackagePlus className="h-4 w-4" />,
+                label: t('itemsTab'),
+                value: 'items',
+              },
+              {
+                badge: lines.length,
+                content: (
+                  <div className="mx-auto grid w-full max-w-3xl gap-3">
+                    <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 text-sm">
+                      <span className="text-muted-foreground">
+                        {t('cartSummary', {
+                          items: lines.length,
+                          units: lines.reduce(
+                            (sum, line) => sum + line.quantity,
+                            0
+                          ),
+                        })}
+                      </span>
+                      <span className="font-semibold tabular-nums">
+                        {currency(total, workspaceCurrency)}
+                      </span>
+                    </div>
                     <CartEditor
                       currencyCode={workspaceCurrency}
                       lines={lines}
@@ -364,9 +385,9 @@ export function SaleCreateDialog({
                     />
                   </div>
                 ),
-                icon: <PackagePlus className="h-4 w-4" />,
-                label: t('itemsTab'),
-                value: 'items',
+                icon: <ShoppingCart className="h-4 w-4" />,
+                label: t('cartTab'),
+                value: 'cart',
               },
               {
                 content: (

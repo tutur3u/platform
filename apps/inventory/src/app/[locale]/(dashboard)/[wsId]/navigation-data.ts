@@ -5,6 +5,7 @@ export type InventoryNavigationItem = {
   sectionKey?: string;
   matchExact?: boolean;
   icon:
+    | 'analytics'
     | 'audits'
     | 'bundles'
     | 'catalog'
@@ -29,6 +30,11 @@ export function getInventoryNavigationItems({
       href: `/${workspaceSlug}`,
       icon: 'overview',
       matchExact: true,
+    },
+    {
+      titleKey: 'analytics.title',
+      href: `/${workspaceSlug}/analytics`,
+      icon: 'analytics',
     },
     null,
     {

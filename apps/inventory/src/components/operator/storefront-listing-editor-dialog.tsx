@@ -27,6 +27,7 @@ import {
   OperatorDialogTabs,
 } from './operator-dialog-shell';
 import { SelectValueField } from './operator-form-fields';
+import { money } from './operator-format';
 import { LifecyclePanel } from './operator-lifecycle';
 import {
   buildOptionsVariantsPayload,
@@ -34,6 +35,7 @@ import {
   StorefrontListingOptionsEditor,
   type VariantDraft,
 } from './storefront-listing-options-editor';
+import { getStockPriceMinor } from './storefront-listing-pricing';
 
 function listingToOptionDrafts(
   listing: InventoryStorefrontListing
@@ -95,6 +97,10 @@ export function ListingEditorDialog({
     listingToVariantDrafts(listing)
   );
   const [templateName, setTemplateName] = useState('');
+  const linkedProduct = products.find(
+    (product) => product.id === listing.productId
+  );
+  const stockPrice = getStockPriceMinor(linkedProduct, currency);
   const templates = useQuery({
     enabled: open,
     queryFn: () => listInventoryOptionTemplates(wsId),
@@ -228,6 +234,30 @@ export function ListingEditorDialog({
                         value={title}
                       />
                     </label>
+                    {stockPrice !== null ? (
+                      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 p-3 text-sm">
+                        <span className="text-muted-foreground">
+                          {t('stockPriceSuggestion')}:{' '}
+                          <span className="font-medium text-foreground tabular-nums">
+                            {money(stockPrice, currency)}
+                          </span>
+                        </span>
+                        {price !== stockPrice ? (
+                          <Button
+                            onClick={() => setPrice(stockPrice)}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                          >
+                            {t('useStockPrice')}
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            {t('stockPriceApplied')}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
                     <label className="grid min-w-0 gap-1 text-sm">
                       <span className="font-medium">{t('price')}</span>
                       <MoneyInput

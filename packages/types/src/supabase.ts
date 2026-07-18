@@ -12643,6 +12643,14 @@ export type Database = {
         }[];
       };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
+      bulk_create_inventory_storefront_listings_from_stock: {
+        Args: {
+          p_minor_unit_factor?: number;
+          p_storefront_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       calculate_invoice_values: {
         Args: {
           p_frontend_discount_amount?: number;
@@ -13431,6 +13439,10 @@ export type Database = {
           _ws_id: string;
           include_confidential?: boolean;
         };
+        Returns: Json;
+      };
+      get_inventory_analytics: {
+        Args: { p_days?: number; p_ws_id: string };
         Returns: Json;
       };
       get_inventory_batches: {
@@ -39445,6 +39457,7 @@ export type Database = {
         };
         Returns: string;
       };
+      inventory_cent_level_prices_ready: { Args: never; Returns: boolean };
       is_board_template_accessible: {
         Args: { p_template_id: string };
         Returns: boolean;

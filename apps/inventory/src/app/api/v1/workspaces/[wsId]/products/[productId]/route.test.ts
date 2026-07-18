@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createInventoryAuditLog: vi.fn(),
   getInventoryActorContext: vi.fn(),
+  resolveProductManufacturerId: vi.fn(),
+  validateInventoryItemWorkspaceRelations: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/inventory-core/actor', () => ({
@@ -24,7 +26,8 @@ vi.mock('@tuturuuu/inventory-core/commerce/auth', () => ({
 }));
 
 vi.mock('@tuturuuu/inventory-core/manufacturers', () => ({
-  resolveProductManufacturerId: vi.fn(),
+  resolveProductManufacturerId: (...args: unknown[]) =>
+    mocks.resolveProductManufacturerId(...args),
 }));
 
 vi.mock('@tuturuuu/inventory-core/product-rpc', () => ({
@@ -32,7 +35,8 @@ vi.mock('@tuturuuu/inventory-core/product-rpc', () => ({
 }));
 
 vi.mock('@tuturuuu/inventory-core/relation-validation', () => ({
-  validateInventoryItemWorkspaceRelations: vi.fn(),
+  validateInventoryItemWorkspaceRelations: (...args: unknown[]) =>
+    mocks.validateInventoryItemWorkspaceRelations(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -120,6 +124,10 @@ describe('inventory product delete route', () => {
     mocks.getInventoryActorContext.mockResolvedValue({
       authUserId: 'user-1',
     });
+    mocks.resolveProductManufacturerId.mockResolvedValue({
+      ok: true,
+      manufacturerId: undefined,
+    });
   });
 
   it('hard deletes products without historical dependencies', async () => {
@@ -179,5 +187,80 @@ describe('inventory product delete route', () => {
     const response = await deleteProduct();
 
     expect(response.status).toBe(500);
+  });
+});
+
+describe('inventory product update route', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: permissionsWith(['manage_inventory_catalog']),
+        wsId: 'ws-real',
+      },
+    });
+    mocks.getInventoryActorContext.mockResolvedValue({ authUserId: 'user-1' });
+    mocks.resolveProductManufacturerId.mockResolvedValue({
+      ok: true,
+      manufacturerId: undefined,
+    });
+  });
+
+  it('persists product usage details as an explicit field', async () => {
+    const update = vi.fn();
+    const existingQuery = thenableQuery({
+      data: {
+        avatar_url: null,
+        category_id: 'category-1',
+        description: null,
+        finance_category_id: null,
+        id: 'product-1',
+        manufacturer_id: null,
+        name: 'Demo product',
+        owner_id: 'owner-1',
+        usage: 'Old usage',
+      },
+      error: null,
+    });
+    const updateQuery = thenableQuery({
+      data: { id: 'product-1' },
+      error: null,
+    });
+    update.mockReturnValue(updateQuery);
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => existingQuery),
+        update,
+      })),
+      schema: vi.fn(() => ({})),
+    });
+
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-alias/products/product-1',
+        {
+          body: JSON.stringify({ usage: 'Counter display' }),
+          headers: { 'content-type': 'application/json' },
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          productId: 'product-1',
+          wsId: 'ws-alias',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(update).toHaveBeenCalledWith({ usage: 'Counter display' });
+    expect(mocks.createInventoryAuditLog).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        after: expect.objectContaining({ usage: 'Counter display' }),
+      })
+    );
   });
 });

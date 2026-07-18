@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Boxes,
   Calculator,
   ClipboardList,
@@ -24,6 +25,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
   const className = 'h-4 w-4';
 
   switch (icon) {
+    case 'analytics':
+      return <BarChart3 className={className} />;
     case 'audits':
       return <ClipboardList className={className} />;
     case 'bundles':

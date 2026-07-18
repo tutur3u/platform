@@ -148,7 +148,7 @@ export function ProductEditDialog({
         manufacturer_id: details.manufacturerId || null,
         name: details.name.trim(),
         owner_id: details.ownerId,
-        usage: details.usage || undefined,
+        usage: details.usage.trim(),
       });
 
       if (stockSaveState.shouldSave) {
@@ -185,7 +185,7 @@ export function ProductEditDialog({
         manufacturer_id: details.manufacturerId || null,
         name: details.name.trim() || row.name,
         owner_id: details.ownerId || row.owner_id || row.owner?.id || '',
-        usage: details.usage || undefined,
+        usage: details.usage.trim(),
       }),
     onError: () => toast.error(t('saveError')),
     onSuccess: () => {
