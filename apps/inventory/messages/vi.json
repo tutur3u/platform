@@ -2049,6 +2049,13 @@
         "tipTitle": "Có thể mô phỏng thanh toán",
         "title": "Hướng dẫn mở bán Inventory"
       },
+      "hybridSearch": {
+        "allCached": "Đã lưu toàn bộ bộ nhớ đệm",
+        "localFirst": "Kết quả cục bộ tức thì",
+        "refreshing": "Đang kiểm tra máy chủ",
+        "results": "{count} kết quả đã lưu",
+        "verified": "Máy chủ đã xác minh"
+      },
       "metrics": {
         "bundles": "Combo",
         "lowStock": "Sắp hết hàng",

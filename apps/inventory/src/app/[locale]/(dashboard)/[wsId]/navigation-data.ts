@@ -14,6 +14,7 @@ export type InventoryNavigationItem = {
     | 'overview'
     | 'payments'
     | 'promotions'
+    | 'sales'
     | 'setup'
     | 'stock'
     | 'storefront';
@@ -63,13 +64,14 @@ export function getInventoryNavigationItems({
     {
       titleKey: 'commerce.title',
       href: `/${workspaceSlug}/commerce`,
-      aliases: [
-        `/${workspaceSlug}/checkout`,
-        `/${workspaceSlug}/checkouts`,
-        `/${workspaceSlug}/sales`,
-      ],
+      aliases: [`/${workspaceSlug}/checkout`, `/${workspaceSlug}/checkouts`],
       icon: 'commerce',
       sectionKey: 'sections.commerce',
+    },
+    {
+      titleKey: 'sales.title',
+      href: `/${workspaceSlug}/sales`,
+      icon: 'sales',
     },
     {
       titleKey: 'promotions.title',

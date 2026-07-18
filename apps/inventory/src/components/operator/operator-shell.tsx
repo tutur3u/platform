@@ -1,12 +1,15 @@
 'use client';
 
 import {
+  CheckCircle2,
+  Database,
   Loader2,
   PackageOpen,
   RefreshCw,
   Search,
   TriangleAlert,
 } from '@tuturuuu/icons';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { EmptyCard } from '@tuturuuu/ui/custom/empty-card';
@@ -105,11 +108,18 @@ export function LoadingRows() {
 export function Toolbar({
   filters,
   hideStatus = false,
+  searchStatus,
   setFilters,
   statusOptions,
 }: {
   filters: InventoryFilters;
   hideStatus?: boolean;
+  searchStatus?: {
+    cachedCount: number;
+    hasCompleteCache: boolean;
+    isLocalFirst: boolean;
+    isRefreshing: boolean;
+  };
   setFilters: (value: { q?: string; status?: string }) => unknown;
   statusOptions: InventoryStatusOption[];
 }) {
@@ -128,16 +138,47 @@ export function Toolbar({
           'lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center'
       )}
     >
-      <label className="relative flex min-w-0 flex-1 items-center">
-        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          autoComplete="off"
-          className="h-10 bg-background pl-9 sm:h-9"
-          onChange={(event) => setFilters({ q: event.target.value })}
-          placeholder={t('search')}
-          value={filters.q}
-        />
-      </label>
+      <div className="grid min-w-0 gap-1.5">
+        <label className="relative flex min-w-0 flex-1 items-center">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            autoComplete="off"
+            className="h-10 bg-background pr-10 pl-9 sm:h-9"
+            onChange={(event) => setFilters({ q: event.target.value })}
+            placeholder={t('search')}
+            value={filters.q}
+          />
+          {filters.q && searchStatus ? (
+            searchStatus.isRefreshing ? (
+              <Loader2 className="pointer-events-none absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />
+            ) : (
+              <CheckCircle2 className="pointer-events-none absolute right-3 h-4 w-4 text-dynamic-green" />
+            )
+          ) : null}
+        </label>
+        {filters.q && searchStatus ? (
+          <div
+            aria-live="polite"
+            className="flex min-w-0 flex-wrap items-center gap-1.5 px-0.5 text-muted-foreground text-xs"
+          >
+            <Badge className="gap-1" variant="outline">
+              <Database className="h-3 w-3" />
+              {searchStatus.hasCompleteCache
+                ? t('hybridSearch.allCached')
+                : searchStatus.isLocalFirst
+                  ? t('hybridSearch.localFirst')
+                  : searchStatus.isRefreshing
+                    ? t('hybridSearch.refreshing')
+                    : t('hybridSearch.verified')}
+            </Badge>
+            <span>
+              {t('hybridSearch.results', {
+                count: searchStatus.cachedCount,
+              })}
+            </span>
+          </div>
+        ) : null}
+      </div>
       {!hideStatus ? (
         <Combobox
           className="min-w-0"

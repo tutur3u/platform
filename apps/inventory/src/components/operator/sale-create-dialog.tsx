@@ -1,11 +1,18 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   CreditCard,
+  Database,
+  Loader2,
   PackagePlus,
   Plus,
   ReceiptText,
@@ -17,9 +24,14 @@ import type {
   InventoryProductSummary,
   InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
-import { createInventorySale } from '@tuturuuu/internal-api/inventory';
+import {
+  createInventorySale,
+  listInventoryProducts,
+} from '@tuturuuu/internal-api/inventory';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -39,8 +51,16 @@ import {
   type SaleStockOption,
 } from './sale-create-items';
 import { SaleProductImageDialog } from './sale-product-image-dialog';
+import { useHybridSearchResults } from './use-hybrid-search-results';
 
 const SALE_TABS = ['items', 'cart', 'payment', 'review'] as const;
+const SALE_PRODUCT_SEARCH_SCOPE = {
+  category: '',
+  owner: '',
+  sort: 'created-desc',
+  status: 'all',
+  warehouse: '',
+};
 
 export function SaleCreateDialog({
   options,
@@ -64,8 +84,8 @@ export function SaleCreateDialog({
   const t = useTranslations('inventory.operator.commerce.createSale');
   const paginationT = useTranslations('inventory.operator.pagination');
   const filtersT = useTranslations('inventory.operator.filters');
+  const hybridT = useTranslations('inventory.operator.hybridSearch');
   const queryClient = useQueryClient();
-  const stockOptions = useMemo(() => getSaleStockOptions(products), [products]);
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('items');
   const [query, setQuery] = useState('');
@@ -77,6 +97,37 @@ export function SaleCreateDialog({
   const [walletId, setWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [periodId, setPeriodId] = useState('none');
+  const [serverQuery] = useDebounce(query, 280);
+  const productSearchQuery = useQuery({
+    enabled: open && Boolean(serverQuery.trim()),
+    placeholderData: keepPreviousData,
+    queryFn: () =>
+      listInventoryProducts(wsId, {
+        page: 1,
+        pageSize: 100,
+        q: serverQuery,
+        status: 'all',
+      }),
+    queryKey: [
+      'inventory',
+      wsId,
+      'products',
+      SALE_PRODUCT_SEARCH_SCOPE,
+      serverQuery,
+    ],
+  });
+  const productSearch = useHybridSearchResults({
+    getId: (product) => product.id,
+    isFetching: productSearchQuery.isFetching,
+    query,
+    queryKey: ['inventory', wsId, 'products', SALE_PRODUCT_SEARCH_SCOPE],
+    serverQuery,
+    visibleItems: productSearchQuery.data?.data ?? products,
+  });
+  const stockOptions = useMemo(
+    () => getSaleStockOptions(productSearch.results),
+    [productSearch.results]
+  );
 
   const filteredOptions = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -260,18 +311,42 @@ export function SaleCreateDialog({
                 content: (
                   <div className="grid min-w-0 gap-4">
                     <section className="grid min-w-0 content-start gap-3">
-                      <label className="relative flex items-center">
-                        <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          aria-label={t('search')}
-                          autoComplete="off"
-                          className="pl-9"
-                          name="product-search"
-                          onChange={(event) => setQuery(event.target.value)}
-                          placeholder={t('search')}
-                          value={query}
-                        />
-                      </label>
+                      <div className="grid gap-1.5">
+                        <label className="relative flex items-center">
+                          <Search className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            aria-label={t('search')}
+                            autoComplete="off"
+                            className="pr-10 pl-9"
+                            name="product-search"
+                            onChange={(event) => setQuery(event.target.value)}
+                            placeholder={t('search')}
+                            value={query}
+                          />
+                          {query && productSearch.status.isRefreshing ? (
+                            <Loader2 className="pointer-events-none absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : null}
+                        </label>
+                        {query ? (
+                          <div className="flex flex-wrap items-center gap-1.5 text-muted-foreground text-xs">
+                            <Badge className="gap-1" variant="outline">
+                              <Database className="h-3 w-3" />
+                              {productSearch.status.hasCompleteCache
+                                ? hybridT('allCached')
+                                : productSearch.status.isLocalFirst
+                                  ? hybridT('localFirst')
+                                  : productSearch.status.isRefreshing
+                                    ? hybridT('refreshing')
+                                    : hybridT('verified')}
+                            </Badge>
+                            <span>
+                              {hybridT('results', {
+                                count: productSearch.results.length,
+                              })}
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <SelectField
                           label={filtersT('category')}

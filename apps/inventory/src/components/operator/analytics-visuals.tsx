@@ -28,18 +28,17 @@ import {
   YAxis,
 } from 'recharts';
 import {
+  INVENTORY_CHART_ACCENT,
+  INVENTORY_CHART_COLORS,
+  INVENTORY_CHART_COMPARISON,
+  INVENTORY_CHART_PRIMARY,
+  INVENTORY_CHART_SECONDARY,
+} from './inventory-chart-colors';
+import {
   OperatorMetricCard,
   OperatorModuleCard,
 } from './operator-dashboard-primitives';
 import { currency } from './operator-format';
-
-const chartColors = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
-];
 
 function compact(value: number, locale: string) {
   return new Intl.NumberFormat(locale, {
@@ -139,17 +138,17 @@ export function AnalyticsCharts({
   const t = useTranslations('inventory.operator.analyticsCenter');
   const locale = useLocale();
   const revenueConfig = {
-    revenue: { color: 'hsl(var(--primary))', label: t('currentPeriod') },
+    revenue: { color: INVENTORY_CHART_PRIMARY, label: t('currentPeriod') },
     previousRevenue: {
-      color: 'hsl(var(--muted-foreground))',
+      color: INVENTORY_CHART_COMPARISON,
       label: t('previousPeriod'),
     },
   } satisfies ChartConfig;
   const barConfig = {
-    revenue: { color: 'hsl(var(--primary))', label: t('revenue') },
+    revenue: { color: INVENTORY_CHART_SECONDARY, label: t('revenue') },
   } satisfies ChartConfig;
   const unitConfig = {
-    sales: { color: 'hsl(var(--primary))', label: t('sales') },
+    sales: { color: INVENTORY_CHART_ACCENT, label: t('sales') },
   } satisfies ChartConfig;
   const trend = data.trend.map((point) => ({
     ...point,
@@ -241,7 +240,11 @@ export function AnalyticsCharts({
                 >
                   {data.channels.map((item, index) => (
                     <Cell
-                      fill={chartColors[index % chartColors.length]}
+                      fill={
+                        INVENTORY_CHART_COLORS[
+                          index % INVENTORY_CHART_COLORS.length
+                        ]
+                      }
                       key={item.label}
                     />
                   ))}
@@ -261,7 +264,10 @@ export function AnalyticsCharts({
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{
-                        background: chartColors[index % chartColors.length],
+                        background:
+                          INVENTORY_CHART_COLORS[
+                            index % INVENTORY_CHART_COLORS.length
+                          ],
                       }}
                     />
                     <span className="truncate capitalize">{item.label}</span>

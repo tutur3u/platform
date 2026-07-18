@@ -15,40 +15,47 @@ describe('Inventory navigation', () => {
     });
     expect(visibleLinks.map((link) => link.href)).toEqual([
       '/acme',
+      '/acme/analytics',
       '/acme/catalog',
       '/acme/stock',
       '/acme/bundles',
       '/acme/costing',
       '/acme/commerce',
+      '/acme/sales',
       '/acme/promotions',
       '/acme/storefront',
       '/acme/payments',
       '/acme/setup',
       '/acme/audits',
     ]);
-    expect(visibleLinks[1]).toMatchObject({
+    expect(visibleLinks[2]).toMatchObject({
       aliases: ['/acme/items'],
       sectionKey: 'sections.operations',
     });
-    expect(visibleLinks[5]).toMatchObject({
-      aliases: ['/acme/checkout', '/acme/checkouts', '/acme/sales'],
+    expect(visibleLinks[6]).toMatchObject({
+      aliases: ['/acme/checkout', '/acme/checkouts'],
       sectionKey: 'sections.commerce',
       titleKey: 'commerce.title',
     });
-    expect(visibleLinks[6]).toMatchObject({
+    expect(visibleLinks[7]).toMatchObject({
+      href: '/acme/sales',
+      icon: 'sales',
+      titleKey: 'sales.title',
+    });
+    expect(visibleLinks[8]).toMatchObject({
       href: '/acme/promotions',
       icon: 'promotions',
       titleKey: 'promotions.title',
     });
-    expect(visibleLinks[7]).toMatchObject({
+    expect(visibleLinks[9]).toMatchObject({
       aliases: ['/acme/storefront/preview', '/acme/stripe'],
     });
-    expect(visibleLinks[8]).toMatchObject({
+    expect(visibleLinks[10]).toMatchObject({
       aliases: ['/acme/polar'],
       href: '/acme/payments',
       titleKey: 'payments.title',
     });
-    expect(visibleLinks[9]).toMatchObject({
+    expect(visibleLinks[11]).toMatchObject({
       sectionKey: 'sections.controls',
     });
   });

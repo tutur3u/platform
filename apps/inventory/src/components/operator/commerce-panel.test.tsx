@@ -41,14 +41,14 @@ describe('CommercePanel', () => {
         setPeriodId={() => undefined}
         setFilters={() => undefined}
         setTab={() => undefined}
-        tab="sales"
+        tab="checkouts"
         wsId="ws-1"
       />
     );
 
     expect(html).toContain('checkouts');
     expect(html).toContain('cart');
-    expect(html).toContain('sales');
+    expect(html).not.toContain('trigger-sales');
     expect(html).not.toContain('promotions');
     expect(html).toContain('revenueShare');
     expect(html).toContain('animate-pulse');

@@ -7,6 +7,7 @@ import {
   Layers3,
   LayoutDashboard,
   PackageSearch,
+  ReceiptText,
   Settings2,
   Store,
   TicketPercent,
@@ -43,6 +44,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <CreditCard className={className} />;
     case 'promotions':
       return <TicketPercent className={className} />;
+    case 'sales':
+      return <ReceiptText className={className} />;
     case 'setup':
       return <Settings2 className={className} />;
     case 'stock':

@@ -18,6 +18,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  INVENTORY_CHART_PRIMARY,
+  INVENTORY_CHART_SECONDARY,
+} from './inventory-chart-colors';
 import { OperatorModuleCard } from './operator-dashboard-primitives';
 
 export function OverviewCharts({
@@ -30,13 +34,13 @@ export function OverviewCharts({
   const categoryMix = dashboard?.analytics.categoryMix.slice(0, 6) ?? [];
   const revenueConfig = {
     revenue: {
-      color: 'hsl(var(--primary))',
+      color: INVENTORY_CHART_PRIMARY,
       label: t('revenue'),
     },
   } satisfies ChartConfig;
   const mixConfig = {
     revenue: {
-      color: 'hsl(var(--muted-foreground))',
+      color: INVENTORY_CHART_SECONDARY,
       label: t('revenue'),
     },
   } satisfies ChartConfig;

@@ -6,7 +6,8 @@ const redirectMock = vi.hoisted(() =>
   })
 );
 
-vi.mock('next/navigation', () => ({
+vi.mock('next/navigation', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/navigation')>()),
   redirect: redirectMock,
 }));
 
@@ -23,11 +24,24 @@ describe('Inventory commerce route redirects', () => {
     ).rejects.toThrow('redirect:/acme/commerce?tab=checkouts');
   });
 
-  it('redirects legacy sales to the sales commerce tab', async () => {
+  it('renders sales as a first-class Inventory workspace', async () => {
     const { default: SalesPage } = await import('./sales/page');
 
+    const page = await SalesPage({
+      params: Promise.resolve({ wsId: 'acme' }),
+    });
+
+    expect(page.props).toMatchObject({ view: 'sales', wsId: 'acme' });
+  });
+
+  it('redirects the legacy Commerce sales tab to first-class Sales', async () => {
+    const { default: CommercePage } = await import('./commerce/page');
+
     await expect(
-      SalesPage({ params: Promise.resolve({ wsId: 'acme' }) })
-    ).rejects.toThrow('redirect:/acme/commerce?tab=sales');
+      CommercePage({
+        params: Promise.resolve({ wsId: 'acme' }),
+        searchParams: Promise.resolve({ tab: 'sales' }),
+      })
+    ).rejects.toThrow('redirect:/acme/sales');
   });
 });

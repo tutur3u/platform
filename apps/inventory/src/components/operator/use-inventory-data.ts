@@ -1,6 +1,10 @@
 'use client';
 
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 import {
   getInventoryCommerceSummary,
   getInventoryCostingAnalytics,
@@ -21,6 +25,7 @@ import {
   listInventoryStorefronts,
   listInventorySuppliers,
 } from '@tuturuuu/internal-api/inventory';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { parseAsString, useQueryStates } from 'nuqs';
 import type {
   InventoryCatalogTab,
@@ -51,8 +56,29 @@ export function useInventoryData(
     status: parseAsString.withDefault('all'),
   });
   const status = filters.status === 'all' ? undefined : filters.status;
+  const [serverQuery] = useDebounce(filters.q, 280);
   const catalogTab = options?.catalogTab ?? 'products';
   const commerceTab = options?.commerceTab ?? 'checkouts';
+  const isSalesView = view === 'sales' || commerceTab === 'sales';
+  const productScope = {
+    category: filters.productCategory,
+    owner: filters.productOwner,
+    sort: filters.productSort,
+    status: filters.status,
+    warehouse: filters.productWarehouse,
+  };
+  const salesScope = { period: filters.period };
+  const searchKeys = {
+    bundles: ['inventory', wsId, 'bundles', { status: filters.status }],
+    categories: ['inventory', wsId, 'categories'],
+    checkouts: ['inventory', wsId, 'checkouts', { status: filters.status }],
+    costingProfiles: ['inventory', wsId, 'costing', { status: filters.status }],
+    products: ['inventory', wsId, 'products', productScope],
+    promotions: ['inventory', wsId, 'promotions'],
+    revenueShares: ['inventory', wsId, 'revenue-share'],
+    sales: ['inventory', wsId, 'sales', salesScope],
+    storefronts: ['inventory', wsId, 'storefronts', { status: filters.status }],
+  } as const;
 
   const overview = useQuery({
     enabled: view === 'overview',
@@ -71,7 +97,7 @@ export function useInventoryData(
         categoryId: filters.productCategory || undefined,
         page: pageParam,
         pageSize: filters.productOwner || filters.productWarehouse ? 1000 : 50,
-        q: filters.q,
+        q: serverQuery,
         sortBy: filters.productSort.startsWith('name-') ? 'name' : 'created_at',
         sortOrder: filters.productSort.endsWith('-asc') ? 'asc' : 'desc',
         status:
@@ -81,18 +107,8 @@ export function useInventoryData(
       const loaded = pages.reduce((count, page) => count + page.data.length, 0);
       return loaded < lastPage.count ? pages.length + 1 : undefined;
     },
-    queryKey: [
-      'inventory',
-      wsId,
-      'products',
-      view,
-      filters.q,
-      filters.status,
-      filters.productCategory,
-      filters.productOwner,
-      filters.productSort,
-      filters.productWarehouse,
-    ],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.products, serverQuery],
   });
   const categories = useInfiniteQuery({
     enabled: view === 'catalog' && catalogTab === 'categories',
@@ -101,47 +117,51 @@ export function useInventoryData(
       listInventoryProductCategories(wsId, {
         page: pageParam,
         pageSize: 50,
-        q: filters.q,
+        q: serverQuery,
       }),
     getNextPageParam: (lastPage, pages) => {
       const loaded = pages.reduce((count, page) => count + page.data.length, 0);
       return loaded < lastPage.count ? pages.length + 1 : undefined;
     },
-    queryKey: ['inventory', wsId, 'categories', filters.q],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.categories, serverQuery],
   });
   const storefronts = useQuery({
     enabled: ['storefront', 'overview'].includes(view),
     queryFn: () =>
       listInventoryStorefronts(wsId, {
         pageSize: 50,
-        q: filters.q,
+        q: serverQuery,
         status:
           status === 'draft' || status === 'published' || status === 'paused'
             ? status
             : undefined,
       }),
-    queryKey: ['inventory', wsId, 'storefronts', filters.q, filters.status],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.storefronts, serverQuery],
   });
   const bundles = useQuery({
     enabled: ['bundles', 'storefront', 'overview'].includes(view),
     queryFn: () =>
       listInventoryBundles(wsId, {
         pageSize: 50,
-        q: filters.q,
+        q: serverQuery,
         status: status === 'draft' || status === 'active' ? status : undefined,
       }),
-    queryKey: ['inventory', wsId, 'bundles', filters.q, filters.status],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.bundles, serverQuery],
   });
   const checkouts = useQuery({
     enabled: view === 'commerce' && commerceTab === 'checkouts',
     queryFn: () =>
       listInventoryCheckouts(wsId, {
         pageSize: 50,
-        q: filters.q,
+        q: serverQuery,
         status:
           status === 'reserved' || status === 'completed' ? status : undefined,
       }),
-    queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.checkouts, serverQuery],
   });
   const costingProfiles = useQuery({
     enabled:
@@ -150,13 +170,14 @@ export function useInventoryData(
     queryFn: () =>
       listInventoryCostProfiles(wsId, {
         pageSize: 50,
-        q: filters.q,
+        q: serverQuery,
         status:
           status === 'active' || status === 'archived' || status === 'draft'
             ? status
             : undefined,
       }),
-    queryKey: ['inventory', wsId, 'costing', filters.q, filters.status],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.costingProfiles, serverQuery],
   });
   const costingAnalytics = useQuery({
     enabled: view === 'costing' || view === 'overview',
@@ -164,17 +185,11 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'costing-analytics'],
   });
   const sales = useInfiniteQuery({
-    enabled: view === 'commerce' && commerceTab === 'sales',
+    enabled: isSalesView,
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       listInventorySales(wsId, {
-        limit:
-          filters.q ||
-          filters.saleCategory ||
-          filters.saleCreator ||
-          filters.saleWarehouse
-            ? 100
-            : 24,
+        limit: 100,
         offset: pageParam,
         period_id:
           filters.period && filters.period !== UNASSIGNED_SALES_PERIOD_FILTER
@@ -189,19 +204,11 @@ export function useInventoryData(
         ? loaded
         : undefined;
     },
-    queryKey: [
-      'inventory',
-      wsId,
-      'sales',
-      filters.period,
-      filters.q,
-      filters.saleCategory,
-      filters.saleCreator,
-      filters.saleWarehouse,
-    ],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.sales, serverQuery],
   });
   const commerceSummary = useQuery({
-    enabled: view === 'commerce' && commerceTab === 'sales',
+    enabled: isSalesView,
     queryFn: () =>
       getInventoryCommerceSummary(wsId, {
         period_id:
@@ -214,16 +221,12 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'commerce-summary', filters.period],
   });
   const salesPeriods = useQuery({
-    enabled:
-      view === 'commerce' &&
-      (commerceTab === 'cart' || commerceTab === 'sales'),
+    enabled: isSalesView || (view === 'commerce' && commerceTab === 'cart'),
     queryFn: () => listInventorySalesPeriods(wsId, { include_archived: true }),
     queryKey: ['inventory', wsId, 'sales-periods'],
   });
   const periodProducts = useInfiniteQuery({
-    enabled:
-      view === 'commerce' &&
-      (commerceTab === 'cart' || commerceTab === 'sales'),
+    enabled: isSalesView || (view === 'commerce' && commerceTab === 'cart'),
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       listInventoryProducts(wsId, {
@@ -235,22 +238,36 @@ export function useInventoryData(
       const loaded = pages.reduce((count, page) => count + page.data.length, 0);
       return loaded < lastPage.count ? pages.length + 1 : undefined;
     },
-    queryKey: ['inventory', wsId, 'sales-period-products'],
+    queryKey: [
+      'inventory',
+      wsId,
+      'products',
+      {
+        category: '',
+        owner: '',
+        sort: 'created-desc',
+        status: 'all',
+        warehouse: '',
+      },
+      '',
+    ],
   });
   const promotions = useQuery({
     enabled: view === 'promotions',
     queryFn: () =>
-      listInventoryPromotions(wsId, { pageSize: 50, q: filters.q }),
-    queryKey: ['inventory', wsId, 'promotions', filters.q],
+      listInventoryPromotions(wsId, { pageSize: 50, q: serverQuery }),
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.promotions, serverQuery],
   });
   const revenueShares = useQuery({
     enabled: view === 'commerce' && commerceTab === 'revenue-share',
     queryFn: () =>
       listInventoryRevenueShareEarnings(wsId, {
         limit: 50,
-        q: filters.q,
+        q: serverQuery,
       }),
-    queryKey: ['inventory', wsId, 'revenue-share', filters.q],
+    placeholderData: keepPreviousData,
+    queryKey: [...searchKeys.revenueShares, serverQuery],
   });
   const audits = useQuery({
     enabled: view === 'audits',
@@ -268,8 +285,8 @@ export function useInventoryData(
         'storefront',
       ].includes(view) ||
       (view === 'catalog' && catalogTab === 'products') ||
-      (view === 'commerce' &&
-        (commerceTab === 'cart' || commerceTab === 'sales')),
+      isSalesView ||
+      (view === 'commerce' && commerceTab === 'cart'),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
   });
@@ -308,6 +325,8 @@ export function useInventoryData(
     revenueShares,
     sales,
     salesPeriods,
+    searchKeys,
+    serverQuery,
     setFilters,
     storefronts,
     suppliers,

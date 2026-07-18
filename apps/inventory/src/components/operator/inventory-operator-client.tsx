@@ -8,6 +8,7 @@ import {
   CreditCard,
   Layers3,
   PackageSearch,
+  ReceiptText,
   Store,
   TicketPercent,
   TriangleAlert,
@@ -38,7 +39,6 @@ import type {
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
 import { PaymentsHubPanel } from './payments-hub-panel';
-import { filterInventoryProducts } from './product-filters';
 import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
@@ -46,6 +46,7 @@ import { StockWorkspacePanel } from './stock-workspace-panel';
 import { StorefrontAnalyticsPanel } from './storefront-analytics-panel';
 import { StorefrontListingsPanel } from './storefront-listings-panel';
 import { useInventoryData } from './use-inventory-data';
+import { useInventorySearchResults } from './use-inventory-search-results';
 import { WorkspaceCurrencyProvider } from './workspace-currency';
 
 export type { InventoryOperatorView } from './operator-types';
@@ -63,7 +64,7 @@ type InventoryQueryState = {
   refetch: () => unknown;
 };
 
-const commerceTabs = ['checkouts', 'cart', 'sales', 'revenue-share'] as const;
+const commerceTabs = ['checkouts', 'cart', 'revenue-share'] as const;
 const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
@@ -75,36 +76,39 @@ export function InventoryOperatorClient({
     'tab',
     parseAsString.withDefault('').withOptions({ shallow: true })
   );
-  const commerceTab: InventoryCommerceTab = commerceTabs.includes(
-    tabValue as InventoryCommerceTab
-  )
-    ? (tabValue as InventoryCommerceTab)
-    : 'checkouts';
+  const commerceTab: InventoryCommerceTab =
+    view === 'sales'
+      ? 'sales'
+      : commerceTabs.includes(tabValue as (typeof commerceTabs)[number])
+        ? (tabValue as InventoryCommerceTab)
+        : 'checkouts';
   const catalogTab: InventoryCatalogTab = catalogTabs.includes(
     tabValue as InventoryCatalogTab
   )
     ? (tabValue as InventoryCatalogTab)
     : 'products';
   const data = useInventoryData(wsId, view, { catalogTab, commerceTab });
-  const loadedProducts =
-    data.products.data?.pages.flatMap((page) => page.data) ?? [];
-  const products = useMemo(
-    () =>
-      filterInventoryProducts(loadedProducts, {
-        ownerId: data.filters.productOwner,
-        warehouseId: data.filters.productWarehouse,
-      }),
-    [data.filters.productOwner, data.filters.productWarehouse, loadedProducts]
-  );
-  const categories =
-    data.categories.data?.pages.flatMap((page) => page.data) ?? [];
-  const periodProducts =
-    data.periodProducts.data?.pages.flatMap((page) => page.data) ?? [];
-  const storefronts = data.storefronts.data?.data ?? [];
-  const bundles = data.bundles.data?.data ?? [];
-  const sales = data.sales.data?.pages.flatMap((page) => page.data) ?? [];
-  const suppliers = data.suppliers.data?.data ?? [];
-  const batches = data.batches.data?.data ?? [];
+  const search = useInventorySearchResults(data);
+  const {
+    batches,
+    bundleSearch,
+    categorySearch,
+    checkoutSearch,
+    costingSearch,
+    periodProducts,
+    productSearch,
+    products,
+    promotionSearch,
+    revenueShareSearch,
+    sales,
+    saleSearch,
+    setupSearchCount,
+    storefrontSearch,
+    suppliers,
+  } = search;
+  const categories = categorySearch.results;
+  const storefronts = storefrontSearch.results;
+  const bundles = bundleSearch.results;
   const lowStock = data.overview.data?.low_stock_products ?? [];
   const statusOptions = useMemo<InventoryStatusOption[]>(() => {
     const all = { label: t('statuses.all'), value: 'all' };
@@ -145,6 +149,7 @@ export function InventoryOperatorClient({
 
     if (
       view === 'promotions' ||
+      view === 'sales' ||
       (view === 'commerce' &&
         (commerceTab === 'cart' ||
           commerceTab === 'sales' ||
@@ -202,6 +207,11 @@ export function InventoryOperatorClient({
           t('views.promotions.title'),
           t('views.promotions.description'),
         ],
+        sales: [
+          ReceiptText,
+          t('views.sales.title'),
+          t('views.sales.description'),
+        ],
         setup: [Boxes, t('views.setup.title'), t('views.setup.description')],
         stock: [
           TriangleAlert,
@@ -229,14 +239,22 @@ export function InventoryOperatorClient({
     view === 'storefront' ? data.storefronts : null,
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
-    view === 'commerce' && commerceTab === 'sales' ? data.sales : null,
-    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+    view === 'sales' || (view === 'commerce' && commerceTab === 'sales')
+      ? data.sales
+      : null,
+    view === 'sales' || (view === 'commerce' && commerceTab === 'sales')
+      ? data.commerceSummary
+      : null,
+    view === 'sales' ||
+    (view === 'commerce' && ['cart', 'sales'].includes(commerceTab))
       ? data.salesPeriods
       : null,
-    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+    view === 'sales' ||
+    (view === 'commerce' && ['cart', 'sales'].includes(commerceTab))
       ? data.periodProducts
       : null,
-    view === 'commerce' && ['cart', 'sales'].includes(commerceTab)
+    view === 'sales' ||
+    (view === 'commerce' && ['cart', 'sales'].includes(commerceTab))
       ? data.formOptions
       : null,
     view === 'commerce' && commerceTab === 'revenue-share'
@@ -275,21 +293,27 @@ export function InventoryOperatorClient({
   );
   const isError = activeQueries.some((query) => query.isError);
   const commerceLoading =
-    view === 'commerce' && commerceTab === 'checkouts'
-      ? data.checkouts.isPending || data.checkouts.isFetching
-      : view === 'commerce' && commerceTab === 'cart'
-        ? data.periodProducts.isPending ||
-          data.formOptions.isPending ||
-          data.salesPeriods.isPending
-        : view === 'commerce' && commerceTab === 'sales'
-          ? data.sales.isPending ||
-            data.salesPeriods.isPending ||
-            data.commerceSummary.isPending ||
-            data.periodProducts.isPending ||
-            data.formOptions.isPending
-          : view === 'commerce' && commerceTab === 'revenue-share'
-            ? data.revenueShares.isPending || data.revenueShares.isFetching
-            : false;
+    view === 'sales'
+      ? data.sales.isPending ||
+        data.salesPeriods.isPending ||
+        data.commerceSummary.isPending ||
+        data.periodProducts.isPending ||
+        data.formOptions.isPending
+      : view === 'commerce' && commerceTab === 'checkouts'
+        ? data.checkouts.isPending || data.checkouts.isFetching
+        : view === 'commerce' && commerceTab === 'cart'
+          ? data.periodProducts.isPending ||
+            data.formOptions.isPending ||
+            data.salesPeriods.isPending
+          : view === 'commerce' && commerceTab === 'sales'
+            ? data.sales.isPending ||
+              data.salesPeriods.isPending ||
+              data.commerceSummary.isPending ||
+              data.periodProducts.isPending ||
+              data.formOptions.isPending
+            : view === 'commerce' && commerceTab === 'revenue-share'
+              ? data.revenueShares.isPending || data.revenueShares.isFetching
+              : false;
 
   const headerActions =
     view === 'storefront' ? (
@@ -310,10 +334,37 @@ export function InventoryOperatorClient({
         icon={<Icon className="h-5 w-5" />}
         title={section[1] as string}
       >
-        {view !== 'payments' ? (
+        {!['audits', 'overview', 'payments'].includes(view) ? (
           <Toolbar
             filters={data.filters}
             hideStatus={view === 'catalog' && catalogTab === 'categories'}
+            searchStatus={
+              view === 'catalog' && catalogTab === 'categories'
+                ? categorySearch.status
+                : view === 'storefront'
+                  ? storefrontSearch.status
+                  : view === 'bundles'
+                    ? bundleSearch.status
+                    : view === 'costing'
+                      ? costingSearch.status
+                      : view === 'promotions'
+                        ? promotionSearch.status
+                        : view === 'sales'
+                          ? saleSearch.status
+                          : view === 'setup'
+                            ? {
+                                cachedCount: setupSearchCount,
+                                hasCompleteCache: true,
+                                isLocalFirst: false,
+                                isRefreshing: false,
+                              }
+                            : view === 'commerce' && commerceTab === 'checkouts'
+                              ? checkoutSearch.status
+                              : view === 'commerce' &&
+                                  commerceTab === 'revenue-share'
+                                ? revenueShareSearch.status
+                                : productSearch.status
+            }
             setFilters={data.setFilters}
             statusOptions={statusOptions}
           />
@@ -328,7 +379,9 @@ export function InventoryOperatorClient({
           />
         )}
         <div className="grid gap-4">
-          {isLoading && view !== 'commerce' ? <LoadingRows /> : null}
+          {isLoading && !['commerce', 'sales'].includes(view) ? (
+            <LoadingRows />
+          ) : null}
           {isError ? (
             <StatePanel
               actionLabel={t('states.retry')}
@@ -418,6 +471,7 @@ export function InventoryOperatorClient({
             <SetupPanel
               batches={batches}
               options={data.formOptions.data}
+              query={data.filters.q}
               suppliers={suppliers}
               wsId={wsId}
             />
@@ -426,7 +480,7 @@ export function InventoryOperatorClient({
             <CostingPanel
               analytics={data.costingAnalytics.data}
               options={data.formOptions.data}
-              profiles={data.costingProfiles.data?.data ?? []}
+              profiles={costingSearch.results}
               products={products}
               wsId={wsId}
             />
@@ -465,12 +519,12 @@ export function InventoryOperatorClient({
               ) : null}
             </>
           ) : null}
-          {!isError && view === 'commerce' ? (
+          {!isError && (view === 'commerce' || view === 'sales') ? (
             <CommercePanel
-              checkouts={data.checkouts.data?.data ?? []}
+              checkouts={checkoutSearch.results}
               isLoading={commerceLoading}
               query={data.filters.q}
-              revenueShares={data.revenueShares.data?.data ?? []}
+              revenueShares={revenueShareSearch.results}
               sales={sales}
               salesCount={data.sales.data?.pages[0]?.count ?? sales.length}
               salesSummary={data.commerceSummary.data}
@@ -496,12 +550,13 @@ export function InventoryOperatorClient({
                 void setTabValue(tab);
               }}
               tab={commerceTab}
+              standaloneSales={view === 'sales'}
               wsId={wsId}
             />
           ) : null}
           {!isLoading && !isError && view === 'promotions' ? (
             <PromotionsWorkspacePanel
-              promotions={data.promotions.data?.data ?? []}
+              promotions={promotionSearch.results}
               wsId={wsId}
             />
           ) : null}

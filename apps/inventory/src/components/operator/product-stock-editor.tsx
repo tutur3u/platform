@@ -1,6 +1,10 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { Boxes, Plus, Trash2 } from '@tuturuuu/icons';
 import type {
   InventoryProductFormOptionsResponse,
@@ -27,6 +31,7 @@ import {
   ToggleField,
 } from './operator-form-fields';
 import { stockAmountFromRecords } from './operator-stock';
+import { useHybridSearchResults } from './use-hybrid-search-results';
 
 export type ProductStockRowState = {
   amount: string;
@@ -388,6 +393,7 @@ function StockBeneficiaryField({
     name: string;
   } | null>(null);
   const beneficiaries = useQuery({
+    placeholderData: keepPreviousData,
     queryFn: () =>
       listInventoryStockBeneficiaries(wsId, {
         limit: 20,
@@ -400,7 +406,15 @@ function StockBeneficiaryField({
       debouncedSearch.trim(),
     ],
   });
-  const options = beneficiaries.data?.data.map((person) => ({
+  const beneficiarySearch = useHybridSearchResults({
+    getId: (person) => person.id,
+    isFetching: beneficiaries.isFetching,
+    query: search,
+    queryKey: ['inventory', wsId, 'stock-beneficiaries'],
+    serverQuery: debouncedSearch,
+    visibleItems: beneficiaries.data?.data ?? [],
+  });
+  const options = beneficiarySearch.results.map((person) => ({
     id: person.id,
     name: person.name ?? person.email ?? person.id,
   }));

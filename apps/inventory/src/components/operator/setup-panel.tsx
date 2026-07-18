@@ -32,6 +32,7 @@ import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { matchesHybridSearch } from './hybrid-search';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { EmptyRow } from './operator-shell';
 import { BatchSection } from './setup-batch-section';
@@ -41,22 +42,26 @@ import { ResourceDialog, ResourceSection } from './setup-resource-section';
 export function SetupPanel({
   batches,
   options,
+  query,
   suppliers,
   wsId,
 }: {
   batches: ProductBatch[];
   options?: InventoryProductFormOptionsResponse;
+  query: string;
   suppliers: ProductSupplier[];
   wsId: string;
 }) {
   const t = useTranslations('inventory.operator.setup');
+  const searchRows = <T,>(rows: T[]) =>
+    rows.filter((row) => matchesHybridSearch(row, query));
   const configs: ResourceConfig[] = [
     {
       create: (name) => createInventoryOwner(wsId, { name }),
       icon: User,
       key: 'owners',
       remove: (id) => deleteInventoryOwner(wsId, id),
-      rows: options?.owners ?? [],
+      rows: searchRows(options?.owners ?? []),
       title: t('owners'),
       update: (id, name) => updateInventoryOwner(wsId, id, { name }),
     },
@@ -65,7 +70,7 @@ export function SetupPanel({
       icon: PackageSearch,
       key: 'manufacturers',
       remove: (id) => deleteInventoryManufacturer(wsId, id),
-      rows: options?.manufacturers ?? [],
+      rows: searchRows(options?.manufacturers ?? []),
       title: t('manufacturers'),
       update: (id, name) => updateInventoryManufacturer(wsId, id, { name }),
     },
@@ -74,7 +79,7 @@ export function SetupPanel({
       icon: Boxes,
       key: 'units',
       remove: (id) => deleteInventoryUnit(wsId, id),
-      rows: options?.units ?? [],
+      rows: searchRows(options?.units ?? []),
       title: t('units'),
       update: (id, name) => updateInventoryUnit(wsId, id, { name }),
     },
@@ -83,7 +88,7 @@ export function SetupPanel({
       icon: Boxes,
       key: 'warehouses',
       remove: (id) => deleteInventoryWarehouse(wsId, id),
-      rows: options?.warehouses ?? [],
+      rows: searchRows(options?.warehouses ?? []),
       title: t('warehouses'),
       update: (id, name) => updateInventoryWarehouse(wsId, id, { name }),
     },
@@ -92,15 +97,21 @@ export function SetupPanel({
       icon: Store,
       key: 'suppliers',
       remove: (id) => deleteInventorySupplier(wsId, id),
-      rows: namedRows(suppliers),
+      rows: namedRows(searchRows(suppliers)),
       title: t('suppliers'),
       update: (id, name) => updateInventorySupplier(wsId, id, { name }),
     },
   ];
-  const readyGroups = configs.filter((config) => config.rows.length > 0).length;
+  const baseGroups = [
+    options?.owners ?? [],
+    options?.manufacturers ?? [],
+    options?.units ?? [],
+    options?.warehouses ?? [],
+    suppliers,
+  ];
+  const readyGroups = baseGroups.filter((rows) => rows.length > 0).length;
   const totalRecords =
-    configs.reduce((total, config) => total + config.rows.length, 0) +
-    batches.length;
+    baseGroups.reduce((total, rows) => total + rows.length, 0) + batches.length;
   const isEmptyWorkspace = totalRecords === 0;
 
   return (
@@ -160,7 +171,7 @@ export function SetupPanel({
         ))}
       </Accordion>
       <BatchSection
-        batches={batches}
+        batches={searchRows(batches)}
         options={options}
         suppliers={suppliers}
         wsId={wsId}

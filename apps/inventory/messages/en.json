@@ -2049,6 +2049,13 @@
         "tipTitle": "Checkout can be simulated",
         "title": "Inventory launch walkthrough"
       },
+      "hybridSearch": {
+        "allCached": "Full cache ready",
+        "localFirst": "Instant local results",
+        "refreshing": "Checking the server",
+        "results": "{count, plural, one {# cached match} other {# cached matches}}",
+        "verified": "Server verified"
+      },
       "metrics": {
         "bundles": "Bundles",
         "lowStock": "Low stock",
