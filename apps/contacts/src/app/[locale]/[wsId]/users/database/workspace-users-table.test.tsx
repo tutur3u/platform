@@ -254,6 +254,37 @@ describe('WorkspaceUsersTable', () => {
     });
   });
 
+  it('renders core user rows without waiting for optional field definitions', async () => {
+    const hooks = await import('@tuturuuu/users-ui/database/hooks');
+    vi.mocked(hooks.useWorkspaceUserFields).mockReturnValueOnce({
+      data: undefined,
+      isLoading: true,
+    } as ReturnType<typeof hooks.useWorkspaceUserFields>);
+
+    renderWithQueryClient(
+      <WorkspaceUsersTable
+        wsId="ws-123"
+        locale="en"
+        permissions={{
+          hasPrivateInfo: true,
+          hasPublicInfo: true,
+          canCreateUsers: true,
+          canUpdateUsers: true,
+          canDeleteUsers: true,
+          canCheckUserAttendance: true,
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('users-data-table')).toBeInTheDocument();
+    });
+
+    expect(dataTableMock.mock.calls.at(-1)?.[0]).toMatchObject({
+      extraColumns: [],
+    });
+  });
+
   it('keeps search controls available when the users query errors', async () => {
     useWorkspaceUsersMock.mockReturnValue({
       data: {

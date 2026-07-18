@@ -176,8 +176,7 @@ export function WorkspaceUsersTable({
     useDefaultExcludedGroups(wsId, {
       initialData: initialDefaultExcludedGroups,
     });
-  const { data: extraFieldsData, isLoading: isLoadingFields } =
-    useWorkspaceUserFields(wsId);
+  const { data: extraFieldsData } = useWorkspaceUserFields(wsId);
 
   const isUserDefaultsReady = !isLoadingLinkStatus && !isLoadingGroupMembership;
   const isInitialized =
@@ -349,7 +348,9 @@ export function WorkspaceUsersTable({
   // Skeleton replaces the table on the first load / before defaults resolve.
   // Subsequent fetches keep previous data (keepPreviousData) and show only a
   // lightweight inline indicator so the table never blocks or flashes empty.
-  const showSkeleton = !isInitialized || isLoadingFields || isLoading;
+  // Custom fields are optional columns. Do not keep the core user rows behind
+  // a full-table skeleton while those definitions load (or retry independently).
+  const showSkeleton = !isInitialized || isLoading;
   const isBackgroundRefetching = isFetching && !showSkeleton;
 
   return (
