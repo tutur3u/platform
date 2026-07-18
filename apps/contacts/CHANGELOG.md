@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/contacts-v0.4.0...contacts-v0.5.0) (2026-07-18)
+
+
+### Features
+
+* **inventory:** unify promotions and referrals ([ea9b3be](https://github.com/tutur3u/platform/commit/ea9b3be2ea762b216522da4b5d6c1b8242b4c3b7))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+
+
+### Bug Fixes
+
+* **contacts:** own post approval APIs ([632aa32](https://github.com/tutur3u/platform/commit/632aa322fae28d43c39d63e2d033189065735376))
+* **contacts:** restore audit log exports ([4bae50b](https://github.com/tutur3u/platform/commit/4bae50b7b560d3af5fa4b1af42c83db1d0987f02))
+* **contacts:** restore coupon discovery ([cb7dfea](https://github.com/tutur3u/platform/commit/cb7dfea49da9f72e18321f60d7e95c7f056fbea4))
+* **contacts:** restore user group and report mutations ([0f3f12d](https://github.com/tutur3u/platform/commit/0f3f12d5291b3a2d3635fc3bde193cbe5f3e8052))
+* **contacts:** restore workspace posts ([df08eae](https://github.com/tutur3u/platform/commit/df08eae5334a55412bceb994a878d7c3a53d752e))
+* **contacts:** stream group overview sections ([349e68f](https://github.com/tutur3u/platform/commit/349e68f6901b1bdad8fcc9c418d6ddb9b1b176e4))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+* **tasks:** repair task media permissions ([28a0bf1](https://github.com/tutur3u/platform/commit/28a0bf1f1ff11359828a335ac81bb20860062942))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/contacts-v0.3.0...contacts-v0.4.0) (2026-07-13)
 
 

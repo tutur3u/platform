@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/pay-v0.4.0...pay-v0.5.0) (2026-07-18)
+
+
+### Features
+
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/pay-v0.3.0...pay-v0.4.0) (2026-07-13)
 
 

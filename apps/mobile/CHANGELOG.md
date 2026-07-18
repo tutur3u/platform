@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/mobile-v0.7.0...mobile-v0.8.0) (2026-07-18)
+
+
+### Features
+
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **mobile:** revamp app lock experience ([22b300b](https://github.com/tutur3u/platform/commit/22b300b73a94fdf44cd334dcdbfd0760ab46ed71))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
+
+### Bug Fixes
+
+* **inventory:** improve sales period workflows ([2a7cad5](https://github.com/tutur3u/platform/commit/2a7cad54b5af7bdcdcaf4233508eed91d5cd6832))
+* **mobile:** compact navigation and biometric lock ([5fa1589](https://github.com/tutur3u/platform/commit/5fa15898dd6b6798154abacab636c035b2f7e13c))
+* **mobile:** harden finance and inventory experiences ([0f1e7a0](https://github.com/tutur3u/platform/commit/0f1e7a061aa46ff7019dd3e1cae3877a7e4d863a))
+* **mobile:** refine compact navigation and page hierarchy ([e422c19](https://github.com/tutur3u/platform/commit/e422c19ded312575f63ab3560397c8fba8d73c77))
+* **mobile:** require signed native release builds ([55cedc3](https://github.com/tutur3u/platform/commit/55cedc3ca8bc189030f8b0f514926fed472ffd12))
+* **mobile:** restore tasks bearer access ([2aedf84](https://github.com/tutur3u/platform/commit/2aedf8439f6d989ebf9bb69f83f74f1b25e5b06e))
+* **mobile:** route APIs to satellite owners ([2f2222f](https://github.com/tutur3u/platform/commit/2f2222f342c484d062cecc3a481bf5995a8c2217))
+* **mobile:** simplify dense navigation and calendar events ([dca28dd](https://github.com/tutur3u/platform/commit/dca28dd2c3b7f7ae623b9355a09178eb76d82184))
+* **mobile:** stabilize navigation and QR login ([4e208a1](https://github.com/tutur3u/platform/commit/4e208a1dabbd69d5c641a19a12e47d7691c26a9c))
+* **mobile:** stabilize workspace selection and inventory cache ([229af0d](https://github.com/tutur3u/platform/commit/229af0d85f7bfe72c25c4fddda34bdde27d5e2e1))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/mobile-v0.6.1...mobile-v0.7.0) (2026-06-17)
 
 

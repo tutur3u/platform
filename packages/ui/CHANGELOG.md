@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/ui-v0.17.0...ui-v0.18.0) (2026-07-18)
+
+
+### Features
+
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** add leaderboard leave button and per-member sparklines ([5b65238](https://github.com/tutur3u/platform/commit/5b65238c5388345acebacc6cbc612c738cdc3079))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+* **tasks:** revamp progress, goals, analytics & leaderboards with TrackBear parity ([d1bda0e](https://github.com/tutur3u/platform/commit/d1bda0e37a6ed45eb22aaa3bb20c4d62dc41a19f))
+
+
+### Bug Fixes
+
+* **tasks:** polish task card indicators ([d34966f](https://github.com/tutur3u/platform/commit/d34966fe8939dde56990718acada5a7899a990ed))
+* **tasks:** preserve bulk task list rows ([5aac158](https://github.com/tutur3u/platform/commit/5aac158d38969be83499a5fec114197d0378bac7))
+* **tasks:** repair task media permissions ([28a0bf1](https://github.com/tutur3u/platform/commit/28a0bf1f1ff11359828a335ac81bb20860062942))
+* **tasks:** show select all for empty lists ([485ccd7](https://github.com/tutur3u/platform/commit/485ccd737d93d63d00cf582871a9055d819ba694))
+* **tasks:** stabilize task card selection layout ([5754a9c](https://github.com/tutur3u/platform/commit/5754a9c9edcc1fdee5fff116cb809d3d2dc2bf8c))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/ui-v0.16.0...ui-v0.17.0) (2026-07-13)
 
 

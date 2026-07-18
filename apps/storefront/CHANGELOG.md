@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/storefront-v0.14.0...storefront-v0.15.0) (2026-07-18)
+
+
+### Features
+
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** improve discovery metadata ([a574409](https://github.com/tutur3u/platform/commit/a57440984df45086c4989db07b02d402dd93c828))
+* **seo:** improve discovery metadata ([8e2420d](https://github.com/tutur3u/platform/commit/8e2420d49e7b94c462d92222ea8f239ab92564f6))
+* **seo:** improve page metadata ([0c621cb](https://github.com/tutur3u/platform/commit/0c621cb7fc1253b0a11ea21992503274052c6be0))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **storefront:** add inventory management deep link ([c59bc71](https://github.com/tutur3u/platform/commit/c59bc712a0e19b01430c5387ec5555ca9c493578))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/storefront-v0.13.0...storefront-v0.14.0) (2026-07-13)
 
 

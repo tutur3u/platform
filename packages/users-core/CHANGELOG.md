@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/users-core-v0.4.0...users-core-v0.4.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* **contacts:** own post approval APIs ([632aa32](https://github.com/tutur3u/platform/commit/632aa322fae28d43c39d63e2d033189065735376))
+* **contacts:** restore audit log exports ([4bae50b](https://github.com/tutur3u/platform/commit/4bae50b7b560d3af5fa4b1af42c83db1d0987f02))
+* **contacts:** restore coupon discovery ([cb7dfea](https://github.com/tutur3u/platform/commit/cb7dfea49da9f72e18321f60d7e95c7f056fbea4))
+* **contacts:** restore user group and report mutations ([0f3f12d](https://github.com/tutur3u/platform/commit/0f3f12d5291b3a2d3635fc3bde193cbe5f3e8052))
+* **contacts:** restore workspace posts ([df08eae](https://github.com/tutur3u/platform/commit/df08eae5334a55412bceb994a878d7c3a53d752e))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/users-core-v0.3.0...users-core-v0.4.0) (2026-07-13)
 
 

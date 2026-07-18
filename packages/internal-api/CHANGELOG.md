@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/internal-api-v0.18.0...internal-api-v0.19.0) (2026-07-18)
+
+
+### Features
+
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** revamp payments control center ([0f3d220](https://github.com/tutur3u/platform/commit/0f3d2201ca071315b1a93657d3dda322de773167))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+* **web:** add member invite link management ([7b46280](https://github.com/tutur3u/platform/commit/7b462802ebaef2de36f2e86ca8325795b933f840))
+
+
+### Bug Fixes
+
+* **cms:** address managed delivery review findings ([7888033](https://github.com/tutur3u/platform/commit/78880336632d69d11ee462df3a9d69d9732a2e1f))
+* **cms:** harden managed import recovery ([f266874](https://github.com/tutur3u/platform/commit/f2668747130606a4479d51df881fb1f2f06d9c9f))
+* **contacts:** restore coupon discovery ([cb7dfea](https://github.com/tutur3u/platform/commit/cb7dfea49da9f72e18321f60d7e95c7f056fbea4))
+* **contacts:** restore user group and report mutations ([0f3f12d](https://github.com/tutur3u/platform/commit/0f3f12d5291b3a2d3635fc3bde193cbe5f3e8052))
+* **inventory:** clarify payment sync and settings ([cf05ed6](https://github.com/tutur3u/platform/commit/cf05ed63cfc47022a95177b661d1fa796d68d65e))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **inventory:** restore product and sales CRUD ([c691e74](https://github.com/tutur3u/platform/commit/c691e74c1e67c0523d55a1449647c30873582143))
+* **tasks:** repair task media permissions ([28a0bf1](https://github.com/tutur3u/platform/commit/28a0bf1f1ff11359828a335ac81bb20860062942))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/internal-api-v0.17.0...internal-api-v0.18.0) (2026-07-13)
 
 

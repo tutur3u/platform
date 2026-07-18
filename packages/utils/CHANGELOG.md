@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/utils-v0.15.1...utils-v0.16.0) (2026-07-18)
+
+
+### Features
+
+* **seo:** improve discovery metadata ([a574409](https://github.com/tutur3u/platform/commit/a57440984df45086c4989db07b02d402dd93c828))
+* **seo:** improve discovery metadata ([8e2420d](https://github.com/tutur3u/platform/commit/8e2420d49e7b94c462d92222ea8f239ab92564f6))
+* **seo:** improve page metadata ([0c621cb](https://github.com/tutur3u/platform/commit/0c621cb7fc1253b0a11ea21992503274052c6be0))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
+
+### Bug Fixes
+
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+
 ## [0.15.1](https://github.com/tutur3u/platform/compare/utils-v0.15.0...utils-v0.15.1) (2026-07-13)
 
 

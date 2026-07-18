@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/playground-v0.1.4...playground-v0.2.0) (2026-07-18)
+
+
+### Features
+
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
 ## [0.1.4](https://github.com/tutur3u/platform/compare/playground-v0.1.3...playground-v0.1.4) (2026-07-03)
 
 

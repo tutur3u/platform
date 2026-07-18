@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.10.0...tanstack-web-v0.11.0) (2026-07-18)
+
+
+### Features
+
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
+
+### Bug Fixes
+
+* **tasks:** compile task styles with UI globals ([bb1d600](https://github.com/tutur3u/platform/commit/bb1d600d392f78827cc9a6928a1ce0c264c2d80c))
+* **tasks:** restore task board layout styles ([29e052b](https://github.com/tutur3u/platform/commit/29e052b792af9626c5243e6f8178a4905e508a32))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.9.0...tanstack-web-v0.10.0) (2026-07-13)
 
 
