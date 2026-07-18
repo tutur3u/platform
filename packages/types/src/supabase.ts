@@ -23782,6 +23782,80 @@ export type Database = {
           },
         ];
       };
+      task_progress_achievements: {
+        Row: {
+          category: string;
+          code: string;
+          created_at: string;
+          criteria: Json;
+          description: string | null;
+          icon: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          tier: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          category?: string;
+          code: string;
+          created_at?: string;
+          criteria?: Json;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          tier?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          category?: string;
+          code?: string;
+          created_at?: string;
+          criteria?: Json;
+          description?: string | null;
+          icon?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          tier?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_progress_entries: {
         Row: {
           board_id: string | null;
@@ -23937,6 +24011,9 @@ export type Database = {
           created_at: string;
           description: string | null;
           goal_type: string;
+          habit_frequency: string | null;
+          habit_target_count: number | null;
+          habit_threshold: number | null;
           id: string;
           metric_id: string;
           name: string;
@@ -23960,6 +24037,9 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           goal_type?: string;
+          habit_frequency?: string | null;
+          habit_target_count?: number | null;
+          habit_threshold?: number | null;
           id?: string;
           metric_id: string;
           name: string;
@@ -23983,6 +24063,9 @@ export type Database = {
           created_at?: string;
           description?: string | null;
           goal_type?: string;
+          habit_frequency?: string | null;
+          habit_target_count?: number | null;
+          habit_threshold?: number | null;
           id?: string;
           metric_id?: string;
           name?: string;
@@ -24161,6 +24244,158 @@ export type Database = {
           },
           {
             foreignKeyName: 'task_progress_metrics_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_user_achievements: {
+        Row: {
+          achievement_code: string;
+          created_at: string;
+          id: string;
+          progress: number;
+          unlocked_at: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          achievement_code: string;
+          created_at?: string;
+          id?: string;
+          progress?: number;
+          unlocked_at?: string;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          achievement_code?: string;
+          created_at?: string;
+          id?: string;
+          progress?: number;
+          unlocked_at?: string;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_achievements_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_achievements_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_progress_user_stats: {
+        Row: {
+          created_at: string;
+          last_milestone_at: string | null;
+          level: number;
+          streak_freezes: number;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+          xp: number;
+        };
+        Insert: {
+          created_at?: string;
+          last_milestone_at?: string | null;
+          level?: number;
+          streak_freezes?: number;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+          xp?: number;
+        };
+        Update: {
+          created_at?: string;
+          last_milestone_at?: string | null;
+          level?: number;
+          streak_freezes?: number;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+          xp?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_progress_user_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_stats_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_stats_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_stats_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_stats_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_progress_user_stats_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -38228,6 +38463,33 @@ export type Database = {
       };
       get_task_history: {
         Args: {
+          p_change_type?: string;
+          p_field_name?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_task_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          change_type: string;
+          changed_at: string;
+          changed_by: string;
+          field_name: string;
+          id: string;
+          metadata: Json;
+          new_value: Json;
+          old_value: Json;
+          task_id: string;
+          task_name: string;
+          total_count: number;
+          user_avatar_url: string;
+          user_display_name: string;
+          user_id: string;
+        }[];
+      };
+      get_task_history_for_actor: {
+        Args: {
+          p_actor_user_id: string;
           p_change_type?: string;
           p_field_name?: string;
           p_limit?: number;

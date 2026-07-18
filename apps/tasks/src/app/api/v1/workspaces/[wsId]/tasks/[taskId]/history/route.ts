@@ -1,8 +1,13 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+
+const TASK_HISTORY_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
 
 const querySchema = z.object({
   limit: z
@@ -84,22 +89,14 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string; taskId: string }> }
 ) {
   try {
-    const baseSupabase = await createClient();
+    const auth = await resolveSessionAuthContext(req, {
+      allowAppSessionAuth: TASK_HISTORY_ROUTE_APP_SESSION_AUTH,
+    });
+    if (!auth.ok) return auth.response;
 
-    // Get authenticated user
-    const {
-      authError,
-      supabase: authenticatedSupabase,
-      user,
-    } = await resolveAuthenticatedSessionUser(req, baseSupabase);
-
-    if (authError || !authenticatedSupabase || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const supabase = authenticatedSupabase;
+    const { supabase, user } = auth;
     const { wsId: rawWsId, taskId } = await params;
-    const wsId = resolveWorkspaceId(rawWsId);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Parse query parameters
     const { searchParams } = new URL(req.url);
@@ -122,18 +119,25 @@ export async function GET(
 
     const { limit, offset, change_type, field_name } = queryParams.data;
 
-    // Call the RPC function for efficient data retrieval
-    const { data: history, error: historyError } = await supabase.rpc(
-      'get_task_history',
-      {
-        p_ws_id: wsId,
-        p_task_id: taskId,
-        p_limit: limit,
-        p_offset: offset,
-        p_change_type: change_type ?? undefined,
-        p_field_name: field_name ?? undefined,
-      }
-    );
+    const rpcArgs = {
+      p_ws_id: wsId,
+      p_task_id: taskId,
+      p_limit: limit,
+      p_offset: offset,
+      p_change_type: change_type ?? undefined,
+      p_field_name: field_name ?? undefined,
+    };
+    const isAppSession = Boolean(getAppSessionTokenFromRequest(req));
+
+    // Supabase-backed sessions retain the existing auth.uid()-scoped RPC.
+    // Tuturuuu app sessions use an admin-backed client, so they must pass the
+    // already-verified actor through the service-role-only wrapper instead.
+    const { data: history, error: historyError } = isAppSession
+      ? await supabase.rpc('get_task_history_for_actor', {
+          ...rpcArgs,
+          p_actor_user_id: user.id,
+        })
+      : await supabase.rpc('get_task_history', rpcArgs);
 
     if (historyError) {
       console.error('Error fetching task history:', historyError);
@@ -166,8 +170,8 @@ export async function GET(
     const taskName = history?.[0]?.task_name ?? 'Unknown Task';
 
     // Format the response
-    const formattedHistory = (history || []).map((entry) =>
-      formatTaskHistoryEntry(entry as TaskHistoryRpcEntry)
+    const formattedHistory = (history || []).map((entry: TaskHistoryRpcEntry) =>
+      formatTaskHistoryEntry(entry)
     );
 
     return NextResponse.json({
