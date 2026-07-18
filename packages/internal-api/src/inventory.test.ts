@@ -59,6 +59,7 @@ import {
   updateInventoryProductInventory,
   updateInventoryPromotion,
   updateInventorySale,
+  updateInventorySalesDefaults,
   updateInventorySquareSettings,
   updateInventoryStorefrontListing,
   updateInventorySupplier,
@@ -696,6 +697,32 @@ describe('inventory internal API helpers', () => {
       4,
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
       expect.objectContaining({ method: 'DELETE' })
+    );
+  });
+
+  it('updates Inventory-specific sales defaults without changing global Finance defaults', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        message: 'success',
+      })
+    );
+    const payload = {
+      defaultFinanceCategoryId: 'category_1',
+      defaultRevenueWalletId: 'wallet_1',
+      defaultSalesPeriodId: 'period_1',
+    };
+
+    await updateInventorySalesDefaults('workspace 1', payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%201/inventory/sales-defaults',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        method: 'PUT',
+      })
     );
   });
 

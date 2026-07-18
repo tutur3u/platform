@@ -1,18 +1,24 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   CheckCheck,
   CircleDollarSign,
   Package,
+  Save,
+  Wallet,
   X,
 } from '@tuturuuu/icons';
 import type {
   InventorySaleSummary,
   InventorySalesPeriod,
 } from '@tuturuuu/internal-api/inventory';
-import { setInventorySalesPeriodBulk } from '@tuturuuu/internal-api/inventory';
+import {
+  getInventorySale,
+  setInventorySalesPeriodBulk,
+  updateInventorySale,
+} from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -22,6 +28,100 @@ import { useState } from 'react';
 import { SelectField } from './operator-form-fields';
 import { currency, money } from './operator-format';
 import { NO_PERIOD } from './sales-periods-panel';
+
+export function SaleQuickWalletPicker({
+  sale,
+  wallets,
+  wsId,
+}: {
+  sale: InventorySaleSummary;
+  wallets: Array<{ id: string; name: string }>;
+  wsId: string;
+}) {
+  const t = useTranslations('inventory.operator.commerce.quickWallet');
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [walletId, setWalletId] = useState('');
+  const detail = useQuery({
+    enabled: open,
+    queryFn: () => getInventorySale(wsId, sale.id),
+    queryKey: ['inventory', wsId, 'sale', sale.id],
+  });
+  const currentWalletId = walletId || detail.data?.data.wallet_id || '';
+  const mutation = useMutation({
+    mutationFn: () =>
+      updateInventorySale(wsId, sale.id, { wallet_id: currentWalletId }),
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('saveError')),
+    onSuccess: () => {
+      toast.success(t('saveSuccess'));
+      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'sales'] });
+      queryClient.invalidateQueries({
+        queryKey: ['inventory', wsId, 'sale', sale.id],
+      });
+    },
+  });
+
+  return (
+    <Popover
+      onOpenChange={(nextOpen) => {
+        if (nextOpen) setWalletId('');
+        setOpen(nextOpen);
+      }}
+      open={open}
+    >
+      <PopoverTrigger asChild>
+        <Button
+          aria-label={t('trigger', {
+            wallet: sale.wallet_name ?? t('unassigned'),
+          })}
+          className="h-8 max-w-44 gap-1.5"
+          size="sm"
+          variant="outline"
+        >
+          <Wallet className="h-3.5 w-3.5" />
+          <span className="truncate">
+            {sale.wallet_name ?? t('unassigned')}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-3">
+        <div>
+          <p className="font-semibold text-sm">{t('title')}</p>
+          <p className="mt-0.5 text-muted-foreground text-xs">
+            {t('description')}
+          </p>
+        </div>
+        <div className="mt-3 grid gap-2">
+          <SelectField
+            allowEmpty={false}
+            disabled={detail.isPending || mutation.isPending}
+            label={t('label')}
+            onChange={setWalletId}
+            options={wallets}
+            placeholder={t('placeholder')}
+            searchPlaceholder={t('placeholder')}
+            value={currentWalletId}
+          />
+          <Button
+            disabled={
+              !currentWalletId ||
+              currentWalletId === detail.data?.data.wallet_id ||
+              mutation.isPending
+            }
+            onClick={() => mutation.mutate()}
+            size="sm"
+            type="button"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {mutation.isPending ? t('saving') : t('save')}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export function SaleAmountPopover({
   sale,

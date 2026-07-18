@@ -597,7 +597,10 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const defaultWalletId = await getWorkspaceConfig(wsId, 'default_wallet_id');
+  const [defaultWalletId, inventoryDefaultWalletId] = await Promise.all([
+    getWorkspaceConfig(wsId, 'default_wallet_id'),
+    getWorkspaceConfig(wsId, 'inventory_default_revenue_wallet_id'),
+  ]);
 
   try {
     const {
@@ -623,10 +626,20 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    const configuredDefaultWalletIds = [
+      defaultWalletId,
+      inventoryDefaultWalletId,
+    ].filter((value): value is string => Boolean(value));
+    const matchingDefaultWalletId = configuredDefaultWalletIds.includes(
+      wallet_id
+    )
+      ? wallet_id
+      : configuredDefaultWalletIds[0];
+
     if (
       !canUseRequestedFinanceWalletOnCreate({
         permissions,
-        defaultWalletId,
+        defaultWalletId: matchingDefaultWalletId,
         requestedWalletId: wallet_id,
       })
     ) {

@@ -381,6 +381,54 @@ describe('invoice create route', () => {
     expect(mocks.getUser).not.toHaveBeenCalled();
   });
 
+  it('accepts the Inventory revenue default without broad wallet permissions', async () => {
+    const { POST } = await import('./route');
+
+    mocks.getWorkspaceConfig.mockImplementation(
+      async (_wsId: string, id: string) =>
+        id === 'inventory_default_revenue_wallet_id'
+          ? 'wallet-other'
+          : 'wallet-default'
+    );
+    mocks.getPermissions.mockResolvedValue(withPermissions([]));
+
+    const response = await POST(
+      new Request('http://localhost/api/v1/workspaces/ws-1/finance/invoices', {
+        body: JSON.stringify({
+          content: 'Inventory counter sale',
+          products: [
+            {
+              category_id: 'category-1',
+              price: 100,
+              product_id: 'product-1',
+              quantity: 1,
+              unit_id: 'unit-1',
+              warehouse_id: 'warehouse-1',
+            },
+          ],
+          wallet_id: 'wallet-other',
+        }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }),
+      {
+        params: Promise.resolve({
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    // The lean route fixture intentionally stops after wallet validation. A
+    // 500 here proves the request passed the permission gate and reached the
+    // remaining invoice orchestration; the rejection path returns 403 earlier.
+    expect(response.status).toBe(500);
+    expect(mocks.privateFrom).toHaveBeenCalledWith('workspace_wallets');
+    expect(mocks.getWorkspaceConfig).toHaveBeenCalledWith(
+      '00000000-0000-0000-0000-000000000000',
+      'inventory_default_revenue_wallet_id'
+    );
+  });
+
   it('rejects customers outside the normalized workspace before invoice creation', async () => {
     const { POST } = await import('./route');
 

@@ -8,6 +8,7 @@ import {
   Keyboard,
   Paintbrush,
   PanelLeft,
+  ReceiptText,
   User,
 } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
@@ -28,6 +29,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { PaymentSettingsPanel } from '@/components/operator/payment-settings-panel';
 import { InventoryCurrencySettings } from '@/components/settings/currency-settings';
+import { InventorySalesDefaultsSettings } from '@/components/settings/sales-defaults-settings';
 import { useSidebar } from '@/context/sidebar-context';
 
 interface SettingsDialogProps {
@@ -89,6 +91,13 @@ export function SettingsDialog({
             'POS',
             'Checkout',
           ],
+        },
+        {
+          name: 'inventory_sales',
+          label: t('settings.inventory.sales'),
+          icon: ReceiptText,
+          description: t('settings.inventory.sales_description'),
+          keywords: ['Sales', 'Wallet', 'Revenue', 'Category', 'Period'],
         },
       ],
     },
@@ -192,6 +201,12 @@ export function SettingsDialog({
       {activeTab === 'inventory_payments' && wsId && (
         <div className="h-full">
           <PaymentSettingsPanel defaultProvider={paymentProvider} wsId={wsId} />
+        </div>
+      )}
+
+      {activeTab === 'inventory_sales' && wsId && (
+        <div className="h-full">
+          <InventorySalesDefaultsSettings wsId={wsId} />
         </div>
       )}
 

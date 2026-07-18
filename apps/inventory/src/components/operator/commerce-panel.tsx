@@ -176,6 +176,7 @@ export function CommercePanel({
                 periods={salesPeriods}
                 query={query}
                 rows={sales}
+                wallets={formOptions?.wallets ?? []}
                 workspaceCurrency={workspaceCurrency}
                 wsId={wsId}
               />

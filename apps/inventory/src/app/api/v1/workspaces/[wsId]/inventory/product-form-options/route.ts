@@ -29,7 +29,14 @@ export async function GET(req: Request, { params }: Params) {
 
   try {
     const sbAdmin = await createAdminClient();
-    const [data, walletsResult, defaultWalletId] = await Promise.all([
+    const [
+      data,
+      walletsResult,
+      defaultWalletId,
+      defaultRevenueWalletId,
+      defaultFinanceCategoryId,
+      defaultSalesPeriodId,
+    ] = await Promise.all([
       getInventoryProductFormOptions({
         sbAdmin,
         wsId,
@@ -41,12 +48,18 @@ export async function GET(req: Request, { params }: Params) {
         .eq('ws_id', wsId)
         .order('name'),
       getWorkspaceConfig(wsId, 'default_wallet_id'),
+      getWorkspaceConfig(wsId, 'inventory_default_revenue_wallet_id'),
+      getWorkspaceConfig(wsId, 'inventory_default_finance_category_id'),
+      getWorkspaceConfig(wsId, 'inventory_default_sales_period_id'),
     ]);
 
     if (walletsResult.error) throw walletsResult.error;
 
     return NextResponse.json({
       ...data,
+      defaultFinanceCategoryId,
+      defaultRevenueWalletId,
+      defaultSalesPeriodId,
       defaultWalletId,
       wallets: walletsResult.data ?? [],
     });

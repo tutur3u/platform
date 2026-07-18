@@ -90,10 +90,24 @@ export function SaleCreateDialog({
     setContent(t('defaultTitle'));
     setNotes('');
     setWalletId(
-      options?.defaultWalletId || (wallets.length === 1 ? wallets[0]!.id : '')
+      options?.defaultRevenueWalletId ||
+        options?.defaultWalletId ||
+        (wallets.length === 1 ? wallets[0]!.id : '')
     );
-    setCategoryId(categories.length === 1 ? (categories[0]!.id ?? '') : '');
-    setPeriodId('none');
+    setCategoryId(
+      options?.defaultFinanceCategoryId ||
+        (categories.length === 1 ? (categories[0]!.id ?? '') : '')
+    );
+    setPeriodId(
+      options?.defaultSalesPeriodId &&
+        periods.some(
+          (period) =>
+            period.id === options.defaultSalesPeriodId &&
+            period.status === 'active'
+        )
+        ? options.defaultSalesPeriodId
+        : 'none'
+    );
   };
 
   const mutation = useMutation({

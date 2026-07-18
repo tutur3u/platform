@@ -28,6 +28,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { FINANCE_INVOICE_ROUTE_POLICY } from './lib/api-route-policies';
 
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
@@ -64,6 +65,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
 
     const guardResponse = await guardApiProxyRequest(req, {
+      additionalRoutePolicies: [FINANCE_INVOICE_ROUTE_POLICY],
       prefixBase: 'proxy:finance:api',
     });
     if (guardResponse) {

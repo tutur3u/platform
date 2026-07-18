@@ -1637,6 +1637,9 @@ export type InventoryCommerceSummary = {
 
 export type InventoryProductFormOptionsResponse = {
   categories: ProductCategory[];
+  defaultFinanceCategoryId?: string | null;
+  defaultRevenueWalletId?: string | null;
+  defaultSalesPeriodId?: string | null;
   defaultWalletId?: string | null;
   financeCategories: TransactionCategory[];
   manufacturers: InventoryManufacturer[];
@@ -1644,6 +1647,12 @@ export type InventoryProductFormOptionsResponse = {
   units: ProductUnit[];
   wallets?: Array<{ id: string; name: string }>;
   warehouses: ProductWarehouse[];
+};
+
+export type InventorySalesDefaultsPayload = {
+  defaultFinanceCategoryId: string | null;
+  defaultRevenueWalletId: string | null;
+  defaultSalesPeriodId: string | null;
 };
 
 export type InventoryStatisticsResponse = {
@@ -1979,6 +1988,21 @@ export function getInventoryProductFormOptions(
   ).json<InventoryProductFormOptionsResponse>(
     workspaceInventoryPath(wsId, '/product-form-options'),
     { cache: 'no-store' }
+  );
+}
+
+export function updateInventorySalesDefaults(
+  wsId: string,
+  payload: InventorySalesDefaultsPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspaceInventoryPath(wsId, '/sales-defaults'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PUT',
+    }
   );
 }
 

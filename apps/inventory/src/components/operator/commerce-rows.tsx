@@ -42,8 +42,13 @@ import {
 } from './commerce-shared';
 import { money } from './operator-format';
 import { EmptyRow } from './operator-shell';
+import { groupInventorySalesByDate, localDateKey } from './sale-date-groups';
 import { SaleNoteDialog } from './sale-detail-panel';
-import { BulkSalesPeriodToolbar, SaleAmountPopover } from './sale-row-actions';
+import {
+  BulkSalesPeriodToolbar,
+  SaleAmountPopover,
+  SaleQuickWalletPicker,
+} from './sale-row-actions';
 import { SalePeriodPicker } from './sales-periods-panel';
 
 export function CheckoutRows({
@@ -215,6 +220,7 @@ export function SaleRows({
   periods,
   query,
   rows,
+  wallets,
   workspaceCurrency,
   wsId,
 }: {
@@ -224,6 +230,7 @@ export function SaleRows({
   periods: InventorySalesPeriod[];
   query: string;
   rows: InventorySaleSummary[];
+  wallets: Array<{ id: string; name: string }>;
   workspaceCurrency: string;
   wsId: string;
 }) {
@@ -276,6 +283,14 @@ export function SaleRows({
   const selectedVisibleCount = filteredRows.filter((row) =>
     selectedKeys.has(`${row.source}:${row.id}`)
   ).length;
+  const dateGroups = useMemo(
+    () => groupInventorySalesByDate(filteredRows),
+    [filteredRows]
+  );
+  const todayKey = localDateKey(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = localDateKey(yesterday);
 
   if (filteredRows.length === 0) {
     return (
@@ -323,103 +338,134 @@ export function SaleRows({
           wsId={wsId}
         />
       ) : null}
-      {filteredRows.map((row) => {
-        const date = formatDate(row.completed_at ?? row.created_at, locale);
-        const isCheckoutSale = row.source === 'checkout_session';
-        const selectionKey = `${row.source}:${row.id}`;
+      {dateGroups.map((group) => (
+        <section className="grid gap-2" key={group.key}>
+          <div className="flex items-center gap-2 px-1 pt-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-semibold text-sm">
+              {group.key === todayKey
+                ? t('commerce.dateGroups.today')
+                : group.key === yesterdayKey
+                  ? t('commerce.dateGroups.yesterday')
+                  : group.date
+                    ? new Intl.DateTimeFormat(locale, {
+                        dateStyle: 'full',
+                      }).format(group.date)
+                    : t('commerce.dateGroups.undated')}
+            </h3>
+            <Badge variant="secondary">
+              {t('commerce.dateGroups.count', { count: group.rows.length })}
+            </Badge>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          {group.rows.map((row) => {
+            const date = formatDate(row.completed_at ?? row.created_at, locale);
+            const isCheckoutSale = row.source === 'checkout_session';
+            const selectionKey = `${row.source}:${row.id}`;
 
-        return (
-          <article
-            className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-            key={selectionKey}
-          >
-            <div className="flex min-w-0 items-start gap-3">
-              <Checkbox
-                aria-label={t('commerce.bulk.selectSale')}
-                checked={selectedKeys.has(selectionKey)}
-                className="mt-0.5"
-                onCheckedChange={(checked) => {
-                  setSelectedKeys((current) => {
-                    const next = new Set(current);
-                    if (checked) next.add(selectionKey);
-                    else next.delete(selectionKey);
-                    return next;
-                  });
-                }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-2">
-                  {isCheckoutSale ? (
-                    <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <User className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <p className="truncate font-medium">
-                    {row.notice?.trim() ||
-                      row.customer_name?.trim() ||
-                      t('commerce.saleFallback', {
-                        id: row.id.slice(0, 8),
-                      })}
-                  </p>
-                  <StatusBadge
-                    value={
-                      isCheckoutSale
-                        ? t('commerce.source.checkout')
-                        : t('commerce.source.finance')
-                    }
+            return (
+              <article
+                className="grid gap-3 rounded-lg border border-border bg-card p-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                key={selectionKey}
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <Checkbox
+                    aria-label={t('commerce.bulk.selectSale')}
+                    checked={selectedKeys.has(selectionKey)}
+                    className="mt-0.5"
+                    onCheckedChange={(checked) => {
+                      setSelectedKeys((current) => {
+                        const next = new Set(current);
+                        if (checked) next.add(selectionKey);
+                        else next.delete(selectionKey);
+                        return next;
+                      });
+                    }}
                   />
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-                  <span>{t('commerce.items', { count: row.items_count })}</span>
-                  {date ? (
-                    <span className="inline-flex items-center gap-1">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {date}
-                    </span>
-                  ) : null}
-                  {isCheckoutSale && row.public_token ? (
-                    <span className="font-mono">{row.public_token}</span>
-                  ) : null}
-                </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {row.creator_name?.trim() ? (
-                    <StatusBadge
-                      value={t('commerce.creator', {
-                        name: row.creator_name.trim(),
-                      })}
-                    />
-                  ) : null}
-                  {(row.owners ?? [])
-                    .filter((owner) => owner.trim())
-                    .map((owner) => (
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {isCheckoutSale ? (
+                        <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <User className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <p className="truncate font-medium">
+                        {row.notice?.trim() ||
+                          row.customer_name?.trim() ||
+                          t('commerce.saleFallback', {
+                            id: row.id.slice(0, 8),
+                          })}
+                      </p>
                       <StatusBadge
-                        key={owner}
-                        value={t('commerce.owner', { name: owner.trim() })}
+                        value={
+                          isCheckoutSale
+                            ? t('commerce.source.checkout')
+                            : t('commerce.source.finance')
+                        }
                       />
-                    ))}
-                  {row.customer_name?.trim() && row.notice?.trim() ? (
-                    <StatusBadge
-                      value={t('commerce.customer', {
-                        name: row.customer_name.trim(),
-                      })}
-                    />
-                  ) : null}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+                      <span>
+                        {t('commerce.items', { count: row.items_count })}
+                      </span>
+                      {date ? (
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="h-3.5 w-3.5" />
+                          {date}
+                        </span>
+                      ) : null}
+                      {isCheckoutSale && row.public_token ? (
+                        <span className="font-mono">{row.public_token}</span>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {row.creator_name?.trim() ? (
+                        <StatusBadge
+                          value={t('commerce.creator', {
+                            name: row.creator_name.trim(),
+                          })}
+                        />
+                      ) : null}
+                      {(row.owners ?? [])
+                        .filter((owner) => owner.trim())
+                        .map((owner) => (
+                          <StatusBadge
+                            key={owner}
+                            value={t('commerce.owner', { name: owner.trim() })}
+                          />
+                        ))}
+                      {row.customer_name?.trim() && row.notice?.trim() ? (
+                        <StatusBadge
+                          value={t('commerce.customer', {
+                            name: row.customer_name.trim(),
+                          })}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
-              <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
-              <SaleAmountPopover
-                sale={row}
-                workspaceCurrency={workspaceCurrency}
-              />
-              {isCheckoutSale ? null : (
-                <SaleNoteDialog sale={row} wsId={wsId} />
-              )}
-            </div>
-          </article>
-        );
-      })}
+                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                  <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
+                  {isCheckoutSale || wallets.length === 0 ? null : (
+                    <SaleQuickWalletPicker
+                      sale={row}
+                      wallets={wallets}
+                      wsId={wsId}
+                    />
+                  )}
+                  <SaleAmountPopover
+                    sale={row}
+                    workspaceCurrency={workspaceCurrency}
+                  />
+                  {isCheckoutSale ? null : (
+                    <SaleNoteDialog sale={row} wsId={wsId} />
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </section>
+      ))}
       {hasNextPage ? (
         <div
           className="flex min-h-10 items-center justify-center"
