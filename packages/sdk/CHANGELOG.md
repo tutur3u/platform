@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/sdk-v0.14.0...sdk-v0.15.0) (2026-07-18)
+
+
+### Features
+
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/sdk-v0.13.2...sdk-v0.14.0) (2026-07-11)
 
 

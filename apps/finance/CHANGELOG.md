@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/finance-v0.15.0...finance-v0.16.0) (2026-07-18)
+
+
+### Features
+
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+
+
+### Bug Fixes
+
+* **inventory:** restore product and sales CRUD ([c691e74](https://github.com/tutur3u/platform/commit/c691e74c1e67c0523d55a1449647c30873582143))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/finance-v0.14.0...finance-v0.15.0) (2026-07-13)
 
 

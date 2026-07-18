@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/tutur3u/platform/compare/auth-v0.2.4...auth-v0.2.5) (2026-07-18)
+
+
+### Bug Fixes
+
+* **mobile:** restore tasks bearer access ([2aedf84](https://github.com/tutur3u/platform/commit/2aedf8439f6d989ebf9bb69f83f74f1b25e5b06e))
+
 ## [0.2.4](https://github.com/tutur3u/platform/compare/auth-v0.2.3...auth-v0.2.4) (2026-07-03)
 
 

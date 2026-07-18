@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/external",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",

@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/inventory-v0.15.0...inventory-v0.16.0) (2026-07-18)
+
+
+### Features
+
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add promotions navigation ([f1c5b76](https://github.com/tutur3u/platform/commit/f1c5b76b7f9980d37dcc2d68811b1d326e754d29))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** guide Square POS launch ([74e0a3a](https://github.com/tutur3u/platform/commit/74e0a3ab77356ceb4d576455cff4ac9c53730091))
+* **inventory:** revamp payments control center ([0f3d220](https://github.com/tutur3u/platform/commit/0f3d2201ca071315b1a93657d3dda322de773167))
+* **inventory:** support cent-level Square prices ([146f90f](https://github.com/tutur3u/platform/commit/146f90fa513bbb5d6e75082fcd7ec9460125d935))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **inventory:** unify promotions and referrals ([ea9b3be](https://github.com/tutur3u/platform/commit/ea9b3be2ea762b216522da4b5d6c1b8242b4c3b7))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **storefront:** add inventory management deep link ([c59bc71](https://github.com/tutur3u/platform/commit/c59bc712a0e19b01430c5387ec5555ca9c493578))
+
+
+### Bug Fixes
+
+* **inventory:** clarify payment sync and settings ([cf05ed6](https://github.com/tutur3u/platform/commit/cf05ed63cfc47022a95177b661d1fa796d68d65e))
+* **inventory:** clarify unconfigured Square readiness ([c56d583](https://github.com/tutur3u/platform/commit/c56d58337dcbe573d1b90748540f8dcfd846c1d1))
+* **inventory:** harden Square production handoff ([8ef0395](https://github.com/tutur3u/platform/commit/8ef0395187c1f7b74dc21753a417802d9a7bc99f))
+* **inventory:** improve sales period workflows ([2a7cad5](https://github.com/tutur3u/platform/commit/2a7cad54b5af7bdcdcaf4233508eed91d5cd6832))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **inventory:** restore product and sales CRUD ([c691e74](https://github.com/tutur3u/platform/commit/c691e74c1e67c0523d55a1449647c30873582143))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/inventory-v0.14.0...inventory-v0.15.0) (2026-07-13)
 
 

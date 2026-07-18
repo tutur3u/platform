@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/satellite-v0.7.0...satellite-v0.8.0) (2026-07-18)
+
+
+### Features
+
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** emphasize app picker icons ([7a13608](https://github.com/tutur3u/platform/commit/7a13608a9a1b076af7edaeb1352ae432fcc09edc))
+* **satellite:** refine apps picker navigation ([f84b553](https://github.com/tutur3u/platform/commit/f84b5533906f34e7772947a64605cc24ab64fa2e))
+
+
+### Bug Fixes
+
+* **satellite:** clarify apps picker controls ([528bf51](https://github.com/tutur3u/platform/commit/528bf51b566e10267070828ac94ac5496a3c8b26))
+* **satellite:** share apps picker preference ([fb80637](https://github.com/tutur3u/platform/commit/fb80637fe0767836c58bba2ef3f97000fefe6f05))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/satellite-v0.6.0...satellite-v0.7.0) (2026-07-13)
 
 

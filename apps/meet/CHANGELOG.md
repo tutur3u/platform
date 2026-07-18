@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/meet-v0.12.0...meet-v0.13.0) (2026-07-18)
+
+
+### Features
+
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/meet-v0.11.0...meet-v0.12.0) (2026-07-13)
 
 

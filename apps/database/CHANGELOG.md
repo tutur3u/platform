@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.18.0](https://github.com/tutur3u/platform/compare/database-v1.17.0...database-v1.18.0) (2026-07-18)
+
+
+### Features
+
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** support cent-level Square prices ([146f90f](https://github.com/tutur3u/platform/commit/146f90fa513bbb5d6e75082fcd7ec9460125d935))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **tasks:** revamp progress, goals, analytics & leaderboards with TrackBear parity ([d1bda0e](https://github.com/tutur3u/platform/commit/d1bda0e37a6ed45eb22aaa3bb20c4d62dc41a19f))
+
+
+### Bug Fixes
+
+* **cms:** address managed delivery review findings ([7888033](https://github.com/tutur3u/platform/commit/78880336632d69d11ee462df3a9d69d9732a2e1f))
+* **cms:** grant relation tables to service role ([62d1d11](https://github.com/tutur3u/platform/commit/62d1d112a3d6990b1c6ccfbc4ccc77ec75d2d423))
+* **cms:** grant relation tables to service role ([#4991](https://github.com/tutur3u/platform/issues/4991)) ([c34a711](https://github.com/tutur3u/platform/commit/c34a711d0cb7b7beb073a0f32fc732535ec4ade0))
+* **cms:** harden managed import recovery ([f266874](https://github.com/tutur3u/platform/commit/f2668747130606a4479d51df881fb1f2f06d9c9f))
+* **contacts:** restore user group and report mutations ([0f3f12d](https://github.com/tutur3u/platform/commit/0f3f12d5291b3a2d3635fc3bde193cbe5f3e8052))
+* **database:** deduplicate workspace user archive audit entries ([27a0aff](https://github.com/tutur3u/platform/commit/27a0aff4f2590f2e42cd9e3e219e242244617f3b))
+* **inventory:** gate cent prices on schema readiness ([276aa58](https://github.com/tutur3u/platform/commit/276aa58ad5f52f579005cae8deca6ab41c595a73))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **tasks:** restore app-session history reads ([12bbc01](https://github.com/tutur3u/platform/commit/12bbc017f673a8e9c18a9b803dc180ccf2133684))
+
 ## [1.17.0](https://github.com/tutur3u/platform/compare/database-v1.16.0...database-v1.17.0) (2026-07-13)
 
 
