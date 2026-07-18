@@ -92,10 +92,10 @@ export function SalesPeriodsPanel({
           </p>
         </div>
       </div>
-      <div className="flex min-w-0 flex-wrap items-center gap-2 sm:justify-end">
+      <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
         <SelectValueField
           allowEmpty={false}
-          className="min-w-44 flex-1 sm:w-56 sm:flex-none"
+          className="col-span-2 w-full min-w-0 sm:col-span-1 sm:w-56 sm:flex-none"
           label={t('title')}
           onChange={(value) => onSelect(value === ALL_PERIODS ? '' : value)}
           options={[
@@ -126,6 +126,7 @@ export function SalesPeriodsPanel({
         ) : null}
         {selected ? (
           <Button
+            className="w-full touch-manipulation sm:w-auto"
             disabled={lifecycleMutation.isPending}
             onClick={() => lifecycleMutation.mutate(selected)}
             size="sm"
@@ -239,6 +240,7 @@ function SalesPeriodDialog({
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
         <Button
+          className="w-full touch-manipulation sm:w-auto"
           size="sm"
           type="button"
           variant={isEditing ? 'outline' : 'default'}
@@ -385,7 +387,7 @@ export function SalePeriodPicker({
   return (
     <SelectValueField
       allowEmpty={false}
-      className="min-w-36 max-w-52"
+      className="col-span-2 w-full min-w-0 max-w-none sm:col-span-1 sm:w-auto sm:min-w-36 sm:max-w-52"
       disabled={mutation.isPending}
       label={t('assignmentLabel')}
       onChange={(value) => mutation.mutate(value)}

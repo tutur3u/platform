@@ -22,12 +22,12 @@ export function OperatorMetricCard({
   value: ReactNode;
 }) {
   return (
-    <article className="grid min-h-28 min-w-0 gap-3 rounded-lg border border-border bg-card p-4">
+    <article className="grid min-h-24 min-w-0 gap-2 rounded-lg border border-border bg-card p-3 sm:min-h-28 sm:gap-3 sm:p-4">
       <div className="flex min-w-0 items-center justify-between gap-3">
         <p className="truncate text-muted-foreground text-sm">{label}</p>
         <span
           className={cn(
-            'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-muted/35 text-muted-foreground',
+            'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-muted/35 text-muted-foreground sm:h-8 sm:w-8',
             tone === 'danger' &&
               'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
             tone === 'success' &&
@@ -40,7 +40,9 @@ export function OperatorMetricCard({
         </span>
       </div>
       <div className="min-w-0">
-        <p className="truncate font-semibold text-2xl">{value}</p>
+        <p className="truncate font-semibold text-xl tabular-nums sm:text-2xl">
+          {value}
+        </p>
         {description ? (
           <p className="mt-1 line-clamp-2 text-muted-foreground text-xs leading-5">
             {description}

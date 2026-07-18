@@ -2,6 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
+  ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   CreditCard,
   PackagePlus,
@@ -35,6 +37,8 @@ import {
   type SaleCartLine,
   type SaleStockOption,
 } from './sale-create-items';
+
+const SALE_TABS = ['items', 'payment', 'review'] as const;
 
 export function SaleCreateDialog({
   options,
@@ -80,6 +84,9 @@ export function SaleCreateDialog({
   const canSubmit = Boolean(
     lines.length > 0 && content.trim() && walletId && categoryId
   );
+  const tabIndex = SALE_TABS.indexOf(tab as (typeof SALE_TABS)[number]);
+  const canGoNext =
+    tab === 'items' ? lines.length > 0 : tab === 'payment' ? canSubmit : false;
 
   const reset = () => {
     const wallets = options?.wallets ?? [];
@@ -178,12 +185,16 @@ export function SaleCreateDialog({
       open={open}
     >
       <DialogTrigger asChild>
-        <Button size="sm" type="button">
+        <Button
+          className="w-full touch-manipulation sm:w-auto"
+          size="sm"
+          type="button"
+        >
           <ReceiptText className="h-4 w-4" />
           {t('trigger')}
         </Button>
       </DialogTrigger>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('description')}
           title={t('title')}
@@ -202,34 +213,39 @@ export function SaleCreateDialog({
                 badge: lines.length,
                 content: (
                   <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                    <section className="grid min-w-0 gap-3">
+                    <section className="grid min-w-0 content-start gap-3">
                       <Input
                         aria-label={t('search')}
+                        autoComplete="off"
+                        name="product-search"
                         onChange={(event) => setQuery(event.target.value)}
                         placeholder={t('search')}
                         value={query}
                       />
-                      <div className="grid max-h-[24rem] gap-2 overflow-y-auto pr-1">
+                      <div className="grid gap-2 sm:max-h-[24rem] sm:overflow-y-auto sm:pr-1">
                         {filteredOptions.map((option) => {
                           const soldOut =
                             option.amount !== null && option.amount <= 0;
                           return (
                             <div
-                              className="flex min-w-0 items-center gap-3 rounded-lg border p-3"
+                              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border p-3"
                               key={option.key}
                             >
                               <div className="min-w-0 flex-1">
                                 <p className="truncate font-medium text-sm">
                                   {option.productName}
                                 </p>
-                                <p className="truncate text-muted-foreground text-xs">
+                                <p className="line-clamp-2 text-muted-foreground text-xs sm:truncate">
                                   {option.unitName} · {option.warehouseName} ·{' '}
                                   {option.amount === null
                                     ? t('unlimited')
                                     : t('available', { count: option.amount })}
                                 </p>
+                                <p className="mt-1 font-semibold text-sm sm:hidden">
+                                  {currency(option.price, workspaceCurrency)}
+                                </p>
                               </div>
-                              <span className="shrink-0 font-semibold text-sm">
+                              <span className="hidden shrink-0 font-semibold text-sm sm:block">
                                 {currency(option.price, workspaceCurrency)}
                               </span>
                               <Button
@@ -237,6 +253,7 @@ export function SaleCreateDialog({
                                   name: option.productName,
                                 })}
                                 disabled={soldOut}
+                                className="h-10 w-10 touch-manipulation sm:h-9 sm:w-9"
                                 onClick={() => addLine(option)}
                                 size="icon"
                                 type="button"
@@ -271,7 +288,9 @@ export function SaleCreateDialog({
                     <label className="grid gap-1.5 text-sm sm:col-span-2">
                       <span className="font-medium">{t('saleName')}</span>
                       <Input
+                        autoComplete="off"
                         maxLength={500}
+                        name="sale-name"
                         onChange={(event) => setContent(event.target.value)}
                         value={content}
                       />
@@ -316,7 +335,9 @@ export function SaleCreateDialog({
                     <label className="grid gap-1.5 text-sm sm:col-span-2">
                       <span className="font-medium">{t('notes')}</span>
                       <Textarea
+                        autoComplete="off"
                         maxLength={2000}
+                        name="sale-notes"
                         onChange={(event) => setNotes(event.target.value)}
                         placeholder={t('notesPlaceholder')}
                         value={notes}
@@ -338,8 +359,8 @@ export function SaleCreateDialog({
                 content: (
                   <div className="grid gap-4">
                     <div className="rounded-xl border bg-muted/20 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                        <div className="min-w-0">
                           <p className="font-semibold">
                             {content || t('untitled')}
                           </p>
@@ -353,7 +374,7 @@ export function SaleCreateDialog({
                             })}
                           </p>
                         </div>
-                        <p className="font-bold text-xl">
+                        <p className="font-bold text-xl tabular-nums sm:text-right">
                           {currency(total, workspaceCurrency)}
                         </p>
                       </div>
@@ -371,19 +392,60 @@ export function SaleCreateDialog({
             ]}
             value={tab}
           />
-          <OperatorDialogFooter>
-            <p className="mr-auto text-muted-foreground text-sm">
+          <OperatorDialogFooter className="grid grid-cols-2 sm:flex">
+            <p className="col-span-2 flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-sm sm:mr-auto sm:block sm:bg-transparent sm:p-0">
               {t('total', { amount: currency(total, workspaceCurrency) })}
             </p>
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
+              <Button
+                className="hidden sm:inline-flex"
+                type="button"
+                variant="ghost"
+              >
                 {t('cancel')}
               </Button>
             </DialogClose>
-            <Button disabled={!canSubmit || mutation.isPending} type="submit">
-              <ReceiptText className="h-4 w-4" />
-              {mutation.isPending ? t('creating') : t('create')}
-            </Button>
+            {tabIndex > 0 ? (
+              <Button
+                className="w-full touch-manipulation"
+                onClick={() => setTab(SALE_TABS[tabIndex - 1] ?? 'items')}
+                type="button"
+                variant="outline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t('back')}
+              </Button>
+            ) : (
+              <DialogClose asChild>
+                <Button
+                  className="w-full touch-manipulation sm:hidden"
+                  type="button"
+                  variant="ghost"
+                >
+                  {t('cancel')}
+                </Button>
+              </DialogClose>
+            )}
+            {tab !== 'review' ? (
+              <Button
+                className="w-full touch-manipulation"
+                disabled={!canGoNext}
+                onClick={() => setTab(SALE_TABS[tabIndex + 1] ?? 'review')}
+                type="button"
+              >
+                {t('next')}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                className="w-full touch-manipulation"
+                disabled={!canSubmit || mutation.isPending}
+                type="submit"
+              >
+                <ReceiptText className="h-4 w-4" />
+                {mutation.isPending ? t('creating') : t('create')}
+              </Button>
+            )}
           </OperatorDialogFooter>
         </form>
       </OperatorDialogContent>

@@ -1063,6 +1063,7 @@
         "createSale": {
           "addItem": "Thêm {name}",
           "available": "Còn {count}",
+          "back": "Quay lại",
           "cancel": "Hủy",
           "cart": "Giỏ bán hàng",
           "category": "Danh mục tài chính",
@@ -1078,6 +1079,7 @@
           "emptyProducts": "Không có hàng có thể bán phù hợp tìm kiếm.",
           "itemsTab": "Mặt hàng",
           "missingSetup": "Tạo ví Tài chính và danh mục thu nhập trước khi ghi nhận bán hàng.",
+          "next": "Tiếp theo",
           "noPeriod": "Không có giai đoạn bán hàng",
           "notes": "Ghi chú nội bộ",
           "notesPlaceholder": "Thông tin tùy chọn cho đội ngũ",

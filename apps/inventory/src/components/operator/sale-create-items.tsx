@@ -33,7 +33,7 @@ export function CartEditor({
 }) {
   const t = useTranslations('inventory.operator.commerce.createSale');
   return (
-    <aside className="grid content-start gap-3 rounded-xl border bg-muted/15 p-3">
+    <aside className="grid min-w-0 content-start gap-3 rounded-xl border bg-muted/15 p-3">
       <p className="font-semibold text-sm">{t('cart')}</p>
       {lines.map((line) => (
         <div
@@ -49,6 +49,7 @@ export function CartEditor({
               onClick={() =>
                 onChange(lines.filter((item) => item.key !== line.key))
               }
+              className="h-10 w-10 touch-manipulation sm:h-9 sm:w-9"
               size="icon"
               type="button"
               variant="ghost"
@@ -59,6 +60,7 @@ export function CartEditor({
           <div className="grid grid-cols-2 gap-2">
             <Input
               aria-label={t('quantity')}
+              inputMode="numeric"
               max={line.amount ?? undefined}
               min={1}
               onChange={(event) =>
@@ -85,6 +87,7 @@ export function CartEditor({
             />
             <Input
               aria-label={t('unitPrice')}
+              inputMode="decimal"
               min={0}
               onChange={(event) =>
                 onChange(
@@ -103,7 +106,7 @@ export function CartEditor({
               value={line.price}
             />
           </div>
-          <p className="text-right font-medium text-xs">
+          <p className="text-right font-medium text-xs tabular-nums">
             {currency(line.price * line.quantity, currencyCode)}
           </p>
         </div>

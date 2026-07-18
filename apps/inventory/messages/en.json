@@ -1063,6 +1063,7 @@
         "createSale": {
           "addItem": "Add {name}",
           "available": "{count} available",
+          "back": "Back",
           "cancel": "Cancel",
           "cart": "Sale cart",
           "category": "Finance category",
@@ -1078,6 +1079,7 @@
           "emptyProducts": "No sellable stock matches this search.",
           "itemsTab": "Items",
           "missingSetup": "Create a Finance wallet and income category before recording a sale.",
+          "next": "Next",
           "noPeriod": "No sales period",
           "notes": "Internal note",
           "notesPlaceholder": "Optional context for the team",

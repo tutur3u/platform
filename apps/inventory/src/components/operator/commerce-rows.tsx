@@ -299,8 +299,8 @@ export function SaleRows({
   }
 
   return (
-    <div className="grid gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
+    <div className="grid min-w-0 gap-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
         <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
           <Checkbox
             checked={
@@ -340,9 +340,9 @@ export function SaleRows({
       ) : null}
       {dateGroups.map((group) => (
         <section className="grid gap-2" key={group.key}>
-          <div className="flex items-center gap-2 px-1 pt-2">
+          <div className="flex min-w-0 items-center gap-2 px-1 pt-2">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">
+            <h3 className="min-w-0 truncate font-semibold text-sm">
               {group.key === todayKey
                 ? t('commerce.dateGroups.today')
                 : group.key === yesterdayKey
@@ -383,13 +383,13 @@ export function SaleRows({
                     }}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       {isCheckoutSale ? (
                         <ShieldCheck className="h-4 w-4 shrink-0 text-muted-foreground" />
                       ) : (
                         <User className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
-                      <p className="truncate font-medium">
+                      <p className="min-w-0 flex-1 truncate font-medium">
                         {row.notice?.trim() ||
                           row.customer_name?.trim() ||
                           t('commerce.saleFallback', {
@@ -444,7 +444,7 @@ export function SaleRows({
                     </div>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                <div className="grid min-w-0 grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
                   <SalePeriodPicker periods={periods} sale={row} wsId={wsId} />
                   {isCheckoutSale || wallets.length === 0 ? null : (
                     <SaleQuickWalletPicker

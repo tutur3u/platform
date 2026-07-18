@@ -196,6 +196,10 @@ describe('Inventory operator form workflows', () => {
     expect(shell).toContain('OperatorDialogContent');
     expect(shell).toContain('overflow-y-auto');
     expect(shell).toContain('flex max-h-[calc(100dvh-2rem)] flex-col');
+    expect(shell).toContain('mobileFullscreen');
+    expect(source('sale-create-dialog.tsx')).toContain(
+      '<OperatorDialogContent mobileFullscreen size="lg">'
+    );
 
     // No operator dialog may render a raw <DialogContent>; they must compose the
     // shell so header/footer stay pinned consistently.

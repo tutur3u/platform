@@ -76,7 +76,7 @@ export function SaleQuickWalletPicker({
           aria-label={t('trigger', {
             wallet: sale.wallet_name ?? t('unassigned'),
           })}
-          className="h-8 max-w-44 gap-1.5"
+          className="h-10 w-full min-w-0 touch-manipulation gap-1.5 sm:h-8 sm:w-auto sm:max-w-44"
           size="sm"
           variant="outline"
         >
@@ -86,7 +86,10 @@ export function SaleQuickWalletPicker({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-3">
+      <PopoverContent
+        align="end"
+        className="w-[min(20rem,calc(100vw-1rem))] p-3"
+      >
         <div>
           <p className="font-semibold text-sm">{t('title')}</p>
           <p className="mt-0.5 text-muted-foreground text-xs">
@@ -139,12 +142,19 @@ export function SaleAmountPopover({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button className="h-8 gap-1.5" size="sm" variant="outline">
+        <Button
+          className="h-10 w-full touch-manipulation gap-1.5 sm:h-8 sm:w-auto"
+          size="sm"
+          variant="outline"
+        >
           <CircleDollarSign className="h-3.5 w-3.5" />
           {amount}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-3">
+      <PopoverContent
+        align="end"
+        className="w-[min(18rem,calc(100vw-1rem))] p-3"
+      >
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-semibold text-sm">{t('amountDetails')}</p>
@@ -227,14 +237,17 @@ export function BulkSalesPeriodToolbar({
   });
 
   return (
-    <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-background/95 p-2 shadow-lg backdrop-blur">
-      <Badge className="gap-1.5" variant="secondary">
+    <div className="sticky bottom-2 z-10 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 rounded-xl border border-primary/25 bg-background/95 p-2 shadow-lg backdrop-blur sm:top-2 sm:bottom-auto sm:flex sm:flex-wrap sm:items-center">
+      <Badge
+        className="col-span-2 w-fit gap-1.5 pr-10 sm:col-span-1 sm:pr-2"
+        variant="secondary"
+      >
         <CheckCheck className="h-3.5 w-3.5" />
         {t('selected', { count: sales.length })}
       </Badge>
       <SelectField
         allowEmpty={false}
-        className="min-w-44 flex-1 sm:flex-none"
+        className="min-w-0 flex-1 sm:min-w-44 sm:flex-none"
         label={t('targetPeriod')}
         onChange={setPeriodId}
         options={[{ id: NO_PERIOD, name: periodsT('unassigned') }, ...periods]}
@@ -243,7 +256,7 @@ export function BulkSalesPeriodToolbar({
         value={periodId}
       />
       <Button
-        className="h-8"
+        className="h-10 touch-manipulation sm:h-8"
         disabled={mutation.isPending}
         onClick={() => mutation.mutate()}
         size="sm"
@@ -253,7 +266,7 @@ export function BulkSalesPeriodToolbar({
       </Button>
       <Button
         aria-label={t('clear')}
-        className="h-8 w-8"
+        className="absolute top-2 right-2 h-8 w-8 touch-manipulation sm:static"
         onClick={clearSelection}
         size="icon"
         variant="ghost"

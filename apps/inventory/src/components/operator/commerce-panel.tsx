@@ -89,7 +89,7 @@ export function CommercePanel({
 
   return (
     <div className="grid gap-3">
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <OperatorMetricCard
           description={t('metrics.reservedDescription')}
           icon={CreditCard}
@@ -124,12 +124,16 @@ export function CommercePanel({
       >
         <TabsList
           aria-label={tabsT('label')}
-          className="grid h-auto w-full grid-cols-3"
+          className="grid h-auto w-full grid-cols-3 gap-1 p-1"
         >
           {commerceTabs.map(({ icon: Icon, label, value }) => (
-            <TabsTrigger className="gap-2 py-1.5" key={value} value={value}>
-              <Icon className="h-4 w-4" />
-              {label}
+            <TabsTrigger
+              className="min-w-0 touch-manipulation gap-1.5 px-2 py-2 text-xs sm:gap-2 sm:px-3 sm:text-sm"
+              key={value}
+              value={value}
+            >
+              <Icon className="hidden h-4 w-4 shrink-0 min-[380px]:block" />
+              <span className="truncate">{label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -145,7 +149,7 @@ export function CommercePanel({
             <LoadingRows />
           ) : (
             <div className="grid gap-3">
-              <div className="flex justify-end">
+              <div className="flex justify-stretch sm:justify-end">
                 <SaleCreateDialog
                   options={formOptions}
                   periods={salesPeriods}

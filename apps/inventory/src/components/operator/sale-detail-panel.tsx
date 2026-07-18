@@ -76,7 +76,12 @@ export function SaleNoteDialog({
       open={open}
     >
       <DialogTrigger asChild>
-        <Button size="sm" type="button" variant="outline">
+        <Button
+          className="w-full touch-manipulation sm:w-auto"
+          size="sm"
+          type="button"
+          variant="outline"
+        >
           <Pencil className="h-4 w-4" />
           {commerceT('details')}
         </Button>
