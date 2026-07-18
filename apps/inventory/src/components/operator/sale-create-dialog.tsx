@@ -30,6 +30,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Dialog, DialogClose, DialogTrigger } from '@tuturuuu/ui/dialog';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { Input } from '@tuturuuu/ui/input';
@@ -97,6 +98,7 @@ export function SaleCreateDialog({
   const [walletId, setWalletId] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [periodId, setPeriodId] = useState('none');
+  const [keepOpenAfterSale, setKeepOpenAfterSale] = useState(false);
   const [serverQuery] = useDebounce(query, 280);
   const productSearchQuery = useQuery({
     enabled: open && Boolean(serverQuery.trim()),
@@ -238,7 +240,11 @@ export function SaleCreateDialog({
       if (result.period_assignment_warning) {
         toast.warning(result.period_assignment_warning);
       }
-      setOpen(false);
+      if (keepOpenAfterSale) {
+        reset();
+      } else {
+        setOpen(false);
+      }
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'sales'] });
       queryClient.invalidateQueries({
@@ -573,6 +579,17 @@ export function SaleCreateDialog({
             <p className="col-span-2 flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-muted-foreground text-sm sm:mr-auto sm:block sm:bg-transparent sm:p-0">
               {t('total', { amount: currency(total, workspaceCurrency) })}
             </p>
+            <label className="col-span-2 flex w-fit cursor-pointer items-center gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5 text-muted-foreground text-xs">
+              <Checkbox
+                aria-label={t('keepOpen')}
+                checked={keepOpenAfterSale}
+                disabled={mutation.isPending}
+                onCheckedChange={(checked) =>
+                  setKeepOpenAfterSale(checked === true)
+                }
+              />
+              <span>{t('keepOpen')}</span>
+            </label>
             <DialogClose asChild>
               <Button
                 className="hidden sm:inline-flex"

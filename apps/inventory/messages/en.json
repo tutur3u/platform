@@ -1171,6 +1171,7 @@
           "emptyProducts": "No sellable stock matches this search.",
           "imagePreviewDescription": "Full product image preview",
           "itemsTab": "Items",
+          "keepOpen": "Keep open after sale",
           "missingSetup": "Create a Finance wallet and income category before recording a sale.",
           "next": "Next",
           "noPeriod": "No sales period",
