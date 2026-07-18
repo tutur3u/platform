@@ -371,7 +371,10 @@ export function NavLink({
             : undefined;
 
         window.dispatchEvent(
-          new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, { detail })
+          new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+            cancelable: true,
+            detail,
+          })
         );
         onClick();
       } else if (hasSubMenu) {

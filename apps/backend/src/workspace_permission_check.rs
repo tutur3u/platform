@@ -36,6 +36,11 @@ struct EffectiveWorkspacePermissions {
     permissions: Vec<String>,
 }
 
+struct AuthenticatedWorkspaceUser {
+    access_token: Option<String>,
+    id: String,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct WorkspacePermissionAuthorization {
     pub(crate) ws_id: String,
@@ -132,8 +137,9 @@ pub(crate) async fn authorize_workspace_permission(
     let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
         return Err(WorkspacePermissionAuthorizationError::Unauthorized);
     };
+    let auth = DataAuth::AccessToken(&access_token);
     let Some(resolved_ws_id) =
-        normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &access_token)
+        normalize_workspace_id(contact_data, outbound, raw_ws_id, &user_id, &auth)
             .await
             .map_err(|_| WorkspacePermissionAuthorizationError::Internal)?
     else {
@@ -145,7 +151,7 @@ pub(crate) async fn authorize_workspace_permission(
         outbound,
         &resolved_ws_id,
         &user_id,
-        &access_token,
+        &auth,
     )
     .await
     .map_err(|_| WorkspacePermissionAuthorizationError::Internal)?
@@ -167,6 +173,33 @@ pub(crate) async fn authorize_workspace_permission(
     }
 }
 
+pub(crate) async fn authorize_workspace_permission_allowing_app_sessions(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    raw_ws_id: &str,
+    permission: &str,
+    outbound: &impl OutboundHttpClient,
+) -> Result<WorkspacePermissionAuthorization, WorkspacePermissionAuthorizationError> {
+    let permissions =
+        effective_workspace_permissions_allowing_app_sessions(config, request, raw_ws_id, outbound)
+            .await
+            .map_err(|_| WorkspacePermissionAuthorizationError::Internal)?
+            .ok_or(WorkspacePermissionAuthorizationError::NotFound)?;
+
+    if permissions.has_all_permissions
+        || permissions
+            .permissions
+            .iter()
+            .any(|value| value == permission)
+    {
+        Ok(WorkspacePermissionAuthorization {
+            ws_id: permissions.ws_id,
+        })
+    } else {
+        Err(WorkspacePermissionAuthorizationError::Forbidden)
+    }
+}
+
 async fn workspace_permission_check_response(
     config: &BackendConfig,
     request: BackendRequest<'_>,
@@ -180,7 +213,9 @@ async fn workspace_permission_check_response(
         ));
     };
 
-    match effective_workspace_permissions(&config.contact_data, request, ws_id, outbound).await {
+    match effective_workspace_permissions_allowing_app_sessions(config, request, ws_id, outbound)
+        .await
+    {
         Ok(Some(permissions)) => permission_check_response(
             permissions.has_all_permissions
                 || permissions
@@ -199,44 +234,91 @@ async fn workspace_settings_permissions_response(
     ws_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    match effective_workspace_permissions(&config.contact_data, request, ws_id, outbound).await {
-        Ok(Some(permissions)) => workspace_settings_permissions_success_response(&permissions),
+    match effective_workspace_permissions_allowing_app_sessions(config, request, ws_id, outbound)
+        .await
+    {
+        Ok(Some(permissions)) => workspace_settings_permissions_success_response(
+            permissions.has_all_permissions,
+            &permissions.permissions,
+        ),
         Ok(None) => workspace_access_denied_response(),
         Err(()) => internal_server_error_response(),
     }
 }
 
-async fn effective_workspace_permissions(
-    contact_data: &contact::ContactDataConfig,
+async fn effective_workspace_permissions_allowing_app_sessions(
+    config: &BackendConfig,
     request: BackendRequest<'_>,
     ws_id: &str,
     outbound: &impl OutboundHttpClient,
-) -> Result<Option<EffectiveWorkspacePermissions>, ()> {
-    let Some(access_token) = request_access_token_ignoring_app_sessions(request) else {
+) -> Result<Option<EffectiveWorkspacePermissionsWithWorkspace>, ()> {
+    let Some(user) = authenticated_workspace_user(config, request, outbound).await else {
         return Ok(None);
     };
-    let Some(user) =
-        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+    let auth = user
+        .access_token
+        .as_deref()
+        .map(DataAuth::AccessToken)
+        .unwrap_or(DataAuth::ServiceRole);
+    let Some(resolved_ws_id) =
+        normalize_workspace_id(&config.contact_data, outbound, ws_id, &user.id, &auth).await?
     else {
         return Ok(None);
     };
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
-        return Ok(None);
-    };
-    let Some(resolved_ws_id) =
-        normalize_workspace_id(contact_data, outbound, ws_id, &user_id, &access_token).await?
+    let Some(permissions) = effective_workspace_permissions_for_user(
+        &config.contact_data,
+        outbound,
+        &resolved_ws_id,
+        &user.id,
+        &auth,
+    )
+    .await?
     else {
         return Ok(None);
     };
 
-    effective_workspace_permissions_for_user(
-        contact_data,
-        outbound,
-        &resolved_ws_id,
-        &user_id,
-        &access_token,
-    )
-    .await
+    Ok(Some(EffectiveWorkspacePermissionsWithWorkspace {
+        has_all_permissions: permissions.has_all_permissions,
+        permissions: permissions.permissions,
+        ws_id: resolved_ws_id,
+    }))
+}
+
+struct EffectiveWorkspacePermissionsWithWorkspace {
+    has_all_permissions: bool,
+    permissions: Vec<String>,
+    ws_id: String,
+}
+
+async fn authenticated_workspace_user(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    outbound: &impl OutboundHttpClient,
+) -> Option<AuthenticatedWorkspaceUser> {
+    if contact::request_has_app_session_token(request) {
+        if let Ok(identity) = contact::resolve_app_session_identity(
+            config,
+            request,
+            contact::current_user_app_session_targets(),
+        ) && !identity.id.trim().is_empty()
+        {
+            return Some(AuthenticatedWorkspaceUser {
+                access_token: None,
+                id: identity.id,
+            });
+        }
+    }
+
+    let access_token = request_access_token_ignoring_app_sessions(request)?;
+    let user =
+        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
+            .await?;
+    let id = user.id.filter(|id| !id.trim().is_empty())?;
+
+    Some(AuthenticatedWorkspaceUser {
+        access_token: Some(access_token),
+        id,
+    })
 }
 
 async fn effective_workspace_permissions_for_user(
@@ -244,16 +326,10 @@ async fn effective_workspace_permissions_for_user(
     outbound: &impl OutboundHttpClient,
     resolved_ws_id: &str,
     user_id: &str,
-    access_token: &str,
+    auth: &DataAuth<'_>,
 ) -> Result<Option<EffectiveWorkspacePermissions>, ()> {
-    let Some(membership_type) = workspace_membership_type(
-        contact_data,
-        outbound,
-        resolved_ws_id,
-        user_id,
-        access_token,
-    )
-    .await?
+    let Some(membership_type) =
+        workspace_membership_type(contact_data, outbound, resolved_ws_id, user_id, auth).await?
     else {
         return Ok(None);
     };
@@ -292,7 +368,7 @@ async fn normalize_workspace_id(
     outbound: &impl OutboundHttpClient,
     raw_ws_id: &str,
     user_id: &str,
-    access_token: &str,
+    auth: &DataAuth<'_>,
 ) -> Result<Option<String>, ()> {
     let resolved_ws_id = resolve_workspace_id(raw_ws_id);
 
@@ -304,7 +380,7 @@ async fn normalize_workspace_id(
         .trim()
         .eq_ignore_ascii_case(PERSONAL_WORKSPACE_SLUG)
     {
-        return personal_workspace_id(contact_data, outbound, user_id, access_token).await;
+        return personal_workspace_id(contact_data, outbound, user_id, auth).await;
     }
 
     if !is_workspace_uuid_literal(&resolved_ws_id) {
@@ -313,9 +389,8 @@ async fn normalize_workspace_id(
             return Ok(Some(resolved_ws_id));
         }
 
-        let access_token_auth = DataAuth::AccessToken(access_token);
         if let Some(workspace_id) =
-            workspace_id_by_handle(contact_data, outbound, &handle, &access_token_auth).await?
+            workspace_id_by_handle(contact_data, outbound, &handle, auth).await?
         {
             return Ok(Some(workspace_id));
         }
@@ -335,7 +410,7 @@ async fn personal_workspace_id(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
     user_id: &str,
-    access_token: &str,
+    auth: &DataAuth<'_>,
 ) -> Result<Option<String>, ()> {
     let Some(url) = contact_data.rest_url(
         "workspaces",
@@ -352,14 +427,8 @@ async fn personal_workspace_id(
     ) else {
         return Err(());
     };
-    let response = send_rest_request(
-        contact_data,
-        outbound,
-        OutboundMethod::Get,
-        &url,
-        &DataAuth::AccessToken(access_token),
-    )
-    .await?;
+    let response =
+        send_rest_request(contact_data, outbound, OutboundMethod::Get, &url, auth).await?;
 
     if !is_success_status(response.status) {
         return Ok(None);
@@ -399,7 +468,7 @@ async fn workspace_membership_type(
     outbound: &impl OutboundHttpClient,
     ws_id: &str,
     user_id: &str,
-    access_token: &str,
+    auth: &DataAuth<'_>,
 ) -> Result<Option<String>, ()> {
     let Some(url) = contact_data.rest_url(
         "workspace_members",
@@ -412,14 +481,8 @@ async fn workspace_membership_type(
     ) else {
         return Err(());
     };
-    let response = send_rest_request(
-        contact_data,
-        outbound,
-        OutboundMethod::Get,
-        &url,
-        &DataAuth::AccessToken(access_token),
-    )
-    .await?;
+    let response =
+        send_rest_request(contact_data, outbound, OutboundMethod::Get, &url, auth).await?;
 
     if !is_success_status(response.status) {
         return Ok(None);
@@ -817,24 +880,22 @@ fn permission_check_response(has_permission: bool) -> BackendResponse {
 }
 
 fn workspace_settings_permissions_success_response(
-    permissions: &EffectiveWorkspacePermissions,
+    has_all_permissions: bool,
+    permissions: &[String],
 ) -> BackendResponse {
     let mut response = json_response(
         200,
         WorkspaceSettingsPermissionsResponse {
-            manage_subscription: permissions.has_all_permissions
+            manage_subscription: has_all_permissions
                 || permissions
-                    .permissions
                     .iter()
                     .any(|value| value == "manage_subscription"),
-            manage_workspace_settings: permissions.has_all_permissions
+            manage_workspace_settings: has_all_permissions
                 || permissions
-                    .permissions
                     .iter()
                     .any(|value| value == "manage_workspace_settings"),
-            manage_workspace_members: permissions.has_all_permissions
+            manage_workspace_members: has_all_permissions
                 || permissions
-                    .permissions
                     .iter()
                     .any(|value| value == "manage_workspace_members"),
         },
@@ -867,6 +928,7 @@ mod tests {
     use std::{cell::RefCell, collections::VecDeque};
 
     const WORKSPACE_ID: &str = "11111111-1111-4111-8111-111111111111";
+    const APP_SESSION_SECRET: &str = "test-app-session-secret";
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     struct RecordedOutboundRequest {
@@ -944,6 +1006,44 @@ mod tests {
         config
     }
 
+    fn backend_config_with_app_sessions() -> BackendConfig {
+        let mut config = backend_config_with_contact_data();
+        config
+            .app_coordination_secrets
+            .push(APP_SESSION_SECRET.to_owned());
+        config
+    }
+
+    fn app_session_token(target_app: &str) -> String {
+        let header = contact::encode_app_session_part(r#"{"alg":"HS256","typ":"JWT"}"#);
+        let claims = contact::AppCoordinationClaims {
+            aud: contact::app_coordination_token_audience().to_owned(),
+            email: Some("member@example.com".to_owned()),
+            exp: 4_000_000_000,
+            iat: 1,
+            iss: contact::app_coordination_token_issuer().to_owned(),
+            jti: "workspace-settings-test".to_owned(),
+            origin_app: "platform".to_owned(),
+            scopes: vec![contact::APP_SESSION_SCOPE.to_owned()],
+            sub: "app-session-user-1".to_owned(),
+            target_app: target_app.to_owned(),
+            typ: "app_coordination".to_owned(),
+        };
+        let payload = contact::encode_app_session_part(
+            serde_json::to_string(&claims).expect("serialize app-session claims"),
+        );
+        let unsigned = format!("{header}.{payload}");
+        let signature = contact::sign_app_coordination_content(&unsigned, APP_SESSION_SECRET)
+            .expect("sign app-session token");
+
+        format!(
+            "{}{}.{}",
+            contact::app_coordination_token_prefix(),
+            unsigned,
+            signature
+        )
+    }
+
     fn request(
         method: &'static str,
         workspace_id: &'static str,
@@ -1000,6 +1100,16 @@ mod tests {
     fn authorized_settings_permissions_request() -> BackendRequest<'static> {
         BackendRequest {
             authorization: Some("Bearer user-access-token"),
+            ..settings_permissions_request("GET")
+        }
+    }
+
+    fn app_session_settings_permissions_request(target_app: &str) -> BackendRequest<'static> {
+        BackendRequest {
+            authorization: Some(leaked_test_str(format!(
+                "Bearer {}",
+                app_session_token(target_app)
+            ))),
             ..settings_permissions_request("GET")
         }
     }
@@ -1103,6 +1213,60 @@ mod tests {
                 "https://project-ref.supabase.co/rest/v1/workspace_default_permissions?"
             )
         );
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_accepts_inventory_app_sessions() {
+        let config = backend_config_with_app_sessions();
+        let outbound = RecordingOutboundClient::with_responses(vec![
+            outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+            outbound_response(200, r#"[{"creator_id":"app-session-user-1"}]"#),
+            outbound_response(200, r#"[]"#),
+            outbound_response(200, r#"[]"#),
+        ]);
+
+        let response = handle_backend_request(
+            &config,
+            app_session_settings_permissions_request("inventory"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 200);
+        assert_eq!(
+            response.body,
+            json!({
+                "manage_subscription": true,
+                "manage_workspace_settings": true,
+                "manage_workspace_members": true,
+            })
+        );
+        assert_eq!(outbound.calls().len(), 4);
+        assert!(
+            outbound.calls()[0]
+                .url
+                .contains("user_id=eq.app-session-user-1")
+        );
+        assert_eq!(
+            recorded_header(&outbound.calls()[0], "Authorization"),
+            Some("Bearer test-service-role-secret")
+        );
+    }
+
+    #[tokio::test]
+    async fn workspace_settings_permissions_rejects_unknown_app_audiences() {
+        let config = backend_config_with_app_sessions();
+        let outbound = RecordingOutboundClient::default();
+
+        let response = handle_backend_request(
+            &config,
+            app_session_settings_permissions_request("storefront"),
+            &outbound,
+        )
+        .await;
+
+        assert_eq!(response.status, 403);
+        assert_eq!(outbound.calls().len(), 0);
     }
 
     #[tokio::test]

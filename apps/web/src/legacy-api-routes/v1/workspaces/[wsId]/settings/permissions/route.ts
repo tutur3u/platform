@@ -5,6 +5,7 @@ import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { getPermissions, verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { CURRENT_USER_APP_SESSION_AUTH } from '../../../../users/me/session-auth';
 
 async function resolveDiscordIntegrationAccess({
   supabase,
@@ -133,5 +134,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
     }
   },
-  { cache: { maxAge: 30, swr: 30 } }
+  {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    cache: { maxAge: 30, swr: 30 },
+  }
 );

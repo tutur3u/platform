@@ -158,6 +158,7 @@ describe('NavLink', () => {
     )?.[0];
 
     expect(event).toBeInstanceOf(CustomEvent);
+    expect(event?.cancelable).toBe(true);
     expect((event as CustomEvent).detail).toEqual({
       settingsTab: 'workspace_billing',
     });

@@ -68,7 +68,7 @@ use crate::{
     BackendConfig, BackendRequest, BackendResponse, finance_auth, json_response, no_store_response,
     outbound::OutboundHttpClient,
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
     },
 };
 use data::{fetch_default_included_groups, fetch_workspace_configs};
@@ -180,8 +180,8 @@ async fn authorize_config_read(
         .map_err(invoice_permission_error_response);
     }
 
-    authorize_workspace_permission(
-        &config.contact_data,
+    authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         MANAGE_WORKSPACE_SETTINGS_PERMISSION,

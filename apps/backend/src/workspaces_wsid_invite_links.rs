@@ -66,26 +66,32 @@ async fn invite_links_get_response(
         return error_response(500, "Failed to fetch invite links");
     }
 
-    // Step 1: resolve authenticated user from Bearer session token.
-    let access_token = match supabase_auth::request_access_token(request) {
-        Some(token) => token,
-        None => return error_response(401, "Unauthorized"),
-    };
-
-    let user = match supabase_auth::fetch_supabase_auth_user(
-        &config.contact_data,
-        &access_token,
-        outbound,
-    )
-    .await
-    {
-        Some(user) => user,
-        None => return error_response(401, "Unauthorized"),
-    };
-
-    let user_id = match user.id.filter(|id| !id.trim().is_empty()) {
-        Some(id) => id,
-        None => return error_response(401, "Unauthorized"),
+    // Step 1: resolve the caller from a satellite app session or a regular
+    // Supabase browser session.
+    let user_id = if contact::request_has_app_session_token(request) {
+        contact::resolve_app_session_identity(
+            config,
+            request,
+            contact::current_user_app_session_targets(),
+        )
+        .ok()
+        .map(|identity| identity.id)
+    } else {
+        let access_token = supabase_auth::request_access_token(request);
+        match access_token {
+            Some(access_token) => supabase_auth::fetch_supabase_auth_user(
+                &config.contact_data,
+                &access_token,
+                outbound,
+            )
+            .await
+            .and_then(|user| user.id),
+            None => None,
+        }
+    }
+    .filter(|id| !id.trim().is_empty());
+    let Some(user_id) = user_id else {
+        return error_response(401, "Unauthorized");
     };
 
     // Step 2: verify workspace membership.

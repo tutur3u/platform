@@ -44,10 +44,11 @@ pub(crate) const SUPABASE_SERVICE_ROLE_KEY_KEYS: [&str; 3] = [
 ];
 const CONTACT_DATA_SUPABASE_URL_SETTING: &str = "SUPABASE_URL";
 const CONTACT_DATA_SERVICE_ROLE_KEY_SETTING: &str = "SUPABASE_SERVICE_ROLE_KEY";
-const CURRENT_USER_APP_SESSION_TARGETS: [&str; 17] = [
+const CURRENT_USER_APP_SESSION_TARGETS: [&str; 18] = [
     "calendar",
     "chat",
     "cms",
+    "contacts",
     "drive",
     "finance",
     "hive",

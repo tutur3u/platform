@@ -64,6 +64,7 @@ const INTERNAL_WORKSPACE_SLUG: &str = "internal";
 const ENABLE_CMS_GAMES_CONFIG_ID: &str = "ENABLE_CMS_GAMES";
 const DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID: &str = "DATABASE_DEFAULT_INCLUDED_GROUPS";
 const DEFAULT_CURRENCY_CONFIG_ID: &str = "DEFAULT_CURRENCY";
+const GUEST_SELF_JOIN_CONFIG_ID: &str = "ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL";
 
 /// First path segment names under `/settings/` that resolve to their own static
 /// Next.js routes (which take precedence over the `[configId]` dynamic segment).
@@ -391,7 +392,9 @@ fn is_deferred_config_id(config_id: &str) -> bool {
 }
 
 fn app_session_targets(config_id: &str) -> &'static [&'static str] {
-    if config_id == DEFAULT_CURRENCY_CONFIG_ID {
+    if config_id == GUEST_SELF_JOIN_CONFIG_ID {
+        contact::current_user_app_session_targets()
+    } else if config_id == DEFAULT_CURRENCY_CONFIG_ID {
         &FINANCE_INVENTORY_APP_SESSION_TARGETS
     } else {
         &FINANCE_APP_SESSION_TARGETS
@@ -545,6 +548,15 @@ mod tests {
             app_session_targets("default_wallet_id"),
             &["finance", "platform"]
         );
+    }
+
+    #[test]
+    fn guest_self_join_config_accepts_current_user_satellite_sessions() {
+        let targets = app_session_targets(GUEST_SELF_JOIN_CONFIG_ID);
+
+        assert!(targets.contains(&"contacts"));
+        assert!(targets.contains(&"inventory"));
+        assert!(targets.contains(&"tasks"));
     }
 
     #[test]

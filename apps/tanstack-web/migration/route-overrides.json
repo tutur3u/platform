@@ -877,12 +877,12 @@
     "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by revalidating a normal Supabase browser session or non-app-session Bearer token, rejecting app-session tokens, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by accepting current-user satellite app sessions or revalidating a normal Supabase browser session, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
     },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions/check by revalidating a normal Supabase browser session or non-app-session Bearer token, ignoring app-session tokens and the legacy userId query, resolving personal/workspace identifiers, requiring workspace membership, and mirroring getPermissions role/default/creator/admin behavior before returning hasPermission."
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions/check by accepting current-user satellite app sessions or revalidating a normal Supabase browser session, ignoring the legacy userId query, resolving personal/workspace identifiers, requiring workspace membership, and mirroring getPermissions role/default/creator/admin behavior before returning hasPermission."
     },
     "api:/api/v1/workspaces/:wsId/slides:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/slides/route.ts": {
       "status": "migrated",

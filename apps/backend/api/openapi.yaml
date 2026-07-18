@@ -9715,8 +9715,10 @@ paths:
   /api/v1/workspaces/{wsId}/settings/permissions:
     get:
       summary: Workspace settings permission flags
-      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts GET. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, rejects app-session tokens, resolves personal and workspace handles, verifies workspace access, mirrors getPermissions-style role/default/creator/admin behavior, and returns the three legacy settings permission flags.
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts GET. The Rust backend accepts current-user satellite app sessions or revalidates a normal Supabase browser session with Supabase Auth, resolves personal and workspace handles, verifies workspace access, mirrors getPermissions-style role/default/creator/admin behavior, and returns the three legacy settings permission flags.
       security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
       parameters:
@@ -9761,8 +9763,10 @@ paths:
   /api/v1/workspaces/{wsId}/settings/permissions/check:
     get:
       summary: Workspace setting permission check
-      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts GET. The Rust backend revalidates a normal Supabase browser session or non-app-session Bearer token with Supabase Auth, ignores app-session tokens and the legacy userId query parameter, resolves personal and workspace handles, verifies workspace access, and mirrors getPermissions-style role/default/creator/admin behavior before returning `{ hasPermission }`.
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts GET. The Rust backend accepts current-user satellite app sessions or revalidates a normal Supabase browser session with Supabase Auth, ignores the legacy userId query parameter, resolves personal and workspace handles, verifies workspace access, and mirrors getPermissions-style role/default/creator/admin behavior before returning `{ hasPermission }`.
       security:
+        - AppSessionBearer: []
+        - AppSessionCookie: []
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
       parameters:

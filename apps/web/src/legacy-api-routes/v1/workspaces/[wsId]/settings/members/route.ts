@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { CURRENT_USER_APP_SESSION_AUTH } from '../../../../users/me/session-auth';
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, _context, { wsId }) => {
@@ -39,5 +40,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
     }
   },
-  { cache: { maxAge: 30, swr: 30 } }
+  {
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    cache: { maxAge: 30, swr: 30 },
+  }
 );

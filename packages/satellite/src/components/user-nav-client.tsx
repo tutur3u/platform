@@ -48,6 +48,7 @@ import {
 import { SidebarContext } from '../context/sidebar-context';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { LanguageWrapper } from './language-wrapper';
+import { claimSettingsDialogIntent } from './settings-dialog-intent';
 import { SystemLanguageWrapper } from './system-language-wrapper';
 import { ThemeDropdownItems } from './theme-dropdown-items';
 
@@ -91,6 +92,8 @@ export default function UserNavClient({
 
   useEffect(() => {
     const handleSettingsIntent = (event: Event) => {
+      if (!claimSettingsDialogIntent(event)) return;
+
       const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
         ?.settingsTab;
       setSettingsTab(tab);

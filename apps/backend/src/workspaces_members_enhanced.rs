@@ -8,7 +8,7 @@ use crate::{
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
     },
 };
 
@@ -156,11 +156,8 @@ async fn members_enhanced_response(
     // auth + workspace-id normalization (slug/handle/personal/internal) and
     // returns the resolved workspace UUID.
     //
-    // NOTE: App-session / app-coordination-token auth modes are NOT supported
-    // here. Only the standard Supabase cookie/bearer session is handled, in
-    // parity with the rest of the migrated workspace routes.
-    let resolved_ws_id = match authorize_workspace_permission(
-        contact_data,
+    let resolved_ws_id = match authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         MANAGE_WORKSPACE_MEMBERS_PERMISSION,
@@ -171,8 +168,8 @@ async fn members_enhanced_response(
         Ok(authorization) => authorization.ws_id,
         Err(WorkspacePermissionAuthorizationError::Forbidden) => {
             // Re-check for the alternate permission before denying.
-            match authorize_workspace_permission(
-                contact_data,
+            match authorize_workspace_permission_allowing_app_sessions(
+                config,
                 request,
                 raw_ws_id,
                 MANAGE_WORKSPACE_ROLES_PERMISSION,

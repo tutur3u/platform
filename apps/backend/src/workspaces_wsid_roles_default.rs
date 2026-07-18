@@ -43,7 +43,7 @@ use crate::{
     BackendConfig, BackendRequest, BackendResponse, contact, json_response, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
     },
 };
 
@@ -91,8 +91,8 @@ async fn roles_default_response(
         return message_response(400, INVALID_MEMBER_TYPE_MESSAGE);
     };
 
-    let ws_id = match authorize_workspace_permission(
-        &config.contact_data,
+    let ws_id = match authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         MANAGE_WORKSPACE_ROLES_PERMISSION,

@@ -34,11 +34,9 @@
 //!   * `Forbidden`    -> `403 { "message": "Workspace member settings access denied" }`
 //!   * `Internal`     -> `500 { "message": "Internal server error" }`
 //!
-//! NOTES / behavior gaps:
-//! - The legacy route does NOT enable `allowAppSessionAuth`, so internal
-//!   app-session / CLI bearer tokens (`ttr_app_*`) are not accepted. The shared
-//!   helper's `request_access_token_ignoring_app_sessions` already ignores those
-//!   tokens, matching the legacy 401 outcome.
+//! Satellite settings use the same current-user app-session audiences as the
+//! permission summary and member-management reads, while regular Supabase
+//! browser sessions remain supported.
 //! - The secret read mirrors the legacy quirk: `verifyHasSecrets` uses the RAW
 //!   `wsId` via `resolveWorkspaceId` (which only maps the literal `internal`
 //!   slug to the ROOT workspace id; `personal` and handles pass through
@@ -56,7 +54,7 @@ use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact, json_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
     },
 };
 
@@ -107,7 +105,7 @@ async fn member_settings_response(
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
     if let Err(response) =
-        authorize_member_settings_access(&config.contact_data, request, raw_ws_id, outbound).await
+        authorize_member_settings_access(config, request, raw_ws_id, outbound).await
     {
         return response;
     }
@@ -122,13 +120,13 @@ async fn member_settings_response(
 }
 
 async fn authorize_member_settings_access(
-    contact_data: &contact::ContactDataConfig,
+    config: &BackendConfig,
     request: BackendRequest<'_>,
     raw_ws_id: &str,
     outbound: &impl OutboundHttpClient,
 ) -> Result<(), BackendResponse> {
-    match authorize_workspace_permission(
-        contact_data,
+    match authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         MANAGE_WORKSPACE_MEMBERS,
@@ -141,8 +139,8 @@ async fn authorize_member_settings_access(
         // `manage_workspace_members`: fall back to the `manage_workspace_roles`
         // half of the OR gate before denying.
         Err(WorkspacePermissionAuthorizationError::Forbidden) => {
-            match authorize_workspace_permission(
-                contact_data,
+            match authorize_workspace_permission_allowing_app_sessions(
+                config,
                 request,
                 raw_ws_id,
                 MANAGE_WORKSPACE_ROLES,

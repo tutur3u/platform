@@ -172,15 +172,15 @@ The crate is decomposed so every file stays under a **700-LOC ceiling** (see
   legacy enum/string limits, and preserves the private read cache plus no-store
   mutation behavior.
 - `GET /api/v1/workspaces/:wsId/settings/permissions/check`:
-  legacy-compatible workspace permission check route. Rust revalidates a normal
-  Supabase browser session or non-app-session Bearer token, ignores app-session
-  tokens and the legacy `userId` query parameter, resolves personal/workspace
+  legacy-compatible workspace permission check route. Rust accepts current-user
+  satellite app sessions or revalidates a normal Supabase browser session,
+  ignores the legacy `userId` query parameter, resolves personal/workspace
   identifiers, requires workspace access, and returns the derived
   `{ "hasPermission": boolean }` result from role, default, creator, and admin
   permission context.
 - `GET /api/v1/workspaces/:wsId/settings/permissions`: legacy-compatible
   workspace settings permission flags. Rust shares the same permission resolver
-  as the permission check route, rejects app-session tokens, resolves
+  as the permission check route, accepts current-user satellite app sessions, resolves
   personal/workspace identifiers, returns `manage_subscription`,
   `manage_workspace_settings`, and `manage_workspace_members`, and preserves the
   legacy private 30-second success cache directive.
