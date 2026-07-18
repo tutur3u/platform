@@ -15,6 +15,10 @@ import {
   DATABASE_FEATURED_GROUPS_CONFIG_ID,
   parseWorkspaceConfigIdList,
 } from '@tuturuuu/internal-api/workspace-configs';
+import {
+  createWorkspaceSettingsNavGroup,
+  SatelliteWorkspaceSettingsPanel,
+} from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
@@ -123,6 +127,7 @@ export function SettingsDialog({
           },
         ]
       : []),
+    ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
     {
       label: t('settings.user.title'),
       items: [
@@ -172,6 +177,11 @@ export function SettingsDialog({
       onActiveTabChange={setActiveTab}
       primaryGroupLabels={[userManagementLabel]}
     >
+      <SatelliteWorkspaceSettingsPanel
+        activeTab={activeTab}
+        user={user}
+        wsId={wsId}
+      />
       {activeTab === 'database_filters' && wsId && (
         <div className="space-y-8">
           <DatabaseDefaultFiltersSettings />

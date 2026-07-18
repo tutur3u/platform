@@ -10,6 +10,7 @@ import {
   Store,
   TicketPercent,
 } from '@tuturuuu/icons';
+import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -53,18 +54,21 @@ export async function getNavigationLinks({
 }: {
   workspaceSlug: string;
 }): Promise<(NavLink | null)[]> {
-  const t = await getTranslations('inventory.nav');
+  const t = await getTranslations();
+  const inventoryT = await getTranslations('inventory.nav');
 
-  return getInventoryNavigationItems({ workspaceSlug }).map((item) => {
+  const links = getInventoryNavigationItems({ workspaceSlug }).map((item) => {
     if (!item) return null;
 
     return {
-      title: t(item.titleKey),
+      title: inventoryT(item.titleKey),
       href: item.href,
       aliases: item.aliases,
       icon: getNavigationIcon(item.icon),
       matchExact: item.matchExact,
-      sectionLabel: item.sectionKey ? t(item.sectionKey) : undefined,
+      sectionLabel: item.sectionKey ? inventoryT(item.sectionKey) : undefined,
     };
   });
+
+  return [...links, null, createWorkspaceMembersNavLink(t)];
 }

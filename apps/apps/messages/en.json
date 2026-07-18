@@ -278,6 +278,32 @@
     "weekly": "Weekly",
     "yearly": "Yearly"
   },
+  "satellite-workspace-settings": {
+    "avatar": "Workspace avatar",
+    "avatar_choose": "Choose image",
+    "avatar_description": "Used consistently across every Tuturuuu app.",
+    "avatar_error": "Could not update the workspace avatar.",
+    "avatar_invalid": "Choose an image smaller than 2 MB.",
+    "avatar_remove": "Remove avatar",
+    "avatar_removed": "Workspace avatar removed.",
+    "avatar_updated": "Workspace avatar updated.",
+    "billing": "Billing",
+    "billing_description": "Manage plans, seats, and workspace billing.",
+    "billing_manage": "Workspace plan and billing",
+    "billing_manage_description": "Open Tuturuuu Pay to manage the plan, member seats, invoices, and payment method.",
+    "billing_open": "Open billing",
+    "general": "General",
+    "general_description": "Manage workspace identity, handle, and avatar.",
+    "load_error": "Workspace settings unavailable",
+    "load_error_description": "Refresh and try again. Your app data is unaffected.",
+    "loading": "Loading workspace settings…",
+    "manage_members": "Manage members",
+    "members": "Members & roles",
+    "members_description": "Invite people, manage access, roles, and invite links.",
+    "read_only": "Read-only access",
+    "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
+    "title": "Workspace"
+  },
   "settings": {
     "keyboard_shortcuts": {
       "close_settings": "Close settings",
@@ -323,6 +349,24 @@
     "description_too_long": "Description must be 500 characters or fewer",
     "name_required": "Name is required",
     "start_date_required": "Start date is required"
+  },
+  "ws-members": {
+    "guest_self_join_description": "Allow signed-in users with matching workspace profile emails to join this workspace as guests.",
+    "guest_self_join_label": "Enable guest self-join by email match",
+    "guest_self_join_update_error": "Failed to update guest self-join setting.",
+    "guest_self_join_update_success": "Guest self-join setting updated.",
+    "invite_membership_label": "Access"
+  },
+  "ws-settings": {
+    "copy_id": "Copy ID",
+    "handle": "Workspace Slug",
+    "handle_placeholder": "acme-team",
+    "id": "Workspace ID",
+    "name": "Workspace Name",
+    "name_placeholder": "Enter workspace name",
+    "name_update_error": "Failed to update workspace name",
+    "name_updated": "Workspace name updated",
+    "save_changes": "Save changes"
   },
   "ws-task-templates": {
     "actions": {

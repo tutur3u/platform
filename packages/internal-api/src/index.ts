@@ -1847,7 +1847,9 @@ export {
 } from './workspace-user-audit';
 export {
   acceptWorkspaceInvite,
+  createWorkspaceAvatarUploadTarget,
   declineWorkspaceInvite,
+  deleteWorkspaceAvatar,
   getWorkspace,
   getWorkspaceInviteStatus,
   getWorkspaceMemberSettings,
@@ -1861,7 +1863,10 @@ export {
   listWorkspaces,
   removeWorkspaceMember,
   updateWorkspace,
+  updateWorkspaceAvatar,
   updateWorkspaceMemberProfile,
+  uploadWorkspaceAvatarFile,
+  type WorkspaceAvatarUploadTarget,
   type WorkspaceInvitationMemberType,
   type WorkspaceInvitationRecord,
   type WorkspaceInvitationSource,

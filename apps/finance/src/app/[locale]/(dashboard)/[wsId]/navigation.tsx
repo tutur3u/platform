@@ -10,6 +10,7 @@ import {
   Tags,
   Wallet,
 } from '@tuturuuu/icons';
+import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { PermissionsResult } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
@@ -93,6 +94,8 @@ export async function getNavigationLinks({
       icon: <HandCoins className="h-4 w-4" />,
       disabled: withoutPermission('view_transactions'),
     },
+    null,
+    createWorkspaceMembersNavLink(t),
   ];
 
   return navLinks;

@@ -36,7 +36,15 @@ import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useCallback, useContext, useState } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 import { SidebarContext } from '../context/sidebar-context';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
 import { LanguageWrapper } from './language-wrapper';
@@ -68,14 +76,44 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const [reportOpen, setReportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string>();
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
   // once here so every satellite app (calendar/tasks/finance/…) gets it.
-  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  const openSettings = useCallback(() => {
+    setSettingsTab(undefined);
+    setSettingsOpen(true);
+  }, []);
   useSettingsDialogShortcut({
     enabled: Boolean(user && settingsDialog),
     onOpen: openSettings,
   });
+
+  useEffect(() => {
+    const handleSettingsIntent = (event: Event) => {
+      const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
+        ?.settingsTab;
+      setSettingsTab(tab);
+      setSettingsOpen(true);
+    };
+
+    window.addEventListener(
+      'tuturuuu:settings-dialog-open-intent',
+      handleSettingsIntent
+    );
+    return () =>
+      window.removeEventListener(
+        'tuturuuu:settings-dialog-open-intent',
+        handleSettingsIntent
+      );
+  }, []);
+
+  const renderedSettingsDialog = isValidElement(settingsDialog)
+    ? cloneElement(settingsDialog, {
+        defaultTab: settingsTab,
+        key: settingsTab ?? 'default',
+      } as Record<string, unknown>)
+    : settingsDialog;
 
   const centralUrl =
     ttrUrl ??
@@ -104,7 +142,7 @@ export default function UserNavClient({
 
       {user && settingsDialog && (
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          {settingsDialog}
+          {renderedSettingsDialog}
         </Dialog>
       )}
 
@@ -281,7 +319,7 @@ export default function UserNavClient({
             {settingsDialog && (
               <DropdownMenuItem
                 className="cursor-pointer"
-                onClick={() => setSettingsOpen(true)}
+                onClick={openSettings}
               >
                 <Settings className="h-4 w-4" />
                 <span>{t('common.settings')}</span>
@@ -307,8 +345,5 @@ export default function UserNavClient({
   );
 }
 
-// Re-export the wsId for consumers that need it
-// Re-export the wsId for consumers that need it
-// Re-export the wsId for consumers that need it
 // Re-export the wsId for consumers that need it
 export type { UserNavClientProps };

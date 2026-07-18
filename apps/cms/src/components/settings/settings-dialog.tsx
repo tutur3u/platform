@@ -14,6 +14,10 @@ import {
   updateWorkspaceConfig,
 } from '@tuturuuu/internal-api/workspace-configs';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
+import {
+  createWorkspaceSettingsNavGroup,
+  SatelliteWorkspaceSettingsPanel,
+} from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
@@ -166,6 +170,7 @@ export function SettingsDialog({
         },
       ],
     },
+    ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
     {
       label: t('settings.user.title'),
       items: [
@@ -215,6 +220,12 @@ export function SettingsDialog({
       expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
+      <SatelliteWorkspaceSettingsPanel
+        activeTab={activeTab}
+        user={user}
+        workspace={workspace ?? null}
+        wsId={wsId}
+      />
       {activeTab === 'cms_general' && workspace && (
         <div className="h-full">
           <div className="space-y-8">

@@ -1,4 +1,5 @@
 import { Home, ImagePlay, WandSparkles } from '@tuturuuu/icons';
+import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -29,6 +30,8 @@ export async function getNavigationLinks({
       href: `/${personalOrWsId}/imagine`,
       icon: <ImagePlay className="h-4 w-4" />,
     },
+    null,
+    createWorkspaceMembersNavLink(t),
   ];
 
   return navLinks;

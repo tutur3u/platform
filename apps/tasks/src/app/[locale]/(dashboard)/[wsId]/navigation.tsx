@@ -5,6 +5,7 @@ import {
   Trophy,
   UserStar,
 } from '@tuturuuu/icons';
+import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 import { createElement } from 'react';
@@ -54,5 +55,7 @@ export async function getNavigationLinks({
       icon: createElement(Trophy, { className: 'h-4 w-4' }),
       aliases: [`/${personalOrWsId}/leaderboard/*`],
     },
+    null,
+    createWorkspaceMembersNavLink(t),
   ];
 }

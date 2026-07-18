@@ -278,6 +278,32 @@
     "weekly": "Hàng tuần",
     "yearly": "Hàng năm"
   },
+  "satellite-workspace-settings": {
+    "avatar": "Ảnh đại diện không gian làm việc",
+    "avatar_choose": "Chọn ảnh",
+    "avatar_description": "Được sử dụng nhất quán trên mọi ứng dụng Tuturuuu.",
+    "avatar_error": "Không thể cập nhật ảnh đại diện không gian làm việc.",
+    "avatar_invalid": "Chọn ảnh có dung lượng nhỏ hơn 2 MB.",
+    "avatar_remove": "Xóa ảnh đại diện",
+    "avatar_removed": "Đã xóa ảnh đại diện không gian làm việc.",
+    "avatar_updated": "Đã cập nhật ảnh đại diện không gian làm việc.",
+    "billing": "Thanh toán",
+    "billing_description": "Quản lý gói, số lượng thành viên và thanh toán.",
+    "billing_manage": "Gói và thanh toán không gian làm việc",
+    "billing_manage_description": "Mở Tuturuuu Pay để quản lý gói, số lượng thành viên, hóa đơn và phương thức thanh toán.",
+    "billing_open": "Mở thanh toán",
+    "general": "Chung",
+    "general_description": "Quản lý danh tính, định danh và ảnh đại diện của không gian làm việc.",
+    "load_error": "Không thể tải cài đặt không gian làm việc",
+    "load_error_description": "Hãy làm mới và thử lại. Dữ liệu ứng dụng của bạn không bị ảnh hưởng.",
+    "loading": "Đang tải cài đặt không gian làm việc…",
+    "manage_members": "Quản lý thành viên",
+    "members": "Thành viên & vai trò",
+    "members_description": "Mời mọi người, quản lý quyền truy cập, vai trò và liên kết mời.",
+    "read_only": "Quyền chỉ xem",
+    "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
+    "title": "Không gian làm việc"
+  },
   "settings": {
     "keyboard_shortcuts": {
       "close_settings": "Đóng cài đặt",
@@ -323,6 +349,24 @@
     "description_too_long": "Mô tả không được vượt quá 500 ký tự",
     "name_required": "Vui lòng nhập tên",
     "start_date_required": "Vui lòng chọn ngày bắt đầu"
+  },
+  "ws-members": {
+    "guest_self_join_description": "Cho phép người dùng đã đăng nhập có email khớp hồ sơ trong không gian làm việc tham gia với vai trò khách.",
+    "guest_self_join_label": "Bật tham gia khách bằng khớp email",
+    "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
+    "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
+    "invite_membership_label": "Quyền truy cập"
+  },
+  "ws-settings": {
+    "copy_id": "Sao chép ID",
+    "handle": "Slug không gian làm việc",
+    "handle_placeholder": "acme-team",
+    "id": "ID không gian làm việc",
+    "name": "Tên không gian làm việc",
+    "name_placeholder": "Nhập tên không gian làm việc",
+    "name_update_error": "Không thể cập nhật tên không gian làm việc",
+    "name_updated": "Đã cập nhật tên không gian làm việc",
+    "save_changes": "Lưu thay đổi"
   },
   "ws-task-templates": {
     "actions": {

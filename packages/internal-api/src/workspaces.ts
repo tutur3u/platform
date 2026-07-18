@@ -199,6 +199,77 @@ export async function updateWorkspace(
   return (await response.json()) as { message: string };
 }
 
+export type WorkspaceAvatarUploadTarget = {
+  filePath: string;
+  publicUrl: string;
+  signedUrl: string;
+  token: string;
+};
+
+export async function createWorkspaceAvatarUploadTarget(
+  workspaceId: string,
+  filename: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceAvatarUploadTarget>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/avatar/upload-url`,
+    {
+      body: JSON.stringify({ filename }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function uploadWorkspaceAvatarFile(
+  target: Pick<WorkspaceAvatarUploadTarget, 'signedUrl' | 'token'>,
+  file: Blob
+) {
+  const response = await fetch(target.signedUrl, {
+    body: file,
+    cache: 'no-store',
+    headers: {
+      Authorization: `Bearer ${target.token}`,
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    method: 'PUT',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Workspace avatar upload failed: ${response.status}`);
+  }
+}
+
+export async function updateWorkspaceAvatar(
+  workspaceId: string,
+  filePath: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ avatarUrl: string; success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/avatar`,
+    {
+      body: JSON.stringify({ filePath }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceAvatar(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/avatar`,
+    { cache: 'no-store', method: 'DELETE' }
+  );
+}
+
 export async function getWorkspaceExternalProjectMembersContext(
   workspaceId: string,
   options?: InternalApiClientOptions

@@ -7,6 +7,10 @@ import {
   PanelLeft,
   User,
 } from '@tuturuuu/icons';
+import {
+  createWorkspaceSettingsNavGroup,
+  SatelliteWorkspaceSettingsPanel,
+} from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard-shortcuts-settings';
@@ -27,6 +31,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({
+  wsId,
   user,
   defaultTab = 'profile',
 }: SettingsDialogProps) {
@@ -51,6 +56,7 @@ export function SettingsDialog({
         },
       ],
     },
+    ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
     {
       label: t('settings.user.title'),
       items: [
@@ -100,6 +106,11 @@ export function SettingsDialog({
       expandAllAccordions={expandAllAccordions}
       keyboardNavigation
     >
+      <SatelliteWorkspaceSettingsPanel
+        activeTab={activeTab}
+        user={user}
+        wsId={wsId}
+      />
       {activeTab === 'calendar_general' && (
         <div className="h-full">
           <LunarCalendarSettings />
