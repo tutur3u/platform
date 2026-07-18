@@ -292,6 +292,30 @@ describe('Inventory operator form workflows', () => {
     expect(productSource).toContain('avatar_url: form.avatarUrl || null');
   });
 
+  it('keeps every operator image picker Drive-only and locked while uploading', () => {
+    const uploadSource = source('inventory-image-upload.tsx');
+
+    expect(uploadSource).not.toContain('@tuturuuu/ui/input');
+    expect(uploadSource).not.toContain("t('imageUrl')");
+    expect(uploadSource).not.toContain('inputMode="url"');
+    expect(uploadSource).not.toContain('<Button asChild');
+    expect(uploadSource.match(/disabled=\{upload\.isPending\}/gu)).toHaveLength(
+      3
+    );
+    expect(uploadSource).toContain('inputRef.current?.click()');
+    expect(uploadSource).toContain("t('imageDriveOnlyDescription')");
+
+    for (const locale of ['en', 'vi'] as const) {
+      const bundle = messages(locale);
+      expect(
+        valueAtPath(bundle, 'inventory.operator.forms.imageUrl')
+      ).toBeUndefined();
+      expect(
+        valueAtPath(bundle, 'inventory.operator.forms.placeholders.imageUrl')
+      ).toBeUndefined();
+    }
+  });
+
   it('creates product stock rows only when stock is explicit and supports unlimited stock', () => {
     const productSource = source('product-create-dialog.tsx');
     const rowActionsSource = source('product-row-actions.tsx');
@@ -346,6 +370,8 @@ describe('Inventory operator form workflows', () => {
       'inventory.operator.columns.visibility',
       'inventory.operator.forms.costingCoverageMissing',
       'inventory.operator.forms.costingCoverageReady',
+      'inventory.operator.forms.imageDriveOnlyDescription',
+      'inventory.operator.forms.imageDriveOnlyTitle',
       'inventory.operator.forms.addStockRow',
       'inventory.operator.forms.addCategoryComponent',
       'inventory.operator.forms.categoryCandidateScope',
