@@ -24,7 +24,7 @@ import {
   type OperationsTableColumn,
 } from './operations-table';
 import { currency } from './operator-format';
-import { EmptyRow } from './operator-shell';
+import { EmptyRow, InfiniteListFooter } from './operator-shell';
 import {
   getInventoryStockState,
   numberOrZero,
@@ -62,12 +62,19 @@ type ProductTableRow = {
 export function ProductsTable({
   costingProfiles = [],
   formOptions,
+  pagination,
   rows,
   view,
   wsId,
 }: {
   costingProfiles?: InventoryCostProfile[];
   formOptions?: InventoryProductFormOptionsResponse;
+  pagination?: {
+    fetchNextPage: () => void;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+    totalCount: number;
+  };
   rows: InventoryProductSummary[];
   view: string;
   wsId: string;
@@ -140,6 +147,15 @@ export function ProductsTable({
         rowActivateLabel={(row) => `${formsText('edit')}: ${row.product.name}`}
         rows={tableRows}
       />
+      {pagination ? (
+        <InfiniteListFooter
+          hasNextPage={pagination.hasNextPage}
+          isFetchingNextPage={pagination.isFetchingNextPage}
+          loadedCount={rows.length}
+          onLoadMore={pagination.fetchNextPage}
+          totalCount={pagination.totalCount}
+        />
+      ) : null}
       {editing ? (
         <ProductEditDialog
           costingProfiles={costingProfiles}

@@ -70,7 +70,7 @@ export function SquareCatalogSyncDialog({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('dialogDescription')}
           title={t('dialogTitle')}

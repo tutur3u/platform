@@ -56,7 +56,7 @@ export function CostingImportDialog({ wsId }: { wsId: string }) {
           {t('importCsv')}
         </Button>
       </DialogTrigger>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('importDescription')}
           title={t('importTitle')}

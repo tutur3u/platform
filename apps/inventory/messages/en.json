@@ -1022,6 +1022,22 @@
         "stockReady": "Stock ready",
         "stockUnlimited": "Unlimited"
       },
+      "catalogWorkspace": {
+        "categories": {
+          "count": "{count, plural, one {# category} other {# categories}}",
+          "description": "Create clear groups that stay reusable across products, costing, bundles, and storefront merchandising.",
+          "emptyDescription": "Categories make a growing catalog easier to filter, price, bundle, and present to customers.",
+          "emptyTitle": "Create your first product category",
+          "rowDescription": "Reusable product group",
+          "title": "Product categories"
+        },
+        "newCategory": "New category",
+        "newProduct": "New product",
+        "tabs": {
+          "categories": "Categories",
+          "products": "Products"
+        }
+      },
       "columns": {
         "actions": "Actions",
         "available": "Available",
@@ -1921,6 +1937,12 @@
         "storefronts": "Storefronts"
       },
       "openStore": "Open store",
+      "pagination": {
+        "allLoaded": "All records loaded",
+        "loadingMore": "Loading more...",
+        "loadMore": "Load more",
+        "showing": "Showing {loaded} of {total}"
+      },
       "payments": {
         "checking": "Checking",
         "description": "Offer secure online checkout with Polar or send in-person payments to a paired Square Terminal. Configure each provider independently, then choose the checkout mode per storefront.",
@@ -2209,7 +2231,7 @@
           "readyGroups": "Ready groups",
           "readyGroupsDescription": "Setup groups with at least one usable record",
           "records": "Setup records",
-          "recordsDescription": "Categories, owners, units, warehouses, suppliers, and batches"
+          "recordsDescription": "Owners, units, warehouses, suppliers, and batches"
         },
         "owners": "Owners",
         "suppliers": "Suppliers",

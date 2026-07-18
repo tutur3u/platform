@@ -139,6 +139,7 @@ export function SquareSyncObservabilityPanel({ wsId }: { wsId: string }) {
             </div>
           </div>
           <Button
+            className="w-full sm:w-auto"
             onClick={() => setSyncDialogOpen(true)}
             size="sm"
             type="button"
@@ -162,11 +163,15 @@ export function SquareSyncObservabilityPanel({ wsId }: { wsId: string }) {
               onValueChange={(value) => setFilter(value as LinkFilter)}
               value={filter}
             >
-              <TabsList className="grid h-auto grid-cols-4">
+              <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4 lg:w-auto">
                 {(['all', 'linked', 'review', 'errors'] as const).map(
                   (item) => (
-                    <TabsTrigger className="gap-1.5" key={item} value={item}>
-                      {t(`filters.${item}`)}
+                    <TabsTrigger
+                      className="min-h-10 min-w-0 touch-manipulation gap-1.5 px-2 sm:min-h-9"
+                      key={item}
+                      value={item}
+                    >
+                      <span className="truncate">{t(`filters.${item}`)}</span>
                       <span className="rounded-full bg-muted-foreground/15 px-1.5 font-mono text-[0.68rem]">
                         {item === 'all' ? links.length : counts[item]}
                       </span>

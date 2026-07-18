@@ -148,7 +148,7 @@ function BundleComponentsDialog({
           {t('manageComponents')}
         </Button>
       </DialogTrigger>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('bundleComponentsManageDescription')}
           title={t('manageComponentsTitle')}

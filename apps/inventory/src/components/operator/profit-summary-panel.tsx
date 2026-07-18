@@ -8,9 +8,13 @@ import {
   listInventorySalesByProduct,
 } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
+import {
+  OperationsTable,
+  type OperationsTableColumn,
+} from './operations-table';
 import { OperatorMetricCard } from './operator-dashboard-primitives';
 import { currency as formatCurrency, money } from './operator-format';
-import { buildProductPnl } from './operator-pnl';
+import { buildProductPnl, type ProductPnlRow } from './operator-pnl';
 
 export function ProfitSummaryPanel({
   currency,
@@ -35,6 +39,64 @@ export function ProfitSummaryPanel({
     salesByProduct.data?.data ?? [],
     costProfiles.data?.data ?? []
   );
+  const columns: OperationsTableColumn<ProductPnlRow>[] = [
+    {
+      className: 'w-[16rem]',
+      header: t('product'),
+      key: 'product',
+      render: (row) => (
+        <span className="block truncate font-medium">{row.productName}</span>
+      ),
+      sortValue: (row) => row.productName,
+    },
+    {
+      cellClassName: 'tabular-nums lg:text-right',
+      className: 'w-[6rem] text-right',
+      header: t('units'),
+      key: 'units',
+      render: (row) => row.unitsSold,
+      sortValue: (row) => row.unitsSold,
+    },
+    {
+      cellClassName: 'tabular-nums lg:text-right',
+      className: 'w-[9rem] text-right',
+      header: t('revenue'),
+      key: 'revenue',
+      render: (row) => money(row.revenue, currency),
+      sortValue: (row) => row.revenue,
+    },
+    {
+      cellClassName: 'tabular-nums text-muted-foreground lg:text-right',
+      className: 'w-[9rem] text-right',
+      header: t('cost'),
+      key: 'cost',
+      render: (row) =>
+        row.estCogs === null ? '—' : money(row.estCogs, currency),
+      sortValue: (row) => row.estCogs,
+    },
+    {
+      cellClassName: 'tabular-nums lg:text-right',
+      className: 'w-[9rem] text-right',
+      header: t('profit'),
+      key: 'profit',
+      render: (row) =>
+        row.estProfit === null ? '—' : money(row.estProfit, currency),
+      sortValue: (row) => row.estProfit,
+    },
+    {
+      cellClassName: 'tabular-nums lg:text-right',
+      className: 'w-[8rem] text-right',
+      header: t('margin'),
+      key: 'margin',
+      render: (row) =>
+        row.marginPercentage === null ? (
+          <span className="text-muted-foreground text-xs">{t('uncosted')}</span>
+        ) : (
+          `${row.marginPercentage}%`
+        ),
+      sortValue: (row) => row.marginPercentage,
+    },
+  ];
 
   return (
     <section className="grid gap-3 rounded-lg border border-border bg-card p-4">
@@ -81,64 +143,13 @@ export function ProfitSummaryPanel({
       {productRows.length > 0 ? (
         <div className="grid gap-2">
           <p className="font-medium text-sm">{t('byProduct')}</p>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="border-border border-b bg-muted/40 text-muted-foreground text-xs">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">{t('product')}</th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('units')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('revenue')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('cost')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('profit')}
-                  </th>
-                  <th className="px-3 py-2 text-right font-semibold">
-                    {t('margin')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {productRows.map((row) => (
-                  <tr className="border-border/70 border-t" key={row.productId}>
-                    <td className="px-3 py-2">
-                      <span className="block max-w-[16rem] truncate font-medium">
-                        {row.productName}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-right">{row.unitsSold}</td>
-                    <td className="px-3 py-2 text-right">
-                      {money(row.revenue, currency)}
-                    </td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">
-                      {row.estCogs === null
-                        ? '—'
-                        : money(row.estCogs, currency)}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {row.estProfit === null
-                        ? '—'
-                        : money(row.estProfit, currency)}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {row.marginPercentage === null ? (
-                        <span className="text-muted-foreground text-xs">
-                          {t('uncosted')}
-                        </span>
-                      ) : (
-                        `${row.marginPercentage}%`
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <OperationsTable
+            ariaLabel={t('byProduct')}
+            columns={columns}
+            getRowId={(row) => row.productId}
+            minWidth="min-w-[34rem]"
+            rows={productRows}
+          />
         </div>
       ) : null}
     </section>

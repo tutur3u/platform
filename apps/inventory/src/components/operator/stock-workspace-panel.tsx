@@ -28,11 +28,18 @@ const stockTabs = ['stock', 'warehouses'] as const;
 export function StockWorkspacePanel({
   costingProfiles,
   formOptions,
+  pagination,
   products,
   wsId,
 }: {
   costingProfiles: InventoryCostProfile[];
   formOptions?: InventoryProductFormOptionsResponse;
+  pagination: {
+    fetchNextPage: () => void;
+    hasNextPage: boolean;
+    isFetchingNextPage: boolean;
+    totalCount: number;
+  };
   products: InventoryProductSummary[];
   wsId: string;
 }) {
@@ -73,14 +80,17 @@ export function StockWorkspacePanel({
       }}
       value={tab}
     >
-      <div className="overflow-x-auto">
-        <TabsList className="h-auto w-max gap-1 bg-muted/40 p-1">
-          <TabsTrigger className="gap-2 rounded-md px-3 py-2" value="stock">
+      <div className="min-w-0 rounded-lg border border-border bg-card p-2">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-muted/40 p-1 sm:w-fit sm:min-w-72">
+          <TabsTrigger
+            className="min-h-10 touch-manipulation gap-2 rounded-md px-3 py-2 sm:min-h-9"
+            value="stock"
+          >
             <Boxes className="h-4 w-4" />
             {t('tabs.stock')}
           </TabsTrigger>
           <TabsTrigger
-            className="gap-2 rounded-md px-3 py-2"
+            className="min-h-10 touch-manipulation gap-2 rounded-md px-3 py-2 sm:min-h-9"
             value="warehouses"
           >
             <Building2 className="h-4 w-4" />
@@ -92,6 +102,7 @@ export function StockWorkspacePanel({
         <ProductsTable
           costingProfiles={costingProfiles}
           formOptions={formOptions}
+          pagination={pagination}
           rows={products}
           view="stock"
           wsId={wsId}

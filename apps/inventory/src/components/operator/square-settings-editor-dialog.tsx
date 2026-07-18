@@ -216,7 +216,7 @@ export function SquareSettingsEditorDialog({
 
   return (
     <Dialog onOpenChange={closeDialog} open={open}>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('settingsDialogDescription', {
             environment: t(`environment.${environment}`),

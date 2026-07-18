@@ -1022,6 +1022,22 @@
         "stockReady": "Tồn kho sẵn sàng",
         "stockUnlimited": "Không giới hạn"
       },
+      "catalogWorkspace": {
+        "categories": {
+          "count": "{count} danh mục",
+          "description": "Tạo các nhóm rõ ràng để tái sử dụng cho sản phẩm, tính giá vốn, gói sản phẩm và trưng bày cửa hàng.",
+          "emptyDescription": "Danh mục giúp kho sản phẩm đang phát triển dễ lọc, định giá, đóng gói và giới thiệu tới khách hàng hơn.",
+          "emptyTitle": "Tạo danh mục sản phẩm đầu tiên",
+          "rowDescription": "Nhóm sản phẩm có thể tái sử dụng",
+          "title": "Danh mục sản phẩm"
+        },
+        "newCategory": "Danh mục mới",
+        "newProduct": "Sản phẩm mới",
+        "tabs": {
+          "categories": "Danh mục",
+          "products": "Sản phẩm"
+        }
+      },
       "columns": {
         "actions": "Thao tác",
         "available": "Có sẵn",
@@ -1921,6 +1937,12 @@
         "storefronts": "Cửa hàng"
       },
       "openStore": "Mở cửa hàng",
+      "pagination": {
+        "allLoaded": "Đã tải tất cả bản ghi",
+        "loadingMore": "Đang tải thêm...",
+        "loadMore": "Tải thêm",
+        "showing": "Đang hiển thị {loaded} trên {total}"
+      },
       "payments": {
         "checking": "Đang kiểm tra",
         "description": "Cung cấp checkout trực tuyến an toàn với Polar hoặc gửi thanh toán trực tiếp tới Square Terminal đã ghép nối. Thiết lập từng nhà cung cấp độc lập rồi chọn chế độ checkout cho từng cửa hàng.",
@@ -2209,7 +2231,7 @@
           "readyGroups": "Nhóm sẵn sàng",
           "readyGroupsDescription": "Nhóm thiết lập đã có ít nhất một bản ghi dùng được",
           "records": "Bản ghi thiết lập",
-          "recordsDescription": "Danh mục, chủ sở hữu, đơn vị, kho, nhà cung cấp và lô hàng"
+          "recordsDescription": "Chủ sở hữu, đơn vị, kho, nhà cung cấp và lô hàng"
         },
         "owners": "Chủ sở hữu",
         "suppliers": "Nhà cung cấp",

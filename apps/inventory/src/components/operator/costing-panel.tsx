@@ -75,7 +75,7 @@ export function CostingPanel({
           <CostingImportDialog wsId={wsId} />
         </div>
       </section>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1">
         <CostingMetricCard
           label={t('profiles')}
           value={analytics?.profilesCount ?? profiles.length}

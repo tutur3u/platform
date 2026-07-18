@@ -12,6 +12,7 @@ import {
   listInventoryBundles,
   listInventoryCheckouts,
   listInventoryCostProfiles,
+  listInventoryProductCategories,
   listInventoryProducts,
   listInventoryPromotions,
   listInventoryRevenueShareEarnings,
@@ -22,6 +23,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { parseAsString, useQueryStates } from 'nuqs';
 import type {
+  InventoryCatalogTab,
   InventoryCommerceTab,
   InventoryOperatorView,
 } from './operator-types';
@@ -31,6 +33,7 @@ export function useInventoryData(
   wsId: string,
   view: InventoryOperatorView,
   options?: {
+    catalogTab?: InventoryCatalogTab;
     commerceTab?: InventoryCommerceTab;
   }
 ) {
@@ -40,6 +43,7 @@ export function useInventoryData(
     status: parseAsString.withDefault('all'),
   });
   const status = filters.status === 'all' ? undefined : filters.status;
+  const catalogTab = options?.catalogTab ?? 'products';
   const commerceTab = options?.commerceTab ?? 'checkouts';
 
   const overview = useQuery({
@@ -47,28 +51,41 @@ export function useInventoryData(
     queryFn: () => getInventoryOverview(wsId),
     queryKey: ['inventory', wsId, 'overview'],
   });
-  const products = useQuery({
-    enabled: [
-      'bundles',
-      'catalog',
-      'costing',
-      'setup',
-      'stock',
-      'storefront',
-      'overview',
-    ].includes(view),
-    queryFn: () =>
+  const products = useInfiniteQuery({
+    enabled:
+      ['bundles', 'costing', 'stock', 'storefront', 'overview'].includes(
+        view
+      ) ||
+      (view === 'catalog' && catalogTab === 'products'),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
       listInventoryProducts(wsId, {
-        pageSize: view === 'commerce' ? 100 : 50,
-        q: view === 'commerce' ? undefined : filters.q,
+        page: pageParam,
+        pageSize: 50,
+        q: filters.q,
         status:
-          view === 'commerce'
-            ? 'all'
-            : status === 'active' || status === 'archived'
-              ? status
-              : undefined,
+          status === 'active' || status === 'archived' ? status : undefined,
       }),
-    queryKey: ['inventory', wsId, 'products', filters.q, filters.status],
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((count, page) => count + page.data.length, 0);
+      return loaded < lastPage.count ? pages.length + 1 : undefined;
+    },
+    queryKey: ['inventory', wsId, 'products', view, filters.q, filters.status],
+  });
+  const categories = useInfiniteQuery({
+    enabled: view === 'catalog' && catalogTab === 'categories',
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      listInventoryProductCategories(wsId, {
+        page: pageParam,
+        pageSize: 50,
+        q: filters.q,
+      }),
+    getNextPageParam: (lastPage, pages) => {
+      const loaded = pages.reduce((count, page) => count + page.data.length, 0);
+      return loaded < lastPage.count ? pages.length + 1 : undefined;
+    },
+    queryKey: ['inventory', wsId, 'categories', filters.q],
   });
   const storefronts = useQuery({
     enabled: ['storefront', 'overview'].includes(view),
@@ -105,7 +122,9 @@ export function useInventoryData(
     queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
   });
   const costingProfiles = useQuery({
-    enabled: ['catalog', 'costing', 'overview', 'stock'].includes(view),
+    enabled:
+      ['costing', 'overview', 'stock'].includes(view) ||
+      (view === 'catalog' && catalogTab === 'products'),
     queryFn: () =>
       listInventoryCostProfiles(wsId, {
         pageSize: 50,
@@ -201,13 +220,13 @@ export function useInventoryData(
     enabled:
       [
         'bundles',
-        'catalog',
         'costing',
         'overview',
         'setup',
         'stock',
         'storefront',
       ].includes(view) ||
+      (view === 'catalog' && catalogTab === 'products') ||
       (view === 'commerce' && commerceTab === 'sales'),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
@@ -232,6 +251,7 @@ export function useInventoryData(
     audits,
     batches,
     bundles,
+    categories,
     checkouts,
     commerceSummary,
     costingAnalytics,

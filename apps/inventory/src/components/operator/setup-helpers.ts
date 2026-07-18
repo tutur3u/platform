@@ -17,6 +17,9 @@ export function invalidateSetup(queryClient: QueryClient, wsId: string) {
   queryClient.invalidateQueries({
     queryKey: ['inventory', wsId, 'form-options'],
   });
+  queryClient.invalidateQueries({
+    queryKey: ['inventory', wsId, 'categories'],
+  });
   queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'suppliers'] });
   queryClient.invalidateQueries({ queryKey: ['inventory', wsId, 'batches'] });
 }

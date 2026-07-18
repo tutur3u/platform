@@ -152,7 +152,7 @@ export function ProductCreateForm({
           </Button>
         )}
       </DialogTrigger>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('createProductDescription')}
           title={t('createProductTitle')}

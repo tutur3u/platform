@@ -229,7 +229,7 @@ export function OverviewPanel({
 
   return (
     <div className="grid min-w-0 gap-4">
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 2xl:grid-cols-6">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 2xl:grid-cols-6">
         <OperatorMetricCard
           description={t('kpis.productsDescription', {
             count: counts?.stockRows ?? products.length,

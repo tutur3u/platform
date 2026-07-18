@@ -61,7 +61,7 @@ export function ProductBulkToolbar({
   const t = useTranslations('inventory.operator.productBulk');
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2">
+    <div className="grid min-w-0 gap-2 rounded-lg border border-dashed bg-muted/20 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
         <Checkbox
           checked={
@@ -71,14 +71,20 @@ export function ProductBulkToolbar({
         />
         {t('selectAll', { count: totalCount })}
       </label>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="grid grid-cols-2 items-center gap-2 sm:justify-end min-[420px]:flex min-[420px]:flex-wrap">
         {selections.length > 0 ? (
           <Badge variant="outline">
             {t('selected', { count: selections.length })}
           </Badge>
         ) : null}
         {selections.length > 0 ? (
-          <Button onClick={onClear} size="sm" type="button" variant="ghost">
+          <Button
+            className="min-h-10 sm:min-h-9"
+            onClick={onClear}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
             {t('clear')}
           </Button>
         ) : null}
@@ -306,12 +312,17 @@ function ProductBulkEditDialog({
       open={open}
     >
       <DialogTrigger asChild>
-        <Button disabled={selections.length === 0} size="sm" type="button">
+        <Button
+          className="min-h-10 sm:min-h-9"
+          disabled={selections.length === 0}
+          size="sm"
+          type="button"
+        >
           <SlidersHorizontal className="h-4 w-4" />
           {t('edit')}
         </Button>
       </DialogTrigger>
-      <OperatorDialogContent size="md">
+      <OperatorDialogContent mobileFullscreen size="md">
         <OperatorDialogHeader
           description={t('description', { count: selections.length })}
           title={t('title')}
@@ -321,7 +332,7 @@ function ProductBulkEditDialog({
           tabs={view === 'stock' ? [stockTab, ownerTab] : [ownerTab]}
           value={activeTab}
         />
-        <OperatorDialogFooter>
+        <OperatorDialogFooter className="grid grid-cols-2 sm:flex">
           <DialogClose asChild>
             <Button type="button" variant="ghost">
               {t('cancel')}

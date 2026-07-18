@@ -73,7 +73,7 @@ export function PaymentsHubPanel({ wsId }: { wsId: string }) {
         squareSync={squareSync.data}
       />
 
-      <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
         <OperatorMetricCard
           icon={Link2}
           label={t('metrics.squareLinks')}
@@ -99,18 +99,27 @@ export function PaymentsHubPanel({ wsId }: { wsId: string }) {
         onValueChange={(value) => void setSection(value as PaymentsSection)}
         value={section}
       >
-        <TabsList className="grid h-auto w-full grid-cols-3 bg-muted/35 p-1.5">
-          <TabsTrigger className="gap-2 py-2" value="setup">
-            <Settings2 className="size-4" />
-            {t('tabs.setup')}
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-muted/35 p-1">
+          <TabsTrigger
+            className="min-h-10 min-w-0 touch-manipulation gap-1.5 px-2 py-2 sm:min-h-9 sm:gap-2"
+            value="setup"
+          >
+            <Settings2 className="size-4 max-[380px]:hidden" />
+            <span className="truncate">{t('tabs.setup')}</span>
           </TabsTrigger>
-          <TabsTrigger className="gap-2 py-2" value="sync">
-            <Activity className="size-4" />
-            {t('tabs.sync')}
+          <TabsTrigger
+            className="min-h-10 min-w-0 touch-manipulation gap-1.5 px-2 py-2 sm:min-h-9 sm:gap-2"
+            value="sync"
+          >
+            <Activity className="size-4 max-[380px]:hidden" />
+            <span className="truncate">{t('tabs.sync')}</span>
           </TabsTrigger>
-          <TabsTrigger className="gap-2 py-2" value="transactions">
-            <CreditCard className="size-4" />
-            {t('tabs.transactions')}
+          <TabsTrigger
+            className="min-h-10 min-w-0 touch-manipulation gap-1.5 px-2 py-2 sm:min-h-9 sm:gap-2"
+            value="transactions"
+          >
+            <CreditCard className="size-4 max-[380px]:hidden" />
+            <span className="truncate">{t('tabs.transactions')}</span>
           </TabsTrigger>
         </TabsList>
 

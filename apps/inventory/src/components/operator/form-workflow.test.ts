@@ -173,6 +173,26 @@ describe('Inventory operator form workflows', () => {
     }
   });
 
+  it('keeps catalog products, stock, and categories infinitely pageable', () => {
+    const dataSource = source('use-inventory-data.ts');
+    const clientSource = source('inventory-operator-client.tsx');
+    const catalogSource = source('catalog-workspace-panel.tsx');
+    const categoriesSource = source('product-categories-panel.tsx');
+
+    expect(dataSource).toContain('const products = useInfiniteQuery');
+    expect(dataSource).toContain('const categories = useInfiniteQuery');
+    expect(dataSource).toContain('listInventoryProductCategories');
+    expect(dataSource).toContain('getNextPageParam');
+    expect(clientSource).toContain('data.products.fetchNextPage()');
+    expect(clientSource).toContain('data.categories.fetchNextPage()');
+    expect(catalogSource).toContain('ProductCategoriesPanel');
+    expect(catalogSource).toContain('pagination={productPagination}');
+    expect(categoriesSource).toContain('createInventoryProductCategory');
+    expect(categoriesSource).toContain('updateInventoryProductCategory');
+    expect(categoriesSource).toContain('deleteInventoryProductCategory');
+    expect(categoriesSource).toContain('InfiniteListFooter');
+  });
+
   it('moves row-level destructive actions into lifecycle dialogs', () => {
     expect(source('simple-rows.tsx')).not.toContain('deleteInventoryBundle');
     expect(source('simple-rows.tsx')).not.toContain(
@@ -212,6 +232,16 @@ describe('Inventory operator form workflows', () => {
       );
 
     expect(violations).toEqual([]);
+
+    const denseMobileViolations = operatorSources()
+      .filter(({ source }) =>
+        /<OperatorDialogContent(?![^>]*mobileFullscreen)[^>]*size="(?:lg|xl)"/u.test(
+          source
+        )
+      )
+      .map(({ fileName }) => fileName);
+
+    expect(denseMobileViolations).toEqual([]);
   });
 
   it('uses single-form create flows instead of sequential steppers', () => {
@@ -292,9 +322,10 @@ describe('Inventory operator form workflows', () => {
     expect(costingStateSource).toContain('productId: form.productId || null');
     expect(costingSource).toContain('handleProductChange');
     expect(costingSource).toContain('product.inventory?.[0]?.price');
-    expect(dataHookSource).toMatch(
-      /enabled:\s*\[[\s\S]*'costing'[\s\S]*\]\.includes\(view\),\s*queryFn:\s*\(\)\s*=>\s*listInventoryProducts/u
+    expect(dataHookSource).toContain(
+      "['bundles', 'costing', 'stock', 'storefront', 'overview']"
     );
+    expect(dataHookSource).toContain('listInventoryProducts(wsId');
     expect(tableSource).toContain('hasCostingCoverage');
     expect(tableSource).toContain("t('badges.costingReady')");
   });
@@ -337,6 +368,12 @@ describe('Inventory operator form workflows', () => {
       'inventory.operator.productBulk.selected',
       'inventory.operator.productBulk.unlimited',
       'inventory.operator.productBulk.warehouseToggle',
+      'inventory.operator.catalogWorkspace.categories.description',
+      'inventory.operator.catalogWorkspace.categories.emptyTitle',
+      'inventory.operator.catalogWorkspace.newCategory',
+      'inventory.operator.catalogWorkspace.tabs.categories',
+      'inventory.operator.pagination.loadMore',
+      'inventory.operator.pagination.showing',
       'inventory.operator.stockWorkspace.tabs.stock',
       'inventory.operator.stockWorkspace.tabs.warehouses',
       'inventory.operator.stockWorkspace.warehousesDescription',

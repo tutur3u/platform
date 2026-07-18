@@ -71,7 +71,7 @@ export function ResourceDialog({
       open={open}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <OperatorDialogContent size="sm">
+      <OperatorDialogContent mobileFullscreen size="sm">
         <OperatorDialogHeader
           description={
             item
@@ -110,13 +110,21 @@ export function ResourceDialog({
               />
             ) : null}
           </OperatorDialogBody>
-          <OperatorDialogFooter>
+          <OperatorDialogFooter className="grid grid-cols-2 sm:flex">
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
+              <Button
+                className="w-full sm:w-auto"
+                type="button"
+                variant="ghost"
+              >
                 {t('cancel')}
               </Button>
             </DialogClose>
-            <Button disabled={!name || mutation.isPending} type="submit">
+            <Button
+              className="w-full sm:w-auto"
+              disabled={!name || mutation.isPending}
+              type="submit"
+            >
               {item ? t('save') : t('create')}
             </Button>
           </OperatorDialogFooter>
@@ -147,6 +155,7 @@ function ResourceRow({
           trigger={
             <Button
               aria-label={t('edit')}
+              className="h-10 w-10 touch-manipulation sm:h-9 sm:w-9"
               size="icon"
               type="button"
               variant="outline"
@@ -207,7 +216,12 @@ export function ResourceSection({
         <ResourceDialog
           config={config}
           trigger={
-            <Button className="w-fit" size="sm" type="button" variant="outline">
+            <Button
+              className="min-h-10 w-full touch-manipulation sm:min-h-9 sm:w-fit"
+              size="sm"
+              type="button"
+              variant="outline"
+            >
               <Plus className="h-4 w-4" />
               {t('create')}
             </Button>

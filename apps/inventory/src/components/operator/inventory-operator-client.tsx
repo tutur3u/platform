@@ -13,29 +13,30 @@ import {
   TriangleAlert,
 } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
-import { parseAsStringLiteral, useQueryState } from 'nuqs';
+import { parseAsString, useQueryState } from 'nuqs';
 import { useMemo } from 'react';
 import { AuditRows } from './audit-rows';
 import { BundleComponentsPanel } from './bundle-components-panel';
+import { CatalogWorkspacePanel } from './catalog-workspace-panel';
 import { CommercePanel } from './commerce-panel';
 import { CostingPanel } from './costing-panel';
 import { BundleForm, StorefrontForm } from './inventory-forms';
 import { InventoryGuidance } from './inventory-guidance';
 import {
+  InfiniteListFooter,
   LoadingRows,
   SectionShell,
   StatePanel,
   Toolbar,
 } from './operator-shell';
 import type {
+  InventoryCatalogTab,
   InventoryCommerceTab,
   InventoryOperatorView,
   InventoryStatusOption,
 } from './operator-types';
 import { OverviewPanel } from './overview-panel';
 import { PaymentsHubPanel } from './payments-hub-panel';
-import { ProductCreateForm } from './product-management';
-import { ProductsTable } from './products-table';
 import { PromotionsWorkspacePanel } from './promotions-workspace-panel';
 import { SetupPanel } from './setup-panel';
 import { SimpleRows } from './simple-rows';
@@ -61,20 +62,31 @@ type InventoryQueryState = {
 };
 
 const commerceTabs = ['checkouts', 'sales', 'revenue-share'] as const;
+const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
   view,
   wsId,
 }: InventoryOperatorClientProps) {
   const t = useTranslations('inventory.operator');
-  const [commerceTab, setCommerceTab] = useQueryState(
+  const [tabValue, setTabValue] = useQueryState(
     'tab',
-    parseAsStringLiteral(commerceTabs)
-      .withDefault('checkouts')
-      .withOptions({ shallow: true })
+    parseAsString.withDefault('').withOptions({ shallow: true })
   );
-  const data = useInventoryData(wsId, view, { commerceTab });
-  const products = data.products.data?.data ?? [];
+  const commerceTab: InventoryCommerceTab = commerceTabs.includes(
+    tabValue as InventoryCommerceTab
+  )
+    ? (tabValue as InventoryCommerceTab)
+    : 'checkouts';
+  const catalogTab: InventoryCatalogTab = catalogTabs.includes(
+    tabValue as InventoryCatalogTab
+  )
+    ? (tabValue as InventoryCatalogTab)
+    : 'products';
+  const data = useInventoryData(wsId, view, { catalogTab, commerceTab });
+  const products = data.products.data?.pages.flatMap((page) => page.data) ?? [];
+  const categories =
+    data.categories.data?.pages.flatMap((page) => page.data) ?? [];
   const periodProducts =
     data.periodProducts.data?.pages.flatMap((page) => page.data) ?? [];
   const storefronts = data.storefronts.data?.data ?? [];
@@ -196,18 +208,11 @@ export function InventoryOperatorClient({
     view === 'overview' ? data.overview : null,
     view === 'overview' ? data.costingProfiles : null,
     view === 'overview' ? data.costingAnalytics : null,
-    [
-      'bundles',
-      'catalog',
-      'commerce',
-      'costing',
-      'stock',
-      'setup',
-      'storefront',
-      'overview',
-    ].includes(view)
+    ['bundles', 'costing', 'stock', 'storefront', 'overview'].includes(view) ||
+    (view === 'catalog' && catalogTab === 'products')
       ? data.products
       : null,
+    view === 'catalog' && catalogTab === 'categories' ? data.categories : null,
     view === 'storefront' ? data.storefronts : null,
     ['bundles', 'storefront'].includes(view) ? data.bundles : null,
     view === 'commerce' && commerceTab === 'checkouts' ? data.checkouts : null,
@@ -220,17 +225,14 @@ export function InventoryOperatorClient({
     view === 'promotions' ? data.promotions : null,
     view === 'costing' ? data.costingProfiles : null,
     view === 'costing' ? data.costingAnalytics : null,
-    ['catalog', 'stock'].includes(view) ? data.costingProfiles : null,
+    view === 'stock' || (view === 'catalog' && catalogTab === 'products')
+      ? data.costingProfiles
+      : null,
     view === 'audits' ? data.audits : null,
-    [
-      'catalog',
-      'stock',
-      'setup',
-      'bundles',
-      'storefront',
-      'costing',
-      'overview',
-    ].includes(view)
+    ['stock', 'setup', 'bundles', 'storefront', 'costing', 'overview'].includes(
+      view
+    ) ||
+    (view === 'catalog' && catalogTab === 'products')
       ? data.formOptions
       : null,
     view === 'setup' ? data.suppliers : null,
@@ -264,9 +266,7 @@ export function InventoryOperatorClient({
           : false;
 
   const headerActions =
-    view === 'catalog' ? (
-      <ProductCreateForm options={data.formOptions.data} wsId={wsId} />
-    ) : view === 'storefront' ? (
+    view === 'storefront' ? (
       <StorefrontForm wsId={wsId} />
     ) : view === 'bundles' ? (
       <BundleForm
@@ -287,6 +287,7 @@ export function InventoryOperatorClient({
         {view !== 'payments' ? (
           <Toolbar
             filters={data.filters}
+            hideStatus={view === 'catalog' && catalogTab === 'categories'}
             setFilters={data.setFilters}
             statusOptions={statusOptions}
           />
@@ -310,7 +311,9 @@ export function InventoryOperatorClient({
                 costingProfilesCount={
                   data.costingProfiles.data?.data.length ?? 0
                 }
-                productsCount={products.length}
+                productsCount={
+                  data.products.data?.pages[0]?.count ?? products.length
+                }
                 storefrontsCount={storefronts.length}
                 view={view}
                 wsId={wsId}
@@ -328,11 +331,34 @@ export function InventoryOperatorClient({
             </>
           ) : null}
           {!isLoading && !isError && view === 'catalog' ? (
-            <ProductsTable
+            <CatalogWorkspacePanel
+              categories={categories}
+              categoryPagination={{
+                fetchNextPage: () => {
+                  void data.categories.fetchNextPage();
+                },
+                hasNextPage: data.categories.hasNextPage,
+                isFetchingNextPage: data.categories.isFetchingNextPage,
+                totalCount:
+                  data.categories.data?.pages[0]?.count ?? categories.length,
+              }}
               costingProfiles={data.costingProfiles.data?.data ?? []}
               formOptions={data.formOptions.data}
-              rows={products}
-              view={view}
+              onTabChange={(tab) => {
+                void data.setFilters({ status: 'all' });
+                void setTabValue(tab);
+              }}
+              productPagination={{
+                fetchNextPage: () => {
+                  void data.products.fetchNextPage();
+                },
+                hasNextPage: data.products.hasNextPage,
+                isFetchingNextPage: data.products.isFetchingNextPage,
+                totalCount:
+                  data.products.data?.pages[0]?.count ?? products.length,
+              }}
+              products={products}
+              tab={catalogTab}
               wsId={wsId}
             />
           ) : null}
@@ -340,6 +366,15 @@ export function InventoryOperatorClient({
             <StockWorkspacePanel
               costingProfiles={data.costingProfiles.data?.data ?? []}
               formOptions={data.formOptions.data}
+              pagination={{
+                fetchNextPage: () => {
+                  void data.products.fetchNextPage();
+                },
+                hasNextPage: data.products.hasNextPage,
+                isFetchingNextPage: data.products.isFetchingNextPage,
+                totalCount:
+                  data.products.data?.pages[0]?.count ?? products.length,
+              }}
               products={products}
               wsId={wsId}
             />
@@ -421,7 +456,7 @@ export function InventoryOperatorClient({
               }}
               setTab={(tab: InventoryCommerceTab) => {
                 void data.setFilters({ status: 'all' });
-                void setCommerceTab(tab);
+                void setTabValue(tab);
               }}
               tab={commerceTab}
               wsId={wsId}
@@ -438,6 +473,21 @@ export function InventoryOperatorClient({
           ) : null}
           {!isError && view === 'payments' ? (
             <PaymentsHubPanel wsId={wsId} />
+          ) : null}
+          {!isLoading &&
+          !isError &&
+          ['bundles', 'costing', 'storefront'].includes(view) ? (
+            <InfiniteListFooter
+              hasNextPage={data.products.hasNextPage}
+              isFetchingNextPage={data.products.isFetchingNextPage}
+              loadedCount={products.length}
+              onLoadMore={() => {
+                void data.products.fetchNextPage();
+              }}
+              totalCount={
+                data.products.data?.pages[0]?.count ?? products.length
+              }
+            />
           ) : null}
         </div>
       </SectionShell>

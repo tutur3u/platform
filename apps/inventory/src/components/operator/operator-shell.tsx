@@ -1,6 +1,12 @@
 'use client';
 
-import { PackageOpen, RefreshCw, Search, TriangleAlert } from '@tuturuuu/icons';
+import {
+  Loader2,
+  PackageOpen,
+  RefreshCw,
+  Search,
+  TriangleAlert,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { EmptyCard } from '@tuturuuu/ui/custom/empty-card';
@@ -98,10 +104,12 @@ export function LoadingRows() {
 
 export function Toolbar({
   filters,
+  hideStatus = false,
   setFilters,
   statusOptions,
 }: {
   filters: InventoryFilters;
+  hideStatus?: boolean;
   setFilters: (value: { q?: string; status?: string }) => unknown;
   statusOptions: InventoryStatusOption[];
 }) {
@@ -113,30 +121,83 @@ export function Toolbar({
     : (statusOptions[0]?.value ?? 'all');
 
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center">
+    <div
+      className={cn(
+        'grid min-w-0 grid-cols-1 gap-2',
+        !hideStatus &&
+          'lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)] lg:items-center'
+      )}
+    >
       <label className="relative flex min-w-0 flex-1 items-center">
         <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          className="h-9 bg-background pl-9"
+          autoComplete="off"
+          className="h-10 bg-background pl-9 sm:h-9"
           onChange={(event) => setFilters({ q: event.target.value })}
           placeholder={t('search')}
           value={filters.q}
         />
       </label>
-      <Combobox
-        className="min-w-0"
-        emptyText={t('statusEmpty')}
-        onChange={(status) =>
-          setFilters({ status: typeof status === 'string' ? status : 'all' })
-        }
-        options={statusOptions.map((option) => ({
-          label: option.label,
-          value: option.value,
-        }))}
-        placeholder={t('statuses.all')}
-        searchPlaceholder={t('statusSearch')}
-        selected={selectedStatus}
-      />
+      {!hideStatus ? (
+        <Combobox
+          className="min-w-0"
+          emptyText={t('statusEmpty')}
+          onChange={(status) =>
+            setFilters({ status: typeof status === 'string' ? status : 'all' })
+          }
+          options={statusOptions.map((option) => ({
+            label: option.label,
+            value: option.value,
+          }))}
+          placeholder={t('statuses.all')}
+          searchPlaceholder={t('statusSearch')}
+          selected={selectedStatus}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export function InfiniteListFooter({
+  hasNextPage,
+  isFetchingNextPage,
+  loadedCount,
+  onLoadMore,
+  totalCount,
+}: {
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  loadedCount: number;
+  onLoadMore: () => void;
+  totalCount: number;
+}) {
+  const t = useTranslations('inventory.operator.pagination');
+
+  if (totalCount <= 50 && !hasNextPage) return null;
+
+  return (
+    <div className="grid min-w-0 gap-2 rounded-lg border border-border border-dashed bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+      <p aria-live="polite" className="text-muted-foreground text-sm">
+        {t('showing', { loaded: loadedCount, total: totalCount })}
+      </p>
+      {hasNextPage ? (
+        <Button
+          className="min-h-10 w-full touch-manipulation sm:min-h-9 sm:w-auto"
+          disabled={isFetchingNextPage}
+          onClick={onLoadMore}
+          type="button"
+          variant="outline"
+        >
+          {isFetchingNextPage ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : null}
+          {isFetchingNextPage ? t('loadingMore') : t('loadMore')}
+        </Button>
+      ) : (
+        <span className="text-muted-foreground text-xs sm:text-right">
+          {t('allLoaded')}
+        </span>
+      )}
     </div>
   );
 }
@@ -159,7 +220,7 @@ export function SectionShell({
       <FeatureSummary
         action={
           actions ? (
-            <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
+            <div className="flex w-full shrink-0 flex-col items-stretch gap-2 sm:w-auto sm:items-center min-[420px]:flex-row">
               {actions}
             </div>
           ) : undefined

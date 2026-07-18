@@ -217,7 +217,7 @@ export function ProductEditDialog({
       open={open}
     >
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('editProductDescription')}
           title={t('editProductTitle')}

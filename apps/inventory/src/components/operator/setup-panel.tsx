@@ -13,19 +13,16 @@ import type { InventoryProductFormOptionsResponse } from '@tuturuuu/internal-api
 import {
   createInventoryManufacturer,
   createInventoryOwner,
-  createInventoryProductCategory,
   createInventorySupplier,
   createInventoryUnit,
   createInventoryWarehouse,
   deleteInventoryManufacturer,
   deleteInventoryOwner,
-  deleteInventoryProductCategory,
   deleteInventorySupplier,
   deleteInventoryUnit,
   deleteInventoryWarehouse,
   updateInventoryManufacturer,
   updateInventoryOwner,
-  updateInventoryProductCategory,
   updateInventorySupplier,
   updateInventoryUnit,
   updateInventoryWarehouse,
@@ -54,15 +51,6 @@ export function SetupPanel({
 }) {
   const t = useTranslations('inventory.operator.setup');
   const configs: ResourceConfig[] = [
-    {
-      create: (name) => createInventoryProductCategory(wsId, { name }),
-      icon: PackageSearch,
-      key: 'categories',
-      remove: (id) => deleteInventoryProductCategory(wsId, id),
-      rows: options?.categories ?? [],
-      title: t('categories'),
-      update: (id, name) => updateInventoryProductCategory(wsId, id, { name }),
-    },
     {
       create: (name) => createInventoryOwner(wsId, { name }),
       icon: User,
@@ -117,7 +105,7 @@ export function SetupPanel({
 
   return (
     <div className="grid gap-3">
-      <div className="grid min-w-0 gap-3 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 md:grid-cols-3 md:gap-3 [&>*:last-child]:col-span-2 md:[&>*:last-child]:col-span-1">
         <OperatorMetricCard
           description={t('matrix.readyGroupsDescription')}
           icon={CheckCircle2}
@@ -141,13 +129,18 @@ export function SetupPanel({
       {isEmptyWorkspace ? (
         <EmptyRow
           action={
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center">
               {configs.slice(0, 5).map((config) => (
                 <ResourceDialog
                   config={config}
                   key={config.key}
                   trigger={
-                    <Button size="sm" type="button" variant="outline">
+                    <Button
+                      className="min-h-10 w-full touch-manipulation sm:min-h-9 sm:w-auto"
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
                       <Plus className="h-4 w-4" />
                       {config.title}
                     </Button>

@@ -140,7 +140,7 @@ export function StorefrontEditorDialog({
           </Button>
         </DialogTrigger>
       )}
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('editStorefrontDescription')}
           title={t('editStorefrontTitle')}

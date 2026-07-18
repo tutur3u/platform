@@ -167,7 +167,7 @@ export function BundleEditorDialog({
           </Button>
         </DialogTrigger>
       )}
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={t('editBundleDescription')}
           title={t('editBundleTitle')}

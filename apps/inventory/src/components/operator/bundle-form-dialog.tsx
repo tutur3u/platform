@@ -182,7 +182,7 @@ export function BundleForm({
             </Button>
           )}
         </DialogTrigger>
-        <OperatorDialogContent size="lg">
+        <OperatorDialogContent mobileFullscreen size="lg">
           <OperatorDialogHeader
             description={t('createBundleDescription')}
             title={t('createBundleTitle')}

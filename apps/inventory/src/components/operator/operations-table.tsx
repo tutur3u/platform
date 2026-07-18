@@ -177,6 +177,8 @@ export function OperationsTable<Row>({
                   <div
                     className={cn(
                       'min-w-0 rounded-md border border-border bg-muted/20 p-2',
+                      column.key === 'actions' &&
+                        'sm:col-span-2 [&_button]:min-h-10 [&_button]:w-full sm:[&_button]:min-h-9 sm:[&_button]:w-auto',
                       column.cellClassName
                     )}
                     key={column.key}

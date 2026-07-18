@@ -143,7 +143,7 @@ export function StorefrontForm({
             </Button>
           )}
         </DialogTrigger>
-        <OperatorDialogContent size="lg">
+        <OperatorDialogContent mobileFullscreen size="lg">
           <OperatorDialogHeader
             description={t('createStorefrontDescription')}
             title={t('createStorefrontTitle')}

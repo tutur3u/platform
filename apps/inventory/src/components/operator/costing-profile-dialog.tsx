@@ -182,7 +182,7 @@ export function CostingProfileDialog({
           </Button>
         )}
       </DialogTrigger>
-      <OperatorDialogContent size="lg">
+      <OperatorDialogContent mobileFullscreen size="lg">
         <OperatorDialogHeader
           description={
             isEdit ? t('editProfileDescription') : t('summaryDescription')

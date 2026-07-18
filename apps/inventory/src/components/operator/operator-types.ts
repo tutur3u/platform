@@ -13,6 +13,8 @@ export type InventoryOperatorView =
 
 export type InventoryCommerceTab = 'checkouts' | 'revenue-share' | 'sales';
 
+export type InventoryCatalogTab = 'categories' | 'products';
+
 export const UNASSIGNED_SALES_PERIOD_FILTER = '__unassigned__';
 
 export type InventoryStockTab = 'stock' | 'warehouses';
