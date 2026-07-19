@@ -29,6 +29,26 @@
   }
 }
 
+/*
+ * iOS Safari zooms the viewport when a focused editable control computes below
+ * 16px. Protect touch forms across every app that consumes the shared UI styles
+ * without disabling the user's normal pinch-to-zoom controls.
+ */
+@supports (-webkit-touch-callout: none) {
+  @media (pointer: coarse) {
+    input:not([type="button"]):not([type="checkbox"]):not([type="color"]):not(
+        [type="file"]
+      ):not([type="hidden"]):not([type="image"]):not([type="radio"]):not(
+        [type="range"]
+      ):not([type="reset"]):not([type="submit"]),
+    select[class],
+    textarea[class],
+    [contenteditable="true"][class] {
+      font-size: 16px;
+    }
+  }
+}
+
 @layer utilities {
   body {
     font-family: Arial, Helvetica, sans-serif;
