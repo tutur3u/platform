@@ -826,7 +826,17 @@ fn is_direct_workspace_lookup_identifier(identifier: &str) -> bool {
         || normalized == ROOT_WORKSPACE_ID
         || normalized == INTERNAL_WORKSPACE_SLUG
         || is_workspace_uuid_literal(&normalized)
-        || is_workspace_handle(&normalized)
+        || is_workspace_handle_identifier(&normalized)
+}
+
+pub(crate) fn is_workspace_handle_identifier(identifier: &str) -> bool {
+    let normalized = identifier.trim().to_lowercase();
+
+    normalized != PERSONAL_WORKSPACE_SLUG
+        && normalized != ROOT_WORKSPACE_ID
+        && normalized != INTERNAL_WORKSPACE_SLUG
+        && !is_workspace_uuid_literal(&normalized)
+        && is_workspace_handle(&normalized)
 }
 
 fn is_workspace_uuid_literal(value: &str) -> bool {

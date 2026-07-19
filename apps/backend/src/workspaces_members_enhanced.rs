@@ -8,9 +8,13 @@ use crate::{
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
+        WorkspacePermissionAuthorizationError,
+        authorize_workspace_permission_allowing_app_sessions, is_workspace_handle_identifier,
     },
 };
+
+#[cfg(test)]
+mod tests;
 
 const PATH_PREFIX: &str = "/api/workspaces/";
 const PATH_SUFFIX: &str = "/members/enhanced";
@@ -178,10 +182,10 @@ async fn members_enhanced_response(
             .await
             {
                 Ok(authorization) => authorization.ws_id,
-                Err(error) => return authorization_error_response(error),
+                Err(error) => return authorization_error_response(error, raw_ws_id),
             }
         }
-        Err(error) => return authorization_error_response(error),
+        Err(error) => return authorization_error_response(error, raw_ws_id),
     };
 
     let status = status_from_url(request.url);
@@ -192,7 +196,16 @@ async fn members_enhanced_response(
     }
 }
 
-fn authorization_error_response(error: WorkspacePermissionAuthorizationError) -> BackendResponse {
+fn authorization_error_response(
+    error: WorkspacePermissionAuthorizationError,
+    raw_ws_id: &str,
+) -> BackendResponse {
+    if is_workspace_handle_identifier(raw_ws_id)
+        && error != WorkspacePermissionAuthorizationError::Internal
+    {
+        return message_response(404, "error", WORKSPACE_NOT_FOUND_MESSAGE);
+    }
+
     match error {
         // Legacy resolveWorkspaceIdForEnhancedMembers returns 404 when the
         // workspace cannot be resolved.

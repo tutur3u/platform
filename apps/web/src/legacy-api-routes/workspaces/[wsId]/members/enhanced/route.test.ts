@@ -134,6 +134,33 @@ describe('workspace members enhanced route', () => {
     expect(mocks.getWorkspaceMembers).not.toHaveBeenCalled();
   });
 
+  it('does not reveal existing workspace handles through authorization errors', async () => {
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json(
+        { message: 'Workspace access denied' },
+        { status: 403 }
+      ),
+    });
+
+    const { GET } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/members/enhanced/route'
+    );
+    const request = new NextRequest(
+      'http://localhost/api/workspaces/private-team/members/enhanced'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'private-team' }),
+    });
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace not found',
+    });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getWorkspaceMembers).not.toHaveBeenCalled();
+  });
+
   it('rejects unresolved non-UUID workspace ids before member queries', async () => {
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: true,
