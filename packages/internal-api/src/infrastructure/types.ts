@@ -612,6 +612,7 @@ export interface AiAgentZaloPersonalActionResponse {
 }
 
 export type AiAgentZaloPersonalAction =
+  | 'cancel-sync-phone'
   | 'start'
   | 'stop'
   | 'sync-history'

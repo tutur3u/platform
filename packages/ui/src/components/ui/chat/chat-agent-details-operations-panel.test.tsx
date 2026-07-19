@@ -284,7 +284,7 @@ describe('AgentOperationsPanel', () => {
     });
   });
 
-  it('keeps personal Zalo actions busy while a phone sync job is running', async () => {
+  it('keeps only phone-sync cancellation available while a job is running', async () => {
     mocks.getAiAgentZaloPersonalStatus.mockResolvedValue({
       phoneSyncJob: {
         completedAt: null,
@@ -338,12 +338,26 @@ describe('AgentOperationsPanel', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText('agent_zalo_personal_sync_phone').closest('button')
-      ).toBeDisabled();
+        screen
+          .getByText('agent_zalo_personal_sync_phone_cancel')
+          .closest('button')
+      ).toBeEnabled();
     });
+    expect(
+      screen.getByText('agent_zalo_personal_validate').closest('button')
+    ).toBeDisabled();
     expect(
       screen.getByText('agent_zalo_personal_sync_phone_waiting')
     ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('agent_zalo_personal_sync_phone_cancel'));
+    await waitFor(() => {
+      expect(mocks.runAiAgentZaloPersonalAction).toHaveBeenCalledWith(
+        'agent-1',
+        'channel-1',
+        'cancel-sync-phone'
+      );
+    });
   });
 
   it('warns when personal Zalo phone transfer is approved but returns no payload', async () => {

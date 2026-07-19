@@ -163,6 +163,7 @@ export interface ZaloPersonalPhoneSyncOptions {
   maxPulls?: number;
   minSeqId?: number;
   pullDelayMs?: number;
+  signal?: AbortSignal;
   tempKey?: string;
   useListenerWakeup?: boolean;
 }
@@ -211,8 +212,8 @@ const DEFAULT_HISTORY_MAX_PAGES_PER_TYPE = 1000;
 const DEFAULT_HISTORY_MESSAGES_PER_GROUP = 200;
 const DEFAULT_HISTORY_PAGE_TIMEOUT_MS = 8000;
 const HISTORY_CONNECT_TIMEOUT_MS = 5000;
-const DEFAULT_PHONE_SYNC_MAX_PULLS = 90;
-const DEFAULT_PHONE_SYNC_PULL_DELAY_MS = 1000;
+const DEFAULT_PHONE_SYNC_MAX_PULLS = 4;
+const DEFAULT_PHONE_SYNC_PULL_DELAY_MS = 20_000;
 const PHONE_SYNC_PC_NAME_MAX_LENGTH = 80;
 const ZALO_LISTENER_SOCKET_OPEN_STATE = 1;
 const ZALO_PHONE_SYNC_REQUEST_CMD = 590;
@@ -1245,6 +1246,8 @@ export function createZaloPersonalAdapter(
       const useListenerWakeup = options.useListenerWakeup ?? true;
 
       try {
+        assertPhoneSyncNotAborted(options.signal);
+
         if (useListenerWakeup) {
           attachListeners(apiInstance);
           await adapter.startPersonalListener();
@@ -1276,9 +1279,8 @@ export function createZaloPersonalAdapter(
         }
 
         for (let attempt = 0; attempt < maxPulls; attempt += 1) {
-          if (attempt > 0) {
-            await delay(pullDelayMs);
-          }
+          await delay(pullDelayMs, options.signal);
+          assertPhoneSyncNotAborted(options.signal);
 
           try {
             const pullResponse = await transferApi.tuturuuuPullMobileMessages?.(
@@ -1332,7 +1334,11 @@ export function createZaloPersonalAdapter(
           }
         }
       } catch (error) {
-        lastError = error instanceof Error ? error.message : String(error);
+        lastError = options.signal?.aborted
+          ? 'zalo_personal_phone_sync_cancelled'
+          : error instanceof Error
+            ? error.message
+            : String(error);
       } finally {
         if (requestAccepted && messages.length > 0) {
           cleaned =
@@ -2124,8 +2130,29 @@ function stringValue(value: unknown) {
   return '';
 }
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function delay(ms: number, signal?: AbortSignal) {
+  if (signal?.aborted) {
+    return Promise.reject(new Error('zalo_personal_phone_sync_cancelled'));
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new Error('zalo_personal_phone_sync_cancelled'));
+    };
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+function assertPhoneSyncNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    throw new Error('zalo_personal_phone_sync_cancelled');
+  }
 }
 
 function dateFromZaloTimestamp(value: string) {

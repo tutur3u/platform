@@ -65,6 +65,7 @@ const QR_STATUS_KEYS = {
 } as const satisfies Record<AiAgentZaloPersonalQrLoginStatus, string>;
 
 const ACTION_LABEL_KEYS = {
+  'cancel-sync-phone': 'agent_zalo_personal_sync_phone_cancel',
   start: 'agent_zalo_personal_start',
   stop: 'agent_zalo_personal_stop',
   'sync-history': 'agent_zalo_personal_sync_history',
@@ -73,6 +74,7 @@ const ACTION_LABEL_KEYS = {
 } as const satisfies Record<AiAgentZaloPersonalAction, string>;
 
 const ACTION_SUCCESS_KEYS = {
+  'cancel-sync-phone': 'agent_zalo_personal_sync_phone_cancelled',
   start: 'agent_zalo_personal_start_success',
   stop: 'agent_zalo_personal_stop_success',
   validate: 'agent_zalo_personal_validate_success',
@@ -381,12 +383,21 @@ export function AgentZaloPersonalPanel({
               icon={<RefreshCw className="size-4" />}
               onRun={actionMutation.mutate}
             />
-            <ActionButton
-              action="sync-phone"
-              busy={actionBusy}
-              icon={<RefreshCw className="size-4" />}
-              onRun={actionMutation.mutate}
-            />
+            {phoneSyncRunning ? (
+              <ActionButton
+                action="cancel-sync-phone"
+                busy={isPending || actionMutation.isPending}
+                icon={<X className="size-4" />}
+                onRun={actionMutation.mutate}
+              />
+            ) : (
+              <ActionButton
+                action="sync-phone"
+                busy={actionBusy}
+                icon={<RefreshCw className="size-4" />}
+                onRun={actionMutation.mutate}
+              />
+            )}
             <ActionButton
               action="stop"
               busy={actionBusy}

@@ -846,6 +846,27 @@ describe('Zalo personal Chat SDK adapter', () => {
     ]);
   });
 
+  it('does not request or pull phone history after cancellation', async () => {
+    const adapter = createAdapter();
+    const controller = new AbortController();
+    controller.abort('cancelled by operator');
+
+    const result = await adapter.syncPersonalPhoneHistory({
+      signal: controller.signal,
+      useListenerWakeup: false,
+    });
+
+    expect(result).toMatchObject({
+      approvalRequested: false,
+      error: 'zalo_personal_phone_sync_cancelled',
+      messages: [],
+      pullAttempts: 0,
+      requestAccepted: false,
+      status: 'failed',
+    });
+    expect(mocks.transferCalls).toEqual([]);
+  });
+
   it('emits QR progress and returns captured login credentials after success', async () => {
     const events: unknown[] = [];
 

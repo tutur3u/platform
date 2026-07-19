@@ -19,7 +19,14 @@ interface Params {
 }
 
 const actionSchema = z.object({
-  action: z.enum(['start', 'stop', 'sync-history', 'sync-phone', 'validate']),
+  action: z.enum([
+    'cancel-sync-phone',
+    'start',
+    'stop',
+    'sync-history',
+    'sync-phone',
+    'validate',
+  ]),
 });
 
 type PhoneSyncInput = Parameters<typeof syncAiAgentZaloPersonalPhoneHistory>[0];
@@ -34,6 +41,7 @@ type PhoneSyncJobSnapshot = {
   sync: PhoneSyncResult['sync'] | null;
 };
 type PhoneSyncJobRecord = {
+  controller: AbortController;
   promise: Promise<void>;
   snapshot: PhoneSyncJobSnapshot;
 };
@@ -74,9 +82,22 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
     status: 'running',
     sync: null,
   };
+  const controller = new AbortController();
   const job: PhoneSyncJobRecord = {
-    promise: withPhoneSyncTimeout(syncAiAgentZaloPersonalPhoneHistory(input))
+    controller,
+    promise: withPhoneSyncTimeout(
+      syncAiAgentZaloPersonalPhoneHistory({
+        ...input,
+        options: {
+          ...input.options,
+          signal: controller.signal,
+        },
+      }),
+      controller
+    )
       .then((result) => {
+        if (snapshot.status !== 'running') return;
+
         snapshot.completedAt = new Date().toISOString();
         snapshot.status = 'completed';
         snapshot.sync = result.sync;
@@ -97,6 +118,8 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
         });
       })
       .catch((error) => {
+        if (snapshot.status !== 'running') return;
+
         snapshot.completedAt = new Date().toISOString();
         snapshot.error = error instanceof Error ? error.message : String(error);
         snapshot.status = 'failed';
@@ -118,17 +141,20 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
   return job;
 }
 
-async function withPhoneSyncTimeout<T>(task: Promise<T>) {
+async function withPhoneSyncTimeout<T>(
+  task: Promise<T>,
+  controller: AbortController
+) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   try {
     return await Promise.race([
       task,
       new Promise<T>((_resolve, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(PHONE_SYNC_JOB_TIMEOUT_ERROR)),
-          PHONE_SYNC_JOB_TIMEOUT_MS
-        );
+        timer = setTimeout(() => {
+          controller.abort(PHONE_SYNC_JOB_TIMEOUT_ERROR);
+          reject(new Error(PHONE_SYNC_JOB_TIMEOUT_ERROR));
+        }, PHONE_SYNC_JOB_TIMEOUT_MS);
       }),
     ]);
   } finally {
@@ -136,6 +162,21 @@ async function withPhoneSyncTimeout<T>(task: Promise<T>) {
       clearTimeout(timer);
     }
   }
+}
+
+function cancelPhoneSyncJob(agentId: string, channelId: string) {
+  const job = phoneSyncJobs.get(phoneSyncJobKey(agentId, channelId));
+
+  if (job?.snapshot.status !== 'running') {
+    return job?.snapshot ?? null;
+  }
+
+  job.snapshot.completedAt = new Date().toISOString();
+  job.snapshot.error = 'zalo_personal_phone_sync_cancelled';
+  job.snapshot.status = 'failed';
+  job.controller.abort('zalo_personal_phone_sync_cancelled');
+
+  return job.snapshot;
 }
 
 function getPhoneSyncJobSnapshot(agentId: string, channelId: string) {
@@ -256,6 +297,13 @@ async function runAction(request: NextRequest, { params }: Params) {
           threads: 0,
           userMessages: 0,
         },
+      });
+    }
+
+    if (parsed.data.action === 'cancel-sync-phone') {
+      return NextResponse.json({
+        phoneSyncJob: cancelPhoneSyncJob(agentId, channelId),
+        status: await getAiAgentZaloPersonalStatus(input),
       });
     }
 

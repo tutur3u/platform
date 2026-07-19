@@ -770,7 +770,7 @@
       "select": "Chọn không gian"
     },
     "zalo_personal": {
-      "disabled_notice": "Đặt mã bí mật gốc AI_AGENT_ZALO_PERSONAL_ENABLED thành true trước khi xác thực hoặc bắt đầu listener.",
+      "disabled_notice": "Zalo cá nhân được bật mặc định cho workspace gốc nội bộ. Các workspace khác cần secret gốc AI_AGENT_ZALO_PERSONAL_ENABLED.",
       "enabled_notice": "Thao tác listener dùng thông tin đăng nhập Zalo cá nhân đã lưu cho kênh này.",
       "experimental_notice": "Hỗ trợ Zalo cá nhân đang thử nghiệm và dùng API tự động hóa Zalo Web không chính thức. Chỉ dùng tài khoản thử nghiệm.",
       "feature_disabled": "Chưa bật flag",

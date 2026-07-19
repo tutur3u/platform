@@ -188,6 +188,8 @@ const ZALO_PERSONAL_ERROR_KEYS = {
   zalo_personal_credentials_missing: 'agent_zalo_personal_credentials_missing',
   zalo_personal_feature_disabled: 'agent_zalo_personal_feature_disabled',
   zalo_personal_phone_sync_timed_out: 'agent_zalo_personal_sync_phone_failed',
+  zalo_personal_phone_sync_cancelled:
+    'agent_zalo_personal_sync_phone_cancelled',
   zalo_personal_phone_sync_no_payload:
     'agent_zalo_personal_sync_phone_no_payload',
   zalo_personal_phone_sync_waiting_for_phone:

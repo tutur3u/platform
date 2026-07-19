@@ -179,4 +179,29 @@ describe('personal Zalo AI-agent route', () => {
     expect(response.status).toBe(400);
     expect(mocks.syncAiAgentZaloPersonalPhoneHistory).not.toHaveBeenCalled();
   });
+
+  it('aborts a running phone sync instead of leaving background pulls active', async () => {
+    const pendingSync = deferred<typeof completedPhoneSyncResult>();
+    mocks.syncAiAgentZaloPersonalPhoneHistory.mockReturnValueOnce(
+      pendingSync.promise
+    );
+
+    await callPost();
+    const syncInput =
+      mocks.syncAiAgentZaloPersonalPhoneHistory.mock.calls[0]?.[0];
+    expect(syncInput?.options?.signal.aborted).toBe(false);
+
+    const cancelResponse = await callPost({ action: 'cancel-sync-phone' });
+    const cancelPayload = await cancelResponse.json();
+
+    expect(cancelResponse.status).toBe(200);
+    expect(syncInput?.options?.signal.aborted).toBe(true);
+    expect(cancelPayload.phoneSyncJob).toMatchObject({
+      error: 'zalo_personal_phone_sync_cancelled',
+      status: 'failed',
+    });
+
+    pendingSync.resolve(completedPhoneSyncResult);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 });

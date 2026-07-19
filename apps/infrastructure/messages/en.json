@@ -770,7 +770,7 @@
       "select": "Select workspace"
     },
     "zalo_personal": {
-      "disabled_notice": "Set root workspace secret AI_AGENT_ZALO_PERSONAL_ENABLED to true before validating or starting the listener.",
+      "disabled_notice": "Personal Zalo is enabled by default for the internal root workspace. Other workspaces require the AI_AGENT_ZALO_PERSONAL_ENABLED root secret.",
       "enabled_notice": "Listener actions use the saved personal Zalo credentials for this channel.",
       "experimental_notice": "Personal Zalo support is experimental and uses an unofficial Zalo Web automation API. Use only test accounts.",
       "feature_disabled": "Flag disabled",

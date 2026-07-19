@@ -61,9 +61,11 @@ Admin APIs redact channel secrets. One-time generated values are shown only
 after rotation.
 
 Feature flags for this surface are also root workspace secrets. Experimental
-personal Zalo account support requires
-`AI_AGENT_ZALO_PERSONAL_ENABLED = true`; do not gate it with process
-environment variables.
+personal Zalo account support is enabled by default only for the internal root
+workspace. Other workspaces require `AI_AGENT_ZALO_PERSONAL_ENABLED = true`;
+do not gate it with process environment variables. Phone-history transfer
+sends one approval request and uses deliberately low-cadence, cancellable
+polling to avoid notification and API spam.
 
 External chat history is mirrored separately in the `private` schema:
 
