@@ -19,6 +19,7 @@
     "./create-navbar-actions": "./src/components/create-navbar-actions.tsx",
     "./navbar-actions": "./src/components/navbar-actions.tsx",
     "./sidebar-structure": "./src/components/sidebar-structure.tsx",
+    "./fixed-app-brand": "./src/components/fixed-app-brand.tsx",
     "./workspace-shell": "./src/components/workspace-shell.tsx",
     "./notification-popover": "./src/components/notification-popover.tsx",
     "./language-wrapper": "./src/components/language-wrapper.tsx",

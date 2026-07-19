@@ -2,16 +2,16 @@
 
 import { Boxes } from '@tuturuuu/icons';
 import { AppsLauncherDialog } from '@tuturuuu/satellite';
+import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
 import { Button } from '@tuturuuu/ui/button';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import { TTR_URL } from '@/constants/common';
 import { Nav } from './nav';
 
 interface NavItem {
@@ -45,26 +45,10 @@ export default function Structure({
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
   const t = useTranslations('command_launcher');
 
-  const sidebarHeader = (
-    <Link href="/" className="flex w-full items-center gap-2">
-      <div
-        className={cn(
-          isCollapsed
-            ? 'flex w-full items-center justify-center'
-            : 'inline-block w-fit',
-          'flex-none'
-        )}
-      >
-        <Image
-          src="/media/logos/nova-transparent.png"
-          className="h-8 w-8"
-          width={32}
-          height={32}
-          alt="logo"
-        />
-      </div>
-      {isCollapsed || <LogoTitle text="Nova" />}
-    </Link>
+  const sidebarHeader = isCollapsed ? (
+    <TuturuuLogo alt="" className="size-8" height={32} width={32} />
+  ) : (
+    <FixedAppBrand appHref="/" appName="Nova" centralHref={TTR_URL} />
   );
 
   const appsLauncherButton = isCollapsed ? (
@@ -115,25 +99,7 @@ export default function Structure({
   );
 
   const mobileHeader = (
-    <Link href="/" className="flex w-fit items-center gap-2">
-      <div
-        className={cn(
-          isCollapsed
-            ? 'flex w-fit items-center justify-center'
-            : 'inline-block w-fit',
-          'flex-none'
-        )}
-      >
-        <Image
-          src="/media/logos/nova-transparent.png"
-          className="h-8 w-8"
-          width={32}
-          height={32}
-          alt="logo"
-        />
-      </div>
-      <LogoTitle text="Nova" />
-    </Link>
+    <FixedAppBrand appHref="/" appName="Nova" centralHref={TTR_URL} />
   );
 
   return (
