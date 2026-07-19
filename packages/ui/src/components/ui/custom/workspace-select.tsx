@@ -145,6 +145,7 @@ function WorkspaceIcon({
 export function WorkspaceSelect({
   wsId,
   hideLeading,
+  standalone,
   customRedirectSuffix,
   disableCreateNewWorkspace,
   fetchWorkspaces,
@@ -156,6 +157,7 @@ export function WorkspaceSelect({
 }: {
   wsId: string;
   hideLeading?: boolean;
+  standalone?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
   fetchWorkspaces: () => Promise<InternalApiWorkspaceSummary[]>;
@@ -498,7 +500,7 @@ export function WorkspaceSelect({
 
   return (
     <>
-      {hideLeading || wsId === ROOT_WORKSPACE_ID || (
+      {hideLeading || standalone || wsId === ROOT_WORKSPACE_ID || (
         <div className="mx-1 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog

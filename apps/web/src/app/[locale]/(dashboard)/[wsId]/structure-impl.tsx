@@ -2,15 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AppsLauncherDialog } from '@tuturuuu/satellite';
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
-import {
-  TUTURUUU_LOCAL_LOGO_URL,
-  TuturuuLogo,
-} from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { cn } from '@tuturuuu/utils/format';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -263,21 +259,6 @@ export function StructureImpl({
     () => hydrateDashboardNavigationIcons(links),
     [links]
   );
-  const appsLauncherLink = useMemo<NavLink>(
-    () => ({
-      icon: <DashboardNavigationIcon className="h-4 w-4" name="Boxes" />,
-      id: 'apps-launcher',
-      onClick: () => setAppsLauncherOpen(true),
-      preferenceLocked: true,
-      preferencePlacement: 'root',
-      title: t('command_launcher.apps'),
-    }),
-    [t]
-  );
-  const navigationLinksWithLauncher = useMemo<(NavLink | null)[]>(
-    () => cleanNavigationSeparators([appsLauncherLink, null, ...hydratedLinks]),
-    [appsLauncherLink, hydratedLinks]
-  );
   const previousPathnameRef = useRef(pathname);
   const accountNavigationLayoutQueryKey = [
     'user-config',
@@ -318,13 +299,13 @@ export function StructureImpl({
   const navigationPreferenceResult = useMemo(
     () =>
       applySidebarNavigationPreferences(
-        navigationLinksWithLauncher,
+        hydratedLinks,
         effectiveNavigationLayout,
         {
           pathname,
         }
       ),
-    [effectiveNavigationLayout, navigationLinksWithLauncher, pathname]
+    [effectiveNavigationLayout, hydratedLinks, pathname]
   );
   const preferenceItemById = useMemo(
     () =>
@@ -371,7 +352,7 @@ export function StructureImpl({
   const createQuickPlacementUpdate = useCallback(
     (id: string, placement: SidebarNavigationPlacement) => {
       const nextConfig = createSidebarNavigationLayoutConfigForPlacement(
-        navigationLinksWithLauncher,
+        hydratedLinks,
         effectiveNavigationLayout,
         id,
         placement
@@ -383,12 +364,12 @@ export function StructureImpl({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, navigationLinksWithLauncher]
+    [effectiveNavigationLayout, hydratedLinks]
   );
   const createQuickHiddenUpdate = useCallback(
     (id: string, hidden: boolean) => {
       const nextConfig = createSidebarNavigationLayoutConfigForHiddenState(
-        navigationLinksWithLauncher,
+        hydratedLinks,
         effectiveNavigationLayout,
         id,
         hidden
@@ -399,7 +380,7 @@ export function StructureImpl({
         value: serializeSidebarNavigationLayoutConfig(nextConfig),
       };
     },
-    [effectiveNavigationLayout, navigationLinksWithLauncher]
+    [effectiveNavigationLayout, hydratedLinks]
   );
   const preferredLinks = useMemo(() => {
     if (navigationPreferenceResult.archivedLinks.length === 0) {
@@ -843,62 +824,37 @@ export function StructureImpl({
     }
   };
 
-  const matchedLinks = (
-    navState.history.length > 0
-      ? [backButton, ...filteredCurrentLinks]
-      : filteredCurrentLinks
-  )
-    .filter((l): l is NavLink => Boolean(l))
-    .filter(
-      (link) =>
-        (link.href &&
-          matchesPath(
-            pathname,
-            link.href,
-            hasVisibleNavigationChildren(link)
-          )) ||
-        link.aliases?.some((alias) =>
-          matchesPath(pathname, alias, hasVisibleNavigationChildren(link))
-        )
-    )
-    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
-
-  const currentLink = matchedLinks?.[0];
-
-  const sidebarHeader = (
-    <>
-      {isCollapsed || wsId === ROOT_WORKSPACE_ID || (
-        <Link href="/home" className="flex flex-none items-center gap-2">
-          <div className="flex-none">
-            <TuturuuLogo
-              src={TUTURUUU_LOCAL_LOGO_URL}
-              className="h-6 w-6"
-              width={32}
-              height={32}
-              alt="logo"
-            />
-          </div>
-          <LogoTitle />
-        </Link>
-      )}
-
-      <Suspense
-        key={user?.id}
-        fallback={
-          <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
-        }
-      >
-        <WorkspaceSelect
-          wsId={wsId}
-          hideLeading={isCollapsed}
-          disableCreateNewWorkspace={disableCreateNewWorkspace}
-        />
-      </Suspense>
-    </>
+  const sidebarHeader = isCollapsed ? (
+    <Link aria-label={t('common.home')} href="/home">
+      <TuturuuLogo alt="" className="size-7" height={32} width={32} />
+    </Link>
+  ) : (
+    <FixedAppBrand
+      appHref={`/${wsId}`}
+      appName="Platform"
+      centralHref="/home"
+      launcherLabel={t('command_launcher.apps')}
+      onAppClick={() => setAppsLauncherOpen(true)}
+    />
   );
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="shrink-0 border-b p-2" data-sidebar-workspace-select>
+        <Suspense
+          key={user?.id}
+          fallback={
+            <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
+          }
+        >
+          <WorkspaceSelect
+            disableCreateNewWorkspace={disableCreateNewWorkspace}
+            hideLeading={isCollapsed}
+            standalone
+            wsId={wsId}
+          />
+        </Suspense>
+      </div>
       {SidebarActiveTimer && (
         <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
       )}
@@ -982,26 +938,13 @@ export function StructureImpl({
   const header = null;
 
   const mobileHeader = (
-    <>
-      <div className="flex flex-none items-center gap-2">
-        <Link href="/home" className="flex flex-none items-center gap-2">
-          <TuturuuLogo
-            src={TUTURUUU_LOCAL_LOGO_URL}
-            className="h-8 w-8"
-            width={32}
-            height={32}
-            alt="logo"
-          />
-        </Link>
-      </div>
-      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 break-all font-semibold text-lg">
-        {currentLink?.icon && (
-          <div className="flex-none">{currentLink.icon}</div>
-        )}
-        <span className="line-clamp-1">{currentLink?.title}</span>
-      </div>
-    </>
+    <FixedAppBrand
+      appHref={`/${wsId}`}
+      appName="Platform"
+      centralHref="/home"
+      launcherLabel={t('command_launcher.apps')}
+      onAppClick={() => setAppsLauncherOpen(true)}
+    />
   );
 
   if (!initialized) return null;

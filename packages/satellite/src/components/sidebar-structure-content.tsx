@@ -3,8 +3,16 @@
 import { Nav } from '@tuturuuu/ui/custom/nav';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { cn } from '@tuturuuu/utils/format';
-import type { Dispatch, ReactNode, SetStateAction } from 'react';
-import type { NavigationState } from './sidebar-structure-utils';
+import {
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+  Suspense,
+} from 'react';
+import type {
+  NavigationState,
+  WorkspaceSelectRenderer,
+} from './sidebar-structure-utils';
 
 interface SidebarStructureContentProps {
   backButton: NavLink;
@@ -15,6 +23,7 @@ interface SidebarStructureContentProps {
   navState: NavigationState;
   setIsCollapsed: Dispatch<SetStateAction<boolean>>;
   setNavState: Dispatch<SetStateAction<NavigationState>>;
+  workspaceSelect?: WorkspaceSelectRenderer;
   wsId: string;
 }
 
@@ -27,6 +36,7 @@ export function SidebarStructureContent({
   navState,
   setIsCollapsed,
   setNavState,
+  workspaceSelect,
   wsId,
 }: SidebarStructureContentProps) {
   const handleSubMenuClick = (
@@ -47,6 +57,23 @@ export function SidebarStructureContent({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {workspaceSelect ? (
+        <div
+          className={cn(
+            'shrink-0 border-b p-2',
+            isCollapsed && 'flex justify-center'
+          )}
+          data-sidebar-workspace-select
+        >
+          <Suspense
+            fallback={
+              <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
+            }
+          >
+            {workspaceSelect({ isCollapsed, standalone: true })}
+          </Suspense>
+        </div>
+      ) : null}
       <div
         key={navState.history.length}
         className={cn(

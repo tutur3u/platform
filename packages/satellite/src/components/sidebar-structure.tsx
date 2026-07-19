@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Boxes } from '@tuturuuu/icons';
+import { ArrowLeft } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
@@ -29,24 +29,20 @@ import {
 import {
   findActiveNavigation,
   getFilteredLinks,
-  getNavigationMatches,
   type NavigationState,
   type WorkspaceSelectRenderer,
 } from './sidebar-structure-utils';
 
 export interface SidebarStructureProps {
   actions: ReactNode;
-  brand?: ReactNode;
+  appHref?: string;
+  appName: ReactNode;
+  brandActions?: ReactNode;
   brandHref?: string;
-  collapsedBrand?: ReactNode;
-  linkBrand?: boolean;
-  stackWorkspaceSelect?: boolean;
   childContainerClassName?: string;
   children: ReactNode;
   defaultCollapsed?: boolean;
   links: (NavLink | null)[];
-  mobileBrand?: ReactNode;
-  mobileHeaderDivider?: boolean;
   sidebarCollapsedWidth?: string;
   sidebarContentAfter?: ReactNode | WorkspaceSelectRenderer;
   sidebarExpandedWidth?: string;
@@ -63,28 +59,23 @@ export interface SidebarStructureProps {
   } | null;
   workspaceSelect?: WorkspaceSelectRenderer;
   wsId: string;
-  showBrandOnRoot?: boolean;
 }
 
 export function SidebarStructure({
   actions,
-  brand,
+  appHref,
+  appName,
+  brandActions,
   brandHref = '/',
-  collapsedBrand,
-  linkBrand = true,
   childContainerClassName,
   children,
   defaultCollapsed = false,
   links,
-  mobileBrand,
-  mobileHeaderDivider = true,
   sidebarCollapsedWidth,
   sidebarContentAfter,
   sidebarExpandedWidth,
   sidebarHeaderClassName,
   sidebarHeaderHeight,
-  showBrandOnRoot = false,
-  stackWorkspaceSelect = false,
   upgradeExternal = false,
   upgradeHref,
   userPopover,
@@ -97,19 +88,7 @@ export function SidebarStructure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
-  const appsLauncherLink: NavLink = useMemo(
-    () => ({
-      icon: <Boxes className="h-4 w-4" />,
-      id: 'apps-launcher',
-      onClick: () => setAppsLauncherOpen(true),
-      title: t('command_launcher.apps'),
-    }),
-    [t]
-  );
-  const navigationLinks = useMemo<(NavLink | null)[]>(
-    () => [appsLauncherLink, null, ...links],
-    [appsLauncherLink, links]
-  );
+  const navigationLinks = useMemo<(NavLink | null)[]>(() => links, [links]);
   const [navState, setNavState] = useState<NavigationState>(() => {
     const activeNavigation = findActiveNavigation({
       currentPath: pathname,
@@ -226,13 +205,6 @@ export function SidebarStructure({
   }, []);
 
   const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
-  const currentLink = getNavigationMatches({
-    currentLinks:
-      navState.history.length > 0
-        ? [backButton, ...filteredCurrentLinks]
-        : filteredCurrentLinks,
-    pathname,
-  })[0];
   const currentTitle = navState.titleHistory.at(-1);
   const extraContent =
     typeof sidebarContentAfter === 'function'
@@ -272,11 +244,11 @@ export function SidebarStructure({
         isCollapsed={isCollapsed}
         mobileHeader={
           <SidebarStructureMobileHeader
+            appHref={appHref ?? `/${wsId}`}
+            appName={appName}
             brandHref={brandHref}
-            currentIcon={currentLink?.icon}
-            currentTitle={currentLink?.title}
-            mobileBrand={mobileBrand}
-            showDivider={mobileHeaderDivider}
+            launcherLabel={t('command_launcher.apps')}
+            onOpenApps={() => setAppsLauncherOpen(true)}
           />
         }
         onMouseEnter={onMouseEnter}
@@ -298,20 +270,19 @@ export function SidebarStructure({
             navState={navState}
             setIsCollapsed={setIsCollapsed}
             setNavState={setNavState}
+            workspaceSelect={workspaceSelect}
             wsId={wsId}
           />
         }
         sidebarHeader={
           <SidebarStructureHeader
-            brand={brand}
+            actions={brandActions}
+            appHref={appHref ?? `/${wsId}`}
+            appName={appName}
             brandHref={brandHref}
-            collapsedBrand={collapsedBrand}
             isCollapsed={isCollapsed}
-            linkBrand={linkBrand}
-            showBrandOnRoot={showBrandOnRoot}
-            stackWorkspaceSelect={stackWorkspaceSelect}
-            workspaceSelect={workspaceSelect}
-            wsId={wsId}
+            launcherLabel={t('command_launcher.apps')}
+            onOpenApps={() => setAppsLauncherOpen(true)}
           />
         }
         userPopover={userPopover}

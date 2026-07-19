@@ -1,84 +1,57 @@
 'use client';
 
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, Suspense } from 'react';
-import type { WorkspaceSelectRenderer } from './sidebar-structure-utils';
+import type { ReactNode } from 'react';
+import { FixedAppBrand } from './fixed-app-brand';
 
 interface SidebarStructureMobileHeaderProps {
+  appHref: string;
+  appName: ReactNode;
   brandHref: string;
-  currentIcon?: ReactNode;
-  currentTitle?: string;
-  mobileBrand?: ReactNode;
-  showDivider?: boolean;
+  launcherLabel: string;
+  onOpenApps: () => void;
 }
 
 export function SidebarStructureMobileHeader({
+  appHref,
+  appName,
   brandHref,
-  currentIcon,
-  currentTitle,
-  mobileBrand,
-  showDivider = true,
+  launcherLabel,
+  onOpenApps,
 }: SidebarStructureMobileHeaderProps) {
-  const t = useTranslations();
-
   return (
-    <>
-      {mobileBrand ?? (
-        <Link
-          aria-label={t('common.home')}
-          className="flex flex-none items-center gap-2"
-          href={brandHref}
-        >
-          <TuturuuLogo alt="" className="h-8 w-8" height={32} width={32} />
-        </Link>
-      )}
-      {showDivider && currentTitle ? (
-        <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      ) : null}
-      {currentTitle ? (
-        <div className="flex items-center gap-2 break-all font-semibold text-lg">
-          {currentIcon ? <div className="flex-none">{currentIcon}</div> : null}
-          <span className="line-clamp-1">{currentTitle}</span>
-        </div>
-      ) : null}
-    </>
+    <FixedAppBrand
+      appHref={appHref}
+      appName={appName}
+      centralHref={brandHref}
+      launcherLabel={launcherLabel}
+      onAppClick={onOpenApps}
+    />
   );
 }
 
 interface SidebarStructureHeaderProps {
-  brand?: ReactNode;
+  actions?: ReactNode;
+  appHref: string;
+  appName: ReactNode;
   brandHref: string;
-  collapsedBrand?: ReactNode;
   isCollapsed: boolean;
-  linkBrand?: boolean;
-  showBrandOnRoot?: boolean;
-  stackWorkspaceSelect?: boolean;
-  workspaceSelect?: WorkspaceSelectRenderer;
-  wsId: string;
+  launcherLabel: string;
+  onOpenApps: () => void;
 }
 
 export function SidebarStructureHeader({
-  brand,
+  actions,
+  appHref,
+  appName,
   brandHref,
-  collapsedBrand,
   isCollapsed,
-  linkBrand = true,
-  showBrandOnRoot = false,
-  stackWorkspaceSelect = false,
-  workspaceSelect,
-  wsId,
+  launcherLabel,
+  onOpenApps,
 }: SidebarStructureHeaderProps) {
   const t = useTranslations();
-  const brandContent = brand ?? (
-    <>
-      <TuturuuLogo alt="" className="h-6 w-6" height={32} width={32} />
-      <LogoTitle />
-    </>
-  );
 
   if (isCollapsed) {
     return (
@@ -87,50 +60,19 @@ export function SidebarStructureHeader({
         className="flex flex-none items-center justify-center"
         href={brandHref}
       >
-        {collapsedBrand ?? (
-          <TuturuuLogo alt="" className="h-7 w-7" height={32} width={32} />
-        )}
+        <TuturuuLogo alt="" className="h-7 w-7" height={32} width={32} />
       </Link>
-    );
-  }
-
-  const brandNode =
-    wsId === ROOT_WORKSPACE_ID && !showBrandOnRoot ? null : linkBrand ? (
-      <Link
-        aria-label={t('common.home')}
-        className="flex min-w-0 flex-none items-center gap-2"
-        href={brandHref}
-      >
-        {brandContent}
-      </Link>
-    ) : (
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        {brandContent}
-      </div>
-    );
-  const workspaceSelectNode = workspaceSelect ? (
-    <Suspense
-      fallback={
-        <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
-      }
-    >
-      {workspaceSelect({ isCollapsed })}
-    </Suspense>
-  ) : null;
-
-  if (stackWorkspaceSelect) {
-    return (
-      <div className="flex min-w-0 flex-1 flex-col gap-2 py-1">
-        {brandNode}
-        {workspaceSelectNode}
-      </div>
     );
   }
 
   return (
-    <>
-      {brandNode}
-      {workspaceSelectNode}
-    </>
+    <FixedAppBrand
+      actions={actions}
+      appHref={appHref}
+      appName={appName}
+      centralHref={brandHref}
+      launcherLabel={launcherLabel}
+      onAppClick={onOpenApps}
+    />
   );
 }

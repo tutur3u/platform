@@ -30,16 +30,19 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
+      appName="CMS"
+      brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}
       workspace={workspace}
-      workspaceSelect={({ isCollapsed }) => (
+      workspaceSelect={({ isCollapsed, standalone }) => (
         <WorkspaceSelect
           disableCreateNewWorkspace={disableCreateNewWorkspace}
           hideLeading={isCollapsed}
+          standalone={standalone}
           wsId={wsId}
         />
       )}

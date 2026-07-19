@@ -2,7 +2,6 @@
 
 import { Plus, Search } from '@tuturuuu/icons';
 import type { ChatConversation } from '@tuturuuu/internal-api';
-import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import { Button } from '@tuturuuu/ui/button';
 import { ChatConversationFilterMenu } from '@tuturuuu/ui/chat/chat-sidebar';
@@ -15,7 +14,6 @@ import {
   normalizeChatConversationScope,
 } from '@tuturuuu/ui/chat/utils';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { useSearchParams } from 'next/navigation';
@@ -78,41 +76,24 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      brand={
-        <FixedAppBrand
-          actions={
-            <ChatHeaderActions
-              archiveFilter={archiveFilter}
-              currentUserId={currentUserId}
-              defaultConversationScope={defaultConversationScope}
-              onArchiveFilterChange={setArchiveFilter}
-              onCreate={() => setCreateOpen(true)}
-              onSearchChange={setSearchValue}
-              onTypeToggle={toggleConversationType}
-              searchValue={searchValue}
-              selectedTypes={selectedTypes}
-              wsId={wsId}
-            />
-          }
-          appHref={`/${wsId}`}
-          appName={t('title')}
-          centralHref={TTR_URL}
+      appName={t('title')}
+      brandActions={
+        <ChatHeaderActions
+          archiveFilter={archiveFilter}
+          currentUserId={currentUserId}
+          defaultConversationScope={defaultConversationScope}
+          onArchiveFilterChange={setArchiveFilter}
+          onCreate={() => setCreateOpen(true)}
+          onSearchChange={setSearchValue}
+          onTypeToggle={toggleConversationType}
+          searchValue={searchValue}
+          selectedTypes={selectedTypes}
+          wsId={wsId}
         />
       }
-      collapsedBrand={
-        <TuturuuLogo alt="" className="size-8" height={32} width={32} />
-      }
+      brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
-      linkBrand={false}
       links={[]}
-      mobileBrand={
-        <FixedAppBrand
-          appHref={`/${wsId}`}
-          appName={t('title')}
-          centralHref={TTR_URL}
-        />
-      }
-      mobileHeaderDivider={false}
       sidebarContentAfter={({
         closeOnMobile,
         expandSidebar,
@@ -138,7 +119,6 @@ export function Structure({
       sidebarExpandedWidth="22rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
       sidebarHeaderHeight="4rem"
-      showBrandOnRoot
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}

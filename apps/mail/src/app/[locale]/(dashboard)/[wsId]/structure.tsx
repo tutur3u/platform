@@ -2,12 +2,10 @@
 
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
-import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { usePathname, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { TTR_URL } from '@/constants/common';
-import { MailBrand } from './mail-brand';
 import { getMailFolderHref, isMailFolder } from './mail-folders';
 import { MailSidebarPanel } from './mail-sidebar-panel';
 
@@ -78,20 +76,11 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      brand={
-        <MailBrand
-          centralHref={TTR_URL}
-          className="flex-1"
-          mailHref={mailHomeHref}
-        />
-      }
+      appHref={mailHomeHref}
+      appName="Mail"
       brandHref={TTR_URL}
-      collapsedBrand={
-        <TuturuuLogo alt="" className="size-8" height={32} width={32} />
-      }
       defaultCollapsed={defaultCollapsed}
       links={[]}
-      mobileBrand={<MailBrand centralHref={TTR_URL} mailHref={mailHomeHref} />}
       sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
         <MailSidebarPanel
           closeOnMobile={closeOnMobile}
@@ -103,7 +92,6 @@ export function Structure({
       )}
       sidebarExpandedWidth="18rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
-      linkBrand={false}
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}

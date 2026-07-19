@@ -19,10 +19,12 @@ function resolveWorkspacePath({
 export function WorkspaceSelect({
   disableCreateNewWorkspace,
   hideLeading,
+  standalone,
   wsId,
 }: {
   disableCreateNewWorkspace?: boolean;
   hideLeading?: boolean;
+  standalone?: boolean;
   wsId: string;
 }) {
   return (
@@ -30,6 +32,7 @@ export function WorkspaceSelect({
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fetchWorkspaces={fetchWorkspaces}
       hideLeading={hideLeading}
+      standalone={standalone}
       resolveNextPathname={resolveWorkspacePath}
       wsId={wsId}
     />

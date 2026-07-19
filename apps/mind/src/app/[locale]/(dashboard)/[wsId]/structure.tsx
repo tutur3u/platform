@@ -31,6 +31,8 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
+      appName="Mind"
+      brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
       sidebarContentAfter={({ isCollapsed }) =>
@@ -42,8 +44,12 @@ export function Structure({
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}
       workspace={workspace}
-      workspaceSelect={({ isCollapsed }) => (
-        <WorkspaceSelect hideLeading={isCollapsed} wsId={wsId} />
+      workspaceSelect={({ isCollapsed, standalone }) => (
+        <WorkspaceSelect
+          hideLeading={isCollapsed}
+          standalone={standalone}
+          wsId={wsId}
+        />
       )}
       wsId={wsId}
     >

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FixedAppBrand } from './fixed-app-brand';
@@ -47,5 +47,26 @@ describe('FixedAppBrand', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Create chat' })).toBeTruthy();
+  });
+
+  it('turns the app name into a launcher trigger with a chevron', () => {
+    const onAppClick = vi.fn();
+
+    render(
+      <FixedAppBrand
+        appHref="/internal"
+        appName="Infrastructure"
+        centralHref="https://tuturuuu.example"
+        launcherLabel="Open apps"
+        onAppClick={onAppClick}
+      />
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Open apps' });
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(trigger.querySelector('svg')).toBeTruthy();
+
+    fireEvent.click(trigger);
+    expect(onAppClick).toHaveBeenCalledOnce();
   });
 });

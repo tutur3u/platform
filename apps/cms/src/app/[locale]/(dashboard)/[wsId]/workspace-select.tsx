@@ -6,11 +6,13 @@ import { fetchWorkspaces } from './actions';
 export function WorkspaceSelect({
   wsId,
   hideLeading,
+  standalone,
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
   wsId: string;
   hideLeading?: boolean;
+  standalone?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
 }) {
@@ -18,6 +20,7 @@ export function WorkspaceSelect({
     <SharedWorkspaceSelect
       wsId={wsId}
       hideLeading={hideLeading}
+      standalone={standalone}
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace ?? true}
       fetchWorkspaces={fetchWorkspaces}

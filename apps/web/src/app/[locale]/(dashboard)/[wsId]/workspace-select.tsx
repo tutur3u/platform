@@ -7,11 +7,13 @@ import { fetchWorkspaces } from './workspace-list-actions';
 export function WorkspaceSelect({
   wsId,
   hideLeading,
+  standalone,
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
   wsId: string;
   hideLeading?: boolean;
+  standalone?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
 }) {
@@ -19,6 +21,7 @@ export function WorkspaceSelect({
     <SharedWorkspaceSelect
       wsId={wsId}
       hideLeading={hideLeading}
+      standalone={standalone}
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}

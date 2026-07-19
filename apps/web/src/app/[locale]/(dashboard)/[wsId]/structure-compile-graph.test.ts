@@ -73,16 +73,21 @@ describe('[wsId] structure compile graph', () => {
     );
   });
 
-  it('wires the shared Apps launcher as a locked root sidebar action', () => {
+  it('wires the shared Apps launcher into the app-name header', () => {
     expect(structureImplSource).toMatch(
       staticImportPattern('@tuturuuu/satellite')
     );
     expect(structureImplSource).toContain('AppsLauncherDialog');
-    expect(structureImplSource).toContain("id: 'apps-launcher'");
-    expect(structureImplSource).toContain("title: t('command_launcher.apps')");
-    expect(structureImplSource).toContain('preferenceLocked: true');
-    expect(structureImplSource).toContain("preferencePlacement: 'root'");
-    expect(structureImplSource).toContain('navigationLinksWithLauncher');
+    expect(structureImplSource).toContain('FixedAppBrand');
+    expect(structureImplSource).toContain('appName="Platform"');
+    expect(structureImplSource).toContain(
+      "launcherLabel={t('command_launcher.apps')}"
+    );
+    expect(structureImplSource).toContain(
+      'onAppClick={() => setAppsLauncherOpen(true)}'
+    );
+    expect(structureImplSource).not.toContain("id: 'apps-launcher'");
+    expect(structureImplSource).not.toContain('navigationLinksWithLauncher');
     expect(structureImplSource).toContain(
       'currentWorkspace={currentWorkspace}'
     );

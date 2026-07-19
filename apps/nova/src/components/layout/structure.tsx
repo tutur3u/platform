@@ -1,14 +1,11 @@
 'use client';
 
-import { Boxes } from '@tuturuuu/icons';
 import { AppsLauncherDialog } from '@tuturuuu/satellite';
 import { FixedAppBrand } from '@tuturuuu/satellite/fixed-app-brand';
-import { Button } from '@tuturuuu/ui/button';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
 import { TTR_URL } from '@/constants/common';
@@ -46,60 +43,37 @@ export default function Structure({
   const t = useTranslations('command_launcher');
 
   const sidebarHeader = isCollapsed ? (
-    <TuturuuLogo alt="" className="size-8" height={32} width={32} />
+    <Link aria-label="Tuturuuu" href={TTR_URL}>
+      <TuturuuLogo alt="" className="size-8" height={32} width={32} />
+    </Link>
   ) : (
-    <FixedAppBrand appHref="/" appName="Nova" centralHref={TTR_URL} />
-  );
-
-  const appsLauncherButton = isCollapsed ? (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>
-        <Button
-          className="h-9 w-9"
-          onClick={() => setAppsLauncherOpen(true)}
-          type="button"
-          variant="ghost"
-        >
-          <Boxes className="h-4 w-4" />
-          <span className="sr-only">{t('apps')}</span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent
-        className="flex items-center gap-4 border bg-background text-foreground"
-        side="right"
-      >
-        {t('apps')}
-      </TooltipContent>
-    </Tooltip>
-  ) : (
-    <Button
-      className="w-full justify-start gap-2"
-      onClick={() => setAppsLauncherOpen(true)}
-      type="button"
-      variant="ghost"
-    >
-      <Boxes className="h-4 w-4" />
-      {t('apps')}
-    </Button>
+    <FixedAppBrand
+      appHref="/"
+      appName="Nova"
+      centralHref={TTR_URL}
+      launcherLabel={t('apps')}
+      onAppClick={() => setAppsLauncherOpen(true)}
+    />
   );
 
   const sidebarContent = (
-    <>
-      <div className={cn('px-2 pt-2', isCollapsed && 'flex justify-center')}>
-        {appsLauncherButton}
-      </div>
-      <Nav
-        allowChallengeManagement={allowChallengeManagement}
-        allowRoleManagement={allowRoleManagement}
-        isCollapsed={isCollapsed}
-        navItems={navItems}
-        onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
-      />
-    </>
+    <Nav
+      allowChallengeManagement={allowChallengeManagement}
+      allowRoleManagement={allowRoleManagement}
+      isCollapsed={isCollapsed}
+      navItems={navItems}
+      onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
+    />
   );
 
   const mobileHeader = (
-    <FixedAppBrand appHref="/" appName="Nova" centralHref={TTR_URL} />
+    <FixedAppBrand
+      appHref="/"
+      appName="Nova"
+      centralHref={TTR_URL}
+      launcherLabel={t('apps')}
+      onAppClick={() => setAppsLauncherOpen(true)}
+    />
   );
 
   return (

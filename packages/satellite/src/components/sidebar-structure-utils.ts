@@ -5,6 +5,7 @@ export type SidebarStructureRenderProps = {
   closeOnMobile?: () => void;
   expandSidebar?: () => void;
   isCollapsed: boolean;
+  standalone?: boolean;
   setIsCollapsed?: Dispatch<SetStateAction<boolean>>;
 };
 

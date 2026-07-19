@@ -14,45 +14,27 @@ vi.mock('@/constants/common', () => ({
 
 vi.mock('@tuturuuu/satellite/sidebar-structure', () => ({
   SidebarStructure: ({
-    brand,
+    appName,
+    brandHref,
     children,
     workspaceSelect,
   }: {
-    brand: ReactNode;
+    appName: ReactNode;
+    brandHref: string;
     children: ReactNode;
     workspaceSelect?: () => ReactNode;
   }) => (
     <section>
-      <div data-testid="brand-slot">{brand}</div>
+      <a href={brandHref}>Tuturuuu</a>
+      <div data-testid="app-name">{appName}</div>
       <div data-testid="workspace-slot">{workspaceSelect?.()}</div>
       {children}
     </section>
   ),
 }));
 
-vi.mock('@tuturuuu/satellite/fixed-app-brand', () => ({
-  FixedAppBrand: ({
-    appHref,
-    appName,
-    centralHref,
-  }: {
-    appHref: string;
-    appName: ReactNode;
-    centralHref: string;
-  }) => (
-    <div>
-      <a href={centralHref}>Tuturuuu</a>
-      <a href={appHref}>{appName}</a>
-    </div>
-  ),
-}));
-
-vi.mock('@tuturuuu/ui/custom/tuturuuu-logo', () => ({
-  TuturuuLogo: () => <span data-testid="tuturuuu-logo" />,
-}));
-
 describe('Infrastructure Structure', () => {
-  it('renders a fixed Tuturuuu and Infra brand without a workspace selector', () => {
+  it('renders the shared Tuturuuu and Infrastructure brand without a workspace selector', () => {
     render(
       <Structure
         actions={<div />}
@@ -69,11 +51,7 @@ describe('Infrastructure Structure', () => {
     const link = screen.getByRole('link', { name: 'Tuturuuu' });
 
     expect(link).toHaveAttribute('href', mocks.webAppUrl);
-    expect(screen.getByRole('link', { name: 'Infra' })).toHaveAttribute(
-      'href',
-      '/internal'
-    );
-    expect(screen.getByTestId('brand-slot')).toContainElement(link);
+    expect(screen.getByTestId('app-name')).toHaveTextContent('Infrastructure');
     expect(screen.getByTestId('workspace-slot')).toBeEmptyDOMElement();
     expect(screen.getByText('Infrastructure dashboard')).toBeInTheDocument();
   });

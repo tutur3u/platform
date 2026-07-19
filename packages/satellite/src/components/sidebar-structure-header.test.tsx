@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { ComponentProps, ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SidebarStructureHeader } from './sidebar-structure-header';
 
 vi.mock('next-intl', () => ({
@@ -8,8 +8,14 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: ReactNode; href: string }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    children,
+    href,
+    ...props
+  }: { children: ReactNode; href: string } & ComponentProps<'a'>) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
   ),
 }));
 
@@ -21,28 +27,33 @@ vi.mock('@tuturuuu/ui/custom/tuturuuu-logo', () => ({
 }));
 
 const baseProps = {
+  appHref: '/mail',
+  appName: 'Mail',
   brandHref: '/',
   isCollapsed: false,
-  wsId: 'workspace-id',
+  launcherLabel: 'Open apps',
+  onOpenApps: vi.fn(),
 };
 
+afterEach(cleanup);
+
 describe('SidebarStructureHeader', () => {
-  it('supports focused satellite shells without a workspace selector', () => {
-    render(<SidebarStructureHeader {...baseProps} brand={<span>Mail</span>} />);
+  it('renders the shared brand and app launcher trigger', () => {
+    render(<SidebarStructureHeader {...baseProps} />);
 
     expect(screen.getByText('Mail')).toBeTruthy();
-    expect(screen.queryByText('Workspace switcher')).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'Tuturuuu' }).getAttribute('href')
+    ).toBe('/');
+    expect(screen.getByRole('button', { name: 'Open apps' })).toBeTruthy();
   });
 
-  it('still renders workspace selectors for workspace-oriented apps', () => {
-    render(
-      <SidebarStructureHeader
-        {...baseProps}
-        brand={<span>Calendar</span>}
-        workspaceSelect={() => <span>Workspace switcher</span>}
-      />
-    );
+  it('collapses to the Tuturuuu home link', () => {
+    render(<SidebarStructureHeader {...baseProps} isCollapsed />);
 
-    expect(screen.getByText('Workspace switcher')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Home' }).getAttribute('href')
+    ).toBe('/');
+    expect(screen.queryByRole('button', { name: 'Open apps' })).toBeNull();
   });
 });

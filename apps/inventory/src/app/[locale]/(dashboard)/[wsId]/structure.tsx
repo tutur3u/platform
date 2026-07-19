@@ -28,6 +28,8 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
+      appName="Inventory"
+      brandHref={TTR_URL}
       childContainerClassName="mx-auto w-full max-w-[1500px] md:px-4 md:py-3"
       defaultCollapsed={defaultCollapsed}
       links={links}
@@ -35,8 +37,12 @@ export function Structure({
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}
       workspace={workspace}
-      workspaceSelect={({ isCollapsed }) => (
-        <WorkspaceSelect hideLeading={isCollapsed} wsId={wsId} />
+      workspaceSelect={({ isCollapsed, standalone }) => (
+        <WorkspaceSelect
+          hideLeading={isCollapsed}
+          standalone={standalone}
+          wsId={wsId}
+        />
       )}
       wsId={wsId}
     >
