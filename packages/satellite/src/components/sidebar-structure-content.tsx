@@ -60,7 +60,7 @@ export function SidebarStructureContent({
       {workspaceSelect ? (
         <div
           className={cn(
-            'shrink-0 border-b p-2',
+            'shrink-0 border-b px-2 pt-0 pb-2',
             isCollapsed && 'flex justify-center'
           )}
           data-sidebar-workspace-select

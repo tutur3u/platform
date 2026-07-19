@@ -4,6 +4,8 @@ const path = require('node:path');
 const TRANSLATOR_METHODS = new Set(['has', 'markup', 'raw', 'rich']);
 const TRANSLATOR_DECLARATION_REGEX =
   /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s*)?(?:useTranslations|getTranslations)\(\s*(?:(['"])([^'"]+)\2|\{[\s\S]*?\bnamespace\s*:\s*(['"])([^'"]+)\4[\s\S]*?\})?\s*\)/g;
+const TRANSLATOR_PARAMETER_REGEX =
+  /\b(t|translate|translator)\s*:\s*\(\s*key\s*:\s*string\s*\)\s*=>\s*string/g;
 
 function isCheckableSourceFile(fileName) {
   if (!/\.(ts|tsx|js|jsx)$/.test(fileName)) return false;
@@ -137,6 +139,20 @@ function findContainingBlockEnd(bracePairs, position, fallbackEnd) {
 
   for (const [open, close] of bracePairs.entries()) {
     if (open < position && position < close && open > bestOpen) {
+      bestOpen = open;
+      bestClose = close;
+    }
+  }
+
+  return bestClose;
+}
+
+function findFollowingBlockEnd(bracePairs, position, fallbackEnd) {
+  let bestOpen = fallbackEnd;
+  let bestClose = fallbackEnd;
+
+  for (const [open, close] of bracePairs.entries()) {
+    if (position < open && open < bestOpen) {
       bestOpen = open;
       bestClose = close;
     }
@@ -461,7 +477,11 @@ function findTranslatorCalls(
   return keys;
 }
 
-function scanSourceKeys(rootDir, sourceDir) {
+function scanSourceKeys(
+  rootDir,
+  sourceDir,
+  { includeTranslatorParameters = false } = {}
+) {
   const results = [];
   const files = findSourceFiles(rootDir, sourceDir);
 
@@ -489,6 +509,25 @@ function scanSourceKeys(rootDir, sourceDir) {
       });
 
       declarationMatch = TRANSLATOR_DECLARATION_REGEX.exec(content);
+    }
+
+    if (includeTranslatorParameters) {
+      TRANSLATOR_PARAMETER_REGEX.lastIndex = 0;
+      let parameterMatch = TRANSLATOR_PARAMETER_REGEX.exec(content);
+      while (parameterMatch !== null) {
+        declarations.push({
+          index: parameterMatch.index,
+          namespace: '',
+          scopeEnd: findFollowingBlockEnd(
+            bracePairs,
+            parameterMatch.index,
+            content.length
+          ),
+          variableName: parameterMatch[1],
+        });
+
+        parameterMatch = TRANSLATOR_PARAMETER_REGEX.exec(content);
+      }
     }
 
     for (const declaration of declarations) {

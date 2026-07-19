@@ -840,7 +840,10 @@ export function StructureImpl({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div className="shrink-0 border-b p-2" data-sidebar-workspace-select>
+      <div
+        className="shrink-0 border-b px-2 pt-0 pb-2"
+        data-sidebar-workspace-select
+      >
         <Suspense
           key={user?.id}
           fallback={

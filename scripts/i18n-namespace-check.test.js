@@ -73,6 +73,35 @@ test('namespace checker reports missing scoped ws-task-boards share keys', (t) =
   assert.match(result.stdout, /ws-task-boards\.share\.title/u);
 });
 
+test('namespace checker reports workspace settings keys used by typed helpers', (t) => {
+  const projectRoot = createProject(t);
+
+  writeFile(
+    projectRoot,
+    'packages/ui/src/workspace-access-labels.ts',
+    `
+      export function getWorkspaceAccessLabels(
+        t: (key: string) => string
+      ) {
+        return { empty: t('ws-members.no_roles_found') };
+      }
+    `
+  );
+
+  writeSharedUiApp(projectRoot, 'apps/tasks', {
+    'ws-members': {},
+  });
+
+  const result = spawnSync(process.execPath, [checkerPath], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /apps\/tasks: MISSING 1 translation key/u);
+  assert.match(result.stdout, /ws-members\.no_roles_found/u);
+});
+
 test('namespace checker reports shared settings calendar keys missing from tasks', (t) => {
   const projectRoot = createProject(t);
 

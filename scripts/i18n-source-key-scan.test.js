@@ -163,6 +163,44 @@ test('scanSourceKeys follows same-file translator props passed by name', (t) => 
   ]);
 });
 
+test('scanSourceKeys captures typed translator helper parameters', (t) => {
+  const projectRoot = createProject(t);
+  writeFile(
+    projectRoot,
+    'packages/ui/src/labels.ts',
+    `
+      export function getLabels(
+        mode: 'workspace' | 'project',
+        t: (key: string) => string
+      ) {
+        return {
+          empty: mode === 'workspace'
+            ? t('ws-members.no_roles_found')
+            : t('external-projects.no_roles_found'),
+        };
+      }
+    `
+  );
+
+  assert.deepEqual(
+    scanSourceKeys(projectRoot, 'packages/ui/src', {
+      includeTranslatorParameters: true,
+    }),
+    [
+      {
+        file: 'packages/ui/src/labels.ts',
+        key: 'ws-members.no_roles_found',
+        namespace: '',
+      },
+      {
+        file: 'packages/ui/src/labels.ts',
+        key: 'external-projects.no_roles_found',
+        namespace: '',
+      },
+    ]
+  );
+});
+
 test('checkAppSourceKeys does not use shared package key exceptions for local app source', (t) => {
   const projectRoot = createProject(t);
   writeJson(projectRoot, 'apps/finance/messages/en.json', {

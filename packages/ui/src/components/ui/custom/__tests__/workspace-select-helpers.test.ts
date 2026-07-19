@@ -58,6 +58,23 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
       /<AvatarFallback[\s\S]*<AvatarImage/u
     );
   });
+
+  it('lays out the short create and join actions in the command item grid', () => {
+    const workspaceSelectSource = readFileSync(
+      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
+      'utf8'
+    );
+
+    expect(workspaceSelectSource).toContain(
+      '[&_[cmdk-group-items]]:grid-cols-2'
+    );
+    expect(workspaceSelectSource).toContain(
+      "t('common.create_workspace_action')"
+    );
+    expect(workspaceSelectSource).toContain(
+      "t('common.join_workspace_action')"
+    );
+  });
 });
 
 describe('normalizeWorkspaceSwitchPath', () => {

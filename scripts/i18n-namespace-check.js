@@ -62,6 +62,7 @@ const APPS = [
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
   { name: 'apps/hive', dir: 'apps/hive' },
+  { name: 'apps/inventory', dir: 'apps/inventory' },
   { name: 'apps/meet', dir: 'apps/meet' },
   { name: 'apps/mind', dir: 'apps/mind' },
   { name: 'apps/track', dir: 'apps/track' },
@@ -77,6 +78,7 @@ const APPS = [
 // the shared UI they actually render (the account menu / dialogs use `common`).
 // All other shared namespaces are implicitly ignored for the app.
 const APP_NAMESPACE_ALLOWLIST = new Map([
+  ['apps/inventory', new Set(['ws-members', 'ws-roles'])],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
 ]);
@@ -90,7 +92,6 @@ const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
   'apps/infrastructure',
-  'apps/inventory',
   'apps/learn',
   'apps/mail',
   'apps/pay',
@@ -110,7 +111,22 @@ const APP_SHARED_PACKAGE_SCOPES = new Map([
 // `useTranslations()` has no namespace signal, and packages/ui is too broad to
 // require every app to carry every root key it contains. Add namespaces here as
 // their consuming apps are confirmed.
+const SATELLITE_WORKSPACE_SETTINGS_APPS = new Set([
+  'apps/calendar',
+  'apps/cms',
+  'apps/contacts',
+  'apps/drive',
+  'apps/finance',
+  'apps/inventory',
+  'apps/rewise',
+  'apps/tasks',
+  'apps/track',
+  'apps/web',
+]);
+
 const BARE_ROOT_KEY_APP_SCOPES = new Map([
+  ['ws-members', SATELLITE_WORKSPACE_SETTINGS_APPS],
+  ['ws-roles', SATELLITE_WORKSPACE_SETTINGS_APPS],
   ['ws-invoices', new Set(['apps/finance'])],
   ['ws-task-boards', new Set(['apps/tasks', 'apps/web'])],
 ]);
@@ -140,9 +156,9 @@ const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set(['apps/contacts']);
 // The workspace-access component (packages/ui .../custom/workspace-access)
 // renders members/roles/defaults in both apps/web and apps/cms and reads its
 // strings via a bare `useTranslations()` (no namespace argument), plus the
-// permission catalog in packages/utils which receives `t` as a parameter.
-// Neither is visible to the namespace/key scans above, so an app can ship the
-// component while missing keys and render raw text (e.g. "ws-roles.guest_defaults").
+// permission catalog in packages/utils. Typed translator helpers inside the
+// scanned shared packages are covered by the source-key scanner; the external
+// permission catalog still needs parity coverage here.
 //
 // Only apps that actually render the component are listed — most apps carry a
 // (historically duplicated) ws-roles/ws-members namespace but never render it,
@@ -241,7 +257,9 @@ function scanPackageNamespaces(pkg) {
  * Returns an array of { namespace, key, file } objects.
  */
 function scanPackageKeys(pkg) {
-  const scannedKeys = scanSourceKeys(ROOT_DIR, pkg.dir);
+  const scannedKeys = scanSourceKeys(ROOT_DIR, pkg.dir, {
+    includeTranslatorParameters: true,
+  });
   const fileStats = new Map();
 
   for (const item of scannedKeys) {

@@ -203,6 +203,16 @@ An app that renders the full dashboard shell belongs in
 shared packages can request. Use `keyExceptions` to opt out of product surfaces
 the app does not render.
 
+For narrower shared surfaces, register the owning apps in the matching scoped
+consumer set. The workspace members-and-roles panel uses
+`SATELLITE_WORKSPACE_SETTINGS_APPS`, so `bun i18n:namespace-check` requires its
+`ws-members.*` and `ws-roles.*` keys from every satellite that mounts that
+panel. The source scanner also follows typed shared helpers such as
+`t: (key: string) => string`; otherwise helper-owned labels can evade a normal
+`useTranslations()` scan and render their key paths in production. Keep
+conditional product-only branches covered with an explicit key exception
+rather than weakening the whole consumer scope.
+
 ## Moving a feature from web to a satellite
 
 Resolve every import to an **absolute path** before moving anything. A

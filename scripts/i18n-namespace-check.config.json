@@ -87,7 +87,11 @@
       "ws-tasks.*"
     ],
     "apps/cms": ["settings.calendar.*", "ws-polls.*"],
-    "apps/contacts": ["finance.spending-by-category", "ws-polls.*"],
+    "apps/contacts": [
+      "external-projects.*",
+      "finance.spending-by-category",
+      "ws-polls.*"
+    ],
     "apps/drive": ["ws-polls.*"],
     "apps/finance": [
       "calendar.*",

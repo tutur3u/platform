@@ -29,10 +29,11 @@ describe('SidebarStructureContent', () => {
     );
 
     expect(screen.getByText('Standalone workspace picker')).toBeTruthy();
-    expect(
-      screen
-        .getByText('Standalone workspace picker')
-        .closest('[data-sidebar-workspace-select]')
-    ).toBeTruthy();
+    const workspaceSection = screen
+      .getByText('Standalone workspace picker')
+      .closest('[data-sidebar-workspace-select]');
+
+    expect(workspaceSection).toBeTruthy();
+    expect(workspaceSection?.className).toContain('pt-0');
   });
 });

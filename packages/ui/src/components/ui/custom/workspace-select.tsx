@@ -789,34 +789,34 @@ export function WorkspaceSelect({
               <CommandSeparator />
               <CommandGroup
                 className={cn(
-                  'grid gap-2',
-                  disableCreateNewWorkspace ? 'grid-cols-1' : 'grid-cols-2'
+                  '[&_[cmdk-group-items]]:grid [&_[cmdk-group-items]]:gap-1',
+                  disableCreateNewWorkspace
+                    ? '[&_[cmdk-group-items]]:grid-cols-1'
+                    : '[&_[cmdk-group-items]]:grid-cols-2'
                 )}
               >
                 {!disableCreateNewWorkspace && (
                   <CommandItem
-                    className="justify-center"
+                    className="h-9 justify-center gap-1.5 px-2"
                     disabled={disableCreateNewWorkspace}
                     onSelect={() => {
                       setOpen(false);
                       setShowNewWorkspaceDialog(true);
                     }}
                   >
-                    <PlusCircle className="h-5 w-5" />
-                    <span className="truncate">
-                      {t('common.create_new_workspace')}
-                    </span>
+                    <PlusCircle className="size-4" />
+                    <span>{t('common.create_workspace_action')}</span>
                   </CommandItem>
                 )}
                 <CommandItem
-                  className="justify-center"
+                  className="h-9 justify-center gap-1.5 px-2"
                   onSelect={() => {
                     setOpen(false);
                     setShowJoinWorkspaceDialog(true);
                   }}
                 >
-                  <Link className="h-5 w-5" />
-                  <span className="truncate">{t('common.join_workspace')}</span>
+                  <Link className="size-4" />
+                  <span>{t('common.join_workspace_action')}</span>
                 </CommandItem>
               </CommandGroup>
             </Command>
