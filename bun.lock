@@ -454,6 +454,7 @@
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/storage-core": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",

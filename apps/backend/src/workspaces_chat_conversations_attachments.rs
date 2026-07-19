@@ -14,6 +14,8 @@ use crate::{
 type HmacSha256 = Hmac<Sha256>;
 
 const CHAT_GET_ATTACHMENT_RPC: &str = "chat_get_attachment";
+const EXTERNAL_CHAT_GET_ATTACHMENT_RPC: &str = "ai_agent_external_get_attachment";
+const EXTERNAL_CHAT_CONVERSATION_PREFIX: &str = "ai-agent-thread-";
 const PRIVATE_SCHEMA: &str = "private";
 const STORAGE_BUCKET: &str = "workspaces";
 const VIEW_CHAT_PERMISSION: &str = "view_chat";
@@ -199,7 +201,12 @@ async fn call_chat_get_attachment(
     conversation_id: &str,
     attachment_id: &str,
 ) -> Result<ChatAttachment, RpcError> {
-    let Some(rpc_url) = contact_data.rpc_url(CHAT_GET_ATTACHMENT_RPC) else {
+    let rpc_name = if conversation_id.starts_with(EXTERNAL_CHAT_CONVERSATION_PREFIX) {
+        EXTERNAL_CHAT_GET_ATTACHMENT_RPC
+    } else {
+        CHAT_GET_ATTACHMENT_RPC
+    };
+    let Some(rpc_url) = contact_data.rpc_url(rpc_name) else {
         return Err(RpcError {
             code: None,
             message: None,

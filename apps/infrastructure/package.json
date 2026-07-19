@@ -36,6 +36,7 @@
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/storage-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",

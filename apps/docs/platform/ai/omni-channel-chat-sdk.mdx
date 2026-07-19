@@ -128,4 +128,8 @@ recent `thread.messages` when the adapter supports history fetch. Discord can
 return recent messages with the right bot scopes. Official Zalo behaves as a
 webhook-first adapter, so the mirror is populated by received events. Personal
 Zalo channels use the experimental `zca-js` listener and can fetch group chat
-history when the personal account session supports it.
+history when the personal account session supports it. The personal adapter
+also normalizes supported media messages into Chat SDK attachments. The mirror
+stores those binaries in the workspace Drive provider, records only private
+attachment metadata, and serves authenticated links from the same conversation
+API used by native Chat attachments.

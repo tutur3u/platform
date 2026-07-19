@@ -314,6 +314,43 @@ describe('Zalo personal Chat SDK adapter', () => {
     );
   });
 
+  it('maps Zalo media payloads to downloadable Chat SDK attachments', () => {
+    const adapter = createAdapter();
+    const message = adapter.parseMessage(
+      zcaMessage({
+        data: {
+          cliMsgId: 'cli-photo-1',
+          content: {
+            hdUrl: 'https://photo.zalo.test/class-photo.jpg',
+            height: 1080,
+            title: 'Class photo.jpg',
+            totalSize: 4096,
+            width: 1920,
+          },
+          dName: 'Sender',
+          msgId: 'photo-1',
+          msgType: 'chat.photo',
+          ts: '1700000000000',
+          uidFrom: 'zalo-user-1',
+        },
+      }) as never
+    );
+
+    expect(message.text).toBe('[Zalo image]');
+    expect(message.attachments).toMatchObject([
+      {
+        height: 1080,
+        mimeType: 'image/jpeg',
+        name: 'Class photo.jpg',
+        size: 4096,
+        type: 'image',
+        url: 'https://photo.zalo.test/class-photo.jpg',
+        width: 1920,
+      },
+    ]);
+    expect(message.attachments[0]?.fetchData).toEqual(expect.any(Function));
+  });
+
   it('dispatches inbound friend request messages through Chat SDK processing', async () => {
     const adapter = createAdapter();
     const chat = {

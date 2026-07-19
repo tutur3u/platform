@@ -12,6 +12,7 @@ import {
   type ChatMessage,
   callPrivateChatRpc,
 } from '@/lib/chat/private-rpc';
+import { mirrorExternalMessageAttachments } from './external-chat-attachments';
 import type { AiAgentChannelConfig, AiAgentDefinition } from './types';
 
 const AI_AGENT_EXTERNAL_CONVERSATION_PREFIX = 'ai-agent-thread-';
@@ -247,7 +248,7 @@ export async function persistAiAgentExternalSdkMessage({
       : new Date().toISOString();
   const externalMessageId = readString(message.id) || randomUUID();
 
-  return await callPrivateChatRpc<ChatMessage>(
+  const savedMessage = await callPrivateChatRpc<ChatMessage>(
     'ai_agent_external_upsert_message',
     {
       p_author_avatar_url: readString(raw.authorAvatarUrl) ?? null,
@@ -270,6 +271,39 @@ export async function persistAiAgentExternalSdkMessage({
       p_thread_id: savedThread.id,
     }
   );
+
+  const attachments = await mirrorExternalMessageAttachments({
+    adapter: channel.adapter,
+    channelId: channel.id,
+    externalMessageId,
+    externalThreadId,
+    message,
+    wsId: channel.workspaceId,
+  });
+
+  for (const attachment of attachments) {
+    try {
+      await callPrivateChatRpc('ai_agent_external_upsert_attachment', {
+        p_attachment_id: attachment.id,
+        p_content_type: attachment.contentType,
+        p_filename: attachment.filename,
+        p_full_path: attachment.fullPath,
+        p_message_id: savedMessage.id,
+        p_size_bytes: attachment.sizeBytes,
+        p_storage_path: attachment.storagePath,
+        p_thread_id: savedThread.id,
+      });
+    } catch (error) {
+      if (!isMissingExternalMirrorRpc(error)) throw error;
+
+      console.warn('External chat attachment metadata RPC is unavailable', {
+        adapter: channel.adapter,
+        channelId: channel.id,
+      });
+    }
+  }
+
+  return savedMessage;
 }
 
 async function upsertAiAgentExternalSdkThread({

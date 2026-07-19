@@ -27,8 +27,12 @@ export const GET = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
+      const externalConversation =
+        params.conversationId.startsWith('ai-agent-thread-');
       const attachment = await callPrivateChatRpc<ChatAttachment>(
-        'chat_get_attachment',
+        externalConversation
+          ? 'ai_agent_external_get_attachment'
+          : 'chat_get_attachment',
         {
           p_actor_user_id: auth.user.id,
           p_attachment_id: params.attachmentId,

@@ -206,9 +206,15 @@ into Tuturuuu Chat. When the mobile device owns additional history, use
 The phone-transfer action is owned by `apps/web`; `apps/chat` reaches it only
 through the internal API proxy, and the browser never receives cookies, IMEI,
 user agent values, private transfer keys, or raw transfer payloads. Historical
-sync persists mirrored conversations and messages only; it does not trigger AI
-auto-responses for old messages. Deploy the channel and use **Start**/**Stop**
-for the live listener lifecycle.
+sync walks the available Zalo user and group history and upserts it
+idempotently, so operators can rerun it to resume older imports without
+duplicating conversations or messages. It never triggers AI auto-responses for
+old messages. Supported image, video, audio, and file attachments are copied to
+the channel workspace's configured Drive provider under `AI Agent Imports`.
+Chat exposes those files through its authenticated attachment route instead of
+retaining expiring Zalo CDN links. Apply the corresponding private-schema media
+migration before enabling attachment imports in production. Deploy the channel
+and use **Start**/**Stop** for the live listener lifecycle.
 Personal Zalo channels do not receive webhooks, and only one Zalo Web listener
 can be active per personal account at a time. Use test accounts only; the
 upstream `zca-js` package is an unofficial Zalo Web automation API and can

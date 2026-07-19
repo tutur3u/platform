@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
+      ai_agent_external_message_attachments: {
+        Row: {
+          content_type: string | null;
+          created_at: string;
+          filename: string;
+          full_path: string | null;
+          id: string;
+          message_id: string;
+          size_bytes: number | null;
+          storage_path: string;
+          thread_id: string;
+        };
+        Insert: {
+          content_type?: string | null;
+          created_at?: string;
+          filename: string;
+          full_path?: string | null;
+          id?: string;
+          message_id: string;
+          size_bytes?: number | null;
+          storage_path: string;
+          thread_id: string;
+        };
+        Update: {
+          content_type?: string | null;
+          created_at?: string;
+          filename?: string;
+          full_path?: string | null;
+          id?: string;
+          message_id?: string;
+          size_bytes?: number | null;
+          storage_path?: string;
+          thread_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_agent_external_message_attachments_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_agent_external_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_agent_external_message_attachments_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_agent_external_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       ai_agent_external_messages: {
         Row: {
           author_avatar_url: string | null;
@@ -12549,9 +12600,24 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      ai_agent_external_attachment_json: {
+        Args: {
+          p_attachment: Database['private']['Tables']['ai_agent_external_message_attachments']['Row'];
+        };
+        Returns: Json;
+      };
       ai_agent_external_conversation_id: {
         Args: { p_thread_id: string };
         Returns: string;
+      };
+      ai_agent_external_get_attachment: {
+        Args: {
+          p_actor_user_id: string;
+          p_attachment_id: string;
+          p_conversation_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       ai_agent_external_get_thread: {
         Args: { p_thread_id: string };
@@ -12598,6 +12664,19 @@ export type Database = {
       ai_agent_external_thread_json: {
         Args: {
           p_thread: Database['private']['Tables']['ai_agent_external_threads']['Row'];
+        };
+        Returns: Json;
+      };
+      ai_agent_external_upsert_attachment: {
+        Args: {
+          p_attachment_id: string;
+          p_content_type: string;
+          p_filename: string;
+          p_full_path: string;
+          p_message_id: string;
+          p_size_bytes: number;
+          p_storage_path: string;
+          p_thread_id: string;
         };
         Returns: Json;
       };

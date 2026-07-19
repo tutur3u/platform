@@ -1,6 +1,7 @@
 import {
   type Adapter,
   type AdapterPostableMessage,
+  type Attachment,
   type ChatInstance,
   type FetchOptions,
   type FetchResult,
@@ -1024,15 +1025,16 @@ export function createZaloPersonalAdapter(
         });
       }
 
+      const attachments = extractZaloPersonalAttachments(raw, config);
       const text =
         typeof raw.data.content === 'string'
           ? raw.data.content
-          : '[Unsupported Zalo message]';
+          : zaloAttachmentFallbackText(raw.data.msgType, attachments);
       const authorId =
         raw.data.uidFrom || raw.data.userId || (raw.isSelf ? status.ownId : '');
 
       return new Message<ZaloPersonalRawMessage>({
-        attachments: [],
+        attachments,
         author: {
           fullName: raw.data.dName || authorId || 'Zalo user',
           isBot: raw.isSelf,
@@ -2128,6 +2130,206 @@ function stringValue(value: unknown) {
   }
 
   return '';
+}
+
+const ZALO_MEDIA_URL_KEYS = [
+  'downloadUrl',
+  'fileUrl',
+  'hdUrl',
+  'href',
+  'normalUrl',
+  'originUrl',
+  'thumb',
+  'thumbnail',
+  'thumbUrl',
+  'url',
+  'voiceUrl',
+] as const;
+
+function extractZaloPersonalAttachments(
+  raw: ZcaMessage,
+  config: ZaloPersonalAdapterConfig
+): Attachment[] {
+  const content = normalizeZaloAttachmentContent(raw.data.content);
+  if (!content) return [];
+
+  const urls = collectZaloMediaUrls(content);
+  if (urls.length === 0) return [];
+
+  const type = zaloAttachmentType(raw.data.msgType);
+  const preferredUrl = pickPreferredZaloMediaUrl(urls);
+  const name = zaloAttachmentFilename(content, preferredUrl, type);
+  const mimeType = inferZaloAttachmentMimeType(name, type);
+  const size = numericValue(
+    content.fileSize ?? content.file_size ?? content.size ?? content.totalSize
+  );
+
+  return [
+    {
+      fetchData: async () => {
+        const response = await fetch(preferredUrl, {
+          headers: {
+            Cookie: zaloCookieHeader(config.cookieJson),
+            'User-Agent': config.userAgent,
+          },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (!response.ok) {
+          throw new Error(
+            `zalo_personal_media_fetch_failed_${response.status}`
+          );
+        }
+        const declaredSize = Number(response.headers.get('content-length'));
+        if (Number.isFinite(declaredSize) && declaredSize > 25 * 1024 * 1024) {
+          throw new Error('zalo_personal_media_too_large');
+        }
+        return Buffer.from(await response.arrayBuffer());
+      },
+      height: numericValue(content.height),
+      mimeType,
+      name,
+      size,
+      type,
+      url: preferredUrl,
+      width: numericValue(content.width),
+    },
+  ];
+}
+
+function normalizeZaloAttachmentContent(value: unknown) {
+  if (isRecord(value)) return value;
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('{')) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function collectZaloMediaUrls(value: unknown) {
+  const urls: string[] = [];
+
+  visitRecordValues(value, (key, candidate) => {
+    if (
+      ZALO_MEDIA_URL_KEYS.includes(
+        key as (typeof ZALO_MEDIA_URL_KEYS)[number]
+      ) &&
+      typeof candidate === 'string' &&
+      /^https?:\/\//u.test(candidate)
+    ) {
+      urls.push(candidate);
+    }
+  });
+
+  return [...new Set(urls)];
+}
+
+function pickPreferredZaloMediaUrl(urls: string[]) {
+  return (
+    urls.find((url) => /(?:hd|origin|download|file)/iu.test(url)) ?? urls[0]!
+  );
+}
+
+function zaloAttachmentType(msgType: string): Attachment['type'] {
+  if (/voice|audio/iu.test(msgType)) return 'audio';
+  if (/video/iu.test(msgType)) return 'video';
+  if (/photo|image|sticker|gif|doodle/iu.test(msgType)) return 'image';
+  return 'file';
+}
+
+function zaloAttachmentFilename(
+  content: Record<string, unknown>,
+  url: string,
+  type: Attachment['type']
+) {
+  const explicit =
+    stringValue(content.fileName) ||
+    stringValue(content.filename) ||
+    stringValue(content.title);
+  if (explicit) return explicit.slice(0, 240);
+
+  try {
+    const pathname = new URL(url).pathname;
+    const candidate = decodeURIComponent(pathname.split('/').at(-1) ?? '');
+    if (candidate?.includes('.')) return candidate.slice(0, 240);
+  } catch {
+    // Fall through to a stable generic name.
+  }
+
+  const extension =
+    type === 'image'
+      ? 'jpg'
+      : type === 'video'
+        ? 'mp4'
+        : type === 'audio'
+          ? 'm4a'
+          : 'bin';
+  return `zalo-${type}.${extension}`;
+}
+
+function inferZaloAttachmentMimeType(name: string, type: Attachment['type']) {
+  const extension = name.split('.').at(-1)?.toLowerCase();
+  const byExtension: Record<string, string> = {
+    gif: 'image/gif',
+    jpeg: 'image/jpeg',
+    jpg: 'image/jpeg',
+    m4a: 'audio/mp4',
+    mov: 'video/quicktime',
+    mp3: 'audio/mpeg',
+    mp4: 'video/mp4',
+    ogg: 'audio/ogg',
+    pdf: 'application/pdf',
+    png: 'image/png',
+    webm: 'video/webm',
+    webp: 'image/webp',
+  };
+
+  return (
+    (extension && byExtension[extension]) ||
+    (type === 'file' ? 'application/octet-stream' : `${type}/*`)
+  );
+}
+
+function zaloAttachmentFallbackText(
+  msgType: string,
+  attachments: Attachment[]
+) {
+  if (attachments.length === 0) return '[Unsupported Zalo message]';
+  const type = zaloAttachmentType(msgType);
+  return `[Zalo ${type}]`;
+}
+
+function numericValue(value: unknown) {
+  const numeric =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number.parseInt(value, 10)
+        : Number.NaN;
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : undefined;
+}
+
+function zaloCookieHeader(cookieJson: string) {
+  try {
+    const parsed = JSON.parse(cookieJson) as unknown;
+    if (!Array.isArray(parsed)) return '';
+    return parsed
+      .filter(isRecord)
+      .map((cookie) => {
+        const name = stringValue(cookie.name);
+        const value = stringValue(cookie.value);
+        return name && value ? `${name}=${value}` : '';
+      })
+      .filter(Boolean)
+      .join('; ');
+  } catch {
+    return '';
+  }
 }
 
 function delay(ms: number, signal?: AbortSignal) {
