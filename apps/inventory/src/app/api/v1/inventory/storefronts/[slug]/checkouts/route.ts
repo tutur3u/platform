@@ -8,13 +8,16 @@ import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-st
 import { checkoutCreatePayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { createSimulatedCheckoutResponse } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
 import {
+  assertInventorySquarePosReady,
   assertInventorySquareReady,
+  createInventorySquarePosCheckout,
   createInventorySquareTerminalCheckout,
 } from '@tuturuuu/inventory-core/commerce/square';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { INVENTORY_APP_URL } from '@/constants/common';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 interface Params {
@@ -273,6 +276,22 @@ export async function POST(request: Request, { params }: Params) {
       }
     }
 
+    if (checkoutMode === 'square_pos') {
+      try {
+        await assertInventorySquarePosReady(storefrontPayload.storefront.wsId);
+      } catch (error) {
+        return NextResponse.json(
+          {
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Square POS app is not ready',
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const sbAdmin = (await createAdminClient()) as unknown as RpcClient;
     const privateRpc = sbAdmin.schema('private');
     const { data, error } = await privateRpc.rpc(
@@ -370,6 +389,77 @@ export async function POST(request: Request, { params }: Params) {
               error instanceof Error && error.message
                 ? error.message
                 : 'Failed to prepare Square Terminal checkout',
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    if (checkoutMode === 'square_pos') {
+      try {
+        await markCheckoutProvider({
+          checkoutId: checkout.id,
+          provider: 'square_pos',
+          wsId: checkout.wsId,
+        });
+        const storefrontUrl = getStorefrontUrl(request).replace(/\/$/u, '');
+        const nextUrl = `${storefrontUrl}/${slug}/orders/${publicToken}`;
+        const callbackUrl = new URL(
+          '/api/v1/inventory/square/pos/callback',
+          INVENTORY_APP_URL
+        ).toString();
+        const posCheckout = await createInventorySquarePosCheckout({
+          callbackUrl,
+          checkoutId: checkout.id,
+          fallbackUrl: nextUrl,
+          wsId: checkout.wsId,
+        });
+        await recordCheckoutAnalyticsEvent(privateRpc, {
+          checkoutId: checkout.id,
+          customerAuthUid: checkoutPayload.customerAuthUid,
+          eventType: 'checkout_created',
+          metadata: { checkoutMode: 'square_pos' },
+          storefront: storefrontPayload.storefront,
+        });
+
+        return NextResponse.json(
+          {
+            checkout: posCheckout.checkout,
+            checkoutMode: 'square_pos',
+            checkoutUrl: nextUrl,
+            nextUrl,
+            squarePos: posCheckout.launch,
+          },
+          { status: 201 }
+        );
+      } catch (error) {
+        const { error: releaseError } = await privateRpc.rpc(
+          'release_inventory_checkout_session',
+          {
+            p_checkout_id: checkout.id,
+            p_ws_id: checkout.wsId,
+          }
+        );
+        if (releaseError) {
+          console.error(
+            'Failed to release inventory checkout after Square POS error',
+            releaseError
+          );
+        }
+        await recordCheckoutAnalyticsEvent(privateRpc, {
+          checkoutId: checkout.id,
+          customerAuthUid: checkoutPayload.customerAuthUid,
+          eventType: 'checkout_failed',
+          metadata: { checkoutMode: 'square_pos' },
+          storefront: storefrontPayload.storefront,
+        });
+        console.error('Failed to prepare Square POS checkout', error);
+        return NextResponse.json(
+          {
+            message:
+              error instanceof Error && error.message
+                ? error.message
+                : 'Failed to prepare Square POS checkout',
           },
           { status: 409 }
         );

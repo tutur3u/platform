@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SquareAppCredentialRow } from './app-credentials-store';
 import type { SquareConnectionRow } from './connection-store';
-import { computeReadiness } from './settings';
+import { computePosReadiness, computeReadiness } from './settings';
 import {
   mergeSquareSettingsRow,
   type SquareSettingsRow,
@@ -108,6 +108,60 @@ describe('Square readiness', () => {
     ).toEqual({
       issues: [],
       ready: true,
+    });
+  });
+});
+
+describe('Square POS app readiness', () => {
+  const productionConnection = {
+    ...baseConnection,
+    environment: 'production' as const,
+  };
+  const productionCredential = {
+    ...appCredential,
+    environment: 'production' as const,
+  };
+  const productionSettings = {
+    ...settings,
+    environment: 'production' as const,
+  };
+
+  it('does not require a Terminal API device or webhook key', () => {
+    expect(
+      computePosReadiness({
+        appCredentials: [productionCredential],
+        connections: [
+          { ...productionConnection, webhook_signature_key_encrypted: null },
+        ],
+        settings: {
+          ...productionSettings,
+          device_id: null,
+          device_name: null,
+        },
+      })
+    ).toEqual({ issues: [], ready: true });
+  });
+
+  it('requires production, app ID, location, and read scopes for verification', () => {
+    expect(
+      computePosReadiness({
+        appCredentials: [],
+        connections: [
+          {
+            ...productionConnection,
+            scopes: ['MERCHANT_PROFILE_READ'],
+          },
+        ],
+        settings: { ...settings, location_id: null },
+      })
+    ).toEqual({
+      issues: expect.arrayContaining([
+        'production_required',
+        'app_credentials_missing',
+        'location_missing',
+        'scopes_missing',
+      ]),
+      ready: false,
     });
   });
 });

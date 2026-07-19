@@ -70,12 +70,24 @@ export function SquareProductionSetupGuide({
       ? (settings?.sandboxDeviceId ?? null)
       : null,
   });
-  const defaultStep = progress.firstIncompleteId ?? 'device';
+  const posReady =
+    environment === 'production' && Boolean(settings?.posReadiness.ready);
+  const effectiveProgress = posReady
+    ? {
+        ...progress,
+        completed: progress.total,
+        firstIncompleteId: null,
+        ready: true,
+        steps: progress.steps.map((step) => ({ ...step, complete: true })),
+      }
+    : progress;
+  const defaultStep = effectiveProgress.firstIncompleteId ?? 'device';
   const connectionReady = progress.steps
     .filter((step) => step.id !== 'device')
     .every((step) => step.complete);
   const deviceReady =
-    progress.steps.find((step) => step.id === 'device')?.complete ?? false;
+    posReady ||
+    (progress.steps.find((step) => step.id === 'device')?.complete ?? false);
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
@@ -83,8 +95,8 @@ export function SquareProductionSetupGuide({
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline">{t('eyebrow')}</Badge>
-            <Badge variant={progress.ready ? 'default' : 'secondary'}>
-              {progress.ready ? t('ready') : t('inProgress')}
+            <Badge variant={effectiveProgress.ready ? 'default' : 'secondary'}>
+              {effectiveProgress.ready ? t('ready') : t('inProgress')}
             </Badge>
           </div>
           <h3 className="mt-3 text-balance font-semibold text-xl tracking-tight">
@@ -110,8 +122,8 @@ export function SquareProductionSetupGuide({
           </Tabs>
           <p className="font-mono text-muted-foreground text-xs">
             {t('progress', {
-              completed: progress.completed,
-              total: progress.total,
+              completed: effectiveProgress.completed,
+              total: effectiveProgress.total,
             })}
           </p>
         </div>
@@ -124,7 +136,7 @@ export function SquareProductionSetupGuide({
           defaultValue={defaultStep}
           type="single"
         >
-          {progress.steps.map((step, index) => (
+          {effectiveProgress.steps.map((step, index) => (
             <AccordionItem key={step.id} value={step.id}>
               <AccordionTrigger className="gap-3 py-4 hover:no-underline">
                 <span className="flex min-w-0 items-start gap-3">

@@ -64,11 +64,24 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       ? (settings.data?.sandboxDeviceId ?? null)
       : null,
   });
+  const effectiveProgress =
+    selectedEnvironment === 'production' && settings.data?.posReadiness.ready
+      ? {
+          ...progress,
+          completed: progress.total,
+          firstIncompleteId: null,
+          ready: true,
+        }
+      : progress;
   const webhookUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const resolvedWsId = settings.data?.wsId ?? wsId;
     return `${window.location.origin}/api/v1/inventory/square/webhook/${resolvedWsId}`;
   }, [settings.data?.wsId, wsId]);
+  const posCallbackUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/api/v1/inventory/square/pos/callback`;
+  }, []);
 
   const openEditor = (step: SquareSetupStepId = 'application') => {
     setEditorTab(EDITOR_TAB_BY_STEP[step]);
@@ -85,10 +98,10 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-semibold">{t('settingsTitle')}</p>
-              <Badge variant={progress.ready ? 'success' : 'warning'}>
+              <Badge variant={effectiveProgress.ready ? 'success' : 'warning'}>
                 {t('settingsProgress', {
-                  completed: progress.completed,
-                  total: progress.total,
+                  completed: effectiveProgress.completed,
+                  total: effectiveProgress.total,
                 })}
               </Badge>
             </div>
@@ -108,13 +121,13 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
         </Button>
       </div>
 
-      {!progress.ready && progress.firstIncompleteId ? (
+      {!effectiveProgress.ready && effectiveProgress.firstIncompleteId ? (
         <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-dynamic-orange/30 bg-dynamic-orange/5 p-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="warning">{t('nextStepBadge')}</Badge>
               <p className="font-semibold text-sm">
-                {t(`guide.steps.${progress.firstIncompleteId}.title`)}
+                {t(`guide.steps.${effectiveProgress.firstIncompleteId}.title`)}
               </p>
             </div>
             <p className="mt-1 max-w-2xl text-muted-foreground text-sm">
@@ -122,7 +135,9 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
             </p>
           </div>
           <Button
-            onClick={() => openEditor(progress.firstIncompleteId ?? undefined)}
+            onClick={() =>
+              openEditor(effectiveProgress.firstIncompleteId ?? undefined)
+            }
             size="sm"
             type="button"
           >
@@ -153,6 +168,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
         open={editorOpen}
         settings={settings.data}
         tab={editorTab}
+        posCallbackUrl={posCallbackUrl}
         webhookUrl={webhookUrl}
         wsId={wsId}
       />

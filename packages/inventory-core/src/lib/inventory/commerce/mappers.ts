@@ -167,6 +167,8 @@ export type CheckoutRow = {
   square_location_id?: string | null;
   square_order_id?: string | null;
   square_payment_id?: string | null;
+  square_pos_client_transaction_id?: string | null;
+  square_pos_request_id?: string | null;
   square_receipt_url?: string | null;
   square_status?: InventorySquareTerminalCheckoutStatus | null;
   square_terminal_checkout_id?: string | null;
@@ -397,6 +399,7 @@ export function mapCheckout(
     squareLocationId: row.square_location_id ?? null,
     squareOrderId: row.square_order_id ?? null,
     squarePaymentId: row.square_payment_id ?? null,
+    squarePosClientTransactionId: row.square_pos_client_transaction_id ?? null,
     squareReceiptUrl: row.square_receipt_url ?? null,
     squareStatus: row.square_status ?? null,
     squareTerminalCheckoutId: row.square_terminal_checkout_id ?? null,

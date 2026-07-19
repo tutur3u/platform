@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getCheckoutByPublicToken: vi.fn(),
   getCheckoutStorefrontAccessByPublicToken: vi.fn(),
+  reconcileInventorySquarePosCheckout: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   serverError: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
@@ -15,6 +16,11 @@ vi.mock('@tuturuuu/inventory-core/commerce/checkouts', () => ({
   getCheckoutStorefrontAccessByPublicToken: (
     ...args: Parameters<typeof mocks.getCheckoutStorefrontAccessByPublicToken>
   ) => mocks.getCheckoutStorefrontAccessByPublicToken(...args),
+}));
+
+vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
+  reconcileInventorySquarePosCheckout: (...args: unknown[]) =>
+    mocks.reconcileInventorySquarePosCheckout(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -56,6 +62,9 @@ describe('public inventory order route', () => {
       publicToken: 'public-token',
       status: 'completed',
     });
+    mocks.reconcileInventorySquarePosCheckout.mockImplementation(
+      async (order) => order
+    );
     mocks.getCheckoutStorefrontAccessByPublicToken.mockResolvedValue({
       storefrontId: 'storefront-1',
       storefrontSlug: 'shop',
@@ -119,10 +128,40 @@ describe('public inventory order route', () => {
       },
     });
     expect(mocks.getCheckoutByPublicToken).toHaveBeenCalledWith('public-token');
+    expect(mocks.reconcileInventorySquarePosCheckout).toHaveBeenCalledWith({
+      id: 'checkout-1',
+      publicToken: 'public-token',
+      status: 'completed',
+    });
     expect(mocks.getCheckoutStorefrontAccessByPublicToken).toHaveBeenCalledWith(
       'public-token'
     );
     expect(mocks.resolveSessionAuthContext).not.toHaveBeenCalled();
+  });
+
+  it('returns a completed Square POS order after server reconciliation', async () => {
+    mocks.getCheckoutByPublicToken.mockResolvedValue({
+      checkoutProvider: 'square_pos',
+      id: 'checkout-1',
+      publicToken: 'public-token',
+      squareOrderId: 'square-order-1',
+      status: 'reserved',
+    });
+    mocks.reconcileInventorySquarePosCheckout.mockResolvedValue({
+      checkoutProvider: 'square_pos',
+      id: 'checkout-1',
+      publicToken: 'public-token',
+      squareOrderId: 'square-order-1',
+      squareStatus: 'completed',
+      status: 'completed',
+    });
+
+    const response = await getOrder('public-token');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      order: { squareStatus: 'completed', status: 'completed' },
+    });
   });
 
   it('requires session auth before loading private storefront orders', async () => {

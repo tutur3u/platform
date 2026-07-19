@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(15);
+select plan(20);
 
 select ok(
   to_regclass('private.inventory_square_catalog_links') is not null,
@@ -124,6 +124,60 @@ select ok(
       and not tgisinternal
   ) = 2,
   'Square sync tables maintain updated timestamps'
+);
+
+select has_column(
+  'private',
+  'inventory_checkout_sessions',
+  'square_pos_request_id',
+  'Square POS checkout request state is persisted privately'
+);
+
+select has_column(
+  'private',
+  'inventory_checkout_sessions',
+  'square_pos_client_transaction_id',
+  'Square POS client transaction IDs are persisted for review'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint constraint_row
+    join pg_class source_table on source_table.oid = constraint_row.conrelid
+    join pg_namespace source_schema on source_schema.oid = source_table.relnamespace
+    where source_schema.nspname = 'private'
+      and source_table.relname = 'inventory_storefronts'
+      and constraint_row.conname = 'inventory_storefronts_checkout_mode_check'
+      and pg_get_constraintdef(constraint_row.oid) ilike '%square_pos%'
+  ),
+  'storefront checkout mode accepts Square POS app payments'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint constraint_row
+    join pg_class source_table on source_table.oid = constraint_row.conrelid
+    join pg_namespace source_schema on source_schema.oid = source_table.relnamespace
+    where source_schema.nspname = 'private'
+      and source_table.relname = 'inventory_checkout_sessions'
+      and constraint_row.conname = 'inventory_checkout_sessions_checkout_provider_check'
+      and pg_get_constraintdef(constraint_row.oid) ilike '%square_pos%'
+  ),
+  'checkout provider records Square POS app payments separately'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'private'
+      and tablename = 'inventory_checkout_sessions'
+      and indexname = 'inventory_checkout_sessions_square_pos_request_idx'
+      and indexdef ilike '%unique%'
+  ),
+  'Square POS request IDs are unique for callback replay protection'
 );
 
 select * from finish();

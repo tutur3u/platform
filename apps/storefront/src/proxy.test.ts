@@ -198,6 +198,14 @@ describe('Storefront proxy', () => {
       'https://storefront.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
     ],
     ['POST', 'https://storefront.tuturuuu.com/api/v1/inventory/square/webhook'],
+    [
+      'GET',
+      'https://storefront.tuturuuu.com/api/v1/inventory/square/pos/callback',
+    ],
+    [
+      'POST',
+      'https://storefront.tuturuuu.com/api/v1/inventory/square/pos/callback',
+    ],
   ])('allows anonymous public storefront API %s %s', async (method, url) => {
     const request = new NextRequest(url, { method });
 

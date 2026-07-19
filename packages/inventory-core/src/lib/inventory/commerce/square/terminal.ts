@@ -54,14 +54,15 @@ function mapPaymentStatus(status: string | null | undefined) {
 async function updateCheckoutSquareState(
   checkoutId: string,
   wsId: string,
-  values: Record<string, unknown>
+  values: Record<string, unknown>,
+  provider: 'square_pos' | 'square_terminal' = 'square_terminal'
 ) {
   const privateAdmin = await getPrivateAdmin();
   const { error } = (await privateAdmin
     .from('inventory_checkout_sessions' as never)
     .update({
       ...values,
-      checkout_provider: 'square_terminal',
+      checkout_provider: provider,
       square_last_synced_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     } as never)
@@ -247,12 +248,16 @@ async function findCheckoutBySquareField(
   const privateAdmin = await getPrivateAdmin();
   const { data, error } = (await privateAdmin
     .from('inventory_checkout_sessions' as never)
-    .select('id, ws_id')
+    .select('id, ws_id, checkout_provider')
     .eq(field as never, value)
     .eq('ws_id' as never, scope.wsId)
     .eq('square_environment' as never, scope.environment)
     .maybeSingle()) as {
-    data: { id: string; ws_id: string } | null;
+    data: {
+      checkout_provider: 'square_pos' | 'square_terminal' | null;
+      id: string;
+      ws_id: string;
+    } | null;
     error: SupabaseErrorLike;
   };
 
@@ -305,12 +310,14 @@ export async function syncInventorySquareTerminalCheckout(
 export async function completeSquareCheckoutPayment({
   checkoutId,
   paymentId,
+  provider = 'square_terminal',
   receiptUrl,
   squareOrderId,
   wsId,
 }: {
   checkoutId: string;
   paymentId: string;
+  provider?: 'square_pos' | 'square_terminal';
   receiptUrl?: string | null;
   squareOrderId?: string | null;
   wsId: string;
@@ -328,12 +335,17 @@ export async function completeSquareCheckoutPayment({
 
   if (error) throw new Error(error.message ?? 'Failed to complete checkout');
 
-  await updateCheckoutSquareState(checkoutId, wsId, {
-    square_order_id: squareOrderId ?? undefined,
-    square_payment_id: paymentId,
-    square_receipt_url: receiptUrl ?? undefined,
-    square_status: 'paid',
-  });
+  await updateCheckoutSquareState(
+    checkoutId,
+    wsId,
+    {
+      square_order_id: squareOrderId ?? undefined,
+      square_payment_id: paymentId,
+      square_receipt_url: receiptUrl ?? undefined,
+      square_status: 'paid',
+    },
+    provider
+  );
   await recordInventorySaleFinanceTransaction({ checkoutId });
 }
 
@@ -352,19 +364,68 @@ export async function syncInventorySquarePayment(
   );
   if (!checkout) return false;
 
+  if (checkout.checkout_provider === 'square_pos') {
+    const localCheckout = await getCheckoutById(checkout.ws_id, checkout.id);
+    const amountMatches =
+      payment.amount_money?.amount === localCheckout?.totalAmount;
+    const currencyMatches =
+      (payment.amount_money?.currency ?? '').toUpperCase() ===
+      (localCheckout?.currency ?? '').toUpperCase();
+    const locationMatches =
+      payment.location_id === localCheckout?.squareLocationId;
+    const cardPayment = (payment.source_type ?? '').toUpperCase() === 'CARD';
+
+    if (
+      !localCheckout ||
+      !amountMatches ||
+      !currencyMatches ||
+      !locationMatches ||
+      !cardPayment
+    ) {
+      await updateCheckoutSquareState(
+        checkout.id,
+        checkout.ws_id,
+        {
+          ...(options.eventId ? { square_last_event_id: options.eventId } : {}),
+          square_failure_reason:
+            'Square POS webhook did not match the reserved amount, currency, location, and card tender.',
+          square_status: 'in_progress',
+        },
+        'square_pos'
+      );
+      console.error('Rejected mismatched Square POS payment webhook', {
+        checkoutId: checkout.id,
+        paymentId: payment.id,
+        wsId: checkout.ws_id,
+      });
+      return true;
+    }
+  }
+
   const status = mapPaymentStatus(payment.status);
-  await updateCheckoutSquareState(checkout.id, checkout.ws_id, {
-    ...(options.eventId ? { square_last_event_id: options.eventId } : {}),
-    square_order_id: orderId,
-    square_payment_id: payment.id,
-    square_receipt_url: payment.receipt_url ?? null,
-    square_status: status,
-  });
+  await updateCheckoutSquareState(
+    checkout.id,
+    checkout.ws_id,
+    {
+      ...(options.eventId ? { square_last_event_id: options.eventId } : {}),
+      square_order_id: orderId,
+      square_payment_id: payment.id,
+      square_receipt_url: payment.receipt_url ?? null,
+      square_status: status,
+    },
+    checkout.checkout_provider === 'square_pos'
+      ? 'square_pos'
+      : 'square_terminal'
+  );
 
   if (status === 'paid') {
     await completeSquareCheckoutPayment({
       checkoutId: checkout.id,
       paymentId: payment.id,
+      provider:
+        checkout.checkout_provider === 'square_pos'
+          ? 'square_pos'
+          : 'square_terminal',
       receiptUrl: payment.receipt_url ?? null,
       squareOrderId: orderId,
       wsId: checkout.ws_id,

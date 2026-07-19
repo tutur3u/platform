@@ -84,6 +84,18 @@ export type SquareApiDeviceCode = {
 export type SquareApiOrder = {
   id?: string;
   location_id?: string;
+  state?: string;
+  tenders?: SquareApiTender[];
+  total_money?: SquareMoney;
+};
+
+export type SquareApiTender = {
+  amount_money?: SquareMoney;
+  id?: string;
+  location_id?: string;
+  payment_id?: string;
+  transaction_id?: string;
+  type?: string;
 };
 
 export type SquareApiTerminalCheckout = {
@@ -105,11 +117,28 @@ export type SquareApiTerminalCheckout = {
 };
 
 export type SquareApiPayment = {
+  amount_money?: SquareMoney;
+  created_at?: string;
   id?: string;
+  location_id?: string;
   order_id?: string;
   receipt_url?: string;
+  reference_id?: string;
+  source_type?: string;
   status?: string;
   total_money?: SquareMoney;
+};
+
+export type SquarePosLaunch = {
+  androidUrl: string;
+  callbackUrl: string;
+  fallbackUrl: string;
+  iosUrl: string;
+};
+
+export type SquarePosCheckoutResult = {
+  checkout: InventoryCheckoutSession;
+  launch: SquarePosLaunch;
 };
 
 export type SquareCatalogItemVariationData = {

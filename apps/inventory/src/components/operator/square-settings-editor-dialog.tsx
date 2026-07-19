@@ -40,6 +40,7 @@ export function SquareSettingsEditorDialog({
   open,
   settings,
   tab,
+  posCallbackUrl,
   webhookUrl,
   wsId,
 }: {
@@ -50,6 +51,7 @@ export function SquareSettingsEditorDialog({
   open: boolean;
   settings?: InventorySquareSettings;
   tab: SquareSettingsEditorTab;
+  posCallbackUrl: string;
   webhookUrl: string;
   wsId: string;
 }) {
@@ -294,6 +296,8 @@ export function SquareSettingsEditorDialog({
                   onCreateDeviceCode={() => deviceCodeMutation.mutate()}
                   onRefreshDevices={() => devices.refetch()}
                   onSaveDefaults={() => defaultsMutation.mutate()}
+                  posCallbackUrl={posCallbackUrl}
+                  posReady={settings?.posReadiness.ready ?? false}
                   sandboxDeviceId={sandboxDeviceId}
                   sandboxDevicePlaceholder={
                     settings?.sandboxDeviceId ?? 'device:sandbox'

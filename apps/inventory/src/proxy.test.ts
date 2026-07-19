@@ -261,6 +261,14 @@ describe('Inventory proxy storefront access', () => {
       'https://inventory.tuturuuu.com/api/v1/inventory/square/webhook/ws-1',
     ],
     ['POST', 'https://inventory.tuturuuu.com/api/v1/inventory/square/webhook'],
+    [
+      'GET',
+      'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
+    ],
+    [
+      'POST',
+      'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
+    ],
   ])('allows anonymous public inventory API %s %s', async (method, url) => {
     const request = new NextRequest(url, { method });
 

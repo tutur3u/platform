@@ -2,6 +2,12 @@ type OpenHostedCheckoutOptions = {
   assign?: (url: string) => void;
 };
 
+type SquarePosLaunch = {
+  androidUrl: string;
+  fallbackUrl: string;
+  iosUrl: string;
+};
+
 export function openHostedPolarCheckout(
   checkoutUrl: string,
   options: OpenHostedCheckoutOptions = {}
@@ -19,4 +25,30 @@ export function openHostedPolarCheckout(
   // behavior and avoids popup blockers after the async session request.
   assign?.(checkoutUrl);
   return 'same-tab' as const;
+}
+
+export function openSquarePosCheckout(
+  launch: SquarePosLaunch,
+  options: OpenHostedCheckoutOptions & { userAgent?: string } = {}
+) {
+  const assign =
+    options.assign ??
+    (typeof window === 'undefined'
+      ? undefined
+      : (url: string) => window.location.assign(url));
+  const userAgent =
+    options.userAgent ??
+    (typeof navigator === 'undefined' ? '' : navigator.userAgent);
+
+  if (/android/iu.test(userAgent)) {
+    assign?.(launch.androidUrl);
+    return 'android' as const;
+  }
+  if (/iphone|ipad|ipod/iu.test(userAgent)) {
+    assign?.(launch.iosUrl);
+    return 'ios' as const;
+  }
+
+  assign?.(launch.fallbackUrl);
+  return 'unsupported' as const;
 }

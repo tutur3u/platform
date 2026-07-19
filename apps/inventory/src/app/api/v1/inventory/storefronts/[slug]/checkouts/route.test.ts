@@ -4,7 +4,9 @@ import { POST } from './route';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createInventoryPolarCheckout: vi.fn(),
+  createInventorySquarePosCheckout: vi.fn(),
   createInventorySquareTerminalCheckout: vi.fn(),
+  assertInventorySquarePosReady: vi.fn(),
   assertInventorySquareReady: vi.fn(),
   getCheckoutByPublicToken: vi.fn(),
   getPublicStorefront: vi.fn(),
@@ -34,10 +36,18 @@ vi.mock('@tuturuuu/inventory-core/commerce/polar', () => ({
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
+  assertInventorySquarePosReady: (...args: unknown[]) =>
+    mocks.assertInventorySquarePosReady(...args),
   assertInventorySquareReady: (...args: unknown[]) =>
     mocks.assertInventorySquareReady(...args),
+  createInventorySquarePosCheckout: (...args: unknown[]) =>
+    mocks.createInventorySquarePosCheckout(...args),
   createInventorySquareTerminalCheckout: (...args: unknown[]) =>
     mocks.createInventorySquareTerminalCheckout(...args),
+}));
+
+vi.mock('@/constants/common', () => ({
+  INVENTORY_APP_URL: 'https://inventory.tuturuuu.com',
 }));
 
 vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
@@ -96,6 +106,9 @@ describe('inventory storefront checkout route', () => {
     mocks.assertInventorySquareReady.mockResolvedValue({
       readiness: { issues: [], ready: true },
     });
+    mocks.assertInventorySquarePosReady.mockResolvedValue({
+      posReadiness: { issues: [], ready: true },
+    });
     mocks.markCheckoutProvider.mockResolvedValue(undefined);
     mocks.createInventorySquareTerminalCheckout.mockResolvedValue({
       checkout: {
@@ -112,6 +125,22 @@ describe('inventory storefront checkout route', () => {
       squareCheckout: {
         id: 'terminal-checkout-1',
         status: 'PENDING',
+      },
+    });
+    mocks.createInventorySquarePosCheckout.mockResolvedValue({
+      checkout: {
+        id: 'checkout-1',
+        publicToken: 'public-token',
+        squareStatus: 'pending',
+        totalAmount: 2500,
+        wsId: 'ws-1',
+      },
+      launch: {
+        androidUrl: 'intent:#Intent;end',
+        callbackUrl:
+          'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
+        fallbackUrl: 'http://storefront.test/shop/orders/public-token',
+        iosUrl: 'square-commerce-v1://payment/create?data=test',
       },
     });
     mocks.getCheckoutByPublicToken.mockResolvedValue({
@@ -437,6 +466,57 @@ describe('inventory storefront checkout route', () => {
     expect(body.nextUrl).toBe(
       'http://storefront.test/shop/orders/public-token'
     );
+  });
+
+  it('launches Square POS app checkout for a phone-connected Reader', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_pos',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mocks.assertInventorySquarePosReady).toHaveBeenCalledWith('ws-1');
+    expect(mocks.markCheckoutProvider).toHaveBeenCalledWith({
+      checkoutId: 'checkout-1',
+      provider: 'square_pos',
+      wsId: 'ws-1',
+    });
+    expect(mocks.createInventorySquarePosCheckout).toHaveBeenCalledWith({
+      callbackUrl:
+        'https://inventory.tuturuuu.com/api/v1/inventory/square/pos/callback',
+      checkoutId: 'checkout-1',
+      fallbackUrl: 'http://storefront.test/shop/orders/public-token',
+      wsId: 'ws-1',
+    });
+    expect(body).toMatchObject({
+      checkoutMode: 'square_pos',
+      nextUrl: 'http://storefront.test/shop/orders/public-token',
+      squarePos: { androidUrl: 'intent:#Intent;end' },
+    });
+    expect(mocks.createInventorySquareTerminalCheckout).not.toHaveBeenCalled();
+    expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
   });
 
   it('releases Square reservations when provider marking fails', async () => {

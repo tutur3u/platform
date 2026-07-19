@@ -8,6 +8,7 @@ import {
   type SquareApiDeviceCode,
   type SquareApiLocation,
   type SquareApiOrder,
+  type SquareApiPayment,
   type SquareApiTerminalCheckout,
   type SquareCatalogIdMapping,
   type SquareCatalogObject,
@@ -223,6 +224,40 @@ export async function listSquareLocationsApi({
     path: '/v2/locations',
   });
   return payload.locations ?? [];
+}
+
+export async function retrieveSquareOrderApi({
+  accessToken,
+  environment,
+  orderId,
+}: {
+  accessToken: string;
+  environment: SquareEnvironment;
+  orderId: string;
+}) {
+  const payload = await squareFetch<{ order?: SquareApiOrder }>({
+    accessToken,
+    environment,
+    path: `/v2/orders/${encodeURIComponent(orderId)}`,
+  });
+  return payload.order ?? null;
+}
+
+export async function retrieveSquarePaymentApi({
+  accessToken,
+  environment,
+  paymentId,
+}: {
+  accessToken: string;
+  environment: SquareEnvironment;
+  paymentId: string;
+}) {
+  const payload = await squareFetch<{ payment?: SquareApiPayment }>({
+    accessToken,
+    environment,
+    path: `/v2/payments/${encodeURIComponent(paymentId)}`,
+  });
+  return payload.payment ?? null;
 }
 
 export async function searchSquareCatalogApi({

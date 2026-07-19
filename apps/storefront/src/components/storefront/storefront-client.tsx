@@ -22,7 +22,10 @@ import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
-import { openHostedPolarCheckout } from './checkout-window';
+import {
+  openHostedPolarCheckout,
+  openSquarePosCheckout,
+} from './checkout-window';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -85,6 +88,7 @@ export function StorefrontClient({
     isDemoStorefront || storefront?.checkoutMode === 'simulated';
   const isSquareTerminalCheckout =
     storefront?.checkoutMode === 'square_terminal';
+  const isSquarePosCheckout = storefront?.checkoutMode === 'square_pos';
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -208,7 +212,7 @@ export function StorefrontClient({
           : t('checkoutError')
       );
     },
-    onSuccess: async ({ checkoutMode, checkoutUrl, nextUrl }) => {
+    onSuccess: async ({ checkoutMode, checkoutUrl, nextUrl, squarePos }) => {
       const targetUrl = nextUrl ?? checkoutUrl;
       if (!targetUrl) {
         setIsRedirecting(false);
@@ -220,6 +224,19 @@ export function StorefrontClient({
         cart.clear();
         setIsCheckoutOpen(false);
         navigateToCheckoutResult(targetUrl);
+        return;
+      }
+
+      if (checkoutMode === 'square_pos') {
+        if (!squarePos) {
+          setIsRedirecting(false);
+          toast.error(t('checkoutError'));
+          return;
+        }
+        cart.clear();
+        setIsCheckoutOpen(false);
+        setIsRedirecting(true);
+        openSquarePosCheckout(squarePos);
         return;
       }
 
@@ -274,7 +291,9 @@ export function StorefrontClient({
               <p className="mt-2 text-muted-foreground text-sm leading-6">
                 {order?.checkoutProvider === 'square_terminal'
                   ? t('squareOrderPlacedDescription')
-                  : t('orderPlacedDescription')}
+                  : order?.checkoutProvider === 'square_pos'
+                    ? t('squarePosOrderPlacedDescription')
+                    : t('orderPlacedDescription')}
               </p>
               {order ? (
                 <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-xs">
@@ -377,7 +396,10 @@ export function StorefrontClient({
     bundle: t('bundle'),
     bundles: t('bundles'),
     bundleSelectionTitle: t('bundleSelectionTitle'),
-    buyNow: isSquareTerminalCheckout ? t('squareBuyNow') : t('buyNow'),
+    buyNow:
+      isSquareTerminalCheckout || isSquarePosCheckout
+        ? t('squareBuyNow')
+        : t('buyNow'),
     cart: t('cart'),
     cheapestFreePreview: t('cheapestFreePreview'),
     checkout: t('checkout'),
@@ -418,19 +440,25 @@ export function StorefrontClient({
     quantity: t('quantity'),
     reserve: isSimulatedCheckout
       ? t('simulatedReserve')
-      : isSquareTerminalCheckout
-        ? t('squareReserve')
-        : t('reserve'),
+      : isSquarePosCheckout
+        ? t('squarePosReserve')
+        : isSquareTerminalCheckout
+          ? t('squareReserve')
+          : t('reserve'),
     reserving: isSimulatedCheckout
       ? t('simulatedReserving')
-      : isSquareTerminalCheckout
-        ? t('squareReserving')
-        : t('reserving'),
+      : isSquarePosCheckout
+        ? t('squarePosReserving')
+        : isSquareTerminalCheckout
+          ? t('squareReserving')
+          : t('reserving'),
     reservedCopy: isSimulatedCheckout
       ? t('simulatedReservedCopy')
-      : isSquareTerminalCheckout
-        ? t('squareReservedCopy')
-        : t('reservedCopy'),
+      : isSquarePosCheckout
+        ? t('squarePosReservedCopy')
+        : isSquareTerminalCheckout
+          ? t('squareReservedCopy')
+          : t('reservedCopy'),
     simulatedBadge: t('simulatedBadge'),
     soldOut: t('soldOut'),
     squareTerminal: t('squareTerminal'),

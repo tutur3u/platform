@@ -6,6 +6,7 @@ import {
   getSimulatedOrderResponse,
   isSimulatedOrderToken,
 } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
+import { reconcileInventorySquarePosCheckout } from '@tuturuuu/inventory-core/commerce/square';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -77,11 +78,13 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    const order = await getCheckoutByPublicToken(publicToken);
+    const persistedOrder = await getCheckoutByPublicToken(publicToken);
 
-    if (!order) {
+    if (!persistedOrder) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
+
+    const order = await reconcileInventorySquarePosCheckout(persistedOrder);
 
     const authorization = await authorizePrivateStorefrontOrder(
       request,

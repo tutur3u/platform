@@ -83,7 +83,10 @@ export function PaymentsReadinessOverview({
   const polarReady = (polarSettings?.integrations ?? []).some(
     (integration) => integration.status === 'ready'
   );
-  const squareReady = squareSettings?.readiness.ready ?? false;
+  const squareReady =
+    squareSettings?.readiness.ready ||
+    squareSettings?.posReadiness.ready ||
+    false;
   const targetSection =
     nextStep === 'importCatalog' || nextStep === 'importProductionCatalog'
       ? 'sync'

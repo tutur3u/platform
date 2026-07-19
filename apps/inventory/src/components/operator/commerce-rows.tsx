@@ -120,9 +120,7 @@ export function CheckoutRows({
     <div className="grid gap-2">
       {rows.map((row) => {
         const date = formatDate(row.completedAt ?? row.expiresAt, locale);
-        const isSquareCheckout =
-          row.checkoutProvider === 'square_terminal' ||
-          Boolean(row.squareStatus);
+        const isTerminalCheckout = row.checkoutProvider === 'square_terminal';
         const squareActive = [
           'cancel_requested',
           'checkout_created',
@@ -159,7 +157,7 @@ export function CheckoutRows({
                 <StatusBadge value={row.squareStatus} />
               ) : null}
               <StatusBadge value={money(row.totalAmount, row.currency)} />
-              {isSquareCheckout && row.status === 'reserved' ? (
+              {isTerminalCheckout && row.status === 'reserved' ? (
                 row.squareTerminalCheckoutId ? (
                   <Button
                     disabled={!squareActive || cancelSquare.isPending}

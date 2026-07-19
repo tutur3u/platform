@@ -2556,6 +2556,21 @@
           },
           "title": "Go from Square account to a working counter"
         },
+        "hardware": {
+          "choosePrompt": "Choose the hardware above to reveal only the setup steps that can work with it.",
+          "description": "Choose the physical setup before creating a code. Square exposes Terminal and Reader hardware through different APIs.",
+          "reader": {
+            "badge": "Square POS app",
+            "description": "Square Reader, Tap to Pay, or another reader connected to the Square POS app.",
+            "title": "Phone or tablet with Reader"
+          },
+          "terminal": {
+            "badge": "Terminal API",
+            "description": "A standalone Square device with its own screen that can receive Tuturuuu checkouts remotely.",
+            "title": "Square Terminal or Handheld"
+          },
+          "title": "Which Square hardware is at this counter?"
+        },
         "locationLabel": "Location",
         "locationPlaceholder": "Choose a location",
         "nextStepBadge": "Next setup step",
@@ -2567,6 +2582,33 @@
         "oauthRequiresAppCredentials": "Save an application ID and secret before connecting OAuth.",
         "openTerminalPairingGuide": "Open Square pairing guide",
         "pairingCodeExpires": "Enter this code on the physical Square Terminal before {date}.",
+        "readerSetup": {
+          "callback": {
+            "copy": "Copy callback URL",
+            "description": "Copy this exact URL into Square Developer Console → Point of Sale API → Web Callback URL, then save. Square requires an exact match.",
+            "openConsole": "Open Square Developer Console",
+            "title": "Register the web callback URL"
+          },
+          "description": "Tuturuuu opens Square POS on this phone with the exact order total, then verifies the returned Square order and card payment before completing stock.",
+          "device": {
+            "description": "Install or update Square POS, sign in to the saved location, then connect the Reader or enable Tap to Pay. Keep the app online for the first verified payment.",
+            "idHelp": "The Square POS device name and device ID are informational. Do not paste them into the Terminal dropdown; Tuturuuu launches this phone through Square Point of Sale API instead.",
+            "title": "Prepare the Square POS phone and Reader"
+          },
+          "location": {
+            "description": "Use the same production location that the seller signs into in Square POS. A mismatch is rejected before payment verification.",
+            "save": "Save POS location",
+            "title": "Choose and save the selling location"
+          },
+          "openGuide": "Open Square POS web guide",
+          "ready": "Connection ready",
+          "setupRequired": "Setup required",
+          "storefront": {
+            "description": "Set the Storefront checkout mode to Square POS app + Reader. Open that storefront on the same phone, place an order, and complete one owner-approved low-value card payment. Cancelling releases the reservation; unverified callbacks never reduce stock.",
+            "title": "Enable Square POS app checkout"
+          },
+          "title": "Square POS app + Reader is supported"
+        },
         "readiness": "Readiness: {issues}",
         "readOnlyHint": "Connection details stay read-only here. All changes open in a focused, reviewable dialog.",
         "ready": "ready",
@@ -2588,7 +2630,7 @@
         "settingsTabs": {
           "application": "App & OAuth",
           "connection": "Connection & webhook",
-          "terminal": "Location & terminal"
+          "terminal": "Hardware & POS"
         },
         "settingsTitle": "Square connection settings",
         "summaryApplication": "Square application",
@@ -2655,7 +2697,7 @@
           "title": "Catalog and stock sync",
           "writesToSquare": "Writes to Square"
         },
-        "terminalDescription": "Add and pair a physical terminal with a guided production flow, or configure a separate simulator route in Sandbox.",
+        "terminalDescription": "Configure a phone or tablet with Square Reader through Square POS, or pair a standalone Terminal API device. Each hardware path shows only its valid steps.",
         "terminalEmpty": {
           "description": "After entering the pairing code on the physical Square Terminal, choose Refresh terminals. The paired device will appear here when Square reports it.",
           "title": "No paired terminals found"
@@ -2680,7 +2722,7 @@
             "title": "Select and save the paired terminal"
           }
         },
-        "terminalTitle": "Terminal routing",
+        "terminalTitle": "In-person Square hardware",
         "title": "Square Terminal",
         "tokenEnding": "Token ending in {last4}",
         "tokenLabel": "Access token",
@@ -2793,6 +2835,13 @@
         },
         "warehousesDescription": "Create and rename the warehouses and units that product stock rows use.",
         "warehousesTitle": "Warehouse setup"
+      },
+      "storefronts": {
+        "form": {
+          "checkoutModes": {
+            "square_pos": "Square POS app + Reader"
+          }
+        }
       },
       "transactionVerification": {
         "activityDescription": "{square} Square records across {total} recent provider checkouts.",

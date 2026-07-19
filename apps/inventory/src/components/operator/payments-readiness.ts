@@ -40,7 +40,9 @@ export function getPaymentsNextStep({
     if (squareSettings.readiness.issues.includes('device_missing')) {
       return 'pairProductionTerminal';
     }
-    if (!squareSettings.readiness.ready) return 'prepareProduction';
+    if (!squareSettings.readiness.ready && !squareSettings.posReadiness.ready) {
+      return 'prepareProduction';
+    }
     return 'monitor';
   }
 

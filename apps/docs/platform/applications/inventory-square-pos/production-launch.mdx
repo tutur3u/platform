@@ -1,11 +1,11 @@
 ---
-title: Launch a physical Square Terminal
-description: Pair Production safely, run one owner-approved card-present sale, and decide whether the counter is ready.
+title: Launch Square POS or a physical Terminal
+description: Configure the correct Production hardware path, run one owner-approved card-present sale, and decide whether the counter is ready.
 ---
 
 Production launch is the only part of this guide that can move real money. It
-requires the Square account owner, an Inventory workspace admin, the physical
-Terminal, and the counter operator to work through the same checklist.
+requires the Square account owner, an Inventory workspace admin, the intended
+Square hardware, and the counter operator to work through the same checklist.
 
 <Warning>
   A Production payment can incur Square processing fees. Get explicit approval
@@ -18,7 +18,11 @@ Terminal, and the counter operator to work through the same checklist.
 ```mermaid
 flowchart LR
   A["Sandbox exit criteria"] --> B["Production 4/5 preconfiguration"]
-  B --> C["Physical Terminal paired: 5/5"]
+  B --> C{"Hardware path ready"}
+  C -->|"Phone + Reader"| C1["POS callback registered"]
+  C -->|"Standalone Terminal"| C2["Terminal paired: 5/5"]
+  C1 --> D["Catalog, price, tax, stock reviewed"]
+  C2 --> D
   C --> D["Catalog, price, tax, stock reviewed"]
   D --> E["Owner approves one live sale"]
   E --> F["Payment, receipt, stock, finance match"]
@@ -47,14 +51,61 @@ real seller, physical device, counter network, or receipt behavior.
 - [ ] The Production webhook has the required seven events and its test delivery
   returns `2xx`.
 - [ ] Catalog links, price, currency, tax, and stock are reviewed.
-- [ ] The intended Storefront uses **Square Terminal** checkout.
+- [ ] The intended Storefront uses **Square POS app + Reader** or **Square Terminal**, matching the physical hardware.
 
 ### Counter operator
 
-- [ ] The Terminal is powered, charged, updated, and loaded with receipt paper.
+- [ ] The phone/Reader or standalone Terminal is powered, charged, updated, and ready for receipts.
 - [ ] Wi-Fi or Ethernet is stable and does not require a browser sign-in page.
 - [ ] A backup connection and Square login are available if the network fails.
 - [ ] The operator knows not to retry an uncertain payment.
+
+## Choose the Production hardware path
+
+<Tabs>
+  <Tab title="Phone or tablet + Reader">
+    Use this path for the customer's Square POS app, Bluetooth/contactless and
+    chip Reader, or Tap to Pay. The phone never appears in **Refresh terminals**.
+
+    <Steps>
+      <Step title="Select Phone or tablet with Reader">
+        Open **Payments → Connect & set up → Square POS → Edit Square settings →
+        Hardware & POS**, choose **Production**, then select **Phone or tablet
+        with Reader**.
+      </Step>
+      <Step title="Save the selling location">
+        Select the same Production location currently signed in on Square POS.
+        A location mismatch is rejected by Square and by Tuturuuu verification.
+      </Step>
+      <Step title="Register the exact callback URL">
+        Copy the read-only callback URL from Inventory. In
+        [Square Developer Console](https://developer.squareup.com/apps), open the
+        Production application, choose **Point of Sale API**, paste it into
+        **Web Callback URL**, and save. Do not add, remove, or infer a trailing
+        slash.
+      </Step>
+      <Step title="Prepare Square POS">
+        Install or update Square POS on the phone, sign in to the saved location,
+        and connect the Reader or enable Tap to Pay. The displayed phone name and
+        Square device ID are only support evidence; they are not entered into
+        Tuturuuu Terminal routing.
+      </Step>
+      <Step title="Enable the Storefront">
+        Set the Storefront checkout mode to **Square POS app + Reader**. Open the
+        Storefront on that same phone. When submitted, Tuturuuu opens Square POS
+        with the exact minor-unit amount and card tender selected.
+      </Step>
+    </Steps>
+
+    Tuturuuu accepts the callback only when its random request state matches the
+    reserved order. It then retrieves the returned Square Order and Payment and
+    verifies completed status, card tender, location, currency, and exact amount
+    before consuming stock. Cancellation releases the reservation. A missing or
+    unverifiable online transaction ID stays in review and never reduces stock.
+  </Tab>
+  <Tab title="Standalone Square Terminal">
+    Use this path only for a Terminal or Handheld that receives a remote
+    Terminal API checkout prompt.
 
 ## Pair the physical Terminal
 
@@ -95,6 +146,9 @@ real seller, physical device, counter network, or receipt behavior.
   </Step>
 </Steps>
 
+  </Tab>
+</Tabs>
+
 Square's official pairing sequence is documented in
 [Connect a Square Terminal to a POS application](https://developer.squareup.com/docs/terminal-api/integrate-square-terminal).
 
@@ -102,17 +156,18 @@ Square's official pairing sequence is documented in
 
 1. Open **Storefronts** in Inventory and select the intended storefront.
 2. Confirm it belongs to the same workspace as the Square connection.
-3. Select **Square Terminal** checkout mode.
+3. Select the checkout mode matching the hardware: **Square POS app + Reader**
+   on the same phone, or **Square Terminal** for the paired standalone device.
 4. Publish only the approved listings and bundles.
 5. Place one non-payment test cart and verify the name, variant, quantity, tax,
    discount, currency, and total.
 6. Keep **Payments → Test & verify**, Square Payments, and the physical Terminal
    visible during the first sale.
 
-When a ready Square Terminal storefront submits checkout, Tuturuuu reserves the
-stock and dispatches the Square order and Terminal checkout. If a reserved row
-still needs operator action, the Commerce surface can send or cancel that same
-checkout. Never create a replacement order until the existing one is reconciled.
+For standalone Terminal, Tuturuuu reserves stock and dispatches a Square Order
+and Terminal checkout. For POS app + Reader, Tuturuuu reserves stock, opens the
+Square POS app, and verifies the returned provider records before completion.
+Never create a replacement order until the existing one is reconciled.
 
 ## Run one controlled live sale
 
@@ -157,7 +212,7 @@ checkout. Never create a replacement order until the existing one is reconciled.
 | --- | --- |
 | Tuturuuu checkout | One completed checkout for the approved cart |
 | Square order | One order with the matching items, tax, currency, and total |
-| Terminal checkout | One completed checkout for the paired device and location |
+| Hardware evidence | One completed POS app order/payment, or one completed Terminal checkout, for the approved location |
 | Square payment | One completed payment for the exact amount |
 | Receipt | Printed or digital receipt matches the payment and location |
 | Inventory | Reservation consumed and on-hand changed once |

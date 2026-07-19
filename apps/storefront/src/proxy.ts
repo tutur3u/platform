@@ -35,6 +35,8 @@ const PUBLIC_STOREFRONT_ANALYTICS_API_PATTERN =
 const PUBLIC_ORDER_API_PATTERN = /^\/api\/v1\/inventory\/orders\/[^/]+\/?$/u;
 const PUBLIC_SQUARE_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/square\/webhook(?:\/[^/]+)?\/?$/u;
+const PUBLIC_SQUARE_POS_CALLBACK_API_PATTERN =
+  /^\/api\/v1\/inventory\/square\/pos\/callback\/?$/u;
 
 function setLocaleCookie(
   response: NextResponse,
@@ -141,6 +143,13 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
   }
 
   if (method === 'POST' && PUBLIC_SQUARE_WEBHOOK_API_PATTERN.test(pathname)) {
+    return true;
+  }
+
+  if (
+    (method === 'GET' || method === 'POST') &&
+    PUBLIC_SQUARE_POS_CALLBACK_API_PATTERN.test(pathname)
+  ) {
     return true;
   }
 

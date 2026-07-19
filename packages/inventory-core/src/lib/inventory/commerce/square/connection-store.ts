@@ -11,6 +11,7 @@ import {
   getWorkspaceKey,
 } from '../../../workspace-encryption';
 import {
+  getAppCredentialRow,
   getSquareOAuthCredentials,
   loadAppCredentialRows,
 } from './app-credentials-store';
@@ -360,9 +361,19 @@ export async function refreshConnectionIfNeeded(row: SquareConnectionRow) {
 
 export async function getInventorySquareAccessContext(wsId: string) {
   const settings = await loadSettingsRow(wsId);
-  const connection = await getActiveConnection(wsId, settings.environment);
+  return getInventorySquareAccessContextForEnvironment(
+    wsId,
+    settings.environment
+  );
+}
+
+export async function getInventorySquareAccessContextForEnvironment(
+  wsId: string,
+  environment: SquareEnvironment
+) {
+  const connection = await getActiveConnection(wsId, environment);
   if (connection?.status !== 'ready') {
-    throw new Error(`Square ${settings.environment} is not connected`);
+    throw new Error(`Square ${environment} is not connected`);
   }
 
   const refreshed = await refreshConnectionIfNeeded(connection);
@@ -370,8 +381,30 @@ export async function getInventorySquareAccessContext(wsId: string) {
 
   return {
     accessToken,
-    environment: settings.environment,
+    environment,
     wsId,
+  };
+}
+
+export async function getInventorySquarePosContext(wsId: string) {
+  const settings = await loadSettingsRow(wsId);
+  if (settings.environment !== 'production') {
+    throw new Error('Square POS app payments require Production mode');
+  }
+  if (!settings.location_id) throw new Error('Square location is not selected');
+
+  const [connectionContext, appCredential] = await Promise.all([
+    getInventorySquareAccessContextForEnvironment(wsId, 'production'),
+    getAppCredentialRow(wsId, 'production'),
+  ]);
+  if (!appCredential?.application_id) {
+    throw new Error('Square Production application ID is not configured');
+  }
+
+  return {
+    ...connectionContext,
+    applicationId: appCredential.application_id,
+    locationId: settings.location_id,
   };
 }
 

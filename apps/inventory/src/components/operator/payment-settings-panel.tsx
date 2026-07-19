@@ -62,7 +62,8 @@ export function PaymentSettingsPanel({
   const polarReady = (polar.data?.integrations ?? []).some(
     (integration) => integration.status === 'ready'
   );
-  const squareReady = square.data?.readiness.ready ?? false;
+  const squareReady =
+    square.data?.readiness.ready || square.data?.posReadiness.ready || false;
 
   return (
     <section className="grid min-w-0 gap-5">

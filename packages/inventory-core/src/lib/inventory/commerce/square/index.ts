@@ -14,6 +14,15 @@ export {
   createInventorySquareOAuthStart,
 } from './oauth';
 export {
+  buildSquarePosLaunch,
+  completeInventorySquarePosCallback,
+  createInventorySquarePosCheckout,
+  parseSquarePosCallback,
+  reconcileInventorySquarePosCheckout,
+  SquarePosCallbackError,
+} from './pos';
+export {
+  assertInventorySquarePosReady,
   assertInventorySquareReady,
   getInventorySquareSettings,
   saveInventorySquareSettings,

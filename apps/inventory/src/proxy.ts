@@ -42,6 +42,8 @@ const PUBLIC_POLAR_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/polar\/webhook\/[^/]+\/?$/u;
 const PUBLIC_SQUARE_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/square\/webhook(?:\/[^/]+)?\/?$/u;
+const PUBLIC_SQUARE_POS_CALLBACK_API_PATTERN =
+  /^\/api\/v1\/inventory\/square\/pos\/callback\/?$/u;
 const INVENTORY_SALES_API_PATTERN =
   /^\/api\/v1\/workspaces\/[^/]+\/inventory\/sales(?:\/|$)/u;
 const INVENTORY_PRODUCT_CRUD_API_PATTERN =
@@ -158,6 +160,13 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
   }
 
   if (method === 'POST' && PUBLIC_SQUARE_WEBHOOK_API_PATTERN.test(pathname)) {
+    return true;
+  }
+
+  if (
+    (method === 'GET' || method === 'POST') &&
+    PUBLIC_SQUARE_POS_CALLBACK_API_PATTERN.test(pathname)
+  ) {
     return true;
   }
 

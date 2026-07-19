@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { SquareAppCredentialRow } from './app-credentials-store';
 import type { SquareConnectionRow } from './connection-store';
-import { computeReadiness } from './settings';
+import { computePosReadiness, computeReadiness } from './settings';
 import type { SquareSettingsRow } from './settings-store';
 
 vi.mock('server-only', () => ({}));
@@ -65,6 +65,23 @@ describe('Square readiness', () => {
       })
     ).toEqual({
       issues: ['app_credentials_missing'],
+      ready: false,
+    });
+  });
+
+  it('requires Production connection, app ID, and location for POS app checkout', () => {
+    expect(
+      computePosReadiness({
+        appCredentials: [appCredential],
+        connections: [baseConnection],
+        settings,
+      })
+    ).toEqual({
+      issues: [
+        'production_required',
+        'connection_missing',
+        'app_credentials_missing',
+      ],
       ready: false,
     });
   });

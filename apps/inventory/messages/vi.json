@@ -2556,6 +2556,21 @@
           },
           "title": "Từ tài khoản Square đến quầy thanh toán hoạt động"
         },
+        "hardware": {
+          "choosePrompt": "Chọn phần cứng ở trên để chỉ hiển thị các bước thiết lập có thể hoạt động với thiết bị đó.",
+          "description": "Chọn đúng cấu hình phần cứng trước khi tạo mã. Square cung cấp Terminal và Reader qua các API khác nhau.",
+          "reader": {
+            "badge": "Ứng dụng Square POS",
+            "description": "Square Reader, Tap to Pay hoặc đầu đọc khác kết nối với ứng dụng Square POS.",
+            "title": "Điện thoại hoặc máy tính bảng với Reader"
+          },
+          "terminal": {
+            "badge": "Terminal API",
+            "description": "Thiết bị Square độc lập có màn hình riêng và có thể nhận yêu cầu thanh toán từ Tuturuuu từ xa.",
+            "title": "Square Terminal hoặc Handheld"
+          },
+          "title": "Quầy này đang dùng phần cứng Square nào?"
+        },
         "locationLabel": "Địa điểm",
         "locationPlaceholder": "Chọn địa điểm",
         "nextStepBadge": "Bước thiết lập tiếp theo",
@@ -2567,6 +2582,33 @@
         "oauthRequiresAppCredentials": "Lưu application ID và secret trước khi kết nối OAuth.",
         "openTerminalPairingGuide": "Mở hướng dẫn ghép nối Square",
         "pairingCodeExpires": "Nhập mã này trên Square Terminal vật lý trước {date}.",
+        "readerSetup": {
+          "callback": {
+            "copy": "Sao chép URL callback",
+            "description": "Sao chép chính xác URL này vào Square Developer Console → Point of Sale API → Web Callback URL, rồi lưu. Square yêu cầu khớp hoàn toàn.",
+            "openConsole": "Mở Square Developer Console",
+            "title": "Đăng ký URL callback web"
+          },
+          "description": "Tuturuuu mở Square POS trên điện thoại này với đúng tổng đơn hàng, sau đó xác minh đơn Square và thanh toán thẻ trả về trước khi hoàn tất tồn kho.",
+          "device": {
+            "description": "Cài đặt hoặc cập nhật Square POS, đăng nhập vào địa điểm đã lưu, rồi kết nối Reader hoặc bật Tap to Pay. Giữ ứng dụng trực tuyến cho thanh toán xác minh đầu tiên.",
+            "idHelp": "Tên thiết bị và ID thiết bị Square POS chỉ mang tính thông tin. Không dán chúng vào danh sách Terminal; Tuturuuu mở điện thoại này qua Square Point of Sale API.",
+            "title": "Chuẩn bị điện thoại Square POS và Reader"
+          },
+          "location": {
+            "description": "Dùng cùng địa điểm production mà người bán đăng nhập trong Square POS. Nếu không khớp, việc xác minh thanh toán sẽ bị từ chối.",
+            "save": "Lưu địa điểm POS",
+            "title": "Chọn và lưu địa điểm bán hàng"
+          },
+          "openGuide": "Mở hướng dẫn web Square POS",
+          "ready": "Kết nối sẵn sàng",
+          "setupRequired": "Cần thiết lập",
+          "storefront": {
+            "description": "Đặt chế độ thanh toán Storefront thành ứng dụng Square POS + Reader. Mở storefront trên cùng điện thoại, tạo đơn và hoàn tất một thanh toán thẻ giá trị thấp đã được chủ cửa hàng duyệt. Hủy sẽ giải phóng giữ chỗ; callback chưa xác minh không bao giờ giảm tồn kho.",
+            "title": "Bật thanh toán bằng ứng dụng Square POS"
+          },
+          "title": "Ứng dụng Square POS + Reader được hỗ trợ"
+        },
         "readiness": "Sẵn sàng: {issues}",
         "readOnlyHint": "Chi tiết kết nối luôn chỉ đọc tại đây. Mọi thay đổi mở trong hộp thoại tập trung để dễ kiểm tra.",
         "ready": "sẵn sàng",
@@ -2588,7 +2630,7 @@
         "settingsTabs": {
           "application": "Ứng dụng & OAuth",
           "connection": "Kết nối & webhook",
-          "terminal": "Địa điểm & terminal"
+          "terminal": "Thiết bị & POS"
         },
         "settingsTitle": "Cài đặt kết nối Square",
         "summaryApplication": "Ứng dụng Square",
@@ -2655,7 +2697,7 @@
           "title": "Đồng bộ danh mục và tồn kho",
           "writesToSquare": "Ghi vào Square"
         },
-        "terminalDescription": "Thêm và ghép nối terminal vật lý theo quy trình production có hướng dẫn, hoặc cấu hình tuyến mô phỏng riêng trong Sandbox.",
+        "terminalDescription": "Cấu hình điện thoại hoặc máy tính bảng với Square Reader qua Square POS, hoặc ghép nối thiết bị Terminal API độc lập. Mỗi loại thiết bị chỉ hiển thị các bước phù hợp.",
         "terminalEmpty": {
           "description": "Sau khi nhập mã ghép nối trên Square Terminal vật lý, chọn Làm mới terminal. Thiết bị đã ghép nối sẽ xuất hiện khi Square báo về.",
           "title": "Chưa tìm thấy terminal đã ghép nối"
@@ -2680,7 +2722,7 @@
             "title": "Chọn và lưu terminal đã ghép nối"
           }
         },
-        "terminalTitle": "Điều hướng terminal",
+        "terminalTitle": "Thiết bị Square tại quầy",
         "title": "Square Terminal",
         "tokenEnding": "Token kết thúc bằng {last4}",
         "tokenLabel": "Access token",
@@ -2793,6 +2835,13 @@
         },
         "warehousesDescription": "Tạo và đổi tên kho cùng đơn vị mà các dòng tồn kho của sản phẩm sử dụng.",
         "warehousesTitle": "Thiết lập kho"
+      },
+      "storefronts": {
+        "form": {
+          "checkoutModes": {
+            "square_pos": "Ứng dụng Square POS + Reader"
+          }
+        }
       },
       "transactionVerification": {
         "activityDescription": "{square} bản ghi Square trong {total} checkout nhà cung cấp gần đây.",

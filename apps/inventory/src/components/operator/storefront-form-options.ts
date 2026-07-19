@@ -29,6 +29,7 @@ export const storefrontVisibilities: InventoryStorefrontVisibility[] = [
 
 export const checkoutModes: InventoryStorefrontCheckoutMode[] = [
   'polar',
+  'square_pos',
   'square_terminal',
   'simulated',
   'disabled',

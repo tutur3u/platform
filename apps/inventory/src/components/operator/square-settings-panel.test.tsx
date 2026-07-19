@@ -203,4 +203,38 @@ describe('SquareSettingsPanel', () => {
     expect(terminalSource).toContain('lastDeviceCode.pairBy');
     expect(terminalSource).toContain('onRefreshDevices');
   });
+
+  it('separates Terminal API hardware from phones using Square Reader', () => {
+    const terminalSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-terminal-production-setup.tsx'
+      ),
+      'utf8'
+    ).concat(
+      readFileSync(
+        join(
+          inventoryRoot,
+          'src/components/operator/square-reader-production-setup.tsx'
+        ),
+        'utf8'
+      )
+    );
+
+    expect(terminalSource).toContain(
+      "type SquareHardware = 'reader' | 'terminal'"
+    );
+    expect(terminalSource).toContain('useState<SquareHardware | null>');
+    expect(terminalSource).toContain("hardware === 'terminal'");
+    expect(terminalSource).toContain("hardware === 'reader'");
+    expect(terminalSource).toContain("t('hardware.reader.title')");
+    expect(terminalSource).toContain("t('readerSetup.title')");
+    expect(terminalSource).toContain('posCallbackUrl');
+    expect(terminalSource).toContain('posReady');
+    expect(terminalSource).toContain("t('readerSetup.callback.title')");
+    expect(terminalSource).toContain("t('readerSetup.storefront.title')");
+    expect(terminalSource).toContain(
+      'https://developer.squareup.com/docs/pos-api/build-mobile-web'
+    );
+  });
 });

@@ -78,6 +78,8 @@ const CHECKOUT_SQUARE_SELECT = `
   square_order_id,
   square_terminal_checkout_id,
   square_payment_id,
+  square_pos_client_transaction_id,
+  square_pos_request_id,
   square_receipt_url,
   square_status,
   square_failure_reason,
@@ -359,7 +361,7 @@ export async function markCheckoutProvider({
   wsId,
 }: {
   checkoutId: string;
-  provider: 'polar' | 'square_terminal';
+  provider: 'polar' | 'square_pos' | 'square_terminal';
   wsId: string;
 }) {
   const { inventory } = await createPrivateInventoryClient();

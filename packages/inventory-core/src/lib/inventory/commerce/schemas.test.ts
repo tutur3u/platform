@@ -76,6 +76,15 @@ describe('storefrontPayloadSchema', () => {
       }).success
     ).toBe(true);
   });
+
+  it('accepts Square POS app checkout for phone-connected Readers', () => {
+    expect(
+      storefrontPayloadSchema.safeParse({
+        ...baseStorefrontPayload,
+        checkoutMode: 'square_pos',
+      }).success
+    ).toBe(true);
+  });
 });
 
 describe('squareSettingsPayloadSchema', () => {

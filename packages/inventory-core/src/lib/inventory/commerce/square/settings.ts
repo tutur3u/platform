@@ -74,6 +74,44 @@ export function computeReadiness({
   return { issues: list, ready: list.length === 0 };
 }
 
+export function computePosReadiness({
+  appCredentials,
+  connections,
+  settings,
+}: {
+  appCredentials: SquareAppCredentialRow[];
+  connections: SquareConnectionRow[];
+  settings: SquareSettingsRow;
+}): { issues: InventorySquareReadinessIssue[]; ready: boolean } {
+  const issues = new Set<InventorySquareReadinessIssue>();
+  const connection = connections.find(
+    (item) => item.environment === 'production'
+  );
+  const appCredential = appCredentials.find(
+    (item) => item.environment === 'production'
+  );
+
+  if (settings.environment !== 'production') {
+    issues.add('production_required');
+  }
+  if (connection?.status !== 'ready') {
+    issues.add('connection_missing');
+  }
+  if (!appCredential?.application_id) {
+    issues.add('app_credentials_missing');
+  }
+  if (connection?.auth_method === 'oauth') {
+    const scopes = new Set(connection.scopes ?? []);
+    if (['ORDERS_READ', 'PAYMENTS_READ'].some((scope) => !scopes.has(scope))) {
+      issues.add('scopes_missing');
+    }
+  }
+  if (!settings.location_id) issues.add('location_missing');
+
+  const list = Array.from(issues);
+  return { issues: list, ready: list.length === 0 };
+}
+
 export async function getInventorySquareSettings(
   wsId: string
 ): Promise<InventorySquareSettings> {
@@ -83,6 +121,11 @@ export async function getInventorySquareSettings(
     loadAppCredentialRows(wsId),
   ]);
   const readiness = computeReadiness({ appCredentials, connections, settings });
+  const posReadiness = computePosReadiness({
+    appCredentials,
+    connections,
+    settings,
+  });
 
   return {
     appCredentials: appCredentials.map(mapAppCredential),
@@ -92,6 +135,7 @@ export async function getInventorySquareSettings(
     environment: settings.environment,
     locationId: settings.location_id,
     locationName: settings.location_name,
+    posReadiness,
     readiness,
     sandboxDeviceId: settings.sandbox_device_id,
     wsId,
@@ -163,5 +207,13 @@ export async function assertInventorySquareReady(wsId: string) {
   if (settings.readiness.ready) return settings;
   throw new Error(
     `Square Terminal is not ready: ${settings.readiness.issues.join(', ')}`
+  );
+}
+
+export async function assertInventorySquarePosReady(wsId: string) {
+  const settings = await getInventorySquareSettings(wsId);
+  if (settings.posReadiness.ready) return settings;
+  throw new Error(
+    `Square POS app is not ready: ${settings.posReadiness.issues.join(', ')}`
   );
 }

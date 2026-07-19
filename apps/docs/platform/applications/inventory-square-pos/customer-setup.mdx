@@ -4,8 +4,8 @@ description: A non-technical, role-based walkthrough for connecting a Square sel
 ---
 
 This guide prepares the Square account, Tuturuuu workspace, webhook, location,
-and device route. Start in Sandbox even when the store already owns a Square
-Terminal.
+and in-person hardware route. Start with the safe Sandbox checks even when the
+store already owns a Square Terminal, Square Reader, or Tap to Pay device.
 
 <Warning>
   Do not paste credentials, tokens, application secrets, or webhook signature
@@ -19,7 +19,7 @@ Terminal.
 | --- | --- | --- |
 | **Square account owner** | Seller authorization, business settings, locations, banking, taxes, tips, receipts, and approval for a live test | Tuturuuu engineering access |
 | **Inventory workspace admin** | Payments setup, environment selection, catalog links, Storefront checkout mode, and transaction verification | The owner's Square password after OAuth is approved |
-| **Counter operator** | Terminal power, network, paper, pairing code entry, and the controlled first sale | Developer Console access |
+| **Counter operator** | POS app sign-in, Reader or Terminal connectivity, paper, and the controlled first sale | Developer Console access |
 | **Technical helper** | Square application, OAuth redirect, webhook subscription, and diagnosing rejected events | Permission to run a live charge |
 
 One person can hold several roles, but the Square owner should explicitly approve
@@ -29,7 +29,11 @@ the Production seller, location, item, amount, and payment card.
 flowchart TD
   Owner["Square owner authorizes the seller"] --> Admin["Inventory admin saves the connection"]
   Helper["Technical helper configures OAuth and webhooks"] --> Admin
-  Admin --> Operator["Counter operator pairs the physical Terminal"]
+  Admin --> Choice{"Counter hardware"}
+  Choice --> Reader["Phone / tablet + Reader: Square POS app"]
+  Choice --> Terminal["Standalone Terminal: Terminal API pairing"]
+  Reader --> Operator["Counter operator prepares the device"]
+  Terminal --> Operator
   Operator --> Gate["Owner approves one controlled live sale"]
 ```
 
@@ -41,8 +45,8 @@ Have these items ready before opening the setup editor:
 - owner access to the [Square Developer Console](https://developer.squareup.com/apps);
 - an Inventory workspace where you can manage Payments and Storefronts;
 - a Square location dedicated to or clearly associated with this counter;
-- a Square Terminal, power supply, current software, and receipt paper for
-  Production;
+- either a phone or tablet with the latest Square POS app and a connected Square
+  Reader/Tap to Pay, or a standalone Square Terminal with current software;
 - reliable Wi-Fi or Ethernet without a browser-based captive portal;
 - a clearly named Sandbox demo product with known price and stock;
 - a clearly named, low-value Production test item for the later go-live check.
@@ -51,7 +55,26 @@ Review Square's official
 [Terminal setup guide](https://squareup.com/help/us/en/article/6535-set-up-square-terminal)
 and
 [hardware network requirements](https://squareup.com/help/us/en/article/8348-set-up-network-requirements-for-square-hardware)
-before the launch day.
+before the launch day when using standalone Terminal hardware. For a phone or
+tablet, review Square's
+[Point of Sale mobile web guide](https://developer.squareup.com/docs/pos-api/build-mobile-web).
+
+## Choose the correct hardware path
+
+Square exposes these devices through different APIs. Choosing the correct path
+prevents the most common setup failure.
+
+| What the customer has | Tuturuuu checkout mode | Setup in Inventory | Does it appear under Refresh terminals? |
+| --- | --- | --- | --- |
+| Phone/tablet running Square POS with Bluetooth Reader or Tap to Pay | **Square POS app + Reader** | Register the displayed POS callback URL, save the Production location, and open the Storefront on that phone | **No.** The phone's name and device ID are informational |
+| Standalone Square Terminal or Square Handheld receiving remote prompts | **Square Terminal** | Create a Tuturuuu Terminal API pairing code and save the paired device | **Yes** |
+
+<Info>
+  A Square POS device ID such as a phone installation ID is not a Terminal API
+  device ID. Do not paste it into the Terminal dropdown. Tuturuuu opens Square
+  POS on the phone instead, then verifies the returned Square Order and card
+  Payment before completing inventory.
+</Info>
 
 ## Open the correct Tuturuuu workspace
 
@@ -84,10 +107,11 @@ the Square account owner:
 - the location is the real owner-approved selling location;
 - **Catalog sync** shows the expected Production links and no unexplained
   conflicts;
-- the only incomplete check is **Device**.
+- the intended hardware path is clear. A phone/Reader path does not require a
+  Terminal API device or Terminal webhook key; a standalone Terminal does.
 
-The customer can then skip credential entry and continue directly to
-[pairing the physical Terminal](/platform/applications/inventory-square-pos/production-launch#pair-the-physical-terminal).
+The customer can then skip credential entry and continue directly to the
+[Production hardware path](/platform/applications/inventory-square-pos/production-launch#choose-the-production-hardware-path).
 The owner still needs to confirm business, bank, tax, tip, and receipt settings
 inside Square. Tuturuuu cannot safely choose those business settings on the
 customer's behalf.
@@ -197,10 +221,11 @@ Do this only after Sandbox exit criteria pass.
     and reporting. Ask the Square owner to verify the location name before
     saving.
   </Step>
-  <Step title="Prepare the physical Terminal">
-    Power the Terminal, install updates, load paper, and connect to the final
-    counter network. The physical pairing happens in the Production launch
-    guide, not in Sandbox.
+  <Step title="Prepare the in-person hardware">
+    For Square POS app + Reader, install or update Square POS, sign in to the
+    selected location, and connect the Reader or enable Tap to Pay. For a
+    standalone Terminal, power it, install updates, load paper, and connect to
+    the final counter network. Continue with the matching Production path.
   </Step>
 </Steps>
 
@@ -214,7 +239,7 @@ Before pairing, the read-only Production summary should show:
 | Connection | Token ending in four characters |
 | Square application | The Production Application ID |
 | Location | The owner-approved counter location |
-| Default terminal | Not configured until physical pairing |
+| In-person device | POS app/Reader needs no Terminal ID; standalone Terminal is unconfigured until pairing |
 | Webhook verification | Signature key ending in four characters |
 
 If any row is unexpected, stop and correct it before creating a device code.
@@ -227,4 +252,6 @@ Continue with the
 - [OAuth API overview](https://developer.squareup.com/docs/oauth-api/overview)
 - [Square webhooks overview](https://developer.squareup.com/docs/webhooks/overview)
 - [Connect Square Terminal to a POS application](https://developer.squareup.com/docs/terminal-api/integrate-square-terminal)
+- [Build a Point of Sale mobile web integration](https://developer.squareup.com/docs/pos-api/build-mobile-web)
+- [Point of Sale mobile web technical reference](https://developer.squareup.com/docs/pos-api/web-technical-reference)
 - [Square hardware network requirements](https://squareup.com/help/us/en/article/8348-set-up-network-requirements-for-square-hardware)

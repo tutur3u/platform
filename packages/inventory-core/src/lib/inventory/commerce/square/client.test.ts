@@ -10,6 +10,8 @@ import {
   exchangeSquareOAuthCode,
   parseSquareScopes,
   refreshSquareOAuthToken,
+  retrieveSquareOrderApi,
+  retrieveSquarePaymentApi,
   type SquareApiError,
   searchSquareCatalogApi,
   squareFetch,
@@ -338,6 +340,44 @@ describe('Square REST client', () => {
         }),
         method: 'POST',
       })
+    );
+  });
+
+  it('retrieves POS order and payment details for server-side verification', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ order: { id: 'order-1' } }), {
+          status: 200,
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ payment: { id: 'payment-1' } }), {
+          status: 200,
+        })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      retrieveSquareOrderApi({
+        accessToken: 'square-access-token',
+        environment: 'production',
+        orderId: 'order-1',
+      })
+    ).resolves.toEqual({ id: 'order-1' });
+    await expect(
+      retrieveSquarePaymentApi({
+        accessToken: 'square-access-token',
+        environment: 'production',
+        paymentId: 'payment-1',
+      })
+    ).resolves.toEqual({ id: 'payment-1' });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://connect.squareup.com/v2/orders/order-1'
+    );
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://connect.squareup.com/v2/payments/payment-1'
     );
   });
 

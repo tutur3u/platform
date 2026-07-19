@@ -3861,6 +3861,8 @@ export type Database = {
           square_location_id: string | null;
           square_order_id: string | null;
           square_payment_id: string | null;
+          square_pos_client_transaction_id: string | null;
+          square_pos_request_id: string | null;
           square_receipt_url: string | null;
           square_status: string | null;
           square_terminal_checkout_id: string | null;
@@ -3906,6 +3908,8 @@ export type Database = {
           square_location_id?: string | null;
           square_order_id?: string | null;
           square_payment_id?: string | null;
+          square_pos_client_transaction_id?: string | null;
+          square_pos_request_id?: string | null;
           square_receipt_url?: string | null;
           square_status?: string | null;
           square_terminal_checkout_id?: string | null;
@@ -3951,6 +3955,8 @@ export type Database = {
           square_location_id?: string | null;
           square_order_id?: string | null;
           square_payment_id?: string | null;
+          square_pos_client_transaction_id?: string | null;
+          square_pos_request_id?: string | null;
           square_receipt_url?: string | null;
           square_status?: string | null;
           square_terminal_checkout_id?: string | null;

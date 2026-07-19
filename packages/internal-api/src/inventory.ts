@@ -196,6 +196,7 @@ export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
 export type InventoryStorefrontCheckoutMode =
   | 'disabled'
   | 'polar'
+  | 'square_pos'
   | 'square_terminal'
   | 'simulated';
 
@@ -530,6 +531,7 @@ export type InventoryCheckoutSession = {
   squareOrderId: string | null;
   squareTerminalCheckoutId: string | null;
   squarePaymentId: string | null;
+  squarePosClientTransactionId?: string | null;
   squareReceiptUrl: string | null;
   squareStatus: InventorySquareTerminalCheckoutStatus | null;
   squareFailureReason: string | null;
@@ -609,6 +611,7 @@ export type InventorySquareReadinessIssue =
   | 'connection_missing'
   | 'device_missing'
   | 'location_missing'
+  | 'production_required'
   | 'scopes_missing'
   | 'webhook_signature_missing';
 
@@ -647,6 +650,10 @@ export type InventorySquareSettings = {
   deviceName: string | null;
   sandboxDeviceId: string | null;
   readiness: {
+    ready: boolean;
+    issues: InventorySquareReadinessIssue[];
+  };
+  posReadiness: {
     ready: boolean;
     issues: InventorySquareReadinessIssue[];
   };
@@ -1782,6 +1789,14 @@ export type InventoryCheckoutResponse = {
   checkoutUrl: string | null;
   checkoutMode?: InventoryStorefrontCheckoutMode;
   nextUrl?: string | null;
+  squarePos?: InventorySquarePosLaunch;
+};
+
+export type InventorySquarePosLaunch = {
+  androidUrl: string;
+  callbackUrl: string;
+  fallbackUrl: string;
+  iosUrl: string;
 };
 
 export type InventoryOrderHistoryItem = {

@@ -29,6 +29,7 @@ export const StorefrontCornerStyleSchema = z.enum([
 
 export const StorefrontCheckoutModeSchema = z.enum([
   'polar',
+  'square_pos',
   'square_terminal',
   'simulated',
   'disabled',
