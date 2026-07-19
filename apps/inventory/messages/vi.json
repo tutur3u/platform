@@ -1620,6 +1620,7 @@
           "disabled": "Đã tắt",
           "polar": "Polar",
           "simulated": "Mô phỏng",
+          "square_pos": "Ứng dụng Square POS + Reader",
           "square_terminal": "Square Terminal"
         },
         "clearImage": "Xóa ảnh",
@@ -2835,13 +2836,6 @@
         },
         "warehousesDescription": "Tạo và đổi tên kho cùng đơn vị mà các dòng tồn kho của sản phẩm sử dụng.",
         "warehousesTitle": "Thiết lập kho"
-      },
-      "storefronts": {
-        "form": {
-          "checkoutModes": {
-            "square_pos": "Ứng dụng Square POS + Reader"
-          }
-        }
       },
       "transactionVerification": {
         "activityDescription": "{square} bản ghi Square trong {total} checkout nhà cung cấp gần đây.",

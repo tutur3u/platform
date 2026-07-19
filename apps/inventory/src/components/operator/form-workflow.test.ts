@@ -459,6 +459,24 @@ describe('Inventory operator form workflows', () => {
     expect(editSource).toContain('target="storefront-hero"');
   });
 
+  it('localizes every storefront checkout mode', () => {
+    for (const locale of ['en', 'vi'] as const) {
+      const tree = messages(locale);
+      for (const mode of [
+        'polar',
+        'square_pos',
+        'square_terminal',
+        'simulated',
+        'disabled',
+      ]) {
+        expect(
+          valueAtPath(tree, `inventory.operator.forms.checkoutModes.${mode}`),
+          `${locale}:${mode}`
+        ).toBeTypeOf('string');
+      }
+    }
+  });
+
   it('creates bundles with stock-backed component payloads', () => {
     const bundleSource = source('bundle-form-dialog.tsx');
     const pickerSource = source('bundle-component-picker.tsx');

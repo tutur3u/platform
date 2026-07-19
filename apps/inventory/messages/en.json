@@ -1620,6 +1620,7 @@
           "disabled": "Disabled",
           "polar": "Polar",
           "simulated": "Simulated",
+          "square_pos": "Square POS app + Reader",
           "square_terminal": "Square Terminal"
         },
         "clearImage": "Clear image",
@@ -2835,13 +2836,6 @@
         },
         "warehousesDescription": "Create and rename the warehouses and units that product stock rows use.",
         "warehousesTitle": "Warehouse setup"
-      },
-      "storefronts": {
-        "form": {
-          "checkoutModes": {
-            "square_pos": "Square POS app + Reader"
-          }
-        }
       },
       "transactionVerification": {
         "activityDescription": "{square} Square records across {total} recent provider checkouts.",
