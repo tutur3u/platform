@@ -656,10 +656,7 @@ async function resolvePersonalChannel({
   db?: TypedSupabaseClient;
   origin?: string | null;
 }): Promise<ResolvePersonalChannelResult> {
-  const [enabled, agent] = await Promise.all([
-    isAiAgentZaloPersonalEnabled(db),
-    getAiAgentById({ agentId, db, origin }),
-  ]);
+  const agent = await getAiAgentById({ agentId, db, origin });
   const channel = agent?.channels.find(
     (candidate) => candidate.id === channelId
   );
@@ -671,6 +668,8 @@ async function resolvePersonalChannel({
   if (channel.adapter !== 'zalo' || channel.zaloAccountMode !== 'personal') {
     throw new Error('ai_agent_zalo_personal_channel_required');
   }
+
+  const enabled = await isAiAgentZaloPersonalEnabled(db, channel.workspaceId);
 
   return {
     agent,

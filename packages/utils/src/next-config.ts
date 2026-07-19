@@ -193,3 +193,31 @@ export function resolveTuturuuuWebAppUrl({
       (isTuturuuuNextDeployedEnvironment(env) ? productionUrl : localUrl)
   );
 }
+
+export function resolveTuturuuuInfrastructureAppUrl({
+  env = process.env,
+  localFallbackUrl,
+  productionUrl = 'https://infrastructure.tuturuuu.com',
+}: {
+  env?: Environment;
+  localFallbackUrl?: string;
+  productionUrl?: string;
+} = {}) {
+  const localUrl =
+    localFallbackUrl ??
+    getLocalInternalAppUrl('infra', 'http://localhost:7823');
+
+  return trimTrailingSlashes(
+    resolveInternalAppUrl({
+      appName: 'infra',
+      candidates: [
+        env.INTERNAL_INFRASTRUCTURE_API_ORIGIN,
+        env.INFRASTRUCTURE_APP_URL,
+        env.NEXT_PUBLIC_INFRASTRUCTURE_APP_URL,
+      ],
+      fallback: isTuturuuuNextDeployedEnvironment(env)
+        ? productionUrl
+        : localUrl,
+    })
+  );
+}

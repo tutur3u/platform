@@ -4,6 +4,7 @@ import {
   createTuturuuuNextConfig,
   isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
+  resolveTuturuuuInfrastructureAppUrl,
   resolveTuturuuuWebAppUrl,
   TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
   TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
@@ -369,6 +370,46 @@ describe('resolveTuturuuuWebAppUrl', () => {
         },
       })
     ).toBe('https://tuturuuu.com');
+  });
+});
+
+describe('resolveTuturuuuInfrastructureAppUrl', () => {
+  it('trims configured infrastructure origins', () => {
+    expect(
+      resolveTuturuuuInfrastructureAppUrl({
+        env: {
+          INTERNAL_INFRASTRUCTURE_API_ORIGIN: 'https://example.com///',
+          NODE_ENV: 'development',
+        },
+      })
+    ).toBe('https://example.com');
+  });
+
+  it('uses the local Portless infrastructure app in development', () => {
+    expect(
+      resolveTuturuuuInfrastructureAppUrl({
+        env: { NODE_ENV: 'development' },
+      })
+    ).toBe('https://infra.tuturuuu.localhost');
+  });
+
+  it('uses the canonical production infrastructure app when deployed', () => {
+    expect(
+      resolveTuturuuuInfrastructureAppUrl({
+        env: { VERCEL_ENV: 'production' },
+      })
+    ).toBe('https://infrastructure.tuturuuu.com');
+  });
+
+  it('ignores origins registered to another Tuturuuu app', () => {
+    expect(
+      resolveTuturuuuInfrastructureAppUrl({
+        env: {
+          INTERNAL_INFRASTRUCTURE_API_ORIGIN: 'https://chat.tuturuuu.com',
+          VERCEL_ENV: 'production',
+        },
+      })
+    ).toBe('https://infrastructure.tuturuuu.com');
   });
 });
 

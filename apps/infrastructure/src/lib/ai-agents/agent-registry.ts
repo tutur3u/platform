@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { DEV_MODE, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   assertId,
   assertSecretName,
@@ -162,7 +162,7 @@ export async function deployAiAgentChannel({
   if (
     channel.adapter === 'zalo' &&
     normalizeZaloAccountMode(channel.zaloAccountMode) === 'personal' &&
-    !(await isAiAgentZaloPersonalEnabled(db))
+    !(await isAiAgentZaloPersonalEnabled(db, channel.workspaceId))
   ) {
     missing.push(AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET);
   }
@@ -270,7 +270,14 @@ export async function markAiAgentChannelEvent({
   });
 }
 
-export async function isAiAgentZaloPersonalEnabled(db?: TypedSupabaseClient) {
+export async function isAiAgentZaloPersonalEnabled(
+  db?: TypedSupabaseClient,
+  workspaceId?: string | null
+) {
+  if (workspaceId === ROOT_WORKSPACE_ID) {
+    return true;
+  }
+
   const value = await getRootSecretValue(
     AI_AGENT_ZALO_PERSONAL_ENABLED_SECRET,
     db

@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   getPermissions: vi.fn(),
   getRootSecretValue: vi.fn(),
   google: vi.fn(),
+  markAiAgentChannelEvent: vi.fn(),
   onNewMention: null as null | ((thread: unknown, message: unknown) => unknown),
   onSubscribedMessage: null as
     | null
@@ -136,7 +137,9 @@ vi.mock('./registry', () => ({
   ) => mocks.getChannelSecretValues(...args),
   getRootSecretValue: (...args: Parameters<typeof mocks.getRootSecretValue>) =>
     mocks.getRootSecretValue(...args),
-  markAiAgentChannelEvent: vi.fn(),
+  markAiAgentChannelEvent: (
+    ...args: Parameters<typeof mocks.markAiAgentChannelEvent>
+  ) => mocks.markAiAgentChannelEvent(...args),
   resolveZaloIdentity: (
     ...args: Parameters<typeof mocks.resolveZaloIdentity>
   ) => mocks.resolveZaloIdentity(...args),
@@ -401,6 +404,47 @@ describe('AI agent runtime billing controls', () => {
     expect(mocks.checkAiCredits).not.toHaveBeenCalled();
     expect(thread.startTyping).not.toHaveBeenCalled();
     expect(mocks.stream).not.toHaveBeenCalled();
+  });
+
+  it('mirrors self-authored messages without replying to them', async () => {
+    const handler = await registerRuntime();
+    const thread = createThread();
+
+    await handler(thread, {
+      ...externalMessage,
+      author: {
+        isBot: false,
+        isMe: true,
+        userId: 'own-zalo-user',
+      },
+    });
+
+    expect(mocks.persistAiAgentExternalSdkMessage).toHaveBeenCalledOnce();
+    expect(thread.post).not.toHaveBeenCalled();
+    expect(mocks.checkRateLimitRedis).not.toHaveBeenCalled();
+  });
+
+  it('does not send a failure message when mirroring is read-only', async () => {
+    mocks.persistAiAgentExternalSdkMessage.mockRejectedValueOnce(
+      new Error('mirror unavailable')
+    );
+    const handler = await createAiAgentChatRuntime({
+      agent,
+      channel: { ...channel, autoRespond: false },
+    }).then(() => {
+      expect(mocks.onSubscribedMessage).toBeTypeOf('function');
+      return mocks.onSubscribedMessage as NonNullable<
+        typeof mocks.onSubscribedMessage
+      >;
+    });
+    const thread = createThread();
+
+    await handler(thread, externalMessage);
+
+    expect(thread.post).not.toHaveBeenCalled();
+    expect(mocks.markAiAgentChannelEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'mirror unavailable' })
+    );
   });
 
   it('uses a zca-js personal adapter for personal Zalo channels', async () => {

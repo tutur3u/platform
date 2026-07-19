@@ -115,7 +115,7 @@ function buildManagedChannelInput({
 }): SaveAiAgentChannelInput {
   return {
     adapter: defaults.adapter,
-    autoRespond: channel?.autoRespond ?? true,
+    autoRespond: channel?.autoRespond ?? false,
     displayName:
       displayName?.trim() || channel?.displayName || defaults.displayName,
     enabled: channel?.enabled ?? true,

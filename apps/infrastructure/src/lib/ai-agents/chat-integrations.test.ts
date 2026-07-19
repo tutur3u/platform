@@ -54,6 +54,7 @@ describe('chat integration AI-agent channels', () => {
     expect(payload.channels).toMatchObject([
       {
         adapter: 'zalo',
+        autoRespond: false,
         displayName: 'Zalo Personal',
         enabled: true,
         historySyncEnabled: true,
@@ -125,6 +126,35 @@ describe('chat integration AI-agent channels', () => {
     );
     expect(JSON.stringify(payload)).not.toContain('abcd');
     expect(JSON.stringify(result)).not.toContain('raw-secret');
+  });
+
+  it('preserves an explicitly enabled auto-response setting', async () => {
+    mocks.getAiAgentById.mockResolvedValue(
+      agent({
+        channels: [
+          channel({
+            adapter: 'zalo',
+            autoRespond: true,
+            id: 'chat-zalo-personal',
+            zaloAccountMode: 'personal',
+          }),
+        ],
+      })
+    );
+
+    await createChatIntegrationChannel({
+      actorUserId: 'user-1',
+      kind: 'zalo-personal',
+    });
+
+    const payload = mocks.saveAiAgent.mock.calls[0]?.[0]
+      .payload as SaveAiAgentInput;
+    expect(payload.channels).toEqual([
+      expect.objectContaining({
+        autoRespond: true,
+        id: 'chat-zalo-personal',
+      }),
+    ]);
   });
 });
 

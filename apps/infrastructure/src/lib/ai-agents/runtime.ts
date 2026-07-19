@@ -528,6 +528,11 @@ async function createAiAgentChatRuntimeBundle({
   });
 
   const handler = async (thread: ChatThread, message: SdkMessage) => {
+    const shouldRespond =
+      channel.autoRespond !== false &&
+      !message.author.isMe &&
+      message.author.isBot !== true;
+
     try {
       await persistAiAgentExternalSdkMessage({
         agent,
@@ -538,7 +543,7 @@ async function createAiAgentChatRuntimeBundle({
         thread,
       });
 
-      if (channel.autoRespond === false) {
+      if (!shouldRespond) {
         await markAiAgentChannelEvent({
           agentId: agent.id,
           channelId: channel.id,
@@ -569,17 +574,19 @@ async function createAiAgentChatRuntimeBundle({
         channelId: channel.id,
         error: messageText,
       });
-      const sent = await thread.post(
-        'The Tuturuuu agent could not complete this request.'
-      );
-      await persistAiAgentExternalSdkMessage({
-        agent,
-        channel,
-        direction: 'outbound',
-        message: sent,
-        platformUserId: null,
-        thread,
-      });
+      if (shouldRespond) {
+        const sent = await thread.post(
+          'The Tuturuuu agent could not complete this request.'
+        );
+        await persistAiAgentExternalSdkMessage({
+          agent,
+          channel,
+          direction: 'outbound',
+          message: sent,
+          platformUserId: null,
+          thread,
+        });
+      }
     }
   };
 

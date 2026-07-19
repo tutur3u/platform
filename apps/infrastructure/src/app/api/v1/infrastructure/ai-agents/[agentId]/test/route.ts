@@ -100,7 +100,7 @@ async function buildChannelDiagnostics({
   const personalZalo =
     channel.adapter === 'zalo' && channel.zaloAccountMode === 'personal';
   const personalZaloEnabled = personalZalo
-    ? await isAiAgentZaloPersonalEnabled(db)
+    ? await isAiAgentZaloPersonalEnabled(db, channel.workspaceId)
     : true;
   const missingSecrets = getAiAgentChannelRequiredSecrets(channel).filter(
     (name) => {
