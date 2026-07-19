@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { ROOT_WORKSPACE_ID } from '../constants';
 import { permissions } from '../permissions';
 
 describe('workspace permission catalog', () => {
@@ -30,7 +31,37 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).toContain('admin');
     expect(permissionIds).not.toContain('view_infrastructure');
     expect(permissionIds).not.toContain('manage_infrastructure_stress_tests');
+    expect(permissionIds).not.toContain('manage_internal_accounts');
     expect(permissionIds).not.toContain('manage_workspace_secrets');
+  });
+
+  it('exposes internal account management only in the root workspace', () => {
+    const rootPermissionIds = permissions({
+      wsId: ROOT_WORKSPACE_ID,
+      user: null,
+    }).map((permission) => permission.id);
+
+    expect(rootPermissionIds).toContain('manage_internal_accounts');
+  });
+
+  it('keeps internal account permission translations in shared role editors', () => {
+    for (const app of ['cms', 'infrastructure', 'inventory', 'web']) {
+      for (const locale of ['en', 'vi']) {
+        const messages = JSON.parse(
+          readFileSync(
+            resolve(repoRoot, `apps/${app}/messages/${locale}.json`),
+            'utf8'
+          )
+        ) as { 'ws-roles': Record<string, string> };
+
+        expect(
+          messages['ws-roles'].manage_internal_accounts?.length
+        ).toBeGreaterThan(0);
+        expect(
+          messages['ws-roles'].manage_internal_accounts_description?.length
+        ).toBeGreaterThan(0);
+      }
+    }
   });
 
   it('exposes the full shared catalog for typed defaults', () => {
@@ -43,6 +74,7 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).toContain('admin');
     expect(permissionIds).toContain('view_infrastructure');
     expect(permissionIds).toContain('manage_infrastructure_stress_tests');
+    expect(permissionIds).toContain('manage_internal_accounts');
     expect(permissionIds).toContain('manage_external_migrations');
     expect(permissionIds).toContain('manage_workspace_secrets');
     expect(new Set(permissionIds).size).toBe(permissionIds.length);

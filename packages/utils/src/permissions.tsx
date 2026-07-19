@@ -122,6 +122,16 @@ export const permissionGroups = ({
                   disabled: false,
                 },
                 {
+                  id: 'manage_internal_accounts' as PermissionId,
+                  icon: <UserCog />,
+                  title: t('ws-roles.manage_internal_accounts'),
+                  description: t(
+                    'ws-roles.manage_internal_accounts_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
                   id: 'manage_mobile_deployment_vault' as PermissionId,
                   icon: <FileKey2 />,
                   title: t('ws-roles.manage_mobile_deployment_vault'),

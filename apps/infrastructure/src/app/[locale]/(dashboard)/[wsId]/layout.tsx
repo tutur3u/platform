@@ -10,6 +10,7 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import type { PermissionId } from '@tuturuuu/types';
 import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -101,7 +102,14 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
         defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+        links={
+          await getNavigationLinks({
+            canManageInternalAccounts: permissions.containsPermission(
+              'manage_internal_accounts' as PermissionId
+            ),
+            personalOrWsId: workspaceSlug,
+          })
+        }
         userPopover={
           <Suspense
             key={user.id}

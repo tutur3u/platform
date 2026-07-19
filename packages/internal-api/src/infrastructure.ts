@@ -5,6 +5,7 @@ export * from './infrastructure/auth-recovery';
 export * from './infrastructure/blocked-ips';
 export * from './infrastructure/cron';
 export * from './infrastructure/github-bot';
+export * from './infrastructure/internal-accounts';
 export * from './infrastructure/mobile';
 export * from './infrastructure/monitoring';
 export * from './infrastructure/native-settings';

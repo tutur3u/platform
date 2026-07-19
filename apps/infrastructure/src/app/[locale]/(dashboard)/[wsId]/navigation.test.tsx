@@ -69,6 +69,21 @@ describe('Infrastructure navigation', () => {
         '/internal/calendar-sync',
       ])
     );
+    expect(hrefs).not.toContain('/internal/internal-accounts');
+  });
+
+  it('only shows internal accounts when the permission is available', async () => {
+    const { getNavigationLinks } = await import('./navigation');
+    const allLinks = flattenLinks(
+      await getNavigationLinks({
+        canManageInternalAccounts: true,
+        personalOrWsId: 'internal',
+      })
+    );
+
+    expect(allLinks.map((link) => link.href)).toContain(
+      '/internal/internal-accounts'
+    );
   });
 
   it('uses translation keys for navigation titles and card descriptions', async () => {

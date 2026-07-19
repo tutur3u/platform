@@ -8190,6 +8190,73 @@
       "workspaces": "workspaces"
     }
   },
+  "internal-accounts": {
+    "actions": {
+      "cancel": "Cancel",
+      "disable_access": "Disable access",
+      "enable_access": "Enable access",
+      "refresh": "Refresh accounts",
+      "reset_password": "Reset password",
+      "retry": "Try again",
+      "search": "Search"
+    },
+    "count": "{count, plural, one {# internal account} other {# internal accounts}}",
+    "count_loading": "Loading account count...",
+    "dates": {
+      "created": "Created {date}",
+      "last_sign_in": "Last sign-in {date}",
+      "never": "Never"
+    },
+    "description": "Manage authentication access and credentials for exact @tuturuuu.com accounts.",
+    "dialog": {
+      "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
+      "confirmation_label": "Confirm account email",
+      "disable_access": {
+        "confirm": "Disable access",
+        "description": "This immediately blocks {email} from signing in until access is restored.",
+        "title": "Disable account access?"
+      },
+      "enable_access": {
+        "confirm": "Enable access",
+        "description": "This restores sign-in access for {email} immediately.",
+        "title": "Enable account access?"
+      },
+      "new_password": "New temporary password",
+      "password_help": "Use at least {count} characters and share it through an approved secure channel.",
+      "reset_password": {
+        "confirm": "Set new password",
+        "description": "This replaces the current password for {email}. Existing sessions may remain active until separately revoked.",
+        "title": "Force reset password?"
+      }
+    },
+    "empty": {
+      "description": "Try a different email address or display name.",
+      "title": "No internal accounts found"
+    },
+    "error": {
+      "description": "The internal account directory could not be loaded. Your access may have changed.",
+      "title": "Unable to load internal accounts"
+    },
+    "notice": {
+      "description": "Changes take effect immediately. Self-service actions are blocked to reduce accidental lockouts, and every mutation requires the exact target email.",
+      "title": "Restricted root-workspace operation"
+    },
+    "search": {
+      "label": "Search internal accounts",
+      "placeholder": "Search by name or @tuturuuu.com email"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "unconfirmed": "Email unconfirmed",
+      "you": "You"
+    },
+    "title": "Internal Accounts",
+    "toasts": {
+      "update_failed": "The internal account could not be updated.",
+      "updated": "Internal account updated."
+    }
+  },
   "infrastructure-navigation": {
     "groups": {
       "ai_operations": {
@@ -8249,6 +8316,7 @@
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
+    "internal_accounts": "Internal Accounts",
     "internal_projects": "Internal Projects",
     "managed_cron_whitelisted_domains": "Managed Cron Domains",
     "mobile_deployment": "Mobile Deployment",
@@ -19789,6 +19857,8 @@
     "manage_forms_description": "Allows members to create, edit, and manage workspace forms.",
     "manage_infrastructure_stress_tests": "Manage infrastructure stress tests",
     "manage_infrastructure_stress_tests_description": "Allows root workspace members to start and abort controlled infrastructure stress tests.",
+    "manage_internal_accounts": "Manage internal accounts",
+    "manage_internal_accounts_description": "Allows root workspace members to reset passwords and disable or restore access for exact @tuturuuu.com accounts.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_catalog": "Manage Inventory Catalog",
     "manage_inventory_catalog_description": "Allows members to create, edit, and remove inventory catalog items.",

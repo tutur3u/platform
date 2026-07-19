@@ -138,7 +138,10 @@ vi.mock('./structure', () => ({
 }));
 
 function allowInfrastructurePermission() {
-  return { withoutPermission: vi.fn(() => false) };
+  return {
+    containsPermission: vi.fn(() => true),
+    withoutPermission: vi.fn(() => false),
+  };
 }
 
 async function renderLayout(wsId = 'internal') {
@@ -227,6 +230,7 @@ describe('Infrastructure dashboard layout', () => {
     );
     expect(screen.getByText('dashboard child')).toBeInTheDocument();
     expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
+      canManageInternalAccounts: true,
       personalOrWsId: 'internal',
     });
   });

@@ -8190,6 +8190,73 @@
       "workspaces": "không gian làm việc"
     }
   },
+  "internal-accounts": {
+    "actions": {
+      "cancel": "Hủy",
+      "disable_access": "Vô hiệu hóa truy cập",
+      "enable_access": "Khôi phục truy cập",
+      "refresh": "Làm mới tài khoản",
+      "reset_password": "Đặt lại mật khẩu",
+      "retry": "Thử lại",
+      "search": "Tìm kiếm"
+    },
+    "count": "{count, plural, one {# tài khoản nội bộ} other {# tài khoản nội bộ}}",
+    "count_loading": "Đang tải số lượng tài khoản...",
+    "dates": {
+      "created": "Đã tạo {date}",
+      "last_sign_in": "Đăng nhập gần nhất {date}",
+      "never": "Chưa bao giờ"
+    },
+    "description": "Quản lý quyền truy cập xác thực và thông tin đăng nhập cho các tài khoản chính xác thuộc @tuturuuu.com.",
+    "dialog": {
+      "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
+      "confirmation_label": "Xác nhận email tài khoản",
+      "disable_access": {
+        "confirm": "Vô hiệu hóa truy cập",
+        "description": "Thao tác này sẽ chặn ngay {email} đăng nhập cho đến khi quyền truy cập được khôi phục.",
+        "title": "Vô hiệu hóa quyền truy cập?"
+      },
+      "enable_access": {
+        "confirm": "Khôi phục truy cập",
+        "description": "Thao tác này sẽ khôi phục ngay quyền đăng nhập cho {email}.",
+        "title": "Khôi phục quyền truy cập?"
+      },
+      "new_password": "Mật khẩu tạm thời mới",
+      "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
+      "reset_password": {
+        "confirm": "Đặt mật khẩu mới",
+        "description": "Thao tác này thay thế mật khẩu hiện tại của {email}. Các phiên hiện có có thể vẫn hoạt động cho đến khi bị thu hồi riêng.",
+        "title": "Buộc đặt lại mật khẩu?"
+      }
+    },
+    "empty": {
+      "description": "Hãy thử địa chỉ email hoặc tên hiển thị khác.",
+      "title": "Không tìm thấy tài khoản nội bộ"
+    },
+    "error": {
+      "description": "Không thể tải danh bạ tài khoản nội bộ. Quyền truy cập của bạn có thể đã thay đổi.",
+      "title": "Không thể tải tài khoản nội bộ"
+    },
+    "notice": {
+      "description": "Thay đổi có hiệu lực ngay lập tức. Các thao tác trên chính tài khoản của bạn bị chặn để giảm nguy cơ tự khóa, và mọi thay đổi đều yêu cầu email chính xác của tài khoản đích.",
+      "title": "Thao tác giới hạn trong không gian làm việc gốc"
+    },
+    "search": {
+      "label": "Tìm kiếm tài khoản nội bộ",
+      "placeholder": "Tìm theo tên hoặc email @tuturuuu.com"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "disabled": "Đã vô hiệu hóa",
+      "unconfirmed": "Email chưa xác nhận",
+      "you": "Bạn"
+    },
+    "title": "Tài khoản nội bộ",
+    "toasts": {
+      "update_failed": "Không thể cập nhật tài khoản nội bộ.",
+      "updated": "Đã cập nhật tài khoản nội bộ."
+    }
+  },
   "infrastructure-navigation": {
     "groups": {
       "ai_operations": {
@@ -8249,6 +8316,7 @@
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
+    "internal_accounts": "Tài khoản nội bộ",
     "internal_projects": "Dự án nội bộ",
     "managed_cron_whitelisted_domains": "Tên miền Cron được quản lý",
     "mobile_deployment": "Triển khai di động",
@@ -19789,6 +19857,8 @@
     "manage_forms_description": "Cho phép thành viên tạo, chỉnh sửa và quản lý biểu mẫu trong không gian làm việc.",
     "manage_infrastructure_stress_tests": "Quản lý stress test hạ tầng",
     "manage_infrastructure_stress_tests_description": "Cho phép thành viên không gian làm việc gốc bắt đầu và dừng các stress test hạ tầng có kiểm soát.",
+    "manage_internal_accounts": "Quản lý tài khoản nội bộ",
+    "manage_internal_accounts_description": "Cho phép thành viên không gian làm việc gốc đặt lại mật khẩu và vô hiệu hóa hoặc khôi phục truy cập cho các tài khoản chính xác thuộc @tuturuuu.com.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_catalog": "Quản lý danh mục kho",
     "manage_inventory_catalog_description": "Cho phép thành viên tạo, chỉnh sửa và xóa mặt hàng trong danh mục kho.",

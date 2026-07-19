@@ -19885,6 +19885,8 @@
     "manage_forms_description": "Cho phép thành viên tạo, chỉnh sửa và quản lý biểu mẫu trong không gian làm việc.",
     "manage_infrastructure_stress_tests": "Quản lý stress test hạ tầng",
     "manage_infrastructure_stress_tests_description": "Cho phép thành viên không gian làm việc gốc bắt đầu và dừng các stress test hạ tầng có kiểm soát.",
+    "manage_internal_accounts": "Quản lý tài khoản nội bộ",
+    "manage_internal_accounts_description": "Cho phép thành viên không gian làm việc gốc đặt lại mật khẩu và vô hiệu hóa hoặc khôi phục truy cập cho các tài khoản chính xác thuộc @tuturuuu.com.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_catalog": "Quản lý danh mục kho",
     "manage_inventory_catalog_description": "Cho phép thành viên tạo, chỉnh sửa và xóa mặt hàng trong danh mục kho.",

@@ -15536,6 +15536,8 @@
     "manage_forms_description": "Allows members to create, edit, and manage workspace forms.",
     "manage_infrastructure_stress_tests": "Manage infrastructure stress tests",
     "manage_infrastructure_stress_tests_description": "Allows root workspace members to start and abort controlled infrastructure stress tests.",
+    "manage_internal_accounts": "Manage internal accounts",
+    "manage_internal_accounts_description": "Allows root workspace members to reset passwords and disable or restore access for exact @tuturuuu.com accounts.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_catalog": "Manage Inventory Catalog",
     "manage_inventory_catalog_description": "Allows members to create, edit, and remove inventory catalog items.",

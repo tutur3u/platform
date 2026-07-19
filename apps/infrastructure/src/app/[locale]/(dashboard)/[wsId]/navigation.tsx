@@ -53,9 +53,11 @@ function href(wsId: string, path = '') {
 }
 
 function getTopLevelNavigation({
+  canManageInternalAccounts,
   t,
   wsId,
 }: {
+  canManageInternalAccounts: boolean;
   t: Translator;
   wsId: string;
 }): (NavLink | null)[] {
@@ -250,6 +252,15 @@ function getTopLevelNavigation({
           icon: icon(Users),
           title: t('infrastructure-tabs.users'),
         },
+        ...(canManageInternalAccounts
+          ? [
+              {
+                href: href(wsId, '/internal-accounts'),
+                icon: icon(ShieldCheck),
+                title: t('infrastructure-tabs.internal_accounts'),
+              },
+            ]
+          : []),
         {
           href: href(wsId, '/workspaces'),
           icon: icon(Building2),
@@ -340,12 +351,18 @@ function getTopLevelNavigation({
 }
 
 export async function getNavigationLinks({
+  canManageInternalAccounts = false,
   personalOrWsId,
 }: {
+  canManageInternalAccounts?: boolean;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
-  return getTopLevelNavigation({ t, wsId: personalOrWsId });
+  return getTopLevelNavigation({
+    canManageInternalAccounts,
+    t,
+    wsId: personalOrWsId,
+  });
 }
 
 export async function getInfrastructureNavigationCards({

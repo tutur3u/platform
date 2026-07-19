@@ -377,6 +377,23 @@ Common patterns:
 - some features compare target-workspace permissions with root-workspace permissions
 - root membership is often treated as the gate for platform-wide admin tooling
 
+### Internal account administration
+
+Infrastructure exposes **Platform Admin → Internal Accounts** only when the
+operator has the root-only `manage_internal_accounts` permission. The server
+rechecks that permission against the root workspace on every request and also
+requires the actor and target to use an exact `@tuturuuu.com` email address.
+
+Use this surface to disable or restore sign-in access, or to force-set a new
+temporary password. Each mutation requires the operator to type the exact
+target email, and self-service mutations are rejected to reduce accidental
+lockouts. Passwords must never be copied into logs, tickets, or coordination
+notes; share a temporary password only through an approved secure channel.
+
+Disabling access applies an Auth ban and does not implicitly revoke every
+already-issued session. If an incident also requires session revocation, handle
+that as a separate authenticated operation and verify the target carefully.
+
 ## Current Enforcement Patterns In The Codebase
 
 Today the codebase uses a mix of patterns:
