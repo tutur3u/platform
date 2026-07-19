@@ -57,10 +57,8 @@ export function FixedAppBrand({
       </Link>
       <span
         aria-hidden
-        className="shrink-0 select-none font-light text-2xl text-foreground/25"
-      >
-        |
-      </span>
+        className="h-5 w-px shrink-0 self-center rounded-full bg-foreground/10"
+      />
       {appControl}
       {actions ? <div className="ml-auto flex-none">{actions}</div> : null}
     </div>
