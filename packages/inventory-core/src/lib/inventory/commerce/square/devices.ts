@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { TablesInsert } from '@tuturuuu/types/supabase';
 import {
   createSquareDeviceCodeApi,
   createSquareIdempotencyKey,
@@ -8,11 +9,7 @@ import {
   SquareApiError,
 } from './client';
 import { getInventorySquareAccessContext } from './connection-store';
-import {
-  getPrivateAdmin,
-  loadSettingsRow,
-  type SupabaseErrorLike,
-} from './settings-store';
+import { getPrivateAdmin, loadSettingsRow } from './settings-store';
 import type {
   SquareApiDevice,
   SquareApiDeviceCode,
@@ -22,6 +19,16 @@ import type {
   SquareEnvironment,
   SquareLocation,
 } from './types';
+
+type SquareDeviceCacheRecord = TablesInsert<
+  { schema: 'private' },
+  'inventory_square_devices'
+>;
+
+type SquareDeviceCacheError = {
+  code?: string;
+  message?: string;
+} | null;
 
 function mapLocation(location: SquareApiLocation): SquareLocation | null {
   if (!location.id) return null;
@@ -60,6 +67,63 @@ function mapDeviceCode(deviceCode: SquareApiDeviceCode): SquareDeviceCode {
   };
 }
 
+async function persistSquareDeviceCache({
+  deviceCodeId,
+  deviceId,
+  record,
+}: {
+  deviceCodeId?: string | null;
+  deviceId?: string | null;
+  record: SquareDeviceCacheRecord;
+}) {
+  const privateAdmin = await getPrivateAdmin();
+
+  const updateExistingDeviceCode = async () => {
+    if (!deviceCodeId) return false;
+
+    const result = (await privateAdmin
+      .from('inventory_square_devices' as never)
+      .update(record as never)
+      .eq('device_code_id', deviceCodeId)
+      .select('id')
+      .maybeSingle()) as {
+      data: { id: string } | null;
+      error: SquareDeviceCacheError;
+    };
+
+    if (result.error) {
+      throw new Error(
+        result.error.message ?? 'Failed to update Square device cache'
+      );
+    }
+
+    return Boolean(result.data);
+  };
+
+  if (await updateExistingDeviceCode()) return;
+
+  const { error } = (
+    deviceId
+      ? await privateAdmin
+          .from('inventory_square_devices' as never)
+          .upsert(record as never, {
+            onConflict: 'ws_id,environment,device_id',
+          })
+      : await privateAdmin
+          .from('inventory_square_devices' as never)
+          .insert(record as never)
+  ) as { error: SquareDeviceCacheError };
+
+  if (!error) return;
+
+  // Another request may have cached the same Square code after our first read.
+  // Resolve that safe race without relying on the partial device_code_id index
+  // as an ON CONFLICT target (PostgreSQL cannot infer it without its predicate).
+  if (error.code === '23505' && (await updateExistingDeviceCode())) return;
+
+  throw new Error(error.message ?? 'Failed to save Square device cache');
+}
+
 async function upsertDevice({
   device,
   environment,
@@ -71,29 +135,25 @@ async function upsertDevice({
   userId?: string | null;
   wsId: string;
 }) {
-  const privateAdmin = await getPrivateAdmin();
-  const { error } = (await privateAdmin
-    .from('inventory_square_devices' as never)
-    .upsert(
-      {
-        device_code_id: device.code,
-        device_id: device.id,
-        device_name: device.name,
-        environment,
-        last_seen_at: device.updatedAt,
-        location_id: device.locationId,
-        metadata: {},
-        paired_at: device.pairedAt,
-        product_type: device.productType,
-        status: device.status,
-        updated_at: new Date().toISOString(),
-        updated_by: userId ?? null,
-        ws_id: wsId,
-      } as never,
-      { onConflict: 'ws_id,environment,device_id' }
-    )) as { error: SupabaseErrorLike };
-
-  if (error) throw new Error(error.message ?? 'Failed to save Square device');
+  await persistSquareDeviceCache({
+    deviceCodeId: device.code,
+    deviceId: device.id,
+    record: {
+      device_code_id: device.code,
+      device_id: device.id,
+      device_name: device.name,
+      environment,
+      last_seen_at: device.updatedAt,
+      location_id: device.locationId,
+      metadata: {},
+      paired_at: device.pairedAt,
+      product_type: device.productType,
+      status: device.status,
+      updated_at: new Date().toISOString(),
+      updated_by: userId ?? null,
+      ws_id: wsId,
+    },
+  });
 }
 
 export async function listInventorySquareLocations(wsId: string) {
@@ -149,28 +209,24 @@ export async function createInventorySquareDeviceCode({
   if (!deviceCode) throw new Error('Square did not return a device code');
 
   const mapped = mapDeviceCode(deviceCode);
-  const privateAdmin = await getPrivateAdmin();
-  const { error } = (await privateAdmin
-    .from('inventory_square_devices' as never)
-    .upsert(
-      {
-        device_code_id: mapped.id,
-        device_id: deviceCode.device_id ?? null,
-        device_name: mapped.name,
-        environment: context.environment,
-        location_id: mapped.locationId,
-        metadata: deviceCode as never,
-        pairing_code: mapped.code,
-        product_type: mapped.productType,
-        status: mapped.status,
-        updated_at: new Date().toISOString(),
-        updated_by: userId,
-        ws_id: wsId,
-      } as never,
-      { onConflict: 'device_code_id' }
-    )) as { error: SupabaseErrorLike };
-
-  if (error) throw new Error(error.message ?? 'Failed to save device code');
+  await persistSquareDeviceCache({
+    deviceCodeId: mapped.id,
+    deviceId: deviceCode.device_id,
+    record: {
+      device_code_id: mapped.id,
+      device_id: deviceCode.device_id ?? null,
+      device_name: mapped.name,
+      environment: context.environment,
+      location_id: mapped.locationId,
+      metadata: deviceCode as never,
+      pairing_code: mapped.code,
+      product_type: mapped.productType,
+      status: mapped.status,
+      updated_at: new Date().toISOString(),
+      updated_by: userId,
+      ws_id: wsId,
+    },
+  });
   return mapped;
 }
 
@@ -188,27 +244,23 @@ export async function syncInventorySquareDeviceCodePaired({
   if (!codeId || !deviceId) return false;
 
   const mapped = mapDeviceCode(deviceCode);
-  const privateAdmin = await getPrivateAdmin();
-  const { error } = (await privateAdmin
-    .from('inventory_square_devices' as never)
-    .upsert(
-      {
-        device_code_id: codeId,
-        device_id: deviceId,
-        device_name: mapped.name,
-        environment,
-        last_seen_at: new Date().toISOString(),
-        location_id: mapped.locationId,
-        metadata: deviceCode as never,
-        pairing_code: mapped.code || null,
-        product_type: mapped.productType,
-        status: mapped.status ?? 'PAIRED',
-        updated_at: new Date().toISOString(),
-        ws_id: wsId,
-      } as never,
-      { onConflict: 'device_code_id' }
-    )) as { error: SupabaseErrorLike };
-
-  if (error) throw new Error(error.message ?? 'Failed to save paired device');
+  await persistSquareDeviceCache({
+    deviceCodeId: codeId,
+    deviceId,
+    record: {
+      device_code_id: codeId,
+      device_id: deviceId,
+      device_name: mapped.name,
+      environment,
+      last_seen_at: new Date().toISOString(),
+      location_id: mapped.locationId,
+      metadata: deviceCode as never,
+      pairing_code: mapped.code || null,
+      product_type: mapped.productType,
+      status: mapped.status ?? 'PAIRED',
+      updated_at: new Date().toISOString(),
+      ws_id: wsId,
+    },
+  });
   return true;
 }
