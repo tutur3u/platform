@@ -1,5 +1,6 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { after, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { recordAiAgentZaloPersonalConnection } from '@/lib/ai-agents/registry';
 import {
   getAiAgentZaloPersonalStatus,
   startAiAgentZaloPersonalListener,
@@ -52,7 +53,9 @@ type GlobalWithZaloPersonalPhoneSyncJobs = typeof globalThis & {
 
 const PHONE_SYNC_JOB_TIMEOUT_ERROR = 'zalo_personal_phone_sync_timed_out';
 const PHONE_SYNC_JOB_TIMEOUT_MS = 2 * 60 * 1000;
+const PHONE_SYNC_JOB_STALE_AFTER_MS = PHONE_SYNC_JOB_TIMEOUT_MS + 15_000;
 const PHONE_SYNC_JOB_TTL_MS = 10 * 60 * 1000;
+const PHONE_SYNC_WAITING_ERROR = 'zalo_personal_phone_sync_waiting_for_phone';
 const phoneSyncJobs = getPhoneSyncJobs();
 
 function getPhoneSyncJobs() {
@@ -129,6 +132,13 @@ function startPhoneSyncJob(input: PhoneSyncInput) {
           channelId: input.channelId,
           error: snapshot.error,
         });
+
+        return recordAiAgentZaloPersonalConnection({
+          agentId: input.agentId,
+          channelId: input.channelId,
+          db: input.db,
+          error: snapshot.error,
+        }).catch(() => undefined);
       })
       .finally(() => {
         schedulePhoneSyncJobCleanup(key, snapshot);
@@ -185,6 +195,32 @@ function getPhoneSyncJobSnapshot(agentId: string, channelId: string) {
   );
 }
 
+function inferPersistedPhoneSyncJob(status: {
+  lastError: string | null;
+  lastEventAt: string | null;
+}): PhoneSyncJobSnapshot | null {
+  if (status.lastError !== PHONE_SYNC_WAITING_ERROR || !status.lastEventAt) {
+    return null;
+  }
+
+  const startedAt = Date.parse(status.lastEventAt);
+
+  if (
+    !Number.isFinite(startedAt) ||
+    Date.now() - startedAt > PHONE_SYNC_JOB_STALE_AFTER_MS
+  ) {
+    return null;
+  }
+
+  return {
+    completedAt: null,
+    error: null,
+    startedAt: status.lastEventAt,
+    status: 'running',
+    sync: null,
+  };
+}
+
 function schedulePhoneSyncJobCleanup(
   key: string,
   snapshot: PhoneSyncJobSnapshot
@@ -218,7 +254,9 @@ async function getStatus(request: NextRequest, { params }: Params) {
     });
 
     return NextResponse.json({
-      phoneSyncJob: getPhoneSyncJobSnapshot(agentId, channelId),
+      phoneSyncJob:
+        getPhoneSyncJobSnapshot(agentId, channelId) ??
+        inferPersistedPhoneSyncJob(status),
       status,
     });
   } catch (error) {
@@ -273,13 +311,45 @@ async function runAction(request: NextRequest, { params }: Params) {
         );
       }
 
+      const persistedJob = inferPersistedPhoneSyncJob(status);
+
+      if (persistedJob) {
+        return NextResponse.json({
+          phoneSyncJob: persistedJob,
+          status,
+          sync: {
+            approvalRequested: true,
+            cleaned: false,
+            error: null,
+            groupMessages: 0,
+            pullAttempts: 0,
+            requestAccepted: true,
+            requestHttpError: null,
+            requestViaHttp: false,
+            requestViaWebSocket: true,
+            status: 'waiting_for_phone',
+            synced: 0,
+            threads: 0,
+            userMessages: 0,
+          },
+        });
+      }
+
+      await recordAiAgentZaloPersonalConnection({
+        agentId,
+        channelId,
+        db: access.sbAdmin,
+        error: PHONE_SYNC_WAITING_ERROR,
+      });
+
       const phoneSyncJob = startPhoneSyncJob(input);
+      after(() => phoneSyncJob.promise);
 
       return NextResponse.json({
         phoneSyncJob: phoneSyncJob.snapshot,
         status: {
           ...status,
-          lastError: 'zalo_personal_phone_sync_waiting_for_phone',
+          lastError: PHONE_SYNC_WAITING_ERROR,
           lastEventAt: new Date().toISOString(),
         },
         sync: {

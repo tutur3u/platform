@@ -2,8 +2,10 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  after: vi.fn((callback: () => unknown) => void callback()),
   getAiAgentZaloPersonalStatus: vi.fn(),
   info: vi.fn(),
+  recordAiAgentZaloPersonalConnection: vi.fn(),
   requireAiAgentAdmin: vi.fn(),
   startAiAgentZaloPersonalListener: vi.fn(),
   stopAiAgentZaloPersonalListener: vi.fn(),
@@ -11,6 +13,11 @@ const mocks = vi.hoisted(() => ({
   syncAiAgentZaloPersonalPhoneHistory: vi.fn(),
   validateAiAgentZaloPersonalChannel: vi.fn(),
   warn: vi.fn(),
+}));
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  after: mocks.after,
 }));
 
 vi.mock('@/lib/ai-agents/zalo-personal-listeners', () => ({
@@ -32,6 +39,12 @@ vi.mock('@/lib/ai-agents/zalo-personal-listeners', () => ({
   validateAiAgentZaloPersonalChannel: (
     ...args: Parameters<typeof mocks.validateAiAgentZaloPersonalChannel>
   ) => mocks.validateAiAgentZaloPersonalChannel(...args),
+}));
+
+vi.mock('@/lib/ai-agents/registry', () => ({
+  recordAiAgentZaloPersonalConnection: (
+    ...args: Parameters<typeof mocks.recordAiAgentZaloPersonalConnection>
+  ) => mocks.recordAiAgentZaloPersonalConnection(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -135,6 +148,7 @@ describe('personal Zalo AI-agent route', () => {
       sbAdmin: { id: 'admin-client' },
       user: { id: 'user-1' },
     });
+    mocks.recordAiAgentZaloPersonalConnection.mockResolvedValue(undefined);
     mocks.syncAiAgentZaloPersonalPhoneHistory.mockResolvedValue(
       completedPhoneSyncResult
     );
@@ -152,6 +166,7 @@ describe('personal Zalo AI-agent route', () => {
     expect(firstResponse.status).toBe(200);
     expect(secondResponse.status).toBe(200);
     expect(mocks.syncAiAgentZaloPersonalPhoneHistory).toHaveBeenCalledTimes(1);
+    expect(mocks.after).toHaveBeenCalledTimes(2);
 
     const firstPayload = await firstResponse.json();
     const secondPayload = await secondResponse.json();
@@ -166,6 +181,44 @@ describe('personal Zalo AI-agent route', () => {
 
     pendingSync.resolve(completedPhoneSyncResult);
     await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  it('keeps a phone-sync job alive after returning the initial response', async () => {
+    const pendingSync = deferred<typeof completedPhoneSyncResult>();
+    mocks.syncAiAgentZaloPersonalPhoneHistory.mockReturnValueOnce(
+      pendingSync.promise
+    );
+
+    const response = await callPost();
+
+    expect(response.status).toBe(200);
+    expect(mocks.after).toHaveBeenCalledOnce();
+    expect(mocks.after).toHaveBeenCalledWith(expect.any(Function));
+
+    pendingSync.resolve(completedPhoneSyncResult);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  it('does not start a duplicate sync when another instance persisted a running job', async () => {
+    mocks.getAiAgentZaloPersonalStatus.mockResolvedValueOnce({
+      ...status,
+      lastError: 'zalo_personal_phone_sync_waiting_for_phone',
+      lastEventAt: new Date().toISOString(),
+    });
+
+    const response = await callPost();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.phoneSyncJob).toMatchObject({
+      completedAt: null,
+      error: null,
+      status: 'running',
+      sync: null,
+    });
+    expect(mocks.syncAiAgentZaloPersonalPhoneHistory).not.toHaveBeenCalled();
+    expect(mocks.recordAiAgentZaloPersonalConnection).not.toHaveBeenCalled();
+    expect(mocks.after).not.toHaveBeenCalled();
   });
 
   it('rejects phone sync when the personal Zalo feature is disabled', async () => {
