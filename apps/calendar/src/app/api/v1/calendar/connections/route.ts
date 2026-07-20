@@ -8,9 +8,23 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+const WORKSPACE_CALENDAR_COLORS = new Set([
+  'RED',
+  'BLUE',
+  'GREEN',
+  'YELLOW',
+  'ORANGE',
+  'PURPLE',
+  'PINK',
+  'INDIGO',
+  'CYAN',
+  'GRAY',
+]);
 
 const createConnectionSchema = z.object({
-  wsId: z.guid(),
+  wsId: z.string().min(1),
   calendarId: z.string().max(MAX_LONG_TEXT_LENGTH).min(1),
   calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1),
   color: z.string().max(MAX_COLOR_LENGTH).optional(),
@@ -27,7 +41,7 @@ const updateConnectionSchema = z
     // Either id OR (calendarId + wsId) to identify the connection
     id: z.guid().optional(),
     calendarId: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
-    wsId: z.guid().optional(),
+    wsId: z.string().min(1).optional(),
     authTokenId: z.guid().optional(),
     isEnabled: z.boolean().optional(),
     calendarName: z.string().max(MAX_LONG_TEXT_LENGTH).min(1).optional(),
@@ -103,13 +117,18 @@ async function ensureWorkspaceCalendarForConnection(args: {
   color?: string | null;
 }) {
   const sbAdmin = await createAdminClient();
+  const normalizedColor = args.color?.trim().toUpperCase();
+  const workspaceCalendarColor =
+    normalizedColor && WORKSPACE_CALENDAR_COLORS.has(normalizedColor)
+      ? normalizedColor
+      : 'BLUE';
   const { data, error } = await (sbAdmin as any)
     .schema('private')
     .from('workspace_calendars')
     .insert({
       ws_id: args.wsId,
       name: args.calendarName,
-      color: args.color || 'BLUE',
+      color: workspaceCalendarColor,
       calendar_type: 'custom',
       is_system: false,
       position: 100,
@@ -130,14 +149,16 @@ export async function GET(request: Request) {
 
   try {
     const url = new URL(request.url);
-    const wsId = url.searchParams.get('wsId');
+    const rawWsId = url.searchParams.get('wsId');
 
-    if (!wsId) {
+    if (!rawWsId) {
       return NextResponse.json(
         { error: 'Missing workspace ID' },
         { status: 400 }
       );
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const accessError = await requireWorkspaceAccess({
       supabase,
@@ -198,7 +219,7 @@ export async function POST(request: Request) {
     }
 
     const {
-      wsId,
+      wsId: rawWsId,
       calendarId,
       calendarName,
       color,
@@ -209,10 +230,11 @@ export async function POST(request: Request) {
       syncInboundEnabled,
       syncOutboundEnabled,
     } = validation.data;
+    const normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
     const accessError = await requireWorkspaceAccess({
       supabase,
       userId: user.id,
-      wsId,
+      wsId: normalizedWsId,
     });
     if (accessError) return accessError;
     let provider: 'google' | 'microsoft' = 'google';
@@ -222,7 +244,7 @@ export async function POST(request: Request) {
         .from('calendar_auth_tokens')
         .select('provider')
         .eq('id', authTokenId)
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('user_id', user.id)
         .eq('is_active', true)
         .single();
@@ -240,7 +262,7 @@ export async function POST(request: Request) {
     let duplicateQuery = supabase
       .from('calendar_connections')
       .select('id')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('calendar_id', calendarId)
       .eq('provider', provider);
 
@@ -263,7 +285,7 @@ export async function POST(request: Request) {
     }
 
     const workspaceCalendarId = await ensureWorkspaceCalendarForConnection({
-      wsId,
+      wsId: normalizedWsId,
       calendarName,
       color,
     });
@@ -272,7 +294,7 @@ export async function POST(request: Request) {
     const { data: connection, error: insertError } = await supabase
       .from('calendar_connections')
       .insert({
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         calendar_id: calendarId,
         calendar_name: calendarName,
         color: color || null,
@@ -334,8 +356,12 @@ export async function PATCH(request: Request) {
     }
 
     const { id, calendarId, wsId, authTokenId, ...updates } = validation.data;
+    const normalizedWsId = wsId
+      ? await normalizeWorkspaceId(wsId, supabase)
+      : null;
     const targetWsId =
-      wsId ?? (id ? await getConnectionWorkspaceId(supabase, id) : null);
+      normalizedWsId ??
+      (id ? await getConnectionWorkspaceId(supabase, id) : null);
 
     if (!targetWsId) {
       return NextResponse.json(
@@ -376,8 +402,8 @@ export async function PATCH(request: Request) {
 
     if (id) {
       query = query.eq('id', id);
-    } else if (calendarId && wsId) {
-      query = query.eq('calendar_id', calendarId).eq('ws_id', wsId);
+    } else if (calendarId && normalizedWsId) {
+      query = query.eq('calendar_id', calendarId).eq('ws_id', normalizedWsId);
       query = authTokenId
         ? query.eq('auth_token_id', authTokenId)
         : query.is('auth_token_id', null);
