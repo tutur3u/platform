@@ -12,6 +12,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { deduplicateCalendarEvents } from '@/lib/calendar/event-deduplication';
 import { createProviderEvent } from '@/lib/calendar/provider-writes';
 import {
   type ResolvedCalendarSource,
@@ -177,7 +178,9 @@ export async function GET(request: Request, { params }: Params) {
     if (error) throw error;
 
     // Decrypt encrypted events
-    const decryptedEvents = await decryptEventsFromStorage(events || [], wsId);
+    const decryptedEvents = deduplicateCalendarEvents(
+      await decryptEventsFromStorage(events || [], wsId)
+    );
 
     return NextResponse.json({
       data: decryptedEvents,

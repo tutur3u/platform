@@ -2,35 +2,42 @@ import {
   DELETE as deleteMembers,
   GET as getMembers,
 } from '@tuturuuu/apis/members/route';
-import { type NextRequest, NextResponse } from 'next/server';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
+  wsId: string;
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
-  const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
+export const GET = withSessionAuth<Params>(
+  async (req, authContext, { wsId }) => {
+    const normalizedWsId = await normalizeWorkspaceId(
+      wsId,
+      authContext.supabase
+    );
 
-  if (!normalizedWsId) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+    return getMembers(
+      req,
+      { params: Promise.resolve({ wsId: normalizedWsId }) },
+      authContext
+    );
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);
 
-  return getMembers(req, { params: Promise.resolve({ wsId: normalizedWsId }) });
-}
+export const DELETE = withSessionAuth<Params>(
+  async (req, authContext, { wsId }) => {
+    const normalizedWsId = await normalizeWorkspaceId(
+      wsId,
+      authContext.supabase
+    );
 
-export async function DELETE(req: NextRequest, { params }: Params) {
-  const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
-
-  if (!normalizedWsId) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  return deleteMembers(req, {
-    params: Promise.resolve({ wsId: normalizedWsId }),
-  });
-}
+    return deleteMembers(
+      req,
+      { params: Promise.resolve({ wsId: normalizedWsId }) },
+      authContext
+    );
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);

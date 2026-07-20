@@ -24,6 +24,7 @@ vi.mock('@tuturuuu/google', () => ({
     this.generateAuthUrl = (input: Record<string, unknown>) => {
       generatedAuthUrlInputs.push(input);
       const url = new URL('https://accounts.google.test/o/oauth2/v2/auth');
+      url.searchParams.set('client_id', String(options.clientId));
       url.searchParams.set('redirect_uri', String(options.redirectUri));
       url.searchParams.set('state', String(input.state));
 
@@ -61,6 +62,8 @@ describe('Google Calendar auth route', () => {
     vi.clearAllMocks();
     generatedAuthUrlInputs.length = 0;
     oauthConstructors.length = 0;
+    vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     normalizeWorkspaceIdMock.mockResolvedValue('workspace-1');
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
@@ -69,6 +72,26 @@ describe('Google Calendar auth route', () => {
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });
+
+  it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(
+    'fails closed when %s is missing',
+    async (environmentVariable) => {
+      vi.stubEnv(environmentVariable, '');
+
+      const response = await GET(
+        new NextRequest(
+          'https://calendar.tuturuuu.com/api/v1/calendar/auth?wsId=personal'
+        )
+      );
+
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toEqual({
+        code: 'google_calendar_not_configured',
+        error: 'Google Calendar integration is not configured',
+      });
+      expect(oauthConstructors).toHaveLength(0);
+    }
+  );
 
   it('does not emit 0.0.0.0 in the Google redirect URI', async () => {
     vi.stubEnv(
@@ -84,6 +107,9 @@ describe('Google Calendar auth route', () => {
     const redirectUri = new URL(body.authUrl).searchParams.get('redirect_uri');
 
     expect(response.status).toBe(200);
+    expect(new URL(body.authUrl).searchParams.get('client_id')).toBe(
+      'google-client-id'
+    );
     expect(redirectUri).toBe(
       'https://tuturuuu.com/api/v1/calendar/auth/callback'
     );

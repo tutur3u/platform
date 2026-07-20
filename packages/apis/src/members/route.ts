@@ -18,13 +18,35 @@ interface Params {
   }>;
 }
 
+export interface MembersRouteAuthContext {
+  supabase: TypedSupabaseClient;
+  user: {
+    email?: string | null;
+    id: string;
+  };
+}
+
+interface WorkspaceMemberRow {
+  user_id: string;
+  users: {
+    avatar_url: string | null;
+    display_name: string | null;
+    email: string | null;
+    id: string;
+  };
+}
+
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
 }
 
-export async function GET(req: NextRequest, { params }: Params) {
+export async function GET(
+  req: NextRequest,
+  { params }: Params,
+  authContext?: MembersRouteAuthContext
+) {
   const { wsId: id } = await params;
-  const supabase = await createClient(req);
+  const supabase = authContext?.supabase ?? (await createClient(req));
 
   const wsId = await normalizeWorkspaceId(id, supabase);
 
@@ -39,7 +61,8 @@ export async function GET(req: NextRequest, { params }: Params) {
     .eq('id', wsId)
     .single();
 
-  const creatorId = workspace?.creator_id;
+  const creatorId = (workspace as { creator_id: string | null } | null)
+    ?.creator_id;
 
   const { data, error } = await supabase
     .from('workspace_members')
@@ -67,7 +90,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   // Transform the data to flatten the user information and add is_creator field
   // Include both id and user_id for compatibility with task assignment flows
   const members =
-    data?.map((member) => ({
+    (data as WorkspaceMemberRow[] | null)?.map((member) => ({
       id: member.users.id,
       user_id: member.user_id, // Include user_id for task creation consistency
       display_name: member.users.display_name,
@@ -79,7 +102,11 @@ export async function GET(req: NextRequest, { params }: Params) {
   return NextResponse.json({ members });
 }
 
-export async function DELETE(req: NextRequest, { params }: Params) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: Params,
+  authContext?: MembersRouteAuthContext
+) {
   const { wsId } = await params;
   const searchParams = req.nextUrl.searchParams;
 
@@ -87,16 +114,15 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const userEmail = searchParams.get('email');
   const normalizedUserEmail = userEmail?.trim().toLowerCase() || null;
 
-  const supabase = await createClient(req);
+  const supabase = authContext?.supabase ?? (await createClient(req));
   const resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   if (!resolvedWsId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user =
+    authContext?.user ?? (await supabase.auth.getUser()).data.user ?? null;
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -133,7 +159,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    inviteUserIds = (matchingInvites ?? [])
+    inviteUserIds = ((matchingInvites ?? []) as Array<{ id: string | null }>)
       .map((row) => row.id)
       .filter((id): id is string => typeof id === 'string' && id.length > 0);
   }

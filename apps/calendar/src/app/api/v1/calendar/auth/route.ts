@@ -2,6 +2,7 @@ import { OAuth2Client } from '@tuturuuu/google';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
@@ -37,9 +38,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  const oauthConfig = getGoogleCalendarOAuthConfig();
+  if (!oauthConfig.ok) {
+    console.error('Google Calendar OAuth is not configured');
+    return NextResponse.json(
+      {
+        code: 'google_calendar_not_configured',
+        error: 'Google Calendar integration is not configured',
+      },
+      { status: 503 }
+    );
+  }
+
   const auth = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientId: oauthConfig.config.clientId,
+    clientSecret: oauthConfig.config.clientSecret,
     redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
   });
 

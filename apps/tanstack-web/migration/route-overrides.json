@@ -1,5 +1,15 @@
 {
   "routes": {
+    "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The legacy GET and DELETE route remains in Next.js while the Rust port is pending. It accepts current-user satellite app sessions through withSessionAuth, normalizes workspace aliases with the attached session client, and injects the authenticated actor into the shared members handler so satellite workspace member management does not fall back to unavailable browser cookies."
+    },
+    "api:/api/workspaces/:wsId/members:apps/web/src/legacy-api-routes/workspaces/[wsId]/members/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The legacy GET and DELETE route remains in Next.js while the Rust port is pending. It accepts current-user satellite app sessions through withSessionAuth, normalizes workspace aliases with the attached session client, and injects the authenticated actor into the shared members handler so satellite workspace member management does not fall back to unavailable browser cookies."
+    },
     "api:/api/billing/:wsId/invoice:apps/web/src/legacy-api-routes/billing/[wsId]/invoice/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "satellite-app",

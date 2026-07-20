@@ -138,6 +138,8 @@ describe('Google Calendar OAuth callback route', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    vi.stubEnv('GOOGLE_CLIENT_ID', 'google-client-id');
+    vi.stubEnv('GOOGLE_CLIENT_SECRET', 'google-client-secret');
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     getTokenMock.mockResolvedValue(createTokenResponse());
@@ -148,6 +150,27 @@ describe('Google Calendar OAuth callback route', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+
+  it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(
+    'fails closed when %s is missing',
+    async (environmentVariable) => {
+      vi.stubEnv(environmentVariable, '');
+
+      const response = await GET(
+        new Request(
+          'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback?code=abc&state=workspace-1'
+        )
+      );
+
+      expect(response.status).toBe(503);
+      await expect(response.json()).resolves.toEqual({
+        code: 'google_calendar_not_configured',
+        error: 'Google Calendar integration is not configured',
+      });
+      expect(getTokenMock).not.toHaveBeenCalled();
+      expect(fullSyncMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('redirects wildcard listener callbacks back to the public Web origin', async () => {
     vi.stubEnv('GOOGLE_REDIRECT_URI', '');

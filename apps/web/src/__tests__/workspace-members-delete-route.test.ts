@@ -20,6 +20,30 @@ const mocks = vi.hoisted(() => {
   const listSeats = vi.fn();
   const revokeSeat = vi.fn();
   const workspaceBoardsEq = vi.fn();
+  const withSessionAuth = vi.fn(
+    (
+      handler: (
+        request: NextRequest,
+        authContext: {
+          supabase: typeof sessionSupabase;
+          user: { id: string };
+        },
+        params: { wsId: string }
+      ) => Promise<Response>
+    ) =>
+      async (
+        request: NextRequest,
+        routeContext?: { params?: Promise<{ wsId: string }> }
+      ) =>
+        handler(
+          request,
+          {
+            supabase: sessionSupabase,
+            user: { id: 'admin-user' },
+          },
+          (await routeContext?.params) ?? { wsId: ROOT_WORKSPACE_ID }
+        )
+  );
 
   const sessionSupabase = {
     auth: {
@@ -124,8 +148,17 @@ const mocks = vi.hoisted(() => {
     subscriptionProductMaybeSingle,
     workspaceSubscriptionSingle,
     workspaceBoardsEq,
+    withSessionAuth,
   };
 });
+
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth: mocks.withSessionAuth,
+}));
+
+vi.mock('@/legacy-api-routes/v1/users/me/session-auth', () => ({
+  CURRENT_USER_APP_SESSION_AUTH: { targetApp: ['tasks'] },
+}));
 
 vi.mock('@tuturuuu/payment/polar/server', () => ({
   createPolarClient: vi.fn(() => mocks.polarClient),
@@ -206,7 +239,8 @@ describe('workspace members delete route', () => {
       workspace_deleted: false,
     });
     expect(mocks.normalizeAppWorkspaceId).toHaveBeenCalledWith(
-      ROOT_WORKSPACE_ID
+      ROOT_WORKSPACE_ID,
+      mocks.sessionSupabase
     );
     expect(mocks.normalizeSharedWorkspaceId).toHaveBeenCalledWith(
       ROOT_WORKSPACE_ID,
@@ -218,5 +252,6 @@ describe('workspace members delete route', () => {
     expect(mocks.revokeSeat).toHaveBeenCalledWith({
       seatId: 'seat-1',
     });
+    expect(mocks.sessionSupabase.auth.getUser).not.toHaveBeenCalled();
   });
 });

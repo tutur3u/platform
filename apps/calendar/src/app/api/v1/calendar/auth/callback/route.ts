@@ -1,6 +1,7 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
 import {
   buildGoogleCalendarPostAuthRedirectUrl,
   resolveGoogleCalendarOAuthRedirectUri,
@@ -41,10 +42,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'No code provided' }, { status: 400 });
   }
 
+  const oauthConfig = getGoogleCalendarOAuthConfig();
+  if (!oauthConfig.ok) {
+    calendarOAuthError('Google Calendar OAuth is not configured');
+    return NextResponse.json(
+      {
+        code: 'google_calendar_not_configured',
+        error: 'Google Calendar integration is not configured',
+      },
+      { status: 503 }
+    );
+  }
+
   calendarOAuthDebug('🔍 [DEBUG] Creating OAuth2Client...');
   const auth = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientId: oauthConfig.config.clientId,
+    clientSecret: oauthConfig.config.clientSecret,
     redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
   });
 
