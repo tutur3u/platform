@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aggregateSaleLines } from './sale-line-items';
+import { aggregateSaleLines, checkoutLineToSaleLine } from './sale-line-items';
 
 describe('aggregateSaleLines', () => {
   it('combines repeated products and keeps their compact quantity and total', () => {
@@ -48,5 +48,28 @@ describe('aggregateSaleLines', () => {
       quantity: 3,
     });
     expect(result[0]?.total).toBeCloseTo(24.3);
+  });
+});
+
+describe('checkoutLineToSaleLine', () => {
+  it('converts processor minor units before rendering a checkout line', () => {
+    expect(
+      checkoutLineToSaleLine(
+        {
+          bundleId: null,
+          id: 'line-1',
+          listingId: 'listing-1',
+          productId: 'product-1',
+          quantity: 1,
+          subtotalAmount: 2000,
+          title: 'Märpo Elder A3 Poster',
+          unitId: 'unit-1',
+          unitPrice: 2000,
+          variantId: null,
+          warehouseId: 'warehouse-1',
+        },
+        'USD'
+      ).price
+    ).toBe(20);
   });
 });

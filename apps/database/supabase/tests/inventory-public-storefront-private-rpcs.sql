@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(38);
+select plan(39);
 
 select ok(
   to_regprocedure(
@@ -213,7 +213,7 @@ select
   null,
   null,
   '00000000-0000-4000-8000-000000001201',
-  null,
+  'https://example.test/inventory-product.png',
   null,
   false,
   owner.id,
@@ -736,6 +736,15 @@ select is(
   )::int,
   7,
   'public storefront RPC returns listing availability'
+);
+
+select is(
+  private.get_public_inventory_storefront('inventory-public-rpc-test')
+    -> 'listings'
+    -> 0
+    ->> 'imageUrl',
+  'https://example.test/inventory-product.png',
+  'public storefront listing inherits its product image'
 );
 
 select ok(

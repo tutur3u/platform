@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Package } from '@tuturuuu/icons';
 import type {
+  InventoryCheckoutLine,
   InventoryProductSummary,
   InventorySaleLine,
   InventorySaleSummary,
@@ -13,6 +14,7 @@ import {
 } from '@tuturuuu/internal-api/inventory';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { minorToMajor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { currency } from './operator-format';
@@ -78,6 +80,24 @@ export function aggregateSaleLines(
   }));
 }
 
+export function checkoutLineToSaleLine(
+  line: InventoryCheckoutLine,
+  currencyCode: string
+): InventorySaleLine {
+  return {
+    owner_id: null,
+    owner_name: '',
+    price: minorToMajor(line.unitPrice, currencyCode),
+    product_id: line.productId,
+    product_name: line.title,
+    quantity: line.quantity,
+    unit_id: line.unitId,
+    unit_name: '',
+    warehouse_id: line.warehouseId,
+    warehouse_name: '',
+  };
+}
+
 export async function loadInventorySaleLines(
   wsId: string,
   sale: InventorySaleSummary
@@ -92,18 +112,9 @@ export async function loadInventorySaleLines(
     status: 'all',
   });
   const checkout = response.data.find((item) => item.id === sale.id);
-  return (checkout?.lines ?? []).map((line) => ({
-    owner_id: null,
-    owner_name: '',
-    price: line.unitPrice,
-    product_id: line.productId,
-    product_name: line.title,
-    quantity: line.quantity,
-    unit_id: line.unitId,
-    unit_name: '',
-    warehouse_id: line.warehouseId,
-    warehouse_name: '',
-  }));
+  return (checkout?.lines ?? []).map((line) =>
+    checkoutLineToSaleLine(line, sale.currency ?? 'USD')
+  );
 }
 
 export function SaleLineItems({

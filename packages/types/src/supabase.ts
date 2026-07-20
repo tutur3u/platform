@@ -4028,6 +4028,87 @@ export type Database = {
           },
         ];
       };
+      inventory_checkout_stock_consumptions: {
+        Row: {
+          checkout_line_id: string;
+          checkout_session_id: string;
+          consumed_at: string;
+          outcome: string;
+          product_id: string;
+          requested_amount: number;
+          reservation_id: string;
+          stock_after_amount: number | null;
+          stock_before_amount: number | null;
+          stock_change_id: string | null;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          checkout_line_id: string;
+          checkout_session_id: string;
+          consumed_at?: string;
+          outcome?: string;
+          product_id: string;
+          requested_amount: number;
+          reservation_id: string;
+          stock_after_amount?: number | null;
+          stock_before_amount?: number | null;
+          stock_change_id?: string | null;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          checkout_line_id?: string;
+          checkout_session_id?: string;
+          consumed_at?: string;
+          outcome?: string;
+          product_id?: string;
+          requested_amount?: number;
+          reservation_id?: string;
+          stock_after_amount?: number | null;
+          stock_before_amount?: number | null;
+          stock_change_id?: string | null;
+          unit_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_checkout_line_id_fkey';
+            columns: ['checkout_line_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_reservation_id_fkey';
+            columns: ['reservation_id'];
+            isOneToOne: true;
+            referencedRelation: 'inventory_reservations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_unit_id_fkey';
+            columns: ['unit_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_units';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_stock_consumptions_warehouse_id_fkey';
+            columns: ['warehouse_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_warehouses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_cost_profiles: {
         Row: {
           category_id: string | null;
@@ -13134,6 +13215,10 @@ export type Database = {
           override_id: string;
           token_id: string;
         }[];
+      };
+      consume_inventory_checkout_stock: {
+        Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
+        Returns: number;
       };
       count_task_source_filter_lists: {
         Args: {
@@ -42730,7 +42815,8 @@ export type Database = {
         | 'moderate_chat'
         | 'manage_infrastructure_stress_tests'
         | 'manage_mobile_deployment_vault'
-        | 'manage_user_profile_links';
+        | 'manage_user_profile_links'
+        | 'manage_internal_accounts';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -45484,6 +45570,7 @@ export const Constants = {
         'manage_infrastructure_stress_tests',
         'manage_mobile_deployment_vault',
         'manage_user_profile_links',
+        'manage_internal_accounts',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },
