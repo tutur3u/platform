@@ -1,3 +1,4 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
 import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
@@ -18,12 +19,21 @@ const CreateTeamWorkspaceSchema = z.object({
 
 export async function POST(req: Request) {
   const supabase = await createClient(req);
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const { user: supabaseUser } =
+    await resolveAuthenticatedSessionUser(supabase);
+  const user = supabaseUser ?? getAppSessionUserFromRequest(req);
 
   if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  // Satellite apps proxy their signed app-session cookie but intentionally do
+  // not forward Supabase auth cookies. Once that signature has resolved a
+  // user, use the admin client for the same database work RLS performs for a
+  // direct web session.
+  const database = supabaseUser
+    ? supabase
+    : await createAdminClient({ noCookie: true });
 
   // Parse and validate request body
   let body: z.infer<typeof CreateTeamWorkspaceSchema>;
@@ -39,7 +49,7 @@ export async function POST(req: Request) {
 
   // Check workspace creation limits
   const limitCheck = await checkWorkspaceCreationLimit(
-    supabase,
+    database,
     user.id,
     user.email
   );
@@ -57,7 +67,7 @@ export async function POST(req: Request) {
   }
 
   // Create the team workspace (personal: false explicitly)
-  const { data: workspace, error: createError } = await supabase
+  const { data: workspace, error: createError } = await database
     .from('workspaces')
     .insert({
       name: body.name,
@@ -77,7 +87,7 @@ export async function POST(req: Request) {
   }
 
   // Update onboarding progress to link the team workspace
-  const { error: progressError } = await supabase
+  const { error: progressError } = await database
     .from('onboarding_progress')
     .upsert(
       {
@@ -96,10 +106,14 @@ export async function POST(req: Request) {
   // Create Polar customer and free subscription for the new workspace
   try {
     const polar = createPolarClient();
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     // Get or create Polar customer
-    await getOrCreatePolarCustomer({ polar, supabase, wsId: workspace.id });
+    await getOrCreatePolarCustomer({
+      polar,
+      supabase: database,
+      wsId: workspace.id,
+    });
 
     // Create free subscription for the workspace
     const subResult = await createFreeSubscription(

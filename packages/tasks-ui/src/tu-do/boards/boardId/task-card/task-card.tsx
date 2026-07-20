@@ -405,6 +405,7 @@ function TaskCardInner({
     effectiveWorkspaceId,
     initialAvailableLists,
     isSourceWorkspaceTask,
+    relationshipWorkspaceId,
     taskBoardId,
   } = getTaskCardResourceContext({
     boardId,
@@ -418,7 +419,7 @@ function TaskCardInner({
   );
   const taskShareWsId = effectiveWorkspaceId;
   const { data: workspaceLabels = [], isLoading: labelsLoading } =
-    useWorkspaceLabels(effectiveWorkspaceId);
+    useWorkspaceLabels(relationshipWorkspaceId);
 
   // Local state for UI interactions
   const [estimationSaving, setEstimationSaving] = useState(false);
@@ -436,12 +437,13 @@ function TaskCardInner({
     task,
     boardId,
     workspaceLabels,
-    workspaceId: effectiveWorkspaceId,
+    workspaceId: relationshipWorkspaceId,
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,
     labelCacheWorkspaceIds: [
       effectiveWorkspaceId,
+      relationshipWorkspaceId,
       workspaceContextWsId,
       wsId,
       task.source_workspace_id ?? undefined,
@@ -458,22 +460,30 @@ function TaskCardInner({
     {
       queryKey: [
         'task_projects',
-        effectiveWorkspaceId,
-        isSourceWorkspaceTask ? taskProjectIds.join(',') : 'all',
+        relationshipWorkspaceId,
+        isSourceWorkspaceTask &&
+        relationshipWorkspaceId === effectiveWorkspaceId
+          ? taskProjectIds.join(',')
+          : 'all',
       ],
       queryFn: async () => {
-        if (!effectiveWorkspaceId) return [];
-        if (isSourceWorkspaceTask) {
+        if (!relationshipWorkspaceId) return [];
+        if (
+          isSourceWorkspaceTask &&
+          relationshipWorkspaceId === effectiveWorkspaceId
+        ) {
           return listWorkspaceTaskProjectsByIds(
-            effectiveWorkspaceId,
+            relationshipWorkspaceId,
             taskProjectIds
           );
         }
-        return listWorkspaceTaskProjects(effectiveWorkspaceId);
+        return listWorkspaceTaskProjects(relationshipWorkspaceId);
       },
       enabled:
-        !!effectiveWorkspaceId &&
-        (!isSourceWorkspaceTask || taskProjectIds.length > 0),
+        !!relationshipWorkspaceId &&
+        (!isSourceWorkspaceTask ||
+          relationshipWorkspaceId !== effectiveWorkspaceId ||
+          taskProjectIds.length > 0),
       staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
     }
   );
@@ -489,7 +499,7 @@ function TaskCardInner({
     task,
     boardId,
     workspaceProjects,
-    workspaceId: effectiveWorkspaceId,
+    workspaceId: relationshipWorkspaceId,
     selectedTasks,
     isMultiSelectMode,
     onClearSelection,

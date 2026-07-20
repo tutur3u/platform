@@ -2,7 +2,7 @@ import {
   createWorkspaceTaskBoard,
   getUserWorkspaceConfig,
   type InternalApiClientOptions,
-  listWorkspaceBoards,
+  listWorkspaceTaskBoards,
   listWorkspaceTaskLists,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
   updateWorkspaceTaskList,
@@ -20,7 +20,14 @@ async function resolveExistingBoardId(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions
 ) {
-  const { boards } = await listWorkspaceBoards(workspaceId, internalApiOptions);
+  // The task-boards endpoint repairs a missing personal default board before
+  // returning. New accounts therefore get a usable board in the same request
+  // instead of bouncing between `/personal/tasks` and the app root.
+  const { boards } = await listWorkspaceTaskBoards(
+    workspaceId,
+    { status: 'active' },
+    internalApiOptions
+  );
   const firstBoardId = boards[0]?.id ?? null;
 
   if (!firstBoardId) return null;

@@ -72,6 +72,16 @@ export type ListWorkspacesParams = {
   q?: string;
 };
 
+export type CreateTeamWorkspacePayload = {
+  avatar_url?: string;
+  name: string;
+};
+
+export type CreateTeamWorkspaceResponse = {
+  id: string;
+  name: string;
+};
+
 function isInternalApiClientOptions(
   value: InternalApiClientOptions | ListWorkspacesParams | undefined
 ): value is InternalApiClientOptions {
@@ -130,6 +140,19 @@ export async function listCmsWorkspaces(options?: InternalApiClientOptions) {
   const client = getInternalApiClient(options);
   return client.json<InternalApiWorkspaceSummary[]>('/api/v1/cms/workspaces', {
     cache: 'no-store',
+  });
+}
+
+export async function createTeamWorkspace(
+  payload: CreateTeamWorkspacePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CreateTeamWorkspaceResponse>('/api/v1/workspaces/team', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
   });
 }
 

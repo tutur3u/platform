@@ -32,7 +32,9 @@ export default async function ProjectsPage({ params }: Props) {
     withForwardedInternalApiAuth(requestHeaders)
   );
 
-  if (!boardId) redirect('/');
+  if (!boardId) {
+    throw new Error('Unable to prepare a task board for this workspace');
+  }
 
   const workspaceSlug = toWorkspaceSlug(workspace.id, {
     personal: workspace.personal,

@@ -8200,6 +8200,7 @@
       "edit_profile": "Edit profile",
       "enable_access": "Enable access",
       "load_more": "Load more",
+      "open_menu": "Open account actions",
       "refresh": "Refresh accounts",
       "reset_password": "Reset password",
       "retry": "Try again",
@@ -8216,6 +8217,9 @@
     "dialog": {
       "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
       "confirmation_label": "Confirm account email",
+      "done": "Done",
+      "generate_password": "Generate",
+      "hide_password": "Hide password",
       "disable_access": {
         "confirm": "Disable access",
         "description": "This immediately blocks {email} from signing in until access is restored.",
@@ -8229,10 +8233,17 @@
       "new_password": "New temporary password",
       "password_help": "Use at least {count} characters and share it through an approved secure channel.",
       "reset_password": {
+        "copied": "Copied",
+        "copy_message": "Copy message",
         "confirm": "Set new password",
         "description": "This replaces the current password for {email}. Existing sessions may remain active until separately revoked.",
+        "handoff_label": "Secure handoff message",
+        "handoff_message": "Your Tuturuuu account password has been reset.\n\nEmail: {email}\nTemporary password: {password}\n\nPlease sign in and change this temporary password immediately. Do not forward this message.",
+        "success_description": "Copy the prepared handoff message now. The temporary password is not stored in this admin screen after you close it.",
+        "success_title": "Password reset successfully",
         "title": "Force reset password?"
-      }
+      },
+      "show_password": "Show password"
     },
     "empty": {
       "description": "Try a different search or loosen the active and verified filters.",

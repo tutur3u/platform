@@ -3,6 +3,7 @@
 import {
   Ban,
   CheckCircle2,
+  Ellipsis,
   HardDrive,
   KeyRound,
   Loader2,
@@ -15,6 +16,13 @@ import type {
 } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { formatBytes } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -117,57 +125,59 @@ export function InternalAccountRow({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-2 xl:justify-end">
-        <Button
-          disabled={isWorking}
-          onClick={() => setEditOpen(true)}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <Pencil className="size-4" />
-          {t('actions.edit_profile')}
-        </Button>
-        <Button
-          data-testid={`reset-password-${account.email}`}
-          disabled={account.isSelf || isWorking}
-          onClick={() => setAction('reset_password')}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          {isWorking ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <KeyRound className="size-4" />
-          )}
-          {t('actions.reset_password')}
-        </Button>
-        {account.isDisabled ? (
-          <Button
-            data-testid={`enable-access-${account.email}`}
-            disabled={account.isSelf || isWorking}
-            onClick={() => setAction('enable_access')}
-            size="sm"
-            type="button"
-            variant="secondary"
-          >
-            <CheckCircle2 className="size-4" />
-            {t('actions.enable_access')}
-          </Button>
-        ) : (
-          <Button
-            data-testid={`disable-access-${account.email}`}
-            disabled={account.isSelf || isWorking}
-            onClick={() => setAction('disable_access')}
-            size="sm"
-            type="button"
-            variant="destructive"
-          >
-            <Ban className="size-4" />
-            {t('actions.disable_access')}
-          </Button>
-        )}
+      <div className="flex xl:justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label={t('actions.open_menu')}
+              disabled={isWorking}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {isWorking ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Ellipsis className="size-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+              <Pencil className="size-4" />
+              {t('actions.edit_profile')}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              data-testid={`reset-password-${account.email}`}
+              disabled={account.isSelf}
+              onSelect={() => setAction('reset_password')}
+            >
+              <KeyRound className="size-4" />
+              {t('actions.reset_password')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {account.isDisabled ? (
+              <DropdownMenuItem
+                data-testid={`enable-access-${account.email}`}
+                disabled={account.isSelf}
+                onSelect={() => setAction('enable_access')}
+              >
+                <CheckCircle2 className="size-4" />
+                {t('actions.enable_access')}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                data-testid={`disable-access-${account.email}`}
+                disabled={account.isSelf}
+                onSelect={() => setAction('disable_access')}
+              >
+                <Ban className="size-4" />
+                {t('actions.disable_access')}
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <InternalAccountActionDialog

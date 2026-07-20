@@ -8200,6 +8200,7 @@
       "edit_profile": "Sửa hồ sơ",
       "enable_access": "Khôi phục truy cập",
       "load_more": "Tải thêm",
+      "open_menu": "Mở thao tác tài khoản",
       "refresh": "Làm mới tài khoản",
       "reset_password": "Đặt lại mật khẩu",
       "retry": "Thử lại",
@@ -8216,6 +8217,9 @@
     "dialog": {
       "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
       "confirmation_label": "Xác nhận email tài khoản",
+      "done": "Xong",
+      "generate_password": "Tạo mật khẩu",
+      "hide_password": "Ẩn mật khẩu",
       "disable_access": {
         "confirm": "Vô hiệu hóa truy cập",
         "description": "Thao tác này sẽ chặn ngay {email} đăng nhập cho đến khi quyền truy cập được khôi phục.",
@@ -8229,10 +8233,17 @@
       "new_password": "Mật khẩu tạm thời mới",
       "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
       "reset_password": {
+        "copied": "Đã sao chép",
+        "copy_message": "Sao chép tin nhắn",
         "confirm": "Đặt mật khẩu mới",
         "description": "Thao tác này thay thế mật khẩu hiện tại của {email}. Các phiên hiện có có thể vẫn hoạt động cho đến khi bị thu hồi riêng.",
+        "handoff_label": "Tin nhắn bàn giao bảo mật",
+        "handoff_message": "Mật khẩu tài khoản Tuturuuu của bạn đã được đặt lại.\n\nEmail: {email}\nMật khẩu tạm thời: {password}\n\nVui lòng đăng nhập và đổi mật khẩu tạm thời này ngay. Không chuyển tiếp tin nhắn này.",
+        "success_description": "Hãy sao chép tin nhắn bàn giao ngay. Mật khẩu tạm thời sẽ không còn hiển thị trên màn hình quản trị sau khi bạn đóng hộp thoại.",
+        "success_title": "Đặt lại mật khẩu thành công",
         "title": "Buộc đặt lại mật khẩu?"
-      }
+      },
+      "show_password": "Hiện mật khẩu"
     },
     "empty": {
       "description": "Hãy thử tìm kiếm khác hoặc nới lỏng bộ lọc đang hoạt động và đã xác minh.",

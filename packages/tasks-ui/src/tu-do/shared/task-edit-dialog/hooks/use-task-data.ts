@@ -88,6 +88,7 @@ export interface SharedTaskContext {
 
 interface UseTaskDataProps {
   wsId: string;
+  relationshipWsId?: string;
   boardId: string;
   isOpen: boolean;
   propAvailableLists?: TaskList[];
@@ -115,6 +116,7 @@ function isValidUUID(id: string): boolean {
 
 export function useTaskData({
   wsId,
+  relationshipWsId,
   boardId,
   isOpen,
   propAvailableLists,
@@ -149,6 +151,8 @@ export function useTaskData({
   // Extract real workspace ID from boardConfig (not from URL param which might be "internal")
   const realWorkspaceId = boardConfig?.ws_id || wsId;
   const isValidWsId = isValidUUID(realWorkspaceId);
+  const relationshipWorkspaceId = relationshipWsId || realWorkspaceId;
+  const isValidRelationshipWsId = isValidUUID(relationshipWorkspaceId);
 
   // Available lists — always subscribe to ['task_lists', boardId] when the dialog is open
   // (unless shared-task context) so CreateListDialog's setQueryData cache updates appear
@@ -184,7 +188,11 @@ export function useTaskData({
 
   // Workspace labels - use real workspace ID from boardConfig
   const { data: fetchedWorkspaceLabels = [] } = useWorkspaceLabels(
-    hasSharedContext ? '' : isValidWsId ? realWorkspaceId : ''
+    hasSharedContext
+      ? ''
+      : isValidRelationshipWsId
+        ? relationshipWorkspaceId
+        : ''
   );
   const workspaceLabels =
     sharedContext?.workspaceLabels || fetchedWorkspaceLabels;
@@ -311,13 +319,17 @@ export function useTaskData({
 
   // Task projects
   const { data: fetchedTaskProjects = [] } = useQuery({
-    queryKey: ['task-projects', realWorkspaceId],
+    queryKey: ['task-projects', relationshipWorkspaceId],
     queryFn: async () => {
-      if (!realWorkspaceId || !isValidWsId) return [];
-      const projects = await listWorkspaceTaskProjects(realWorkspaceId);
+      if (!relationshipWorkspaceId || !isValidRelationshipWsId) return [];
+      const projects = await listWorkspaceTaskProjects(relationshipWorkspaceId);
       return projects.filter((project) => project.status !== 'deleted');
     },
-    enabled: !!realWorkspaceId && isOpen && isValidWsId && !hasSharedContext,
+    enabled:
+      !!relationshipWorkspaceId &&
+      isOpen &&
+      isValidRelationshipWsId &&
+      !hasSharedContext,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   const taskProjects = sharedContext?.workspaceProjects || fetchedTaskProjects;

@@ -1847,6 +1847,9 @@ export {
 } from './workspace-user-audit';
 export {
   acceptWorkspaceInvite,
+  type CreateTeamWorkspacePayload,
+  type CreateTeamWorkspaceResponse,
+  createTeamWorkspace,
   createWorkspaceAvatarUploadTarget,
   declineWorkspaceInvite,
   deleteWorkspaceAvatar,

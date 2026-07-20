@@ -209,4 +209,53 @@ describe('useTaskRelationships', () => {
       taskId: 'task-1',
     });
   });
+
+  it('writes external task labels and projects through the personal overlay workspace', async () => {
+    const project = { id: 'project-1', name: 'Personal', status: 'active' };
+    const { result } = renderHook(
+      () =>
+        useTaskRelationships({
+          wsId: 'source-workspace',
+          relationshipWsId: 'personal-workspace',
+          taskId: 'external-task',
+          isCreateMode: false,
+          boardId: 'source-board',
+          selectedLabels: [],
+          selectedAssignees: [],
+          selectedProjects: [],
+          newLabelName: '',
+          newLabelColor: '#14b8a6',
+          newProjectName: '',
+          setSelectedLabels: vi.fn(),
+          setSelectedAssignees: vi.fn(),
+          setSelectedProjects: vi.fn(),
+          setAvailableLabels: vi.fn(),
+          setNewLabelName: vi.fn(),
+          setNewLabelColor: vi.fn(),
+          setNewProjectName: vi.fn(),
+          setShowNewLabelDialog: vi.fn(),
+          setShowNewProjectDialog: vi.fn(),
+          onUpdate: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.toggleLabel(newLabel);
+      await result.current.toggleProject(project);
+    });
+
+    expect(mocks.updateWorkspaceTask).toHaveBeenNthCalledWith(
+      1,
+      'personal-workspace',
+      'external-task',
+      { label_ids: ['label-new'] }
+    );
+    expect(mocks.updateWorkspaceTask).toHaveBeenNthCalledWith(
+      2,
+      'personal-workspace',
+      'external-task',
+      { project_ids: ['project-1'] }
+    );
+  });
 });

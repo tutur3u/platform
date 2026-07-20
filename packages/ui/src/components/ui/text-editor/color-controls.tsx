@@ -269,7 +269,7 @@ function SwatchButton({
       type="button"
       variant="ghost"
     >
-      {swatchKind === 'text' ? (
+      {swatchKind === 'text' || swatchKind === 'highlight' ? (
         <TextIcon className="size-4" />
       ) : (
         <span

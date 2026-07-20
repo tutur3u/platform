@@ -42,6 +42,7 @@ describe('getTaskCardResourceContext', () => {
       effectiveWorkspaceId: 'page-workspace',
       initialAvailableLists: [pageList],
       isSourceWorkspaceTask: false,
+      relationshipWorkspaceId: 'page-workspace',
       taskBoardId: 'page-board',
     });
   });
@@ -65,6 +66,7 @@ describe('getTaskCardResourceContext', () => {
       effectiveWorkspaceId: 'source-workspace',
       initialAvailableLists: undefined,
       isSourceWorkspaceTask: true,
+      relationshipWorkspaceId: 'source-workspace',
       taskBoardId: 'source-board',
     });
   });
@@ -86,6 +88,7 @@ describe('getTaskCardResourceContext', () => {
       effectiveWorkspaceId: 'page-workspace',
       initialAvailableLists: undefined,
       isSourceWorkspaceTask: true,
+      relationshipWorkspaceId: 'page-workspace',
       taskBoardId: 'source-board',
     });
   });
@@ -107,7 +110,30 @@ describe('getTaskCardResourceContext', () => {
       effectiveWorkspaceId: 'source-workspace',
       initialAvailableLists: [pageList],
       isSourceWorkspaceTask: true,
+      relationshipWorkspaceId: 'source-workspace',
       taskBoardId: 'page-board',
+    });
+  });
+
+  it('routes personal external labels and projects to the personal overlay workspace', () => {
+    expect(
+      getTaskCardResourceContext({
+        boardId: 'personal-board',
+        pageWorkspaceId: 'personal-workspace',
+        propAvailableLists: [pageList],
+        task: {
+          ...task,
+          is_personal_external: true,
+          personal_board_id: 'personal-board',
+          personal_list_id: 'personal-list',
+          source_board_id: 'source-board',
+          source_workspace_id: 'source-workspace',
+        },
+      })
+    ).toMatchObject({
+      effectiveWorkspaceId: 'source-workspace',
+      relationshipWorkspaceId: 'personal-workspace',
+      taskBoardId: 'source-board',
     });
   });
 });

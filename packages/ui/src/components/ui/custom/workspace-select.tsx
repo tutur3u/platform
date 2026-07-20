@@ -9,9 +9,11 @@ import {
   PlusCircle,
   Star,
 } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
 import {
   acceptWorkspaceInvite,
+  createTeamWorkspace,
   getWorkspace,
 } from '@tuturuuu/internal-api/workspaces';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
@@ -271,50 +273,31 @@ export function WorkspaceSelect({
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/v1/workspaces/team`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        form.reset();
-
-        const { id } = await res.json();
-
-        router.push(getWorkspaceLandingPath(id));
-        router.refresh();
-
-        setShowNewWorkspaceDialog(false);
-        setLoading(false);
-        setOpen(false);
-      } else {
-        const errorData = await res.json();
-
-        // Check if it's a workspace limit error
-        if (
-          res.status === 403 &&
-          errorData.code === WORKSPACE_LIMIT_ERROR_CODE
-        ) {
-          toast.error(t('common.workspace_limit_reached'), {
-            description: errorData.message,
-          });
-        } else {
-          toast.error(t('common.error_creating_workspace'), {
-            description:
-              errorData.message || t('common.workspace_creation_failed'),
-          });
-        }
-
-        setLoading(false);
-      }
+      const { id } = await createTeamWorkspace(formData);
+      form.reset();
+      router.push(getWorkspaceLandingPath(id));
+      router.refresh();
+      setShowNewWorkspaceDialog(false);
+      setOpen(false);
     } catch (error) {
       console.error('Error creating workspace:', error);
-      toast.error(t('common.error_creating_workspace'), {
-        description: t('common.workspace_creation_failed'),
-      });
+      if (
+        error instanceof InternalApiError &&
+        error.status === 403 &&
+        error.code === WORKSPACE_LIMIT_ERROR_CODE
+      ) {
+        toast.error(t('common.workspace_limit_reached'), {
+          description: error.message,
+        });
+      } else {
+        toast.error(t('common.error_creating_workspace'), {
+          description:
+            error instanceof Error
+              ? error.message
+              : t('common.workspace_creation_failed'),
+        });
+      }
+    } finally {
       setLoading(false);
     }
   }

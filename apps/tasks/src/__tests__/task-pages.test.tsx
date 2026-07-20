@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   getWorkspace: vi.fn(),
   headers: vi.fn(),
   createWorkspaceTaskBoard: vi.fn(),
-  listWorkspaceBoards: vi.fn(),
+  listWorkspaceTaskBoards: vi.fn(),
   listWorkspaceTaskLists: vi.fn(),
   myTasksPage: vi.fn(),
   connection: vi.fn(),
@@ -28,9 +28,9 @@ vi.mock('@tuturuuu/internal-api', () => ({
   getUserWorkspaceConfig: (
     ...args: Parameters<typeof mocks.getUserWorkspaceConfig>
   ) => mocks.getUserWorkspaceConfig(...args),
-  listWorkspaceBoards: (
-    ...args: Parameters<typeof mocks.listWorkspaceBoards>
-  ) => mocks.listWorkspaceBoards(...args),
+  listWorkspaceTaskBoards: (
+    ...args: Parameters<typeof mocks.listWorkspaceTaskBoards>
+  ) => mocks.listWorkspaceTaskBoards(...args),
   listWorkspaceTaskLists: (
     ...args: Parameters<typeof mocks.listWorkspaceTaskLists>
   ) => mocks.listWorkspaceTaskLists(...args),
@@ -120,7 +120,7 @@ describe('tasks app task pages', () => {
         name: 'Created',
       },
     });
-    mocks.listWorkspaceBoards.mockResolvedValue({
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({
       boards: [
         {
           archived_at: null,
@@ -191,7 +191,7 @@ describe('tasks app task pages', () => {
   });
 
   it('creates a board with translated default list names when no board exists', async () => {
-    mocks.listWorkspaceBoards.mockResolvedValue({ boards: [] });
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
 
     const { default: Page } = await import(
       '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
@@ -224,8 +224,8 @@ describe('tasks app task pages', () => {
   });
 
   it('refetches boards after an auto-create race and redirects to the winner', async () => {
-    mocks.listWorkspaceBoards
-      .mockResolvedValueOnce({ boards: [] })
+    mocks.listWorkspaceTaskBoards
+      .mockResolvedValueOnce({ boards: [], count: 0 })
       .mockResolvedValueOnce({
         boards: [
           {
@@ -247,6 +247,32 @@ describe('tasks app task pages', () => {
     ).rejects.toMatchObject({
       href: '/workspace-1/boards/board-race-winner',
     });
+  });
+
+  it('uses the repairing task-board endpoint for new personal accounts', async () => {
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({
+      boards: [{ id: 'personal-default', name: 'Tasks' }],
+      count: 1,
+    });
+    mocks.getWorkspace.mockResolvedValue({
+      id: 'personal-workspace',
+      joined: true,
+      personal: true,
+    });
+
+    const { default: Page } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
+    );
+
+    await expect(
+      Page({ params: Promise.resolve({ wsId: 'personal' }) })
+    ).rejects.toMatchObject({ href: '/personal/boards/personal-default' });
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledWith(
+      'personal-workspace',
+      { status: 'active' },
+      { auth: 'forwarded' }
+    );
+    expect(mocks.createWorkspaceTaskBoard).not.toHaveBeenCalled();
   });
 
   it('forces the board detail route to open kanban by default', async () => {
@@ -408,6 +434,6 @@ describe('tasks app task pages', () => {
     ).rejects.toMatchObject({
       href: '/onboarding',
     });
-    expect(mocks.listWorkspaceBoards).not.toHaveBeenCalled();
+    expect(mocks.listWorkspaceTaskBoards).not.toHaveBeenCalled();
   });
 });

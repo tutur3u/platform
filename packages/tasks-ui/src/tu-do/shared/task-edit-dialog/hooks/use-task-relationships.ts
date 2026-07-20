@@ -27,6 +27,7 @@ import {
 
 export interface UseTaskRelationshipsProps {
   wsId: string;
+  relationshipWsId?: string;
   labelCacheWorkspaceId?: string;
   taskId?: string;
   isCreateMode: boolean;
@@ -157,6 +158,7 @@ function normalizeTaskProjects(projects: WorkspaceTaskProject[]) {
 
 export function useTaskRelationships({
   wsId,
+  relationshipWsId,
   labelCacheWorkspaceId,
   taskId,
   isCreateMode,
@@ -185,6 +187,7 @@ export function useTaskRelationships({
     contextBroadcast ?? getActiveBroadcast() ?? fallbackBroadcast;
   const [creatingLabel, setCreatingLabel] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
+  const metadataWorkspaceId = relationshipWsId || wsId;
 
   const toggleLabel = useCallback(
     async (label: WorkspaceTaskLabel) => {
@@ -210,7 +213,7 @@ export function useTaskRelationships({
                 .localeCompare((b?.name || '').toLowerCase())
             );
 
-        await updateWorkspaceTask(wsId, taskId, {
+        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           label_ids: nextSelectedLabels.map((entry) => entry.id),
         });
 
@@ -237,7 +240,7 @@ export function useTaskRelationships({
     [
       selectedLabels,
       isCreateMode,
-      wsId,
+      metadataWorkspaceId,
       taskId,
       boardId,
       queryClient,
@@ -333,7 +336,7 @@ export function useTaskRelationships({
           ? selectedProjects.filter((entry) => entry.id !== project.id)
           : [...selectedProjects, project];
 
-        await updateWorkspaceTask(wsId, taskId, {
+        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
@@ -360,7 +363,7 @@ export function useTaskRelationships({
     [
       selectedProjects,
       isCreateMode,
-      wsId,
+      metadataWorkspaceId,
       taskId,
       queryClient,
       boardId,
@@ -377,13 +380,13 @@ export function useTaskRelationships({
 
     let newLabel: WorkspaceTaskLabel;
     try {
-      newLabel = await createWorkspaceLabel(wsId, {
+      newLabel = await createWorkspaceLabel(metadataWorkspaceId, {
         name: newLabelName.trim(),
         color: newLabelColor,
       });
       upsertWorkspaceLabelCaches({
         queryClient,
-        workspaceIds: [wsId, labelCacheWorkspaceId],
+        workspaceIds: [metadataWorkspaceId, labelCacheWorkspaceId],
         label: newLabel,
       });
     } catch (error: unknown) {
@@ -407,7 +410,7 @@ export function useTaskRelationships({
           compareLabelsByName(a, b)
         );
 
-        await updateWorkspaceTask(wsId, taskId, {
+        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           label_ids: nextSelectedLabels.map((entry) => entry.id),
         });
 
@@ -451,7 +454,7 @@ export function useTaskRelationships({
   }, [
     newLabelName,
     newLabelColor,
-    wsId,
+    metadataWorkspaceId,
     boardId,
     taskId,
     queryClient,
@@ -473,16 +476,19 @@ export function useTaskRelationships({
     setCreatingProject(true);
 
     try {
-      const newProjectResponse = await createWorkspaceProject(wsId, {
-        name: newProjectName.trim(),
-      });
+      const newProjectResponse = await createWorkspaceProject(
+        metadataWorkspaceId,
+        {
+          name: newProjectName.trim(),
+        }
+      );
       const newProject: WorkspaceTaskProject = {
         ...newProjectResponse,
         status: newProjectResponse.status ?? null,
       };
 
       await queryClient.invalidateQueries({
-        queryKey: ['task-projects', wsId],
+        queryKey: ['task-projects', metadataWorkspaceId],
       });
 
       if (isCreateMode) {
@@ -493,7 +499,7 @@ export function useTaskRelationships({
       } else if (taskId) {
         const nextSelectedProjects = [...selectedProjects, newProject];
 
-        await updateWorkspaceTask(wsId, taskId, {
+        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
@@ -529,7 +535,7 @@ export function useTaskRelationships({
     }
   }, [
     newProjectName,
-    wsId,
+    metadataWorkspaceId,
     boardId,
     taskId,
     queryClient,

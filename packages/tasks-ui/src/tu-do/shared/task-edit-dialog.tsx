@@ -17,6 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
+import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -246,6 +247,15 @@ export function TaskEditDialog({
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
+  const relationshipTask = task
+    ? ({ ...task, ...visibleTaskSnapshot } as Task)
+    : undefined;
+  const relationshipWorkspaceId =
+    !isCreateMode &&
+    isPersonalWorkspace &&
+    isPersonalExternalOverlayTask(relationshipTask)
+      ? wsId
+      : effectiveTaskWsId;
   const pathname = usePathname();
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -622,6 +632,7 @@ export function TaskEditDialog({
     workspaceTasksLoading,
   } = useTaskData({
     wsId: effectiveTaskWsId,
+    relationshipWsId: relationshipWorkspaceId,
     boardId,
     isOpen,
     propAvailableLists,
@@ -1064,7 +1075,8 @@ export function TaskEditDialog({
     creatingProject,
   } = useTaskRelationships({
     wsId: effectiveTaskWsId,
-    labelCacheWorkspaceId: boardConfig?.ws_id || effectiveTaskWsId,
+    relationshipWsId: relationshipWorkspaceId,
+    labelCacheWorkspaceId: relationshipWorkspaceId,
     taskId: task?.id,
     isCreateMode,
     boardId,
