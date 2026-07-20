@@ -60,6 +60,7 @@
     "./effect": "./src/effect.ts",
     "./email/validation": "./src/email/validation.ts",
     "./hooks/*": "./src/hooks/*.ts",
+    "./task-helper/personal-external-staging": "./src/task-helper/personal-external-staging.ts",
     "./*": "./src/*.ts",
     "./common/scan": "./src/common/scan.tsx",
     "./common/metadata": "./src/common/metadata.ts",

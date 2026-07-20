@@ -16,6 +16,17 @@ describe('task UI Tailwind source boundary', () => {
     expect(
       require.resolve('@tuturuuu/ui/lib/task-personal-external')
     ).toContain('packages/ui/src/lib/task-personal-external.ts');
+    expect(
+      require.resolve('@tuturuuu/utils/task-helper/personal-external-staging')
+    ).toContain('packages/utils/src/task-helper/personal-external-staging.ts');
+
+    const overlaySource = readRepoFile(
+      'packages/ui/src/lib/task-personal-external.ts'
+    );
+    expect(overlaySource).toContain(
+      '@tuturuuu/utils/task-helper/personal-external-staging'
+    );
+    expect(overlaySource).not.toContain("from '@tuturuuu/utils/task-helper'");
   });
 
   it('owns and exports its Tailwind source registration', () => {

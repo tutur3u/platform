@@ -1,5 +1,5 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { isPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper';
+import { isPersonalExternalStagingListId } from '@tuturuuu/utils/task-helper/personal-external-staging';
 
 function hasValue(value: string | null | undefined): value is string {
   return typeof value === 'string' && value.length > 0;
