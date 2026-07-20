@@ -88,6 +88,9 @@ describe('AppsLauncherDialog', () => {
         .querySelector('[data-slot="dialog-header"]')
         ?.contains(launcherToolbar)
     ).toBe(true);
+    const dialogHeader = document.querySelector('[data-slot="dialog-header"]');
+    expect(dialogHeader?.className).toContain('flex-row');
+    expect(dialogHeader?.className).not.toContain('flex-col');
     expect(
       document.querySelector('[data-slot="apps-launcher-search-trigger"]')
     ).toBeTruthy();

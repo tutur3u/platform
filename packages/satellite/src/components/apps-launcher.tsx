@@ -133,7 +133,7 @@ export function AppsLauncherDialog({
         showCloseButton={false}
         style={dialogStyle}
       >
-        <DialogHeader className="flex w-full shrink-0 items-center gap-2 border-b bg-muted/20 px-3 py-2.5 text-left sm:px-4">
+        <DialogHeader className="flex w-full shrink-0 flex-row items-center gap-2 border-b bg-muted/20 px-3 py-2.5 text-left sm:px-4">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <LauncherMark />
             <div className="min-w-0">
