@@ -16,7 +16,6 @@ import {
   openTaskFromBoard,
   readServiceRows,
   selectBoardFromSwitcher,
-  TASKS_E2E_ORIGIN,
   WEB_E2E_ORIGIN,
 } from './helpers/tasks-workspace-lifecycle';
 
@@ -81,7 +80,8 @@ async function signUpWithEmailOtp(page: Page, email: string): Promise<void> {
 
 async function completeCrossAppLoginWhenRequested(
   page: Page,
-  email: string
+  email: string,
+  tasksOrigin: string
 ): Promise<void> {
   const emailInput = page
     .getByPlaceholder('Enter your email or username')
@@ -106,8 +106,7 @@ async function completeCrossAppLoginWhenRequested(
     const verifierResponsePromise = page.waitForResponse((response) => {
       const url = new URL(response.url());
       return (
-        url.origin === TASKS_E2E_ORIGIN &&
-        url.pathname.endsWith('/verify-token')
+        url.origin === tasksOrigin && url.pathname.endsWith('/verify-token')
       );
     });
     await submitEmailOtp(page, email);
@@ -118,7 +117,7 @@ async function completeCrossAppLoginWhenRequested(
     ).toBeLessThan(400);
     await expect
       .poll(async () => {
-        const cookies = await page.context().cookies(TASKS_E2E_ORIGIN);
+        const cookies = await page.context().cookies(tasksOrigin);
         return cookies.map((cookie) => cookie.name);
       })
       .toContain('tuturuuu_app_session');
@@ -379,8 +378,12 @@ test.describe('Tasks workspace lifecycle', () => {
       let boardId = '';
       let ownerTaskId = '';
       await test.step('launch Tasks and create a configured board and task through the UI', async () => {
-        await launchTasksFromAppsPicker(ownerPage);
-        await completeCrossAppLoginWhenRequested(ownerPage, ownerEmail);
+        const ownerTasksOrigin = await launchTasksFromAppsPicker(ownerPage);
+        await completeCrossAppLoginWhenRequested(
+          ownerPage,
+          ownerEmail,
+          ownerTasksOrigin
+        );
         await expect(ownerPage).toHaveURL(
           new RegExp(`/${workspaceId}/boards/[0-9a-f-]+$`),
           { timeout: 120_000 }
@@ -498,8 +501,12 @@ test.describe('Tasks workspace lifecycle', () => {
 
         await completeInvitedMemberOnboarding(memberPage, workspaceId!);
 
-        await launchTasksFromAppsPicker(memberPage);
-        await completeCrossAppLoginWhenRequested(memberPage, memberEmail);
+        const memberTasksOrigin = await launchTasksFromAppsPicker(memberPage);
+        await completeCrossAppLoginWhenRequested(
+          memberPage,
+          memberEmail,
+          memberTasksOrigin
+        );
 
         await selectBoardFromSwitcher(
           memberPage,

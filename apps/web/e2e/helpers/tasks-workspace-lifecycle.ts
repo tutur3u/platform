@@ -9,6 +9,19 @@ export const TASKS_E2E_ORIGIN =
   process.env.TASKS_BASE_URL ?? 'http://localhost:7809';
 export const WEB_E2E_ORIGIN = process.env.BASE_URL ?? 'http://localhost:7803';
 
+function isSafeLocalTasksOrigin(url: URL): boolean {
+  const isDirectLocalhost =
+    url.protocol === 'http:' &&
+    ['127.0.0.1', 'localhost'].includes(url.hostname) &&
+    url.port === '7809';
+  const isPortlessLocalhost =
+    url.protocol === 'https:' &&
+    url.hostname === 'tasks.tuturuuu.localhost' &&
+    ['', '1355'].includes(url.port);
+
+  return isDirectLocalhost || isPortlessLocalhost;
+}
+
 type LifecycleFixtures = {
   userEmails?: string[];
   userIds?: string[];
@@ -52,14 +65,7 @@ export function assertSafeTasksLifecycleEnvironment(): void {
   assertSafeE2EEnvironment();
 
   const tasksUrl = new URL(TASKS_E2E_ORIGIN);
-  const isLocalTasksOrigin =
-    tasksUrl.protocol === 'http:' &&
-    ['127.0.0.1', 'localhost', 'tasks.tuturuuu.localhost'].includes(
-      tasksUrl.hostname
-    ) &&
-    tasksUrl.port === '7809';
-
-  if (!isLocalTasksOrigin) {
+  if (!isSafeLocalTasksOrigin(tasksUrl)) {
     throw new Error(
       `Refusing to run Tasks lifecycle E2E against non-local Tasks origin: ${tasksUrl.origin}`
     );
@@ -71,7 +77,7 @@ export function assertSafeTasksLifecycleEnvironment(): void {
  * the current-tab preference keeps Playwright on the page that performs the
  * normal cross-app handoff.
  */
-export async function launchTasksFromAppsPicker(page: Page): Promise<void> {
+export async function launchTasksFromAppsPicker(page: Page): Promise<string> {
   await page
     .getByRole('button', { name: 'Apps', exact: true })
     .click({ timeout: 30_000 });
@@ -86,11 +92,18 @@ export async function launchTasksFromAppsPicker(page: Page): Promise<void> {
 
   const tasksLink = dialog.getByRole('link', { name: 'Tasks', exact: true });
   await expect(tasksLink).not.toHaveAttribute('target', '_blank');
-  await expect(tasksLink).toHaveAttribute(
-    'href',
-    new RegExp(`^${escapeRegExp(TASKS_E2E_ORIGIN)}/`)
-  );
+  const tasksHref = await tasksLink.getAttribute('href');
+  expect(
+    tasksHref,
+    'expected the Apps picker to expose a Tasks URL'
+  ).toBeTruthy();
+  const tasksUrl = new URL(tasksHref!, WEB_E2E_ORIGIN);
+  expect(
+    isSafeLocalTasksOrigin(tasksUrl),
+    `refusing to launch Tasks lifecycle E2E at ${tasksUrl.origin}`
+  ).toBe(true);
   await tasksLink.click({ timeout: 30_000 });
+  return tasksUrl.origin;
 }
 
 export async function createBoardFromSwitcher(
