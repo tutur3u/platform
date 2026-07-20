@@ -395,6 +395,32 @@ function getAutoEnvironment(currentOrigin?: string): LaunchableAppEnvironment {
   return process.env.NODE_ENV === 'production' ? 'production' : 'portless';
 }
 
+function preservePortlessProxyPort(
+  targetOrigin: string,
+  currentOrigin?: string
+): string {
+  if (!currentOrigin) return targetOrigin;
+
+  try {
+    const currentUrl = new URL(currentOrigin);
+    const targetUrl = new URL(targetOrigin);
+    const isCurrentPortlessHost =
+      currentUrl.hostname === 'tuturuuu.localhost' ||
+      currentUrl.hostname.endsWith('.tuturuuu.localhost');
+    const isTargetPortlessHost =
+      targetUrl.hostname === 'tuturuuu.localhost' ||
+      targetUrl.hostname.endsWith('.tuturuuu.localhost');
+
+    if (isCurrentPortlessHost && isTargetPortlessHost && currentUrl.port) {
+      targetUrl.port = currentUrl.port;
+    }
+
+    return targetUrl.origin;
+  } catch {
+    return targetOrigin;
+  }
+}
+
 export function getLaunchableAppOrigin(
   app: LaunchableApp,
   {
@@ -413,7 +439,10 @@ export function getLaunchableAppOrigin(
     return app.localhostOrigin ?? getTuturuuuPortlessAppOrigin(app.portlessApp);
   }
 
-  return getTuturuuuPortlessAppOrigin(app.portlessApp);
+  return preservePortlessProxyPort(
+    getTuturuuuPortlessAppOrigin(app.portlessApp),
+    currentOrigin
+  );
 }
 
 function trimTrailingSlashes(value: string) {

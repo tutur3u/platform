@@ -15,6 +15,7 @@ const {
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
+  LOCAL_E2E_TASKS_BASE_URL,
   LOCAL_E2E_TANSTACK_BASE_URL,
   LOCAL_E2E_TANSTACK_DIRECT_URL,
   LOCAL_E2E_UPSTASH_REDIS_REST_TOKEN,
@@ -118,6 +119,7 @@ test('local E2E safety allowlist accepts TanStack localhost origins', () => {
   );
   assert.equal(LOCAL_E2E_TANSTACK_DIRECT_URL, 'http://127.0.0.1:7824');
   assert.equal(SAFE_LOCAL_WEB_ORIGINS.has(LOCAL_E2E_TANSTACK_DIRECT_URL), true);
+  assert.equal(SAFE_LOCAL_WEB_ORIGINS.has(LOCAL_E2E_TASKS_BASE_URL), true);
   assert.equal(
     SAFE_LOCAL_WEB_ORIGINS.has('https://tanstack.tuturuuu.localhost'),
     true

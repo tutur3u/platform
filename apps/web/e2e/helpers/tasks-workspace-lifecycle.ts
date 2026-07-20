@@ -17,7 +17,7 @@ function isSafeLocalTasksOrigin(url: URL): boolean {
   const isPortlessLocalhost =
     url.protocol === 'https:' &&
     url.hostname === 'tasks.tuturuuu.localhost' &&
-    ['', '1355'].includes(url.port);
+    url.port === '1355';
 
   return isDirectLocalhost || isPortlessLocalhost;
 }
@@ -102,6 +102,10 @@ export async function launchTasksFromAppsPicker(page: Page): Promise<string> {
     isSafeLocalTasksOrigin(tasksUrl),
     `refusing to launch Tasks lifecycle E2E at ${tasksUrl.origin}`
   ).toBe(true);
+  expect(
+    tasksUrl.origin,
+    'expected the Apps picker to target the running Tasks test server'
+  ).toBe(new URL(TASKS_E2E_ORIGIN).origin);
   await tasksLink.click({ timeout: 30_000 });
   return tasksUrl.origin;
 }

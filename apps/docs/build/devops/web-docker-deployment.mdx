@@ -394,6 +394,15 @@ preview origins before resuming canary traffic.
    against that shared-cookie origin, and
 6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
+Full web E2E runs also start the Tasks satellite on its native port, register
+`https://tasks.tuturuuu.localhost:1355` with the shared Portless proxy, and wait
+for its login route before Playwright begins. This lets cross-app scenarios use
+the same Apps picker, token exchange, shared-session cookie, and satellite UI
+that users operate. Set `E2E_TASKS_SATELLITE_ENABLED=0` only when a focused
+local spec cannot reach Tasks and does not exercise cross-app navigation; CI
+keeps the satellite enabled for every shard so test redistribution cannot
+silently strand the Tasks lifecycle on an unserved hostname.
+
 Pass `--frontend next`, `--frontend tanstack`, or `--frontend compare` to select
 the legacy Next.js host, the TanStack host, or both sequentially:
 

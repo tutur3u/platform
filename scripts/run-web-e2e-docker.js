@@ -21,6 +21,15 @@ const {
 } = require('./e2e-local-environment.js');
 const { SKIP_WATCH_HISTORY_ENV } = require('./watch-blue-green/history.js');
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
+const {
+  getTasksSatellitePortlessEnv,
+  getTasksSatellitePlaywrightEnv,
+  printTasksSatelliteLog,
+  shouldStartTasksSatellite,
+  startTasksSatellite,
+  stopTasksSatellite,
+  waitForTasksSatellite,
+} = require('./e2e-tasks-satellite.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
@@ -2013,6 +2022,9 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
 
   let stackTouched = false;
   let runError = null;
+  let tasksSatellite = null;
+
+  let playwrightEnv = env;
 
   try {
     stackTouched = true;
@@ -2030,17 +2042,46 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
+    if (shouldStartTasksSatellite(frontendArgs.playwrightArgs, env)) {
+      tasksSatellite = startTasksSatellite({ env });
+      await ensurePortlessRoute({
+        env: getTasksSatellitePortlessEnv(env),
+      });
+      await waitForTasksSatellite(tasksSatellite, (url) =>
+        waitForUrl(url, {
+          timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+        })
+      );
+      playwrightEnv = getTasksSatellitePlaywrightEnv(env);
+    }
     await runCommand(
       'bunx',
       ['playwright', 'test', ...frontendArgs.playwrightArgs],
       {
         cwd: WEB_DIR,
-        env,
+        env: playwrightEnv,
       }
     );
   } catch (error) {
     runError = error;
     await printE2EFailureDiagnostics({ env, error });
+    printTasksSatelliteLog(tasksSatellite);
+  }
+
+  if (tasksSatellite) {
+    try {
+      await stopTasksSatellite(tasksSatellite);
+    } catch (tasksCleanupError) {
+      if (!runError) {
+        runError = tasksCleanupError;
+      } else {
+        console.error(
+          tasksCleanupError instanceof Error
+            ? tasksCleanupError.message
+            : tasksCleanupError
+        );
+      }
+    }
   }
 
   if (stackTouched && !shouldKeepStack(env)) {

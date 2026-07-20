@@ -33,7 +33,7 @@ export function getTasksAppOriginClient() {
   }
 
   if (typeof window !== 'undefined') {
-    const { hostname, protocol } = window.location;
+    const { hostname, port, protocol } = window.location;
     const normalizedHostname = hostname.toLowerCase();
 
     if (
@@ -49,7 +49,7 @@ export function getTasksAppOriginClient() {
       normalizedHostname === 'tuturuuu.localhost' ||
       normalizedHostname.endsWith('.tuturuuu.localhost')
     ) {
-      return `${protocol}//tasks.tuturuuu.localhost`;
+      return `${protocol}//tasks.tuturuuu.localhost${port ? `:${port}` : ''}`;
     }
 
     if (

@@ -184,6 +184,7 @@ jobs:
       DOCKER_WEB_CACHE_WEB_FROM: type=gha,scope=docker-web-prod,timeout=10m
       DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.shard }}
       E2E_SHARD_INDEX: ${{ matrix.shard }}
+      E2E_TASKS_SATELLITE_ENABLED: "1"
       E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
       PORTLESS_PORT: "1355"

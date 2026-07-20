@@ -101,6 +101,28 @@ describe('launchable apps', () => {
         currentOrigin: 'https://calendar.tuturuuu.localhost',
       })
     ).toBe('https://tasks.tuturuuu.localhost');
+
+    expect(
+      getLaunchableAppOrigin(app!, {
+        currentOrigin: 'https://tuturuuu.localhost:1355',
+      })
+    ).toBe('https://tasks.tuturuuu.localhost:1355');
+  });
+
+  it('preserves the Portless proxy port in full app URLs', () => {
+    const app = getLaunchableApp('tasks');
+
+    expect(app).not.toBeNull();
+    expect(
+      resolveLaunchableAppUrl({
+        app: app!,
+        currentOrigin: 'https://tuturuuu.localhost:1355',
+        searchParams: { source: 'sidebar-apps' },
+        workspace: teamWorkspace,
+      })
+    ).toBe(
+      'https://tasks.tuturuuu.localhost:1355/team-workspace/tasks?source=sidebar-apps'
+    );
   });
 
   it('uses default paths when no workspace is provided', () => {
