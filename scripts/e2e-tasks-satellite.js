@@ -6,6 +6,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const TASKS_DIR = path.join(ROOT_DIR, 'apps', 'tasks');
 const TASKS_PORT = '7809';
 const TASKS_ROUTE_NAME = 'tasks.tuturuuu';
+const TASKS_LIFECYCLE_SPEC = 'tasks-workspace-lifecycle.noauth.spec.ts';
 const TASKS_HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';
 const DEFAULT_LOG_PATH = path.join(
   ROOT_DIR,
@@ -22,14 +23,40 @@ function isFalsy(value) {
   return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
 }
 
-function shouldStartTasksSatellite(playwrightArgs = [], env = process.env) {
+function shouldStartTasksSatellite(
+  playwrightArgs = [],
+  env = process.env,
+  playwrightTestList = ''
+) {
   if (isFalsy(env.E2E_TASKS_SATELLITE_ENABLED)) return false;
   if (isTruthy(env.E2E_TASKS_SATELLITE_ENABLED)) return true;
   if (playwrightArgs.length === 0) return true;
 
-  return playwrightArgs.some((arg) =>
-    String(arg).includes('tasks-workspace-lifecycle')
+  return (
+    playwrightArgs.some((arg) => String(arg).includes(TASKS_LIFECYCLE_SPEC)) ||
+    String(playwrightTestList).includes(TASKS_LIFECYCLE_SPEC)
   );
+}
+
+function shouldDiscoverTasksSatelliteFromTestList(
+  playwrightArgs = [],
+  env = process.env
+) {
+  if (
+    isFalsy(env.E2E_TASKS_SATELLITE_ENABLED) ||
+    isTruthy(env.E2E_TASKS_SATELLITE_ENABLED) ||
+    playwrightArgs.length === 0
+  ) {
+    return false;
+  }
+
+  return !playwrightArgs.some((arg) =>
+    String(arg).includes(TASKS_LIFECYCLE_SPEC)
+  );
+}
+
+function getTasksSatelliteDependencyBuildArgs() {
+  return ['turbo:local', 'run', 'build', '--filter=@tuturuuu/tasks^...'];
 }
 
 function getTasksSatelliteUrl(env = process.env) {
@@ -159,12 +186,15 @@ module.exports = {
   getTasksSatellitePortlessEnv,
   getTasksSatellitePlaywrightEnv,
   getTasksSatelliteUrl,
+  getTasksSatelliteDependencyBuildArgs,
   printTasksSatelliteLog,
+  shouldDiscoverTasksSatelliteFromTestList,
   shouldStartTasksSatellite,
   startTasksSatellite,
   stopTasksSatellite,
   TASKS_DIR,
   TASKS_HOST_REDIS_REST_URL,
+  TASKS_LIFECYCLE_SPEC,
   TASKS_PORT,
   TASKS_ROUTE_NAME,
   waitForTasksSatellite,

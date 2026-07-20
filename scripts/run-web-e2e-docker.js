@@ -24,7 +24,9 @@ const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const {
   getTasksSatellitePortlessEnv,
   getTasksSatellitePlaywrightEnv,
+  getTasksSatelliteDependencyBuildArgs,
   printTasksSatelliteLog,
+  shouldDiscoverTasksSatelliteFromTestList,
   shouldStartTasksSatellite,
   startTasksSatellite,
   stopTasksSatellite,
@@ -2027,6 +2029,35 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
   let playwrightEnv = env;
 
   try {
+    let tasksSatelliteRequired = shouldStartTasksSatellite(
+      frontendArgs.playwrightArgs,
+      env
+    );
+    if (
+      !tasksSatelliteRequired &&
+      shouldDiscoverTasksSatelliteFromTestList(frontendArgs.playwrightArgs, env)
+    ) {
+      const listedTests = await runCommandForOutput(
+        'bunx',
+        ['playwright', 'test', '--list', ...frontendArgs.playwrightArgs],
+        {
+          cwd: WEB_DIR,
+          env,
+        }
+      );
+      tasksSatelliteRequired = shouldStartTasksSatellite(
+        frontendArgs.playwrightArgs,
+        env,
+        `${listedTests.stdout}\n${listedTests.stderr}`
+      );
+    }
+    if (tasksSatelliteRequired) {
+      await runCommand('bun', getTasksSatelliteDependencyBuildArgs(), {
+        cwd: ROOT_DIR,
+        env,
+      });
+    }
+
     stackTouched = true;
     await runDockerWebWorkflow(
       parseDockerWebArgs(getDockerWebUpArgs(envFilePath, env)),
@@ -2042,7 +2073,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
-    if (shouldStartTasksSatellite(frontendArgs.playwrightArgs, env)) {
+    if (tasksSatelliteRequired) {
       tasksSatellite = startTasksSatellite({ env });
       await ensurePortlessRoute({
         env: getTasksSatellitePortlessEnv(env),

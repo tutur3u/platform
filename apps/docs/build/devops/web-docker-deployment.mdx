@@ -398,10 +398,13 @@ Full web E2E runs also start the Tasks satellite on its native port, register
 `https://tasks.tuturuuu.localhost:1355` with the shared Portless proxy, and wait
 for its login route before Playwright begins. This lets cross-app scenarios use
 the same Apps picker, token exchange, shared-session cookie, and satellite UI
-that users operate. Set `E2E_TASKS_SATELLITE_ENABLED=0` only when a focused
-local spec cannot reach Tasks and does not exercise cross-app navigation; CI
-keeps the satellite enabled for every shard so test redistribution cannot
-silently strand the Tasks lifecycle on an unserved hostname.
+that users operate. Before starting Tasks, the runner builds the satellite's
+compiled workspace dependencies so a fresh CI checkout matches a prepared local
+checkout. For sharded runs, it asks Playwright which tests belong to the current
+shard and starts Tasks only for the shard that owns the lifecycle spec, so suite
+redistribution cannot strand that spec or make unrelated shards pay the
+satellite startup cost. Set `E2E_TASKS_SATELLITE_ENABLED=0` only when a focused
+local spec cannot reach Tasks and does not exercise cross-app navigation.
 
 Pass `--frontend next`, `--frontend tanstack`, or `--frontend compare` to select
 the legacy Next.js host, the TanStack host, or both sequentially:

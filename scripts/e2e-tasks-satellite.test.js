@@ -4,9 +4,11 @@ const test = require('node:test');
 
 const {
   createTasksSatelliteEnv,
+  getTasksSatelliteDependencyBuildArgs,
   getTasksSatellitePortlessEnv,
   getTasksSatellitePlaywrightEnv,
   getTasksSatelliteUrl,
+  shouldDiscoverTasksSatelliteFromTestList,
   shouldStartTasksSatellite,
   startTasksSatellite,
   waitForTasksSatellite,
@@ -30,6 +32,53 @@ test('starts the Tasks satellite for full, focused, and explicitly enabled E2E r
     }),
     false
   );
+  assert.equal(
+    shouldStartTasksSatellite(
+      ['--shard=3/4'],
+      {},
+      'tasks-workspace-lifecycle.noauth.spec.ts'
+    ),
+    true
+  );
+  assert.equal(
+    shouldStartTasksSatellite(['--shard=1/4'], {}, 'auth.spec.ts'),
+    false
+  );
+});
+
+test('discovers sharded Tasks lifecycle ownership without forcing every shard', () => {
+  assert.equal(
+    shouldDiscoverTasksSatelliteFromTestList(['--shard=1/4'], {}),
+    true
+  );
+  assert.equal(
+    shouldDiscoverTasksSatelliteFromTestList(
+      ['tasks-workspace-lifecycle.noauth.spec.ts'],
+      {}
+    ),
+    false
+  );
+  assert.equal(
+    shouldDiscoverTasksSatelliteFromTestList(['--shard=1/4'], {
+      E2E_TASKS_SATELLITE_ENABLED: '1',
+    }),
+    false
+  );
+  assert.equal(
+    shouldDiscoverTasksSatelliteFromTestList(['--shard=1/4'], {
+      E2E_TASKS_SATELLITE_ENABLED: '0',
+    }),
+    false
+  );
+});
+
+test('builds only Tasks workspace dependencies before satellite startup', () => {
+  assert.deepEqual(getTasksSatelliteDependencyBuildArgs(), [
+    'turbo:local',
+    'run',
+    'build',
+    '--filter=@tuturuuu/tasks^...',
+  ]);
 });
 
 test('builds host-safe Tasks runtime and Portless environments', () => {
