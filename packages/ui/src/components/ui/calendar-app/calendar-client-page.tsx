@@ -5,9 +5,15 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
-import { type ComponentType, useState } from 'react';
+import {
+  type ComponentType,
+  type Dispatch,
+  type SetStateAction,
+  useState,
+} from 'react';
 import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-timezone-dialog';
 import { useCalendarSettings } from './hooks';
 
@@ -24,13 +30,23 @@ interface CalendarClientPageProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   workspace: Workspace;
   enableSmartScheduling: boolean;
+  externalState?: {
+    availableViews: { value: string; label: string; disabled?: boolean }[];
+    date: Date;
+    setDate: Dispatch<SetStateAction<Date>>;
+    setView: Dispatch<SetStateAction<CalendarView>>;
+    view: CalendarView;
+  };
+  showConnectionsManager?: boolean;
 }
 
 export function CalendarClientPage({
   experimentalGoogleToken,
   workspace,
   enableSmartScheduling,
+  externalState,
   HeaderActions,
+  showConnectionsManager,
 }: CalendarClientPageProps) {
   const t = useTranslations('calendar');
   const locale = useLocale();
@@ -69,7 +85,9 @@ export function CalendarClientPage({
             : null
         }
         extras={extras}
+        externalState={externalState}
         initialSettings={initialSettings}
+        showConnectionsManager={showConnectionsManager}
       />
     </div>
   );

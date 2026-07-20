@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { listWorkspaceCalendars } from '@tuturuuu/internal-api/calendar';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
@@ -235,6 +236,22 @@ export const CalendarSyncProvider = ({
     );
   }, [calendarConnections]);
 
+  const { data: workspaceCalendarsData } = useQuery({
+    queryKey: ['workspace-calendars', wsId],
+    enabled: !hasExternalEvents && !!wsId,
+    queryFn: () => listWorkspaceCalendars(wsId),
+    staleTime: 30_000,
+  });
+  const enabledWorkspaceCalendarIds = useMemo(
+    () =>
+      new Set(
+        (workspaceCalendarsData?.calendars ?? [])
+          .filter((calendar) => calendar.is_enabled)
+          .map((calendar) => calendar.id)
+      ),
+    [workspaceCalendarsData?.calendars]
+  );
+
   // Update calendar connection state
   const updateCalendarConnection = useCallback(
     (connectionId: string, isEnabled: boolean) => {
@@ -454,8 +471,8 @@ export const CalendarSyncProvider = ({
         );
 
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch events');
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.error || 'Failed to fetch events');
         }
 
         const result = await response.json();
@@ -471,6 +488,12 @@ export const CalendarSyncProvider = ({
         isForcedRef.current = false;
 
         setError(null);
+        setSyncStatus((currentStatus) =>
+          currentStatus.state === 'error' &&
+          currentStatus.message === 'failed_to_load_events'
+            ? { state: 'idle' }
+            : currentStatus
+        );
         return fetchedData;
       } catch (err) {
         const errorMessage =
@@ -745,18 +768,30 @@ export const CalendarSyncProvider = ({
   const visibleEventsWithOptimisticState = useMemo(() => {
     const removedIds = new Set(optimisticState.removedIds);
 
-    // Filter external events by enabled provider calendars. Local Tuturuuu
-    // events are always shown here; native calendar visibility is handled
-    // by the workspace calendar endpoints.
-    const filteredEvents =
-      !hasExternalEvents && calendarConnections.length > 0
-        ? (visibleDatabaseEvents as CalendarEvent[]).filter((event) => {
-            const eventCalendarId =
-              (event as any).external_calendar_id ||
-              (event as any).google_calendar_id;
-            return !eventCalendarId || enabledCalendarIds.has(eventCalendarId);
-          })
-        : (visibleDatabaseEvents as CalendarEvent[]);
+    // Filter native and external events using the same visibility controls as
+    // the sidebar. Events without a source remain visible for backwards
+    // compatibility with older calendar rows.
+    const filteredEvents = !hasExternalEvents
+      ? (visibleDatabaseEvents as CalendarEvent[]).filter((event) => {
+          const sourceCalendarId = event.source_calendar_id;
+          const eventCalendarId =
+            event.external_calendar_id || event.google_calendar_id;
+
+          if (
+            sourceCalendarId &&
+            (workspaceCalendarsData?.calendars.length ?? 0) > 0 &&
+            !enabledWorkspaceCalendarIds.has(sourceCalendarId)
+          ) {
+            return false;
+          }
+
+          return (
+            !eventCalendarId ||
+            calendarConnections.length === 0 ||
+            enabledCalendarIds.has(eventCalendarId)
+          );
+        })
+      : (visibleDatabaseEvents as CalendarEvent[]);
 
     const byId = new Map<string, CalendarEvent>();
 
@@ -782,11 +817,13 @@ export const CalendarSyncProvider = ({
   }, [
     calendarConnections.length,
     enabledCalendarIds,
+    enabledWorkspaceCalendarIds,
     hasExternalEvents,
     isVisibleInCurrentRange,
     optimisticState.events,
     optimisticState.removedIds,
     visibleDatabaseEvents,
+    workspaceCalendarsData?.calendars.length,
   ]);
 
   useEffect(() => {

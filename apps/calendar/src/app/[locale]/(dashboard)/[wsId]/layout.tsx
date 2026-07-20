@@ -9,12 +9,14 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/workspace-presence-provider';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
+import { CalendarNavigationProvider } from '@/components/calendar-navigation-provider';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
@@ -55,10 +57,6 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!workspace?.joined) redirect('/');
 
   const wsId = workspace.id;
-  const workspaceSlug = toWorkspaceSlug(wsId, {
-    personal: !!workspace.personal,
-  });
-
   const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
   const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
@@ -66,52 +64,61 @@ export default async function Layout({ children, params }: LayoutProps) {
     cookieStore,
     sidebarBehavior
   );
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: calendarConnections } = await sbAdmin
+    .from('calendar_connections')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('created_at', { ascending: true });
 
   return (
     <SidebarProvider
       initialBehavior={sidebarBehavior}
       initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
     >
-      <Structure
-        wsId={wsId}
-        workspace={workspace}
-        defaultCollapsed={defaultCollapsed}
-        links={
-          await getNavigationLinks({
-            personalOrWsId: workspaceSlug,
-          })
-        }
-        actions={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <NavbarActions />
-          </Suspense>
-        }
-        userPopover={
-          <Suspense
-            key={user.id}
-            fallback={
-              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
-            }
-          >
-            <UserNav hideMetadata />
-          </Suspense>
-        }
-      >
-        <RealtimeLogProvider wsId={wsId}>
-          <WorkspacePresenceProvider
+      <CalendarNavigationProvider>
+        <CalendarSyncProvider
+          initialCalendarConnections={calendarConnections || []}
+          wsId={wsId}
+        >
+          <Structure
             wsId={wsId}
-            tier={workspace.tier ?? null}
-            enabled={!workspace.personal}
+            workspace={workspace}
+            defaultCollapsed={defaultCollapsed}
+            links={await getNavigationLinks()}
+            actions={
+              <Suspense
+                key={user.id}
+                fallback={
+                  <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+                }
+              >
+                <NavbarActions />
+              </Suspense>
+            }
+            userPopover={
+              <Suspense
+                key={user.id}
+                fallback={
+                  <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+                }
+              >
+                <UserNav hideMetadata />
+              </Suspense>
+            }
           >
-            {children}
-          </WorkspacePresenceProvider>
-        </RealtimeLogProvider>
-      </Structure>
+            <RealtimeLogProvider wsId={wsId}>
+              <WorkspacePresenceProvider
+                wsId={wsId}
+                tier={workspace.tier ?? null}
+                enabled={!workspace.personal}
+              >
+                {children}
+              </WorkspacePresenceProvider>
+            </RealtimeLogProvider>
+          </Structure>
+        </CalendarSyncProvider>
+      </CalendarNavigationProvider>
     </SidebarProvider>
   );
 }

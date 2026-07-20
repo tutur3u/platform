@@ -8,6 +8,7 @@ import {
 } from './use-calendar-connections-manager';
 
 export type { CalendarConnectionsUnifiedVariant };
+export { useCalendarConnectionsManager };
 
 export default function CalendarConnectionsUnified({
   wsId,

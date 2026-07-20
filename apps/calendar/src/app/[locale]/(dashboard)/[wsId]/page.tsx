@@ -1,12 +1,12 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
-import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
 import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
+import { CalendarWorkspacePage } from '@/components/calendar-workspace-page';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -40,29 +40,22 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const [googleToken, { data: calendarConnections }, smartSchedulingTasks] =
-    await Promise.all([
-      fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
-        wsId: workspace.id,
-        userId: user.id,
-      }),
-      sbAdmin
-        .from('calendar_connections')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .order('created_at', { ascending: true }),
-      loadSmartSchedulingTasks({
-        resolvedWsId: workspace.id,
-        userId: user.id,
-      }),
-    ]);
+  const [googleToken, smartSchedulingTasks] = await Promise.all([
+    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+      wsId: workspace.id,
+      userId: user.id,
+    }),
+    loadSmartSchedulingTasks({
+      resolvedWsId: workspace.id,
+      userId: user.id,
+    }),
+  ]);
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = workspace.id === user?.id;
 
   return (
-    <TaskCalendarPageShell
-      calendarConnections={calendarConnections || []}
+    <CalendarWorkspacePage
       enableSmartScheduling={enableSmartScheduling}
       experimentalGoogleToken={googleToken}
       isPersonalWorkspace={isPersonalWorkspace}

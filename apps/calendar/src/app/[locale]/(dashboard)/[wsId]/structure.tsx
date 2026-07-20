@@ -3,6 +3,7 @@
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';
+import { CalendarSidebarContent } from '@/components/calendar-sidebar-content';
 import { TTR_URL } from '@/constants/common';
 import { WorkspaceSelect } from './workspace-select';
 
@@ -34,6 +35,9 @@ export function Structure({
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
+      sidebarContentAfter={({ isCollapsed }) =>
+        isCollapsed ? null : <CalendarSidebarContent wsId={wsId} />
+      }
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
       userPopover={userPopover}

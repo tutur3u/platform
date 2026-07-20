@@ -53,9 +53,19 @@ function renderCalendarSync({
   return renderHook(() => useCalendarSync(), { wrapper });
 }
 
-function mockCalendarFetch(events: CalendarEvent[]) {
+function mockCalendarFetch(
+  events: CalendarEvent[],
+  calendars: Array<{ id: string; is_enabled: boolean }> = []
+) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+
+    if (url.includes('/calendars')) {
+      return {
+        ok: true,
+        json: async () => ({ calendars, grouped: {}, total: calendars.length }),
+      } as Response;
+    }
 
     if (url.includes('/calendar/habit-events')) {
       return {
@@ -94,6 +104,13 @@ function mockCalendarFetchByWeek(
 ) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = new URL(String(input), 'http://localhost');
+
+    if (url.pathname.endsWith('/calendars')) {
+      return {
+        ok: true,
+        json: async () => ({ calendars: [], grouped: {}, total: 0 }),
+      } as Response;
+    }
 
     if (url.pathname.includes('/calendar/habit-events')) {
       return {
@@ -250,6 +267,60 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       expect(result.current.syncStatus.state).toBe('error');
     });
     expect(result.current.events.map((event) => event.id)).toEqual(['event-1']);
+  });
+
+  it('clears a transient event loading warning after the next successful fetch', async () => {
+    const initialEvent = createEvent('event-1');
+    const fetchMock = mockCalendarFetch([initialEvent]);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { result } = renderCalendarSync();
+
+    act(() => {
+      result.current.setDates([new Date('2026-06-22T00:00:00.000Z')]);
+    });
+
+    await waitFor(() => {
+      expect(result.current.events).toHaveLength(1);
+    });
+
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      if (String(input).includes('/calendar/habit-events')) {
+        return {
+          ok: true,
+          json: async () => ({
+            completedHabitEventIds: [],
+            habitEventIds: [],
+          }),
+        } as Response;
+      }
+
+      return {
+        ok: false,
+        json: async () => ({ error: 'Temporary outage' }),
+      } as Response;
+    });
+
+    act(() => {
+      result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(result.current.syncStatus).toMatchObject({
+        message: 'failed_to_load_events',
+        state: 'error',
+      });
+    });
+
+    fetchMock.mockImplementation(mockCalendarFetch([initialEvent]));
+    act(() => {
+      result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(result.current.syncStatus.state).toBe('idle');
+    });
+    expect(result.current.error).toBeNull();
   });
 
   it('shows the active week events when navigating away and back', async () => {
@@ -442,5 +513,36 @@ describe('CalendarSyncProvider optimistic visible events', () => {
       expect.stringContaining('/calendar/events/event-b'),
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('hides events whose workspace calendar is disabled', async () => {
+    const visibleEvent = createEvent('visible-event', {
+      source_calendar_id: 'calendar-visible',
+    });
+    const hiddenEvent = createEvent('hidden-event', {
+      source_calendar_id: 'calendar-hidden',
+    });
+    vi.stubGlobal(
+      'fetch',
+      mockCalendarFetch(
+        [visibleEvent, hiddenEvent],
+        [
+          { id: 'calendar-visible', is_enabled: true },
+          { id: 'calendar-hidden', is_enabled: false },
+        ]
+      )
+    );
+
+    const { result } = renderCalendarSync();
+
+    act(() => {
+      result.current.setDates([new Date('2026-06-22T00:00:00.000Z')]);
+    });
+
+    await waitFor(() => {
+      expect(result.current.events.map((event) => event.id)).toEqual([
+        'visible-event',
+      ]);
+    });
   });
 });
