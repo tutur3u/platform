@@ -31,7 +31,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName="Mind"
+      appId="mind"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}

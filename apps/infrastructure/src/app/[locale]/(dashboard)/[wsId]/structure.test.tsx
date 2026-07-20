@@ -14,19 +14,19 @@ vi.mock('@/constants/common', () => ({
 
 vi.mock('@tuturuuu/satellite/sidebar-structure', () => ({
   SidebarStructure: ({
-    appName,
+    appId,
     brandHref,
     children,
     workspaceSelect,
   }: {
-    appName: ReactNode;
+    appId: string;
     brandHref: string;
     children: ReactNode;
     workspaceSelect?: () => ReactNode;
   }) => (
     <section>
       <a href={brandHref}>Tuturuuu</a>
-      <div data-testid="app-name">{appName}</div>
+      <div data-testid="app-name">{appId}</div>
       <div data-testid="workspace-slot">{workspaceSelect?.()}</div>
       {children}
     </section>
@@ -51,7 +51,7 @@ describe('Infrastructure Structure', () => {
     const link = screen.getByRole('link', { name: 'Tuturuuu' });
 
     expect(link).toHaveAttribute('href', mocks.webAppUrl);
-    expect(screen.getByTestId('app-name')).toHaveTextContent('Infrastructure');
+    expect(screen.getByTestId('app-name')).toHaveTextContent('infrastructure');
     expect(screen.getByTestId('workspace-slot')).toBeEmptyDOMElement();
     expect(screen.getByText('Infrastructure dashboard')).toBeInTheDocument();
   });

@@ -53,7 +53,6 @@ export function Structure({
   workspace,
   wsId,
 }: StructureProps) {
-  const t = useTranslations('chat');
   const [searchValue, setSearchValue] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [archiveFilter, setArchiveFilter] =
@@ -76,7 +75,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName={t('title')}
+      appId="chat"
       brandActions={
         <ChatHeaderActions
           archiveFilter={archiveFilter}

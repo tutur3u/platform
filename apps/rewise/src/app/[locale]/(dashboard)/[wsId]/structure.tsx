@@ -35,7 +35,7 @@ export function Structure({
     <SidebarStructure
       actions={actions}
       appHref={brandHref}
-      appName="Rewise"
+      appId="rewise"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}

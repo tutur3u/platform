@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -79,6 +79,21 @@ describe('AppsLauncherDialog', () => {
     expect(
       document.querySelector('[data-slot="apps-launcher-open-mode"]')
     ).toBeTruthy();
+    const launcherToolbar = document.querySelector(
+      '[data-slot="apps-launcher-toolbar"]'
+    );
+    expect(launcherToolbar).toBeTruthy();
+    expect(
+      document
+        .querySelector('[data-slot="dialog-header"]')
+        ?.contains(launcherToolbar)
+    ).toBe(true);
+    expect(
+      document.querySelector('[data-slot="apps-launcher-search-trigger"]')
+    ).toBeTruthy();
+    expect(
+      document.querySelector('[data-slot="apps-launcher-preference-trigger"]')
+    ).toBeTruthy();
     expect(
       screen.getByRole('radiogroup', { name: 'Open options' })
     ).toBeTruthy();
@@ -140,6 +155,54 @@ describe('AppsLauncherDialog', () => {
         screen.getByRole('searchbox', { name: 'Search apps' })
       );
     });
+  });
+
+  it('focuses compact search controls on mobile and opens both popovers', async () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+    });
+    renderDialog();
+
+    const searchTrigger = screen.getByRole('button', { name: 'Search apps' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(searchTrigger);
+    });
+
+    fireEvent.click(searchTrigger);
+    const mobileSearch = await waitFor(() => {
+      const input = document.querySelector<HTMLInputElement>(
+        '[data-slot="apps-launcher-search"][data-mobile="true"]'
+      );
+      expect(input).toBeTruthy();
+      return input;
+    });
+    expect(mobileSearch?.getAttribute('data-mobile')).toBe('true');
+
+    fireEvent.click(searchTrigger);
+    await waitFor(() => {
+      expect(
+        document.querySelector(
+          '[data-slot="apps-launcher-search"][data-mobile="true"]'
+        )
+      ).toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Open options' }));
+    const preferencePopover = await waitFor(() => {
+      const content = document.querySelector<HTMLElement>(
+        '[data-slot="popover-content"][data-state="open"]'
+      );
+      expect(content).toBeTruthy();
+      return content;
+    });
+    expect(
+      within(preferencePopover as HTMLElement).getByRole('radiogroup', {
+        name: 'Open options',
+      })
+    ).toBeTruthy();
+    expect(
+      within(preferencePopover as HTMLElement).getByText('Open apps in')
+    ).toBeTruthy();
   });
 
   it('groups apps by localized category sections', () => {

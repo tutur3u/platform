@@ -49,7 +49,7 @@ export default function Structure({
   ) : (
     <FixedAppBrand
       appHref="/"
-      appName="Nova"
+      appId="nova"
       centralHref={TTR_URL}
       launcherLabel={t('apps')}
       onAppClick={() => setAppsLauncherOpen(true)}
@@ -69,7 +69,7 @@ export default function Structure({
   const mobileHeader = (
     <FixedAppBrand
       appHref="/"
-      appName="Nova"
+      appId="nova"
       centralHref={TTR_URL}
       launcherLabel={t('apps')}
       onAppClick={() => setAppsLauncherOpen(true)}

@@ -79,7 +79,7 @@ describe('[wsId] structure compile graph', () => {
     );
     expect(structureImplSource).toContain('AppsLauncherDialog');
     expect(structureImplSource).toContain('FixedAppBrand');
-    expect(structureImplSource).toContain('appName="Platform"');
+    expect(structureImplSource).toContain('appId="platform"');
     expect(structureImplSource).toContain(
       "launcherLabel={t('command_launcher.apps')}"
     );
@@ -90,6 +90,12 @@ describe('[wsId] structure compile graph', () => {
     expect(structureImplSource).not.toContain('navigationLinksWithLauncher');
     expect(structureImplSource).toContain(
       'currentWorkspace={currentWorkspace}'
+    );
+    expect(structureImplSource).toContain('WorkspaceSelectVisibilityToggle');
+    expect(structureImplSource).toContain('grid-rows-[0fr]');
+    expect(structureImplSource).toContain('pointer-events-none');
+    expect(structureImplSource).toContain(
+      'inert={showWorkspaceSelect ? undefined : true}'
     );
   });
 

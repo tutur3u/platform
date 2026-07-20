@@ -77,7 +77,7 @@ export function Structure({
     <SidebarStructure
       actions={actions}
       appHref={mailHomeHref}
-      appName="Mail"
+      appId="mail"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={[]}

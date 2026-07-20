@@ -30,7 +30,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName="Drive"
+      appId="drive"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}

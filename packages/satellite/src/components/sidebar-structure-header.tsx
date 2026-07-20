@@ -4,11 +4,47 @@ import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { FixedAppBrand } from './fixed-app-brand';
+import {
+  type AppBrandId,
+  FixedAppBrand,
+  WorkspaceSelectVisibilityToggle,
+} from './fixed-app-brand';
 
-interface SidebarStructureMobileHeaderProps {
+interface WorkspaceSelectControlProps {
+  hideWorkspaceSelectLabel: string;
+  onToggleWorkspaceSelect?: () => void;
+  showWorkspaceSelectLabel: string;
+  workspaceSelectVisible: boolean;
+}
+
+function getBrandActions(
+  actions: ReactNode,
+  {
+    hideWorkspaceSelectLabel,
+    onToggleWorkspaceSelect,
+    showWorkspaceSelectLabel,
+    workspaceSelectVisible,
+  }: WorkspaceSelectControlProps
+) {
+  if (!onToggleWorkspaceSelect) return actions;
+
+  return (
+    <div className="flex items-center gap-1">
+      {actions}
+      <WorkspaceSelectVisibilityToggle
+        hideLabel={hideWorkspaceSelectLabel}
+        onToggle={onToggleWorkspaceSelect}
+        showLabel={showWorkspaceSelectLabel}
+        visible={workspaceSelectVisible}
+      />
+    </div>
+  );
+}
+
+interface SidebarStructureMobileHeaderProps
+  extends WorkspaceSelectControlProps {
   appHref: string;
-  appName: ReactNode;
+  appId: AppBrandId;
   brandHref: string;
   launcherLabel: string;
   onOpenApps: () => void;
@@ -16,15 +52,25 @@ interface SidebarStructureMobileHeaderProps {
 
 export function SidebarStructureMobileHeader({
   appHref,
-  appName,
+  appId,
   brandHref,
+  hideWorkspaceSelectLabel,
   launcherLabel,
+  onToggleWorkspaceSelect,
   onOpenApps,
+  showWorkspaceSelectLabel,
+  workspaceSelectVisible,
 }: SidebarStructureMobileHeaderProps) {
   return (
     <FixedAppBrand
+      actions={getBrandActions(null, {
+        hideWorkspaceSelectLabel,
+        onToggleWorkspaceSelect,
+        showWorkspaceSelectLabel,
+        workspaceSelectVisible,
+      })}
       appHref={appHref}
-      appName={appName}
+      appId={appId}
       centralHref={brandHref}
       launcherLabel={launcherLabel}
       onAppClick={onOpenApps}
@@ -32,10 +78,10 @@ export function SidebarStructureMobileHeader({
   );
 }
 
-interface SidebarStructureHeaderProps {
+interface SidebarStructureHeaderProps extends WorkspaceSelectControlProps {
   actions?: ReactNode;
   appHref: string;
-  appName: ReactNode;
+  appId: AppBrandId;
   brandHref: string;
   isCollapsed: boolean;
   launcherLabel: string;
@@ -45,11 +91,15 @@ interface SidebarStructureHeaderProps {
 export function SidebarStructureHeader({
   actions,
   appHref,
-  appName,
+  appId,
   brandHref,
+  hideWorkspaceSelectLabel,
   isCollapsed,
   launcherLabel,
+  onToggleWorkspaceSelect,
   onOpenApps,
+  showWorkspaceSelectLabel,
+  workspaceSelectVisible,
 }: SidebarStructureHeaderProps) {
   const t = useTranslations();
 
@@ -67,9 +117,14 @@ export function SidebarStructureHeader({
 
   return (
     <FixedAppBrand
-      actions={actions}
+      actions={getBrandActions(actions, {
+        hideWorkspaceSelectLabel,
+        onToggleWorkspaceSelect,
+        showWorkspaceSelectLabel,
+        workspaceSelectVisible,
+      })}
       appHref={appHref}
-      appName={appName}
+      appId={appId}
       centralHref={brandHref}
       launcherLabel={launcherLabel}
       onAppClick={onOpenApps}

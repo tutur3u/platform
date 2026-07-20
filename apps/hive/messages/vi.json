@@ -101,6 +101,7 @@
       "drive": "Tệp",
       "finance": "Tài chính",
       "hive": "Hive",
+      "infrastructure": "Hạ tầng",
       "inventory": "Kho hàng",
       "learn": "Học tập",
       "mail": "Thư",
@@ -129,6 +130,7 @@
     "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
     "error_workspaces": "Không thể tải workspace",
     "guest": "Khách",
+    "hide_workspace_selector": "Ẩn bộ chọn workspace",
     "loading_workspaces": "Đang tải workspace",
     "match": "Khớp",
     "navigate": "di chuyển",
@@ -149,6 +151,7 @@
     "search_apps": "Tìm ứng dụng",
     "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
     "select": "chọn",
+    "show_workspace_selector": "Hiện bộ chọn workspace",
     "title": "Trình mở lệnh",
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"

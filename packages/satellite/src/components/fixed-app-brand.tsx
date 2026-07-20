@@ -1,13 +1,66 @@
-import { ChevronDown } from '@tuturuuu/icons';
+'use client';
+
+import {
+  Building2 as BuildingIcon,
+  ChevronDown,
+  EyeDashed as EyeDashedIcon,
+} from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+
+export type AppBrandId = LaunchableAppSlug | 'infrastructure';
+
+interface WorkspaceSelectVisibilityToggleProps {
+  hideLabel: string;
+  onToggle: () => void;
+  showLabel: string;
+  visible: boolean;
+}
+
+export function WorkspaceSelectVisibilityToggle({
+  hideLabel,
+  onToggle,
+  showLabel,
+  visible,
+}: WorkspaceSelectVisibilityToggleProps) {
+  const label = visible ? hideLabel : showLabel;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-controls="sidebar-workspace-selector"
+          aria-expanded={visible}
+          aria-label={label}
+          className="size-8 shrink-0 text-muted-foreground shadow-none hover:text-foreground"
+          data-slot="workspace-select-visibility-toggle"
+          onClick={onToggle}
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          {visible ? (
+            <EyeDashedIcon aria-hidden className="size-4" />
+          ) : (
+            <BuildingIcon aria-hidden className="size-4" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface FixedAppBrandProps {
   actions?: ReactNode;
   appHref: string;
-  appName: ReactNode;
+  appId: AppBrandId;
   centralHref: string;
   className?: string;
   launcherLabel?: string;
@@ -17,12 +70,14 @@ interface FixedAppBrandProps {
 export function FixedAppBrand({
   actions,
   appHref,
-  appName,
+  appId,
   centralHref,
   className,
   launcherLabel = 'Open apps',
   onAppClick,
 }: FixedAppBrandProps) {
+  const t = useTranslations('command_launcher');
+  const appName = t(`app_names.${appId}`);
   const appControl = onAppClick ? (
     <button
       aria-haspopup="dialog"
@@ -34,7 +89,7 @@ export function FixedAppBrand({
       <span className="truncate">{appName}</span>
       <ChevronDown
         aria-hidden
-        className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-y-0.5"
+        className="size-4 shrink-0 text-muted-foreground"
       />
     </button>
   ) : (

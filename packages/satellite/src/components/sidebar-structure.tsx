@@ -21,6 +21,7 @@ import {
   useSidebar,
 } from '../context/sidebar-context';
 import { AppsLauncherDialog } from './apps-launcher';
+import type { AppBrandId } from './fixed-app-brand';
 import { SidebarStructureContent } from './sidebar-structure-content';
 import {
   SidebarStructureHeader,
@@ -36,7 +37,7 @@ import {
 export interface SidebarStructureProps {
   actions: ReactNode;
   appHref?: string;
-  appName: ReactNode;
+  appId: AppBrandId;
   brandActions?: ReactNode;
   brandHref?: string;
   childContainerClassName?: string;
@@ -64,7 +65,7 @@ export interface SidebarStructureProps {
 export function SidebarStructure({
   actions,
   appHref,
-  appName,
+  appId,
   brandActions,
   brandHref = '/',
   childContainerClassName,
@@ -88,6 +89,7 @@ export function SidebarStructure({
   const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [appsLauncherOpen, setAppsLauncherOpen] = useState(false);
+  const [workspaceSelectVisible, setWorkspaceSelectVisible] = useState(false);
   const navigationLinks = useMemo<(NavLink | null)[]>(() => links, [links]);
   const [navState, setNavState] = useState<NavigationState>(() => {
     const activeNavigation = findActiveNavigation({
@@ -109,6 +111,10 @@ export function SidebarStructure({
       behavior === 'collapsed' || behavior === 'hover' || behavior === 'hidden'
     );
   }, [behavior]);
+
+  useEffect(() => {
+    if (isCollapsed) setWorkspaceSelectVisible(false);
+  }, [isCollapsed]);
 
   useEffect(() => {
     setNavState((prevState) => {
@@ -160,6 +166,7 @@ export function SidebarStructure({
 
     const newCollapsed = !isCollapsed;
     setIsCollapsed(newCollapsed);
+    if (newCollapsed) setWorkspaceSelectVisible(false);
     setCookie(
       SIDEBAR_COLLAPSED_COOKIE_NAME,
       newCollapsed,
@@ -220,6 +227,14 @@ export function SidebarStructure({
     name: workspace?.name ?? null,
     personal: workspace?.personal ?? false,
   };
+  const showWorkspaceSelect = workspaceSelectVisible && !isCollapsed;
+  const handleToggleWorkspaceSelect = workspaceSelect
+    ? () => {
+        const nextVisible = !showWorkspaceSelect;
+        setWorkspaceSelectVisible(nextVisible);
+        if (nextVisible && isCollapsed) expandSidebar();
+      }
+    : undefined;
 
   return (
     <>
@@ -245,10 +260,18 @@ export function SidebarStructure({
         mobileHeader={
           <SidebarStructureMobileHeader
             appHref={appHref ?? `/${wsId}`}
-            appName={appName}
+            appId={appId}
             brandHref={brandHref}
+            hideWorkspaceSelectLabel={t(
+              'command_launcher.hide_workspace_selector'
+            )}
             launcherLabel={t('command_launcher.apps')}
             onOpenApps={() => setAppsLauncherOpen(true)}
+            onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
+            showWorkspaceSelectLabel={t(
+              'command_launcher.show_workspace_selector'
+            )}
+            workspaceSelectVisible={showWorkspaceSelect}
           />
         }
         onMouseEnter={onMouseEnter}
@@ -271,6 +294,7 @@ export function SidebarStructure({
             setIsCollapsed={setIsCollapsed}
             setNavState={setNavState}
             workspaceSelect={workspaceSelect}
+            workspaceSelectVisible={showWorkspaceSelect}
             wsId={wsId}
           />
         }
@@ -278,11 +302,19 @@ export function SidebarStructure({
           <SidebarStructureHeader
             actions={brandActions}
             appHref={appHref ?? `/${wsId}`}
-            appName={appName}
+            appId={appId}
             brandHref={brandHref}
+            hideWorkspaceSelectLabel={t(
+              'command_launcher.hide_workspace_selector'
+            )}
             isCollapsed={isCollapsed}
             launcherLabel={t('command_launcher.apps')}
             onOpenApps={() => setAppsLauncherOpen(true)}
+            onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
+            showWorkspaceSelectLabel={t(
+              'command_launcher.show_workspace_selector'
+            )}
+            workspaceSelectVisible={showWorkspaceSelect}
           />
         }
         userPopover={userPopover}

@@ -59,6 +59,7 @@
       "drive": "Drive",
       "finance": "Finance",
       "hive": "Hive",
+      "infrastructure": "Infrastructure",
       "inventory": "Inventory",
       "learn": "Learn",
       "mail": "Mail",
@@ -79,6 +80,7 @@
     "apps_count": "{count, plural, one {# app} other {# apps}}",
     "apps_description": "Open another Tuturuuu app from this workspace.",
     "default_destination": "Default app home",
+    "hide_workspace_selector": "Hide workspace selector",
     "no_apps_found": "No apps found",
     "no_apps_found_description": "Try a different app name or keyword.",
     "open_apps_in": "Open apps in",
@@ -88,6 +90,7 @@
     "open_new_tab": "New tab",
     "open_options": "Open options",
     "search_apps": "Search apps",
+    "show_workspace_selector": "Show workspace selector",
     "workspace_destination": "{workspace} workspace"
   },
   "common": {

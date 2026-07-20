@@ -28,7 +28,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName="Contacts"
+      appId="contacts"
       brandHref={TTR_URL}
       childContainerClassName="mx-auto w-full max-w-[1500px] md:px-4 md:py-3"
       defaultCollapsed={defaultCollapsed}

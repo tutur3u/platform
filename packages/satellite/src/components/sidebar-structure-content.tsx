@@ -24,6 +24,7 @@ interface SidebarStructureContentProps {
   setIsCollapsed: Dispatch<SetStateAction<boolean>>;
   setNavState: Dispatch<SetStateAction<NavigationState>>;
   workspaceSelect?: WorkspaceSelectRenderer;
+  workspaceSelectVisible: boolean;
   wsId: string;
 }
 
@@ -37,6 +38,7 @@ export function SidebarStructureContent({
   setIsCollapsed,
   setNavState,
   workspaceSelect,
+  workspaceSelectVisible,
   wsId,
 }: SidebarStructureContentProps) {
   const handleSubMenuClick = (
@@ -59,19 +61,27 @@ export function SidebarStructureContent({
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {workspaceSelect ? (
         <div
+          aria-hidden={!workspaceSelectVisible}
           className={cn(
-            'shrink-0 border-b px-2 pt-0 pb-2',
-            isCollapsed && 'flex justify-center'
+            'grid shrink-0 overflow-hidden px-2 transition-[grid-template-rows,opacity,border-color,padding] duration-200 ease-out',
+            workspaceSelectVisible
+              ? 'grid-rows-[1fr] border-b pb-2 opacity-100'
+              : 'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'
           )}
           data-sidebar-workspace-select
+          data-state={workspaceSelectVisible ? 'open' : 'closed'}
+          id="sidebar-workspace-selector"
+          inert={workspaceSelectVisible ? undefined : true}
         >
-          <Suspense
-            fallback={
-              <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
-            }
-          >
-            {workspaceSelect({ isCollapsed, standalone: true })}
-          </Suspense>
+          <div className="min-h-0 overflow-hidden">
+            <Suspense
+              fallback={
+                <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
+              }
+            >
+              {workspaceSelect({ isCollapsed, standalone: true })}
+            </Suspense>
+          </div>
         </div>
       ) : null}
       <div

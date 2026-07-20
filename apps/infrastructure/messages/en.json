@@ -4031,6 +4031,7 @@
       "drive": "Drive",
       "finance": "Finance",
       "hive": "Hive",
+      "infrastructure": "Infrastructure",
       "inventory": "Inventory",
       "learn": "Learn",
       "mail": "Mail",
@@ -4059,6 +4060,7 @@
     "empty_description": "Try a workspace, app, page, or a closer spelling.",
     "error_workspaces": "Could not load workspaces",
     "guest": "Guest",
+    "hide_workspace_selector": "Hide workspace selector",
     "loading_workspaces": "Loading workspaces",
     "match": "Match",
     "navigate": "navigate",
@@ -4079,6 +4081,7 @@
     "search_apps": "Search apps",
     "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
     "select": "select",
+    "show_workspace_selector": "Show workspace selector",
     "title": "Command Launcher",
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
@@ -8190,73 +8193,6 @@
       "workspaces": "workspaces"
     }
   },
-  "internal-accounts": {
-    "actions": {
-      "cancel": "Cancel",
-      "disable_access": "Disable access",
-      "enable_access": "Enable access",
-      "refresh": "Refresh accounts",
-      "reset_password": "Reset password",
-      "retry": "Try again",
-      "search": "Search"
-    },
-    "count": "{count, plural, one {# internal account} other {# internal accounts}}",
-    "count_loading": "Loading account count...",
-    "dates": {
-      "created": "Created {date}",
-      "last_sign_in": "Last sign-in {date}",
-      "never": "Never"
-    },
-    "description": "Manage authentication access and credentials for exact @tuturuuu.com accounts.",
-    "dialog": {
-      "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
-      "confirmation_label": "Confirm account email",
-      "disable_access": {
-        "confirm": "Disable access",
-        "description": "This immediately blocks {email} from signing in until access is restored.",
-        "title": "Disable account access?"
-      },
-      "enable_access": {
-        "confirm": "Enable access",
-        "description": "This restores sign-in access for {email} immediately.",
-        "title": "Enable account access?"
-      },
-      "new_password": "New temporary password",
-      "password_help": "Use at least {count} characters and share it through an approved secure channel.",
-      "reset_password": {
-        "confirm": "Set new password",
-        "description": "This replaces the current password for {email}. Existing sessions may remain active until separately revoked.",
-        "title": "Force reset password?"
-      }
-    },
-    "empty": {
-      "description": "Try a different email address or display name.",
-      "title": "No internal accounts found"
-    },
-    "error": {
-      "description": "The internal account directory could not be loaded. Your access may have changed.",
-      "title": "Unable to load internal accounts"
-    },
-    "notice": {
-      "description": "Changes take effect immediately. Self-service actions are blocked to reduce accidental lockouts, and every mutation requires the exact target email.",
-      "title": "Restricted root-workspace operation"
-    },
-    "search": {
-      "label": "Search internal accounts",
-      "placeholder": "Search by name or @tuturuuu.com email"
-    },
-    "status": {
-      "active": "Active",
-      "disabled": "Disabled",
-      "unconfirmed": "Email unconfirmed",
-      "you": "You"
-    },
-    "title": "Internal Accounts",
-    "toasts": {
-      "update_failed": "The internal account could not be updated.",
-      "updated": "Internal account updated."
-    }
-  },
   "infrastructure-navigation": {
     "groups": {
       "ai_operations": {
@@ -8353,6 +8289,73 @@
     "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
     "sepay-error-provisioning-description": "SePay connected, but the initial bank-account sync or webhook provisioning did not finish. Retry the setup actions from this workspace.",
     "sepay-error-title": "SePay setup needs attention"
+  },
+  "internal-accounts": {
+    "actions": {
+      "cancel": "Cancel",
+      "disable_access": "Disable access",
+      "enable_access": "Enable access",
+      "refresh": "Refresh accounts",
+      "reset_password": "Reset password",
+      "retry": "Try again",
+      "search": "Search"
+    },
+    "count": "{count, plural, one {# internal account} other {# internal accounts}}",
+    "count_loading": "Loading account count...",
+    "dates": {
+      "created": "Created {date}",
+      "last_sign_in": "Last sign-in {date}",
+      "never": "Never"
+    },
+    "description": "Manage authentication access and credentials for exact @tuturuuu.com accounts.",
+    "dialog": {
+      "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
+      "confirmation_label": "Confirm account email",
+      "disable_access": {
+        "confirm": "Disable access",
+        "description": "This immediately blocks {email} from signing in until access is restored.",
+        "title": "Disable account access?"
+      },
+      "enable_access": {
+        "confirm": "Enable access",
+        "description": "This restores sign-in access for {email} immediately.",
+        "title": "Enable account access?"
+      },
+      "new_password": "New temporary password",
+      "password_help": "Use at least {count} characters and share it through an approved secure channel.",
+      "reset_password": {
+        "confirm": "Set new password",
+        "description": "This replaces the current password for {email}. Existing sessions may remain active until separately revoked.",
+        "title": "Force reset password?"
+      }
+    },
+    "empty": {
+      "description": "Try a different email address or display name.",
+      "title": "No internal accounts found"
+    },
+    "error": {
+      "description": "The internal account directory could not be loaded. Your access may have changed.",
+      "title": "Unable to load internal accounts"
+    },
+    "notice": {
+      "description": "Changes take effect immediately. Self-service actions are blocked to reduce accidental lockouts, and every mutation requires the exact target email.",
+      "title": "Restricted root-workspace operation"
+    },
+    "search": {
+      "label": "Search internal accounts",
+      "placeholder": "Search by name or @tuturuuu.com email"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled",
+      "unconfirmed": "Email unconfirmed",
+      "you": "You"
+    },
+    "title": "Internal Accounts",
+    "toasts": {
+      "update_failed": "The internal account could not be updated.",
+      "updated": "Internal account updated."
+    }
   },
   "inventory": {
     "default_referral_promotion": "Default referral promotion",

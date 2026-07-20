@@ -27,7 +27,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName="Infrastructure"
+      appId="infrastructure"
       brandHref={TTR_URL}
       childContainerClassName="mx-auto flex w-full max-w-7xl flex-col gap-8 md:px-2"
       defaultCollapsed={defaultCollapsed}

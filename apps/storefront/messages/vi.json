@@ -68,6 +68,7 @@
       "drive": "Tệp",
       "finance": "Tài chính",
       "hive": "Hive",
+      "infrastructure": "Hạ tầng",
       "inventory": "Kho hàng",
       "learn": "Học tập",
       "mail": "Thư",
@@ -88,6 +89,7 @@
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
     "apps_description": "Mở một ứng dụng Tuturuuu khác từ workspace này.",
     "default_destination": "Trang mặc định của ứng dụng",
+    "hide_workspace_selector": "Ẩn bộ chọn workspace",
     "no_apps_found": "Không tìm thấy ứng dụng",
     "no_apps_found_description": "Hãy thử tên ứng dụng hoặc từ khóa khác.",
     "open_apps_in": "Mở ứng dụng trong",
@@ -97,6 +99,7 @@
     "open_new_tab": "Tab mới",
     "open_options": "Tùy chọn mở",
     "search_apps": "Tìm ứng dụng",
+    "show_workspace_selector": "Hiện bộ chọn workspace",
     "workspace_destination": "Workspace {workspace}"
   },
   "common": {

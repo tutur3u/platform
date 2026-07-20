@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import type {
   LaunchableApp,
   LaunchableWorkspace,
@@ -120,46 +121,55 @@ export function AppsLauncherDialog({
         className="flex max-w-none flex-col gap-0 overflow-hidden border-border/70 bg-background p-0 sm:max-w-none sm:rounded-xl"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
+          const focusTarget =
+            window.innerWidth < 768
+              ? '[data-slot="apps-launcher-search-trigger"]'
+              : '[data-slot="apps-launcher-search"]';
           dialogContentRef.current
-            ?.querySelector<HTMLElement>('[data-slot="apps-launcher-search"]')
+            ?.querySelector<HTMLElement>(focusTarget)
             ?.focus();
         }}
         ref={dialogContentRef}
         showCloseButton={false}
         style={dialogStyle}
       >
-        <DialogHeader className="grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-muted/20 px-3 py-2.5 text-left sm:px-4">
-          <div className="flex min-w-0 items-center gap-3">
+        <DialogHeader className="flex w-full shrink-0 items-center gap-2 border-b bg-muted/20 px-3 py-2.5 text-left sm:px-4">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <LauncherMark />
             <div className="min-w-0">
               <DialogTitle className="font-semibold text-base tracking-tight">
                 {t('apps')}
               </DialogTitle>
-              <DialogDescription className="mt-0.5 hidden text-xs sm:block">
+              <DialogDescription className="mt-0.5 line-clamp-1 text-[11px] sm:text-xs">
                 {t('apps_description')}
               </DialogDescription>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center">
-            <DialogClose className="flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <X className="size-3.5" />
-              <span className="sr-only">{commonT('close')}</span>
-            </DialogClose>
-          </div>
-        </DialogHeader>
+          <AppsLauncherToolbar
+            currentLabel={t('open_current_tab')}
+            mode={openMode}
+            newLabel={t('open_new_tab')}
+            onModeChange={setOpenMode}
+            onQueryChange={setQuery}
+            openModeLabel={t('open_apps_in')}
+            openOptionsLabel={t('open_options')}
+            query={query}
+            searchLabel={t('search_apps')}
+          />
 
-        <AppsLauncherToolbar
-          currentLabel={t('open_current_tab')}
-          mode={openMode}
-          newLabel={t('open_new_tab')}
-          onModeChange={setOpenMode}
-          onQueryChange={setQuery}
-          openModeLabel={t('open_apps_in')}
-          openOptionsLabel={t('open_options')}
-          query={query}
-          searchLabel={t('search_apps')}
-        />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogClose
+                aria-label={commonT('close')}
+                className="flex size-8 shrink-0 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X aria-hidden className="size-3.5" />
+              </DialogClose>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{commonT('close')}</TooltipContent>
+          </Tooltip>
+        </DialogHeader>
 
         <div
           className="min-h-0 w-full flex-1 overflow-hidden"

@@ -30,7 +30,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appName="Calendar"
+      appId="calendar"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
