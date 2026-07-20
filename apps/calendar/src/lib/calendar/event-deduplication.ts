@@ -43,13 +43,21 @@ function externalSemanticIdentity(event: CalendarEventIdentity) {
   ].join('\u0000');
 }
 
+function visibleSemanticIdentity(event: CalendarEventIdentity) {
+  return [
+    event.start_at,
+    event.end_at,
+    normalizeIdentityText(event.title),
+  ].join('\u0000');
+}
+
 /**
- * Suppress duplicate provider rows without merging native Tuturuuu events.
+ * Suppress duplicate provider rows and native/provider mirror pairs.
  *
  * Provider accounts can expose the same shared calendar or birthday feed under
- * different connection identities. The database-level provider key correctly
- * preserves each source, while this read-boundary projection prevents an
- * identical external event from being rendered more than once.
+ * different connection identities. A native event can also be mirrored to a
+ * provider and return through the import feed. The database correctly retains
+ * each source, while this read-boundary projection renders one occurrence.
  */
 export function deduplicateCalendarEvents<T extends CalendarEventIdentity>(
   events: T[]
@@ -57,6 +65,7 @@ export function deduplicateCalendarEvents<T extends CalendarEventIdentity>(
   const seenIds = new Set<string>();
   const seenExternalIdentities = new Set<string>();
   const seenExternalSemanticIdentities = new Set<string>();
+  const seenVisibleSemanticSources = new Map<string, string>();
 
   return events.filter((event) => {
     if (event.id && seenIds.has(event.id)) return false;
@@ -74,11 +83,22 @@ export function deduplicateCalendarEvents<T extends CalendarEventIdentity>(
       return false;
     }
 
+    // A mirrored provider event can coexist with the native Tuturuuu row that
+    // initiated the write. They intentionally have different provider IDs and
+    // may not share provider-only metadata, but rendering both is always a
+    // duplicate from the user's perspective. Suppress an otherwise identical
+    // visible occurrence only when it crosses source boundaries.
+    const source = event.provider?.trim().toLocaleLowerCase() || 'tuturuuu';
+    const visibleIdentity = visibleSemanticIdentity(event);
+    const existingSource = seenVisibleSemanticSources.get(visibleIdentity);
+    if (existingSource && existingSource !== source) return false;
+
     if (event.id) seenIds.add(event.id);
     if (providerIdentity) seenExternalIdentities.add(providerIdentity);
     if (semanticIdentity) {
       seenExternalSemanticIdentities.add(semanticIdentity);
     }
+    seenVisibleSemanticSources.set(visibleIdentity, source);
 
     return true;
   });

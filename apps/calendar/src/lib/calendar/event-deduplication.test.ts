@@ -49,13 +49,32 @@ describe('deduplicateCalendarEvents', () => {
     expect(deduplicateCalendarEvents(events)).toEqual([events[0]]);
   });
 
-  it('preserves native events even when their visible fields match', () => {
+  it('preserves distinct native events even when their visible fields match', () => {
     const events = [
       { ...baseEvent, id: 'native-1', provider: 'tuturuuu' },
       { ...baseEvent, id: 'native-2', provider: 'tuturuuu' },
     ];
 
     expect(deduplicateCalendarEvents(events)).toEqual(events);
+  });
+
+  it('deduplicates a native event mirrored by a provider', () => {
+    const events = [
+      {
+        ...baseEvent,
+        description: 'Provider metadata',
+        external_event_id: 'google-event',
+        id: 'provider-row',
+      },
+      {
+        ...baseEvent,
+        description: '',
+        id: 'native-row',
+        provider: 'tuturuuu',
+      },
+    ];
+
+    expect(deduplicateCalendarEvents(events)).toEqual([events[0]]);
   });
 
   it('preserves provider events when meaningful content differs', () => {
