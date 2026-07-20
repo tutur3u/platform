@@ -1,15 +1,23 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const require = createRequire(import.meta.url);
 
 function readRepoFile(path: string) {
   return readFileSync(resolve(repoRoot, path), 'utf8');
 }
 
 describe('task UI Tailwind source boundary', () => {
+  it('resolves shared task helpers from CommonJS test collection', () => {
+    expect(
+      require.resolve('@tuturuuu/ui/lib/task-personal-external')
+    ).toContain('packages/ui/src/lib/task-personal-external.ts');
+  });
+
   it('owns and exports its Tailwind source registration', () => {
     const packageJson = JSON.parse(
       readRepoFile('packages/tasks-ui/package.json')

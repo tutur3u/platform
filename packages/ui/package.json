@@ -392,7 +392,8 @@
     "./*": "./src/components/ui/*.tsx",
     "./lib/task-personal-external": {
       "types": "./src/lib/task-personal-external.ts",
-      "import": "./src/lib/task-personal-external.ts"
+      "import": "./src/lib/task-personal-external.ts",
+      "default": "./src/lib/task-personal-external.ts"
     },
     "./lib/tasks-app-url": {
       "types": "./src/lib/tasks-app-url.ts",
