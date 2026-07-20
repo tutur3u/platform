@@ -153,9 +153,11 @@ export function useWorkspaceLabels(wsId: string | null | undefined) {
 
 export interface BoardConfig {
   id: string;
+  name?: string | null;
   estimation_type: string | null;
   extended_estimation: boolean;
   allow_zero_estimates: boolean;
+  count_unestimated_issues?: boolean;
   ws_id: string;
   ticket_prefix: string | null;
 }
@@ -179,9 +181,11 @@ export function useBoardConfig(
 
       return {
         id: board.id,
+        name: board.name ?? null,
         estimation_type: board.estimation_type ?? null,
         extended_estimation: board.extended_estimation ?? false,
         allow_zero_estimates: board.allow_zero_estimates ?? false,
+        count_unestimated_issues: board.count_unestimated_issues ?? false,
         ws_id: board.ws_id,
         ticket_prefix: board.ticket_prefix ?? null,
       } as BoardConfig;

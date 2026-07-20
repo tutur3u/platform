@@ -160,7 +160,7 @@ describe('AppsLauncherDialog', () => {
     });
   });
 
-  it('focuses compact search controls on mobile and opens both popovers', async () => {
+  it('keeps mobile search collapsed without auto-focus and opens both popovers', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       value: 390,
@@ -169,7 +169,10 @@ describe('AppsLauncherDialog', () => {
 
     const searchTrigger = screen.getByRole('button', { name: 'Search apps' });
     await waitFor(() => {
-      expect(document.activeElement).toBe(searchTrigger);
+      expect(document.activeElement).not.toBe(searchTrigger);
+      expect(document.activeElement).not.toBe(
+        screen.getByRole('searchbox', { name: 'Search apps' })
+      );
     });
 
     fireEvent.click(searchTrigger);

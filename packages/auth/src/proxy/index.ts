@@ -67,6 +67,34 @@ function isInternalHostname(hostname: string): boolean {
   return INTERNAL_HOSTNAME_PATTERN.test(hostname);
 }
 
+function isLoopbackBrowserHostname(hostname: string): boolean {
+  return (
+    hostname === 'localhost' ||
+    hostname === '::1' ||
+    hostname === '[::1]' ||
+    /^127(?:\.\d+){0,3}$/u.test(hostname)
+  );
+}
+
+function shouldPreserveCentralLoopbackCookies(
+  req: NextRequest,
+  webAppUrl: string
+): boolean {
+  try {
+    const requestUrl = req.nextUrl;
+    const centralUrl = new URL(webAppUrl);
+
+    return (
+      isLoopbackBrowserHostname(requestUrl.hostname) &&
+      isLoopbackBrowserHostname(centralUrl.hostname) &&
+      requestUrl.hostname === centralUrl.hostname &&
+      requestUrl.origin !== centralUrl.origin
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function resolveCanonicalRequestOrigin(
   req: NextRequest,
   webAppUrl: string
@@ -93,6 +121,17 @@ export function resolveCanonicalRequestOrigin(
   }
 
   if (!isInternalHostname(req.nextUrl.hostname)) {
+    return req.nextUrl.origin;
+  }
+
+  // Local development runs each first-party app on a distinct loopback port.
+  // Preserve that explicit browser-facing origin so a satellite returns to its
+  // own verifier instead of the central app's verifier. Internal/container
+  // hosts without this loopback shape still use the configured safe fallback.
+  if (
+    isLoopbackBrowserHostname(req.nextUrl.hostname) &&
+    req.nextUrl.port.length > 0
+  ) {
     return req.nextUrl.origin;
   }
 
@@ -389,7 +428,10 @@ function getAuthApiUrl(req: NextRequest, apiPath: string) {
 
 function shouldUseClientVerifyTokenFlow(req: NextRequest) {
   return (
-    process.env.NODE_ENV !== 'production' && isTuturuuuLocalhostRequest(req)
+    process.env.NODE_ENV !== 'production' &&
+    (isTuturuuuLocalhostRequest(req) ||
+      (isLoopbackBrowserHostname(req.nextUrl.hostname) &&
+        req.nextUrl.port.length > 0))
   );
 }
 
@@ -1133,7 +1175,10 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             buildCentralizedReturnUrl(req, webAppUrl)
           );
 
-          return clearSupabaseAuthCookies(req, NextResponse.redirect(loginUrl));
+          const redirectResponse = NextResponse.redirect(loginUrl);
+          return shouldPreserveCentralLoopbackCookies(req, webAppUrl)
+            ? redirectResponse
+            : clearSupabaseAuthCookies(req, redirectResponse);
         }
 
         return appSessionVerification.ok

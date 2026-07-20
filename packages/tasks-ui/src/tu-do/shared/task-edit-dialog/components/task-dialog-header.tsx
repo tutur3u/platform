@@ -48,7 +48,7 @@ export interface DialogHeaderInfo {
 }
 
 /** Configuration for each relationship type */
-const RELATIONSHIP_HEADER_CONFIG = (t: any) => ({
+const getRelationshipHeaderConfig = (t: any) => ({
   subtask: {
     title: t('ws-task-boards.dialog.create_subtask'),
     descriptionPrefix: t('ws-task-boards.dialog.subtask_of'),
@@ -107,7 +107,7 @@ export function getTaskDialogHeaderInfo(
     draftId,
   } = options;
 
-  const relationshipConfig = RELATIONSHIP_HEADER_CONFIG(t);
+  const relationshipConfig = getRelationshipHeaderConfig(t);
 
   // Handle pending relationship (new way)
   if (isCreateMode && pendingRelationship) {

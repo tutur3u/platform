@@ -358,7 +358,7 @@ export async function sendOtp(
   }
 
   const supabase = turnstile.shouldBypassForDev
-    ? await createAdminClient()
+    ? createDetachedClient()
     : await createClient(context.request);
   const metadata = buildOtpMetadata({
     client: input.client,
@@ -507,11 +507,21 @@ export async function verifyOtp(
       ? createDetachedClient()
       : await createClient(context.request);
 
-  const { data, error } = await supabase.auth.verifyOtp({
+  let { data, error } = await supabase.auth.verifyOtp({
     email: validatedEmail,
     token: validatedCode,
     type: 'email',
   });
+
+  if (error) {
+    const signupVerification = await supabase.auth.verifyOtp({
+      email: validatedEmail,
+      token: validatedCode,
+      type: 'signup',
+    });
+    data = signupVerification.data;
+    error = signupVerification.error;
+  }
 
   if (error) {
     await recordOTPVerifyFailure(

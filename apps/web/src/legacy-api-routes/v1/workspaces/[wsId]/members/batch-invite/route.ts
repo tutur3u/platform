@@ -124,11 +124,19 @@ export async function POST(req: Request, { params }: Params) {
 
   // Insert one by one to handle individual failures gracefully
   for (const invite of invites) {
-    const { error } = await supabase
+    // Authentication, workspace membership, and seat availability have already
+    // been verified above. Use the admin client for the write so a freshly
+    // created workspace is not blocked by permission rows that are still being
+    // initialized during onboarding.
+    const { error } = await sbAdmin
       .from('workspace_email_invites')
       .insert(invite);
 
     if (error) {
+      console.error('Failed to create workspace email invitation', {
+        code: error.code,
+        workspaceId: wsId,
+      });
       const isDuplicate = error.message.includes('duplicate key value');
       const isSeatLimit =
         error.message.includes('workspace_has_available_seats') ||

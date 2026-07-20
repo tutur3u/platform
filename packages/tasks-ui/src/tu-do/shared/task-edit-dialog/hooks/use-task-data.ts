@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   listWorkspaceTaskBoardViewableMembers,
+  listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api/tasks';
+import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -139,8 +141,6 @@ export function useTaskData({
     }
   }
 
-  const supabase = createClient();
-
   // Board configuration - fetch first to get real workspace ID
   const { data: fetchedBoardConfig } = useBoardConfig(
     hasSharedContext ? null : boardId,
@@ -160,16 +160,9 @@ export function useTaskData({
   const { data: fetchedAvailableLists = [] } = useQuery({
     queryKey: ['task_lists', boardId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      if (error) throw error;
-      return data as TaskList[];
+      if (!realWorkspaceId || !isValidWsId) return [];
+      const payload = await listWorkspaceTaskLists(realWorkspaceId, boardId);
+      return (payload.lists ?? []) as TaskList[];
     },
     enabled: !!boardId && isOpen && !hasSharedContext,
     placeholderData: propAvailableLists,
@@ -212,38 +205,19 @@ export function useTaskData({
     queryFn: async () => {
       if (!realWorkspaceId || !isValidWsId) return [];
 
-      const { data: members, error } = await supabase
-        .from('workspace_members')
-        .select(
-          `
-          user_id,
-          users!inner(
-            id,
-            display_name,
-            avatar_url
-          )
-        `
-        )
-        .eq('ws_id', realWorkspaceId);
-
-      if (error) {
-        console.error('Error fetching workspace members:', error);
-        throw error;
-      }
-
-      if (!members) return [];
-
+      const members = await listWorkspaceMembers(realWorkspaceId);
       const transformedMembers = members.flatMap((member) => {
-        if (!member.user_id || !member.users) {
+        const userId = member.user_id ?? member.id;
+        if (!userId) {
           return [];
         }
 
         return [
           {
-            id: member.user_id,
-            user_id: member.user_id,
-            display_name: member.users.display_name || 'Unknown User',
-            avatar_url: member.users.avatar_url,
+            id: userId,
+            user_id: userId,
+            display_name: member.display_name || 'Unknown User',
+            avatar_url: member.avatar_url,
           },
         ];
       });

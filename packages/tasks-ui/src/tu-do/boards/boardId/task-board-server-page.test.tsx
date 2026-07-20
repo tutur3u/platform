@@ -77,13 +77,17 @@ type BoardClientElement = ReactElement<{
   workspaceTier: unknown;
 }>;
 
-function renderServerPage(options?: { rootLoading?: boolean }) {
+function renderServerPage(options?: {
+  rootLoading?: boolean;
+  sessionUser?: { id: string };
+}) {
   return TaskBoardServerPage({
     params: Promise.resolve({
       boardId: BOARD_ID,
       wsId: 'ws-1',
     }),
     rootLoading: options?.rootLoading,
+    sessionUser: options?.sessionUser,
   }) as Promise<BoardClientElement>;
 }
 
@@ -180,10 +184,38 @@ describe('TaskBoardServerPage', () => {
 
     expect(mocks.getWorkspace).toHaveBeenCalledWith('ws-board', {
       useAdmin: true,
+      user: { email: 'member@example.com', id: 'user-1' },
     });
     expect(element.type).toBe(mocks.BoardClient);
     expect(element.props.workspace).toBe(workspace);
     expect(element.props.workspaceTier).toBe('FREE');
+  });
+
+  it('uses a verified satellite actor without reading a Supabase session', async () => {
+    const sessionUser = { id: 'satellite-user-1' };
+    const workspace = {
+      id: 'ws-board',
+      joined: true,
+      personal: false,
+      tier: 'FREE',
+    };
+    mocks.getWorkspaceTaskBoard.mockResolvedValue({
+      board: {
+        access_type: 'member',
+        id: BOARD_ID,
+        ws_id: 'ws-board',
+      },
+    });
+    mocks.getWorkspace.mockResolvedValue(workspace);
+
+    const element = await renderServerPage({ sessionUser });
+
+    expect(mocks.getCurrentUser).not.toHaveBeenCalled();
+    expect(mocks.getWorkspace).toHaveBeenCalledWith('ws-board', {
+      useAdmin: true,
+      user: sessionUser,
+    });
+    expect(element.props.currentUserId).toBe(sessionUser.id);
   });
 
   it('passes full-bleed loading through to the board client when requested', async () => {

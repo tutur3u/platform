@@ -13,7 +13,12 @@ import {
 } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { hasPendingWorkspaceInvitations } from '@/lib/workspace-invitations/status';
+import { connection } from 'next/server';
+import { isPolarWorkspaceSetupEnabled } from '@/lib/polar-config';
+import {
+  hasPendingWorkspaceInvitations,
+  listPendingWorkspaceInvitations,
+} from '@/lib/workspace-invitations/status';
 import { getUserOnboardingProgress, hasCompletedOnboarding } from './actions';
 import OnboardingFlow from './onboarding-flow';
 
@@ -22,6 +27,8 @@ export const metadata: Metadata = {
   description: 'Guide new teammates through getting started with Tuturuuu.',
   robots: NO_INDEX_ROBOTS,
 };
+
+export const instant = false;
 
 interface OnboardingPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -126,7 +133,20 @@ async function hasPendingWorkspaceInvitation(user: {
   }
 }
 
-async function redirectToDefaultWorkspace() {
+async function redirectToDefaultWorkspace(user: {
+  email?: string | null;
+  id: string;
+}) {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const [invitation] = await listPendingWorkspaceInvitations(sbAdmin, {
+    authEmail: user.email,
+    userId: user.id,
+  });
+
+  if (invitation) {
+    redirect(`/${invitation.workspace.id}`);
+  }
+
   const defaultWorkspace = await getUserDefaultWorkspace();
 
   if (defaultWorkspace?.id) {
@@ -139,6 +159,8 @@ async function redirectToDefaultWorkspace() {
 export default async function OnboardingPage({
   searchParams,
 }: OnboardingPageProps) {
+  await connection();
+
   const user = await getCurrentUser();
 
   if (!user) {
@@ -146,20 +168,22 @@ export default async function OnboardingPage({
   }
 
   if (await hasPendingWorkspaceInvitation(user)) {
-    await redirectToDefaultWorkspace();
+    await redirectToDefaultWorkspace(user);
   }
 
   // Ensure the user's personal workspace has a free subscription.
   // This handles users redirected here by the proxy subscription check,
   // as well as users who onboarded before the subscription system existed.
-  await ensurePersonalWorkspaceSubscription(user.id);
+  if (isPolarWorkspaceSetupEnabled()) {
+    await ensurePersonalWorkspaceSubscription(user.id);
+  }
 
   // Check if user has completed onboarding
   const completedOnboarding = await hasCompletedOnboarding(user.id);
 
   if (completedOnboarding) {
     // If onboarding is complete, redirect to dashboard
-    await redirectToDefaultWorkspace();
+    await redirectToDefaultWorkspace(user);
   }
 
   const progress = await getUserOnboardingProgress(user.id);

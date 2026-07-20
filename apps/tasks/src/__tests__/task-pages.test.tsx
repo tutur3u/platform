@@ -235,6 +235,7 @@ describe('tasks app task pages', () => {
             name: 'Race winner',
           },
         ],
+        count: 1,
       });
     mocks.createWorkspaceTaskBoard.mockRejectedValue(new Error('conflict'));
 
@@ -247,6 +248,69 @@ describe('tasks app task pages', () => {
     ).rejects.toMatchObject({
       href: '/workspace-1/boards/board-race-winner',
     });
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledTimes(2);
+  });
+
+  it('refetches boards when an auto-create conflict returns no board', async () => {
+    mocks.listWorkspaceTaskBoards
+      .mockResolvedValueOnce({ boards: [], count: 0 })
+      .mockResolvedValueOnce({
+        boards: [
+          {
+            archived_at: null,
+            deleted_at: null,
+            id: 'board-payload-race-winner',
+            name: 'Race winner',
+          },
+        ],
+        count: 1,
+      });
+    mocks.createWorkspaceTaskBoard.mockResolvedValue({ board: null });
+
+    const { default: Page } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/tasks/page'
+    );
+
+    await expect(
+      Page({ params: Promise.resolve({ wsId: 'workspace-1' }) })
+    ).rejects.toMatchObject({
+      href: '/workspace-1/boards/board-payload-race-winner',
+    });
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledTimes(2);
+  });
+
+  it('coalesces concurrent default-board initialization', async () => {
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
+    let finishCreate:
+      | ((value: { board: { id: string; name: string } }) => void)
+      | undefined;
+    mocks.createWorkspaceTaskBoard.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishCreate = resolve;
+        })
+    );
+    mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
+    const { resolveTaskBoardEntrypoint } = await import(
+      '@/app/[locale]/(dashboard)/[wsId]/task-board-entrypoint'
+    );
+
+    const first = resolveTaskBoardEntrypoint('workspace-concurrent', {
+      baseUrl: 'http://first.test',
+    });
+    const second = resolveTaskBoardEntrypoint('workspace-concurrent', {
+      baseUrl: 'http://second.test',
+    });
+    await vi.waitFor(() =>
+      expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1)
+    );
+    finishCreate?.({ board: { id: 'board-shared', name: 'Shared' } });
+
+    await expect(Promise.all([first, second])).resolves.toEqual([
+      'board-shared',
+      'board-shared',
+    ]);
+    expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1);
   });
 
   it('uses the repairing task-board endpoint for new personal accounts', async () => {
@@ -289,6 +353,7 @@ describe('tasks app task pages', () => {
         params,
         routePrefix: '',
         rootLoading: true,
+        sessionUser: { id: 'user-1' },
       },
       type: mocks.taskBoardServerPage,
     });

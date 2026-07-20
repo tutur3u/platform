@@ -1099,6 +1099,9 @@ export async function handleCreateTask({
       queryClient,
       pendingTaskRelationships: normalizedPendingRelationships,
     });
+    await queryClient.invalidateQueries({
+      queryKey: ['task-list-counts', boardId],
+    });
     await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
 
     // Broadcast the new task to other clients

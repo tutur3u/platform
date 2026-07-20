@@ -28,7 +28,7 @@ export interface UseSuggestionMenusProps {
   boardConfig:
     | {
         id: string;
-        name?: string;
+        name?: string | null;
         estimation_type?: string | null;
       }
     | null

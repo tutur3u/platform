@@ -52,7 +52,10 @@ import { getMeetAppOrigin } from './lib/meet-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
-import { hasPendingWorkspaceInvitations } from './lib/workspace-invitations/status';
+import {
+  hasPendingWorkspaceInvitations,
+  listPendingWorkspaceInvitations,
+} from './lib/workspace-invitations/status';
 import {
   getWorkspaceRoutePermissionRequirements,
   hasRequiredWorkspaceRoutePermission,
@@ -1020,16 +1023,28 @@ async function userHasPendingWorkspaceInvitation({
 
 async function buildDefaultWorkspaceRedirectResponse(
   req: NextRequest,
-  authRes: NextResponse
+  authRes: NextResponse,
+  user: { email?: string | null; id: string }
 ) {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const [invitation] = await listPendingWorkspaceInvitations(sbAdmin, {
+    authEmail: user.email,
+    userId: user.id,
+  });
   const defaultWorkspace = await getUserDefaultWorkspace();
-  const target = defaultWorkspace
-    ? defaultWorkspace.personal
+  let target: string;
+
+  if (invitation) {
+    target = invitation.workspace.id;
+  } else if (defaultWorkspace) {
+    target = defaultWorkspace.personal
       ? 'personal'
       : defaultWorkspace.id === ROOT_WORKSPACE_ID
         ? 'internal'
-        : defaultWorkspace.id
-    : 'personal';
+        : defaultWorkspace.id;
+  } else {
+    target = 'personal';
+  }
   const redirectUrl = new URL(`/${target}`, req.nextUrl);
   const redirectResponse = NextResponse.redirect(redirectUrl);
   propagateAuthCookies(authRes, redirectResponse);
@@ -1308,12 +1323,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
       if (user) {
         if (await userHasPendingWorkspaceInvitation(user)) {
-          return buildDefaultWorkspaceRedirectResponse(req, authRes);
+          return buildDefaultWorkspaceRedirectResponse(req, authRes, user);
         }
 
         const completed = await hasCompletedOnboarding(user.id);
         if (completed) {
-          return buildDefaultWorkspaceRedirectResponse(req, authRes);
+          return buildDefaultWorkspaceRedirectResponse(req, authRes, user);
         }
       }
     } catch (error) {

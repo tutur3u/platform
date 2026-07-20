@@ -32,6 +32,11 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+// This authenticated shell resolves the app session, workspace membership, and
+// user-specific sidebar state before it can render. It is intentionally a
+// blocking route rather than an instant-navigation shell.
+export const instant = false;
+
 export default async function Layout({ children, params }: LayoutProps) {
   await connection();
 

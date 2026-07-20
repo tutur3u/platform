@@ -26,6 +26,8 @@ interface Props {
   defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
   rootLoading?: boolean;
+  /** Verified actor supplied by satellite apps that do not use Web's Supabase session. */
+  sessionUser?: { id: string };
 }
 
 type AuthorizedWorkspace = Workspace & {
@@ -79,10 +81,11 @@ export default async function TaskBoardServerPage({
   params,
   routePrefix = '/tasks',
   rootLoading = false,
+  sessionUser,
 }: Props) {
   const { wsId: id, boardId } = await params;
 
-  const user = await getCurrentUser();
+  const user = sessionUser ?? (await getCurrentUser());
   if (!user) redirect('/login');
 
   const board = await getAuthorizedBoard(id, boardId);
@@ -90,7 +93,7 @@ export default async function TaskBoardServerPage({
 
   const isMemberBoardAccess = board.access_type === 'member';
   const workspace = isMemberBoardAccess
-    ? await getWorkspace(board.ws_id, { useAdmin: true })
+    ? await getWorkspace(board.ws_id, { useAdmin: true, user })
     : createBoardGuestWorkspace(board.ws_id);
   if (!workspace) notFound();
 

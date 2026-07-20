@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
   getUserDefaultWorkspace: vi.fn(),
   hasPendingWorkspaceInvitations: vi.fn(),
+  listPendingWorkspaceInvitations: vi.fn(),
   isExactTuturuuuDotComEmail: vi.fn(),
 }));
 
@@ -106,6 +107,9 @@ vi.mock('../lib/workspace-invitations/status', () => ({
   hasPendingWorkspaceInvitations: (
     ...args: Parameters<typeof mocks.hasPendingWorkspaceInvitations>
   ) => mocks.hasPendingWorkspaceInvitations(...args),
+  listPendingWorkspaceInvitations: (
+    ...args: Parameters<typeof mocks.listPendingWorkspaceInvitations>
+  ) => mocks.listPendingWorkspaceInvitations(...args),
 }));
 
 vi.mock('@tuturuuu/utils/email/client', () => ({
@@ -195,6 +199,7 @@ describe('web proxy api handling', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getUserDefaultWorkspace.mockResolvedValue(null);
     mocks.hasPendingWorkspaceInvitations.mockResolvedValue(false);
+    mocks.listPendingWorkspaceInvitations.mockResolvedValue([]);
   });
 
   function createSessionRequest(url: string) {
@@ -1442,6 +1447,34 @@ describe('web proxy api handling', () => {
         authEmail: 'invitee@example.com',
         userId: 'user-1',
       }
+    );
+  });
+
+  it('redirects a new invitee without a default workspace to the invited workspace', async () => {
+    mocks.createClient.mockResolvedValue(
+      createAuthenticatedSupabaseClient(
+        {
+          email: 'new-invitee@example.com',
+          id: 'user-new',
+        },
+        null
+      )
+    );
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
+    mocks.getUserDefaultWorkspace.mockResolvedValue(null);
+    mocks.listPendingWorkspaceInvitations.mockResolvedValue([
+      { workspace: { id: 'ws-invited' } },
+    ]);
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      createSessionRequest('http://localhost/onboarding')
+    );
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/ws-invited'
     );
   });
 

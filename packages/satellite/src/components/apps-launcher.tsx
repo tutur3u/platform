@@ -121,12 +121,10 @@ export function AppsLauncherDialog({
         className="flex max-w-none flex-col gap-0 overflow-hidden border-border/70 bg-background p-0 sm:max-w-none sm:rounded-xl"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
-          const focusTarget =
-            window.innerWidth < 768
-              ? '[data-slot="apps-launcher-search-trigger"]'
-              : '[data-slot="apps-launcher-search"]';
+          if (window.innerWidth < 768) return;
+
           dialogContentRef.current
-            ?.querySelector<HTMLElement>(focusTarget)
+            ?.querySelector<HTMLElement>('[data-slot="apps-launcher-search"]')
             ?.focus();
         }}
         ref={dialogContentRef}

@@ -226,6 +226,7 @@ describe('handleCreateTask', () => {
       defaultOptions: { queries: { retry: false } },
     });
     const toast = vi.fn();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
 
     mockCreateTask.mockResolvedValueOnce({
       id: 'task-new',
@@ -285,5 +286,8 @@ describe('handleCreateTask', () => {
     );
     expect(mockDispatchTaskSoundCue).toHaveBeenCalledTimes(1);
     expect(mockDispatchTaskSoundCue).toHaveBeenCalledWith('create');
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['task-list-counts', 'board-1'],
+    });
   });
 });

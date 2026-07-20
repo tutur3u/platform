@@ -16,6 +16,8 @@ const DEFAULT_LIST_NAME_KEYS: Record<string, string> = {
   Closed: 'ws-tasks.default_list_closed',
 };
 
+const inFlightEntrypointResolutions = new Map<string, Promise<string | null>>();
+
 async function resolveExistingBoardId(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions
@@ -49,6 +51,25 @@ async function resolveExistingBoardId(
   return firstBoardId;
 }
 
+async function resolveBoardAfterCreateRace(
+  workspaceId: string,
+  internalApiOptions: InternalApiClientOptions
+) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const boardId = await resolveExistingBoardId(
+      workspaceId,
+      internalApiOptions
+    );
+    if (boardId) return boardId;
+
+    if (attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
+    }
+  }
+
+  return null;
+}
+
 async function renameDefaultLists(
   workspaceId: string,
   boardId: string,
@@ -78,7 +99,7 @@ async function renameDefaultLists(
   );
 }
 
-export async function resolveTaskBoardEntrypoint(
+async function resolveTaskBoardEntrypointOnce(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions
 ) {
@@ -99,12 +120,39 @@ export async function resolveTaskBoardEntrypoint(
       internalApiOptions
     );
 
-    if (!board?.id) return null;
+    if (!board?.id) {
+      return resolveBoardAfterCreateRace(workspaceId, internalApiOptions);
+    }
 
     await renameDefaultLists(workspaceId, board.id, internalApiOptions);
 
     return board.id;
   } catch {
-    return resolveExistingBoardId(workspaceId, internalApiOptions);
+    // Concurrent navigations can both observe an empty workspace and race to
+    // create the default board. The unique constraint chooses one winner; give
+    // its transaction a brief window to become visible before falling home.
+    return resolveBoardAfterCreateRace(workspaceId, internalApiOptions);
+  }
+}
+
+export async function resolveTaskBoardEntrypoint(
+  workspaceId: string,
+  internalApiOptions: InternalApiClientOptions
+) {
+  const pending = inFlightEntrypointResolutions.get(workspaceId);
+  if (pending) return pending;
+
+  const resolution = resolveTaskBoardEntrypointOnce(
+    workspaceId,
+    internalApiOptions
+  );
+  inFlightEntrypointResolutions.set(workspaceId, resolution);
+
+  try {
+    return await resolution;
+  } finally {
+    if (inFlightEntrypointResolutions.get(workspaceId) === resolution) {
+      inFlightEntrypointResolutions.delete(workspaceId);
+    }
   }
 }

@@ -305,9 +305,22 @@ export async function completeOtpStage(
   await otpInput.waitFor({ state: 'visible', timeout: 10_000 });
   await otpInput.fill(otpCode);
 
-  // Submit the OTP form
+  const verificationResponse = page.waitForResponse((response) => {
+    return (
+      response.request().method() === 'POST' &&
+      new URL(response.url()).pathname === '/api/v1/auth/otp/verify'
+    );
+  });
+
+  // Submit the OTP form.
   const verifyButton = page.getByRole('button', { name: /verify|submit/i });
-  if (await verifyButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await verifyButton.click();
+  await verifyButton.waitFor({ state: 'visible', timeout: 10_000 });
+  await verifyButton.click();
+
+  const response = await verificationResponse;
+  if (!response.ok()) {
+    throw new Error(
+      `OTP verification failed for ${email} (${response.status()}): ${await response.text()}`
+    );
   }
 }

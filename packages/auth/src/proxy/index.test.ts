@@ -173,6 +173,30 @@ describe('auth proxy redirect helpers', () => {
     );
   });
 
+  it('preserves explicit loopback ports for local satellite auth returns', () => {
+    const request = new NextRequest(
+      'http://localhost:7809/workspace/tasks?source=sidebar-apps',
+      {
+        headers: {
+          'x-forwarded-host': 'localhost:7809',
+          'x-forwarded-proto': 'http',
+        },
+      }
+    );
+
+    expect(
+      resolveCanonicalRequestOrigin(request, 'http://localhost:7803')
+    ).toBe('http://localhost:7809');
+  });
+
+  it('keeps using the configured fallback for non-browser internal hosts', () => {
+    const request = new NextRequest('http://0.0.0.0:7809/workspace/tasks');
+
+    expect(
+      resolveCanonicalRequestOrigin(request, 'http://localhost:7803')
+    ).toBe('http://localhost:7803');
+  });
+
   it('flattens nested login and verify-token redirect chains', () => {
     const nestedTarget = encodeURIComponent(
       '/verify-token?nextUrl=%2Fworkspace%2Fdemo%3Ftab%3Dmail'
@@ -280,6 +304,19 @@ describe('auth proxy redirect helpers', () => {
       vi.stubGlobal('fetch', fetchMock);
       const request = new NextRequest(
         'https://chat.tuturuuu.localhost/verify-token?token=copy-token&nextUrl=%2Fpersonal'
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('lets the client verifier page handle direct localhost app ports', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'http://localhost:7809/verify-token?token=copy-token&nextUrl=%2Fpersonal'
       );
 
       const response = await consumeVerifyTokenRequest(request);
@@ -1149,6 +1186,32 @@ describe('auth proxy redirect helpers', () => {
       )
     );
     expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('preserves the central session cookie across localhost app ports', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'tasks' },
+      skipApiRoutes: true,
+      webAppUrl: 'http://localhost:7803',
+    });
+    const request = new NextRequest('http://localhost:7809/personal/tasks', {
+      headers: {
+        cookie: 'sb-test-auth-token=central-session',
+      },
+    });
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location') ?? '';
+
+    expect(location).toContain('http://localhost:7803/login?returnUrl=');
+    expect(location).toContain(
+      encodeURIComponent(
+        'http://localhost:7809/verify-token?nextUrl=%2Fpersonal%2Ftasks'
+      )
+    );
+    expect(response.headers.get('set-cookie') ?? '').not.toContain(
+      'sb-test-auth-token=;'
+    );
   });
 
   it('keeps Portless app requests under the Tuturuuu localhost namespace', async () => {

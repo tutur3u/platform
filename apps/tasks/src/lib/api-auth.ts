@@ -508,6 +508,21 @@ function isCliAppSessionClaims(claims: {
   );
 }
 
+export function shouldSkipAppSessionStepUpChallenge(
+  claims: {
+    origin_app?: string | null;
+    scopes?: readonly string[];
+    target_app?: string | null;
+  },
+  explicitlyAllowed = false
+) {
+  return (
+    explicitlyAllowed ||
+    isCliAppSessionClaims(claims) ||
+    (claims.origin_app === 'web' && claims.target_app === 'tasks')
+  );
+}
+
 function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
 }
@@ -833,9 +848,10 @@ export function withSessionAuth<T = unknown>(
             isRead,
             rateLimit: options?.rateLimit,
             request,
-            skipStepUpChallenge:
-              options?.skipAppSessionStepUpChallenge === true ||
-              isCliAppSessionClaims(appSessionVerification.claims),
+            skipStepUpChallenge: shouldSkipAppSessionStepUpChallenge(
+              appSessionVerification.claims,
+              options?.skipAppSessionStepUpChallenge === true
+            ),
             user: appSessionUser,
           });
           if (adaptiveControls.response) {

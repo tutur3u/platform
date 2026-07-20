@@ -15,8 +15,12 @@ const mocks = vi.hoisted(() => {
   };
 
   const detachedVerifyOtp = vi.fn();
+  const detachedSignInWithOtp = vi.fn();
+  const detachedSignUp = vi.fn();
   const detachedClient = {
     auth: {
+      signInWithOtp: detachedSignInWithOtp,
+      signUp: detachedSignUp,
       verifyOtp: detachedVerifyOtp,
     },
   };
@@ -49,6 +53,8 @@ const mocks = vi.hoisted(() => {
     createClient: vi.fn(),
     createDetachedClient: vi.fn(),
     detachedClient,
+    detachedSignInWithOtp,
+    detachedSignUp,
     detachedVerifyOtp,
     extractIPFromHeaders: vi.fn(),
     extractUserAgentFromHeaders: vi.fn(),
@@ -218,6 +224,8 @@ describe('otp auth service', () => {
       },
       error: null,
     });
+    mocks.detachedSignInWithOtp.mockResolvedValue({ error: null });
+    mocks.detachedSignUp.mockResolvedValue({ error: null });
     mocks.adminUpdateUserById.mockResolvedValue({ error: null });
   });
 
@@ -297,6 +305,96 @@ describe('otp auth service', () => {
     expect(mocks.requestSignUp).not.toHaveBeenCalled();
     expect(mocks.checkOTPSendAllowed).not.toHaveBeenCalled();
     expect(mocks.recordOTPSendSuccess).not.toHaveBeenCalled();
+  });
+
+  it('uses the detached publishable-key client for local OTP sign-up', async () => {
+    mocks.resolveTurnstileToken.mockReturnValue({
+      captchaOptions: {},
+      shouldBypassForDev: true,
+    });
+    mocks.checkIfUserExists.mockResolvedValue(undefined);
+
+    const { sendOtp } = await import('./otp');
+    const result = await sendOtp(
+      {
+        client: 'web',
+        email: 'new-person@example.com',
+        locale: 'en',
+      },
+      {
+        client: 'web',
+        endpoint: '/api/v1/auth/otp/send',
+        headers: new Headers(),
+      }
+    );
+
+    expect(result).toEqual({
+      body: { success: true },
+      status: 200,
+    });
+    expect(mocks.createDetachedClient).toHaveBeenCalledOnce();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.detachedSignUp).toHaveBeenCalledWith({
+      email: 'person@example.com',
+      options: {
+        data: {
+          auth_client: 'web',
+          locale: 'en',
+          origin: 'TUTURUUU',
+        },
+      },
+      password: 'random-password',
+    });
+  });
+
+  it('falls back to signup verification for a new account OTP', async () => {
+    mocks.requestVerifyOtp
+      .mockResolvedValueOnce({
+        data: { session: null, user: null },
+        error: { message: 'Token has wrong type' },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          session: {
+            access_token: 'access',
+            expires_at: 123,
+            expires_in: 3600,
+            refresh_token: 'refresh',
+            token_type: 'bearer',
+            user: { id: 'user-1' },
+          },
+          user: { id: 'user-1' },
+        },
+        error: null,
+      });
+
+    const { verifyOtp } = await import('./otp');
+    const result = await verifyOtp(
+      {
+        client: 'web',
+        email: 'new-person@example.com',
+        locale: 'en',
+        otp: '123456',
+      },
+      {
+        client: 'web',
+        endpoint: '/api/v1/auth/otp/verify',
+        headers: new Headers(),
+      }
+    );
+
+    expect(result).toEqual({ body: { success: true }, status: 200 });
+    expect(mocks.requestVerifyOtp).toHaveBeenNthCalledWith(1, {
+      email: 'person@example.com',
+      token: '123456',
+      type: 'email',
+    });
+    expect(mocks.requestVerifyOtp).toHaveBeenNthCalledWith(2, {
+      email: 'person@example.com',
+      token: '123456',
+      type: 'signup',
+    });
+    expect(mocks.recordOTPVerifyFailure).not.toHaveBeenCalled();
   });
 
   it('uses an active auth recovery override to bypass email-scoped OTP send blockers only', async () => {
