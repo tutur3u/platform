@@ -16,10 +16,17 @@ const mocks = vi.hoisted(() => {
   const inviteDeleteByUserId = vi.fn();
   const memberDeleteByUserId = vi.fn();
   const getExternalCustomer = vi.fn();
+  const getPermissions = vi.fn();
   const listSeats = vi.fn();
   const revokeSeat = vi.fn();
+  const workspaceBoardsEq = vi.fn();
 
   const sessionSupabase = {
+    auth: {
+      getUser: vi.fn(() =>
+        Promise.resolve({ data: { user: { id: 'admin-user' } } })
+      ),
+    },
     from: vi.fn((table: string) => {
       if (table === 'workspace_invites') {
         return {
@@ -55,6 +62,14 @@ const mocks = vi.hoisted(() => {
                 single: workspaceSubscriptionSingle,
               })),
             })),
+          })),
+        };
+      }
+
+      if (table === 'workspace_boards') {
+        return {
+          select: vi.fn(() => ({
+            eq: workspaceBoardsEq,
           })),
         };
       }
@@ -97,6 +112,7 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     getExternalCustomer,
+    getPermissions,
     inviteDeleteByUserId,
     listSeats,
     memberDeleteByUserId,
@@ -107,6 +123,7 @@ const mocks = vi.hoisted(() => {
     sessionSupabase,
     subscriptionProductMaybeSingle,
     workspaceSubscriptionSingle,
+    workspaceBoardsEq,
   };
 });
 
@@ -120,6 +137,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: mocks.getPermissions,
   normalizeWorkspaceId: mocks.normalizeSharedWorkspaceId,
 }));
 
@@ -157,8 +175,12 @@ describe('workspace members delete route', () => {
       ],
     });
     mocks.revokeSeat.mockResolvedValue(undefined);
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
     mocks.inviteDeleteByUserId.mockResolvedValue({ error: null });
     mocks.memberDeleteByUserId.mockResolvedValue({ error: null });
+    mocks.workspaceBoardsEq.mockResolvedValue({ data: [], error: null });
   });
 
   it('revokes the Polar seat using the Polar customer id during member removal', async () => {

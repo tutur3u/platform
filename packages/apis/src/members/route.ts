@@ -6,7 +6,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
@@ -82,13 +85,28 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const userId = searchParams.get('id');
   const userEmail = searchParams.get('email');
-  const normalizedUserEmail = userEmail?.trim() || null;
+  const normalizedUserEmail = userEmail?.trim().toLowerCase() || null;
 
   const supabase = await createClient(req);
   const resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   if (!resolvedWsId) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const permissions = await getPermissions({ user, wsId: resolvedWsId });
+  if (
+    !permissions ||
+    permissions.withoutPermission('manage_workspace_members')
+  ) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   // Revoke Polar seat BEFORE deleting member (best-effort)
@@ -165,6 +183,22 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     );
   }
 
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    await revokeDirectBoardGuestAccess({
+      sbAdmin,
+      wsId: resolvedWsId,
+      userId,
+      userEmail: normalizedUserEmail,
+    });
+  } catch (error) {
+    console.error('Error revoking direct board guest access:', error);
+    return NextResponse.json(
+      { message: 'Error deleting workspace member' },
+      { status: 500 }
+    );
+  }
+
   // After successful removal, check if workspace is now orphaned
   const workspaceDeleted = userId
     ? await cleanupOrphanedWorkspace(resolvedWsId)
@@ -174,6 +208,55 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     message: 'success',
     workspace_deleted: workspaceDeleted,
   });
+}
+
+export async function revokeDirectBoardGuestAccess({
+  sbAdmin,
+  userEmail,
+  userId,
+  wsId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  userEmail: string | null;
+  userId: string | null;
+  wsId: string;
+}) {
+  if (!userId && !userEmail) return;
+
+  const { data: boards, error: boardsError } = await sbAdmin
+    .from('workspace_boards')
+    .select('id')
+    .eq('ws_id', wsId);
+
+  if (boardsError) throw boardsError;
+  const boardIds = (boards ?? []).map((board: { id: string }) => board.id);
+  if (boardIds.length === 0) return;
+
+  const deletes = [];
+  if (userId) {
+    deletes.push(
+      sbAdmin
+        .from('task_board_shares')
+        .delete()
+        .in('board_id', boardIds)
+        .eq('shared_with_user_id', userId)
+    );
+  }
+  if (userEmail) {
+    deletes.push(
+      sbAdmin
+        .from('task_board_shares')
+        .delete()
+        .in('board_id', boardIds)
+        .eq('shared_with_email', userEmail)
+    );
+  }
+
+  const results = await Promise.all(deletes);
+  const deleteError = results.find(
+    (result: { error: unknown | null }) => result.error
+  )?.error;
+  if (deleteError) throw deleteError;
 }
 
 /**
