@@ -16,11 +16,19 @@ describe('internal account API helpers', () => {
       jsonResponse({
         accounts: [],
         count: 0,
+        nextCursor: null,
       })
     );
 
     await listInternalAccounts(
-      { q: 'local@tuturuuu.com' },
+      {
+        activeOnly: true,
+        limit: 24,
+        q: 'local@tuturuuu.com',
+        sortBy: 'displayName',
+        sortDirection: 'asc',
+        verifiedOnly: true,
+      },
       {
         baseUrl: 'https://infra.test',
         fetch: fetchMock as unknown as typeof fetch,
@@ -28,7 +36,13 @@ describe('internal account API helpers', () => {
     );
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(new URL(url).searchParams.get('q')).toBe('local@tuturuuu.com');
+    const searchParams = new URL(url).searchParams;
+    expect(searchParams.get('q')).toBe('local@tuturuuu.com');
+    expect(searchParams.get('activeOnly')).toBe('true');
+    expect(searchParams.get('verifiedOnly')).toBe('true');
+    expect(searchParams.get('sortBy')).toBe('displayName');
+    expect(searchParams.get('sortDirection')).toBe('asc');
+    expect(searchParams.get('limit')).toBe('24');
     expect(init.cache).toBe('no-store');
   });
 

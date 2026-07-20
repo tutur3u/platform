@@ -1,6 +1,13 @@
 'use client';
 
-import { Ban, CheckCircle2, KeyRound, Loader2 } from '@tuturuuu/icons';
+import {
+  Ban,
+  CheckCircle2,
+  HardDrive,
+  KeyRound,
+  Loader2,
+  Pencil,
+} from '@tuturuuu/icons';
 import type {
   InternalAccount,
   InternalAccountAction,
@@ -8,9 +15,11 @@ import type {
 } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { formatBytes } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { InternalAccountActionDialog } from './internal-account-action-dialog';
+import { InternalAccountEditDialog } from './internal-account-edit-dialog';
 
 interface InternalAccountRowProps {
   account: InternalAccount;
@@ -25,21 +34,31 @@ export function InternalAccountRow({
 }: InternalAccountRowProps) {
   const locale = useLocale();
   const t = useTranslations('internal-accounts');
-  const [action, setAction] = useState<InternalAccountAction | null>(null);
+  const [action, setAction] = useState<Exclude<
+    InternalAccountAction,
+    'update_profile'
+  > | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });
+  const storagePercentage = account.storageLimitBytes
+    ? Math.min(
+        100,
+        ((account.storageUsedBytes ?? 0) / account.storageLimitBytes) * 100
+      )
+    : null;
 
   const formatDate = (value: string | null) =>
     value ? dateFormatter.format(new Date(value)) : t('dates.never');
 
   return (
     <div
-      className="flex flex-col gap-4 p-4 transition-colors hover:bg-foreground/[0.025] lg:flex-row lg:items-center"
+      className="grid gap-4 p-4 transition-colors hover:bg-foreground/[0.025] xl:grid-cols-[minmax(0,1fr)_minmax(15rem,0.45fr)_auto] xl:items-center"
       data-testid={`internal-account-${account.email}`}
     >
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="min-w-0 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate font-semibold">
             {account.displayName || account.email}
@@ -54,11 +73,10 @@ export function InternalAccountRow({
             <Badge variant="outline">{t('status.unconfirmed')}</Badge>
           ) : null}
         </div>
-        {account.displayName ? (
-          <p className="truncate text-muted-foreground text-sm">
-            {account.email}
-          </p>
-        ) : null}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+          <span className="truncate">{account.email}</span>
+          {account.username ? <span>@{account.username}</span> : null}
+        </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-muted-foreground text-xs">
           <span>
             {t('dates.last_sign_in', {
@@ -71,7 +89,45 @@ export function InternalAccountRow({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 lg:justify-end">
+      <div className="min-w-0 rounded-lg border bg-muted/30 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 font-medium text-xs">
+            <HardDrive className="size-4 text-muted-foreground" />
+            {t('storage.title')}
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {account.storageUsedBytes !== null &&
+            account.storageLimitBytes !== null
+              ? t('storage.value', {
+                  limit: formatBytes(account.storageLimitBytes, {
+                    decimals: 1,
+                  }),
+                  used: formatBytes(account.storageUsedBytes, { decimals: 1 }),
+                })
+              : t('storage.unavailable')}
+          </span>
+        </div>
+        {storagePercentage !== null ? (
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${storagePercentage}%` }}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex flex-wrap gap-2 xl:justify-end">
+        <Button
+          disabled={isWorking}
+          onClick={() => setEditOpen(true)}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Pencil className="size-4" />
+          {t('actions.edit_profile')}
+        </Button>
         <Button
           data-testid={`reset-password-${account.email}`}
           disabled={account.isSelf || isWorking}
@@ -81,9 +137,9 @@ export function InternalAccountRow({
           variant="outline"
         >
           {isWorking ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <KeyRound className="h-4 w-4" />
+            <KeyRound className="size-4" />
           )}
           {t('actions.reset_password')}
         </Button>
@@ -96,7 +152,7 @@ export function InternalAccountRow({
             type="button"
             variant="secondary"
           >
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="size-4" />
             {t('actions.enable_access')}
           </Button>
         ) : (
@@ -108,7 +164,7 @@ export function InternalAccountRow({
             type="button"
             variant="destructive"
           >
-            <Ban className="h-4 w-4" />
+            <Ban className="size-4" />
             {t('actions.disable_access')}
           </Button>
         )}
@@ -120,6 +176,12 @@ export function InternalAccountRow({
         onConfirm={onConfirm}
         onOpenChange={(open) => !open && setAction(null)}
         open={action !== null}
+      />
+      <InternalAccountEditDialog
+        account={account}
+        onConfirm={onConfirm}
+        onOpenChange={setEditOpen}
+        open={editOpen}
       />
     </div>
   );

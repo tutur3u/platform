@@ -24,7 +24,7 @@ const MIN_PASSWORD_LENGTH = 12;
 
 interface InternalAccountActionDialogProps {
   account: InternalAccount;
-  action: InternalAccountAction | null;
+  action: Exclude<InternalAccountAction, 'update_profile'> | null;
   onConfirm: (payload: UpdateInternalAccountPayload) => Promise<unknown>;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -66,12 +66,15 @@ export function InternalAccountActionDialog({
     setIsSubmitting(true);
 
     try {
-      await onConfirm({
-        action: selectedAction,
-        confirmationEmail,
-        newPassword:
-          selectedAction === 'reset_password' ? newPassword : undefined,
-      });
+      await onConfirm(
+        selectedAction === 'reset_password'
+          ? {
+              action: selectedAction,
+              confirmationEmail,
+              newPassword,
+            }
+          : { action: selectedAction, confirmationEmail }
+      );
       handleOpenChange(false);
     } catch {
       // The mutation owns user-facing error reporting and keeps the dialog open.

@@ -96,4 +96,25 @@ describe('internal account mutation route', () => {
       })
     );
   });
+
+  it('accepts a valid profile update without email confirmation', async () => {
+    const response = await PATCH(
+      request({
+        action: 'update_profile',
+        displayName: 'Local Operator',
+        username: 'local-operator',
+      }),
+      params()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.mutateInternalAccount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'update_profile',
+        displayName: 'Local Operator',
+        targetUserId,
+        username: 'local-operator',
+      })
+    );
+  });
 });

@@ -3,7 +3,16 @@ import { getInternalApiClient, type InternalApiClientOptions } from '../client';
 export type InternalAccountAction =
   | 'disable_access'
   | 'enable_access'
-  | 'reset_password';
+  | 'reset_password'
+  | 'update_profile';
+
+export type InternalAccountSortBy =
+  | 'createdAt'
+  | 'displayName'
+  | 'email'
+  | 'lastSignInAt';
+
+export type InternalAccountSortDirection = 'asc' | 'desc';
 
 export interface InternalAccount {
   bannedUntil: string | null;
@@ -15,22 +24,43 @@ export interface InternalAccount {
   isDisabled: boolean;
   isSelf: boolean;
   lastSignInAt: string | null;
+  personalWorkspaceId: string | null;
+  storageLimitBytes: number | null;
+  storageUsedBytes: number | null;
+  username: string | null;
 }
 
 export interface ListInternalAccountsParams {
+  activeOnly?: boolean;
+  cursor?: string;
+  limit?: number;
   q?: string;
+  sortBy?: InternalAccountSortBy;
+  sortDirection?: InternalAccountSortDirection;
+  verifiedOnly?: boolean;
 }
 
 export interface ListInternalAccountsResponse {
   accounts: InternalAccount[];
   count: number;
+  nextCursor: string | null;
 }
 
-export interface UpdateInternalAccountPayload {
-  action: InternalAccountAction;
-  confirmationEmail: string;
-  newPassword?: string;
-}
+export type UpdateInternalAccountPayload =
+  | {
+      action: 'disable_access' | 'enable_access';
+      confirmationEmail: string;
+    }
+  | {
+      action: 'reset_password';
+      confirmationEmail: string;
+      newPassword: string;
+    }
+  | {
+      action: 'update_profile';
+      displayName: string;
+      username: string | null;
+    };
 
 export interface UpdateInternalAccountResponse {
   account: InternalAccount;
@@ -48,7 +78,13 @@ export async function listInternalAccounts(
     {
       cache: 'no-store',
       query: {
+        activeOnly: params.activeOnly,
+        cursor: params.cursor,
+        limit: params.limit,
         q: params.q?.trim() || undefined,
+        sortBy: params.sortBy,
+        sortDirection: params.sortDirection,
+        verifiedOnly: params.verifiedOnly,
       },
     }
   );

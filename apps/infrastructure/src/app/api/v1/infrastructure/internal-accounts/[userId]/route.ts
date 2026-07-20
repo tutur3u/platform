@@ -1,4 +1,8 @@
-import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_DISPLAY_NAME_LENGTH,
+  MAX_EMAIL_LENGTH,
+} from '@tuturuuu/utils/constants';
+import { WORKSPACE_HANDLE_REGEX } from '@tuturuuu/utils/workspace-handle';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInternalAccountRequest } from '@/lib/internal-accounts/authorization';
@@ -11,29 +15,28 @@ const ParamsSchema = z.object({
   userId: z.guid(),
 });
 
-const UpdateInternalAccountSchema = z
-  .object({
-    action: z.enum(['disable_access', 'enable_access', 'reset_password']),
+const UpdateInternalAccountSchema = z.discriminatedUnion('action', [
+  z.object({
+    action: z.enum(['disable_access', 'enable_access']),
     confirmationEmail: z.string().trim().email().max(MAX_EMAIL_LENGTH),
-    newPassword: z.string().min(12).max(72).optional(),
-  })
-  .superRefine((value, context) => {
-    if (value.action === 'reset_password' && !value.newPassword) {
-      context.addIssue({
-        code: 'custom',
-        message: 'A new password is required',
-        path: ['newPassword'],
-      });
-    }
-
-    if (value.action !== 'reset_password' && value.newPassword) {
-      context.addIssue({
-        code: 'custom',
-        message: 'A password is only accepted for password reset actions',
-        path: ['newPassword'],
-      });
-    }
-  });
+  }),
+  z.object({
+    action: z.literal('reset_password'),
+    confirmationEmail: z.string().trim().email().max(MAX_EMAIL_LENGTH),
+    newPassword: z.string().min(12).max(72),
+  }),
+  z.object({
+    action: z.literal('update_profile'),
+    displayName: z.string().trim().min(1).max(MAX_DISPLAY_NAME_LENGTH),
+    username: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(64)
+      .regex(WORKSPACE_HANDLE_REGEX)
+      .nullable(),
+  }),
+]);
 
 interface RouteParams {
   params: Promise<{ userId: string }>;
@@ -43,6 +46,7 @@ const actionMessages = {
   disable_access: 'Internal account access disabled',
   enable_access: 'Internal account access restored',
   reset_password: 'Internal account password updated',
+  update_profile: 'Internal account profile updated',
 } as const;
 
 export async function PATCH(request: Request, { params }: RouteParams) {

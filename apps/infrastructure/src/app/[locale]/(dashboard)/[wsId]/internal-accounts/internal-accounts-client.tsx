@@ -1,19 +1,26 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { RefreshCw, Search } from '@tuturuuu/icons';
 import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { Loader2 } from '@tuturuuu/icons';
+import {
+  type InternalAccountSortBy,
+  type InternalAccountSortDirection,
+  type ListInternalAccountsResponse,
   listInternalAccounts,
   type UpdateInternalAccountPayload,
   updateInternalAccount,
 } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useCallback, useRef, useState } from 'react';
 import { InternalAccountRow } from './internal-account-row';
+import { InternalAccountsToolbar } from './internal-accounts-toolbar';
 
 const QUERY_KEY = ['infrastructure', 'internal-accounts'] as const;
 
@@ -25,12 +32,32 @@ interface MutationInput {
 export function InternalAccountsClient() {
   const t = useTranslations('internal-accounts');
   const queryClient = useQueryClient();
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const [draftQuery, setDraftQuery] = useState('');
   const [query, setQuery] = useState('');
+  const [activeOnly, setActiveOnly] = useState(true);
+  const [verifiedOnly, setVerifiedOnly] = useState(true);
+  const [sortBy, setSortBy] = useState<InternalAccountSortBy>('displayName');
+  const [sortDirection, setSortDirection] =
+    useState<InternalAccountSortDirection>('asc');
 
-  const accountsQuery = useQuery({
-    queryFn: () => listInternalAccounts({ q: query || undefined }),
-    queryKey: [...QUERY_KEY, query],
+  const accountsQuery = useInfiniteQuery<ListInternalAccountsResponse>({
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      listInternalAccounts({
+        activeOnly,
+        cursor: pageParam as string | undefined,
+        limit: 24,
+        q: query || undefined,
+        sortBy,
+        sortDirection,
+        verifiedOnly,
+      }),
+    queryKey: [
+      ...QUERY_KEY,
+      { activeOnly, query, sortBy, sortDirection, verifiedOnly },
+    ],
     staleTime: 10_000,
   });
 
@@ -44,55 +71,56 @@ export function InternalAccountsClient() {
     },
   });
 
+  const loadMoreRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observerRef.current?.disconnect();
+      if (!node || !accountsQuery.hasNextPage) return;
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0]?.isIntersecting && !accountsQuery.isFetchingNextPage) {
+          void accountsQuery.fetchNextPage();
+        }
+      });
+      observerRef.current.observe(node);
+    },
+    [
+      accountsQuery.fetchNextPage,
+      accountsQuery.hasNextPage,
+      accountsQuery.isFetchingNextPage,
+    ]
+  );
+
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setQuery(draftQuery.trim());
   }
 
+  const accounts =
+    accountsQuery.data?.pages.flatMap((page) => page.accounts) ?? [];
+  const count = accountsQuery.data?.pages[0]?.count;
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-        <form className="flex min-w-0 flex-1 gap-2" onSubmit={submitSearch}>
-          <div className="relative min-w-0 flex-1 sm:max-w-md">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              aria-label={t('search.label')}
-              className="pl-9"
-              data-testid="internal-account-search"
-              onChange={(event) => setDraftQuery(event.target.value)}
-              placeholder={t('search.placeholder')}
-              value={draftQuery}
-            />
-          </div>
-          <Button type="submit" variant="secondary">
-            {t('actions.search')}
-          </Button>
-        </form>
-        <div className="flex items-center justify-between gap-3 sm:justify-end">
-          <p className="text-muted-foreground text-sm">
-            {accountsQuery.data
-              ? t('count', { count: accountsQuery.data.count })
-              : t('count_loading')}
-          </p>
-          <Button
-            aria-label={t('actions.refresh')}
-            disabled={accountsQuery.isFetching}
-            onClick={() => accountsQuery.refetch()}
-            size="icon"
-            type="button"
-            variant="outline"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${accountsQuery.isFetching ? 'animate-spin' : ''}`}
-            />
-          </Button>
-        </div>
-      </div>
+      <InternalAccountsToolbar
+        activeOnly={activeOnly}
+        count={count}
+        draftQuery={draftQuery}
+        isFetching={accountsQuery.isFetching}
+        onActiveOnlyChange={setActiveOnly}
+        onDraftQueryChange={setDraftQuery}
+        onRefresh={() => void accountsQuery.refetch()}
+        onSearch={submitSearch}
+        onSortByChange={setSortBy}
+        onSortDirectionChange={setSortDirection}
+        onVerifiedOnlyChange={setVerifiedOnly}
+        sortBy={sortBy}
+        sortDirection={sortDirection}
+        verifiedOnly={verifiedOnly}
+      />
 
       {accountsQuery.isLoading ? <AccountsSkeleton /> : null}
 
       {accountsQuery.isError ? (
-        <div className="space-y-3 rounded-lg border border-border bg-card p-6">
+        <div className="space-y-3 rounded-xl border bg-card p-6">
           <div>
             <p className="font-semibold">{t('error.title')}</p>
             <p className="mt-1 text-muted-foreground text-sm">
@@ -109,8 +137,10 @@ export function InternalAccountsClient() {
         </div>
       ) : null}
 
-      {accountsQuery.data?.accounts.length === 0 ? (
-        <div className="rounded-lg border border-border border-dashed p-8 text-center">
+      {!accountsQuery.isLoading &&
+      !accountsQuery.isError &&
+      accounts.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-8 text-center">
           <p className="font-medium">{t('empty.title')}</p>
           <p className="mt-1 text-muted-foreground text-sm">
             {t('empty.description')}
@@ -118,9 +148,9 @@ export function InternalAccountsClient() {
         </div>
       ) : null}
 
-      {accountsQuery.data?.accounts.length ? (
-        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {accountsQuery.data.accounts.map((account) => (
+      {accounts.length ? (
+        <div className="divide-y overflow-hidden rounded-xl border bg-card shadow-xs">
+          {accounts.map((account) => (
             <InternalAccountRow
               account={account}
               isWorking={
@@ -135,16 +165,35 @@ export function InternalAccountsClient() {
           ))}
         </div>
       ) : null}
+
+      {accountsQuery.hasNextPage ? (
+        <div className="flex justify-center py-2" ref={loadMoreRef}>
+          {accountsQuery.isFetchingNextPage ? (
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          ) : (
+            <Button
+              onClick={() => accountsQuery.fetchNextPage()}
+              variant="ghost"
+            >
+              {t('actions.load_more')}
+            </Button>
+          )}
+        </div>
+      ) : accounts.length ? (
+        <p className="text-center text-muted-foreground text-xs">
+          {t('end_of_list')}
+        </p>
+      ) : null}
     </div>
   );
 }
 
 function AccountsSkeleton() {
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-      {[0, 1, 2].map((item) => (
+    <div className="divide-y overflow-hidden rounded-xl border">
+      {[0, 1, 2, 3].map((item) => (
         <div className="flex items-center gap-4 p-4" key={item}>
-          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="size-10 rounded-full" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-44" />
             <Skeleton className="h-3 w-64 max-w-full" />
