@@ -93,6 +93,10 @@ export async function GET(request: Request) {
 
   const byAccount: Record<string, unknown[]> = {};
   const calendars: unknown[] = [];
+  const accountStatuses: Record<
+    string,
+    { state: 'connected' | 'reconnect_required' }
+  > = {};
 
   for (const token of tokens ?? []) {
     try {
@@ -122,6 +126,7 @@ export async function GET(request: Request) {
         }));
 
         byAccount[token.id] = accountCalendars;
+        accountStatuses[token.id] = { state: 'connected' };
         calendars.push(...accountCalendars);
         continue;
       }
@@ -143,6 +148,7 @@ export async function GET(request: Request) {
         }));
 
         byAccount[token.id] = accountCalendars;
+        accountStatuses[token.id] = { state: 'connected' };
         calendars.push(...accountCalendars);
       }
     } catch (error) {
@@ -152,12 +158,14 @@ export async function GET(request: Request) {
         error,
       });
       byAccount[token.id] = [];
+      accountStatuses[token.id] = { state: 'reconnect_required' };
     }
   }
 
   return NextResponse.json({
     calendars,
     byAccount,
+    accountStatuses,
     accounts:
       tokens?.map((token) => ({
         id: token.id,

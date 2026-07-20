@@ -25,10 +25,13 @@ export type CalendarSyncPreferencesPayload = {
 };
 
 type PreferenceRow = {
+  default_calendar_connection_id: string | null;
+  default_provider: 'tuturuuu' | 'google' | 'microsoft';
   inbound_sync_enabled: boolean | null;
   outbound_sync_enabled: boolean | null;
   conflict_policy: string | null;
   default_outbound_calendar_connection_id: string | null;
+  default_workspace_calendar_id: string | null;
 };
 
 const DEFAULT_SYNC_PREFERENCES = {
@@ -86,7 +89,7 @@ async function getPreferenceRow(args: {
     .schema('private')
     .from('calendar_user_workspace_preferences')
     .select(
-      'inbound_sync_enabled, outbound_sync_enabled, conflict_policy, default_outbound_calendar_connection_id'
+      'default_provider, default_workspace_calendar_id, default_calendar_connection_id, inbound_sync_enabled, outbound_sync_enabled, conflict_policy, default_outbound_calendar_connection_id'
     )
     .eq('ws_id', args.wsId)
     .eq('user_id', args.userId)
@@ -154,9 +157,7 @@ export async function saveCalendarSyncPreferences(args: {
     }
   }
 
-  const payload = {
-    user_id: args.userId,
-    ws_id: args.wsId,
+  const syncPayload = {
     inbound_sync_enabled:
       args.preferences.inboundSyncEnabled ?? current.inboundSyncEnabled,
     outbound_sync_enabled:
@@ -165,13 +166,52 @@ export async function saveCalendarSyncPreferences(args: {
     default_outbound_calendar_connection_id: defaultOutboundConnectionId,
   };
 
-  const { error } = await (args.sbAdmin as any)
+  const existingRow = await getPreferenceRow(args);
+  const preferencesTable = (args.sbAdmin as any)
     .schema('private')
-    .from('calendar_user_workspace_preferences')
-    .upsert(payload, { onConflict: 'user_id,ws_id' });
+    .from('calendar_user_workspace_preferences');
+
+  const { error } = existingRow
+    ? await preferencesTable
+        .update(syncPayload)
+        .eq('user_id', args.userId)
+        .eq('ws_id', args.wsId)
+    : await preferencesTable.insert({
+        ...syncPayload,
+        ...buildDefaultPreferenceSourceColumns(current.options),
+        user_id: args.userId,
+        ws_id: args.wsId,
+      });
 
   if (error) throw error;
   return getCalendarSyncPreferences(args);
+}
+
+export function buildDefaultPreferenceSourceColumns(
+  options: CalendarSourceOption[]
+) {
+  const option =
+    options.find(
+      (candidate) => candidate.provider === 'tuturuuu' && candidate.primary
+    ) ?? options[0];
+
+  if (!option) {
+    throw new Error('No writable calendar is available for this workspace');
+  }
+
+  if (option.provider === 'tuturuuu') {
+    return {
+      default_provider: option.provider,
+      default_workspace_calendar_id: option.workspaceCalendarId,
+      default_calendar_connection_id: null,
+    };
+  }
+
+  return {
+    default_provider: option.provider,
+    default_workspace_calendar_id: null,
+    default_calendar_connection_id: option.connectionId,
+  };
 }
 
 export async function resolveOutboundSyncSource(args: {

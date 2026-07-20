@@ -1,19 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  googleCalendarMock,
   normalizeWorkspaceIdMock,
   resolveSessionAuthContextMock,
   verifyWorkspaceMembershipTypeMock,
 } = vi.hoisted(() => ({
+  googleCalendarMock: vi.fn(),
   normalizeWorkspaceIdMock: vi.fn(),
   resolveSessionAuthContextMock: vi.fn(),
   verifyWorkspaceMembershipTypeMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/google', () => ({
-  OAuth2Client: vi.fn(),
+  OAuth2Client: vi.fn(() => ({ setCredentials: vi.fn() })),
   google: {
-    calendar: vi.fn(),
+    calendar: googleCalendarMock,
   },
 }));
 
@@ -41,7 +43,7 @@ import { GET } from './route';
 
 function createTokenQuery() {
   const query = {
-    data: [],
+    data: [] as Array<Record<string, unknown>>,
     error: null,
     eq: vi.fn(() => query),
     order: vi.fn(() => query),
@@ -116,5 +118,41 @@ describe('calendar provider calendars route', () => {
 
     expect(response.status).toBe(403);
     expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it('marks an expired provider account for reconnection', async () => {
+    const tokenQuery = createTokenQuery();
+    tokenQuery.data = [
+      {
+        id: 'account-1',
+        provider: 'google',
+        access_token: 'expired',
+        refresh_token: 'invalid',
+        account_email: 'member@example.com',
+        account_name: 'Member',
+      },
+    ];
+    const supabase = { from: vi.fn(() => tokenQuery) };
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase,
+      user: { id: 'user-1' },
+    });
+    googleCalendarMock.mockImplementation(() => {
+      throw new Error('invalid_request');
+    });
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/calendar/auth/provider-calendars?wsId=workspace-1'
+      )
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.byAccount).toEqual({ 'account-1': [] });
+    expect(body.accountStatuses).toEqual({
+      'account-1': { state: 'reconnect_required' },
+    });
   });
 });

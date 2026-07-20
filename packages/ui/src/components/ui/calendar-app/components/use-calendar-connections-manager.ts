@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  type CalendarSourceOption,
   getGoogleCalendarAuthUrl,
   getWorkspaceCalendarDefaultSource,
   getWorkspaceCalendarSyncPreferences,
@@ -14,66 +13,21 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { toast } from '../../sonner';
+import {
+  type AccountsResponse,
+  getCalendarColor,
+  type ManualSyncResponse,
+  sourceInputFromOption,
+  type WorkspaceCalendarsResponse,
+} from './calendar-connections-manager-helpers';
 import type {
   AuthResponse,
   CalendarSyncHealth,
-  ConnectedAccount,
   ProviderCalendar,
 } from './calendar-types';
-
-interface AccountsResponse {
-  accounts: ConnectedAccount[];
-  grouped: {
-    google: ConnectedAccount[];
-    microsoft: ConnectedAccount[];
-  };
-  total: number;
-}
-
-interface WorkspaceCalendar {
-  id: string;
-  ws_id: string;
-  name: string;
-  description: string | null;
-  color: string | null;
-  calendar_type: 'primary' | 'tasks' | 'habits' | 'custom';
-  is_system: boolean;
-  is_enabled: boolean;
-  position: number;
-}
-
-interface WorkspaceCalendarsResponse {
-  calendars: WorkspaceCalendar[];
-  grouped: {
-    system: WorkspaceCalendar[];
-    custom: WorkspaceCalendar[];
-  };
-  total: number;
-}
-
-interface ManualSyncResponse {
-  ok: boolean;
-  alreadyRunning?: boolean;
-  code?: string;
-  error?: string;
-  retryAfterSeconds?: number | null;
-}
+import { mergeProviderCalendarsByAccount } from './merge-provider-calendars';
 
 export type CalendarConnectionsUnifiedVariant = 'compact' | 'settings';
-
-function sourceInputFromOption(option: CalendarSourceOption) {
-  if (option.provider === 'tuturuuu') {
-    return {
-      provider: 'tuturuuu' as const,
-      workspaceCalendarId: option.workspaceCalendarId,
-    };
-  }
-
-  return {
-    provider: option.provider,
-    connectionId: option.connectionId,
-  };
-}
 
 export function useCalendarConnectionsManager(wsId: string) {
   const t = useTranslations('calendar');
@@ -293,22 +247,6 @@ export function useCalendarConnectionsManager(wsId: string) {
   const workspaceCalendars = workspaceCalendarsData?.calendars || [];
   const systemCalendars = workspaceCalendarsData?.grouped?.system || [];
   const customCalendars = workspaceCalendarsData?.grouped?.custom || [];
-
-  // Calendar color mapping helper
-  const getCalendarColor = (color: string): string => {
-    const colorMap: Record<string, string> = {
-      BLUE: '#3b82f6',
-      RED: '#ef4444',
-      GREEN: '#22c55e',
-      YELLOW: '#eab308',
-      ORANGE: '#f97316',
-      PURPLE: '#a855f7',
-      PINK: '#ec4899',
-      CYAN: '#06b6d4',
-      GRAY: '#6b7280',
-    };
-    return colorMap[color.toUpperCase()] || color;
-  };
 
   // Calculate total enabled calendars count
   const tuturuuuEnabledCount = workspaceCalendars.filter(
@@ -648,75 +586,29 @@ export function useCalendarConnectionsManager(wsId: string) {
         `/api/v1/calendar/auth/provider-calendars?wsId=${wsId}`,
         { cache: 'no-store' }
       );
-      if (!response.ok) return { calendars: [], byAccount: {} };
+      if (!response.ok)
+        return { calendars: [], byAccount: {}, accountStatuses: {} };
       return response.json() as Promise<{
         calendars: ProviderCalendar[];
         byAccount: Record<string, ProviderCalendar[]>;
+        accountStatuses: Record<
+          string,
+          { state: 'connected' | 'reconnect_required' }
+        >;
       }>;
     },
     staleTime: 30_000,
   });
 
   const calendarsByAccountFromAPI = googleCalendarsData?.byAccount || {};
+  const providerAccountStatuses = googleCalendarsData?.accountStatuses || {};
 
-  // Merge API calendars with existing connections for visibility state
-  const calendarsByAccount = accounts.reduce(
-    (acc, account) => {
-      const apiCalendars = calendarsByAccountFromAPI[account.id] || [];
-
-      // Map API calendars to connection-like objects, merging with existing connections
-      acc[account.id] = apiCalendars.map((apiCal) => {
-        // Find existing connection for this calendar
-        const existingConnection = calendarConnections.find(
-          (conn) =>
-            conn.calendar_id === apiCal.id && conn.auth_token_id === account.id
-        ) as
-          | ((typeof calendarConnections)[number] & {
-              sync_delete_enabled?: boolean | null;
-              sync_inbound_enabled?: boolean | null;
-              sync_outbound_enabled?: boolean | null;
-            })
-          | undefined;
-
-        return {
-          id: existingConnection?.id || apiCal.id,
-          ws_id: wsId,
-          calendar_id: apiCal.id,
-          calendar_name: apiCal.name,
-          is_enabled: existingConnection?.is_enabled ?? false, // Default to hidden if no connection exists
-          color: existingConnection?.color || apiCal.backgroundColor,
-          isFromAPI: true,
-          connectionExists: !!existingConnection,
-          accountId: account.id,
-          accessRole: apiCal.accessRole,
-          syncDeleteEnabled: existingConnection?.sync_delete_enabled ?? true,
-          syncInboundEnabled: existingConnection?.sync_inbound_enabled ?? true,
-          syncOutboundEnabled:
-            existingConnection?.sync_outbound_enabled ?? false,
-        };
-      });
-
-      return acc;
-    },
-    {} as Record<
-      string,
-      Array<{
-        id: string;
-        ws_id: string;
-        calendar_id: string;
-        calendar_name: string;
-        is_enabled: boolean;
-        color: string | null;
-        isFromAPI: boolean;
-        connectionExists: boolean;
-        accountId: string;
-        accessRole: string;
-        syncDeleteEnabled: boolean;
-        syncInboundEnabled: boolean;
-        syncOutboundEnabled: boolean;
-      }>
-    >
-  );
+  const calendarsByAccount = mergeProviderCalendarsByAccount({
+    accounts,
+    calendarConnections,
+    liveCalendarsByAccount: calendarsByAccountFromAPI,
+    wsId,
+  });
 
   // Note: Removed early return - we always show the full UI now so Tuturuuu calendars are visible
 
@@ -724,6 +616,7 @@ export function useCalendarConnectionsManager(wsId: string) {
     accounts,
     calendarConnections,
     calendarsByAccount,
+    providerAccountStatuses,
     createCalendarMutation,
     customCalendars,
     defaultSourceData,
