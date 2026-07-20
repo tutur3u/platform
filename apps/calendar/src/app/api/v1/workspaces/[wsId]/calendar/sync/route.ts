@@ -385,37 +385,60 @@ async function syncGoogleInbound(args: {
   let inserted = 0;
   let updated = 0;
   let deleted = 0;
+  let failedConnections = 0;
+  let firstConnectionError: unknown;
 
   for (const connection of googleConnections) {
-    const result = await performIncrementalActiveSync(
-      args.wsId,
-      args.userIdForFallback,
-      connection.calendar_id,
-      new Date(args.rangeStart),
-      new Date(args.rangeEnd),
-      undefined,
-      connection.auth_token_id,
-      connection.workspace_calendar_id ?? null,
-      {
-        syncDeletes: connection.sync_delete_enabled !== false,
+    try {
+      const result = await performIncrementalActiveSync(
+        args.wsId,
+        args.userIdForFallback,
+        connection.calendar_id,
+        new Date(args.rangeStart),
+        new Date(args.rangeEnd),
+        undefined,
+        connection.auth_token_id,
+        connection.workspace_calendar_id ?? null,
+        {
+          syncDeletes: connection.sync_delete_enabled !== false,
+        }
+      );
+
+      if (result instanceof NextResponse) {
+        const body = await result.json();
+        throw new Error(body.error || 'Google sync failed');
       }
-    );
 
-    if (result instanceof NextResponse) {
-      const body = await result.json();
-      throw new Error(body.error || 'Google sync failed');
+      inserted += result.eventsInserted;
+      updated += result.eventsUpdated;
+      deleted += result.eventsDeleted;
+    } catch (error) {
+      failedConnections += 1;
+      firstConnectionError ??= error;
+      console.warn('Google calendar connection sync failed', {
+        wsId: args.wsId,
+        authTokenId: connection.auth_token_id,
+        calendarId: connection.calendar_id,
+        error,
+      });
     }
+  }
 
-    inserted += result.eventsInserted;
-    updated += result.eventsUpdated;
-    deleted += result.eventsDeleted;
+  if (
+    googleConnections.length > 0 &&
+    failedConnections === googleConnections.length
+  ) {
+    throw firstConnectionError instanceof Error
+      ? firstConnectionError
+      : new Error('Google sync failed for all connected calendars');
   }
 
   return {
     inserted,
     updated,
     deleted,
-    processedConnections: googleConnections.length,
+    processedConnections: googleConnections.length - failedConnections,
+    failedConnections,
   };
 }
 
@@ -659,6 +682,7 @@ export async function POST(
           updated: 0,
           deleted: 0,
           processedConnections: 0,
+          failedConnections: 0,
         };
 
     const microsoftSummary = shouldRunInbound

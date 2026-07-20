@@ -44,6 +44,17 @@ function filterEventsByStatus(events: calendar_v3.Schema$Event[]) {
   return result;
 }
 
+export function getCancelledGoogleEventIds(events: calendar_v3.Schema$Event[]) {
+  return [
+    ...new Set(
+      events
+        .filter((event) => event.status === 'cancelled')
+        .map((event) => event.id)
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+}
+
 export async function performIncrementalActiveSync(
   wsId: string,
   userId: string,
@@ -486,22 +497,15 @@ async function incrementalActiveSync(
     });
   });
 
-  const formattedEventsToDelete = eventsToDelete.map((event) => {
-    const formatted = formatEventForDb(event, wsId, calendarId);
-    return {
-      ...formatted,
-      provider: 'google' as const,
-      external_calendar_id: calendarId,
-      external_event_id: event.id,
-      source_calendar_id: sourceCalendarId ?? null,
-    };
-  });
+  // Google deletion tombstones often contain only an id and status. Avoid
+  // formatting them as full events because they have no start/end payload.
+  const googleEventIdsToDelete = getCancelledGoogleEventIds(eventsToDelete);
 
   const eventProcessingMs = Date.now() - processingStart;
 
   console.debug('✅ [DEBUG] Events formatted:', {
     formattedEventsToUpsertCount: formattedEventsToUpsert.length,
-    formattedEventsToDeleteCount: formattedEventsToDelete.length,
+    formattedEventsToDeleteCount: googleEventIdsToDelete.length,
   });
 
   const dbWriteStart = Date.now();
@@ -558,15 +562,9 @@ async function incrementalActiveSync(
     }
   }
 
-  if (
-    options.syncDeletes !== false &&
-    formattedEventsToDelete &&
-    formattedEventsToDelete.length > 0
-  ) {
+  if (options.syncDeletes !== false && googleEventIdsToDelete.length > 0) {
     console.debug('🔍 [DEBUG] Deleting events...');
-    const validEventIds = formattedEventsToDelete
-      .map((e) => e.external_event_id ?? e.google_event_id)
-      .filter((id): id is string => id !== null && id !== undefined);
+    const validEventIds = googleEventIdsToDelete;
 
     if (validEventIds.length > 0) {
       // Batch deletes to avoid "URI too long" error when deleting many events
@@ -599,18 +597,29 @@ async function incrementalActiveSync(
           .eq('external_calendar_id', calendarId)
           .in('external_event_id', batch);
 
+        // Clean up rows imported before the provider-neutral identity columns
+        // were introduced. Those rows only have google_* identifiers.
+        const { error: legacyDeleteError } = await supabase
+          .from('workspace_calendar_events')
+          .delete()
+          .eq('ws_id', wsId)
+          .eq('provider', 'google')
+          .eq('google_calendar_id', calendarId)
+          .in('google_event_id', batch);
+
         console.debug(
           `🔍 [DEBUG] Delete batch ${i + 1}/${deleteBatches.length}:`,
           {
-            hasError: !!deleteError,
+            hasError: !!deleteError || !!legacyDeleteError,
             batchSize: batch.length,
-            errorMessage: deleteError?.message,
+            errorMessage: deleteError?.message ?? legacyDeleteError?.message,
           }
         );
 
-        if (deleteError) {
-          console.debug(`❌ [DEBUG] Delete batch ${i + 1} error:`, deleteError);
-          throw new Error(deleteError.message);
+        if (deleteError || legacyDeleteError) {
+          const error = deleteError ?? legacyDeleteError;
+          console.debug(`❌ [DEBUG] Delete batch ${i + 1} error:`, error);
+          throw new Error(error?.message ?? 'Failed to delete Google events');
         }
       }
 

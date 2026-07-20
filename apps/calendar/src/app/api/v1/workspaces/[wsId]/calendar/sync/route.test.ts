@@ -60,7 +60,11 @@ function createAwaitableQuery<T>(result: T) {
   return query;
 }
 
-function createAdminSupabaseMock() {
+function createAdminSupabaseMock({
+  additionalGoogleConnections = [],
+}: {
+  additionalGoogleConnections?: Array<Record<string, unknown>>;
+} = {}) {
   const tokenRows = [
     {
       id: 'google-token-id',
@@ -92,6 +96,7 @@ function createAdminSupabaseMock() {
       workspace_calendar_id: 'microsoft-workspace-calendar-id',
       ws_id: WS_ID,
     },
+    ...additionalGoogleConnections,
   ];
 
   const createFilteredQuery = <T extends Record<string, unknown>>(
@@ -274,5 +279,49 @@ describe('workspace calendar sync route', () => {
       expect.any(String),
       expect.any(String)
     );
+  });
+
+  it('continues syncing healthy Google calendars when one connection is stale', async () => {
+    createAdminClientMock.mockResolvedValue(
+      createAdminSupabaseMock({
+        additionalGoogleConnections: [
+          {
+            auth_token_id: 'google-token-id',
+            calendar_id: 'healthy-calendar',
+            is_enabled: true,
+            workspace_calendar_id: 'healthy-workspace-calendar-id',
+            ws_id: WS_ID,
+          },
+        ],
+      })
+    );
+    performIncrementalActiveSyncMock
+      .mockRejectedValueOnce(new Error('invalid_request'))
+      .mockResolvedValueOnce({
+        eventsDeleted: 1,
+        eventsInserted: 0,
+        eventsUpdated: 0,
+      });
+
+    const response = await POST(
+      new Request(`http://localhost/api/v1/workspaces/${WS_ID}/calendar/sync`, {
+        body: JSON.stringify({ direction: 'inbound', source: 'cron' }),
+        headers: {
+          Authorization: 'Bearer cron-secret',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      }) as never,
+      { params: Promise.resolve({ wsId: WS_ID }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(performIncrementalActiveSyncMock).toHaveBeenCalledTimes(2);
+    expect(body.summary.google).toMatchObject({
+      deleted: 1,
+      failedConnections: 1,
+      processedConnections: 1,
+    });
   });
 });

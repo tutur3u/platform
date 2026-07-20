@@ -24,6 +24,47 @@ type ExistingExternalEvent = {
   google_event_id?: string | null;
 };
 
+function providerErrorStatus(error: unknown): number | null {
+  const seen = new Set<object>();
+  let current = error;
+
+  while (current && typeof current === 'object' && !seen.has(current)) {
+    seen.add(current);
+    const candidate = current as {
+      cause?: unknown;
+      code?: unknown;
+      response?: { status?: unknown };
+      status?: unknown;
+      statusCode?: unknown;
+    };
+    const statuses = [
+      candidate.status,
+      candidate.statusCode,
+      candidate.code,
+      candidate.response?.status,
+    ];
+
+    for (const status of statuses) {
+      const numericStatus =
+        typeof status === 'number'
+          ? status
+          : typeof status === 'string'
+            ? Number.parseInt(status, 10)
+            : Number.NaN;
+      if (Number.isInteger(numericStatus)) return numericStatus;
+    }
+
+    current = candidate.cause;
+  }
+
+  return null;
+}
+
+export function isProviderEventAlreadyDeletedError(error: unknown) {
+  const status = providerErrorStatus(error);
+  return status === 404 || status === 410;
+}
+
 function assertExternalSource(
   source: ResolvedCalendarSource
 ): asserts source is ResolvedCalendarSource & {
@@ -216,20 +257,30 @@ export async function deleteProviderEvent(args: {
       auth: createGoogleAuthClient(source),
     });
 
-    await calendar.events.delete({
-      calendarId: existing.externalCalendarId,
-      eventId: existing.externalEventId,
-    });
+    try {
+      await calendar.events.delete({
+        calendarId: existing.externalCalendarId,
+        eventId: existing.externalEventId,
+      });
+    } catch (error) {
+      // Provider deletions are idempotent. Google returns 410 when a synced
+      // event was already removed, and can return 404 after it is purged.
+      if (!isProviderEventAlreadyDeletedError(error)) throw error;
+    }
     return;
   }
 
   const client = createGraphClient(source.accessToken) as any;
-  await client
-    .api(
-      `/me/calendars/${existing.externalCalendarId}/events/${existing.externalEventId}`
-    )
-    .header('Prefer', 'IdType="ImmutableId"')
-    .delete();
+  try {
+    await client
+      .api(
+        `/me/calendars/${existing.externalCalendarId}/events/${existing.externalEventId}`
+      )
+      .header('Prefer', 'IdType="ImmutableId"')
+      .delete();
+  } catch (error) {
+    if (!isProviderEventAlreadyDeletedError(error)) throw error;
+  }
 }
 
 export async function moveProviderEvent(args: {
