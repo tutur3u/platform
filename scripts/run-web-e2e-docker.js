@@ -750,11 +750,7 @@ function isTanStackPortlessRoute(env = process.env) {
 }
 
 function getE2EPortlessTargetPort(env = process.env) {
-  if (!isTanStackPortlessRoute(env)) {
-    return getWebProxyHostPort(env);
-  }
-
-  if (env.DOCKER_WEB_FRONTEND === 'tanstack') {
+  if (!isTanStackPortlessRoute(env) || env.DOCKER_WEB_FRONTEND === 'tanstack') {
     return getWebProxyHostPort(env);
   }
 
@@ -816,8 +812,12 @@ function getReadinessFetchOptions(url, options = {}) {
     redirect: 'manual',
   };
 
-  if (Number.isFinite(options.requestTimeoutMs)) {
+  if (
+    Number.isFinite(options.requestTimeoutMs) &&
+    options.requestTimeoutMs > 0
+  ) {
     fetchOptions.requestTimeoutMs = options.requestTimeoutMs;
+    fetchOptions.signal = AbortSignal.timeout(options.requestTimeoutMs);
   }
 
   if (isLocalHttpsReadinessUrl(url)) {
@@ -1928,7 +1928,10 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     if (!report.passed) {
       const failures = Object.entries(frontends)
         .filter(([, result]) => result.passed !== true)
-        .map(([frontend, result]) => `${frontend}: ${result.error}`);
+        .map(
+          ([frontend, result]) =>
+            `${frontend}: ${result.error ?? 'unknown failure'}`
+        );
       throw new Error(
         `Docker E2E compare failed. See ${path.relative(
           ROOT_DIR,
