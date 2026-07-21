@@ -1,216 +1,38 @@
-'use client';
-
 import {
-  Award,
   BookOpen,
   Brain,
   FileText,
   GraduationCap,
-  LayoutDashboard,
   LineChart,
-  Medal,
   MessageSquare,
-  ShieldCheck,
-  Users,
   Video,
 } from '@tuturuuu/icons/lucide';
 import {
-  ProductBadge,
-  ProductButton,
-  ProductCard,
-  ProductLinkButton,
+  ProductPage,
+  type ProductPageConfig,
 } from '../product-page-primitives';
 
-const features = [
-  {
-    title: 'Course Management',
-    description:
-      'Create, organize, and deliver engaging courses with rich multimedia content and interactive elements.',
-    icon: <BookOpen className="h-6 w-6" />,
-  },
-  {
-    title: 'Progress Tracking',
-    description:
-      'Monitor student progress, completion rates, and performance with detailed analytics.',
-    icon: <LineChart className="h-6 w-6" />,
-  },
-  {
-    title: 'Interactive Learning',
-    description:
-      'Engage students with quizzes, assignments, and collaborative learning tools.',
-    icon: <Brain className="h-6 w-6" />,
-  },
-  {
-    title: 'Video Conferencing',
-    description:
-      'Conduct live classes, webinars, and one-on-one sessions with integrated video tools.',
-    icon: <Video className="h-6 w-6" />,
-  },
-  {
-    title: 'Assessment Tools',
-    description:
-      'Create and grade assignments, quizzes, and exams with automated scoring.',
-    icon: <FileText className="h-6 w-6" />,
-  },
-  {
-    title: 'Discussion Forums',
-    description:
-      'Foster community learning with moderated discussion boards and peer interactions.',
-    icon: <MessageSquare className="h-6 w-6" />,
-  },
-];
-
-const useCases = [
-  {
-    title: 'Corporate Training',
-    items: [
-      'Employee onboarding programs',
-      'Professional development courses',
-      'Compliance training',
-      'Skills assessment',
-    ],
-  },
-  {
-    title: 'Educational Institutions',
-    items: [
-      'Online course delivery',
-      'Student performance tracking',
-      'Virtual classrooms',
-      'Resource management',
-    ],
-  },
-  {
-    title: 'Training Centers',
-    items: [
-      'Course catalog management',
-      'Certification programs',
-      'Progress monitoring',
-      'Learning analytics',
-    ],
-  },
-];
+const config: ProductPageConfig = {
+  slug: 'lms',
+  accent: 'orange',
+  icon: GraduationCap,
+  primaryHref: 'https://learn.tuturuuu.com',
+  primaryExternal: true,
+  features: [
+    { key: 'courses', icon: BookOpen },
+    { key: 'progress', icon: LineChart },
+    { key: 'assignments', icon: FileText },
+    { key: 'practice', icon: Brain },
+    { key: 'live', icon: Video },
+    { key: 'discussion', icon: MessageSquare },
+  ],
+  useCases: [
+    { key: 'institutions', itemCount: 4 },
+    { key: 'corporate', itemCount: 4 },
+    { key: 'centers', itemCount: 4 },
+  ],
+};
 
 export default function LMSProductPage() {
-  return (
-    <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-      {/* Hero Section */}
-      <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Learning Management System</h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your educational and training programs with our
-          comprehensive learning management system. Deliver engaging content,
-          track progress, and enhance learning outcomes.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
-        </div>
-      </div>
-
-      {/* Trust Section */}
-      <section className="mb-24">
-        <ProductCard className="border-primary bg-primary/5 p-8">
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Certified Learning Platform</h2>
-            <p className="text-muted-foreground">
-              Our LMS is designed to meet educational standards and compliance
-              requirements, ensuring a secure and effective learning environment
-              for all users.
-            </p>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Features Grid */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Powerful Features
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <ProductCard key={feature.title} className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
-              </div>
-              <p className="text-muted-foreground">{feature.description}</p>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Use Cases */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
-        <div className="grid gap-8 md:grid-cols-3">
-          {useCases.map((useCase) => (
-            <ProductCard key={useCase.title} className="p-6">
-              <GraduationCap className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                {useCase.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Analytics Section */}
-      <section className="mb-24">
-        <ProductCard className="overflow-hidden">
-          <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
-              <LayoutDashboard className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Learning Analytics</h3>
-              <p className="text-muted-foreground">
-                Gain valuable insights into learning patterns, engagement
-                levels, and performance metrics with our advanced analytics
-                dashboard.
-              </p>
-            </div>
-            <div className="flex flex-col justify-center gap-4 p-8">
-              <Users className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">User Management</h3>
-              <p className="text-muted-foreground">
-                Easily manage learners, instructors, and administrators with
-                role-based access control and detailed user profiles.
-              </p>
-            </div>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Achievements Section */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Learning Achievements
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <ProductCard className="p-6">
-            <Award className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Certifications</h3>
-            <p className="text-muted-foreground">
-              Issue digital certificates and badges to recognize course
-              completion and achievements.
-            </p>
-          </ProductCard>
-          <ProductCard className="p-6">
-            <Medal className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Gamification</h3>
-            <p className="text-muted-foreground">
-              Motivate learners with points, leaderboards, and rewards for
-              completing learning objectives.
-            </p>
-          </ProductCard>
-        </div>
-      </section>
-    </div>
-  );
+  return <ProductPage config={config} />;
 }

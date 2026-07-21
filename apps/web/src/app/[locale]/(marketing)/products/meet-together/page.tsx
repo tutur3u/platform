@@ -1,14 +1,44 @@
-import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import {
+  CalendarRange,
+  ClipboardList,
+  Globe,
+  LayoutGrid,
+  Share2,
+  UserPlus,
+  Users,
+} from '@tuturuuu/icons/lucide';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import {
+  ProductPage,
+  type ProductPageConfig,
+} from '../product-page-primitives';
 
 export const metadata: Metadata = {
   title: 'Meet Together Product',
   description:
-    'Plan agendas and run meetings end-to-end with Tuturuuu Meet Together.',
-  robots: NO_INDEX_ROBOTS,
+    'Find a time that works for everyone, then plan the agenda in the same place — with Tuturuuu Meet Together.',
+};
+
+const config: ProductPageConfig = {
+  slug: 'meet',
+  accent: 'purple',
+  icon: Users,
+  primaryHref: '/meet-together',
+  features: [
+    { key: 'availability', icon: CalendarRange },
+    { key: 'overlap', icon: LayoutGrid },
+    { key: 'timezones', icon: Globe },
+    { key: 'guests', icon: UserPlus },
+    { key: 'agenda', icon: ClipboardList },
+    { key: 'sharing', icon: Share2 },
+  ],
+  useCases: [
+    { key: 'teams', itemCount: 4 },
+    { key: 'groups', itemCount: 4 },
+    { key: 'clients', itemCount: 4 },
+  ],
 };
 
 export default function MeetTogetherProductPage() {
-  redirect('/meet-together');
+  return <ProductPage config={config} />;
 }

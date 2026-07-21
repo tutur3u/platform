@@ -1,217 +1,37 @@
-'use client';
-
 import {
-  Bot,
   FileSearch,
   FileText,
+  History,
   KeyRound,
-  Languages,
-  Lock,
-  Share2,
-  ShieldCheck,
+  PenLine,
   Sparkles,
-  UserPlus,
   Users,
-  Wand2,
 } from '@tuturuuu/icons/lucide';
 import {
-  ProductBadge,
-  ProductButton,
-  ProductCard,
-  ProductLinkButton,
+  ProductPage,
+  type ProductPageConfig,
 } from '../product-page-primitives';
 
-const features = [
-  {
-    title: 'AI-Powered Analysis',
-    description:
-      'Extract insights and key information from documents automatically using advanced AI.',
-    icon: <Bot className="h-6 w-6" />,
-  },
-  {
-    title: 'Smart Search',
-    description:
-      'Find any document instantly with powerful full-text search and filters.',
-    icon: <FileSearch className="h-6 w-6" />,
-  },
-  {
-    title: 'Multi-Language Support',
-    description:
-      'Work with documents in multiple languages with automatic translation.',
-    icon: <Languages className="h-6 w-6" />,
-  },
-  {
-    title: 'Collaboration Tools',
-    description:
-      'Work together in real-time with comments, suggestions, and version control.',
-    icon: <Users className="h-6 w-6" />,
-  },
-  {
-    title: 'Smart Templates',
-    description:
-      'Create documents quickly with AI-powered templates and suggestions.',
-    icon: <Wand2 className="h-6 w-6" />,
-  },
-  {
-    title: 'Access Control',
-    description:
-      'Manage document permissions with granular access controls and tracking.',
-    icon: <KeyRound className="h-6 w-6" />,
-  },
-];
-
-const useCases = [
-  {
-    title: 'Business Documents',
-    items: [
-      'Contract management',
-      'Proposal creation',
-      'Policy documentation',
-      'Financial reports',
-    ],
-  },
-  {
-    title: 'Team Collaboration',
-    items: [
-      'Project documentation',
-      'Knowledge sharing',
-      'Meeting notes',
-      'Process guides',
-    ],
-  },
-  {
-    title: 'Content Creation',
-    items: [
-      'Marketing materials',
-      'Technical documentation',
-      'Training manuals',
-      'Research papers',
-    ],
-  },
-];
+const config: ProductPageConfig = {
+  slug: 'documents',
+  accent: 'orange',
+  icon: FileText,
+  primaryHref: '/onboarding',
+  features: [
+    { key: 'editor', icon: PenLine },
+    { key: 'collaboration', icon: Users },
+    { key: 'search', icon: FileSearch },
+    { key: 'assistant', icon: Sparkles },
+    { key: 'versions', icon: History },
+    { key: 'permissions', icon: KeyRound },
+  ],
+  useCases: [
+    { key: 'specs', itemCount: 4 },
+    { key: 'knowledge', itemCount: 4 },
+    { key: 'business', itemCount: 4 },
+  ],
+};
 
 export default function DocumentsProductPage() {
-  return (
-    <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-      {/* Hero Section */}
-      <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">
-          Intelligent Document Management
-        </h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your document workflow with AI-powered analysis,
-          collaboration tools, and intelligent organization. Create, manage, and
-          share documents smarter.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
-        </div>
-      </div>
-
-      {/* Trust Section */}
-      <section className="mb-24">
-        <ProductCard className="border-primary bg-primary/5 p-8">
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
-            <p className="text-muted-foreground">
-              Your documents are protected with industry-leading security
-              measures, including end-to-end encryption and advanced access
-              controls.
-            </p>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Features Grid */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Powerful Features
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <ProductCard key={feature.title} className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
-              </div>
-              <p className="text-muted-foreground">{feature.description}</p>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Use Cases */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
-        <div className="grid gap-8 md:grid-cols-3">
-          {useCases.map((useCase) => (
-            <ProductCard key={useCase.title} className="p-6">
-              <FileText className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                {useCase.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Security Section */}
-      <section className="mb-24">
-        <ProductCard className="overflow-hidden">
-          <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
-              <Lock className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Advanced Security</h3>
-              <p className="text-muted-foreground">
-                Protect sensitive information with encryption, access logs, and
-                customizable security policies.
-              </p>
-            </div>
-            <div className="flex flex-col justify-center gap-4 p-8">
-              <Share2 className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Seamless Sharing</h3>
-              <p className="text-muted-foreground">
-                Share documents securely with team members or external
-                stakeholders with customizable permissions.
-              </p>
-            </div>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Additional Features Section */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Smart Capabilities
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <ProductCard className="p-6">
-            <Sparkles className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">AI Assistance</h3>
-            <p className="text-muted-foreground">
-              Get intelligent suggestions for content, formatting, and document
-              organization powered by AI.
-            </p>
-          </ProductCard>
-          <ProductCard className="p-6">
-            <UserPlus className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Team Workspace</h3>
-            <p className="text-muted-foreground">
-              Create collaborative spaces for teams to work together on
-              documents efficiently.
-            </p>
-          </ProductCard>
-        </div>
-      </section>
-    </div>
-  );
+  return <ProductPage config={config} />;
 }

@@ -7920,7 +7920,6 @@
   },
   "landing": {
     "ai": {
-      "eyebrow": "Meet Mira",
       "mira": {
         "capabilities": {
           "contextAware": "Context-Aware",
@@ -7935,9 +7934,54 @@
         ],
         "title": "Mira: Your AI Partner",
         "tryAsking": "Try asking Mira..."
+      }
+    },
+    "aiCapabilities": {
+      "capabilities": {
+        "drafting": {
+          "description": "Documents, replies, and reports that start from your context instead of a blank page.",
+          "title": "Writes the first draft"
+        },
+        "extraction": {
+          "description": "Reads a thread, spots what you promised, and turns it into a task with a due date.",
+          "title": "Catches commitments"
+        },
+        "insight": {
+          "description": "Surfaces the spend, the runway, and the anomaly before it becomes a problem.",
+          "title": "Watches the numbers"
+        },
+        "meetings": {
+          "description": "Transcribes the call, writes the summary, and assigns the actions that came out of it.",
+          "title": "Runs the follow-up"
+        },
+        "scheduling": {
+          "description": "Finds real blocks of time for deep work around the meetings you cannot move.",
+          "title": "Protects your focus"
+        },
+        "search": {
+          "description": "Ask for what you half-remember and get the document, not a list of keyword matches.",
+          "title": "Finds it by meaning"
+        },
+        "title": "What it actually does"
       },
-      "subtitle": "Meet Mira, your AI assistant that understands your work.",
-      "title": "Powered by intelligent AI"
+      "eyebrow": "The AI core",
+      "pipeline": {
+        "act": {
+          "description": "Mira books the time, drafts the reply, or files the task — then tells you what it did.",
+          "label": "Act"
+        },
+        "caption": "How a request moves through the core",
+        "reason": {
+          "description": "Rewise routes the question to the model best suited to it, guided by Nova.",
+          "label": "Reason"
+        },
+        "sense": {
+          "description": "Aurora links the email, task, file, and event that belong to the same thread of work.",
+          "label": "Sense"
+        }
+      },
+      "subtitle": "Five cooperating systems read your context, reason about it, and act inside the products you already use.",
+      "title": "An assistant that does the work, not just the talking"
     },
     "aiCore": {
       "aurora": {
@@ -7951,9 +7995,6 @@
         "role": "Bridge to Humanity"
       },
       "mira": {
-        "badge1": "Proactive AI",
-        "badge2": "Context-Aware",
-        "badge3": "Always Learning",
         "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
         "title": "Mira: Your AI Partner"
       },
@@ -7974,13 +8015,10 @@
       }
     },
     "cta": {
-      "description": "Join thousands of professionals who've eliminated digital friction and regained focus. Start with our free plan—no credit card required.",
-      "getStarted": "Get Started Free",
-      "learnStory": "Learn Our Story",
+      "description": "Free to start, open source, and yours to self-host. No credit card, no sales call, no lock-in.",
       "note": "No credit card required. Free forever plan available.",
       "primary": "Get Started Free",
       "secondary": "Talk to Sales",
-      "starGitHub": "Star on GitHub",
       "title": "Ready to work smarter?",
       "trust": {
         "openSource": "Open Source & Transparent",
@@ -8011,6 +8049,10 @@
         "status": "Online",
         "subtitle": "Your proactive AI companion",
         "title": "AI Assistant (Mira)",
+        "toolCall": {
+          "checking": "Checking 3 calendars",
+          "done": "Found 3 open slots"
+        },
         "userMessage1": "What's on my agenda for tomorrow?",
         "userMessage2": "Can you reschedule the 2 PM meeting?"
       },
@@ -8103,7 +8145,7 @@
           "title": "This Week's Distribution"
         }
       },
-      "badge": "Live Demo",
+      "badge": "Illustration",
       "calendar": {
         "cta": "Try Smart Calendar",
         "event1": {
@@ -8156,92 +8198,6 @@
           "weeklyReview": "Weekly Review"
         }
       },
-      "demoTexts": {
-        "aiChat": {
-          "aiResponse1Intro": "You have 4 meetings and 2 focus blocks scheduled:",
-          "aiResponse1Item1": "9:00 AM - Team sync (30 min)",
-          "aiResponse1Item2": "11:00 AM - Focus: Project Alpha (2h)",
-          "aiResponse1Item3": "2:00 PM - Client review (1h)",
-          "aiResponse2": "I've found 3 available slots. The best option is Friday at 3 PM based on everyone's calendar. Shall I send the update?",
-          "contextAwareDescription": "Mira understands your work patterns, preferences, and goals to provide truly personalized assistance.",
-          "contextAwareTitle": "Context-Aware",
-          "cta": "Chat with Mira",
-          "quickActionReminder": "Create reminder",
-          "quickActionSummary": "Weekly summary",
-          "quickActionTasks": "Show my tasks",
-          "subtitle": "Your proactive AI companion",
-          "title": "AI Assistant (Mira)",
-          "userMessage1": "What's on my agenda for tomorrow?",
-          "userMessage2": "Can you reschedule the 2 PM meeting?"
-        },
-        "analytics": {
-          "adminLabel": "Admin",
-          "adminValue": "15%",
-          "cta": "View Full Dashboard",
-          "deepWorkLabel": "Deep Work",
-          "deepWorkValue": "65%",
-          "focusChange": "+3.2h vs last week",
-          "focusLabel": "Focus",
-          "focusValue": "18.5h",
-          "goalsLabel": "Goals",
-          "goalsSubtitle": "Completion rate",
-          "goalsValue": "89%",
-          "meetingsChange": "-8% this week",
-          "meetingsLabel": "Meetings",
-          "meetingsValue": "12",
-          "performanceDescription": "You're spending 65% more time on deep work compared to last month. Keep it up!",
-          "performanceTitle": "Performance",
-          "productivityScoreBadge": "Excellent",
-          "productivityScoreRank": "Top 10% of users",
-          "productivityScoreTitle": "Productivity Score",
-          "productivityScoreValue": "87/100",
-          "subtitle": "Track productivity and patterns",
-          "tasksChange": "+15% this week",
-          "tasksLabel": "Tasks",
-          "tasksValue": "24",
-          "title": "Analytics & Insights",
-          "weeklyDistributionTitle": "This Week's Distribution"
-        },
-        "calendar": {
-          "cta": "Try Smart Calendar",
-          "event1Meta": "5 participants",
-          "event1Title": "Team Standup",
-          "event2Meta": "AI-scheduled block",
-          "event2Title": "Focus Time: Deep Work",
-          "event3Meta": "Video call",
-          "event3Title": "Client Presentation",
-          "eventCount": "6 events",
-          "focusTimeLabel": "Focus Time",
-          "focusTimeValue": "3.5h",
-          "optimizedLabel": "Optimized",
-          "optimizedValue": "85%",
-          "smartSuggestionDescription": "Your calendar is 15% more efficient than last week. Consider adding another focus block on Friday.",
-          "smartSuggestionTitle": "Smart Suggestion",
-          "subtitle": "AI-powered scheduling and time blocking",
-          "title": "Smart Calendar",
-          "todaySchedule": "Today's Schedule"
-        },
-        "taskManagement": {
-          "aiInsightDescription": "You have 3 high-priority tasks due this week. Consider blocking 2 hours tomorrow morning for focused work.",
-          "aiInsightTitle": "AI Insight",
-          "cta": "Try Task Management",
-          "subtitle": "Hierarchical organization with AI insights",
-          "task1Assignees": "3 assignees",
-          "task1DueDate": "Due tomorrow",
-          "task1Files": "2 files",
-          "task1Priority": "High",
-          "task1Title": "Review marketing proposal",
-          "task2DueDate": "Next week",
-          "task2Priority": "Medium",
-          "task2Tag": "Development",
-          "task2Title": "Implement calendar sync feature",
-          "task3DueDate": "In 2 weeks",
-          "task3Priority": "Low",
-          "task3Tag": "Team building",
-          "task3Title": "Plan team offsite event",
-          "title": "Smart Task Management"
-        }
-      },
       "kanban": {
         "columns": {
           "done": "Done",
@@ -8277,7 +8233,12 @@
           }
         }
       },
-      "subtitle": "Experience the future of work with our interactive demos. These are real, production-ready features you can use today.",
+      "shell": {
+        "illustration": "Illustrative interface",
+        "search": "Search",
+        "synced": "Synced"
+      },
+      "subtitle": "An illustration of how the apps share one workspace — switch rooms and your context, shortcuts, and assistant come with you.",
       "tabs": {
         "analytics": "Analytics",
         "calendar": "Calendar",
@@ -8314,14 +8275,8 @@
         "title": "Smart Task Management"
       },
       "title": {
-        "highlight": "In Action",
-        "part1": "See It"
-      },
-      "video": {
-        "badge": "Watch Demo",
-        "thumbnail": "Tuturuuu Platform Demo",
-        "title": "Tuturuuu Platform Demo Video",
-        "watchNow": "Click to watch the full demo"
+        "highlight": "the workspace",
+        "part1": "A look inside"
       },
       "videoMeeting": {
         "aiFeatures": {
@@ -8366,179 +8321,63 @@
         }
       }
     },
-    "demoSection": {
-      "badge": "Live Demo",
-      "subtitle": "Experience the future of work with our interactive demos. These are real, production-ready features you can use today.",
-      "title": {
-        "highlight": "In Action",
-        "part1": "See It"
-      }
-    },
-    "digitalFriction": {
-      "stats": {
-        "globalCost": {
-          "description": "Annual cost of digital friction and administrative overhead worldwide",
-          "subtitle": "Global Productivity",
-          "title": "$1T+ Lost",
-          "trend": "$1T+/year"
-        },
-        "hoursLost": {
-          "description": "Average time knowledge workers waste on \"work about work\" instead of meaningful tasks",
-          "subtitle": "Every Week",
-          "title": "21 Hours Lost",
-          "trend": "-21h/week"
-        },
-        "productivityLoss": {
-          "description": "The mental tax of context-switching between fragmented tools and notifications",
-          "subtitle": "Productive Output",
-          "title": "40% Less",
-          "trend": "-40%"
-        }
-      },
-      "subtitle": "Modern workers are drowning in digital noise. Here's the cost.",
-      "title": {
-        "highlight": "Digital Friction",
-        "part1": "The",
-        "part2": "Crisis"
-      }
-    },
     "features": {
       "apps": {
         "nova": {
           "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
-          "features": {
-            "challenges": "AI challenges",
-            "leaderboards": "Leaderboards",
-            "tracking": "Skill tracking"
-          },
           "subtitle": "Learning Platform",
           "title": "Nova"
         },
         "tuchat": {
           "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
-          "features": {
-            "chat": "Team chat",
-            "insights": "AI insights",
-            "routing": "Auto-routing"
-          },
           "subtitle": "Smart Communications",
           "title": "TuChat"
         },
         "tudo": {
           "description": "Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.",
-          "features": {
-            "hierarchical": "Hierarchical tasks",
-            "kanban": "Kanban boards",
-            "management": "Project management"
-          },
           "subtitle": "Smart Tasks",
           "title": "Tuturuuu Tasks"
         },
         "tufinance": {
           "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
-          "features": {
-            "analytics": "Financial analytics",
-            "planning": "Budget planning",
-            "tracking": "Expense tracking"
-          },
           "subtitle": "Finance Management",
           "title": "Tuturuuu Finance"
         },
         "tumeet": {
           "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
-          "features": {
-            "plans": "Meeting plans",
-            "tracking": "Action tracking",
-            "transcription": "AI transcription"
-          },
           "subtitle": "Smart Meetings",
           "title": "Tuturuuu Meet"
         },
         "tuplan": {
           "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
-          "features": {
-            "blocking": "Time blocking",
-            "scheduling": "Auto-scheduling",
-            "sync": "Google Calendar sync"
-          },
           "subtitle": "Smart Calendar",
           "title": "Tuturuuu Calendar"
         }
       },
       "eyebrow": "One platform",
-      "nova": {
-        "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
-        "feature1": "AI challenges",
-        "feature2": "Skill tracking",
-        "feature3": "Leaderboards",
-        "subtitle": "Learning Platform",
-        "title": "Nova"
+      "more": {
+        "subtitle": "Add the ones you need, ignore the rest. One workspace, one login, one bill.",
+        "title": "And the rest of the suite"
       },
-      "subtitle": "One platform for your entire workflow",
-      "title": "Everything you need",
-      "tuchat": {
-        "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
-        "feature1": "Team chat",
-        "feature2": "AI insights",
-        "feature3": "Auto-routing",
-        "subtitle": "Smart Communications",
-        "title": "TuChat"
-      },
-      "tudo": {
-        "description": "Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.",
-        "feature1": "Kanban boards",
-        "feature2": "Hierarchical tasks",
-        "feature3": "Project management",
-        "subtitle": "Smart Tasks",
-        "title": "Tuturuuu Tasks"
-      },
-      "tufinance": {
-        "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
-        "feature1": "Expense tracking",
-        "feature2": "Budget planning",
-        "feature3": "Financial analytics",
-        "subtitle": "Finance Management",
-        "title": "Tuturuuu Finance"
-      },
-      "tumeet": {
-        "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
-        "feature1": "Meeting plans",
-        "feature2": "AI transcription",
-        "feature3": "Action tracking",
-        "subtitle": "Smart Meetings",
-        "title": "Tuturuuu Meet"
-      },
-      "tuplan": {
-        "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
-        "feature1": "Google Calendar sync",
-        "feature2": "Auto-scheduling",
-        "feature3": "Time blocking",
-        "subtitle": "Smart Calendar",
-        "title": "Tuturuuu Calendar"
-      }
+      "subtitle": "Eighteen apps that already share your context, instead of eighteen subscriptions that know nothing about each other.",
+      "title": "One workspace. Every part of the job."
     },
     "hero": {
       "badge": "Intelligent Workspace Platform",
       "cta": {
-        "exploreFeatures": "Explore Features",
-        "getStarted": "Get Started Free",
         "primary": "Get Started Free",
-        "secondary": "Watch Demo",
-        "viewGitHub": "View on GitHub"
+        "secondary": "Watch Demo"
       },
-      "description": "The all-in-one workspace that brings your tasks, calendar, documents, and team together.",
+      "description": "One workspace for everything you are juggling, and an assistant that plans your days around the life you actually want.",
       "title": {
         "line1": "Work Smarter.",
-        "line2": "Live Better.",
-        "part1": "Your Life,",
-        "part2": "In Sync"
+        "line2": "Live Better."
       },
       "trust": {
-        "commits": "10,000+ Commits",
-        "contributors": "30+ Contributors",
-        "free": "Free Forever",
-        "freePlan": "Free Forever Plan",
-        "openSource": "Open Source"
+        "free": "Free forever plan",
+        "noCard": "No credit card",
+        "openSource": "Open source",
+        "selfHost": "Self-hostable"
       },
       "video": {
         "floatingCards": {
@@ -8566,6 +8405,48 @@
         "title": "Tuturuuu Platform Demo Video",
         "watchNow": "Watch the demo"
       }
+    },
+    "outcomes": {
+      "audience": {
+        "businesses": {
+          "description": "Finance, inventory, and customers that talk to each other.",
+          "label": "Small businesses"
+        },
+        "freelancers": {
+          "description": "Clients, invoices, and hours without five subscriptions.",
+          "label": "Freelancers"
+        },
+        "students": {
+          "description": "Coursework, deadlines, and study blocks in one place.",
+          "label": "Students"
+        },
+        "teams": {
+          "description": "Shared boards, shared calendar, shared context.",
+          "label": "Teams"
+        },
+        "title": "Built for everyone, everywhere"
+      },
+      "eyebrow": "What changes",
+      "items": {
+        "context": {
+          "description": "Your calendar, tasks, documents, and money live in the same workspace, so you stop paying the tax of twelve open tabs.",
+          "title": "One place, one context"
+        },
+        "dropped": {
+          "description": "The promise buried in a thread becomes a task with an owner and a date, without you remembering to write it down.",
+          "title": "Nothing falls through"
+        },
+        "evenings": {
+          "description": "Focus blocks are scheduled around the meetings you cannot move, and the end of your day is defended like any other appointment.",
+          "title": "Your evenings, returned"
+        },
+        "head": {
+          "description": "Sorting, scheduling and chasing are handled for you, so the attention you have left goes to the work only you can do.",
+          "title": "A quieter head"
+        }
+      },
+      "subtitle": "The point was never to own more software. It is to close the laptop knowing nothing was dropped.",
+      "title": "Less time running your life. More time living it."
     },
     "pricing": {
       "compare": "Compare all features",
@@ -8763,13 +8644,6 @@
         }
       },
       "title": "Built in the open"
-    },
-    "womenInTechBanner": {
-      "cta": "Learn More",
-      "date": "October 20",
-      "description": "Honoring the incredible women shaping our team and the tech industry. Discover their stories of innovation, leadership, and impact.",
-      "occasion": "Vietnamese Women's Day",
-      "title": "Celebrating Women in Tech"
     }
   },
   "link-shortener": {
@@ -9270,6 +9144,10 @@
         "description": "AI auto-scheduling around your real priorities.",
         "label": "Calendar"
       },
+      "chat": {
+        "description": "Channels, direct messages, and files in the same workspace as your work.",
+        "label": "Chat"
+      },
       "crm": {
         "description": "Contacts, pipelines, and customer history.",
         "label": "CRM"
@@ -9285,6 +9163,14 @@
       "finance": {
         "description": "Track spend, budgets, invoices, and wallets.",
         "label": "Finance"
+      },
+      "forms": {
+        "description": "Build a form, collect responses, read the results in place.",
+        "label": "Forms"
+      },
+      "hive": {
+        "description": "A lab for swarm agents: build workflows, run simulations, study the results.",
+        "label": "Agent lab"
       },
       "inventory": {
         "description": "Products, stock, suppliers, and warehouses.",
@@ -9302,9 +9188,21 @@
         "description": "Find a time that works for everyone, fast.",
         "label": "Meet Together"
       },
+      "qr": {
+        "description": "Codes for links, events, menus, and payments.",
+        "label": "QR generator"
+      },
+      "storefront": {
+        "description": "A buyer-facing shop sitting on top of your inventory.",
+        "label": "Storefront"
+      },
       "tasks": {
         "description": "Boards, hierarchies, and a fast capture inbox.",
         "label": "Tasks"
+      },
+      "track": {
+        "description": "Start a timer and see where the week actually went.",
+        "label": "Time tracking"
       },
       "workflows": {
         "description": "Automate the handoffs between your tools.",
@@ -10836,6 +10734,1358 @@
     "usage": "Usage",
     "warehouse": "Warehouse",
     "warehouses": "warehouses"
+  },
+  "products": {
+    "ai": {
+      "closing": {
+        "description": "Start with the assistant, and the rest of the core is already behind her.",
+        "title": "Meet Mira"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Start with Mira",
+        "secondary": "Talk to us"
+      },
+      "description": "Tuturuuu's AI is not a chat box bolted onto the side. Mira plans and acts; Aurora, Rewise, Nova and Crystal are what make her useful.",
+      "eyebrow": "AI",
+      "features": {
+        "aurora": {
+          "description": "The contextual engine that links related emails, tasks, files and events, so Mira answers with your work in view instead of a blank slate.",
+          "title": "Aurora, the nervous system"
+        },
+        "crystal": {
+          "description": "The multi-modal interface for voice, video and screen sharing, for the moments when typing is the slow way to explain.",
+          "title": "Crystal, the bridge to humanity"
+        },
+        "everywhere": {
+          "description": "The same core sits behind your tasks, calendar, mail and documents, so you do not have to visit a separate AI tab to get help.",
+          "title": "In the surfaces you already use"
+        },
+        "eyebrow": "The AI core",
+        "mira": {
+          "description": "The assistant you talk to. She plans, reasons and acts on your behalf across calendar, goals, finances and communications, surfacing proactive recommendations rather than passive reminders.",
+          "title": "Mira, your AI partner"
+        },
+        "nova": {
+          "description": "The prompt-engineering platform that shapes how Mira reasons, so her behaviour is something you can inspect and change.",
+          "title": "Nova, the conscience and forge"
+        },
+        "rewise": {
+          "description": "An aggregator of leading AI models from OpenAI, Gemini and Anthropic, routing each request to the one that handles it best.",
+          "title": "Rewise, the collective mind"
+        },
+        "subtitle": "Each part does one job, and you only ever address one of them.",
+        "title": "What is actually running"
+      },
+      "title": "Five systems, one assistant you talk to",
+      "useCases": {
+        "eyebrow": "Where it fits",
+        "inbox": {
+          "items": [
+            "Long threads reduced to what was decided",
+            "Replies drafted in your own context",
+            "Commitments in a thread turned into tasks",
+            "Meetings proposed at times you can make"
+          ],
+          "title": "Getting through the inbox"
+        },
+        "knowledge": {
+          "items": [
+            "Summaries of documents you have not read yet",
+            "Key details pulled out of a long file",
+            "Answers grounded in your workspace, with the source",
+            "Notes turned into an outline you can edit"
+          ],
+          "title": "Working with your own material"
+        },
+        "planning": {
+          "items": [
+            "Focus blocks scheduled around the meetings you cannot move",
+            "A plan that shifts when the day does",
+            "Priorities read from your actual tasks",
+            "A realistic answer to what fits before Friday"
+          ],
+          "title": "Planning the day"
+        },
+        "subtitle": "Ordinary work, handled with the context your workspace already holds.",
+        "title": "What people ask it to do"
+      }
+    },
+    "calendar": {
+      "closing": {
+        "description": "Open Calendar and see meetings, deadlines and focus time in one place before you agree to anything else.",
+        "title": "Look at the week you actually have"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Calendar",
+        "secondary": "Talk to us"
+      },
+      "description": "Meetings, deadlines and focus blocks in one view, with scheduling that accounts for time zones and the work you already committed to.",
+      "eyebrow": "Calendar",
+      "features": {
+        "anywhere": {
+          "description": "Your schedule reads well on a phone between meetings, not only on the laptop you left at your desk.",
+          "title": "The same day on any device"
+        },
+        "booking": {
+          "description": "Share a booking link with the hours you are willing to give away, and the event appears on both calendars.",
+          "title": "A link instead of an email thread"
+        },
+        "coordination": {
+          "description": "Team calendars overlap in a single view, so the meeting lands where it fits everyone rather than where it fits the organiser.",
+          "title": "One shared availability"
+        },
+        "eyebrow": "What you get",
+        "reminders": {
+          "description": "Notifications and email updates go out ahead of the event and when details change, so nobody prepares for the wrong thing.",
+          "title": "Reminders that arrive in time"
+        },
+        "scheduling": {
+          "description": "Slots are proposed from real availability and your stated preferences, so you pick rather than hunt.",
+          "title": "Suggested times, not empty grids"
+        },
+        "subtitle": "The calendar knows what you owe and when you are free, so booking a time stops being a negotiation.",
+        "timezones": {
+          "description": "Everyone sees the event in their own local time, and the conversion happens before anyone joins an hour early.",
+          "title": "Time zones handled quietly"
+        },
+        "title": "Scheduling without the back and forth"
+      },
+      "title": "A calendar that defends your day",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Bookable slots you control",
+            "Consultations confirmed without an exchange of emails",
+            "Follow-ups scheduled before the call ends",
+            "Reminders sent so fewer meetings are missed"
+          ],
+          "title": "Working with clients"
+        },
+        "events": {
+          "items": [
+            "Sessions and speakers on one schedule",
+            "Venue and equipment booked against the same dates",
+            "Attendee lists attached to the event",
+            "A calendar you can share read-only"
+          ],
+          "title": "Running an event"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "Internal coordination, client bookings and events all run on the same calendar.",
+        "team": {
+          "items": [
+            "Meetings placed where the team is actually free",
+            "Shared availability without a spreadsheet",
+            "Project milestones on the same timeline",
+            "Rooms and shared resources booked once"
+          ],
+          "title": "Working with a team"
+        },
+        "title": "Whoever you are scheduling with"
+      }
+    },
+    "chat": {
+      "closing": {
+        "description": "Move the conversation next to the tasks and the calendar it keeps referring to.",
+        "title": "Open the workspace channel"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Chat",
+        "secondary": "Talk to us"
+      },
+      "description": "Channels and direct messages inside the same workspace as your tasks, calendar and documents, so context does not live in a separate app.",
+      "eyebrow": "Chat",
+      "features": {
+        "agents": {
+          "description": "Connect an AI agent to a channel, including bridged Discord and Zalo threads, and let it answer or draft where the conversation already is.",
+          "title": "Agents in the channel"
+        },
+        "channels": {
+          "description": "A channel for a project, a team or a decision, so a thread has a home instead of drifting through a group chat.",
+          "title": "A channel per topic"
+        },
+        "direct": {
+          "description": "One-to-one conversations sit beside the shared ones, so a quick question does not mean switching apps.",
+          "title": "Direct messages"
+        },
+        "eyebrow": "What you get",
+        "files": {
+          "description": "Shared files remain in the conversation that produced them, and are listed per conversation when you need them again.",
+          "title": "Files stay with the thread"
+        },
+        "search": {
+          "description": "Search across conversations, so last month's decision is retrievable without scrolling for it.",
+          "title": "Findable afterwards"
+        },
+        "subtitle": "Workspace channels, private messages, and everything findable afterwards.",
+        "title": "Messaging that stays in context",
+        "workspace": {
+          "description": "Move between your own conversations and each workspace's from the same rail, without signing out of anything.",
+          "title": "Personal and workspace side by side"
+        }
+      },
+      "title": "The conversation next to the work",
+      "useCases": {
+        "eyebrow": "In practice",
+        "personal": {
+          "items": [
+            "Notes to yourself in the same app",
+            "Direct messages without a separate tool",
+            "Personal and work conversations kept apart",
+            "Search that covers both"
+          ],
+          "title": "Your own thread"
+        },
+        "projects": {
+          "items": [
+            "A channel per project, closed when it ships",
+            "Decisions written where the work lives",
+            "Files kept with the discussion",
+            "Context available to whoever picks it up next"
+          ],
+          "title": "Project threads"
+        },
+        "subtitle": "Everyday team talk, project threads, and the notes you send yourself.",
+        "team": {
+          "items": [
+            "One place instead of three group chats",
+            "A reaction instead of another reply",
+            "Pinned conversations for the ones that matter",
+            "New joiners can read what happened"
+          ],
+          "title": "Everyday team talk"
+        },
+        "title": "Three conversations worth keeping"
+      }
+    },
+    "crm": {
+      "closing": {
+        "description": "Contacts is part of your Tuturuuu workspace. Sign in and bring your customer list with you.",
+        "title": "Stop rebuilding context before every call"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Contacts",
+        "secondary": "Talk to us"
+      },
+      "description": "Contacts, deals and conversation history in one record that the rest of your workspace can see. The follow-up you meant to send becomes a task with a date instead of a note to yourself.",
+      "eyebrow": "Contacts",
+      "features": {
+        "analytics": {
+          "description": "Conversion by stage, cycle length and where deals stall, so you fix the step that is actually costing you.",
+          "title": "Numbers behind the feeling"
+        },
+        "automation": {
+          "description": "Stage changes create the follow-up tasks and reminders, so process does not depend on discipline.",
+          "title": "The routine parts, taken over"
+        },
+        "contacts": {
+          "description": "Details, roles and history in a single record, so anyone picking up the account knows what was already said.",
+          "title": "One profile per person"
+        },
+        "deals": {
+          "description": "Every opportunity has a stage, a value and a person responsible. Handovers stop losing details.",
+          "title": "Deals with owners and dates"
+        },
+        "eyebrow": "What it does",
+        "history": {
+          "description": "Calls, emails and meeting notes attach to the contact, so nothing important lives only in someone's inbox.",
+          "title": "Conversations that stay findable"
+        },
+        "pipeline": {
+          "description": "See every open opportunity by stage, and which ones have gone quiet longer than they should have.",
+          "title": "A pipeline you can read at a glance"
+        },
+        "subtitle": "Not another database to maintain. The customer record sits beside your tasks, calendar and invoices, so context arrives with the name.",
+        "title": "The relationship, written down"
+      },
+      "title": "Every customer, and everything you promised them",
+      "useCases": {
+        "eyebrow": "Who it is for",
+        "growth": {
+          "items": [
+            "See which customers actually drive revenue",
+            "Spot the segments worth more of your time",
+            "Track revenue per account over time",
+            "Plan capacity against real demand"
+          ],
+          "title": "Growth and planning"
+        },
+        "sales": {
+          "items": [
+            "Track leads from first contact to signed",
+            "See the whole pipeline without asking for an update",
+            "Get reminded before a deal goes cold",
+            "Forecast from stages rather than optimism"
+          ],
+          "title": "Sales"
+        },
+        "service": {
+          "items": [
+            "Open a case against the full customer history",
+            "Track what was promised and by when",
+            "Keep feedback where the next conversation will find it",
+            "See which accounts need attention this week"
+          ],
+          "title": "Customer service"
+        },
+        "subtitle": "Selling, supporting and planning all draw on the same customer history.",
+        "title": "One record, several jobs"
+      }
+    },
+    "documents": {
+      "closing": {
+        "description": "Bring your writing into the same workspace as the rest of the work, and stop hunting for the version everyone agreed on.",
+        "title": "Start your next document here"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Start writing",
+        "secondary": "Talk to us"
+      },
+      "description": "Docs sit next to the tasks, calendar and files they belong to, so a spec stops being a link somebody has to go find.",
+      "eyebrow": "Documents",
+      "features": {
+        "assistant": {
+          "description": "Ask for a summary, an outline or a rewrite, and start from something on the page instead of a blank one.",
+          "title": "A draft to argue with"
+        },
+        "collaboration": {
+          "description": "Comments, suggestions and live editing mean the review happens on the page instead of scattered across three threads.",
+          "title": "Draft together"
+        },
+        "editor": {
+          "description": "A clean editor with the structure you expect: headings, lists, tables, code. The page gets out of the way of the thinking.",
+          "title": "Write without ceremony"
+        },
+        "eyebrow": "What you get",
+        "permissions": {
+          "description": "Per-document and per-folder access, including people outside the workspace, revocable at any time.",
+          "title": "Share exactly this much"
+        },
+        "search": {
+          "description": "Full-text search across every document in the workspace, so you stop reconstructing a decision from memory.",
+          "title": "Find the one you mean"
+        },
+        "subtitle": "Editing, search, history and permissions, without another tab to keep open.",
+        "title": "A document that keeps its context",
+        "versions": {
+          "description": "Every change is kept, so you can see who altered what and restore an earlier version without asking anyone.",
+          "title": "Nothing is lost by editing"
+        }
+      },
+      "title": "Write it down where the work already lives",
+      "useCases": {
+        "business": {
+          "items": [
+            "Contracts and their revision history",
+            "Proposals drafted from a previous one",
+            "Policies with controlled access",
+            "Reports written next to the numbers"
+          ],
+          "title": "Business paperwork"
+        },
+        "eyebrow": "Where it fits",
+        "knowledge": {
+          "items": [
+            "Onboarding guides new hires read on day one",
+            "Process documentation kept in one place",
+            "Internal FAQs instead of answering it again",
+            "Research notes with their sources attached"
+          ],
+          "title": "Team knowledge"
+        },
+        "specs": {
+          "items": [
+            "Specs that link to the tasks they created",
+            "Meeting notes with decisions and owners",
+            "Runbooks the on-call person can follow",
+            "Retrospectives that stay findable"
+          ],
+          "title": "Project and product docs"
+        },
+        "subtitle": "Three shapes of writing that stop drifting once they live in the workspace.",
+        "title": "The documents a team actually keeps"
+      }
+    },
+    "drive": {
+      "closing": {
+        "description": "Put storage next to the tasks, mail and documents that reference it, and stop paying for a drive that knows nothing about your work.",
+        "title": "Move your files in"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Drive",
+        "secondary": "Talk to us"
+      },
+      "description": "Storage that sits inside the workspace, so a file, the task it belongs to and the person who needs it are never three products apart.",
+      "eyebrow": "Drive",
+      "features": {
+        "devices": {
+          "description": "Web and mobile, so the file you need on the way to a meeting is not sitting on a laptop at home.",
+          "title": "The same drive on every device"
+        },
+        "eyebrow": "What you get",
+        "organization": {
+          "description": "Nest folders the way your team works and tag files so the same document can belong to more than one place.",
+          "title": "Folders, plus the labels you think in"
+        },
+        "search": {
+          "description": "Filter by name, type, owner and date, so a file from three months ago takes one search instead of ten clicks.",
+          "title": "Find it without opening folders"
+        },
+        "sharing": {
+          "description": "Share a file or a folder with chosen people or a link, and take the access back whenever you want.",
+          "title": "Send a link, not an attachment"
+        },
+        "storage": {
+          "description": "Everything is encrypted at rest and reachable only by the people you have given access to.",
+          "title": "Files kept private by default"
+        },
+        "subtitle": "Upload, find, share and roll back, without a folder archaeology expedition.",
+        "title": "Storage that behaves",
+        "versions": {
+          "description": "Replacing a file does not erase it. Earlier versions stay available, so an overwrite is not a lost afternoon.",
+          "title": "Every upload keeps the last one"
+        }
+      },
+      "title": "Your files, where the rest of the work is",
+      "useCases": {
+        "delivery": {
+          "items": [
+            "A link instead of an attachment that bounces",
+            "Access you can revoke after the handover",
+            "Large files without the compression ritual",
+            "A clear record of what was sent and when"
+          ],
+          "title": "Sending work to clients"
+        },
+        "eyebrow": "Where it fits",
+        "records": {
+          "items": [
+            "Version history for anything that gets revised",
+            "Originals preserved alongside the current file",
+            "Restore a file someone replaced by mistake",
+            "A tidy archive instead of a folder on one desktop"
+          ],
+          "title": "Records you have to keep"
+        },
+        "subtitle": "Three jobs storage has to do before anyone trusts it.",
+        "team": {
+          "items": [
+            "One place for the assets everyone reuses",
+            "Folders scoped to a project or a client",
+            "Access that follows the workspace, not one person's inbox",
+            "New members see the history, not an empty folder"
+          ],
+          "title": "Shared team files"
+        },
+        "title": "What teams keep in Drive"
+      }
+    },
+    "finance": {
+      "closing": {
+        "description": "Finance is part of your Tuturuuu workspace. Sign in and start with this month.",
+        "title": "Open the books without dreading it"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Finance",
+        "secondary": "Talk to us"
+      },
+      "description": "Expenses, budgets, invoices and cash flow in the same workspace as the rest of your work. Receipts get read and categorised for you, so the month closes without a weekend of data entry.",
+      "eyebrow": "Finance",
+      "features": {
+        "budgets": {
+          "description": "Set a limit per category and see where you stand as you spend, not after the statement lands.",
+          "title": "Budgets you actually notice"
+        },
+        "cashflow": {
+          "description": "Money in against money out over time, so a thin month shows up while you can still do something about it.",
+          "title": "Cash flow you can see coming"
+        },
+        "expenses": {
+          "description": "Photograph a receipt and it arrives as a categorised transaction. The shoebox of paper stops being a problem you deal with in April.",
+          "title": "Expenses that file themselves"
+        },
+        "eyebrow": "What it does",
+        "payments": {
+          "description": "Record what you billed and what cleared in the same place, so chasing an unpaid invoice starts from a fact rather than a memory.",
+          "title": "Payments and invoices in one ledger"
+        },
+        "planning": {
+          "description": "Model a hire, a price change or a savings goal against your actual history instead of a guess.",
+          "title": "Plans that use your real numbers"
+        },
+        "reports": {
+          "description": "Income, spend and category breakdowns are already built. Pull the number your accountant asked for in a minute, not an evening.",
+          "title": "Reports without the export"
+        },
+        "subtitle": "Every number lives next to the work that produced it, so you are not reconciling two versions of the truth.",
+        "title": "The bookkeeping, mostly handled"
+      },
+      "title": "Know where the money went, without the spreadsheet",
+      "useCases": {
+        "business": {
+          "items": [
+            "Keep team spend in categories you chose, not the bank's",
+            "Invoice, track and follow up without a second tool",
+            "Close the month from records that were already tidy",
+            "See margin per project rather than per bank account"
+          ],
+          "title": "Running a business"
+        },
+        "eyebrow": "Who it is for",
+        "personal": {
+          "items": [
+            "See where the month actually went, by category",
+            "Give every savings goal a number and a date",
+            "Track accounts and investments in one balance",
+            "Set a budget you will still be following in March"
+          ],
+          "title": "Personal money"
+        },
+        "planning": {
+          "items": [
+            "Project the next few months from real history",
+            "Test a decision before it becomes an expense",
+            "Spot the months where cash gets tight early",
+            "Compare a plan against what actually happened"
+          ],
+          "title": "Planning ahead"
+        },
+        "subtitle": "A freelancer, a small team and a household all want to know the same thing: what is left, and what is coming.",
+        "title": "Same ledger, different questions"
+      }
+    },
+    "forms": {
+      "closing": {
+        "description": "Open Forms, build the form you keep asking for by email, and share the link.",
+        "title": "Write the first question"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Forms",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a form, send a link, and watch the responses arrive where you can read, filter and chart them without exporting anything.",
+      "eyebrow": "Forms",
+      "features": {
+        "analytics": {
+          "description": "Per-question charts, activity over time and drop-off points are there as soon as the answers are.",
+          "title": "Summaries you did not build"
+        },
+        "builder": {
+          "description": "Add questions and group them into sections, then move blocks until the form reads the way you would ask in person.",
+          "title": "Questions, sections, order"
+        },
+        "eyebrow": "What you get",
+        "logic": {
+          "description": "Rules skip a question or jump to a section based on an earlier answer, so nobody reads what does not apply to them.",
+          "title": "Shows only what applies"
+        },
+        "responses": {
+          "description": "Answers land in the form itself, grouped by responder, so reading them is not a spreadsheet exercise.",
+          "title": "Responses in place"
+        },
+        "share": {
+          "description": "Publish and get a share link that opens for anyone you send it to, on a phone as easily as a laptop.",
+          "title": "One link to share"
+        },
+        "subtitle": "A builder, a link to share, and a response view that already knows how to summarise itself.",
+        "theme": {
+          "description": "Colors, fonts and images are set on the form itself, so a public link does not look borrowed.",
+          "title": "Looks like you sent it"
+        },
+        "title": "From question to answer without a detour"
+      },
+      "title": "Ask once, read the answers in one place",
+      "useCases": {
+        "eyebrow": "In practice",
+        "feedback": {
+          "items": [
+            "Surveys after a purchase or an event",
+            "Ratings you can read as a chart",
+            "Open answers kept next to the numbers",
+            "Drop-off shown at the question people stopped on"
+          ],
+          "title": "Asking customers"
+        },
+        "intake": {
+          "items": [
+            "Registration for an event or a class",
+            "Client intake before the first call",
+            "Applications collected in one queue",
+            "A public link that needs no account to answer"
+          ],
+          "title": "Requests and sign-ups"
+        },
+        "internal": {
+          "items": [
+            "Requests routed with conditional questions",
+            "Checklists filled the same way every time",
+            "Answers reviewed without a shared inbox",
+            "Results summarised for the next meeting"
+          ],
+          "title": "Running the team"
+        },
+        "subtitle": "Collecting requests, asking customers, and running something internal.",
+        "title": "The forms most teams need first"
+      }
+    },
+    "hive": {
+      "closing": {
+        "description": "Build the world, configure the agents, and run the first tick.",
+        "title": "Open the lab"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Hive",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a world, place agents in it, give them prompts and memory, then run the simulation and read what they actually did.",
+      "eyebrow": "Hive",
+      "features": {
+        "agents": {
+          "description": "Each agent carries a role, a backstory, a model and a prompt, and can be selected in the world to see exactly how it is configured.",
+          "title": "Agents you place and inspect"
+        },
+        "eyebrow": "What you get",
+        "observe": {
+          "description": "Run logs, conversation turns, event counts and world state are kept per session, so a result can be checked rather than remembered.",
+          "title": "What happened, recorded"
+        },
+        "prompts": {
+          "description": "Switch between default, enhanced and custom prompts, turn memory and backstory on or off, and change the model without leaving the run.",
+          "title": "Prompt, memory, model"
+        },
+        "runs": {
+          "description": "Step a single simulation tick by hand, or let autonomous ticks pair agents round-robin, all-to-all, or against a chosen target.",
+          "title": "Runs you trigger or schedule"
+        },
+        "subtitle": "A world you can edit, agents you can configure, and runs you can watch and compare.",
+        "title": "Everything an experiment needs to be repeatable",
+        "workflows": {
+          "description": "The same run reads three ways: the world as it stands, the sequence of events, and the graph of how the agents' work connected.",
+          "title": "World, timeline, workflow graph"
+        },
+        "world": {
+          "description": "Place blocks and objects on a voxel grid, with camera presets, time of day, season and weather as variables you control.",
+          "title": "A world you build by hand"
+        }
+      },
+      "title": "A lab for swarm agents",
+      "useCases": {
+        "design": {
+          "items": [
+            "A multi-agent setup tried before it is built",
+            "Pairing strategies compared on the same world",
+            "Prompt changes seen in behavior, not in theory",
+            "Failure modes found in simulation"
+          ],
+          "title": "Designing a system"
+        },
+        "eyebrow": "In practice",
+        "research": {
+          "items": [
+            "One variable changed between two runs",
+            "Memory and backstory isolated as conditions",
+            "Conversation turns kept for review",
+            "Named sessions, so results stay attributable"
+          ],
+          "title": "Agent research"
+        },
+        "subtitle": "Agent research, designing a multi-agent system, and showing others how one behaves.",
+        "teaching": {
+          "items": [
+            "A shared world several people can watch",
+            "Live state as the tick runs",
+            "A scenario replayed for a discussion",
+            "Agent decisions traceable to their prompt"
+          ],
+          "title": "Showing how it behaves"
+        },
+        "title": "What people run in it"
+      }
+    },
+    "inventory": {
+      "closing": {
+        "description": "Inventory is part of your Tuturuuu workspace. Sign in and load your first items.",
+        "title": "Count once, trust it afterwards"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Inventory",
+        "secondary": "Talk to us"
+      },
+      "description": "Track what you hold, across every location, with scanning, reorder points and a full movement history. The stockout you would have found out about from a customer shows up as an alert instead.",
+      "eyebrow": "Inventory",
+      "features": {
+        "eyebrow": "What it does",
+        "orders": {
+          "description": "Raise an order, track what is inbound and see which supplier delivers late, all against the same item record.",
+          "title": "Purchase orders and suppliers"
+        },
+        "reordering": {
+          "description": "Set a minimum per item and get told to reorder before you run out, not after.",
+          "title": "Reorder points that trigger themselves"
+        },
+        "reports": {
+          "description": "See what moves, what sits, and what is quietly tying up your cash.",
+          "title": "Turnover you can act on"
+        },
+        "scanning": {
+          "description": "Receive, move and count items with a phone camera, so a stock take stops meaning a clipboard.",
+          "title": "Barcode and QR scanning"
+        },
+        "stock": {
+          "description": "What you have, where it is, updated as it moves. The count you quote a customer is the count on the shelf.",
+          "title": "Live stock levels"
+        },
+        "subtitle": "Levels, movements and suppliers in one system, connected to the finance and customer records you already keep.",
+        "title": "Fewer surprises in the stockroom",
+        "warehouses": {
+          "description": "Track stock per site and every transfer between them, without a spreadsheet per warehouse.",
+          "title": "Multiple locations, one picture"
+        }
+      },
+      "title": "Stock counts that match the shelf",
+      "useCases": {
+        "distribution": {
+          "items": [
+            "Organise stock by location and bin",
+            "Pick and fulfil against live availability",
+            "Follow transfers between sites",
+            "See what is inbound and when it lands"
+          ],
+          "title": "Distribution"
+        },
+        "eyebrow": "Who it is for",
+        "manufacturing": {
+          "items": [
+            "Track raw materials against planned runs",
+            "Plan production around what you actually hold",
+            "Keep a movement record for quality checks",
+            "Watch unit cost as input prices change"
+          ],
+          "title": "Production"
+        },
+        "retail": {
+          "items": [
+            "Keep shelf and system counts in agreement",
+            "Reorder before a best seller runs out",
+            "Track supplier prices and lead times",
+            "Tie stock movements back to sales"
+          ],
+          "title": "Retail"
+        },
+        "subtitle": "Retail, distribution and production ask the same question in different words: do we have enough, and where is it?",
+        "title": "Wherever the stock sits"
+      }
+    },
+    "lms": {
+      "closing": {
+        "description": "Learn is part of your Tuturuuu workspace. Sign in and set up your first course.",
+        "title": "Start teaching, not configuring"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Learn",
+        "secondary": "Talk to us"
+      },
+      "description": "Build a course, set the work, and see progress as it happens. Learners get one place for what is due; you get an honest picture of who is falling behind while there is still time to help.",
+      "eyebrow": "Learn",
+      "features": {
+        "assignments": {
+          "description": "Set work, collect submissions and grade in one place, with scoring handled automatically where it can be.",
+          "title": "Assignments and grading"
+        },
+        "courses": {
+          "description": "Organise lessons, readings and video into modules, and reuse the structure the next time you run it.",
+          "title": "Courses you can build in an afternoon"
+        },
+        "discussion": {
+          "description": "Discussion attached to the lesson, so the answer helps everyone who reaches that point later.",
+          "title": "Questions asked once"
+        },
+        "eyebrow": "What it does",
+        "live": {
+          "description": "Run classes and one-to-ones next to the material they cover, with the recording where the lesson is.",
+          "title": "Live sessions in context"
+        },
+        "practice": {
+          "description": "Check understanding as you go with quizzes and exercises, rather than finding out at the exam.",
+          "title": "Quizzes and practice"
+        },
+        "progress": {
+          "description": "Completion and performance per learner, so the person who stopped three weeks ago is visible now.",
+          "title": "Progress you can see, not guess"
+        },
+        "subtitle": "Course material, submissions and progress in one system, on the same calendar as everything else your learners are juggling.",
+        "title": "Teaching, with less admin around it"
+      },
+      "title": "Courses, assignments and where each learner stands",
+      "useCases": {
+        "centers": {
+          "items": [
+            "Manage a catalogue of courses and cohorts",
+            "Run certification programmes end to end",
+            "Monitor progress across every active group",
+            "See which courses actually finish well"
+          ],
+          "title": "Training providers"
+        },
+        "corporate": {
+          "items": [
+            "Onboard new hires with a path they can follow",
+            "Run professional development without a scheduler",
+            "Track compliance training to completion",
+            "Assess skills before and after the programme"
+          ],
+          "title": "Teams and training"
+        },
+        "eyebrow": "Who it is for",
+        "institutions": {
+          "items": [
+            "Deliver a course online with the material in order",
+            "See performance per student, not just per class",
+            "Run virtual classrooms alongside the coursework",
+            "Keep readings and resources in one library"
+          ],
+          "title": "Schools and universities"
+        },
+        "subtitle": "A classroom, an onboarding programme and a certification course run on the same three things: material, work, and progress.",
+        "title": "Anywhere people are learning something"
+      }
+    },
+    "mail": {
+      "closing": {
+        "description": "Connect your inbox and let the messages that create work create it directly, instead of on a sticky note.",
+        "title": "Move your mail in"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Mail",
+        "secondary": "Talk to us"
+      },
+      "description": "Mail that knows about your tasks and your calendar, so the promise made in a thread becomes something with an owner and a date.",
+      "eyebrow": "Mail",
+      "features": {
+        "assistant": {
+          "description": "Mira drafts a response in your context and summarises a long thread, so you are editing instead of writing from nothing.",
+          "title": "A reply already started"
+        },
+        "calendar": {
+          "description": "Times you can actually make are proposed from your calendar, and the event is created without leaving the message.",
+          "title": "Book the meeting from the thread"
+        },
+        "eyebrow": "What you get",
+        "inbox": {
+          "description": "Priority sorting and automatic grouping put the messages that need you at the top and the rest out of the way.",
+          "title": "The important mail first"
+        },
+        "schedule": {
+          "description": "Write now, deliver later, and set a follow-up so a silent thread comes back to you instead of disappearing.",
+          "title": "Send it when it lands better"
+        },
+        "search": {
+          "description": "Find a message by what you remember about it, the person, the month, the attachment, not the exact subject line.",
+          "title": "Ask for it in plain words"
+        },
+        "shared": {
+          "description": "Shared addresses with delegated access, so support or billing mail is not stuck behind one person's login.",
+          "title": "Inboxes a team can run"
+        },
+        "subtitle": "Triage, drafting, scheduling and shared inboxes in one place.",
+        "title": "Less inbox, more done"
+      },
+      "title": "An inbox that hands work to the rest of your day",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Threads that carry the project's context",
+            "Scheduling without the four-message dance",
+            "Follow-ups that fire without you remembering",
+            "Attachments that land in Drive, not a downloads folder"
+          ],
+          "title": "Client correspondence"
+        },
+        "eyebrow": "Where it fits",
+        "followups": {
+          "items": [
+            "Reply drafts waiting for your edit",
+            "Scheduled sending across time zones",
+            "Reminders when nobody answered",
+            "Mail turned into a task with a due date"
+          ],
+          "title": "Keeping your day intact"
+        },
+        "subtitle": "Three kinds of correspondence that stop leaking once mail sits in the workspace.",
+        "team": {
+          "items": [
+            "One address several people can answer",
+            "Handover without a chain of forwards",
+            "Internal updates that become tasks",
+            "A record new teammates can read back"
+          ],
+          "title": "Team and shared inboxes"
+        },
+        "title": "The mail that actually costs you time"
+      }
+    },
+    "meet": {
+      "closing": {
+        "description": "Choose the dates, share the link, and let the group answer in their own time.",
+        "title": "Set up a plan in a minute"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Create a plan",
+        "secondary": "Talk to us"
+      },
+      "description": "Pick some candidate dates, share one link, and watch a group's availability collect itself. No account needed to take part.",
+      "eyebrow": "Meet Together",
+      "features": {
+        "agenda": {
+          "description": "Discussion points and objectives sit alongside the time slot, so the meeting has a purpose written down before it starts.",
+          "title": "The agenda lives with the plan"
+        },
+        "availability": {
+          "description": "Set the candidate dates and the range of hours worth considering, so people only answer the question that matters.",
+          "title": "Dates and hours you choose"
+        },
+        "eyebrow": "What you get",
+        "guests": {
+          "description": "Anyone with the link can add their availability by name, so external people are not a reason to fall back to email.",
+          "title": "Guests without an account"
+        },
+        "overlap": {
+          "description": "Group availability builds up as a grid, and the soonest and best slots surface without anyone counting rows.",
+          "title": "The overlap, drawn for you"
+        },
+        "sharing": {
+          "description": "Sign in and your plans are saved, so a recurring group does not start from a blank page every time.",
+          "title": "Plans you can come back to"
+        },
+        "subtitle": "A plan takes a minute to set up and replaces the thread where six people list the hours they cannot make.",
+        "timezones": {
+          "description": "Each participant marks availability in their own time zone, and the plan reconciles them into one honest picture.",
+          "title": "Everyone answers in local time"
+        },
+        "title": "One link, everyone's availability"
+      },
+      "title": "Find the time before you send the invite",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Candidate times offered in one message",
+            "No access to your internal calendar required",
+            "Several attendees reconciled at once",
+            "A record of what was agreed and why"
+          ],
+          "title": "Clients and externals"
+        },
+        "eyebrow": "In practice",
+        "groups": {
+          "items": [
+            "Study sessions arranged around classes",
+            "Volunteer shifts matched to who is free",
+            "Recurring plans reused week to week",
+            "Anyone can respond without signing up"
+          ],
+          "title": "Groups and communities"
+        },
+        "subtitle": "The more calendars in play, the more the thread costs. This replaces it.",
+        "teams": {
+          "items": [
+            "A workable hour found without a chain of replies",
+            "Local time shown to every participant",
+            "Contractors and partners included by link",
+            "The agenda ready before the slot is booked"
+          ],
+          "title": "Teams across time zones"
+        },
+        "title": "Whenever more than three people are involved"
+      }
+    },
+    "qr": {
+      "closing": {
+        "description": "Paste the link, set the colors, and download a file you can print.",
+        "title": "Make the code"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open QR generator",
+        "secondary": "Talk to us"
+      },
+      "description": "Turn a link, a message or a payment detail into a QR code, style it so it looks like yours, and download it ready to print.",
+      "eyebrow": "QR",
+      "features": {
+        "anyValue": {
+          "description": "Paste a URL, a message, or payment details, and the code updates as you type.",
+          "title": "Any link or text"
+        },
+        "colors": {
+          "description": "Set the code and background colors so it sits inside your material instead of on a white square.",
+          "title": "Your colors"
+        },
+        "export": {
+          "description": "Download as PNG, JPG or WebP at four times the on-screen size, so it holds up on a menu or a banner.",
+          "title": "A file that prints"
+        },
+        "eyebrow": "What you get",
+        "logo": {
+          "description": "Drop an image into the center, with its size, opacity and rounding under your control, and the code stays scannable.",
+          "title": "A logo in the middle"
+        },
+        "open": {
+          "description": "The generator is part of the Tuturuuu tools app and opens straight to the form.",
+          "title": "Nothing to sign up for"
+        },
+        "styles": {
+          "description": "A plain code, a branded card with your own title, or a scan-me version for a poster where people need the instruction.",
+          "title": "Three layouts"
+        },
+        "subtitle": "Any value, three layouts, your colors, your logo, and a file large enough for print.",
+        "title": "Enough control to print it once"
+      },
+      "title": "A code for the thing you keep repeating",
+      "useCases": {
+        "business": {
+          "items": [
+            "A menu opened without an app",
+            "Payment details on a card by the till",
+            "An ordering or review link at the table",
+            "A link printed on a receipt or a bag"
+          ],
+          "title": "On the counter"
+        },
+        "events": {
+          "items": [
+            "A registration link on a poster",
+            "Directions to the room or the venue",
+            "Slides and materials after a talk",
+            "A contact card people can scan"
+          ],
+          "title": "At an event"
+        },
+        "everyday": {
+          "items": [
+            "A long link passed to a phone without typing",
+            "A form link people can scan and fill in",
+            "A profile or portfolio on a business card",
+            "A code sized for a sticker or a badge"
+          ],
+          "title": "Everyday handoffs"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "On counters, at events, and in everyday handoffs.",
+        "title": "Where these codes end up"
+      }
+    },
+    "storefront": {
+      "closing": {
+        "description": "Publish the products you already track and give buyers a link that stays current.",
+        "title": "Open the shop"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Storefront",
+        "secondary": "Talk to us"
+      },
+      "description": "A public shop that reads the products and stock you already keep in Inventory, so the catalog customers see is the one you maintain.",
+      "eyebrow": "Storefront",
+      "features": {
+        "cart": {
+          "description": "Buyers add across categories and come back to the cart, on a phone as easily as a laptop.",
+          "title": "A cart that survives browsing"
+        },
+        "catalog": {
+          "description": "Products, prices and descriptions come from Inventory, so publishing is a visibility decision rather than a second data entry.",
+          "title": "The catalog is your inventory"
+        },
+        "checkout": {
+          "description": "Payment is handed to Polar at checkout, so card details never sit with the shop.",
+          "title": "Checkout handled by Polar"
+        },
+        "eyebrow": "What you get",
+        "orders": {
+          "description": "A buyer can look their order up, and the workspace sees the same record without asking for a screenshot.",
+          "title": "Orders both sides can see"
+        },
+        "stock": {
+          "description": "Availability follows the counts your team maintains, so the shop does not sell what the shelf no longer has.",
+          "title": "Stock buyers can trust"
+        },
+        "subtitle": "One catalog, one stock count, and a checkout your buyers can finish.",
+        "title": "A shop on top of the stock you already track",
+        "visibility": {
+          "description": "A store can be open to anyone with the link or kept to invited buyers, decided per store.",
+          "title": "Public or private"
+        }
+      },
+      "title": "Your inventory, open to buyers",
+      "useCases": {
+        "buyers": {
+          "items": [
+            "Browsing by category on a phone",
+            "A cart that remembers what was added",
+            "A checkout that ends at a real payment page",
+            "An order they can look up later"
+          ],
+          "title": "The people buying"
+        },
+        "eyebrow": "In practice",
+        "operators": {
+          "items": [
+            "Stock counted once, shown everywhere",
+            "Product visibility set per store",
+            "Orders in the same workspace as inventory",
+            "Catalog and payment settings kept in Inventory"
+          ],
+          "title": "Behind the counter"
+        },
+        "shops": {
+          "items": [
+            "A shop without rebuilding the catalog",
+            "Prices maintained in one place",
+            "A link you can put on a receipt or a poster",
+            "No second system to reconcile"
+          ],
+          "title": "Small shops"
+        },
+        "subtitle": "Small shops, the team behind the counter, and the people buying.",
+        "title": "Who the shop is for"
+      }
+    },
+    "tasks": {
+      "closing": {
+        "description": "Open Tasks, write down what is on your mind, and let the workspace keep track of the rest.",
+        "title": "Start with today's list"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Tasks",
+        "secondary": "Talk to us"
+      },
+      "description": "Lists, boards and timelines over the same set of tasks, with owners, dates and priorities that hold up when the week gets busy.",
+      "eyebrow": "Tasks",
+      "features": {
+        "assistant": {
+          "description": "Suggested priorities and time estimates arrive before you open the board, so triage is a review rather than a decision from scratch.",
+          "title": "An assistant that sorts first"
+        },
+        "collaborate": {
+          "description": "Every task carries an owner and a state, so nobody has to ask in chat who picked it up.",
+          "title": "Assigned, not implied"
+        },
+        "deadlines": {
+          "description": "Due dates and reminders land on the same calendar as your meetings, so deadlines compete for real time.",
+          "title": "Dates that reach your calendar"
+        },
+        "eyebrow": "What you get",
+        "insights": {
+          "description": "Completion and time spent are recorded as you go, so a retrospective starts from data instead of memory.",
+          "title": "What actually got done"
+        },
+        "organize": {
+          "description": "Group work the way you think about it, so the next thing to do is visible without reading the whole list.",
+          "title": "Lists, labels and priorities"
+        },
+        "subtitle": "The parts that keep a list honest: an owner, a date, a priority, and a view that matches how you actually work.",
+        "title": "Enough structure to stop re-deciding",
+        "views": {
+          "description": "Switch the view without moving the work. The same tasks, arranged for planning, standups or delivery.",
+          "title": "List, board or timeline"
+        }
+      },
+      "title": "Work that stays where you left it",
+      "useCases": {
+        "eyebrow": "In practice",
+        "operations": {
+          "items": [
+            "Repeatable checklists for routine work",
+            "Deadlines tracked across several projects",
+            "Workload visible before you commit to more",
+            "Status reports assembled from real activity"
+          ],
+          "title": "Recurring operations"
+        },
+        "personal": {
+          "items": [
+            "A daily list you can finish, not an inbox",
+            "Goals broken down into tasks with dates",
+            "Habits and routines that repeat on schedule",
+            "Priorities set once, in the morning"
+          ],
+          "title": "Your own week"
+        },
+        "subtitle": "Personal lists, team delivery and recurring operations all sit in one workspace.",
+        "team": {
+          "items": [
+            "Project work split into owned tasks",
+            "Handoffs with a state everyone can see",
+            "Progress readable without a status meeting",
+            "Comments and context on the task itself"
+          ],
+          "title": "Team delivery"
+        },
+        "title": "The same board, three ways to use it"
+      }
+    },
+    "track": {
+      "closing": {
+        "description": "Open Track, pick the task you are on, and let the week record itself.",
+        "title": "Start the timer"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Open Track",
+        "secondary": "Talk to us"
+      },
+      "description": "Start a timer against a real task, stop it when you move on, and end the week knowing where the hours went instead of guessing.",
+      "eyebrow": "Track",
+      "features": {
+        "breaks": {
+          "description": "Coffee, lunch and walks are logged as their own break types, so tracked time stays honest.",
+          "title": "Breaks counted apart"
+        },
+        "export": {
+          "description": "Export the sessions you filtered for, so invoicing and payroll start from the same rows you just read.",
+          "title": "Numbers that leave the app"
+        },
+        "eyebrow": "What you get",
+        "history": {
+          "description": "Past sessions stay editable, and an entry someone forgot can be requested and approved instead of quietly lost.",
+          "title": "A record you can correct"
+        },
+        "subtitle": "Sessions attached to tasks, breaks counted separately, and a history you can still correct.",
+        "tasks": {
+          "description": "Pick a task from your boards and the session attaches to it, so hours land on the work rather than a free-text label.",
+          "title": "Time against real tasks"
+        },
+        "team": {
+          "description": "Managers see sessions across the workspace, filtered by person and period, without collecting screenshots.",
+          "title": "Hours per person"
+        },
+        "timer": {
+          "description": "A running timer sits at the top of the screen, so starting is faster than deciding to skip it.",
+          "title": "Start and stop in one click"
+        },
+        "title": "A timer that stays close to the work"
+      },
+      "title": "Hours you can account for",
+      "useCases": {
+        "eyebrow": "In practice",
+        "freelance": {
+          "items": [
+            "Hours per client, ready to invoice",
+            "Sessions tied to the task you delivered",
+            "Estimates checked against what it took",
+            "An export your invoice can cite"
+          ],
+          "title": "Billing clients"
+        },
+        "review": {
+          "items": [
+            "A week reviewed in one screen",
+            "Time by task, project and person",
+            "Gaps found while you can still fix them",
+            "A record for the next planning round"
+          ],
+          "title": "Closing the week"
+        },
+        "subtitle": "Billing a client, running a team, or closing out a week.",
+        "team": {
+          "items": [
+            "Who is working on what, right now",
+            "Workload visible before you assign more",
+            "Break time separated from focused time",
+            "Approvals for entries someone forgot"
+          ],
+          "title": "Running a team"
+        },
+        "title": "Three reasons people keep it running"
+      }
+    },
+    "workflows": {
+      "closing": {
+        "description": "Set up your workspace, map the process once, and stop doing it by hand next month.",
+        "title": "Automate the part you keep repeating"
+      },
+      "cta": {
+        "pricing": "See pricing",
+        "primary": "Set up your workspace",
+        "secondary": "Talk to us"
+      },
+      "description": "Build the process once with triggers and conditions, and the approvals, handoffs and updates run whether or not anyone remembers to chase them.",
+      "eyebrow": "Workflows",
+      "features": {
+        "assistant": {
+          "description": "The assistant reads how a workflow actually runs and points at the steps that queue up or get skipped.",
+          "title": "Suggestions where it stalls"
+        },
+        "builder": {
+          "description": "Lay out steps visually and the shape of the process stays obvious to anyone who opens it later.",
+          "title": "Built by arranging, not coding"
+        },
+        "eyebrow": "What you get",
+        "integrations": {
+          "description": "APIs and custom triggers let a workflow reach the tools your team has not replaced, instead of forcing a migration.",
+          "title": "Connected to what you already run"
+        },
+        "subtitle": "A workflow is meant to be understood by the people it affects, not just by whoever built it.",
+        "templates": {
+          "description": "Templates cover the common cases, so onboarding or approvals are adjusted rather than designed from nothing.",
+          "title": "Start from a known process"
+        },
+        "title": "Automation you can read",
+        "triggers": {
+          "description": "Work starts on an event, a schedule or a rule you set, so the process moves without someone noticing it should.",
+          "title": "Conditions and triggers"
+        },
+        "versions": {
+          "description": "Versions are kept as the process evolves, so you can see what changed and go back if the new one is worse.",
+          "title": "Changes you can trace"
+        }
+      },
+      "title": "The routine parts, handled without you",
+      "useCases": {
+        "approvals": {
+          "items": [
+            "Approvals routed to whoever should decide",
+            "Documents moved through review in order",
+            "New hires set up from the same checklist",
+            "Purchase requests tracked to a decision"
+          ],
+          "title": "Business processes"
+        },
+        "eyebrow": "In practice",
+        "subtitle": "Approvals, handoffs and system chores are the parts that quietly cost a week each month.",
+        "systems": {
+          "items": [
+            "Data kept in step between tools",
+            "Scheduled jobs run on time",
+            "Custom triggers for your own events",
+            "Runs logged so failures are findable"
+          ],
+          "title": "System chores"
+        },
+        "team": {
+          "items": [
+            "Tasks assigned as work reaches a stage",
+            "Handoffs that carry their context along",
+            "Status updates posted without a reminder",
+            "Notifications only for people who need them"
+          ],
+          "title": "Team automation"
+        },
+        "title": "Where the manual work usually hides"
+      }
+    }
   },
   "promotion-data-table": {
     "code": "Code",

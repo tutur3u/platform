@@ -464,10 +464,6 @@ function handlePublicMarketingRedirectRoute(
     return redirectToPath(req, '/?hash-nav=1#pricing');
   }
 
-  if (pathnameWithoutLocale === '/products/meet-together') {
-    return redirectToPath(req, '/meet-together');
-  }
-
   if (pathnameWithoutLocale === '/qr-generator') {
     return redirectToQrApp(req);
   }

@@ -1,211 +1,38 @@
-'use client';
-
 import {
-  BarChart3,
   Calculator,
   CreditCard,
-  DollarSign,
   FileSpreadsheet,
   LineChart,
-  LockKeyhole,
-  PieChart,
   Receipt,
-  ShieldCheck,
   Wallet,
   Wallet2,
 } from '@tuturuuu/icons/lucide';
 import {
-  ProductBadge,
-  ProductButton,
-  ProductCard,
-  ProductLinkButton,
+  ProductPage,
+  type ProductPageConfig,
 } from '../product-page-primitives';
 
-const features = [
-  {
-    title: 'Expense Tracking',
-    description:
-      'Track and categorize expenses with automated receipt processing.',
-    icon: <Receipt className="h-6 w-6" />,
-  },
-  {
-    title: 'Budget Management',
-    description: 'Create and monitor budgets with real-time spending insights.',
-    icon: <Wallet className="h-6 w-6" />,
-  },
-  {
-    title: 'Financial Reports',
-    description: 'Generate comprehensive financial reports and analytics.',
-    icon: <FileSpreadsheet className="h-6 w-6" />,
-  },
-  {
-    title: 'Payment Processing',
-    description: 'Handle payments and transactions with secure integrations.',
-    icon: <CreditCard className="h-6 w-6" />,
-  },
-  {
-    title: 'Cash Flow Analysis',
-    description: 'Monitor and forecast cash flow with advanced analytics.',
-    icon: <LineChart className="h-6 w-6" />,
-  },
-  {
-    title: 'Financial Planning',
-    description:
-      'Plan and optimize your financial strategy with AI-powered insights.',
-    icon: <Calculator className="h-6 w-6" />,
-  },
-];
-
-const useCases = [
-  {
-    title: 'Business Finance',
-    items: [
-      'Expense management',
-      'Budget tracking',
-      'Financial reporting',
-      'Cash flow analysis',
-    ],
-  },
-  {
-    title: 'Personal Finance',
-    items: [
-      'Spending tracking',
-      'Savings goals',
-      'Investment monitoring',
-      'Budget planning',
-    ],
-  },
-  {
-    title: 'Financial Planning',
-    items: [
-      'Future projections',
-      'Risk assessment',
-      'Goal setting',
-      'Scenario planning',
-    ],
-  },
-];
+const config: ProductPageConfig = {
+  slug: 'finance',
+  accent: 'pink',
+  icon: Wallet,
+  primaryHref: 'https://finance.tuturuuu.com',
+  primaryExternal: true,
+  features: [
+    { key: 'expenses', icon: Receipt },
+    { key: 'budgets', icon: Wallet2 },
+    { key: 'reports', icon: FileSpreadsheet },
+    { key: 'payments', icon: CreditCard },
+    { key: 'cashflow', icon: LineChart },
+    { key: 'planning', icon: Calculator },
+  ],
+  useCases: [
+    { key: 'business', itemCount: 4 },
+    { key: 'personal', itemCount: 4 },
+    { key: 'planning', itemCount: 4 },
+  ],
+};
 
 export default function FinanceProductPage() {
-  return (
-    <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-      {/* Hero Section */}
-      <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Financial Management</h1>
-        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Take control of your finances with our intelligent management system.
-          Track expenses, manage budgets, and make informed financial decisions
-          with powerful analytics.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
-        </div>
-      </div>
-
-      {/* Trust Section */}
-      <section className="mb-24">
-        <ProductCard className="border-primary bg-primary/5 p-8">
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Bank-Grade Security</h2>
-            <p className="text-muted-foreground">
-              Your financial data is protected with state-of-the-art encryption
-              and security measures, ensuring safe and reliable financial
-              management.
-            </p>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Features Grid */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Powerful Features
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <ProductCard key={feature.title} className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
-              </div>
-              <p className="text-muted-foreground">{feature.description}</p>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Use Cases */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
-        <div className="grid gap-8 md:grid-cols-3">
-          {useCases.map((useCase) => (
-            <ProductCard key={useCase.title} className="p-6">
-              <Wallet2 className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                {useCase.items.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </ProductCard>
-          ))}
-        </div>
-      </section>
-
-      {/* Analytics Section */}
-      <section className="mb-24">
-        <ProductCard className="overflow-hidden">
-          <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
-              <BarChart3 className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Financial Analytics</h3>
-              <p className="text-muted-foreground">
-                Gain deep insights into your financial health with comprehensive
-                analytics and customizable dashboards.
-              </p>
-            </div>
-            <div className="flex flex-col justify-center gap-4 p-8">
-              <PieChart className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Expense Insights</h3>
-              <p className="text-muted-foreground">
-                Visualize spending patterns and identify opportunities for
-                optimization with detailed expense breakdowns.
-              </p>
-            </div>
-          </div>
-        </ProductCard>
-      </section>
-
-      {/* Additional Features Section */}
-      <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
-          Financial Tools
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2">
-          <ProductCard className="p-6">
-            <LockKeyhole className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Secure Transactions</h3>
-            <p className="text-muted-foreground">
-              Process payments and manage transactions with enterprise-grade
-              security and real-time monitoring.
-            </p>
-          </ProductCard>
-          <ProductCard className="p-6">
-            <DollarSign className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Smart Budgeting</h3>
-            <p className="text-muted-foreground">
-              Create and manage budgets with AI-powered recommendations and
-              automated tracking.
-            </p>
-          </ProductCard>
-        </div>
-      </section>
-    </div>
-  );
+  return <ProductPage config={config} />;
 }

@@ -7920,7 +7920,6 @@
   },
   "landing": {
     "ai": {
-      "eyebrow": "Gặp gỡ Mira",
       "mira": {
         "capabilities": {
           "contextAware": "Hiểu ngữ cảnh",
@@ -7935,9 +7934,54 @@
         ],
         "title": "Gặp Mira - Trợ Lý AI Của Bạn",
         "tryAsking": "Thử hỏi Mira..."
+      }
+    },
+    "aiCapabilities": {
+      "capabilities": {
+        "drafting": {
+          "description": "Tài liệu, phản hồi và báo cáo bắt đầu từ ngữ cảnh của bạn thay vì trang trắng.",
+          "title": "Viết bản nháp đầu tiên"
+        },
+        "extraction": {
+          "description": "Đọc một cuộc trao đổi, nhận ra điều bạn đã hứa và biến nó thành công việc có hạn chót.",
+          "title": "Không bỏ sót cam kết"
+        },
+        "insight": {
+          "description": "Chỉ ra khoản chi, dòng tiền và điểm bất thường trước khi chúng thành vấn đề.",
+          "title": "Theo dõi các con số"
+        },
+        "meetings": {
+          "description": "Ghi lại nội dung, viết tóm tắt và giao những hành động phát sinh từ cuộc họp.",
+          "title": "Lo phần việc sau cuộc họp"
+        },
+        "scheduling": {
+          "description": "Tìm những khoảng thời gian thật sự để làm việc sâu, xoay quanh các cuộc họp không thể dời.",
+          "title": "Bảo vệ thời gian tập trung"
+        },
+        "search": {
+          "description": "Hỏi theo điều bạn mang máng nhớ và nhận đúng tài liệu, không phải danh sách từ khoá.",
+          "title": "Tìm theo ý nghĩa"
+        },
+        "title": "Cụ thể thì AI làm gì"
       },
-      "subtitle": "Gặp Mira—trợ lý AI thực sự hiểu cách bạn làm việc.",
-      "title": "AI thông minh. Thật sự thông minh."
+      "eyebrow": "Lõi AI",
+      "pipeline": {
+        "act": {
+          "description": "Mira đặt lịch, soạn phản hồi hoặc tạo công việc — rồi báo lại cho bạn.",
+          "label": "Hành động"
+        },
+        "caption": "Một yêu cầu đi qua lõi AI như thế nào",
+        "reason": {
+          "description": "Rewise chuyển câu hỏi tới mô hình phù hợp nhất, dưới sự dẫn dắt của Nova.",
+          "label": "Suy luận"
+        },
+        "sense": {
+          "description": "Aurora liên kết email, công việc, tệp và sự kiện cùng thuộc một mạch công việc.",
+          "label": "Cảm nhận"
+        }
+      },
+      "subtitle": "Năm hệ thống phối hợp đọc ngữ cảnh của bạn, suy luận và hành động ngay trong những sản phẩm bạn đang dùng.",
+      "title": "Trợ lý làm việc thật, không chỉ trò chuyện"
     },
     "aiCore": {
       "aurora": {
@@ -7951,9 +7995,6 @@
         "role": "Cầu nối con người"
       },
       "mira": {
-        "badge1": "Chủ động",
-        "badge2": "Hiểu ngữ cảnh",
-        "badge3": "Học liên tục",
         "description": "Mira là JARVIS mà chúng ta từng mơ. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu, tài chính và tin nhắn để gợi ý chủ động thay vì chỉ nhắc thụ động.",
         "title": "Gặp Mira - Trợ Lý AI"
       },
@@ -7974,13 +8015,10 @@
       }
     },
     "cta": {
-      "description": "Hàng nghìn bạn đã thoát khỏi đống app lộn xộn và tìm lại sự tập trung. Thử miễn phí ngay—không cần thẻ nhé!",
-      "getStarted": "Bắt Đầu Ngay",
-      "learnStory": "Xem Câu Chuyện",
+      "description": "Miễn phí để bắt đầu, mã nguồn mở, và bạn có thể tự vận hành. Không cần thẻ, không cần gọi tư vấn, không bị ràng buộc.",
       "note": "Không cần thẻ. Miễn phí mãi mãi.",
       "primary": "Dùng Thử Miễn Phí",
       "secondary": "Nói Chuyện Với Mình",
-      "starGitHub": "Star trên GitHub",
       "title": "Thử ngay đi—miễn phí mà!",
       "trust": {
         "openSource": "Mã nguồn mở & minh bạch",
@@ -8011,6 +8049,10 @@
         "status": "Online",
         "subtitle": "Trợ lý AI chủ động của bạn",
         "title": "Mira - Trợ Lý AI",
+        "toolCall": {
+          "checking": "Đang kiểm tra 3 lịch",
+          "done": "Tìm thấy 3 khung giờ trống"
+        },
         "userMessage1": "Mai mình có lịch gì?",
         "userMessage2": "Dời họp 2h chiều được không?"
       },
@@ -8103,7 +8145,7 @@
           "title": "Phân Bổ Thời Gian Tuần Này"
         }
       },
-      "badge": "Trải Nghiệm Trực Tiếp",
+      "badge": "Minh hoạ",
       "calendar": {
         "cta": "Dùng Thử Lịch Thông Minh",
         "event1": {
@@ -8156,92 +8198,6 @@
           "weeklyReview": "Tổng Kết Tuần"
         }
       },
-      "demoTexts": {
-        "aiChat": {
-          "aiResponse1Intro": "Mai bạn có 4 họp và 2 khung focus:",
-          "aiResponse1Item1": "9:00 - Họp nhóm (30 phút)",
-          "aiResponse1Item2": "11:00 - Focus: Project Alpha (2 tiếng)",
-          "aiResponse1Item3": "2:00 - Review khách hàng (1 tiếng)",
-          "aiResponse2": "Tìm được 3 slot trống. Thứ Sáu 3h chiều là tốt nhất theo lịch mọi người. Gửi lời mời luôn không?",
-          "contextAwareDescription": "Mira hiểu cách bạn làm việc, sở thích và mục tiêu để hỗ trợ đúng lúc.",
-          "contextAwareTitle": "Hiểu ngữ cảnh",
-          "cta": "Chat với Mira",
-          "quickActionReminder": "Tạo nhắc nhở",
-          "quickActionSummary": "Tóm tắt tuần",
-          "quickActionTasks": "Xem task",
-          "subtitle": "Trợ lý AI chủ động của bạn",
-          "title": "Mira - Trợ Lý AI",
-          "userMessage1": "Mai có lịch gì?",
-          "userMessage2": "Dời họp 2h chiều được không?"
-        },
-        "analytics": {
-          "adminLabel": "Admin",
-          "adminValue": "15%",
-          "cta": "Xem dashboard đầy đủ",
-          "deepWorkLabel": "Deep work",
-          "deepWorkValue": "65%",
-          "focusChange": "+3.2h so với tuần trước",
-          "focusLabel": "Focus",
-          "focusValue": "18.5h",
-          "goalsLabel": "Mục tiêu",
-          "goalsSubtitle": "Tỷ lệ hoàn thành",
-          "goalsValue": "89%",
-          "meetingsChange": "-8% tuần này",
-          "meetingsLabel": "Họp",
-          "meetingsValue": "12",
-          "performanceDescription": "Bạn dành nhiều hơn 65% thời gian cho deep work so với tháng trước. Quá đỉnh!",
-          "performanceTitle": "Hiệu suất",
-          "productivityScoreBadge": "Xuất sắc",
-          "productivityScoreRank": "Top 10% người dùng",
-          "productivityScoreTitle": "Điểm năng suất",
-          "productivityScoreValue": "87/100",
-          "subtitle": "Theo dõi năng suất và xu hướng",
-          "tasksChange": "+15% tuần này",
-          "tasksLabel": "Task",
-          "tasksValue": "24",
-          "title": "Phân Tích & Insights",
-          "weeklyDistributionTitle": "Phân bổ tuần này"
-        },
-        "calendar": {
-          "cta": "Thử Lịch Thông Minh",
-          "event1Meta": "5 người",
-          "event1Title": "Standup",
-          "event2Meta": "AI tự đặt",
-          "event2Title": "Focus: Deep work",
-          "event3Meta": "Video call",
-          "event3Title": "Present cho khách",
-          "eventCount": "6 sự kiện",
-          "focusTimeLabel": "Thời gian focus",
-          "focusTimeValue": "3.5h",
-          "optimizedLabel": "Đã tối ưu",
-          "optimizedValue": "85%",
-          "smartSuggestionDescription": "Lịch tuần này hiệu quả hơn 15% so với tuần trước. Thêm khung focus thứ Sáu nha!",
-          "smartSuggestionTitle": "Gợi ý từ AI",
-          "subtitle": "Lên lịch và chặn giờ bằng AI",
-          "title": "Lịch thông minh",
-          "todaySchedule": "Hôm nay"
-        },
-        "taskManagement": {
-          "aiInsightDescription": "Bạn có 3 task ưu tiên cao đến hạn tuần này. Dành 2 tiếng sáng mai để dọn sạch nha!",
-          "aiInsightTitle": "AI gợi ý",
-          "cta": "Thử Quản Lý Task",
-          "subtitle": "Tổ chức có hệ thống với AI hỗ trợ",
-          "task1Assignees": "3 người",
-          "task1DueDate": "Ngày mai",
-          "task1Files": "2 file",
-          "task1Priority": "Cao",
-          "task1Title": "Review đề xuất marketing",
-          "task2DueDate": "Tuần tới",
-          "task2Priority": "Trung bình",
-          "task2Tag": "Dev",
-          "task2Title": "Làm tính năng sync lịch",
-          "task3DueDate": "2 tuần nữa",
-          "task3Priority": "Thấp",
-          "task3Tag": "Team building",
-          "task3Title": "Lên kế hoạch team building",
-          "title": "Quản Lý Task Thông Minh"
-        }
-      },
       "kanban": {
         "columns": {
           "done": "Hoàn Thành",
@@ -8277,7 +8233,12 @@
           }
         }
       },
-      "subtitle": "Trải nghiệm tương lai của làm việc. Đây là tính năng thật, dùng được ngay.",
+      "shell": {
+        "illustration": "Giao diện minh hoạ",
+        "search": "Tìm kiếm",
+        "synced": "Đã đồng bộ"
+      },
+      "subtitle": "Minh hoạ cách các ứng dụng dùng chung một không gian làm việc — đổi khu vực mà ngữ cảnh, phím tắt và trợ lý vẫn đi cùng bạn.",
       "tabs": {
         "analytics": "Analytics",
         "calendar": "Lịch",
@@ -8314,14 +8275,8 @@
         "title": "Quản Lý Công Việc Thông Minh"
       },
       "title": {
-        "highlight": "Trong Thực Tế",
-        "part1": "Xem Ngay"
-      },
-      "video": {
-        "badge": "Xem Demo",
-        "thumbnail": "Demo Nền Tảng Tuturuuu",
-        "title": "Video Demo Nền Tảng Tuturuuu",
-        "watchNow": "Nhấn để xem demo đầy đủ"
+        "highlight": "không gian làm việc",
+        "part1": "Nhìn vào bên trong"
       },
       "videoMeeting": {
         "aiFeatures": {
@@ -8366,179 +8321,63 @@
         }
       }
     },
-    "demoSection": {
-      "badge": "Demo Trực Tiếp",
-      "subtitle": "Đây là tính năng thật, dùng được ngay. Không phải concept.",
-      "title": {
-        "highlight": "thực tế",
-        "part1": "Xem ngay"
-      }
-    },
-    "digitalFriction": {
-      "stats": {
-        "globalCost": {
-          "description": "Chi phí toàn cầu mỗi năm do quá tải công cụ và việc hành chính không cần thiết",
-          "subtitle": "Thiệt hại toàn cầu",
-          "title": "Mất hơn $1T",
-          "trend": "Hơn $1T/năm"
-        },
-        "hoursLost": {
-          "description": "Thời gian dân văn phòng dành cho 'quản lý công việc' thay vì làm việc thật sự mỗi tuần",
-          "subtitle": "Mỗi tuần",
-          "title": "21 giờ bay hơi",
-          "trend": "-21 giờ/tuần"
-        },
-        "productivityLoss": {
-          "description": "Năng suất giảm do nhảy qua nhảy lại giữa các app và notification liên tục",
-          "subtitle": "Hiệu suất",
-          "title": "Giảm 40%",
-          "trend": "-40%"
-        }
-      },
-      "subtitle": "Dân văn phòng đang chìm trong biển app và thông báo. Và cái giá không hề rẻ.",
-      "title": {
-        "highlight": "Ma Sát Số",
-        "part1": "Khủng Hoảng",
-        "part2": "Hiện Nay"
-      }
-    },
     "features": {
       "apps": {
         "nova": {
           "description": "Thực hành kỹ thuật prompt, tham gia thử thách AI và nâng cao kỹ năng của bạn với việc học thực hành.",
-          "features": {
-            "challenges": "Thử thách AI",
-            "leaderboards": "Bảng xếp hạng",
-            "tracking": "Theo dõi kỹ năng"
-          },
           "subtitle": "Nền Tảng Học Tập",
           "title": "Nova"
         },
         "tuchat": {
           "description": "Trung tâm giao tiếp tích hợp nơi AI phát hiện cam kết và chuyển chúng thành công việc và lịch.",
-          "features": {
-            "chat": "Trò chuyện nhóm",
-            "insights": "Thông tin AI",
-            "routing": "Tự động phân loại"
-          },
           "subtitle": "Giao Tiếp Thông Minh",
           "title": "TuChat"
         },
         "tudo": {
           "description": "Trung tâm quản lý công việc tập trung với tổ chức phân cấp, tính năng ghi chú nhanh và tích hợp lịch liền mạch.",
-          "features": {
-            "hierarchical": "Công việc phân cấp",
-            "kanban": "Bảng Kanban",
-            "management": "Quản lý dự án"
-          },
           "subtitle": "Quản Lý Công Việc Thông Minh",
           "title": "Tuturuuu Tasks"
         },
         "tufinance": {
           "description": "Theo dõi chi tiêu, quản lý ngân sách và nhận thông tin chuyên sâu do AI cung cấp về sức khỏe tài chính của bạn.",
-          "features": {
-            "analytics": "Phân tích tài chính",
-            "planning": "Lập kế hoạch ngân sách",
-            "tracking": "Theo dõi chi tiêu"
-          },
           "subtitle": "Quản Lý Tài Chính",
           "title": "Tuturuuu Finance"
         },
         "tumeet": {
           "description": "Giải pháp cuộc họp toàn diện với lập kế hoạch cộng tác, thông tin vị trí và tóm tắt do AI tạo ra.",
-          "features": {
-            "plans": "Kế hoạch cuộc họp",
-            "tracking": "Theo dõi hành động",
-            "transcription": "Phiên âm AI"
-          },
           "subtitle": "Cuộc Họp Thông Minh",
           "title": "Tuturuuu Meet"
         },
         "tuplan": {
           "description": "Tự động lập lịch bằng AI dựa trên thời hạn, ưu tiên và nhịp điệu làm việc cá nhân của bạn.",
-          "features": {
-            "blocking": "Phân bổ thời gian",
-            "scheduling": "Tự động lập lịch",
-            "sync": "Đồng bộ Google Calendar"
-          },
           "subtitle": "Lịch Thông Minh",
           "title": "Tuturuuu Calendar"
         }
       },
       "eyebrow": "Một nền tảng",
-      "nova": {
-        "description": "Rèn luyện kỹ năng prompt engineering, tham gia thử thách AI và nâng cao trình độ qua trải nghiệm thực hành.",
-        "feature1": "Thử thách AI",
-        "feature2": "Theo dõi kỹ năng",
-        "feature3": "Bảng xếp hạng",
-        "subtitle": "Nền Tảng Học Tập",
-        "title": "Nova"
+      "more": {
+        "subtitle": "Thêm những gì bạn cần, bỏ qua phần còn lại. Một không gian làm việc, một lần đăng nhập, một hoá đơn.",
+        "title": "Và phần còn lại của bộ sản phẩm"
       },
-      "subtitle": "Một nền tảng cho mọi thứ bạn làm",
-      "title": "Đầy đủ. Không thiếu gì.",
-      "tuchat": {
-        "description": "Trung tâm giao tiếp tích hợp, nơi AI tự động phát hiện các cam kết và chuyển đổi chúng thành công việc hoặc sự kiện lịch.",
-        "feature1": "Chat nhóm",
-        "feature2": "Phân tích thông minh AI",
-        "feature3": "Tự động phân loại",
-        "subtitle": "Giao Tiếp Thông Minh",
-        "title": "TuChat"
-      },
-      "tudo": {
-        "description": "Trung tâm quản lý công việc với cấu trúc phân cấp, tính năng ghi chú nhanh và tích hợp liền mạch với lịch trình.",
-        "feature1": "Bảng Kanban",
-        "feature2": "Công việc phân cấp",
-        "feature3": "Quản lý dự án",
-        "subtitle": "Quản Lý Công Việc Thông Minh",
-        "title": "Tuturuuu Tasks"
-      },
-      "tufinance": {
-        "description": "Theo dõi chi tiêu, quản lý ngân sách và nhận thông tin phân tích về tình hình tài chính nhờ sức mạnh AI.",
-        "feature1": "Theo dõi chi tiêu",
-        "feature2": "Lập kế hoạch ngân sách",
-        "feature3": "Phân tích tài chính",
-        "subtitle": "Quản Lý Tài Chính",
-        "title": "Tuturuuu Finance"
-      },
-      "tumeet": {
-        "description": "Giải pháp cuộc họp toàn diện với lập kế hoạch cộng tác, định vị thông minh và tóm tắt tự động bằng AI.",
-        "feature1": "Kế hoạch cuộc họp",
-        "feature2": "Phiên âm AI",
-        "feature3": "Theo dõi hành động",
-        "subtitle": "Cuộc Họp Thông Minh",
-        "title": "Tuturuuu Meet"
-      },
-      "tuplan": {
-        "description": "Tự động sắp xếp lịch trình dựa trên AI, phân bổ thời gian theo deadline, độ ưu tiên và nhịp làm việc riêng của bạn.",
-        "feature1": "Đồng bộ Google Calendar",
-        "feature2": "Tự động sắp xếp lịch",
-        "feature3": "Phân chia khung thời gian",
-        "subtitle": "Lịch Trình Thông Minh",
-        "title": "Tuturuuu Calendar"
-      }
+      "subtitle": "Mười tám ứng dụng cùng chia sẻ ngữ cảnh của bạn, thay vì mười tám gói thuê bao không biết gì về nhau.",
+      "title": "Một không gian làm việc. Mọi phần của công việc."
     },
     "hero": {
       "badge": "Nền Tảng Làm Việc Thông Minh",
       "cta": {
-        "exploreFeatures": "Khám Phá Ngay",
-        "getStarted": "Bắt Đầu Miễn Phí",
         "primary": "Bắt Đầu Miễn Phí",
-        "secondary": "Xem Demo",
-        "viewGitHub": "Xem Trên GitHub"
+        "secondary": "Xem Demo"
       },
-      "description": "Một nền tảng duy nhất cho công việc, lịch trình, tài liệu và cả đội của bạn.",
+      "description": "Một không gian làm việc cho mọi thứ bạn đang xoay xở, và một trợ lý sắp xếp ngày của bạn quanh cuộc sống bạn thật sự muốn.",
       "title": {
         "line1": "Làm ít hơn.",
-        "line2": "Đạt nhiều hơn.",
-        "part1": "Cuộc Sống Của Bạn,",
-        "part2": "Đồng Bộ Hoàn Hảo"
+        "line2": "Đạt nhiều hơn."
       },
       "trust": {
-        "commits": "10,000+ Commits",
-        "contributors": "30+ Contributors",
-        "free": "Miễn Phí Mãi Mãi",
-        "freePlan": "Miễn Phí Vĩnh Viễn",
-        "openSource": "Mã Nguồn Mở"
+        "free": "Gói miễn phí trọn đời",
+        "noCard": "Không cần thẻ",
+        "openSource": "Mã nguồn mở",
+        "selfHost": "Tự vận hành được"
       },
       "video": {
         "floatingCards": {
@@ -8566,6 +8405,48 @@
         "title": "Video Demo Tuturuuu",
         "watchNow": "Xem demo"
       }
+    },
+    "outcomes": {
+      "audience": {
+        "businesses": {
+          "description": "Tài chính, kho hàng và khách hàng nói chuyện được với nhau.",
+          "label": "Doanh nghiệp nhỏ"
+        },
+        "freelancers": {
+          "description": "Khách hàng, hoá đơn và giờ công mà không cần năm gói thuê bao.",
+          "label": "Người làm tự do"
+        },
+        "students": {
+          "description": "Bài vở, hạn nộp và giờ học trong cùng một nơi.",
+          "label": "Sinh viên"
+        },
+        "teams": {
+          "description": "Chung bảng công việc, chung lịch, chung ngữ cảnh.",
+          "label": "Đội nhóm"
+        },
+        "title": "Dành cho mọi người, ở mọi nơi"
+      },
+      "eyebrow": "Điều thay đổi",
+      "items": {
+        "context": {
+          "description": "Lịch, công việc, tài liệu và tài chính nằm chung một không gian, để bạn thôi phải trả giá cho mười hai tab đang mở.",
+          "title": "Một nơi, một ngữ cảnh"
+        },
+        "dropped": {
+          "description": "Lời hứa nằm sâu trong một cuộc trao đổi trở thành công việc có người phụ trách và hạn chót, mà bạn không cần nhớ để ghi lại.",
+          "title": "Không gì bị bỏ sót"
+        },
+        "evenings": {
+          "description": "Những khoảng tập trung được xếp quanh các cuộc họp không thể dời, và phần cuối ngày của bạn được bảo vệ như mọi lịch hẹn khác.",
+          "title": "Trả lại buổi tối cho bạn"
+        },
+        "head": {
+          "description": "Việc sắp xếp, lên lịch và nhắc nhở đã có người lo, để phần chú ý còn lại dành cho công việc chỉ bạn mới làm được.",
+          "title": "Một cái đầu nhẹ hơn"
+        }
+      },
+      "subtitle": "Mục tiêu chưa bao giờ là sở hữu thêm phần mềm, mà là gấp máy lại và biết rằng không có gì bị bỏ sót.",
+      "title": "Bớt thời gian vận hành cuộc sống. Thêm thời gian để sống."
     },
     "pricing": {
       "compare": "So sánh tất cả tính năng",
@@ -8763,13 +8644,6 @@
         }
       },
       "title": "Build in public"
-    },
-    "womenInTechBanner": {
-      "cta": "Tìm Hiểu Thêm",
-      "date": "20 Tháng 10",
-      "description": "Vinh danh những người phụ nữ xuất sắc đang định hình đội ngũ của chúng tôi và ngành công nghệ. Khám phá câu chuyện về sự đổi mới, khả năng lãnh đạo và tầm ảnh hưởng của họ.",
-      "occasion": "Ngày Phụ Nữ Việt Nam",
-      "title": "Tôn Vinh Phụ Nữ Trong Ngành Công Nghệ"
     }
   },
   "link-shortener": {
@@ -9270,6 +9144,10 @@
         "description": "AI tự động xếp lịch theo ưu tiên thực tế của bạn.",
         "label": "Lịch"
       },
+      "chat": {
+        "description": "Kênh, tin nhắn riêng và tệp trong cùng không gian làm việc với công việc của bạn.",
+        "label": "Trò chuyện"
+      },
       "crm": {
         "description": "Liên hệ, pipeline và lịch sử khách hàng.",
         "label": "CRM"
@@ -9285,6 +9163,14 @@
       "finance": {
         "description": "Theo dõi chi tiêu, ngân sách, hoá đơn và ví.",
         "label": "Tài chính"
+      },
+      "forms": {
+        "description": "Tạo biểu mẫu, thu thập phản hồi và xem kết quả ngay tại chỗ.",
+        "label": "Biểu mẫu"
+      },
+      "hive": {
+        "description": "Phòng thí nghiệm cho tác tử bầy đàn: dựng quy trình, chạy mô phỏng, xem kết quả.",
+        "label": "Phòng thí nghiệm tác tử"
       },
       "inventory": {
         "description": "Sản phẩm, tồn kho, nhà cung cấp và kho bãi.",
@@ -9302,9 +9188,21 @@
         "description": "Tìm thời gian phù hợp cho tất cả mọi người.",
         "label": "Họp cùng nhau"
       },
+      "qr": {
+        "description": "Mã QR cho liên kết, sự kiện, thực đơn và thanh toán.",
+        "label": "Tạo mã QR"
+      },
+      "storefront": {
+        "description": "Cửa hàng cho người mua, dựng ngay trên kho hàng của bạn.",
+        "label": "Gian hàng"
+      },
       "tasks": {
         "description": "Bảng Kanban, phân cấp và hộp thu thập nhanh.",
         "label": "Công việc"
+      },
+      "track": {
+        "description": "Bấm giờ và thấy rõ tuần vừa rồi đã trôi đi đâu.",
+        "label": "Chấm công"
       },
       "workflows": {
         "description": "Tự động hoá các bước chuyển giao giữa công cụ.",
@@ -10836,6 +10734,1358 @@
     "usage": "Cách dùng",
     "warehouse": "Kho",
     "warehouses": "kho hàng"
+  },
+  "products": {
+    "ai": {
+      "closing": {
+        "description": "Bắt đầu từ trợ lý, phần lõi còn lại đã sẵn sàng phía sau cô ấy.",
+        "title": "Gặp Mira"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Bắt đầu với Mira",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "AI của Tuturuuu không phải một ô chat gắn thêm bên cạnh. Mira lên kế hoạch và hành động; Aurora, Rewise, Nova và Crystal là thứ khiến cô ấy hữu ích.",
+      "eyebrow": "AI",
+      "features": {
+        "aurora": {
+          "description": "Hệ thống ngữ cảnh liên kết email, công việc, tệp và sự kiện liên quan, để Mira trả lời khi đã nhìn thấy công việc của bạn.",
+          "title": "Aurora, hệ thần kinh"
+        },
+        "crystal": {
+          "description": "Giao diện đa phương thức cho giọng nói, video và chia sẻ màn hình, dành cho những lúc gõ phím là cách giải thích chậm nhất.",
+          "title": "Crystal, cầu nối con người"
+        },
+        "everywhere": {
+          "description": "Cùng một lõi nằm sau công việc, lịch, thư và tài liệu của bạn, nên bạn không phải mở một tab AI riêng để được giúp.",
+          "title": "Ngay trong những nơi bạn đã dùng"
+        },
+        "eyebrow": "Lõi AI",
+        "mira": {
+          "description": "Trợ lý bạn trò chuyện. Cô ấy lên kế hoạch, suy luận và hành động thay bạn trên lịch, mục tiêu, tài chính và tin nhắn, đưa ra gợi ý chủ động thay vì lời nhắc thụ động.",
+          "title": "Mira, người bạn đồng hành AI"
+        },
+        "nova": {
+          "description": "Nền tảng prompt engineering định hình cách Mira suy luận, để hành vi của cô ấy là thứ bạn xem được và đổi được.",
+          "title": "Nova, lương tâm và lò rèn"
+        },
+        "rewise": {
+          "description": "Nơi tổng hợp các model AI hàng đầu từ OpenAI, Gemini và Anthropic, chuyển mỗi yêu cầu tới model xử lý nó tốt nhất.",
+          "title": "Rewise, trí tuệ tập thể"
+        },
+        "subtitle": "Mỗi phần làm một việc, còn bạn chỉ cần nói chuyện với một trong số đó.",
+        "title": "Thứ đang thật sự chạy bên dưới"
+      },
+      "title": "Năm hệ thống, một trợ lý để bạn trò chuyện",
+      "useCases": {
+        "eyebrow": "Dùng vào việc gì",
+        "inbox": {
+          "items": [
+            "Chuỗi thư dài rút lại còn điều đã quyết",
+            "Thư trả lời soạn theo ngữ cảnh của bạn",
+            "Cam kết trong thư chuyển thành công việc",
+            "Cuộc họp đề xuất vào giờ bạn có thể dự"
+          ],
+          "title": "Đi hết hộp thư"
+        },
+        "knowledge": {
+          "items": [
+            "Tóm tắt những tài liệu bạn chưa kịp đọc",
+            "Rút ra chi tiết quan trọng từ một tệp dài",
+            "Câu trả lời dựa trên dữ liệu trong không gian làm việc, kèm nguồn",
+            "Ghi chú biến thành dàn ý bạn có thể sửa"
+          ],
+          "title": "Làm việc với tài liệu của chính bạn"
+        },
+        "planning": {
+          "items": [
+            "Khoảng tập trung xếp quanh những cuộc họp không thể dời",
+            "Kế hoạch tự dịch chuyển khi ngày thay đổi",
+            "Ưu tiên đọc từ danh sách công việc thật của bạn",
+            "Câu trả lời thực tế cho việc gì kịp trước thứ Sáu"
+          ],
+          "title": "Lên kế hoạch cho ngày"
+        },
+        "subtitle": "Công việc thường ngày, xử lý bằng ngữ cảnh mà không gian làm việc của bạn đã có.",
+        "title": "Những việc người ta nhờ nó làm"
+      }
+    },
+    "calendar": {
+      "closing": {
+        "description": "Mở Calendar và xem họp, hạn công việc và thời gian tập trung cùng một chỗ trước khi nhận thêm bất cứ điều gì.",
+        "title": "Nhìn đúng tuần bạn đang có"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Calendar",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Cuộc họp, hạn công việc và khoảng thời gian tập trung trong cùng một khung nhìn, với cách xếp lịch có tính đến múi giờ và những gì bạn đã nhận.",
+      "eyebrow": "Lịch",
+      "features": {
+        "anywhere": {
+          "description": "Lịch của bạn dễ đọc trên điện thoại giữa hai cuộc họp, không chỉ trên chiếc laptop đang để ở bàn.",
+          "title": "Cùng một ngày trên mọi thiết bị"
+        },
+        "booking": {
+          "description": "Chia sẻ liên kết đặt lịch với đúng khung giờ bạn sẵn sàng cho đi, và sự kiện xuất hiện trên lịch của cả hai bên.",
+          "title": "Một đường liên kết thay cho chuỗi email"
+        },
+        "coordination": {
+          "description": "Lịch của cả nhóm chồng lên nhau trong một khung nhìn, nên buổi họp rơi vào chỗ hợp với mọi người chứ không chỉ hợp với người tổ chức.",
+          "title": "Một bức tranh thời gian rảnh chung"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "reminders": {
+          "description": "Thông báo và email được gửi trước sự kiện và khi chi tiết thay đổi, nên không ai chuẩn bị nhầm việc.",
+          "title": "Nhắc đúng lúc còn kịp"
+        },
+        "scheduling": {
+          "description": "Các khung giờ được đề xuất từ thời gian rảnh thật và thói quen bạn đã đặt, nên bạn chỉ việc chọn thay vì đi dò.",
+          "title": "Gợi ý giờ, không phải ô trống"
+        },
+        "subtitle": "Lịch biết bạn đang nợ việc gì và rảnh lúc nào, nên đặt một buổi hẹn không còn là cuộc thương lượng.",
+        "timezones": {
+          "description": "Mỗi người thấy sự kiện theo giờ địa phương của mình, và việc quy đổi xảy ra trước khi có ai vào sớm một tiếng.",
+          "title": "Múi giờ được xử lý lặng lẽ"
+        },
+        "title": "Xếp lịch mà không phải hỏi tới hỏi lui"
+      },
+      "title": "Cuốn lịch biết giữ ngày của bạn",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Khung giờ đặt hẹn do bạn kiểm soát",
+            "Buổi tư vấn chốt được mà không cần trao đổi email",
+            "Buổi kế tiếp đặt xong trước khi cuộc gọi kết thúc",
+            "Lời nhắc gửi đi để bớt buổi hẹn bị quên"
+          ],
+          "title": "Làm việc với khách hàng"
+        },
+        "events": {
+          "items": [
+            "Các phiên và diễn giả trên một lịch trình",
+            "Địa điểm và thiết bị đặt theo đúng ngày",
+            "Danh sách người tham dự gắn với sự kiện",
+            "Một cuốn lịch có thể chia sẻ ở chế độ chỉ xem"
+          ],
+          "title": "Tổ chức sự kiện"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Phối hợp nội bộ, đặt hẹn với khách và tổ chức sự kiện đều chạy trên cùng một cuốn lịch.",
+        "team": {
+          "items": [
+            "Họp đặt vào lúc cả nhóm thật sự rảnh",
+            "Thời gian rảnh chung mà không cần bảng tính",
+            "Các mốc dự án nằm trên cùng dòng thời gian",
+            "Phòng họp và thiết bị dùng chung đặt một lần"
+          ],
+          "title": "Làm việc với nhóm"
+        },
+        "title": "Dù bạn đang xếp lịch với ai"
+      }
+    },
+    "chat": {
+      "closing": {
+        "description": "Đưa cuộc trò chuyện về cạnh những công việc và lịch mà nó vẫn nhắc tới.",
+        "title": "Mở kênh của không gian làm việc"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Chat",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Kênh chung và tin nhắn riêng nằm trong cùng không gian làm việc với công việc, lịch và tài liệu của bạn, nên bối cảnh không trôi sang một ứng dụng khác.",
+      "eyebrow": "Chat",
+      "features": {
+        "agents": {
+          "description": "Kết nối một tác nhân AI vào kênh, kể cả luồng Discord hay Zalo được bắc cầu về, để nó trả lời hoặc soạn nháp ngay nơi cuộc trò chuyện đang diễn ra.",
+          "title": "Tác nhân AI ngay trong kênh"
+        },
+        "channels": {
+          "description": "Một kênh cho dự án, cho nhóm hay cho một quyết định, để mạch trao đổi có chỗ ở thay vì trôi trong một nhóm chat chung.",
+          "title": "Mỗi chủ đề một kênh"
+        },
+        "direct": {
+          "description": "Trò chuyện một–một nằm ngay cạnh các kênh chung, nên hỏi nhanh một câu không cần đổi ứng dụng.",
+          "title": "Tin nhắn riêng"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "files": {
+          "description": "Tệp đã chia sẻ nằm lại trong cuộc trò chuyện sinh ra chúng, và được liệt kê theo từng cuộc trò chuyện khi bạn cần lại.",
+          "title": "Tệp ở lại với mạch trao đổi"
+        },
+        "search": {
+          "description": "Tìm kiếm xuyên các cuộc trò chuyện, nên quyết định của tháng trước lấy lại được mà không phải cuộn tay.",
+          "title": "Tìm lại được về sau"
+        },
+        "subtitle": "Kênh của không gian làm việc, tin nhắn riêng, và mọi thứ đều tìm lại được về sau.",
+        "title": "Nhắn tin không rời khỏi bối cảnh",
+        "workspace": {
+          "description": "Chuyển giữa hội thoại cá nhân và hội thoại của từng không gian làm việc trên cùng một thanh, không phải đăng xuất khỏi đâu cả.",
+          "title": "Cá nhân và không gian làm việc cạnh nhau"
+        }
+      },
+      "title": "Cuộc trò chuyện nằm cạnh công việc",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "personal": {
+          "items": [
+            "Ghi chú cho chính mình trong cùng ứng dụng",
+            "Nhắn tin riêng mà không cần công cụ khác",
+            "Việc riêng và việc chung tách bạch",
+            "Tìm kiếm bao trùm cả hai"
+          ],
+          "title": "Mạch riêng của bạn"
+        },
+        "projects": {
+          "items": [
+            "Mỗi dự án một kênh, đóng lại khi bàn giao xong",
+            "Quyết định được viết ngay nơi công việc diễn ra",
+            "Tệp giữ cùng phần thảo luận",
+            "Người tiếp nhận sau vẫn có đủ bối cảnh"
+          ],
+          "title": "Mạch thảo luận theo dự án"
+        },
+        "subtitle": "Trao đổi hằng ngày, mạch thảo luận theo dự án, và những ghi chú bạn gửi cho chính mình.",
+        "team": {
+          "items": [
+            "Một chỗ thay vì ba nhóm chat",
+            "Một biểu tượng cảm xúc thay cho một câu trả lời nữa",
+            "Ghim lại những cuộc trò chuyện quan trọng",
+            "Người mới vào đọc lại được chuyện đã xảy ra"
+          ],
+          "title": "Trao đổi hằng ngày"
+        },
+        "title": "Ba cuộc trò chuyện đáng giữ lại"
+      }
+    },
+    "crm": {
+      "closing": {
+        "description": "Khách hàng là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và mang danh sách khách hàng theo cùng.",
+        "title": "Thôi dựng lại ngữ cảnh trước mỗi cuộc gọi"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Khách hàng",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Liên hệ, cơ hội bán hàng và lịch sử trao đổi trong một hồ sơ mà cả không gian làm việc đều thấy được. Việc theo sát bạn định làm trở thành một công việc có hạn chót, thay vì một ghi chú cho chính mình.",
+      "eyebrow": "Khách hàng",
+      "features": {
+        "analytics": {
+          "description": "Tỉ lệ chuyển đổi theo giai đoạn, độ dài chu kỳ và chỗ cơ hội hay tắc, để bạn sửa đúng bước đang gây tốn kém.",
+          "title": "Con số phía sau cảm giác"
+        },
+        "automation": {
+          "description": "Chuyển giai đoạn sẽ tự tạo việc theo sát và lời nhắc, nên quy trình không còn phụ thuộc vào tính kỷ luật.",
+          "title": "Phần lặp đi lặp lại, để hệ thống lo"
+        },
+        "contacts": {
+          "description": "Thông tin, vai trò và lịch sử trong một hồ sơ duy nhất, để ai tiếp quản cũng biết trước đó đã trao đổi những gì.",
+          "title": "Mỗi người một hồ sơ"
+        },
+        "deals": {
+          "description": "Mỗi cơ hội có giai đoạn, giá trị và người chịu trách nhiệm. Bàn giao thôi làm rơi chi tiết.",
+          "title": "Cơ hội có người phụ trách và hạn chót"
+        },
+        "eyebrow": "Nó làm gì",
+        "history": {
+          "description": "Cuộc gọi, email và ghi chú họp gắn vào hồ sơ, để không điều gì quan trọng chỉ nằm trong hộp thư của một người.",
+          "title": "Trao đổi luôn tìm lại được"
+        },
+        "pipeline": {
+          "description": "Thấy mọi cơ hội đang mở theo từng giai đoạn, và cơ hội nào đã im lặng lâu hơn mức nên có.",
+          "title": "Nhìn toàn bộ tiến trình bán hàng trong một lần"
+        },
+        "subtitle": "Không phải thêm một cơ sở dữ liệu để chăm. Hồ sơ khách hàng nằm cạnh công việc, lịch và hoá đơn, nên ngữ cảnh đến cùng với cái tên.",
+        "title": "Mối quan hệ, được ghi lại"
+      },
+      "title": "Mọi khách hàng, và mọi điều bạn đã hứa với họ",
+      "useCases": {
+        "eyebrow": "Dành cho ai",
+        "growth": {
+          "items": [
+            "Biết khách hàng nào thật sự tạo ra doanh thu",
+            "Nhận ra nhóm khách đáng dành thêm thời gian",
+            "Theo dõi doanh thu theo từng khách qua thời gian",
+            "Bố trí nguồn lực theo nhu cầu thật"
+          ],
+          "title": "Tăng trưởng và kế hoạch"
+        },
+        "sales": {
+          "items": [
+            "Theo dõi khách tiềm năng từ lần chạm đầu đến khi chốt",
+            "Nhìn toàn bộ tiến trình mà không phải đi hỏi cập nhật",
+            "Được nhắc trước khi một cơ hội nguội đi",
+            "Dự báo dựa trên giai đoạn thay vì sự lạc quan"
+          ],
+          "title": "Đội bán hàng"
+        },
+        "service": {
+          "items": [
+            "Mở một yêu cầu ngay trên lịch sử đầy đủ của khách",
+            "Ghi rõ đã hứa điều gì và đến khi nào",
+            "Giữ phản hồi ở nơi cuộc trò chuyện kế tiếp sẽ thấy",
+            "Biết tài khoản nào cần được để mắt trong tuần này"
+          ],
+          "title": "Chăm sóc khách hàng"
+        },
+        "subtitle": "Bán hàng, chăm sóc và lập kế hoạch đều dựa trên cùng một lịch sử khách hàng.",
+        "title": "Một hồ sơ, nhiều công việc"
+      }
+    },
+    "documents": {
+      "closing": {
+        "description": "Đưa việc viết vào cùng không gian với phần còn lại của công việc, và thôi đi tìm bản mà mọi người đã thống nhất.",
+        "title": "Bắt đầu tài liệu tiếp theo ở đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Bắt đầu viết",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Tài liệu nằm cạnh công việc, lịch và tệp mà nó thuộc về, để một bản mô tả không còn là đường link ai đó phải đi tìm.",
+      "eyebrow": "Tài liệu",
+      "features": {
+        "assistant": {
+          "description": "Yêu cầu một bản tóm tắt, một dàn ý hay một lần viết lại, và bắt đầu từ thứ đã có trên trang thay vì trang trắng.",
+          "title": "Một bản nháp để bắt đầu"
+        },
+        "collaboration": {
+          "description": "Bình luận, đề xuất và chỉnh sửa trực tiếp giúp việc góp ý diễn ra ngay trên trang, thay vì rải rác trong ba cuộc trao đổi.",
+          "title": "Cùng nhau chỉnh sửa"
+        },
+        "editor": {
+          "description": "Trình soạn thảo gọn gàng với đủ cấu trúc bạn cần: tiêu đề, danh sách, bảng, mã nguồn. Trang giấy không cản đường suy nghĩ.",
+          "title": "Viết mà không rườm rà"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "permissions": {
+          "description": "Phân quyền theo từng tài liệu và từng thư mục, kể cả với người ngoài không gian làm việc, và thu hồi bất cứ lúc nào.",
+          "title": "Chia sẻ vừa đủ"
+        },
+        "search": {
+          "description": "Tìm kiếm toàn văn trên mọi tài liệu trong không gian làm việc, để bạn thôi phải dựng lại một quyết định bằng trí nhớ.",
+          "title": "Tìm đúng tài liệu bạn cần"
+        },
+        "subtitle": "Soạn thảo, tìm kiếm, lịch sử và phân quyền, mà không cần mở thêm một tab nào.",
+        "title": "Tài liệu giữ được ngữ cảnh của nó",
+        "versions": {
+          "description": "Mọi thay đổi đều được giữ lại, nên bạn thấy được ai sửa gì và khôi phục phiên bản cũ mà không cần hỏi ai.",
+          "title": "Sửa mà không mất gì"
+        }
+      },
+      "title": "Viết ngay tại nơi công việc đang diễn ra",
+      "useCases": {
+        "business": {
+          "items": [
+            "Hợp đồng cùng lịch sử chỉnh sửa",
+            "Đề xuất soạn lại từ một bản trước",
+            "Chính sách với quyền truy cập được kiểm soát",
+            "Báo cáo viết ngay cạnh số liệu"
+          ],
+          "title": "Giấy tờ kinh doanh"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "knowledge": {
+          "items": [
+            "Hướng dẫn nhập môn người mới đọc ngay ngày đầu",
+            "Tài liệu quy trình gom về một chỗ",
+            "Câu hỏi thường gặp nội bộ thay cho việc trả lời lại",
+            "Ghi chú nghiên cứu kèm nguồn"
+          ],
+          "title": "Kiến thức của đội"
+        },
+        "specs": {
+          "items": [
+            "Bản mô tả liên kết tới công việc mà nó sinh ra",
+            "Biên bản họp kèm quyết định và người phụ trách",
+            "Quy trình xử lý sự cố để người trực làm theo",
+            "Tổng kết dự án vẫn tìm lại được"
+          ],
+          "title": "Tài liệu dự án và sản phẩm"
+        },
+        "subtitle": "Ba dạng tài liệu thôi trôi dạt khi chúng nằm trong không gian làm việc.",
+        "title": "Những tài liệu một đội thật sự giữ lại"
+      }
+    },
+    "drive": {
+      "closing": {
+        "description": "Đặt kho lưu trữ cạnh công việc, thư và tài liệu tham chiếu tới nó, và thôi trả tiền cho một ổ đĩa chẳng biết gì về công việc của bạn.",
+        "title": "Chuyển tệp của bạn vào đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Drive",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Kho lưu trữ nằm trong không gian làm việc, để một tệp, công việc liên quan và người cần nó không còn cách nhau ba phần mềm.",
+      "eyebrow": "Drive",
+      "features": {
+        "devices": {
+          "description": "Có mặt trên web và di động, để tệp bạn cần trên đường đi họp không nằm lại trên chiếc máy ở nhà.",
+          "title": "Cùng một Drive trên mọi thiết bị"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "organization": {
+          "description": "Sắp xếp thư mục theo cách đội bạn làm việc và gắn nhãn để cùng một tài liệu có thể thuộc về nhiều nơi.",
+          "title": "Thư mục, cộng thêm nhãn bạn quen dùng"
+        },
+        "search": {
+          "description": "Lọc theo tên, định dạng, người sở hữu và ngày, để một tệp từ ba tháng trước chỉ tốn một lần tìm thay vì mười lần bấm.",
+          "title": "Tìm mà không phải mở từng thư mục"
+        },
+        "sharing": {
+          "description": "Chia sẻ một tệp hay một thư mục cho người bạn chọn hoặc qua đường link, và thu hồi quyền bất cứ lúc nào.",
+          "title": "Gửi một đường link, không phải tệp đính kèm"
+        },
+        "storage": {
+          "description": "Mọi thứ được mã hoá khi lưu và chỉ những người bạn cấp quyền mới mở được.",
+          "title": "Tệp mặc định là riêng tư"
+        },
+        "subtitle": "Tải lên, tìm, chia sẻ và quay lui, mà không cần khai quật thư mục.",
+        "title": "Kho lưu trữ biết điều",
+        "versions": {
+          "description": "Thay thế một tệp không xoá mất bản trước. Các phiên bản cũ vẫn còn, nên ghi đè không còn là một buổi chiều mất trắng.",
+          "title": "Mỗi lần tải lên đều giữ bản cũ"
+        }
+      },
+      "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
+      "useCases": {
+        "delivery": {
+          "items": [
+            "Một đường link thay cho tệp đính kèm bị chặn",
+            "Quyền truy cập có thể thu hồi sau khi bàn giao",
+            "Tệp lớn mà không cần nghi thức nén",
+            "Ghi nhận rõ ràng đã gửi gì và gửi khi nào"
+          ],
+          "title": "Gửi kết quả cho khách hàng"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "records": {
+          "items": [
+            "Lịch sử phiên bản cho mọi thứ được sửa nhiều lần",
+            "Bản gốc nằm cạnh bản hiện tại",
+            "Khôi phục tệp bị ai đó thay nhầm",
+            "Một kho lưu trữ gọn gàng thay cho thư mục trên màn hình một người"
+          ],
+          "title": "Hồ sơ phải giữ lại"
+        },
+        "subtitle": "Ba việc kho lưu trữ phải làm được trước khi ai đó tin tưởng nó.",
+        "team": {
+          "items": [
+            "Một nơi cho những tài nguyên ai cũng dùng lại",
+            "Thư mục gói gọn theo dự án hoặc khách hàng",
+            "Quyền truy cập gắn với không gian làm việc, không gắn với hộp thư một người",
+            "Người mới thấy được cả lịch sử, không phải thư mục trống"
+          ],
+          "title": "Tệp dùng chung của đội"
+        },
+        "title": "Các đội giữ gì trong Drive"
+      }
+    },
+    "finance": {
+      "closing": {
+        "description": "Tài chính là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và bắt đầu với tháng này.",
+        "title": "Mở sổ mà không thấy ngại"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Tài chính",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Chi tiêu, ngân sách, hoá đơn và dòng tiền nằm chung không gian với phần việc còn lại. Hoá đơn được đọc và phân loại giúp bạn, để cuối tháng khép lại mà không mất trọn một cuối tuần nhập liệu.",
+      "eyebrow": "Tài chính",
+      "features": {
+        "budgets": {
+          "description": "Đặt hạn mức cho từng nhóm và thấy mình đang ở đâu ngay khi chi, chứ không phải khi sao kê về.",
+          "title": "Ngân sách bạn thật sự để ý"
+        },
+        "cashflow": {
+          "description": "Tiền vào so với tiền ra theo thời gian, để một tháng eo hẹp lộ ra khi bạn vẫn còn kịp xoay xở.",
+          "title": "Dòng tiền nhìn thấy trước"
+        },
+        "expenses": {
+          "description": "Chụp một hoá đơn và nó trở thành giao dịch đã phân loại. Chồng giấy trong ngăn kéo thôi là việc bạn phải giải quyết vào cuối năm.",
+          "title": "Chi tiêu tự vào sổ"
+        },
+        "eyebrow": "Nó làm gì",
+        "payments": {
+          "description": "Ghi lại đã xuất hoá đơn gì và đã nhận về gì ở cùng một nơi, để việc nhắc nợ bắt đầu từ dữ liệu chứ không từ trí nhớ.",
+          "title": "Thanh toán và hoá đơn chung một sổ"
+        },
+        "planning": {
+          "description": "Thử một lần tuyển người, một lần đổi giá hay một mục tiêu tiết kiệm trên lịch sử thật, thay vì phỏng đoán.",
+          "title": "Kế hoạch dựa trên số thật"
+        },
+        "reports": {
+          "description": "Thu, chi và cơ cấu theo nhóm đã dựng sẵn. Lấy con số kế toán hỏi trong một phút, thay vì cả buổi tối.",
+          "title": "Báo cáo không cần xuất file"
+        },
+        "subtitle": "Mỗi con số nằm cạnh công việc đã tạo ra nó, nên bạn không phải đối chiếu hai phiên bản sự thật.",
+        "title": "Phần sổ sách, gần như đã có người lo"
+      },
+      "title": "Biết tiền đã đi đâu, không cần bảng tính",
+      "useCases": {
+        "business": {
+          "items": [
+            "Phân loại chi tiêu của nhóm theo cách bạn chọn, không theo ngân hàng",
+            "Xuất hoá đơn, theo dõi và nhắc nợ mà không cần công cụ thứ hai",
+            "Khép sổ cuối tháng từ dữ liệu vốn đã gọn gàng",
+            "Xem biên lợi nhuận theo dự án, không theo tài khoản ngân hàng"
+          ],
+          "title": "Điều hành doanh nghiệp"
+        },
+        "eyebrow": "Dành cho ai",
+        "personal": {
+          "items": [
+            "Thấy rõ tháng vừa rồi tiền đi đâu, theo từng nhóm",
+            "Gắn cho mỗi mục tiêu tiết kiệm một con số và một mốc thời gian",
+            "Theo dõi tài khoản và khoản đầu tư trong một số dư chung",
+            "Đặt một ngân sách mà tháng Ba bạn vẫn còn theo được"
+          ],
+          "title": "Tài chính cá nhân"
+        },
+        "planning": {
+          "items": [
+            "Dự phóng vài tháng tới từ lịch sử thật",
+            "Thử một quyết định trước khi nó thành khoản chi",
+            "Phát hiện sớm những tháng dòng tiền căng",
+            "So kế hoạch với những gì đã thật sự diễn ra"
+          ],
+          "title": "Nhìn về phía trước"
+        },
+        "subtitle": "Người làm tự do, một nhóm nhỏ hay một gia đình đều muốn biết cùng một điều: còn lại bao nhiêu, và sắp tới là gì.",
+        "title": "Cùng một cuốn sổ, những câu hỏi khác nhau"
+      }
+    },
+    "forms": {
+      "closing": {
+        "description": "Mở Forms, dựng đúng biểu mẫu bạn vẫn phải hỏi qua email, rồi chia sẻ đường liên kết.",
+        "title": "Viết câu hỏi đầu tiên"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Forms",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Tạo biểu mẫu, gửi một đường liên kết, và xem phản hồi đổ về đúng nơi bạn có thể đọc, lọc và dựng biểu đồ mà không phải xuất đi đâu cả.",
+      "eyebrow": "Forms",
+      "features": {
+        "analytics": {
+          "description": "Biểu đồ theo từng câu hỏi, hoạt động theo thời gian và điểm bỏ dở có sẵn ngay khi có câu trả lời.",
+          "title": "Bản tóm tắt bạn không phải dựng"
+        },
+        "builder": {
+          "description": "Thêm câu hỏi rồi gom vào từng phần, sắp xếp lại tới khi biểu mẫu đọc lên giống cách bạn hỏi trực tiếp.",
+          "title": "Câu hỏi, phần, thứ tự"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "logic": {
+          "description": "Quy tắc có thể bỏ qua một câu hỏi hoặc nhảy tới một phần dựa trên câu trả lời trước, nên không ai phải đọc thứ không liên quan tới mình.",
+          "title": "Chỉ hiện phần liên quan"
+        },
+        "responses": {
+          "description": "Câu trả lời về thẳng biểu mẫu, nhóm theo người trả lời, nên việc đọc chúng không còn là chuyện của bảng tính.",
+          "title": "Phản hồi nằm ngay tại chỗ"
+        },
+        "share": {
+          "description": "Xuất bản và nhận một đường liên kết mở được cho bất kỳ ai bạn gửi, trên điện thoại cũng dễ như trên máy tính.",
+          "title": "Một đường liên kết để chia sẻ"
+        },
+        "subtitle": "Một trình soạn, một đường liên kết để chia sẻ, và trang phản hồi tự biết cách tóm tắt.",
+        "theme": {
+          "description": "Màu, phông chữ và hình ảnh được đặt ngay trên biểu mẫu, nên đường liên kết công khai không trông như đi mượn.",
+          "title": "Nhìn ra là của bạn"
+        },
+        "title": "Từ câu hỏi tới câu trả lời, không vòng vèo"
+      },
+      "title": "Hỏi một lần, đọc câu trả lời ở một chỗ",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "feedback": {
+          "items": [
+            "Khảo sát sau khi mua hoặc sau một sự kiện",
+            "Điểm đánh giá đọc được ngay dưới dạng biểu đồ",
+            "Câu trả lời mở nằm cạnh các con số",
+            "Thấy rõ người ta dừng lại ở câu hỏi nào"
+          ],
+          "title": "Hỏi khách hàng"
+        },
+        "intake": {
+          "items": [
+            "Đăng ký cho một sự kiện hoặc một lớp học",
+            "Thu thập thông tin khách trước buổi trao đổi đầu tiên",
+            "Hồ sơ ứng tuyển gom về một hàng đợi",
+            "Đường liên kết công khai, người trả lời không cần tài khoản"
+          ],
+          "title": "Yêu cầu và đăng ký"
+        },
+        "internal": {
+          "items": [
+            "Yêu cầu được phân luồng bằng câu hỏi điều kiện",
+            "Danh sách kiểm tra điền theo cùng một cách mỗi lần",
+            "Xem xét câu trả lời mà không cần hộp thư chung",
+            "Kết quả tóm tắt sẵn cho buổi họp kế tiếp"
+          ],
+          "title": "Vận hành đội nhóm"
+        },
+        "subtitle": "Thu thập yêu cầu, hỏi khách hàng, và phục vụ việc nội bộ.",
+        "title": "Những biểu mẫu đội nhóm cần trước tiên"
+      }
+    },
+    "hive": {
+      "closing": {
+        "description": "Dựng thế giới, cấu hình các tác nhân, và chạy nhịp đầu tiên.",
+        "title": "Mở phòng thí nghiệm"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Hive",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng một thế giới, đặt các tác nhân vào đó, cho chúng chỉ dẫn và trí nhớ, rồi chạy mô phỏng và đọc lại xem chúng thực sự đã làm gì.",
+      "eyebrow": "Hive",
+      "features": {
+        "agents": {
+          "description": "Mỗi tác nhân mang một vai trò, một tiểu sử, một mô hình và một chỉ dẫn, chọn ngay trong thế giới là thấy nó đang được cấu hình thế nào.",
+          "title": "Tác nhân đặt vào và soi được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "observe": {
+          "description": "Nhật ký chạy, lượt hội thoại, số sự kiện và trạng thái thế giới được giữ theo từng phiên, nên một kết quả có thể kiểm chứng thay vì phải nhớ.",
+          "title": "Chuyện đã xảy ra, có ghi lại"
+        },
+        "prompts": {
+          "description": "Đổi giữa chỉ dẫn mặc định, mở rộng và tự viết, bật tắt trí nhớ và tiểu sử, đổi mô hình mà không phải rời lượt chạy.",
+          "title": "Chỉ dẫn, trí nhớ, mô hình"
+        },
+        "runs": {
+          "description": "Chạy tay từng nhịp mô phỏng, hoặc để các nhịp tự động ghép cặp tác nhân theo vòng tròn, tất cả với tất cả, hoặc với một đối tượng bạn chọn.",
+          "title": "Lượt chạy do bạn bấm hoặc hẹn lịch"
+        },
+        "subtitle": "Một thế giới sửa được, các tác nhân cấu hình được, và những lượt chạy xem và so sánh được.",
+        "title": "Đủ thứ để một thí nghiệm lặp lại được",
+        "workflows": {
+          "description": "Cùng một lượt chạy đọc được theo ba cách: thế giới ở hiện trạng, chuỗi sự kiện, và đồ thị cho thấy công việc của các tác nhân nối vào nhau ra sao.",
+          "title": "Thế giới, dòng thời gian, đồ thị luồng"
+        },
+        "world": {
+          "description": "Đặt khối và vật thể trên lưới voxel, với góc máy, thời điểm trong ngày, mùa và thời tiết là những biến bạn kiểm soát.",
+          "title": "Thế giới bạn tự dựng"
+        }
+      },
+      "title": "Phòng thí nghiệm cho bầy tác nhân",
+      "useCases": {
+        "design": {
+          "items": [
+            "Thử một thiết lập nhiều tác nhân trước khi dựng thật",
+            "So sánh các cách ghép cặp trên cùng một thế giới",
+            "Thấy thay đổi chỉ dẫn qua hành vi, không phải qua lý thuyết",
+            "Phát hiện kiểu hỏng ngay trong mô phỏng"
+          ],
+          "title": "Thiết kế một hệ thống"
+        },
+        "eyebrow": "Trong thực tế",
+        "research": {
+          "items": [
+            "Chỉ đổi một biến giữa hai lượt chạy",
+            "Tách riêng trí nhớ và tiểu sử thành điều kiện thí nghiệm",
+            "Giữ lại các lượt hội thoại để xem lại",
+            "Phiên có tên, nên kết quả còn quy được về nguồn"
+          ],
+          "title": "Nghiên cứu tác nhân"
+        },
+        "subtitle": "Nghiên cứu tác nhân, thiết kế một hệ nhiều tác nhân, và cho người khác thấy nó hành xử ra sao.",
+        "teaching": {
+          "items": [
+            "Một thế giới chung nhiều người cùng xem",
+            "Trạng thái cập nhật ngay khi nhịp đang chạy",
+            "Dựng lại một kịch bản để cùng thảo luận",
+            "Truy được quyết định của tác nhân về đúng chỉ dẫn của nó"
+          ],
+          "title": "Cho thấy nó hành xử ra sao"
+        },
+        "title": "Người ta chạy gì trong đó"
+      }
+    },
+    "inventory": {
+      "closing": {
+        "description": "Kho hàng là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và nhập những mã hàng đầu tiên.",
+        "title": "Kiểm một lần, rồi tin vào con số đó"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Kho hàng",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Theo dõi hàng bạn đang giữ ở mọi kho, với quét mã, ngưỡng đặt lại và toàn bộ lịch sử xuất nhập. Việc hết hàng mà lẽ ra khách phải báo cho bạn nay hiện ra dưới dạng một cảnh báo.",
+      "eyebrow": "Kho hàng",
+      "features": {
+        "eyebrow": "Nó làm gì",
+        "orders": {
+          "description": "Tạo đơn, theo dõi hàng đang về và biết nhà cung cấp nào hay giao trễ, tất cả trên cùng một mã hàng.",
+          "title": "Đơn mua và nhà cung cấp"
+        },
+        "reordering": {
+          "description": "Đặt mức tối thiểu cho từng mã và được nhắc đặt hàng trước khi hết, chứ không phải sau.",
+          "title": "Ngưỡng đặt lại tự kích hoạt"
+        },
+        "reports": {
+          "description": "Thấy hàng nào chạy, hàng nào nằm im, và hàng nào đang âm thầm giữ vốn của bạn.",
+          "title": "Vòng quay hàng để ra quyết định"
+        },
+        "scanning": {
+          "description": "Nhận, chuyển và kiểm hàng bằng camera điện thoại, để kiểm kê thôi đồng nghĩa với cầm bảng kê giấy.",
+          "title": "Quét mã vạch và mã QR"
+        },
+        "stock": {
+          "description": "Bạn có gì, ở đâu, cập nhật ngay khi hàng dịch chuyển. Con số bạn báo cho khách đúng bằng con số trên kệ.",
+          "title": "Tồn kho theo thời gian thực"
+        },
+        "subtitle": "Tồn kho, luân chuyển và nhà cung cấp trong một hệ thống, nối với dữ liệu tài chính và khách hàng bạn vẫn đang giữ.",
+        "title": "Bớt bất ngờ trong kho",
+        "warehouses": {
+          "description": "Theo dõi tồn kho từng địa điểm và mọi lần điều chuyển, không cần mỗi kho một bảng tính.",
+          "title": "Nhiều kho, một bức tranh"
+        }
+      },
+      "title": "Số liệu tồn kho khớp với hàng trên kệ",
+      "useCases": {
+        "distribution": {
+          "items": [
+            "Sắp xếp hàng theo kho và theo vị trí",
+            "Soạn và giao hàng dựa trên tồn kho thực tế",
+            "Theo dõi các lần điều chuyển giữa các kho",
+            "Biết hàng nào đang về và về lúc nào"
+          ],
+          "title": "Phân phối"
+        },
+        "eyebrow": "Dành cho ai",
+        "manufacturing": {
+          "items": [
+            "Theo dõi nguyên vật liệu theo kế hoạch sản xuất",
+            "Lên kế hoạch dựa trên lượng hàng đang thật sự có",
+            "Giữ lịch sử luân chuyển phục vụ kiểm tra chất lượng",
+            "Theo dõi giá thành khi giá đầu vào thay đổi"
+          ],
+          "title": "Sản xuất"
+        },
+        "retail": {
+          "items": [
+            "Giữ số trên hệ thống khớp với hàng trên kệ",
+            "Đặt lại hàng trước khi mã bán chạy hết",
+            "Theo dõi giá và thời gian giao của nhà cung cấp",
+            "Nối luân chuyển hàng với doanh số"
+          ],
+          "title": "Bán lẻ"
+        },
+        "subtitle": "Bán lẻ, phân phối và sản xuất hỏi cùng một câu bằng những cách khác nhau: còn đủ không, và đang nằm ở đâu?",
+        "title": "Ở bất cứ nơi nào có hàng"
+      }
+    },
+    "lms": {
+      "closing": {
+        "description": "Học tập là một phần trong không gian làm việc Tuturuuu của bạn. Đăng nhập và dựng khoá học đầu tiên.",
+        "title": "Bắt đầu dạy, thay vì đi cấu hình"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Học tập",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng một khoá học, giao bài, và thấy tiến độ ngay khi nó diễn ra. Người học có một nơi duy nhất để biết cần nộp gì; bạn có bức tranh trung thực về ai đang tụt lại, khi vẫn còn kịp giúp.",
+      "eyebrow": "Học tập",
+      "features": {
+        "assignments": {
+          "description": "Giao bài, thu bài và chấm ở cùng một nơi, phần nào chấm tự động được thì hệ thống lo.",
+          "title": "Bài tập và chấm điểm"
+        },
+        "courses": {
+          "description": "Sắp xếp bài giảng, tài liệu đọc và video thành từng phần, rồi dùng lại cấu trúc đó cho lần mở khoá sau.",
+          "title": "Khoá học dựng xong trong một buổi chiều"
+        },
+        "discussion": {
+          "description": "Thảo luận gắn với bài học, nên câu trả lời giúp được mọi người học đến đó về sau.",
+          "title": "Câu hỏi chỉ phải trả lời một lần"
+        },
+        "eyebrow": "Nó làm gì",
+        "live": {
+          "description": "Dạy lớp và kèm riêng ngay cạnh phần nội dung liên quan, bản ghi nằm đúng chỗ bài học.",
+          "title": "Buổi học trực tuyến đúng ngữ cảnh"
+        },
+        "practice": {
+          "description": "Kiểm tra mức hiểu bài dọc đường bằng câu hỏi và bài luyện, thay vì đợi đến kỳ thi mới biết.",
+          "title": "Câu hỏi và luyện tập"
+        },
+        "progress": {
+          "description": "Mức hoàn thành và kết quả của từng người học, để người đã dừng lại ba tuần trước hiện ra ngay bây giờ.",
+          "title": "Tiến độ nhìn thấy được, không phải đoán"
+        },
+        "subtitle": "Tài liệu, bài nộp và tiến độ trong một hệ thống, trên cùng cuốn lịch với mọi thứ khác người học đang xoay xở.",
+        "title": "Dạy học, với ít việc hành chính xung quanh hơn"
+      },
+      "title": "Khoá học, bài tập và vị trí của từng người học",
+      "useCases": {
+        "centers": {
+          "items": [
+            "Quản lý danh mục khoá học và các lớp đang mở",
+            "Vận hành chương trình cấp chứng chỉ từ đầu đến cuối",
+            "Theo dõi tiến độ của mọi lớp đang chạy",
+            "Biết khoá học nào thật sự kết thúc tốt"
+          ],
+          "title": "Trung tâm đào tạo"
+        },
+        "corporate": {
+          "items": [
+            "Đón người mới bằng một lộ trình họ tự theo được",
+            "Chạy chương trình phát triển chuyên môn mà không cần người điều phối",
+            "Theo dõi đào tạo tuân thủ đến khi hoàn thành",
+            "Đánh giá năng lực trước và sau chương trình"
+          ],
+          "title": "Đội nhóm và đào tạo nội bộ"
+        },
+        "eyebrow": "Dành cho ai",
+        "institutions": {
+          "items": [
+            "Đưa khoá học lên trực tuyến với nội dung đúng thứ tự",
+            "Xem kết quả theo từng sinh viên, không chỉ theo lớp",
+            "Tổ chức lớp học trực tuyến song song với bài vở",
+            "Gom tài liệu và học liệu vào một thư viện"
+          ],
+          "title": "Trường học và đại học"
+        },
+        "subtitle": "Một lớp học, một chương trình hội nhập hay một khoá cấp chứng chỉ đều chạy trên ba thứ: nội dung, bài làm và tiến độ.",
+        "title": "Ở bất cứ đâu có người đang học"
+      }
+    },
+    "mail": {
+      "closing": {
+        "description": "Kết nối hộp thư và để những lá thư sinh ra công việc tạo ra công việc thật, thay vì một mẩu giấy nhớ.",
+        "title": "Chuyển thư của bạn vào đây"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Mail",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Thư biết về công việc và lịch của bạn, để lời hứa trong một cuộc trao đổi trở thành việc có người phụ trách và có hạn chót.",
+      "eyebrow": "Mail",
+      "features": {
+        "assistant": {
+          "description": "Mira soạn bản trả lời theo ngữ cảnh của bạn và tóm tắt một chuỗi thư dài, để bạn chỉnh sửa thay vì viết từ đầu.",
+          "title": "Thư trả lời đã bắt đầu sẵn"
+        },
+        "calendar": {
+          "description": "Các khung giờ bạn thật sự trống được đề xuất từ lịch của bạn, và sự kiện được tạo mà không cần rời khỏi lá thư.",
+          "title": "Đặt lịch họp ngay trong thư"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "inbox": {
+          "description": "Sắp xếp theo mức ưu tiên và tự động gom nhóm đưa những thư cần bạn lên đầu, phần còn lại lùi ra sau.",
+          "title": "Thư quan trọng lên trước"
+        },
+        "schedule": {
+          "description": "Viết bây giờ, gửi sau, và đặt nhắc theo dõi để một chuỗi thư im lặng quay lại với bạn thay vì biến mất.",
+          "title": "Gửi vào lúc dễ được đọc hơn"
+        },
+        "search": {
+          "description": "Tìm một lá thư bằng những gì bạn còn nhớ, người gửi, tháng nào, tệp đính kèm, chứ không cần đúng dòng tiêu đề.",
+          "title": "Hỏi bằng lời thường ngày"
+        },
+        "shared": {
+          "description": "Địa chỉ dùng chung với quyền được uỷ nhiệm, để thư hỗ trợ hay thanh toán không kẹt sau tài khoản của một người.",
+          "title": "Hộp thư cả đội cùng vận hành"
+        },
+        "subtitle": "Phân loại, soạn thư, hẹn giờ và hộp thư dùng chung ở cùng một nơi.",
+        "title": "Ít hộp thư hơn, xong việc nhiều hơn"
+      },
+      "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Chuỗi thư mang theo ngữ cảnh của dự án",
+            "Hẹn lịch mà không cần bốn lượt qua lại",
+            "Nhắc theo dõi tự chạy mà bạn không phải nhớ",
+            "Tệp đính kèm nằm trong Drive, không nằm trong thư mục tải về"
+          ],
+          "title": "Trao đổi với khách hàng"
+        },
+        "eyebrow": "Dùng vào việc gì",
+        "followups": {
+          "items": [
+            "Bản nháp trả lời chờ bạn chỉnh",
+            "Hẹn giờ gửi qua các múi giờ",
+            "Nhắc lại khi chưa ai trả lời",
+            "Thư được chuyển thành công việc có hạn chót"
+          ],
+          "title": "Giữ nguyên vẹn một ngày của bạn"
+        },
+        "subtitle": "Ba dạng trao đổi thôi rò rỉ khi thư nằm trong không gian làm việc.",
+        "team": {
+          "items": [
+            "Một địa chỉ nhiều người cùng trả lời",
+            "Bàn giao mà không cần chuyển tiếp lòng vòng",
+            "Cập nhật nội bộ trở thành công việc",
+            "Một bản ghi người mới có thể đọc lại"
+          ],
+          "title": "Đội nhóm và hộp thư dùng chung"
+        },
+        "title": "Những loại thư thật sự tốn thời gian của bạn"
+      }
+    },
+    "meet": {
+      "closing": {
+        "description": "Chọn ngày, chia sẻ liên kết, và để cả nhóm trả lời theo thời gian của họ.",
+        "title": "Tạo một kế hoạch trong một phút"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Tạo kế hoạch",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Chọn vài ngày khả dĩ, chia sẻ một đường liên kết, và thời gian rảnh của cả nhóm tự gom lại. Người tham gia không cần tài khoản.",
+      "eyebrow": "Meet Together",
+      "features": {
+        "agenda": {
+          "description": "Các điểm thảo luận và mục tiêu nằm ngay cạnh khung giờ, nên buổi họp có mục đích được viết ra trước khi bắt đầu.",
+          "title": "Nội dung họp nằm cùng kế hoạch"
+        },
+        "availability": {
+          "description": "Đặt sẵn những ngày khả dĩ và khoảng giờ đáng cân nhắc, để mọi người chỉ trả lời đúng câu hỏi cần trả lời.",
+          "title": "Ngày và khung giờ do bạn chọn"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "guests": {
+          "description": "Bất kỳ ai có liên kết đều có thể điền thời gian rảnh kèm tên, nên người ngoài công ty không còn là lý do phải quay lại dùng email.",
+          "title": "Khách không cần tài khoản"
+        },
+        "overlap": {
+          "description": "Thời gian rảnh của nhóm hiện dần thành một lưới, và khung giờ sớm nhất cũng như hợp nhất tự nổi lên mà không ai phải đếm.",
+          "title": "Phần trùng nhau được vẽ sẵn"
+        },
+        "sharing": {
+          "description": "Đăng nhập thì kế hoạch được lưu, nên một nhóm họp định kỳ không phải bắt đầu từ trang trắng mỗi lần.",
+          "title": "Kế hoạch có thể quay lại dùng"
+        },
+        "subtitle": "Một kế hoạch mất chừng một phút để tạo và thay cho cả đoạn hội thoại nơi sáu người lần lượt kể ra những giờ họ bận.",
+        "timezones": {
+          "description": "Mỗi người đánh dấu thời gian rảnh theo múi giờ của họ, và kế hoạch quy về một bức tranh chung trung thực.",
+          "title": "Ai cũng trả lời theo giờ của mình"
+        },
+        "title": "Một liên kết, thời gian rảnh của tất cả"
+      },
+      "title": "Tìm ra giờ họp trước khi gửi lời mời",
+      "useCases": {
+        "clients": {
+          "items": [
+            "Đưa ra nhiều giờ khả dĩ trong một tin nhắn",
+            "Không cần mở lịch nội bộ cho người ngoài",
+            "Nhiều người tham dự được gom về một lần",
+            "Còn lại bản ghi về điều đã thống nhất"
+          ],
+          "title": "Khách hàng và đối tác ngoài"
+        },
+        "eyebrow": "Trong thực tế",
+        "groups": {
+          "items": [
+            "Buổi học chung xếp quanh lịch lên lớp",
+            "Ca tình nguyện khớp với người đang rảnh",
+            "Kế hoạch định kỳ dùng lại từ tuần này sang tuần khác",
+            "Ai cũng trả lời được mà không phải đăng ký"
+          ],
+          "title": "Nhóm và cộng đồng"
+        },
+        "subtitle": "Càng nhiều cuốn lịch tham gia, chuỗi tin nhắn càng tốn kém. Đây là thứ thay thế nó.",
+        "teams": {
+          "items": [
+            "Tìm được giờ khả thi mà không cần chuỗi trả lời",
+            "Giờ địa phương hiển thị cho từng người",
+            "Cộng tác viên và đối tác tham gia bằng liên kết",
+            "Nội dung họp sẵn sàng trước khi chốt giờ"
+          ],
+          "title": "Nhóm ở nhiều múi giờ"
+        },
+        "title": "Bất cứ khi nào có hơn ba người"
+      }
+    },
+    "qr": {
+      "closing": {
+        "description": "Dán đường liên kết, chọn màu, và tải về tệp bạn có thể đem in.",
+        "title": "Tạo mã"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở trình tạo mã QR",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Biến một đường liên kết, một đoạn chữ hay thông tin thanh toán thành mã QR, chỉnh cho ra dáng của bạn, rồi tải về sẵn sàng đem in.",
+      "eyebrow": "QR",
+      "features": {
+        "anyValue": {
+          "description": "Dán một địa chỉ web, một đoạn tin nhắn hay thông tin thanh toán, mã cập nhật ngay khi bạn gõ.",
+          "title": "Mọi đường liên kết hoặc đoạn chữ"
+        },
+        "colors": {
+          "description": "Đặt màu mã và màu nền để nó nằm gọn trong ấn phẩm thay vì trên một ô trắng.",
+          "title": "Màu của bạn"
+        },
+        "export": {
+          "description": "Tải về dạng PNG, JPG hoặc WebP ở kích thước gấp bốn lần bản hiển thị, đủ nét cho thực đơn hay băng rôn.",
+          "title": "Tệp in được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "logo": {
+          "description": "Thả một hình vào chính giữa, tự chỉnh kích thước, độ mờ và bo góc, mà mã vẫn quét được.",
+          "title": "Logo ở giữa"
+        },
+        "open": {
+          "description": "Trình tạo mã nằm trong bộ công cụ Tuturuuu và mở thẳng vào biểu mẫu.",
+          "title": "Không phải đăng ký gì"
+        },
+        "styles": {
+          "description": "Mã trơn, thẻ có thương hiệu kèm tiêu đề của bạn, hoặc bản có dòng nhắc quét dành cho áp phích, nơi người ta cần một lời hướng dẫn.",
+          "title": "Ba kiểu bố cục"
+        },
+        "subtitle": "Mọi nội dung, ba kiểu bố cục, màu của bạn, logo của bạn, và tệp đủ lớn để in.",
+        "title": "Đủ tùy chỉnh để in một lần là xong"
+      },
+      "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
+      "useCases": {
+        "business": {
+          "items": [
+            "Thực đơn mở ra mà không cần ứng dụng",
+            "Thông tin thanh toán trên tấm thẻ cạnh quầy thu ngân",
+            "Đường liên kết đặt món hoặc đánh giá ngay tại bàn",
+            "Một đường liên kết in trên hóa đơn hoặc túi đựng"
+          ],
+          "title": "Trên quầy"
+        },
+        "events": {
+          "items": [
+            "Đường liên kết đăng ký in trên áp phích",
+            "Chỉ đường tới phòng hoặc địa điểm",
+            "Slide và tài liệu sau buổi nói chuyện",
+            "Một danh thiếp người khác quét được"
+          ],
+          "title": "Tại sự kiện"
+        },
+        "everyday": {
+          "items": [
+            "Đưa một đường liên kết dài sang điện thoại mà không phải gõ",
+            "Đường liên kết biểu mẫu để người khác quét và điền",
+            "Trang cá nhân hoặc hồ sơ năng lực trên danh thiếp",
+            "Mã in vừa một miếng dán hoặc một thẻ đeo"
+          ],
+          "title": "Trao đổi hằng ngày"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Trên quầy, tại sự kiện, và trong những lần trao đổi hằng ngày.",
+        "title": "Những mã này rồi đi về đâu"
+      }
+    },
+    "storefront": {
+      "closing": {
+        "description": "Đăng bán những sản phẩm bạn đã theo dõi và đưa cho người mua một đường liên kết luôn đúng.",
+        "title": "Mở cửa hàng"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Storefront",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Một cửa hàng công khai đọc thẳng sản phẩm và tồn kho bạn đang quản lý trong Inventory, nên danh mục khách nhìn thấy chính là danh mục bạn duy trì.",
+      "eyebrow": "Storefront",
+      "features": {
+        "cart": {
+          "description": "Người mua thêm hàng qua nhiều nhóm sản phẩm rồi quay lại giỏ, trên điện thoại cũng dễ như trên máy tính.",
+          "title": "Giỏ hàng không mất khi xem tiếp"
+        },
+        "catalog": {
+          "description": "Sản phẩm, giá và mô tả lấy từ Inventory, nên đăng bán là một quyết định hiển thị chứ không phải nhập liệu lần hai.",
+          "title": "Danh mục chính là kho của bạn"
+        },
+        "checkout": {
+          "description": "Bước thanh toán được chuyển sang Polar, nên thông tin thẻ không nằm lại ở cửa hàng.",
+          "title": "Thanh toán do Polar đảm nhiệm"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "orders": {
+          "description": "Người mua tra lại được đơn của mình, còn không gian làm việc thấy đúng bản ghi đó mà không phải xin ảnh chụp màn hình.",
+          "title": "Đơn hàng hai bên cùng thấy"
+        },
+        "stock": {
+          "description": "Tình trạng còn hàng bám theo con số đội bạn duy trì, nên cửa hàng không bán thứ đã hết trên kệ.",
+          "title": "Tồn kho người mua tin được"
+        },
+        "subtitle": "Một danh mục, một con số tồn kho, và một luồng thanh toán người mua hoàn tất được.",
+        "title": "Một cửa hàng đặt trên chính kho bạn đang theo dõi",
+        "visibility": {
+          "description": "Mỗi cửa hàng tự chọn: mở cho bất kỳ ai có đường liên kết, hoặc chỉ dành cho người mua được mời.",
+          "title": "Công khai hoặc riêng tư"
+        }
+      },
+      "title": "Kho hàng của bạn, mở ra cho người mua",
+      "useCases": {
+        "buyers": {
+          "items": [
+            "Xem theo nhóm sản phẩm trên điện thoại",
+            "Giỏ hàng nhớ những gì đã thêm",
+            "Thanh toán kết thúc ở một trang thanh toán thật",
+            "Đơn hàng tra lại được sau này"
+          ],
+          "title": "Người đi mua"
+        },
+        "eyebrow": "Trong thực tế",
+        "operators": {
+          "items": [
+            "Tồn kho đếm một lần, hiển thị ở mọi nơi",
+            "Bật tắt hiển thị sản phẩm theo từng cửa hàng",
+            "Đơn hàng nằm cùng không gian làm việc với kho",
+            "Danh mục và thiết lập thanh toán giữ trong Inventory"
+          ],
+          "title": "Phía sau quầy"
+        },
+        "shops": {
+          "items": [
+            "Có cửa hàng mà không phải dựng lại danh mục",
+            "Giá duy trì ở một nơi duy nhất",
+            "Đường liên kết in được lên hóa đơn hay áp phích",
+            "Không thêm hệ thống thứ hai phải đối soát"
+          ],
+          "title": "Cửa hàng nhỏ"
+        },
+        "subtitle": "Cửa hàng nhỏ, đội đứng sau quầy, và người đi mua.",
+        "title": "Cửa hàng này dành cho ai"
+      }
+    },
+    "tasks": {
+      "closing": {
+        "description": "Mở Tasks, ghi ra những gì đang trong đầu, phần còn lại để không gian làm việc theo dõi.",
+        "title": "Bắt đầu từ danh sách hôm nay"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Tasks",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Danh sách, bảng và dòng thời gian trên cùng một tập công việc, với người phụ trách, hạn hoàn thành và mức ưu tiên vẫn đứng vững khi tuần bận rộn.",
+      "eyebrow": "Công việc",
+      "features": {
+        "assistant": {
+          "description": "Gợi ý về mức ưu tiên và thời gian ước tính có sẵn trước khi bạn mở bảng, nên việc phân loại chỉ còn là xem lại thay vì quyết định từ đầu.",
+          "title": "Trợ lý sắp xếp trước"
+        },
+        "collaborate": {
+          "description": "Mỗi việc đều gắn một người và một trạng thái, nên không ai phải hỏi trong nhóm chat xem ai đang làm.",
+          "title": "Có người phụ trách rõ ràng"
+        },
+        "deadlines": {
+          "description": "Hạn và nhắc nhở xuất hiện trên cùng cuốn lịch với các cuộc họp, nên deadline phải cạnh tranh bằng thời gian thật.",
+          "title": "Hạn hoàn thành nằm trên lịch"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "insights": {
+          "description": "Mức hoàn thành và thời gian bỏ ra được ghi lại khi bạn làm, nên buổi nhìn lại bắt đầu từ số liệu chứ không từ trí nhớ.",
+          "title": "Thực sự đã xong những gì"
+        },
+        "organize": {
+          "description": "Nhóm công việc theo đúng cách bạn nghĩ về nó, để việc cần làm tiếp theo hiện ra mà không phải đọc hết danh sách.",
+          "title": "Danh sách, nhãn và ưu tiên"
+        },
+        "subtitle": "Những thứ giữ cho một danh sách trung thực: người phụ trách, hạn hoàn thành, mức ưu tiên và một chế độ xem đúng với cách bạn làm việc.",
+        "title": "Đủ cấu trúc để không phải quyết định lại",
+        "views": {
+          "description": "Đổi cách xem mà không phải dời công việc. Vẫn là những việc đó, sắp xếp cho lập kế hoạch, họp nhanh hoặc bàn giao.",
+          "title": "Danh sách, bảng hoặc dòng thời gian"
+        }
+      },
+      "title": "Công việc nằm đúng chỗ bạn để lại",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "operations": {
+          "items": [
+            "Danh sách kiểm tra dùng lại cho việc thường kỳ",
+            "Theo dõi hạn trên nhiều dự án cùng lúc",
+            "Nhìn thấy khối lượng việc trước khi nhận thêm",
+            "Báo cáo trạng thái dựng từ hoạt động thật"
+          ],
+          "title": "Vận hành lặp lại"
+        },
+        "personal": {
+          "items": [
+            "Một danh sách trong ngày có thể làm hết, không phải hộp thư",
+            "Mục tiêu chia nhỏ thành việc có hạn cụ thể",
+            "Thói quen và việc định kỳ tự lặp lại",
+            "Ưu tiên đặt một lần vào buổi sáng"
+          ],
+          "title": "Tuần của riêng bạn"
+        },
+        "subtitle": "Việc cá nhân, việc của nhóm và việc lặp lại hằng tháng đều nằm trong một không gian làm việc.",
+        "team": {
+          "items": [
+            "Dự án chia thành các việc có người phụ trách",
+            "Bàn giao kèm trạng thái ai cũng nhìn thấy",
+            "Tiến độ đọc được mà không cần họp báo cáo",
+            "Bình luận và bối cảnh nằm ngay trong công việc"
+          ],
+          "title": "Nhóm bàn giao công việc"
+        },
+        "title": "Cùng một bảng, ba cách dùng"
+      }
+    },
+    "track": {
+      "closing": {
+        "description": "Mở Track, chọn công việc bạn đang làm, và để cả tuần tự được ghi lại.",
+        "title": "Bắt đầu bấm giờ"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Mở Track",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Bấm giờ theo đúng công việc đang làm, dừng khi chuyển việc, và kết thúc tuần với con số cụ thể thay vì phỏng đoán.",
+      "eyebrow": "Track",
+      "features": {
+        "breaks": {
+          "description": "Cà phê, ăn trưa hay đi dạo được ghi theo từng loại nghỉ riêng, nên thời gian làm việc vẫn trung thực.",
+          "title": "Thời gian nghỉ tính riêng"
+        },
+        "export": {
+          "description": "Xuất đúng những phiên bạn vừa lọc, để việc lập hóa đơn và tính lương bắt đầu từ chính các dòng bạn vừa đọc.",
+          "title": "Số liệu mang ra ngoài được"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "history": {
+          "description": "Các phiên cũ vẫn sửa được, và một lần quên bấm giờ có thể được yêu cầu bổ sung rồi duyệt, thay vì mất luôn.",
+          "title": "Bản ghi có thể sửa"
+        },
+        "subtitle": "Phiên làm việc gắn với công việc cụ thể, thời gian nghỉ tính riêng, và lịch sử vẫn sửa lại được.",
+        "tasks": {
+          "description": "Chọn một công việc từ bảng của bạn và phiên làm việc gắn vào đó, nên số giờ thuộc về công việc chứ không phải một dòng chữ tự do.",
+          "title": "Đếm giờ theo công việc thật"
+        },
+        "team": {
+          "description": "Quản lý xem các phiên trong cả không gian làm việc, lọc theo người và theo kỳ, không cần đi thu ảnh chụp màn hình.",
+          "title": "Số giờ theo từng người"
+        },
+        "timer": {
+          "description": "Bộ đếm giờ luôn hiện ở đầu màn hình, nên bấm bắt đầu còn nhanh hơn là quyết định bỏ qua.",
+          "title": "Bắt đầu và dừng bằng một cú nhấp"
+        },
+        "title": "Bộ đếm giờ nằm ngay cạnh công việc"
+      },
+      "title": "Số giờ bạn có thể giải trình",
+      "useCases": {
+        "eyebrow": "Trong thực tế",
+        "freelance": {
+          "items": [
+            "Số giờ theo từng khách, sẵn sàng lập hóa đơn",
+            "Phiên làm việc gắn với công việc đã bàn giao",
+            "Ước lượng được đối chiếu với thời gian thực tế",
+            "Bản xuất dữ liệu để hóa đơn dẫn chiếu"
+          ],
+          "title": "Lập hóa đơn cho khách"
+        },
+        "review": {
+          "items": [
+            "Xem lại cả tuần trong một màn hình",
+            "Thời gian theo công việc, dự án và người",
+            "Phát hiện chỗ thiếu khi vẫn còn sửa được",
+            "Một bản ghi cho lần lập kế hoạch tiếp theo"
+          ],
+          "title": "Chốt lại một tuần"
+        },
+        "subtitle": "Lập hóa đơn cho khách, điều phối một nhóm, hoặc chốt lại một tuần.",
+        "team": {
+          "items": [
+            "Ai đang làm gì, ngay lúc này",
+            "Thấy rõ khối lượng công việc trước khi giao thêm",
+            "Thời gian nghỉ tách khỏi thời gian tập trung",
+            "Duyệt những mục ai đó quên ghi"
+          ],
+          "title": "Điều phối một nhóm"
+        },
+        "title": "Ba lý do người dùng để bộ đếm chạy"
+      }
+    },
+    "workflows": {
+      "closing": {
+        "description": "Thiết lập không gian làm việc, vẽ quy trình một lần, và tháng sau không phải làm tay nữa.",
+        "title": "Tự động hóa phần bạn cứ làm đi làm lại"
+      },
+      "cta": {
+        "pricing": "Xem bảng giá",
+        "primary": "Thiết lập không gian làm việc",
+        "secondary": "Trao đổi với chúng tôi"
+      },
+      "description": "Dựng quy trình một lần với điều kiện và tác nhân kích hoạt, rồi các bước phê duyệt, bàn giao và cập nhật tự chạy dù có ai nhớ nhắc hay không.",
+      "eyebrow": "Quy trình",
+      "features": {
+        "assistant": {
+          "description": "Trợ lý đọc cách một quy trình thật sự chạy và chỉ ra những bước thường dồn ứ hoặc bị bỏ qua.",
+          "title": "Gợi ý ở chỗ hay tắc"
+        },
+        "builder": {
+          "description": "Bố trí các bước một cách trực quan để hình dạng quy trình vẫn rõ ràng với người mở nó ra sau này.",
+          "title": "Dựng bằng cách sắp xếp, không phải viết mã"
+        },
+        "eyebrow": "Bạn nhận được gì",
+        "integrations": {
+          "description": "API và tác nhân kích hoạt tùy chỉnh giúp quy trình chạm tới các công cụ nhóm bạn chưa thay, thay vì bắt phải chuyển đổi toàn bộ.",
+          "title": "Nối với những gì bạn đang dùng"
+        },
+        "subtitle": "Một quy trình phải dễ hiểu với những người chịu ảnh hưởng bởi nó, chứ không chỉ với người đã dựng ra nó.",
+        "templates": {
+          "description": "Mẫu có sẵn cho các trường hợp phổ biến, nên việc nhận nhân sự mới hay phê duyệt chỉ cần chỉnh lại thay vì dựng từ đầu.",
+          "title": "Bắt đầu từ quy trình đã biết"
+        },
+        "title": "Tự động hóa mà vẫn đọc được",
+        "triggers": {
+          "description": "Công việc bắt đầu từ một sự kiện, một lịch chạy hoặc một quy tắc bạn đặt, nên quy trình tự chạy mà không chờ ai để ý.",
+          "title": "Điều kiện và tác nhân kích hoạt"
+        },
+        "versions": {
+          "description": "Các phiên bản được giữ lại khi quy trình thay đổi, nên bạn thấy được cái gì đã đổi và quay về nếu bản mới tệ hơn.",
+          "title": "Thay đổi có thể truy lại"
+        }
+      },
+      "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
+      "useCases": {
+        "approvals": {
+          "items": [
+            "Phê duyệt tự đi đến đúng người có quyền quyết",
+            "Tài liệu đi qua các vòng xem xét theo thứ tự",
+            "Nhân sự mới được thiết lập theo cùng một danh sách",
+            "Đề nghị mua sắm theo dõi được đến khi có quyết định"
+          ],
+          "title": "Quy trình nghiệp vụ"
+        },
+        "eyebrow": "Trong thực tế",
+        "subtitle": "Phê duyệt, bàn giao và các việc vặt giữa hệ thống là phần âm thầm ngốn cả tuần mỗi tháng.",
+        "systems": {
+          "items": [
+            "Dữ liệu giữ đồng bộ giữa các công cụ",
+            "Tác vụ theo lịch chạy đúng giờ",
+            "Tác nhân kích hoạt riêng cho sự kiện của bạn",
+            "Mỗi lần chạy đều có nhật ký để tìm ra lỗi"
+          ],
+          "title": "Việc vặt giữa các hệ thống"
+        },
+        "team": {
+          "items": [
+            "Việc được giao khi công việc tới một giai đoạn",
+            "Bàn giao mang theo bối cảnh của chính nó",
+            "Cập nhật trạng thái đăng đi mà không cần nhắc",
+            "Thông báo chỉ gửi cho người thật sự cần"
+          ],
+          "title": "Tự động hóa cho nhóm"
+        },
+        "title": "Nơi việc thủ công thường trốn"
+      }
+    }
   },
   "promotion-data-table": {
     "code": "Mã giảm giá",
