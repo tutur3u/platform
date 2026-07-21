@@ -129,7 +129,7 @@ function printResult(
     }
   } else {
     console.log('Changed files path: (unavailable)');
-    console.log('Vercel affected gating will default open.');
+    console.log('Affected-workflow gating will default open.');
   }
 }
 

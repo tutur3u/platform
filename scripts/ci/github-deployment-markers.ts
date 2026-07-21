@@ -20,6 +20,10 @@ type SuccessfulDeploymentMarkerInput = {
   workflowName: string;
 };
 
+function getOptionalEnv(name: string): string | undefined {
+  return process.env[name];
+}
+
 function parsePayload(payload: unknown): Record<string, unknown> {
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     return payload as Record<string, unknown>;
@@ -190,7 +194,9 @@ export async function findLastSuccessfulDeploymentSha({
   refName?: string;
   workflowName: string;
 }): Promise<string | null> {
-  const markerShaOverride = process.env.VERCEL_DEPLOYMENT_MARKER_SHA;
+  const markerShaOverride =
+    getOptionalEnv('DEPLOYMENT_MARKER_SHA') ??
+    process.env.VERCEL_DEPLOYMENT_MARKER_SHA;
 
   if (markerShaOverride) {
     return markerShaOverride;

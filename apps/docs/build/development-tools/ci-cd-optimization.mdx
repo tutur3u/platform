@@ -1,7 +1,7 @@
 ---
 title: "CI/CD Pipeline Optimization"
 description: "Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs."
-updatedAt: "2026-07-10"
+updatedAt: "2026-07-21"
 ---
 
 <Info>
@@ -14,10 +14,9 @@ updatedAt: "2026-07-10"
 
 Our CI/CD pipelines avoid wasted builds, tests, and deployments through a
 **centralized affected-path gate** plus **build caching**. Instead of every
-workflow re-implementing its own change detection, each gated workflow calls a
-single reusable workflow (`ci-check.yml`) that computes the changed-file set
-once and asks a shared TypeScript decision function whether the workflow is
-actually affected.
+workflow re-implementing its own change detection, automatic deployments share
+the same TypeScript decision function while avoiding a separate configuration
+runner when the decision can be made inside an already-required job.
 
 This page documents how that gate works, how the per-app Vercel workflows are
 wired, and how to debug skip decisions.
@@ -45,10 +44,14 @@ feedback and congesting the Actions queue.
 
 ## How Gating Works Today
 
-Gated workflows do **not** rely on GitHub's native `on.push.paths` filters.
-Path filters are coarse (they cannot understand workspace dependency graphs) and
-they would have to be duplicated and kept in sync across every workflow. Instead,
-the logic is centralized in four pieces:
+Vercel affected-app gating does **not** rely on GitHub's native
+`on.push.paths` filters. Path filters are coarse (they cannot understand
+workspace dependency graphs), so the Vercel logic stays centralized. A narrow
+exception is the external-app compatibility build: its contract is simply
+"`apps/external` or any internal package changed," so native trigger paths can
+avoid creating a runner at all for unrelated app-only commits.
+
+The shared logic is organized in four pieces:
 
 1. **`tuturuuu.ts`** — the source of truth. It exports a `ci` toggle map (each
    workflow can be globally enabled/disabled), the `vercelWorkflowTargets` table
@@ -58,32 +61,39 @@ the logic is centralized in four pieces:
 2. **`scripts/ci/resolve-changed-files.ts`** — resolves the changed-file set for
    the current event (push payload, pull-request base/head, or git diff against
    the last successful deployment marker).
-3. **`.github/workflows/ci-check.yml`** — the reusable gate for preview and
-   non-Vercel workflows that need an individual `should_run` output.
+3. **`.github/workflows/ci-check.yml`** — the reusable gate for non-Vercel
+   workflows that still need an individual `should_run` output.
 4. **`.github/workflows/vercel-production.yaml`** — the single production
    planner. It resolves every app against that app's last successful deployment
    marker in one runner, then dispatches only affected production workflows.
 
-### The `ci-check` reusable workflow
+### Reusable and inline gates
 
-Preview and non-Vercel gated workflows declare a `check-ci` job that calls
-`ci-check.yml`, then gate their real job on the result:
+Non-Vercel gated workflows can declare a `check-ci` job that calls
+`ci-check.yml`, then gate their real job on the result. Platform preview is
+different: it must complete on every protected `main` push so
+`supabase-staging.yaml` receives its workflow-run signal. Its deploy job checks
+configuration and affected paths inline, then skips install/build/deploy steps
+when the app is unaffected. This keeps the workflow signal while using one
+runner instead of a configuration runner followed by a deploy runner.
 
 ```yaml
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: vercel-preview-platform.yaml
-    permissions:
-      contents: read
-      deployments: read
-
   Deploy-Preview:
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    # ...
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Compute changed files
+        id: changed_files
+        run: node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+      - name: Check preview configuration
+        id: check_config
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
 ```
 
 Internally, `ci-check.yml` uses a sparse checkout (only the manifests and
@@ -106,7 +116,13 @@ scripts it needs), computes the changed files, and runs the decision script:
 ```
 
 The scripts run with Node's `--experimental-strip-types`, so the `.ts` sources
-execute directly without a separate build step.
+execute directly without a separate build step. Trusted manual satellite
+preview workflows launch their guarded deploy job directly: manual dispatch
+already bypasses affected-path gating, so a reusable preflight would only add a
+second queued runner. These workflows remain protected by the `main` dispatch
+ref, `TRUSTED_PREVIEW_DEPLOY_ACTORS`, and their GitHub Environment. Preview
+concurrency is keyed by workflow and `preview_ref`; a repeated request for the
+same preview cancels stale work, while different preview refs remain independent.
 
 ### The production planner
 
@@ -164,8 +180,10 @@ matching then apply automatically.
 }
 ```
 
-**Applied to:** all Vercel app workflows (currently 24 preview + 24 production =
-48 workflows) plus the other gated CI workflows wired through `ci-check.yml`.
+**Applied to:** the 24-target production planner, the inline platform preview
+gate, and other gated CI workflows wired through `ci-check.yml`. The other 23
+preview workflows are trusted manual dispatches and therefore do not allocate a
+standalone configuration runner.
 
 ## Build Caching
 
@@ -229,6 +247,30 @@ CocoaPods), never final APK, AAB, IPA, archive, or application-bundle outputs.
 Dependency resolution and the platform build always execute so a cache hit
 cannot skip validation. Managed uv and CodeQL caches remain owned by their
 upstream actions rather than being duplicated.
+
+CodeQL scans canonical `main` pushes, pull requests targeting `main` or
+`production`, and the daily schedule. Production is fast-forwarded from `main`
+by `bun git-sync`, so scanning the mirrored production push would analyze the
+same SHA twice. CodeQL starts its analysis job directly and uses same-ref
+concurrency; it does not allocate a switchboard preflight runner for an
+unconditionally enabled security scan.
+
+The full Dockerized E2E graph is created for E2E specs, Playwright and Docker
+configuration, database fixtures, package manifests, lockfiles, and its own
+runner scripts. Ordinary application source commits do not create six expensive
+E2E consumers. A nightly run on `main` retains broad regression coverage, and
+manual dispatch remains available for deliberate validation. E2E uses native
+push paths and launches its image producer directly, without an extra static
+switchboard job.
+
+Supabase staging and production migrations use the last successful migration
+deployment marker as their change-range baseline. Each workflow resolves the
+entire pending range, fails open when no trustworthy marker exists, and runs
+`supabase db push --include-all` only when `apps/database/**` or migration
+control files changed. Evaluation and deployment share one serialized job per
+environment, so no-op workflow-run signals finish quickly while database
+migrations cannot race. Production still requires the successful same-SHA
+platform deployment marker and staging migration before applying changes.
 
 ## Runner And Storage Policy
 
@@ -407,16 +449,17 @@ commit is, so treat the following as **illustrative** rather than a fixed figure
 
 The monorepo currently registers **24 active Vercel app targets**, each with a
 preview and a production workflow (**48 Vercel deploy workflows**), out of 91
-workflow files. Without gating, a single-app change would attempt to run every
-target's preview/production deploy. With affected-path gating, a change scoped to
-one app skips the other 46 Vercel deploys, plus any unrelated CI workflows.
+workflow files. Production planning prevents a single-app change from creating
+23 unrelated production runners. Preview workflows create a runner only for the
+inline platform signal or an explicitly requested satellite preview.
 
 For a change that touches only one app:
 
 ```text
 1 production planner workflow
 + only the affected app deployment workflows
-+ preview gates only when preview workflows are invoked
++ one inline platform preview gate on protected main
++ direct satellite preview jobs only when explicitly dispatched
 ```
 
 Each skipped production app now consumes no runner at all; only the shared
@@ -427,17 +470,20 @@ change.
 
 <Note>
   To measure real-world impact, inspect the production planner's job summary and
-  compare its selected workflow count with the 24 registered targets. Preview
-  gates still report their decision in `check-ci`.
+  compare its selected workflow count with the 24 registered targets. Platform
+  preview reports its inline decision in the deploy job; manual satellite
+  previews have no separate gate job.
 </Note>
 
 ## Best Practices
 
 ### 1. Keep `tuturuuu.ts` as the source of truth
 
-When adding an app or workflow, register it in `tuturuuu.ts` (the `ci` map and,
-for Vercel apps, `vercelWorkflowTargets`) instead of hand-editing path filters in
-individual workflows. The gate and the tests key off that file.
+When adding an app or workflow, register Vercel app metadata in
+`vercelWorkflowTargets` and register automatic switchboard-controlled workflows
+in the `ci` map. Trusted manual satellite previews and intentionally
+path-triggered compatibility smokes do not keep unused `ci` toggles. The gate
+and the tests key off these boundaries.
 
 ### 2. Trust the fail-safe
 
@@ -473,15 +519,19 @@ behavior stays pinned.
 
 Our CI/CD optimization centralizes change detection so each workflow stays thin:
 
-- A single reusable `ci-check.yml` workflow computes the changed-file set once.
+- Reusable `ci-check.yml` calls remain available where a separate gate is
+  necessary; production planning and platform preview avoid per-app preflight
+  fan-out.
 - `tuturuuu.ts` decides, per workflow, whether the change is relevant — including
   workspace dependency-closure awareness for shared packages.
 - The remote-cache wrapper keeps Turbo credentials step-scoped and gives
   secretless jobs a GitHub-backed local fallback.
 - Turborepo caches full app builds, type checks, tests, and release preparation
   once a run is warranted.
-- The gate fails safe (builds on uncertainty), and `workflow_dispatch` always
-  bypasses gating for manual runs.
+- The gate fails safe (builds on uncertainty), and trusted manual satellite
+  previews start their guarded deploy job directly.
 
-The result: a one-app change skips the other 46 Vercel deploys at a cheap gate,
-while shared-root changes still correctly fan out everywhere they matter.
+The result: a one-app change selects only the necessary production deploys,
+platform preview retains its required staging signal without a second runner,
+manual previews never queue a redundant preflight, and superseded previews are
+canceled before they occupy the queue indefinitely.

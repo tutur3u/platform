@@ -122,6 +122,48 @@ test('changed-file resolver uses deployment marker baseline before latest push p
   );
 });
 
+test('Supabase workflow runs diff from the last successful migration marker', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  commitFile(
+    rootDir,
+    'apps/database/supabase/migrations/001_example.sql',
+    'select 1;\n',
+    'database change'
+  );
+  const headSha = commitFile(
+    rootDir,
+    'apps/web/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'web change'
+  );
+  const resolver = runChangedFileResolver({
+    env: {
+      DEPLOYMENT_MARKER_SHA: baseSha,
+    },
+    eventName: 'workflow_run',
+    headSha,
+    refName: 'main',
+    rootDir,
+    workflowName: 'supabase-staging.yaml',
+  });
+
+  assert.match(resolver.output, /Changed-file source: deployment-marker/);
+  assert.deepEqual(resolver.changedFiles, [
+    'apps/database/supabase/migrations/001_example.sql',
+    'apps/web/src/app/page.tsx',
+  ]);
+
+  assertWorkflowDecision(
+    {
+      changedFiles: resolver.changedFiles,
+      rootDir,
+      workflowName: 'supabase-staging.yaml',
+    },
+    true
+  );
+});
+
 test('Vercel gating fails open when no successful deployment marker exists', () => {
   const rootDir = createFixtureRoot();
   initializeGitRepo(rootDir);
@@ -163,7 +205,7 @@ test('Vercel gating fails open when no successful deployment marker exists', () 
     resolver.output,
     /Changed-file source: deployment-marker-unavailable/
   );
-  assert.match(resolver.output, /affected-app gating must fail open/);
+  assert.match(resolver.output, /affected gating must fail open/);
 
   assertWorkflowDecision(
     {

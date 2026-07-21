@@ -10,29 +10,21 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.preview_ref || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: vercel-preview-platform.yaml
-    permissions:
-      contents: read
-      deployments: read
-
   Deploy-Preview:
-    needs: [check-ci]
     if: >-
-      needs.check-ci.outputs.should_run == 'true' &&
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (
-        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        (
-          github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/main' &&
-          contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
-        )
+        github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' &&
+        contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
       )
     environment: vercel-preview-platform
     runs-on: ubuntu-latest
@@ -43,25 +35,44 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           ref: ${{ github.event.inputs.preview_ref || github.sha }}
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Compute changed files
+        id: changed_files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: vercel-preview-platform.yaml
+        run: node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+
+      - name: Check preview configuration
+        id: check_config
+        env:
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          WORKFLOW_NAME: vercel-preview-platform.yaml
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
 
       - name: Confirm preview target
         id: check_commits
         run: |
+          if [ "${{ steps.check_config.outputs.should_run }}" != "true" ]; then
+            echo "No platform preview build is required for this change."
+            echo "skip_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           echo "Building preview ref ${{ github.event.inputs.preview_ref || github.sha }}."
-          echo "skip_build=false" >> $GITHUB_OUTPUT
+          echo "skip_build=false" >> "$GITHUB_OUTPUT"
 
       - name: Resolve checked-out SHA
         if: steps.check_commits.outputs.skip_build != 'true'
         id: resolve_target
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Use Node.js 24
-        if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
 
       - name: Check equivalent production platform build
         if: steps.check_commits.outputs.skip_build != 'true'

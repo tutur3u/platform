@@ -261,6 +261,12 @@ function isVercelWorkflow(workflowName?: string): workflowName is string {
   return /^vercel-(preview|production)-.+\.ya?ml$/.test(workflowName ?? '');
 }
 
+function isSupabaseMigrationWorkflow(
+  workflowName?: string
+): workflowName is string {
+  return /^supabase-(staging|production)\.ya?ml$/.test(workflowName ?? '');
+}
+
 export async function resolveChangedFiles({
   eventName = process.env.GITHUB_EVENT_NAME,
   eventPath,
@@ -278,7 +284,11 @@ export async function resolveChangedFiles({
     };
   }
 
-  if (eventName === 'push' && isVercelWorkflow(workflowName)) {
+  const usesDeploymentMarkerRange =
+    (eventName === 'push' && isVercelWorkflow(workflowName)) ||
+    (eventName === 'workflow_run' && isSupabaseMigrationWorkflow(workflowName));
+
+  if (usesDeploymentMarkerRange) {
     const markerSha = await findLastSuccessfulDeploymentSha({
       refName,
       workflowName,
@@ -290,7 +300,7 @@ export async function resolveChangedFiles({
         files: [],
         headSha,
         reason:
-          'no successful deployment marker is available; affected-app gating must fail open',
+          'no successful deployment marker is available; affected gating must fail open',
         source: 'deployment-marker-unavailable',
       };
     }
@@ -301,7 +311,7 @@ export async function resolveChangedFiles({
         baseSha: markerSha,
         files: [],
         reason:
-          'the current commit is unavailable; affected-app gating must fail open',
+          'the current commit is unavailable; affected gating must fail open',
         source: 'deployment-marker-unavailable',
       };
     }

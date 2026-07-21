@@ -17,6 +17,31 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
   `supabase-staging.yaml` depends on its completed workflow-run event; other
   preview Vercel workflows remain trusted manual-dispatch only.
+- Keep the platform preview affected-path decision inline in its deploy job so
+  every protected `main` push still emits the staging workflow-run signal
+  without allocating a second runner. Manual-only satellite previews should
+  launch their guarded deploy job directly and must not add a redundant
+  reusable `check-ci` job.
+- Keep preview concurrency keyed by workflow and `preview_ref` with
+  `cancel-in-progress: true`; repeated requests for one target should replace
+  stale runs without canceling a distinct preview ref.
+- Prefer native trigger paths for a broad compatibility smoke only when its
+  contract is intentionally path-simple. The external-app internal-package
+  smoke owns `apps/external/**`, `packages/**`, and its build-control files, so
+  unrelated app-only commits should not create that workflow at all.
+- Keep CodeQL push scanning on canonical `main` only because `bun git-sync`
+  mirrors the same SHA to `production`. Retain pull-request coverage for both
+  target branches and the daily schedule, and launch analysis without an
+  always-enabled reusable switchboard preflight.
+- Scope the expensive E2E workflow with native push paths for E2E specs,
+  Playwright/Docker configuration, database fixtures, dependency manifests,
+  lockfiles, and E2E runner scripts. Keep a nightly full run and manual dispatch
+  so ordinary application source commits do not allocate the image bundle and
+  all consumers.
+- Resolve Supabase migration changes from the last successful environment
+  marker, fail open when that marker is unavailable, and serialize one combined
+  evaluate-and-migrate job per environment. Production must retain its same-SHA
+  platform deployment marker and successful staging prerequisite.
 - For repo-local Codex plugins, keep `.agents/plugins/marketplace.json` present and pointed at `./plugins/<plugin-name>`.
 
 ## Docs

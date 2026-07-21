@@ -7,21 +7,16 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.preview_ref || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: vercel-preview-finance.yaml
-    permissions:
-      contents: read
-      deployments: read
-
   Deploy-Preview:
-    needs: [check-ci]
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor)) && needs.check-ci.outputs.should_run == 'true'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && contains(format(',{0},', vars.TRUSTED_PREVIEW_DEPLOY_ACTORS), format(',{0},', github.actor))
     environment: vercel-preview-finance
     runs-on: ubuntu-latest
     permissions:

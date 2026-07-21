@@ -209,6 +209,34 @@ formatting behavior, or repo-wide verification.
   production must build and deploy prebuilt artifacts, then record both build
   and deployment markers. Satellite Vercel workflows still deploy prebuilt
   artifacts independently.
+- Avoid reusable configuration jobs when the caller already has to allocate a
+  runner. Platform preview resolves changed files and configuration inside its
+  deploy job so the required protected-`main` workflow-run signal remains
+  intact without a second runner. Trusted manual satellite previews run their
+  ref/actor-guarded deploy job directly because manual dispatch already bypasses
+  affected-path gating. A path-simple compatibility smoke may use native
+  trigger filters instead; the external-app smoke runs only for
+  `apps/external/**`, `packages/**`, or its build-control files.
+- Key preview concurrency by workflow and `preview_ref` and enable
+  `cancel-in-progress`. This lets a newer protected-main platform signal or a
+  repeated manual preview replace stale work without serializing unrelated
+  preview refs behind the same group.
+- Scan CodeQL pushes on canonical `main` only. `bun git-sync` fast-forwards the
+  identical SHA to `production`, so a production push trigger duplicates the
+  same analysis. Keep pull-request coverage for `main` and `production` plus
+  the daily schedule, use same-ref concurrency, and do not allocate a reusable
+  switchboard job for this unconditionally enabled security scan.
+- Use native push paths for the expensive E2E image producer and consumers.
+  Cover E2E specs, Playwright/Docker configuration, database fixtures,
+  dependency manifests, lockfiles, and runner scripts; preserve a nightly full
+  run plus manual dispatch instead of rebuilding the E2E stack for every
+  application source commit.
+- Gate Supabase migrations against a successful per-environment deployment
+  marker and diff the entire pending range, not only the latest commit. Fail
+  open without a trustworthy marker, keep staging/production jobs serialized,
+  and combine evaluation with deployment so a no-op workflow-run signal uses
+  one short runner. Never weaken production's same-SHA platform deployment and
+  successful staging checks.
 - Keep remote-cache values out of workflow/job environments and `GITHUB_ENV`.
   Pass them only to the composite wrapper's command step. Repository
   `TURBO_TOKEN` is for trusted jobs only; `TURBO_TEAM` is a repository variable

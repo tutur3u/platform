@@ -8,12 +8,9 @@ export const ci = {
   'check-migration-timestamps.yml': true,
   'check-migrations.yml': true,
   'codecov.yaml': true,
-  'codeql.yml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': true,
-  'e2e-tests.yaml': true,
-  'external-internal-packages.yaml': true,
   'rust-backend.yml': true,
   'i18n-check.yaml': true,
   'mobile.yaml': true,
@@ -36,30 +33,7 @@ export const ci = {
   'supabase-staging.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
-  'vercel-preview-apps.yaml': true,
-  'vercel-preview-calendar.yaml': true,
-  'vercel-preview-chat.yaml': true,
-  'vercel-preview-cms.yaml': true,
-  'vercel-preview-drive.yaml': true,
-  'vercel-preview-finance.yaml': true,
-  'vercel-preview-inventory.yaml': true,
-  'vercel-preview-infrastructure.yaml': true,
-  'vercel-preview-storefront.yaml': true,
-  'vercel-preview-mind.yaml': true,
-  'vercel-preview-nova.yaml': true,
   'vercel-preview-platform.yaml': true,
-  'vercel-preview-tools.yaml': true,
-  'vercel-preview-rewise.yaml': true,
-  'vercel-preview-shortener.yaml': true,
-  'vercel-preview-tasks.yaml': true,
-  'vercel-preview-meet.yaml': true,
-  'vercel-preview-learn.yaml': true,
-  'vercel-preview-mail.yaml': true,
-  'vercel-preview-tanstack-web.yaml': true,
-  'vercel-preview-teach.yaml': true,
-  'vercel-preview-pay.yaml': true,
-  'vercel-preview-contacts.yaml': true,
-  'vercel-preview-track.yaml': true,
   'vercel-production-apps.yaml': true,
   'vercel-production-calendar.yaml': true,
   'vercel-production-chat.yaml': true,
@@ -300,6 +274,24 @@ const globalVercelAffectingPaths = new Set([
   'turbo.json',
 ]);
 
+const databaseMigrationWorkflows = new Set([
+  'supabase-production.yaml',
+  'supabase-staging.yaml',
+]);
+
+const databaseMigrationAffectingPaths = new Set([
+  '.github/actions/setup-supabase-cli-with-retry/action.yml',
+  '.github/workflows/supabase-production.yaml',
+  '.github/workflows/supabase-staging.yaml',
+  'scripts/ci/check-workflow-config.ts',
+  'scripts/ci/github-deployment-markers.ts',
+  'scripts/ci/record-deployment-marker.ts',
+  'scripts/ci/resolve-changed-files-core.ts',
+  'scripts/ci/resolve-changed-files.ts',
+  'scripts/ci/workflow-config-core.ts',
+  'tuturuuu.ts',
+]);
+
 const scopedVercelAffectingPaths = [
   {
     apps: new Set(['inventory', 'storefront']),
@@ -437,6 +429,44 @@ export function getWorkflowDecision({
       matchedPaths: [],
       reason: 'workflow_dispatch bypasses affected-path gating',
       shouldRun: true,
+    };
+  }
+
+  if (databaseMigrationWorkflows.has(workflowName)) {
+    const normalizedChangedFiles =
+      changedFiles?.map(normalizeChangedPath).filter(Boolean) ?? null;
+
+    if (!normalizedChangedFiles) {
+      return {
+        matchedPaths: [],
+        reason:
+          'changed-file state is unavailable, so database migration gating is open',
+        shouldRun: true,
+      };
+    }
+
+    if (normalizedChangedFiles.length === 0) {
+      return {
+        matchedPaths: [],
+        reason: `${workflowName} migration marker already covers the target SHA`,
+        shouldRun: false,
+      };
+    }
+
+    const matchedPaths = normalizedChangedFiles.filter(
+      (filePath) =>
+        filePath === 'apps/database' ||
+        filePath.startsWith('apps/database/') ||
+        databaseMigrationAffectingPaths.has(filePath)
+    );
+
+    return {
+      matchedPaths,
+      reason:
+        matchedPaths.length > 0
+          ? `${workflowName} is affected by ${matchedPaths.length} database path(s)`
+          : `${workflowName} has no pending database path changes`,
+      shouldRun: matchedPaths.length > 0,
     };
   }
 

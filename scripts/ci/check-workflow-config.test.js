@@ -410,6 +410,61 @@ test('workflow_dispatch bypasses affected gating', () => {
   );
 });
 
+test('Supabase migration gating tracks database changes and fails open safely', () => {
+  const rootDir = createFixtureRoot();
+
+  for (const workflowName of [
+    'supabase-staging.yaml',
+    'supabase-production.yaml',
+  ]) {
+    assertWorkflowDecision(
+      {
+        changedFiles: ['apps/web/src/app/page.tsx'],
+        rootDir,
+        workflowName,
+      },
+      false
+    );
+    assertWorkflowDecision(
+      {
+        changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
+        rootDir,
+        workflowName,
+      },
+      true
+    );
+    assertWorkflowDecision(
+      {
+        changedFiles: ['scripts/ci/record-deployment-marker.ts'],
+        rootDir,
+        workflowName,
+      },
+      true
+    );
+    assertWorkflowDecision(
+      {
+        changedFiles: null,
+        rootDir,
+        workflowName,
+      },
+      true
+    );
+  }
+
+  const markerCoveredDecision = JSON.parse(
+    execFileSync(
+      'bun',
+      [
+        '--eval',
+        `import { getWorkflowDecision } from './tuturuuu.ts'; console.log(JSON.stringify(getWorkflowDecision({ changedFiles: [], workflowName: 'supabase-staging.yaml' })));`,
+      ],
+      { cwd: repoRoot, encoding: 'utf8' }
+    )
+  );
+  assert.equal(markerCoveredDecision.shouldRun, false);
+  assert.match(markerCoveredDecision.reason, /marker already covers/u);
+});
+
 test('release-please workflow uses static switchboard gating', () => {
   const rootDir = createFixtureRoot();
   const decision = assertWorkflowDecision(
@@ -751,9 +806,8 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   const job = workflow.jobs?.['migration-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the migration-e2e job');
-  assert.deepEqual(job.needs, ['check-ci', 'prepare-e2e-images']);
+  assert.deepEqual(job.needs, ['prepare-e2e-images']);
   assert.match(job.if, /always\(\)/u);
-  assert.match(job.if, /needs\.check-ci\.outputs\.should_run == 'true'/u);
   assert.equal(job['timeout-minutes'], 60);
   assert.equal(job.strategy?.['fail-fast'], false);
 
@@ -852,9 +906,8 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
   const job = workflow.jobs?.['inventory-storefront-cache-e2e'];
 
   assert.ok(job, 'e2e-tests.yaml must define the cross-app cache E2E job');
-  assert.deepEqual(job.needs, ['check-ci']);
+  assert.equal(job.needs, undefined);
   assert.match(job.if, /github\.ref != 'refs\/heads\/production'/u);
-  assert.match(job.if, /needs\.check-ci\.outputs\.should_run == 'true'/u);
   assert.equal(job['timeout-minutes'], 30);
   assert.equal(job.permissions?.contents, 'read');
 
@@ -931,9 +984,9 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   assert.ok(e2e);
   assert.ok(migration);
   assert.ok(cleanup);
-  assert.deepEqual(producer.needs, ['check-ci']);
-  assert.deepEqual(e2e.needs, ['check-ci', 'prepare-e2e-images']);
-  assert.deepEqual(migration.needs, ['check-ci', 'prepare-e2e-images']);
+  assert.equal(producer.needs, undefined);
+  assert.deepEqual(e2e.needs, ['prepare-e2e-images']);
+  assert.deepEqual(migration.needs, ['prepare-e2e-images']);
   assert.match(e2e.if, /always\(\)/u);
   assert.match(migration.if, /always\(\)/u);
   assert.equal(producer['continue-on-error'], true);
@@ -984,7 +1037,6 @@ test('E2E image bundle completes before private, bounded, optional consumers', (
   );
 
   assert.deepEqual(cleanup.needs, [
-    'check-ci',
     'prepare-e2e-images',
     'e2e',
     'migration-e2e',

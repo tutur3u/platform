@@ -4,6 +4,28 @@ on:
   push:
     branches-ignore:
       - production
+    paths:
+      - ".github/actions/run-with-turbo-remote-cache/**"
+      - ".github/actions/setup-bun-with-retry/**"
+      - ".github/actions/setup-supabase-cli-with-retry/**"
+      - ".github/workflows/e2e-tests.yaml"
+      - "apps/**/Dockerfile*"
+      - "apps/**/e2e/**"
+      - "apps/**/package.json"
+      - "apps/**/playwright.config.*"
+      - "apps/database/**"
+      - "bun.lock"
+      - "docker-compose*.yml"
+      - "package.json"
+      - "packages/*/package.json"
+      - "packages/devbox/src/e2e-harness*"
+      - "scripts/ci/e2e-*"
+      - "scripts/ci/run-with-backoff.sh"
+      - "scripts/docker-web.js"
+      - "scripts/e2e-*"
+      - "turbo.json"
+  schedule:
+    - cron: "17 2 * * *"
   workflow_dispatch:
     inputs:
       supabase_image_transport:
@@ -13,6 +35,10 @@ on:
           - cache
           - registry
         default: cache
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,15 +53,9 @@ env:
   E2E_SUPABASE_IMAGE_TRANSPORT: ${{ inputs.supabase_image_transport || 'cache' }}
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: e2e-tests.yaml
-
   prepare-e2e-images:
     name: Prepare E2E image bundle
-    needs: [check-ci]
-    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: github.ref != 'refs/heads/production'
     continue-on-error: true
     timeout-minutes: 45
     runs-on: ubuntu-latest
@@ -157,8 +177,8 @@ jobs:
 
   e2e:
     name: Playwright E2E (${{ matrix.shard }}/${{ matrix.total_shards }})
-    needs: [check-ci, prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
+    needs: [prepare-e2e-images]
+    if: ${{ always() && github.ref != 'refs/heads/production' }}
     timeout-minutes: 45
     runs-on: ubuntu-latest
     permissions:
@@ -473,8 +493,7 @@ jobs:
 
   inventory-storefront-cache-e2e:
     name: Inventory / Storefront cache contract
-    needs: [check-ci]
-    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: github.ref != 'refs/heads/production'
     timeout-minutes: 30
     runs-on: ubuntu-latest
     permissions:
@@ -571,8 +590,8 @@ jobs:
 
   migration-e2e:
     name: Migration E2E (${{ matrix.mode }})
-    needs: [check-ci, prepare-e2e-images]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
+    needs: [prepare-e2e-images]
+    if: ${{ always() && github.ref != 'refs/heads/production' }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
@@ -726,8 +745,8 @@ jobs:
 
   cleanup-e2e-images:
     name: Clean up E2E image bundle
-    needs: [check-ci, prepare-e2e-images, e2e, migration-e2e]
-    if: ${{ always() && github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true' }}
+    needs: [prepare-e2e-images, e2e, migration-e2e]
+    if: ${{ always() && github.ref != 'refs/heads/production' }}
     timeout-minutes: 10
     runs-on: ubuntu-latest
     permissions:

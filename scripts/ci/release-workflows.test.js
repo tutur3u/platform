@@ -45,12 +45,8 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
       getVercelRunJobName(workflowName)
     );
 
-    if (workflowName.startsWith('vercel-preview-')) {
-      const checkCiJob = readWorkflowJobBlock(workflowName, 'check-ci');
-      assert.match(checkCiJob, /deployments:\s*read/);
-    } else {
-      assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-    }
+    assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+    assert.doesNotMatch(workflow, /needs\.check-ci/);
     assert.match(deployJob, /deployments:\s*write/);
     assert.match(workflow, new RegExp(`VERCEL_WORKFLOW_NAME: ${workflowName}`));
 
@@ -170,6 +166,82 @@ test('external app build cancels superseded runs instead of passing a skipped bu
   assert.doesNotMatch(
     workflow,
     /Check for newer commits|check_commits|skip_build/
+  );
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.doesNotMatch(workflow, /needs\.check-ci/);
+  assert.equal((header.match(/^ {4}paths:$/gm) ?? []).length, 2);
+
+  for (const affectingPath of [
+    '.github/workflows/external-internal-packages.yaml',
+    'apps/external/**',
+    'bun.lock',
+    'package.json',
+    'packages/**',
+    'turbo.json',
+  ]) {
+    const escapedPath = affectingPath.replaceAll('*', '\\*');
+    assert.equal(
+      (header.match(new RegExp(`- "${escapedPath}"`, 'g')) ?? []).length,
+      2,
+      `${affectingPath} must scope both push and pull request builds`
+    );
+  }
+});
+
+test('preview workflows avoid standalone configuration runners', () => {
+  const previewWorkflows = vercelWorkflows.filter((workflowName) =>
+    workflowName.startsWith('vercel-preview-')
+  );
+  const ciConfig = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
+
+  for (const workflowName of previewWorkflows) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+
+    assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+    assert.doesNotMatch(workflow, /needs\.check-ci/);
+    assert.match(
+      header,
+      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ inputs\.preview_ref \|\| github\.ref \}\}\n {2}cancel-in-progress: true\n/
+    );
+
+    if (workflowName === 'vercel-preview-platform.yaml') {
+      const deployJob = readWorkflowJobBlock(workflowName, 'Deploy-Preview');
+      const changedFilesIndex = deployJob.indexOf('Compute changed files');
+      const configIndex = deployJob.indexOf('Check preview configuration');
+      const buildIndex = deployJob.indexOf('Build Project Artifacts');
+
+      assert.notEqual(changedFilesIndex, -1);
+      assert.notEqual(configIndex, -1);
+      assert.notEqual(buildIndex, -1);
+      assert.ok(changedFilesIndex < configIndex);
+      assert.ok(configIndex < buildIndex);
+      assert.match(
+        deployJob,
+        /node --experimental-strip-types scripts\/ci\/resolve-changed-files\.ts/
+      );
+      assert.match(
+        deployJob,
+        /node --experimental-strip-types scripts\/ci\/check-workflow-config\.ts/
+      );
+      assert.match(deployJob, /fetch-depth: 0/);
+      continue;
+    }
+
+    assert.doesNotMatch(
+      ciConfig,
+      new RegExp(`'${workflowName.replaceAll('.', '\\.')}': true`),
+      `${workflowName} is manual-only and must not retain an unused switchboard entry`
+    );
+  }
+
+  assert.doesNotMatch(
+    ciConfig,
+    /'external-internal-packages\.yaml': true/,
+    'the path-scoped external build must not retain an unused switchboard entry'
   );
 });
 
@@ -412,6 +484,30 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
+test('CodeQL scans canonical pushes once without a switchboard preflight', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
+    'utf8'
+  );
+
+  assert.match(workflow, /\n {2}push:\n {4}branches: \["main"\]\n/);
+  assert.match(
+    workflow,
+    /\n {2}pull_request:\n {4}branches: \["main", "production"\]\n/
+  );
+  assert.match(workflow, /\n {2}schedule:\n {4}- cron: "0 0 \* \* \*"\n/);
+  assert.match(
+    workflow,
+    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
+  );
+  assert.match(workflow, /cancel-in-progress: true/);
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.doesNotMatch(workflow, /needs\.check-ci/);
+
+  const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
+  assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
+});
+
 test('Codecov workflow runs workspace package tests with coverage', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'codecov.yaml'),
@@ -585,9 +681,45 @@ test('Rust backend Cloudflare deploys require trusted main dispatches', () => {
 });
 
 test('Supabase staging migration includes every local migration when pushing', () => {
-  const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'deploy');
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'supabase-staging.yaml'),
+    'utf8'
+  );
+  const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'migrate');
 
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.match(deployJob, /Compute pending migration changes/);
+  assert.match(deployJob, /Check migration configuration/);
+  assert.match(deployJob, /--ref-name main/);
+  assert.match(deployJob, /no database changes are pending/);
   assert.match(deployJob, /supabase db push --include-all/);
+  assert.match(deployJob, /Record successful staging migration marker/);
+  assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
+});
+
+test('E2E runs only for test infrastructure changes or its nightly safety run', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
+    'utf8'
+  );
+  const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+
+  assert.match(header, /\n {4}paths:\n/);
+  assert.match(header, /- "apps\/\*\*\/e2e\/\*\*"/);
+  assert.match(header, /- "apps\/database\/\*\*"/);
+  assert.match(header, /- "scripts\/ci\/e2e-\*"/);
+  assert.doesNotMatch(header, /^ {6}- "apps\/\*\*"$/m);
+  assert.match(header, /\n {2}schedule:\n {4}- cron: "17 2 \* \* \*"/);
+  assert.match(
+    header,
+    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/
+  );
+  assert.match(header, /cancel-in-progress: true/);
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.doesNotMatch(workflow, /needs\.check-ci/);
+
+  const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
+  assert.doesNotMatch(config, /['"]e2e-tests\.yaml['"]\s*:/);
 });
 
 test('branch name check allows release-please generated branches', () => {
@@ -972,12 +1104,9 @@ test('E2E workflow runs TanStack migration dual-stack and compare smoke jobs', (
   const stopIndex = migrationJob.indexOf('Stop migration E2E stacks');
 
   assert.match(workflow, /\n {2}workflow_dispatch:\n/u);
-  assert.match(migrationJob, /needs: \[check-ci, prepare-e2e-images\]/u);
+  assert.match(migrationJob, /needs: \[prepare-e2e-images\]/u);
   assert.match(migrationJob, /if: \$\{\{ always\(\)/u);
-  assert.match(
-    migrationJob,
-    /github\.ref != 'refs\/heads\/production' && needs\.check-ci\.outputs\.should_run == 'true'/u
-  );
+  assert.match(migrationJob, /github\.ref != 'refs\/heads\/production'/u);
   assert.match(migrationJob, /mode: tanstack-dual-stack/u);
   assert.match(
     migrationJob,
@@ -1056,11 +1185,10 @@ test('Supabase production migration requires production platform deploy and succ
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
   );
-  const evaluateJob = readWorkflowJobBlock(
+  const migrateJob = readWorkflowJobBlock(
     'supabase-production.yaml',
-    'evaluate-prerequisites'
+    'migrate'
   );
-  const deployJob = readWorkflowJobBlock('supabase-production.yaml', 'deploy');
 
   assert.match(
     workflow,
@@ -1068,73 +1196,77 @@ test('Supabase production migration requires production platform deploy and succ
   );
   assert.match(workflow, /\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {6}- main\n/);
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.match(migrateJob, /Compute pending migration changes/);
+  assert.match(migrateJob, /Check migration configuration/);
+  assert.match(migrateJob, /--ref-name production/);
+  assert.match(migrateJob, /no database changes are pending/);
 
   assert.match(
-    evaluateJob,
+    migrateJob,
     /manual dispatches must run from the production branch/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /TRIGGER_WORKFLOW" = "Vercel Platform Production Deployment"/
   );
-  assert.match(evaluateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
+  assert.match(migrateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
   assert.match(
-    evaluateJob,
+    migrateJob,
     /production platform deployment trigger ran on '\$TRIGGER_BRANCH' instead of production/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /staging migration trigger ran on '\$TRIGGER_BRANCH' instead of main/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /Staging migration completed\. Re-checking production migration prerequisites for \$TARGET_SHA/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /vercel-production-platform\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
   );
-  assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
+  assert.match(migrateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
   assert.match(
-    evaluateJob,
+    migrateJob,
     /no production platform deployment workflow run was found for \$TARGET_SHA/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /deployments\?environment=vercel-production-platform&per_page=100/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /no production platform deployment marker was found for \$TARGET_SHA/
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /\(\(\$payload\.markerKind \/\/ "deployment"\) == "deployment"\)/
   );
-  assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
-  assert.match(evaluateJob, /does not include a success status/);
+  assert.match(migrateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
+  assert.match(migrateJob, /does not include a success status/);
   assert.match(
-    evaluateJob,
+    migrateJob,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
-  assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
-  assert.match(evaluateJob, /STAGING_STATUS" != "completed"/);
-  assert.match(evaluateJob, /STAGING_CONCLUSION" != "success"/);
+  assert.match(migrateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
+  assert.match(migrateJob, /STAGING_STATUS" != "completed"/);
+  assert.match(migrateJob, /STAGING_CONCLUSION" != "success"/);
   assert.doesNotMatch(
-    evaluateJob,
+    migrateJob,
     /STAGING_CONCLUSION" = "skipped"/,
     'production migration must not accept skipped staging migration runs'
   );
   assert.match(
-    evaluateJob,
+    migrateJob,
     /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
   );
 
-  assert.match(
-    deployJob,
-    /ref: \$\{\{ needs\.evaluate-prerequisites\.outputs\.target_sha \}\}/
-  );
-  assert.match(deployJob, /supabase db push --include-all/);
+  assert.match(migrateJob, /ref: \$\{\{ env\.TARGET_SHA \}\}/);
+  assert.match(migrateJob, /supabase db push --include-all/);
+  assert.match(migrateJob, /Record successful production migration marker/);
+  assert.match(migrateJob, /scripts\/ci\/record-deployment-marker\.ts/);
 });
 
 test('environment-scoped Vercel workflows scope project secrets to protected jobs', () => {

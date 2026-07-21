@@ -3,21 +3,36 @@ name: Internal Packages in External App
 on:
   push:
     branches: ["main"]
+    paths:
+      - ".github/actions/run-with-turbo-remote-cache/**"
+      - ".github/actions/setup-bun-with-retry/**"
+      - ".github/actions/setup-turbo-fallback-cache/**"
+      - ".github/workflows/external-internal-packages.yaml"
+      - "apps/external/**"
+      - "bun.lock"
+      - "package.json"
+      - "packages/**"
+      - "scripts/ci/run-with-backoff.sh"
+      - "turbo.json"
   pull_request:
+    paths:
+      - ".github/actions/run-with-turbo-remote-cache/**"
+      - ".github/actions/setup-bun-with-retry/**"
+      - ".github/actions/setup-turbo-fallback-cache/**"
+      - ".github/workflows/external-internal-packages.yaml"
+      - "apps/external/**"
+      - "bun.lock"
+      - "package.json"
+      - "packages/**"
+      - "scripts/ci/run-with-backoff.sh"
+      - "turbo.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: external-internal-packages.yaml
-
   Build:
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

@@ -13,21 +13,19 @@ name: "CodeQL"
 
 on:
   push:
-    branches: ["main", "production"]
+    branches: ["main"]
   pull_request:
     branches: ["main", "production"]
   schedule:
     - cron: "0 0 * * *"
-jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: codeql.yml
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
     # Runner size impacts CodeQL analysis time. To learn more, please see:
     #   - https://gh.io/recommended-hardware-resources-for-running-codeql
     #   - https://gh.io/supported-runners-and-hardware-resources

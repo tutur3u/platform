@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-07-10"
+updatedAt: "2026-07-21"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -16,10 +16,12 @@ The reusable workflow
 reads that config and emits `should_run`, which downstream jobs use before doing
 real work.
 
-For Vercel deployments, `ci-check.yml` also performs affected-app gating before
-any install, build, or deploy step starts. It checks the current GitHub event's
-changed files against Vercel app metadata and workspace dependency closures from
-`tuturuuu.ts`.
+For Vercel deployments, the production planner and platform preview perform
+affected-app gating before any install, build, or deploy step starts. They check
+the current GitHub event's changed files against Vercel app metadata and
+workspace dependency closures from `tuturuuu.ts`. Platform preview performs the
+check inside its deploy job so protected `main` pushes create one runner, not a
+reusable gate runner followed by a deployment runner.
 
 The changed-file resolver must evaluate the full effective change range:
 
@@ -395,6 +397,27 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
+CodeQL runs once for canonical `main` pushes, for pull requests targeting
+`main` or `production`, and on its daily schedule. Do not add `production` back
+to the push trigger: `bun git-sync` mirrors the already-scanned `main` SHA to
+`production`, which otherwise creates duplicate analysis runs. The security
+scan launches its analysis job directly and cancels stale same-ref work instead
+of allocating an always-enabled switchboard preflight.
+
+`e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
+configuration, database fixtures, dependency manifests, lockfiles, and its own
+runner scripts. Normal application source-only commits do not create the image
+bundle and six downstream consumers. The nightly `main` run provides broad
+regression coverage, and maintainers can still use manual dispatch for an
+intentional full run.
+
+Supabase migration workflows still consume the required platform workflow-run
+signals, but compare the target SHA with the last successful migration marker.
+Only database and migration-control changes proceed to Supabase CLI setup and
+`db push`; an unavailable marker fails open. Staging and production each use a
+single serialized evaluate-and-migrate job, and production preserves the
+same-SHA platform deployment plus staging-success prerequisites.
+
 Cloudflare Worker manual deployments follow the same trust boundary: run
 `rust-backend.yml` from `main`, keep `TRUSTED_CLOUDFLARE_DEPLOY_ACTORS` limited
 to trusted maintainers, and avoid exposing `CLOUDFLARE_API_TOKEN` to unreviewed
@@ -426,13 +449,19 @@ Use `workflow_dispatch` when:
 - you need to promote a migration outside the normal trigger timing
 - you need to recover from a failed but otherwise understood automation path
 
-Manual dispatch bypasses affected-app gating when the workflow is enabled in
-`tuturuuu.ts`. Disabled `ci` entries still skip, even for manual dispatch.
+Manual dispatch bypasses affected-app gating. Generic switchboard-controlled
+workflows still honor disabled `ci` entries, while trusted manual satellite
+preview workflows launch their guarded deploy job directly and do not keep an
+unused `tuturuuu.ts` toggle.
 
 For preview Vercel deployments, dispatch the workflow from `main`, set
 `preview_ref` to the branch, tag, or SHA to deploy, and confirm the actor is in
 `TRUSTED_PREVIEW_DEPLOY_ACTORS`. Do not reintroduce preview `push` triggers for
-secret-backed Vercel workflows.
+secret-backed Vercel workflows, and do not add a standalone `check-ci` job to a
+manual-only preview: the dispatch already selected the build and the extra job
+only consumes another runner. Preview concurrency uses the workflow plus
+`preview_ref`, so rerunning the same target cancels stale work without canceling
+a different preview target.
 
 Package release workflows that expose production secrets or trusted publishing
 authority must add their own ref guard before dependency installation or publish

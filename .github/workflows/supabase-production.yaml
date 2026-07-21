@@ -12,31 +12,58 @@ on:
       - main
   workflow_dispatch:
 
-jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: supabase-production.yaml
-    permissions:
-      contents: read
-      deployments: read
+concurrency:
+  group: supabase-production-migration
+  cancel-in-progress: false
 
-  evaluate-prerequisites:
-    name: Evaluate production prerequisites
+jobs:
+  migrate:
+    name: Migrate production database
+    timeout-minutes: 20
     runs-on: ubuntu-latest
-    needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
     permissions:
       actions: read
       contents: read
-    outputs:
-      should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
-      target_sha: ${{ steps.evaluate.outputs.target_sha }}
+      deployments: write
+    env:
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
+      PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
+      - name: Check out migration target
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Compute pending migration changes
+        id: changed_files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: supabase-production.yaml
+        run: >-
+          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+          --head-sha "$TARGET_SHA" --ref-name production
+
+      - name: Check migration configuration
+        id: check_config
+        env:
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          WORKFLOW_NAME: supabase-production.yaml
+        run: node --experimental-strip-types scripts/ci/check-workflow-config.ts
+
       - name: Evaluate prerequisite status
         id: evaluate
         env:
           GH_TOKEN: ${{ github.token }}
+          DATABASE_AFFECTED: ${{ steps.check_config.outputs.should_run }}
           CURRENT_SHA: ${{ github.sha }}
           CURRENT_REF_NAME: ${{ github.ref_name }}
           EVENT_NAME: ${{ github.event_name }}
@@ -50,7 +77,9 @@ jobs:
           SHOULD_DEPLOY=false
           TARGET_SHA=""
 
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+          if [ "$DATABASE_AFFECTED" != "true" ]; then
+            echo "::notice::Skipping production migration because no database changes are pending."
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if [ "$CURRENT_REF_NAME" != "production" ]; then
               echo "::notice::Skipping production migration because manual dispatches must run from the production branch. Current ref is '$CURRENT_REF_NAME'."
             else
@@ -183,32 +212,26 @@ jobs:
           echo "should_deploy=$SHOULD_DEPLOY" >> "$GITHUB_OUTPUT"
           echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
 
-  deploy:
-    name: Migrate production database
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    needs: [check-ci, evaluate-prerequisites]
-    if: needs.check-ci.outputs.should_run == 'true' && needs.evaluate-prerequisites.outputs.should_deploy == 'true'
-    permissions:
-      contents: read
-
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
-      PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
-      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
-
       - name: Setup Supabase CLI
+        if: steps.evaluate.outputs.should_deploy == 'true'
         uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
           github-token: ${{ github.token }}
 
       - name: Deploy migrations to production
+        if: steps.evaluate.outputs.should_deploy == 'true'
         run: |
           cd apps/database
           supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
           supabase db push --include-all
+
+      - name: Record successful production migration marker
+        if: steps.evaluate.outputs.should_deploy == 'true'
+        env:
+          DEPLOYMENT_MARKER_REF_NAME: production
+          DEPLOYMENT_MARKER_SHA: ${{ steps.evaluate.outputs.target_sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: supabase-production.yaml
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          node --experimental-strip-types
+          scripts/ci/record-deployment-marker.ts
