@@ -97,28 +97,6 @@ test('getActiveChecks adds Discord Python validation after script tests when Dis
   ]);
 });
 
-test('bun check always includes mobile dependency compatibility validation', () => {
-  const activeChecks = getActiveChecks({
-    changedFiles: ['apps/web/src/app/page.tsx'],
-  });
-  const mobileDependencyCheck = activeChecks.find(
-    (check) => check.name === 'mobile-dependency-compat'
-  );
-  const scriptTestsIndex = activeChecks.findIndex(
-    (check) => check.name === 'script-tests'
-  );
-  const mobileDependencyIndex = activeChecks.findIndex(
-    (check) => check.name === 'mobile-dependency-compat'
-  );
-
-  assert.ok(mobileDependencyCheck);
-  assert.deepEqual(mobileDependencyCheck.args, [
-    'scripts/check-mobile-dependencies.js',
-  ]);
-  assert.ok(mobileDependencyIndex > -1);
-  assert.ok(mobileDependencyIndex < scriptTestsIndex);
-});
-
 test('bun check always includes mobile iOS project settings validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/web/src/app/page.tsx'],

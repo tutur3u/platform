@@ -571,12 +571,11 @@ after Flutter setup. Keep the iOS CI path on CocoaPods while `image_cropper` and
 package ranges; otherwise Flutter 3.44+ can fail before the simulator build
 with an Xcode package dependency resolution error.
 
-Root `bun check` runs `scripts/check-mobile-dependencies.js` to catch mobile
-dependency versions known to fail Apple CI before the native build starts. While
-the iOS/macOS build workflows use Xcode 16.4, keep `connectivity_plus` pinned to
-`7.0.0` because `7.1.1` references `NWPath.isUltraConstrained`, and keep
-`device_info_plus` pinned to `12.3.0` because `12.4.0` references
-`NSProcessInfo.isiOSAppOnVision`; those symbols are not available in that CI SDK.
+The iOS/macOS build workflows currently resolve `macos-latest` to GitHub's
+macOS 26 ARM64 image with Xcode 26+. The former Xcode 16.4 compatibility pins
+for `connectivity_plus` and `device_info_plus` are no longer required. Before
+adding a future Apple-specific dependency pin, verify the active runner image
+from a build log and reproduce the native build failure on that toolchain.
 
 ### Mobile store beta deployment
 
