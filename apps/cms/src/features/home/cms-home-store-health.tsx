@@ -1,17 +1,9 @@
-'use client';
-
-import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, ChevronRight } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-
-interface CommerceInsights {
-  hasStorefront: boolean;
-  outOfStock: number;
-  storefrontPublished: boolean;
-  totalProducts: number;
-  unlisted: number;
-}
+import type { CmsCommerceInsights } from '@/lib/commerce-client';
 
 interface Suggestion {
   href: string;
@@ -24,29 +16,43 @@ interface Suggestion {
  * dashboard. Renders nothing for workspaces without products or a storefront.
  */
 export function CmsHomeStoreHealth({
-  workspaceId,
+  insights,
+  isError,
+  isPending,
+  onRetry,
   workspaceSlug,
 }: {
-  workspaceId: string;
+  insights: CmsCommerceInsights | null | undefined;
+  isError: boolean;
+  isPending: boolean;
+  onRetry: () => void;
   workspaceSlug: string;
 }) {
   const t = useTranslations('external-projects');
-  const insightsQuery = useQuery({
-    queryFn: async (): Promise<CommerceInsights | null> => {
-      const response = await fetch(
-        `/api/v1/commerce/insights?wsId=${encodeURIComponent(workspaceId)}`,
-        { cache: 'no-store' }
-      );
-      return response.ok ? response.json() : null;
-    },
-    queryKey: ['cms-commerce-insights', workspaceId],
-    retry: false,
-    staleTime: 60_000,
-  });
 
-  const insights = insightsQuery.data;
+  if (isPending) {
+    return <Skeleton className="h-32 rounded-lg" />;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-dashed p-4">
+        <p className="text-muted-foreground text-sm">
+          {t('epm.store_health_error_description')}
+        </p>
+        <Button onClick={onRetry} size="sm" variant="outline">
+          {t('epm.retry_action')}
+        </Button>
+      </div>
+    );
+  }
+
   if (!insights || (!insights.hasStorefront && insights.totalProducts === 0)) {
-    return null;
+    return (
+      <div className="rounded-lg border border-dashed p-4 text-muted-foreground text-sm leading-6">
+        {t('epm.store_health_empty_description')}
+      </div>
+    );
   }
 
   const productsHref = `/${workspaceSlug}/products`;
