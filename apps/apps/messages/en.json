@@ -1,104 +1,24 @@
 {
   "appsGateway": {
-    "apps": {
-      "apps": {
-        "description": "The central gateway for Tuturuuu browser apps."
-      },
-      "calendar": {
-        "description": "Calendar, scheduling, and workspace planning."
-      },
-      "chat": {
-        "description": "Private workspace messaging, channels, and AI conversations."
-      },
-      "cms": {
-        "description": "Content operations, schemas, previews, and publishing."
-      },
-      "docs": {
-        "description": "Documentation, guides, and platform references."
-      },
-      "drive": {
-        "description": "Workspace files, folders, sharing, and storage operations."
-      },
-      "external": {
-        "description": "Developer demos and integration surfaces for Tuturuuu packages."
-      },
-      "finance": {
-        "description": "Wallets, invoices, transactions, and financial reporting."
-      },
-      "hive": {
-        "description": "AI collaboration experiments and Hive product surfaces."
-      },
-      "inventory": {
-        "description": "Products, stock, warehouses, and inventory workflows."
-      },
-      "learn": {
-        "description": "Learner dashboards, courses, and education experiences."
-      },
-      "mail": {
-        "description": "Team mailboxes for exact @tuturuuu.com accounts."
-      },
-      "meet": {
-        "description": "Meeting coordination and shared availability."
-      },
-      "mind": {
-        "description": "Mindboards, knowledge graphs, and AI-assisted planning."
-      },
-      "nova": {
-        "description": "AI-native product experiences and creative tools."
-      },
-      "platform": {
-        "description": "The main Tuturuuu workspace platform and central login."
-      },
-      "playground": {
-        "description": "Internal experiments for AI, SDKs, and prototype flows."
-      },
-      "rewise": {
-        "description": "Learning, review, and revision workflows."
-      },
-      "shortener": {
-        "description": "Short links, redirects, and link verification."
-      },
-      "tasks": {
-        "description": "Task boards, projects, cycles, labels, and work planning."
-      },
-      "teach": {
-        "description": "Educator dashboards, teaching tools, and classroom workflows."
-      },
-      "tools": {
-        "description": "Free public utilities: QR generator, password/random generator, and more."
-      },
-      "track": {
-        "description": "Time tracking, habits, activity, and daily work records."
-      }
+    "appsCount": "{count} apps",
+    "catalog": {
+      "clearSearch": "Clear app search",
+      "description": "Search the same live catalog used by the in-product app picker, then continue on each app's canonical Tuturuuu domain.",
+      "eyebrow": "Explore the suite",
+      "title": "The right surface for every kind of work."
     },
-    "categories": {
-      "ai": "AI",
-      "content": "Content",
-      "core": "Core",
-      "developer": "Developer",
-      "learning": "Learning",
-      "miscellaneous": "Miscellaneous",
-      "operations": "Operations",
-      "productivity": "Productivity"
-    },
-    "categoryCount": "{count, plural, one {# app} other {# apps}}",
-    "categoryDescriptions": {
-      "ai": "AI-first tools and planning surfaces.",
-      "content": "Authoring and publishing workspaces.",
-      "core": "The central product and workspace base.",
-      "developer": "Tools for integration, testing, and package demos.",
-      "learning": "Education apps for learners and teachers.",
-      "miscellaneous": "Docs, utilities, and public shortcuts.",
-      "operations": "Business operations and resource management.",
-      "productivity": "Daily coordination, planning, and execution."
-    },
+    "categoriesCount": "{count} collections",
     "eyebrow": "Tuturuuu Apps",
     "metadata": {
-      "description": "Open every routable Tuturuuu web app from one central gateway.",
+      "description": "Discover and open every Tuturuuu app from one beautifully connected, always-current catalog.",
       "title": "Tuturuuu Apps"
     },
-    "subtitle": "A central entrypoint for the routable apps in this monorepo. Choose an app here, then continue on its canonical domain.",
-    "title": "One gateway for every Tuturuuu app."
+    "oneSystem": "One connected system",
+    "subtitle": "Move from planning to publishing, finance to forms, and learning to AI without losing the context that keeps your team moving.",
+    "title": {
+      "line1": "Every app your work needs.",
+      "line2": "One beautifully connected system."
+    }
   },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",

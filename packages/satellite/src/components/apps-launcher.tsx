@@ -40,60 +40,6 @@ export function AppsLauncherDialog({
   const [openMode, setOpenMode] = useAppsLauncherOpenMode();
   const [query, setQuery] = useState('');
   const dialogContentRef = useRef<HTMLDivElement>(null);
-  const appNames: Record<string, string> = {
-    apps: t('app_names.apps'),
-    calendar: t('app_names.calendar'),
-    chat: t('app_names.chat'),
-    cms: t('app_names.cms'),
-    contacts: t('app_names.contacts'),
-    docs: t('app_names.docs'),
-    drive: t('app_names.drive'),
-    finance: t('app_names.finance'),
-    forms: t('app_names.forms'),
-    hive: t('app_names.hive'),
-    inventory: t('app_names.inventory'),
-    learn: t('app_names.learn'),
-    mail: t('app_names.mail'),
-    meet: t('app_names.meet'),
-    mind: t('app_names.mind'),
-    nova: t('app_names.nova'),
-    pay: t('app_names.pay'),
-    platform: t('app_names.platform'),
-    rewise: t('app_names.rewise'),
-    shortener: t('app_names.shortener'),
-    storefront: t('app_names.storefront'),
-    tasks: t('app_names.tasks'),
-    teach: t('app_names.teach'),
-    tools: t('app_names.tools'),
-    track: t('app_names.track'),
-  };
-  const appDescriptions: Record<string, string> = {
-    apps: t('app_descriptions.apps'),
-    calendar: t('app_descriptions.calendar'),
-    chat: t('app_descriptions.chat'),
-    cms: t('app_descriptions.cms'),
-    contacts: t('app_descriptions.contacts'),
-    docs: t('app_descriptions.docs'),
-    drive: t('app_descriptions.drive'),
-    finance: t('app_descriptions.finance'),
-    forms: t('app_descriptions.forms'),
-    hive: t('app_descriptions.hive'),
-    inventory: t('app_descriptions.inventory'),
-    learn: t('app_descriptions.learn'),
-    mail: t('app_descriptions.mail'),
-    meet: t('app_descriptions.meet'),
-    mind: t('app_descriptions.mind'),
-    nova: t('app_descriptions.nova'),
-    pay: t('app_descriptions.pay'),
-    platform: t('app_descriptions.platform'),
-    rewise: t('app_descriptions.rewise'),
-    shortener: t('app_descriptions.shortener'),
-    storefront: t('app_descriptions.storefront'),
-    tasks: t('app_descriptions.tasks'),
-    teach: t('app_descriptions.teach'),
-    tools: t('app_descriptions.tools'),
-    track: t('app_descriptions.track'),
-  };
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) setQuery('');
@@ -179,9 +125,11 @@ export function AppsLauncherDialog({
             apps={LAUNCHABLE_APPS}
             emptyDescription={t('no_apps_found_description')}
             emptyTitle={t('no_apps_found')}
-            getAppDescription={(app) => appDescriptions[app.slug] ?? app.title}
+            getAppDescription={(app) =>
+              t(`app_descriptions.${app.slug}` as never)
+            }
             getAppUrl={resolveUrl}
-            getAppTitle={(app) => appNames[app.slug] ?? app.title}
+            getAppTitle={(app) => t(`app_names.${app.slug}` as never)}
             getCategoryLabel={(category) => t(`app_categories.${category}`)}
             onOpen={() => handleOpenChange(false)}
             openMode={openMode}

@@ -1,0 +1,91 @@
+import {
+  BookOpenCheck,
+  BookText,
+  BrainCircuit,
+  CalendarDays,
+  ClipboardList,
+  Command,
+  CreditCard,
+  FilePenLine,
+  GraduationCap,
+  HardDrive,
+  Hexagon,
+  LayoutGrid,
+  Link2,
+  ListChecks,
+  type LucideIcon,
+  Mail,
+  MessageSquare,
+  Package,
+  Presentation,
+  QrCodeIcon,
+  Sparkles,
+  Store,
+  Timer,
+  Users,
+  Video,
+  Wallet,
+} from '@tuturuuu/icons';
+import type {
+  LaunchableAppCategory,
+  LaunchableAppSlug,
+} from '@tuturuuu/utils/launchable-apps';
+
+export const APP_ICONS: Partial<Record<LaunchableAppSlug, LucideIcon>> = {
+  apps: LayoutGrid,
+  calendar: CalendarDays,
+  chat: MessageSquare,
+  cms: FilePenLine,
+  contacts: Users,
+  docs: BookText,
+  drive: HardDrive,
+  finance: Wallet,
+  forms: ClipboardList,
+  hive: Hexagon,
+  inventory: Package,
+  learn: GraduationCap,
+  mail: Mail,
+  meet: Video,
+  mind: BrainCircuit,
+  nova: Sparkles,
+  pay: CreditCard,
+  platform: Command,
+  rewise: BookOpenCheck,
+  shortener: Link2,
+  storefront: Store,
+  tasks: ListChecks,
+  teach: Presentation,
+  tools: QrCodeIcon,
+  track: Timer,
+};
+
+export const CATEGORY_TONES: Record<
+  LaunchableAppCategory,
+  { dot: string; icon: string; surface: string }
+> = {
+  ai: {
+    dot: 'bg-dynamic-cyan',
+    icon: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan',
+    surface: 'hover:border-dynamic-cyan/30 hover:bg-dynamic-cyan/[0.035]',
+  },
+  learning: {
+    dot: 'bg-dynamic-orange',
+    icon: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
+    surface: 'hover:border-dynamic-orange/30 hover:bg-dynamic-orange/[0.035]',
+  },
+  miscellaneous: {
+    dot: 'bg-dynamic-red',
+    icon: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
+    surface: 'hover:border-dynamic-red/30 hover:bg-dynamic-red/[0.035]',
+  },
+  operations: {
+    dot: 'bg-dynamic-green',
+    icon: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
+    surface: 'hover:border-dynamic-green/30 hover:bg-dynamic-green/[0.035]',
+  },
+  productivity: {
+    dot: 'bg-dynamic-blue',
+    icon: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
+    surface: 'hover:border-dynamic-blue/30 hover:bg-dynamic-blue/[0.035]',
+  },
+};

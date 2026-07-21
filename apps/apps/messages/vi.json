@@ -1,104 +1,24 @@
 {
   "appsGateway": {
-    "apps": {
-      "apps": {
-        "description": "Gateway trung tâm cho các ứng dụng trình duyệt Tuturuuu."
-      },
-      "calendar": {
-        "description": "Lịch, lên lịch và lập kế hoạch trong workspace."
-      },
-      "chat": {
-        "description": "Nhắn tin workspace riêng tư, kênh và hội thoại AI."
-      },
-      "cms": {
-        "description": "Vận hành nội dung, schema, xem trước và xuất bản."
-      },
-      "docs": {
-        "description": "Tài liệu, hướng dẫn và tham chiếu nền tảng."
-      },
-      "drive": {
-        "description": "Tệp, thư mục, chia sẻ và vận hành lưu trữ trong workspace."
-      },
-      "external": {
-        "description": "Demo dành cho lập trình viên và bề mặt tích hợp cho các package Tuturuuu."
-      },
-      "finance": {
-        "description": "Ví, hóa đơn, giao dịch và báo cáo tài chính."
-      },
-      "hive": {
-        "description": "Thử nghiệm cộng tác AI và các bề mặt sản phẩm Hive."
-      },
-      "inventory": {
-        "description": "Sản phẩm, tồn kho, kho hàng và quy trình inventory."
-      },
-      "learn": {
-        "description": "Dashboard học viên, khóa học và trải nghiệm giáo dục."
-      },
-      "mail": {
-        "description": "Hộp thư nhóm cho tài khoản chính xác @tuturuuu.com."
-      },
-      "meet": {
-        "description": "Điều phối cuộc họp và thời gian rảnh chung."
-      },
-      "mind": {
-        "description": "Mindboard, đồ thị tri thức và lập kế hoạch có AI hỗ trợ."
-      },
-      "nova": {
-        "description": "Trải nghiệm sản phẩm AI-native và công cụ sáng tạo."
-      },
-      "platform": {
-        "description": "Nền tảng workspace chính của Tuturuuu và đăng nhập trung tâm."
-      },
-      "playground": {
-        "description": "Thử nghiệm nội bộ cho AI, SDK và các luồng nguyên mẫu."
-      },
-      "rewise": {
-        "description": "Quy trình học, ôn tập và củng cố kiến thức."
-      },
-      "shortener": {
-        "description": "Liên kết rút gọn, chuyển hướng và xác minh liên kết."
-      },
-      "tasks": {
-        "description": "Task board, dự án, chu kỳ, nhãn và lập kế hoạch công việc."
-      },
-      "teach": {
-        "description": "Dashboard giáo viên, công cụ giảng dạy và quy trình lớp học."
-      },
-      "tools": {
-        "description": "Tiện ích công khai miễn phí: tạo mã QR, tạo mật khẩu/ngẫu nhiên và hơn thế nữa."
-      },
-      "track": {
-        "description": "Theo dõi thời gian, thói quen, hoạt động và nhật ký công việc."
-      }
+    "appsCount": "{count} ứng dụng",
+    "catalog": {
+      "clearSearch": "Xóa nội dung tìm kiếm ứng dụng",
+      "description": "Tìm kiếm trong cùng danh mục trực tiếp được dùng bởi trình chọn ứng dụng, rồi tiếp tục trên tên miền Tuturuuu chính thức của từng ứng dụng.",
+      "eyebrow": "Khám phá bộ ứng dụng",
+      "title": "Đúng không gian cho mọi loại công việc."
     },
-    "categories": {
-      "ai": "AI",
-      "content": "Nội dung",
-      "core": "Cốt lõi",
-      "developer": "Lập trình",
-      "learning": "Học tập",
-      "miscellaneous": "Khác",
-      "operations": "Vận hành",
-      "productivity": "Năng suất"
-    },
-    "categoryCount": "{count, plural, one {# app} other {# app}}",
-    "categoryDescriptions": {
-      "ai": "Công cụ AI-first và bề mặt lập kế hoạch.",
-      "content": "Workspace biên tập và xuất bản.",
-      "core": "Nền tảng sản phẩm và workspace trung tâm.",
-      "developer": "Công cụ tích hợp, kiểm thử và demo package.",
-      "learning": "Ứng dụng giáo dục cho học viên và giáo viên.",
-      "miscellaneous": "Tài liệu, tiện ích và lối tắt công khai.",
-      "operations": "Vận hành kinh doanh và quản lý tài nguyên.",
-      "productivity": "Điều phối, lập kế hoạch và thực thi hằng ngày."
-    },
+    "categoriesCount": "{count} nhóm",
     "eyebrow": "Tuturuuu Apps",
     "metadata": {
-      "description": "Mở mọi ứng dụng web có route của Tuturuuu từ một gateway trung tâm.",
+      "description": "Khám phá và mở mọi ứng dụng Tuturuuu từ một danh mục luôn đồng bộ và kết nối liền mạch.",
       "title": "Tuturuuu Apps"
     },
-    "subtitle": "Điểm vào trung tâm cho các ứng dụng có route trong monorepo này. Chọn một app tại đây, rồi tiếp tục trên domain canonical của app đó.",
-    "title": "Một gateway cho mọi app Tuturuuu."
+    "oneSystem": "Một hệ thống kết nối",
+    "subtitle": "Chuyển từ lập kế hoạch sang xuất bản, từ tài chính sang biểu mẫu, và từ học tập sang AI mà không làm mất ngữ cảnh giúp đội ngũ luôn tiến về phía trước.",
+    "title": {
+      "line1": "Mọi ứng dụng công việc cần.",
+      "line2": "Một hệ thống kết nối liền mạch."
+    }
   },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",

@@ -1,80 +1,14 @@
-import {
-  ArrowUpRight,
-  BookOpenCheck,
-  BookText,
-  BrainCircuit,
-  CalendarDays,
-  ClipboardList,
-  Command,
-  CreditCard,
-  FilePenLine,
-  GraduationCap,
-  HardDrive,
-  Hexagon,
-  LayoutGrid,
-  Link2,
-  ListChecks,
-  type LucideIcon,
-  Mail,
-  MessageSquare,
-  Package,
-  Presentation,
-  QrCodeIcon,
-  Sparkles,
-  Store,
-  Timer,
-  Users,
-  Video,
-  Wallet,
-} from '@tuturuuu/icons';
+import { LayoutGrid, Sparkles } from '@tuturuuu/icons';
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
-import { cn } from '@tuturuuu/utils/format';
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-import { BASE_URL } from '@/constants/common';
 import {
-  APP_CATEGORIES,
-  type AppCategory,
-  GATEWAY_APPS,
-  type GatewayAppSlug,
-} from '@/lib/apps-registry';
-
-const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
-  apps: LayoutGrid,
-  calendar: CalendarDays,
-  chat: MessageSquare,
-  cms: FilePenLine,
-  contacts: Users,
-  docs: BookText,
-  drive: HardDrive,
-  finance: Wallet,
-  forms: ClipboardList,
-  hive: Hexagon,
-  inventory: Package,
-  learn: GraduationCap,
-  mail: Mail,
-  meet: Video,
-  mind: BrainCircuit,
-  nova: Sparkles,
-  pay: CreditCard,
-  platform: Command,
-  tools: QrCodeIcon,
-  rewise: BookOpenCheck,
-  shortener: Link2,
-  storefront: Store,
-  tasks: ListChecks,
-  teach: Presentation,
-  track: Timer,
-};
-
-const CATEGORY_TONES: Record<AppCategory, string> = {
-  ai: 'border-dynamic-cyan/30 bg-dynamic-cyan/10 text-dynamic-cyan',
-  learning: 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange',
-  miscellaneous: 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red',
-  operations: 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green',
-  productivity: 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue',
-};
+  LAUNCHABLE_APP_CATEGORIES,
+  LAUNCHABLE_APPS,
+} from '@tuturuuu/utils/launchable-apps';
+import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+import { AppsCatalog } from '@/components/apps-catalog';
+import { AppsGatewayAtmosphere } from '@/components/apps-gateway-atmosphere';
+import { BASE_URL } from '@/constants/common';
 
 interface Props {
   params: Promise<{
@@ -103,121 +37,97 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AppsGatewayPage() {
   const t = await getTranslations('appsGateway');
+  const launcherT = await getTranslations('command_launcher');
+  const categories = LAUNCHABLE_APP_CATEGORIES.map((category) => ({
+    description: launcherT(`app_category_descriptions.${category}` as never),
+    label: launcherT(`app_categories.${category}` as never),
+    slug: category,
+  }));
+  const apps = LAUNCHABLE_APPS.map((app) => ({
+    aliases: app.aliases,
+    category: app.category,
+    description: launcherT(`app_descriptions.${app.slug}` as never),
+    href: `/${app.slug}`,
+    slug: app.slug,
+    title: launcherT(`app_names.${app.slug}` as never),
+  }));
 
   return (
-    <main className="min-h-screen">
-      <section className="border-border/70 border-b">
-        <div className="mx-auto grid min-h-[36rem] w-full max-w-7xl content-end gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(20rem,0.55fr)] lg:px-8 lg:py-14">
-          <div className="max-w-3xl space-y-7">
-            <div className="inline-flex items-center gap-2 rounded-md border border-dynamic-blue/25 bg-dynamic-blue/10 px-3 py-1 text-dynamic-blue text-sm">
-              <LayoutGrid className="size-4" />
-              <span>{t('eyebrow')}</span>
-            </div>
-            <div className="space-y-5">
-              <h1 className="max-w-4xl text-balance font-semibold text-5xl leading-tight sm:text-6xl lg:text-7xl">
-                {t('title')}
-              </h1>
-              <p className="max-w-2xl text-lg text-muted-foreground leading-8">
-                {t('subtitle')}
-              </p>
-            </div>
-          </div>
-          <div className="grid content-end gap-3 text-sm">
-            {APP_CATEGORIES.map((category) => (
-              <a
-                className={cn(
-                  'group flex items-center justify-between rounded-lg border px-4 py-3 transition hover:bg-background',
-                  CATEGORY_TONES[category]
-                )}
-                href={`#${category}`}
-                key={category}
-              >
-                <span>{t(`categories.${category}`)}</span>
-                <span>
-                  {t('categoryCount', { count: countApps(category) })}
-                </span>
-              </a>
-            ))}
+    <main className="relative min-h-screen overflow-hidden bg-background">
+      <section className="relative overflow-hidden px-4 pt-24 pb-20 sm:px-6 sm:pt-32 sm:pb-24 lg:px-8 lg:pt-40">
+        <AppsGatewayAtmosphere />
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-foreground/10 bg-background/40 py-1.5 pr-4 pl-2.5 font-mono-ui text-[0.65rem] text-foreground/60 uppercase tracking-[0.2em] backdrop-blur-md">
+            <span className="relative flex size-4 items-center justify-center">
+              <span className="absolute inset-0 animate-ring-pulse rounded-full bg-dynamic-purple/40" />
+              <Sparkles className="relative size-3 text-dynamic-purple" />
+            </span>
+            {t('eyebrow')}
+          </span>
+
+          <h1 className="mt-8 max-w-5xl text-balance font-display font-extrabold text-5xl leading-[0.98] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[5.25rem]">
+            <span className="block">{t('title.line1')}</span>
+            <span className="block animate-text-sheen bg-[length:250%_auto] bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-clip-text text-transparent motion-reduce:animate-none">
+              {t('title.line2')}
+            </span>
+          </h1>
+
+          <p className="mt-7 max-w-2xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg">
+            {t('subtitle')}
+          </p>
+
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 rounded-full border border-foreground/10 bg-background/35 px-5 py-3 font-mono-ui text-[0.66rem] text-foreground/45 uppercase tracking-[0.16em] backdrop-blur-md">
+            <span className="flex items-center gap-2">
+              <LayoutGrid className="size-3.5 text-dynamic-blue" />
+              {t('appsCount', { count: apps.length })}
+            </span>
+            <span
+              aria-hidden
+              className="hidden h-3 w-px bg-foreground/15 sm:block"
+            />
+            <span>{t('categoriesCount', { count: categories.length })}</span>
+            <span
+              aria-hidden
+              className="hidden h-3 w-px bg-foreground/15 sm:block"
+            />
+            <span>{t('oneSystem')}</span>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6">
-          {APP_CATEGORIES.map((category) => {
-            const apps = GATEWAY_APPS.filter(
-              (app) => app.category === category
-            );
+      <section className="relative px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-32">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--foreground)_12%,transparent)_25%,color-mix(in_oklab,var(--foreground)_12%,transparent)_75%,transparent)]" />
+        <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-[30rem] w-[44rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--blue),transparent)] opacity-[0.06] blur-3xl dark:opacity-[0.1]" />
 
-            if (apps.length === 0) {
-              return null;
-            }
+        <div className="relative mx-auto w-full max-w-7xl">
+          <header className="mb-12 max-w-3xl sm:mb-16">
+            <div className="flex items-center gap-3 font-mono-ui text-[0.7rem] text-foreground/45 uppercase tracking-[0.22em]">
+              <span className="text-foreground/30 tabular-nums">01</span>
+              <span className="h-px w-8 bg-gradient-to-r from-foreground/25 to-transparent" />
+              <span>{t('catalog.eyebrow')}</span>
+            </div>
+            <h2 className="mt-6 max-w-3xl text-balance font-display font-semibold text-4xl tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
+              {t('catalog.title')}
+            </h2>
+            <p className="mt-5 max-w-2xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg">
+              {t('catalog.description')}
+            </p>
+          </header>
 
-            return (
-              <section
-                aria-labelledby={`${category}-heading`}
-                className="scroll-mt-8"
-                id={category}
-                key={category}
-              >
-                <div className="mb-3 flex items-center justify-between gap-4">
-                  <div>
-                    <h2
-                      className="font-semibold text-2xl"
-                      id={`${category}-heading`}
-                    >
-                      {t(`categories.${category}`)}
-                    </h2>
-                    <p className="text-muted-foreground text-sm">
-                      {t(`categoryDescriptions.${category}`)}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {apps.map((app) => {
-                    const Icon = APP_ICONS[app.slug];
-
-                    return (
-                      <Link
-                        className="group grid min-h-40 rounded-lg border border-border/80 bg-background p-4 transition hover:border-dynamic-blue/40 hover:bg-dynamic-blue/5"
-                        href={`/${app.slug}`}
-                        key={app.slug}
-                      >
-                        <span className="flex items-start justify-between gap-3">
-                          <span
-                            className={cn(
-                              'flex size-10 items-center justify-center rounded-md border',
-                              CATEGORY_TONES[app.category]
-                            )}
-                          >
-                            <Icon className="size-5" />
-                          </span>
-                          <ArrowUpRight className="size-5 text-muted-foreground transition group-hover:text-dynamic-blue" />
-                        </span>
-                        <span className="mt-6 grid gap-2">
-                          <span className="font-semibold text-xl">
-                            {app.title}
-                          </span>
-                          <span className="text-muted-foreground text-sm leading-6">
-                            {t(`apps.${app.slug}.description`)}
-                          </span>
-                        </span>
-                        <span className="mt-5 text-muted-foreground text-xs">
-                          {app.appRoot}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
+          <AppsCatalog
+            apps={apps}
+            categories={categories}
+            copy={{
+              allApps: launcherT('app_categories.all'),
+              clearSearch: t('catalog.clearSearch'),
+              emptyDescription: launcherT('no_apps_found_description'),
+              emptyTitle: launcherT('no_apps_found'),
+              openApp: launcherT('open_app'),
+              searchPlaceholder: launcherT('search_apps'),
+            }}
+          />
         </div>
       </section>
     </main>
   );
-}
-
-function countApps(category: AppCategory) {
-  return GATEWAY_APPS.filter((app) => app.category === category).length;
 }

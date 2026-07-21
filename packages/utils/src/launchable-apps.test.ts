@@ -25,7 +25,13 @@ const teamWorkspace: LaunchableWorkspace = {
 describe('launchable apps', () => {
   it('resolves apps by slug, title, and aliases', () => {
     expect(getLaunchableApp('calendar')?.title).toBe('Calendar');
+    expect(getLaunchableApp('forms')).toMatchObject({
+      appRoot: 'apps/forms',
+      productionUrl: 'https://forms.tuturuuu.com',
+      title: 'Forms',
+    });
     expect(getLaunchableAppByTitle('Tuturuuu')?.slug).toBe('platform');
+    expect(getLaunchableAppByTitle('questionnaires')?.slug).toBe('forms');
     expect(getLaunchableAppByTitle('apps gateway')?.slug).toBe('apps');
   });
 
