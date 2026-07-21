@@ -4,13 +4,13 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, TextButton, TextField;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// A read-only bottom sheet that shows the full details of a
 /// [TimeTrackingSession].

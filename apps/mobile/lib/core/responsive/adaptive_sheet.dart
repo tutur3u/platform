@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 
 /// Shows a bottom sheet on compact screens and a centered dialog on
 /// medium / expanded screens.

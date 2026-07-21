@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracking_category_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SessionTile extends StatelessWidget {
   const SessionTile({

@@ -13,6 +13,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -31,7 +32,6 @@ import 'package:mobile/widgets/fab/fab_action.dart';
 import 'package:mobile/widgets/fab/speed_dial_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/platform_icon_picker.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TransactionCategoriesPage extends StatelessWidget {
   const TransactionCategoriesPage({super.key});

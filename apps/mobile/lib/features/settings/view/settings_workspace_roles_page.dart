@@ -6,6 +6,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/responsive/responsive_wrapper.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/workspace_management.dart';
 import 'package:mobile/data/repositories/workspace_management_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -18,7 +19,6 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class SettingsWorkspaceRolesPage extends StatelessWidget {
   const SettingsWorkspaceRolesPage({super.key});

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart'
     hide AlertDialog, FilledButton, OutlinedButton, TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class RequestReasonBox extends StatelessWidget {
   const RequestReasonBox({

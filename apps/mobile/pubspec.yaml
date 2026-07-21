@@ -60,7 +60,7 @@ dependencies:
   permission_handler: ^12.0.1
   qr_flutter: ^4.1.0
   record: ^7.0.0
-  shadcn_flutter: 0.0.52
+  shadcn_flutter: ^0.0.53
   share_plus: ^12.0.2
   shared_preferences: ^2.5.5
   sign_in_with_apple: ^8.0.0

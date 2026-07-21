@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/mfa_approval/data/mfa_approval_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class MobileMfaApprovalListener extends StatefulWidget {
   const MobileMfaApprovalListener({

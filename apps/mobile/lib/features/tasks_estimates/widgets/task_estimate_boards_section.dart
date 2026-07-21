@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_estimate_board.dart';
 import 'package:mobile/features/tasks/widgets/task_surface.dart';
 import 'package:mobile/features/tasks_estimates/cubit/task_estimates_cubit.dart';
@@ -9,7 +10,6 @@ import 'package:mobile/features/tasks_estimates/utils/estimation_type_meta.dart'
 import 'package:mobile/features/tasks_estimates/widgets/task_estimate_dialog.dart';
 import 'package:mobile/features/tasks_estimates/widgets/task_estimates_feedback.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskEstimateBoardsSection extends StatelessWidget {
   const TaskEstimateBoardsSection({

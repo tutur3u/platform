@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/task_initiative_summary.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
@@ -11,7 +12,6 @@ import 'package:mobile/features/task_portfolio/widgets/task_portfolio_dialogs.da
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TaskPortfolioActions {
   const TaskPortfolioActions({

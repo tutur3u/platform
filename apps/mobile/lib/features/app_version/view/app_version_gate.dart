@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide FilledButton, Scaffold, TextButton;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/cubit/app_version_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:url_launcher/url_launcher.dart';
 
 class AppVersionGate extends StatefulWidget {
