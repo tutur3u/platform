@@ -66,8 +66,12 @@ vi.mock('../common', () => ({
     key: 'test-key',
   }),
   getSupabaseCookieOptions: (url: string, requestUrl?: string) => {
-    const isProductionTuturuuuHost = requestUrl?.includes('tuturuuu.com');
-    const isLocalTuturuuuHost = requestUrl?.includes('tuturuuu.localhost');
+    const hostname = requestUrl ? new URL(requestUrl).hostname : '';
+    const isProductionTuturuuuHost =
+      hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com');
+    const isLocalTuturuuuHost =
+      hostname === 'tuturuuu.localhost' ||
+      hostname.endsWith('.tuturuuu.localhost');
 
     return {
       ...(isProductionTuturuuuHost ? { domain: '.tuturuuu.com' } : {}),

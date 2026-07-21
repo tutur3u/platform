@@ -253,7 +253,12 @@ The `apps/web` → `apps/backend` (Rust) + `apps/web` → `apps/tanstack-web` sw
 is in progress. Do NOT add debt while it is pending — treat the three apps as one
 system on every change:
 
-- Adding/changing an `apps/web` API route: if `apps/backend` already serves that
+- `apps/backend` is a future migration target only. It is not deployed and does
+  not serve current production traffic; `apps/web` remains the live API source
+  of truth. A Rust route marked migrated means source parity is ready, not that
+  production requests reach it.
+
+- Adding/changing an `apps/web` API route: if `apps/backend` already implements that
   path, update the Rust handler in the same change (faithful status/body/cache;
   GET first, `None` for un-ported methods). If not, register/refresh it in
   `apps/tanstack-web/migration/route-overrides.json` and run

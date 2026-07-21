@@ -387,7 +387,7 @@ function parseDockerStatsLine(line) {
     name = '',
   ] = String(line).split('\t');
   const cpuPercent = Number.parseFloat(
-    String(cpuRaw).replace('%', '').replace(/,/g, '.').trim()
+    String(cpuRaw).replaceAll('%', '').replaceAll(',', '.').trim()
   );
   const [memoryRaw = ''] = String(memoryUsage).split('/');
   const { rxBytes, txBytes } = parseDockerIoPair(netIo);

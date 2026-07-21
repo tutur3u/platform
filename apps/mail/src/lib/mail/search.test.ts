@@ -24,6 +24,12 @@ describe('parseMailSearch', () => {
       parseMailSearch('before:tomorrow size:large "plain words"').freeText
     ).toEqual(['before:tomorrow', 'size:large', 'plain words']);
   });
+
+  it('tokenizes long unstructured input without regex backtracking', () => {
+    const value = 'a'.repeat(100_000);
+
+    expect(parseMailSearch(value).freeText).toEqual([value]);
+  });
 });
 
 describe('escapeMailLike', () => {

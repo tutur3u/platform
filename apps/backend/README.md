@@ -4,6 +4,11 @@ This app is the Rust backend service that API/route logic is being migrated into
 from `apps/web`, handler by handler. The HTTP core is shared by the native Docker
 runtime and the Cloudflare Workers entrypoint in `wrangler.jsonc`.
 
+> **Current status:** this service is a future migration target. It is not
+> deployed and does not receive production traffic. `apps/web` remains the live
+> API runtime; route inventory marked `migrated` records implemented source
+> parity only, not a completed traffic cutover.
+
 ## Migration progress
 
 The `apps/web` → `apps/backend` move is **GET-first**: a migrated handler matches
@@ -11,10 +16,11 @@ the exact legacy mount path and returns `None` (never `405`) for any method it
 has not ported, so un-ported methods fall through to the still-live Next.js
 route. As of the latest wave, ~240 GET handlers plus the first Supabase-backed
 mutations (managed-cron whitelist `POST`/`PUT`/`DELETE`, cron-job `DELETE`) are
-served by Rust; mutations that need npm-only deps (e.g. `cron-parser`) or
-host-coupled secrets stay on Next.js for now. The checked route inventory and
-per-route ownership live in `apps/tanstack-web/migration/route-manifest.json`
-and the `/api/migration/*` endpoints below; the runtime dual-coverage probe (see
+implemented in Rust source; mutations that need npm-only deps (e.g.
+`cron-parser`) or host-coupled secrets stay on Next.js for now. The checked
+route inventory and per-route ownership live in
+`apps/tanstack-web/migration/route-manifest.json` and the `/api/migration/*`
+endpoints below; the runtime dual-coverage probe (see
 `AGENTS.md`) is the ground truth for what is actually migrated.
 
 ## Source layout
@@ -624,7 +630,8 @@ cargo check --locked --target wasm32-unknown-unknown --no-default-features --fea
 worker-build --release -- --no-default-features --features worker
 ```
 
-Deploy the backend Worker for preview traffic:
+The following future preview procedure is not evidence of an existing
+deployment. Run it only for an explicitly approved migration preview:
 
 ```sh
 rustup target add wasm32-unknown-unknown

@@ -51,14 +51,17 @@ export function YoutubeRow({
 }) {
   const t = useTranslations('teachModules.lessonEditor');
   const videoId = getYoutubeVideoId(url);
+  const safeYoutubeUrl = videoId
+    ? `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`
+    : null;
 
   return (
     <div className="group/yt flex items-center gap-2 border-2 border-border bg-card px-3 py-2 shadow-[2px_2px_0_var(--border)]">
       <Youtube className="h-4 w-4 shrink-0 text-dynamic-red" />
-      {videoId ? (
+      {safeYoutubeUrl ? (
         <a
           className="min-w-0 flex-1 truncate text-sm hover:underline"
-          href={url}
+          href={safeYoutubeUrl}
           rel="noopener noreferrer"
           target="_blank"
         >

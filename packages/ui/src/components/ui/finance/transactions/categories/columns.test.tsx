@@ -68,12 +68,12 @@ describe('transactionCategoryColumns', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks the total amount column when finance numbers are globally hidden', () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=true;path=/';
+    document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     render(<CategoryAmountCell amount={123} />);
 
@@ -83,7 +83,7 @@ describe('transactionCategoryColumns', () => {
 
   it('shows the total amount column when finance numbers are globally visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     render(<CategoryAmountCell amount={123} />);
 
@@ -93,7 +93,7 @@ describe('transactionCategoryColumns', () => {
 
   it('masks the transaction count column when finance numbers are globally hidden', () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=true;path=/';
+    document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     render(<CategoryCountCell count={1234} />);
 
@@ -103,7 +103,7 @@ describe('transactionCategoryColumns', () => {
 
   it('shows the transaction count column when finance numbers are globally visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     render(<CategoryCountCell count={1234} />);
 

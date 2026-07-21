@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import TaskDetailPage from '../task-detail-page';
+import TaskDetailPage, { removeTaskQuery } from '../task-detail-page';
 
 const mockBack = vi.fn();
 const mockPush = vi.fn();
@@ -98,6 +98,14 @@ describe('TaskDetailPage', () => {
     vi.clearAllMocks();
     window.history.pushState({}, '', '/workspace-1/tasks/boards/board-1');
     window.history.pushState({}, '', '/workspace-1/tasks/task-1');
+  });
+
+  it('removes a long task query without regex backtracking', () => {
+    expect(
+      removeTaskQuery(
+        `/workspace-1/tasks/boards/board-1?task=${'?task='.repeat(20_000)}`
+      )
+    ).toBe('/workspace-1/tasks/boards/board-1');
   });
 
   it('renders the shared task dialog surface and records the visit snapshot', async () => {

@@ -96,12 +96,12 @@ describe('WalletForm', () => {
     mocks.updateWallet.mockResolvedValue({ message: 'success' });
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks the disabled balance field when finance numbers are globally hidden', () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=true;path=/';
+    document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     renderWalletForm();
 
@@ -112,7 +112,7 @@ describe('WalletForm', () => {
 
   it('shows the disabled balance field when finance numbers are globally visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     renderWalletForm();
 

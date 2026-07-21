@@ -268,11 +268,6 @@ function parseArgs(argv = process.argv.slice(2), env = process.env) {
       continue;
     }
 
-    if (arg === '--insecure') {
-      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-      continue;
-    }
-
     if (arg === '--help' || arg === '-h') {
       args.help = true;
       continue;
@@ -836,7 +831,6 @@ Options:
   --frontend-threshold <ratio>
   --api-threshold <ratio>
   --require-all
-  --insecure
 `);
 }
 

@@ -19,7 +19,7 @@ vi.mock('@/lib/post-email-queue', () => ({
   ) => cancelPendingPostEmailsForRecipientEmailMock(...args),
 }));
 
-import { POST } from './route';
+import { GET, POST } from './route';
 
 describe('email unsubscribe route', () => {
   beforeEach(() => {
@@ -87,5 +87,23 @@ describe('email unsubscribe route', () => {
     expect(response.status).toBe(400);
     expect(emailBlacklistUpsertMock).not.toHaveBeenCalled();
     expect(cancelPendingPostEmailsForRecipientEmailMock).not.toHaveBeenCalled();
+  });
+
+  it('escapes token claims before rendering the confirmation page', async () => {
+    const token = createEmailUnsubscribeToken(
+      'attacker@example.com</span><script>alert(1)</script>'
+    );
+    const request = new NextRequest(
+      `http://localhost/api/email/unsubscribe?token=${encodeURIComponent(token)}`
+    );
+
+    const response = await GET(request);
+    const html = await response.text();
+
+    expect(response.headers.get('content-security-policy')).toContain(
+      "default-src 'none'"
+    );
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
   });
 });

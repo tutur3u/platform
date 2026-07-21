@@ -26,13 +26,14 @@ vi.mock('../common', () => ({
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
   }),
   getSupabaseCookieOptions: (url: string, requestUrl?: string | URL | null) => {
-    const requestUrlText = requestUrl?.toString() ?? '';
+    const hostname = requestUrl ? new URL(requestUrl).hostname : '';
 
     return {
-      ...(requestUrlText.includes('tuturuuu.localhost')
+      ...(hostname === 'tuturuuu.localhost' ||
+      hostname.endsWith('.tuturuuu.localhost')
         ? { domain: '.tuturuuu.localhost', secure: false }
         : {}),
-      ...(requestUrlText.includes('tuturuuu.com')
+      ...(hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com')
         ? { domain: '.tuturuuu.com', secure: true }
         : {}),
       name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,

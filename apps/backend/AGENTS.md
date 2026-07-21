@@ -3,6 +3,14 @@
 Nearest-scope operating rules for the Rust backend. Read this before editing
 `apps/backend`; root `AGENTS.md` still applies on top.
 
+## Deployment Status
+
+`apps/backend` is a future migration target only. It is not currently deployed
+and does not serve production traffic; `apps/web` remains the live API runtime.
+Treat dispatcher coverage and `migrated` manifest entries as source-readiness
+signals, not evidence of live routing. Do not claim a Rust route is serving
+users without an explicitly approved and independently verified cutover.
+
 ## Incremental refactor as you migrate (REQUIRED)
 
 The backend is migrated handler-by-handler by many agents in parallel. To stop

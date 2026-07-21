@@ -63,6 +63,8 @@ const EMAIL_UNSUBSCRIBE_PATH: &str = "/api/email/unsubscribe";
 const TOKEN_TYPE: &str = "global_email_unsubscribe";
 const TOKEN_VERSION: u64 = 1;
 const HTML_CONTENT_TYPE: &str = "text/html; charset=utf-8";
+const HTML_CONTENT_SECURITY_POLICY: &str =
+    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'";
 
 /// Deserialized claims embedded in the unsubscribe token.
 #[derive(Deserialize)]
@@ -106,7 +108,7 @@ fn email_unsubscribe_get_response(
     let token = extract_token_from_url(request.url);
 
     match verify_token(config, token.as_deref()) {
-        Err(_) => text_response(
+        Err(_) => html_response(
             400,
             render_page(RenderParams {
                 title: "Invalid unsubscribe link",
@@ -114,9 +116,8 @@ fn email_unsubscribe_get_response(
                 email: None,
                 token: None,
             }),
-            HTML_CONTENT_TYPE,
         ),
-        Ok(email) => text_response(
+        Ok(email) => html_response(
             200,
             render_page(RenderParams {
                 title: "Unsubscribe from Tuturuuu emails",
@@ -124,9 +125,20 @@ fn email_unsubscribe_get_response(
                 email: Some(&email),
                 token: token.as_deref(),
             }),
-            HTML_CONTENT_TYPE,
         ),
     }
+}
+
+fn html_response(status: u16, body: String) -> BackendResponse {
+    let mut response = text_response(status, body, HTML_CONTENT_TYPE);
+    response.headers.push((
+        "content-security-policy",
+        HTML_CONTENT_SECURITY_POLICY.to_owned(),
+    ));
+    response
+        .headers
+        .push(("x-content-type-options", "nosniff".to_owned()));
+    response
 }
 
 // ---------------------------------------------------------------------------
@@ -240,8 +252,8 @@ struct RenderParams<'a> {
 }
 
 fn render_page(params: RenderParams<'_>) -> String {
-    let escaped_email = params.email.map(escape_html_text).unwrap_or_default();
-    let escaped_token = params.token.map(escape_html_attr).unwrap_or_default();
+    let escaped_email = params.email.map(escape_html).unwrap_or_default();
+    let escaped_token = params.token.map(escape_html).unwrap_or_default();
 
     let email_span = if escaped_email.is_empty() {
         String::new()
@@ -257,8 +269,8 @@ fn render_page(params: RenderParams<'_>) -> String {
         )
     };
 
-    let title = params.title;
-    let message = params.message;
+    let title = escape_html(params.title);
+    let message = escape_html(params.message);
 
     format!(
         r#"<!doctype html>
@@ -290,14 +302,13 @@ fn render_page(params: RenderParams<'_>) -> String {
     )
 }
 
-/// Escapes `&` and `<` for use inside HTML text content.
-fn escape_html_text(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;")
-}
-
-/// Escapes `&` and `"` for use inside an HTML attribute value.
-fn escape_html_attr(s: &str) -> String {
-    s.replace('&', "&amp;").replace('"', "&quot;")
+/// Escapes all HTML metacharacters for quoted attributes and text nodes.
+fn escape_html(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 // ---------------------------------------------------------------------------
@@ -334,10 +345,10 @@ mod tests {
 
     #[test]
     fn html_escaping_rules() {
-        // Text content: escape & and < only.
-        assert_eq!(escape_html_text("a&b<c\"d"), "a&amp;b&lt;c\"d");
-        // Attribute value: escape & and " only.
-        assert_eq!(escape_html_attr("a&b\"c<d"), "a&amp;b&quot;c<d");
+        assert_eq!(
+            escape_html("a&b<c>d\"e'f"),
+            "a&amp;b&lt;c&gt;d&quot;e&#39;f"
+        );
     }
 
     // -- render_page ---------------------------------------------------------
@@ -366,6 +377,37 @@ mod tests {
         assert!(html.contains("<form"));
         assert!(html.contains("a&amp;b&lt;c@example.com"));
         assert!(html.contains("value=\"tok&amp;&quot;sig\""));
+    }
+
+    #[test]
+    fn render_page_escapes_all_dynamic_fields() {
+        let html = render_page(RenderParams {
+            title: "</title><script>alert(1)</script>",
+            message: "<img src=x onerror=alert(1)>",
+            email: Some("attacker@example.com<script>"),
+            token: Some("\"><script>alert(1)</script>"),
+        });
+
+        assert!(!html.contains("<script>"));
+        assert!(!html.contains("<img"));
+        assert!(html.contains("&lt;script&gt;"));
+        assert!(html.contains("&quot;&gt;&lt;script&gt;"));
+    }
+
+    #[test]
+    fn html_response_sets_browser_security_headers() {
+        let response = html_response(200, "safe".to_owned());
+
+        assert_eq!(response.content_type, Some(HTML_CONTENT_TYPE));
+        assert!(response.headers.contains(&(
+            "content-security-policy",
+            HTML_CONTENT_SECURITY_POLICY.to_owned()
+        )));
+        assert!(
+            response
+                .headers
+                .contains(&("x-content-type-options", "nosniff".to_owned()))
+        );
     }
 
     // -- HMAC signature round-trip -------------------------------------------

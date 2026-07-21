@@ -99,7 +99,7 @@ describe('Chat SDK adapter registry', () => {
   it('points at resolvable adapter packages', () => {
     for (const adapter of CHAT_SDK_ADAPTERS) {
       expect(import.meta.resolve(adapter.packageName)).toContain(
-        adapter.packageName.replace('/', '+').replace('@', '@')
+        adapter.packageName.replace('/', '+')
       );
     }
   });

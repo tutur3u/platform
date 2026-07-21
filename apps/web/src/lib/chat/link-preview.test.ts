@@ -117,4 +117,24 @@ describe('chat link preview', () => {
       url: 'https://example.com/article',
     });
   });
+
+  it('decodes exactly one layer of HTML entities', async () => {
+    const preview = await fetchChatLinkPreviewWithDependencies(
+      'https://example.com/article',
+      {
+        createDispatcher: (record) => dispatcherForAddress(record.address),
+        fetchImpl: vi.fn(
+          async () =>
+            new Response('<html><title>&amp;lt;safe&amp;gt;</title></html>', {
+              headers: { 'content-type': 'text/html; charset=utf-8' },
+            })
+        ),
+        resolveHost: vi.fn(async () => [
+          { address: '93.184.216.34', family: 4 },
+        ]),
+      }
+    );
+
+    expect(preview.title).toBe('&lt;safe&gt;');
+  });
 });

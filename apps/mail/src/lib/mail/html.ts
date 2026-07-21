@@ -1,9 +1,21 @@
-const UNSAFE_TAG_PATTERN =
-  /<\/?(?:script|iframe|object|embed|base|form|input|button|textarea|select|option|link|meta|style)[^>]*>/giu;
-const EVENT_HANDLER_PATTERN =
-  /\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/giu;
-const JAVASCRIPT_URL_PATTERN =
-  /\s+(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/giu;
+import DOMPurify from 'isomorphic-dompurify';
+
+const FORBIDDEN_MAIL_TAGS = [
+  'base',
+  'button',
+  'embed',
+  'form',
+  'iframe',
+  'input',
+  'link',
+  'meta',
+  'object',
+  'option',
+  'script',
+  'select',
+  'style',
+  'textarea',
+];
 
 export function escapeHtml(value: string) {
   return value
@@ -32,10 +44,10 @@ export function stripHtml(value: string) {
 }
 
 export function sanitizeMailHtml(value: string) {
-  return value
-    .replace(UNSAFE_TAG_PATTERN, '')
-    .replace(EVENT_HANDLER_PATTERN, '')
-    .replace(JAVASCRIPT_URL_PATTERN, '');
+  return DOMPurify.sanitize(value, {
+    FORBID_TAGS: FORBIDDEN_MAIL_TAGS,
+    USE_PROFILES: { html: true },
+  });
 }
 
 export function createSnippet({

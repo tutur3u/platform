@@ -150,6 +150,23 @@ function toNullablePositiveInteger(value: unknown, fallback: number | null) {
   return fallback;
 }
 
+function isValidEmailAddress(value: string) {
+  const at = value.indexOf('@');
+  const lastAt = value.lastIndexOf('@');
+  const lastDot = value.lastIndexOf('.');
+  const hasWhitespace = Array.from(value).some(
+    (character) => character.trim() === ''
+  );
+
+  return (
+    !hasWhitespace &&
+    at > 0 &&
+    at === lastAt &&
+    lastDot > at + 1 &&
+    lastDot < value.length - 1
+  );
+}
+
 function normalizeEmailList(value: unknown) {
   const entries = Array.isArray(value)
     ? value
@@ -165,11 +182,7 @@ function normalizeEmailList(value: unknown) {
     }
 
     const email = entry.trim().toLowerCase();
-    if (
-      !email ||
-      seen.has(email) ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)
-    ) {
+    if (!email || seen.has(email) || !isValidEmailAddress(email)) {
       continue;
     }
 

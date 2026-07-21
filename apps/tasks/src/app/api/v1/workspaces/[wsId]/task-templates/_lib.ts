@@ -12,6 +12,7 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { escapeLikePattern } from '@tuturuuu/utils/search-helper';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -401,7 +402,7 @@ export async function listTaskTemplates(
   }
 
   if (q) {
-    const escaped = q.replace(/[%_]/g, '\\$&');
+    const escaped = escapeLikePattern(q);
     query = query.or(
       `name.ilike.%${escaped}%,task_name.ilike.%${escaped}%,slug.ilike.%${escaped}%`
     );

@@ -26,4 +26,13 @@ describe('Mind route helpers', () => {
       })
     ).toBe('/personal/mind/boards/board-1');
   });
+
+  it('trims arbitrarily long trailing slash runs without regex backtracking', () => {
+    expect(
+      buildMindWorkspaceHref({
+        mindPrefix: `/mind${'/'.repeat(20_000)}`,
+        workspaceSlug: 'personal',
+      })
+    ).toBe('/personal/mind');
+  });
 });

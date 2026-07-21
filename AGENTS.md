@@ -103,6 +103,9 @@ surface you are changing:
   `apps/tanstack-web` switch is in progress — do not add debt while it is
   pending): treat `apps/web`, `apps/backend`, and `apps/tanstack-web` as one
   system, not three independent apps.
+  `apps/backend` is a future migration target only: it is not deployed and does
+  not serve current production traffic. `apps/web` remains the live API source
+  of truth until an explicitly approved cutover.
   - When you ADD or CHANGE an `apps/web` API route (any method), also keep the
     Rust port in step: if `apps/backend` already owns that path, update the Rust
     handler in the same change; if it does not yet, register/refresh the route in
@@ -118,7 +121,8 @@ surface you are changing:
     ready, return `None` (not `405`) for un-ported methods so they fall through
     to the still-live Next.js route, and verify with the runtime coverage probe
     documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
-    cache headers faithful to the legacy route.
+    cache headers faithful to the legacy route. A Rust handler being marked
+    migrated means source parity is implemented, not that traffic has moved.
 - Keep every source file well-maintained and under a hard ceiling of 700 LOC
   whenever possible. Treat ~400 LOC (and ~200 LOC for components/widgets) as the
   point to start splitting when you create or significantly edit a file; never
@@ -148,11 +152,12 @@ surface you are changing:
 - `apps/web`: main Next.js App Router platform app on port `7803`. Current source
   of truth; backend (API/route) logic is being migrated OUT of it into
   `apps/backend`, and pages/frontend into `apps/tanstack-web`.
-- `apps/backend`: Rust worker (native Docker + Cloudflare Workers) that backend
-  API routes are being migrated INTO, handler-by-handler. See its nested
-  `AGENTS.md`.
+- `apps/backend`: future Rust worker target (native Docker + Cloudflare Workers)
+  that backend API routes are being prepared for handler-by-handler. It is not
+  currently deployed or used for production traffic. See its nested `AGENTS.md`.
 - `apps/tanstack-web`: TanStack Start frontend migration target that consumes the
-  Rust backend through Start server functions / `packages/internal-api` facades.
+  future Rust backend through Start server functions / `packages/internal-api`
+  facades after cutover.
 - `apps/contacts`: `contacts.tuturuuu.com` satellite (port `7827`) that now owns
   the entire `workspace_users` CRM surface (`/[wsId]/users/*` + `workforce`).
   `apps/web` no longer has a users section. Shared logic lives in

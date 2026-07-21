@@ -183,10 +183,10 @@ export async function createFreeSubscription(
     return { status: 'created', subscription };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(
-      `Failed to create free subscription for workspace ${wsId}:`,
-      errorMessage
-    );
+    console.error('Failed to create free subscription', {
+      error: errorMessage,
+      wsId,
+    });
     return { status: 'error', message: errorMessage };
   }
 }

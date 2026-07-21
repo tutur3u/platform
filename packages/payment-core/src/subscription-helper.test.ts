@@ -626,8 +626,8 @@ describe('subscription-helper', () => {
 
       expect(result).toEqual({ status: 'error', message: 'Polar API error' });
       expect(mockConsoleError).toHaveBeenCalledWith(
-        'Failed to create free subscription for workspace ws-123:',
-        'Polar API error'
+        'Failed to create free subscription',
+        { error: 'Polar API error', wsId: 'ws-123' }
       );
     });
 
@@ -687,8 +687,8 @@ describe('subscription-helper', () => {
 
       expect(result).toEqual({ status: 'error', message: 'String error' });
       expect(mockConsoleError).toHaveBeenCalledWith(
-        'Failed to create free subscription for workspace ws-123:',
-        'String error'
+        'Failed to create free subscription',
+        { error: 'String error', wsId: 'ws-123' }
       );
     });
   });

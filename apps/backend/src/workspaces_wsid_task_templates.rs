@@ -329,12 +329,12 @@ fn parse_list_query(url: Option<&str>) -> ListQuery {
     }
 }
 
-/// Mirrors `q.replace(/[%_]/g, '\\$&')`: backslash-escapes the SQL `LIKE`
-/// wildcards so the term is matched literally inside the `ilike` patterns.
+/// Mirrors `escapeLikePattern`: backslash-escapes the SQL `LIKE` escape
+/// character and wildcards so the term is matched literally.
 fn escape_ilike_term(term: &str) -> String {
     let mut escaped = String::with_capacity(term.len());
     for character in term.chars() {
-        if character == '%' || character == '_' {
+        if character == '\\' || character == '%' || character == '_' {
             escaped.push('\\');
         }
         escaped.push(character);
@@ -646,7 +646,7 @@ mod tests {
 
     #[test]
     fn escape_ilike_term_escapes_wildcards() {
-        assert_eq!(escape_ilike_term("a%b_c"), "a\\%b\\_c");
+        assert_eq!(escape_ilike_term("a%b_c\\d"), "a\\%b\\_c\\\\d");
         assert_eq!(escape_ilike_term("plain"), "plain");
     }
 

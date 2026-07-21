@@ -43,12 +43,12 @@ describe('InvoiceTotalsChart', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks invoice count totals when finance numbers are hidden', () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=true;path=/';
+    document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     renderInvoiceTotalsChart();
 
@@ -58,7 +58,7 @@ describe('InvoiceTotalsChart', () => {
 
   it('shows invoice count totals when finance numbers are visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     renderInvoiceTotalsChart();
 

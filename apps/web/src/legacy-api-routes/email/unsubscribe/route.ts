@@ -17,10 +17,22 @@ function htmlResponse(body: string, init?: ResponseInit) {
   return new NextResponse(body, {
     ...init,
     headers: {
+      'Content-Security-Policy':
+        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'",
       'Content-Type': 'text/html; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
       ...init?.headers,
     },
   });
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function renderPage({
@@ -34,19 +46,17 @@ function renderPage({
   token?: string;
   title: string;
 }) {
-  const escapedEmail = email
-    ? email.replaceAll('&', '&amp;').replaceAll('<', '&lt;')
-    : '';
-  const escapedToken = token
-    ? token.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
-    : '';
+  const escapedEmail = email ? escapeHtml(email) : '';
+  const escapedMessage = escapeHtml(message);
+  const escapedTitle = escapeHtml(title);
+  const escapedToken = token ? escapeHtml(token) : '';
 
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
+    <title>${escapedTitle}</title>
     <style>
       body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f8fafc; color: #0f172a; }
       main { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
@@ -60,8 +70,8 @@ function renderPage({
   <body>
     <main>
       <section>
-        <h1>${title}</h1>
-        <p>${message}${escapedEmail ? ` <span class="email">${escapedEmail}</span>` : ''}</p>
+        <h1>${escapedTitle}</h1>
+        <p>${escapedMessage}${escapedEmail ? ` <span class="email">${escapedEmail}</span>` : ''}</p>
         ${
           escapedToken
             ? `<form method="post"><input type="hidden" name="token" value="${escapedToken}" /><button type="submit">Unsubscribe</button></form>`

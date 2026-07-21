@@ -10,7 +10,7 @@ describe('FinanceNumbersVisibilityToggle', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('persists visibility state and notifies other finance widgets', () => {

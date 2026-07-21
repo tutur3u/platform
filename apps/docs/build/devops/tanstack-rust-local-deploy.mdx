@@ -1,7 +1,7 @@
 ---
 title: "TanStack/Rust Local And Deployment"
 description: "Run apps/backend and apps/tanstack-web locally, deploy to Cloudflare Workers, validate the Vercel build, and self-host with Docker plus Cloudflare Tunnel."
-updatedAt: "2026-07-04"
+updatedAt: "2026-07-21"
 ---
 
 This is the operator runbook for the migration stack:
@@ -11,6 +11,13 @@ This is the operator runbook for the migration stack:
 - `apps/tanstack-web`: TanStack Start frontend, local dev on port `7824`,
   Docker sidecar, Cloudflare Worker `tuturuuu-tanstack-web`, and opt-in Vercel
   build validation.
+
+<Warning>
+  This runbook describes future deployment capability. `apps/backend` is not
+  currently deployed or used by production, and `apps/web` remains the live API
+  runtime. Do not run the deployment sections or infer a cutover without
+  explicit migration approval.
+</Warning>
 
 Keep the legacy `apps/web` runtime available until the cutover gates pass. This
 page explains how to start, validate, and deploy the new stack; route ownership

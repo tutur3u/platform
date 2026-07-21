@@ -342,12 +342,18 @@ function cleanText(value: string | null, maxLength: number) {
 }
 
 function decodeHtmlEntities(value: string) {
-  return value
-    .replace(/&amp;/giu, '&')
-    .replace(/&quot;/giu, '"')
-    .replace(/&#39;/giu, "'")
-    .replace(/&lt;/giu, '<')
-    .replace(/&gt;/giu, '>');
+  const entities: Record<string, string> = {
+    '#39': "'",
+    amp: '&',
+    gt: '>',
+    lt: '<',
+    quot: '"',
+  };
+
+  return value.replace(/&(?:amp|quot|#39|lt|gt);/giu, (entity) => {
+    const name = entity.slice(1, -1).toLowerCase();
+    return entities[name] ?? entity;
+  });
 }
 
 function escapeRegExp(value: string) {

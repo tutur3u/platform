@@ -31,4 +31,17 @@ describe('theme adapters', () => {
     expect(script).toContain('prefers-color-scheme: dark');
     expect(script).toContain('"storageKey":"theme"');
   });
+
+  it('escapes values that could terminate the containing script element', () => {
+    const script = createThemeInitScript({
+      className: '</script><script>alert(1)</script>',
+      storageKey: 'theme&\u2028key',
+    });
+
+    expect(script).not.toContain('</script>');
+    expect(script).not.toContain('<script>');
+    expect(script).not.toContain('\u2028');
+    expect(script).toContain('\\u003c/script\\u003e');
+    expect(script).toContain('\\u0026\\u2028');
+  });
 });

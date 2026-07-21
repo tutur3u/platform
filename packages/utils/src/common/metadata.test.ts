@@ -183,6 +183,21 @@ describe('createPageMetadata', () => {
     });
   });
 
+  it('normalizes long runs of boundary slashes in linear time', () => {
+    const boundary = '/'.repeat(20_000);
+    const metadata = createPageMetadata({
+      baseUrl: 'https://test.tuturuuu.com',
+      description: 'Stable metadata path normalization.',
+      locale: 'en',
+      pathname: `${boundary}products/workflows${boundary}`,
+      title: 'Workflow Automation',
+    });
+
+    expect(metadata.alternates?.canonical).toBe(
+      'https://test.tuturuuu.com/products/workflows'
+    );
+  });
+
   it('supports apps that never expose locale prefixes', () => {
     const metadata = createPageMetadata({
       baseUrl: 'https://tools.tuturuuu.com',

@@ -1,18 +1,27 @@
 ---
 title: "TanStack Start And Rust Migration"
 description: "Migration contract for replacing apps/web with apps/tanstack-web plus the Rust backend"
-updatedAt: "2026-06-30"
+updatedAt: "2026-07-21"
 ---
 
 `apps/tanstack-web` is the replacement frontend for the legacy Next.js
 `apps/web` runtime. It uses TanStack Start, TanStack Router, TanStack Query,
 Vite, React 19, Tailwind 4, and the existing Tuturuuu shared packages.
 
-`apps/backend` is the dedicated Rust API runtime. Do not create another backend
+`apps/backend` is the planned Rust API runtime. Do not create another backend
 service for this migration; extend `apps/backend` route groups and keep API
-contracts documented in `apps/backend/api/openapi.yaml`. The backend runs as a
-native container now and keeps a Cloudflare Workers Rust entrypoint ready in
-`apps/backend/wrangler.jsonc` for edge preview deployment.
+contracts documented in `apps/backend/api/openapi.yaml`.
+
+<Warning>
+  `apps/backend` is not currently deployed and receives no production traffic.
+  `apps/web` remains the live API runtime. A route marked `migrated` in this
+  document means its future Rust source contract is implemented and tested; it
+  does not mean that request routing has cut over.
+</Warning>
+
+The crate can run as a native container and keeps a Cloudflare Workers Rust
+entrypoint in `apps/backend/wrangler.jsonc` for future, explicitly approved
+preview deployment.
 
 For exact local run commands and deployment steps across native local, Docker,
 Cloudflare Workers, Vercel, and VPS/Cloudflare Tunnel paths, use
@@ -82,7 +91,7 @@ Current compatibility contract:
 
 | Runtime                 | Cloudflare entrypoint              | Deploy command                                             | Compatibility status                                                                                                                                                                        |
 | ----------------------- | ---------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Preview-ready for migrated pure dispatcher routes, health/readiness, protected migration inventory, static/cookie endpoints, Discord cron proxies, and the native/Worker outbound boundary. |
+| Rust backend            | `apps/backend/wrangler.jsonc`      | `bun wrangler deploy --config apps/backend/wrangler.jsonc` | Source- and preview-ready, but not currently deployed. The command is reserved for an explicitly approved future preview.                                                                    |
 | TanStack Start frontend | `apps/tanstack-web/wrangler.jsonc` | `bun --cwd apps/tanstack-web run deploy:cloudflare`        | Preview-ready for migrated public routes, redirects, the root migration shell, and Start server-function calls to the Rust backend.                                                         |
 
 `apps/tanstack-web` deployment runs `bun run build` internally through the
@@ -1172,7 +1181,7 @@ written under ignored
 `tmp/benchmarks/web-migration/<timestamp>/report.json`.
 
 ```bash
-bun benchmark:web-setups -- --setup compare --profile smoke --insecure
+bun benchmark:web-setups -- --setup compare --profile smoke
 ```
 
 Backend benchmark samples include protected migration endpoints. Set
@@ -1205,7 +1214,7 @@ distinct-origin rule for the browser-facing Next and TanStack frontend runs.
 Use full mode when both frontends are running with representative seeded data:
 
 ```bash
-bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure
+bun benchmark:web-setups -- --setup compare --profile full --require-all
 ```
 
 In compare mode, `--require-all` fails the benchmark command when any required
@@ -1310,7 +1319,7 @@ to make a run pass.
 2. `bun migration:tanstack:cutover-check` passes.
 3. `bun test:e2e:web:docker -- --frontend compare` passes and has a compare
    evidence report.
-4. `bun benchmark:web-setups -- --setup compare --profile full --require-all --insecure` passes or has approved exceptions.
+4. `bun benchmark:web-setups -- --setup compare --profile full --require-all` passes or has approved exceptions. HTTPS origins must present a certificate trusted by the host; use the local development CA or `NODE_EXTRA_CA_CERTS` instead of disabling certificate verification.
 5. `bun smoke:cloudflare --output <path>` passes against the preview Workers.
 6. `bun migration:tanstack:gates -- --e2e-report <path> --benchmark-report <path> --cloudflare-smoke-report <path>` passes.
 7. `bun check:docker` and `bun check` pass.

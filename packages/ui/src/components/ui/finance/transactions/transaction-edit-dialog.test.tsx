@@ -82,7 +82,7 @@ describe('TransactionEditDialog', () => {
     vi.clearAllMocks();
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
     mocks.listTransactionCategories.mockResolvedValue([
       { id: 'category-1', is_expense: false, name: 'Income' },
     ]);
@@ -95,7 +95,7 @@ describe('TransactionEditDialog', () => {
 
   it('masks the summary amount when finance numbers are globally hidden', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=true;path=/';
+    document.cookie = 'finance-confidential-mode=true;path=/;Secure';
 
     renderDialog();
 

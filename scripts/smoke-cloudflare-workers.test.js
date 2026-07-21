@@ -23,6 +23,18 @@ test('parseArgs reads Cloudflare smoke inputs from env', () => {
   assert.equal(args.token, 'token');
 });
 
+test('parseArgs rejects attempts to disable TLS certificate verification', () => {
+  assert.throws(
+    () =>
+      parseArgs(['--insecure'], {
+        BACKEND_INTERNAL_TOKEN: 'token',
+        BACKEND_WORKER_ORIGIN: 'https://backend.example.workers.dev',
+        TANSTACK_WEB_WORKER_ORIGIN: 'https://tanstack.example.workers.dev',
+      }),
+    /Unknown argument: --insecure/u
+  );
+});
+
 test('parseArgs allows plaintext only for local Wrangler dev origins', () => {
   const args = parseArgs([], {
     BACKEND_INTERNAL_TOKEN: 'token',

@@ -42,6 +42,13 @@ test('parseArgs accepts compare benchmark options', () => {
   assert.equal(args.requireAll, true);
 });
 
+test('parseArgs rejects attempts to disable TLS certificate verification', () => {
+  assert.throws(
+    () => parseArgs(['--insecure']),
+    /Unknown argument: --insecure/u
+  );
+});
+
 test('parseArgs allows plaintext only for local benchmark origins', () => {
   const local = parseArgs([
     '--setup',

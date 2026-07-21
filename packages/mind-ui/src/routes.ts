@@ -12,7 +12,10 @@ function normalizeMindPrefix(prefix?: string) {
   const trimmed = prefix.trim();
   if (!trimmed || trimmed === '/') return '';
   const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return withLeadingSlash.replace(/\/+$/u, '');
+  let end = withLeadingSlash.length;
+  while (end > 0 && withLeadingSlash[end - 1] === '/') end -= 1;
+
+  return withLeadingSlash.slice(0, end);
 }
 
 export function buildMindWorkspaceHref({

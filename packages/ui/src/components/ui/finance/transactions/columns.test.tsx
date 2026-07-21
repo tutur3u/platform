@@ -79,7 +79,7 @@ describe('transactionColumns', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
   it('masks the amount column when finance numbers are globally hidden', () => {
@@ -91,7 +91,7 @@ describe('transactionColumns', () => {
 
   it('shows the amount column when finance numbers are globally visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     render(<TransactionAmountCell amount={123} />);
 

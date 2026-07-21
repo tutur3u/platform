@@ -12,6 +12,10 @@ const HIVE_EVENT_PERSISTENCE_FILES = [
   'apps/hive-realtime/src/hive-db.ts',
 ];
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
 function readMigration(filename) {
   return fs.readFileSync(path.join(MIGRATIONS_DIR, filename), 'utf8');
 }
@@ -106,10 +110,7 @@ test('Hive world event RPC final definition binds writes to a verified actor', (
 
 test('Hive world event RPC final migration revokes browser execution', () => {
   const grantPattern = new RegExp(
-    `grant\\s+execute\\s+on\\s+function\\s+${RPC_SIGNATURE.replace(
-      /[().]/g,
-      '\\$&'
-    )}\\s+to\\s+[^;]*(?:authenticated|anon|public)`,
+    `grant\\s+execute\\s+on\\s+function\\s+${escapeRegExp(RPC_SIGNATURE)}\\s+to\\s+[^;]*(?:authenticated|anon|public)`,
     'iu'
   );
   const secureMigration = readMigration(
@@ -124,30 +125,21 @@ test('Hive world event RPC final migration revokes browser execution', () => {
   assert.match(
     secureMigration,
     new RegExp(
-      `revoke\\s+execute\\s+on\\s+function\\s+${RPC_SIGNATURE.replace(
-        /[().]/g,
-        '\\$&'
-      )}\\s+from\\s+public`,
+      `revoke\\s+execute\\s+on\\s+function\\s+${escapeRegExp(RPC_SIGNATURE)}\\s+from\\s+public`,
       'iu'
     )
   );
   assert.match(
     secureMigration,
     new RegExp(
-      `revoke\\s+execute\\s+on\\s+function\\s+${RPC_SIGNATURE.replace(
-        /[().]/g,
-        '\\$&'
-      )}\\s+from\\s+authenticated`,
+      `revoke\\s+execute\\s+on\\s+function\\s+${escapeRegExp(RPC_SIGNATURE)}\\s+from\\s+authenticated`,
       'iu'
     )
   );
   assert.match(
     secureMigration,
     new RegExp(
-      `grant\\s+execute\\s+on\\s+function\\s+${RPC_SIGNATURE.replace(
-        /[().]/g,
-        '\\$&'
-      )}\\s+to\\s+service_role`,
+      `grant\\s+execute\\s+on\\s+function\\s+${escapeRegExp(RPC_SIGNATURE)}\\s+to\\s+service_role`,
       'iu'
     )
   );

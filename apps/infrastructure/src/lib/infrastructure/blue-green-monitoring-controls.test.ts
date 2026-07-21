@@ -112,7 +112,11 @@ describe('blue-green monitoring controls', () => {
         dockerRestartCooldownMs: 60_000,
         dockerRestartDisabled: false,
         emailAlertCooldownMs: 900_000,
-        emailAlertRecipients: ['Ops@Platform.Test', 'bad-email'],
+        emailAlertRecipients: [
+          'Ops@Platform.Test',
+          'bad-email',
+          `${'a'.repeat(100_000)}!@invalid`,
+        ],
         emailAlertsEnabled: true,
         postRestartCommandTimeoutMs: 120_000,
         postRestartCommands: [

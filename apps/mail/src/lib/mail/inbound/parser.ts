@@ -5,8 +5,22 @@ import type {
 } from './types';
 
 export function normalizeAddress(value: string) {
-  const match = value.match(/<([^>]+)>/u);
-  return (match?.[1] ?? value).trim().toLowerCase();
+  const openBracket = value.lastIndexOf('<');
+  const closeBracket =
+    openBracket === -1 ? -1 : value.indexOf('>', openBracket + 1);
+  const address =
+    openBracket !== -1 && closeBracket > openBracket + 1
+      ? value.slice(openBracket + 1, closeBracket)
+      : value;
+
+  return address.trim().toLowerCase();
+}
+
+function trimOptionalQuotes(value: string) {
+  const trimmed = value.trim();
+  return trimmed.startsWith('"') && trimmed.endsWith('"')
+    ? trimmed.slice(1, -1).trim()
+    : trimmed;
 }
 
 function parseAddressList(value: string | null | undefined) {
@@ -17,14 +31,16 @@ function parseAddressList(value: string | null | undefined) {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry): ParsedEmailAddress => {
-      const match = entry.match(/^\s*(?:"?([^"<]*)"?)?\s*<([^>]+)>\s*$/u);
-      if (!match) {
+      const openBracket = entry.lastIndexOf('<');
+      const closeBracket =
+        openBracket === -1 ? -1 : entry.indexOf('>', openBracket + 1);
+      if (openBracket === -1 || closeBracket <= openBracket + 1) {
         return { address: normalizeAddress(entry), displayName: null };
       }
 
       return {
-        address: normalizeAddress(match[2] ?? entry),
-        displayName: match[1]?.trim() || null,
+        address: normalizeAddress(entry),
+        displayName: trimOptionalQuotes(entry.slice(0, openBracket)) || null,
       };
     });
 }

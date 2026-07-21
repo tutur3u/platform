@@ -32,6 +32,11 @@ interface TaskDetailPageProps {
   };
 }
 
+export function removeTaskQuery(url: string) {
+  const taskQueryIndex = url.indexOf('?task=');
+  return taskQueryIndex === -1 ? url : url.slice(0, taskQueryIndex);
+}
+
 export default function TaskDetailPage({
   task,
   boardId,
@@ -52,13 +57,14 @@ export default function TaskDetailPage({
 
     hasRedirectedRef.current = true;
     setIsNavigating(true);
-    const boardUrl = buildWorkspaceTaskUrl({
+    const boardUrlWithTask = buildWorkspaceTaskUrl({
       boardId,
       currentPathname: window.location.pathname,
       taskId: task.id,
       workspaceId: wsId,
       isPersonalWorkspace,
-    }).replace(/\?task=.*$/u, '');
+    });
+    const boardUrl = removeTaskQuery(boardUrlWithTask);
 
     if (window.history.length > 1) {
       router.back();

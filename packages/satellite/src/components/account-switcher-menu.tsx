@@ -35,7 +35,10 @@ function accountLabel(account: WebAccountSummary, fallback: string) {
 }
 
 function webAccountSettingsUrl(centralUrl: string) {
-  return `${centralUrl.replace(/\/+$/u, '')}/settings/account/accounts`;
+  let end = centralUrl.length;
+  while (end > 0 && centralUrl[end - 1] === '/') end -= 1;
+
+  return `${centralUrl.slice(0, end)}/settings/account/accounts`;
 }
 
 export function SatelliteAccountSwitcherMenu({

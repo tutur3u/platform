@@ -70,6 +70,16 @@ function getOpenGraphLocale(locale: string) {
   return locale === 'vi' ? 'vi_VN' : 'en_US';
 }
 
+function trimSlashes(value: string) {
+  let start = 0;
+  let end = value.length;
+
+  while (start < end && value[start] === '/') start += 1;
+  while (end > start && value[end - 1] === '/') end -= 1;
+
+  return value.slice(start, end);
+}
+
 function getLocalizedUrl(
   baseUrl: string,
   locale: string,
@@ -77,7 +87,7 @@ function getLocalizedUrl(
   localePrefix: NonNullable<PageMetadataConfig['localePrefix']>
 ) {
   const normalizedPathname =
-    pathname === '/' ? '' : `/${pathname.replace(/^\/+|\/+$/g, '')}`;
+    pathname === '/' ? '' : `/${trimSlashes(pathname)}`;
   const localizedPrefix =
     localePrefix === 'never' ||
     (localePrefix === 'as-needed' && locale === 'en')

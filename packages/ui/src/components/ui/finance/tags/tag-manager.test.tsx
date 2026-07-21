@@ -72,7 +72,7 @@ describe('TagManager', () => {
     vi.clearAllMocks();
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
-      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
     mocks.listTransactionTags.mockResolvedValue([
       {
         id: 'tag-1',
@@ -97,7 +97,7 @@ describe('TagManager', () => {
 
   it('renders RPC-backed income, expense, and recent pace stats for each tag', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
-    document.cookie = 'finance-confidential-mode=false;path=/';
+    document.cookie = 'finance-confidential-mode=false;path=/;Secure';
 
     renderTagManager();
 
