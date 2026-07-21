@@ -3,6 +3,7 @@
   "version": "0.15.0",
   "private": true,
   "scripts": {
+    "test": "vitest run",
     "type-check": "node ../../scripts/run-tsc-build.js --build",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7822} --turbopack",
