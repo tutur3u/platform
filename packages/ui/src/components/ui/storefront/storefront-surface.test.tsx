@@ -260,6 +260,7 @@ describe('StorefrontSurface', () => {
   it('opens a wide, readable Square Terminal product dialog', () => {
     const longListing = {
       ...listing,
+      description: null,
       title: 'Shikishi Board (8.8 x 10 inches, 253 mm x 225 mm)',
     };
 
@@ -268,6 +269,7 @@ describe('StorefrontSurface', () => {
         detailListingId={longListing.id}
         labels={{
           buyNow: 'Pay at terminal',
+          fallbackDescription: 'Available from this workspace storefront.',
           squareTerminal: 'Square Terminal',
           squareTerminalDescription: 'Finish payment on the counter device.',
         }}
@@ -275,6 +277,7 @@ describe('StorefrontSurface', () => {
         mode="store"
         onBuyNow={() => undefined}
         onDetailListingChange={() => undefined}
+        onIncrement={() => undefined}
         storefront={{ ...storefront, checkoutMode: 'square_terminal' }}
       />
     );
@@ -299,6 +302,16 @@ describe('StorefrontSurface', () => {
     expect(
       screen.getByRole('button', { name: 'Pay at terminal' })
     ).toBeEnabled();
+    expect(
+      screen.queryByText('Available from this workspace storefront.')
+    ).not.toBeInTheDocument();
+
+    const addButton = screen.getByRole('button', { name: 'Add' });
+    const payButton = screen.getByRole('button', { name: 'Pay at terminal' });
+    expect(addButton).toHaveClass('h-11', 'w-full', 'bg-secondary');
+    expect(payButton).toHaveClass('h-11', 'w-full');
+    expect(addButton.parentElement).toBe(payButton.parentElement);
+    expect(addButton.parentElement).toHaveClass('grid-cols-2');
   });
 
   it('keeps the compatibility cart page as a full cart review', () => {
@@ -315,7 +328,12 @@ describe('StorefrontSurface', () => {
       />
     );
 
-    expect(screen.getByRole('region', { name: 'Cart' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Cart' })).toHaveClass(
+      'grid',
+      'gap-5',
+      'p-5',
+      'sm:p-6'
+    );
     expect(screen.getByText('1:1 Mentoring')).toBeInTheDocument();
     expect(screen.getAllByText('$2.00')).toHaveLength(2);
     expect(screen.getByRole('button', { name: /Checkout/ })).toBeEnabled();

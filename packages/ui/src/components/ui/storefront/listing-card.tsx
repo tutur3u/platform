@@ -106,9 +106,11 @@ export function StorefrontListingCard({
             {listing.listingType === 'bundle' ? labels.bundle : labels.product}
           </Badge>
         </div>
-        <p className="mt-1 line-clamp-2 text-muted-foreground text-sm leading-6">
-          {listing.description ?? labels.fallbackDescription}
-        </p>
+        {listing.description?.trim() ? (
+          <p className="mt-1 line-clamp-2 text-muted-foreground text-sm leading-6">
+            {listing.description.trim()}
+          </p>
+        ) : null}
         {showInventoryBadges ? (
           <p className="mt-2 text-muted-foreground text-xs">
             {limit === 0

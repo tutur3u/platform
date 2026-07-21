@@ -1021,7 +1021,7 @@
     "squareOrderPlacedDescription": "Yêu cầu thanh toán đã được gửi tới Square Terminal đã ghép nối. Hãy hoàn tất trên thiết bị; trang này sẽ tự cập nhật.",
     "squarePosOrderPlacedDescription": "Đơn hàng đang chờ thanh toán thẻ được xác minh trong Square POS. Hoàn tất thanh toán trong ứng dụng; Tuturuuu sẽ xác minh đơn Square và tự động cập nhật trang này.",
     "squarePosReserve": "Mở Square POS",
-    "squarePosReservedCopy": "Xác nhận thông tin, sau đó Tuturuuu sẽ mở Square POS trên điện thoại này với đúng số tiền và phương thức thanh toán thẻ.",
+    "squarePosReservedCopy": "Xác nhận thông tin đơn hàng, sau đó tiếp tục trong Square POS trên thiết bị tương thích. Số tiền chính xác và phương thức thanh toán thẻ đã được chọn sẵn.",
     "squarePosReserving": "Đang chuẩn bị Square POS...",
     "squareReserve": "Gửi tới Square Terminal",
     "squareReservedCopy": "Xác nhận thông tin, sau đó yêu cầu thanh toán sẽ xuất hiện trên Square Terminal đã ghép nối.",

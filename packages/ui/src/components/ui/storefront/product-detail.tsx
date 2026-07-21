@@ -137,13 +137,15 @@ export function StorefrontProductDetail({
   const isDialog = presentation === 'dialog';
   const isSquareTerminal = checkoutMode === 'square_terminal';
   const isPolar = checkoutMode === 'polar';
+  const description = listing.description?.trim();
+  const hasMatchedActions = canChange && Boolean(onBuyNow);
 
   return (
     <div
       className={cn(
         'grid min-w-0',
         isDialog
-          ? 'lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]'
+          ? 'lg:h-[min(44rem,88dvh)] lg:grid-cols-[minmax(0,1.08fr)_minmax(22rem,0.92fr)]'
           : 'gap-6 lg:grid-cols-2'
       )}
     >
@@ -157,7 +159,7 @@ export function StorefrontProductDetail({
         <StorefrontImagePanel
           className={cn(
             isDialog
-              ? 'aspect-[4/3] min-h-72 lg:aspect-auto lg:h-full lg:min-h-[36rem]'
+              ? 'aspect-[4/3] min-h-72 lg:aspect-auto lg:h-full lg:min-h-0'
               : 'aspect-square'
           )}
           imageUrl={imageUrl}
@@ -169,8 +171,7 @@ export function StorefrontProductDetail({
       <div
         className={cn(
           'flex min-w-0 flex-col gap-5',
-          isDialog &&
-            'p-5 sm:p-7 lg:max-h-[min(44rem,90dvh)] lg:overflow-y-auto lg:p-9'
+          isDialog && 'p-5 sm:p-7 lg:h-full lg:overflow-y-auto lg:p-9'
         )}
       >
         <div className="flex flex-wrap items-center gap-2">
@@ -260,9 +261,11 @@ export function StorefrontProductDetail({
           </p>
         ) : null}
 
-        <p className="text-pretty text-muted-foreground leading-7">
-          {listing.description ?? labels.fallbackDescription}
-        </p>
+        {description ? (
+          <p className="text-pretty text-muted-foreground leading-7">
+            {description}
+          </p>
+        ) : null}
 
         {isSquareTerminal || isPolar ? (
           <div
@@ -298,14 +301,24 @@ export function StorefrontProductDetail({
           </div>
         ) : null}
 
-        <div className="mt-auto flex flex-wrap items-center gap-3 border-border border-t pt-5">
+        <div
+          className={cn(
+            'mt-auto grid w-full grid-cols-1 gap-2 border-border border-t pt-5',
+            hasMatchedActions && 'grid-cols-2'
+          )}
+        >
           {canChange ? (
             needsSelection ? (
-              <Button className={cn('h-11', radius)} disabled type="button">
+              <Button
+                className={cn('h-11 w-full', radius)}
+                disabled
+                type="button"
+                variant="secondary"
+              >
                 {labels.selectOptions}
               </Button>
             ) : cartQuantity > 0 ? (
-              <div className="flex items-center gap-1">
+              <div className="grid h-11 w-full grid-cols-[2.75rem_minmax(2.5rem,1fr)_2.75rem] items-center gap-1">
                 <Button
                   aria-label={`${labels.quantity} -`}
                   className={cn('h-11 w-11 p-0', radius)}
@@ -330,31 +343,41 @@ export function StorefrontProductDetail({
                 </Button>
               </div>
             ) : (
-              <AccentButton
+              <Button
+                className={cn('h-11 w-full', radius)}
                 disabled={addDisabled}
                 onClick={() => onIncrement?.(listing.id, limit, variantId)}
-                radius={radius}
+                type="button"
+                variant="secondary"
               >
                 <Plus className="h-4 w-4" />
                 {soldOut ? labels.soldOut : labels.add}
-              </AccentButton>
+              </Button>
             )
           ) : null}
 
           {onBuyNow ? (
-            <Button
-              className={cn('h-11', radius)}
+            <AccentButton
+              className="h-11 w-full"
               disabled={buyNowDisabled}
               onClick={() => onBuyNow(listing.id, variantId)}
-              type="button"
+              radius={radius}
             >
               <Zap className="size-4 shrink-0" />
               {labels.buyNow}
-            </Button>
+            </AccentButton>
           ) : null}
 
           {cartHref && cartQuantity > 0 ? (
-            <Button asChild className={cn('h-11', radius)} variant="outline">
+            <Button
+              asChild
+              className={cn(
+                'h-11 w-full',
+                hasMatchedActions && 'col-span-2',
+                radius
+              )}
+              variant="outline"
+            >
               <NavigationLink href={cartHref}>
                 <ShoppingCart className="size-4 shrink-0" />
                 {labels.cart}

@@ -40,9 +40,11 @@ export function StorefrontHeroPanel({
           <h2 className="text-balance font-semibold text-4xl tracking-[-0.035em] sm:text-5xl lg:text-6xl">
             {storefront.name}
           </h2>
-          <p className="mt-4 max-w-xl text-pretty text-muted-foreground leading-7">
-            {storefront.description ?? labels.fallbackDescription}
-          </p>
+          {storefront.description?.trim() ? (
+            <p className="mt-4 max-w-xl text-pretty text-muted-foreground leading-7">
+              {storefront.description.trim()}
+            </p>
+          ) : null}
           <div className="mt-6 flex flex-wrap gap-2">
             <Badge className="border-border bg-background" variant="outline">
               {listingsCount} {labels.product}

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight } from '@tuturuuu/icons';
+import { ArrowRight, ShoppingCart } from '@tuturuuu/icons';
 import type { InventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
 import type { FormEvent } from 'react';
@@ -116,19 +116,31 @@ export function StorefrontCartSummary({
       className={cn(
         'h-fit',
         presentation === 'panel'
-          ? cn('p-4', storefrontSurfaceClasses[storefront.surfaceStyle], radius)
+          ? cn(
+              'grid gap-5 p-5 sm:p-6',
+              storefrontSurfaceClasses[storefront.surfaceStyle],
+              radius
+            )
           : 'grid gap-4',
         className
       )}
     >
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-semibold">{labels.cart}</p>
+      <div className="grid gap-2">
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              'grid size-9 shrink-0 place-items-center border border-border bg-background',
+              radius
+            )}
+          >
+            <ShoppingCart className="size-4" />
+          </span>
+          <p className="min-w-0 flex-1 font-semibold">{labels.cart}</p>
           <Badge className="border-border bg-background" variant="outline">
             {cartEntries.length}
           </Badge>
         </div>
-        <p className="mt-2 text-muted-foreground text-sm leading-6">
+        <p className="text-pretty text-muted-foreground text-sm leading-6">
           {labels.reservedCopy}
         </p>
       </div>

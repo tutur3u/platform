@@ -88,7 +88,12 @@ export function CartActions({
   const NavigationLink = linkComponent ?? 'a';
   if (isPreview || isCheckoutDisabled) {
     return (
-      <Button className={cn('w-full', radius)} disabled type="button">
+      <Button
+        className={cn('w-full', radius)}
+        disabled
+        type="button"
+        variant="secondary"
+      >
         {labels.checkoutDisabled}
       </Button>
     );
@@ -96,7 +101,12 @@ export function CartActions({
 
   if (!canOpenCheckout) {
     return (
-      <Button className={cn('w-full', radius)} disabled type="button">
+      <Button
+        className={cn('w-full', radius)}
+        disabled
+        type="button"
+        variant="secondary"
+      >
         {labels.checkout}
         <ArrowRight className="size-4 shrink-0" />
       </Button>
