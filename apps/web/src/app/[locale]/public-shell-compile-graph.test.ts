@@ -14,6 +14,12 @@ const navigationConfigSource = source(
   'src/app/[locale]/shared/navigation-config.tsx'
 );
 const navigationMenuSource = source('src/app/[locale]/navigation-menu.tsx');
+const marketingNavShellSource = source(
+  'src/app/[locale]/marketing-nav/marketing-nav-shell.tsx'
+);
+const marketingNavDropdownSource = source(
+  'src/app/[locale]/marketing-nav/nav-dropdown.tsx'
+);
 const userNavClientSource = source('src/app/[locale]/user-nav-client.tsx');
 const reportProblemMenuItemSource = source(
   'src/app/[locale]/report-problem-menu-item.tsx'
@@ -232,6 +238,12 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('public shell compile graph', () => {
+  it('keeps desktop marketing dropdowns visible outside the navbar pill', () => {
+    expect(marketingNavShellSource).toContain('overflow-visible');
+    expect(marketingNavShellSource).not.toContain('overflow-hidden');
+    expect(marketingNavDropdownSource).not.toContain('rotate-180');
+  });
+
   it('keeps the mobile menu drawer graph behind a dynamic import', () => {
     for (const modulePath of [
       '@tuturuuu/ui/accordion',

@@ -117,49 +117,59 @@ export function PricingCard({
   return (
     <div
       className={cn(
-        'relative flex h-full flex-col overflow-hidden rounded-xl border p-5 transition-all',
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-500',
         highlighted
-          ? styles.cardHighlighted
+          ? cn(styles.cardHighlighted, '-translate-y-1 lg:-translate-y-2')
           : cn(
-              'border-foreground/10 bg-background/50 hover:shadow-md',
+              'border-foreground/[0.08] bg-foreground/[0.015] hover:-translate-y-1 hover:border-foreground/15 hover:bg-foreground/[0.03]',
               styles.cardHover
             )
       )}
     >
+      {/* Lit top edge — always on for the highlighted tier, on hover otherwise */}
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent transition-opacity duration-500',
+          highlighted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        )}
+      />
+
       {/* Badge */}
       {badge && (
-        <Badge
-          variant="secondary"
+        <span
           className={cn(
-            'absolute top-4 right-4 text-xs',
+            'absolute top-5 right-5 rounded-full border px-2.5 py-1 font-mono-ui text-[0.58rem] uppercase tracking-[0.16em]',
             highlighted
               ? styles.badge
-              : 'border-foreground/20 bg-foreground/10 text-foreground/70'
+              : 'border-foreground/15 bg-foreground/[0.06] text-foreground/60'
           )}
         >
           {badge}
-        </Badge>
+        </span>
       )}
 
       {/* Icon & Name */}
       <div
         className={cn(
-          'mb-3 flex h-10 w-10 items-center justify-center rounded-lg',
+          'mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-500 group-hover:scale-105',
           styles.iconBg
         )}
       >
-        <Icon className={cn('h-5 w-5', styles.iconText)} />
+        <Icon className={cn('h-4 w-4', styles.iconText)} />
       </div>
 
-      <h3 className="mb-1 font-semibold text-lg">{name}</h3>
+      <h3 className="font-display font-semibold text-lg tracking-[-0.01em]">
+        {name}
+      </h3>
 
       {/* Price with animation */}
-      <div className="mb-2 flex items-baseline">
+      <div className="mt-3 mb-2 flex items-baseline">
         <div className="overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               key={price}
-              className="block font-bold text-3xl"
+              className="block font-bold font-display text-4xl tabular-nums tracking-[-0.04em]"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -20, opacity: 0 }}

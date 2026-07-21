@@ -442,6 +442,145 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-aurora: aurora 80s linear infinite;
   --animate-shake: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-bloom-drift: bloom-drift 24s ease-in-out infinite;
+  --animate-bloom-drift-slow: bloom-drift-slow 32s ease-in-out infinite;
+  --animate-sheen: sheen 6s ease-in-out infinite;
+  --animate-rise-in: rise-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-text-sheen: text-sheen 8s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-float-y: float-y 6s ease-in-out infinite;
+  --animate-scroll-cue: scroll-cue 2.2s ease-in-out infinite;
+  --animate-ring-pulse: ring-pulse 3s ease-out infinite;
+
+  /* Marketing type scale. The variables resolve only where the marketing
+     layout loads the fonts; everywhere else these fall back to the app font. */
+  --font-display:
+    var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+  --font-mono-ui:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Marketing atmosphere: slow, low-amplitude drift for hero light blooms. */
+@keyframes bloom-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+}
+
+@keyframes bloom-drift-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-5%, 4%, 0) scale(1);
+  }
+}
+
+@keyframes sheen {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+/* Hero entrance. Paired with an inline animation-delay for stagger, so the
+   choreography needs no JavaScript and runs before hydration. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+    filter: blur(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
+}
+
+/* Slow light travelling through gradient headline text. */
+@keyframes text-sheen {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Product marquee: the track holds two identical halves, so -50% loops
+   seamlessly. */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes scroll-cue {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+}
+
+@keyframes ring-pulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Global guard: the marketing atmosphere and entrance choreography are
+   decorative, so drop them entirely when the user asks for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in,
+  .animate-text-sheen,
+  .animate-marquee,
+  .animate-float-y,
+  .animate-scroll-cue,
+  .animate-ring-pulse {
+    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
+    animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
+    opacity: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
+    filter: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
+    transform: none !important;
+  }
 }
 
 /* Aurora animation - must be outside @theme block */

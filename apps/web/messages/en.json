@@ -4456,6 +4456,7 @@
     "filters": "Filters",
     "finance": "Finance",
     "finance-description": "Track finances and manage transactions efficiently.",
+    "footer_tagline": "One AI-powered workspace for your tasks, calendar, documents, and team.",
     "foreground": "Foreground",
     "formats": "Formats",
     "free": "Free",
@@ -4534,6 +4535,7 @@
     "logout": "Logout",
     "mail": "Mail",
     "mail-description": "Powerful email and communication management.",
+    "main_navigation": "Main navigation",
     "manage": "Manage",
     "manufacturing": "Manufacturing",
     "manufacturing-description": "Solutions tailored for manufacturing businesses.",
@@ -8450,6 +8452,7 @@
   },
   "landing": {
     "ai": {
+      "eyebrow": "Meet Mira",
       "mira": {
         "capabilities": {
           "contextAware": "Context-Aware",
@@ -8994,6 +8997,7 @@
           "title": "Tuturuuu Calendar"
         }
       },
+      "eyebrow": "One platform",
       "nova": {
         "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
         "feature1": "AI challenges",
@@ -9097,6 +9101,7 @@
     },
     "pricing": {
       "compare": "Compare all features",
+      "eyebrow": "Pricing",
       "faq": {
         "q1": {
           "answer": "Yes! The Free tier is completely free forever with basic features. Upgrade anytime for more capabilities.",
@@ -9249,6 +9254,7 @@
       }
     },
     "problem": {
+      "eyebrow": "The problem",
       "stats": {
         "apps": {
           "label": "apps used daily",
@@ -9269,6 +9275,7 @@
     "socialProof": {
       "backedBy": "Powered by",
       "cta": "View on GitHub",
+      "eyebrow": "Open source",
       "stats": {
         "commits": {
           "label": "Commits",
@@ -9778,6 +9785,64 @@
     "view_grid": "Grid view",
     "view_list": "List view",
     "view_mode": "View mode"
+  },
+  "marketing-nav": {
+    "all_apps": "Explore every Tuturuuu app",
+    "groups": {
+      "create": "Create & share",
+      "operate": "Run the business",
+      "plan": "Plan & execute"
+    },
+    "products": {
+      "ai": {
+        "description": "Mira and the assistants powering every surface.",
+        "label": "AI"
+      },
+      "calendar": {
+        "description": "AI auto-scheduling around your real priorities.",
+        "label": "Calendar"
+      },
+      "crm": {
+        "description": "Contacts, pipelines, and customer history.",
+        "label": "CRM"
+      },
+      "documents": {
+        "description": "Collaborative docs that stay next to the work.",
+        "label": "Documents"
+      },
+      "drive": {
+        "description": "Shared storage with workspace-level permissions.",
+        "label": "Drive"
+      },
+      "finance": {
+        "description": "Track spend, budgets, invoices, and wallets.",
+        "label": "Finance"
+      },
+      "inventory": {
+        "description": "Products, stock, suppliers, and warehouses.",
+        "label": "Inventory"
+      },
+      "lms": {
+        "description": "Courses, quizzes, and progress tracking.",
+        "label": "Learning"
+      },
+      "mail": {
+        "description": "Team inboxes wired into tasks and calendar.",
+        "label": "Mail"
+      },
+      "meet": {
+        "description": "Find a time that works for everyone, fast.",
+        "label": "Meet Together"
+      },
+      "tasks": {
+        "description": "Boards, hierarchies, and a fast capture inbox.",
+        "label": "Tasks"
+      },
+      "workflows": {
+        "description": "Automate the handoffs between your tools.",
+        "label": "Workflows"
+      }
+    }
   },
   "meet-together": {
     "agenda": "Agenda",

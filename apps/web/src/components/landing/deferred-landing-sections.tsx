@@ -4,11 +4,19 @@ import dynamic from 'next/dynamic';
 
 function SectionFallback() {
   return (
-    <section className="px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-      <div className="mx-auto h-64 max-w-6xl animate-pulse rounded-lg bg-foreground/[0.03]" />
+    <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
+      <div className="mx-auto h-64 max-w-6xl animate-pulse rounded-2xl bg-foreground/[0.03]" />
     </section>
   );
 }
+
+const ProblemSection = dynamic(
+  () =>
+    import('@/components/landing/problem/problem-section').then(
+      (module) => module.ProblemSection
+    ),
+  { loading: SectionFallback, ssr: false }
+);
 
 const DemoSection = dynamic(
   () =>
@@ -50,13 +58,22 @@ const CTASection = dynamic(
   { loading: SectionFallback, ssr: false }
 );
 
+/**
+ * Renders between the hero and the product bento: names the pain before the
+ * page shows the product that solves it.
+ */
+export function DeferredProblemSection() {
+  return <ProblemSection />;
+}
+
+/** Everything below the product bento. */
 export function DeferredLandingSections() {
   return (
     <>
       <DemoSection />
-      <PricingSection />
       <AISection />
       <GithubStats />
+      <PricingSection />
       <CTASection />
     </>
   );

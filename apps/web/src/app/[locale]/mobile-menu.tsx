@@ -22,6 +22,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AuthButton } from './auth-button';
+import { MARKETING_PRODUCT_GROUPS } from './marketing-nav/products';
 import { type NavItem, useNavigation } from './shared/navigation-config';
 
 interface MenuProps {
@@ -80,10 +81,6 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
 
   // Extract categories by their titles
   const mainLinks = categories.find((cat) => cat.title === 'main')?.items || [];
-  // const products =
-  //   categories.find((cat) => cat.title === 'products')?.items || [];
-  // const solutions =
-  //   categories.find((cat) => cat.title === 'solutions')?.items || [];
   const resources =
     categories.find((cat) => cat.title === 'resources')?.items || [];
 
@@ -140,46 +137,37 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
 
               <Accordion type="multiple" className="space-y-3">
                 {/* Products Section */}
-                {/* <AccordionItem value="products" className="border-none px-4">
+                <AccordionItem value="products" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="font-semibold text-sm">
                       {t('common.products')}
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
-                    <div className="grid gap-2 px-2">
-                      {products.map((item) => (
-                        <MobileNavLink
-                          key={item.href}
-                          item={item}
-                          onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
-                        />
+                    <div className="grid gap-4 px-2">
+                      {MARKETING_PRODUCT_GROUPS.map((group) => (
+                        <div key={group.key}>
+                          <div className="mb-1 px-4 font-semibold text-foreground/40 text-xs uppercase tracking-wide">
+                            {t(`marketing-nav.groups.${group.key}` as never)}
+                          </div>
+                          {group.items.map((product) => (
+                            <MobileNavLink
+                              className="rounded-lg px-4 py-2.5 text-sm transition-all hover:bg-accent active:bg-accent/80"
+                              item={{
+                                href: product.href,
+                                label: t(
+                                  `marketing-nav.products.${product.key}.label` as never
+                                ),
+                              }}
+                              key={product.key}
+                              onClick={closeMenu}
+                            />
+                          ))}
+                        </div>
                       ))}
                     </div>
                   </AccordionContent>
-                </AccordionItem> */}
-
-                {/* Solutions Section */}
-                {/* <AccordionItem value="solutions" className="border-none px-4">
-                  <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="font-semibold text-sm">
-                      {t('common.solutions')}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-3 pb-2">
-                    <div className="grid gap-2 px-2">
-                      {solutions.map((item) => (
-                        <MobileNavLink
-                          key={item.href}
-                          item={item}
-                          onClick={closeMenu}
-                          className="rounded-lg px-4 py-2.5 transition-all hover:bg-accent active:bg-accent/80"
-                        />
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem> */}
+                </AccordionItem>
 
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">

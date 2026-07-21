@@ -4456,6 +4456,7 @@
     "filters": "Bộ lọc",
     "finance": "Tài chính",
     "finance-description": "Theo dõi tài chính và quản lý giao dịch hiệu quả.",
+    "footer_tagline": "Một không gian làm việc AI cho công việc, lịch, tài liệu và đội nhóm của bạn.",
     "foreground": "Màu chi tiết",
     "formats": "Định dạng",
     "free": "Miễn phí",
@@ -4534,6 +4535,7 @@
     "logout": "Đăng xuất",
     "mail": "Hộp thư",
     "mail-description": "Quản lý email và truyền thông mạnh mẽ.",
+    "main_navigation": "Điều hướng chính",
     "manage": "Quản lý",
     "manufacturing": "Chế tạo",
     "manufacturing-description": "Giải pháp dành riêng cho các doanh nghiệp chế tạo.",
@@ -8450,6 +8452,7 @@
   },
   "landing": {
     "ai": {
+      "eyebrow": "Gặp gỡ Mira",
       "mira": {
         "capabilities": {
           "contextAware": "Hiểu ngữ cảnh",
@@ -8994,6 +8997,7 @@
           "title": "Tuturuuu Calendar"
         }
       },
+      "eyebrow": "Một nền tảng",
       "nova": {
         "description": "Rèn luyện kỹ năng prompt engineering, tham gia thử thách AI và nâng cao trình độ qua trải nghiệm thực hành.",
         "feature1": "Thử thách AI",
@@ -9097,6 +9101,7 @@
     },
     "pricing": {
       "compare": "So sánh tất cả tính năng",
+      "eyebrow": "Bảng giá",
       "faq": {
         "q1": {
           "answer": "Có! Gói Miễn Phí hoàn toàn miễn phí mãi mãi với các tính năng cơ bản. Nâng cấp bất cứ lúc nào để có thêm khả năng.",
@@ -9249,6 +9254,7 @@
       }
     },
     "problem": {
+      "eyebrow": "Vấn đề",
       "stats": {
         "apps": {
           "label": "app mỗi ngày",
@@ -9269,6 +9275,7 @@
     "socialProof": {
       "backedBy": "Được hỗ trợ bởi",
       "cta": "Xem trên GitHub",
+      "eyebrow": "Mã nguồn mở",
       "stats": {
         "commits": {
           "label": "Commit",
@@ -9778,6 +9785,64 @@
     "view_grid": "Xem dạng lưới",
     "view_list": "Xem dạng danh sách",
     "view_mode": "Chế độ xem"
+  },
+  "marketing-nav": {
+    "all_apps": "Khám phá mọi ứng dụng Tuturuuu",
+    "groups": {
+      "create": "Tạo & chia sẻ",
+      "operate": "Vận hành doanh nghiệp",
+      "plan": "Lên kế hoạch & thực thi"
+    },
+    "products": {
+      "ai": {
+        "description": "Mira và các trợ lý vận hành mọi bề mặt sản phẩm.",
+        "label": "AI"
+      },
+      "calendar": {
+        "description": "AI tự động xếp lịch theo ưu tiên thực tế của bạn.",
+        "label": "Lịch"
+      },
+      "crm": {
+        "description": "Liên hệ, pipeline và lịch sử khách hàng.",
+        "label": "CRM"
+      },
+      "documents": {
+        "description": "Tài liệu cộng tác nằm ngay cạnh công việc.",
+        "label": "Tài liệu"
+      },
+      "drive": {
+        "description": "Kho lưu trữ chung với phân quyền theo workspace.",
+        "label": "Lưu trữ"
+      },
+      "finance": {
+        "description": "Theo dõi chi tiêu, ngân sách, hoá đơn và ví.",
+        "label": "Tài chính"
+      },
+      "inventory": {
+        "description": "Sản phẩm, tồn kho, nhà cung cấp và kho bãi.",
+        "label": "Kho hàng"
+      },
+      "lms": {
+        "description": "Khoá học, bài kiểm tra và theo dõi tiến độ.",
+        "label": "Học tập"
+      },
+      "mail": {
+        "description": "Hộp thư nhóm kết nối với công việc và lịch.",
+        "label": "Thư"
+      },
+      "meet": {
+        "description": "Tìm thời gian phù hợp cho tất cả mọi người.",
+        "label": "Họp cùng nhau"
+      },
+      "tasks": {
+        "description": "Bảng Kanban, phân cấp và hộp thu thập nhanh.",
+        "label": "Công việc"
+      },
+      "workflows": {
+        "description": "Tự động hoá các bước chuyển giao giữa công cụ.",
+        "label": "Quy trình"
+      }
+    }
   },
   "meet-together": {
     "agenda": "Nội dung cuộc họp",

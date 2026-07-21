@@ -1,5 +1,3 @@
-// Hero Section
-
 // AI Section
 export { AISection } from './ai/ai-section';
 export { MiraShowcase } from './ai/mira-showcase';
@@ -25,5 +23,7 @@ export { PricingToggle } from './pricing/pricing-toggle';
 // Problem Section
 export { ProblemSection } from './problem/problem-section';
 export { StatCard } from './problem/stat-card';
+// Shared section primitives
+export { SectionEyebrow, SectionShell } from './shared/section-shell';
 // Social Proof Section
 export { GithubStats } from './social-proof/github-stats';

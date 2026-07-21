@@ -1,9 +1,16 @@
 'use client';
 
-import { Building2, Crown, Rocket, Sparkles } from '@tuturuuu/icons/lucide';
+import {
+  Building2,
+  Crown,
+  Rocket,
+  Sparkles,
+  Tag,
+} from '@tuturuuu/icons/lucide';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SectionShell } from '../shared/section-shell';
 import { FeatureMatrix } from './feature-matrix';
 import { PaygBanner } from './payg-banner';
 import { PricingCard } from './pricing-card';
@@ -104,97 +111,91 @@ export function PricingSection() {
   ];
 
   return (
-    <section
+    <SectionShell
+      bloom="green"
+      eyebrow={
+        <>
+          <Tag className="h-3 w-3 text-dynamic-green" />
+          {t('eyebrow')}
+        </>
+      }
       id="pricing"
-      className="relative scroll-mt-20 px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24"
+      index="06"
+      subtitle={t('subtitle')}
+      title={t('title')}
+      width="wide"
     >
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.6 }}
-          className="mb-10 text-center sm:mb-12"
-        >
-          <h2 className="mb-3 font-bold text-3xl tracking-tight sm:text-4xl">
-            {t('title')}
-          </h2>
-          <p className="mx-auto mb-6 max-w-xl text-foreground/60 text-lg">
-            {t('subtitle')}
-          </p>
-
-          {/* Billing Toggle */}
-          <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
-        </motion.div>
-
-        {/* Pricing Cards Grid */}
-        <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {tiers.map((tier, index) => (
-            <motion.div
-              key={tier.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-            >
-              <motion.div
-                animate={{
-                  scale: [1, 1.02, 1],
-                }}
-                transition={{
-                  duration: 0.3,
-                  ease: 'easeOut',
-                }}
-                key={`${tier.id}-${isYearly}`}
-              >
-                <PricingCard
-                  icon={tier.icon}
-                  name={tier.name}
-                  price={isYearly ? tier.price.yearly : tier.price.monthly}
-                  period={
-                    typeof tier.period === 'object'
-                      ? isYearly
-                        ? tier.period.yearly
-                        : tier.period.monthly
-                      : tier.period
-                  }
-                  badge={tier.badge}
-                  description={tier.description}
-                  cta={tier.cta}
-                  ctaVariant={tier.ctaVariant}
-                  features={tier.features}
-                  color={tier.color}
-                  highlighted={tier.highlighted}
-                  isEnterprise={tier.id === 'enterprise'}
-                  isFree={tier.id === 'free'}
-                />
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Feature Comparison */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          <FeatureMatrix />
-        </motion.div>
-
-        {/* Pay As You Go Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-8"
-        >
-          <PaygBanner />
-        </motion.div>
+      {/* Billing Toggle */}
+      <div className="-mt-4 mb-10 flex justify-center">
+        <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
       </div>
-    </section>
+
+      {/* Pricing Cards Grid */}
+      <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {tiers.map((tier, index) => (
+          <motion.div
+            key={tier.id}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+          >
+            <motion.div
+              animate={{
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                duration: 0.3,
+                ease: 'easeOut',
+              }}
+              key={`${tier.id}-${isYearly}`}
+            >
+              <PricingCard
+                icon={tier.icon}
+                name={tier.name}
+                price={isYearly ? tier.price.yearly : tier.price.monthly}
+                period={
+                  typeof tier.period === 'object'
+                    ? isYearly
+                      ? tier.period.yearly
+                      : tier.period.monthly
+                    : tier.period
+                }
+                badge={tier.badge}
+                description={tier.description}
+                cta={tier.cta}
+                ctaVariant={tier.ctaVariant}
+                features={tier.features}
+                color={tier.color}
+                highlighted={tier.highlighted}
+                isEnterprise={tier.id === 'enterprise'}
+                isFree={tier.id === 'free'}
+              />
+            </motion.div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Feature Comparison */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+      >
+        <FeatureMatrix />
+      </motion.div>
+
+      {/* Pay As You Go Banner */}
+      <motion.div
+        className="mt-8"
+        initial={{ opacity: 0, y: 20 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        viewport={{ once: true, margin: '-50px' }}
+        whileInView={{ opacity: 1, y: 0 }}
+      >
+        <PaygBanner />
+      </motion.div>
+    </SectionShell>
   );
 }
