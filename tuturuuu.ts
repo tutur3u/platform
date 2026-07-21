@@ -33,6 +33,8 @@ export const ci = {
   'supabase-staging.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
+  // Satellite previews are trusted workflow_dispatch-only jobs and bypass
+  // affected-path gating. Only the automatic platform preview belongs here.
   'vercel-preview-platform.yaml': true,
   'vercel-production-apps.yaml': true,
   'vercel-production-calendar.yaml': true,
@@ -73,9 +75,9 @@ export type WorkflowDecision = {
 };
 
 export type WorkspaceManifest = {
-  dependencies: string[];
-  name: string;
-  path: string;
+  readonly dependencies: readonly string[];
+  readonly name: string;
+  readonly path: string;
 };
 
 export type WorkflowDecisionInput = {
@@ -83,7 +85,7 @@ export type WorkflowDecisionInput = {
   ciConfig?: Record<string, boolean | undefined>;
   eventName?: string;
   workflowName: string;
-  workspaceManifests?: WorkspaceManifest[];
+  workspaceManifests?: readonly WorkspaceManifest[];
 };
 
 export type VercelWorkflowTarget = {
@@ -333,29 +335,93 @@ function getScopedVercelOwners(filePath: string): ReadonlySet<string> | null {
   );
 }
 
-const workspaceDependencyClosureCache = new WeakMap<
-  WorkspaceManifest[],
-  Map<string, Set<string> | null>
+type WorkspaceDependencyCache = {
+  closureByPackage: Map<string, Set<string> | null>;
+  manifestsByName: Map<string, WorkspaceManifest>;
+};
+
+const WORKSPACE_DEPENDENCY_CONTENT_CACHE_LIMIT = 16;
+const workspaceDependencyCacheByReference = new WeakMap<
+  readonly WorkspaceManifest[],
+  WorkspaceDependencyCache
 >();
+const workspaceDependencyCacheByContent = new Map<
+  string,
+  WorkspaceDependencyCache
+>();
+
+function getWorkspaceDependencyCacheKey(
+  manifests: readonly WorkspaceManifest[]
+): string {
+  return JSON.stringify(
+    manifests
+      .map(({ dependencies, name, path }) => ({
+        dependencies: [...dependencies].sort(),
+        name,
+        path,
+      }))
+      .sort(
+        (left, right) =>
+          left.name.localeCompare(right.name) ||
+          left.path.localeCompare(right.path) ||
+          JSON.stringify(left.dependencies).localeCompare(
+            JSON.stringify(right.dependencies)
+          )
+      )
+  );
+}
+
+function getWorkspaceDependencyCache(
+  manifests: readonly WorkspaceManifest[]
+): WorkspaceDependencyCache {
+  const referenceMatch = workspaceDependencyCacheByReference.get(manifests);
+
+  if (referenceMatch) {
+    return referenceMatch;
+  }
+
+  const contentKey = getWorkspaceDependencyCacheKey(manifests);
+  let cache = workspaceDependencyCacheByContent.get(contentKey);
+
+  if (cache) {
+    workspaceDependencyCacheByContent.delete(contentKey);
+    workspaceDependencyCacheByContent.set(contentKey, cache);
+  } else {
+    cache = {
+      closureByPackage: new Map(),
+      manifestsByName: new Map(
+        manifests.map((manifest) => [manifest.name, manifest])
+      ),
+    };
+    workspaceDependencyCacheByContent.set(contentKey, cache);
+
+    if (
+      workspaceDependencyCacheByContent.size >
+      WORKSPACE_DEPENDENCY_CONTENT_CACHE_LIMIT
+    ) {
+      const oldestKey = workspaceDependencyCacheByContent.keys().next().value;
+
+      if (oldestKey !== undefined) {
+        workspaceDependencyCacheByContent.delete(oldestKey);
+      }
+    }
+  }
+
+  workspaceDependencyCacheByReference.set(manifests, cache);
+  return cache;
+}
 
 function buildWorkspaceDependencyClosure(
   packageName: string,
-  manifests: WorkspaceManifest[]
+  manifests: readonly WorkspaceManifest[]
 ): Set<string> | null {
-  let closureByPackage = workspaceDependencyClosureCache.get(manifests);
-
-  if (!closureByPackage) {
-    closureByPackage = new Map();
-    workspaceDependencyClosureCache.set(manifests, closureByPackage);
-  }
+  const { closureByPackage, manifestsByName } =
+    getWorkspaceDependencyCache(manifests);
 
   if (closureByPackage.has(packageName)) {
     return closureByPackage.get(packageName) ?? null;
   }
 
-  const manifestsByName = new Map(
-    manifests.map((manifest) => [manifest.name, manifest])
-  );
   const rootManifest = manifestsByName.get(packageName);
 
   if (!rootManifest) {
@@ -394,7 +460,7 @@ function buildWorkspaceDependencyClosure(
 
 function getChangedWorkspaceName(
   filePath: string,
-  manifests: WorkspaceManifest[]
+  manifests: readonly WorkspaceManifest[]
 ): string | null {
   const workspaceDir = getWorkspaceDirFromPath(filePath);
 

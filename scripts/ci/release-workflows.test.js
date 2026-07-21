@@ -23,6 +23,8 @@ const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
 ]);
+const SECRET_INTERPOLATION_PATTERN =
+  /\$\{\{[^}\n]*\bsecrets\.[A-Z_][A-Z0-9_]*[^}\n]*\}\}/u;
 
 function getVercelRunJobName(workflowName) {
   const jobTarget = workflowName.startsWith('vercel-preview-')
@@ -61,7 +63,7 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
       assert.match(workflow, /Record successful Vercel build marker/);
       assert.match(workflow, /VERCEL_MARKER_KIND: build/);
       assert.match(workflow, /Record successful Vercel deployment marker/);
-      assert.doesNotMatch(workflow, /VERCEL_MARKER_KIND: deployment/);
+      assert.match(workflow, /VERCEL_MARKER_KIND: deployment/);
       assert.match(
         workflow,
         /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
@@ -440,7 +442,7 @@ test('Platform production build waits for release packages, deploys, and records
     /vercel deploy --archive=tgz --prebuilt --prod --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
   );
   assert.match(deployJob, /VERCEL_MARKER_KIND: build/);
-  assert.doesNotMatch(deployJob, /VERCEL_MARKER_KIND: deployment/);
+  assert.match(deployJob, /VERCEL_MARKER_KIND: deployment/);
   assert.doesNotMatch(deployJob, /Check equivalent preview platform build/);
   assert.doesNotMatch(deployJob, /steps\.equivalent_build/);
 });
@@ -1377,7 +1379,9 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const installIndex = workflow.indexOf(
       'run: bash scripts/ci/run-with-backoff.sh bun install\n'
     );
-    const firstSecretIndex = workflow.indexOf('secrets.');
+    const firstSecretInterpolationIndex = workflow.search(
+      SECRET_INTERPOLATION_PATTERN
+    );
 
     assert.doesNotMatch(
       header,
@@ -1427,11 +1431,16 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
 
     assert.doesNotMatch(
       workflow.slice(0, installIndex),
-      /\bsecrets\./,
+      SECRET_INTERPOLATION_PATTERN,
       `${workflowName} must not expose secrets before dependency install runs`
     );
+    assert.notEqual(
+      firstSecretInterpolationIndex,
+      -1,
+      `${workflowName} must include a deployment secret interpolation`
+    );
     assert.ok(
-      installIndex > -1 && installIndex < firstSecretIndex,
+      installIndex > -1 && installIndex < firstSecretInterpolationIndex,
       `${workflowName} must install dependencies before deployment secrets are introduced`
     );
     assert.match(

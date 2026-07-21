@@ -279,3 +279,60 @@ test('changed-file resolver does not fall back to latest commit only when push r
   assert.equal(decision.shouldRun, true);
   assert.match(decision.reason, /changed-file state is unavailable/);
 });
+
+test('workflow gating reuses manifest indexes for equivalent arrays', () => {
+  const output = execFileSync(
+    'bun',
+    [
+      '--eval',
+      `
+        import { getWorkflowDecision } from './tuturuuu.ts';
+
+        const input = {
+          changedFiles: ['package.json'],
+          workflowName: 'vercel-preview-calendar.yaml',
+        };
+        getWorkflowDecision({
+          ...input,
+          workspaceManifests: [
+            {
+              dependencies: [],
+              name: '@tuturuuu/calendar',
+              path: 'apps/calendar',
+            },
+          ],
+        });
+
+        const reads = { dependencies: 0, name: 0, path: 0 };
+        const observedManifest = {
+          get dependencies() {
+            reads.dependencies += 1;
+            return [];
+          },
+          get name() {
+            reads.name += 1;
+            return '@tuturuuu/calendar';
+          },
+          get path() {
+            reads.path += 1;
+            return 'apps/calendar';
+          },
+        };
+        const decision = getWorkflowDecision({
+          ...input,
+          workspaceManifests: [observedManifest],
+        });
+
+        console.log(JSON.stringify({ decision, reads }));
+      `,
+    ],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  const { decision, reads } = JSON.parse(output);
+
+  assert.equal(decision.shouldRun, true);
+  assert.deepEqual(reads, { dependencies: 1, name: 1, path: 1 });
+});
