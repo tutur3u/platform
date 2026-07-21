@@ -85,4 +85,7 @@ prefetched loading shell commits before dynamic data resumes, keeps Storefront
 navigation client-side, and removes the entire fixture in cleanup. Keep both
 Inventory (`7815`) and Storefront (`7822`) server entries in
 `apps/inventory/playwright.config.ts` whenever either app's local host or
-startup command changes.
+startup command changes. The `Inventory / Storefront cache contract` job in
+`.github/workflows/e2e-tests.yaml` runs this suite in parallel with the broader
+platform E2E matrix and uploads Playwright traces and the HTML report when it
+fails.

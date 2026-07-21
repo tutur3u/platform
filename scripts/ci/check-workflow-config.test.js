@@ -764,6 +764,68 @@ test('TanStack migration E2E workflow keeps dual-stack and compare coverage', ()
   assert.match(cleanupStep.run || '', /bun sb:stop \|\| true/);
 });
 
+test('Inventory and Storefront cache invalidation stays protected by E2E', () => {
+  const workflow = readWorkflowYaml('e2e-tests.yaml');
+  const job = workflow.jobs?.['inventory-storefront-cache-e2e'];
+
+  assert.ok(job, 'e2e-tests.yaml must define the cross-app cache E2E job');
+  assert.deepEqual(job.needs, ['check-ci']);
+  assert.match(job.if, /github\.ref != 'refs\/heads\/production'/u);
+  assert.match(job.if, /needs\.check-ci\.outputs\.should_run == 'true'/u);
+  assert.equal(job['timeout-minutes'], 30);
+  assert.equal(job.permissions?.contents, 'read');
+
+  const steps = job.steps || [];
+  const stepNamed = (name) => steps.find((step) => step.name === name);
+
+  assert.equal(
+    stepNamed('Setup Supabase CLI')?.uses,
+    './.github/actions/setup-supabase-cli-with-retry'
+  );
+  assert.equal(
+    stepNamed('Restore cached Supabase Docker images')?.uses,
+    'actions/cache/restore@v6'
+  );
+  assert.match(
+    stepNamed('Restore cached Supabase Docker images')?.with?.key || '',
+    /supabase-docker-v2-/u
+  );
+  assert.equal(
+    stepNamed('Install Playwright browser')?.['working-directory'],
+    'apps/inventory'
+  );
+  assert.equal(stepNamed('Start local Supabase')?.run, 'bun sb:start');
+  assert.equal(
+    stepNamed('Verify cache invalidation and instant navigation')?.run,
+    'bun test:e2e -- --reporter=line,html'
+  );
+  assert.equal(
+    stepNamed('Verify cache invalidation and instant navigation')?.[
+      'working-directory'
+    ],
+    'apps/inventory'
+  );
+
+  const artifactStep = stepNamed('Upload cache E2E failure artifact');
+  assert.equal(artifactStep?.uses, 'actions/upload-artifact@v7');
+  assert.equal(artifactStep?.if, githubExpression('failure()'));
+  assert.equal(artifactStep?.with?.name, 'inventory-storefront-cache-e2e');
+  assert.match(
+    artifactStep?.with?.path || '',
+    /apps\/inventory\/playwright-report\//u
+  );
+  assert.match(
+    artifactStep?.with?.path || '',
+    /apps\/inventory\/test-results\//u
+  );
+  assert.equal(artifactStep?.with?.['if-no-files-found'], 'ignore');
+  assert.equal(artifactStep?.with?.['retention-days'], 7);
+
+  const cleanupStep = stepNamed('Stop local Supabase');
+  assert.equal(cleanupStep?.if, 'always()');
+  assert.equal(cleanupStep?.run, 'bun sb:stop || true');
+});
+
 test('E2E image bundle completes before private, bounded, optional consumers', () => {
   const workflow = readWorkflowYaml('e2e-tests.yaml');
   const producer = workflow.jobs?.['prepare-e2e-images'];
