@@ -17,9 +17,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@tuturuuu/ui/toggle-group';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { ProviderLogo } from '@/components/provider-logo';
 import { DEV_MODE } from '@/constants/common';
+import { apiFetch } from '@/lib/api-fetch';
 
 interface GatewayModel {
   id: string;
@@ -48,7 +49,13 @@ interface ModelsResponse {
   pagination: { page: number; limit: number; total: number };
 }
 
-const ADMIN_MODELS_PAGE_SIZE = 100;
+interface ModelFacetsResponse {
+  providers: string[];
+  tags: string[];
+  types: string[];
+}
+
+const MODELS_PAGE_SIZE = 50;
 
 type SyncSource = 'tuturuuu-production-public' | 'vercel-gateway';
 
@@ -76,45 +83,41 @@ export default function ModelsTab() {
   const [tagFilter, setTagFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search.trim());
   const [page, setPage] = useState(1);
   const [syncSource, setSyncSource] = useState<SyncSource>(
     DEV_MODE ? 'tuturuuu-production-public' : 'vercel-gateway'
   );
 
-  const { data, isLoading } = useQuery<ModelsResponse>({
-    queryKey: ['admin', 'ai-credits', 'models', { scope: 'all' }],
+  const { data: facets } = useQuery<ModelFacetsResponse>({
+    queryKey: ['admin', 'ai-credits', 'models', 'facets'],
+    queryFn: () =>
+      apiFetch<ModelFacetsResponse>('/api/v1/admin/ai-credits/models/facets'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data, isLoading, isFetching } = useQuery<ModelsResponse>({
+    queryKey: [
+      'admin',
+      'ai-credits',
+      'models',
+      { deferredSearch, page, providerFilter, tagFilter, typeFilter },
+    ],
     queryFn: async () => {
-      const models: GatewayModel[] = [];
-      let total = 0;
+      const params = new URLSearchParams({
+        limit: String(MODELS_PAGE_SIZE),
+        page: String(page),
+      });
+      if (deferredSearch) params.set('search', deferredSearch);
+      if (providerFilter !== 'all') params.set('provider', providerFilter);
+      if (typeFilter !== 'all') params.set('type', typeFilter);
+      if (tagFilter !== 'all') params.set('tag', tagFilter);
 
-      for (let pageNumber = 1; pageNumber <= 100; pageNumber++) {
-        const params = new URLSearchParams({
-          limit: String(ADMIN_MODELS_PAGE_SIZE),
-          page: String(pageNumber),
-        });
-        const res = await fetch(
-          `/api/v1/admin/ai-credits/models?${params.toString()}`,
-          { cache: 'no-store' }
-        );
-        if (!res.ok) throw new Error('Failed to fetch models');
-
-        const pageData = (await res.json()) as ModelsResponse;
-        models.push(...pageData.data);
-        total = pageData.pagination.total;
-
-        if (
-          pageData.data.length < ADMIN_MODELS_PAGE_SIZE ||
-          models.length >= total
-        ) {
-          break;
-        }
-      }
-
-      return {
-        data: models,
-        pagination: { limit: models.length, page: 1, total },
-      };
+      return apiFetch<ModelsResponse>(
+        `/api/v1/admin/ai-credits/models?${params.toString()}`
+      );
     },
+    placeholderData: (previousData) => previousData,
   });
 
   const toggleMutation = useMutation({
@@ -125,18 +128,11 @@ export default function ModelsTab() {
       id: string;
       is_enabled: boolean;
     }) => {
-      const res = await fetch('/api/v1/admin/ai-credits/models', {
+      return apiFetch('/api/v1/admin/ai-credits/models', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, is_enabled }),
       });
-      if (!res.ok) {
-        const payload = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(payload?.error || 'Failed to update');
-      }
-      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -150,13 +146,15 @@ export default function ModelsTab() {
 
   const syncMutation = useMutation({
     mutationFn: async (source: SyncSource) => {
-      const res = await fetch('/api/v1/admin/ai-credits/sync-models', {
+      return apiFetch<{
+        new?: number;
+        synced?: number;
+        updated?: number;
+      }>('/api/v1/admin/ai-credits/sync-models', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source }),
       });
-      if (!res.ok) throw new Error('Sync failed');
-      return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
@@ -173,49 +171,15 @@ export default function ModelsTab() {
     onError: () => toast.error(t('sync_failed')),
   });
 
-  const allModels = data?.data ?? [];
-
-  const providers = useMemo(() => {
-    const set = new Set(allModels.map((m) => m.provider));
-    return Array.from(set).sort();
-  }, [allModels]);
-
-  const types = useMemo(() => {
-    const set = new Set(allModels.map((m) => m.type));
-    return Array.from(set).sort();
-  }, [allModels]);
-
-  const tags = useMemo(() => {
-    const set = new Set<string>();
-    for (const model of allModels) {
-      for (const tag of model.tags ?? []) {
-        set.add(tag);
-      }
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [allModels]);
-
-  const filteredModels = useMemo(() => {
-    return allModels.filter((m) => {
-      const matchesSearch =
-        m.name.toLowerCase().includes(search.toLowerCase()) ||
-        m.id.toLowerCase().includes(search.toLowerCase());
-      const matchesProvider =
-        providerFilter === 'all' || m.provider === providerFilter;
-      const matchesType = typeFilter === 'all' || m.type === typeFilter;
-      const matchesTag =
-        tagFilter === 'all' || (m.tags ?? []).some((tag) => tag === tagFilter);
-
-      return matchesSearch && matchesProvider && matchesType && matchesTag;
-    });
-  }, [allModels, search, providerFilter, typeFilter, tagFilter]);
-
-  const itemsPerPage = 50;
-  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
-  const pagedModels = filteredModels.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
+  const pagedModels = data?.data ?? [];
+  const totalResults = data?.pagination.total ?? 0;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalResults / (data?.pagination.limit ?? MODELS_PAGE_SIZE))
   );
+  const providers = facets?.providers ?? [];
+  const types = facets?.types ?? [];
+  const tags = facets?.tags ?? [];
 
   return (
     <div className="space-y-4">
@@ -347,7 +311,10 @@ export default function ModelsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <p className="text-muted-foreground text-sm">
-            {filteredModels.length} {t('results')}
+            {totalResults} {t('results')}
+            {isFetching && !isLoading ? (
+              <span className="ml-2 inline-block h-2 w-2 animate-pulse rounded-full bg-primary" />
+            ) : null}
           </p>
           <ToggleGroup
             type="single"

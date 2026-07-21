@@ -150,30 +150,6 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/storage/list by validating workspace API keys with the legacy ttr_ prefix and workspace permission union, requiring manage_drive or admin, preserving legacy query coercion and storage path sanitization, blocking reserved mobile-deployment vault paths, listing Supabase Storage objects through the server-owned storage REST adapter, filtering placeholder and reserved entries, recursively counting matching files for pagination totals, and returning no-store legacy data/pagination and error envelopes."
     },
-    "api:/api/v1/internal/holidays:apps/web/src/legacy-api-routes/v1/internal/holidays/route.ts": {
-      "methods": {
-        "GET": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles the public Vietnamese holiday list GET through the server-owned Supabase REST adapter, preserving optional parseInt-style year filtering, date ascending ordering, no-store JSON responses, and the legacy 500 error body."
-        },
-        "POST": {
-          "status": "migrated",
-          "targetOwner": "rust-backend",
-          "note": "Rust backend handle_backend_request handles POST /api/v1/internal/holidays by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access, validating date/name input, checking duplicate dates, and inserting with the caller's Supabase token so vietnamese_holidays RLS remains active while preserving legacy-compatible 201, 400, 403, 409, and 500 JSON responses."
-        }
-      }
-    },
-    "api:/api/v1/internal/holidays/:holidayId:apps/web/src/legacy-api-routes/v1/internal/holidays/[holidayId]/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles PUT and DELETE /api/v1/internal/holidays/:holidayId by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access like the legacy admin check, validating optional update fields, checking item existence and date conflicts for PUT, and mutating with the caller's Supabase token so vietnamese_holidays RLS remains active. DELETE preserves the legacy behavior of returning the success message for any successful Supabase delete response without a separate existence check."
-    },
-    "api:/api/v1/internal/holidays/bulk:apps/web/src/legacy-api-routes/v1/internal/holidays/bulk/route.ts": {
-      "status": "migrated",
-      "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles POST /api/v1/internal/holidays/bulk by revalidating the browser Supabase auth cookie or bearer token, requiring root workspace MEMBER access like the legacy admin check, validating the holidays array and optional replaceExisting flag, deleting affected years when replaceExisting is true, and upserting date/name rows with the caller's Supabase token so vietnamese_holidays RLS remains active while preserving the legacy 201 success payload and 400/403/500 error messages."
-    },
     "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

@@ -44,6 +44,14 @@ Legacy public links (`tuturuuu.com/<locale>/shared/forms/<shareCode>`) get a
 permanent **308** from web's proxy, issued before the auth proxy runs so
 respondents and social crawlers are never bounced to `/login`.
 
+`apps/infrastructure` follows the same hard-ownership rule for internal platform
+operations. Infrastructure-only routes such as AI-credit administration,
+translation tooling, and holiday administration live in that app. Shared route
+shapes that its UI needs, including the root-admin workspace list and workspace
+secret management, also have local Infrastructure handlers protected by the
+Infrastructure app session and root-workspace membership. Do not add a new
+Infrastructure UI call that depends on an `apps/web` fallback rewrite.
+
 ## Cache Components: `connection()`, not `dynamic`
 
 <Warning>

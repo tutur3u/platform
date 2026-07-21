@@ -255,8 +255,8 @@ The crate is decomposed so every file stays under a **700-LOC ceiling** (see
   returns only derived coverage statistics.
 - `GET` / `POST` `/api/v1/internal/holidays`, `POST`
   `/api/v1/internal/holidays/bulk`, and `PUT` / `DELETE`
-  `/api/v1/internal/holidays/:holidayId`: legacy-compatible Vietnamese holiday
-  routes. GET reads the public holiday list through the server-owned Supabase
+  `/api/v1/internal/holidays/:holidayId`: Infrastructure-owned Vietnamese holiday
+  route counterparts. GET reads the holiday list through the server-owned Supabase
   REST adapter with optional parseInt-style year filtering. Mutations revalidate
   the caller's Supabase browser cookie or Bearer token, require a root workspace
   `MEMBER` row, and use that caller token for duplicate checks, bulk upserts,

@@ -7128,7 +7128,7 @@ paths:
   /api/v1/internal/holidays:
     get:
       summary: Legacy-compatible Vietnamese holiday list
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts GET. The Rust backend reads public Vietnamese holiday rows through the server-owned Supabase REST adapter, preserves the optional parseInt-style year filter, and orders rows by date ascending.
+      description: Prepared Rust counterpart for apps/infrastructure/src/app/api/v1/internal/holidays/route.ts GET. The Rust backend reads Vietnamese holiday rows through the server-owned Supabase REST adapter, preserves the optional parseInt-style year filter, and orders rows by date ascending.
       parameters:
         - name: year
           in: query
@@ -7172,7 +7172,7 @@ paths:
                   - GET, POST
     post:
       summary: Legacy-compatible Vietnamese holiday create
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/route.ts POST. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, preserves the legacy holiday date/name validation and duplicate-date response, and inserts with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
+      description: Prepared Rust counterpart for apps/infrastructure/src/app/api/v1/internal/holidays/route.ts POST. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, preserves the holiday date/name validation and duplicate-date response, and inserts with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -7231,7 +7231,7 @@ paths:
   /api/v1/internal/holidays/bulk:
     post:
       summary: Legacy-compatible Vietnamese holiday bulk import
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/bulk/route.ts POST. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row like the legacy admin check, validates 1-100 holiday date/name rows and the optional replaceExisting flag, deletes existing holidays for affected years when requested, then upserts with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
+      description: Prepared Rust counterpart for apps/infrastructure/src/app/api/v1/internal/holidays/bulk/route.ts POST. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, validates 1-100 holiday date/name rows and the optional replaceExisting flag, deletes existing holidays for affected years when requested, then upserts with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -7299,7 +7299,7 @@ paths:
         description: Vietnamese holiday row id.
     put:
       summary: Legacy-compatible Vietnamese holiday update
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/[holidayId]/route.ts PUT. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row like the legacy admin check, validates optional date/name updates, checks row existence and duplicate-date conflicts, and updates with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
+      description: Prepared Rust counterpart for apps/infrastructure/src/app/api/v1/internal/holidays/[holidayId]/route.ts PUT. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, validates optional date/name updates, checks row existence and duplicate-date conflicts, and updates with the caller's Supabase token so vietnamese_holidays RLS stays active while the server-held Supabase key remains limited to the apikey header.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
@@ -7371,7 +7371,7 @@ paths:
           $ref: "#/components/responses/RequestBodyTooLarge"
     delete:
       summary: Legacy-compatible Vietnamese holiday delete
-      description: Migrated replacement for apps/web/src/app/api/v1/internal/holidays/[holidayId]/route.ts DELETE. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row like the legacy admin check, and deletes with the caller's Supabase token so vietnamese_holidays RLS stays active. The legacy route did not check row existence before delete, so a successful Supabase delete returns the legacy success message even when no row matched.
+      description: Prepared Rust counterpart for apps/infrastructure/src/app/api/v1/internal/holidays/[holidayId]/route.ts DELETE. The Rust backend revalidates the browser Supabase auth cookie or bearer token, requires a root workspace MEMBER row, and deletes with the caller's Supabase token so vietnamese_holidays RLS stays active. A successful Supabase delete preserves the satellite response even when no row matched.
       security:
         - SupabaseBrowserSessionCookie: []
         - SupabaseBearer: []
