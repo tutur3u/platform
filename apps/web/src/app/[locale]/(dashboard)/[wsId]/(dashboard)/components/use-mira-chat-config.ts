@@ -6,6 +6,7 @@ import {
   matchesAllowedModel,
   normalizeStableModelId,
 } from '@tuturuuu/ai/credits/model-mapping';
+import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { resolveTimezone } from '@tuturuuu/utils/calendar-settings-resolver';
@@ -23,6 +24,7 @@ import {
 } from './mira-chat-constants';
 import {
   fetchGatewayModels,
+  type GatewayModelUi,
   MIRA_GATEWAY_MODELS_QUERY_KEY,
   modelSupportsFileInput,
 } from './mira-gateway-models';
@@ -87,6 +89,41 @@ export function resolveInitialThinkingMode(
   return 'fast';
 }
 
+export function resolveAvailableMiraModel({
+  allowedModels,
+  defaultLanguageModelId,
+  gatewayModels,
+  selectedModel,
+}: {
+  allowedModels: string[];
+  defaultLanguageModelId: string;
+  gatewayModels: GatewayModelUi[] | undefined;
+  selectedModel: AIModelUI;
+}): AIModelUI {
+  if (!gatewayModels) return selectedModel;
+
+  const findSelectableModel = (modelId: string) => {
+    const stableModelId = normalizeStableModelId(modelId);
+    return gatewayModels.find(
+      (gatewayModel) =>
+        !gatewayModel.disabled &&
+        normalizeStableModelId(gatewayModel.value) === stableModelId &&
+        matchesAllowedModel(gatewayModel.value, allowedModels)
+    );
+  };
+
+  return (
+    findSelectableModel(selectedModel.value) ??
+    findSelectableModel(defaultLanguageModelId) ??
+    gatewayModels.find(
+      (gatewayModel) =>
+        !gatewayModel.disabled &&
+        matchesAllowedModel(gatewayModel.value, allowedModels)
+    ) ??
+    toModelUi(defaultLanguageModelId)
+  );
+}
+
 export function useMiraChatConfig({
   wsId,
   taskBoardContext,
@@ -136,16 +173,12 @@ export function useMiraChatConfig({
   const { data: personalWorkspaceId } = useQuery<string | null>({
     queryKey: ['personal-workspace-id'],
     queryFn: async () => {
-      const res = await fetch('/api/v1/infrastructure/resolve-workspace-id', {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wsId: 'personal' }),
-      });
-
-      if (!res.ok) return null;
-      const payload = (await res.json()) as { workspaceId?: string };
-      return payload.workspaceId ?? null;
+      try {
+        const workspace = await getWorkspace('personal');
+        return workspace.id ?? null;
+      } catch {
+        return null;
+      }
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -174,12 +207,18 @@ export function useMiraChatConfig({
   });
 
   const model = useMemo(() => {
-    const catalogModel = gatewayModels?.find(
-      (gatewayModel) => gatewayModel.value === selectedModel.value
-    );
-
-    return catalogModel ?? selectedModel;
-  }, [gatewayModels, selectedModel]);
+    return resolveAvailableMiraModel({
+      allowedModels: creditCredits?.allowedModels ?? [],
+      defaultLanguageModelId,
+      gatewayModels,
+      selectedModel,
+    });
+  }, [
+    creditCredits?.allowedModels,
+    defaultLanguageModelId,
+    gatewayModels,
+    selectedModel,
+  ]);
 
   const supportsFileInput = useMemo(
     () => modelSupportsFileInput(model),

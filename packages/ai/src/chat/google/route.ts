@@ -31,6 +31,7 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
+import { resolveChatReasoningSettings } from './reasoning-settings';
 import {
   type AiRouteAuthResult,
   isInternalTuturuuuAiUser,
@@ -50,8 +51,6 @@ import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
 } from './stream-finish-persistence';
-
-type ThinkingMode = 'fast' | 'thinking';
 
 function splitSystemMessages(messages: ModelMessage[]) {
   const systemMessages: string[] = [];
@@ -144,8 +143,7 @@ export function createPOST(
         observabilityContext,
         taskBoardContext,
       } = parsedBody.data;
-      const thinkingMode: ThinkingMode =
-        rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
+      const thinkingMode = rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
 
       if (!messages) {
         console.error('Missing messages');
@@ -461,20 +459,7 @@ export function createPOST(
         wsId: billingWsId ?? normalizedWsId,
       });
 
-      // Reasoning mode: default to fast unless the client explicitly requests thinking.
-      const modelLower = resolvedModelId.toLowerCase();
-      const supportsThinking =
-        modelLower.includes('gemini-2.5') || modelLower.includes('gemini-3');
-      const thinkingConfig = supportsThinking
-        ? thinkingMode === 'thinking'
-          ? { thinkingConfig: { includeThoughts: true } }
-          : {
-              thinkingConfig: {
-                thinkingBudget: 0,
-                includeThoughts: false,
-              },
-            }
-        : {};
+      const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
       const forceRenderUi = shouldForceRenderUiForLatestUserMessage(
         promptMessages.messages
       );
@@ -540,6 +525,7 @@ export function createPOST(
         maxRetries: 0,
         model: resolvedGatewayModel,
         messages: promptMessages.messages,
+        reasoning: reasoningSettings.effort,
         system: mergeSystemInstructions(
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
           promptMessages.system
@@ -561,7 +547,9 @@ export function createPOST(
             }),
         providerOptions: {
           google: {
-            ...thinkingConfig,
+            thinkingConfig: {
+              includeThoughts: reasoningSettings.includeThoughts,
+            },
             safetySettings: [
               {
                 category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
@@ -582,7 +570,9 @@ export function createPOST(
             ],
           },
           vertex: {
-            ...thinkingConfig,
+            thinkingConfig: {
+              includeThoughts: reasoningSettings.includeThoughts,
+            },
             safetySettings: [
               {
                 category: 'HARM_CATEGORY_HARASSMENT',

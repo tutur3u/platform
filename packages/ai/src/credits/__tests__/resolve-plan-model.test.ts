@@ -76,6 +76,37 @@ describe('selectEffectivePlanModel', () => {
     expect(result.source).toBe('plan_default');
   });
 
+  it('falls back to the plan default when the requested model is disabled', () => {
+    const result = selectEffectivePlanModel({
+      allocation: {
+        ...baseAllocation,
+        allowed_models: [
+          'google/gemini-2.5-flash',
+          'google/gemini-3.5-flash-lite',
+        ],
+      },
+      capability: 'language',
+      modelsById: new Map([
+        [
+          'google/gemini-2.5-flash',
+          { id: 'google/gemini-2.5-flash', is_enabled: true, type: 'language' },
+        ],
+        [
+          'google/gemini-3.5-flash-lite',
+          {
+            id: 'google/gemini-3.5-flash-lite',
+            is_enabled: false,
+            type: 'language',
+          },
+        ],
+      ]),
+      requestedModel: 'google/gemini-3.5-flash-lite',
+    });
+
+    expect(result.modelId).toBe('google/gemini-2.5-flash');
+    expect(result.source).toBe('plan_default');
+  });
+
   it('normalizes legacy Gemini 3.1 Flash Lite preview allocation values', () => {
     const result = selectEffectivePlanModel({
       allocation: {

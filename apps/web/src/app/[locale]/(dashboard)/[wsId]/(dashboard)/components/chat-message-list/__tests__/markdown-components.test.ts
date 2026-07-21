@@ -34,3 +34,13 @@ describe('markdown-components table normalization', () => {
     expect(__testUtils.normalizeMarkdownTables(input)).toBe(input);
   });
 });
+
+describe('reasoning disclosure', () => {
+  it('opens reasoning by default while it is streaming', () => {
+    expect(__testUtils.getInitialReasoningDisclosureState(true)).toBe(true);
+  });
+
+  it('keeps completed reasoning collapsed by default', () => {
+    expect(__testUtils.getInitialReasoningDisclosureState(false)).toBe(false);
+  });
+});
