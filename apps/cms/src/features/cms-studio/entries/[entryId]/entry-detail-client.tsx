@@ -49,6 +49,7 @@ import {
   getCmsWorkspaceBasePath,
 } from '../../cms-paths';
 import type { CmsStrings } from '../../cms-strings';
+import { getCmsMediaQueryKey } from '../../media/use-cms-media-library';
 import { useCmsLivePreview } from '../../use-cms-live-preview';
 import { getCmsStudioQueryKey, useCmsStudio } from '../../use-cms-studio';
 import { EntryDetailConfirmDialogs } from './entry-detail-confirm-dialogs';
@@ -680,9 +681,14 @@ export function EntryDetailClient({
   };
 
   const refreshStudioFromBackend = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: getCmsStudioQueryKey(workspaceId),
-    });
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: getCmsStudioQueryKey(workspaceId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: getCmsMediaQueryKey(workspaceId),
+      }),
+    ]);
   };
 
   const setUploadProgressItem = (

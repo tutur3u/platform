@@ -7,6 +7,7 @@ import {
   diffWorkspaceExternalProjectSyncManifest,
   getWorkspaceExternalProjectSyncSnapshot,
   listWorkspaceExternalProjectFieldDefinitions,
+  listWorkspaceExternalProjectMedia,
   setupWorkspaceExternalProject,
   updateWorkspaceExternalProjectFieldDefinition,
   uploadWorkspaceExternalProjectAssetFile,
@@ -256,6 +257,44 @@ describe('external project upload helpers', () => {
       fullPath: 'ws-1/external-projects/yoola/artworks/mine/cover.png',
       path: 'external-projects/yoola/artworks/mine/cover.png',
     });
+  });
+});
+
+describe('external project media helpers', () => {
+  it('requests bounded media pages with stable filters', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      createJsonResponse({
+        items: [],
+        pageInfo: {
+          hasMore: false,
+          nextPage: null,
+          page: 3,
+          pageSize: 18,
+          total: 0,
+        },
+        totals: { all: 0, audio: 0, image: 0, other: 0 },
+      })
+    );
+
+    await listWorkspaceExternalProjectMedia(
+      'ws 1',
+      {
+        attachment: 'unattached',
+        page: 3,
+        pageSize: 18,
+        query: ' hero image ',
+        type: 'image',
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://web.example.com/api/v1/workspaces/ws%201/external-projects/assets?attachment=unattached&page=3&pageSize=18&type=image&q=hero+image',
+      expect.objectContaining({ cache: 'no-store' })
+    );
   });
 });
 

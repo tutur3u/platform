@@ -1,5 +1,5 @@
 import type { Json } from '@tuturuuu/types';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import {
@@ -7,6 +7,15 @@ import {
   isExternalProjectStoragePath,
 } from '@/lib/external-projects/storage-path';
 import { createWorkspaceExternalProjectAsset } from '@/lib/external-projects/store';
+import { listWorkspaceExternalProjectMediaPage } from '@/lib/external-projects/store-media';
+
+const mediaQuerySchema = z.object({
+  attachment: z.enum(['all', 'attached', 'unattached']).default('all'),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(48).default(24),
+  q: z.string().trim().max(120).default(''),
+  type: z.enum(['all', 'image', 'audio', 'other']).default('all'),
+});
 
 const assetStoragePathSchema = z
   .string()
@@ -30,6 +39,56 @@ const assetSchema = z
     message: 'entry_id or block_id is required',
     path: ['entry_id'],
   });
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+) {
+  await connection();
+  const { wsId } = await params;
+  const access = await requireWorkspaceExternalProjectAccess({
+    mode: 'read',
+    request,
+    wsId,
+  });
+  if (!access.ok) return access.response;
+
+  try {
+    const parsed = mediaQuerySchema.parse(
+      Object.fromEntries(new URL(request.url).searchParams)
+    );
+    const page = await listWorkspaceExternalProjectMediaPage(
+      access.normalizedWorkspaceId,
+      {
+        attachment: parsed.attachment,
+        page: parsed.page,
+        pageSize: parsed.pageSize,
+        query: parsed.q,
+        type: parsed.type,
+      },
+      access.admin
+    );
+
+    return NextResponse.json(page, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=300',
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid query', details: error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    console.error('Failed to list workspace external project media', error);
+    return NextResponse.json(
+      { error: 'Failed to list workspace external project media' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(
   request: Request,

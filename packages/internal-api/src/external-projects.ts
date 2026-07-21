@@ -12,6 +12,7 @@ import type {
   ExternalProjectImportJob,
   ExternalProjectImportReport,
   ExternalProjectRelationDefinition,
+  ExternalProjectStudioAsset,
   ExternalProjectStudioData,
   ExternalProjectSummary,
   ExternalProjectWorkspaceBindingSummary,
@@ -79,6 +80,41 @@ type WorkspaceExternalProjectAssetPayload = {
   sort_order?: number;
   source_url?: string | null;
   storage_path?: string | null;
+};
+
+export type WorkspaceExternalProjectMediaType =
+  | 'all'
+  | 'image'
+  | 'audio'
+  | 'other';
+
+export type WorkspaceExternalProjectMediaAttachment =
+  | 'all'
+  | 'attached'
+  | 'unattached';
+
+export type WorkspaceExternalProjectMediaItem = ExternalProjectStudioAsset & {
+  entry: { id: string; title: string } | null;
+};
+
+export type WorkspaceExternalProjectMediaPage = {
+  items: WorkspaceExternalProjectMediaItem[];
+  pageInfo: {
+    hasMore: boolean;
+    nextPage: number | null;
+    page: number;
+    pageSize: number;
+    total: number;
+  };
+  totals: Record<WorkspaceExternalProjectMediaType, number>;
+};
+
+export type ListWorkspaceExternalProjectMediaQuery = {
+  attachment?: WorkspaceExternalProjectMediaAttachment;
+  page?: number;
+  pageSize?: number;
+  query?: string;
+  type?: WorkspaceExternalProjectMediaType;
 };
 
 type WorkspaceExternalProjectFieldDefinitionPayload = {
@@ -526,6 +562,27 @@ export async function getWorkspaceExternalProjectStudio(
   >(`/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects`, {
     cache: 'no-store',
   });
+}
+
+export async function listWorkspaceExternalProjectMedia(
+  workspaceId: string,
+  query: ListWorkspaceExternalProjectMediaQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  searchParams.set('attachment', query.attachment ?? 'all');
+  searchParams.set('page', String(query.page ?? 1));
+  searchParams.set('pageSize', String(query.pageSize ?? 24));
+  searchParams.set('type', query.type ?? 'all');
+  if (query.query?.trim()) {
+    searchParams.set('q', query.query.trim());
+  }
+
+  return client.json<WorkspaceExternalProjectMediaPage>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/assets?${searchParams.toString()}`,
+    { cache: 'no-store' }
+  );
 }
 
 export async function getWorkspaceExternalProjectSummary(

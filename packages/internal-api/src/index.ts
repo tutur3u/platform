@@ -508,8 +508,13 @@ export {
 } from './external-project-team';
 export type {
   ExternalProjectSyncManifest,
+  ListWorkspaceExternalProjectMediaQuery,
   WorkspaceExternalProjectEntryBundleCreatePayload,
   WorkspaceExternalProjectEntryBundleUpdatePayload,
+  WorkspaceExternalProjectMediaAttachment,
+  WorkspaceExternalProjectMediaItem,
+  WorkspaceExternalProjectMediaPage,
+  WorkspaceExternalProjectMediaType,
   WorkspaceExternalProjectSyncApplyPayload,
   WorkspaceExternalProjectSyncApplyResult,
   WorkspaceExternalProjectSyncDiffPayload,
@@ -554,6 +559,7 @@ export {
   listWorkspaceExternalProjectCollections,
   listWorkspaceExternalProjectEntries,
   listWorkspaceExternalProjectFieldDefinitions,
+  listWorkspaceExternalProjectMedia,
   listWorkspaceExternalProjectRelationDefinitions,
   processWorkspaceExternalProjectManagedAssetImportJob,
   publishWorkspaceExternalProjectEntry,
