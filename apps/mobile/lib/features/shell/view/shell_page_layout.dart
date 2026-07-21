@@ -300,10 +300,7 @@ extension _ShellPageLayout on _ShellPageState {
             selectedKey: selectedKey,
             compact: true,
             onSelected: (key) => useInjectedMiniNav
-                ? _onInjectedMiniNavItemTapped(
-                    key,
-                    injectedMiniNavRegistration,
-                  )
+                ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
                 : isMiniAppRoute
                 ? _onMiniAppItemTapped(
                     key,
@@ -311,10 +308,7 @@ extension _ShellPageLayout on _ShellPageState {
                     activeModule,
                     activeMiniNavItems,
                   )
-                : _onItemTapped(
-                    _ShellPageState._indexForKey(key),
-                    context,
-                  ),
+                : _onItemTapped(_ShellPageState._indexForKey(key), context),
             children: isMiniAppRoute ? miniItems : globalItems,
           )
         : CustomNavigationBar(

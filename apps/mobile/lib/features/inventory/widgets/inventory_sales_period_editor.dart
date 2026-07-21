@@ -28,11 +28,8 @@ Future<InventorySalesPeriod?> showInventorySalesPeriodEditor({
 }) => showAdaptiveSheet<InventorySalesPeriod>(
   context: context,
   maxDialogWidth: 460,
-  builder: (_) => _SalesPeriodEditor(
-    period: period,
-    repository: repository,
-    wsId: wsId,
-  ),
+  builder: (_) =>
+      _SalesPeriodEditor(period: period, repository: repository, wsId: wsId),
 );
 
 class _SalesPeriodEditor extends StatefulWidget {

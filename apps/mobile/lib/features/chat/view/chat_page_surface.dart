@@ -106,9 +106,7 @@ class _ChatOverviewCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.24),
-        ),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.24)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -140,12 +138,9 @@ class _ChatOverviewCard extends StatelessWidget {
               children: [
                 Text(
                   context.l10n.chatTitle,
-                  style:
-                      Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(

@@ -77,13 +77,10 @@ extension _InventoryRepositoryCache on InventoryRepository {
     return data;
   }
 
-  Future<void> _invalidateInventory(
-    String wsId,
-    Iterable<String> tags,
-  ) {
-    return CacheStore.instance.invalidateTags(
-      {...tags, 'inventory:audit'},
-      workspaceId: wsId,
-    );
+  Future<void> _invalidateInventory(String wsId, Iterable<String> tags) {
+    return CacheStore.instance.invalidateTags({
+      ...tags,
+      'inventory:audit',
+    }, workspaceId: wsId);
   }
 }

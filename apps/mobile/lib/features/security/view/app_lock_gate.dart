@@ -57,10 +57,7 @@ class AppLockGate extends StatelessWidget {
 }
 
 class _LockCard extends StatelessWidget {
-  const _LockCard({
-    required this.authenticating,
-    required this.onUnlock,
-  });
+  const _LockCard({required this.authenticating, required this.onUnlock});
 
   final bool authenticating;
   final VoidCallback onUnlock;

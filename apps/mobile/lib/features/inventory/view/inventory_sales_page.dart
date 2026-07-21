@@ -368,9 +368,7 @@ class _InventorySalesPageState extends State<InventorySalesPage> {
 
             if (_error != null && _sales.isEmpty) {
               return _InventorySalesError(
-                onRetry: () => unawaited(
-                  _loadInitial(forceRefresh: true),
-                ),
+                onRetry: () => unawaited(_loadInitial(forceRefresh: true)),
               );
             }
 

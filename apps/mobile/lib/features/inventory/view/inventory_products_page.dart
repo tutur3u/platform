@@ -227,9 +227,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage> {
 
             if (_error != null && _products.isEmpty) {
               return _InventoryProductsError(
-                onRetry: () => unawaited(
-                  _loadInitial(forceRefresh: true),
-                ),
+                onRetry: () => unawaited(_loadInitial(forceRefresh: true)),
               );
             }
 

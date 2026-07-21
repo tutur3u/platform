@@ -103,9 +103,7 @@ void main() {
         expect(buttonRect.center.dx, closeTo(195, 0.1));
         expect(buttonContentRect.center.dx, closeTo(buttonRect.center.dx, 0.1));
 
-        verify(
-          () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
-        ).called(1);
+        verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
       },
     );
 
@@ -134,17 +132,13 @@ void main() {
       );
 
       expect(tester.takeException(), isNull);
-      verify(
-        () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
-      ).called(1);
+      verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
       clearInteractions(appLockCubit);
       await tester.ensureVisible(find.text('Unlock'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Unlock'));
 
-      verify(
-        () => appLockCubit.unlock(reason: 'Unlock Tuturuuu.'),
-      ).called(1);
+      verify(() => appLockCubit.unlock(reason: 'Unlock Tuturuuu.')).called(1);
     });
 
     testWidgets('shows a centered authenticating state', (tester) async {

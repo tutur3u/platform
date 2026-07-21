@@ -69,9 +69,7 @@ void main() {
         workspaceId: 'workspace-1',
       ),
       policy: CachePolicies.detail,
-      payload: const <String, Object?>{
-        'description': resourceSecret,
-      },
+      payload: const <String, Object?>{'description': resourceSecret},
     );
     await cacheStore.savePendingMutation(
       PendingMutationRecord(
@@ -82,9 +80,7 @@ void main() {
         createdAt: DateTime.utc(2026),
         workspaceId: 'workspace-1',
         userId: 'user-1',
-        payload: const <String, dynamic>{
-          'description': mutationSecret,
-        },
+        payload: const <String, dynamic>{'description': mutationSecret},
       ),
     );
 

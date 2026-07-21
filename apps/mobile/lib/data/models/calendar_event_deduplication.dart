@@ -5,9 +5,7 @@ import 'package:mobile/data/models/calendar_event.dart';
 /// IDs are the primary identity. A semantic fingerprint also catches duplicate
 /// rows created by repeated calendar imports or syncs, without collapsing
 /// events that only share a title but occur at different times.
-List<CalendarEvent> deduplicateCalendarEvents(
-  Iterable<CalendarEvent> events,
-) {
+List<CalendarEvent> deduplicateCalendarEvents(Iterable<CalendarEvent> events) {
   final seenIds = <String>{};
   final seenFingerprints = <String>{};
   final uniqueEvents = <CalendarEvent>[];

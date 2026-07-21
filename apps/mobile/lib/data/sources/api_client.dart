@@ -19,9 +19,8 @@ class ApiClient {
   final String? _baseUrl;
   static const int _expiryBufferMs = 60 * 1000;
 
-  Uri _url(String path) => Uri.parse(
-    '${_baseUrl ?? ApiConfig.baseUrlForPath(path)}$path',
-  );
+  Uri _url(String path) =>
+      Uri.parse('${_baseUrl ?? ApiConfig.baseUrlForPath(path)}$path');
 
   Future<void> _ensureValidSession({bool forceRefresh = false}) async {
     final session = supabase.auth.currentSession;

@@ -136,10 +136,7 @@ class _InventoryProductEditorPageState
           _inventoryRepository.getManufacturers(wsId),
           <InventoryLookupItem>[],
         ),
-        loadOptional(
-          _inventoryRepository.getOwners(wsId),
-          <InventoryOwner>[],
-        ),
+        loadOptional(_inventoryRepository.getOwners(wsId), <InventoryOwner>[]),
         loadOptional(
           _inventoryRepository.getProductUnits(wsId),
           <InventoryLookupItem>[],
@@ -1173,10 +1170,7 @@ class _InventoryInlineAlertCard extends StatelessWidget {
           ),
           if (actionLabel != null && onAction != null) ...[
             const shad.Gap(8),
-            shad.GhostButton(
-              onPressed: onAction,
-              child: Text(actionLabel!),
-            ),
+            shad.GhostButton(onPressed: onAction, child: Text(actionLabel!)),
           ],
         ],
       ),

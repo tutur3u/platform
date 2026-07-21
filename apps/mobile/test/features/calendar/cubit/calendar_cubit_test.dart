@@ -166,10 +166,7 @@ void main() {
         ],
       );
 
-      await CalendarCubit.prewarm(
-        calendarRepository: repository,
-        wsId: 'ws-2',
-      );
+      await CalendarCubit.prewarm(calendarRepository: repository, wsId: 'ws-2');
       CalendarCubit.clearCache();
 
       when(

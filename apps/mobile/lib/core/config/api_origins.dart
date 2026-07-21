@@ -163,13 +163,11 @@ class ApiOrigins {
     }
   }
 
-  static bool _matchesWorkspace(String path, String remainder) => RegExp(
-    '^/api/workspaces/[^/]+/$remainder',
-  ).hasMatch(path);
+  static bool _matchesWorkspace(String path, String remainder) =>
+      RegExp('^/api/workspaces/[^/]+/$remainder').hasMatch(path);
 
-  static bool _matchesWorkspaceV1(String path, String remainder) => RegExp(
-    '^/api/v1/workspaces/[^/]+/$remainder',
-  ).hasMatch(path);
+  static bool _matchesWorkspaceV1(String path, String remainder) =>
+      RegExp('^/api/v1/workspaces/[^/]+/$remainder').hasMatch(path);
 
   static String _normalize(String url) =>
       url.trim().replaceAll(RegExp(r'/$'), '');

@@ -79,11 +79,7 @@ void main() {
       };
 
       for (final entry in expectations.entries) {
-        expect(
-          origins.ownerForPath(entry.key),
-          entry.value,
-          reason: entry.key,
-        );
+        expect(origins.ownerForPath(entry.key), entry.value, reason: entry.key);
       }
     });
 

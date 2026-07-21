@@ -19,9 +19,7 @@ class Env {
     defaultValue: 'http://localhost:7803',
   );
 
-  static const tasksApiBaseUrl = String.fromEnvironment(
-    'TASKS_API_BASE_URL',
-  );
+  static const tasksApiBaseUrl = String.fromEnvironment('TASKS_API_BASE_URL');
 
   static const financeApiBaseUrl = String.fromEnvironment(
     'FINANCE_API_BASE_URL',

@@ -195,9 +195,8 @@ class _InventoryAuditLogsPageState extends State<InventoryAuditLogsPage> {
                     title: context.l10n.commonSomethingWentWrong,
                     body: _error ?? context.l10n.inventoryAuditLabel,
                     action: shad.SecondaryButton(
-                      onPressed: () => unawaited(
-                        _loadInitial(forceRefresh: true),
-                      ),
+                      onPressed: () =>
+                          unawaited(_loadInitial(forceRefresh: true)),
                       child: Text(context.l10n.commonRetry),
                     ),
                   ),

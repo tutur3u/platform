@@ -174,9 +174,7 @@ void main() {
         const Stream<TaskPortfolioState>.empty(),
         initialState: portfolioState,
       );
-      when(
-        () => permissionsRepository.getPermissions(wsId: 'ws-1'),
-      ).thenAnswer(
+      when(() => permissionsRepository.getPermissions(wsId: 'ws-1')).thenAnswer(
         (_) async => const WorkspacePermissions(
           permissions: {'manage_projects'},
           isCreator: false,

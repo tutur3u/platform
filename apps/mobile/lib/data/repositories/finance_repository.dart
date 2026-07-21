@@ -381,11 +381,7 @@ class FinanceRepository {
         walletId,
         checkpointId,
       ),
-      {
-        'basis': basis,
-        'category_id': categoryId,
-        'description': description,
-      },
+      {'basis': basis, 'category_id': categoryId, 'description': description},
     );
     return WalletCheckpointReconciliationResponse.fromJson(response);
   }

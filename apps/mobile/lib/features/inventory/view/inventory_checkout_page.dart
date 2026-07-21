@@ -136,11 +136,7 @@ class _InventoryCheckoutPageState extends State<InventoryCheckoutPage> {
           _products,
           'products',
         ),
-        loadOptional(
-          _financeRepository.getWallets(wsId),
-          _wallets,
-          'wallets',
-        ),
+        loadOptional(_financeRepository.getWallets(wsId), _wallets, 'wallets'),
         loadOptional(
           _financeRepository.getCategories(wsId),
           _categories,

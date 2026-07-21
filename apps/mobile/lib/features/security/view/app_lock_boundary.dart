@@ -101,9 +101,7 @@ class _AppLockLoadingGate extends StatelessWidget {
 
     return ColoredBox(
       color: theme.colorScheme.background,
-      child: const SafeArea(
-        child: Center(child: NovaLoadingIndicator()),
-      ),
+      child: const SafeArea(child: Center(child: NovaLoadingIndicator())),
     );
   }
 }

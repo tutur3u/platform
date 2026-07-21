@@ -478,41 +478,38 @@ void main() {
       );
     });
 
-    test(
-      'does not fall back to browser OAuth when native Apple sign-in is '
-      'unavailable',
-      () async {
-        repository = AuthRepository(
-          supabaseClient: supabaseClient,
-          secureStorage: secureStorage,
-          googleIdentityClient: googleIdentityClient,
-          appleIdentityClient: appleIdentityClient,
-          oauthUrlLauncher: oauthUrlLauncher,
-          packageInfoLoader: () async => _packageInfo(),
-          devicePlatform: const _IosPlatform(),
-          googleWebClientId: 'web-client-id',
-          googleIosClientId: 'ios-client-id',
-        );
+    test('does not fall back to browser OAuth when native Apple sign-in is '
+        'unavailable', () async {
+      repository = AuthRepository(
+        supabaseClient: supabaseClient,
+        secureStorage: secureStorage,
+        googleIdentityClient: googleIdentityClient,
+        appleIdentityClient: appleIdentityClient,
+        oauthUrlLauncher: oauthUrlLauncher,
+        packageInfoLoader: () async => _packageInfo(),
+        devicePlatform: const _IosPlatform(),
+        googleWebClientId: 'web-client-id',
+        googleIosClientId: 'ios-client-id',
+      );
 
-        when(
-          () => appleIdentityClient.isAvailable(),
-        ).thenAnswer((_) async => false);
+      when(
+        () => appleIdentityClient.isAvailable(),
+      ).thenAnswer((_) async => false);
 
-        final result = await repository.signInWithApple();
+      final result = await repository.signInWithApple();
 
-        expect(result.status, AuthActionStatus.failure);
-        expect(result.errorCode, AuthErrorCode.appleSignInFailed);
-        verifyNever(
-          () => oauthUrlLauncher.launchProviderSignIn(
-            authClient: goTrueClient,
-            provider: OAuthProvider.apple,
-            redirectTo: any(named: 'redirectTo'),
-            queryParams: any(named: 'queryParams'),
-            scopes: any(named: 'scopes'),
-          ),
-        );
-      },
-    );
+      expect(result.status, AuthActionStatus.failure);
+      expect(result.errorCode, AuthErrorCode.appleSignInFailed);
+      verifyNever(
+        () => oauthUrlLauncher.launchProviderSignIn(
+          authClient: goTrueClient,
+          provider: OAuthProvider.apple,
+          redirectTo: any(named: 'redirectTo'),
+          queryParams: any(named: 'queryParams'),
+          scopes: any(named: 'scopes'),
+        ),
+      );
+    });
 
     test('does not launch Apple OAuth in the browser on Android', () async {
       final result = await repository.signInWithApple();

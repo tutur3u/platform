@@ -52,14 +52,8 @@ class CacheStore {
     final dir = await _resolveHiveDirectory();
     Hive.init(dir.path);
     final encryptionCipher = await _resolveEncryptionCipher();
-    _resourceBox = await _openEncryptedBox(
-      _resourceBoxName,
-      encryptionCipher,
-    );
-    _mutationBox = await _openEncryptedBox(
-      _mutationBoxName,
-      encryptionCipher,
-    );
+    _resourceBox = await _openEncryptedBox(_resourceBoxName, encryptionCipher);
+    _mutationBox = await _openEncryptedBox(_mutationBoxName, encryptionCipher);
     final nonPersistentKeys = <dynamic>[];
     for (final key in _resourceBox.keys) {
       final raw = _resourceBox.get(key);
@@ -204,10 +198,7 @@ class CacheStore {
         'CacheStore: resetting unreadable legacy cache box $boxName: $error',
       );
       await Hive.deleteBoxFromDisk(boxName);
-      return Hive.openBox<dynamic>(
-        boxName,
-        encryptionCipher: encryptionCipher,
-      );
+      return Hive.openBox<dynamic>(boxName, encryptionCipher: encryptionCipher);
     }
   }
 

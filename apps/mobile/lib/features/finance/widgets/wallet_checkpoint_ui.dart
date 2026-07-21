@@ -88,10 +88,7 @@ class FinanceCheckpointTotalsPanel extends StatelessWidget {
               runSpacing: 10,
               children: [
                 for (final total in totals)
-                  _CheckpointTotalChip(
-                    total: total,
-                    showAmounts: showAmounts,
-                  ),
+                  _CheckpointTotalChip(total: total, showAmounts: showAmounts),
               ],
             ),
           const shad.Gap(18),
@@ -275,10 +272,7 @@ class WalletCheckpointDetailSections extends StatelessWidget {
 }
 
 class _CheckpointTotalChip extends StatelessWidget {
-  const _CheckpointTotalChip({
-    required this.total,
-    required this.showAmounts,
-  });
+  const _CheckpointTotalChip({required this.total, required this.showAmounts});
 
   final WalletCheckpointCurrencyTotal total;
   final bool showAmounts;
@@ -315,9 +309,7 @@ class _CheckpointTotalChip extends StatelessWidget {
               formatCurrency(total.actualTotal, total.currency),
               showAmounts: showAmounts,
             ),
-            style: theme.typography.large.copyWith(
-              fontWeight: FontWeight.w900,
-            ),
+            style: theme.typography.large.copyWith(fontWeight: FontWeight.w900),
           ),
           const shad.Gap(4),
           Text(

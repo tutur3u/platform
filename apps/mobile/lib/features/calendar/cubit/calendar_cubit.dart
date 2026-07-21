@@ -288,10 +288,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       emit(
         _storeAndReturn(
           state.copyWith(
-            events: deduplicateCalendarEvents([
-              ...state.events,
-              ...moreEvents,
-            ]),
+            events: deduplicateCalendarEvents([...state.events, ...moreEvents]),
             fetchedRange: DateTimeRange(start: range.start, end: newEnd),
             isLoadingMore: false,
           ),

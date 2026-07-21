@@ -145,9 +145,7 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
           TextField(
             controller: _description,
             maxLines: 3,
-            decoration: InputDecoration(
-              labelText: l10n.storefrontDescription,
-            ),
+            decoration: InputDecoration(labelText: l10n.storefrontDescription),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -174,12 +172,7 @@ class _StorefrontEditorState extends State<_StorefrontEditor> {
           _ChoiceField(
             label: l10n.storefrontCheckoutMode,
             value: _checkoutMode,
-            values: const [
-              'disabled',
-              'polar',
-              'square_terminal',
-              'simulated',
-            ],
+            values: const ['disabled', 'polar', 'square_terminal', 'simulated'],
             onChanged: (value) => setState(() => _checkoutMode = value),
           ),
           _ChoiceField(

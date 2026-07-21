@@ -31,9 +31,9 @@ void main() {
       tester,
     ) async {
       final versionCheck = Completer<MobileVersionCheck?>();
-      when(() => versionCheckRepository.checkCurrentVersion()).thenAnswer(
-        (_) => versionCheck.future,
-      );
+      when(
+        () => versionCheckRepository.checkCurrentVersion(),
+      ).thenAnswer((_) => versionCheck.future);
 
       final cubit = AppVersionCubit(
         versionCheckRepository: versionCheckRepository,

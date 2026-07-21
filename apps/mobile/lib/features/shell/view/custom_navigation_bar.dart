@@ -27,10 +27,7 @@ class CustomNavigationBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 4,
-        vertical: compact ? 2 : 4,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 4, vertical: compact ? 2 : 4),
       child: Row(
         mainAxisSize: expandItems ? MainAxisSize.max : MainAxisSize.min,
         children: List.generate(children.length, (index) {

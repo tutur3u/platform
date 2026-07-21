@@ -604,14 +604,8 @@ void main() {
       expect(footerRect.height, 54);
       expect(compactNavItems, hasLength(3));
       expect(compactNavItems.every((item) => item.label == null), isTrue);
-      expect(
-        tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size,
-        27,
-      );
-      expect(
-        tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size,
-        27,
-      );
+      expect(tester.widget<Icon>(find.byIcon(Icons.home_outlined)).size, 27);
+      expect(tester.widget<Icon>(find.byIcon(Icons.apps_outlined)).size, 27);
     });
 
     testWidgets('six-item compact mini nav stays within a narrow viewport', (
@@ -696,10 +690,7 @@ void main() {
       expect(tester.takeException(), isNull);
       await _pumpForTransitions(tester);
       expect(tester.takeException(), isNull);
-      expect(
-        router.routeInformationProvider.value.uri.path,
-        Routes.taskBoards,
-      );
+      expect(router.routeInformationProvider.value.uri.path, Routes.taskBoards);
     });
 
     testWidgets('injected mini-nav takes precedence over module mini-nav', (

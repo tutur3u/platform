@@ -153,11 +153,7 @@ class _StorefrontDetailPageState extends State<StorefrontDetailPage> {
     if (payload == null || !mounted) return;
     try {
       if (listing == null) {
-        await _storefrontRepository.createListing(
-          wsId,
-          storefront.id,
-          payload,
-        );
+        await _storefrontRepository.createListing(wsId, storefront.id, payload);
       } else {
         await _storefrontRepository.updateListing(
           wsId,
@@ -308,10 +304,7 @@ class _StorefrontHeader extends StatelessWidget {
       ),
       InventoryMetricTile(
         label: context.l10n.storefrontVisibility,
-        value: storefrontVisibilityLabel(
-          context.l10n,
-          storefront.visibility,
-        ),
+        value: storefrontVisibilityLabel(context.l10n, storefront.visibility),
         icon: Icons.public_outlined,
       ),
       InventoryMetricTile(

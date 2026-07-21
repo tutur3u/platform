@@ -73,10 +73,7 @@ void main() {
               {'type': 'text', 'text': 'No align crash'},
             ],
           },
-          {
-            'type': 'imageResize',
-            'attrs': 'not-an-object',
-          },
+          {'type': 'imageResize', 'attrs': 'not-an-object'},
         ],
       });
 

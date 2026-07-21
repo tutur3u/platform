@@ -127,10 +127,7 @@ TaskBoardTimelineWindow _boundedTimelineWindow({
     visibleStart = visibleEnd.subtract(maxOffset);
   }
 
-  return TaskBoardTimelineWindow(
-    startDate: visibleStart,
-    endDate: visibleEnd,
-  );
+  return TaskBoardTimelineWindow(startDate: visibleStart, endDate: visibleEnd);
 }
 
 DateTime _normalizeTimelineDay(DateTime value) =>

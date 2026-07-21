@@ -102,10 +102,7 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.commonCancel),
         ),
-        shad.PrimaryButton(
-          onPressed: _submit,
-          child: Text(l10n.commonSave),
-        ),
+        shad.PrimaryButton(onPressed: _submit, child: Text(l10n.commonSave)),
       ],
       child: ListView(
         children: [
@@ -295,9 +292,9 @@ class _WalletCheckpointReconciliationSheetState
                     formatCurrency(widget.interval.intervalVariance, currency),
                     showAmounts: widget.showAmounts,
                   ),
-                  style: shad.Theme.of(context).typography.h4.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.h4.copyWith(fontWeight: FontWeight.w900),
                 ),
               ],
             ),

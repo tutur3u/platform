@@ -19,58 +19,58 @@ void main() {
       repository = NotificationsRepository(apiClient: apiClient);
     });
 
-    test(
-      'fetchNotifications parses page and includes workspace scope',
-      () async {
-        when(
-          () => apiClient.getJson(
-            '/api/v1/notifications?limit=30&offset=10&unreadOnly=false&readOnly=true&wsId=ws_1',
-          ),
-        ).thenAnswer(
-          (_) async => {
-            'notifications': [
-              {
-                'id': 'notif_1',
-                'user_id': 'user_1',
-                'type': 'task_assigned',
-                'title': 'Task assigned',
-                'description': 'A task was assigned to you',
-                'data': {
-                  'workspace_id': 'ws_1',
-                  'workspace_name': 'Product',
-                  'board_id': 'board_1',
-                },
-                'entity_type': 'task',
-                'entity_id': 'task_1',
-                'created_at': '2026-03-25T10:00:00.000Z',
+    const workspaceScopeTestName =
+        'fetchNotifications parses page and includes workspace scope';
+
+    test(workspaceScopeTestName, () async {
+      when(
+        () => apiClient.getJson(
+          '/api/v1/notifications?limit=30&offset=10&unreadOnly=false&readOnly=true&wsId=ws_1',
+        ),
+      ).thenAnswer(
+        (_) async => {
+          'notifications': [
+            {
+              'id': 'notif_1',
+              'user_id': 'user_1',
+              'type': 'task_assigned',
+              'title': 'Task assigned',
+              'description': 'A task was assigned to you',
+              'data': {
+                'workspace_id': 'ws_1',
+                'workspace_name': 'Product',
+                'board_id': 'board_1',
               },
-            ],
-            'count': 1,
-            'limit': 30,
-            'offset': 10,
-          },
-        );
+              'entity_type': 'task',
+              'entity_id': 'task_1',
+              'created_at': '2026-03-25T10:00:00.000Z',
+            },
+          ],
+          'count': 1,
+          'limit': 30,
+          'offset': 10,
+        },
+      );
 
-        final page = await repository.fetchNotifications(
-          wsId: 'ws_1',
-          readOnly: true,
-          limit: 30,
-          offset: 10,
-        );
+      final page = await repository.fetchNotifications(
+        wsId: 'ws_1',
+        readOnly: true,
+        limit: 30,
+        offset: 10,
+      );
 
-        expect(page.count, 1);
-        expect(page.limit, 30);
-        expect(page.offset, 10);
-        expect(page.notifications, hasLength(1));
-        expect(page.notifications.first.workspaceId, 'ws_1');
-        expect(page.notifications.first.workspaceName, 'Product');
-        verify(
-          () => apiClient.getJson(
-            '/api/v1/notifications?limit=30&offset=10&unreadOnly=false&readOnly=true&wsId=ws_1',
-          ),
-        ).called(1);
-      },
-    );
+      expect(page.count, 1);
+      expect(page.limit, 30);
+      expect(page.offset, 10);
+      expect(page.notifications, hasLength(1));
+      expect(page.notifications.first.workspaceId, 'ws_1');
+      expect(page.notifications.first.workspaceName, 'Product');
+      verify(
+        () => apiClient.getJson(
+          '/api/v1/notifications?limit=30&offset=10&unreadOnly=false&readOnly=true&wsId=ws_1',
+        ),
+      ).called(1);
+    });
 
     test('fetchNotifications omits wsId for personal scope', () async {
       when(

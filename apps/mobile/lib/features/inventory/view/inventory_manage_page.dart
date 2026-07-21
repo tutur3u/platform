@@ -70,10 +70,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     final results = await Future.wait<dynamic>([
       _loadManageCollection(
         'owners',
-        () => _inventoryRepository.getOwners(
-          wsId,
-          forceRefresh: forceRefresh,
-        ),
+        () => _inventoryRepository.getOwners(wsId, forceRefresh: forceRefresh),
       ),
       _loadManageCollection(
         'manufacturers',
@@ -216,9 +213,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                   title: l10n.commonSomethingWentWrong,
                   body: snapshot.error?.toString() ?? l10n.inventoryManageLabel,
                   action: shad.SecondaryButton(
-                    onPressed: () => unawaited(
-                      _reload(forceRefresh: true),
-                    ),
+                    onPressed: () => unawaited(_reload(forceRefresh: true)),
                     child: Text(l10n.commonRetry),
                   ),
                 ),

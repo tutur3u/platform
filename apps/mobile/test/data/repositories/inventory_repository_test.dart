@@ -46,9 +46,9 @@ void main() {
   test('does not reuse inventory data across workspaces', () async {
     final apiClient = _MockApiClient();
     final repository = InventoryRepository(apiClient: apiClient);
-    when(() => apiClient.getJson(any())).thenAnswer(
-      (_) async => _overviewResponse(revenue: 150),
-    );
+    when(
+      () => apiClient.getJson(any()),
+    ).thenAnswer((_) async => _overviewResponse(revenue: 150));
 
     await repository.getOverview('workspace-a');
     await repository.getOverview('workspace-b');
@@ -70,10 +70,9 @@ void main() {
     });
 
     final first = await repository.getOverview('ws-swr');
-    await CacheStore.instance.invalidateTags(
-      const ['inventory:overview'],
-      workspaceId: 'ws-swr',
-    );
+    await CacheStore.instance.invalidateTags(const [
+      'inventory:overview',
+    ], workspaceId: 'ws-swr');
     final stale = await repository.getOverview('ws-swr');
 
     expect(first.totals.inventorySalesRevenue, 150);

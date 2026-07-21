@@ -179,9 +179,7 @@ class InventoryRepository {
       forceRefresh: forceRefresh,
       tags: const ['inventory:catalog'],
       params: {'productId': productId},
-      fetch: () => _api.getJson(
-        InventoryEndpoints.product(wsId, productId),
-      ),
+      fetch: () => _api.getJson(InventoryEndpoints.product(wsId, productId)),
       decode: InventoryProduct.fromJson,
     );
   }
@@ -323,9 +321,7 @@ class InventoryRepository {
       wsId: wsId,
       forceRefresh: forceRefresh,
       tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(
-        InventoryEndpoints.productCategories(wsId),
-      ),
+      fetch: () => _api.getJsonList(InventoryEndpoints.productCategories(wsId)),
       decode: _decodeLookupList,
     );
   }
@@ -368,9 +364,7 @@ class InventoryRepository {
       wsId: wsId,
       forceRefresh: forceRefresh,
       tags: const ['inventory:setup'],
-      fetch: () => _api.getJsonList(
-        InventoryEndpoints.productWarehouses(wsId),
-      ),
+      fetch: () => _api.getJsonList(InventoryEndpoints.productWarehouses(wsId)),
       decode: _decodeLookupList,
     );
   }
@@ -432,10 +426,7 @@ class InventoryRepository {
       tags: const ['inventory:periods'],
       params: {'includeArchived': '$includeArchived'},
       fetch: () => _api.getJson(
-        InventoryEndpoints.salesPeriods(
-          wsId,
-          includeArchived: includeArchived,
-        ),
+        InventoryEndpoints.salesPeriods(wsId, includeArchived: includeArchived),
       ),
       decode: (response) =>
           (response['data'] as List<dynamic>? ?? const <dynamic>[])

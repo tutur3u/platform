@@ -1,10 +1,7 @@
 import 'package:url_launcher/url_launcher.dart';
 
 typedef MobileDeepLinkLaunchUrl =
-    Future<bool> Function(
-      Uri uri,
-      LaunchMode mode,
-    );
+    Future<bool> Function(Uri uri, LaunchMode mode);
 
 Future<bool> launchExternalMobileDeepLink(
   Uri uri, {

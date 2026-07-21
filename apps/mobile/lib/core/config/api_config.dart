@@ -372,11 +372,7 @@ abstract final class StorefrontEndpoints {
   static String listings(String wsId, String storefrontId) =>
       '/api/v1/workspaces/$wsId/inventory/storefronts/$storefrontId/listings?status=all';
 
-  static String listing(
-    String wsId,
-    String storefrontId,
-    String listingId,
-  ) =>
+  static String listing(String wsId, String storefrontId, String listingId) =>
       '/api/v1/workspaces/$wsId/inventory/storefronts/$storefrontId/listings/$listingId';
 }
 

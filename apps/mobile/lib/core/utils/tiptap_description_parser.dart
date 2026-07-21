@@ -160,12 +160,13 @@ String _extractMarkdown(Object? node, _ParseContext context) {
       return '${_extractListMarkdown(content, context, ordered: false)}\n';
     case 'orderedList':
       final start = _intAttr(attrs, 'start') ?? 1;
-      return '${_extractListMarkdown(
+      final markdown = _extractListMarkdown(
         content,
         context,
         ordered: true,
         start: start,
-      )}\n';
+      );
+      return '$markdown\n';
     case 'taskList':
       return '${_extractTaskListMarkdown(content, context)}\n';
     case 'table':

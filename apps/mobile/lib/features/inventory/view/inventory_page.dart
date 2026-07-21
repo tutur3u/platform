@@ -44,10 +44,7 @@ class _InventoryPageState extends State<InventoryPage> {
   Future<void> _reload({bool forceRefresh = false}) async {
     final wsId = _wsId;
     if (wsId == null) return;
-    final future = _repository.getOverview(
-      wsId,
-      forceRefresh: forceRefresh,
-    );
+    final future = _repository.getOverview(wsId, forceRefresh: forceRefresh);
     setState(() {
       _future = future;
     });

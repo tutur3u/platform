@@ -44,9 +44,7 @@ class _ListingEditorState extends State<_ListingEditor> {
     final listing = widget.listing;
     _title = TextEditingController(text: listing?.title);
     _description = TextEditingController(text: listing?.description);
-    _price = TextEditingController(
-      text: listing?.price.toStringAsFixed(0),
-    );
+    _price = TextEditingController(text: listing?.price.toStringAsFixed(0));
     _compareAtPrice = TextEditingController(
       text: listing?.compareAtPrice?.toStringAsFixed(0),
     );
@@ -185,9 +183,7 @@ class _ListingEditorState extends State<_ListingEditor> {
           TextField(
             controller: _description,
             maxLines: 3,
-            decoration: InputDecoration(
-              labelText: l10n.storefrontDescription,
-            ),
+            decoration: InputDecoration(labelText: l10n.storefrontDescription),
           ),
           const SizedBox(height: 12),
           Row(
@@ -198,9 +194,7 @@ class _ListingEditorState extends State<_ListingEditor> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  decoration: InputDecoration(
-                    labelText: l10n.storefrontPrice,
-                  ),
+                  decoration: InputDecoration(labelText: l10n.storefrontPrice),
                 ),
               ),
               const SizedBox(width: 12),
@@ -223,9 +217,7 @@ class _ListingEditorState extends State<_ListingEditor> {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: _status,
-                  decoration: InputDecoration(
-                    labelText: l10n.storefrontStatus,
-                  ),
+                  decoration: InputDecoration(labelText: l10n.storefrontStatus),
                   items: const ['draft', 'published', 'paused', 'archived']
                       .map(
                         (status) => DropdownMenuItem(

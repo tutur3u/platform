@@ -45,10 +45,7 @@ void main() {
         '?limit=24&offset=48&period_id=period-1',
       );
       expect(
-        InventoryEndpoints.salesPeriods(
-          'workspace-1',
-          includeArchived: true,
-        ),
+        InventoryEndpoints.salesPeriods('workspace-1', includeArchived: true),
         '/api/v1/workspaces/workspace-1/inventory/sales-periods'
         '?include_archived=true',
       );
