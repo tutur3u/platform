@@ -8,6 +8,7 @@ import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
+import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/widgets/edit_session_dialog.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
@@ -171,7 +172,10 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
                   _DetailRow(
                     icon: shad.LucideIcons.clock,
                     label: l10n.timerDuration,
-                    value: _formatDuration(_session.duration, l10n),
+                    value: formatTimerDuration(
+                      _session.duration,
+                      invalidDurationLabel: l10n.timerInvalidDuration,
+                    ),
                     valueBold: true,
                   ),
 
@@ -279,16 +283,6 @@ class _SessionDetailSheetState extends State<SessionDetailSheet> {
 
     setState(() => _session = updatedSession);
     sheetNavigator.pop();
-  }
-
-  String _formatDuration(Duration d, AppLocalizations l10n) {
-    if (d.isNegative) return l10n.timerInvalidDuration;
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '${h}h ${m}m';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
   }
 }
 

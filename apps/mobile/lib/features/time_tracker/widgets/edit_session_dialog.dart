@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
+import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -73,7 +74,10 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
     final sessionDateText = dateFmt.format(sessionDate.toLocal());
 
     final duration = _endTime.difference(_startTime);
-    final durationText = _formatDuration(duration, l10n);
+    final durationText = formatTimerDuration(
+      duration,
+      invalidDurationLabel: l10n.timerInvalidDuration,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -314,18 +318,6 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
       pendingApproval: widget.session.pendingApproval,
       createdAt: widget.session.createdAt,
     );
-  }
-
-  String _formatDuration(Duration d, AppLocalizations l10n) {
-    if (d.isNegative) {
-      return l10n.timerInvalidDuration;
-    }
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '${h}h ${m}m';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
   }
 }
 

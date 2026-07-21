@@ -158,15 +158,60 @@ test('runSmoke fails unauthorized protected migration status responses', async (
   );
 
   assert.equal(report.ok, false);
+  const protectedStatusCall = calls.find(({ url }) =>
+    url.endsWith('/api/migration/status')
+  );
+  const protectedStatusResult = report.results.find(
+    ({ id }) => id === 'backend-migration-status'
+  );
+  const missingTokenResult = report.results.find(
+    ({ id }) => id === 'backend-migration-status-missing-token'
+  );
+  const invalidTokenResult = report.results.find(
+    ({ id }) => id === 'backend-migration-status-invalid-token'
+  );
+
+  assert.ok(protectedStatusCall);
+  assert.ok(protectedStatusResult);
+  assert.ok(missingTokenResult);
+  assert.ok(invalidTokenResult);
   assert.equal(
-    new Headers(calls[2].init.headers).get('authorization'),
+    new Headers(protectedStatusCall.init.headers).get('authorization'),
     'Bearer secret-token'
   );
-  assert.equal(report.results[2].status, 401);
-  assert.equal(report.results[3].ok, true);
-  assert.equal(report.results[3].expectedStatus, 401);
-  assert.equal(report.results[4].ok, true);
-  assert.equal(report.results[4].expectedStatus, 401);
+  assert.equal(protectedStatusResult.status, 401);
+  assert.equal(missingTokenResult.ok, true);
+  assert.equal(missingTokenResult.expectedStatus, 401);
+  assert.equal(invalidTokenResult.ok, true);
+  assert.equal(invalidTokenResult.expectedStatus, 401);
+});
+
+test('runSmoke reports thrown fetch errors with detail', async () => {
+  const fetchImpl = async (url) => {
+    if (url.endsWith('/api/migration/status')) {
+      throw new TypeError('fetch failed');
+    }
+
+    return new Response('TanStack Start + Rust readiness', { status: 200 });
+  };
+
+  const report = await runSmoke(
+    {
+      backendOrigin: 'https://backend.example.workers.dev',
+      tanstackOrigin: 'https://tanstack.example.workers.dev',
+      timeoutMs: 1000,
+      token: 'secret-token',
+    },
+    fetchImpl
+  );
+
+  const erroredResult = report.results.find(
+    (result) => result.id === 'backend-migration-status' && result.ok === false
+  );
+
+  assert.equal(report.ok, false);
+  assert.ok(erroredResult);
+  assert.match(erroredResult.detail, /fetch failed/u);
 });
 
 test('runSmoke validates migration JSON shape and TanStack backend-connected shell body', async () => {
