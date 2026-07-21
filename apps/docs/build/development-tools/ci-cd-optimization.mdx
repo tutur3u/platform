@@ -48,7 +48,7 @@ feedback and congesting the Actions queue.
 Gated workflows do **not** rely on GitHub's native `on.push.paths` filters.
 Path filters are coarse (they cannot understand workspace dependency graphs) and
 they would have to be duplicated and kept in sync across every workflow. Instead,
-the logic is centralized in three pieces:
+the logic is centralized in four pieces:
 
 1. **`tuturuuu.ts`** — the source of truth. It exports a `ci` toggle map (each
    workflow can be globally enabled/disabled), the `vercelWorkflowTargets` table
@@ -58,27 +58,30 @@ the logic is centralized in three pieces:
 2. **`scripts/ci/resolve-changed-files.ts`** — resolves the changed-file set for
    the current event (push payload, pull-request base/head, or git diff against
    the last successful deployment marker).
-3. **`.github/workflows/ci-check.yml`** — a reusable workflow that runs the two
-   scripts and exposes a `should_run` output.
+3. **`.github/workflows/ci-check.yml`** — the reusable gate for preview and
+   non-Vercel workflows that need an individual `should_run` output.
+4. **`.github/workflows/vercel-production.yaml`** — the single production
+   planner. It resolves every app against that app's last successful deployment
+   marker in one runner, then dispatches only affected production workflows.
 
 ### The `ci-check` reusable workflow
 
-Each gated workflow declares a `check-ci` job that calls `ci-check.yml`, then
-gates its real job on the result:
+Preview and non-Vercel gated workflows declare a `check-ci` job that calls
+`ci-check.yml`, then gate their real job on the result:
 
 ```yaml
 jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
     with:
-      workflow_name: vercel-production-platform.yaml
+      workflow_name: vercel-preview-platform.yaml
     permissions:
       contents: read
       deployments: read
 
-  Deploy-Production:
+  Deploy-Preview:
     needs: [check-ci]
-    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     # ...
 ```
@@ -104,6 +107,19 @@ scripts it needs), computes the changed files, and runs the decision script:
 
 The scripts run with Node's `--experimental-strip-types`, so the `.ts` sources
 execute directly without a separate build step.
+
+### The production planner
+
+A `production` push starts one `plan-and-dispatch` job instead of starting one
+`check-ci` runner per app. `resolve-production-vercel-targets.ts` reads the
+workspace graph once, memoizes dependency closures, resolves each target from
+its own successful deployment marker, and emits a reviewable Actions summary.
+The same job dispatches the selected `vercel-production-<app>.yaml` workflows.
+
+Per-app production workflows remain independently protected by their GitHub
+Environment and concurrency group, but are `workflow_dispatch`-only. A missing
+or untrusted marker fails open for that app without forcing every other app's
+gate open.
 
 ### The decision function
 
@@ -309,8 +325,10 @@ full diff since the last live deploy is considered.
 
 ### Inspect the gate decision
 
-`check-workflow-config.ts` logs its decision and the matched paths. In the
-`check-ci` job logs you will see lines like:
+`check-workflow-config.ts` logs its decision and the matched paths. Preview
+`check-ci` logs show the individual decision; production uses the planner's
+**Production Vercel deployment plan** job summary, including the per-app
+baseline source and dispatch/skip result. Individual logs still look like:
 
 ```text
 Workflow: vercel-production-platform.yaml
@@ -342,8 +360,9 @@ node --experimental-strip-types scripts/ci/check-workflow-config.ts
 There are also unit tests covering the gating logic:
 
 ```bash
-bun test scripts/ci/check-workflow-config.test.js
-bun test scripts/ci/resolve-changed-files.test.js
+node --test scripts/ci/check-workflow-config.test.js
+node --test scripts/ci/resolve-changed-files.test.js
+node --test scripts/ci/resolve-production-vercel-targets.test.js
 ```
 
 ### Common Issues
@@ -373,8 +392,8 @@ that clearly do not touch shared roots.
 
 #### Issue: Need to force a run
 
-Use the workflow's manual trigger — `workflow_dispatch` bypasses affected-path
-gating entirely:
+Use the app workflow's manual trigger. A direct `workflow_dispatch` starts that
+app without re-running affected-path gating:
 
 ```yaml
 on:
@@ -395,22 +414,21 @@ one app skips the other 46 Vercel deploys, plus any unrelated CI workflows.
 For a change that touches only one app:
 
 ```text
-48 Vercel deploy workflows
-- 2 that actually deploy the touched app (preview + production)
-= 46 deploy workflows skipped at the cheap check-ci gate
+1 production planner workflow
++ only the affected app deployment workflows
++ preview gates only when preview workflows are invoked
 ```
 
-Each skipped deploy avoids several minutes of install + build + deploy time and
-only pays the cost of the lightweight `check-ci` job. Changes to shared roots
+Each skipped production app now consumes no runner at all; only the shared
+planner and selected deployments run. Changes to shared roots
 (`package.json`, `bun.lock`, `turbo.json`, `tuturuuu.ts`) intentionally fan out
 to all targets, so headline skip rates will vary with how often those roots
 change.
 
 <Note>
-  To measure real-world impact, watch the **Actions** tab: gated runs that skip
-  resolve in the `check-ci` job within seconds, while full deploys take minutes.
-  Counting skipped vs. full runs over a representative window is the most
-  reliable estimate for your change patterns.
+  To measure real-world impact, inspect the production planner's job summary and
+  compare its selected workflow count with the 24 registered targets. Preview
+  gates still report their decision in `check-ci`.
 </Note>
 
 ## Best Practices

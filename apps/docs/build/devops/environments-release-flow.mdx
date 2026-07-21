@@ -56,6 +56,10 @@ This page explains how Tuturuuu moves from code to running environments.
 ### Production
 
 - Satellite production web deploys run through `vercel-production-<app>.yaml`.
+- A production push first runs `vercel-production.yaml`, which computes all
+  affected apps in one runner and dispatches only the necessary per-app
+  workflows. Each target uses its own last successful deployment marker, so an
+  app skipped on an earlier commit still receives any undeployed changes.
 - Hosted `apps/web` production deploys run through
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.

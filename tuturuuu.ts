@@ -84,6 +84,7 @@ export const ci = {
   'vercel-production-pay.yaml': true,
   'vercel-production-contacts.yaml': true,
   'vercel-production-track.yaml': true,
+  'vercel-production.yaml': true,
   'mobile-build-ios.yaml': true,
   'mobile-build-android.yaml': true,
   'mobile-build-windows.yaml': true,
@@ -294,12 +295,22 @@ const globalVercelAffectingPaths = new Set([
   '.github/actions/run-with-turbo-remote-cache/action.yml',
   '.github/actions/setup-bun-with-retry/action.yml',
   '.github/workflows/ci-check.yml',
+  '.github/workflows/vercel-production.yaml',
   'bun.lock',
   'package.json',
   'scripts/ci/generate-build-metadata.ts',
+  'scripts/ci/resolve-production-vercel-targets.ts',
+  'scripts/ci/workflow-config-core.ts',
   'turbo.json',
   'tuturuuu.ts',
 ]);
+
+const scopedVercelAffectingPaths = [
+  {
+    apps: new Set(['inventory', 'storefront']),
+    prefix: 'packages/ui/src/components/ui/storefront/',
+  },
+] as const;
 
 const vercelTargetsByWorkflow = new Map(
   vercelWorkflowTargets.flatMap((target) => [
@@ -328,16 +339,40 @@ function getWorkspaceDirFromPath(filePath: string): string | null {
   return match?.[0].replace(/\/$/, '') ?? null;
 }
 
+function getScopedVercelOwners(filePath: string): ReadonlySet<string> | null {
+  return (
+    scopedVercelAffectingPaths.find(({ prefix }) => filePath.startsWith(prefix))
+      ?.apps ?? null
+  );
+}
+
+const workspaceDependencyClosureCache = new WeakMap<
+  WorkspaceManifest[],
+  Map<string, Set<string> | null>
+>();
+
 function buildWorkspaceDependencyClosure(
   packageName: string,
   manifests: WorkspaceManifest[]
 ): Set<string> | null {
+  let closureByPackage = workspaceDependencyClosureCache.get(manifests);
+
+  if (!closureByPackage) {
+    closureByPackage = new Map();
+    workspaceDependencyClosureCache.set(manifests, closureByPackage);
+  }
+
+  if (closureByPackage.has(packageName)) {
+    return closureByPackage.get(packageName) ?? null;
+  }
+
   const manifestsByName = new Map(
     manifests.map((manifest) => [manifest.name, manifest])
   );
   const rootManifest = manifestsByName.get(packageName);
 
   if (!rootManifest) {
+    closureByPackage.set(packageName, null);
     return null;
   }
 
@@ -366,6 +401,7 @@ function buildWorkspaceDependencyClosure(
     }
   }
 
+  closureByPackage.set(packageName, closure);
   return closure;
 }
 
@@ -444,6 +480,12 @@ export function getWorkflowDecision({
   }
 
   const matchedPaths = normalizedChangedFiles.filter((filePath) => {
+    const scopedOwners = getScopedVercelOwners(filePath);
+
+    if (scopedOwners) {
+      return scopedOwners.has(target.app);
+    }
+
     if (globalVercelAffectingPaths.has(filePath)) {
       return true;
     }

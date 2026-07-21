@@ -1,8 +1,5 @@
 name: Vercel Infrastructure Production Deployment
 on:
-  push:
-    branches:
-      - production
   workflow_dispatch:
 
 permissions:
@@ -13,17 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: vercel-production-infrastructure.yaml
-    permissions:
-      contents: read
-      deployments: read
-
   Deploy-Production:
-    needs: [check-ci]
-    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: github.ref == 'refs/heads/production'
     environment: vercel-production-infrastructure
     runs-on: ubuntu-latest
     permissions:

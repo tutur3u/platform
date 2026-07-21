@@ -39,6 +39,10 @@ Affected Vercel rules:
 - `apps/<app>/**` runs that app's preview or production Vercel workflow.
 - `packages/<package>/**` runs every Vercel app whose transitive `workspace:*`
   dependency closure includes that package.
+- Storefront UI modules under
+  `packages/ui/src/components/ui/storefront/**` are scoped to their verified
+  consumers, Inventory and Storefront, instead of rebuilding every app that
+  imports another part of `@tuturuuu/ui`.
 - `apps/*/package.json` and `packages/*/package.json` are dependency changes for
   their owning workspaces.
 - `bun.lock`, root `package.json`, `turbo.json`, `tuturuuu.ts`, and
@@ -46,6 +50,12 @@ Affected Vercel rules:
 - A Vercel workflow file change, such as
   `.github/workflows/vercel-preview-calendar.yaml`, runs that specific workflow.
 - If changed files cannot be computed, the Vercel gate defaults open.
+
+Production pushes run `.github/workflows/vercel-production.yaml` once. That
+planner evaluates all targets from their individual deployment markers and
+dispatches only the affected `vercel-production-<app>.yaml` workflows. Do not
+restore `push` triggers or `check-ci` jobs in the per-app production workflows;
+doing so recreates the queued preflight fan-out the planner replaces.
 
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.

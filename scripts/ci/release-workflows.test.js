@@ -40,13 +40,17 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
     );
-    const checkCiJob = readWorkflowJobBlock(workflowName, 'check-ci');
     const deployJob = readWorkflowJobBlock(
       workflowName,
       getVercelRunJobName(workflowName)
     );
 
-    assert.match(checkCiJob, /deployments:\s*read/);
+    if (workflowName.startsWith('vercel-preview-')) {
+      const checkCiJob = readWorkflowJobBlock(workflowName, 'check-ci');
+      assert.match(checkCiJob, /deployments:\s*read/);
+    } else {
+      assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+    }
     assert.match(deployJob, /deployments:\s*write/);
     assert.match(workflow, new RegExp(`VERCEL_WORKFLOW_NAME: ${workflowName}`));
 
@@ -110,7 +114,41 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
       /Check for newer commits|check_commits|skip_build/,
       `${workflowName} must not report a superseded deployment as a successful no-op`
     );
+    assert.doesNotMatch(
+      header,
+      /\n {2}push:/,
+      `${workflowName} must be dispatched by the shared production planner`
+    );
+    assert.match(header, /\n {2}workflow_dispatch:/);
+    assert.doesNotMatch(
+      workflow,
+      /uses: \.\/\.github\/workflows\/ci-check\.yml/
+    );
+    assert.doesNotMatch(workflow, /needs\.check-ci|needs: \[check-ci\]/);
   }
+});
+
+test('production Vercel planner resolves once and dispatches only affected apps', () => {
+  const workflowName = 'vercel-production.yaml';
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', workflowName),
+    'utf8'
+  );
+  const plannerJob = readWorkflowJobBlock(workflowName, 'plan-and-dispatch');
+
+  assert.match(workflow, /\n {2}push:\n {4}branches:\n {6}- production\n/);
+  assert.match(workflow, /\n {2}workflow_dispatch:/);
+  assert.match(workflow, /actions:\s*write/);
+  assert.match(workflow, /deployments:\s*read/);
+  assert.match(
+    plannerJob,
+    /node --experimental-strip-types scripts\/ci\/resolve-production-vercel-targets\.ts/
+  );
+  assert.match(plannerJob, /gh workflow run "\$\{workflow\}" --ref production/);
+  assert.doesNotMatch(
+    plannerJob,
+    /uses: \.\/\.github\/workflows\/ci-check\.yml/
+  );
 });
 
 test('external app build cancels superseded runs instead of passing a skipped build', () => {

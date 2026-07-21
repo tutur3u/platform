@@ -313,6 +313,67 @@ test('shared remote-cache and metadata changes run Vercel workflows', () => {
   }
 });
 
+test('storefront UI modules only rebuild their verified consuming apps', () => {
+  const rootDir = createFixtureRoot();
+  const changedFiles = [
+    'packages/ui/src/components/ui/storefront/product-detail.tsx',
+  ];
+
+  for (const workflowName of [
+    'vercel-production-storefront.yaml',
+    'vercel-production-inventory.yaml',
+  ]) {
+    assertWorkflowDecision(
+      {
+        changedFiles,
+        rootDir,
+        workflowName,
+      },
+      true
+    );
+  }
+
+  assertWorkflowDecision(
+    {
+      changedFiles,
+      rootDir,
+      workflowName: 'vercel-production-calendar.yaml',
+    },
+    false
+  );
+
+  assertWorkflowDecision(
+    {
+      changedFiles: ['packages/ui/src/components/ui/button.tsx'],
+      rootDir,
+      workflowName: 'vercel-production-calendar.yaml',
+    },
+    true
+  );
+});
+
+test('storefront UI scoped owners cover every direct app consumer', () => {
+  const output = execFileSync(
+    'git',
+    ['grep', '-l', '@tuturuuu/ui/storefront', '--', 'apps'],
+    {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    }
+  );
+  const consumers = [
+    ...new Set(
+      output
+        .trim()
+        .split(/\r?\n/u)
+        .map((filePath) => filePath.split('/')[1])
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  assert.deepEqual(consumers, ['inventory', 'storefront']);
+});
+
 test('workflow_dispatch bypasses affected gating', () => {
   const rootDir = createFixtureRoot();
 

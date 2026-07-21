@@ -1,8 +1,5 @@
 name: Vercel Inventory Production Deployment
 on:
-  push:
-    branches:
-      - production
   workflow_dispatch:
 
 concurrency:
@@ -13,17 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  check-ci:
-    uses: ./.github/workflows/ci-check.yml
-    with:
-      workflow_name: vercel-production-inventory.yaml
-    permissions:
-      contents: read
-      deployments: read
-
   Deploy-Production:
-    needs: [check-ci]
-    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    if: github.ref == 'refs/heads/production'
     environment: vercel-production-inventory
     runs-on: ubuntu-latest
     permissions:
