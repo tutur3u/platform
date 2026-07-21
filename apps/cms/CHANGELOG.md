@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/cms-v0.19.0...cms-v0.20.0) (2026-07-21)
+
+
+### Features
+
+* **cms:** redesign workspace home ([cd727b8](https://github.com/tutur3u/platform/commit/cd727b8a2f220d96527b892a39a288cc0f211a70))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/cms-v0.18.0...cms-v0.19.0) (2026-07-21)
 
 
