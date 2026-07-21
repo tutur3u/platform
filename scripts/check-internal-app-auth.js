@@ -10,6 +10,7 @@ const REGISTERED_APPS = [
   'contacts',
   'drive',
   'finance',
+  'forms',
   'hive',
   'inventory',
   'storefront',
@@ -28,6 +29,7 @@ const REGISTERED_APP_TARGETS = {
   contacts: 'contacts',
   drive: 'drive',
   finance: 'finance',
+  forms: 'forms',
   hive: 'hive',
   inventory: 'inventory',
   storefront: 'storefront',
@@ -161,7 +163,7 @@ const failures = [];
 // Rolled out per-app. apps/contacts is audited and clean; apps/calendar,
 // apps/tasks, apps/track, apps/teach, apps/hive, and apps/inventory each still
 // have actorless call sites and must be audited before they are added here.
-const ACTORLESS_CHECK_APPS = new Set(['contacts']);
+const ACTORLESS_CHECK_APPS = new Set(['contacts', 'forms']);
 const ACTORLESS_WORKSPACE_CALL = /\bgetWorkspace\(\s*[\w.]+\s*\)/gu;
 const ACTORLESS_PERMISSIONS_CALL = /\bgetPermissions\(\s*\{([\s\S]*?)\}\s*\)/gu;
 
@@ -210,9 +212,13 @@ function findActorlessWorkspaceCalls(filePath, rawSource) {
 
 for (const filePath of files) {
   const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
+  // Match against comment-free source for the same reason the actorless rule
+  // does: the helpers written to FIX these violations document the forbidden
+  // call shape they replaced, and quoting it must not re-trip the guard.
+  const executableSource = stripComments(source);
 
   for (const { allowedFiles, pattern, message } of FORBIDDEN_PATTERNS) {
-    if (pattern.test(source) && !allowedFiles?.has(filePath)) {
+    if (pattern.test(executableSource) && !allowedFiles?.has(filePath)) {
       failures.push(`${filePath}: ${message}`);
     }
   }
@@ -357,6 +363,7 @@ const registeredProxyPaths = [
   'apps/contacts/src/proxy.ts',
   'apps/drive/src/proxy.ts',
   'apps/finance/src/proxy.ts',
+  'apps/forms/src/proxy.ts',
   'apps/hive/src/proxy.ts',
   'apps/inventory/src/proxy.ts',
   'apps/storefront/src/proxy.ts',
@@ -385,6 +392,7 @@ const registeredAppConstantPaths = [
   ['apps/contacts/src/constants/common.ts', REGISTERED_APP_TARGETS.contacts],
   ['apps/drive/src/constants/common.ts', REGISTERED_APP_TARGETS.drive],
   ['apps/finance/src/constants/common.ts', REGISTERED_APP_TARGETS.finance],
+  ['apps/forms/src/constants/common.ts', REGISTERED_APP_TARGETS.forms],
   ['apps/hive/src/constants/common.ts', REGISTERED_APP_TARGETS.hive],
   ['apps/inventory/src/constants/common.ts', REGISTERED_APP_TARGETS.inventory],
   [

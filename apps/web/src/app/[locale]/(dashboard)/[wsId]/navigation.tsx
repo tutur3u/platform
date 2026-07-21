@@ -19,6 +19,7 @@ import { getContactsAppOrigin } from '@/lib/contacts-app-url';
 import { getDriveAppOrigin } from '@/lib/drive-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { getFinanceAppOrigin } from '@/lib/finance-app-url';
+import { getFormsAppOrigin } from '@/lib/forms-app-url';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/constants';
 import { getHiveAppOrigin } from '@/lib/hive-app-url';
 import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
@@ -112,6 +113,7 @@ export async function WorkspaceNavigationLinks({
   const contactsAppHref = `${getContactsAppOrigin()}/${personalOrWsId}`;
   const driveAppHref = `${getDriveAppOrigin()}/${personalOrWsId}`;
   const financeAppHref = `${getFinanceAppOrigin()}/${personalOrWsId}`;
+  const formsAppHref = `${getFormsAppOrigin()}/${personalOrWsId}/forms`;
   const meetAppHref = `${getMeetAppOrigin()}/workspace/${personalOrWsId}`;
   const mindAppHref = `${getMindAppOrigin()}/${personalOrWsId}`;
   const hiveAppHref = getHiveAppOrigin();
@@ -553,28 +555,13 @@ export async function WorkspaceNavigationLinks({
     {
       id: 'forms',
       title: t('sidebar_tabs.forms'),
-      href: `/${personalOrWsId}/forms`,
+      href: formsAppHref,
+      external: true,
       icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
-      aliases: [`/${personalOrWsId}/forms`, `/${personalOrWsId}/forms/new`],
       disabled:
         withoutPermission('manage_forms') &&
         withoutPermission('view_form_analytics'),
       preferenceSectionLabel: sidebarSections.workTools,
-      children: [
-        {
-          title: t('sidebar_tabs.forms'),
-          href: `/${personalOrWsId}/forms`,
-          icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
-          matchExact: true,
-        },
-        null,
-        {
-          title: t('forms.studio.create_form'),
-          href: `/${personalOrWsId}/forms/new`,
-          icon: createDashboardNavigationIcon('Plus', 'h-5 w-5'),
-          disabled: withoutPermission('manage_forms'),
-        },
-      ],
     },
     null,
     // ── Vertical 5: More (collapsed features) ──

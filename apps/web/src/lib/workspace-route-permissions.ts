@@ -57,10 +57,6 @@ export function getWorkspaceRoutePermissionRequirements(
     case 'epm':
     case 'external-projects':
       return ['manage_external_projects', 'publish_external_projects'];
-    case 'forms':
-      return subSection === 'new'
-        ? ['manage_forms']
-        : ['manage_forms', 'view_form_analytics'];
     case 'finance':
       if (subSection === 'invoices') {
         if (nestedSection === 'new') {

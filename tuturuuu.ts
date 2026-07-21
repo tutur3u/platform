@@ -59,6 +59,7 @@ export const ci = {
   'vercel-production-teach.yaml': true,
   'vercel-production-pay.yaml': true,
   'vercel-production-contacts.yaml': true,
+  'vercel-production-forms.yaml': true,
   'vercel-production-track.yaml': true,
   'vercel-production.yaml': true,
   'mobile-build-ios.yaml': true,
@@ -264,6 +265,13 @@ export const vercelWorkflowTargets = [
     packageName: '@tuturuuu/contacts',
     previewWorkflow: 'vercel-preview-contacts.yaml',
     productionWorkflow: 'vercel-production-contacts.yaml',
+  },
+  {
+    app: 'forms',
+    appPath: 'apps/forms',
+    packageName: '@tuturuuu/forms',
+    previewWorkflow: 'vercel-preview-forms.yaml',
+    productionWorkflow: 'vercel-production-forms.yaml',
   },
 ] satisfies VercelWorkflowTarget[];
 

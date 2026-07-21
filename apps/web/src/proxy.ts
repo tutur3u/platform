@@ -47,6 +47,7 @@ import { getChatAppOrigin } from './lib/chat-app-url';
 import { getContactsAppOrigin } from './lib/contacts-app-url';
 import { getDriveAppOrigin } from './lib/drive-app-url';
 import { getFinanceAppOrigin } from './lib/finance-app-url';
+import { getFormsAppOrigin } from './lib/forms-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
 import { getQrAppOrigin } from './lib/qr-app-url';
@@ -348,6 +349,51 @@ function handleContactsAppRedirectRoute(req: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+function handleFormsAppRedirectRoute(req: NextRequest): NextResponse | null {
+  return handleWorkspaceSatelliteRedirectRoute(req, {
+    appOrigin: getFormsAppOrigin(),
+    routeSegment: 'forms',
+    preserveRouteSegment: true,
+  });
+}
+
+/**
+ * Permanent redirect for already-distributed shared-form links.
+ *
+ * Public forms moved to `forms.tuturuuu.com/f/<shareCode>`. Every link people
+ * have already sent points at `tuturuuu.com/<locale>/shared/forms/<shareCode>`,
+ * and social platforms have cached OG cards against those URLs — so this must
+ * be a permanent (308) redirect and must serve crawlers, not just browsers.
+ */
+function handleSharedFormRedirectRoute(req: NextRequest): NextResponse | null {
+  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
+  const hasLocale =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
+  const offset = hasLocale ? 1 : 0;
+
+  if (
+    pathSegments[offset] !== 'shared' ||
+    pathSegments[offset + 1] !== 'forms'
+  ) {
+    return null;
+  }
+
+  const shareCode = pathSegments[offset + 2];
+  if (!shareCode) return null;
+
+  const redirectUrl = new URL(getFormsAppOrigin());
+  redirectUrl.pathname = [
+    '',
+    'f',
+    shareCode,
+    // Preserve `/opengraph-image` and `/twitter-image` sub-paths.
+    ...pathSegments.slice(offset + 3),
+  ].join('/');
+  redirectUrl.search = req.nextUrl.search;
+
+  return NextResponse.redirect(redirectUrl, 308);
 }
 
 function handleWorkspaceSatelliteRedirectRoute(
@@ -1304,6 +1350,19 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const contactsAppRedirectResponse = handleContactsAppRedirectRoute(req);
   if (contactsAppRedirectResponse) {
     return contactsAppRedirectResponse;
+  }
+
+  // Forms moved wholesale to forms.tuturuuu.com. Public shared-form links are
+  // redirected before the auth proxy runs so anonymous respondents and social
+  // crawlers are never bounced to /login.
+  const sharedFormRedirectResponse = handleSharedFormRedirectRoute(req);
+  if (sharedFormRedirectResponse) {
+    return sharedFormRedirectResponse;
+  }
+
+  const formsAppRedirectResponse = handleFormsAppRedirectRoute(req);
+  if (formsAppRedirectResponse) {
+    return formsAppRedirectResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware

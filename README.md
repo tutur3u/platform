@@ -21,21 +21,21 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=29.71%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=14.14%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=74.63%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=30.33%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=14.44%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=76.14%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 29.71% | 232 / 781 | 219 | 13 | 549 |
-| Rust backend | `[###-----------------]` 14.14% | 82 / 580 | 71 | 11 | 498 |
-| TanStack Start | `[###############-----]` 74.63% | 150 / 201 | 148 | 2 | 51 |
+| Overall | `[######--------------]` 30.33% | 232 / 765 | 219 | 13 | 533 |
+| Rust backend | `[###-----------------]` 14.44% | 82 / 568 | 71 | 11 | 486 |
+| TanStack Start | `[###############-----]` 76.14% | 150 / 197 | 148 | 2 | 47 |
 
 <details>
 <summary>Remaining work by route kind</summary>
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 13.56% | 77 / 568 | 491 |
-| page | `[###########-----]` 70.14% | 101 / 144 | 43 |
+| api | `[##--------------]` 13.85% | 77 / 556 | 479 |
+| page | `[############----]` 72.14% | 101 / 140 | 39 |
 | layout | `[##############--]` 87.04% | 47 / 54 | 7 |
 | cron | `[#####-----------]` 28.57% | 2 / 7 | 5 |
 | route-handler | `[############----]` 75% | 3 / 4 | 1 |

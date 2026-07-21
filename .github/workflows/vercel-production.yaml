@@ -67,6 +67,12 @@ jobs:
     uses: ./.github/workflows/vercel-production-contacts.yaml
     secrets: inherit
 
+  deploy-forms:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-forms.yaml')
+    uses: ./.github/workflows/vercel-production-forms.yaml
+    secrets: inherit
+
   deploy-drive:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-drive.yaml')
