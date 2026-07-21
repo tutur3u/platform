@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { hasAIWhitelistAccess } from '@/lib/ai-whitelist/authorization';
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export default async function WhitelistPage({ params, searchParams }: Props) {
+  await connection();
+
   const t = await getTranslations();
   const { wsId } = await params;
 
