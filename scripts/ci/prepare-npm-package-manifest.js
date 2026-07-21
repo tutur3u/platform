@@ -9,29 +9,6 @@ const dependencyFields = [
   'peerDependencies',
 ];
 
-const vendoredPackageDependencies = {
-  '@tuturuuu/ui': {
-    xlsx: {
-      archive: 'vendor/xlsx-0.20.3.tgz',
-      exportName: './xlsx',
-      exportValue: {
-        types: './vendor/xlsx/types/index.d.ts',
-        import: './vendor/xlsx/xlsx.mjs',
-        require: './vendor/xlsx/xlsx.js',
-        default: './vendor/xlsx/xlsx.js',
-      },
-      extractedDirectory: 'vendor/xlsx',
-      members: [
-        'package/LICENSE',
-        'package/types/index.d.ts',
-        'package/xlsx.js',
-        'package/xlsx.mjs',
-      ],
-      source: 'file:vendor/xlsx-0.20.3.tgz',
-    },
-  },
-};
-
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
@@ -155,7 +132,8 @@ function preparePackageManifest({
     }
   }
 
-  const vendoredDependencies = vendoredPackageDependencies[packageJson.name];
+  const vendoredDependencies =
+    packageJson.tuturuuuPublish?.vendoredDependencies;
 
   if (vendoredDependencies) {
     for (const [dependencyName, vendoredDependency] of Object.entries(
@@ -216,6 +194,8 @@ function preparePackageManifest({
         to: `embedded:${vendoredDependency.extractedDirectory}`,
       });
     }
+
+    delete packageJson.tuturuuuPublish;
   }
 
   for (const field of dependencyFields) {
@@ -284,5 +264,4 @@ module.exports = {
   getWorkspaceVersions,
   preparePackageManifest,
   resolveWorkspaceDependencyVersion,
-  vendoredPackageDependencies,
 };

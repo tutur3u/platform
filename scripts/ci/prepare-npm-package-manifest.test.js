@@ -75,6 +75,28 @@ function writeUiPackageFixture(
       './xlsx': './src/xlsx.ts',
     },
     name: '@tuturuuu/ui',
+    tuturuuuPublish: {
+      vendoredDependencies: {
+        xlsx: {
+          archive: 'vendor/xlsx-0.20.3.tgz',
+          exportName: './xlsx',
+          exportValue: {
+            types: './vendor/xlsx/types/index.d.ts',
+            import: './vendor/xlsx/xlsx.mjs',
+            require: './vendor/xlsx/xlsx.js',
+            default: './vendor/xlsx/xlsx.js',
+          },
+          extractedDirectory: 'vendor/xlsx',
+          members: [
+            'package/LICENSE',
+            'package/types/index.d.ts',
+            'package/xlsx.js',
+            'package/xlsx.mjs',
+          ],
+          source: 'file:vendor/xlsx-0.20.3.tgz',
+        },
+      },
+    },
     version: '1.2.3',
   });
   fs.mkdirSync(path.join(repoRoot, 'packages/ui/vendor'), { recursive: true });
@@ -202,6 +224,7 @@ test('preparePackageManifest embeds UI vendored xlsx for portable npm installs',
     false
   );
   assert.equal(packageJson.dependencies.xlsx, undefined);
+  assert.equal(packageJson.tuturuuuPublish, undefined);
   assert.deepEqual(packageJson.exports['./xlsx'], {
     types: './vendor/xlsx/types/index.d.ts',
     import: './vendor/xlsx/xlsx.mjs',

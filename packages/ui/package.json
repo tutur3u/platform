@@ -10,6 +10,28 @@
   "publishConfig": {
     "access": "public"
   },
+  "tuturuuuPublish": {
+    "vendoredDependencies": {
+      "xlsx": {
+        "archive": "vendor/xlsx-0.20.3.tgz",
+        "exportName": "./xlsx",
+        "exportValue": {
+          "types": "./vendor/xlsx/types/index.d.ts",
+          "import": "./vendor/xlsx/xlsx.mjs",
+          "require": "./vendor/xlsx/xlsx.js",
+          "default": "./vendor/xlsx/xlsx.js"
+        },
+        "extractedDirectory": "vendor/xlsx",
+        "members": [
+          "package/LICENSE",
+          "package/types/index.d.ts",
+          "package/xlsx.js",
+          "package/xlsx.mjs"
+        ],
+        "source": "file:vendor/xlsx-0.20.3.tgz"
+      }
+    }
+  },
   "scripts": {
     "ui": "bunx shadcn-ui@latest",
     "test": "vitest run",
