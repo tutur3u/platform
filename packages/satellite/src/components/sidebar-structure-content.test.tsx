@@ -72,4 +72,34 @@ describe('SidebarStructureContent', () => {
     expect(workspaceSection?.className).toContain('pointer-events-none');
     expect(workspaceSection?.className).toContain('grid-rows-[0fr]');
   });
+
+  it('keeps the same collapsed selector row for fixed-purpose apps', () => {
+    const { container } = render(
+      <SidebarStructureContent
+        backButton={{ title: 'Back' }}
+        filteredCurrentLinks={[]}
+        isCollapsed={false}
+        navState={{
+          currentLinks: [],
+          direction: 'forward',
+          history: [],
+          titleHistory: [],
+        }}
+        setIsCollapsed={vi.fn()}
+        setNavState={vi.fn()}
+        workspaceSelectVisible={false}
+        wsId="workspace-id"
+      />
+    );
+
+    const workspaceSection = container.querySelector(
+      '[data-sidebar-workspace-select]'
+    );
+
+    expect(workspaceSection?.getAttribute('data-state')).toBe('closed');
+    expect(workspaceSection?.getAttribute('aria-hidden')).toBe('true');
+    expect(workspaceSection?.hasAttribute('inert')).toBe(true);
+    expect(workspaceSection?.className).toContain('grid-rows-[0fr]');
+    expect(workspaceSection?.className).toContain('pb-0');
+  });
 });

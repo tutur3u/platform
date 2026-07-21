@@ -92,10 +92,8 @@ describe('[wsId] structure compile graph', () => {
       'currentWorkspace={currentWorkspace}'
     );
     expect(structureImplSource).toContain('WorkspaceSelectVisibilityToggle');
-    expect(structureImplSource).toContain('grid-rows-[0fr]');
-    expect(structureImplSource).toContain('pointer-events-none');
     expect(structureImplSource).toContain(
-      'inert={showWorkspaceSelect ? undefined : true}'
+      'SidebarWorkspaceSelectSection visible={showWorkspaceSelect}'
     );
   });
 
