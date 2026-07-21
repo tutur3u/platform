@@ -1,221 +1,147 @@
-'use client';
+import {
+  Building2,
+  Check,
+  Lightbulb,
+  Rocket,
+  Sparkles,
+} from '@tuturuuu/icons/lucide';
+import { cn } from '@tuturuuu/utils/format';
+import type { ComponentType } from 'react';
+import { RevealGroup, RevealItem } from '@/components/landing/shared/reveal';
+import { SectionShell } from '@/components/landing/shared/section-shell';
+import { useAboutTranslations } from './use-about-translations';
 
-import { Brain, Globe, Rocket, Star } from '@tuturuuu/icons';
-import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
-
-interface ItemProps {
-  icon: ReactNode;
-  title: string;
-  description: string;
-}
-
-const journeyItems: ItemProps[] = [
+/** Static triples — Tailwind cannot resolve a class built at runtime. */
+const milestones: Array<{
+  key: string;
+  icon: ComponentType<{ className?: string }>;
+  achievements: number;
+  text: string;
+  border: string;
+  surface: string;
+}> = [
   {
-    icon: <Star className="h-8 w-8 text-primary" />,
-    title: 'The Beginning',
-    description:
-      'Started with a vision to democratize technology, making powerful tools accessible to everyone.',
+    key: 'foundation',
+    icon: Lightbulb,
+    achievements: 2,
+    text: 'text-dynamic-yellow',
+    border: 'border-dynamic-yellow/25',
+    surface: 'bg-dynamic-yellow/10',
   },
   {
-    icon: <Rocket className="h-8 w-8 text-primary" />,
-    title: 'Rapid Growth',
-    description:
-      'Expanded our reach globally, touching thousands of lives with innovative solutions.',
+    key: 'building',
+    icon: Rocket,
+    achievements: 4,
+    text: 'text-dynamic-blue',
+    border: 'border-dynamic-blue/25',
+    surface: 'bg-dynamic-blue/10',
   },
   {
-    icon: <Brain className="h-8 w-8 text-primary" />,
-    title: 'AI Revolution',
-    description:
-      'Pioneered breakthrough AI technologies that adapt and evolve to serve human needs better.',
+    key: 'launch',
+    icon: Building2,
+    achievements: 2,
+    text: 'text-dynamic-purple',
+    border: 'border-dynamic-purple/25',
+    surface: 'bg-dynamic-purple/10',
   },
   {
-    icon: <Globe className="h-8 w-8 text-primary" />,
-    title: 'Global Impact',
-    description:
-      'Building a worldwide community of innovators and dreamers who share our vision.',
+    key: 'evolution',
+    icon: Sparkles,
+    achievements: 3,
+    text: 'text-dynamic-pink',
+    border: 'border-dynamic-pink/25',
+    surface: 'bg-dynamic-pink/10',
   },
 ];
 
+/** One rail, four stops. A vertical list reads better than an alternating grid. */
 export function JourneySection() {
+  const t = useAboutTranslations();
+
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      className="relative text-center"
+    <SectionShell
+      eyebrow={t('sections.journey.eyebrow')}
+      index="07"
+      subtitle={t('timeline.subtitle')}
+      title={`${t('timeline.title.part1')} ${t('timeline.title.highlight')}`}
+      width="narrow"
     >
-      <div className="absolute inset-0 -z-10">
-        <motion.div
-          animate={{
-            opacity: [0.1, 0.15, 0.1],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-          className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]"
-        />
-        <motion.div
-          animate={{
-            rotate: [0, 360],
-          }}
-          transition={{
-            duration: 60,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-          className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-      </div>
-
       <div className="relative">
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
-          viewport={{ once: true }}
-          className="mb-16"
-        >
-          <motion.div
-            whileHover={{
-              scale: 1.1,
-              rotate: [0, 10, -10, 0],
-            }}
-            transition={{
-              rotate: {
-                duration: 0.5,
-                ease: 'easeInOut',
-              },
-            }}
-            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
-          >
-            <Star className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
-          </motion.div>
-          <motion.h2
-            className="mb-4 font-bold text-4xl text-foreground"
-            whileHover={{
-              scale: 1.02,
-            }}
-          >
-            <motion.span
-              animate={{
-                backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-              className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
-            >
-              Our Journey
-            </motion.span>
-          </motion.h2>
-          <motion.p
-            className="mx-auto max-w-2xl text-foreground/60 text-lg"
-            whileHover={{
-              scale: 1.01,
-            }}
-          >
-            From humble beginnings to groundbreaking innovations, every step of
-            our journey is driven by the desire to make technology work for
-            everyone
-          </motion.p>
-        </motion.div>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute top-2 bottom-2 left-[1.1875rem] w-px bg-gradient-to-b from-transparent via-foreground/12 to-transparent sm:left-[1.4375rem]"
+        />
 
-        <div className="grid gap-8 md:grid-cols-4">
-          {journeyItems.map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ y: 20, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{
-                y: -5,
-                transition: {
-                  duration: 0.2,
-                  ease: 'easeOut',
-                },
-              }}
-              className="group relative"
-            >
-              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
-                />
-                <motion.div
-                  animate={{
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 20,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
-                />
-                <div className="pointer-events-none relative p-8">
-                  <motion.div
-                    whileHover={{
-                      rotate: [0, 10, -10, 0],
-                      scale: 1.1,
-                    }}
-                    transition={{
-                      duration: 0.3,
-                    }}
-                    className="relative mb-6"
-                  >
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      >
-                        {item.icon}
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                  <motion.h3
-                    className="relative mb-4 font-bold text-foreground text-xl"
-                    whileHover={{
-                      scale: 1.05,
-                      color: 'hsl(var(--primary))',
-                    }}
-                  >
-                    {item.title}
-                  </motion.h3>
-                  <motion.p
-                    className="relative text-foreground/60"
-                    whileHover={{
-                      scale: 1.02,
-                    }}
-                  >
-                    {item.description}
-                  </motion.p>
+        <RevealGroup className="grid gap-4" stagger={0.08}>
+          {milestones.map((milestone) => (
+            <RevealItem key={milestone.key}>
+              <div className="relative flex gap-5 sm:gap-7">
+                <span
+                  className={cn(
+                    'relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-background sm:h-12 sm:w-12',
+                    milestone.border
+                  )}
+                >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'absolute inset-1 rounded-full',
+                      milestone.surface
+                    )}
+                  />
+                  <milestone.icon
+                    className={cn('relative h-4 w-4', milestone.text)}
+                  />
+                </span>
+
+                <div className="group relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-colors duration-500 hover:border-foreground/15 hover:bg-foreground/[0.03] sm:p-6">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono-ui text-[0.62rem] uppercase tracking-[0.2em]">
+                    <span className={milestone.text}>
+                      {t(`timeline.${milestone.key}.phase`)}
+                    </span>
+                    <span
+                      aria-hidden
+                      className="h-px w-6 bg-gradient-to-r from-foreground/20 to-transparent"
+                    />
+                    <span className="text-foreground/35 tabular-nums">
+                      {t(`timeline.${milestone.key}.period`)}
+                    </span>
+                  </div>
+
+                  <h3 className="mt-3 font-display font-semibold text-xl tracking-[-0.02em]">
+                    {t(`timeline.${milestone.key}.title`)}
+                  </h3>
+                  <p className="mt-2 text-foreground/50 text-sm leading-relaxed">
+                    {t(`timeline.${milestone.key}.description`)}
+                  </p>
+
+                  <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+                    {Array.from(
+                      { length: milestone.achievements },
+                      (_, index) => (
+                        <li
+                          className="flex items-start gap-2 text-foreground/55 text-xs"
+                          key={`${milestone.key}-${index}`}
+                        >
+                          <Check
+                            className={cn(
+                              'mt-0.5 h-3 w-3 shrink-0',
+                              milestone.text
+                            )}
+                          />
+                          {t(
+                            `timeline.${milestone.key}.achievement${index + 1}`
+                          )}
+                        </li>
+                      )
+                    )}
+                  </ul>
                 </div>
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
-                />
               </div>
-            </motion.div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </div>
-    </motion.section>
+    </SectionShell>
   );
 }

@@ -243,6 +243,35 @@
         "part1": "The Costs of"
       }
     },
+    "sections": {
+      "beliefs": {
+        "eyebrow": "Beliefs"
+      },
+      "capabilities": {
+        "eyebrow": "Capabilities"
+      },
+      "closing": {
+        "eyebrow": "Get involved"
+      },
+      "community": {
+        "eyebrow": "Community"
+      },
+      "company": {
+        "eyebrow": "Company"
+      },
+      "ecosystem": {
+        "eyebrow": "Ecosystem"
+      },
+      "journey": {
+        "eyebrow": "Journey"
+      },
+      "purpose": {
+        "eyebrow": "Purpose"
+      },
+      "stack": {
+        "eyebrow": "Stack"
+      }
+    },
     "techStack": {
       "ai": {
         "category": "AI & Analytics",
@@ -5018,6 +5047,7 @@
   "contact": {
     "banner": {
       "description": "Our team is committed to providing exceptional support and helping you get the most out of Tuturuuu.",
+      "eyebrow": "Support",
       "features": {
         "dedicated": "Dedicated Team",
         "expert": "Expert Support",
@@ -5036,6 +5066,7 @@
         "sending": "Sending..."
       },
       "description": "Share your ideas, questions, or request beta access to experimental features. We'll get back to you as soon as possible.",
+      "eyebrow": "Message",
       "fields": {
         "email": {
           "label": "Email",
@@ -5118,6 +5149,7 @@
         "description": "For general inquiries and support",
         "title": "Email"
       },
+      "eyebrow": "Channels",
       "github": {
         "description": "Explore our open source projects",
         "title": "GitHub"

@@ -243,6 +243,35 @@
         "part1": "Cái Giá Của"
       }
     },
+    "sections": {
+      "beliefs": {
+        "eyebrow": "Niềm tin"
+      },
+      "capabilities": {
+        "eyebrow": "Năng lực"
+      },
+      "closing": {
+        "eyebrow": "Tham gia cùng chúng tôi"
+      },
+      "community": {
+        "eyebrow": "Cộng đồng"
+      },
+      "company": {
+        "eyebrow": "Doanh nghiệp"
+      },
+      "ecosystem": {
+        "eyebrow": "Hệ sinh thái"
+      },
+      "journey": {
+        "eyebrow": "Hành trình"
+      },
+      "purpose": {
+        "eyebrow": "Mục đích"
+      },
+      "stack": {
+        "eyebrow": "Công nghệ"
+      }
+    },
     "techStack": {
       "ai": {
         "category": "AI & Phân Tích",
@@ -5018,6 +5047,7 @@
   "contact": {
     "banner": {
       "description": "Đội ngũ của chúng tôi cam kết cung cấp hỗ trợ xuất sắc và giúp bạn tận dụng tối đa Tuturuuu.",
+      "eyebrow": "Hỗ trợ",
       "features": {
         "dedicated": "Đội Ngũ Tận Tâm",
         "expert": "Hỗ Trợ Chuyên Nghiệp",
@@ -5036,6 +5066,7 @@
         "sending": "Đang gửi..."
       },
       "description": "Chia sẻ ý tưởng, câu hỏi của bạn, hoặc yêu cầu truy cập beta các tính năng thử nghiệm. Chúng tôi sẽ phản hồi sớm nhất có thể.",
+      "eyebrow": "Gửi tin nhắn",
       "fields": {
         "email": {
           "label": "Email",
@@ -5118,6 +5149,7 @@
         "description": "Cho các câu hỏi chung và hỗ trợ",
         "title": "Email"
       },
+      "eyebrow": "Kênh liên hệ",
       "github": {
         "description": "Khám phá các dự án mã nguồn mở",
         "title": "GitHub"
