@@ -106,16 +106,18 @@ export function RealtimeAnalyticsFilters({
       <div className="grid gap-4 md:grid-cols-2">
         {/* View Mode */}
         <div className="space-y-2">
-          <Label className="font-semibold text-sm">View Mode</Label>
+          <Label className="font-semibold text-sm">
+            {t('filters.view_mode')}
+          </Label>
           <Tabs value={filters.viewMode} onValueChange={handleViewModeChange}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="hourly" className="gap-2">
                 <Calendar className="h-4 w-4" />
-                Hourly
+                {t('filters.hourly')}
               </TabsTrigger>
               <TabsTrigger value="daily" className="gap-2">
                 <Calendar className="h-4 w-4" />
-                Daily
+                {t('filters.daily')}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -141,17 +143,25 @@ export function RealtimeAnalyticsFilters({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label className="font-semibold text-sm">
-            {filters.viewMode === 'hourly' ? 'Select Date' : 'Date Range'}
+            {filters.viewMode === 'hourly'
+              ? t('filters.select_date')
+              : t('filters.date_range')}
           </Label>
           {filters.viewMode === 'daily' && (
             <Select onValueChange={handleDatePreset} value="">
               <SelectTrigger className="h-8 w-[150px]">
-                <SelectValue placeholder="Quick select" />
+                <SelectValue placeholder={t('filters.quick_select')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="last_24h">Last 24 hours</SelectItem>
-                <SelectItem value="last_7d">Last 7 days</SelectItem>
-                <SelectItem value="last_30d">Last 30 days</SelectItem>
+                <SelectItem value="last_24h">
+                  {t('filters.last_24_hours')}
+                </SelectItem>
+                <SelectItem value="last_7d">
+                  {t('filters.last_7_days')}
+                </SelectItem>
+                <SelectItem value="last_30d">
+                  {t('filters.last_30_days')}
+                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -179,7 +189,7 @@ export function RealtimeAnalyticsFilters({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label className="text-muted-foreground text-xs">
-                Start Date
+                {t('filters.start_date')}
               </Label>
               <DateTimePicker
                 date={filters.startDate}
@@ -198,7 +208,9 @@ export function RealtimeAnalyticsFilters({
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-muted-foreground text-xs">End Date</Label>
+              <Label className="text-muted-foreground text-xs">
+                {t('filters.end_date')}
+              </Label>
               <DateTimePicker
                 date={filters.endDate}
                 setDate={(date) => {
@@ -230,7 +242,7 @@ export function RealtimeAnalyticsFilters({
 
       {/* Filters */}
       <div className="space-y-4">
-        <Label className="font-semibold text-sm">Filters</Label>
+        <Label className="font-semibold text-sm">{t('filters.title')}</Label>
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Workspace Filter */}
           <div className="space-y-2">
