@@ -445,8 +445,13 @@ export function GlobalCommandLauncher({
   const hasResults = visibleItems.length > 0;
 
   const navigateTo = useCallback(
-    (url: string) => {
+    (url: string, options: { newTab?: boolean } = {}) => {
       closeLauncher();
+
+      if (options.newTab && !onNavigate) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
 
       if (onNavigate) {
         onNavigate(url);
@@ -470,7 +475,7 @@ export function GlobalCommandLauncher({
         workspace: currentWorkspace,
       });
 
-      navigateTo(url);
+      navigateTo(url, { newTab: app.slug === 'pay' });
     },
     [currentWorkspace, navigateTo]
   );

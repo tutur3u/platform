@@ -151,7 +151,9 @@ export function SatelliteWorkspaceSettingsPanel({
           </div>
           {permissions?.manage_subscription ? (
             <Button asChild>
-              <a href={billingUrl}>{t('billing_open')}</a>
+              <a href={billingUrl} rel="noopener noreferrer" target="_blank">
+                {t('billing_open')}
+              </a>
             </Button>
           ) : (
             <Button disabled>{t('billing_open')}</Button>

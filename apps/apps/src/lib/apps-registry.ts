@@ -63,5 +63,9 @@ export function buildGatewayRedirectUrl({
     }
   }
 
+  if (!url.searchParams.has('source')) {
+    url.searchParams.set('source', 'apps');
+  }
+
   return url.toString();
 }

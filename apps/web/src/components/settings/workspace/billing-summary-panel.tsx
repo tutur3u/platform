@@ -62,7 +62,11 @@ export function WorkspaceBillingSummaryPanel({ wsId }: { wsId: string }) {
           </p>
         </div>
         <Button asChild>
-          <a href={getPayBillingUrl(wsId)} rel="noreferrer">
+          <a
+            href={getPayBillingUrl(wsId)}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             {t('open-billing')}
             <ExternalLink className="ml-2 h-4 w-4" />
           </a>

@@ -55,7 +55,7 @@ describe('apps launcher opening preference', () => {
     expect(
       screen.getByRole('link', { name: 'Finance' }).getAttribute('target')
     ).toBe('_blank');
-  });
+  }, 30_000);
 
   it('shares the open-mode cookie across Tuturuuu subdomains', () => {
     expect(

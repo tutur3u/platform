@@ -61,7 +61,7 @@ function renderLauncher({
   currentApp = 'calendar',
   currentWorkspaceId = 'personal-id',
   duplicateCount = 1,
-  onNavigate = vi.fn(),
+  onNavigate,
 }: Partial<Parameters<typeof GlobalCommandLauncher>[0]> & {
   duplicateCount?: number;
 } = {}) {
@@ -300,6 +300,26 @@ describe('GlobalCommandLauncher', () => {
 
     expect(onNavigate).toHaveBeenCalledWith(
       'http://localhost:7808/personal?source=command-launcher'
+    );
+  });
+
+  it('opens Pay app command results in a new tab by default', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    const open = vi.fn();
+    vi.stubGlobal('open', open);
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    const input = await screen.findByPlaceholderText(
+      'Search apps, workspaces, and pages...'
+    );
+    fireEvent.change(input, { target: { value: 'pay' } });
+    fireEvent.click(await screen.findByText('Pay'));
+
+    expect(open).toHaveBeenCalledWith(
+      'http://localhost:7826/personal?source=command-launcher',
+      '_blank',
+      'noopener,noreferrer'
     );
   });
 });
