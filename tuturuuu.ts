@@ -294,14 +294,10 @@ export const vercelWorkflowTargets = [
 const globalVercelAffectingPaths = new Set([
   '.github/actions/run-with-turbo-remote-cache/action.yml',
   '.github/actions/setup-bun-with-retry/action.yml',
-  '.github/workflows/vercel-production.yaml',
   'bun.lock',
   'package.json',
   'scripts/ci/generate-build-metadata.ts',
-  'scripts/ci/resolve-production-vercel-targets.ts',
-  'scripts/ci/workflow-config-core.ts',
   'turbo.json',
-  'tuturuuu.ts',
 ]);
 
 const scopedVercelAffectingPaths = [

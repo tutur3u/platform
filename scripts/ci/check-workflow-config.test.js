@@ -85,9 +85,15 @@ test('docs-only changes skip all Vercel deploy workflows', () => {
   }
 });
 
-test('CI gate changes do not rebuild application artifacts', () => {
+test('CI orchestration changes do not rebuild application artifacts', () => {
   const rootDir = createFixtureRoot();
-  const changedFiles = ['.github/workflows/ci-check.yml'];
+  const changedFiles = [
+    '.github/workflows/ci-check.yml',
+    '.github/workflows/vercel-production.yaml',
+    'scripts/ci/resolve-production-vercel-targets.ts',
+    'scripts/ci/workflow-config-core.ts',
+    'tuturuuu.ts',
+  ];
 
   for (const workflowName of vercelWorkflows) {
     assertWorkflowDecision(
