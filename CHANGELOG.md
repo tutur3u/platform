@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/platform-v0.24.0...platform-v0.25.0) (2026-07-21)
+
+
+### Features
+
+* **cms:** redesign workspace home ([cd727b8](https://github.com/tutur3u/platform/commit/cd727b8a2f220d96527b892a39a288cc0f211a70))
+
+
+### Bug Fixes
+
+* **ci:** publish portable vendored UI dependencies ([e69563f](https://github.com/tutur3u/platform/commit/e69563fe9a3b99768f408d6b8d96477eeeebed94))
+* **ui:** publish portable vendored dependencies ([99ad359](https://github.com/tutur3u/platform/commit/99ad35903a27b8f9df26f22fc5f1003aed363d6f))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/platform-v0.23.0...platform-v0.24.0) (2026-07-21)
 
 

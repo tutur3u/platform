@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/tutur3u/platform/compare/ui-v0.19.0...ui-v0.19.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* **ui:** publish portable vendored dependencies ([99ad359](https://github.com/tutur3u/platform/commit/99ad35903a27b8f9df26f22fc5f1003aed363d6f))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/ui-v0.18.0...ui-v0.19.0) (2026-07-21)
 
 
