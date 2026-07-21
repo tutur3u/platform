@@ -1,11 +1,13 @@
 'use client';
 
-import { Plus } from '@tuturuuu/icons';
+import { Loader2, Plus, SearchX } from '@tuturuuu/icons';
 import type {
   ExternalProjectCollection,
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
 } from '@tuturuuu/types';
+import { Button } from '@tuturuuu/ui/button';
+import { useMemo } from 'react';
 import { CmsEntryIndexCard } from './cms-entry-index-card';
 import type { PublishMutationPayload } from './cms-library-section-shared';
 import type { CmsStrings } from './cms-strings';
@@ -17,6 +19,9 @@ export function CmsEntriesGallery({
   createEntryHint,
   createEntryPending = false,
   entries,
+  filterKey,
+  filtersActive,
+  onClearFilters,
   onCreateEntry,
   onDeleteEntry,
   onDuplicateEntry,
@@ -24,7 +29,6 @@ export function CmsEntriesGallery({
   onOpenQuickTaxonomy,
   onPublishEntry,
   quickTaxonomyPending,
-  search,
   selectedEntryId,
   taxonomyAvailable,
   strings,
@@ -34,6 +38,9 @@ export function CmsEntriesGallery({
   createEntryHint?: string;
   createEntryPending?: boolean;
   entries: ExternalProjectEntry[];
+  filterKey: string;
+  filtersActive: boolean;
+  onClearFilters: () => void;
   onCreateEntry: () => void;
   onDeleteEntry: (entryId: string) => void;
   onDuplicateEntry: (entryId: string) => void;
@@ -41,21 +48,47 @@ export function CmsEntriesGallery({
   onOpenQuickTaxonomy: (entryId: string) => void;
   onPublishEntry: (payload: PublishMutationPayload) => void;
   quickTaxonomyPending: boolean;
-  search: string;
   selectedEntryId: string;
   taxonomyAvailable: boolean;
   strings: CmsStrings;
 }) {
   const { hasMore, sentinelRef, visibleCount } = useInfiniteVisibleCount({
     pageSize: 18,
-    resetKey: `${activeCollection?.id ?? ''}:${search}`,
+    resetKey: `${activeCollection?.id ?? ''}:${filterKey}`,
     totalCount: entries.length,
   });
   const visibleEntries = entries.slice(0, visibleCount);
+  const visualByEntryId = useMemo(() => {
+    const index = new Map<string, ExternalProjectStudioAsset>();
+    for (const asset of assets) {
+      if (asset.entry_id && !index.has(asset.entry_id)) {
+        index.set(asset.entry_id, asset);
+      }
+    }
+    return index;
+  }, [assets]);
 
   return (
     <div className="space-y-3" data-testid="cms-edit-gallery">
-      {entries.length === 0 ? (
+      {entries.length === 0 && filtersActive ? (
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-border/70 border-dashed bg-card/70 p-6 text-center">
+          <span className="flex size-10 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground">
+            <SearchX className="h-5 w-5" />
+          </span>
+          <h3 className="mt-4 font-semibold">{strings.filteredEmptyTitle}</h3>
+          <p className="mt-1 max-w-md text-muted-foreground text-sm leading-6">
+            {strings.filteredEmptyDescription}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4"
+            onClick={onClearFilters}
+          >
+            {strings.clearFiltersAction}
+          </Button>
+        </div>
+      ) : entries.length === 0 ? (
         <button
           type="button"
           className="grid min-h-28 w-full gap-3 rounded-lg border border-border/70 border-dashed bg-card/70 p-4 text-left transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-60 md:grid-cols-[104px_minmax(0,1fr)]"
@@ -89,16 +122,19 @@ export function CmsEntriesGallery({
           selected={entry.id === selectedEntryId}
           strings={strings}
           taxonomyAvailable={taxonomyAvailable}
-          visual={assets.find((asset) => asset.entry_id === entry.id)}
+          visual={visualByEntryId.get(entry.id)}
         />
       ))}
 
       {hasMore ? (
         <div
           ref={sentinelRef}
-          aria-hidden="true"
-          className="h-24 rounded-lg border border-border/70 border-dashed bg-card/50"
-        />
+          role="status"
+          className="flex h-20 items-center justify-center gap-2 rounded-lg border border-border/70 border-dashed bg-card/50 text-muted-foreground text-sm"
+        >
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {strings.loadingMoreLabel}
+        </div>
       ) : null}
     </div>
   );

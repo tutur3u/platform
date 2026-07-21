@@ -40,6 +40,7 @@ export type CmsLibrarySectionProps = {
   createEntryHint?: string;
   createEntryPending?: boolean;
   editSection: EditSection;
+  entryFilter: WorkflowFilter;
   entries: ExternalProjectEntry[];
   fieldDefinitions: ExternalProjectFieldDefinition[];
   importPending: boolean;
@@ -57,9 +58,11 @@ export type CmsLibrarySectionProps = {
   onOpenEntry: (entryId: string) => void;
   onOpenQuickTaxonomy: (entryId: string) => void;
   onPublishEntry: (payload: PublishMutationPayload) => void;
+  onClearEntryFilters: () => void;
   onSearchChange: (value: string) => void;
   onSelectBulkEntry: (entryId: string, checked: boolean) => void;
   onSelectCollection: (collectionId: string) => void;
+  onSetEntryFilter: (filter: WorkflowFilter) => void;
   onSetWorkflowFilter: (filter: WorkflowFilter) => void;
   onSetWorkflowScheduleValue: (value: string) => void;
   onWorkflowAction: (payload: {
@@ -84,6 +87,7 @@ export type CmsLibrarySectionProps = {
   surface?: 'games' | 'landing' | 'library';
   taxonomyAvailable: boolean;
   templatePending: boolean;
+  unfilteredEntries: ExternalProjectEntry[];
   workflowEntries: ExternalProjectEntry[];
   workflowFilter: WorkflowFilter;
   workflowLanes: WorkflowLane[];

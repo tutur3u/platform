@@ -23,6 +23,7 @@ export type CmsStrings = {
   bulkSelectionHint: string;
   bulkUploadMediaAction: string;
   cancelAction: string;
+  clearFiltersAction: string;
   categoryClearAction: string;
   categoryCreateAction: string;
   categoryCreateHint: string;
@@ -119,6 +120,8 @@ export type CmsStrings = {
   featuredPlacementWritingLabel: string;
   featuredWritingEntriesDescription: string;
   featuredWritingEntriesLabel: string;
+  filteredEmptyDescription: string;
+  filteredEmptyTitle: string;
   fieldAuthorLabel: string;
   fieldAvailableLabel: string;
   fieldCompletedOnLabel: string;
@@ -182,6 +185,7 @@ export type CmsStrings = {
   libraryOperationsTitle: string;
   libraryPageDescription: string;
   loadingPreviewLabel: string;
+  loadingMoreLabel: string;
   metadataLabel: string;
   mediaAssetGalleryDescription: string;
   missingLeadImageLabel: string;
@@ -359,6 +363,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     bulkSelectionHint: t('epm.bulk_selection_hint'),
     bulkUploadMediaAction: t('epm.bulk_upload_media_action'),
     cancelAction: t('epm.cancel_action'),
+    clearFiltersAction: t('epm.clear_filters_action'),
     categoryActiveHint: t('epm.category_active_hint'),
     categoryClearAction: t('epm.category_clear_action'),
     categoryCreateAction: t('epm.category_create_action'),
@@ -471,6 +476,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
       'epm.featured_writing_entries_description'
     ),
     featuredWritingEntriesLabel: t('epm.featured_writing_entries_label'),
+    filteredEmptyDescription: t('epm.filtered_empty_description'),
+    filteredEmptyTitle: t('epm.filtered_empty_title'),
     fieldAuthorLabel: t('epm.field_author_label'),
     fieldAvailableLabel: t('epm.field_available_label'),
     fieldCompletedOnLabel: t('epm.field_completed_on_label'),
@@ -537,6 +544,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     libraryOperationsTitle: t('epm.library_operations_title'),
     libraryPageDescription: t('epm.library_page_description'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
+    loadingMoreLabel: t('epm.loading_more_label'),
     metadataLabel: t('epm.metadata_label'),
     mediaProcessingLabel: t('epm.media_processing_label'),
     navigationTitleDescription: t('epm.navigation_title_description'),

@@ -22,6 +22,7 @@ export function CmsLibrarySection({
   createEntryPending,
   deleteFieldDefinitionPending,
   editSection,
+  entryFilter,
   entries,
   fieldDefinitions,
   importPending,
@@ -38,9 +39,11 @@ export function CmsLibrarySection({
   onOpenEntry,
   onOpenQuickTaxonomy,
   onPublishEntry,
+  onClearEntryFilters,
   onSearchChange,
   onSelectBulkEntry,
   onSelectCollection,
+  onSetEntryFilter,
   onSetWorkflowFilter,
   onSetWorkflowScheduleValue,
   onWorkflowAction,
@@ -55,6 +58,7 @@ export function CmsLibrarySection({
   surface = 'library',
   taxonomyAvailable,
   templatePending,
+  unfilteredEntries,
   workflowEntries,
   workflowFilter,
   workflowLanes,
@@ -67,23 +71,34 @@ export function CmsLibrarySection({
   const canShowContentModel = availableEditSections.includes('content-model');
   const canShowWorkflow = availableEditSections.includes('workflow');
   const canShowSettings = availableEditSections.includes('settings');
-  const activeCollectionEntryCount = activeCollection
-    ? entries.filter((entry) => entry.collection_id === activeCollection.id)
-        .length
-    : entries.length;
-  const activeCollectionPublishedCount = activeCollection
-    ? entries.filter(
-        (entry) =>
-          entry.collection_id === activeCollection.id &&
-          entry.status === 'published'
-      ).length
-    : entries.filter((entry) => entry.status === 'published').length;
+  const activeCollectionEntries = activeCollection
+    ? unfilteredEntries.filter(
+        (entry) => entry.collection_id === activeCollection.id
+      )
+    : unfilteredEntries;
+  const activeCollectionEntryCount = activeCollectionEntries.length;
+  const activeCollectionPublishedCount = activeCollectionEntries.filter(
+    (entry) => entry.status === 'published'
+  ).length;
+  const activeCollectionCounts = {
+    archived: activeCollectionEntries.filter(
+      (entry) => entry.status === 'archived'
+    ).length,
+    collections: counts.collections,
+    drafts: activeCollectionEntries.filter((entry) => entry.status === 'draft')
+      .length,
+    entries: activeCollectionEntries.length,
+    published: activeCollectionPublishedCount,
+    scheduled: activeCollectionEntries.filter(
+      (entry) => entry.status === 'scheduled'
+    ).length,
+  };
   const entriesWithMedia = new Set(
     assets
       .map((asset) => asset.entry_id)
       .filter((entryId): entryId is string => Boolean(entryId))
   );
-  const missingVisualCount = entries.filter(
+  const missingVisualCount = unfilteredEntries.filter(
     (entry) => !entriesWithMedia.has(entry.id)
   ).length;
   const activeContent =
@@ -94,6 +109,9 @@ export function CmsLibrarySection({
         createEntryHint={createEntryHint}
         createEntryPending={createEntryPending}
         entries={entries}
+        filterKey={`${entryFilter}:${search}`}
+        filtersActive={Boolean(search.trim()) || entryFilter !== 'all'}
+        onClearFilters={onClearEntryFilters}
         onCreateEntry={onCreateEntry}
         onDeleteEntry={onDeleteEntry}
         onDuplicateEntry={onDuplicateEntry}
@@ -101,7 +119,6 @@ export function CmsLibrarySection({
         onOpenQuickTaxonomy={onOpenQuickTaxonomy}
         onPublishEntry={onPublishEntry}
         quickTaxonomyPending={quickTaxonomyPending}
-        search={search}
         selectedEntryId={selectedEntryId}
         taxonomyAvailable={taxonomyAvailable}
         strings={strings}
@@ -135,7 +152,7 @@ export function CmsLibrarySection({
         binding={binding}
         collections={collections}
         counts={counts}
-        entries={entries}
+        entries={unfilteredEntries}
         importPending={importPending}
         onCreateCollection={onCreateCollection}
         onDeleteCollection={onDeleteCollection}
@@ -232,7 +249,7 @@ export function CmsLibrarySection({
 
               <div className="max-h-[52rem] overflow-auto p-2">
                 {collections.map((collection) => {
-                  const entryCount = entries.filter(
+                  const entryCount = unfilteredEntries.filter(
                     (entry) => entry.collection_id === collection.id
                   ).length;
 
@@ -311,9 +328,10 @@ export function CmsLibrarySection({
         activeCollection={activeCollection}
         availableEditSections={availableEditSections}
         collections={collections}
-        counts={counts}
+        counts={activeCollectionCounts}
         createEntryPending={createEntryPending}
         editSection={editSection}
+        entryFilter={entryFilter}
         importPending={importPending}
         onChangeEditSection={onChangeEditSection}
         onCreateCollection={onCreateCollection}
@@ -323,6 +341,7 @@ export function CmsLibrarySection({
         onOpenCollection={onOpenCollection}
         onSearchChange={onSearchChange}
         onSelectCollection={onSelectCollection}
+        onSetEntryFilter={onSetEntryFilter}
         search={search}
         strings={strings}
       />
@@ -354,7 +373,7 @@ export function CmsLibrarySection({
 
             <div className="max-h-[52rem] overflow-auto p-2">
               {collections.map((collection) => {
-                const entryCount = entries.filter(
+                const entryCount = unfilteredEntries.filter(
                   (entry) => entry.collection_id === collection.id
                 ).length;
 

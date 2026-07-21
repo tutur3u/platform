@@ -27,13 +27,13 @@ export function useCmsStudio({
   workspaceId: string;
 } & Pick<InternalApiClientOptions, 'fetch'>) {
   return useQuery({
-    gcTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     initialData,
     queryFn: async () =>
       getWorkspaceExternalProjectStudio(workspaceId, { fetch }),
     queryKey: getCmsStudioQueryKey(workspaceId),
     refetchOnWindowFocus: false,
     retry: false,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
 }

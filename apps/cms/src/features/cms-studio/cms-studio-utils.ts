@@ -42,6 +42,39 @@ export function statusTone(status: ExternalProjectEntry['status']) {
   }
 }
 
+export function filterCmsEntries(
+  entries: ExternalProjectEntry[],
+  {
+    collectionId,
+    query,
+    status,
+  }: {
+    collectionId?: string;
+    query: string;
+    status: WorkflowFilter;
+  }
+) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  return entries.filter((entry) => {
+    if (collectionId && entry.collection_id !== collectionId) {
+      return false;
+    }
+
+    if (status !== 'all' && entry.status !== status) {
+      return false;
+    }
+
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return [entry.title, entry.slug, entry.summary, entry.subtitle]
+      .filter((value): value is string => Boolean(value))
+      .some((value) => value.toLowerCase().includes(normalizedQuery));
+  });
+}
+
 export function formatDateLabel(
   value: string | null | undefined,
   fallback: string

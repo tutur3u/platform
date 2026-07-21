@@ -58,6 +58,7 @@ import { CmsStudioHeader } from './cms-studio-header';
 import {
   type CmsStudioMode,
   type EditSection,
+  filterCmsEntries,
   getProjectBrand,
   slugifyLabel,
   type WorkflowFilter,
@@ -158,6 +159,7 @@ export function CmsStudioClient({
     initialStudio?.entries[0]?.id ?? ''
   );
   const [search, setSearch] = useState('');
+  const [entryFilter, setEntryFilter] = useState<WorkflowFilter>('all');
   const [workflowFilter, setWorkflowFilter] = useState<WorkflowFilter>('all');
   const [selectedBulkIds, setSelectedBulkIds] = useState<string[]>([]);
   const [scheduleValue, setScheduleValue] = useState('');
@@ -249,22 +251,10 @@ export function CmsStudioClient({
       : undefined) ||
     deliveryCollections[0] ||
     null;
-  const visibleEntries = entries.filter((entry) => {
-    if (
-      effectiveCollectionId &&
-      entry.collection_id !== effectiveCollectionId
-    ) {
-      return false;
-    }
-
-    if (!deferredSearch.trim()) {
-      return true;
-    }
-
-    const query = deferredSearch.toLowerCase();
-    return [entry.title, entry.slug, entry.summary, entry.subtitle]
-      .filter(Boolean)
-      .some((value) => value?.toLowerCase().includes(query));
+  const visibleEntries = filterCmsEntries(entries, {
+    collectionId: effectiveCollectionId || undefined,
+    query: deferredSearch,
+    status: entryFilter,
   });
   const activeEditEntry =
     visibleEntries.find((entry) => entry.id === selectedEntryId) ??
@@ -1055,6 +1045,7 @@ export function CmsStudioClient({
     createEntryPending: createEntryMutation.isPending,
     deleteFieldDefinitionPending: deleteFieldDefinitionMutation.isPending,
     editSection,
+    entryFilter,
     entries: visibleEntries,
     fieldDefinitions,
     importPending: importMutation.isPending,
@@ -1073,9 +1064,14 @@ export function CmsStudioClient({
     onOpenEntry: openEntryEditor,
     onOpenQuickTaxonomy: openQuickTaxonomy,
     onPublishEntry: (payload) => publishEntryMutation.mutate(payload),
+    onClearEntryFilters: () => {
+      setEntryFilter('all');
+      setSearch('');
+    },
     onSearchChange: setSearch,
     onSelectBulkEntry: handleSelectBulkEntry,
     onSelectCollection: selectCollection,
+    onSetEntryFilter: setEntryFilter,
     onSetWorkflowFilter: setWorkflowFilter,
     onSetWorkflowScheduleValue: setScheduleValue,
     onWorkflowAction: (payload) => bulkMutation.mutate(payload),
@@ -1095,6 +1091,7 @@ export function CmsStudioClient({
           : 'library',
     taxonomyAvailable,
     templatePending: applyContentModelTemplateMutation.isPending,
+    unfilteredEntries: entries,
     workflowEntries,
     workflowFilter,
     workflowLanes,
