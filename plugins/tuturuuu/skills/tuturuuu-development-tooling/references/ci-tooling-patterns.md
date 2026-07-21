@@ -167,9 +167,11 @@ formatting behavior, or repo-wide verification.
   package releases. Before `npm pack`, run
   `node scripts/ci/prepare-npm-package-manifest.js packages/<name>` so packed
   artifacts contain concrete npm-compatible versions instead of `workspace:`
-  protocol ranges. Package-included `file:` tarball dependencies, such as
-  `@tuturuuu/ui`'s vendored SheetJS tarball, must stay local in the packed
-  manifest and must not be rewritten to mutable external HTTPS tarball URLs.
+  protocol ranges. Package-included `file:` tarball dependencies must not remain
+  as consumer-relative manifest ranges. Embed their vetted contents into the
+  artifact, redirect the owning package export to those immutable bytes, and
+  remove the install-time dependency edge; never replace the checked-in archive
+  with a mutable external HTTPS tarball URL.
 - After `npm publish`, package workflows must poll `npm view` for the exact
   published version before reporting success. First-publish `E404`, permission,
   or trusted-publisher errors should fail clearly and be fixed in npm package
@@ -182,9 +184,10 @@ formatting behavior, or repo-wide verification.
   dependency graph fully publishable on npm; if a UI-only edge points at a
   private package, remove it when unused or model it as an optional peer owned
   by the narrow export that needs it. File-backed dependencies such as UI's
-  vendored SheetJS tarball must stay local in source manifests and packed npm
-  manifests when the tarball is included in the package artifact; do not rewrite
-  them to mutable external HTTPS tarballs before `npm pack`.
+  vendored SheetJS tarball stay local in source manifests. The prepared npm
+  artifact must embed the archive contents and omit the consumer-facing `file:`
+  dependency so npm and Bun can install it from any workspace; do not rewrite
+  the dependency to a mutable external HTTPS tarball before `npm pack`.
 - Platform Vercel production deployment should run
   `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
   before dependency installation when release-please package manifests changed.

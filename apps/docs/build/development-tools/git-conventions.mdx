@@ -202,9 +202,11 @@ the checked-out package manifest with
 `scripts/ci/prepare-npm-package-manifest.js` immediately before `npm pack` so
 published artifacts contain installable npm version ranges. Package-included
 `file:` tarball dependencies, such as `@tuturuuu/ui`'s vendored SheetJS tarball,
-stay local in the packed manifest and must not be rewritten to mutable external
-tarball URLs. Before any build or
-pack work starts, package workflows run
+must not leak a consumer-relative `file:` range into the npm manifest. Package
+preparation expands the checked-in archive into the artifact, redirects the
+package export to those immutable bytes, and removes the install-time dependency
+edge. Do not rewrite the vetted archive to a mutable external tarball URL.
+Before any build or pack work starts, package workflows run
 `scripts/ci/package-release-readiness.js gate-package-release packages/<name>`.
 The gate checks publishable Tuturuuu workspace dependency versions on npm once,
 dispatches missing dependency workflows, and exits green without occupying a

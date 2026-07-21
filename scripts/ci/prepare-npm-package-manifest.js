@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 
 const dependencyFields = [
   'dependencies',
@@ -8,12 +9,52 @@ const dependencyFields = [
   'peerDependencies',
 ];
 
+const vendoredPackageDependencies = {
+  '@tuturuuu/ui': {
+    xlsx: {
+      archive: 'vendor/xlsx-0.20.3.tgz',
+      exportName: './xlsx',
+      exportValue: {
+        types: './vendor/xlsx/types/index.d.ts',
+        import: './vendor/xlsx/xlsx.mjs',
+        require: './vendor/xlsx/xlsx.js',
+        default: './vendor/xlsx/xlsx.js',
+      },
+      extractedDirectory: 'vendor/xlsx',
+      members: [
+        'package/LICENSE',
+        'package/types/index.d.ts',
+        'package/xlsx.js',
+        'package/xlsx.mjs',
+      ],
+      source: 'file:vendor/xlsx-0.20.3.tgz',
+    },
+  },
+};
+
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
 function writeJson(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function extractVendoredTarball({ archivePath, destinationPath, members }) {
+  fs.rmSync(destinationPath, { force: true, recursive: true });
+  fs.mkdirSync(destinationPath, { recursive: true });
+  execFileSync(
+    'tar',
+    [
+      '-xzf',
+      archivePath,
+      '--strip-components=1',
+      '-C',
+      destinationPath,
+      ...members,
+    ],
+    { stdio: 'inherit' }
+  );
 }
 
 function expandWorkspacePattern(repoRoot, pattern) {
@@ -65,11 +106,16 @@ function resolveWorkspaceDependencyVersion(workspaceRange, packageVersion) {
   return range;
 }
 
-function preparePackageManifest({ packageDir, repoRoot }) {
+function preparePackageManifest({
+  extractTarball = extractVendoredTarball,
+  packageDir,
+  repoRoot,
+}) {
   const resolvedPackageDir = path.resolve(repoRoot, packageDir);
   const packageJsonPath = path.join(resolvedPackageDir, 'package.json');
   const packageJson = readJson(packageJsonPath);
   const workspaceVersions = getWorkspaceVersions(repoRoot);
+  const archivesToRemove = [];
   const rewrites = [];
 
   for (const field of dependencyFields) {
@@ -109,8 +155,92 @@ function preparePackageManifest({ packageDir, repoRoot }) {
     }
   }
 
+  const vendoredDependencies = vendoredPackageDependencies[packageJson.name];
+
+  if (vendoredDependencies) {
+    for (const [dependencyName, vendoredDependency] of Object.entries(
+      vendoredDependencies
+    )) {
+      const dependencyVersion = packageJson.dependencies?.[dependencyName];
+
+      if (dependencyVersion !== vendoredDependency.source) {
+        throw new Error(
+          `${packageDir} must declare dependencies.${dependencyName} as ` +
+            `${vendoredDependency.source} before it can be embedded for npm.`
+        );
+      }
+
+      const archivePath = path.join(
+        resolvedPackageDir,
+        vendoredDependency.archive
+      );
+      const destinationPath = path.join(
+        resolvedPackageDir,
+        vendoredDependency.extractedDirectory
+      );
+
+      if (!fs.existsSync(archivePath)) {
+        throw new Error(
+          `${packageDir} is missing vendored archive ${vendoredDependency.archive}.`
+        );
+      }
+
+      extractTarball({
+        archivePath,
+        destinationPath,
+        members: vendoredDependency.members,
+      });
+
+      for (const exportPath of Object.values(vendoredDependency.exportValue)) {
+        const absoluteExportPath = path.join(
+          resolvedPackageDir,
+          exportPath.slice('./'.length)
+        );
+
+        if (!fs.existsSync(absoluteExportPath)) {
+          throw new Error(
+            `${packageDir} did not extract required vendored file ${exportPath}.`
+          );
+        }
+      }
+
+      archivesToRemove.push(archivePath);
+      delete packageJson.dependencies[dependencyName];
+      packageJson.exports ??= {};
+      packageJson.exports[vendoredDependency.exportName] =
+        vendoredDependency.exportValue;
+      rewrites.push({
+        field: 'dependencies',
+        from: dependencyVersion,
+        name: dependencyName,
+        to: `embedded:${vendoredDependency.extractedDirectory}`,
+      });
+    }
+  }
+
+  for (const field of dependencyFields) {
+    for (const [dependencyName, dependencyVersion] of Object.entries(
+      packageJson[field] ?? {}
+    )) {
+      if (
+        typeof dependencyVersion === 'string' &&
+        dependencyVersion.startsWith('file:')
+      ) {
+        throw new Error(
+          `${packageDir} cannot publish ${field}.${dependencyName} as ` +
+            `${dependencyVersion}; embed the vendored dependency or publish it ` +
+            'as an installable registry package.'
+        );
+      }
+    }
+  }
+
   if (rewrites.length > 0) {
     writeJson(packageJsonPath, packageJson);
+  }
+
+  for (const archivePath of archivesToRemove) {
+    fs.rmSync(archivePath);
   }
 
   return {
@@ -150,7 +280,9 @@ if (require.main === module) {
 
 module.exports = {
   dependencyFields,
+  extractVendoredTarball,
   getWorkspaceVersions,
   preparePackageManifest,
   resolveWorkspaceDependencyVersion,
+  vendoredPackageDependencies,
 };
