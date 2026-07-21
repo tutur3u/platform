@@ -1,7 +1,7 @@
 import 'server-only';
 
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
-import { getPlatformSql } from '@/lib/database/platform-sql';
 
 interface ListAIWhitelistDomainsOptions {
   page?: string;
@@ -24,50 +24,25 @@ export async function listAIWhitelistDomains({
   page,
   pageSize,
 }: ListAIWhitelistDomainsOptions = {}) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
   const limit = parsePositiveInteger(pageSize, 10);
   const offset = (parsePositiveInteger(page, 1) - 1) * limit;
   const search = normalizeDomainSearch(q);
 
-  const rows = search
-    ? await sql<AIWhitelistDomain[]>`
-        select
-          domain,
-          description,
-          enabled,
-          created_at::text as created_at
-        from private.ai_whitelisted_domains
-        where domain ilike ${search}
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `
-    : await sql<AIWhitelistDomain[]>`
-        select
-          domain,
-          description,
-          enabled,
-          created_at::text as created_at
-        from private.ai_whitelisted_domains
-        order by created_at desc
-        limit ${limit}
-        offset ${offset}
-      `;
+  let query = db
+    .from('ai_whitelisted_domains')
+    .select('domain, description, enabled, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const [countRow] = search
-    ? await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.ai_whitelisted_domains
-        where domain ilike ${search}
-      `
-    : await sql<{ count: number }[]>`
-        select count(*)::int as count
-        from private.ai_whitelisted_domains
-      `;
+  if (search) query = query.ilike('domain', search);
+
+  const { data, error, count } = await query;
+  if (error) throw error;
 
   return {
-    data: rows,
-    count: countRow?.count ?? 0,
+    data: data ?? [],
+    count: count ?? 0,
   };
 }
 
@@ -76,47 +51,37 @@ export async function addAIWhitelistDomain({
   domain,
   enabled,
 }: Pick<AIWhitelistDomain, 'description' | 'domain' | 'enabled'>) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { data, error } = await db
+    .from('ai_whitelisted_domains')
+    .insert({ description, domain, enabled })
+    .select('domain, description, enabled, created_at')
+    .single();
 
-  const [row] = await sql<AIWhitelistDomain[]>`
-    insert into private.ai_whitelisted_domains (
-      domain,
-      description,
-      enabled
-    )
-    values (
-      ${domain},
-      ${description},
-      ${enabled}
-    )
-    returning
-      domain,
-      description,
-      enabled,
-      created_at::text as created_at
-  `;
+  if (error) throw error;
 
-  return row;
+  return data;
 }
 
 export async function updateAIWhitelistDomainEnabled(
   domain: string,
   enabled: boolean
 ) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { error } = await db
+    .from('ai_whitelisted_domains')
+    .update({ enabled })
+    .eq('domain', domain);
 
-  await sql`
-    update private.ai_whitelisted_domains
-    set enabled = ${enabled}
-    where domain = ${domain}
-  `;
+  if (error) throw error;
 }
 
 export async function deleteAIWhitelistDomain(domain: string) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { error } = await db
+    .from('ai_whitelisted_domains')
+    .delete()
+    .eq('domain', domain);
 
-  await sql`
-    delete from private.ai_whitelisted_domains
-    where domain = ${domain}
-  `;
+  if (error) throw error;
 }

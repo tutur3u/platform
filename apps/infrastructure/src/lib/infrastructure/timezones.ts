@@ -1,7 +1,10 @@
 import 'server-only';
 
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
-import { getPlatformSql } from '@/lib/database/platform-sql';
+
+type TimezoneInsert = Database['private']['Tables']['timezones']['Insert'];
 
 type TimezoneInput = Pick<
   Timezone,
@@ -38,114 +41,67 @@ function normalizeTimezoneInput(data: Partial<Timezone>): TimezoneInput {
 }
 
 export async function listTimezones() {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { data, error } = await db.from('timezones').select('*').order('value');
 
-  return sql<Timezone[]>`
-    select
-      id::text as id,
-      value,
-      abbr,
-      offset,
-      isdst,
-      text,
-      utc,
-      created_at::text as created_at
-    from private.timezones
-    order by value
-  `;
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function listTimezonesByValues(values: string[]) {
   if (!values.length) return [];
 
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { data, error } = await db
+    .from('timezones')
+    .select('*')
+    .in('value', values)
+    .order('value');
 
-  return sql<Timezone[]>`
-    select
-      id::text as id,
-      value,
-      abbr,
-      offset,
-      isdst,
-      text,
-      utc,
-      created_at::text as created_at
-    from private.timezones
-    where value = any(${values}::text[])
-    order by value
-  `;
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function createTimezone(data: Partial<Timezone>) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
   const timezone = normalizeTimezoneInput(data);
+  const values: TimezoneInsert = {
+    abbr: timezone.abbr,
+    isdst: timezone.isdst,
+    offset: timezone.offset,
+    text: timezone.text,
+    utc: timezone.utc,
+    value: timezone.value,
+    ...(timezone.id ? { id: timezone.id } : {}),
+  };
+  const { data: row, error } = await db
+    .from('timezones')
+    .insert(values)
+    .select('*')
+    .single();
 
-  const [row] = await sql<Timezone[]>`
-    insert into private.timezones (
-      id,
-      value,
-      abbr,
-      offset,
-      isdst,
-      text,
-      utc
-    )
-    values (
-      coalesce(${timezone.id}::uuid, gen_random_uuid()),
-      ${timezone.value},
-      ${timezone.abbr},
-      ${timezone.offset},
-      ${timezone.isdst},
-      ${timezone.text},
-      ${timezone.utc}::text[]
-    )
-    returning
-      id::text as id,
-      value,
-      abbr,
-      offset,
-      isdst,
-      text,
-      utc,
-      created_at::text as created_at
-  `;
-
+  if (error) throw error;
   return row;
 }
 
 export async function updateTimezone(id: string, data: Partial<Timezone>) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
   const timezone = normalizeTimezoneInput(data);
+  const { id: _ignoredId, ...values } = timezone;
+  const { data: row, error } = await db
+    .from('timezones')
+    .update(values)
+    .eq('id', id)
+    .select('*')
+    .single();
 
-  const [row] = await sql<Timezone[]>`
-    update private.timezones
-    set
-      value = ${timezone.value},
-      abbr = ${timezone.abbr},
-      offset = ${timezone.offset},
-      isdst = ${timezone.isdst},
-      text = ${timezone.text},
-      utc = ${timezone.utc}::text[]
-    where id = ${id}::uuid
-    returning
-      id::text as id,
-      value,
-      abbr,
-      offset,
-      isdst,
-      text,
-      utc,
-      created_at::text as created_at
-  `;
-
+  if (error) throw error;
   return row;
 }
 
 export async function deleteTimezone(id: string) {
-  const sql = getPlatformSql();
+  const db = (await createAdminClient({ noCookie: true })).schema('private');
+  const { error } = await db.from('timezones').delete().eq('id', id);
 
-  await sql`
-    delete from private.timezones
-    where id = ${id}::uuid
-  `;
+  if (error) throw error;
 }
