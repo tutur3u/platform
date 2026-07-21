@@ -68,10 +68,10 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
         onFinish?.(data);
         router.refresh();
       } else {
-        const data = await res.json();
+        const errorData = await res.json();
         toast({
           title: `Failed to ${data.id ? 'edit' : 'create'} group tag`,
-          description: data.message,
+          description: errorData.message,
         });
       }
     } catch (error) {

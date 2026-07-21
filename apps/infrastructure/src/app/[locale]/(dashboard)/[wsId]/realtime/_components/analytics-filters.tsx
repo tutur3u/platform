@@ -163,8 +163,6 @@ export function RealtimeAnalyticsFilters({
             date={filters.startDate}
             setDate={(date) => {
               if (date) {
-                console.log(startOfDay(date));
-                console.log(endOfDay(date));
                 onFiltersChange({
                   ...filters,
                   startDate: startOfDay(date),
