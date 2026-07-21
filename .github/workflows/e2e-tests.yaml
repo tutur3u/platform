@@ -536,6 +536,13 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install
 
+      - name: Build app workspace dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/inventory^... --filter=@tuturuuu/storefront^...
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && github.ref == 'refs/heads/main' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
       - name: Install Playwright browser
         working-directory: apps/inventory
         run: bun x playwright install chromium

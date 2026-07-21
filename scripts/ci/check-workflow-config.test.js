@@ -794,6 +794,17 @@ test('Inventory and Storefront cache invalidation stays protected by E2E', () =>
     stepNamed('Install Playwright browser')?.['working-directory'],
     'apps/inventory'
   );
+  const dependencyBuildStep = stepNamed('Build app workspace dependencies');
+  assert.equal(
+    dependencyBuildStep?.uses,
+    './.github/actions/run-with-turbo-remote-cache'
+  );
+  assert.equal(
+    dependencyBuildStep?.with?.command,
+    'bun turbo:local run build --concurrency=4 --filter=@tuturuuu/inventory^... --filter=@tuturuuu/storefront^...'
+  );
+  assert.match(dependencyBuildStep?.with?.token || '', /secrets\.TURBO_TOKEN/u);
+  assert.match(dependencyBuildStep?.with?.team || '', /TURBO_TEAM/u);
   assert.equal(stepNamed('Start local Supabase')?.run, 'bun sb:start');
   assert.equal(
     stepNamed('Verify cache invalidation and instant navigation')?.run,
