@@ -1,17 +1,12 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { Users } from '@tuturuuu/icons';
 import {
   createWorkspaceGroupTag,
-  listWorkspaceUserGroups,
   updateWorkspaceGroupTag,
 } from '@tuturuuu/internal-api';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
-import { Filter } from '@tuturuuu/ui/custom/user-filters';
 import {
   Form,
   FormControl,
@@ -24,7 +19,6 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import * as z from 'zod';
@@ -45,14 +39,6 @@ const FormSchema = z.object({
 export default function GroupTagForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-user-group-tags');
   const router = useRouter();
-
-  const { data: groupsResult, isPending: groupsPending } = useQuery({
-    queryKey: ['workspaces', wsId, 'user-groups'],
-    queryFn: async (): Promise<{ data: UserGroup[]; count: number }> => {
-      const result = await listWorkspaceUserGroups(wsId, {});
-      return { data: result.data, count: result.count };
-    },
-  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -131,30 +117,6 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
             </FormItem>
           )}
         />
-
-        {true || !!data?.id || (
-          <>
-            <Separator />
-
-            <Filter
-              title={t('linked_user_groups')}
-              icon={<Users className="mr-2 h-4 w-4" />}
-              defaultValues={form.watch('group_ids')}
-              options={
-                groupsResult?.data.map((group) => ({
-                  label: group.name || 'No name',
-                  value: group.id,
-                  count: group.amount,
-                })) || []
-              }
-              onSet={(value: string[]) => form.setValue('group_ids', value)}
-              disabled={groupsPending || !!data?.id}
-              align="center"
-              alwaysEnableZero
-              alwaysShowNumber
-            />
-          </>
-        )}
 
         <Button type="submit" className="w-full" disabled={disabled}>
           {data?.id ? t('edit') : t('create')}
