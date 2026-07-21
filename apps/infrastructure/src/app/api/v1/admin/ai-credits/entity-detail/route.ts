@@ -1,42 +1,12 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { connection, type NextRequest, NextResponse } from 'next/server';
+import { authorizeAiCreditsAdminRequest } from '../access';
 
 export async function GET(req: NextRequest) {
   await connection();
 
   try {
-    const supabase = await createClient();
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const member = await verifyWorkspaceMembershipType({
-      wsId: ROOT_WORKSPACE_ID,
-      userId: user.id,
-      supabase,
-    });
-
-    if (member.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!member.ok) {
-      return NextResponse.json(
-        { error: 'Root workspace admin required' },
-        { status: 403 }
-      );
-    }
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const wsId = req.nextUrl.searchParams.get('ws_id');
     const userId = req.nextUrl.searchParams.get('user_id');
@@ -52,7 +22,7 @@ export async function GET(req: NextRequest) {
     if (wsId) rpcParams.p_ws_id = wsId;
     if (userId) rpcParams.p_user_id = userId;
 
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
     const { data, error } = await sbAdmin.rpc(
       'admin_get_ai_credit_entity_detail' as any,
       rpcParams

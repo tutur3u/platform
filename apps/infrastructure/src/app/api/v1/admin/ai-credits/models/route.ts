@@ -1,60 +1,20 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { MAX_NAME_LENGTH, ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeAiCreditsAdminRequest } from '../access';
 import {
   applyAdminAiCreditsModelFilters,
   parseAdminAiCreditsModelFilters,
   parsePositiveInt,
 } from './route-filters';
 
-async function requireRootAdmin() {
-  const supabase = await createClient();
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const member = await verifyWorkspaceMembershipType({
-    wsId: ROOT_WORKSPACE_ID,
-    userId: user.id,
-    supabase,
-  });
-
-  if (member.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!member.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Root workspace admin required' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return { user };
-}
-
 export async function GET(req: NextRequest) {
+  await connection();
+
   try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const searchParams = req.nextUrl.searchParams;
     const page = parsePositiveInt(searchParams.get('page'), 1);
@@ -64,7 +24,7 @@ export async function GET(req: NextRequest) {
     );
     const filters = parseAdminAiCreditsModelFilters(searchParams);
 
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
     const privateDb = sbAdmin.schema('private');
     let query = privateDb
       .from('ai_gateway_models')
@@ -107,8 +67,8 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request) {
   try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const body = await req.json();
     const parsed = patchSchema.safeParse(body);
@@ -119,7 +79,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
 
     if (!parsed.data.is_enabled) {
       const { data: allocationReference, error: allocationReferenceError } =

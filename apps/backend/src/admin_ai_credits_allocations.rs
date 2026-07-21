@@ -1,7 +1,7 @@
 //! Handler for `GET /api/v1/admin/ai-credits/allocations`.
 //!
-//! Ports the legacy Next.js route at
-//! `apps/web/src/app/api/v1/admin/ai-credits/allocations/route.ts`.
+//! Ports the infrastructure satellite route at
+//! `apps/infrastructure/src/app/api/v1/admin/ai-credits/allocations/route.ts`.
 //!
 //! ## Auth
 //!
@@ -18,7 +18,7 @@
 //! ## Gaps vs legacy
 //!
 //! - `PUT` is not ported; this handler returns `None` for non-GET methods so
-//!   the still-live Next.js route handles them.
+//!   the infrastructure satellite route handles them.
 //! - The `method_not_allowed` helper is intentionally **not** called for
 //!   non-GET methods; returning `None` lets the worker fall through.
 

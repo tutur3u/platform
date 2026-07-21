@@ -1,58 +1,15 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  MAX_SEARCH_LENGTH,
-  ROOT_WORKSPACE_ID,
-} from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-
-async function requireRootAdmin() {
-  const supabase = await createClient();
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const member = await verifyWorkspaceMembershipType({
-    wsId: ROOT_WORKSPACE_ID,
-    userId: user.id,
-    supabase,
-  });
-
-  if (member.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!member.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Root workspace admin required' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return { user };
-}
+import { authorizeAiCreditsAdminRequest } from '../access';
 
 export async function GET(req: NextRequest) {
+  await connection();
+
   try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const searchParams = req.nextUrl.searchParams;
     const page = Math.max(1, Number(searchParams.get('page') ?? 1));
@@ -63,7 +20,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search');
     const scopeFilter = searchParams.get('scope'); // 'user' | 'workspace'
 
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
     const periodStart = new Date();
     periodStart.setUTCDate(1);
     periodStart.setUTCHours(0, 0, 0, 0);
@@ -183,8 +140,8 @@ const bonusSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const body = await req.json();
     const parsed = bonusSchema.safeParse(body);
@@ -195,7 +152,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
 
     // Read current balance, then increment
     const { data: current } = await sbAdmin

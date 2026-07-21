@@ -1,10 +1,10 @@
-//! Rust port of the Next.js route:
-//! `apps/web/src/app/api/v1/admin/ai-credits/models/route.ts` — GET only.
+//! Rust port of the infrastructure satellite route:
+//! `apps/infrastructure/src/app/api/v1/admin/ai-credits/models/route.ts` — GET only.
 //!
 //! ## Behavior gaps vs. legacy
 //!
 //! - The PATCH handler is **not** ported here. Non-GET methods return `None` so
-//!   the Cloudflare Worker falls through to the still-live Next.js route.
+//!   the infrastructure satellite remains the mutation owner.
 //! - The legacy route selects from the `private` schema via
 //!   `createAdminClient().schema('private').from('ai_gateway_models')`. This
 //!   port sets the `Accept-Profile: private` header on the PostgREST GET
@@ -79,8 +79,8 @@ pub(crate) async fn handle_admin_ai_credits_models_route(
         return None;
     }
 
-    // Only GET is migrated. PATCH still lives in Next.js; return None so the
-    // Worker falls through to Next.js for every other method.
+    // Only GET is migrated. PATCH stays in the infrastructure satellite;
+    // return None so every other method falls through.
     Some(match request.method {
         "GET" => admin_ai_credits_models_get(config, request, outbound).await,
         _ => return None,

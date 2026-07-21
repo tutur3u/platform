@@ -1,13 +1,7 @@
 import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeAiCreditsAdminRequest } from '../access';
 
 const PLAN_DEFAULT_MODELS = {
   ENTERPRISE: {
@@ -41,49 +35,14 @@ function getPlanDefaults(tier: string) {
   ];
 }
 
-async function requireRootAdmin() {
-  const supabase = await createClient();
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  const member = await verifyWorkspaceMembershipType({
-    wsId: ROOT_WORKSPACE_ID,
-    userId: user.id,
-    supabase,
-  });
-
-  if (member.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!member.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Root workspace admin required' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return { user };
-}
-
 export async function GET() {
-  try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+  await connection();
 
-    const sbAdmin = await createAdminClient();
+  try {
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
+
+    const { sbAdmin } = auth;
     const { data, error } = await sbAdmin
       .from('ai_credit_plan_allocations')
       .select('*')
@@ -205,8 +164,8 @@ async function validateDefaultModels(args: {
 
 export async function PUT(req: Request) {
   try {
-    const auth = await requireRootAdmin();
-    if ('error' in auth && auth.error) return auth.error;
+    const auth = await authorizeAiCreditsAdminRequest();
+    if (!auth.ok) return auth.response;
 
     const body = await req.json();
     const parsed = updateSchema.safeParse(body);
@@ -218,7 +177,7 @@ export async function PUT(req: Request) {
     }
 
     const { id, ...updates } = parsed.data;
-    const sbAdmin = await createAdminClient();
+    const { sbAdmin } = auth;
 
     // Fetch the allocation before update to know the tier
     const { data: existingData } = await sbAdmin

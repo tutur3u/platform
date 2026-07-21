@@ -43,8 +43,8 @@ pub(crate) async fn handle_admin_ai_credits_features_route(
     }
 
     // Only the GET method is migrated to the Worker. Every other method
-    // (e.g. the legacy PUT) must fall through to the still-active Next.js
-    // route, so we return None rather than a 405 for those.
+    // (e.g. PUT) remains owned by the infrastructure satellite, so we return
+    // None rather than a 405 for those.
     Some(match request.method {
         "GET" => admin_ai_credits_features_response(config, request, outbound).await,
         _ => return None,

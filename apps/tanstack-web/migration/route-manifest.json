@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 499,
+        "legacyNext": 491,
         "migrated": 66,
-        "percentComplete": 13.37,
-        "remaining": 499,
+        "percentComplete": 13.56,
+        "remaining": 491,
         "terminal": 77,
-        "total": 576,
+        "total": 568,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 506,
+        "legacyNext": 498,
         "migrated": 71,
-        "percentComplete": 13.95,
-        "remaining": 506,
+        "percentComplete": 14.14,
+        "remaining": 498,
         "terminal": 82,
-        "total": 588,
+        "total": 580,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 557,
+      "legacyNext": 549,
       "migrated": 219,
-      "percentComplete": 29.4,
-      "remaining": 557,
+      "percentComplete": 29.71,
+      "remaining": 549,
       "terminal": 232,
-      "total": 789,
+      "total": 781,
       "unknownStatus": 0
     }
   },
@@ -772,78 +772,6 @@
       "routePath": "/api/users/search",
       "sourceFile": "apps/web/src/legacy-api-routes/users/search/route.ts",
       "status": "accepted-removal",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/allocations:apps/web/src/legacy-api-routes/v1/admin/ai-credits/allocations/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT"],
-      "routePath": "/api/v1/admin/ai-credits/allocations",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/allocations/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/balances:apps/web/src/legacy-api-routes/v1/admin/ai-credits/balances/route.ts",
-      "kind": "api",
-      "methods": ["GET", "POST"],
-      "routePath": "/api/v1/admin/ai-credits/balances",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/balances/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/entity-detail:apps/web/src/legacy-api-routes/v1/admin/ai-credits/entity-detail/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/admin/ai-credits/entity-detail",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/entity-detail/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/features:apps/web/src/legacy-api-routes/v1/admin/ai-credits/features/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PUT"],
-      "routePath": "/api/v1/admin/ai-credits/features",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/features/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/models:apps/web/src/legacy-api-routes/v1/admin/ai-credits/models/route.ts",
-      "kind": "api",
-      "methods": ["GET", "PATCH"],
-      "routePath": "/api/v1/admin/ai-credits/models",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/models/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/overview:apps/web/src/legacy-api-routes/v1/admin/ai-credits/overview/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/admin/ai-credits/overview",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/overview/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/sync-models:apps/web/src/legacy-api-routes/v1/admin/ai-credits/sync-models/route.ts",
-      "kind": "api",
-      "methods": ["POST"],
-      "routePath": "/api/v1/admin/ai-credits/sync-models",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/sync-models/route.ts",
-      "status": "legacy-next",
-      "targetOwner": "rust-backend"
-    },
-    {
-      "id": "api:/api/v1/admin/ai-credits/transactions:apps/web/src/legacy-api-routes/v1/admin/ai-credits/transactions/route.ts",
-      "kind": "api",
-      "methods": ["GET"],
-      "routePath": "/api/v1/admin/ai-credits/transactions",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/admin/ai-credits/transactions/route.ts",
-      "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
     {
@@ -7520,20 +7448,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 576,
+    "apiRoutes": 568,
     "cronRoutes": 7,
     "layouts": 54,
     "pages": 144,
-    "routeHandlers": 588,
+    "routeHandlers": 580,
     "methodCounts": {
-      "GET": 298,
+      "GET": 291,
       "HEAD": 1,
-      "POST": 290,
-      "PUT": 54,
-      "PATCH": 61,
+      "POST": 288,
+      "PUT": 52,
+      "PATCH": 60,
       "DELETE": 101,
       "OPTIONS": 23
     },
-    "total": 789
+    "total": 781
   }
 }

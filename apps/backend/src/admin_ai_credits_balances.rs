@@ -1,11 +1,11 @@
 //! Handler for `GET /api/v1/admin/ai-credits/balances`.
 //!
-//! Ports the legacy Next.js route at
-//! `apps/web/src/app/api/v1/admin/ai-credits/balances/route.ts`.
+//! Ports the infrastructure satellite route at
+//! `apps/infrastructure/src/app/api/v1/admin/ai-credits/balances/route.ts`.
 //!
 //! Only the GET method is migrated here. POST (admin bonus-credits grant) is
-//! left entirely to the still-live Next.js route; this handler returns `None`
-//! for every non-GET request so the worker falls through to Next.js.
+//! left entirely to the infrastructure satellite route; this handler returns
+//! `None` for every non-GET request so the worker falls through.
 //!
 //! Auth: the caller must hold a valid Supabase session and be a `MEMBER` of
 //! the root workspace — identical to the other `admin/ai-credits/*` handlers
