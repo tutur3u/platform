@@ -37,6 +37,7 @@ jobs:
             scripts/ci/github-deployment-markers.ts
             scripts/ci/resolve-changed-files-core.ts
             scripts/ci/resolve-changed-files.ts
+            scripts/ci/workflow-config-core.ts
             turbo.json
             tuturuuu.ts
           sparse-checkout-cone-mode: false

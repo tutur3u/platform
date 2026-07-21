@@ -1068,6 +1068,11 @@ test('ci configuration gate runs TypeScript scripts with Node strip-types', () =
     workflow,
     /node --experimental-strip-types scripts\/ci\/check-workflow-config\.ts/
   );
+  assert.match(
+    workflow,
+    /^ {12}scripts\/ci\/workflow-config-core\.ts$/m,
+    'ci-check sparse checkout must include every local module imported by the configuration checker'
+  );
   assert.doesNotMatch(workflow, /oven-sh\/setup-bun@v2/);
   assert.doesNotMatch(
     workflow,
