@@ -71,7 +71,7 @@
     "@tanstack/react-hotkeys": "^0.10.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-table": "^8.21.3",
-    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/jest-dom": "^7.0.0",
     "@tiptap/extension-highlight": "3.28.0",
     "@tiptap/extension-link": "3.28.0",
     "@tiptap/extension-strike": "3.28.0",
