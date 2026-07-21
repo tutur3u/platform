@@ -918,6 +918,7 @@ describe('withSessionAuth', () => {
         'contacts',
         'drive',
         'finance',
+        'forms',
         'hive',
         'inventory',
         'learn',

@@ -143,6 +143,10 @@
       "component": "contacts",
       "package-name": "@tuturuuu/contacts"
     },
+    "apps/forms": {
+      "component": "forms",
+      "package-name": "@tuturuuu/forms"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"

@@ -1153,7 +1153,8 @@
       "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
       "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
       "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
-      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao.",
+      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace."
     },
     "app_names": {
       "apps": "Ứng dụng",
@@ -1180,7 +1181,8 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi"
+      "track": "Theo dõi",
+      "forms": "Biểu mẫu"
     },
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",

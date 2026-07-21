@@ -1315,6 +1315,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     contacts: 'VERCEL_CONTACTS_PROJECT_ID',
     drive: 'VERCEL_DRIVE_PROJECT_ID',
     finance: 'VERCEL_FINANCE_PROJECT_ID',
+    forms: 'VERCEL_FORMS_PROJECT_ID',
     inventory: 'VERCEL_INVENTORY_PROJECT_ID',
     infrastructure: 'VERCEL_INFRASTRUCTURE_PROJECT_ID',
     storefront: 'VERCEL_STOREFRONT_PROJECT_ID',

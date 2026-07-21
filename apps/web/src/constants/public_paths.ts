@@ -34,6 +34,10 @@ export const APP_PUBLIC_PATHS = [
   '/share',
   '/tools',
   '/ui',
+  // Forms moved to forms.tuturuuu.com/f/<shareCode>. This path no longer
+  // renders anything, but already-distributed links still arrive here and are
+  // permanently redirected — it must stay public so anonymous respondents and
+  // social crawlers are never bounced to /login first.
   '/shared/forms',
   '/meet',
   '/meet-together',

@@ -58,7 +58,8 @@
       "tasks": "Plan projects, assign work, and track progress.",
       "teach": "Plan courses, manage classes, and support learners.",
       "tools": "Open focused utilities for QR codes and quick tasks.",
-      "track": "Record time and understand where work goes."
+      "track": "Record time and understand where work goes.",
+      "forms": "Build, share, and analyze workspace forms and their responses."
     },
     "app_names": {
       "apps": "Apps",
@@ -85,7 +86,8 @@
       "tasks": "Tasks",
       "teach": "Teach",
       "tools": "Tools",
-      "track": "Track"
+      "track": "Track",
+      "forms": "Forms"
     },
     "apps": "Apps",
     "apps_count": "{count, plural, one {# app} other {# apps}}",

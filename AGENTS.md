@@ -164,6 +164,14 @@ surface you are changing:
   `@tuturuuu/users-core` (server) and `@tuturuuu/users-ui` (client); routes it
   does not own are listed in `CONTACTS_OWNED_ROUTE_PREFIXES` (`src/proxy.ts`) and
   everything else under `/[wsId]` redirects to web.
+- `apps/forms`: `forms.tuturuuu.com` satellite (port `7828`) that owns the entire
+  forms product — the studio/builder, responses, analytics, and the public
+  form-filling surface at `/f/<shareCode>`. It owns its own API routes under
+  `/api/v1/workspaces/[wsId]/forms/*` and `/api/v1/shared/forms/*` rather than
+  proxying them to web. `apps/web` no longer has any forms code and only
+  redirects (`/[wsId]/forms/*`, plus a permanent 308 from the legacy
+  `/shared/forms/<shareCode>` links). Forms tables live in the Postgres
+  `private` schema and require the admin client.
 - `apps/mobile`: Flutter mobile app.
 - `apps/database`: Supabase migrations, configuration, reset scripts, and tests.
 - `apps/docs`: Mintlify docs and operational runbooks.

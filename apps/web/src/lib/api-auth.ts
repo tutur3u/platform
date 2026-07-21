@@ -199,6 +199,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'contacts',
   'drive',
   'finance',
+  'forms',
   'hive',
   'inventory',
   'learn',

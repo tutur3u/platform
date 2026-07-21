@@ -59,6 +59,7 @@ const APPS = [
   { name: 'apps/calendar', dir: 'apps/calendar' },
   { name: 'apps/cms', dir: 'apps/cms' },
   { name: 'apps/contacts', dir: 'apps/contacts' },
+  { name: 'apps/forms', dir: 'apps/forms' },
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
   { name: 'apps/hive', dir: 'apps/hive' },
@@ -115,6 +116,7 @@ const SATELLITE_WORKSPACE_SETTINGS_APPS = new Set([
   'apps/calendar',
   'apps/cms',
   'apps/contacts',
+  'apps/forms',
   'apps/drive',
   'apps/finance',
   'apps/inventory',
@@ -148,7 +150,7 @@ const BARE_ROOT_KEY_APP_SCOPES = new Map([
 //
 // Use `keyExceptions` to opt a full-scope app out of namespaces belonging to
 // product surfaces it does not render.
-const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set(['apps/contacts']);
+const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set(['apps/contacts', 'apps/forms']);
 
 // Namespaces that must stay in parity across the apps that render the shared
 // component using them.

@@ -113,6 +113,10 @@ const DEV_TARGETS = Object.freeze({
     apps: ['contacts', 'web'],
     shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
   },
+  forms: {
+    apps: ['forms', 'web'],
+    shared: ['@tuturuuu/types', '@tuturuuu/supabase', '@tuturuuu/internal-api'],
+  },
   tools: {
     apps: ['tools'],
     shared: ['@tuturuuu/types'],
