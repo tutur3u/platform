@@ -28,6 +28,14 @@ export function SidebarWorkspaceSelectSection({
       data-state={visible ? 'open' : 'closed'}
       id="sidebar-workspace-selector"
       inert={visible ? undefined : true}
+      style={{
+        // Satellite source files are outside each app's Tailwind scan root.
+        // Keep the critical height transition identical to apps/web even when
+        // arbitrary grid utilities are not emitted by a satellite build.
+        gridTemplateRows: visible ? '1fr' : '0fr',
+        transitionProperty:
+          'grid-template-rows, opacity, border-color, padding',
+      }}
     >
       <div className="min-h-0 overflow-hidden">{children}</div>
     </div>

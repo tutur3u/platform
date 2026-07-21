@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '../button';
 import { LoadingIndicator } from './loading-indicator';
+import { persistLocalePreference } from './locale-preference';
 
 export function LanguageToggle({
   forceDisplay = false,
@@ -15,18 +16,17 @@ export function LanguageToggle({
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const updateLocale = async () => {
+  const updateLocale = () => {
     setLoading(true);
 
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale: currentLocale === 'en' ? 'vi' : 'en' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) router.refresh();
+    try {
+      persistLocalePreference(currentLocale === 'en' ? 'vi' : 'en');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to update locale', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,6 +34,7 @@ export function LanguageToggle({
       variant="outline"
       size="icon"
       onClick={updateLocale}
+      disabled={loading}
       className={forceDisplay ? 'flex-none' : 'hidden flex-none md:flex'}
     >
       {loading ? <LoadingIndicator /> : currentLocale}

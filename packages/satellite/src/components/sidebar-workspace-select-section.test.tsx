@@ -18,6 +18,10 @@ describe('SidebarWorkspaceSelectSection', () => {
     expect(section?.className).toContain('pb-2');
     expect(section?.className).toContain('opacity-100');
     expect(section?.hasAttribute('inert')).toBe(false);
+    expect((section as HTMLElement | null)?.style.gridTemplateRows).toBe('1fr');
+    expect((section as HTMLElement | null)?.style.transitionProperty).toBe(
+      'grid-template-rows, opacity, border-color, padding'
+    );
   });
 
   it('collapses to an invisible and inert zero-height row', () => {
@@ -36,5 +40,9 @@ describe('SidebarWorkspaceSelectSection', () => {
     expect(section?.className).toContain('grid-rows-[0fr]');
     expect(section?.className).toContain('pb-0');
     expect(section?.className).toContain('opacity-0');
+    expect((section as HTMLElement | null)?.style.gridTemplateRows).toBe('0fr');
+    expect((section as HTMLElement | null)?.style.transitionProperty).toBe(
+      'grid-template-rows, opacity, border-color, padding'
+    );
   });
 });

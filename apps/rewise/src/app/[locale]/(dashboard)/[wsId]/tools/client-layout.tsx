@@ -3,6 +3,7 @@
 import { ArrowRight, Globe } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { useRouter } from 'next/navigation';
 import { use, useState } from 'react';
 
@@ -20,18 +21,11 @@ export default function ClientLayout({
 
   const [loading, setLoading] = useState(false);
 
-  const updateLocale = async () => {
+  const updateLocale = () => {
     setLoading(true);
-
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale: 'en' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) router.refresh();
+    persistLocalePreference('en');
+    router.refresh();
+    setLoading(false);
   };
 
   if (locale === 'vi')

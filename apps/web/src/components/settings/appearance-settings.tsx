@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
@@ -84,20 +85,11 @@ export default function AppearanceSettings({
     },
   });
 
-  const handleLocaleChange = async (newLocale: string) => {
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale: newLocale }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  const handleLocaleChange = (newLocale: string) => {
+    persistLocalePreference(newLocale);
+    startTransition(() => {
+      router.refresh();
     });
-
-    if (res.ok) {
-      startTransition(() => {
-        router.refresh();
-      });
-    }
   };
 
   const handleTimezoneChange = (timezone: string) => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Hexagon } from '@tuturuuu/icons';
+import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 
@@ -13,16 +14,9 @@ interface Props {
 export function LanguageDropdownItem({ label, locale, selected }: Props) {
   const router = useRouter();
 
-  const useLocale = async () => {
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) router.refresh();
+  const useLocale = () => {
+    persistLocalePreference(locale);
+    router.refresh();
   };
 
   return (

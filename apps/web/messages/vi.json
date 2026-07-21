@@ -4940,8 +4940,8 @@
     "today": "Hôm nay",
     "toggle-columns": "Hiển thị cột",
     "tomorrow": "Ngày mai",
-    "ui": "UI",
-    "ui-description": "Duyet thu vien thanh phan UI Tuturuuu.",
+    "ui": "Giao diện",
+    "ui-description": "Duyệt thư viện thành phần giao diện Tuturuuu.",
     "unarchive": "Bỏ lưu trữ",
     "unarchive_success": "Đã bỏ lưu trữ thành công",
     "unarchive_whiteboard_description": "Bạn có chắc chắn muốn bỏ lưu trữ \"{title}\"? Hành động này sẽ chuyển bảng trắng trở lại mục hiện tại.",
@@ -9271,16 +9271,20 @@
       "cta": "Xem trên GitHub",
       "stats": {
         "commits": {
-          "label": "Commits",
-          "value": "10,000+"
+          "label": "Commit",
+          "value": "20K+"
         },
         "contributors": {
-          "label": "Contributors",
+          "label": "Người đóng góp",
           "value": "30+"
         },
+        "potential": {
+          "label": "Tiềm năng",
+          "value": "Vô hạn"
+        },
         "years": {
-          "label": "Năm phát triển",
-          "value": "3.5+"
+          "label": "Năm đổi mới sáng tạo",
+          "value": "4+"
         }
       },
       "title": "Build in public"

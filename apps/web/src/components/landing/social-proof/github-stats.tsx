@@ -1,6 +1,12 @@
 'use client';
 
-import { Clock, Code2, GitBranch, Users } from '@tuturuuu/icons/lucide';
+import {
+  Clock,
+  Code2,
+  GitBranch,
+  Sparkles,
+  Users,
+} from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
@@ -29,6 +35,12 @@ export function GithubStats() {
       value: t('stats.contributors.value'),
       label: t('stats.contributors.label'),
       color: 'blue',
+    },
+    {
+      icon: Sparkles,
+      value: t('stats.potential.value'),
+      label: t('stats.potential.label'),
+      color: 'purple',
     },
   ];
 

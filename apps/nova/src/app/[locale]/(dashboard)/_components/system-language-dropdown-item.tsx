@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Monitor } from '@tuturuuu/icons';
+import { clearLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -13,12 +14,9 @@ export function SystemLanguageDropdownItem({ selected }: Props) {
   const t = useTranslations('common');
   const router = useRouter();
 
-  const useDefaultLocale = async () => {
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'DELETE',
-    });
-
-    if (res.ok) router.refresh();
+  const useDefaultLocale = () => {
+    clearLocalePreference();
+    router.refresh();
   };
 
   return (

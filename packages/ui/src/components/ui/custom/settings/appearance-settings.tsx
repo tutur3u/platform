@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
+import { persistLocalePreference } from '../locale-preference';
 import { VersionBadgeSetting } from '../version-badge';
 
 /**
@@ -33,20 +34,11 @@ export function AppearanceSettings({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const handleLocaleChange = async (newLocale: string) => {
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale: newLocale }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  const handleLocaleChange = (newLocale: string) => {
+    persistLocalePreference(newLocale);
+    startTransition(() => {
+      router.refresh();
     });
-
-    if (res.ok) {
-      startTransition(() => {
-        router.refresh();
-      });
-    }
   };
 
   return (

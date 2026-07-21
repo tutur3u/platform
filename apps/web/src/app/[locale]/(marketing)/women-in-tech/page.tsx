@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
+import { persistLocalePreference } from '@tuturuuu/ui/custom/locale-preference';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Image from 'next/image';
@@ -78,18 +79,14 @@ function LanguageSwitcher({
   const [loading, setLoading] = useState(false);
   const isVietnamese = currentLocale === 'vi';
 
-  const switchLocale = async () => {
+  const switchLocale = () => {
     setLoading(true);
-
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale: isVietnamese ? 'en' : 'vi' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) router.refresh();
+    try {
+      persistLocalePreference(isVietnamese ? 'en' : 'vi');
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

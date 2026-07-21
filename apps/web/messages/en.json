@@ -9272,15 +9272,19 @@
       "stats": {
         "commits": {
           "label": "Commits",
-          "value": "10,000+"
+          "value": "20K+"
         },
         "contributors": {
           "label": "Contributors",
           "value": "30+"
         },
+        "potential": {
+          "label": "Potential",
+          "value": "Limitless"
+        },
         "years": {
           "label": "Years of Innovation",
-          "value": "3.5+"
+          "value": "4+"
         }
       },
       "title": "Built in the open"

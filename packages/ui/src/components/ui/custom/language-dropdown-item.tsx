@@ -3,6 +3,7 @@
 import { Check, Hexagon } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import { DropdownMenuItem } from '../dropdown-menu';
+import { persistLocalePreference } from './locale-preference';
 
 interface Props {
   label: string;
@@ -26,16 +27,8 @@ export function LanguageDropdownItem({
       return;
     }
 
-    // Default: API-based locale change (web pattern)
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'POST',
-      body: JSON.stringify({ locale }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (res.ok) router.refresh();
+    persistLocalePreference(locale);
+    router.refresh();
   };
 
   return (

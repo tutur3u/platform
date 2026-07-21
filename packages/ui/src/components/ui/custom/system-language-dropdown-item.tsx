@@ -4,6 +4,7 @@ import { Check, Monitor } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { DropdownMenuItem } from '../dropdown-menu';
+import { clearLocalePreference } from './locale-preference';
 
 interface Props {
   selected?: boolean;
@@ -21,12 +22,8 @@ export function SystemLanguageDropdownItem({ selected, onResetLocale }: Props) {
       return;
     }
 
-    // Default: API-based locale reset (web pattern)
-    const res = await fetch('/api/v1/infrastructure/languages', {
-      method: 'DELETE',
-    });
-
-    if (res.ok) router.refresh();
+    clearLocalePreference();
+    router.refresh();
   };
 
   return (
