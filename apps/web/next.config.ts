@@ -1,9 +1,27 @@
 import { getTurbopackConfig } from '@tuturuuu/offline/config';
-import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
+import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import {
+  createTuturuuuNextConfig,
+  isTuturuuuNextDeployedEnvironment,
+  resolveTuturuuuInfrastructureAppUrl,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig({ projectRoot: __dirname });
+const INFRASTRUCTURE_APP_URL = resolveTuturuuuInfrastructureAppUrl();
+const CALENDAR_APP_URL = resolveInternalAppUrl({
+  appName: 'calendar',
+  candidates: [
+    process.env.CALENDAR_APP_URL,
+    process.env.NEXT_PUBLIC_CALENDAR_APP_URL,
+  ],
+  fallback: isTuturuuuNextDeployedEnvironment()
+    ? 'https://calendar.tuturuuu.com'
+    : getLocalInternalAppUrl('calendar', 'http://localhost:7806'),
+});
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
 const isNativeDockerStandaloneBuild =
   isDockerStandaloneBuild && process.env.DOCKER_WEB_NATIVE_BUILD === '1';
@@ -107,6 +125,16 @@ const nextConfig = createTuturuuuNextConfig({
       source,
       headers: authShellHeaders,
     }));
+  },
+  async rewrites() {
+    return {
+      afterFiles: [],
+      beforeFiles: createSatelliteApiRewrites({
+        calendarAppOrigin: CALENDAR_APP_URL,
+        infrastructureAppOrigin: INFRASTRUCTURE_APP_URL,
+      }),
+      fallback: [],
+    };
   },
 });
 

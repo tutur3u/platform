@@ -94,8 +94,11 @@ function getUserConfigClient(
   configId: string,
   options?: InternalApiClientOptions
 ) {
+  const taskOptions =
+    typeof window === 'undefined' ? withTaskApiBaseUrl(options) : options;
+
   return getInternalApiClient(
-    isTaskScopedConfig(configId) ? withTaskApiBaseUrl(options) : options
+    isTaskScopedConfig(configId) ? taskOptions : options
   );
 }
 

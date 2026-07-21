@@ -10,13 +10,7 @@ describe('MiraModelSelectorTriggerButton', () => {
       <MiraModelSelectorTriggerButton
         aria-expanded={false}
         data-state="closed"
-        defaultModelId="google/gemini-2.5-flash"
-        model={{
-          label: 'gemini-2.5-flash',
-          provider: 'google',
-          value: 'google/gemini-2.5-flash',
-        }}
-        modelDefaultBadgeLabel="default"
+        label="Model"
         onClick={handleClick}
       />
     );
@@ -25,6 +19,9 @@ describe('MiraModelSelectorTriggerButton', () => {
 
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(trigger).toHaveAttribute('data-state', 'closed');
+    expect(trigger).toHaveTextContent('Model');
+    expect(trigger).not.toHaveTextContent('gemini-2.5-flash');
+    expect(trigger).not.toHaveTextContent('default');
 
     fireEvent.click(trigger);
 

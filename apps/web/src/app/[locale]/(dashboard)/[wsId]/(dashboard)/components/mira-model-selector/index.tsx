@@ -28,6 +28,7 @@ export default function MiraModelSelector({
   wsId,
 }: MiraModelSelectorProps) {
   const t = useTranslations('dashboard.mira_chat');
+  const modelT = useTranslations('ws-models');
 
   const viewState = useMiraModelSelectorViewState({
     disabled,
@@ -72,16 +73,20 @@ export default function MiraModelSelector({
         <TooltipTrigger asChild>
           <PopoverTrigger asChild>
             <MiraModelSelectorTriggerButton
-              defaultModelId={data.defaultModelId}
+              aria-label={`${t('model_picker')}: ${model.label}`}
               disabled={disabled}
-              model={model}
-              modelDefaultBadgeLabel={t('model_default_badge')}
+              label={modelT('singular')}
             />
           </PopoverTrigger>
         </TooltipTrigger>
-        {shortcutLabel ? (
-          <TooltipContent>{`${t('model_picker')} (${shortcutLabel})`}</TooltipContent>
-        ) : null}
+        <TooltipContent className="max-w-64">
+          <div className="font-medium text-foreground">{model.label}</div>
+          <div className="text-muted-foreground text-xs">
+            {shortcutLabel
+              ? `${t('model_picker')} (${shortcutLabel})`
+              : t('model_picker')}
+          </div>
+        </TooltipContent>
       </Tooltip>
 
       <PopoverContent

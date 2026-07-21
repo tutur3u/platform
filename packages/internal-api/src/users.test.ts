@@ -21,6 +21,7 @@ function createJsonResponse(payload: unknown) {
 describe('users internal-api helpers', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it('saves nullable user config payloads through the stable route', async () => {
@@ -76,6 +77,32 @@ describe('users internal-api helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://tasks.example.com/api/v1/users/me/workspaces/ws-1/configs/TASK_DEFAULT_BOARD_ID',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('keeps task-scoped config requests same-origin in the browser', async () => {
+    vi.stubEnv('TASKS_APP_URL', 'https://tasks.example.com');
+    vi.stubGlobal('window', {
+      location: {
+        hostname: 'tuturuuu.com',
+        origin: 'https://tuturuuu.com',
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        value: 'compact',
+      })
+    );
+
+    await getUserConfig('TASK_DIALOG_DEFAULT_PRESENTATION', {
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/users/me/configs/TASK_DIALOG_DEFAULT_PRESENTATION',
       expect.objectContaining({
         headers: expect.any(Headers),
       })
