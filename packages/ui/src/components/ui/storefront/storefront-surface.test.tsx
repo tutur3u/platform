@@ -162,6 +162,22 @@ describe('StorefrontSurface', () => {
     expect(sanitizeStorefrontAccentColor('red')).toBeNull();
   });
 
+  it('omits the duplicate hero card when no cover media is configured', () => {
+    render(
+      <StorefrontSurface
+        listings={[listing]}
+        mode="store"
+        storefront={storefront}
+      />
+    );
+
+    expect(screen.getAllByText('Preview Store')).toHaveLength(1);
+    expect(screen.queryByText('Buyer-facing copy')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Shop' }).closest('section')
+    ).not.toHaveClass('mt-10');
+  });
+
   it('renders a preview empty state without enabling checkout', () => {
     render(
       <StorefrontSurface
@@ -176,7 +192,7 @@ describe('StorefrontSurface', () => {
       />
     );
 
-    expect(screen.getAllByText('Preview Store')).toHaveLength(2);
+    expect(screen.getAllByText('Preview Store')).toHaveLength(1);
     expect(screen.getByText('No buyer listings')).toBeInTheDocument();
     expect(screen.getByText('Create a listing next.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cart: 0' }));
@@ -462,7 +478,7 @@ describe('StorefrontSurface', () => {
     );
 
     expect(screen.queryByText('Simulated checkout')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Preview Store')).toHaveLength(2);
+    expect(screen.getAllByText('Preview Store')).toHaveLength(1);
   });
 
   it('blocks disabled checkout without showing checkout mode badges', () => {

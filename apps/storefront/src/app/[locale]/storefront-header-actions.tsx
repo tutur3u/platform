@@ -17,9 +17,11 @@ import { UserNav } from './user-nav';
  * or a theme toggle + sign-in link for anonymous shoppers.
  */
 export async function StorefrontHeaderActions({
+  showHistory = true,
   storeSlug,
   storefront,
 }: {
+  showHistory?: boolean;
   storeSlug?: string;
   storefront?: Pick<InventoryStorefront, 'id' | 'wsId'> | null;
 } = {}) {
@@ -64,7 +66,7 @@ export async function StorefrontHeaderActions({
             </a>
           </Button>
         ) : null}
-        {storeSlug ? (
+        {storeSlug && showHistory ? (
           <Button asChild size="sm" variant="outline">
             <Link href={`/${storeSlug}/orders`}>
               <ReceiptText className="size-4" />

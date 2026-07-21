@@ -32,12 +32,14 @@ export function StorefrontOrderScreen({
   order,
   publicToken,
   storeSlug,
+  withinSharedShell = false,
 }: {
   isUnavailable: boolean;
   onRetry: () => void;
   order?: InventoryCheckoutSession;
   publicToken?: string;
   storeSlug: string;
+  withinSharedShell?: boolean;
 }) {
   const t = useTranslations('storefront');
   const state = getStorefrontOrderState(order);
@@ -66,7 +68,13 @@ export function StorefrontOrderScreen({
             : t('orderPlacedDescription');
 
   return (
-    <main className="mx-auto grid min-h-dvh w-full max-w-lg place-items-center p-2 sm:px-4 sm:py-10">
+    <main
+      className={
+        withinSharedShell
+          ? 'mx-auto grid min-h-[calc(100dvh-4.3125rem)] w-full max-w-lg place-items-center p-2 sm:px-4 sm:py-10'
+          : 'mx-auto grid min-h-dvh w-full max-w-lg place-items-center p-2 sm:px-4 sm:py-10'
+      }
+    >
       <section className="w-full overflow-hidden rounded-xl border border-border bg-card p-4 text-center sm:p-6">
         {isUnavailable ? (
           <>

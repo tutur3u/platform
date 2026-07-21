@@ -1,16 +1,22 @@
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
+import type { Metadata } from 'next';
 import { StorefrontRouteFromParams } from '@/components/storefront/storefront-route';
 
-export default function StorefrontCheckoutSuccessPage({
+export const metadata: Metadata = {
+  robots: NO_INDEX_ROBOTS,
+};
+
+export default function StorefrontCartPage({
   params,
 }: {
   params: Promise<{ storeSlug: string }>;
 }) {
   return (
     <StorefrontRouteFromParams
-      clearCartOnMount
-      mode="store"
+      mode="cart"
       params={params}
       showHeaderActions={false}
+      withinSharedShell
     />
   );
 }

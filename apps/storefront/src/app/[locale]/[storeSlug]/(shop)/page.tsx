@@ -29,5 +29,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function StorefrontPage({ params }: Props) {
-  return <StorefrontRouteFromParams mode="store" params={params} />;
+  return (
+    <StorefrontRouteFromParams
+      mode="store"
+      params={params}
+      showHeaderActions={false}
+      withinSharedShell
+    />
+  );
 }

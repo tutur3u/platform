@@ -1,7 +1,14 @@
 'use client';
 
 import type { StorefrontCartLine } from '@tuturuuu/ui/storefront';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 export type CartLine = {
   listingId: string;
@@ -40,11 +47,13 @@ function readCart(storeSlug: string): CartLine[] {
  * `storage` listener keeps the cart in sync across tabs/components so the badge,
  * product dialog, and cart view all reflect a single source of truth.
  */
-export function useCart(storeSlug: string) {
+function useStorefrontCartState(storeSlug: string) {
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     setCart(readCart(storeSlug));
+    setIsHydrated(true);
     const onStorage = (event: StorageEvent) => {
       if (event.key === cartKey(storeSlug)) setCart(readCart(storeSlug));
     };
@@ -53,8 +62,9 @@ export function useCart(storeSlug: string) {
   }, [storeSlug]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem(cartKey(storeSlug), JSON.stringify(cart));
-  }, [cart, storeSlug]);
+  }, [cart, isHydrated, storeSlug]);
 
   const clear = useCallback(() => setCart([]), []);
 
@@ -123,4 +133,38 @@ export function useCart(storeSlug: string) {
   );
 
   return { addLine, cart, clear, decrement, increment };
+}
+
+type StorefrontCartContextValue = ReturnType<typeof useStorefrontCartState> & {
+  storeSlug: string;
+};
+
+const StorefrontCartContext = createContext<StorefrontCartContextValue | null>(
+  null
+);
+
+export function StorefrontCartProvider({
+  children,
+  storeSlug,
+}: {
+  children: ReactNode;
+  storeSlug: string;
+}) {
+  const cart = useStorefrontCartState(storeSlug);
+
+  return (
+    <StorefrontCartContext.Provider value={{ ...cart, storeSlug }}>
+      {children}
+    </StorefrontCartContext.Provider>
+  );
+}
+
+export function useCart(storeSlug: string) {
+  const cart = useContext(StorefrontCartContext);
+
+  if (!cart || cart.storeSlug !== storeSlug) {
+    throw new Error('useCart must be used inside StorefrontCartProvider');
+  }
+
+  return cart;
 }

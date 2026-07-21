@@ -10,6 +10,7 @@ export default function StorefrontCheckoutCancelPage({
       mode="cart"
       params={params}
       showHeaderActions={false}
+      withinSharedShell
     />
   );
 }

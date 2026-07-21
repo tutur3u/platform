@@ -49,6 +49,7 @@ type StorefrontClientProps = {
   mode: StorefrontMode;
   publicToken?: string;
   storeSlug: string;
+  withinSharedShell?: boolean;
 };
 
 export function StorefrontClient({
@@ -61,6 +62,7 @@ export function StorefrontClient({
   mode,
   publicToken,
   storeSlug,
+  withinSharedShell = false,
 }: StorefrontClientProps) {
   const t = useTranslations('storefront');
   const cart = useCart(storeSlug);
@@ -267,17 +269,29 @@ export function StorefrontClient({
         order={order}
         publicToken={publicToken}
         storeSlug={storeSlug}
+        withinSharedShell={withinSharedShell}
       />
     );
   }
 
   if (storefrontQuery.isLoading) {
-    return <StorefrontSkeleton label={t('loading')} />;
+    return (
+      <StorefrontSkeleton
+        label={t('loading')}
+        withinSharedShell={withinSharedShell}
+      />
+    );
   }
 
   if (storefrontQuery.isError) {
     return (
-      <main className="grid min-h-dvh place-items-center px-4">
+      <main
+        className={
+          withinSharedShell
+            ? 'grid min-h-[calc(100dvh-4.3125rem)] place-items-center px-4'
+            : 'grid min-h-dvh place-items-center px-4'
+        }
+      >
         <RetryPanel
           description={t('storefrontErrorDescription')}
           onRetry={() => storefrontQuery.refetch()}
@@ -296,6 +310,7 @@ export function StorefrontClient({
         onRetry={() => storefrontQuery.refetch()}
         retryLabel={t('retry')}
         title={t('unavailableTitle')}
+        withinSharedShell={withinSharedShell}
       />
     );
   }
@@ -489,6 +504,7 @@ export function StorefrontClient({
       selectedListingId={listingId}
       storefront={storefront}
       storefrontHref={`/${storeSlug}`}
+      withinSharedShell={withinSharedShell}
     />
   );
 }

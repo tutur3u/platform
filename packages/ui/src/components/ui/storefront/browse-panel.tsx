@@ -16,12 +16,14 @@ type BrowseFilter = 'all' | 'bundle' | 'product';
 export function StorefrontBrowsePanel({
   compactLayout,
   emptyListings,
+  flushTop = false,
   labels,
   listings,
   renderListing,
 }: {
   compactLayout: boolean;
   emptyListings: ReactNode;
+  flushTop?: boolean;
   labels: StorefrontSurfaceLabels;
   listings: InventoryStorefrontListing[];
   renderListing: (listing: InventoryStorefrontListing) => ReactNode;
@@ -47,7 +49,10 @@ export function StorefrontBrowsePanel({
   const hasActiveFilters = filter !== 'all' || query.trim().length > 0;
 
   return (
-    <section aria-labelledby="storefront-shop-heading" className="mt-10">
+    <section
+      aria-labelledby="storefront-shop-heading"
+      className={flushTop ? undefined : 'mt-10'}
+    >
       <div className="flex flex-col gap-5 border-border border-b pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.16em]">

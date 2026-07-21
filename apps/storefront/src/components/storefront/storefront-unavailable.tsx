@@ -10,6 +10,7 @@ export function StorefrontUnavailable({
   onRetry,
   retryLabel,
   title,
+  withinSharedShell = false,
 }: {
   description: string;
   eyebrow: string;
@@ -17,9 +18,16 @@ export function StorefrontUnavailable({
   onRetry: () => void;
   retryLabel: string;
   title: string;
+  withinSharedShell?: boolean;
 }) {
   return (
-    <main className="relative grid min-h-dvh overflow-hidden bg-background px-5 py-12 sm:px-8">
+    <main
+      className={
+        withinSharedShell
+          ? 'relative grid min-h-[calc(100dvh-4.3125rem)] overflow-hidden bg-background px-5 py-12 sm:px-8'
+          : 'relative grid min-h-dvh overflow-hidden bg-background px-5 py-12 sm:px-8'
+      }
+    >
       <div
         aria-hidden
         className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/35 to-transparent"

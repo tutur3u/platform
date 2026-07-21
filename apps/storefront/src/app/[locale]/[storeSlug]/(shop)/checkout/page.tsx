@@ -16,6 +16,8 @@ export default function StorefrontCheckoutPage({
       initialCheckoutOpen
       mode="checkout"
       params={params}
+      showHeaderActions={false}
+      withinSharedShell
     />
   );
 }

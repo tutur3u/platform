@@ -12,6 +12,7 @@ type StorefrontRouteProps = {
   mode: 'cart' | 'checkout' | 'product' | 'store';
   showHeaderActions?: boolean;
   storeSlug: string;
+  withinSharedShell?: boolean;
 };
 
 type StorefrontRouteFromParamsProps = Omit<
@@ -28,6 +29,7 @@ async function StorefrontRouteContent({
   mode,
   showHeaderActions = true,
   storeSlug,
+  withinSharedShell = false,
 }: StorefrontRouteProps) {
   const [buyerDefaults, initialStorefront] = await Promise.all([
     getStorefrontBuyerDefaults(),
@@ -51,13 +53,18 @@ async function StorefrontRouteContent({
       listingId={listingId}
       mode={mode}
       storeSlug={storeSlug}
+      withinSharedShell={withinSharedShell}
     />
   );
 }
 
 export function StorefrontRoute(props: StorefrontRouteProps) {
   return (
-    <Suspense fallback={<StorefrontSkeleton />}>
+    <Suspense
+      fallback={
+        <StorefrontSkeleton withinSharedShell={props.withinSharedShell} />
+      }
+    >
       <StorefrontRouteContent {...props} />
     </Suspense>
   );
@@ -81,7 +88,11 @@ export function StorefrontRouteFromParams(
   props: StorefrontRouteFromParamsProps
 ) {
   return (
-    <Suspense fallback={<StorefrontSkeleton />}>
+    <Suspense
+      fallback={
+        <StorefrontSkeleton withinSharedShell={props.withinSharedShell} />
+      }
+    >
       <StorefrontRouteParamsContent {...props} />
     </Suspense>
   );

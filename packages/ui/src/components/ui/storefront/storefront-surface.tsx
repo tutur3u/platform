@@ -77,6 +77,7 @@ export function StorefrontSurface({
   selectedListingId,
   storefront,
   storefrontHref,
+  withinSharedShell = false,
 }: {
   bundles?: InventoryBundle[];
   buyerDefaults?: StorefrontBuyerDefaults;
@@ -113,6 +114,7 @@ export function StorefrontSurface({
   selectedListingId?: string;
   storefront: InventoryStorefront;
   storefrontHref?: string;
+  withinSharedShell?: boolean;
 }) {
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
   const NavigationLink = linkComponent ?? 'a';
@@ -251,7 +253,9 @@ export function StorefrontSurface({
   return (
     <main
       className={cn(
-        'min-h-dvh bg-background text-foreground',
+        withinSharedShell
+          ? 'min-h-[calc(100dvh-4.3125rem)] bg-background text-foreground'
+          : 'min-h-dvh bg-background text-foreground',
         storefrontThemeClasses[storefront.themePreset],
         className
       )}
@@ -263,51 +267,53 @@ export function StorefrontSurface({
         </div>
       ) : null}
 
-      <header className="sticky top-0 z-30 border-border border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-6">
-          <div className="min-w-0">
-            <h1 className="truncate font-semibold text-base tracking-tight">
-              {storefrontHref ? (
-                <NavigationLink
-                  className="flex min-w-0 items-center gap-3 rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-                  href={storefrontHref}
-                  title={storefront.name}
-                >
-                  <span
-                    aria-hidden
-                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
+      {withinSharedShell ? null : (
+        <header className="sticky top-0 z-30 border-border border-b bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/85">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3 sm:px-6">
+            <div className="min-w-0">
+              <h1 className="truncate font-semibold text-base tracking-tight">
+                {storefrontHref ? (
+                  <NavigationLink
+                    className="flex min-w-0 items-center gap-3 rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                    href={storefrontHref}
+                    title={storefront.name}
                   >
-                    {storefront.name.slice(0, 1)}
+                    <span
+                      aria-hidden
+                      className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
+                    >
+                      {storefront.name.slice(0, 1)}
+                    </span>
+                    <span className="truncate">{storefront.name}</span>
+                  </NavigationLink>
+                ) : (
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
+                    >
+                      {storefront.name.slice(0, 1)}
+                    </span>
+                    <span className="truncate">{storefront.name}</span>
                   </span>
-                  <span className="truncate">{storefront.name}</span>
-                </NavigationLink>
-              ) : (
-                <span className="flex min-w-0 items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-muted/35 font-mono text-xs uppercase"
-                  >
-                    {storefront.name.slice(0, 1)}
-                  </span>
-                  <span className="truncate">{storefront.name}</span>
-                </span>
-              )}
-            </h1>
+                )}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              {headerActions}
+              <StorefrontCartPopover
+                cartQuantity={cartQuantity}
+                labels={labels}
+                onOpenChange={setIsCartPopoverOpen}
+                open={isCartPopoverOpen}
+                radius={radius}
+              >
+                {cartPopoverSummary}
+              </StorefrontCartPopover>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {headerActions}
-            <StorefrontCartPopover
-              cartQuantity={cartQuantity}
-              labels={labels}
-              onOpenChange={setIsCartPopoverOpen}
-              open={isCartPopoverOpen}
-              radius={radius}
-            >
-              {cartPopoverSummary}
-            </StorefrontCartPopover>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <section
         className={cn(
@@ -377,6 +383,11 @@ export function StorefrontSurface({
                       labels={labels}
                       radius={radius}
                     />
+                  }
+                  flushTop={
+                    !storefront.coverImageUrl &&
+                    !storefront.heroImageUrl &&
+                    (storefront.sections?.length ?? 0) === 0
                   }
                   labels={labels}
                   listings={visibleListings}

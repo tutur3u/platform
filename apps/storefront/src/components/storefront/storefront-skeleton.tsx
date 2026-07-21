@@ -1,15 +1,30 @@
 const SKELETON_CARD_KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
 
-export function StorefrontSkeleton({ label }: { label?: string }) {
+export function StorefrontSkeleton({
+  label,
+  withinSharedShell = false,
+}: {
+  label?: string;
+  withinSharedShell?: boolean;
+}) {
   return (
-    <main aria-busy="true" className="min-h-dvh bg-background">
+    <main
+      aria-busy="true"
+      className={
+        withinSharedShell
+          ? 'min-h-[calc(100dvh-4.3125rem)] bg-background'
+          : 'min-h-dvh bg-background'
+      }
+    >
       {label ? <span className="sr-only">{label}</span> : null}
-      <header className="border-border border-b">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
-          <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
-          <div className="h-11 w-16 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </header>
+      {withinSharedShell ? null : (
+        <header className="border-border border-b">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+            <div className="h-6 w-40 animate-pulse rounded-md bg-muted" />
+            <div className="h-11 w-16 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </header>
+      )}
       <section className="mx-auto max-w-7xl px-4 py-5">
         <div className="min-w-0">
           <div className="grid min-h-80 animate-pulse overflow-hidden rounded-xl border border-border md:grid-cols-2">

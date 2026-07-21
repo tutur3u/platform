@@ -12,6 +12,7 @@ export type {
 } from './types';
 export {
   formatStorefrontPrice,
+  getAccentStyle,
   getStorefrontLinePrice,
   getStorefrontListingFromPrice,
   getStorefrontListingLimit,

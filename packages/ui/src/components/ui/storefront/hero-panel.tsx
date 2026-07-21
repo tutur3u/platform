@@ -21,6 +21,8 @@ export function StorefrontHeroPanel({
 }) {
   const heroImage = storefront.coverImageUrl ?? storefront.heroImageUrl;
 
+  if (!heroImage) return null;
+
   return (
     <section
       className={cn(
@@ -58,20 +60,12 @@ export function StorefrontHeroPanel({
       </div>
 
       <div className="relative min-h-64 border-border border-t md:min-h-full md:border-t-0 md:border-l">
-        {heroImage ? (
-          <StorefrontImagePanel
-            className="absolute inset-0 h-full w-full"
-            imageUrl={heroImage}
-            label={storefront.name}
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center bg-muted/35">
-            <div className="grid size-24 place-items-center rounded-xl border border-border bg-background/80">
-              <Store className="size-8 text-muted-foreground" />
-            </div>
-          </div>
-        )}
+        <StorefrontImagePanel
+          className="absolute inset-0 h-full w-full"
+          imageUrl={heroImage}
+          label={storefront.name}
+          priority
+        />
       </div>
     </section>
   );

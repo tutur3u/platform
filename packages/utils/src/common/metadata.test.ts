@@ -282,8 +282,8 @@ describe('application metadata coverage', () => {
       'apps/tools/src/app/[locale]/page.tsx',
       'apps/tools/src/app/[locale]/qr/page.tsx',
       'apps/tools/src/app/[locale]/random/page.tsx',
-      'apps/storefront/src/app/[locale]/[storeSlug]/page.tsx',
-      'apps/storefront/src/app/[locale]/[storeSlug]/products/[listingId]/page.tsx',
+      'apps/storefront/src/app/[locale]/[storeSlug]/(shop)/page.tsx',
+      'apps/storefront/src/app/[locale]/[storeSlug]/(shop)/products/[listingId]/page.tsx',
       'apps/nova/src/app/[locale]/(marketing)/layout.tsx',
       'apps/nova/src/app/[locale]/(marketing)/learn/layout.tsx',
     ];
