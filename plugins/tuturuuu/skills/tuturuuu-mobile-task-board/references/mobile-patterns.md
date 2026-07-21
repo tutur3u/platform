@@ -14,12 +14,10 @@ localization changes.
 - Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package
   Manager in CI while `image_cropper` and `dkimagepickercontroller` resolve
   incompatible `TOCropViewController` Swift package ranges.
-- Keep `connectivity_plus` pinned to `7.0.0` and `device_info_plus` pinned to
-  `12.3.0` while mobile iOS/macOS CI uses Xcode 16.4. `connectivity_plus`
-  `7.1.1` references `NWPath.isUltraConstrained`, and `device_info_plus`
-  `12.4.0` references `NSProcessInfo.isiOSAppOnVision`; that SDK does not
-  provide those symbols, so root `bun check` enforces these pins with
-  `scripts/check-mobile-dependencies.js`.
+- Mobile iOS/macOS CI uses the current `macos-latest` GitHub runner with Xcode
+  26+. `connectivity_plus` and `device_info_plus` no longer require the former
+  Xcode 16.4 compatibility pins. Revalidate the runner image and native builds
+  before introducing a future Apple-specific dependency pin.
 - Keep `mobile-deploy-stores.yaml` beta-only: production pushes may publish the
   production flavor to Google Play internal testing and TestFlight, but should
   not submit production store releases. CI stores only
