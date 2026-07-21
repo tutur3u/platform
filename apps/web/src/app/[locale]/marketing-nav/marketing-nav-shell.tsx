@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
 interface MarketingNavShellProps {
   logo: ReactNode;
@@ -15,9 +15,6 @@ interface MarketingNavShellProps {
  * Replaces the old approach of imperatively adding/removing classes on
  * `#navbar-content` from a sibling component: the scroll state now lives in
  * React and is applied where it is read.
- *
- * Scroll progress is written straight to a CSS variable inside a rAF rather
- * than held in state, so continuous scrolling never re-renders the tree.
  */
 export function MarketingNavShell({
   logo,
@@ -25,37 +22,25 @@ export function MarketingNavShell({
   actions,
 }: MarketingNavShellProps) {
   const [scrolled, setScrolled] = useState(false);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const frame = useRef<number | null>(null);
 
   useEffect(() => {
+    let frame: number | null = null;
+
     const update = () => {
-      frame.current = null;
-
-      const scrollable =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress =
-        scrollable > 0 ? Math.min(window.scrollY / scrollable, 1) : 0;
-
-      progressRef.current?.style.setProperty(
-        'transform',
-        `scaleX(${progress.toFixed(4)})`
-      );
+      frame = null;
       setScrolled(window.scrollY > 8);
     };
 
     const handleScroll = () => {
-      if (frame.current !== null) return;
-      frame.current = requestAnimationFrame(update);
+      if (frame !== null) return;
+      frame = requestAnimationFrame(update);
     };
 
     update();
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
-      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      if (frame !== null) cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -66,6 +51,7 @@ export function MarketingNavShell({
     >
       <div
         className={cn(
+          // overflow-visible so the Products/Resources panels can escape the pill
           'relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-500 sm:px-4',
           scrolled
             ? 'border border-foreground/10 bg-background/70 shadow-foreground/5 shadow-lg backdrop-blur-xl'
@@ -89,17 +75,6 @@ export function MarketingNavShell({
         </div>
 
         <div className="flex flex-none items-center gap-1.5">{actions}</div>
-
-        {/* Reading progress */}
-        <div
-          aria-hidden
-          className={cn(
-            'pointer-events-none absolute inset-x-0 bottom-0 h-px origin-left bg-[linear-gradient(90deg,var(--purple),var(--blue),var(--cyan))] transition-opacity duration-500',
-            scrolled ? 'opacity-90' : 'opacity-0'
-          )}
-          ref={progressRef}
-          style={{ transform: 'scaleX(0)' }}
-        />
       </div>
     </header>
   );

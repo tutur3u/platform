@@ -139,7 +139,7 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="font-semibold text-sm">
+                    <span className="font-mono-ui text-[0.68rem] uppercase tracking-[0.18em]">
                       {t('common.products')}
                     </span>
                   </AccordionTrigger>
@@ -147,7 +147,7 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
                     <div className="grid gap-4 px-2">
                       {MARKETING_PRODUCT_GROUPS.map((group) => (
                         <div key={group.key}>
-                          <div className="mb-1 px-4 font-semibold text-foreground/40 text-xs uppercase tracking-wide">
+                          <div className="mb-1 px-4 font-mono-ui text-[0.58rem] text-foreground/35 uppercase tracking-[0.2em]">
                             {t(`marketing-nav.groups.${group.key}` as never)}
                           </div>
                           {group.items.map((product) => (
@@ -172,7 +172,7 @@ export function MobileMenu({ sbUser, user }: MenuProps) {
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="font-semibold text-sm">
+                    <span className="font-mono-ui text-[0.68rem] uppercase tracking-[0.18em]">
                       {t('common.resources')}
                     </span>
                   </AccordionTrigger>

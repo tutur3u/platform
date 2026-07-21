@@ -3,14 +3,19 @@
 import {
   ArrowRight,
   Bot,
+  Boxes,
   Building2,
   Calendar,
+  CalendarClock,
   CheckCircle2,
   FileText,
   Folder,
   GraduationCap,
   Mail,
+  MessageSquare,
   Package,
+  QrCode,
+  Store,
   Users,
   Wallet,
   Zap,
@@ -19,7 +24,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
 import { useNavigation } from '../shared/navigation-config';
-import { NavDropdown } from './nav-dropdown';
+import { type NavMenu, NavMenuBar } from './nav-dropdown';
 import { MARKETING_PRODUCT_GROUPS } from './products';
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -37,6 +42,12 @@ const productIcons: Record<string, IconComponent> = {
   crm: Building2,
   inventory: Package,
   lms: GraduationCap,
+  track: CalendarClock,
+  forms: FileText,
+  chat: MessageSquare,
+  qr: QrCode,
+  storefront: Store,
+  hive: Boxes,
 };
 
 const linkClassName = cn(
@@ -52,78 +63,82 @@ export function MarketingNavMenu() {
   const resources =
     categories.find((category) => category.title === 'resources')?.items ?? [];
 
-  return (
-    <nav aria-label={t('common.main_navigation')} className="flex items-center">
-      <NavDropdown
-        label={t('common.products')}
-        panelClassName="w-[46rem] max-w-[calc(100vw-3rem)]"
-      >
-        <div className="grid gap-x-3 gap-y-7 p-6 sm:grid-cols-3">
-          {MARKETING_PRODUCT_GROUPS.map((group) => (
-            <div key={group.key}>
-              <div className="mb-3 flex items-center gap-2 px-2">
-                <span className="font-mono-ui text-[0.6rem] text-foreground/35 uppercase tracking-[0.2em]">
-                  {t(`marketing-nav.groups.${group.key}` as never)}
-                </span>
-                <span
-                  aria-hidden
-                  className="h-px flex-1 bg-gradient-to-r from-foreground/15 to-transparent"
-                />
+  const menus: NavMenu[] = [
+    {
+      id: 'products',
+      label: t('common.products'),
+      // Wider than Resources: three columns of six apps each.
+      width: 880,
+      content: (
+        <>
+          <div className="grid gap-x-3 gap-y-7 p-6 sm:grid-cols-3">
+            {MARKETING_PRODUCT_GROUPS.map((group) => (
+              <div key={group.key}>
+                <div className="mb-3 flex items-center gap-2 px-2">
+                  <span className="font-mono-ui text-[0.6rem] text-foreground/35 uppercase tracking-[0.2em]">
+                    {t(`marketing-nav.groups.${group.key}` as never)}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="h-px flex-1 bg-gradient-to-r from-foreground/15 to-transparent"
+                  />
+                </div>
+                <div className="grid">
+                  {group.items.map((product) => {
+                    const Icon = productIcons[product.key];
+                    return (
+                      <a
+                        className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors duration-200 hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        href={product.href}
+                        key={product.key}
+                      >
+                        {Icon ? (
+                          <span
+                            className={cn(
+                              'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-foreground/10 bg-foreground/[0.04] transition-all duration-200 group-hover:scale-105 group-hover:border-foreground/20',
+                              product.accent
+                            )}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                          </span>
+                        ) : null}
+                        <span className="min-w-0 pt-0.5">
+                          <span className="block font-medium text-sm leading-none">
+                            {t(
+                              `marketing-nav.products.${product.key}.label` as never
+                            )}
+                          </span>
+                          <span className="mt-1.5 block text-foreground/45 text-xs leading-snug">
+                            {t(
+                              `marketing-nav.products.${product.key}.description` as never
+                            )}
+                          </span>
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="grid">
-                {group.items.map((product) => {
-                  const Icon = productIcons[product.key];
-                  return (
-                    <a
-                      className="group flex items-start gap-3 rounded-xl p-2.5 transition-colors duration-200 hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      href={product.href}
-                      key={product.key}
-                    >
-                      {Icon ? (
-                        <span
-                          className={cn(
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-foreground/10 bg-foreground/[0.04] transition-all duration-200 group-hover:scale-105 group-hover:border-foreground/20',
-                            product.accent
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                        </span>
-                      ) : null}
-                      <span className="min-w-0 pt-0.5">
-                        <span className="block font-medium text-sm leading-none">
-                          {t(
-                            `marketing-nav.products.${product.key}.label` as never
-                          )}
-                        </span>
-                        <span className="mt-1.5 block text-foreground/45 text-xs leading-snug">
-                          {t(
-                            `marketing-nav.products.${product.key}.description` as never
-                          )}
-                        </span>
-                      </span>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <a
-          className="group flex items-center justify-between gap-2 border-foreground/10 border-t bg-foreground/[0.03] px-6 py-4 font-mono-ui text-[0.68rem] uppercase tracking-[0.16em] transition-colors hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-          href="https://apps.tuturuuu.com"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <span>{t('marketing-nav.all_apps')}</span>
-          <ArrowRight className="h-4 w-4 text-foreground/40 transition-transform duration-300 group-hover:translate-x-1" />
-        </a>
-      </NavDropdown>
-
-      <NavDropdown
-        label={t('common.resources')}
-        panelClassName="w-[34rem] max-w-[calc(100vw-3rem)]"
-      >
+          <a
+            className="group flex items-center justify-between gap-2 border-foreground/10 border-t bg-foreground/[0.03] px-6 py-4 font-mono-ui text-[0.68rem] uppercase tracking-[0.16em] transition-colors hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            href="https://apps.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <span>{t('marketing-nav.all_apps')}</span>
+            <ArrowRight className="h-4 w-4 text-foreground/40 transition-transform duration-300 group-hover:translate-x-1" />
+          </a>
+        </>
+      ),
+    },
+    {
+      id: 'resources',
+      label: t('common.resources'),
+      width: 544,
+      content: (
         <div className="grid gap-1 p-4 sm:grid-cols-2">
           {resources.map((resource) => (
             <a
@@ -148,8 +163,12 @@ export function MarketingNavMenu() {
             </a>
           ))}
         </div>
-      </NavDropdown>
+      ),
+    },
+  ];
 
+  return (
+    <NavMenuBar ariaLabel={t('common.main_navigation')} menus={menus}>
       <a className={linkClassName} href="/?hash-nav=1#pricing">
         {t('common.pricing')}
       </a>
@@ -160,6 +179,6 @@ export function MarketingNavMenu() {
       <a className={cn(linkClassName, 'hidden lg:inline-flex')} href="/contact">
         {t('common.contact')}
       </a>
-    </nav>
+    </NavMenuBar>
   );
 }
