@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/types-v0.18.0...types-v0.19.0) (2026-07-21)
+
+
+### Features
+
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+
+
+### Bug Fixes
+
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/types-v0.17.0...types-v0.18.0) (2026-07-18)
 
 

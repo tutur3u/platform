@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/ai-v0.2.2...ai-v0.3.0) (2026-07-21)
+
+
+### Features
+
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+
+
+### Bug Fixes
+
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
 ## [0.2.2](https://github.com/tutur3u/platform/compare/ai-v0.2.1...ai-v0.2.2) (2026-06-13)
 
 

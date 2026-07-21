@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/cms-v0.18.0...cms-v0.19.0) (2026-07-21)
+
+
+### Features
+
+* **cms:** redesign content library controls ([220ee96](https://github.com/tutur3u/platform/commit/220ee965446a7ae95b5e4cc53788f8ea71e24872))
+* **cms:** redesign media library loading ([d382b3b](https://github.com/tutur3u/platform/commit/d382b3bd254086d344b1b066ccbaf913a303a682))
+* **cms:** safeguard entry publishing workflow ([2371b08](https://github.com/tutur3u/platform/commit/2371b08c726a1ea4ecf480dfe25f1b9e12f55e35))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/cms-v0.17.0...cms-v0.18.0) (2026-07-18)
 
 

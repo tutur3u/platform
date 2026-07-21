@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/cms",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/tutur3u/platform/compare/mobile-v0.8.0...mobile-v0.8.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* **quality:** address AI findings ([c24f827](https://github.com/tutur3u/platform/commit/c24f8278ac03c927683c5a3af193ce77c736f3ec))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/mobile-v0.7.0...mobile-v0.8.0) (2026-07-18)
 
 

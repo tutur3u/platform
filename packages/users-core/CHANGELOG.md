@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/users-core-v0.4.1...users-core-v0.4.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
+
+### Performance Improvements
+
+* **contacts:** accelerate virtual user listing ([8d0b86c](https://github.com/tutur3u/platform/commit/8d0b86c46f7045b2e7475d2e6211dc0cc2ebb6ab))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/users-core-v0.4.0...users-core-v0.4.1) (2026-07-18)
 
 

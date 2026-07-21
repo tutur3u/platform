@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/satellite-v0.8.0...satellite-v0.9.0) (2026-07-21)
+
+
+### Features
+
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** standardize fixed app headers ([7b86c42](https://github.com/tutur3u/platform/commit/7b86c4283b39ebc5de8bec971ce3bab5fdaef422))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **satellite:** align app picker header ([96758ef](https://github.com/tutur3u/platform/commit/96758ef1344c2f62434b2de92551b0c0891a1353))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/satellite-v0.7.0...satellite-v0.8.0) (2026-07-18)
 
 

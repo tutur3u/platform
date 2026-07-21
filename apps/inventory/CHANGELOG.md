@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/inventory-v0.16.0...inventory-v0.17.0) (2026-07-21)
+
+
+### Features
+
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** add guarded bulk stock management ([3516913](https://github.com/tutur3u/platform/commit/3516913093066c01b2b601d558310a63e398378f))
+* **inventory:** add responsive catalog workflows ([f81815f](https://github.com/tutur3u/platform/commit/f81815feff041a5ef47318db8cbefc668592c531))
+* **inventory:** improve sales discovery and cart ([cced561](https://github.com/tutur3u/platform/commit/cced5611796e3a0760b65987fbe50afb0876d055))
+* **inventory:** improve search sales and analytics ([9af9256](https://github.com/tutur3u/platform/commit/9af92569336948cb03ee9f6a1520f8026dfb00d6))
+* **inventory:** keep sale entry open ([cba815d](https://github.com/tutur3u/platform/commit/cba815da970bb2a08ea624a8a6e8bf722e248d0c))
+* **inventory:** optimize mobile sales workflow ([1ee5f6b](https://github.com/tutur3u/platform/commit/1ee5f6b533c25440302057e35149370faa0e470b))
+* **inventory:** streamline sales entry ([ae22db5](https://github.com/tutur3u/platform/commit/ae22db56b982756fe6f76cdb65cfbac913dda807))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **inventory:** compact mobile sale workflow ([779712c](https://github.com/tutur3u/platform/commit/779712c9c7e950afcea291d9851a0b1a7e69d947))
+* **inventory:** condense mobile sale catalog ([fdea63b](https://github.com/tutur3u/platform/commit/fdea63b4716dd856fa63e45b2de835850076436e))
+* **inventory:** harden sales analytics and access ([53968d3](https://github.com/tutur3u/platform/commit/53968d38a0c5425a3c1065ab2f645e30a0145c8f))
+* **inventory:** honor adjusted sale prices ([1393ac9](https://github.com/tutur3u/platform/commit/1393ac9e44390a54b856ced49fa82229230e2aa8))
+* **inventory:** localize Square POS checkout ([a74a2be](https://github.com/tutur3u/platform/commit/a74a2be7a81c0cd0bafb02e313b362aa0bcf547f))
+* **inventory:** normalize sales revenue units ([99fa671](https://github.com/tutur3u/platform/commit/99fa67173b738f4dc7dc83c7ef4639524a3dc449))
+* **inventory:** polish mobile sales and settings ([59ef49c](https://github.com/tutur3u/platform/commit/59ef49cde2095361e2b13ce36848e1e39f772c18))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **inventory:** require Drive image uploads ([943a39d](https://github.com/tutur3u/platform/commit/943a39d19b7afa9ddc58bfbfd3eaf575b9edaf8b))
+* **inventory:** reset bulk edit controls ([bffc4b9](https://github.com/tutur3u/platform/commit/bffc4b9d316865e99014da1b3e1040fd1e7d987a))
+* **inventory:** restore referral settings and currency ([6676838](https://github.com/tutur3u/platform/commit/667683841b9823159ae84cf999034c1c364dac4e))
+* **inventory:** streamline mobile sales and shared settings ([72b7724](https://github.com/tutur3u/platform/commit/72b7724f9ca70048f5cb37db9f6a9809cf028f26))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/inventory-v0.15.0...inventory-v0.16.0) (2026-07-18)
 
 

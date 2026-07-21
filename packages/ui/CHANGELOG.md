@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/ui-v0.18.0...ui-v0.19.0) (2026-07-21)
+
+
+### Features
+
+* **calendar:** redesign workspace sidebar ([194e126](https://github.com/tutur3u/platform/commit/194e1267e573e50416f3866826e2a182b3ff8729))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **calendar:** restore provider calendar management ([68753a8](https://github.com/tutur3u/platform/commit/68753a865dcc25a35cd53e5fc7ced1913b9a10bb))
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **ci:** resolve shared task helper during e2e collection ([0319a3b](https://github.com/tutur3u/platform/commit/0319a3bd0df12592b823b7cebdff38cea3e50836))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **inventory:** polish mobile sales and settings ([59ef49c](https://github.com/tutur3u/platform/commit/59ef49cde2095361e2b13ce36848e1e39f772c18))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+* **ui:** prevent iOS form focus zoom ([a0e3f3c](https://github.com/tutur3u/platform/commit/a0e3f3cc10e0ef0676714857088ff8d2b826dcd2))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+* **storefront:** stabilize navigation and cart rendering ([471c6b7](https://github.com/tutur3u/platform/commit/471c6b75abc6a4d69692e868cc1b220785e03262))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/ui-v0.17.0...ui-v0.18.0) (2026-07-18)
 
 

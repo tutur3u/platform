@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/tutur3u/platform/compare/apis-v0.9.1...apis-v0.9.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* **platform:** repair calendar sync and member auth ([fcf8f89](https://github.com/tutur3u/platform/commit/fcf8f89100fb9fc5de024dccb7605a3b9d197cfb))
+* **workspaces:** revoke direct board guest access ([32c0fc1](https://github.com/tutur3u/platform/commit/32c0fc190d0f201ac331f82044f6df180601d531))
+
 ## [0.9.1](https://github.com/tutur3u/platform/compare/apis-v0.9.0...apis-v0.9.1) (2026-07-13)
 
 

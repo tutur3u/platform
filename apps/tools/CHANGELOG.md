@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/tools-v0.7.0...tools-v0.8.0) (2026-07-21)
+
+
+### Features
+
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/tools-v0.6.0...tools-v0.7.0) (2026-07-18)
 
 
