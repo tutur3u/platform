@@ -136,10 +136,13 @@ workflows, so deployments stay attached to the original push SHA instead of
 appearing as detached `workflow_dispatch` runs.
 
 Per-app production workflows remain independently protected by their GitHub
-Environment and workflow-ref concurrency group. They accept `workflow_call` for
-commit-driven planner jobs and retain `workflow_dispatch` for deliberate
-operator reruns. A missing or untrusted marker fails open for that app without
-forcing every other app's gate open.
+Environment and a static per-app concurrency group. The group must include the
+app identifier because reusable workflows inherit caller context; a shared
+caller-derived key would cancel sibling deployments and show red X statuses
+instead of clean skips. They accept `workflow_call` for commit-driven planner
+jobs and retain `workflow_dispatch` for deliberate operator reruns. A missing
+or untrusted marker fails open for that app without forcing every other app's
+gate open.
 
 ### The decision function
 

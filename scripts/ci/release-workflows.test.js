@@ -92,6 +92,7 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
   const productionWorkflows = vercelWorkflows.filter((workflowName) =>
     workflowName.startsWith('vercel-production-')
   );
+  const concurrencyGroups = new Set();
 
   for (const workflowName of productionWorkflows) {
     const workflow = fs.readFileSync(
@@ -99,12 +100,20 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
       'utf8'
     );
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+    const workflowId = workflowName.replace(/\.yaml$/u, '');
+    const concurrencyGroup = `group: ${workflowId}-\${{ github.ref }}`;
 
-    assert.match(
-      header,
-      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow_ref \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/,
+    assert.ok(
+      header.includes(
+        `\nconcurrency:\n  ${concurrencyGroup}\n  cancel-in-progress: true\n`
+      ),
       `${workflowName} must cancel its superseded production run`
     );
+    assert.ok(
+      !concurrencyGroups.has(concurrencyGroup),
+      `${workflowName} must not cancel a different app's reusable deployment`
+    );
+    concurrencyGroups.add(concurrencyGroup);
     assert.doesNotMatch(
       workflow,
       /Check for newer commits|check_commits|skip_build/,
@@ -146,12 +155,24 @@ test('production Vercel planner resolves once and calls affected apps in the pus
   );
   assert.doesNotMatch(workflow, /gh workflow run/);
   for (const productionWorkflow of productionWorkflows) {
+    const appId = productionWorkflow
+      .replace(/^vercel-production-/u, '')
+      .replace(/\.yaml$/u, '');
+    const reusableJob = readWorkflowJobBlock(workflowName, `deploy-${appId}`);
+
     assert.match(
-      workflow,
+      reusableJob,
       new RegExp(
         `uses: \\.\\/\\.github\\/workflows\\/${productionWorkflow.replaceAll('.', '\\.')}`
       ),
       `${productionWorkflow} must be called as a reusable job from the production push run`
+    );
+    assert.match(
+      reusableJob,
+      new RegExp(
+        `if: contains\\(fromJSON\\(needs\\.plan\\.outputs\\.workflows_json\\), '${productionWorkflow.replaceAll('.', '\\.')}'\\)`
+      ),
+      `${productionWorkflow} must stay skipped when the planner does not select it`
     );
   }
   assert.doesNotMatch(

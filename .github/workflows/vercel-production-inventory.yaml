@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow_ref }}-${{ github.ref }}
+  group: vercel-production-inventory-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

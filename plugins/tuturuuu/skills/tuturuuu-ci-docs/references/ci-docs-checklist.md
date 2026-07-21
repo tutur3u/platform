@@ -25,6 +25,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Keep commit-driven production Vercel deployments under the production
   planner's push run. Call selected per-app workflows through `workflow_call`
   and reserve `workflow_dispatch` for explicit operator reruns.
+- Document and test a unique static concurrency prefix for every reusable
+  production app workflow; caller-derived shared keys can cancel sibling jobs
+  instead of leaving unselected jobs cleanly skipped.
 - Keep preview concurrency keyed by workflow and `preview_ref` with
   `cancel-in-progress: true`; repeated requests for one target should replace
   stale runs without canceling a distinct preview ref.

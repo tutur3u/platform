@@ -61,6 +61,11 @@ instead of creating `workflow_dispatch` runs. Do not restore per-app `push`
 triggers or `check-ci` jobs; doing so recreates the queued preflight fan-out the
 planner replaces.
 
+Each reusable production workflow uses a static per-app concurrency prefix plus
+the Git ref. Do not derive this key from reusable-workflow caller context: that
+can make sibling app jobs share one group, cancel one another, and surface red X
+statuses where unselected jobs should be skipped.
+
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
 
@@ -569,11 +574,11 @@ native compiler path instead of trying to auto-install classic TypeScript.
 
 ### Superseded-run guards
 
-Production Vercel workflows use a concurrency group built from the workflow and
-Git ref with `cancel-in-progress: true`. A newer production push cancels the
-older run instead of allowing it to finish green after skipping every deploy
-step. The newest run stays queued or active and deploys the cumulative branch
-state.
+Production Vercel workflows use a static per-app concurrency prefix and Git ref
+with `cancel-in-progress: true`. A newer production push cancels only the older
+run for that same app instead of cancelling sibling app deployments or allowing
+an obsolete run to finish green. The newest run stays queued or active and
+deploys the cumulative branch state.
 
 Deployment markers still let affected-app gating compare every change since
 the last successful deployment, including changes accumulated across canceled
