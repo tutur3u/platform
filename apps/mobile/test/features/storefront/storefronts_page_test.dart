@@ -82,12 +82,16 @@ void main() {
 
     expect(find.text(l10n.storefrontTitle), findsNothing);
     expect(find.text(l10n.storefrontSubtitle), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsWidgets);
 
     await tester.drag(find.byType(ListView), const Offset(0, -360));
     await tester.pumpAndSettle();
 
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsWidgets);
     expect(find.text('Summer catalog'), findsOneWidget);
-    expect(find.text('4 listings'), findsOneWidget);
+    expect(find.text(l10n.storefrontListingCount(4)), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
