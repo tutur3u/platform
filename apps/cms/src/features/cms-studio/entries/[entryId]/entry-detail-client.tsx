@@ -76,6 +76,10 @@ import {
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
 import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
+import {
+  getEntryPublishReadiness,
+  hasMeaningfulStructuredContent,
+} from './entry-detail-publish-readiness';
 import { EntryDetailSchemaFieldsCard } from './entry-detail-schema-fields-card';
 import {
   buildEntryFormState,
@@ -146,6 +150,11 @@ export function EntryDetailClient({
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
   const [deleteMediaDialogOpen, setDeleteMediaDialogOpen] = useState(false);
+  const [discardChangesDialogOpen, setDiscardChangesDialogOpen] =
+    useState(false);
+  const [pendingExit, setPendingExit] = useState<'back' | 'dialog' | null>(
+    null
+  );
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
   const [uploadProgressById, setUploadProgressById] = useState<
     Record<string, EntryDetailUploadProgressItem>
@@ -644,6 +653,21 @@ export function EntryDetailClient({
   const activeEntryTitle = activeEntry?.title ?? strings.title;
   const bodyMarkdownDirty =
     bodyMarkdown.trim() !== getMarkdownBlockContent(markdownBlock).trim();
+  const dirty = entryDirty || coverDirty || bodyMarkdownDirty;
+
+  useEffect(() => {
+    if (!dirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty]);
 
   const updateStudioCache = (
     updater: (current: NonNullable<typeof studio>) => NonNullable<typeof studio>
@@ -1824,7 +1848,6 @@ export function EntryDetailClient({
   const featuredPlacementProcessing =
     updateFeaturedPlacementMutation.isPending ||
     createFeaturedPlacementConfigMutation.isPending;
-  const dirty = entryDirty || coverDirty || bodyMarkdownDirty;
   const collectionTitle =
     activeCollection?.title ?? strings.collectionFallbackLabel;
   const featuredPlacementLabel = featuredPlacementConfig?.sectionEntry
@@ -1838,17 +1861,90 @@ export function EntryDetailClient({
     });
   };
 
-  const saveCurrentEntry = () => {
+  const publishReadiness = getEntryPublishReadiness({
+    bodyMarkdown,
+    coverRecommended: supportedAssetTypes.includes('image'),
+    hasCover: Boolean(coverAsset),
+    hasStructuredContent: hasMeaningfulStructuredContent(
+      Object.fromEntries(
+        activeFieldDefinitions.map((definition) => [
+          definition.key,
+          definition.field_scope === 'metadata'
+            ? schemaMetadata[definition.key]
+            : schemaProfileData[definition.key],
+        ])
+      )
+    ),
+    slug: entryForm.slug,
+    summary: normalizedDescription,
+    title: entryForm.title,
+  });
+
+  const saveCurrentEntry = async () => {
+    const pendingSaves: Promise<unknown>[] = [];
+
     if (entryDirty) {
-      saveEntryMutation.mutate();
+      pendingSaves.push(saveEntryMutation.mutateAsync());
     }
 
     if (bodyMarkdownDirty) {
-      saveMarkdownMutation.mutate();
+      pendingSaves.push(saveMarkdownMutation.mutateAsync());
     }
 
     if (coverDirty && coverAsset) {
-      saveCoverMutation.mutate();
+      pendingSaves.push(saveCoverMutation.mutateAsync());
+    }
+
+    await Promise.all(pendingSaves);
+  };
+
+  const togglePublish = async () => {
+    if (dirty) {
+      try {
+        await saveCurrentEntry();
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : strings.saveFailedToast
+        );
+        return;
+      }
+    }
+
+    try {
+      await publishEntryMutation.mutateAsync(
+        activeEntry.status === 'published' ? 'unpublish' : 'publish'
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : strings.publishFailedToast
+      );
+    }
+  };
+
+  const requestExit = (kind: 'back' | 'dialog') => {
+    if (dirty) {
+      setPendingExit(kind);
+      setDiscardChangesDialogOpen(true);
+      return;
+    }
+
+    if (kind === 'dialog') {
+      onOpenChange?.(false);
+      return;
+    }
+
+    router.push(dashboardPath);
+  };
+
+  const discardChangesAndExit = () => {
+    const exit = pendingExit;
+    setDiscardChangesDialogOpen(false);
+    setPendingExit(null);
+
+    if (exit === 'dialog') {
+      onOpenChange?.(false);
+    } else if (exit === 'back') {
+      router.push(dashboardPath);
     }
   };
 
@@ -1869,24 +1965,25 @@ export function EntryDetailClient({
         activeEntryTitle={activeEntryTitle}
         collectionTitle={collectionTitle}
         coverVisible={Boolean(coverAsset)}
-        dashboardPath={dashboardPath}
         dirty={dirty}
         featuredPlacementActive={isFeaturedPlacementActive}
         featuredPlacementIndex={featuredPlacementIndex}
         featuredPlacementLabel={featuredPlacementLabel}
         featuredPlacementProcessing={featuredPlacementProcessing}
         mediaProcessing={mediaProcessing}
-        onBack={(path) => router.push(path)}
+        onBack={() => requestExit('back')}
         onDelete={() => setDeleteEntryDialogOpen(true)}
         onDuplicate={() => duplicateEntryMutation.mutate()}
         onOpenPreview={() => setPreviewOpen(true)}
-        onPublishToggle={() =>
-          publishEntryMutation.mutate(
-            activeEntry.status === 'published' ? 'unpublish' : 'publish'
-          )
-        }
+        onPublishToggle={() => void togglePublish()}
         onRefresh={refreshWorkspace}
-        onSave={saveCurrentEntry}
+        onSave={() =>
+          void saveCurrentEntry().catch((error: unknown) => {
+            toast.error(
+              error instanceof Error ? error.message : strings.saveFailedToast
+            );
+          })
+        }
         onToggleFeaturedPlacement={toggleFeaturedPlacement}
         publishPending={publishEntryMutation.isPending}
         saveDisabled={!dirty || saveProcessing}
@@ -2082,6 +2179,7 @@ export function EntryDetailClient({
             )
           }
           pairedArtworkSlug={pairedArtworkSlug}
+          publishReadiness={publishReadiness}
           strings={strings}
           supportsPairedVisual={supportsPairedVisual}
           tagCreateOpen={tagCreateOpen}
@@ -2099,10 +2197,18 @@ export function EntryDetailClient({
       </div>
 
       <EntryDetailConfirmDialogs
+        discardChangesOpen={discardChangesDialogOpen}
         deleteEntryOpen={deleteEntryDialogOpen}
         deleteEntryPending={deleteEntryMutation.isPending}
         deleteMediaOpen={deleteMediaDialogOpen}
         deleteMediaPending={deleteAssetsMutation.isPending}
+        onDiscardChanges={discardChangesAndExit}
+        onDiscardChangesOpenChange={(nextOpen) => {
+          setDiscardChangesDialogOpen(nextOpen);
+          if (!nextOpen) {
+            setPendingExit(null);
+          }
+        }}
         onDeleteEntry={() => deleteEntryMutation.mutate()}
         onDeleteEntryOpenChange={setDeleteEntryDialogOpen}
         onDeleteMedia={() => deleteAssetsMutation.mutate(selectedAssetIds)}
@@ -2124,7 +2230,17 @@ export function EntryDetailClient({
 
   if (variant === 'dialog') {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen) {
+            onOpenChange?.(true);
+            return;
+          }
+
+          requestExit('dialog');
+        }}
+      >
         <DialogContent className="inset-0 top-0 left-0 flex h-screen max-h-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:max-w-none">
           <DialogHeader className="sr-only">
             <DialogTitle>{activeEntry.title}</DialogTitle>

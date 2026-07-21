@@ -65,6 +65,9 @@ export type CmsStrings = {
   deleteFieldDefinitionAction: string;
   deleteEntryConfirmDescription: string;
   deleteEntryConfirmTitle: string;
+  discardChangesAction: string;
+  discardChangesDescription: string;
+  discardChangesTitle: string;
   descriptionEditorDescription: string;
   descriptionLabel: string;
   dashboardModeLabel: string;
@@ -85,6 +88,7 @@ export type CmsStrings = {
   editModeDescription: string;
   editModeLabel: string;
   editSettingsDescription: string;
+  editorSavedLabel: string;
   editorStepContentHint: string;
   editorStepContentLabel: string;
   editorStepMediaHint: string;
@@ -93,6 +97,7 @@ export type CmsStrings = {
   editorStepOrganizeLabel: string;
   editorStepPublishHint: string;
   editorStepPublishLabel: string;
+  editorUnsavedLabel: string;
   emptyCollection: string;
   emptyEntries: string;
   enabledLabel: string;
@@ -225,20 +230,33 @@ export type CmsStrings = {
   markdownPreviewLabel: string;
   markdownWriteLabel: string;
   mediaProcessingLabel: string;
+  moreActionsLabel: string;
   navigationTitleDescription: string;
   navigationTitleLabel: string;
   publishAction: string;
+  publishFailedToast: string;
+  publishReadinessDescription: string;
+  publishReadinessTitle: string;
   publishedQueue: string;
   quickCreateHint: string;
   recentUnpublishedHint: string;
   recoveryHint: string;
   refreshAction: string;
+  readinessCompleteLabel: string;
+  readinessContentLabel: string;
+  readinessCoverLabel: string;
+  readinessMissingLabel: string;
+  readinessReadyLabel: string;
+  readinessReviewLabel: string;
+  readinessSlugLabel: string;
+  readinessTitleLabel: string;
   resetZoomAction: string;
   renderedLabel: string;
   replaceCoverAction: string;
   removeMediaAction: string;
   saveAction: string;
   saveCoverAction: string;
+  saveFailedToast: string;
   saveMediaDetailsAction: string;
   scheduleAction: string;
   scheduledForLabel: string;
@@ -404,6 +422,9 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     deleteEntryAction: t('epm.delete_entry_action'),
     deleteEntryConfirmDescription: t('epm.delete_entry_confirm_description'),
     deleteEntryConfirmTitle: t('epm.delete_entry_confirm_title'),
+    discardChangesAction: t('epm.discard_changes_action'),
+    discardChangesDescription: t('epm.discard_changes_description'),
+    discardChangesTitle: t('epm.discard_changes_title'),
     deleteFieldDefinitionAction: t('epm.delete_field_definition_action'),
     descriptionEditorDescription: t('epm.description_editor_description'),
     descriptionLabel: t('epm.description_label'),
@@ -425,6 +446,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     editModeDescription: t('epm.edit_mode_description'),
     editModeLabel: t('epm.edit_mode_label'),
     editSettingsDescription: t('epm.edit_settings_description'),
+    editorSavedLabel: t('epm.editor_saved_label'),
     editorStepContentHint: t('epm.editor_step_content_hint'),
     editorStepContentLabel: t('epm.editor_step_content_label'),
     editorStepMediaHint: t('epm.editor_step_media_hint'),
@@ -433,6 +455,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     editorStepOrganizeLabel: t('epm.editor_step_organize_label'),
     editorStepPublishHint: t('epm.editor_step_publish_hint'),
     editorStepPublishLabel: t('epm.editor_step_publish_label'),
+    editorUnsavedLabel: t('epm.editor_unsaved_label'),
     emptyCollection: t('epm.empty_collection'),
     emptyEntries: t('epm.empty_entries'),
     enabledLabel: t('epm.enabled_label'),
@@ -547,6 +570,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     loadingMoreLabel: t('epm.loading_more_label'),
     metadataLabel: t('epm.metadata_label'),
     mediaProcessingLabel: t('epm.media_processing_label'),
+    moreActionsLabel: t('epm.more_actions_label'),
     navigationTitleDescription: t('epm.navigation_title_description'),
     navigationTitleLabel: t('epm.navigation_title_label'),
     mediaAssetGalleryDescription: t('epm.media_asset_gallery_description'),
@@ -587,17 +611,29 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     markdownPreviewLabel: t('epm.markdown_preview_label'),
     markdownWriteLabel: t('epm.markdown_write_label'),
     publishAction: t('epm.publish_action'),
+    publishFailedToast: t('epm.publish_failed_toast'),
+    publishReadinessDescription: t('epm.publish_readiness_description'),
+    publishReadinessTitle: t('epm.publish_readiness_title'),
     publishedQueue: t('epm.published_queue'),
     quickCreateHint: t('epm.quick_create_hint'),
     recentUnpublishedHint: t('epm.recent_unpublished_hint'),
     recoveryHint: t('epm.recovery_hint'),
     refreshAction: t('epm.refresh_action'),
+    readinessCompleteLabel: t('epm.readiness_complete_label'),
+    readinessContentLabel: t('epm.readiness_content_label'),
+    readinessCoverLabel: t('epm.readiness_cover_label'),
+    readinessMissingLabel: t('epm.readiness_missing_label'),
+    readinessReadyLabel: t('epm.readiness_ready_label'),
+    readinessReviewLabel: t('epm.readiness_review_label'),
+    readinessSlugLabel: t('epm.readiness_slug_label'),
+    readinessTitleLabel: t('epm.readiness_title_label'),
     resetZoomAction: t('epm.reset_zoom_action'),
     renderedLabel: t('epm.rendered_label'),
     replaceCoverAction: t('epm.replace_cover_action'),
     removeMediaAction: t('epm.remove_media_action'),
     saveAction: t('epm.save_action'),
     saveCoverAction: t('epm.save_cover_action'),
+    saveFailedToast: t('epm.save_failed_toast'),
     saveMediaDetailsAction: t('epm.save_media_details_action'),
     scheduleAction: t('epm.schedule_action'),
     scheduledForLabel: t('epm.scheduled_for_label'),

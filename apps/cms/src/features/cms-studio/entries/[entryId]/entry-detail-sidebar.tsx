@@ -32,6 +32,8 @@ import {
 import type { CmsStrings } from '../../cms-strings';
 import { EntryDetailFeaturedEntryCard } from './entry-detail-featured-entry-card';
 import { EntryDetailFeaturedPlacementCard } from './entry-detail-featured-placement-card';
+import type { EntryPublishReadiness } from './entry-detail-publish-readiness';
+import { EntryDetailPublishReadinessCard } from './entry-detail-publish-readiness-card';
 import {
   type EntryFormState,
   type FeaturedEntryEditorConfig,
@@ -87,6 +89,7 @@ type EntryDetailSidebarProps = {
   onTagSelectionChange: (value: string[]) => void;
   onTitleChange: (value: string) => void;
   pairedArtworkSlug: string;
+  publishReadiness: EntryPublishReadiness;
   strings: CmsStrings;
   supportsPairedVisual: boolean;
   tagCreateOpen: boolean;
@@ -142,6 +145,7 @@ export function EntryDetailSidebar({
   onTagSelectionChange,
   onTitleChange,
   pairedArtworkSlug,
+  publishReadiness,
   strings,
   supportsPairedVisual,
   tagCreateOpen,
@@ -156,6 +160,13 @@ export function EntryDetailSidebar({
 
   return (
     <div className="space-y-5">
+      {showPublish ? (
+        <EntryDetailPublishReadinessCard
+          readiness={publishReadiness}
+          strings={strings}
+        />
+      ) : null}
+
       {showContent ? (
         <Card className="border-border/70 bg-card/95 shadow-none">
           <CardHeader>

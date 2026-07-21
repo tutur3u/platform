@@ -136,13 +136,13 @@ export function formatStatus(
 export function statusTone(status: ExternalProjectEntry['status']) {
   switch (status) {
     case 'published':
-      return 'bg-emerald-500/10 text-emerald-600';
+      return 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green';
     case 'scheduled':
-      return 'bg-amber-500/10 text-amber-600';
+      return 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange';
     case 'archived':
       return 'bg-muted text-muted-foreground';
     default:
-      return 'bg-sky-500/10 text-sky-600';
+      return 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue';
   }
 }
 
