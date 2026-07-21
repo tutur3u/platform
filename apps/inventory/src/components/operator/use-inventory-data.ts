@@ -34,6 +34,10 @@ import type {
 } from './operator-types';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
 
+const ACTIVE_DATA_STALE_TIME = 20_000;
+const SEARCH_DATA_STALE_TIME = 30_000;
+const REFERENCE_DATA_STALE_TIME = 5 * 60_000;
+
 export function useInventoryData(
   wsId: string,
   view: InventoryOperatorView,
@@ -84,6 +88,7 @@ export function useInventoryData(
     enabled: view === 'overview',
     queryFn: () => getInventoryOverview(wsId),
     queryKey: ['inventory', wsId, 'overview'],
+    staleTime: ACTIVE_DATA_STALE_TIME,
   });
   const products = useInfiniteQuery({
     enabled:
@@ -109,6 +114,7 @@ export function useInventoryData(
     },
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.products, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const categories = useInfiniteQuery({
     enabled: view === 'catalog' && catalogTab === 'categories',
@@ -125,6 +131,7 @@ export function useInventoryData(
     },
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.categories, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const storefronts = useQuery({
     enabled: ['storefront', 'overview'].includes(view),
@@ -139,6 +146,7 @@ export function useInventoryData(
       }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.storefronts, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const bundles = useQuery({
     enabled: ['bundles', 'storefront', 'overview'].includes(view),
@@ -150,6 +158,7 @@ export function useInventoryData(
       }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.bundles, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const checkouts = useQuery({
     enabled: view === 'commerce' && commerceTab === 'checkouts',
@@ -162,6 +171,7 @@ export function useInventoryData(
       }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.checkouts, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const costingProfiles = useQuery({
     enabled:
@@ -178,11 +188,13 @@ export function useInventoryData(
       }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.costingProfiles, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const costingAnalytics = useQuery({
     enabled: view === 'costing' || view === 'overview',
     queryFn: () => getInventoryCostingAnalytics(wsId),
     queryKey: ['inventory', wsId, 'costing-analytics'],
+    staleTime: ACTIVE_DATA_STALE_TIME,
   });
   const sales = useInfiniteQuery({
     enabled: isSalesView,
@@ -206,6 +218,7 @@ export function useInventoryData(
     },
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.sales, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const commerceSummary = useQuery({
     enabled: isSalesView,
@@ -219,11 +232,13 @@ export function useInventoryData(
           filters.period === UNASSIGNED_SALES_PERIOD_FILTER || undefined,
       }),
     queryKey: ['inventory', wsId, 'commerce-summary', filters.period],
+    staleTime: ACTIVE_DATA_STALE_TIME,
   });
   const salesPeriods = useQuery({
     enabled: isSalesView || (view === 'commerce' && commerceTab === 'cart'),
     queryFn: () => listInventorySalesPeriods(wsId, { include_archived: true }),
     queryKey: ['inventory', wsId, 'sales-periods'],
+    staleTime: REFERENCE_DATA_STALE_TIME,
   });
   const periodProducts = useInfiniteQuery({
     enabled: isSalesView || (view === 'commerce' && commerceTab === 'cart'),
@@ -251,6 +266,7 @@ export function useInventoryData(
       },
       '',
     ],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const promotions = useQuery({
     enabled: view === 'promotions',
@@ -258,6 +274,7 @@ export function useInventoryData(
       listInventoryPromotions(wsId, { pageSize: 50, q: serverQuery }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.promotions, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const revenueShares = useQuery({
     enabled: view === 'commerce' && commerceTab === 'revenue-share',
@@ -268,11 +285,13 @@ export function useInventoryData(
       }),
     placeholderData: keepPreviousData,
     queryKey: [...searchKeys.revenueShares, serverQuery],
+    staleTime: SEARCH_DATA_STALE_TIME,
   });
   const audits = useQuery({
     enabled: view === 'audits',
     queryFn: () => listInventoryAuditLogs(wsId, { limit: 50 }),
     queryKey: ['inventory', wsId, 'audits'],
+    staleTime: ACTIVE_DATA_STALE_TIME,
   });
   const formOptions = useQuery({
     enabled:
@@ -289,21 +308,25 @@ export function useInventoryData(
       (view === 'commerce' && commerceTab === 'cart'),
     queryFn: () => getInventoryProductFormOptions(wsId),
     queryKey: ['inventory', wsId, 'form-options'],
+    staleTime: REFERENCE_DATA_STALE_TIME,
   });
   const suppliers = useQuery({
     enabled: view === 'setup',
     queryFn: () => listInventorySuppliers(wsId, { pageSize: 100 }),
     queryKey: ['inventory', wsId, 'suppliers'],
+    staleTime: REFERENCE_DATA_STALE_TIME,
   });
   const batches = useQuery({
     enabled: view === 'setup',
     queryFn: () => listInventoryBatches(wsId, { pageSize: 100 }),
     queryKey: ['inventory', wsId, 'batches'],
+    staleTime: REFERENCE_DATA_STALE_TIME,
   });
   const polarSettings = useQuery({
     enabled: view === 'overview',
     queryFn: () => getInventoryPolarSettings(wsId),
     queryKey: ['inventory', wsId, 'polar-settings'],
+    staleTime: 60_000,
   });
 
   return {

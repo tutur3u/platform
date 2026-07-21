@@ -10,6 +10,7 @@
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "next build --turbopack",
     "start": "next start",
+    "test:e2e": "playwright test",
     "preview": "next build --turbopack && next start -p 7815 --turbopack",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",
@@ -63,6 +64,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@next/playwright": "16.3.0-preview.6",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.1.1",

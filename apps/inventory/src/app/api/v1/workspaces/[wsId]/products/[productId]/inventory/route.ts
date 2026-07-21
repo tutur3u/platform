@@ -1,4 +1,5 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -153,6 +154,8 @@ export async function POST(req: Request, { params }: Params) {
     }
   }
 
+  await safelyRevalidateWorkspaceStorefronts(wsId);
+
   return NextResponse.json({ message: 'Inventory created successfully' });
 }
 
@@ -296,6 +299,8 @@ export async function PATCH(req: Request, { params }: Params) {
         { status: 500 }
       );
     }
+
+    await safelyRevalidateWorkspaceStorefronts(wsId);
 
     return NextResponse.json({ message: 'Inventory cleared' });
   }
@@ -477,6 +482,8 @@ export async function PATCH(req: Request, { params }: Params) {
     }
   }
 
+  await safelyRevalidateWorkspaceStorefronts(wsId);
+
   return NextResponse.json({
     message: 'Inventory updated successfully',
     changes: {
@@ -620,6 +627,8 @@ export async function DELETE(req: Request, { params }: Params) {
       { status: 500 }
     );
   }
+
+  await safelyRevalidateWorkspaceStorefronts(wsId);
 
   return NextResponse.json({ message: 'Inventory deleted successfully' });
 }

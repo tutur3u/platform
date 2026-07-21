@@ -44,13 +44,14 @@ export async function GET(request: Request, { params }: Params) {
       }
     }
 
-    // Public storefronts are CDN-cacheable for a short window; private ones
-    // depend on per-user auth and must never be shared in a cache.
+    // The payload itself lives in the tagged Next data cache. Do not add an
+    // independent stale CDN layer here: it cannot be invalidated by the catalog
+    // and stock mutation tags and could replay old availability after a write.
     const headers =
       payload.storefront.visibility === 'private'
         ? { 'Cache-Control': 'private, no-store' }
         : {
-            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+            'Cache-Control': 'public, max-age=0, s-maxage=0, must-revalidate',
           };
 
     return NextResponse.json(payload, { headers });

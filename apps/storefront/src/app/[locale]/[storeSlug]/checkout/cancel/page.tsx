@@ -1,19 +1,15 @@
-import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
-import { StorefrontClient } from '@/components/storefront/storefront-client';
+import { StorefrontRouteFromParams } from '@/components/storefront/storefront-route';
 
-export default async function StorefrontCheckoutCancelPage({
+export default function StorefrontCheckoutCancelPage({
   params,
 }: {
   params: Promise<{ storeSlug: string }>;
 }) {
-  const { storeSlug } = await params;
-  const buyerDefaults = await getStorefrontBuyerDefaults();
-
   return (
-    <StorefrontClient
-      buyerDefaults={buyerDefaults}
+    <StorefrontRouteFromParams
       mode="cart"
-      storeSlug={storeSlug}
+      params={params}
+      showHeaderActions={false}
     />
   );
 }

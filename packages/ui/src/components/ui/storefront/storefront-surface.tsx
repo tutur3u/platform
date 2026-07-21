@@ -29,6 +29,7 @@ import { StorefrontProductDialog } from './product-dialog';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartLine,
+  StorefrontLinkComponent,
   StorefrontSurfaceLabels,
   StorefrontSurfaceMode,
 } from './types';
@@ -59,6 +60,7 @@ export function StorefrontSurface({
   isDemo: _isDemo = false,
   isRedirecting = false,
   isSubmitting = false,
+  linkComponent,
   labels: labelOverrides,
   listings,
   mode,
@@ -90,6 +92,7 @@ export function StorefrontSurface({
   isDemo?: boolean;
   isRedirecting?: boolean;
   isSubmitting?: boolean;
+  linkComponent?: StorefrontLinkComponent;
   labels?: Partial<StorefrontSurfaceLabels>;
   listings: InventoryStorefrontListing[];
   mode: StorefrontSurfaceMode;
@@ -112,6 +115,7 @@ export function StorefrontSurface({
   storefrontHref?: string;
 }) {
   const labels = mergeStorefrontSurfaceLabels(labelOverrides);
+  const NavigationLink = linkComponent ?? 'a';
   const [isCartPopoverOpen, setIsCartPopoverOpen] = useState(false);
   const [bundleSelectionListingId, setBundleSelectionListingId] = useState<
     string | null
@@ -198,6 +202,7 @@ export function StorefrontSurface({
       isPreview={isPreview}
       isSubmitting={isSubmitting}
       labels={labels}
+      linkComponent={linkComponent}
       onCheckoutOpen={handleCheckoutOpen}
       onCheckoutSubmit={onCheckoutSubmit}
       onInstantCheckout={mode === 'cart' ? onInstantCheckout : undefined}
@@ -216,6 +221,7 @@ export function StorefrontSurface({
       isPreview={isPreview}
       isSubmitting={isSubmitting}
       labels={labels}
+      linkComponent={linkComponent}
       onCheckoutOpen={handleCheckoutOpen}
       onCheckoutSubmit={onCheckoutSubmit}
       radius={radius}
@@ -234,6 +240,7 @@ export function StorefrontSurface({
       isPreview={isPreview}
       isSubmitting={isSubmitting}
       labels={labels}
+      linkComponent={linkComponent}
       onCheckoutSubmit={onCheckoutSubmit}
       radius={radius}
       storefront={storefront}
@@ -261,7 +268,7 @@ export function StorefrontSurface({
           <div className="min-w-0">
             <h1 className="truncate font-semibold text-base tracking-tight">
               {storefrontHref ? (
-                <a
+                <NavigationLink
                   className="flex min-w-0 items-center gap-3 rounded-sm transition hover:text-[var(--storefront-accent-text,var(--primary))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                   href={storefrontHref}
                   title={storefront.name}
@@ -273,7 +280,7 @@ export function StorefrontSurface({
                     {storefront.name.slice(0, 1)}
                   </span>
                   <span className="truncate">{storefront.name}</span>
-                </a>
+                </NavigationLink>
               ) : (
                 <span className="flex min-w-0 items-center gap-3">
                   <span
@@ -315,13 +322,13 @@ export function StorefrontSurface({
             {isProductDetail && selectedListing ? (
               <>
                 {storefrontHref ? (
-                  <a
+                  <NavigationLink
                     className="mb-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
                     href={storefrontHref}
                   >
                     <ArrowLeft aria-hidden className="size-4" />
                     {labels.browse}
-                  </a>
+                  </NavigationLink>
                 ) : null}
                 <StorefrontProductDetail
                   cartHref={cartHref}
@@ -330,6 +337,7 @@ export function StorefrontSurface({
                   currency={currency}
                   isSubmitting={isSubmitting}
                   labels={labels}
+                  linkComponent={linkComponent}
                   listing={selectedListing}
                   onBuyNow={onBuyNow}
                   onDecrement={onDecrement}
@@ -422,6 +430,7 @@ export function StorefrontSurface({
         currency={currency}
         isSubmitting={isSubmitting}
         labels={labels}
+        linkComponent={linkComponent}
         listing={detailListing ?? null}
         onBuyNow={onBuyNow}
         onDecrement={onDecrement}

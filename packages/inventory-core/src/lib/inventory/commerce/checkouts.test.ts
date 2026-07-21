@@ -18,8 +18,17 @@ const mocks = vi.hoisted(() => {
     from,
     rpc,
     schema,
+    safelyRevalidateStorefrontByCheckoutId: vi.fn(),
+    safelyRevalidateWorkspaceStorefronts: vi.fn(),
   };
 });
+
+vi.mock('./public-storefront', () => ({
+  safelyRevalidateStorefrontByCheckoutId: (...args: unknown[]) =>
+    mocks.safelyRevalidateStorefrontByCheckoutId(...args),
+  safelyRevalidateWorkspaceStorefronts: (...args: unknown[]) =>
+    mocks.safelyRevalidateWorkspaceStorefronts(...args),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
@@ -162,6 +171,9 @@ describe('getCheckoutByPublicToken', () => {
         p_ws_id: 'ws-1',
       }
     );
+    expect(mocks.safelyRevalidateWorkspaceStorefronts).toHaveBeenCalledWith(
+      'ws-1'
+    );
   });
 
   it('lazily expires a stale public checkout before returning it', async () => {
@@ -235,6 +247,10 @@ describe('getCheckoutByPublicToken', () => {
       {
         p_public_token: 'public-token',
       }
+    );
+    expect(mocks.safelyRevalidateStorefrontByCheckoutId).toHaveBeenCalledWith(
+      'ws-1',
+      'checkout-1'
     );
   });
 });

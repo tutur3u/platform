@@ -11,6 +11,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { ListQuery } from './mappers';
 import { type CheckoutLineRow, type CheckoutRow, mapCheckout } from './mappers';
+import {
+  safelyRevalidateStorefrontByCheckoutId,
+  safelyRevalidateWorkspaceStorefronts,
+} from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
 
@@ -336,7 +340,14 @@ export async function expireCheckoutReservations({
   };
 
   if (error) throw error;
-  return data ?? [];
+  const expired = data ?? [];
+  const workspaceIds = [...new Set(expired.map((row) => row.ws_id))];
+  await Promise.all(
+    workspaceIds.map((expiredWsId) =>
+      safelyRevalidateWorkspaceStorefronts(expiredWsId)
+    )
+  );
+  return expired;
 }
 
 export async function getCheckoutById(wsId: string, checkoutId: string) {
@@ -544,5 +555,6 @@ export async function releaseCheckout(wsId: string, checkoutId: string) {
   };
 
   if (error) throw error;
+  await safelyRevalidateStorefrontByCheckoutId(wsId, checkoutId);
   return getCheckoutByPublicToken(checkout.public_token);
 }

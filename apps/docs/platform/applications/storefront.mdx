@@ -48,3 +48,41 @@ returns to availability. Abandoned reserved sessions are materialized as expired
 by the Inventory sweeper as well as lazy checkout reconciliation. Catalog and
 physical stock can be synchronized in either direction from Inventory settings;
 Square-side updates are additive and never delete or archive Square objects.
+
+## Cache and invalidation contract
+
+Published storefront payloads use Next.js Cache Components with a cache tag per
+storefront slug. The data cache has a long safety-net lifetime and is refreshed
+by events rather than by polling. Any operation that changes shopper-visible
+catalog data or availability must invalidate the affected tag before returning
+success. This includes product and stock edits, reservations, reservation
+release or expiry, completed sales, provider reconciliation, and inbound Square
+catalog sync.
+
+Checkout reservation code must continue to read fresh stock directly. A cached
+browse response is only a presentation optimization and must never be used as
+the source of truth for reserving or consuming inventory.
+
+Storefront routes stream `loading.tsx` and explicit Suspense fallbacks while
+request-specific buyer and access data resolves. Server data seeds the TanStack
+Query cache, internal links use Next.js navigation, and the browser must not
+repeat the initial storefront request on mount.
+
+## Cache E2E test
+
+Start local Supabase, then run the Inventory-owned cross-app Playwright suite:
+
+```bash
+bun sb:start
+bun --cwd apps/inventory test:e2e
+```
+
+The test creates a disposable public storefront, warms the cached API payload,
+changes stock through the authenticated Inventory API, and verifies the next
+public read sees the new quantity. It also confirms the product route streams a
+skeleton, uses Next's `@next/playwright` `instant()` helper to prove that the
+prefetched loading shell commits before dynamic data resumes, keeps Storefront
+navigation client-side, and removes the entire fixture in cleanup. Keep both
+Inventory (`7815`) and Storefront (`7822`) server entries in
+`apps/inventory/playwright.config.ts` whenever either app's local host or
+startup command changes.

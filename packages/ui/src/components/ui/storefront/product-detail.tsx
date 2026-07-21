@@ -20,7 +20,11 @@ import { Badge } from '../badge';
 import { Button } from '../button';
 import { AccentButton } from './accent-button';
 import { StorefrontImagePanel } from './image-panel';
-import type { StorefrontCartLine, StorefrontSurfaceLabels } from './types';
+import type {
+  StorefrontCartLine,
+  StorefrontLinkComponent,
+  StorefrontSurfaceLabels,
+} from './types';
 import {
   formatStorefrontPrice,
   getStorefrontLinePrice,
@@ -43,6 +47,7 @@ export function StorefrontProductDetail({
   currency,
   isSubmitting = false,
   labels,
+  linkComponent,
   listing,
   onBuyNow,
   onDecrement,
@@ -59,6 +64,7 @@ export function StorefrontProductDetail({
   currency: string;
   isSubmitting?: boolean;
   labels: StorefrontSurfaceLabels;
+  linkComponent?: StorefrontLinkComponent;
   listing: InventoryStorefrontListing;
   onBuyNow?: (listingId: string, variantId?: string | null) => void;
   onDecrement?: (listingId: string, variantId?: string | null) => void;
@@ -73,6 +79,7 @@ export function StorefrontProductDetail({
   showInventoryBadges: boolean;
   surfaceClassName: string;
 }) {
+  const NavigationLink = linkComponent ?? 'a';
   const options = listing.options ?? [];
   const variants = useMemo(
     () => getStorefrontListingVariants(listing),
@@ -348,11 +355,11 @@ export function StorefrontProductDetail({
 
           {cartHref && cartQuantity > 0 ? (
             <Button asChild className={cn('h-11', radius)} variant="outline">
-              <a href={cartHref}>
+              <NavigationLink href={cartHref}>
                 <ShoppingCart className="size-4 shrink-0" />
                 {labels.cart}
                 <ArrowRight className="size-4 shrink-0" />
-              </a>
+              </NavigationLink>
             </Button>
           ) : null}
         </div>

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
     firstEq,
     from,
     recordInventorySaleFinanceTransaction: vi.fn(),
+    revalidatePublicStorefront: vi.fn(),
     rpc,
     schema,
     secondEq,
@@ -34,6 +35,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('./finance', () => ({
   recordInventorySaleFinanceTransaction: (...args: unknown[]) =>
     mocks.recordInventorySaleFinanceTransaction(...args),
+}));
+
+vi.mock('./public-storefront', () => ({
+  revalidatePublicStorefront: (...args: unknown[]) =>
+    mocks.revalidatePublicStorefront(...args),
 }));
 
 describe('inventory Polar order sync', () => {
@@ -72,6 +78,7 @@ describe('inventory Polar order sync', () => {
           metadata: {
             checkoutId: 'checkout-1',
             kind: 'inventory_checkout',
+            storefrontSlug: 'shop',
             wsId: 'ws-1',
           },
           status: 'paid',
@@ -100,6 +107,7 @@ describe('inventory Polar order sync', () => {
     expect(mocks.recordInventorySaleFinanceTransaction).toHaveBeenCalledWith({
       checkoutId: 'checkout-1',
     });
+    expect(mocks.revalidatePublicStorefront).toHaveBeenCalledWith('shop');
   });
 });
 

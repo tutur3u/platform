@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { getWorkspaceDefaultCurrency } from '../../workspace-currency';
+import { safelyRevalidateWorkspaceStorefronts } from '../public-storefront';
 import {
   buildSquarePhysicalCountChanges,
   catalogSyncCompletionStatus,
@@ -681,6 +682,11 @@ export async function syncInventorySquareCatalog({
       userId,
       wsId,
     });
+    // A Square pull can change Tuturuuu catalog details, prices, and stock.
+    // Refresh all published storefront projections before reporting success.
+    if (direction !== 'to_square') {
+      await safelyRevalidateWorkspaceStorefronts(wsId);
+    }
     return summary;
   } catch (error) {
     await markSyncState({

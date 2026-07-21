@@ -15,6 +15,7 @@ import {
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartEntry,
+  StorefrontLinkComponent,
   StorefrontSurfaceLabels,
 } from './types';
 import { formatStorefrontPrice, storefrontSurfaceClasses } from './utils';
@@ -31,6 +32,7 @@ export function StorefrontCartSummary({
   isPreview,
   isSubmitting,
   labels,
+  linkComponent,
   onCheckoutOpen,
   onCheckoutSubmit,
   onInstantCheckout,
@@ -48,6 +50,7 @@ export function StorefrontCartSummary({
   isPreview: boolean;
   isSubmitting: boolean;
   labels: StorefrontSurfaceLabels;
+  linkComponent?: StorefrontLinkComponent;
   onCheckoutOpen?: () => void;
   onCheckoutSubmit?: (formData: FormData) => void;
   onInstantCheckout?: () => void;
@@ -146,6 +149,7 @@ export function StorefrontCartSummary({
         isPreview={isPreview}
         isSubmitting={isSubmitting}
         labels={labels}
+        linkComponent={linkComponent}
         onCheckoutOpen={onCheckoutOpen}
         onInstantCheckout={onInstantCheckout}
         radius={radius}

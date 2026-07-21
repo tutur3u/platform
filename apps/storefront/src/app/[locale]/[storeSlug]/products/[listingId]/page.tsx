@@ -1,12 +1,8 @@
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
-import { connection } from 'next/server';
-import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
-import { StorefrontClient } from '@/components/storefront/storefront-client';
-import { getOptionalInventoryPublicStorefront } from '@/components/storefront/storefront-loader';
-import { INVENTORY_APP_URL } from '@/constants/common';
+import { StorefrontRouteFromParams } from '@/components/storefront/storefront-route';
+import { getServerInventoryStorefront } from '@/components/storefront/storefront-server-loader';
 import { siteConfig } from '@/constants/configs';
-import { StorefrontHeaderActions } from '../../../storefront-header-actions';
 
 interface Props {
   params: Promise<{
@@ -17,11 +13,8 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await connection();
   const { listingId, locale, storeSlug } = await params;
-  const response = await getOptionalInventoryPublicStorefront(storeSlug, {
-    baseUrl: INVENTORY_APP_URL,
-  }).catch(() => null);
+  const response = await getServerInventoryStorefront(storeSlug);
   const listing = response?.listings.find((item) => item.id === listingId);
   const storefront = response?.storefront;
 
@@ -42,17 +35,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function StorefrontProductPage({ params }: Props) {
-  const { listingId, storeSlug } = await params;
-  const buyerDefaults = await getStorefrontBuyerDefaults();
-
-  return (
-    <StorefrontClient
-      buyerDefaults={buyerDefaults}
-      headerActions={<StorefrontHeaderActions storeSlug={storeSlug} />}
-      listingId={listingId}
-      mode="product"
-      storeSlug={storeSlug}
-    />
-  );
+export default function StorefrontProductPage({ params }: Props) {
+  return <StorefrontRouteFromParams mode="product" params={params} />;
 }

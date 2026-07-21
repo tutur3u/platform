@@ -4,7 +4,10 @@ import {
   markCheckoutProvider,
 } from '@tuturuuu/inventory-core/commerce/checkouts';
 import { createInventoryPolarCheckout } from '@tuturuuu/inventory-core/commerce/polar';
-import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
+import {
+  getPublicStorefront,
+  revalidatePublicStorefront,
+} from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { checkoutCreatePayloadSchema } from '@tuturuuu/inventory-core/commerce/schemas';
 import { createSimulatedCheckoutResponse } from '@tuturuuu/inventory-core/commerce/simulated-checkout';
 import {
@@ -321,6 +324,11 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
+    // A reservation changes shopper-visible availability immediately. The
+    // checkout path itself stays uncached, while this invalidates the public
+    // catalog payload used by browse/product/cart routes.
+    revalidatePublicStorefront(slug);
+
     const checkout = await getCheckoutByPublicToken(publicToken);
     if (!checkout) {
       return NextResponse.json(
@@ -374,6 +382,7 @@ export async function POST(request: Request, { params }: Params) {
             releaseError
           );
         }
+        revalidatePublicStorefront(slug);
         await recordCheckoutAnalyticsEvent(privateRpc, {
           checkoutId: checkout.id,
           customerAuthUid: checkoutPayload.customerAuthUid,
@@ -446,6 +455,7 @@ export async function POST(request: Request, { params }: Params) {
             releaseError
           );
         }
+        revalidatePublicStorefront(slug);
         await recordCheckoutAnalyticsEvent(privateRpc, {
           checkoutId: checkout.id,
           customerAuthUid: checkoutPayload.customerAuthUid,
@@ -504,6 +514,7 @@ export async function POST(request: Request, { params }: Params) {
           releaseError
         );
       }
+      revalidatePublicStorefront(slug);
       await recordCheckoutAnalyticsEvent(privateRpc, {
         checkoutId: checkout.id,
         customerAuthUid: checkoutPayload.customerAuthUid,

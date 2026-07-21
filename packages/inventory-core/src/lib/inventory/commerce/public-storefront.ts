@@ -2,7 +2,7 @@ import 'server-only';
 
 import type { InventoryPublicStorefrontResponse } from '@tuturuuu/internal-api/inventory';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { cacheLife, cacheTag, revalidateTag } from 'next/cache';
 
 /**
  * Cache tag for a single public storefront payload. Inventory writes
@@ -15,8 +15,8 @@ export function publicStorefrontTag(slug: string) {
 }
 
 async function loadPublicStorefront(slug: string) {
-  // noCookie keeps this read free of request scope so it can be wrapped in
-  // unstable_cache (which forbids cookies()/headers()).
+  // noCookie keeps this read free of request scope so it can run inside the
+  // shared `use cache` scope (which forbids cookies()/headers()).
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = await sbAdmin
     .schema('private')
@@ -51,15 +51,92 @@ export async function getPublicStorefront(slug: string) {
  * the data does not bypass access control.
  */
 export async function getCachedPublicStorefront(slug: string) {
-  const load = unstable_cache(
-    (innerSlug: string) => loadPublicStorefront(innerSlug),
-    ['inventory-public-storefront'],
-    { revalidate: 300, tags: [publicStorefrontTag(slug)] }
-  );
-  return load(slug);
+  'use cache';
+
+  // Storefront reads are event-driven: writes invalidate the tag below. The
+  // long revalidation interval is only a safety net for missed external writes,
+  // while deployments continue to invalidate the build-scoped cache normally.
+  cacheLife({
+    stale: 300,
+    revalidate: 31_536_000,
+    expire: 315_360_000,
+  });
+  cacheTag(publicStorefrontTag(slug));
+
+  return loadPublicStorefront(slug);
 }
 
 export function revalidatePublicStorefront(slug: string) {
-  // Next 16 requires the cache-life profile; "max" purges the tag immediately.
-  revalidateTag(publicStorefrontTag(slug), 'max');
+  // Route handlers need the next read to observe stock/catalog writes. The
+  // Server Action-only updateTag API cannot be used from these shared services.
+  revalidateTag(publicStorefrontTag(slug), { expire: 0 });
+}
+
+export async function revalidateWorkspaceStorefronts(wsId: string) {
+  const sbAdmin = await createAdminClient();
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('inventory_storefronts')
+    .select('slug')
+    .eq('ws_id', wsId)
+    .neq('status', 'archived');
+
+  if (error) throw error;
+
+  for (const storefront of data ?? []) {
+    if (storefront.slug) revalidatePublicStorefront(storefront.slug);
+  }
+}
+
+export async function revalidateStorefrontByCheckoutId(
+  wsId: string,
+  checkoutId: string
+) {
+  const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
+  const { data: checkout, error: checkoutError } = await inventory
+    .from('inventory_checkout_sessions')
+    .select('storefront_id')
+    .eq('id', checkoutId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (checkoutError) throw checkoutError;
+  if (!checkout?.storefront_id) return;
+
+  const { data: storefront, error: storefrontError } = await inventory
+    .from('inventory_storefronts')
+    .select('slug')
+    .eq('id', checkout.storefront_id)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (storefrontError) throw storefrontError;
+  if (storefront?.slug) revalidatePublicStorefront(storefront.slug);
+}
+
+export async function safelyRevalidateWorkspaceStorefronts(wsId: string) {
+  try {
+    await revalidateWorkspaceStorefronts(wsId);
+  } catch (error) {
+    console.error('Failed to revalidate workspace storefronts', {
+      error,
+      wsId,
+    });
+  }
+}
+
+export async function safelyRevalidateStorefrontByCheckoutId(
+  wsId: string,
+  checkoutId: string
+) {
+  try {
+    await revalidateStorefrontByCheckoutId(wsId, checkoutId);
+  } catch (error) {
+    console.error('Failed to revalidate checkout storefront', {
+      checkoutId,
+      error,
+      wsId,
+    });
+  }
 }

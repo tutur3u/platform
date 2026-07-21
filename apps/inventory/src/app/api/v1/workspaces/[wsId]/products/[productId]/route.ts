@@ -4,6 +4,7 @@ import {
   diffInventoryAuditFields,
 } from '@tuturuuu/inventory-core/audit';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import { resolveProductManufacturerId } from '@tuturuuu/inventory-core/manufacturers';
 import {
   canAdjustInventoryStock,
@@ -422,6 +423,8 @@ export async function PATCH(req: Request, { params }: Params) {
     actor,
   });
 
+  await safelyRevalidateWorkspaceStorefronts(wsId);
+
   return NextResponse.json({ message: 'success' });
 }
 
@@ -511,6 +514,8 @@ export async function DELETE(req: Request, { params }: Params) {
         actor,
       });
 
+      await safelyRevalidateWorkspaceStorefronts(wsId);
+
       return NextResponse.json({
         disposition: 'archived',
         message:
@@ -539,6 +544,8 @@ export async function DELETE(req: Request, { params }: Params) {
     summary: `Deleted product ${product.name ?? productId}`,
     actor,
   });
+
+  await safelyRevalidateWorkspaceStorefronts(wsId);
 
   return NextResponse.json({ disposition: 'deleted', message: 'success' });
 }

@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { createFinanceInvoice } from '@tuturuuu/internal-api/finance';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import {
   canCreateInventorySales,
   canViewInventorySales,
@@ -220,6 +221,8 @@ export async function POST(req: Request, { params }: Params) {
           'Sale was created, but its sales period could not be assigned';
       }
     }
+
+    await safelyRevalidateWorkspaceStorefronts(wsId);
 
     return NextResponse.json(
       {

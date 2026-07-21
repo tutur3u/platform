@@ -1,23 +1,16 @@
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
-import { connection } from 'next/server';
-import { getStorefrontBuyerDefaults } from '@/components/storefront/buyer-defaults';
-import { StorefrontClient } from '@/components/storefront/storefront-client';
-import { getOptionalInventoryPublicStorefront } from '@/components/storefront/storefront-loader';
-import { INVENTORY_APP_URL } from '@/constants/common';
+import { StorefrontRouteFromParams } from '@/components/storefront/storefront-route';
+import { getServerInventoryStorefront } from '@/components/storefront/storefront-server-loader';
 import { siteConfig } from '@/constants/configs';
-import { StorefrontHeaderActions } from '../storefront-header-actions';
 
 interface Props {
   params: Promise<{ locale: string; storeSlug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  await connection();
   const { locale, storeSlug } = await params;
-  const response = await getOptionalInventoryPublicStorefront(storeSlug, {
-    baseUrl: INVENTORY_APP_URL,
-  }).catch(() => null);
+  const response = await getServerInventoryStorefront(storeSlug);
   const storefront = response?.storefront;
 
   return createPageMetadata({
@@ -35,30 +28,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function StorefrontPage({ params }: Props) {
-  await connection();
-  const { storeSlug } = await params;
-  // Resolve the storefront on the server so the first paint already has data.
-  // Falls back to null (client query still runs) if the server fetch fails.
-  const [buyerDefaults, initialStorefront] = await Promise.all([
-    getStorefrontBuyerDefaults(),
-    getOptionalInventoryPublicStorefront(storeSlug, {
-      baseUrl: INVENTORY_APP_URL,
-    }).catch(() => null),
-  ]);
-
-  return (
-    <StorefrontClient
-      buyerDefaults={buyerDefaults}
-      headerActions={
-        <StorefrontHeaderActions
-          storefront={initialStorefront?.storefront ?? null}
-          storeSlug={storeSlug}
-        />
-      }
-      initialStorefront={initialStorefront}
-      mode="store"
-      storeSlug={storeSlug}
-    />
-  );
+export default function StorefrontPage({ params }: Props) {
+  return <StorefrontRouteFromParams mode="store" params={params} />;
 }

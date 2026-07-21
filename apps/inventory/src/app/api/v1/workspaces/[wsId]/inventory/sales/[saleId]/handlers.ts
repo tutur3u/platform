@@ -4,6 +4,7 @@ import {
   diffInventoryAuditFields,
 } from '@tuturuuu/inventory-core/audit';
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
 import {
   canDeleteInventorySales,
   canUpdateInventorySales,
@@ -389,6 +390,10 @@ export async function handlePutSale(req: Request, { params }: Params) {
     actor,
   });
 
+  if (payload.products) {
+    await safelyRevalidateWorkspaceStorefronts(wsId);
+  }
+
   return NextResponse.json({ data: after });
 }
 
@@ -515,6 +520,8 @@ export async function handleDeleteSale(req: Request, { params }: Params) {
     after: null,
     actor,
   });
+
+  await safelyRevalidateWorkspaceStorefronts(wsId);
 
   return NextResponse.json({ message: 'Sale deleted' });
 }

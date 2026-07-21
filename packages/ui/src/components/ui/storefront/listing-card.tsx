@@ -59,7 +59,7 @@ export function StorefrontListingCard({
       className={cn(
         surfaceClassName,
         radius,
-        'group relative overflow-hidden transition duration-200 hover:border-foreground/20 hover:shadow-foreground/5 hover:shadow-sm',
+        'group relative overflow-hidden transition duration-200 [contain-intrinsic-size:auto_420px] [content-visibility:auto] hover:border-foreground/20 hover:shadow-foreground/5 hover:shadow-sm',
         isList
           ? 'grid gap-4 p-3 sm:grid-cols-[112px_minmax(0,1fr)_auto] sm:items-center'
           : 'flex min-h-full flex-col'

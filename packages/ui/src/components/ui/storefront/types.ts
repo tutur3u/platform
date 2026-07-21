@@ -4,6 +4,9 @@ import type {
   InventoryListingVariant,
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
+import type { ElementType } from 'react';
+
+export type StorefrontLinkComponent = ElementType<{ href: string }>;
 
 export type StorefrontCartLine = {
   listingId: string;

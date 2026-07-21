@@ -6,6 +6,7 @@ export type {
   StorefrontBuyerDefaults,
   StorefrontCartEntry,
   StorefrontCartLine,
+  StorefrontLinkComponent,
   StorefrontSurfaceLabels,
   StorefrontSurfaceMode,
 } from './types';

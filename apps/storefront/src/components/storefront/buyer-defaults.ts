@@ -1,4 +1,5 @@
 import type { StorefrontBuyerDefaults } from '@tuturuuu/ui/storefront';
+import { connection } from 'next/server';
 
 type StorefrontBuyerProfile = {
   display_name?: string | null;
@@ -26,6 +27,10 @@ export function mapStorefrontBuyerDefaults(
 }
 
 export async function getStorefrontBuyerDefaults() {
+  // Session-derived defaults are request-specific. Keep this access outside the
+  // cached public catalog while allowing the catalog itself to remain tagged
+  // and shared across visitors.
+  await connection();
   const { getSatelliteCurrentUser } = await import('@tuturuuu/satellite/auth');
   const user = await getSatelliteCurrentUser('storefront').catch(() => null);
   return mapStorefrontBuyerDefaults(user);

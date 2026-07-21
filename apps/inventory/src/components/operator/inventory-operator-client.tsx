@@ -229,9 +229,7 @@ export function InventoryOperatorClient({
   const Icon = section[0] as typeof Boxes;
   const activeQueries = [
     view === 'overview' ? data.overview : null,
-    view === 'overview' ? data.costingProfiles : null,
-    view === 'overview' ? data.costingAnalytics : null,
-    ['bundles', 'costing', 'stock', 'storefront', 'overview'].includes(view) ||
+    ['bundles', 'costing', 'stock', 'storefront'].includes(view) ||
     (view === 'catalog' && catalogTab === 'products')
       ? data.products
       : null,
@@ -267,9 +265,7 @@ export function InventoryOperatorClient({
       ? data.costingProfiles
       : null,
     view === 'audits' ? data.audits : null,
-    ['stock', 'setup', 'bundles', 'storefront', 'costing', 'overview'].includes(
-      view
-    ) ||
+    ['stock', 'setup', 'bundles', 'storefront', 'costing'].includes(view) ||
     (view === 'catalog' && catalogTab === 'products')
       ? data.formOptions
       : null,
@@ -294,25 +290,25 @@ export function InventoryOperatorClient({
   const isError = activeQueries.some((query) => query.isError);
   const commerceLoading =
     view === 'sales'
-      ? data.sales.isPending ||
-        data.salesPeriods.isPending ||
-        data.commerceSummary.isPending ||
-        data.periodProducts.isPending ||
-        data.formOptions.isPending
+      ? (data.sales.isPending && !data.sales.data) ||
+        (data.salesPeriods.isPending && !data.salesPeriods.data) ||
+        (data.commerceSummary.isPending && !data.commerceSummary.data) ||
+        (data.periodProducts.isPending && !data.periodProducts.data) ||
+        (data.formOptions.isPending && !data.formOptions.data)
       : view === 'commerce' && commerceTab === 'checkouts'
-        ? data.checkouts.isPending || data.checkouts.isFetching
+        ? data.checkouts.isPending && !data.checkouts.data
         : view === 'commerce' && commerceTab === 'cart'
-          ? data.periodProducts.isPending ||
-            data.formOptions.isPending ||
-            data.salesPeriods.isPending
+          ? (data.periodProducts.isPending && !data.periodProducts.data) ||
+            (data.formOptions.isPending && !data.formOptions.data) ||
+            (data.salesPeriods.isPending && !data.salesPeriods.data)
           : view === 'commerce' && commerceTab === 'sales'
-            ? data.sales.isPending ||
-              data.salesPeriods.isPending ||
-              data.commerceSummary.isPending ||
-              data.periodProducts.isPending ||
-              data.formOptions.isPending
+            ? (data.sales.isPending && !data.sales.data) ||
+              (data.salesPeriods.isPending && !data.salesPeriods.data) ||
+              (data.commerceSummary.isPending && !data.commerceSummary.data) ||
+              (data.periodProducts.isPending && !data.periodProducts.data) ||
+              (data.formOptions.isPending && !data.formOptions.data)
             : view === 'commerce' && commerceTab === 'revenue-share'
-              ? data.revenueShares.isPending || data.revenueShares.isFetching
+              ? data.revenueShares.isPending && !data.revenueShares.data
               : false;
 
   const headerActions =

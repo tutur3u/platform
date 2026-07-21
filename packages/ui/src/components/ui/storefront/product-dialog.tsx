@@ -3,7 +3,11 @@
 import type { InventoryStorefrontListing } from '@tuturuuu/internal-api/inventory';
 import { Dialog, DialogContent, DialogTitle } from '../dialog';
 import { StorefrontProductDetail } from './product-detail';
-import type { StorefrontCartLine, StorefrontSurfaceLabels } from './types';
+import type {
+  StorefrontCartLine,
+  StorefrontLinkComponent,
+  StorefrontSurfaceLabels,
+} from './types';
 
 /**
  * Large product detail dialog opened from a listing card. Reuses the same
@@ -17,6 +21,7 @@ export function StorefrontProductDialog({
   currency,
   isSubmitting,
   labels,
+  linkComponent,
   listing,
   onBuyNow,
   onDecrement,
@@ -32,6 +37,7 @@ export function StorefrontProductDialog({
   currency: string;
   isSubmitting?: boolean;
   labels: StorefrontSurfaceLabels;
+  linkComponent?: StorefrontLinkComponent;
   listing: InventoryStorefrontListing | null;
   onBuyNow?: (listingId: string, variantId?: string | null) => void;
   onDecrement?: (listingId: string, variantId?: string | null) => void;
@@ -58,6 +64,7 @@ export function StorefrontProductDialog({
               currency={currency}
               isSubmitting={isSubmitting}
               labels={labels}
+              linkComponent={linkComponent}
               listing={listing}
               onBuyNow={onBuyNow}
               onDecrement={onDecrement}

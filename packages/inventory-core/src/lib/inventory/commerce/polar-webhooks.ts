@@ -7,6 +7,7 @@ import { recordInventorySaleFinanceTransaction } from './finance';
 import { updateCheckoutPolarState } from './polar-checkout';
 import type { SupabaseErrorLike } from './polar-core';
 import { assertInventoryPolarWorkspace } from './polar-errors';
+import { revalidatePublicStorefront } from './public-storefront';
 
 function getInventoryMetadata(value: unknown, expectedWsId?: string) {
   if (!value || typeof value !== 'object') return null;
@@ -82,6 +83,10 @@ export async function syncInventoryPolarCheckout(
         error.message ?? 'Failed to release checkout reservation'
       );
     }
+
+    if (metadata.storefrontSlug) {
+      revalidatePublicStorefront(metadata.storefrontSlug);
+    }
   }
 
   return true;
@@ -125,6 +130,10 @@ export async function syncInventoryPolarOrder(
     await recordInventorySaleFinanceTransaction({
       checkoutId: metadata.checkoutId,
     });
+
+    if (metadata.storefrontSlug) {
+      revalidatePublicStorefront(metadata.storefrontSlug);
+    }
   }
 
   return true;

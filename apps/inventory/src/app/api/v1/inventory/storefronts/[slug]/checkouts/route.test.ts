@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   isInventoryEnabled: vi.fn(),
   markCheckoutProvider: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
+  revalidatePublicStorefront: vi.fn(),
   rpc: vi.fn(),
   schema: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
@@ -53,6 +54,8 @@ vi.mock('@/constants/common', () => ({
 vi.mock('@tuturuuu/inventory-core/commerce/public-storefront', () => ({
   getPublicStorefront: (...args: unknown[]) =>
     mocks.getPublicStorefront(...args),
+  revalidatePublicStorefront: (...args: unknown[]) =>
+    mocks.revalidatePublicStorefront(...args),
 }));
 
 vi.mock('@tuturuuu/inventory-core/access', () => ({
@@ -461,6 +464,7 @@ describe('inventory storefront checkout route', () => {
       wsId: 'ws-1',
     });
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+    expect(mocks.revalidatePublicStorefront).toHaveBeenCalledWith('shop');
     expect(body.checkoutMode).toBe('square_terminal');
     expect(body.checkout.squareTerminalCheckoutId).toBe('terminal-checkout-1');
     expect(body.nextUrl).toBe(

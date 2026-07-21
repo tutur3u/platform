@@ -36,7 +36,7 @@ const INVENTORY_STOREFRONTS_TABLE: &str = "inventory_storefronts";
 const WORKSPACE_MEMBERS_TABLE: &str = "workspace_members";
 const MEMBER_WORKSPACE_TYPE: &str = "MEMBER";
 const PRIVATE_CACHE_CONTROL: &str = "private, no-store";
-const PUBLIC_STOREFRONT_CACHE_CONTROL: &str = "public, s-maxage=60, stale-while-revalidate=300";
+const PUBLIC_STOREFRONT_CACHE_CONTROL: &str = "public, max-age=0, s-maxage=0, must-revalidate";
 const SIMULATED_ORDER_PREFIX: &str = "simulated-order-";
 const SIMULATED_ORDER_TOKEN_TYPE: &str = "inventory_simulated_order";
 const SIMULATED_ORDER_TOKEN_VERSION: u8 = 1;

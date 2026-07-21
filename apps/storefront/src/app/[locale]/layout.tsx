@@ -60,7 +60,7 @@ export default async function RootLayout({ children, params }: Props) {
   setRequestLocale(locale as Locale);
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html data-scroll-behavior="smooth" lang={locale} suppressHydrationWarning>
       <body
         className={cn(
           'overflow-y-auto overflow-x-hidden bg-root-background antialiased',

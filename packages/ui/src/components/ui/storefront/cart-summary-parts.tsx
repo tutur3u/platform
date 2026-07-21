@@ -14,6 +14,7 @@ import { AccentButton } from './accent-button';
 import type {
   StorefrontBuyerDefaults,
   StorefrontCartEntry,
+  StorefrontLinkComponent,
   StorefrontSurfaceLabels,
 } from './types';
 import {
@@ -68,6 +69,7 @@ export function CartActions({
   isPreview,
   isSubmitting,
   labels,
+  linkComponent,
   onCheckoutOpen,
   onInstantCheckout,
   radius,
@@ -78,10 +80,12 @@ export function CartActions({
   isPreview: boolean;
   isSubmitting: boolean;
   labels: StorefrontSurfaceLabels;
+  linkComponent?: StorefrontLinkComponent;
   onCheckoutOpen?: () => void;
   onInstantCheckout?: () => void;
   radius: string;
 }) {
+  const NavigationLink = linkComponent ?? 'a';
   if (isPreview || isCheckoutDisabled) {
     return (
       <Button className={cn('w-full', radius)} disabled type="button">
@@ -122,10 +126,10 @@ export function CartActions({
         </AccentButton>
       ) : (
         <Button asChild className={cn('w-full', radius)} variant="outline">
-          <a href={checkoutHref}>
+          <NavigationLink href={checkoutHref ?? '#'}>
             {labels.checkout}
             <ArrowRight className="size-4 shrink-0" />
-          </a>
+          </NavigationLink>
         </Button>
       )}
     </div>
