@@ -22,6 +22,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   without allocating a second runner. Manual-only satellite previews should
   launch their guarded deploy job directly and must not add a redundant
   reusable `check-ci` job.
+- Keep commit-driven production Vercel deployments under the production
+  planner's push run. Call selected per-app workflows through `workflow_call`
+  and reserve `workflow_dispatch` for explicit operator reruns.
 - Keep preview concurrency keyed by workflow and `preview_ref` with
   `cancel-in-progress: true`; repeated requests for one target should replace
   stale runs without canceling a distinct preview ref.
@@ -29,10 +32,10 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   contract is intentionally path-simple. The external-app internal-package
   smoke owns `apps/external/**`, `packages/**`, and its build-control files, so
   unrelated app-only commits should not create that workflow at all.
-- Keep CodeQL in the checked-in `codeql.yml` and keep GitHub's legacy
-  `dynamic/github-code-scanning/codeql` workflow disabled. Scan
-  JavaScript/TypeScript and Python on canonical commits and pull requests, not
-  mirrored production pushes or cron schedules.
+- Keep automatic CodeQL in GitHub's organization-managed
+  `dynamic/github-code-scanning/codeql` workflow. Keep `codeql.yml` as a
+  manual-only JavaScript/TypeScript and Python fallback with no push,
+  pull-request, or cron triggers.
 - Scope the expensive E2E workflow with native push paths for E2E specs,
   Playwright/Docker configuration, database fixtures, dependency manifests,
   lockfiles, and E2E runner scripts. Do not add a cron schedule; automatic E2E

@@ -217,14 +217,19 @@ formatting behavior, or repo-wide verification.
   affected-path gating. A path-simple compatibility smoke may use native
   trigger filters instead; the external-app smoke runs only for
   `apps/external/**`, `packages/**`, or its build-control files.
+- Keep automatic production Vercel deployments attached to the commit's push
+  run: resolve affected apps once in the planner, then call selected per-app
+  workflows through static `workflow_call` jobs. Reserve `workflow_dispatch`
+  for manual recovery so commit CI remains traceable by SHA.
 - Key preview concurrency by workflow and `preview_ref` and enable
   `cancel-in-progress`. This lets a newer protected-main platform signal or a
   repeated manual preview replace stale work without serializing unrelated
   preview refs behind the same group.
-- Use the checked-in `codeql.yml` as the single CodeQL owner and keep GitHub's
-  legacy `dynamic/github-code-scanning/codeql` workflow disabled. Cover
-  JavaScript/TypeScript and Python on canonical commits and pull requests, with
-  no mirrored-production push or cron duplicate.
+- Use GitHub's organization-managed `dynamic/github-code-scanning/codeql`
+  workflow for automatic JavaScript/TypeScript and Python scans. Keep the
+  checked-in `codeql.yml` manual-only so it provides an explicit fallback and
+  satisfies the Security UI without duplicating push, pull-request, or cron
+  runs.
 - Use native push paths for the expensive E2E image producer and consumers.
   Cover E2E specs, Playwright/Docker configuration, database fixtures,
   dependency manifests, lockfiles, and runner scripts. Keep automatic E2E

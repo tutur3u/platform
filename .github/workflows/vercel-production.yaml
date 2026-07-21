@@ -12,12 +12,14 @@ concurrency:
 permissions:
   actions: write
   contents: read
-  deployments: read
+  deployments: write
 
 jobs:
-  plan-and-dispatch:
+  plan:
     if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
+    outputs:
+      workflows_json: ${{ steps.plan.outputs.workflows_json }}
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -35,13 +37,146 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --step-summary "${GITHUB_STEP_SUMMARY}"
 
-      - name: Dispatch affected production deployments
-        if: steps.plan.outputs.workflow_count != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          WORKFLOWS_JSON: ${{ steps.plan.outputs.workflows_json }}
-        run: |
-          while IFS= read -r workflow; do
-            echo "Dispatching ${workflow} at production"
-            gh workflow run "${workflow}" --ref production
-          done < <(jq -r '.[]' <<< "${WORKFLOWS_JSON}")
+  deploy-apps:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-apps.yaml')
+    uses: ./.github/workflows/vercel-production-apps.yaml
+    secrets: inherit
+
+  deploy-calendar:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-calendar.yaml')
+    uses: ./.github/workflows/vercel-production-calendar.yaml
+    secrets: inherit
+
+  deploy-chat:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-chat.yaml')
+    uses: ./.github/workflows/vercel-production-chat.yaml
+    secrets: inherit
+
+  deploy-cms:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-cms.yaml')
+    uses: ./.github/workflows/vercel-production-cms.yaml
+    secrets: inherit
+
+  deploy-contacts:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-contacts.yaml')
+    uses: ./.github/workflows/vercel-production-contacts.yaml
+    secrets: inherit
+
+  deploy-drive:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-drive.yaml')
+    uses: ./.github/workflows/vercel-production-drive.yaml
+    secrets: inherit
+
+  deploy-finance:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-finance.yaml')
+    uses: ./.github/workflows/vercel-production-finance.yaml
+    secrets: inherit
+
+  deploy-infrastructure:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-infrastructure.yaml')
+    uses: ./.github/workflows/vercel-production-infrastructure.yaml
+    secrets: inherit
+
+  deploy-inventory:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-inventory.yaml')
+    uses: ./.github/workflows/vercel-production-inventory.yaml
+    secrets: inherit
+
+  deploy-learn:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-learn.yaml')
+    uses: ./.github/workflows/vercel-production-learn.yaml
+    secrets: inherit
+
+  deploy-mail:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mail.yaml')
+    uses: ./.github/workflows/vercel-production-mail.yaml
+    secrets: inherit
+
+  deploy-meet:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-meet.yaml')
+    uses: ./.github/workflows/vercel-production-meet.yaml
+    secrets: inherit
+
+  deploy-mind:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mind.yaml')
+    uses: ./.github/workflows/vercel-production-mind.yaml
+    secrets: inherit
+
+  deploy-nova:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-nova.yaml')
+    uses: ./.github/workflows/vercel-production-nova.yaml
+    secrets: inherit
+
+  deploy-pay:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-pay.yaml')
+    uses: ./.github/workflows/vercel-production-pay.yaml
+    secrets: inherit
+
+  deploy-platform:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml')
+    uses: ./.github/workflows/vercel-production-platform.yaml
+    secrets: inherit
+
+  deploy-rewise:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-rewise.yaml')
+    uses: ./.github/workflows/vercel-production-rewise.yaml
+    secrets: inherit
+
+  deploy-shortener:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-shortener.yaml')
+    uses: ./.github/workflows/vercel-production-shortener.yaml
+    secrets: inherit
+
+  deploy-storefront:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-storefront.yaml')
+    uses: ./.github/workflows/vercel-production-storefront.yaml
+    secrets: inherit
+
+  deploy-tanstack-web:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tanstack-web.yaml')
+    uses: ./.github/workflows/vercel-production-tanstack-web.yaml
+    secrets: inherit
+
+  deploy-tasks:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tasks.yaml')
+    uses: ./.github/workflows/vercel-production-tasks.yaml
+    secrets: inherit
+
+  deploy-teach:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-teach.yaml')
+    uses: ./.github/workflows/vercel-production-teach.yaml
+    secrets: inherit
+
+  deploy-tools:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tools.yaml')
+    uses: ./.github/workflows/vercel-production-tools.yaml
+    secrets: inherit
+
+  deploy-track:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-track.yaml')
+    uses: ./.github/workflows/vercel-production-track.yaml
+    secrets: inherit

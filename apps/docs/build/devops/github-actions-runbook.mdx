@@ -55,9 +55,11 @@ Affected Vercel rules:
 
 Production pushes run `.github/workflows/vercel-production.yaml` once. That
 planner evaluates all targets from their individual deployment markers and
-dispatches only the affected `vercel-production-<app>.yaml` workflows. Do not
-restore `push` triggers or `check-ci` jobs in the per-app production workflows;
-doing so recreates the queued preflight fan-out the planner replaces.
+calls only the affected `vercel-production-<app>.yaml` workflows as reusable
+jobs. This keeps every automatic deployment attached to the original push SHA
+instead of creating `workflow_dispatch` runs. Do not restore per-app `push`
+triggers or `check-ci` jobs; doing so recreates the queued preflight fan-out the
+planner replaces.
 
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
@@ -165,6 +167,8 @@ These workflows:
   migrations keep their same-SHA prerequisite signal
 - reject production manual dispatches from non-production branches before
   install/build/deploy work starts
+- call production workflows from the production push planner through
+  `workflow_call`; retain `workflow_dispatch` only for deliberate operator reruns
 - install Bun with `.github/actions/setup-bun-with-retry`, pinned to the root
   `packageManager` Bun version and retried with exponential backoff
 - install dependencies through `scripts/ci/run-with-backoff.sh` so transient Bun
@@ -397,11 +401,12 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-CodeQL uses the checked-in `codeql.yml` for JavaScript/TypeScript and Python.
-Keep GitHub's legacy `dynamic/github-code-scanning/codeql` workflow disabled or
-both owners will analyze the same SHA. Automatic scans are commit-driven on
-canonical `main` and pull requests; `bun git-sync` mirrors the already-scanned
-commit to `production`, so production pushes are excluded.
+Automatic CodeQL uses GitHub's organization-managed
+`dynamic/github-code-scanning/codeql` workflow for JavaScript/TypeScript and
+Python. `codeql.yml` is a manual-only fallback so the repository retains an
+explicit workflow file without duplicating managed push or pull-request scans.
+Do not add automatic or cron triggers to the fallback; `bun git-sync` mirrors
+the already-scanned `main` commit to `production`.
 
 `e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
 configuration, database fixtures, dependency manifests, lockfiles, and its own

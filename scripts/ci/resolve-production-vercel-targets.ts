@@ -53,7 +53,7 @@ function appendStepSummary(
 
   const rows = decisions.map(
     ({ changeResult, reason, shouldRun, workflowName }) =>
-      `| \`${workflowName}\` | ${shouldRun ? 'Dispatch' : 'Skip'} | ${changeResult.source} | ${reason.replaceAll('|', '\\|')} |`
+      `| \`${workflowName}\` | ${shouldRun ? 'Deploy' : 'Skip'} | ${changeResult.source} | ${reason.replaceAll('|', '\\|')} |`
   );
 
   appendFileSync(
@@ -115,7 +115,7 @@ async function main() {
 
   for (const decision of decisions) {
     console.log(
-      `${decision.shouldRun ? 'dispatch' : 'skip'} ${decision.workflowName}: ${decision.reason} (${decision.changeResult.source})`
+      `${decision.shouldRun ? 'select' : 'skip'} ${decision.workflowName}: ${decision.reason} (${decision.changeResult.source})`
     );
   }
 

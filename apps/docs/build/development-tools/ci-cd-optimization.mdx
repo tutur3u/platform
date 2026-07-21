@@ -65,7 +65,8 @@ The shared logic is organized in four pieces:
    workflows that still need an individual `should_run` output.
 4. **`.github/workflows/vercel-production.yaml`** — the single production
    planner. It resolves every app against that app's last successful deployment
-   marker in one runner, then dispatches only affected production workflows.
+   marker in one runner, then calls only affected production workflows as
+   reusable jobs in the same commit-associated push run.
 
 ### Reusable and inline gates
 
@@ -126,16 +127,19 @@ same preview cancels stale work, while different preview refs remain independent
 
 ### The production planner
 
-A `production` push starts one `plan-and-dispatch` job instead of starting one
+A `production` push starts one `plan` job instead of starting one
 `check-ci` runner per app. `resolve-production-vercel-targets.ts` reads the
 workspace graph once, memoizes dependency closures, resolves each target from
 its own successful deployment marker, and emits a reviewable Actions summary.
-The same job dispatches the selected `vercel-production-<app>.yaml` workflows.
+Static reusable jobs call only the selected `vercel-production-<app>.yaml`
+workflows, so deployments stay attached to the original push SHA instead of
+appearing as detached `workflow_dispatch` runs.
 
 Per-app production workflows remain independently protected by their GitHub
-Environment and concurrency group, but are `workflow_dispatch`-only. A missing
-or untrusted marker fails open for that app without forcing every other app's
-gate open.
+Environment and workflow-ref concurrency group. They accept `workflow_call` for
+commit-driven planner jobs and retain `workflow_dispatch` for deliberate
+operator reruns. A missing or untrusted marker fails open for that app without
+forcing every other app's gate open.
 
 ### The decision function
 
@@ -248,12 +252,12 @@ Dependency resolution and the platform build always execute so a cache hit
 cannot skip validation. Managed uv and CodeQL caches remain owned by their
 upstream actions rather than being duplicated.
 
-CodeQL is owned by the checked-in `.github/workflows/codeql.yml`. It scans
-JavaScript/TypeScript and Python on canonical `main` commits and pull requests,
-with a manual fallback and no cron trigger. GitHub's legacy dynamic CodeQL
-workflow must remain disabled; enabling both owners analyzes the same SHA
-twice. `bun git-sync` mirrors the already-scanned `main` SHA to `production`,
-so the custom workflow does not listen for production pushes.
+Automatic CodeQL is owned by GitHub's organization-managed
+`dynamic/github-code-scanning/codeql` workflow, which scans
+JavaScript/TypeScript and Python. The checked-in `.github/workflows/codeql.yml`
+is manual-only: it preserves an explicit fallback and avoids the Security UI's
+missing-workflow warning without adding push, pull-request, or cron duplicates.
+`bun git-sync` mirrors the already-scanned `main` SHA to `production`.
 
 The full Dockerized E2E graph is created for E2E specs, Playwright and Docker
 configuration, database fixtures, package manifests, lockfiles, and its own
@@ -370,7 +374,7 @@ full diff since the last live deploy is considered.
 `check-workflow-config.ts` logs its decision and the matched paths. Preview
 `check-ci` logs show the individual decision; production uses the planner's
 **Production Vercel deployment plan** job summary, including the per-app
-baseline source and dispatch/skip result. Individual logs still look like:
+baseline source and deploy/skip result. Individual logs still look like:
 
 ```text
 Workflow: vercel-production-platform.yaml
@@ -463,7 +467,8 @@ For a change that touches only one app:
 ```
 
 Each skipped production app now consumes no runner at all; only the shared
-planner and selected deployments run. Changes to shared roots
+planner and selected reusable deployment jobs run under the production push.
+Changes to shared roots
 (`package.json`, `bun.lock`, `turbo.json`, `tuturuuu.ts`) intentionally fan out
 to all targets, so headline skip rates will vary with how often those roots
 change.
@@ -531,7 +536,8 @@ Our CI/CD optimization centralizes change detection so each workflow stays thin:
 - The gate fails safe (builds on uncertainty), and trusted manual satellite
   previews start their guarded deploy job directly.
 
-The result: a one-app change selects only the necessary production deploys,
+The result: a one-app change selects only the necessary production deploys in
+the commit-associated push run,
 platform preview retains its required staging signal without a second runner,
 manual previews never queue a redundant preflight, and superseded previews are
 canceled before they occupy the queue indefinitely.

@@ -102,7 +102,7 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
 
     assert.match(
       header,
-      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/,
+      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow_ref \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/,
       `${workflowName} must cancel its superseded production run`
     );
     assert.doesNotMatch(
@@ -113,8 +113,9 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
     assert.doesNotMatch(
       header,
       /\n {2}push:/,
-      `${workflowName} must be dispatched by the shared production planner`
+      `${workflowName} must be called by the shared production planner`
     );
+    assert.match(header, /\n {2}workflow_call:/);
     assert.match(header, /\n {2}workflow_dispatch:/);
     assert.doesNotMatch(
       workflow,
@@ -124,23 +125,35 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
   }
 });
 
-test('production Vercel planner resolves once and dispatches only affected apps', () => {
+test('production Vercel planner resolves once and calls affected apps in the push run', () => {
   const workflowName = 'vercel-production.yaml';
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', workflowName),
     'utf8'
   );
-  const plannerJob = readWorkflowJobBlock(workflowName, 'plan-and-dispatch');
+  const plannerJob = readWorkflowJobBlock(workflowName, 'plan');
+  const productionWorkflows = vercelWorkflows.filter((name) =>
+    name.startsWith('vercel-production-')
+  );
 
   assert.match(workflow, /\n {2}push:\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {2}workflow_dispatch:/);
   assert.match(workflow, /actions:\s*write/);
-  assert.match(workflow, /deployments:\s*read/);
+  assert.match(workflow, /deployments:\s*write/);
   assert.match(
     plannerJob,
     /node --experimental-strip-types scripts\/ci\/resolve-production-vercel-targets\.ts/
   );
-  assert.match(plannerJob, /gh workflow run "\$\{workflow\}" --ref production/);
+  assert.doesNotMatch(workflow, /gh workflow run/);
+  for (const productionWorkflow of productionWorkflows) {
+    assert.match(
+      workflow,
+      new RegExp(
+        `uses: \\.\\/\\.github\\/workflows\\/${productionWorkflow.replaceAll('.', '\\.')}`
+      ),
+      `${productionWorkflow} must be called as a reusable job from the production push run`
+    );
+  }
   assert.doesNotMatch(
     plannerJob,
     /uses: \.\/\.github\/workflows\/ci-check\.yml/
@@ -489,18 +502,15 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
-test('checked-in CodeQL owns commit scanning without duplicate branch or cron runs', () => {
+test('checked-in CodeQL is a manual fallback for managed commit scanning', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
     'utf8'
   );
 
-  assert.match(workflow, /\n {2}push:\n {4}branches: \["main"\]\n/);
-  assert.match(
-    workflow,
-    /\n {2}pull_request:\n {4}branches: \["main", "production"\]\n/
-  );
   assert.match(workflow, /\n {2}workflow_dispatch:\n/);
+  assert.doesNotMatch(workflow, /\n {2}push:/);
+  assert.doesNotMatch(workflow, /\n {2}pull_request:/);
   assert.doesNotMatch(workflow, /\n {2}schedule:/);
   assert.match(workflow, /- javascript-typescript\n {10}- python/);
   assert.match(workflow, /queries: security-extended/);
