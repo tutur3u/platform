@@ -9,181 +9,171 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root';
-import { Route as Char126offlineRouteImport } from './routes/~offline';
-import { Route as QrGeneratorRouteImport } from './routes/qr-generator';
-import { Route as PricingRouteImport } from './routes/pricing';
-import { Route as LocaleRouteRouteImport } from './routes/$locale/route';
 import { Route as IndexRouteImport } from './routes/index';
+import { Route as LocaleRouteRouteImport } from './routes/$locale/route';
+import { Route as PricingRouteImport } from './routes/pricing';
+import { Route as QrGeneratorRouteImport } from './routes/qr-generator';
+import { Route as Char126offlineRouteImport } from './routes/~offline';
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index';
-import { Route as ToolsRandomRouteImport } from './routes/tools/random';
-import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together';
-import { Route as LocaleWomenInTechRouteImport } from './routes/$locale/women-in-tech';
-import { Route as LocaleVerifyTokenRouteImport } from './routes/$locale/verify-token';
-import { Route as LocaleTermsRouteImport } from './routes/$locale/terms';
-import { Route as LocaleSecurityRouteImport } from './routes/$locale/security';
-import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-generator';
-import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy';
-import { Route as LocalePricingRouteImport } from './routes/$locale/pricing';
-import { Route as LocalePartnersRouteImport } from './routes/$locale/partners';
-import { Route as LocaleModelsRouteImport } from './routes/$locale/models';
-import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together';
-import { Route as LocaleMeetRouteImport } from './routes/$locale/meet';
-import { Route as LocaleLogoutRouteImport } from './routes/$locale/logout';
-import { Route as LocaleLoginRouteImport } from './routes/$locale/login';
-import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup';
-import { Route as LocaleDocsRouteImport } from './routes/$locale/docs';
-import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors';
-import { Route as LocaleContactRouteImport } from './routes/$locale/contact';
-import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines';
-import { Route as LocaleChangelogRouteImport } from './routes/$locale/changelog';
-import { Route as LocaleCareersRouteImport } from './routes/$locale/careers';
-import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding';
-import { Route as LocaleBlogRouteImport } from './routes/$locale/blog';
-import { Route as LocaleAddAccountRouteImport } from './routes/$locale/add-account';
-import { Route as LocaleAcceptableUseRouteImport } from './routes/$locale/acceptable-use';
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about';
-import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index';
-import { Route as LocaleVisualizationsHorseRacingRouteImport } from './routes/$locale/visualizations/horse-racing';
-import { Route as LocaleUsersHandleRouteImport } from './routes/$locale/users/$handle';
-import { Route as LocaleUiSetupRouteImport } from './routes/$locale/ui/setup';
-import { Route as LocaleUiContributingRouteImport } from './routes/$locale/ui/contributing';
-import { Route as LocaleToolsRandomRouteImport } from './routes/$locale/tools/random';
-import { Route as LocaleSolutionsRetailRouteImport } from './routes/$locale/solutions/retail';
-import { Route as LocaleSolutionsRestaurantsRouteImport } from './routes/$locale/solutions/restaurants';
-import { Route as LocaleSolutionsRealestateRouteImport } from './routes/$locale/solutions/realestate';
-import { Route as LocaleSolutionsPharmaciesRouteImport } from './routes/$locale/solutions/pharmacies';
-import { Route as LocaleSolutionsManufacturingRouteImport } from './routes/$locale/solutions/manufacturing';
-import { Route as LocaleSolutionsHospitalityRouteImport } from './routes/$locale/solutions/hospitality';
-import { Route as LocaleSolutionsHealthcareRouteImport } from './routes/$locale/solutions/healthcare';
-import { Route as LocaleSolutionsEducationRouteImport } from './routes/$locale/solutions/education';
-import { Route as LocaleSolutionsConstructionRouteImport } from './routes/$locale/solutions/construction';
-import { Route as LocaleSecurityPolicyRouteImport } from './routes/$locale/security/policy';
-import { Route as LocaleSecurityBugBountyRouteImport } from './routes/$locale/security/bug-bounty';
-import { Route as LocaleProductsWorkflowsRouteImport } from './routes/$locale/products/workflows';
-import { Route as LocaleProductsTasksRouteImport } from './routes/$locale/products/tasks';
-import { Route as LocaleProductsMeetTogetherRouteImport } from './routes/$locale/products/meet-together';
-import { Route as LocaleProductsMailRouteImport } from './routes/$locale/products/mail';
-import { Route as LocaleProductsLmsRouteImport } from './routes/$locale/products/lms';
-import { Route as LocaleProductsInventoryRouteImport } from './routes/$locale/products/inventory';
-import { Route as LocaleProductsFinanceRouteImport } from './routes/$locale/products/finance';
-import { Route as LocaleProductsDriveRouteImport } from './routes/$locale/products/drive';
-import { Route as LocaleProductsDocumentsRouteImport } from './routes/$locale/products/documents';
-import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products/crm';
-import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar';
-import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai';
-import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm';
-import { Route as LocaleDocumentsDocumentIdRouteImport } from './routes/$locale/documents/$documentId';
-import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug';
-import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together';
-import { Route as LocaleAccountDeleteRouteImport } from './routes/$locale/account/delete';
-import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts';
-import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce';
-import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles';
-import { Route as LocaleWsIdReadingsRouteImport } from './routes/$locale/$wsId/readings';
-import { Route as LocaleWsIdQueuesRouteImport } from './routes/$locale/$wsId/queues';
-import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator';
-import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress';
-import { Route as LocaleWsIdPostsRouteImport } from './routes/$locale/$wsId/posts';
-import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls';
-import { Route as LocaleWsIdPlatformRouteImport } from './routes/$locale/$wsId/platform';
-import { Route as LocaleWsIdPipelinesRouteImport } from './routes/$locale/$wsId/pipelines';
-import { Route as LocaleWsIdNotificationsRouteImport } from './routes/$locale/$wsId/notifications';
-import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
-import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics';
-import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/memories';
-import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/members';
-import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet';
-import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
-import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
-import { Route as LocaleWsIdHabitsRouteImport } from './routes/$locale/$wsId/habits';
-import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects';
-import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
-import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive';
-import { Route as LocaleWsIdDocumentsRouteImport } from './routes/$locale/$wsId/documents';
-import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet';
-import { Route as LocaleWsIdCronRouteImport } from './routes/$locale/$wsId/cron';
-import { Route as LocaleWsIdCrawlersRouteImport } from './routes/$locale/$wsId/crawlers';
-import { Route as LocaleWsIdChatRouteImport } from './routes/$locale/$wsId/chat';
-import { Route as LocaleWsIdChangelogRouteImport } from './routes/$locale/$wsId/changelog';
-import { Route as LocaleWsIdCalendarRouteImport } from './routes/$locale/$wsId/calendar';
+import { Route as LocaleAcceptableUseRouteImport } from './routes/$locale/acceptable-use';
+import { Route as LocaleAddAccountRouteImport } from './routes/$locale/add-account';
+import { Route as LocaleBlogRouteImport } from './routes/$locale/blog';
+import { Route as LocaleBrandingRouteImport } from './routes/$locale/branding';
+import { Route as LocaleCareersRouteImport } from './routes/$locale/careers';
+import { Route as LocaleChangelogRouteImport } from './routes/$locale/changelog';
+import { Route as LocaleCommunityGuidelinesRouteImport } from './routes/$locale/community-guidelines';
+import { Route as LocaleContactRouteImport } from './routes/$locale/contact';
+import { Route as LocaleContributorsRouteImport } from './routes/$locale/contributors';
+import { Route as LocaleDocsRouteImport } from './routes/$locale/docs';
+import { Route as LocaleFacebookMockupRouteImport } from './routes/$locale/facebook-mockup';
+import { Route as LocaleLoginRouteImport } from './routes/$locale/login';
+import { Route as LocaleLogoutRouteImport } from './routes/$locale/logout';
+import { Route as LocaleMeetRouteImport } from './routes/$locale/meet';
+import { Route as LocaleMeetTogetherRouteImport } from './routes/$locale/meet-together';
+import { Route as LocaleModelsRouteImport } from './routes/$locale/models';
+import { Route as LocalePartnersRouteImport } from './routes/$locale/partners';
+import { Route as LocalePricingRouteImport } from './routes/$locale/pricing';
+import { Route as LocalePrivacyRouteImport } from './routes/$locale/privacy';
+import { Route as LocaleQrGeneratorRouteImport } from './routes/$locale/qr-generator';
+import { Route as LocaleSecurityRouteImport } from './routes/$locale/security';
+import { Route as LocaleTermsRouteImport } from './routes/$locale/terms';
+import { Route as LocaleVerifyTokenRouteImport } from './routes/$locale/verify-token';
+import { Route as LocaleWomenInTechRouteImport } from './routes/$locale/women-in-tech';
+import { Route as ProductsMeetTogetherRouteImport } from './routes/products/meet-together';
+import { Route as ToolsRandomRouteImport } from './routes/tools/random';
 import { Route as LocaleWsIdAiChatRouteImport } from './routes/$locale/$wsId/ai-chat';
-import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index';
-import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
-import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index';
-import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId';
-import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code';
-import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
-import { Route as LocaleSharedTaskBoardsCodeRouteImport } from './routes/$locale/shared/task-boards/$code';
-import { Route as LocaleShareTypeResourceIdRouteImport } from './routes/$locale/share/$type/$resourceId';
-import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$';
-import { Route as LocaleAiChatsChatIdRouteImport } from './routes/$locale/ai/chats/$chatId';
-import { Route as LocaleWsIdUsersTutoringRouteImport } from './routes/$locale/$wsId/users/tutoring';
-import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements';
-import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure';
-import { Route as LocaleWsIdUsersFeedbacksRouteImport } from './routes/$locale/$wsId/users/feedbacks';
-import { Route as LocaleWsIdUsersApprovalsRouteImport } from './routes/$locale/$wsId/users/approvals';
-import { Route as LocaleWsIdTasksTemplatesRouteImport } from './routes/$locale/$wsId/tasks/templates';
-import { Route as LocaleWsIdTasksProjectsRouteImport } from './routes/$locale/$wsId/tasks/projects';
-import { Route as LocaleWsIdTasksNotesRouteImport } from './routes/$locale/$wsId/tasks/notes';
-import { Route as LocaleWsIdTasksLogsRouteImport } from './routes/$locale/$wsId/tasks/logs';
-import { Route as LocaleWsIdTasksLabelsRouteImport } from './routes/$locale/$wsId/tasks/labels';
-import { Route as LocaleWsIdTasksInitiativesRouteImport } from './routes/$locale/$wsId/tasks/initiatives';
-import { Route as LocaleWsIdTasksHabitsRouteImport } from './routes/$locale/$wsId/tasks/habits';
-import { Route as LocaleWsIdTasksEstimatesRouteImport } from './routes/$locale/$wsId/tasks/estimates';
-import { Route as LocaleWsIdTasksCyclesRouteImport } from './routes/$locale/$wsId/tasks/cycles';
-import { Route as LocaleWsIdTasksTaskIdRouteImport } from './routes/$locale/$wsId/tasks/$taskId';
-import { Route as LocaleWsIdSettingsReportsRouteImport } from './routes/$locale/$wsId/settings/reports';
-import { Route as LocaleWsIdSettingsNotificationsRouteImport } from './routes/$locale/$wsId/settings/notifications';
-import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects';
-import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans';
-import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
-import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent';
-import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
-import { Route as LocaleWsIdDocumentsDocumentIdRouteImport } from './routes/$locale/$wsId/documents/$documentId';
-import { Route as LocaleWsIdCronJobsRouteImport } from './routes/$locale/$wsId/cron/jobs';
-import { Route as LocaleWsIdCrawlersUncrawledRouteImport } from './routes/$locale/$wsId/crawlers/uncrawled';
-import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
-import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
+import { Route as LocaleWsIdCalendarRouteImport } from './routes/$locale/$wsId/calendar';
+import { Route as LocaleWsIdChangelogRouteImport } from './routes/$locale/$wsId/changelog';
+import { Route as LocaleWsIdChatRouteImport } from './routes/$locale/$wsId/chat';
+import { Route as LocaleWsIdCrawlersRouteImport } from './routes/$locale/$wsId/crawlers';
+import { Route as LocaleWsIdCronRouteImport } from './routes/$locale/$wsId/cron';
+import { Route as LocaleWsIdDietRouteImport } from './routes/$locale/$wsId/diet';
+import { Route as LocaleWsIdDocumentsRouteImport } from './routes/$locale/$wsId/documents';
+import { Route as LocaleWsIdDriveRouteImport } from './routes/$locale/$wsId/drive';
+import { Route as LocaleWsIdEpmRouteImport } from './routes/$locale/$wsId/epm';
+import { Route as LocaleWsIdExternalProjectsRouteImport } from './routes/$locale/$wsId/external-projects';
+import { Route as LocaleWsIdHabitsRouteImport } from './routes/$locale/$wsId/habits';
+import { Route as LocaleWsIdHiveRouteImport } from './routes/$locale/$wsId/hive';
+import { Route as LocaleWsIdIntegrationsRouteImport } from './routes/$locale/$wsId/integrations';
+import { Route as LocaleWsIdMeetRouteImport } from './routes/$locale/$wsId/meet';
+import { Route as LocaleWsIdMembersRouteImport } from './routes/$locale/$wsId/members';
+import { Route as LocaleWsIdMemoriesRouteImport } from './routes/$locale/$wsId/memories';
+import { Route as LocaleWsIdMetricsRouteImport } from './routes/$locale/$wsId/metrics';
+import { Route as LocaleWsIdMindRouteImport } from './routes/$locale/$wsId/mind';
+import { Route as LocaleWsIdNotificationsRouteImport } from './routes/$locale/$wsId/notifications';
+import { Route as LocaleWsIdPipelinesRouteImport } from './routes/$locale/$wsId/pipelines';
+import { Route as LocaleWsIdPlatformRouteImport } from './routes/$locale/$wsId/platform';
+import { Route as LocaleWsIdPollsRouteImport } from './routes/$locale/$wsId/polls';
+import { Route as LocaleWsIdPostsRouteImport } from './routes/$locale/$wsId/posts';
+import { Route as LocaleWsIdProgressRouteImport } from './routes/$locale/$wsId/progress';
+import { Route as LocaleWsIdQrGeneratorRouteImport } from './routes/$locale/$wsId/qr-generator';
+import { Route as LocaleWsIdQueuesRouteImport } from './routes/$locale/$wsId/queues';
+import { Route as LocaleWsIdReadingsRouteImport } from './routes/$locale/$wsId/readings';
+import { Route as LocaleWsIdRolesRouteImport } from './routes/$locale/$wsId/roles';
+import { Route as LocaleWsIdWorkforceRouteImport } from './routes/$locale/$wsId/workforce';
+import { Route as LocaleWsIdWorkoutsRouteImport } from './routes/$locale/$wsId/workouts';
+import { Route as LocaleAccountDeleteRouteImport } from './routes/$locale/account/delete';
+import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale/calendar/meet-together';
+import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug';
+import { Route as LocaleDocumentsDocumentIdRouteImport } from './routes/$locale/documents/$documentId';
+import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm';
+import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai';
+import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar';
+import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products/crm';
+import { Route as LocaleProductsDocumentsRouteImport } from './routes/$locale/products/documents';
+import { Route as LocaleProductsDriveRouteImport } from './routes/$locale/products/drive';
+import { Route as LocaleProductsFinanceRouteImport } from './routes/$locale/products/finance';
+import { Route as LocaleProductsInventoryRouteImport } from './routes/$locale/products/inventory';
+import { Route as LocaleProductsLmsRouteImport } from './routes/$locale/products/lms';
+import { Route as LocaleProductsMailRouteImport } from './routes/$locale/products/mail';
+import { Route as LocaleProductsMeetTogetherRouteImport } from './routes/$locale/products/meet-together';
+import { Route as LocaleProductsTasksRouteImport } from './routes/$locale/products/tasks';
+import { Route as LocaleProductsWorkflowsRouteImport } from './routes/$locale/products/workflows';
+import { Route as LocaleSecurityBugBountyRouteImport } from './routes/$locale/security/bug-bounty';
+import { Route as LocaleSecurityPolicyRouteImport } from './routes/$locale/security/policy';
+import { Route as LocaleSolutionsConstructionRouteImport } from './routes/$locale/solutions/construction';
+import { Route as LocaleSolutionsEducationRouteImport } from './routes/$locale/solutions/education';
+import { Route as LocaleSolutionsHealthcareRouteImport } from './routes/$locale/solutions/healthcare';
+import { Route as LocaleSolutionsHospitalityRouteImport } from './routes/$locale/solutions/hospitality';
+import { Route as LocaleSolutionsManufacturingRouteImport } from './routes/$locale/solutions/manufacturing';
+import { Route as LocaleSolutionsPharmaciesRouteImport } from './routes/$locale/solutions/pharmacies';
+import { Route as LocaleSolutionsRealestateRouteImport } from './routes/$locale/solutions/realestate';
+import { Route as LocaleSolutionsRestaurantsRouteImport } from './routes/$locale/solutions/restaurants';
+import { Route as LocaleSolutionsRetailRouteImport } from './routes/$locale/solutions/retail';
+import { Route as LocaleToolsRandomRouteImport } from './routes/$locale/tools/random';
+import { Route as LocaleUiIndexRouteImport } from './routes/$locale/ui/index';
+import { Route as LocaleUiContributingRouteImport } from './routes/$locale/ui/contributing';
+import { Route as LocaleUiSetupRouteImport } from './routes/$locale/ui/setup';
+import { Route as LocaleUsersHandleRouteImport } from './routes/$locale/users/$handle';
+import { Route as LocaleVisualizationsHorseRacingRouteImport } from './routes/$locale/visualizations/horse-racing';
 import { Route as LocaleWsIdAiChatChatbotsRouteImport } from './routes/$locale/$wsId/ai-chat/chatbots';
-import { Route as LocaleWsIdUsersGroupTagsIndexRouteImport } from './routes/$locale/$wsId/users/group-tags/index';
-import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
+import { Route as LocaleWsIdAiChatNewRouteImport } from './routes/$locale/$wsId/ai-chat/new';
+import { Route as LocaleWsIdBillingSuccessRouteImport } from './routes/$locale/$wsId/billing/success';
+import { Route as LocaleWsIdCrawlersUncrawledRouteImport } from './routes/$locale/$wsId/crawlers/uncrawled';
+import { Route as LocaleWsIdCronJobsRouteImport } from './routes/$locale/$wsId/cron/jobs';
+import { Route as LocaleWsIdDocumentsDocumentIdRouteImport } from './routes/$locale/$wsId/documents/$documentId';
+import { Route as LocaleWsIdHiveNotWhitelistedRouteImport } from './routes/$locale/$wsId/hive/not-whitelisted';
+import { Route as LocaleWsIdMailIndexRouteImport } from './routes/$locale/$wsId/mail/index';
+import { Route as LocaleWsIdMailSentRouteImport } from './routes/$locale/$wsId/mail/sent';
+import { Route as LocaleWsIdMeetMeetingsRouteImport } from './routes/$locale/$wsId/meet/meetings';
+import { Route as LocaleWsIdMeetPlansRouteImport } from './routes/$locale/$wsId/meet/plans';
+import { Route as LocaleWsIdPlatformExternalProjectsRouteImport } from './routes/$locale/$wsId/platform/external-projects';
+import { Route as LocaleWsIdSettingsNotificationsRouteImport } from './routes/$locale/$wsId/settings/notifications';
+import { Route as LocaleWsIdSettingsReportsRouteImport } from './routes/$locale/$wsId/settings/reports';
+import { Route as LocaleWsIdTasksIndexRouteImport } from './routes/$locale/$wsId/tasks/index';
+import { Route as LocaleWsIdTasksTaskIdRouteImport } from './routes/$locale/$wsId/tasks/$taskId';
+import { Route as LocaleWsIdTasksCyclesRouteImport } from './routes/$locale/$wsId/tasks/cycles';
+import { Route as LocaleWsIdTasksEstimatesRouteImport } from './routes/$locale/$wsId/tasks/estimates';
+import { Route as LocaleWsIdTasksHabitsRouteImport } from './routes/$locale/$wsId/tasks/habits';
+import { Route as LocaleWsIdTasksInitiativesRouteImport } from './routes/$locale/$wsId/tasks/initiatives';
+import { Route as LocaleWsIdTasksLabelsRouteImport } from './routes/$locale/$wsId/tasks/labels';
+import { Route as LocaleWsIdTasksLogsRouteImport } from './routes/$locale/$wsId/tasks/logs';
+import { Route as LocaleWsIdTasksNotesRouteImport } from './routes/$locale/$wsId/tasks/notes';
+import { Route as LocaleWsIdTasksProjectsRouteImport } from './routes/$locale/$wsId/tasks/projects';
+import { Route as LocaleWsIdTasksTemplatesRouteImport } from './routes/$locale/$wsId/tasks/templates';
+import { Route as LocaleWsIdUsersApprovalsRouteImport } from './routes/$locale/$wsId/users/approvals';
+import { Route as LocaleWsIdUsersFeedbacksRouteImport } from './routes/$locale/$wsId/users/feedbacks';
+import { Route as LocaleWsIdUsersStructureRouteImport } from './routes/$locale/$wsId/users/structure';
+import { Route as LocaleWsIdUsersTopicAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements';
+import { Route as LocaleWsIdUsersTutoringRouteImport } from './routes/$locale/$wsId/users/tutoring';
+import { Route as LocaleAiChatsChatIdRouteImport } from './routes/$locale/ai/chats/$chatId';
+import { Route as LocaleCalendarMeetTogetherSplatRouteImport } from './routes/$locale/calendar/meet-together/$';
+import { Route as LocaleShareTypeResourceIdRouteImport } from './routes/$locale/share/$type/$resourceId';
+import { Route as LocaleSharedTaskBoardsCodeRouteImport } from './routes/$locale/shared/task-boards/$code';
+import { Route as LocaleSharedTaskShareCodeRouteImport } from './routes/$locale/shared/task/$shareCode';
+import { Route as LocaleSharedUserProfileCodeRouteImport } from './routes/$locale/shared/user-profile/$code';
+import { Route as LocaleUiComponentsIndexRouteImport } from './routes/$locale/ui/components/index';
+import { Route as LocaleUiComponentsComponentIdRouteImport } from './routes/$locale/ui/components/$componentId';
 import { Route as LocaleWsIdAiChatMyChatbotsIndexRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/index';
-import { Route as LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport } from './routes/$locale/$wsId/users/topic-announcements/templates';
-import { Route as LocaleWsIdUsersTopicAnnouncementsImportRouteImport } from './routes/$locale/$wsId/users/topic-announcements/import';
-import { Route as LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport } from './routes/$locale/$wsId/users/topic-announcements/delivery';
-import { Route as LocaleWsIdUsersTopicAnnouncementsContactsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/contacts';
-import { Route as LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/announcements';
-import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
-import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
-import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
-import { Route as LocaleWsIdUsersGroupTagsTagIdRouteImport } from './routes/$locale/$wsId/users/group-tags/$tagId';
-import { Route as LocaleWsIdTasksTemplatesMarketplaceRouteImport } from './routes/$locale/$wsId/tasks/templates/marketplace';
-import { Route as LocaleWsIdTasksTemplatesTemplateIdRouteImport } from './routes/$locale/$wsId/tasks/templates/$templateId';
-import { Route as LocaleWsIdTasksProjectsProjectIdRouteImport } from './routes/$locale/$wsId/tasks/projects/$projectId';
-import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId';
-import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
-import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
-import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId';
-import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId';
 import { Route as LocaleWsIdAiChatMyChatbotsNewRouteImport } from './routes/$locale/$wsId/ai-chat/my-chatbots/new';
-import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
-import { Route as LocaleWsIdUsersGroupsGroupIdScheduleRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/schedule';
-import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/requests';
+import { Route as LocaleWsIdEpmCollectionsCollectionIdRouteImport } from './routes/$locale/$wsId/epm/collections/$collectionId';
+import { Route as LocaleWsIdEpmEntriesEntryIdRouteImport } from './routes/$locale/$wsId/epm/entries/$entryId';
+import { Route as LocaleWsIdMeetMeetingsMeetingIdRouteImport } from './routes/$locale/$wsId/meet/meetings/$meetingId';
+import { Route as LocaleWsIdMindBoardsBoardIdRouteImport } from './routes/$locale/$wsId/mind/boards/$boardId';
+import { Route as LocaleWsIdTasksBoardsIndexRouteImport } from './routes/$locale/$wsId/tasks/boards/index';
+import { Route as LocaleWsIdTasksBoardsBoardIdRouteImport } from './routes/$locale/$wsId/tasks/boards/$boardId';
+import { Route as LocaleWsIdTasksProjectsProjectIdRouteImport } from './routes/$locale/$wsId/tasks/projects/$projectId';
+import { Route as LocaleWsIdTasksTemplatesTemplateIdRouteImport } from './routes/$locale/$wsId/tasks/templates/$templateId';
+import { Route as LocaleWsIdTasksTemplatesMarketplaceRouteImport } from './routes/$locale/$wsId/tasks/templates/marketplace';
+import { Route as LocaleWsIdUsersGroupTagsIndexRouteImport } from './routes/$locale/$wsId/users/group-tags/index';
+import { Route as LocaleWsIdUsersGroupTagsTagIdRouteImport } from './routes/$locale/$wsId/users/group-tags/$tagId';
+import { Route as LocaleWsIdUsersGroupsGroupIdRouteImport } from './routes/$locale/$wsId/users/groups/$groupId';
+import { Route as LocaleWsIdUsersGroupsCalendarRouteImport } from './routes/$locale/$wsId/users/groups/calendar';
+import { Route as LocaleWsIdUsersReportsReportIdRouteImport } from './routes/$locale/$wsId/users/reports/$reportId';
+import { Route as LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/announcements';
+import { Route as LocaleWsIdUsersTopicAnnouncementsContactsRouteImport } from './routes/$locale/$wsId/users/topic-announcements/contacts';
+import { Route as LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport } from './routes/$locale/$wsId/users/topic-announcements/delivery';
+import { Route as LocaleWsIdUsersTopicAnnouncementsImportRouteImport } from './routes/$locale/$wsId/users/topic-announcements/import';
+import { Route as LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport } from './routes/$locale/$wsId/users/topic-announcements/templates';
 import { Route as LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/attendance';
+import { Route as LocaleWsIdUsersGroupsGroupIdRequestsRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/requests';
+import { Route as LocaleWsIdUsersGroupsGroupIdScheduleRouteImport } from './routes/$locale/$wsId/users/groups/$groupId/schedule';
+import { Route as LocaleShareTypeResourceIdModulesModuleIdRouteImport } from './routes/$locale/share/$type/$resourceId/modules/$moduleId';
 
-const Char126offlineRoute = Char126offlineRouteImport.update({
-  id: '/~offline',
-  path: '/~offline',
-  getParentRoute: () => rootRouteImport,
-} as any);
-const QrGeneratorRoute = QrGeneratorRouteImport.update({
-  id: '/qr-generator',
-  path: '/qr-generator',
-  getParentRoute: () => rootRouteImport,
-} as any);
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any);
 const LocaleRouteRoute = LocaleRouteRouteImport.update({
@@ -191,9 +181,19 @@ const LocaleRouteRoute = LocaleRouteRouteImport.update({
   path: '/$locale',
   getParentRoute: () => rootRouteImport,
 } as any);
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const QrGeneratorRoute = QrGeneratorRouteImport.update({
+  id: '/qr-generator',
+  path: '/qr-generator',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const Char126offlineRoute = Char126offlineRouteImport.update({
+  id: '/~offline',
+  path: '/~offline',
   getParentRoute: () => rootRouteImport,
 } as any);
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
@@ -201,99 +201,39 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const ToolsRandomRoute = ToolsRandomRouteImport.update({
-  id: '/tools/random',
-  path: '/tools/random',
-  getParentRoute: () => rootRouteImport,
-} as any);
-const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
-  id: '/products/meet-together',
-  path: '/products/meet-together',
-  getParentRoute: () => rootRouteImport,
-} as any);
-const LocaleWomenInTechRoute = LocaleWomenInTechRouteImport.update({
-  id: '/women-in-tech',
-  path: '/women-in-tech',
+const LocaleAboutRoute = LocaleAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleVerifyTokenRoute = LocaleVerifyTokenRouteImport.update({
-  id: '/verify-token',
-  path: '/verify-token',
+const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
+  id: '/acceptable-use',
+  path: '/acceptable-use',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleTermsRoute = LocaleTermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const LocaleAddAccountRoute = LocaleAddAccountRouteImport.update({
+  id: '/add-account',
+  path: '/add-account',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleSecurityRoute = LocaleSecurityRouteImport.update({
-  id: '/security',
-  path: '/security',
+const LocaleBlogRoute = LocaleBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleQrGeneratorRoute = LocaleQrGeneratorRouteImport.update({
-  id: '/qr-generator',
-  path: '/qr-generator',
+const LocaleBrandingRoute = LocaleBrandingRouteImport.update({
+  id: '/branding',
+  path: '/branding',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
+const LocaleCareersRoute = LocaleCareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocalePricingRoute = LocalePricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocalePartnersRoute = LocalePartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleModelsRoute = LocaleModelsRouteImport.update({
-  id: '/models',
-  path: '/models',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
-  id: '/meet-together',
-  path: '/meet-together',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleMeetRoute = LocaleMeetRouteImport.update({
-  id: '/meet',
-  path: '/meet',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleLogoutRoute = LocaleLogoutRouteImport.update({
-  id: '/logout',
-  path: '/logout',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleLoginRoute = LocaleLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
-  id: '/facebook-mockup',
-  path: '/facebook-mockup',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleDocsRoute = LocaleDocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleContributorsRoute = LocaleContributorsRouteImport.update({
-  id: '/contributors',
-  path: '/contributors',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleContactRoute = LocaleContactRouteImport.update({
-  id: '/contact',
-  path: '/contact',
+const LocaleChangelogRoute = LocaleChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleCommunityGuidelinesRoute =
@@ -302,321 +242,149 @@ const LocaleCommunityGuidelinesRoute =
     path: '/community-guidelines',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleChangelogRoute = LocaleChangelogRouteImport.update({
-  id: '/changelog',
-  path: '/changelog',
+const LocaleContactRoute = LocaleContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleCareersRoute = LocaleCareersRouteImport.update({
-  id: '/careers',
-  path: '/careers',
+const LocaleContributorsRoute = LocaleContributorsRouteImport.update({
+  id: '/contributors',
+  path: '/contributors',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleBrandingRoute = LocaleBrandingRouteImport.update({
-  id: '/branding',
-  path: '/branding',
+const LocaleDocsRoute = LocaleDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleBlogRoute = LocaleBlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
+const LocaleFacebookMockupRoute = LocaleFacebookMockupRouteImport.update({
+  id: '/facebook-mockup',
+  path: '/facebook-mockup',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleAddAccountRoute = LocaleAddAccountRouteImport.update({
-  id: '/add-account',
-  path: '/add-account',
+const LocaleLoginRoute = LocaleLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleAcceptableUseRoute = LocaleAcceptableUseRouteImport.update({
-  id: '/acceptable-use',
-  path: '/acceptable-use',
+const LocaleLogoutRoute = LocaleLogoutRouteImport.update({
+  id: '/logout',
+  path: '/logout',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleAboutRoute = LocaleAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const LocaleMeetRoute = LocaleMeetRouteImport.update({
+  id: '/meet',
+  path: '/meet',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleUiIndexRoute = LocaleUiIndexRouteImport.update({
-  id: '/ui/',
-  path: '/ui/',
+const LocaleMeetTogetherRoute = LocaleMeetTogetherRouteImport.update({
+  id: '/meet-together',
+  path: '/meet-together',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleVisualizationsHorseRacingRoute =
-  LocaleVisualizationsHorseRacingRouteImport.update({
-    id: '/visualizations/horse-racing',
-    path: '/visualizations/horse-racing',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleUsersHandleRoute = LocaleUsersHandleRouteImport.update({
-  id: '/users/$handle',
-  path: '/users/$handle',
+const LocaleModelsRoute = LocaleModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
-  id: '/ui/setup',
-  path: '/ui/setup',
+const LocalePartnersRoute = LocalePartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleUiContributingRoute = LocaleUiContributingRouteImport.update({
-  id: '/ui/contributing',
-  path: '/ui/contributing',
+const LocalePricingRoute = LocalePricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleToolsRandomRoute = LocaleToolsRandomRouteImport.update({
+const LocalePrivacyRoute = LocalePrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleQrGeneratorRoute = LocaleQrGeneratorRouteImport.update({
+  id: '/qr-generator',
+  path: '/qr-generator',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleSecurityRoute = LocaleSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleTermsRoute = LocaleTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleVerifyTokenRoute = LocaleVerifyTokenRouteImport.update({
+  id: '/verify-token',
+  path: '/verify-token',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWomenInTechRoute = LocaleWomenInTechRouteImport.update({
+  id: '/women-in-tech',
+  path: '/women-in-tech',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const ProductsMeetTogetherRoute = ProductsMeetTogetherRouteImport.update({
+  id: '/products/meet-together',
+  path: '/products/meet-together',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ToolsRandomRoute = ToolsRandomRouteImport.update({
   id: '/tools/random',
   path: '/tools/random',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LocaleWsIdAiChatRoute = LocaleWsIdAiChatRouteImport.update({
+  id: '/$wsId/ai-chat',
+  path: '/$wsId/ai-chat',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleSolutionsRetailRoute = LocaleSolutionsRetailRouteImport.update({
-  id: '/solutions/retail',
-  path: '/solutions/retail',
+const LocaleWsIdCalendarRoute = LocaleWsIdCalendarRouteImport.update({
+  id: '/$wsId/calendar',
+  path: '/$wsId/calendar',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleSolutionsRestaurantsRoute =
-  LocaleSolutionsRestaurantsRouteImport.update({
-    id: '/solutions/restaurants',
-    path: '/solutions/restaurants',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsRealestateRoute =
-  LocaleSolutionsRealestateRouteImport.update({
-    id: '/solutions/realestate',
-    path: '/solutions/realestate',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsPharmaciesRoute =
-  LocaleSolutionsPharmaciesRouteImport.update({
-    id: '/solutions/pharmacies',
-    path: '/solutions/pharmacies',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsManufacturingRoute =
-  LocaleSolutionsManufacturingRouteImport.update({
-    id: '/solutions/manufacturing',
-    path: '/solutions/manufacturing',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsHospitalityRoute =
-  LocaleSolutionsHospitalityRouteImport.update({
-    id: '/solutions/hospitality',
-    path: '/solutions/hospitality',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsHealthcareRoute =
-  LocaleSolutionsHealthcareRouteImport.update({
-    id: '/solutions/healthcare',
-    path: '/solutions/healthcare',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsEducationRoute =
-  LocaleSolutionsEducationRouteImport.update({
-    id: '/solutions/education',
-    path: '/solutions/education',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSolutionsConstructionRoute =
-  LocaleSolutionsConstructionRouteImport.update({
-    id: '/solutions/construction',
-    path: '/solutions/construction',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSecurityPolicyRoute = LocaleSecurityPolicyRouteImport.update({
-  id: '/policy',
-  path: '/policy',
-  getParentRoute: () => LocaleSecurityRoute,
-} as any);
-const LocaleSecurityBugBountyRoute = LocaleSecurityBugBountyRouteImport.update({
-  id: '/bug-bounty',
-  path: '/bug-bounty',
-  getParentRoute: () => LocaleSecurityRoute,
-} as any);
-const LocaleProductsWorkflowsRoute = LocaleProductsWorkflowsRouteImport.update({
-  id: '/products/workflows',
-  path: '/products/workflows',
+const LocaleWsIdChangelogRoute = LocaleWsIdChangelogRouteImport.update({
+  id: '/$wsId/changelog',
+  path: '/$wsId/changelog',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsTasksRoute = LocaleProductsTasksRouteImport.update({
-  id: '/products/tasks',
-  path: '/products/tasks',
+const LocaleWsIdChatRoute = LocaleWsIdChatRouteImport.update({
+  id: '/$wsId/chat',
+  path: '/$wsId/chat',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsMeetTogetherRoute =
-  LocaleProductsMeetTogetherRouteImport.update({
-    id: '/products/meet-together',
-    path: '/products/meet-together',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleProductsMailRoute = LocaleProductsMailRouteImport.update({
-  id: '/products/mail',
-  path: '/products/mail',
+const LocaleWsIdCrawlersRoute = LocaleWsIdCrawlersRouteImport.update({
+  id: '/$wsId/crawlers',
+  path: '/$wsId/crawlers',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsLmsRoute = LocaleProductsLmsRouteImport.update({
-  id: '/products/lms',
-  path: '/products/lms',
+const LocaleWsIdCronRoute = LocaleWsIdCronRouteImport.update({
+  id: '/$wsId/cron',
+  path: '/$wsId/cron',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsInventoryRoute = LocaleProductsInventoryRouteImport.update({
-  id: '/products/inventory',
-  path: '/products/inventory',
+const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
+  id: '/$wsId/diet',
+  path: '/$wsId/diet',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsFinanceRoute = LocaleProductsFinanceRouteImport.update({
-  id: '/products/finance',
-  path: '/products/finance',
+const LocaleWsIdDocumentsRoute = LocaleWsIdDocumentsRouteImport.update({
+  id: '/$wsId/documents',
+  path: '/$wsId/documents',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsDriveRoute = LocaleProductsDriveRouteImport.update({
-  id: '/products/drive',
-  path: '/products/drive',
+const LocaleWsIdDriveRoute = LocaleWsIdDriveRouteImport.update({
+  id: '/$wsId/drive',
+  path: '/$wsId/drive',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleProductsDocumentsRoute = LocaleProductsDocumentsRouteImport.update({
-  id: '/products/documents',
-  path: '/products/documents',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleProductsCrmRoute = LocaleProductsCrmRouteImport.update({
-  id: '/products/crm',
-  path: '/products/crm',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleProductsCalendarRoute = LocaleProductsCalendarRouteImport.update({
-  id: '/products/calendar',
-  path: '/products/calendar',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleProductsAiRoute = LocaleProductsAiRouteImport.update({
-  id: '/products/ai',
-  path: '/products/ai',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
-  id: '/games/farm',
-  path: '/games/farm',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleDocumentsDocumentIdRoute =
-  LocaleDocumentsDocumentIdRouteImport.update({
-    id: '/documents/$documentId',
-    path: '/documents/$documentId',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => LocaleChangelogRoute,
-} as any);
-const LocaleCalendarMeetTogetherRoute =
-  LocaleCalendarMeetTogetherRouteImport.update({
-    id: '/calendar/meet-together',
-    path: '/calendar/meet-together',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleAccountDeleteRoute = LocaleAccountDeleteRouteImport.update({
-  id: '/account/delete',
-  path: '/account/delete',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdWorkoutsRoute = LocaleWsIdWorkoutsRouteImport.update({
-  id: '/$wsId/workouts',
-  path: '/$wsId/workouts',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdWorkforceRoute = LocaleWsIdWorkforceRouteImport.update({
-  id: '/$wsId/workforce',
-  path: '/$wsId/workforce',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdRolesRoute = LocaleWsIdRolesRouteImport.update({
-  id: '/$wsId/roles',
-  path: '/$wsId/roles',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdReadingsRoute = LocaleWsIdReadingsRouteImport.update({
-  id: '/$wsId/readings',
-  path: '/$wsId/readings',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdQueuesRoute = LocaleWsIdQueuesRouteImport.update({
-  id: '/$wsId/queues',
-  path: '/$wsId/queues',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
-  id: '/$wsId/qr-generator',
-  path: '/$wsId/qr-generator',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdProgressRoute = LocaleWsIdProgressRouteImport.update({
-  id: '/$wsId/progress',
-  path: '/$wsId/progress',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdPostsRoute = LocaleWsIdPostsRouteImport.update({
-  id: '/$wsId/posts',
-  path: '/$wsId/posts',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
-  id: '/$wsId/polls',
-  path: '/$wsId/polls',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdPlatformRoute = LocaleWsIdPlatformRouteImport.update({
-  id: '/$wsId/platform',
-  path: '/$wsId/platform',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdPipelinesRoute = LocaleWsIdPipelinesRouteImport.update({
-  id: '/$wsId/pipelines',
-  path: '/$wsId/pipelines',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdNotificationsRoute = LocaleWsIdNotificationsRouteImport.update({
-  id: '/$wsId/notifications',
-  path: '/$wsId/notifications',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
-  id: '/$wsId/mind',
-  path: '/$wsId/mind',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
-  id: '/$wsId/metrics',
-  path: '/$wsId/metrics',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdMemoriesRoute = LocaleWsIdMemoriesRouteImport.update({
-  id: '/$wsId/memories',
-  path: '/$wsId/memories',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdMembersRoute = LocaleWsIdMembersRouteImport.update({
-  id: '/$wsId/members',
-  path: '/$wsId/members',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
-  id: '/$wsId/meet',
-  path: '/$wsId/meet',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
-  id: '/$wsId/integrations',
-  path: '/$wsId/integrations',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
-  id: '/$wsId/hive',
-  path: '/$wsId/hive',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdHabitsRoute = LocaleWsIdHabitsRouteImport.update({
-  id: '/$wsId/habits',
-  path: '/$wsId/habits',
+const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
+  id: '/$wsId/epm',
+  path: '/$wsId/epm',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdExternalProjectsRoute =
@@ -625,176 +393,379 @@ const LocaleWsIdExternalProjectsRoute =
     path: '/$wsId/external-projects',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdEpmRoute = LocaleWsIdEpmRouteImport.update({
-  id: '/$wsId/epm',
-  path: '/$wsId/epm',
+const LocaleWsIdHabitsRoute = LocaleWsIdHabitsRouteImport.update({
+  id: '/$wsId/habits',
+  path: '/$wsId/habits',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdDriveRoute = LocaleWsIdDriveRouteImport.update({
-  id: '/$wsId/drive',
-  path: '/$wsId/drive',
+const LocaleWsIdHiveRoute = LocaleWsIdHiveRouteImport.update({
+  id: '/$wsId/hive',
+  path: '/$wsId/hive',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdDocumentsRoute = LocaleWsIdDocumentsRouteImport.update({
-  id: '/$wsId/documents',
-  path: '/$wsId/documents',
+const LocaleWsIdIntegrationsRoute = LocaleWsIdIntegrationsRouteImport.update({
+  id: '/$wsId/integrations',
+  path: '/$wsId/integrations',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdDietRoute = LocaleWsIdDietRouteImport.update({
-  id: '/$wsId/diet',
-  path: '/$wsId/diet',
+const LocaleWsIdMeetRoute = LocaleWsIdMeetRouteImport.update({
+  id: '/$wsId/meet',
+  path: '/$wsId/meet',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdCronRoute = LocaleWsIdCronRouteImport.update({
-  id: '/$wsId/cron',
-  path: '/$wsId/cron',
+const LocaleWsIdMembersRoute = LocaleWsIdMembersRouteImport.update({
+  id: '/$wsId/members',
+  path: '/$wsId/members',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdCrawlersRoute = LocaleWsIdCrawlersRouteImport.update({
-  id: '/$wsId/crawlers',
-  path: '/$wsId/crawlers',
+const LocaleWsIdMemoriesRoute = LocaleWsIdMemoriesRouteImport.update({
+  id: '/$wsId/memories',
+  path: '/$wsId/memories',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdChatRoute = LocaleWsIdChatRouteImport.update({
-  id: '/$wsId/chat',
-  path: '/$wsId/chat',
+const LocaleWsIdMetricsRoute = LocaleWsIdMetricsRouteImport.update({
+  id: '/$wsId/metrics',
+  path: '/$wsId/metrics',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdChangelogRoute = LocaleWsIdChangelogRouteImport.update({
-  id: '/$wsId/changelog',
-  path: '/$wsId/changelog',
+const LocaleWsIdMindRoute = LocaleWsIdMindRouteImport.update({
+  id: '/$wsId/mind',
+  path: '/$wsId/mind',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdCalendarRoute = LocaleWsIdCalendarRouteImport.update({
-  id: '/$wsId/calendar',
-  path: '/$wsId/calendar',
+const LocaleWsIdNotificationsRoute = LocaleWsIdNotificationsRouteImport.update({
+  id: '/$wsId/notifications',
+  path: '/$wsId/notifications',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdAiChatRoute = LocaleWsIdAiChatRouteImport.update({
-  id: '/$wsId/ai-chat',
-  path: '/$wsId/ai-chat',
+const LocaleWsIdPipelinesRoute = LocaleWsIdPipelinesRouteImport.update({
+  id: '/$wsId/pipelines',
+  path: '/$wsId/pipelines',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleUiComponentsIndexRoute = LocaleUiComponentsIndexRouteImport.update({
-  id: '/ui/components/',
-  path: '/ui/components/',
+const LocaleWsIdPlatformRoute = LocaleWsIdPlatformRouteImport.update({
+  id: '/$wsId/platform',
+  path: '/$wsId/platform',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdTasksIndexRoute = LocaleWsIdTasksIndexRouteImport.update({
-  id: '/$wsId/tasks/',
-  path: '/$wsId/tasks/',
+const LocaleWsIdPollsRoute = LocaleWsIdPollsRouteImport.update({
+  id: '/$wsId/polls',
+  path: '/$wsId/polls',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleWsIdPostsRoute = LocaleWsIdPostsRouteImport.update({
+  id: '/$wsId/posts',
+  path: '/$wsId/posts',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdProgressRoute = LocaleWsIdProgressRouteImport.update({
+  id: '/$wsId/progress',
+  path: '/$wsId/progress',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdQrGeneratorRoute = LocaleWsIdQrGeneratorRouteImport.update({
+  id: '/$wsId/qr-generator',
+  path: '/$wsId/qr-generator',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdQueuesRoute = LocaleWsIdQueuesRouteImport.update({
+  id: '/$wsId/queues',
+  path: '/$wsId/queues',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdReadingsRoute = LocaleWsIdReadingsRouteImport.update({
+  id: '/$wsId/readings',
+  path: '/$wsId/readings',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdRolesRoute = LocaleWsIdRolesRouteImport.update({
+  id: '/$wsId/roles',
+  path: '/$wsId/roles',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdWorkforceRoute = LocaleWsIdWorkforceRouteImport.update({
+  id: '/$wsId/workforce',
+  path: '/$wsId/workforce',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdWorkoutsRoute = LocaleWsIdWorkoutsRouteImport.update({
+  id: '/$wsId/workouts',
+  path: '/$wsId/workouts',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleAccountDeleteRoute = LocaleAccountDeleteRouteImport.update({
+  id: '/account/delete',
+  path: '/account/delete',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleCalendarMeetTogetherRoute =
+  LocaleCalendarMeetTogetherRouteImport.update({
+    id: '/calendar/meet-together',
+    path: '/calendar/meet-together',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleChangelogSlugRoute = LocaleChangelogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LocaleChangelogRoute,
+} as any);
+const LocaleDocumentsDocumentIdRoute =
+  LocaleDocumentsDocumentIdRouteImport.update({
+    id: '/documents/$documentId',
+    path: '/documents/$documentId',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
+  id: '/games/farm',
+  path: '/games/farm',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsAiRoute = LocaleProductsAiRouteImport.update({
+  id: '/products/ai',
+  path: '/products/ai',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsCalendarRoute = LocaleProductsCalendarRouteImport.update({
+  id: '/products/calendar',
+  path: '/products/calendar',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsCrmRoute = LocaleProductsCrmRouteImport.update({
+  id: '/products/crm',
+  path: '/products/crm',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsDocumentsRoute = LocaleProductsDocumentsRouteImport.update({
+  id: '/products/documents',
+  path: '/products/documents',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsDriveRoute = LocaleProductsDriveRouteImport.update({
+  id: '/products/drive',
+  path: '/products/drive',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsFinanceRoute = LocaleProductsFinanceRouteImport.update({
+  id: '/products/finance',
+  path: '/products/finance',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsInventoryRoute = LocaleProductsInventoryRouteImport.update({
+  id: '/products/inventory',
+  path: '/products/inventory',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsLmsRoute = LocaleProductsLmsRouteImport.update({
+  id: '/products/lms',
+  path: '/products/lms',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsMailRoute = LocaleProductsMailRouteImport.update({
+  id: '/products/mail',
+  path: '/products/mail',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsMeetTogetherRoute =
+  LocaleProductsMeetTogetherRouteImport.update({
+    id: '/products/meet-together',
+    path: '/products/meet-together',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleProductsTasksRoute = LocaleProductsTasksRouteImport.update({
+  id: '/products/tasks',
+  path: '/products/tasks',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleProductsWorkflowsRoute = LocaleProductsWorkflowsRouteImport.update({
+  id: '/products/workflows',
+  path: '/products/workflows',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleSecurityBugBountyRoute = LocaleSecurityBugBountyRouteImport.update({
+  id: '/bug-bounty',
+  path: '/bug-bounty',
+  getParentRoute: () => LocaleSecurityRoute,
+} as any);
+const LocaleSecurityPolicyRoute = LocaleSecurityPolicyRouteImport.update({
+  id: '/policy',
+  path: '/policy',
+  getParentRoute: () => LocaleSecurityRoute,
+} as any);
+const LocaleSolutionsConstructionRoute =
+  LocaleSolutionsConstructionRouteImport.update({
+    id: '/solutions/construction',
+    path: '/solutions/construction',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsEducationRoute =
+  LocaleSolutionsEducationRouteImport.update({
+    id: '/solutions/education',
+    path: '/solutions/education',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsHealthcareRoute =
+  LocaleSolutionsHealthcareRouteImport.update({
+    id: '/solutions/healthcare',
+    path: '/solutions/healthcare',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsHospitalityRoute =
+  LocaleSolutionsHospitalityRouteImport.update({
+    id: '/solutions/hospitality',
+    path: '/solutions/hospitality',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsManufacturingRoute =
+  LocaleSolutionsManufacturingRouteImport.update({
+    id: '/solutions/manufacturing',
+    path: '/solutions/manufacturing',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsPharmaciesRoute =
+  LocaleSolutionsPharmaciesRouteImport.update({
+    id: '/solutions/pharmacies',
+    path: '/solutions/pharmacies',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsRealestateRoute =
+  LocaleSolutionsRealestateRouteImport.update({
+    id: '/solutions/realestate',
+    path: '/solutions/realestate',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsRestaurantsRoute =
+  LocaleSolutionsRestaurantsRouteImport.update({
+    id: '/solutions/restaurants',
+    path: '/solutions/restaurants',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSolutionsRetailRoute = LocaleSolutionsRetailRouteImport.update({
+  id: '/solutions/retail',
+  path: '/solutions/retail',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleToolsRandomRoute = LocaleToolsRandomRouteImport.update({
+  id: '/tools/random',
+  path: '/tools/random',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleUiIndexRoute = LocaleUiIndexRouteImport.update({
+  id: '/ui/',
+  path: '/ui/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleUiContributingRoute = LocaleUiContributingRouteImport.update({
+  id: '/ui/contributing',
+  path: '/ui/contributing',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleUiSetupRoute = LocaleUiSetupRouteImport.update({
+  id: '/ui/setup',
+  path: '/ui/setup',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleUsersHandleRoute = LocaleUsersHandleRouteImport.update({
+  id: '/users/$handle',
+  path: '/users/$handle',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleVisualizationsHorseRacingRoute =
+  LocaleVisualizationsHorseRacingRouteImport.update({
+    id: '/visualizations/horse-racing',
+    path: '/visualizations/horse-racing',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdAiChatChatbotsRoute =
+  LocaleWsIdAiChatChatbotsRouteImport.update({
+    id: '/chatbots',
+    path: '/chatbots',
+    getParentRoute: () => LocaleWsIdAiChatRoute,
+  } as any);
+const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LocaleWsIdAiChatRoute,
+} as any);
+const LocaleWsIdBillingSuccessRoute =
+  LocaleWsIdBillingSuccessRouteImport.update({
+    id: '/$wsId/billing/success',
+    path: '/$wsId/billing/success',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdCrawlersUncrawledRoute =
+  LocaleWsIdCrawlersUncrawledRouteImport.update({
+    id: '/uncrawled',
+    path: '/uncrawled',
+    getParentRoute: () => LocaleWsIdCrawlersRoute,
+  } as any);
+const LocaleWsIdCronJobsRoute = LocaleWsIdCronJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => LocaleWsIdCronRoute,
+} as any);
+const LocaleWsIdDocumentsDocumentIdRoute =
+  LocaleWsIdDocumentsDocumentIdRouteImport.update({
+    id: '/$documentId',
+    path: '/$documentId',
+    getParentRoute: () => LocaleWsIdDocumentsRoute,
+  } as any);
+const LocaleWsIdHiveNotWhitelistedRoute =
+  LocaleWsIdHiveNotWhitelistedRouteImport.update({
+    id: '/not-whitelisted',
+    path: '/not-whitelisted',
+    getParentRoute: () => LocaleWsIdHiveRoute,
+  } as any);
 const LocaleWsIdMailIndexRoute = LocaleWsIdMailIndexRouteImport.update({
   id: '/$wsId/mail/',
   path: '/$wsId/mail/',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleUiComponentsComponentIdRoute =
-  LocaleUiComponentsComponentIdRouteImport.update({
-    id: '/ui/components/$componentId',
-    path: '/ui/components/$componentId',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSharedUserProfileCodeRoute =
-  LocaleSharedUserProfileCodeRouteImport.update({
-    id: '/shared/user-profile/$code',
-    path: '/shared/user-profile/$code',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSharedTaskShareCodeRoute =
-  LocaleSharedTaskShareCodeRouteImport.update({
-    id: '/shared/task/$shareCode',
-    path: '/shared/task/$shareCode',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleSharedTaskBoardsCodeRoute =
-  LocaleSharedTaskBoardsCodeRouteImport.update({
-    id: '/shared/task-boards/$code',
-    path: '/shared/task-boards/$code',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleShareTypeResourceIdRoute =
-  LocaleShareTypeResourceIdRouteImport.update({
-    id: '/share/$type/$resourceId',
-    path: '/share/$type/$resourceId',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleCalendarMeetTogetherSplatRoute =
-  LocaleCalendarMeetTogetherSplatRouteImport.update({
-    id: '/$',
-    path: '/$',
-    getParentRoute: () => LocaleCalendarMeetTogetherRoute,
-  } as any);
-const LocaleAiChatsChatIdRoute = LocaleAiChatsChatIdRouteImport.update({
-  id: '/ai/chats/$chatId',
-  path: '/ai/chats/$chatId',
+const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
+  id: '/$wsId/mail/sent',
+  path: '/$wsId/mail/sent',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdUsersTutoringRoute = LocaleWsIdUsersTutoringRouteImport.update({
-  id: '/$wsId/users/tutoring',
-  path: '/$wsId/users/tutoring',
+const LocaleWsIdMeetMeetingsRoute = LocaleWsIdMeetMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => LocaleWsIdMeetRoute,
+} as any);
+const LocaleWsIdMeetPlansRoute = LocaleWsIdMeetPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => LocaleWsIdMeetRoute,
+} as any);
+const LocaleWsIdPlatformExternalProjectsRoute =
+  LocaleWsIdPlatformExternalProjectsRouteImport.update({
+    id: '/external-projects',
+    path: '/external-projects',
+    getParentRoute: () => LocaleWsIdPlatformRoute,
+  } as any);
+const LocaleWsIdSettingsNotificationsRoute =
+  LocaleWsIdSettingsNotificationsRouteImport.update({
+    id: '/$wsId/settings/notifications',
+    path: '/$wsId/settings/notifications',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdSettingsReportsRoute =
+  LocaleWsIdSettingsReportsRouteImport.update({
+    id: '/$wsId/settings/reports',
+    path: '/$wsId/settings/reports',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdTasksIndexRoute = LocaleWsIdTasksIndexRouteImport.update({
+  id: '/$wsId/tasks/',
+  path: '/$wsId/tasks/',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdUsersTopicAnnouncementsRoute =
-  LocaleWsIdUsersTopicAnnouncementsRouteImport.update({
-    id: '/$wsId/users/topic-announcements',
-    path: '/$wsId/users/topic-announcements',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdUsersStructureRoute =
-  LocaleWsIdUsersStructureRouteImport.update({
-    id: '/$wsId/users/structure',
-    path: '/$wsId/users/structure',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdUsersFeedbacksRoute =
-  LocaleWsIdUsersFeedbacksRouteImport.update({
-    id: '/$wsId/users/feedbacks',
-    path: '/$wsId/users/feedbacks',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdUsersApprovalsRoute =
-  LocaleWsIdUsersApprovalsRouteImport.update({
-    id: '/$wsId/users/approvals',
-    path: '/$wsId/users/approvals',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdTasksTemplatesRoute =
-  LocaleWsIdTasksTemplatesRouteImport.update({
-    id: '/$wsId/tasks/templates',
-    path: '/$wsId/tasks/templates',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdTasksProjectsRoute = LocaleWsIdTasksProjectsRouteImport.update({
-  id: '/$wsId/tasks/projects',
-  path: '/$wsId/tasks/projects',
+const LocaleWsIdTasksTaskIdRoute = LocaleWsIdTasksTaskIdRouteImport.update({
+  id: '/$wsId/tasks/$taskId',
+  path: '/$wsId/tasks/$taskId',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdTasksNotesRoute = LocaleWsIdTasksNotesRouteImport.update({
-  id: '/$wsId/tasks/notes',
-  path: '/$wsId/tasks/notes',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdTasksLogsRoute = LocaleWsIdTasksLogsRouteImport.update({
-  id: '/$wsId/tasks/logs',
-  path: '/$wsId/tasks/logs',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdTasksLabelsRoute = LocaleWsIdTasksLabelsRouteImport.update({
-  id: '/$wsId/tasks/labels',
-  path: '/$wsId/tasks/labels',
-  getParentRoute: () => LocaleRouteRoute,
-} as any);
-const LocaleWsIdTasksInitiativesRoute =
-  LocaleWsIdTasksInitiativesRouteImport.update({
-    id: '/$wsId/tasks/initiatives',
-    path: '/$wsId/tasks/initiatives',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdTasksHabitsRoute = LocaleWsIdTasksHabitsRouteImport.update({
-  id: '/$wsId/tasks/habits',
-  path: '/$wsId/tasks/habits',
+const LocaleWsIdTasksCyclesRoute = LocaleWsIdTasksCyclesRouteImport.update({
+  id: '/$wsId/tasks/cycles',
+  path: '/$wsId/tasks/cycles',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
 const LocaleWsIdTasksEstimatesRoute =
@@ -803,99 +774,116 @@ const LocaleWsIdTasksEstimatesRoute =
     path: '/$wsId/tasks/estimates',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdTasksCyclesRoute = LocaleWsIdTasksCyclesRouteImport.update({
-  id: '/$wsId/tasks/cycles',
-  path: '/$wsId/tasks/cycles',
+const LocaleWsIdTasksHabitsRoute = LocaleWsIdTasksHabitsRouteImport.update({
+  id: '/$wsId/tasks/habits',
+  path: '/$wsId/tasks/habits',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdTasksTaskIdRoute = LocaleWsIdTasksTaskIdRouteImport.update({
-  id: '/$wsId/tasks/$taskId',
-  path: '/$wsId/tasks/$taskId',
+const LocaleWsIdTasksInitiativesRoute =
+  LocaleWsIdTasksInitiativesRouteImport.update({
+    id: '/$wsId/tasks/initiatives',
+    path: '/$wsId/tasks/initiatives',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdTasksLabelsRoute = LocaleWsIdTasksLabelsRouteImport.update({
+  id: '/$wsId/tasks/labels',
+  path: '/$wsId/tasks/labels',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdSettingsReportsRoute =
-  LocaleWsIdSettingsReportsRouteImport.update({
-    id: '/$wsId/settings/reports',
-    path: '/$wsId/settings/reports',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdSettingsNotificationsRoute =
-  LocaleWsIdSettingsNotificationsRouteImport.update({
-    id: '/$wsId/settings/notifications',
-    path: '/$wsId/settings/notifications',
-    getParentRoute: () => LocaleRouteRoute,
-  } as any);
-const LocaleWsIdPlatformExternalProjectsRoute =
-  LocaleWsIdPlatformExternalProjectsRouteImport.update({
-    id: '/external-projects',
-    path: '/external-projects',
-    getParentRoute: () => LocaleWsIdPlatformRoute,
-  } as any);
-const LocaleWsIdMeetPlansRoute = LocaleWsIdMeetPlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
-  getParentRoute: () => LocaleWsIdMeetRoute,
-} as any);
-const LocaleWsIdMeetMeetingsRoute = LocaleWsIdMeetMeetingsRouteImport.update({
-  id: '/meetings',
-  path: '/meetings',
-  getParentRoute: () => LocaleWsIdMeetRoute,
-} as any);
-const LocaleWsIdMailSentRoute = LocaleWsIdMailSentRouteImport.update({
-  id: '/$wsId/mail/sent',
-  path: '/$wsId/mail/sent',
+const LocaleWsIdTasksLogsRoute = LocaleWsIdTasksLogsRouteImport.update({
+  id: '/$wsId/tasks/logs',
+  path: '/$wsId/tasks/logs',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdHiveNotWhitelistedRoute =
-  LocaleWsIdHiveNotWhitelistedRouteImport.update({
-    id: '/not-whitelisted',
-    path: '/not-whitelisted',
-    getParentRoute: () => LocaleWsIdHiveRoute,
-  } as any);
-const LocaleWsIdDocumentsDocumentIdRoute =
-  LocaleWsIdDocumentsDocumentIdRouteImport.update({
-    id: '/$documentId',
-    path: '/$documentId',
-    getParentRoute: () => LocaleWsIdDocumentsRoute,
-  } as any);
-const LocaleWsIdCronJobsRoute = LocaleWsIdCronJobsRouteImport.update({
-  id: '/jobs',
-  path: '/jobs',
-  getParentRoute: () => LocaleWsIdCronRoute,
+const LocaleWsIdTasksNotesRoute = LocaleWsIdTasksNotesRouteImport.update({
+  id: '/$wsId/tasks/notes',
+  path: '/$wsId/tasks/notes',
+  getParentRoute: () => LocaleRouteRoute,
 } as any);
-const LocaleWsIdCrawlersUncrawledRoute =
-  LocaleWsIdCrawlersUncrawledRouteImport.update({
-    id: '/uncrawled',
-    path: '/uncrawled',
-    getParentRoute: () => LocaleWsIdCrawlersRoute,
-  } as any);
-const LocaleWsIdBillingSuccessRoute =
-  LocaleWsIdBillingSuccessRouteImport.update({
-    id: '/$wsId/billing/success',
-    path: '/$wsId/billing/success',
+const LocaleWsIdTasksProjectsRoute = LocaleWsIdTasksProjectsRouteImport.update({
+  id: '/$wsId/tasks/projects',
+  path: '/$wsId/tasks/projects',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleWsIdTasksTemplatesRoute =
+  LocaleWsIdTasksTemplatesRouteImport.update({
+    id: '/$wsId/tasks/templates',
+    path: '/$wsId/tasks/templates',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdAiChatNewRoute = LocaleWsIdAiChatNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => LocaleWsIdAiChatRoute,
-} as any);
-const LocaleWsIdAiChatChatbotsRoute =
-  LocaleWsIdAiChatChatbotsRouteImport.update({
-    id: '/chatbots',
-    path: '/chatbots',
-    getParentRoute: () => LocaleWsIdAiChatRoute,
-  } as any);
-const LocaleWsIdUsersGroupTagsIndexRoute =
-  LocaleWsIdUsersGroupTagsIndexRouteImport.update({
-    id: '/$wsId/users/group-tags/',
-    path: '/$wsId/users/group-tags/',
+const LocaleWsIdUsersApprovalsRoute =
+  LocaleWsIdUsersApprovalsRouteImport.update({
+    id: '/$wsId/users/approvals',
+    path: '/$wsId/users/approvals',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdTasksBoardsIndexRoute =
-  LocaleWsIdTasksBoardsIndexRouteImport.update({
-    id: '/$wsId/tasks/boards/',
-    path: '/$wsId/tasks/boards/',
+const LocaleWsIdUsersFeedbacksRoute =
+  LocaleWsIdUsersFeedbacksRouteImport.update({
+    id: '/$wsId/users/feedbacks',
+    path: '/$wsId/users/feedbacks',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdUsersStructureRoute =
+  LocaleWsIdUsersStructureRouteImport.update({
+    id: '/$wsId/users/structure',
+    path: '/$wsId/users/structure',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdUsersTopicAnnouncementsRoute =
+  LocaleWsIdUsersTopicAnnouncementsRouteImport.update({
+    id: '/$wsId/users/topic-announcements',
+    path: '/$wsId/users/topic-announcements',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleWsIdUsersTutoringRoute = LocaleWsIdUsersTutoringRouteImport.update({
+  id: '/$wsId/users/tutoring',
+  path: '/$wsId/users/tutoring',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleAiChatsChatIdRoute = LocaleAiChatsChatIdRouteImport.update({
+  id: '/ai/chats/$chatId',
+  path: '/ai/chats/$chatId',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleCalendarMeetTogetherSplatRoute =
+  LocaleCalendarMeetTogetherSplatRouteImport.update({
+    id: '/$',
+    path: '/$',
+    getParentRoute: () => LocaleCalendarMeetTogetherRoute,
+  } as any);
+const LocaleShareTypeResourceIdRoute =
+  LocaleShareTypeResourceIdRouteImport.update({
+    id: '/share/$type/$resourceId',
+    path: '/share/$type/$resourceId',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSharedTaskBoardsCodeRoute =
+  LocaleSharedTaskBoardsCodeRouteImport.update({
+    id: '/shared/task-boards/$code',
+    path: '/shared/task-boards/$code',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSharedTaskShareCodeRoute =
+  LocaleSharedTaskShareCodeRouteImport.update({
+    id: '/shared/task/$shareCode',
+    path: '/shared/task/$shareCode',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleSharedUserProfileCodeRoute =
+  LocaleSharedUserProfileCodeRouteImport.update({
+    id: '/shared/user-profile/$code',
+    path: '/shared/user-profile/$code',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
+const LocaleUiComponentsIndexRoute = LocaleUiComponentsIndexRouteImport.update({
+  id: '/ui/components/',
+  path: '/ui/components/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleUiComponentsComponentIdRoute =
+  LocaleUiComponentsComponentIdRouteImport.update({
+    id: '/ui/components/$componentId',
+    path: '/ui/components/$componentId',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
 const LocaleWsIdAiChatMyChatbotsIndexRoute =
@@ -904,52 +892,70 @@ const LocaleWsIdAiChatMyChatbotsIndexRoute =
     path: '/my-chatbots/',
     getParentRoute: () => LocaleWsIdAiChatRoute,
   } as any);
-const LocaleWsIdUsersTopicAnnouncementsTemplatesRoute =
-  LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport.update({
-    id: '/templates',
-    path: '/templates',
-    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+const LocaleWsIdAiChatMyChatbotsNewRoute =
+  LocaleWsIdAiChatMyChatbotsNewRouteImport.update({
+    id: '/my-chatbots/new',
+    path: '/my-chatbots/new',
+    getParentRoute: () => LocaleWsIdAiChatRoute,
   } as any);
-const LocaleWsIdUsersTopicAnnouncementsImportRoute =
-  LocaleWsIdUsersTopicAnnouncementsImportRouteImport.update({
-    id: '/import',
-    path: '/import',
-    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+const LocaleWsIdEpmCollectionsCollectionIdRoute =
+  LocaleWsIdEpmCollectionsCollectionIdRouteImport.update({
+    id: '/collections/$collectionId',
+    path: '/collections/$collectionId',
+    getParentRoute: () => LocaleWsIdEpmRoute,
   } as any);
-const LocaleWsIdUsersTopicAnnouncementsDeliveryRoute =
-  LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport.update({
-    id: '/delivery',
-    path: '/delivery',
-    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+const LocaleWsIdEpmEntriesEntryIdRoute =
+  LocaleWsIdEpmEntriesEntryIdRouteImport.update({
+    id: '/entries/$entryId',
+    path: '/entries/$entryId',
+    getParentRoute: () => LocaleWsIdEpmRoute,
   } as any);
-const LocaleWsIdUsersTopicAnnouncementsContactsRoute =
-  LocaleWsIdUsersTopicAnnouncementsContactsRouteImport.update({
-    id: '/contacts',
-    path: '/contacts',
-    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+const LocaleWsIdMeetMeetingsMeetingIdRoute =
+  LocaleWsIdMeetMeetingsMeetingIdRouteImport.update({
+    id: '/$meetingId',
+    path: '/$meetingId',
+    getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
   } as any);
-const LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute =
-  LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport.update({
-    id: '/announcements',
-    path: '/announcements',
-    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+const LocaleWsIdMindBoardsBoardIdRoute =
+  LocaleWsIdMindBoardsBoardIdRouteImport.update({
+    id: '/boards/$boardId',
+    path: '/boards/$boardId',
+    getParentRoute: () => LocaleWsIdMindRoute,
   } as any);
-const LocaleWsIdUsersReportsReportIdRoute =
-  LocaleWsIdUsersReportsReportIdRouteImport.update({
-    id: '/$wsId/users/reports/$reportId',
-    path: '/$wsId/users/reports/$reportId',
+const LocaleWsIdTasksBoardsIndexRoute =
+  LocaleWsIdTasksBoardsIndexRouteImport.update({
+    id: '/$wsId/tasks/boards/',
+    path: '/$wsId/tasks/boards/',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdUsersGroupsCalendarRoute =
-  LocaleWsIdUsersGroupsCalendarRouteImport.update({
-    id: '/$wsId/users/groups/calendar',
-    path: '/$wsId/users/groups/calendar',
+const LocaleWsIdTasksBoardsBoardIdRoute =
+  LocaleWsIdTasksBoardsBoardIdRouteImport.update({
+    id: '/$wsId/tasks/boards/$boardId',
+    path: '/$wsId/tasks/boards/$boardId',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdUsersGroupsGroupIdRoute =
-  LocaleWsIdUsersGroupsGroupIdRouteImport.update({
-    id: '/$wsId/users/groups/$groupId',
-    path: '/$wsId/users/groups/$groupId',
+const LocaleWsIdTasksProjectsProjectIdRoute =
+  LocaleWsIdTasksProjectsProjectIdRouteImport.update({
+    id: '/$projectId',
+    path: '/$projectId',
+    getParentRoute: () => LocaleWsIdTasksProjectsRoute,
+  } as any);
+const LocaleWsIdTasksTemplatesTemplateIdRoute =
+  LocaleWsIdTasksTemplatesTemplateIdRouteImport.update({
+    id: '/$templateId',
+    path: '/$templateId',
+    getParentRoute: () => LocaleWsIdTasksTemplatesRoute,
+  } as any);
+const LocaleWsIdTasksTemplatesMarketplaceRoute =
+  LocaleWsIdTasksTemplatesMarketplaceRouteImport.update({
+    id: '/marketplace',
+    path: '/marketplace',
+    getParentRoute: () => LocaleWsIdTasksTemplatesRoute,
+  } as any);
+const LocaleWsIdUsersGroupTagsIndexRoute =
+  LocaleWsIdUsersGroupTagsIndexRouteImport.update({
+    id: '/$wsId/users/group-tags/',
+    path: '/$wsId/users/group-tags/',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
 const LocaleWsIdUsersGroupTagsTagIdRoute =
@@ -958,70 +964,58 @@ const LocaleWsIdUsersGroupTagsTagIdRoute =
     path: '/$wsId/users/group-tags/$tagId',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdTasksTemplatesMarketplaceRoute =
-  LocaleWsIdTasksTemplatesMarketplaceRouteImport.update({
-    id: '/marketplace',
-    path: '/marketplace',
-    getParentRoute: () => LocaleWsIdTasksTemplatesRoute,
-  } as any);
-const LocaleWsIdTasksTemplatesTemplateIdRoute =
-  LocaleWsIdTasksTemplatesTemplateIdRouteImport.update({
-    id: '/$templateId',
-    path: '/$templateId',
-    getParentRoute: () => LocaleWsIdTasksTemplatesRoute,
-  } as any);
-const LocaleWsIdTasksProjectsProjectIdRoute =
-  LocaleWsIdTasksProjectsProjectIdRouteImport.update({
-    id: '/$projectId',
-    path: '/$projectId',
-    getParentRoute: () => LocaleWsIdTasksProjectsRoute,
-  } as any);
-const LocaleWsIdTasksBoardsBoardIdRoute =
-  LocaleWsIdTasksBoardsBoardIdRouteImport.update({
-    id: '/$wsId/tasks/boards/$boardId',
-    path: '/$wsId/tasks/boards/$boardId',
+const LocaleWsIdUsersGroupsGroupIdRoute =
+  LocaleWsIdUsersGroupsGroupIdRouteImport.update({
+    id: '/$wsId/users/groups/$groupId',
+    path: '/$wsId/users/groups/$groupId',
     getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdMindBoardsBoardIdRoute =
-  LocaleWsIdMindBoardsBoardIdRouteImport.update({
-    id: '/boards/$boardId',
-    path: '/boards/$boardId',
-    getParentRoute: () => LocaleWsIdMindRoute,
+const LocaleWsIdUsersGroupsCalendarRoute =
+  LocaleWsIdUsersGroupsCalendarRouteImport.update({
+    id: '/$wsId/users/groups/calendar',
+    path: '/$wsId/users/groups/calendar',
+    getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdMeetMeetingsMeetingIdRoute =
-  LocaleWsIdMeetMeetingsMeetingIdRouteImport.update({
-    id: '/$meetingId',
-    path: '/$meetingId',
-    getParentRoute: () => LocaleWsIdMeetMeetingsRoute,
+const LocaleWsIdUsersReportsReportIdRoute =
+  LocaleWsIdUsersReportsReportIdRouteImport.update({
+    id: '/$wsId/users/reports/$reportId',
+    path: '/$wsId/users/reports/$reportId',
+    getParentRoute: () => LocaleRouteRoute,
   } as any);
-const LocaleWsIdEpmEntriesEntryIdRoute =
-  LocaleWsIdEpmEntriesEntryIdRouteImport.update({
-    id: '/entries/$entryId',
-    path: '/entries/$entryId',
-    getParentRoute: () => LocaleWsIdEpmRoute,
+const LocaleWsIdUsersTopicAnnouncementsAnnouncementsRoute =
+  LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport.update({
+    id: '/announcements',
+    path: '/announcements',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
   } as any);
-const LocaleWsIdEpmCollectionsCollectionIdRoute =
-  LocaleWsIdEpmCollectionsCollectionIdRouteImport.update({
-    id: '/collections/$collectionId',
-    path: '/collections/$collectionId',
-    getParentRoute: () => LocaleWsIdEpmRoute,
+const LocaleWsIdUsersTopicAnnouncementsContactsRoute =
+  LocaleWsIdUsersTopicAnnouncementsContactsRouteImport.update({
+    id: '/contacts',
+    path: '/contacts',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
   } as any);
-const LocaleWsIdAiChatMyChatbotsNewRoute =
-  LocaleWsIdAiChatMyChatbotsNewRouteImport.update({
-    id: '/my-chatbots/new',
-    path: '/my-chatbots/new',
-    getParentRoute: () => LocaleWsIdAiChatRoute,
+const LocaleWsIdUsersTopicAnnouncementsDeliveryRoute =
+  LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport.update({
+    id: '/delivery',
+    path: '/delivery',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
   } as any);
-const LocaleShareTypeResourceIdModulesModuleIdRoute =
-  LocaleShareTypeResourceIdModulesModuleIdRouteImport.update({
-    id: '/modules/$moduleId',
-    path: '/modules/$moduleId',
-    getParentRoute: () => LocaleShareTypeResourceIdRoute,
+const LocaleWsIdUsersTopicAnnouncementsImportRoute =
+  LocaleWsIdUsersTopicAnnouncementsImportRouteImport.update({
+    id: '/import',
+    path: '/import',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
   } as any);
-const LocaleWsIdUsersGroupsGroupIdScheduleRoute =
-  LocaleWsIdUsersGroupsGroupIdScheduleRouteImport.update({
-    id: '/schedule',
-    path: '/schedule',
+const LocaleWsIdUsersTopicAnnouncementsTemplatesRoute =
+  LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport.update({
+    id: '/templates',
+    path: '/templates',
+    getParentRoute: () => LocaleWsIdUsersTopicAnnouncementsRoute,
+  } as any);
+const LocaleWsIdUsersGroupsGroupIdAttendanceRoute =
+  LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport.update({
+    id: '/attendance',
+    path: '/attendance',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
   } as any);
 const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
@@ -1030,11 +1024,17 @@ const LocaleWsIdUsersGroupsGroupIdRequestsRoute =
     path: '/requests',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
   } as any);
-const LocaleWsIdUsersGroupsGroupIdAttendanceRoute =
-  LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport.update({
-    id: '/attendance',
-    path: '/attendance',
+const LocaleWsIdUsersGroupsGroupIdScheduleRoute =
+  LocaleWsIdUsersGroupsGroupIdScheduleRouteImport.update({
+    id: '/schedule',
+    path: '/schedule',
     getParentRoute: () => LocaleWsIdUsersGroupsGroupIdRoute,
+  } as any);
+const LocaleShareTypeResourceIdModulesModuleIdRoute =
+  LocaleShareTypeResourceIdModulesModuleIdRouteImport.update({
+    id: '/modules/$moduleId',
+    path: '/modules/$moduleId',
+    getParentRoute: () => LocaleShareTypeResourceIdRoute,
   } as any);
 
 export interface FileRoutesByFullPath {
@@ -2029,25 +2029,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/~offline': {
-      id: '/~offline';
-      path: '/~offline';
-      fullPath: '/~offline';
-      preLoaderRoute: typeof Char126offlineRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/qr-generator': {
-      id: '/qr-generator';
-      path: '/qr-generator';
-      fullPath: '/qr-generator';
-      preLoaderRoute: typeof QrGeneratorRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/pricing': {
-      id: '/pricing';
-      path: '/pricing';
-      fullPath: '/pricing';
-      preLoaderRoute: typeof PricingRouteImport;
+    '/': {
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/$locale': {
@@ -2057,11 +2043,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleRouteRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexRouteImport;
+    '/pricing': {
+      id: '/pricing';
+      path: '/pricing';
+      fullPath: '/pricing';
+      preLoaderRoute: typeof PricingRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/qr-generator': {
+      id: '/qr-generator';
+      path: '/qr-generator';
+      fullPath: '/qr-generator';
+      preLoaderRoute: typeof QrGeneratorRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/~offline': {
+      id: '/~offline';
+      path: '/~offline';
+      fullPath: '/~offline';
+      preLoaderRoute: typeof Char126offlineRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/$locale/': {
@@ -2071,179 +2071,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/tools/random': {
-      id: '/tools/random';
-      path: '/tools/random';
-      fullPath: '/tools/random';
-      preLoaderRoute: typeof ToolsRandomRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/products/meet-together': {
-      id: '/products/meet-together';
-      path: '/products/meet-together';
-      fullPath: '/products/meet-together';
-      preLoaderRoute: typeof ProductsMeetTogetherRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/$locale/women-in-tech': {
-      id: '/$locale/women-in-tech';
-      path: '/women-in-tech';
-      fullPath: '/$locale/women-in-tech';
-      preLoaderRoute: typeof LocaleWomenInTechRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/verify-token': {
-      id: '/$locale/verify-token';
-      path: '/verify-token';
-      fullPath: '/$locale/verify-token';
-      preLoaderRoute: typeof LocaleVerifyTokenRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/terms': {
-      id: '/$locale/terms';
-      path: '/terms';
-      fullPath: '/$locale/terms';
-      preLoaderRoute: typeof LocaleTermsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/security': {
-      id: '/$locale/security';
-      path: '/security';
-      fullPath: '/$locale/security';
-      preLoaderRoute: typeof LocaleSecurityRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/qr-generator': {
-      id: '/$locale/qr-generator';
-      path: '/qr-generator';
-      fullPath: '/$locale/qr-generator';
-      preLoaderRoute: typeof LocaleQrGeneratorRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/privacy': {
-      id: '/$locale/privacy';
-      path: '/privacy';
-      fullPath: '/$locale/privacy';
-      preLoaderRoute: typeof LocalePrivacyRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/pricing': {
-      id: '/$locale/pricing';
-      path: '/pricing';
-      fullPath: '/$locale/pricing';
-      preLoaderRoute: typeof LocalePricingRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/partners': {
-      id: '/$locale/partners';
-      path: '/partners';
-      fullPath: '/$locale/partners';
-      preLoaderRoute: typeof LocalePartnersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/models': {
-      id: '/$locale/models';
-      path: '/models';
-      fullPath: '/$locale/models';
-      preLoaderRoute: typeof LocaleModelsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/meet-together': {
-      id: '/$locale/meet-together';
-      path: '/meet-together';
-      fullPath: '/$locale/meet-together';
-      preLoaderRoute: typeof LocaleMeetTogetherRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/meet': {
-      id: '/$locale/meet';
-      path: '/meet';
-      fullPath: '/$locale/meet';
-      preLoaderRoute: typeof LocaleMeetRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/logout': {
-      id: '/$locale/logout';
-      path: '/logout';
-      fullPath: '/$locale/logout';
-      preLoaderRoute: typeof LocaleLogoutRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/login': {
-      id: '/$locale/login';
-      path: '/login';
-      fullPath: '/$locale/login';
-      preLoaderRoute: typeof LocaleLoginRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/facebook-mockup': {
-      id: '/$locale/facebook-mockup';
-      path: '/facebook-mockup';
-      fullPath: '/$locale/facebook-mockup';
-      preLoaderRoute: typeof LocaleFacebookMockupRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/docs': {
-      id: '/$locale/docs';
-      path: '/docs';
-      fullPath: '/$locale/docs';
-      preLoaderRoute: typeof LocaleDocsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/contributors': {
-      id: '/$locale/contributors';
-      path: '/contributors';
-      fullPath: '/$locale/contributors';
-      preLoaderRoute: typeof LocaleContributorsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/contact': {
-      id: '/$locale/contact';
-      path: '/contact';
-      fullPath: '/$locale/contact';
-      preLoaderRoute: typeof LocaleContactRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/community-guidelines': {
-      id: '/$locale/community-guidelines';
-      path: '/community-guidelines';
-      fullPath: '/$locale/community-guidelines';
-      preLoaderRoute: typeof LocaleCommunityGuidelinesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/changelog': {
-      id: '/$locale/changelog';
-      path: '/changelog';
-      fullPath: '/$locale/changelog';
-      preLoaderRoute: typeof LocaleChangelogRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/careers': {
-      id: '/$locale/careers';
-      path: '/careers';
-      fullPath: '/$locale/careers';
-      preLoaderRoute: typeof LocaleCareersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/branding': {
-      id: '/$locale/branding';
-      path: '/branding';
-      fullPath: '/$locale/branding';
-      preLoaderRoute: typeof LocaleBrandingRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/blog': {
-      id: '/$locale/blog';
-      path: '/blog';
-      fullPath: '/$locale/blog';
-      preLoaderRoute: typeof LocaleBlogRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/add-account': {
-      id: '/$locale/add-account';
-      path: '/add-account';
-      fullPath: '/$locale/add-account';
-      preLoaderRoute: typeof LocaleAddAccountRouteImport;
+    '/$locale/about': {
+      id: '/$locale/about';
+      path: '/about';
+      fullPath: '/$locale/about';
+      preLoaderRoute: typeof LocaleAboutRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/acceptable-use': {
@@ -2253,452 +2085,186 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAcceptableUseRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/about': {
-      id: '/$locale/about';
-      path: '/about';
-      fullPath: '/$locale/about';
-      preLoaderRoute: typeof LocaleAboutRouteImport;
+    '/$locale/add-account': {
+      id: '/$locale/add-account';
+      path: '/add-account';
+      fullPath: '/$locale/add-account';
+      preLoaderRoute: typeof LocaleAddAccountRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/ui/': {
-      id: '/$locale/ui/';
-      path: '/ui';
-      fullPath: '/$locale/ui/';
-      preLoaderRoute: typeof LocaleUiIndexRouteImport;
+    '/$locale/blog': {
+      id: '/$locale/blog';
+      path: '/blog';
+      fullPath: '/$locale/blog';
+      preLoaderRoute: typeof LocaleBlogRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/visualizations/horse-racing': {
-      id: '/$locale/visualizations/horse-racing';
-      path: '/visualizations/horse-racing';
-      fullPath: '/$locale/visualizations/horse-racing';
-      preLoaderRoute: typeof LocaleVisualizationsHorseRacingRouteImport;
+    '/$locale/branding': {
+      id: '/$locale/branding';
+      path: '/branding';
+      fullPath: '/$locale/branding';
+      preLoaderRoute: typeof LocaleBrandingRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/users/$handle': {
-      id: '/$locale/users/$handle';
-      path: '/users/$handle';
-      fullPath: '/$locale/users/$handle';
-      preLoaderRoute: typeof LocaleUsersHandleRouteImport;
+    '/$locale/careers': {
+      id: '/$locale/careers';
+      path: '/careers';
+      fullPath: '/$locale/careers';
+      preLoaderRoute: typeof LocaleCareersRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/ui/setup': {
-      id: '/$locale/ui/setup';
-      path: '/ui/setup';
-      fullPath: '/$locale/ui/setup';
-      preLoaderRoute: typeof LocaleUiSetupRouteImport;
+    '/$locale/changelog': {
+      id: '/$locale/changelog';
+      path: '/changelog';
+      fullPath: '/$locale/changelog';
+      preLoaderRoute: typeof LocaleChangelogRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/ui/contributing': {
-      id: '/$locale/ui/contributing';
-      path: '/ui/contributing';
-      fullPath: '/$locale/ui/contributing';
-      preLoaderRoute: typeof LocaleUiContributingRouteImport;
+    '/$locale/community-guidelines': {
+      id: '/$locale/community-guidelines';
+      path: '/community-guidelines';
+      fullPath: '/$locale/community-guidelines';
+      preLoaderRoute: typeof LocaleCommunityGuidelinesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/tools/random': {
-      id: '/$locale/tools/random';
-      path: '/tools/random';
-      fullPath: '/$locale/tools/random';
-      preLoaderRoute: typeof LocaleToolsRandomRouteImport;
+    '/$locale/contact': {
+      id: '/$locale/contact';
+      path: '/contact';
+      fullPath: '/$locale/contact';
+      preLoaderRoute: typeof LocaleContactRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/retail': {
-      id: '/$locale/solutions/retail';
-      path: '/solutions/retail';
-      fullPath: '/$locale/solutions/retail';
-      preLoaderRoute: typeof LocaleSolutionsRetailRouteImport;
+    '/$locale/contributors': {
+      id: '/$locale/contributors';
+      path: '/contributors';
+      fullPath: '/$locale/contributors';
+      preLoaderRoute: typeof LocaleContributorsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/restaurants': {
-      id: '/$locale/solutions/restaurants';
-      path: '/solutions/restaurants';
-      fullPath: '/$locale/solutions/restaurants';
-      preLoaderRoute: typeof LocaleSolutionsRestaurantsRouteImport;
+    '/$locale/docs': {
+      id: '/$locale/docs';
+      path: '/docs';
+      fullPath: '/$locale/docs';
+      preLoaderRoute: typeof LocaleDocsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/realestate': {
-      id: '/$locale/solutions/realestate';
-      path: '/solutions/realestate';
-      fullPath: '/$locale/solutions/realestate';
-      preLoaderRoute: typeof LocaleSolutionsRealestateRouteImport;
+    '/$locale/facebook-mockup': {
+      id: '/$locale/facebook-mockup';
+      path: '/facebook-mockup';
+      fullPath: '/$locale/facebook-mockup';
+      preLoaderRoute: typeof LocaleFacebookMockupRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/pharmacies': {
-      id: '/$locale/solutions/pharmacies';
-      path: '/solutions/pharmacies';
-      fullPath: '/$locale/solutions/pharmacies';
-      preLoaderRoute: typeof LocaleSolutionsPharmaciesRouteImport;
+    '/$locale/login': {
+      id: '/$locale/login';
+      path: '/login';
+      fullPath: '/$locale/login';
+      preLoaderRoute: typeof LocaleLoginRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/manufacturing': {
-      id: '/$locale/solutions/manufacturing';
-      path: '/solutions/manufacturing';
-      fullPath: '/$locale/solutions/manufacturing';
-      preLoaderRoute: typeof LocaleSolutionsManufacturingRouteImport;
+    '/$locale/logout': {
+      id: '/$locale/logout';
+      path: '/logout';
+      fullPath: '/$locale/logout';
+      preLoaderRoute: typeof LocaleLogoutRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/hospitality': {
-      id: '/$locale/solutions/hospitality';
-      path: '/solutions/hospitality';
-      fullPath: '/$locale/solutions/hospitality';
-      preLoaderRoute: typeof LocaleSolutionsHospitalityRouteImport;
+    '/$locale/meet': {
+      id: '/$locale/meet';
+      path: '/meet';
+      fullPath: '/$locale/meet';
+      preLoaderRoute: typeof LocaleMeetRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/healthcare': {
-      id: '/$locale/solutions/healthcare';
-      path: '/solutions/healthcare';
-      fullPath: '/$locale/solutions/healthcare';
-      preLoaderRoute: typeof LocaleSolutionsHealthcareRouteImport;
+    '/$locale/meet-together': {
+      id: '/$locale/meet-together';
+      path: '/meet-together';
+      fullPath: '/$locale/meet-together';
+      preLoaderRoute: typeof LocaleMeetTogetherRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/education': {
-      id: '/$locale/solutions/education';
-      path: '/solutions/education';
-      fullPath: '/$locale/solutions/education';
-      preLoaderRoute: typeof LocaleSolutionsEducationRouteImport;
+    '/$locale/models': {
+      id: '/$locale/models';
+      path: '/models';
+      fullPath: '/$locale/models';
+      preLoaderRoute: typeof LocaleModelsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/solutions/construction': {
-      id: '/$locale/solutions/construction';
-      path: '/solutions/construction';
-      fullPath: '/$locale/solutions/construction';
-      preLoaderRoute: typeof LocaleSolutionsConstructionRouteImport;
+    '/$locale/partners': {
+      id: '/$locale/partners';
+      path: '/partners';
+      fullPath: '/$locale/partners';
+      preLoaderRoute: typeof LocalePartnersRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/security/policy': {
-      id: '/$locale/security/policy';
-      path: '/policy';
-      fullPath: '/$locale/security/policy';
-      preLoaderRoute: typeof LocaleSecurityPolicyRouteImport;
-      parentRoute: typeof LocaleSecurityRoute;
-    };
-    '/$locale/security/bug-bounty': {
-      id: '/$locale/security/bug-bounty';
-      path: '/bug-bounty';
-      fullPath: '/$locale/security/bug-bounty';
-      preLoaderRoute: typeof LocaleSecurityBugBountyRouteImport;
-      parentRoute: typeof LocaleSecurityRoute;
-    };
-    '/$locale/products/workflows': {
-      id: '/$locale/products/workflows';
-      path: '/products/workflows';
-      fullPath: '/$locale/products/workflows';
-      preLoaderRoute: typeof LocaleProductsWorkflowsRouteImport;
+    '/$locale/pricing': {
+      id: '/$locale/pricing';
+      path: '/pricing';
+      fullPath: '/$locale/pricing';
+      preLoaderRoute: typeof LocalePricingRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/products/tasks': {
-      id: '/$locale/products/tasks';
-      path: '/products/tasks';
-      fullPath: '/$locale/products/tasks';
-      preLoaderRoute: typeof LocaleProductsTasksRouteImport;
+    '/$locale/privacy': {
+      id: '/$locale/privacy';
+      path: '/privacy';
+      fullPath: '/$locale/privacy';
+      preLoaderRoute: typeof LocalePrivacyRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/products/meet-together': {
-      id: '/$locale/products/meet-together';
+    '/$locale/qr-generator': {
+      id: '/$locale/qr-generator';
+      path: '/qr-generator';
+      fullPath: '/$locale/qr-generator';
+      preLoaderRoute: typeof LocaleQrGeneratorRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/security': {
+      id: '/$locale/security';
+      path: '/security';
+      fullPath: '/$locale/security';
+      preLoaderRoute: typeof LocaleSecurityRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/terms': {
+      id: '/$locale/terms';
+      path: '/terms';
+      fullPath: '/$locale/terms';
+      preLoaderRoute: typeof LocaleTermsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/verify-token': {
+      id: '/$locale/verify-token';
+      path: '/verify-token';
+      fullPath: '/$locale/verify-token';
+      preLoaderRoute: typeof LocaleVerifyTokenRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/women-in-tech': {
+      id: '/$locale/women-in-tech';
+      path: '/women-in-tech';
+      fullPath: '/$locale/women-in-tech';
+      preLoaderRoute: typeof LocaleWomenInTechRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/products/meet-together': {
+      id: '/products/meet-together';
       path: '/products/meet-together';
-      fullPath: '/$locale/products/meet-together';
-      preLoaderRoute: typeof LocaleProductsMeetTogetherRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+      fullPath: '/products/meet-together';
+      preLoaderRoute: typeof ProductsMeetTogetherRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
-    '/$locale/products/mail': {
-      id: '/$locale/products/mail';
-      path: '/products/mail';
-      fullPath: '/$locale/products/mail';
-      preLoaderRoute: typeof LocaleProductsMailRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+    '/tools/random': {
+      id: '/tools/random';
+      path: '/tools/random';
+      fullPath: '/tools/random';
+      preLoaderRoute: typeof ToolsRandomRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
-    '/$locale/products/lms': {
-      id: '/$locale/products/lms';
-      path: '/products/lms';
-      fullPath: '/$locale/products/lms';
-      preLoaderRoute: typeof LocaleProductsLmsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/inventory': {
-      id: '/$locale/products/inventory';
-      path: '/products/inventory';
-      fullPath: '/$locale/products/inventory';
-      preLoaderRoute: typeof LocaleProductsInventoryRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/finance': {
-      id: '/$locale/products/finance';
-      path: '/products/finance';
-      fullPath: '/$locale/products/finance';
-      preLoaderRoute: typeof LocaleProductsFinanceRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/drive': {
-      id: '/$locale/products/drive';
-      path: '/products/drive';
-      fullPath: '/$locale/products/drive';
-      preLoaderRoute: typeof LocaleProductsDriveRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/documents': {
-      id: '/$locale/products/documents';
-      path: '/products/documents';
-      fullPath: '/$locale/products/documents';
-      preLoaderRoute: typeof LocaleProductsDocumentsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/crm': {
-      id: '/$locale/products/crm';
-      path: '/products/crm';
-      fullPath: '/$locale/products/crm';
-      preLoaderRoute: typeof LocaleProductsCrmRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/calendar': {
-      id: '/$locale/products/calendar';
-      path: '/products/calendar';
-      fullPath: '/$locale/products/calendar';
-      preLoaderRoute: typeof LocaleProductsCalendarRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/products/ai': {
-      id: '/$locale/products/ai';
-      path: '/products/ai';
-      fullPath: '/$locale/products/ai';
-      preLoaderRoute: typeof LocaleProductsAiRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/games/farm': {
-      id: '/$locale/games/farm';
-      path: '/games/farm';
-      fullPath: '/$locale/games/farm';
-      preLoaderRoute: typeof LocaleGamesFarmRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/documents/$documentId': {
-      id: '/$locale/documents/$documentId';
-      path: '/documents/$documentId';
-      fullPath: '/$locale/documents/$documentId';
-      preLoaderRoute: typeof LocaleDocumentsDocumentIdRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/changelog/$slug': {
-      id: '/$locale/changelog/$slug';
-      path: '/$slug';
-      fullPath: '/$locale/changelog/$slug';
-      preLoaderRoute: typeof LocaleChangelogSlugRouteImport;
-      parentRoute: typeof LocaleChangelogRoute;
-    };
-    '/$locale/calendar/meet-together': {
-      id: '/$locale/calendar/meet-together';
-      path: '/calendar/meet-together';
-      fullPath: '/$locale/calendar/meet-together';
-      preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/account/delete': {
-      id: '/$locale/account/delete';
-      path: '/account/delete';
-      fullPath: '/$locale/account/delete';
-      preLoaderRoute: typeof LocaleAccountDeleteRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/workouts': {
-      id: '/$locale/$wsId/workouts';
-      path: '/$wsId/workouts';
-      fullPath: '/$locale/$wsId/workouts';
-      preLoaderRoute: typeof LocaleWsIdWorkoutsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/workforce': {
-      id: '/$locale/$wsId/workforce';
-      path: '/$wsId/workforce';
-      fullPath: '/$locale/$wsId/workforce';
-      preLoaderRoute: typeof LocaleWsIdWorkforceRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/roles': {
-      id: '/$locale/$wsId/roles';
-      path: '/$wsId/roles';
-      fullPath: '/$locale/$wsId/roles';
-      preLoaderRoute: typeof LocaleWsIdRolesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/readings': {
-      id: '/$locale/$wsId/readings';
-      path: '/$wsId/readings';
-      fullPath: '/$locale/$wsId/readings';
-      preLoaderRoute: typeof LocaleWsIdReadingsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/queues': {
-      id: '/$locale/$wsId/queues';
-      path: '/$wsId/queues';
-      fullPath: '/$locale/$wsId/queues';
-      preLoaderRoute: typeof LocaleWsIdQueuesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/qr-generator': {
-      id: '/$locale/$wsId/qr-generator';
-      path: '/$wsId/qr-generator';
-      fullPath: '/$locale/$wsId/qr-generator';
-      preLoaderRoute: typeof LocaleWsIdQrGeneratorRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/progress': {
-      id: '/$locale/$wsId/progress';
-      path: '/$wsId/progress';
-      fullPath: '/$locale/$wsId/progress';
-      preLoaderRoute: typeof LocaleWsIdProgressRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/posts': {
-      id: '/$locale/$wsId/posts';
-      path: '/$wsId/posts';
-      fullPath: '/$locale/$wsId/posts';
-      preLoaderRoute: typeof LocaleWsIdPostsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/polls': {
-      id: '/$locale/$wsId/polls';
-      path: '/$wsId/polls';
-      fullPath: '/$locale/$wsId/polls';
-      preLoaderRoute: typeof LocaleWsIdPollsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/platform': {
-      id: '/$locale/$wsId/platform';
-      path: '/$wsId/platform';
-      fullPath: '/$locale/$wsId/platform';
-      preLoaderRoute: typeof LocaleWsIdPlatformRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/pipelines': {
-      id: '/$locale/$wsId/pipelines';
-      path: '/$wsId/pipelines';
-      fullPath: '/$locale/$wsId/pipelines';
-      preLoaderRoute: typeof LocaleWsIdPipelinesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/notifications': {
-      id: '/$locale/$wsId/notifications';
-      path: '/$wsId/notifications';
-      fullPath: '/$locale/$wsId/notifications';
-      preLoaderRoute: typeof LocaleWsIdNotificationsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/mind': {
-      id: '/$locale/$wsId/mind';
-      path: '/$wsId/mind';
-      fullPath: '/$locale/$wsId/mind';
-      preLoaderRoute: typeof LocaleWsIdMindRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/metrics': {
-      id: '/$locale/$wsId/metrics';
-      path: '/$wsId/metrics';
-      fullPath: '/$locale/$wsId/metrics';
-      preLoaderRoute: typeof LocaleWsIdMetricsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/memories': {
-      id: '/$locale/$wsId/memories';
-      path: '/$wsId/memories';
-      fullPath: '/$locale/$wsId/memories';
-      preLoaderRoute: typeof LocaleWsIdMemoriesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/members': {
-      id: '/$locale/$wsId/members';
-      path: '/$wsId/members';
-      fullPath: '/$locale/$wsId/members';
-      preLoaderRoute: typeof LocaleWsIdMembersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/meet': {
-      id: '/$locale/$wsId/meet';
-      path: '/$wsId/meet';
-      fullPath: '/$locale/$wsId/meet';
-      preLoaderRoute: typeof LocaleWsIdMeetRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/integrations': {
-      id: '/$locale/$wsId/integrations';
-      path: '/$wsId/integrations';
-      fullPath: '/$locale/$wsId/integrations';
-      preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/hive': {
-      id: '/$locale/$wsId/hive';
-      path: '/$wsId/hive';
-      fullPath: '/$locale/$wsId/hive';
-      preLoaderRoute: typeof LocaleWsIdHiveRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/habits': {
-      id: '/$locale/$wsId/habits';
-      path: '/$wsId/habits';
-      fullPath: '/$locale/$wsId/habits';
-      preLoaderRoute: typeof LocaleWsIdHabitsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/external-projects': {
-      id: '/$locale/$wsId/external-projects';
-      path: '/$wsId/external-projects';
-      fullPath: '/$locale/$wsId/external-projects';
-      preLoaderRoute: typeof LocaleWsIdExternalProjectsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/epm': {
-      id: '/$locale/$wsId/epm';
-      path: '/$wsId/epm';
-      fullPath: '/$locale/$wsId/epm';
-      preLoaderRoute: typeof LocaleWsIdEpmRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/drive': {
-      id: '/$locale/$wsId/drive';
-      path: '/$wsId/drive';
-      fullPath: '/$locale/$wsId/drive';
-      preLoaderRoute: typeof LocaleWsIdDriveRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/documents': {
-      id: '/$locale/$wsId/documents';
-      path: '/$wsId/documents';
-      fullPath: '/$locale/$wsId/documents';
-      preLoaderRoute: typeof LocaleWsIdDocumentsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/diet': {
-      id: '/$locale/$wsId/diet';
-      path: '/$wsId/diet';
-      fullPath: '/$locale/$wsId/diet';
-      preLoaderRoute: typeof LocaleWsIdDietRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/cron': {
-      id: '/$locale/$wsId/cron';
-      path: '/$wsId/cron';
-      fullPath: '/$locale/$wsId/cron';
-      preLoaderRoute: typeof LocaleWsIdCronRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/crawlers': {
-      id: '/$locale/$wsId/crawlers';
-      path: '/$wsId/crawlers';
-      fullPath: '/$locale/$wsId/crawlers';
-      preLoaderRoute: typeof LocaleWsIdCrawlersRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/chat': {
-      id: '/$locale/$wsId/chat';
-      path: '/$wsId/chat';
-      fullPath: '/$locale/$wsId/chat';
-      preLoaderRoute: typeof LocaleWsIdChatRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/changelog': {
-      id: '/$locale/$wsId/changelog';
-      path: '/$wsId/changelog';
-      fullPath: '/$locale/$wsId/changelog';
-      preLoaderRoute: typeof LocaleWsIdChangelogRouteImport;
+    '/$locale/$wsId/ai-chat': {
+      id: '/$locale/$wsId/ai-chat';
+      path: '/$wsId/ai-chat';
+      fullPath: '/$locale/$wsId/ai-chat';
+      preLoaderRoute: typeof LocaleWsIdAiChatRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/calendar': {
@@ -2708,26 +2274,495 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdCalendarRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/ai-chat': {
-      id: '/$locale/$wsId/ai-chat';
-      path: '/$wsId/ai-chat';
-      fullPath: '/$locale/$wsId/ai-chat';
-      preLoaderRoute: typeof LocaleWsIdAiChatRouteImport;
+    '/$locale/$wsId/changelog': {
+      id: '/$locale/$wsId/changelog';
+      path: '/$wsId/changelog';
+      fullPath: '/$locale/$wsId/changelog';
+      preLoaderRoute: typeof LocaleWsIdChangelogRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/ui/components/': {
-      id: '/$locale/ui/components/';
-      path: '/ui/components';
-      fullPath: '/$locale/ui/components/';
-      preLoaderRoute: typeof LocaleUiComponentsIndexRouteImport;
+    '/$locale/$wsId/chat': {
+      id: '/$locale/$wsId/chat';
+      path: '/$wsId/chat';
+      fullPath: '/$locale/$wsId/chat';
+      preLoaderRoute: typeof LocaleWsIdChatRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/tasks/': {
-      id: '/$locale/$wsId/tasks/';
-      path: '/$wsId/tasks';
-      fullPath: '/$locale/$wsId/tasks/';
-      preLoaderRoute: typeof LocaleWsIdTasksIndexRouteImport;
+    '/$locale/$wsId/crawlers': {
+      id: '/$locale/$wsId/crawlers';
+      path: '/$wsId/crawlers';
+      fullPath: '/$locale/$wsId/crawlers';
+      preLoaderRoute: typeof LocaleWsIdCrawlersRouteImport;
       parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/cron': {
+      id: '/$locale/$wsId/cron';
+      path: '/$wsId/cron';
+      fullPath: '/$locale/$wsId/cron';
+      preLoaderRoute: typeof LocaleWsIdCronRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/diet': {
+      id: '/$locale/$wsId/diet';
+      path: '/$wsId/diet';
+      fullPath: '/$locale/$wsId/diet';
+      preLoaderRoute: typeof LocaleWsIdDietRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/documents': {
+      id: '/$locale/$wsId/documents';
+      path: '/$wsId/documents';
+      fullPath: '/$locale/$wsId/documents';
+      preLoaderRoute: typeof LocaleWsIdDocumentsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/drive': {
+      id: '/$locale/$wsId/drive';
+      path: '/$wsId/drive';
+      fullPath: '/$locale/$wsId/drive';
+      preLoaderRoute: typeof LocaleWsIdDriveRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/epm': {
+      id: '/$locale/$wsId/epm';
+      path: '/$wsId/epm';
+      fullPath: '/$locale/$wsId/epm';
+      preLoaderRoute: typeof LocaleWsIdEpmRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/external-projects': {
+      id: '/$locale/$wsId/external-projects';
+      path: '/$wsId/external-projects';
+      fullPath: '/$locale/$wsId/external-projects';
+      preLoaderRoute: typeof LocaleWsIdExternalProjectsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/habits': {
+      id: '/$locale/$wsId/habits';
+      path: '/$wsId/habits';
+      fullPath: '/$locale/$wsId/habits';
+      preLoaderRoute: typeof LocaleWsIdHabitsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/hive': {
+      id: '/$locale/$wsId/hive';
+      path: '/$wsId/hive';
+      fullPath: '/$locale/$wsId/hive';
+      preLoaderRoute: typeof LocaleWsIdHiveRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/integrations': {
+      id: '/$locale/$wsId/integrations';
+      path: '/$wsId/integrations';
+      fullPath: '/$locale/$wsId/integrations';
+      preLoaderRoute: typeof LocaleWsIdIntegrationsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/meet': {
+      id: '/$locale/$wsId/meet';
+      path: '/$wsId/meet';
+      fullPath: '/$locale/$wsId/meet';
+      preLoaderRoute: typeof LocaleWsIdMeetRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/members': {
+      id: '/$locale/$wsId/members';
+      path: '/$wsId/members';
+      fullPath: '/$locale/$wsId/members';
+      preLoaderRoute: typeof LocaleWsIdMembersRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/memories': {
+      id: '/$locale/$wsId/memories';
+      path: '/$wsId/memories';
+      fullPath: '/$locale/$wsId/memories';
+      preLoaderRoute: typeof LocaleWsIdMemoriesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/metrics': {
+      id: '/$locale/$wsId/metrics';
+      path: '/$wsId/metrics';
+      fullPath: '/$locale/$wsId/metrics';
+      preLoaderRoute: typeof LocaleWsIdMetricsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/mind': {
+      id: '/$locale/$wsId/mind';
+      path: '/$wsId/mind';
+      fullPath: '/$locale/$wsId/mind';
+      preLoaderRoute: typeof LocaleWsIdMindRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/notifications': {
+      id: '/$locale/$wsId/notifications';
+      path: '/$wsId/notifications';
+      fullPath: '/$locale/$wsId/notifications';
+      preLoaderRoute: typeof LocaleWsIdNotificationsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/pipelines': {
+      id: '/$locale/$wsId/pipelines';
+      path: '/$wsId/pipelines';
+      fullPath: '/$locale/$wsId/pipelines';
+      preLoaderRoute: typeof LocaleWsIdPipelinesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/platform': {
+      id: '/$locale/$wsId/platform';
+      path: '/$wsId/platform';
+      fullPath: '/$locale/$wsId/platform';
+      preLoaderRoute: typeof LocaleWsIdPlatformRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/polls': {
+      id: '/$locale/$wsId/polls';
+      path: '/$wsId/polls';
+      fullPath: '/$locale/$wsId/polls';
+      preLoaderRoute: typeof LocaleWsIdPollsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/posts': {
+      id: '/$locale/$wsId/posts';
+      path: '/$wsId/posts';
+      fullPath: '/$locale/$wsId/posts';
+      preLoaderRoute: typeof LocaleWsIdPostsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/progress': {
+      id: '/$locale/$wsId/progress';
+      path: '/$wsId/progress';
+      fullPath: '/$locale/$wsId/progress';
+      preLoaderRoute: typeof LocaleWsIdProgressRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/qr-generator': {
+      id: '/$locale/$wsId/qr-generator';
+      path: '/$wsId/qr-generator';
+      fullPath: '/$locale/$wsId/qr-generator';
+      preLoaderRoute: typeof LocaleWsIdQrGeneratorRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/queues': {
+      id: '/$locale/$wsId/queues';
+      path: '/$wsId/queues';
+      fullPath: '/$locale/$wsId/queues';
+      preLoaderRoute: typeof LocaleWsIdQueuesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/readings': {
+      id: '/$locale/$wsId/readings';
+      path: '/$wsId/readings';
+      fullPath: '/$locale/$wsId/readings';
+      preLoaderRoute: typeof LocaleWsIdReadingsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/roles': {
+      id: '/$locale/$wsId/roles';
+      path: '/$wsId/roles';
+      fullPath: '/$locale/$wsId/roles';
+      preLoaderRoute: typeof LocaleWsIdRolesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/workforce': {
+      id: '/$locale/$wsId/workforce';
+      path: '/$wsId/workforce';
+      fullPath: '/$locale/$wsId/workforce';
+      preLoaderRoute: typeof LocaleWsIdWorkforceRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/workouts': {
+      id: '/$locale/$wsId/workouts';
+      path: '/$wsId/workouts';
+      fullPath: '/$locale/$wsId/workouts';
+      preLoaderRoute: typeof LocaleWsIdWorkoutsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/account/delete': {
+      id: '/$locale/account/delete';
+      path: '/account/delete';
+      fullPath: '/$locale/account/delete';
+      preLoaderRoute: typeof LocaleAccountDeleteRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/calendar/meet-together': {
+      id: '/$locale/calendar/meet-together';
+      path: '/calendar/meet-together';
+      fullPath: '/$locale/calendar/meet-together';
+      preLoaderRoute: typeof LocaleCalendarMeetTogetherRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/changelog/$slug': {
+      id: '/$locale/changelog/$slug';
+      path: '/$slug';
+      fullPath: '/$locale/changelog/$slug';
+      preLoaderRoute: typeof LocaleChangelogSlugRouteImport;
+      parentRoute: typeof LocaleChangelogRoute;
+    };
+    '/$locale/documents/$documentId': {
+      id: '/$locale/documents/$documentId';
+      path: '/documents/$documentId';
+      fullPath: '/$locale/documents/$documentId';
+      preLoaderRoute: typeof LocaleDocumentsDocumentIdRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/games/farm': {
+      id: '/$locale/games/farm';
+      path: '/games/farm';
+      fullPath: '/$locale/games/farm';
+      preLoaderRoute: typeof LocaleGamesFarmRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/ai': {
+      id: '/$locale/products/ai';
+      path: '/products/ai';
+      fullPath: '/$locale/products/ai';
+      preLoaderRoute: typeof LocaleProductsAiRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/calendar': {
+      id: '/$locale/products/calendar';
+      path: '/products/calendar';
+      fullPath: '/$locale/products/calendar';
+      preLoaderRoute: typeof LocaleProductsCalendarRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/crm': {
+      id: '/$locale/products/crm';
+      path: '/products/crm';
+      fullPath: '/$locale/products/crm';
+      preLoaderRoute: typeof LocaleProductsCrmRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/documents': {
+      id: '/$locale/products/documents';
+      path: '/products/documents';
+      fullPath: '/$locale/products/documents';
+      preLoaderRoute: typeof LocaleProductsDocumentsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/drive': {
+      id: '/$locale/products/drive';
+      path: '/products/drive';
+      fullPath: '/$locale/products/drive';
+      preLoaderRoute: typeof LocaleProductsDriveRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/finance': {
+      id: '/$locale/products/finance';
+      path: '/products/finance';
+      fullPath: '/$locale/products/finance';
+      preLoaderRoute: typeof LocaleProductsFinanceRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/inventory': {
+      id: '/$locale/products/inventory';
+      path: '/products/inventory';
+      fullPath: '/$locale/products/inventory';
+      preLoaderRoute: typeof LocaleProductsInventoryRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/lms': {
+      id: '/$locale/products/lms';
+      path: '/products/lms';
+      fullPath: '/$locale/products/lms';
+      preLoaderRoute: typeof LocaleProductsLmsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/mail': {
+      id: '/$locale/products/mail';
+      path: '/products/mail';
+      fullPath: '/$locale/products/mail';
+      preLoaderRoute: typeof LocaleProductsMailRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/meet-together': {
+      id: '/$locale/products/meet-together';
+      path: '/products/meet-together';
+      fullPath: '/$locale/products/meet-together';
+      preLoaderRoute: typeof LocaleProductsMeetTogetherRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/tasks': {
+      id: '/$locale/products/tasks';
+      path: '/products/tasks';
+      fullPath: '/$locale/products/tasks';
+      preLoaderRoute: typeof LocaleProductsTasksRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/products/workflows': {
+      id: '/$locale/products/workflows';
+      path: '/products/workflows';
+      fullPath: '/$locale/products/workflows';
+      preLoaderRoute: typeof LocaleProductsWorkflowsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/security/bug-bounty': {
+      id: '/$locale/security/bug-bounty';
+      path: '/bug-bounty';
+      fullPath: '/$locale/security/bug-bounty';
+      preLoaderRoute: typeof LocaleSecurityBugBountyRouteImport;
+      parentRoute: typeof LocaleSecurityRoute;
+    };
+    '/$locale/security/policy': {
+      id: '/$locale/security/policy';
+      path: '/policy';
+      fullPath: '/$locale/security/policy';
+      preLoaderRoute: typeof LocaleSecurityPolicyRouteImport;
+      parentRoute: typeof LocaleSecurityRoute;
+    };
+    '/$locale/solutions/construction': {
+      id: '/$locale/solutions/construction';
+      path: '/solutions/construction';
+      fullPath: '/$locale/solutions/construction';
+      preLoaderRoute: typeof LocaleSolutionsConstructionRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/education': {
+      id: '/$locale/solutions/education';
+      path: '/solutions/education';
+      fullPath: '/$locale/solutions/education';
+      preLoaderRoute: typeof LocaleSolutionsEducationRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/healthcare': {
+      id: '/$locale/solutions/healthcare';
+      path: '/solutions/healthcare';
+      fullPath: '/$locale/solutions/healthcare';
+      preLoaderRoute: typeof LocaleSolutionsHealthcareRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/hospitality': {
+      id: '/$locale/solutions/hospitality';
+      path: '/solutions/hospitality';
+      fullPath: '/$locale/solutions/hospitality';
+      preLoaderRoute: typeof LocaleSolutionsHospitalityRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/manufacturing': {
+      id: '/$locale/solutions/manufacturing';
+      path: '/solutions/manufacturing';
+      fullPath: '/$locale/solutions/manufacturing';
+      preLoaderRoute: typeof LocaleSolutionsManufacturingRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/pharmacies': {
+      id: '/$locale/solutions/pharmacies';
+      path: '/solutions/pharmacies';
+      fullPath: '/$locale/solutions/pharmacies';
+      preLoaderRoute: typeof LocaleSolutionsPharmaciesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/realestate': {
+      id: '/$locale/solutions/realestate';
+      path: '/solutions/realestate';
+      fullPath: '/$locale/solutions/realestate';
+      preLoaderRoute: typeof LocaleSolutionsRealestateRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/restaurants': {
+      id: '/$locale/solutions/restaurants';
+      path: '/solutions/restaurants';
+      fullPath: '/$locale/solutions/restaurants';
+      preLoaderRoute: typeof LocaleSolutionsRestaurantsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/solutions/retail': {
+      id: '/$locale/solutions/retail';
+      path: '/solutions/retail';
+      fullPath: '/$locale/solutions/retail';
+      preLoaderRoute: typeof LocaleSolutionsRetailRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/tools/random': {
+      id: '/$locale/tools/random';
+      path: '/tools/random';
+      fullPath: '/$locale/tools/random';
+      preLoaderRoute: typeof LocaleToolsRandomRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ui/': {
+      id: '/$locale/ui/';
+      path: '/ui';
+      fullPath: '/$locale/ui/';
+      preLoaderRoute: typeof LocaleUiIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ui/contributing': {
+      id: '/$locale/ui/contributing';
+      path: '/ui/contributing';
+      fullPath: '/$locale/ui/contributing';
+      preLoaderRoute: typeof LocaleUiContributingRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ui/setup': {
+      id: '/$locale/ui/setup';
+      path: '/ui/setup';
+      fullPath: '/$locale/ui/setup';
+      preLoaderRoute: typeof LocaleUiSetupRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/users/$handle': {
+      id: '/$locale/users/$handle';
+      path: '/users/$handle';
+      fullPath: '/$locale/users/$handle';
+      preLoaderRoute: typeof LocaleUsersHandleRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/visualizations/horse-racing': {
+      id: '/$locale/visualizations/horse-racing';
+      path: '/visualizations/horse-racing';
+      fullPath: '/$locale/visualizations/horse-racing';
+      preLoaderRoute: typeof LocaleVisualizationsHorseRacingRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/ai-chat/chatbots': {
+      id: '/$locale/$wsId/ai-chat/chatbots';
+      path: '/chatbots';
+      fullPath: '/$locale/$wsId/ai-chat/chatbots';
+      preLoaderRoute: typeof LocaleWsIdAiChatChatbotsRouteImport;
+      parentRoute: typeof LocaleWsIdAiChatRoute;
+    };
+    '/$locale/$wsId/ai-chat/new': {
+      id: '/$locale/$wsId/ai-chat/new';
+      path: '/new';
+      fullPath: '/$locale/$wsId/ai-chat/new';
+      preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport;
+      parentRoute: typeof LocaleWsIdAiChatRoute;
+    };
+    '/$locale/$wsId/billing/success': {
+      id: '/$locale/$wsId/billing/success';
+      path: '/$wsId/billing/success';
+      fullPath: '/$locale/$wsId/billing/success';
+      preLoaderRoute: typeof LocaleWsIdBillingSuccessRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/crawlers/uncrawled': {
+      id: '/$locale/$wsId/crawlers/uncrawled';
+      path: '/uncrawled';
+      fullPath: '/$locale/$wsId/crawlers/uncrawled';
+      preLoaderRoute: typeof LocaleWsIdCrawlersUncrawledRouteImport;
+      parentRoute: typeof LocaleWsIdCrawlersRoute;
+    };
+    '/$locale/$wsId/cron/jobs': {
+      id: '/$locale/$wsId/cron/jobs';
+      path: '/jobs';
+      fullPath: '/$locale/$wsId/cron/jobs';
+      preLoaderRoute: typeof LocaleWsIdCronJobsRouteImport;
+      parentRoute: typeof LocaleWsIdCronRoute;
+    };
+    '/$locale/$wsId/documents/$documentId': {
+      id: '/$locale/$wsId/documents/$documentId';
+      path: '/$documentId';
+      fullPath: '/$locale/$wsId/documents/$documentId';
+      preLoaderRoute: typeof LocaleWsIdDocumentsDocumentIdRouteImport;
+      parentRoute: typeof LocaleWsIdDocumentsRoute;
+    };
+    '/$locale/$wsId/hive/not-whitelisted': {
+      id: '/$locale/$wsId/hive/not-whitelisted';
+      path: '/not-whitelisted';
+      fullPath: '/$locale/$wsId/hive/not-whitelisted';
+      preLoaderRoute: typeof LocaleWsIdHiveNotWhitelistedRouteImport;
+      parentRoute: typeof LocaleWsIdHiveRoute;
     };
     '/$locale/$wsId/mail/': {
       id: '/$locale/$wsId/mail/';
@@ -2736,158 +2771,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdMailIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/ui/components/$componentId': {
-      id: '/$locale/ui/components/$componentId';
-      path: '/ui/components/$componentId';
-      fullPath: '/$locale/ui/components/$componentId';
-      preLoaderRoute: typeof LocaleUiComponentsComponentIdRouteImport;
+    '/$locale/$wsId/mail/sent': {
+      id: '/$locale/$wsId/mail/sent';
+      path: '/$wsId/mail/sent';
+      fullPath: '/$locale/$wsId/mail/sent';
+      preLoaderRoute: typeof LocaleWsIdMailSentRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/shared/user-profile/$code': {
-      id: '/$locale/shared/user-profile/$code';
-      path: '/shared/user-profile/$code';
-      fullPath: '/$locale/shared/user-profile/$code';
-      preLoaderRoute: typeof LocaleSharedUserProfileCodeRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+    '/$locale/$wsId/meet/meetings': {
+      id: '/$locale/$wsId/meet/meetings';
+      path: '/meetings';
+      fullPath: '/$locale/$wsId/meet/meetings';
+      preLoaderRoute: typeof LocaleWsIdMeetMeetingsRouteImport;
+      parentRoute: typeof LocaleWsIdMeetRoute;
     };
-    '/$locale/shared/task/$shareCode': {
-      id: '/$locale/shared/task/$shareCode';
-      path: '/shared/task/$shareCode';
-      fullPath: '/$locale/shared/task/$shareCode';
-      preLoaderRoute: typeof LocaleSharedTaskShareCodeRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+    '/$locale/$wsId/meet/plans': {
+      id: '/$locale/$wsId/meet/plans';
+      path: '/plans';
+      fullPath: '/$locale/$wsId/meet/plans';
+      preLoaderRoute: typeof LocaleWsIdMeetPlansRouteImport;
+      parentRoute: typeof LocaleWsIdMeetRoute;
     };
-    '/$locale/shared/task-boards/$code': {
-      id: '/$locale/shared/task-boards/$code';
-      path: '/shared/task-boards/$code';
-      fullPath: '/$locale/shared/task-boards/$code';
-      preLoaderRoute: typeof LocaleSharedTaskBoardsCodeRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
+    '/$locale/$wsId/platform/external-projects': {
+      id: '/$locale/$wsId/platform/external-projects';
+      path: '/external-projects';
+      fullPath: '/$locale/$wsId/platform/external-projects';
+      preLoaderRoute: typeof LocaleWsIdPlatformExternalProjectsRouteImport;
+      parentRoute: typeof LocaleWsIdPlatformRoute;
     };
-    '/$locale/share/$type/$resourceId': {
-      id: '/$locale/share/$type/$resourceId';
-      path: '/share/$type/$resourceId';
-      fullPath: '/$locale/share/$type/$resourceId';
-      preLoaderRoute: typeof LocaleShareTypeResourceIdRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/calendar/meet-together/$': {
-      id: '/$locale/calendar/meet-together/$';
-      path: '/$';
-      fullPath: '/$locale/calendar/meet-together/$';
-      preLoaderRoute: typeof LocaleCalendarMeetTogetherSplatRouteImport;
-      parentRoute: typeof LocaleCalendarMeetTogetherRoute;
-    };
-    '/$locale/ai/chats/$chatId': {
-      id: '/$locale/ai/chats/$chatId';
-      path: '/ai/chats/$chatId';
-      fullPath: '/$locale/ai/chats/$chatId';
-      preLoaderRoute: typeof LocaleAiChatsChatIdRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/users/tutoring': {
-      id: '/$locale/$wsId/users/tutoring';
-      path: '/$wsId/users/tutoring';
-      fullPath: '/$locale/$wsId/users/tutoring';
-      preLoaderRoute: typeof LocaleWsIdUsersTutoringRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/users/topic-announcements': {
-      id: '/$locale/$wsId/users/topic-announcements';
-      path: '/$wsId/users/topic-announcements';
-      fullPath: '/$locale/$wsId/users/topic-announcements';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/users/structure': {
-      id: '/$locale/$wsId/users/structure';
-      path: '/$wsId/users/structure';
-      fullPath: '/$locale/$wsId/users/structure';
-      preLoaderRoute: typeof LocaleWsIdUsersStructureRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/users/feedbacks': {
-      id: '/$locale/$wsId/users/feedbacks';
-      path: '/$wsId/users/feedbacks';
-      fullPath: '/$locale/$wsId/users/feedbacks';
-      preLoaderRoute: typeof LocaleWsIdUsersFeedbacksRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/users/approvals': {
-      id: '/$locale/$wsId/users/approvals';
-      path: '/$wsId/users/approvals';
-      fullPath: '/$locale/$wsId/users/approvals';
-      preLoaderRoute: typeof LocaleWsIdUsersApprovalsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/templates': {
-      id: '/$locale/$wsId/tasks/templates';
-      path: '/$wsId/tasks/templates';
-      fullPath: '/$locale/$wsId/tasks/templates';
-      preLoaderRoute: typeof LocaleWsIdTasksTemplatesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/projects': {
-      id: '/$locale/$wsId/tasks/projects';
-      path: '/$wsId/tasks/projects';
-      fullPath: '/$locale/$wsId/tasks/projects';
-      preLoaderRoute: typeof LocaleWsIdTasksProjectsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/notes': {
-      id: '/$locale/$wsId/tasks/notes';
-      path: '/$wsId/tasks/notes';
-      fullPath: '/$locale/$wsId/tasks/notes';
-      preLoaderRoute: typeof LocaleWsIdTasksNotesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/logs': {
-      id: '/$locale/$wsId/tasks/logs';
-      path: '/$wsId/tasks/logs';
-      fullPath: '/$locale/$wsId/tasks/logs';
-      preLoaderRoute: typeof LocaleWsIdTasksLogsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/labels': {
-      id: '/$locale/$wsId/tasks/labels';
-      path: '/$wsId/tasks/labels';
-      fullPath: '/$locale/$wsId/tasks/labels';
-      preLoaderRoute: typeof LocaleWsIdTasksLabelsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/initiatives': {
-      id: '/$locale/$wsId/tasks/initiatives';
-      path: '/$wsId/tasks/initiatives';
-      fullPath: '/$locale/$wsId/tasks/initiatives';
-      preLoaderRoute: typeof LocaleWsIdTasksInitiativesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/habits': {
-      id: '/$locale/$wsId/tasks/habits';
-      path: '/$wsId/tasks/habits';
-      fullPath: '/$locale/$wsId/tasks/habits';
-      preLoaderRoute: typeof LocaleWsIdTasksHabitsRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/estimates': {
-      id: '/$locale/$wsId/tasks/estimates';
-      path: '/$wsId/tasks/estimates';
-      fullPath: '/$locale/$wsId/tasks/estimates';
-      preLoaderRoute: typeof LocaleWsIdTasksEstimatesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/cycles': {
-      id: '/$locale/$wsId/tasks/cycles';
-      path: '/$wsId/tasks/cycles';
-      fullPath: '/$locale/$wsId/tasks/cycles';
-      preLoaderRoute: typeof LocaleWsIdTasksCyclesRouteImport;
-      parentRoute: typeof LocaleRouteRoute;
-    };
-    '/$locale/$wsId/tasks/$taskId': {
-      id: '/$locale/$wsId/tasks/$taskId';
-      path: '/$wsId/tasks/$taskId';
-      fullPath: '/$locale/$wsId/tasks/$taskId';
-      preLoaderRoute: typeof LocaleWsIdTasksTaskIdRouteImport;
+    '/$locale/$wsId/settings/notifications': {
+      id: '/$locale/$wsId/settings/notifications';
+      path: '/$wsId/settings/notifications';
+      fullPath: '/$locale/$wsId/settings/notifications';
+      preLoaderRoute: typeof LocaleWsIdSettingsNotificationsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/settings/reports': {
@@ -2897,102 +2813,172 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdSettingsReportsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/settings/notifications': {
-      id: '/$locale/$wsId/settings/notifications';
-      path: '/$wsId/settings/notifications';
-      fullPath: '/$locale/$wsId/settings/notifications';
-      preLoaderRoute: typeof LocaleWsIdSettingsNotificationsRouteImport;
+    '/$locale/$wsId/tasks/': {
+      id: '/$locale/$wsId/tasks/';
+      path: '/$wsId/tasks';
+      fullPath: '/$locale/$wsId/tasks/';
+      preLoaderRoute: typeof LocaleWsIdTasksIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/platform/external-projects': {
-      id: '/$locale/$wsId/platform/external-projects';
-      path: '/external-projects';
-      fullPath: '/$locale/$wsId/platform/external-projects';
-      preLoaderRoute: typeof LocaleWsIdPlatformExternalProjectsRouteImport;
-      parentRoute: typeof LocaleWsIdPlatformRoute;
-    };
-    '/$locale/$wsId/meet/plans': {
-      id: '/$locale/$wsId/meet/plans';
-      path: '/plans';
-      fullPath: '/$locale/$wsId/meet/plans';
-      preLoaderRoute: typeof LocaleWsIdMeetPlansRouteImport;
-      parentRoute: typeof LocaleWsIdMeetRoute;
-    };
-    '/$locale/$wsId/meet/meetings': {
-      id: '/$locale/$wsId/meet/meetings';
-      path: '/meetings';
-      fullPath: '/$locale/$wsId/meet/meetings';
-      preLoaderRoute: typeof LocaleWsIdMeetMeetingsRouteImport;
-      parentRoute: typeof LocaleWsIdMeetRoute;
-    };
-    '/$locale/$wsId/mail/sent': {
-      id: '/$locale/$wsId/mail/sent';
-      path: '/$wsId/mail/sent';
-      fullPath: '/$locale/$wsId/mail/sent';
-      preLoaderRoute: typeof LocaleWsIdMailSentRouteImport;
+    '/$locale/$wsId/tasks/$taskId': {
+      id: '/$locale/$wsId/tasks/$taskId';
+      path: '/$wsId/tasks/$taskId';
+      fullPath: '/$locale/$wsId/tasks/$taskId';
+      preLoaderRoute: typeof LocaleWsIdTasksTaskIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/hive/not-whitelisted': {
-      id: '/$locale/$wsId/hive/not-whitelisted';
-      path: '/not-whitelisted';
-      fullPath: '/$locale/$wsId/hive/not-whitelisted';
-      preLoaderRoute: typeof LocaleWsIdHiveNotWhitelistedRouteImport;
-      parentRoute: typeof LocaleWsIdHiveRoute;
-    };
-    '/$locale/$wsId/documents/$documentId': {
-      id: '/$locale/$wsId/documents/$documentId';
-      path: '/$documentId';
-      fullPath: '/$locale/$wsId/documents/$documentId';
-      preLoaderRoute: typeof LocaleWsIdDocumentsDocumentIdRouteImport;
-      parentRoute: typeof LocaleWsIdDocumentsRoute;
-    };
-    '/$locale/$wsId/cron/jobs': {
-      id: '/$locale/$wsId/cron/jobs';
-      path: '/jobs';
-      fullPath: '/$locale/$wsId/cron/jobs';
-      preLoaderRoute: typeof LocaleWsIdCronJobsRouteImport;
-      parentRoute: typeof LocaleWsIdCronRoute;
-    };
-    '/$locale/$wsId/crawlers/uncrawled': {
-      id: '/$locale/$wsId/crawlers/uncrawled';
-      path: '/uncrawled';
-      fullPath: '/$locale/$wsId/crawlers/uncrawled';
-      preLoaderRoute: typeof LocaleWsIdCrawlersUncrawledRouteImport;
-      parentRoute: typeof LocaleWsIdCrawlersRoute;
-    };
-    '/$locale/$wsId/billing/success': {
-      id: '/$locale/$wsId/billing/success';
-      path: '/$wsId/billing/success';
-      fullPath: '/$locale/$wsId/billing/success';
-      preLoaderRoute: typeof LocaleWsIdBillingSuccessRouteImport;
+    '/$locale/$wsId/tasks/cycles': {
+      id: '/$locale/$wsId/tasks/cycles';
+      path: '/$wsId/tasks/cycles';
+      fullPath: '/$locale/$wsId/tasks/cycles';
+      preLoaderRoute: typeof LocaleWsIdTasksCyclesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/ai-chat/new': {
-      id: '/$locale/$wsId/ai-chat/new';
-      path: '/new';
-      fullPath: '/$locale/$wsId/ai-chat/new';
-      preLoaderRoute: typeof LocaleWsIdAiChatNewRouteImport;
-      parentRoute: typeof LocaleWsIdAiChatRoute;
-    };
-    '/$locale/$wsId/ai-chat/chatbots': {
-      id: '/$locale/$wsId/ai-chat/chatbots';
-      path: '/chatbots';
-      fullPath: '/$locale/$wsId/ai-chat/chatbots';
-      preLoaderRoute: typeof LocaleWsIdAiChatChatbotsRouteImport;
-      parentRoute: typeof LocaleWsIdAiChatRoute;
-    };
-    '/$locale/$wsId/users/group-tags/': {
-      id: '/$locale/$wsId/users/group-tags/';
-      path: '/$wsId/users/group-tags';
-      fullPath: '/$locale/$wsId/users/group-tags/';
-      preLoaderRoute: typeof LocaleWsIdUsersGroupTagsIndexRouteImport;
+    '/$locale/$wsId/tasks/estimates': {
+      id: '/$locale/$wsId/tasks/estimates';
+      path: '/$wsId/tasks/estimates';
+      fullPath: '/$locale/$wsId/tasks/estimates';
+      preLoaderRoute: typeof LocaleWsIdTasksEstimatesRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/tasks/boards/': {
-      id: '/$locale/$wsId/tasks/boards/';
-      path: '/$wsId/tasks/boards';
-      fullPath: '/$locale/$wsId/tasks/boards/';
-      preLoaderRoute: typeof LocaleWsIdTasksBoardsIndexRouteImport;
+    '/$locale/$wsId/tasks/habits': {
+      id: '/$locale/$wsId/tasks/habits';
+      path: '/$wsId/tasks/habits';
+      fullPath: '/$locale/$wsId/tasks/habits';
+      preLoaderRoute: typeof LocaleWsIdTasksHabitsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/initiatives': {
+      id: '/$locale/$wsId/tasks/initiatives';
+      path: '/$wsId/tasks/initiatives';
+      fullPath: '/$locale/$wsId/tasks/initiatives';
+      preLoaderRoute: typeof LocaleWsIdTasksInitiativesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/labels': {
+      id: '/$locale/$wsId/tasks/labels';
+      path: '/$wsId/tasks/labels';
+      fullPath: '/$locale/$wsId/tasks/labels';
+      preLoaderRoute: typeof LocaleWsIdTasksLabelsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/logs': {
+      id: '/$locale/$wsId/tasks/logs';
+      path: '/$wsId/tasks/logs';
+      fullPath: '/$locale/$wsId/tasks/logs';
+      preLoaderRoute: typeof LocaleWsIdTasksLogsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/notes': {
+      id: '/$locale/$wsId/tasks/notes';
+      path: '/$wsId/tasks/notes';
+      fullPath: '/$locale/$wsId/tasks/notes';
+      preLoaderRoute: typeof LocaleWsIdTasksNotesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/projects': {
+      id: '/$locale/$wsId/tasks/projects';
+      path: '/$wsId/tasks/projects';
+      fullPath: '/$locale/$wsId/tasks/projects';
+      preLoaderRoute: typeof LocaleWsIdTasksProjectsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/tasks/templates': {
+      id: '/$locale/$wsId/tasks/templates';
+      path: '/$wsId/tasks/templates';
+      fullPath: '/$locale/$wsId/tasks/templates';
+      preLoaderRoute: typeof LocaleWsIdTasksTemplatesRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/approvals': {
+      id: '/$locale/$wsId/users/approvals';
+      path: '/$wsId/users/approvals';
+      fullPath: '/$locale/$wsId/users/approvals';
+      preLoaderRoute: typeof LocaleWsIdUsersApprovalsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/feedbacks': {
+      id: '/$locale/$wsId/users/feedbacks';
+      path: '/$wsId/users/feedbacks';
+      fullPath: '/$locale/$wsId/users/feedbacks';
+      preLoaderRoute: typeof LocaleWsIdUsersFeedbacksRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/structure': {
+      id: '/$locale/$wsId/users/structure';
+      path: '/$wsId/users/structure';
+      fullPath: '/$locale/$wsId/users/structure';
+      preLoaderRoute: typeof LocaleWsIdUsersStructureRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/topic-announcements': {
+      id: '/$locale/$wsId/users/topic-announcements';
+      path: '/$wsId/users/topic-announcements';
+      fullPath: '/$locale/$wsId/users/topic-announcements';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/$wsId/users/tutoring': {
+      id: '/$locale/$wsId/users/tutoring';
+      path: '/$wsId/users/tutoring';
+      fullPath: '/$locale/$wsId/users/tutoring';
+      preLoaderRoute: typeof LocaleWsIdUsersTutoringRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ai/chats/$chatId': {
+      id: '/$locale/ai/chats/$chatId';
+      path: '/ai/chats/$chatId';
+      fullPath: '/$locale/ai/chats/$chatId';
+      preLoaderRoute: typeof LocaleAiChatsChatIdRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/calendar/meet-together/$': {
+      id: '/$locale/calendar/meet-together/$';
+      path: '/$';
+      fullPath: '/$locale/calendar/meet-together/$';
+      preLoaderRoute: typeof LocaleCalendarMeetTogetherSplatRouteImport;
+      parentRoute: typeof LocaleCalendarMeetTogetherRoute;
+    };
+    '/$locale/share/$type/$resourceId': {
+      id: '/$locale/share/$type/$resourceId';
+      path: '/share/$type/$resourceId';
+      fullPath: '/$locale/share/$type/$resourceId';
+      preLoaderRoute: typeof LocaleShareTypeResourceIdRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/shared/task-boards/$code': {
+      id: '/$locale/shared/task-boards/$code';
+      path: '/shared/task-boards/$code';
+      fullPath: '/$locale/shared/task-boards/$code';
+      preLoaderRoute: typeof LocaleSharedTaskBoardsCodeRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/shared/task/$shareCode': {
+      id: '/$locale/shared/task/$shareCode';
+      path: '/shared/task/$shareCode';
+      fullPath: '/$locale/shared/task/$shareCode';
+      preLoaderRoute: typeof LocaleSharedTaskShareCodeRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/shared/user-profile/$code': {
+      id: '/$locale/shared/user-profile/$code';
+      path: '/shared/user-profile/$code';
+      fullPath: '/$locale/shared/user-profile/$code';
+      preLoaderRoute: typeof LocaleSharedUserProfileCodeRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ui/components/': {
+      id: '/$locale/ui/components/';
+      path: '/ui/components';
+      fullPath: '/$locale/ui/components/';
+      preLoaderRoute: typeof LocaleUiComponentsIndexRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/ui/components/$componentId': {
+      id: '/$locale/ui/components/$componentId';
+      path: '/ui/components/$componentId';
+      fullPath: '/$locale/ui/components/$componentId';
+      preLoaderRoute: typeof LocaleUiComponentsComponentIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/ai-chat/my-chatbots/': {
@@ -3002,60 +2988,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsIndexRouteImport;
       parentRoute: typeof LocaleWsIdAiChatRoute;
     };
-    '/$locale/$wsId/users/topic-announcements/templates': {
-      id: '/$locale/$wsId/users/topic-announcements/templates';
-      path: '/templates';
-      fullPath: '/$locale/$wsId/users/topic-announcements/templates';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport;
-      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    '/$locale/$wsId/ai-chat/my-chatbots/new': {
+      id: '/$locale/$wsId/ai-chat/my-chatbots/new';
+      path: '/my-chatbots/new';
+      fullPath: '/$locale/$wsId/ai-chat/my-chatbots/new';
+      preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsNewRouteImport;
+      parentRoute: typeof LocaleWsIdAiChatRoute;
     };
-    '/$locale/$wsId/users/topic-announcements/import': {
-      id: '/$locale/$wsId/users/topic-announcements/import';
-      path: '/import';
-      fullPath: '/$locale/$wsId/users/topic-announcements/import';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsImportRouteImport;
-      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    '/$locale/$wsId/epm/collections/$collectionId': {
+      id: '/$locale/$wsId/epm/collections/$collectionId';
+      path: '/collections/$collectionId';
+      fullPath: '/$locale/$wsId/epm/collections/$collectionId';
+      preLoaderRoute: typeof LocaleWsIdEpmCollectionsCollectionIdRouteImport;
+      parentRoute: typeof LocaleWsIdEpmRoute;
     };
-    '/$locale/$wsId/users/topic-announcements/delivery': {
-      id: '/$locale/$wsId/users/topic-announcements/delivery';
-      path: '/delivery';
-      fullPath: '/$locale/$wsId/users/topic-announcements/delivery';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport;
-      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    '/$locale/$wsId/epm/entries/$entryId': {
+      id: '/$locale/$wsId/epm/entries/$entryId';
+      path: '/entries/$entryId';
+      fullPath: '/$locale/$wsId/epm/entries/$entryId';
+      preLoaderRoute: typeof LocaleWsIdEpmEntriesEntryIdRouteImport;
+      parentRoute: typeof LocaleWsIdEpmRoute;
     };
-    '/$locale/$wsId/users/topic-announcements/contacts': {
-      id: '/$locale/$wsId/users/topic-announcements/contacts';
-      path: '/contacts';
-      fullPath: '/$locale/$wsId/users/topic-announcements/contacts';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsContactsRouteImport;
-      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    '/$locale/$wsId/meet/meetings/$meetingId': {
+      id: '/$locale/$wsId/meet/meetings/$meetingId';
+      path: '/$meetingId';
+      fullPath: '/$locale/$wsId/meet/meetings/$meetingId';
+      preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport;
+      parentRoute: typeof LocaleWsIdMeetMeetingsRoute;
     };
-    '/$locale/$wsId/users/topic-announcements/announcements': {
-      id: '/$locale/$wsId/users/topic-announcements/announcements';
-      path: '/announcements';
-      fullPath: '/$locale/$wsId/users/topic-announcements/announcements';
-      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport;
-      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    '/$locale/$wsId/mind/boards/$boardId': {
+      id: '/$locale/$wsId/mind/boards/$boardId';
+      path: '/boards/$boardId';
+      fullPath: '/$locale/$wsId/mind/boards/$boardId';
+      preLoaderRoute: typeof LocaleWsIdMindBoardsBoardIdRouteImport;
+      parentRoute: typeof LocaleWsIdMindRoute;
     };
-    '/$locale/$wsId/users/reports/$reportId': {
-      id: '/$locale/$wsId/users/reports/$reportId';
-      path: '/$wsId/users/reports/$reportId';
-      fullPath: '/$locale/$wsId/users/reports/$reportId';
-      preLoaderRoute: typeof LocaleWsIdUsersReportsReportIdRouteImport;
+    '/$locale/$wsId/tasks/boards/': {
+      id: '/$locale/$wsId/tasks/boards/';
+      path: '/$wsId/tasks/boards';
+      fullPath: '/$locale/$wsId/tasks/boards/';
+      preLoaderRoute: typeof LocaleWsIdTasksBoardsIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/users/groups/calendar': {
-      id: '/$locale/$wsId/users/groups/calendar';
-      path: '/$wsId/users/groups/calendar';
-      fullPath: '/$locale/$wsId/users/groups/calendar';
-      preLoaderRoute: typeof LocaleWsIdUsersGroupsCalendarRouteImport;
+    '/$locale/$wsId/tasks/boards/$boardId': {
+      id: '/$locale/$wsId/tasks/boards/$boardId';
+      path: '/$wsId/tasks/boards/$boardId';
+      fullPath: '/$locale/$wsId/tasks/boards/$boardId';
+      preLoaderRoute: typeof LocaleWsIdTasksBoardsBoardIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/users/groups/$groupId': {
-      id: '/$locale/$wsId/users/groups/$groupId';
-      path: '/$wsId/users/groups/$groupId';
-      fullPath: '/$locale/$wsId/users/groups/$groupId';
-      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRouteImport;
+    '/$locale/$wsId/tasks/projects/$projectId': {
+      id: '/$locale/$wsId/tasks/projects/$projectId';
+      path: '/$projectId';
+      fullPath: '/$locale/$wsId/tasks/projects/$projectId';
+      preLoaderRoute: typeof LocaleWsIdTasksProjectsProjectIdRouteImport;
+      parentRoute: typeof LocaleWsIdTasksProjectsRoute;
+    };
+    '/$locale/$wsId/tasks/templates/$templateId': {
+      id: '/$locale/$wsId/tasks/templates/$templateId';
+      path: '/$templateId';
+      fullPath: '/$locale/$wsId/tasks/templates/$templateId';
+      preLoaderRoute: typeof LocaleWsIdTasksTemplatesTemplateIdRouteImport;
+      parentRoute: typeof LocaleWsIdTasksTemplatesRoute;
+    };
+    '/$locale/$wsId/tasks/templates/marketplace': {
+      id: '/$locale/$wsId/tasks/templates/marketplace';
+      path: '/marketplace';
+      fullPath: '/$locale/$wsId/tasks/templates/marketplace';
+      preLoaderRoute: typeof LocaleWsIdTasksTemplatesMarketplaceRouteImport;
+      parentRoute: typeof LocaleWsIdTasksTemplatesRoute;
+    };
+    '/$locale/$wsId/users/group-tags/': {
+      id: '/$locale/$wsId/users/group-tags/';
+      path: '/$wsId/users/group-tags';
+      fullPath: '/$locale/$wsId/users/group-tags/';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupTagsIndexRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/$wsId/users/group-tags/$tagId': {
@@ -3065,81 +3072,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersGroupTagsTagIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/tasks/templates/marketplace': {
-      id: '/$locale/$wsId/tasks/templates/marketplace';
-      path: '/marketplace';
-      fullPath: '/$locale/$wsId/tasks/templates/marketplace';
-      preLoaderRoute: typeof LocaleWsIdTasksTemplatesMarketplaceRouteImport;
-      parentRoute: typeof LocaleWsIdTasksTemplatesRoute;
-    };
-    '/$locale/$wsId/tasks/templates/$templateId': {
-      id: '/$locale/$wsId/tasks/templates/$templateId';
-      path: '/$templateId';
-      fullPath: '/$locale/$wsId/tasks/templates/$templateId';
-      preLoaderRoute: typeof LocaleWsIdTasksTemplatesTemplateIdRouteImport;
-      parentRoute: typeof LocaleWsIdTasksTemplatesRoute;
-    };
-    '/$locale/$wsId/tasks/projects/$projectId': {
-      id: '/$locale/$wsId/tasks/projects/$projectId';
-      path: '/$projectId';
-      fullPath: '/$locale/$wsId/tasks/projects/$projectId';
-      preLoaderRoute: typeof LocaleWsIdTasksProjectsProjectIdRouteImport;
-      parentRoute: typeof LocaleWsIdTasksProjectsRoute;
-    };
-    '/$locale/$wsId/tasks/boards/$boardId': {
-      id: '/$locale/$wsId/tasks/boards/$boardId';
-      path: '/$wsId/tasks/boards/$boardId';
-      fullPath: '/$locale/$wsId/tasks/boards/$boardId';
-      preLoaderRoute: typeof LocaleWsIdTasksBoardsBoardIdRouteImport;
+    '/$locale/$wsId/users/groups/$groupId': {
+      id: '/$locale/$wsId/users/groups/$groupId';
+      path: '/$wsId/users/groups/$groupId';
+      fullPath: '/$locale/$wsId/users/groups/$groupId';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/mind/boards/$boardId': {
-      id: '/$locale/$wsId/mind/boards/$boardId';
-      path: '/boards/$boardId';
-      fullPath: '/$locale/$wsId/mind/boards/$boardId';
-      preLoaderRoute: typeof LocaleWsIdMindBoardsBoardIdRouteImport;
-      parentRoute: typeof LocaleWsIdMindRoute;
+    '/$locale/$wsId/users/groups/calendar': {
+      id: '/$locale/$wsId/users/groups/calendar';
+      path: '/$wsId/users/groups/calendar';
+      fullPath: '/$locale/$wsId/users/groups/calendar';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsCalendarRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/meet/meetings/$meetingId': {
-      id: '/$locale/$wsId/meet/meetings/$meetingId';
-      path: '/$meetingId';
-      fullPath: '/$locale/$wsId/meet/meetings/$meetingId';
-      preLoaderRoute: typeof LocaleWsIdMeetMeetingsMeetingIdRouteImport;
-      parentRoute: typeof LocaleWsIdMeetMeetingsRoute;
+    '/$locale/$wsId/users/reports/$reportId': {
+      id: '/$locale/$wsId/users/reports/$reportId';
+      path: '/$wsId/users/reports/$reportId';
+      fullPath: '/$locale/$wsId/users/reports/$reportId';
+      preLoaderRoute: typeof LocaleWsIdUsersReportsReportIdRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
     };
-    '/$locale/$wsId/epm/entries/$entryId': {
-      id: '/$locale/$wsId/epm/entries/$entryId';
-      path: '/entries/$entryId';
-      fullPath: '/$locale/$wsId/epm/entries/$entryId';
-      preLoaderRoute: typeof LocaleWsIdEpmEntriesEntryIdRouteImport;
-      parentRoute: typeof LocaleWsIdEpmRoute;
+    '/$locale/$wsId/users/topic-announcements/announcements': {
+      id: '/$locale/$wsId/users/topic-announcements/announcements';
+      path: '/announcements';
+      fullPath: '/$locale/$wsId/users/topic-announcements/announcements';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsAnnouncementsRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
     };
-    '/$locale/$wsId/epm/collections/$collectionId': {
-      id: '/$locale/$wsId/epm/collections/$collectionId';
-      path: '/collections/$collectionId';
-      fullPath: '/$locale/$wsId/epm/collections/$collectionId';
-      preLoaderRoute: typeof LocaleWsIdEpmCollectionsCollectionIdRouteImport;
-      parentRoute: typeof LocaleWsIdEpmRoute;
+    '/$locale/$wsId/users/topic-announcements/contacts': {
+      id: '/$locale/$wsId/users/topic-announcements/contacts';
+      path: '/contacts';
+      fullPath: '/$locale/$wsId/users/topic-announcements/contacts';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsContactsRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
     };
-    '/$locale/$wsId/ai-chat/my-chatbots/new': {
-      id: '/$locale/$wsId/ai-chat/my-chatbots/new';
-      path: '/my-chatbots/new';
-      fullPath: '/$locale/$wsId/ai-chat/my-chatbots/new';
-      preLoaderRoute: typeof LocaleWsIdAiChatMyChatbotsNewRouteImport;
-      parentRoute: typeof LocaleWsIdAiChatRoute;
+    '/$locale/$wsId/users/topic-announcements/delivery': {
+      id: '/$locale/$wsId/users/topic-announcements/delivery';
+      path: '/delivery';
+      fullPath: '/$locale/$wsId/users/topic-announcements/delivery';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsDeliveryRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
     };
-    '/$locale/share/$type/$resourceId/modules/$moduleId': {
-      id: '/$locale/share/$type/$resourceId/modules/$moduleId';
-      path: '/modules/$moduleId';
-      fullPath: '/$locale/share/$type/$resourceId/modules/$moduleId';
-      preLoaderRoute: typeof LocaleShareTypeResourceIdModulesModuleIdRouteImport;
-      parentRoute: typeof LocaleShareTypeResourceIdRoute;
+    '/$locale/$wsId/users/topic-announcements/import': {
+      id: '/$locale/$wsId/users/topic-announcements/import';
+      path: '/import';
+      fullPath: '/$locale/$wsId/users/topic-announcements/import';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsImportRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
     };
-    '/$locale/$wsId/users/groups/$groupId/schedule': {
-      id: '/$locale/$wsId/users/groups/$groupId/schedule';
-      path: '/schedule';
-      fullPath: '/$locale/$wsId/users/groups/$groupId/schedule';
-      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdScheduleRouteImport;
+    '/$locale/$wsId/users/topic-announcements/templates': {
+      id: '/$locale/$wsId/users/topic-announcements/templates';
+      path: '/templates';
+      fullPath: '/$locale/$wsId/users/topic-announcements/templates';
+      preLoaderRoute: typeof LocaleWsIdUsersTopicAnnouncementsTemplatesRouteImport;
+      parentRoute: typeof LocaleWsIdUsersTopicAnnouncementsRoute;
+    };
+    '/$locale/$wsId/users/groups/$groupId/attendance': {
+      id: '/$locale/$wsId/users/groups/$groupId/attendance';
+      path: '/attendance';
+      fullPath: '/$locale/$wsId/users/groups/$groupId/attendance';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
     };
     '/$locale/$wsId/users/groups/$groupId/requests': {
@@ -3149,12 +3142,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdRequestsRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
     };
-    '/$locale/$wsId/users/groups/$groupId/attendance': {
-      id: '/$locale/$wsId/users/groups/$groupId/attendance';
-      path: '/attendance';
-      fullPath: '/$locale/$wsId/users/groups/$groupId/attendance';
-      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdAttendanceRouteImport;
+    '/$locale/$wsId/users/groups/$groupId/schedule': {
+      id: '/$locale/$wsId/users/groups/$groupId/schedule';
+      path: '/schedule';
+      fullPath: '/$locale/$wsId/users/groups/$groupId/schedule';
+      preLoaderRoute: typeof LocaleWsIdUsersGroupsGroupIdScheduleRouteImport;
       parentRoute: typeof LocaleWsIdUsersGroupsGroupIdRoute;
+    };
+    '/$locale/share/$type/$resourceId/modules/$moduleId': {
+      id: '/$locale/share/$type/$resourceId/modules/$moduleId';
+      path: '/modules/$moduleId';
+      fullPath: '/$locale/share/$type/$resourceId/modules/$moduleId';
+      preLoaderRoute: typeof LocaleShareTypeResourceIdModulesModuleIdRouteImport;
+      parentRoute: typeof LocaleShareTypeResourceIdRoute;
     };
   }
 }
