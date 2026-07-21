@@ -165,8 +165,8 @@ These workflows:
   production workflow
 - treat `vercel-preview-platform.yaml` as platform build validation only;
   self-hosted machines own their own Docker `apps/web` runtime deployment
-- skip production push work when a newer commit already exists on the target
-  branch
+- cancel superseded production runs through per-workflow, per-branch
+  concurrency so the newest SHA remains deployable
 - record non-blocking GitHub Deployment markers after successful Vercel preview
   builds and production deploys so the next production push can evaluate every
   change since the last successful run
@@ -240,13 +240,13 @@ The deploy jobs are bound to the `cloudflare-workers-preview` GitHub
 Environment. Configure these GitHub values there before expecting deployment
 jobs to run:
 
-| Name                    | GitHub storage             | Purpose                                                                  |
-| ----------------------- | -------------------------- | ------------------------------------------------------------------------ |
-| `CLOUDFLARE_API_TOKEN`  | Environment secret         | Cloudflare API token with Workers Scripts edit access for this account.  |
-| `CLOUDFLARE_ACCOUNT_ID` | Environment variable       | Cloudflare account id used by Wrangler. A same-named secret is accepted only as a fallback. |
-| `BACKEND_WORKER_ORIGIN` | Environment variable       | Deployed Rust backend Worker origin used by the post-deploy smoke gate.  |
-| `TANSTACK_WEB_WORKER_ORIGIN` | Environment variable  | Deployed TanStack Worker origin used by the post-deploy smoke gate.      |
-| `CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN` | Environment secret | Dedicated smoke token mapped to `BACKEND_INTERNAL_TOKEN` only while running `bun smoke:cloudflare`. |
+| Name                                      | GitHub storage       | Purpose                                                                                             |
+| ----------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`                    | Environment secret   | Cloudflare API token with Workers Scripts edit access for this account.                             |
+| `CLOUDFLARE_ACCOUNT_ID`                   | Environment variable | Cloudflare account id used by Wrangler. A same-named secret is accepted only as a fallback.         |
+| `BACKEND_WORKER_ORIGIN`                   | Environment variable | Deployed Rust backend Worker origin used by the post-deploy smoke gate.                             |
+| `TANSTACK_WEB_WORKER_ORIGIN`              | Environment variable | Deployed TanStack Worker origin used by the post-deploy smoke gate.                                 |
+| `CLOUDFLARE_SMOKE_BACKEND_INTERNAL_TOKEN` | Environment secret   | Dedicated smoke token mapped to `BACKEND_INTERNAL_TOKEN` only while running `bun smoke:cloudflare`. |
 
 If either value is missing, the workflow emits a
 `Cloudflare deployment skipped` warning, records setup guidance in the job
@@ -266,10 +266,10 @@ step. Missing-secret warnings use the `Missing Worker secrets` wording and list
 only secret names plus `bun wrangler secret put ...` commands; they never print
 or infer secret values.
 
-| Worker                   | Required Cloudflare Worker secrets                                                                                                                  |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tuturuuu-backend`       | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL`, `AURORA_EXTERNAL_WSID` |
-| `tuturuuu-tanstack-web`  | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`                                                                                                   |
+| Worker                  | Required Cloudflare Worker secrets                                                                                                                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tuturuuu-backend`      | `BACKEND_INTERNAL_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `DISCORD_APP_DEPLOYMENT_URL`, `AURORA_EXTERNAL_URL`, `AURORA_EXTERNAL_WSID` |
+| `tuturuuu-tanstack-web` | `BACKEND_PUBLIC_ORIGIN`, `BACKEND_INTERNAL_TOKEN`                                                                                                                                                     |
 
 Bootstrap missing Worker secrets from a trusted local shell with Wrangler:
 
@@ -524,16 +524,18 @@ The TS7 `typescript` package does not ship the legacy
 TypeScript setup; the native-preview marker makes Next use its supported TS7
 native compiler path instead of trying to auto-install classic TypeScript.
 
-### Newer-commit guards
+### Superseded-run guards
 
-Production Vercel push workflows intentionally skip if the branch already has a
-newer commit than the current run. A skipped deployment may be correct rather
-than broken.
+Production Vercel workflows use a concurrency group built from the workflow and
+Git ref with `cancel-in-progress: true`. A newer production push cancels the
+older run instead of allowing it to finish green after skipping every deploy
+step. The newest run stays queued or active and deploys the cumulative branch
+state.
 
-The deployment marker closes the gap created by these stale-run skips. When a
-later push reaches the latest commit, affected-app gating compares against the
-last successful marker rather than only the newest push payload, so app changes
-from skipped intermediate runs still queue the correct Vercel workflow.
+Deployment markers still let affected-app gating compare every change since
+the last successful deployment, including changes accumulated across canceled
+intermediate runs. If the marker is missing or cannot be trusted, Vercel gating
+defaults open so a later unrelated commit cannot hide an earlier app change.
 
 ### Prerequisite guards
 
@@ -645,7 +647,8 @@ full Xcode before claiming the iOS archive has been verified locally.
 2. For Vercel workflows, inspect the `ci-check.yml` decision reason and matched paths.
 3. Inspect the changed-file source, base SHA, head SHA, and path count emitted by
    `resolve-changed-files.ts`.
-4. Check whether the workflow was skipped because a newer commit exists.
+4. Check whether the workflow was canceled because a newer run superseded it,
+   then follow the newest run in the same workflow-and-branch concurrency group.
 5. Check whether the prior successful GitHub Deployment marker exists for that
    Vercel workflow and branch.
 6. Check path filters to confirm GitHub should have started the lightweight workflow.

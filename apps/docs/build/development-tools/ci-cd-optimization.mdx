@@ -1,11 +1,13 @@
 ---
-title: 'CI/CD Pipeline Optimization'
-description: 'Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs.'
-updatedAt: '2026-07-10'
+title: "CI/CD Pipeline Optimization"
+description: "Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs."
+updatedAt: "2026-07-10"
 ---
 
 <Info>
-  **Prerequisite**: Read the [CI/CD Pipelines](/build/development-tools/ci-cd-pipelines) page to understand the basic workflow structure.
+  **Prerequisite**: Read the [CI/CD
+  Pipelines](/build/development-tools/ci-cd-pipelines) page to understand the
+  basic workflow structure.
 </Info>
 
 ## Overview
@@ -23,9 +25,10 @@ wired, and how to debug skip decisions.
 <Note>
   The platform is mid-migration from `apps/web` (Next.js, port `7803`) to
   `apps/tanstack-web` (TanStack Start) plus `apps/backend` (Rust, port `7820`).
-  See [TanStack + Rust migration](/platform/architecture/tanstack-rust-migration).
-  The optimization model below applies to both stacks: every Vercel app target
-  is gated the same way, regardless of framework.
+  See [TanStack + Rust
+  migration](/platform/architecture/tanstack-rust-migration). The optimization
+  model below applies to both stacks: every Vercel app target is gated the same
+  way, regardless of framework.
 </Note>
 
 ## The Problem
@@ -258,26 +261,24 @@ default-branch CodeQL caches are never part of automated cleanup.
 
 ## Race-Condition Handling
 
-Production deployments guard against superseded commits. Before building, the
-workflow checks whether a newer commit already landed on the production branch:
+Production deployments serialize each app and branch with GitHub Actions
+concurrency:
 
 ```yaml
-- name: Check for newer commits
-  id: check_commits
-  run: |
-    git fetch origin production || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
-    LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
-    CURRENT_COMMIT=${GITHUB_SHA}
-    if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
-      echo "Newer commit found on production branch. Skipping build."
-      echo "skip_build=true" >> $GITHUB_OUTPUT
-    else
-      echo "skip_build=false" >> $GITHUB_OUTPUT
-    fi
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 ```
 
-Every subsequent step is gated on `steps.check_commits.outputs.skip_build != 'true'`,
-so a stale run short-circuits instead of deploying an outdated artifact.
+When another production commit arrives, GitHub cancels the superseded run and
+keeps the newest run deployable. Older runs no longer finish green after
+skipping every deployment step, which makes queued and deployed SHAs
+observable without allowing stale artifacts to replace newer production code.
+
+Affected-app gating always diffs the newest SHA against the last successful
+deployment marker. If no trustworthy marker is available, the gate fails open
+and runs the deployment instead of considering only the newest push payload;
+this preserves app changes from canceled intermediate commits.
 
 ## Edge Case Handling
 

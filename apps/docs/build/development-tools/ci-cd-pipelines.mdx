@@ -1,7 +1,7 @@
 ---
-title: 'CI/CD Pipelines'
-description: 'High-level CI/CD overview, with current operational runbooks linked from one place.'
-updatedAt: '2026-06-02'
+title: "CI/CD Pipelines"
+description: "High-level CI/CD overview, with current operational runbooks linked from one place."
+updatedAt: "2026-06-02"
 ---
 
 This page is the entry point for CI/CD. The day-to-day operational detail now lives
@@ -36,7 +36,8 @@ Tuturuuu currently automates:
 - Vercel workflows use `tuturuuu.ts` app metadata and workspace `workspace:*` dependency closures to run only affected app deploys.
 - `bun.lock` changes run all Vercel app deploys because lockfile ownership is ambiguous without a source or manifest path.
 - Manual `workflow_dispatch` runs enabled workflows even when changed paths would otherwise be unaffected.
-- Several deploy workflows intentionally skip if a newer commit already exists on the target branch.
+- Production Vercel workflows cancel superseded per-app runs and keep the newest branch SHA deployable.
+- The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.
 - Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
 - Docker changes are guarded by `docker-setup-check.yaml`, including dev and production image builds.
 

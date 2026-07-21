@@ -88,6 +88,53 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
+test('production Vercel workflows cancel superseded runs instead of passing no-op deploys', () => {
+  const productionWorkflows = vercelWorkflows.filter((workflowName) =>
+    workflowName.startsWith('vercel-production-')
+  );
+
+  for (const workflowName of productionWorkflows) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+
+    assert.match(
+      header,
+      /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/,
+      `${workflowName} must cancel its superseded production run`
+    );
+    assert.doesNotMatch(
+      workflow,
+      /Check for newer commits|check_commits|skip_build/,
+      `${workflowName} must not report a superseded deployment as a successful no-op`
+    );
+  }
+});
+
+test('external app build cancels superseded runs instead of passing a skipped build', () => {
+  const workflow = fs.readFileSync(
+    path.join(
+      repoRoot,
+      '.github',
+      'workflows',
+      'external-internal-packages.yaml'
+    ),
+    'utf8'
+  );
+  const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+
+  assert.match(
+    header,
+    /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}\n {2}cancel-in-progress: true\n/
+  );
+  assert.doesNotMatch(
+    workflow,
+    /Check for newer commits|check_commits|skip_build/
+  );
+});
+
 test('Vercel workflows generate shared build metadata before building', () => {
   for (const workflowName of vercelWorkflows) {
     const workflow = fs.readFileSync(
@@ -1226,7 +1273,7 @@ test('TanStack production Vercel workflow skips when project secret is absent', 
   );
   const deployJob = readWorkflowJobBlock(workflowName, 'Build-Production');
   const guardedStepPattern =
-    /if: steps\.check_commits\.outputs\.skip_build != 'true' && steps\.vercel_config\.outputs\.configured == 'true'/g;
+    /if: steps\.vercel_config\.outputs\.configured == 'true'/g;
 
   assert.match(deployJob, /- name: Check Vercel project configuration/);
   assert.match(deployJob, /\n {8}id: vercel_config\n/);

@@ -382,26 +382,26 @@ function runWorkflowDecision({
   rootDir,
   workflowName,
 }) {
-  const output = execFileSync(
-    'bun',
-    [
-      'run',
-      '--silent',
-      'scripts/ci/check-workflow-config.ts',
-      '--workflow',
-      workflowName,
-      '--event-name',
-      eventName,
-      '--root-dir',
-      rootDir,
-      '--changed-files',
-      changedFiles.join('\n'),
-    ],
-    {
-      cwd: repoRoot,
-      encoding: 'utf8',
-    }
-  );
+  const args = [
+    'run',
+    '--silent',
+    'scripts/ci/check-workflow-config.ts',
+    '--workflow',
+    workflowName,
+    '--event-name',
+    eventName,
+    '--root-dir',
+    rootDir,
+  ];
+
+  if (changedFiles) {
+    args.push('--changed-files', changedFiles.join('\n'));
+  }
+
+  const output = execFileSync('bun', args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
 
   return {
     output,

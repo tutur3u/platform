@@ -284,15 +284,35 @@ export async function resolveChangedFiles({
       workflowName,
     });
 
-    if (markerSha && headSha) {
-      return getChangedFilesFromRange({
-        baseSha: markerSha,
+    if (!markerSha) {
+      return {
+        available: false,
+        files: [],
         headSha,
-        requireAncestor: true,
-        rootDir,
-        source: 'deployment-marker',
-      });
+        reason:
+          'no successful deployment marker is available; affected-app gating must fail open',
+        source: 'deployment-marker-unavailable',
+      };
     }
+
+    if (!headSha) {
+      return {
+        available: false,
+        baseSha: markerSha,
+        files: [],
+        reason:
+          'the current commit is unavailable; affected-app gating must fail open',
+        source: 'deployment-marker-unavailable',
+      };
+    }
+
+    return getChangedFilesFromRange({
+      baseSha: markerSha,
+      headSha,
+      requireAncestor: true,
+      rootDir,
+      source: 'deployment-marker',
+    });
   }
 
   if (eventName === 'push') {

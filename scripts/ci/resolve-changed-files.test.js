@@ -48,6 +48,7 @@ test('changed-file resolver unions batched push commits before workflow gating',
     eventPath,
     headSha,
     rootDir,
+    workflowName: 'biome-check.yaml',
   });
 
   assert.match(resolver.output, /Changed-file source: push-payload:2-commits/);
@@ -121,6 +122,59 @@ test('changed-file resolver uses deployment marker baseline before latest push p
   );
 });
 
+test('Vercel gating fails open when no successful deployment marker exists', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  commitFile(
+    rootDir,
+    'apps/calendar/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'calendar change'
+  );
+  const previousSha = git(rootDir, ['rev-parse', 'HEAD']);
+  const headSha = commitFile(
+    rootDir,
+    'apps/docs/build/devops/github-actions-runbook.mdx',
+    'docs only\n',
+    'docs change'
+  );
+  const eventPath = writeEventPayload(rootDir, {
+    after: headSha,
+    before: previousSha,
+    commits: [
+      {
+        added: [],
+        modified: ['apps/docs/build/devops/github-actions-runbook.mdx'],
+        removed: [],
+      },
+    ],
+    size: 1,
+  });
+  const workflowName = 'vercel-production-calendar.yaml';
+  const resolver = runChangedFileResolver({
+    eventPath,
+    headSha,
+    rootDir,
+    workflowName,
+  });
+
+  assert.equal(resolver.changedFiles, null);
+  assert.match(
+    resolver.output,
+    /Changed-file source: deployment-marker-unavailable/
+  );
+  assert.match(resolver.output, /affected-app gating must fail open/);
+
+  assertWorkflowDecision(
+    {
+      changedFiles: resolver.changedFiles,
+      rootDir,
+      workflowName,
+    },
+    true
+  );
+});
+
 test('changed-file resolver does not fall back to latest commit only when push range is unavailable', () => {
   const rootDir = createFixtureRoot();
   const baseSha = initializeGitRepo(rootDir);
@@ -146,6 +200,7 @@ test('changed-file resolver does not fall back to latest commit only when push r
     eventPath,
     headSha,
     rootDir,
+    workflowName: 'biome-check.yaml',
   });
 
   assert.equal(resolver.changedFiles, null);

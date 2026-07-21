@@ -5,6 +5,10 @@ on:
       - production
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -32,74 +36,56 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check for newer commits
-        id: check_commits
-        run: |
-          git fetch origin production || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
-          LATEST_COMMIT=$(git rev-parse origin/production 2>/dev/null || echo "")
-          CURRENT_COMMIT=${GITHUB_SHA}
-          if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
-            echo "Newer commit found on production branch. Skipping build."
-            echo "skip_build=true" >> $GITHUB_OUTPUT
-          else
-            echo "This is the latest commit. Proceeding with build."
-            echo "skip_build=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Resolve checked-out SHA
-        if: steps.check_commits.outputs.skip_build != 'true'
         id: resolve_target
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Use Node.js 24
-        if: steps.check_commits.outputs.skip_build != 'true'
         uses: actions/setup-node@v7
         with:
           node-version: 24
 
       - name: Setup bun
-        if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.3.14
 
       - name: Gate package release visibility
         id: package_release_gate
-        if: steps.check_commits.outputs.skip_build != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/package-release-readiness.js gate-changed-package-versions
 
       - name: Skip build while package releases publish
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'false'
+        if: steps.package_release_gate.outputs.packages_ready == 'false'
         run: |
           echo "Changed package versions are still publishing; skipping this platform build run without failing."
           echo 'Pending packages: ${{ steps.package_release_gate.outputs.pending_packages }}'
 
       - name: Install dependencies
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install
 
       - name: Install Vercel CLI
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Generate shared build metadata
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           PLATFORM_BUILD_ENVIRONMENT: production
           PLATFORM_BUILD_REF_NAME: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           NODE_OPTIONS: --max-old-space-size=8192
           TURBO_CONCURRENCY: "2"
@@ -112,14 +98,14 @@ jobs:
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Deploy Project Artifacts to Vercel
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel build marker
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -129,7 +115,7 @@ jobs:
         run: node --experimental-strip-types scripts/ci/record-vercel-deployment.ts
 
       - name: Record successful Vercel deployment marker
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.package_release_gate.outputs.packages_ready == 'true'
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
