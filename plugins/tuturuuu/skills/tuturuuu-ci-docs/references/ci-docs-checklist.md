@@ -29,15 +29,14 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   contract is intentionally path-simple. The external-app internal-package
   smoke owns `apps/external/**`, `packages/**`, and its build-control files, so
   unrelated app-only commits should not create that workflow at all.
-- Keep CodeQL push scanning on canonical `main` only because `bun git-sync`
-  mirrors the same SHA to `production`. Retain pull-request coverage for both
-  target branches and the daily schedule, and launch analysis without an
-  always-enabled reusable switchboard preflight.
+- Keep CodeQL on GitHub's managed `dynamic/github-code-scanning/codeql`
+  workflow. Do not add a checked-in `codeql.yml`, which would duplicate the
+  managed JavaScript/TypeScript and Python analysis for the same SHA.
 - Scope the expensive E2E workflow with native push paths for E2E specs,
   Playwright/Docker configuration, database fixtures, dependency manifests,
-  lockfiles, and E2E runner scripts. Keep a nightly full run and manual dispatch
-  so ordinary application source commits do not allocate the image bundle and
-  all consumers.
+  lockfiles, and E2E runner scripts. Do not add a cron schedule; automatic E2E
+  runs are commit-driven, while manual dispatch remains available for deliberate
+  full validation.
 - Resolve Supabase migration changes from the last successful environment
   marker, fail open when that marker is unavailable, and serialize one combined
   evaluate-and-migrate job per environment. Production must retain its same-SHA

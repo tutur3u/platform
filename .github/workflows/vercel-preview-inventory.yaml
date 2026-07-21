@@ -11,10 +11,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ inputs.preview_ref || github.ref }}
   cancel-in-progress: true
 
-concurrency:
-  group: ${{ github.workflow }}-${{ inputs.preview_ref || github.ref }}
-  cancel-in-progress: true
-
 permissions:
   contents: read
 

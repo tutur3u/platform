@@ -335,7 +335,7 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `type-check.yaml`
 - `turbo-unit-tests.yaml`
 - `biome-check.yaml`
-- `codeql.yml`
+- GitHub-managed CodeQL (`dynamic/github-code-scanning/codeql`)
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`
@@ -397,19 +397,17 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-CodeQL runs once for canonical `main` pushes, for pull requests targeting
-`main` or `production`, and on its daily schedule. Do not add `production` back
-to the push trigger: `bun git-sync` mirrors the already-scanned `main` SHA to
-`production`, which otherwise creates duplicate analysis runs. The security
-scan launches its analysis job directly and cancels stale same-ref work instead
-of allocating an always-enabled switchboard preflight.
+CodeQL uses GitHub's managed `dynamic/github-code-scanning/codeql` workflow.
+Do not add a checked-in `codeql.yml`: GitHub would run both definitions for the
+same SHA. The managed workflow covers JavaScript/TypeScript and Python, while
+`bun git-sync` mirrors the already-scanned `main` commit to `production`.
 
 `e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
 configuration, database fixtures, dependency manifests, lockfiles, and its own
 runner scripts. Normal application source-only commits do not create the image
-bundle and six downstream consumers. The nightly `main` run provides broad
-regression coverage, and maintainers can still use manual dispatch for an
-intentional full run.
+bundle and six downstream consumers. E2E has no cron trigger: automatic runs
+are limited to matching commits, and maintainers can still use manual dispatch
+for an intentional full run.
 
 Supabase migration workflows still consume the required platform workflow-run
 signals, but compare the target SHA with the last successful migration marker.

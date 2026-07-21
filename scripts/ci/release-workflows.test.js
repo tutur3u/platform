@@ -207,6 +207,11 @@ test('preview workflows avoid standalone configuration runners', () => {
       header,
       /\nconcurrency:\n {2}group: \$\{\{ github\.workflow \}\}-\$\{\{ inputs\.preview_ref \|\| github\.ref \}\}\n {2}cancel-in-progress: true\n/
     );
+    assert.equal(
+      (header.match(/^concurrency:/gm) ?? []).length,
+      1,
+      `${workflowName} must define exactly one top-level concurrency key`
+    );
 
     if (workflowName === 'vercel-preview-platform.yaml') {
       const deployJob = readWorkflowJobBlock(workflowName, 'Deploy-Preview');
@@ -435,7 +440,6 @@ test('mail deployment workflows do not persist checkout credentials', () => {
 test('CI workflows use main instead of retired staging branch filters', () => {
   const workflowsWithoutStagingBranchFilters = [
     'branch-name-check.yaml',
-    'codeql.yml',
     'docker-setup-check.yaml',
     'supabase-production.yaml',
     'supabase-staging.yaml',
@@ -484,26 +488,12 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
-test('CodeQL scans canonical pushes once without a switchboard preflight', () => {
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
-    'utf8'
+test('CodeQL relies on the single GitHub-managed workflow', () => {
+  assert.equal(
+    fs.existsSync(path.join(repoRoot, '.github', 'workflows', 'codeql.yml')),
+    false,
+    'a checked-in CodeQL workflow would duplicate GitHub managed code scanning'
   );
-
-  assert.match(workflow, /\n {2}push:\n {4}branches: \["main"\]\n/);
-  assert.match(
-    workflow,
-    /\n {2}pull_request:\n {4}branches: \["main", "production"\]\n/
-  );
-  assert.match(workflow, /\n {2}schedule:\n {4}- cron: "0 0 \* \* \*"\n/);
-  assert.match(
-    workflow,
-    /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/
-  );
-  assert.match(workflow, /cancel-in-progress: true/);
-  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.doesNotMatch(workflow, /needs\.check-ci/);
-
   const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
   assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
 });
@@ -697,7 +687,7 @@ test('Supabase staging migration includes every local migration when pushing', (
   assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
 });
 
-test('E2E runs only for test infrastructure changes or its nightly safety run', () => {
+test('E2E runs only for matching commit changes or explicit dispatch', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
     'utf8'
@@ -709,7 +699,8 @@ test('E2E runs only for test infrastructure changes or its nightly safety run', 
   assert.match(header, /- "apps\/database\/\*\*"/);
   assert.match(header, /- "scripts\/ci\/e2e-\*"/);
   assert.doesNotMatch(header, /^ {6}- "apps\/\*\*"$/m);
-  assert.match(header, /\n {2}schedule:\n {4}- cron: "17 2 \* \* \*"/);
+  assert.doesNotMatch(header, /\n {2}schedule:/);
+  assert.match(header, /\n {2}workflow_dispatch:/);
   assert.match(
     header,
     /group: \$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/

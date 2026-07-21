@@ -221,16 +221,14 @@ formatting behavior, or repo-wide verification.
   `cancel-in-progress`. This lets a newer protected-main platform signal or a
   repeated manual preview replace stale work without serializing unrelated
   preview refs behind the same group.
-- Scan CodeQL pushes on canonical `main` only. `bun git-sync` fast-forwards the
-  identical SHA to `production`, so a production push trigger duplicates the
-  same analysis. Keep pull-request coverage for `main` and `production` plus
-  the daily schedule, use same-ref concurrency, and do not allocate a reusable
-  switchboard job for this unconditionally enabled security scan.
+- Use GitHub's managed `dynamic/github-code-scanning/codeql` workflow as the
+  single CodeQL owner. Do not add a checked-in `codeql.yml`; GitHub would run it
+  beside managed JavaScript/TypeScript and Python analysis for the same SHA.
 - Use native push paths for the expensive E2E image producer and consumers.
   Cover E2E specs, Playwright/Docker configuration, database fixtures,
-  dependency manifests, lockfiles, and runner scripts; preserve a nightly full
-  run plus manual dispatch instead of rebuilding the E2E stack for every
-  application source commit.
+  dependency manifests, lockfiles, and runner scripts. Keep automatic E2E
+  commit-driven with no cron schedule; retain manual dispatch for deliberate
+  full validation.
 - Gate Supabase migrations against a successful per-environment deployment
   marker and diff the entire pending range, not only the latest commit. Fail
   open without a trustworthy marker, keep staging/production jobs serialized,
