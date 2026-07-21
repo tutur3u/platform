@@ -70,7 +70,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.10",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tanstack/react-query-devtools": "^5.101.2",
+    "@tanstack/react-query-devtools": "^5.101.4",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/canvas-confetti": "^1.9.0",
