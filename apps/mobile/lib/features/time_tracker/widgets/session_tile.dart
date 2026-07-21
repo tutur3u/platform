@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/time_tracking/session.dart';
+import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracking_category_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -32,7 +33,10 @@ class SessionTile extends StatelessWidget {
     final l10n = context.l10n;
 
     final dur = session.duration;
-    final durationText = _formatDuration(dur);
+    final durationText = formatTimerDuration(
+      dur,
+      invalidDurationLabel: l10n.timerInvalidDuration,
+    );
 
     final timeRange = _formatTimeRange(session.startTime, session.endTime);
     final categoryLabel = session.categoryName?.trim().isNotEmpty == true
@@ -187,15 +191,6 @@ class SessionTile extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes % 60;
-    final s = d.inSeconds % 60;
-    if (h > 0) return '${h}h ${m}m';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
   }
 
   String _formatTimeRange(DateTime? start, DateTime? end) {

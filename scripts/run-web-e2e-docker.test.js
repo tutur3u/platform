@@ -1167,6 +1167,35 @@ test('runWebE2E compare mode removes next project images before TanStack', async
   }
 });
 
+test('runWebE2E compare mode describes failures without an error field', async () => {
+  const reportPath = path.join(
+    process.cwd(),
+    'tmp',
+    'e2e',
+    'web-migration',
+    `compare-failure-${process.pid}-${Date.now()}.json`
+  );
+
+  try {
+    await assert.rejects(
+      () =>
+        runWebE2E(['--frontend=compare', 'smoke.spec.ts'], {
+          env: {
+            E2E_COMPARE_REPORT_PATH: reportPath,
+          },
+          runFrontendE2EForCompare: async (frontend) => ({
+            durationMs: 1,
+            passed: frontend === 'tanstack',
+            status: frontend === 'tanstack' ? 'passed' : 'failed',
+          }),
+        }),
+      /next: unknown failure/u
+    );
+  } finally {
+    fs.rmSync(reportPath, { force: true });
+  }
+});
+
 test('getFrontendE2EEnv points TanStack runs at the TanStack route', () => {
   const env = getFrontendE2EEnv('tanstack', {});
 
@@ -1560,6 +1589,22 @@ test('getReadinessFetchOptions refuses insecure TLS for non-local HTTPS origins'
     getReadinessFetchOptions('https://tanstack.tuturuuu.localhost:1355/')
       .rejectUnauthorized,
     false
+  );
+});
+
+test('getReadinessFetchOptions applies positive request timeouts to fetch', () => {
+  const options = getReadinessFetchOptions('http://127.0.0.1:7803/login', {
+    requestTimeoutMs: 250,
+  });
+
+  assert.equal(options.requestTimeoutMs, 250);
+  assert.ok(options.signal instanceof AbortSignal);
+  assert.equal(options.signal.aborted, false);
+  assert.equal(
+    getReadinessFetchOptions('http://127.0.0.1:7803/login', {
+      requestTimeoutMs: 0,
+    }).signal,
+    undefined
   );
 });
 
