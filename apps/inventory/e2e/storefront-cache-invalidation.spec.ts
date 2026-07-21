@@ -8,7 +8,7 @@ import {
 
 const STOREFRONT_URL = 'http://localhost:7822';
 
-test('invalidates cached availability and keeps storefront navigation client-side', async ({
+test('invalidates cached availability and preserves the shared storefront shell', async ({
   page,
   request,
 }, testInfo) => {
@@ -52,7 +52,7 @@ test('invalidates cached availability and keeps storefront navigation client-sid
       `${STOREFRONT_URL}/${fixture.slug}/products/${invalidatedPayload.listings[0].id}`
     );
     expect(streamedProductPage.ok()).toBe(true);
-    expect(await streamedProductPage.text()).toContain('aria-busy="true"');
+    expect(await streamedProductPage.text()).toContain('data-storefront-shell');
 
     let documentRequests = 0;
     page.on('request', (requestEvent) => {
@@ -64,8 +64,17 @@ test('invalidates cached availability and keeps storefront navigation client-sid
     await expect(
       page.getByRole('heading', { name: 'Cache Test Store' })
     ).toBeVisible();
+    const storefrontShell = page.locator('[data-storefront-shell]');
+    await storefrontShell.evaluate((element) => {
+      element.dataset.navigationProbe = 'persistent';
+    });
     await instant(page, async () => {
       await page.getByRole('link', { name: 'Browse' }).click();
+      await expect(
+        page.locator(
+          '[data-storefront-shell][data-navigation-probe="persistent"]'
+        )
+      ).toBeVisible();
       await expect(page.locator('main[aria-busy="true"]')).toBeVisible();
     });
     await expect(page).toHaveURL(new RegExp(`/${fixture.slug}/?$`, 'u'));
