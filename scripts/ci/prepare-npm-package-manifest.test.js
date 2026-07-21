@@ -63,6 +63,30 @@ function createFixture() {
   return repoRoot;
 }
 
+function writeUiPackageFixture(
+  repoRoot,
+  { dependency = 'file:vendor/xlsx-0.20.3.tgz', includeArchive = true } = {}
+) {
+  writeJson(repoRoot, 'packages/ui/package.json', {
+    dependencies: {
+      xlsx: dependency,
+    },
+    exports: {
+      './xlsx': './src/xlsx.ts',
+    },
+    name: '@tuturuuu/ui',
+    version: '1.2.3',
+  });
+  fs.mkdirSync(path.join(repoRoot, 'packages/ui/vendor'), { recursive: true });
+
+  if (includeArchive) {
+    fs.writeFileSync(
+      path.join(repoRoot, 'packages/ui/vendor/xlsx-0.20.3.tgz'),
+      'fixture'
+    );
+  }
+}
+
 test('workspace dependency versions resolve to npm-compatible ranges', () => {
   assert.equal(
     resolveWorkspaceDependencyVersion('workspace:*', '1.2.3'),
@@ -122,21 +146,7 @@ test('preparePackageManifest rewrites workspace protocol dependencies', () => {
 test('preparePackageManifest embeds UI vendored xlsx for portable npm installs', () => {
   const repoRoot = createFixture();
 
-  writeJson(repoRoot, 'packages/ui/package.json', {
-    dependencies: {
-      xlsx: 'file:vendor/xlsx-0.20.3.tgz',
-    },
-    exports: {
-      './xlsx': './src/xlsx.ts',
-    },
-    name: '@tuturuuu/ui',
-    version: '1.2.3',
-  });
-  fs.mkdirSync(path.join(repoRoot, 'packages/ui/vendor'), { recursive: true });
-  fs.writeFileSync(
-    path.join(repoRoot, 'packages/ui/vendor/xlsx-0.20.3.tgz'),
-    'fixture'
-  );
+  writeUiPackageFixture(repoRoot);
 
   const extractions = [];
 
@@ -198,6 +208,56 @@ test('preparePackageManifest embeds UI vendored xlsx for portable npm installs',
     require: './vendor/xlsx/xlsx.js',
     default: './vendor/xlsx/xlsx.js',
   });
+});
+
+test('preparePackageManifest rejects a missing vendored archive', () => {
+  const repoRoot = createFixture();
+
+  writeUiPackageFixture(repoRoot, { includeArchive: false });
+
+  assert.throws(
+    () => preparePackageManifest({ packageDir: 'packages/ui', repoRoot }),
+    /missing vendored archive vendor\/xlsx-0\.20\.3\.tgz/
+  );
+});
+
+test('preparePackageManifest rejects an incomplete vendored extraction', () => {
+  const repoRoot = createFixture();
+
+  writeUiPackageFixture(repoRoot);
+
+  assert.throws(
+    () =>
+      preparePackageManifest({
+        extractTarball: ({ destinationPath }) => {
+          for (const relativePath of [
+            'LICENSE',
+            'types/index.d.ts',
+            'xlsx.js',
+          ]) {
+            const filePath = path.join(destinationPath, relativePath);
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
+            fs.writeFileSync(filePath, 'fixture');
+          }
+        },
+        packageDir: 'packages/ui',
+        repoRoot,
+      }),
+    /did not extract required vendored file \.\/vendor\/xlsx\/xlsx\.mjs/
+  );
+});
+
+test('preparePackageManifest rejects a vendored dependency source mismatch', () => {
+  const repoRoot = createFixture();
+
+  writeUiPackageFixture(repoRoot, {
+    dependency: 'file:vendor/not-the-vetted-archive.tgz',
+  });
+
+  assert.throws(
+    () => preparePackageManifest({ packageDir: 'packages/ui', repoRoot }),
+    /must declare dependencies\.xlsx as file:vendor\/xlsx-0\.20\.3\.tgz/
+  );
 });
 
 test('preparePackageManifest rejects unhandled file dependencies', () => {
