@@ -201,6 +201,43 @@ test('scanSourceKeys captures typed translator helper parameters', (t) => {
   );
 });
 
+test('checkAppSourceKeys follows a namespaced translator into a typed helper', (t) => {
+  const projectRoot = createProject(t);
+  writeJson(projectRoot, 'apps/contacts/messages/en.json', {
+    'user-data-table': {},
+  });
+  writeFile(
+    projectRoot,
+    'apps/contacts/src/user-details.tsx',
+    `
+      import { getTranslations } from 'next-intl/server';
+
+      export async function UserDetails() {
+        const t = await getTranslations('user-data-table');
+        return buildMetrics({ t });
+      }
+
+      function buildMetrics({
+        t,
+      }: {
+        t: Awaited<ReturnType<typeof getTranslations>>;
+      }) {
+        return t('metric_groups');
+      }
+    `
+  );
+
+  const failures = checkAppSourceKeys({
+    rootDir: projectRoot,
+  });
+
+  assert.equal(failures.length, 1);
+  assert.deepEqual(
+    failures[0].missing.map(({ namespace, key }) => `${namespace}.${key}`),
+    ['user-data-table.metric_groups']
+  );
+});
+
 test('checkAppSourceKeys does not use shared package key exceptions for local app source', (t) => {
   const projectRoot = createProject(t);
   writeJson(projectRoot, 'apps/finance/messages/en.json', {

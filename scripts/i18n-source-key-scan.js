@@ -4,8 +4,10 @@ const path = require('node:path');
 const TRANSLATOR_METHODS = new Set(['has', 'markup', 'raw', 'rich']);
 const TRANSLATOR_DECLARATION_REGEX =
   /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s*)?(?:useTranslations|getTranslations)\(\s*(?:(['"])([^'"]+)\2|\{[\s\S]*?\bnamespace\s*:\s*(['"])([^'"]+)\4[\s\S]*?\})?\s*\)/g;
-const TRANSLATOR_PARAMETER_REGEX =
+const ARROW_TRANSLATOR_PARAMETER_REGEX =
   /\b(t|translate|translator)\s*:\s*\(\s*key\s*:\s*string\s*\)\s*=>\s*string/g;
+const RETURN_TYPE_TRANSLATOR_PARAMETER_REGEX =
+  /\b(t|translate|translator)\s*:\s*(?:Awaited\s*<\s*)?ReturnType\s*<\s*typeof\s+(?:useTranslations|getTranslations)(?:\s*<\s*(['"])([^'"]+)\2\s*>)?\s*>\s*>?/g;
 
 function isCheckableSourceFile(fileName) {
   if (!/\.(ts|tsx|js|jsx)$/.test(fileName)) return false;
@@ -480,7 +482,10 @@ function findTranslatorCalls(
 function scanSourceKeys(
   rootDir,
   sourceDir,
-  { includeTranslatorParameters = false } = {}
+  {
+    includeTranslatorParameters = false,
+    skipUnresolvedTranslatorParameters = false,
+  } = {}
 ) {
   const results = [];
   const files = findSourceFiles(rootDir, sourceDir);
@@ -503,6 +508,7 @@ function scanSourceKeys(
       );
       declarations.push({
         index: declarationMatch.index,
+        kind: 'declaration',
         namespace,
         scopeEnd,
         variableName,
@@ -512,25 +518,56 @@ function scanSourceKeys(
     }
 
     if (includeTranslatorParameters) {
-      TRANSLATOR_PARAMETER_REGEX.lastIndex = 0;
-      let parameterMatch = TRANSLATOR_PARAMETER_REGEX.exec(content);
-      while (parameterMatch !== null) {
-        declarations.push({
-          index: parameterMatch.index,
-          namespace: '',
-          scopeEnd: findFollowingBlockEnd(
-            bracePairs,
-            parameterMatch.index,
-            content.length
-          ),
-          variableName: parameterMatch[1],
-        });
+      for (const parameterRegex of [
+        ARROW_TRANSLATOR_PARAMETER_REGEX,
+        RETURN_TYPE_TRANSLATOR_PARAMETER_REGEX,
+      ]) {
+        parameterRegex.lastIndex = 0;
+        let parameterMatch = parameterRegex.exec(content);
+        while (parameterMatch !== null) {
+          declarations.push({
+            index: parameterMatch.index,
+            kind: 'parameter',
+            namespace: parameterMatch[3] ?? null,
+            scopeEnd: findFollowingBlockEnd(
+              bracePairs,
+              parameterMatch.index,
+              content.length
+            ),
+            variableName: parameterMatch[1],
+          });
 
-        parameterMatch = TRANSLATOR_PARAMETER_REGEX.exec(content);
+          parameterMatch = parameterRegex.exec(content);
+        }
+      }
+
+      for (const declaration of declarations) {
+        if (declaration.kind !== 'parameter' || declaration.namespace !== null)
+          continue;
+
+        const candidateNamespaces = new Set(
+          declarations
+            .filter(
+              (candidate) =>
+                candidate.kind === 'declaration' &&
+                candidate.variableName === declaration.variableName
+            )
+            .map((candidate) => candidate.namespace)
+        );
+
+        if (candidateNamespaces.size === 1) {
+          declaration.namespace = [...candidateNamespaces][0];
+        }
       }
     }
 
     for (const declaration of declarations) {
+      if (
+        declaration.namespace === null &&
+        skipUnresolvedTranslatorParameters
+      ) {
+        continue;
+      }
       const isForwardedTranslator = isForwardedAsSameNameJsxProp(
         content.slice(declaration.index, declaration.scopeEnd),
         declaration.variableName
@@ -552,7 +589,11 @@ function scanSourceKeys(
         isForwardedTranslator ? content.length : declaration.scopeEnd,
         excludedRanges
       )) {
-        results.push({ namespace: declaration.namespace, key, file: relPath });
+        results.push({
+          namespace: declaration.namespace ?? '',
+          key,
+          file: relPath,
+        });
       }
     }
   }
@@ -629,7 +670,10 @@ function checkAppSourceKeys({ exceptions = {}, rootDir }) {
     );
     const missingKeys = [];
 
-    for (const { namespace, key, file } of scanSourceKeys(rootDir, sourceDir)) {
+    for (const { namespace, key, file } of scanSourceKeys(rootDir, sourceDir, {
+      includeTranslatorParameters: true,
+      skipUnresolvedTranslatorParameters: true,
+    })) {
       if (isKeyExcepted(appSourceKeyExceptions, namespace, key)) continue;
       if (!resolveKeyPath(appJson, namespace, key)) {
         missingKeys.push({ namespace, key, file });

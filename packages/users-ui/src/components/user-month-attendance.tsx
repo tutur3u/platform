@@ -1,7 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from '@tuturuuu/icons';
+import { AlertCircle, ChevronLeft, ChevronRight } from '@tuturuuu/icons';
 import type {
   WorkspaceUser,
   WorkspaceUserAttendance,
@@ -45,6 +45,7 @@ export default function UserMonthAttendance({
   const locale = useLocale();
   const tDetails = useTranslations('ws-user-group-details');
   const tGuests = useTranslations('meet-together');
+  const tAttendance = useTranslations('ws-user-group-attendance');
 
   const searchParams = useSearchParams();
 
@@ -416,7 +417,32 @@ export default function UserMonthAttendance({
               </div>
             </div>
 
-            <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
+            {isError && (
+              <div
+                className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-6 text-center"
+                role="alert"
+              >
+                <AlertCircle className="h-6 w-6 text-dynamic-red" />
+                <p className="max-w-sm text-foreground/70 text-sm">
+                  {tAttendance('load_error')}
+                </p>
+                <Button
+                  onClick={() => void refetch()}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {tAttendance('retry')}
+                </Button>
+              </div>
+            )}
+
+            <div
+              className={cn(
+                'relative grid gap-1 text-xs md:gap-2 md:text-base',
+                isError && 'hidden'
+              )}
+            >
               <div className="grid grid-cols-7 gap-1 md:gap-2">
                 {days.map((day, idx) => (
                   <div
