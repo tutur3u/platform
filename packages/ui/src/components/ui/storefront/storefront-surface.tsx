@@ -7,7 +7,7 @@ import type {
   InventoryStorefrontListing,
 } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -124,69 +124,102 @@ export function StorefrontSurface({
   >(null);
   const accentColor = sanitizeStorefrontAccentColor(storefront.accentColor);
   const radius = storefrontRadiusClasses[storefront.cornerStyle];
-  const resolveVariant = (
-    listing: InventoryStorefrontListing,
-    variantId?: string | null
-  ) =>
-    variantId
-      ? (listing.variants ?? []).find((variant) => variant.id === variantId)
-      : undefined;
-  const cartEntries = cartLines.flatMap((line) => {
-    const listing = listings.find((item) => item.id === line.listingId);
-    if (!listing) return [];
-    return [
-      {
-        bundle: listing.bundleId
-          ? bundles.find((bundle) => bundle.id === listing.bundleId)
-          : undefined,
-        line,
-        listing,
-        variant: resolveVariant(listing, line.variantId),
-      },
-    ];
-  });
-  const lineLimit = (entry: (typeof cartEntries)[number]) =>
-    entry.variant
-      ? getStorefrontVariantLimit(entry.listing, entry.variant)
-      : getStorefrontListingLimit(entry.listing);
-  const checkoutEntries = cartEntries.filter(
-    (entry) => Math.min(entry.line.quantity, lineLimit(entry)) > 0
+  const listingsById = useMemo(
+    () => new Map(listings.map((listing) => [listing.id, listing])),
+    [listings]
   );
-  const total = checkoutEntries.reduce((sum, entry) => {
-    const quantity = Math.min(entry.line.quantity, lineLimit(entry));
-    return (
-      sum +
-      getStorefrontCartLineSubtotal({
-        bundle: entry.bundle,
-        line: { ...entry.line, quantity },
-        listing: entry.listing,
-        variant: entry.variant,
-      })
-    );
-  }, 0);
-  const cartQuantity = cartLines.reduce((sum, line) => sum + line.quantity, 0);
+  const bundlesById = useMemo(
+    () => new Map(bundles.map((bundle) => [bundle.id, bundle])),
+    [bundles]
+  );
+  const cartEntries = useMemo(
+    () =>
+      cartLines.flatMap((line) => {
+        const listing = listingsById.get(line.listingId);
+        if (!listing) return [];
+        return [
+          {
+            bundle: listing.bundleId
+              ? bundlesById.get(listing.bundleId)
+              : undefined,
+            line,
+            listing,
+            variant: line.variantId
+              ? (listing.variants ?? []).find(
+                  (variant) => variant.id === line.variantId
+                )
+              : undefined,
+          },
+        ];
+      }),
+    [bundlesById, cartLines, listingsById]
+  );
+  const checkoutEntries = useMemo(
+    () =>
+      cartEntries.filter((entry) => {
+        const limit = entry.variant
+          ? getStorefrontVariantLimit(entry.listing, entry.variant)
+          : getStorefrontListingLimit(entry.listing);
+        return Math.min(entry.line.quantity, limit) > 0;
+      }),
+    [cartEntries]
+  );
+  const total = useMemo(
+    () =>
+      checkoutEntries.reduce((sum, entry) => {
+        const limit = entry.variant
+          ? getStorefrontVariantLimit(entry.listing, entry.variant)
+          : getStorefrontListingLimit(entry.listing);
+        const quantity = Math.min(entry.line.quantity, limit);
+        return (
+          sum +
+          getStorefrontCartLineSubtotal({
+            bundle: entry.bundle,
+            line: { ...entry.line, quantity },
+            listing: entry.listing,
+            variant: entry.variant,
+          })
+        );
+      }, 0),
+    [checkoutEntries]
+  );
+  const cartQuantityByListing = useMemo(() => {
+    const quantities = new Map<string, number>();
+
+    for (const line of cartLines) {
+      quantities.set(
+        line.listingId,
+        (quantities.get(line.listingId) ?? 0) + line.quantity
+      );
+    }
+
+    return quantities;
+  }, [cartLines]);
+  const cartQuantity = useMemo(
+    () => cartLines.reduce((sum, line) => sum + line.quantity, 0),
+    [cartLines]
+  );
   const detailListing = detailListingId
-    ? listings.find((listing) => listing.id === detailListingId)
+    ? listingsById.get(detailListingId)
     : undefined;
   const selectedListing = selectedListingId
-    ? listings.find((listing) => listing.id === selectedListingId)
+    ? listingsById.get(selectedListingId)
     : undefined;
   const isProductDetail = mode === 'product' && Boolean(selectedListing);
-  const visibleListings =
-    mode === 'product' && selectedListingId
-      ? listings.filter((listing) => listing.id === selectedListingId)
-      : listings;
+  const visibleListings = useMemo(
+    () =>
+      mode === 'product' && selectedListing ? [selectedListing] : listings,
+    [listings, mode, selectedListing]
+  );
   const isCheckout = mode === 'checkout';
   const isCheckoutDialogOpen = checkoutOpen ?? isCheckout;
   const isPreview = mode === 'preview';
   const isCartPage = mode === 'cart';
   const bundleSelectionListing = bundleSelectionListingId
-    ? listings.find((listing) => listing.id === bundleSelectionListingId)
+    ? listingsById.get(bundleSelectionListingId)
     : null;
   const bundleSelectionBundle = bundleSelectionListing?.bundleId
-    ? (bundles.find(
-        (bundle) => bundle.id === bundleSelectionListing.bundleId
-      ) ?? null)
+    ? (bundlesById.get(bundleSelectionListing.bundleId) ?? null)
     : null;
   const currency = storefront.currency ?? 'USD';
   const handleCheckoutOpen = () => {
@@ -393,11 +426,9 @@ export function StorefrontSurface({
                   listings={visibleListings}
                   renderListing={(listing) => {
                     const listingBundle = listing.bundleId
-                      ? bundles.find((bundle) => bundle.id === listing.bundleId)
+                      ? bundlesById.get(listing.bundleId)
                       : undefined;
-                    const quantity = cartLines
-                      .filter((item) => item.listingId === listing.id)
-                      .reduce((sum, item) => sum + item.quantity, 0);
+                    const quantity = cartQuantityByListing.get(listing.id) ?? 0;
 
                     return (
                       <StorefrontListingCard

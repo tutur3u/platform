@@ -19,6 +19,7 @@ export function StorefrontShellNavigation({
   const { cart } = useCart(storeSlug);
   const cartQuantity = cart.reduce((total, line) => total + line.quantity, 0);
   const isHistory = pathname.startsWith(`/${storeSlug}/orders`);
+  const isCart = pathname.startsWith(`/${storeSlug}/cart`);
 
   return (
     <nav
@@ -27,25 +28,37 @@ export function StorefrontShellNavigation({
     >
       <Button
         asChild
-        className="shrink-0"
+        className="shrink-0 aria-disabled:pointer-events-none aria-disabled:opacity-50"
         size="sm"
-        variant={isHistory ? 'secondary' : 'outline'}
+        variant="outline"
       >
         <Link
           aria-current={isHistory ? 'page' : undefined}
+          aria-disabled={isHistory || undefined}
           href={`/${storeSlug}/orders`}
+          onClick={isHistory ? (event) => event.preventDefault() : undefined}
           prefetch
+          tabIndex={isHistory ? -1 : undefined}
         >
           <ReceiptText aria-hidden className="size-4" />
           <span className="hidden sm:inline">{t('history.shortTitle')}</span>
         </Link>
       </Button>
 
-      <Button asChild className="shrink-0" size="sm" variant="outline">
+      <Button
+        asChild
+        className="shrink-0 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        size="sm"
+        variant="outline"
+      >
         <Link
+          aria-current={isCart ? 'page' : undefined}
+          aria-disabled={isCart || undefined}
           aria-label={`${t('cart')}: ${cartQuantity}`}
           href={`/${storeSlug}/cart`}
+          onClick={isCart ? (event) => event.preventDefault() : undefined}
           prefetch
+          tabIndex={isCart ? -1 : undefined}
         >
           <ShoppingCart aria-hidden className="size-4" />
           <span className="sr-only">{t('cart')}</span>

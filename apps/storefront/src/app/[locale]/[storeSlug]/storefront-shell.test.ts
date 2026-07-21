@@ -37,6 +37,13 @@ describe('Storefront route shell', () => {
       ),
       'utf8'
     );
+    const shellNavigation = readFileSync(
+      join(
+        storefrontRoot,
+        'src/components/storefront/storefront-shell-navigation.tsx'
+      ),
+      'utf8'
+    );
 
     expect(shellLayout).toContain('<StorefrontShell');
     for (const routePath of sharedRoutePaths) {
@@ -55,5 +62,9 @@ describe('Storefront route shell', () => {
     }
     expect(historyClient).not.toContain('<header');
     expect(historyClient).not.toContain('headerActions');
+    expect(shellNavigation.match(/variant="outline"/g)).toHaveLength(2);
+    expect(shellNavigation).toContain('aria-disabled={isHistory || undefined}');
+    expect(shellNavigation).toContain('aria-disabled={isCart || undefined}');
+    expect(shellNavigation).not.toContain("isHistory ? 'secondary'");
   });
 });
