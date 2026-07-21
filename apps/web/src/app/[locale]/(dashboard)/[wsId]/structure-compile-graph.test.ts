@@ -93,8 +93,12 @@ describe('[wsId] structure compile graph', () => {
     );
     expect(structureImplSource).toContain('WorkspaceSelectVisibilityToggle');
     expect(structureImplSource).toContain(
-      'SidebarWorkspaceSelectSection visible={showWorkspaceSelect}'
+      "'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'"
     );
+    expect(structureImplSource).toContain(
+      "'grid-rows-[1fr] border-b pb-2 opacity-100'"
+    );
+    expect(structureImplSource).not.toContain('SidebarWorkspaceSelectSection');
   });
 
   it('loads optional sidebar helpers after hydration instead of preloading them through next/dynamic', () => {
