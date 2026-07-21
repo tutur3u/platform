@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import DOMPurify from 'isomorphic-dompurify';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import {
@@ -14,7 +15,9 @@ import {
 const UNSUBSCRIBE_REASON = 'recipient_unsubscribed';
 
 function htmlResponse(body: string, init?: ResponseInit) {
-  return new NextResponse(body, {
+  const sanitizedBody = DOMPurify.sanitize(body, { WHOLE_DOCUMENT: true });
+
+  return new NextResponse(sanitizedBody, {
     ...init,
     headers: {
       'Content-Security-Policy':
