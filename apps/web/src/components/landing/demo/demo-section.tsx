@@ -1,8 +1,9 @@
 'use client';
 
 import { Sparkles } from '@tuturuuu/icons/lucide';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { Grain } from '../shared/atmosphere';
+import { Reveal } from '../shared/reveal';
 import { Panel, SectionShell } from '../shared/section-shell';
 import { DemoTabs } from './demo-tabs';
 
@@ -15,11 +16,11 @@ export function DemoSection() {
       eyebrow={
         <>
           <Sparkles className="h-3 w-3 text-dynamic-blue" />
-          {t('video.badge')}
+          {t('badge')}
         </>
       }
       id="demo"
-      index="03"
+      index="04"
       subtitle={t('subtitle')}
       title={
         <>
@@ -30,16 +31,12 @@ export function DemoSection() {
         </>
       }
     >
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        transition={{ duration: 0.6 }}
-        viewport={{ once: true, margin: '-50px' }}
-        whileInView={{ opacity: 1, y: 0 }}
-      >
+      <Reveal blur direction="scale">
         <Panel className="p-1.5 sm:p-2">
+          <Grain className="rounded-3xl" />
           <DemoTabs />
         </Panel>
-      </motion.div>
+      </Reveal>
     </SectionShell>
   );
 }

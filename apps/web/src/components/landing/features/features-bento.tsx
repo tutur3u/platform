@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 import { RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
 import { FeatureCard, type FeatureColor } from './feature-card';
+import { MoreApps } from './more-apps';
 import { productPreviews } from './product-previews';
 import { SpotlightGrid } from './spotlight-grid';
 
@@ -54,7 +55,7 @@ export function FeaturesBento() {
       bloom="blue"
       eyebrow={t('eyebrow')}
       id="features"
-      index="02"
+      index="03"
       subtitle={t('subtitle')}
       title={t('title')}
     >
@@ -85,6 +86,8 @@ export function FeaturesBento() {
           })}
         </RevealGroup>
       </SpotlightGrid>
+
+      <MoreApps />
     </SectionShell>
   );
 }

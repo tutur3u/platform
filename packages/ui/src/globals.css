@@ -454,10 +454,15 @@
 
   /* Marketing type scale. The variables resolve only where the marketing
      layout loads the fonts; everywhere else these fall back to the app font. */
+  /* The inner fallbacks matter: apps that do not load the marketing faces
+     (nova, meet) would otherwise hit an undefined var and drop the whole
+     font-family declaration. */
   --font-display:
-    var(--font-be-vietnam-pro), ui-sans-serif, system-ui, sans-serif;
+    var(--font-be-vietnam-pro, ui-sans-serif), ui-sans-serif, system-ui,
+    sans-serif;
   --font-mono-ui:
-    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    var(--font-jetbrains-mono, ui-monospace), ui-monospace, SFMono-Regular,
+    Menlo, monospace;
 }
 
 /* Marketing atmosphere: slow, low-amplitude drift for hero light blooms. */
@@ -571,15 +576,21 @@
   .animate-marquee,
   .animate-float-y,
   .animate-scroll-cue,
-  .animate-ring-pulse {
-    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
+  .animate-ring-pulse,
+  .animate-bloom-drift,
+  .animate-bloom-drift-slow,
+  .animate-sheen,
+  .animate-aurora {
+    /*
+     * Cancelling the animation is enough, and is all we should do. These
+     * elements carry layout transforms (`-translate-x-1/2` centres the hero
+     * blooms) and deliberate opacities (blooms sit at 40-60%), so forcing
+     * `transform: none` / `opacity: 1` here would shift them off-centre and
+     * blow out their brightness. Entrance keyframes use `both`, so removing
+     * the animation simply leaves the element in its natural, final state.
+     */
+    /* biome-ignore lint/complexity/noImportantStyles: must beat utility-class animations for accessibility */
     animation: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
-    opacity: 1 !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
-    filter: none !important;
-    /* biome-ignore lint/complexity/noImportantStyles: override inline motion styles for accessibility */
-    transform: none !important;
   }
 }
 

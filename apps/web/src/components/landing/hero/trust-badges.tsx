@@ -4,16 +4,18 @@ import { useTranslations } from 'next-intl';
  * Spec strip under the hero product frame.
  *
  * Reads as instrument labelling — hairline separators, monospace, wide
- * tracking — rather than a row of checkmark chips.
+ * tracking — rather than a row of checkmark chips. Deliberately carries no
+ * figures: the commit and contributor counts belong to the open source
+ * section, where they have context, and repeating them here diluted both.
  */
 export function TrustBadges() {
   const t = useTranslations('landing.hero.trust');
 
   const badges = [
     t('openSource'),
-    t('commits'),
-    t('contributors'),
     t('free'),
+    t('selfHost'),
+    t('noCard'),
   ] as const;
 
   return (

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
 import { StatCard, type StatColor } from './stat-card';
+import { ToolSprawl } from './tool-sprawl';
 
 export function ProblemSection() {
   const t = useTranslations('landing.problem');
@@ -44,6 +45,8 @@ export function ProblemSection() {
       title={t('title')}
       width="narrow"
     >
+      <ToolSprawl />
+
       <RevealGroup className="grid gap-3 sm:grid-cols-3" stagger={0.1}>
         {stats.map((stat) => (
           <RevealItem className="h-full" key={stat.label}>

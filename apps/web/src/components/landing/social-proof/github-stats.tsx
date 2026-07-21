@@ -48,7 +48,7 @@ export function GithubStats() {
           <Grain />
 
           <div className="relative flex flex-col items-center text-center">
-            <SectionEyebrow index="05">{t('eyebrow')}</SectionEyebrow>
+            <SectionEyebrow index="06">{t('eyebrow')}</SectionEyebrow>
             <h2 className="mt-6 max-w-2xl text-balance font-display font-semibold text-3xl tracking-[-0.03em] sm:text-4xl">
               {t('title')}
             </h2>

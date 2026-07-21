@@ -7,9 +7,9 @@ import {
   Sparkles,
   Tag,
 } from '@tuturuuu/icons/lucide';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { Reveal, RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
 import { FeatureMatrix } from './feature-matrix';
 import { PaygBanner } from './payg-banner';
@@ -19,6 +19,9 @@ import { PricingToggle } from './pricing-toggle';
 export function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
   const t = useTranslations('landing.pricing');
+
+  /** Shared vocabulary between the cards and the comparison matrix. */
+  const soonLabel = t('matrix.values.soon');
 
   const tiers = [
     {
@@ -120,82 +123,55 @@ export function PricingSection() {
         </>
       }
       id="pricing"
-      index="06"
+      index="07"
       subtitle={t('subtitle')}
       title={t('title')}
       width="wide"
     >
-      {/* Billing Toggle */}
-      <div className="-mt-4 mb-10 flex justify-center">
+      {/* Billing toggle */}
+      <Reveal className="-mt-4 mb-12 flex justify-center" duration={0.5}>
         <PricingToggle isYearly={isYearly} onToggle={setIsYearly} />
-      </div>
+      </Reveal>
 
-      {/* Pricing Cards Grid */}
-      <div className="mb-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {tiers.map((tier, index) => (
-          <motion.div
-            key={tier.id}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-50px' }}
-            transition={{ delay: index * 0.1, duration: 0.5 }}
-          >
-            <motion.div
-              animate={{
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 0.3,
-                ease: 'easeOut',
-              }}
-              key={`${tier.id}-${isYearly}`}
-            >
-              <PricingCard
-                icon={tier.icon}
-                name={tier.name}
-                price={isYearly ? tier.price.yearly : tier.price.monthly}
-                period={
-                  typeof tier.period === 'object'
-                    ? isYearly
-                      ? tier.period.yearly
-                      : tier.period.monthly
-                    : tier.period
-                }
-                badge={tier.badge}
-                description={tier.description}
-                cta={tier.cta}
-                ctaVariant={tier.ctaVariant}
-                features={tier.features}
-                color={tier.color}
-                highlighted={tier.highlighted}
-                isEnterprise={tier.id === 'enterprise'}
-                isFree={tier.id === 'free'}
-              />
-            </motion.div>
-          </motion.div>
+      {/* Tier grid */}
+      <RevealGroup className="mb-14 grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {tiers.map((tier) => (
+          <RevealItem className="h-full" key={tier.id}>
+            <PricingCard
+              badge={tier.badge}
+              color={tier.color}
+              cta={tier.cta}
+              ctaVariant={tier.ctaVariant}
+              description={tier.description}
+              features={tier.features}
+              highlighted={tier.highlighted}
+              icon={tier.icon}
+              isEnterprise={tier.id === 'enterprise'}
+              isFree={tier.id === 'free'}
+              name={tier.name}
+              period={
+                typeof tier.period === 'object'
+                  ? isYearly
+                    ? tier.period.yearly
+                    : tier.period.monthly
+                  : tier.period
+              }
+              price={isYearly ? tier.price.yearly : tier.price.monthly}
+              soonLabel={soonLabel}
+            />
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
 
-      {/* Feature Comparison */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-      >
+      {/* Feature comparison */}
+      <Reveal>
         <FeatureMatrix />
-      </motion.div>
+      </Reveal>
 
-      {/* Pay As You Go Banner */}
-      <motion.div
-        className="mt-8"
-        initial={{ opacity: 0, y: 20 }}
-        transition={{ delay: 0.5, duration: 0.6 }}
-        viewport={{ once: true, margin: '-50px' }}
-        whileInView={{ opacity: 1, y: 0 }}
-      >
+      {/* Usage-based add-ons */}
+      <Reveal className="mt-10" delay={0.05}>
         <PaygBanner />
-      </motion.div>
+      </Reveal>
     </SectionShell>
   );
 }

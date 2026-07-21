@@ -1,85 +1,15 @@
 'use client';
 
 import type { LucideIcon } from '@tuturuuu/icons/lucide';
-import { ArrowRight, Check, Clock } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
 import { getPayBillingUrl } from '@/lib/pay-app-url';
+import { PricingFeatureList } from './pricing-feature-list';
+import { type PricingColor, pricingColorStyles } from './pricing-styles';
 
-// Explicit color mappings for Tailwind to detect at build time
-const colorStyles = {
-  green: {
-    cardHighlighted:
-      'border-dynamic-light-green/40 bg-gradient-to-b from-calendar-bg-green via-calendar-bg-green/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-green/30',
-    badge:
-      'border-dynamic-light-green/30 bg-calendar-bg-green text-dynamic-light-green',
-    iconBg: 'bg-calendar-bg-green',
-    iconText: 'text-dynamic-light-green',
-    checkmark: 'text-dynamic-light-green',
-    ctaButton: 'bg-dynamic-light-green hover:bg-dynamic-light-green/90',
-  },
-  blue: {
-    cardHighlighted:
-      'border-dynamic-light-blue/40 bg-gradient-to-b from-calendar-bg-blue via-calendar-bg-blue/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-blue/30',
-    badge:
-      'border-dynamic-light-blue/30 bg-calendar-bg-blue text-dynamic-light-blue',
-    iconBg: 'bg-calendar-bg-blue',
-    iconText: 'text-dynamic-light-blue',
-    checkmark: 'text-dynamic-light-blue',
-    ctaButton: 'bg-dynamic-light-blue hover:bg-dynamic-light-blue/90',
-  },
-  purple: {
-    cardHighlighted:
-      'border-dynamic-light-purple/40 bg-gradient-to-b from-calendar-bg-purple via-calendar-bg-purple/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-purple/30',
-    badge:
-      'border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-light-purple',
-    iconBg: 'bg-calendar-bg-purple',
-    iconText: 'text-dynamic-light-purple',
-    checkmark: 'text-dynamic-light-purple',
-    ctaButton: 'bg-dynamic-light-purple hover:bg-dynamic-light-purple/90',
-  },
-  orange: {
-    cardHighlighted:
-      'border-dynamic-light-orange/40 bg-gradient-to-b from-calendar-bg-orange via-calendar-bg-orange/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-orange/30',
-    badge:
-      'border-dynamic-light-orange/30 bg-calendar-bg-orange text-dynamic-light-orange',
-    iconBg: 'bg-calendar-bg-orange',
-    iconText: 'text-dynamic-light-orange',
-    checkmark: 'text-dynamic-light-orange',
-    ctaButton: 'bg-dynamic-light-orange hover:bg-dynamic-light-orange/90',
-  },
-  cyan: {
-    cardHighlighted:
-      'border-dynamic-light-cyan/40 bg-gradient-to-b from-calendar-bg-cyan via-calendar-bg-cyan/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-cyan/30',
-    badge:
-      'border-dynamic-light-cyan/30 bg-calendar-bg-cyan text-dynamic-light-cyan',
-    iconBg: 'bg-calendar-bg-cyan',
-    iconText: 'text-dynamic-light-cyan',
-    checkmark: 'text-dynamic-light-cyan',
-    ctaButton: 'bg-dynamic-light-cyan hover:bg-dynamic-light-cyan/90',
-  },
-  gray: {
-    cardHighlighted:
-      'border-dynamic-light-gray/40 bg-gradient-to-b from-calendar-bg-gray via-calendar-bg-gray/50 to-background shadow-lg',
-    cardHover: 'hover:border-dynamic-light-gray/30',
-    badge:
-      'border-dynamic-light-gray/30 bg-calendar-bg-gray text-dynamic-light-gray',
-    iconBg: 'bg-calendar-bg-gray',
-    iconText: 'text-dynamic-light-gray',
-    checkmark: 'text-dynamic-light-gray',
-    ctaButton: 'bg-dynamic-light-gray hover:bg-dynamic-light-gray/90',
-  },
-} as const;
-
-type ColorKey = keyof typeof colorStyles;
+export type ColorKey = PricingColor;
 
 interface PricingCardProps {
   icon: LucideIcon;
@@ -92,10 +22,14 @@ interface PricingCardProps {
   ctaVariant: 'default' | 'outline';
   features: string[];
   color: ColorKey;
+  /** Translated "Soon" label reused from the comparison matrix vocabulary. */
+  soonLabel: string;
   highlighted?: boolean;
   isEnterprise?: boolean;
   isFree?: boolean;
 }
+
+const PRICE_SPRING = { type: 'spring', stiffness: 320, damping: 26 } as const;
 
 export function PricingCard({
   icon: Icon,
@@ -108,190 +42,171 @@ export function PricingCard({
   ctaVariant,
   features,
   color,
+  soonLabel,
   highlighted,
   isEnterprise,
   isFree,
 }: PricingCardProps) {
-  const styles = colorStyles[color] || colorStyles.blue;
+  const styles = pricingColorStyles[color] ?? pricingColorStyles.blue;
+  const reduced = useReducedMotion();
+
+  const href = isEnterprise
+    ? '/contact'
+    : isFree
+      ? '/onboarding'
+      : getPayBillingUrl('personal');
 
   return (
     <div
-      className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-500',
-        highlighted
-          ? cn(styles.cardHighlighted, '-translate-y-1 lg:-translate-y-2')
-          : cn(
-              'border-foreground/[0.08] bg-foreground/[0.015] hover:-translate-y-1 hover:border-foreground/15 hover:bg-foreground/[0.03]',
-              styles.cardHover
-            )
-      )}
+      className={cn('group relative h-full', highlighted && 'lg:-mt-3 lg:pb-3')}
     >
-      {/* Lit top edge — always on for the highlighted tier, on hover otherwise */}
-      <div
-        aria-hidden
-        className={cn(
-          'pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-foreground/30 to-transparent transition-opacity duration-500',
-          highlighted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        )}
-      />
-
-      {/* Badge */}
-      {badge && (
-        <span
+      {/* Halo — the highlighted tier casts light onto the page behind it. */}
+      {highlighted ? (
+        <div
+          aria-hidden
           className={cn(
-            'absolute top-5 right-5 rounded-full border px-2.5 py-1 font-mono-ui text-[0.58rem] uppercase tracking-[0.16em]',
-            highlighted
-              ? styles.badge
-              : 'border-foreground/15 bg-foreground/[0.06] text-foreground/60'
+            'pointer-events-none absolute -inset-x-6 -top-8 -z-10 h-48 opacity-60 blur-3xl dark:opacity-70',
+            styles.halo
           )}
-        >
-          {badge}
-        </span>
-      )}
+        />
+      ) : null}
 
-      {/* Icon & Name */}
       <div
         className={cn(
-          'mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-500 group-hover:scale-105',
-          styles.iconBg
+          'relative flex h-full flex-col overflow-hidden rounded-2xl border p-6 transition-all duration-500',
+          highlighted
+            ? cn(
+                styles.border,
+                'bg-gradient-to-b from-foreground/[0.06] via-foreground/[0.02] to-transparent shadow-2xl shadow-foreground/5 backdrop-blur-sm'
+              )
+            : cn(
+                'border-foreground/[0.08] bg-foreground/[0.015] hover:-translate-y-1 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5',
+                styles.hoverBorder
+              )
         )}
       >
-        <Icon className={cn('h-4 w-4', styles.iconText)} />
-      </div>
-
-      <h3 className="font-display font-semibold text-lg tracking-[-0.01em]">
-        {name}
-      </h3>
-
-      {/* Price with animation */}
-      <div className="mt-3 mb-2 flex items-baseline">
-        <div className="overflow-hidden">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={price}
-              className="block font-bold font-display text-4xl tabular-nums tracking-[-0.04em]"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{
-                type: 'spring',
-                stiffness: 300,
-                damping: 25,
-              }}
-            >
-              {price}
-            </motion.span>
-          </AnimatePresence>
-        </div>
-        <AnimatePresence mode="wait" initial={false}>
-          {period && (
-            <motion.span
-              key={period}
-              className="ml-1 text-foreground/50 text-sm"
-              initial={{ opacity: 0, x: -5 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 5 }}
-              transition={{ duration: 0.2 }}
-            >
-              {period}
-            </motion.span>
+        {/* Lit top edge — always on for the highlighted tier, on hover otherwise */}
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent to-transparent transition-opacity duration-500',
+            styles.rule,
+            highlighted ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           )}
-        </AnimatePresence>
-      </div>
+        />
 
-      {/* Description */}
-      <p className="mb-4 text-foreground/60 text-sm">{description}</p>
+        {/* Slow drifting aura inside the highlighted card. */}
+        {highlighted ? (
+          <div
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute -top-24 left-1/2 h-56 w-72 -translate-x-1/2 animate-bloom-drift-slow rounded-full opacity-35 blur-3xl motion-reduce:animate-none',
+              styles.aura
+            )}
+          />
+        ) : null}
 
-      {/* Features */}
-      <ul className="mb-6 flex-1 space-y-2">
-        {features.map((feature, index) => {
-          // Check for "Everything in X +" pattern
-          const isInheritFeature =
-            feature.includes('Everything in') ||
-            feature.includes('Mọi thứ của');
-          // Check for "coming soon" pattern
-          const isComingSoon =
-            feature.includes('coming soon') || feature.includes('sắp ra mắt');
-          // Check for "beta" pattern
-          const isBeta = feature.includes('(beta)');
+        {/* Corner bloom on hover. */}
+        <div
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100',
+            styles.bloom
+          )}
+        />
 
-          if (isInheritFeature) {
-            return (
-              <li
-                key={index}
+        <div className="relative flex h-full flex-col">
+          {/* Icon + optional tier badge */}
+          <div className="flex items-start justify-between gap-3">
+            <span
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-xl border transition-transform duration-500 group-hover:scale-105',
+                styles.iconSurface
+              )}
+            >
+              <Icon className={cn('h-4 w-4', styles.icon)} />
+            </span>
+
+            {badge ? (
+              <span
                 className={cn(
-                  '-mx-2 flex items-center gap-2 rounded-lg px-2 py-1.5',
-                  styles.iconBg
+                  'rounded-full border px-2.5 py-1 font-mono-ui text-[0.55rem] uppercase leading-none tracking-[0.16em]',
+                  highlighted
+                    ? styles.badge
+                    : 'border-foreground/12 bg-foreground/[0.04] text-foreground/50'
                 )}
               >
-                <ArrowRight
-                  className={cn('h-4 w-4 shrink-0', styles.iconText)}
-                />
-                <span className={cn('font-medium text-sm', styles.iconText)}>
-                  {feature}
-                </span>
-              </li>
-            );
-          }
-
-          if (isComingSoon) {
-            return (
-              <li key={index} className="flex items-start gap-2 opacity-60">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-foreground/50" />
-                <span className="text-foreground/50 text-sm italic">
-                  {feature}
-                </span>
-              </li>
-            );
-          }
-
-          // Strip "(beta)" from display text if present
-          const displayText = isBeta
-            ? feature.replace(/\s*\(beta\)\s*/gi, '')
-            : feature;
-
-          return (
-            <li key={index} className="flex items-start gap-2">
-              <Check
-                className={cn('mt-0.5 h-4 w-4 shrink-0', styles.checkmark)}
-              />
-              <span className="text-foreground/70 text-sm">
-                {displayText}
-                {isBeta && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1.5 border-dynamic-yellow/30 bg-dynamic-yellow/10 px-1 py-0 text-[10px] text-dynamic-yellow"
-                  >
-                    Beta
-                  </Badge>
-                )}
+                {badge}
               </span>
-            </li>
-          );
-        })}
-      </ul>
+            ) : null}
+          </div>
 
-      {/* CTA */}
-      <Button
-        variant={ctaVariant}
-        className={cn(
-          'w-full',
-          highlighted && ctaVariant === 'default' && styles.ctaButton
-        )}
-        asChild
-      >
-        <Link
-          href={
-            isEnterprise
-              ? '/contact'
-              : isFree
-                ? '/onboarding'
-                : getPayBillingUrl('personal')
-          }
-        >
-          {cta}
-        </Link>
-      </Button>
+          <h3 className="mt-5 font-display font-semibold text-lg tracking-[-0.02em]">
+            {name}
+          </h3>
+
+          {/* Price — re-animates whenever the billing period flips. */}
+          <div className="mt-3 flex items-baseline gap-1">
+            <span className="block overflow-hidden">
+              <AnimatePresence initial={false} mode="wait">
+                <motion.span
+                  animate={{ y: 0, opacity: 1 }}
+                  className="block font-display font-semibold text-[2.75rem] tabular-nums leading-none tracking-[-0.04em]"
+                  exit={reduced ? { opacity: 0 } : { y: -24, opacity: 0 }}
+                  initial={reduced ? { opacity: 0 } : { y: 24, opacity: 0 }}
+                  key={price}
+                  transition={reduced ? { duration: 0.15 } : PRICE_SPRING}
+                >
+                  {price}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+
+            <AnimatePresence initial={false} mode="wait">
+              {period ? (
+                <motion.span
+                  animate={{ opacity: 1, x: 0 }}
+                  className="font-mono-ui text-[0.7rem] text-foreground/40 tabular-nums tracking-[0.04em]"
+                  exit={{ opacity: 0, x: 4 }}
+                  initial={{ opacity: 0, x: -4 }}
+                  key={period}
+                  transition={{ duration: 0.2 }}
+                >
+                  {period}
+                </motion.span>
+              ) : null}
+            </AnimatePresence>
+          </div>
+
+          <p className="mt-3 text-foreground/50 text-sm leading-relaxed">
+            {description}
+          </p>
+
+          {/* Hairline between the offer and what it contains. */}
+          <div
+            aria-hidden
+            className="my-5 h-px bg-gradient-to-r from-foreground/12 via-foreground/[0.06] to-transparent"
+          />
+
+          <PricingFeatureList
+            className="flex-1"
+            features={features}
+            soonLabel={soonLabel}
+            styles={styles}
+          />
+
+          <Button
+            asChild
+            className={cn(
+              'mt-6 w-full',
+              highlighted && ctaVariant === 'default' && styles.cta
+            )}
+            variant={ctaVariant}
+          >
+            <Link href={href}>{cta}</Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

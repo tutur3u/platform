@@ -2,379 +2,244 @@
 
 import {
   AlertCircle,
-  Calendar,
-  CheckCircle2,
-  Circle,
+  ChevronUp,
   Clock,
-  GripVertical,
-  Loader2,
+  MousePointer2,
 } from '@tuturuuu/icons/lucide';
-import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion } from 'framer-motion';
+import { DemoLabel } from './demo-chrome';
+import {
+  type DemoList,
+  type DemoTask,
+  type TaskColor,
+  useKanbanData,
+} from './kanban-data';
 
-type DemoColor = 'gray' | 'blue' | 'green' | 'purple' | 'orange' | 'yellow';
-type DemoStatus = 'not_started' | 'active' | 'done';
-type DemoPriority = 'high' | 'medium' | 'low';
-
-interface DemoList {
-  id: string;
-  name: string;
-  color: DemoColor;
-  status: DemoStatus;
-}
-
-interface DemoLabel {
-  name: string;
-  color: DemoColor;
-}
-
-interface DemoAssignee {
-  initials: string;
-  color: DemoColor;
-}
-
-interface DemoTask {
-  id: string;
-  name: string;
-  listId: string;
-  priority?: DemoPriority;
-  labels?: DemoLabel[];
-  dueDate?: string;
-  assignees?: DemoAssignee[];
-  estimationPoints?: number;
-  ticketId?: string;
-}
-
-// Column header gradient backgrounds
-const columnHeaderGradients: Record<DemoColor, string> = {
-  gray: 'from-dynamic-gray/10 to-transparent',
-  blue: 'from-dynamic-blue/10 to-transparent',
-  green: 'from-dynamic-green/10 to-transparent',
-  purple: 'from-dynamic-purple/10 to-transparent',
-  orange: 'from-dynamic-orange/10 to-transparent',
-  yellow: 'from-dynamic-yellow/10 to-transparent',
+const labelTones: Record<TaskColor, string> = {
+  gray: 'border-foreground/12 bg-foreground/[0.04] text-foreground/50',
+  blue: 'border-dynamic-blue/25 bg-dynamic-blue/10 text-dynamic-blue',
+  green: 'border-dynamic-green/25 bg-dynamic-green/10 text-dynamic-green',
+  purple: 'border-dynamic-purple/25 bg-dynamic-purple/10 text-dynamic-purple',
+  orange: 'border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange',
 };
 
-// Status icons with better visual design
-const statusIcons: Record<DemoStatus, React.ReactNode> = {
-  not_started: <Circle className="h-3.5 w-3.5" />,
-  active: <Loader2 className="h-3.5 w-3.5 animate-spin" />,
-  done: <CheckCircle2 className="h-3.5 w-3.5" />,
+const avatarTones: Record<TaskColor, string> = {
+  gray: 'bg-foreground/15 text-foreground/70',
+  blue: 'bg-dynamic-blue/20 text-dynamic-blue',
+  green: 'bg-dynamic-green/20 text-dynamic-green',
+  purple: 'bg-dynamic-purple/20 text-dynamic-purple',
+  orange: 'bg-dynamic-orange/20 text-dynamic-orange',
 };
 
-// Status badge colors with better contrast
-const statusBadgeColors: Record<DemoStatus, string> = {
-  not_started:
-    'bg-dynamic-gray/15 text-dynamic-gray border-dynamic-gray/20 shadow-dynamic-gray/5',
-  active:
-    'bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/20 shadow-dynamic-blue/5',
-  done: 'bg-dynamic-green/15 text-dynamic-green border-dynamic-green/20 shadow-dynamic-green/5',
+const columnDots: Record<TaskColor, string> = {
+  gray: 'bg-foreground/25',
+  blue: 'bg-dynamic-blue',
+  green: 'bg-dynamic-green',
+  purple: 'bg-dynamic-purple',
+  orange: 'bg-dynamic-orange',
 };
 
-const priorityConfig: Record<
-  DemoPriority,
-  { icon: React.ReactNode; color: string }
-> = {
-  high: {
-    icon: <AlertCircle className="h-3 w-3" />,
-    color:
-      'text-dynamic-red border-dynamic-red/30 bg-dynamic-red/10 shadow-sm shadow-dynamic-red/10',
-  },
-  medium: {
-    icon: <Calendar className="h-3 w-3" />,
-    color:
-      'text-dynamic-orange border-dynamic-orange/30 bg-dynamic-orange/10 shadow-sm shadow-dynamic-orange/10',
-  },
-  low: {
-    icon: null,
-    color:
-      'text-dynamic-blue border-dynamic-blue/30 bg-dynamic-blue/10 shadow-sm shadow-dynamic-blue/10',
-  },
+const columnRails: Record<TaskColor, string> = {
+  gray: 'via-foreground/15',
+  blue: 'via-dynamic-blue/40',
+  green: 'via-dynamic-green/40',
+  purple: 'via-dynamic-purple/40',
+  orange: 'via-dynamic-orange/40',
 };
 
-const labelColorClasses: Record<DemoColor, string> = {
-  gray: 'bg-dynamic-gray/15 text-dynamic-gray border-dynamic-gray/25',
-  blue: 'bg-dynamic-blue/15 text-dynamic-blue border-dynamic-blue/25',
-  green: 'bg-dynamic-green/15 text-dynamic-green border-dynamic-green/25',
-  purple: 'bg-dynamic-purple/15 text-dynamic-purple border-dynamic-purple/25',
-  orange: 'bg-dynamic-orange/15 text-dynamic-orange border-dynamic-orange/25',
-  yellow: 'bg-dynamic-yellow/15 text-dynamic-yellow border-dynamic-yellow/25',
-};
+const priorityTones = {
+  high: 'border-dynamic-red/25 bg-dynamic-red/10 text-dynamic-red',
+  medium: 'border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange',
+  low: 'border-foreground/12 bg-foreground/[0.04] text-foreground/45',
+} as const;
 
-// Avatar colors - using solid backgrounds to prevent overlap issues
-const avatarColorClasses: Record<DemoColor, string> = {
-  gray: 'bg-dynamic-gray text-white',
-  blue: 'bg-dynamic-blue text-white',
-  green: 'bg-dynamic-green text-white',
-  purple: 'bg-dynamic-purple text-white',
-  orange: 'bg-dynamic-orange text-white',
-  yellow: 'bg-dynamic-yellow text-foreground',
-};
-
-// Card border accent colors
-const cardAccentColors: Record<DemoColor, string> = {
-  gray: 'border-l-dynamic-gray',
-  blue: 'border-l-dynamic-blue',
-  green: 'border-l-dynamic-green',
-  purple: 'border-l-dynamic-purple',
-  orange: 'border-l-dynamic-orange',
-  yellow: 'border-l-dynamic-yellow',
-};
-
-function DemoTaskCard({ task, list }: { task: DemoTask; list: DemoList }) {
-  const priority = task.priority ? priorityConfig[task.priority] : null;
+function TaskCard({ task, index }: { task: DemoTask; index: number }) {
+  const reduced = useReducedMotion();
 
   return (
-    <div
-      className={cn(
-        'group relative overflow-hidden rounded-xl border border-border/40 border-l-[3px] bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-border/60 hover:shadow-md',
-        cardAccentColors[list.color]
-      )}
+    <motion.div
+      animate={{ opacity: 1, y: 0 }}
+      className="group/card relative overflow-hidden rounded-lg border border-foreground/[0.08] bg-background/60 p-2.5 transition-colors duration-300 hover:border-foreground/15 hover:bg-background/85"
+      initial={{ opacity: 0, y: reduced ? 0 : 6 }}
+      transition={{
+        duration: reduced ? 0.15 : 0.4,
+        delay: reduced ? 0 : 0.12 + index * 0.05,
+        ease: [0.16, 1, 0.3, 1],
+      }}
     >
-      <div className="p-3">
-        {/* Header with drag handle and task name */}
-        <div className="flex items-start gap-2">
-          <GripVertical className="mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground/30 transition-colors group-hover:text-muted-foreground/50" />
-          <div className="min-w-0 flex-1">
-            {/* Ticket ID */}
-            {task.ticketId && (
-              <Badge
-                variant="outline"
+      <div className="flex items-start justify-between gap-2">
+        <DemoLabel className="text-foreground/30">{task.ticketId}</DemoLabel>
+        {task.assignees?.length ? (
+          <div className="flex -space-x-1.5">
+            {task.assignees.map((assignee) => (
+              <span
                 className={cn(
-                  'mb-1.5 px-1.5 py-0 font-mono text-[9px] tracking-wide',
-                  labelColorClasses[list.color]
+                  'flex h-5 w-5 items-center justify-center rounded-full border border-background font-mono-ui text-[0.55rem] tracking-tight',
+                  avatarTones[assignee.color]
                 )}
+                key={assignee.initials}
               >
-                {task.ticketId}
-              </Badge>
-            )}
-            {/* Task name */}
-            <div className="font-medium text-foreground/90 text-xs leading-snug">
-              {task.name}
-            </div>
+                {assignee.initials}
+              </span>
+            ))}
           </div>
-          {/* Assignees */}
-          {task.assignees && task.assignees.length > 0 && (
-            <div className="flex -space-x-1">
-              {task.assignees.slice(0, 2).map((assignee, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    'flex h-6 w-6 items-center justify-center rounded-full border-2 border-background font-semibold text-[9px] shadow-sm transition-transform hover:z-10 hover:scale-110',
-                    avatarColorClasses[assignee.color]
-                  )}
-                >
-                  {assignee.initials}
-                </div>
-              ))}
-              {task.assignees.length > 2 && (
-                <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-background bg-muted font-semibold text-[9px] text-muted-foreground shadow-sm">
-                  +{task.assignees.length - 2}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        ) : null}
+      </div>
 
-        {/* Metadata row */}
-        <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {/* Priority */}
-          {priority && (
-            <Badge
-              variant="outline"
-              className={cn('h-5 gap-1 px-1.5 text-[9px]', priority.color)}
-            >
-              {priority.icon}
-            </Badge>
-          )}
+      <p className="mt-2 font-medium text-[0.8rem] text-foreground/80 leading-snug">
+        {task.name}
+      </p>
 
-          {/* Labels */}
-          {task.labels?.map((label, idx) => (
-            <Badge
-              key={idx}
-              variant="outline"
-              className={cn(
-                'h-5 px-1.5 font-medium text-[9px]',
-                labelColorClasses[label.color]
-              )}
-            >
-              {label.name}
-            </Badge>
-          ))}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+        {task.priority ? (
+          <span
+            className={cn(
+              'flex h-4.5 items-center gap-1 rounded-[5px] border px-1',
+              priorityTones[task.priority]
+            )}
+          >
+            {task.priority === 'high' ? (
+              <AlertCircle className="h-2.5 w-2.5" />
+            ) : (
+              <ChevronUp
+                className={cn(
+                  'h-2.5 w-2.5',
+                  task.priority === 'low' && 'rotate-180'
+                )}
+              />
+            )}
+          </span>
+        ) : null}
 
-          {/* Estimation points */}
-          {task.estimationPoints !== undefined && (
-            <Badge
-              variant="outline"
-              className="h-5 border-dynamic-cyan/25 bg-dynamic-cyan/10 px-1.5 font-mono text-[9px] text-dynamic-cyan shadow-dynamic-cyan/10 shadow-sm"
-            >
-              {task.estimationPoints}pt
-            </Badge>
-          )}
+        {task.labels?.map((label) => (
+          <span
+            className={cn(
+              'flex h-4.5 items-center rounded-[5px] border px-1.5',
+              labelTones[label.color]
+            )}
+            key={label.name}
+          >
+            <DemoLabel className="tracking-[0.1em]">{label.name}</DemoLabel>
+          </span>
+        ))}
 
-          {/* Due date */}
-          {task.dueDate && (
-            <div className="ml-auto flex items-center gap-1 rounded-md bg-muted/50 px-1.5 py-0.5 text-[9px] text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {task.dueDate}
-            </div>
+        {task.estimationPoints === undefined ? null : (
+          <span className="flex h-4.5 items-center rounded-[5px] border border-dynamic-cyan/25 bg-dynamic-cyan/10 px-1.5 font-mono-ui text-[0.6rem] text-dynamic-cyan tabular-nums">
+            {task.estimationPoints}
+          </span>
+        )}
+
+        {task.dueDate ? (
+          <span className="ml-auto flex items-center gap-1 text-foreground/35">
+            <Clock className="h-2.5 w-2.5" />
+            <DemoLabel>{task.dueDate}</DemoLabel>
+          </span>
+        ) : null}
+      </div>
+    </motion.div>
+  );
+}
+
+function Column({
+  list,
+  tasks,
+  offset,
+}: {
+  list: DemoList;
+  tasks: DemoTask[];
+  offset: number;
+}) {
+  return (
+    <div className="flex h-full w-full flex-col rounded-xl border border-foreground/[0.06] bg-foreground/[0.015]">
+      <div className="relative flex items-center gap-2 px-2.5 py-2">
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-x-2.5 bottom-0 h-px bg-gradient-to-r from-transparent to-transparent',
+            columnRails[list.color]
           )}
-        </div>
+        />
+        <span
+          className={cn(
+            'h-1.5 w-1.5 shrink-0 rounded-full',
+            columnDots[list.color]
+          )}
+        />
+        <DemoLabel className="truncate text-foreground/50">
+          {list.name}
+        </DemoLabel>
+        <span className="ml-auto font-mono-ui text-[0.6rem] text-foreground/30 tabular-nums">
+          {tasks.length}
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-2">
+        {tasks.map((task, index) => (
+          <TaskCard index={offset + index} key={task.id} task={task} />
+        ))}
+        <div className="mt-auto h-6 rounded-lg border border-foreground/[0.06] border-dashed" />
       </div>
     </div>
   );
 }
 
-function DemoColumn({ list, tasks }: { list: DemoList; tasks: DemoTask[] }) {
-  const statusIcon = statusIcons[list.status];
+/**
+ * A collaborator's pointer drifting across the board. Purely atmospheric: it
+ * signals "someone else is in here" without pretending to be interactive.
+ */
+function GhostCursor() {
+  const reduced = useReducedMotion();
+
+  if (reduced) return null;
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border/20 bg-muted/20 transition-all">
-      {/* Column header with gradient */}
-      <div
-        className={cn(
-          'flex items-center justify-between border-border/20 border-b bg-gradient-to-b p-2.5',
-          columnHeaderGradients[list.color]
-        )}
-      >
-        <div className="flex items-center gap-2.5">
-          <div
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-lg border shadow-sm',
-              statusBadgeColors[list.status]
-            )}
-          >
-            {statusIcon}
-          </div>
-          <span className="font-semibold text-sm tracking-tight">
-            {list.name}
-          </span>
-        </div>
-        <Badge
-          variant="secondary"
-          className={cn(
-            'min-w-6 justify-center rounded-full px-2 font-semibold text-xs shadow-sm',
-            statusBadgeColors[list.status]
-          )}
-        >
-          {tasks.length}
-        </Badge>
-      </div>
-
-      {/* Tasks list */}
-      <div className="flex-1 space-y-2 overflow-y-auto p-2.5">
-        {tasks.map((task) => (
-          <DemoTaskCard key={task.id} task={task} list={list} />
-        ))}
-      </div>
-    </div>
+    <motion.div
+      animate={{
+        left: ['20%', '54%', '54%', '86%', '20%'],
+        top: ['38%', '38%', '68%', '46%', '38%'],
+        opacity: [0, 1, 1, 1, 0],
+      }}
+      aria-hidden
+      className="pointer-events-none absolute z-20 hidden sm:block"
+      initial={{ left: '20%', top: '38%', opacity: 0 }}
+      transition={{
+        duration: 14,
+        times: [0, 0.25, 0.5, 0.75, 1],
+        repeat: Number.POSITIVE_INFINITY,
+        ease: 'easeInOut',
+      }}
+    >
+      <MousePointer2 className="h-3.5 w-3.5 fill-dynamic-purple/70 text-dynamic-purple" />
+      <span className="mt-0.5 ml-3 block h-1.5 w-6 rounded-full bg-dynamic-purple/30" />
+    </motion.div>
   );
 }
 
 export function KanbanDemo() {
-  const t = useTranslations('landing.demo.kanban');
+  const { lists, tasks } = useKanbanData();
 
-  const lists: DemoList[] = [
-    {
-      id: 'todo',
-      name: t('columns.todo'),
-      color: 'gray',
-      status: 'not_started',
-    },
-    {
-      id: 'in-progress',
-      name: t('columns.inProgress'),
-      color: 'blue',
-      status: 'active',
-    },
-    { id: 'done', name: t('columns.done'), color: 'green', status: 'done' },
-  ];
-
-  const tasks: DemoTask[] = [
-    // Todo column
-    {
-      id: '1',
-      name: t('tasks.task1.name'),
-      listId: 'todo',
-      ticketId: 'TU-101',
-      priority: 'high',
-      labels: [{ name: t('tasks.task1.label'), color: 'purple' }],
-      dueDate: t('tasks.task1.dueDate'),
-      assignees: [
-        { initials: 'JD', color: 'blue' },
-        { initials: 'KL', color: 'green' },
-      ],
-    },
-    {
-      id: '2',
-      name: t('tasks.task2.name'),
-      listId: 'todo',
-      ticketId: 'TU-102',
-      priority: 'medium',
-      labels: [{ name: t('tasks.task2.label'), color: 'orange' }],
-      estimationPoints: 3,
-    },
-    // In Progress column
-    {
-      id: '3',
-      name: t('tasks.task3.name'),
-      listId: 'in-progress',
-      ticketId: 'TU-98',
-      priority: 'high',
-      labels: [{ name: t('tasks.task3.label'), color: 'blue' }],
-      dueDate: t('tasks.task3.dueDate'),
-      assignees: [{ initials: 'MR', color: 'purple' }],
-      estimationPoints: 5,
-    },
-    {
-      id: '4',
-      name: t('tasks.task4.name'),
-      listId: 'in-progress',
-      ticketId: 'TU-99',
-      labels: [{ name: t('tasks.task4.label'), color: 'green' }],
-      assignees: [{ initials: 'AS', color: 'orange' }],
-    },
-    // Done column
-    {
-      id: '5',
-      name: t('tasks.task5.name'),
-      listId: 'done',
-      ticketId: 'TU-95',
-      labels: [{ name: t('tasks.task5.label'), color: 'blue' }],
-      assignees: [{ initials: 'JD', color: 'blue' }],
-      estimationPoints: 2,
-    },
-    {
-      id: '6',
-      name: t('tasks.task6.name'),
-      listId: 'done',
-      ticketId: 'TU-96',
-      labels: [{ name: t('tasks.task6.label'), color: 'purple' }],
-    },
-  ];
+  const columns = lists.map((list, listIndex) => ({
+    list,
+    tasks: tasks.filter((task) => task.listId === list.id),
+    offset: listIndex * 2,
+  }));
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-background/80 shadow-sm backdrop-blur-sm">
-      {/* Mobile: Horizontal scroll */}
-      <div className="flex gap-2 overflow-x-auto p-2 sm:hidden">
-        {lists.map((list) => (
-          <div key={list.id} className="w-70 shrink-0">
-            <DemoColumn
-              list={list}
-              tasks={tasks.filter((task) => task.listId === list.id)}
-            />
+    <div className="relative">
+      <GhostCursor />
+
+      <div className="flex snap-x gap-2 overflow-x-auto p-2 [-ms-overflow-style:none] [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden">
+        {columns.map((column) => (
+          <div className="w-64 shrink-0 snap-start" key={column.list.id}>
+            <Column {...column} />
           </div>
         ))}
       </div>
-      {/* Desktop: Grid layout */}
+
       <div className="hidden gap-2.5 p-2.5 sm:grid sm:grid-cols-3">
-        {lists.map((list) => (
-          <DemoColumn
-            key={list.id}
-            list={list}
-            tasks={tasks.filter((task) => task.listId === list.id)}
-          />
+        {columns.map((column) => (
+          <Column key={column.list.id} {...column} />
         ))}
       </div>
     </div>

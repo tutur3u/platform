@@ -1,142 +1,87 @@
 'use client';
 
+import { Sparkles } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { enUS } from 'date-fns/locale';
-import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useMemo } from 'react';
+import {
+  type DemoEvent,
+  type EventColor,
+  GRID_HOURS,
+  HOUR_HEIGHT,
+  useCalendarEvents,
+} from './calendar-grid-data';
+import { DemoLabel } from './demo-chrome';
 
-type EventColor = 'blue' | 'green' | 'purple' | 'orange' | 'cyan';
+const GRID_COLUMNS = 'grid grid-cols-[2.75rem_repeat(5,minmax(0,1fr))]';
 
-interface DemoEvent {
-  id: string;
-  title: string;
-  startDay: number; // 0-6 (Mon-Sun)
-  endDay: number; // 0-6 (Mon-Sun)
-  startHour?: number; // 0-23
-  endHour?: number; // 0-23
-  color: EventColor;
-  isMultiDay?: boolean;
+const eventTones: Record<EventColor, string> = {
+  blue: 'border-l-dynamic-blue bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/15',
+  green:
+    'border-l-dynamic-green bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/15',
+  purple:
+    'border-l-dynamic-purple bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/15',
+  orange:
+    'border-l-dynamic-orange bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/15',
+  cyan: 'border-l-dynamic-cyan bg-dynamic-cyan/10 text-dynamic-cyan hover:bg-dynamic-cyan/15',
+};
+
+const multiDayTones: Record<EventColor, string> = {
+  blue: 'bg-dynamic-blue/12 text-dynamic-blue',
+  green: 'bg-dynamic-green/12 text-dynamic-green',
+  purple: 'bg-dynamic-purple/12 text-dynamic-purple',
+  orange: 'bg-dynamic-orange/12 text-dynamic-orange',
+  cyan: 'bg-dynamic-cyan/12 text-dynamic-cyan',
+};
+
+function formatHour(hour: number) {
+  const base = new Date();
+  base.setHours(Math.floor(hour), Math.round((hour % 1) * 60), 0, 0);
+  return format(base, 'HH:mm');
 }
 
-// Enhanced event styling using calendar-specific colors
-const eventColorClasses: Record<EventColor, string> = {
-  blue: 'bg-calendar-bg-blue border-l-dynamic-light-blue text-dynamic-light-blue hover:ring-1 hover:ring-dynamic-light-blue/50',
-  green:
-    'bg-calendar-bg-green border-l-dynamic-light-green text-dynamic-light-green hover:ring-1 hover:ring-dynamic-light-green/50',
-  purple:
-    'bg-calendar-bg-purple border-l-dynamic-light-purple text-dynamic-light-purple hover:ring-1 hover:ring-dynamic-light-purple/50',
-  orange:
-    'bg-calendar-bg-orange border-l-dynamic-light-orange text-dynamic-light-orange hover:ring-1 hover:ring-dynamic-light-orange/50',
-  cyan: 'bg-calendar-bg-cyan border-l-dynamic-light-cyan text-dynamic-light-cyan hover:ring-1 hover:ring-dynamic-light-cyan/50',
-};
-
-// Multi-day event styling using calendar-specific colors
-const multiDayColorClasses: Record<EventColor, string> = {
-  blue: 'bg-calendar-bg-blue text-dynamic-light-blue border border-dynamic-light-blue/30',
-  green:
-    'bg-calendar-bg-green text-dynamic-light-green border border-dynamic-light-green/30',
-  purple:
-    'bg-calendar-bg-purple text-dynamic-light-purple border border-dynamic-light-purple/30',
-  orange:
-    'bg-calendar-bg-orange text-dynamic-light-orange border border-dynamic-light-orange/30',
-  cyan: 'bg-calendar-bg-cyan text-dynamic-light-cyan border border-dynamic-light-cyan/30',
-};
-
-function TimeSlotEvent({
-  event,
-  style,
-  isSmall,
+function WeekHeader({
+  days,
+  todayIndex,
 }: {
-  event: DemoEvent;
-  style?: React.CSSProperties;
-  isSmall?: boolean;
+  days: Date[];
+  todayIndex: number;
 }) {
   return (
     <div
       className={cn(
-        'absolute inset-x-1.5 cursor-pointer overflow-hidden rounded-lg border-l-[3px] px-2 font-medium text-[10px] transition-all duration-200 hover:scale-[1.02]',
-        // For small events, use flexbox to center content vertically
-        isSmall ? 'flex items-center' : 'py-1',
-        eventColorClasses[event.color]
-      )}
-      style={style}
-    >
-      {isSmall ? (
-        // Small event - just centered title
-        <div className="truncate font-semibold">{event.title}</div>
-      ) : (
-        // Larger event - title + time
-        <div>
-          <div className="truncate font-semibold">{event.title}</div>
-          {event.startHour !== undefined && (
-            <div className="mt-0.5 text-[9px] opacity-75">
-              {format(new Date().setHours(event.startHour, 0), 'h:mm a')}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MultiDayEvent({
-  event,
-  isStart,
-  isEnd,
-}: {
-  event: DemoEvent;
-  isStart: boolean;
-  isEnd: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        'relative h-6 cursor-pointer overflow-hidden font-semibold text-[10px] leading-6 transition-all duration-200 hover:brightness-110',
-        multiDayColorClasses[event.color],
-        isStart ? 'ml-1.5 rounded-l-lg pl-2.5' : 'pl-1',
-        isEnd ? 'mr-1.5 rounded-r-lg' : ''
+        GRID_COLUMNS,
+        'border-foreground/[0.06] border-b bg-foreground/[0.015]'
       )}
     >
-      {isStart && <span className="truncate">{event.title}</span>}
-    </div>
-  );
-}
+      <div />
+      {days.map((day, index) => {
+        const isToday = index === todayIndex;
 
-function CalendarHeader({ days }: { days: Date[] }) {
-  const today = new Date();
-  const todayStr = format(today, 'yyyy-MM-dd');
-
-  return (
-    <div className="grid grid-cols-[40px_repeat(5,1fr)] border-border/30 border-b bg-gradient-to-b from-muted/40 to-transparent">
-      <div className="p-1.5" />
-      {days.map((day, idx) => {
-        const isToday = format(day, 'yyyy-MM-dd') === todayStr;
         return (
           <div
-            key={idx}
             className={cn(
-              'border-border/15 border-l p-2 text-center transition-colors',
-              isToday && 'bg-primary/8'
+              'border-foreground/[0.05] border-l px-2 py-2 text-center',
+              isToday && 'bg-dynamic-blue/[0.06]'
             )}
+            key={day.toISOString()}
           >
-            <div
+            <DemoLabel
               className={cn(
-                'font-semibold text-[9px] uppercase tracking-wider',
-                isToday ? 'text-primary' : 'text-muted-foreground/80'
+                isToday ? 'text-dynamic-blue' : 'text-foreground/30'
               )}
             >
               {format(day, 'EEE', { locale: enUS })}
-            </div>
+            </DemoLabel>
             <div
               className={cn(
-                'mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full font-bold text-xs transition-colors',
-                isToday
-                  ? 'bg-primary text-primary-foreground shadow-primary/30 shadow-sm'
-                  : 'text-foreground/70'
+                'mt-1.5 font-mono-ui text-[0.72rem] tabular-nums',
+                isToday ? 'text-dynamic-blue' : 'text-foreground/45'
               )}
             >
-              {format(day, 'd')}
+              {format(day, 'dd')}
             </div>
           </div>
         );
@@ -146,276 +91,204 @@ function CalendarHeader({ days }: { days: Date[] }) {
 }
 
 function AllDayRow({ days, events }: { days: Date[]; events: DemoEvent[] }) {
-  const multiDayEvents = events.filter((e) => e.isMultiDay);
-
-  if (multiDayEvents.length === 0) return null;
+  const multiDay = events.filter((event) => event.isMultiDay);
+  if (multiDay.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-[40px_repeat(5,1fr)] border-border/20 border-b bg-muted/5">
-      <div className="flex items-center justify-center p-1.5 text-[8px] text-muted-foreground/70 uppercase tracking-wide">
-        All
+    <div
+      className={cn(GRID_COLUMNS, 'border-foreground/[0.06] border-b py-1.5')}
+    >
+      <div className="flex items-center justify-end pr-2">
+        <DemoLabel className="text-foreground/25">24h</DemoLabel>
       </div>
-      {days.map((_, dayIdx) => {
-        const dayEvents = multiDayEvents.filter(
-          (e) => dayIdx >= e.startDay && dayIdx <= e.endDay
-        );
+      {days.map((day, dayIndex) => (
+        <div
+          className="relative border-foreground/[0.05] border-l"
+          key={day.toISOString()}
+        >
+          {multiDay
+            .filter(
+              (event) => dayIndex >= event.startDay && dayIndex <= event.endDay
+            )
+            .map((event) => {
+              const isStart = dayIndex === event.startDay;
+              const isEnd = dayIndex === event.endDay;
 
-        return (
-          <div
-            key={dayIdx}
-            className="relative min-h-8 border-border/15 border-l py-1"
-          >
-            {dayEvents.map((event) => (
-              <MultiDayEvent
-                key={event.id}
-                event={event}
-                isStart={dayIdx === event.startDay}
-                isEnd={dayIdx === event.endDay}
-              />
-            ))}
-          </div>
-        );
-      })}
+              return (
+                <div
+                  className={cn(
+                    'flex h-5 items-center overflow-hidden',
+                    multiDayTones[event.color],
+                    isStart && 'ml-1 rounded-l-md pl-2',
+                    isEnd && 'mr-1 rounded-r-md'
+                  )}
+                  key={event.id}
+                >
+                  {isStart ? (
+                    <DemoLabel className="truncate">{event.title}</DemoLabel>
+                  ) : null}
+                </div>
+              );
+            })}
+        </div>
+      ))}
     </div>
   );
 }
 
-// Cell height constant for time grid (36px for compact view)
-const CELL_HEIGHT = 36;
-
-function TimeGrid({
-  days,
-  events,
-  hours,
-}: {
-  days: Date[];
-  events: DemoEvent[];
-  hours: number[];
-}) {
-  const timedEvents = events.filter(
-    (e) => !e.isMultiDay && e.startHour !== undefined
-  );
-
-  // Get current hour for the "now" indicator
-  const currentHour = new Date().getHours();
-  const currentMinutes = new Date().getMinutes();
-  const isWithinHours =
-    currentHour >= hours[0]! && currentHour <= hours[hours.length - 1]!;
+function EventBlock({ event, index }: { event: DemoEvent; index: number }) {
+  const reduced = useReducedMotion();
+  const startHour = event.startHour ?? 0;
+  const endHour = event.endHour ?? startHour + 1;
+  const duration = endHour - startHour;
+  const height = Math.max(duration * HOUR_HEIGHT - 3, 18);
+  const isCompact = height < 34;
 
   return (
-    <div className="relative grid grid-cols-[40px_repeat(5,1fr)]">
-      {/* Time labels */}
-      <div className="relative">
-        {hours.map((hour) => (
-          <div
-            key={hour}
-            className="relative border-border/10 border-b"
-            style={{ height: `${CELL_HEIGHT}px` }}
-          >
-            <span
-              className={cn(
-                'absolute -top-px right-1.5 -translate-y-1/2 font-medium text-[9px]',
-                hour === currentHour
-                  ? 'text-dynamic-red'
-                  : 'text-muted-foreground/70'
-              )}
-            >
-              {format(new Date().setHours(hour, 0), 'h a')}
-            </span>
+    <motion.div
+      animate={{ opacity: 1, scaleY: 1 }}
+      className={cn(
+        'absolute inset-x-1 origin-top cursor-default overflow-hidden rounded-md border-l-2 px-1.5 transition-colors duration-300',
+        isCompact ? 'flex items-center' : 'py-1',
+        eventTones[event.color]
+      )}
+      initial={{ opacity: 0, scaleY: reduced ? 1 : 0.7 }}
+      style={{
+        top: `${(startHour - GRID_HOURS[0]!) * HOUR_HEIGHT}px`,
+        height: `${height}px`,
+      }}
+      transition={{
+        duration: reduced ? 0.15 : 0.45,
+        delay: reduced ? 0 : 0.1 + index * 0.04,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-1">
+          {event.autoScheduled ? (
+            <Sparkles className="h-2.5 w-2.5 shrink-0 opacity-70" />
+          ) : null}
+          <span className="truncate font-medium text-[0.68rem] leading-tight">
+            {event.title}
+          </span>
+        </div>
+        {isCompact ? null : (
+          <div className="mt-0.5 font-mono-ui text-[0.58rem] tabular-nums opacity-60">
+            {formatHour(startHour)}
           </div>
-        ))}
+        )}
       </div>
+    </motion.div>
+  );
+}
 
-      {/* Day columns */}
-      {days.map((day, dayIdx) => {
-        const isToday =
-          format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+function NowLine({ hour, minute }: { hour: number; minute: number }) {
+  const top = (hour - GRID_HOURS[0]! + minute / 60) * HOUR_HEIGHT;
 
-        return (
-          <div
-            key={dayIdx}
-            className={cn(
-              'relative border-border/15 border-l',
-              isToday && 'bg-primary/5'
-            )}
-          >
-            {/* Hour grid lines */}
-            {hours.map((hour) => (
-              <div
-                key={hour}
-                className="border-border/10 border-b"
-                style={{ height: `${CELL_HEIGHT}px` }}
-              />
-            ))}
-
-            {/* Current time indicator (red line) */}
-            {isToday && isWithinHours && (
-              <div
-                className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
-                style={{
-                  top: `${(currentHour - hours[0]! + currentMinutes / 60) * CELL_HEIGHT}px`,
-                }}
-              >
-                <div className="h-2 w-2 rounded-full bg-dynamic-red shadow-dynamic-red/50 shadow-sm" />
-                <div className="h-[2px] flex-1 bg-dynamic-red shadow-dynamic-red/50 shadow-sm" />
-              </div>
-            )}
-
-            {/* Events for this day */}
-            {timedEvents
-              .filter((e) => e.startDay === dayIdx)
-              .map((event) => {
-                const startHour = event.startHour ?? 0;
-                const endHour = event.endHour ?? startHour + 1;
-                const hourOffset = startHour - hours[0]!;
-                const duration = endHour - startHour;
-                // Events shorter than 1 hour are considered "small"
-                const isSmall = duration < 1;
-
-                return (
-                  <TimeSlotEvent
-                    key={event.id}
-                    event={event}
-                    isSmall={isSmall}
-                    style={{
-                      top: `${hourOffset * CELL_HEIGHT}px`,
-                      height: `${Math.max(duration * CELL_HEIGHT - 2, 20)}px`,
-                    }}
-                  />
-                );
-              })}
-          </div>
-        );
-      })}
+  return (
+    <div
+      className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
+      style={{ top: `${top}px` }}
+    >
+      <span className="relative flex h-1.5 w-1.5">
+        <span
+          aria-hidden
+          className="absolute inset-0 animate-ring-pulse rounded-full bg-dynamic-red motion-reduce:animate-none"
+        />
+        <span className="relative h-1.5 w-1.5 rounded-full bg-dynamic-red" />
+      </span>
+      <span className="h-px flex-1 bg-gradient-to-r from-dynamic-red to-dynamic-red/25" />
     </div>
   );
 }
 
+/**
+ * Compact work-week grid: five days, an eight-hour band, and the live "now"
+ * line. Blocks flown in on entrance so switching to the calendar tab reads as
+ * the schedule resolving rather than a static screenshot.
+ */
 export function CalendarGridDemo() {
-  const t = useTranslations('landing.demo.calendarGrid');
+  const events = useCalendarEvents();
 
-  // Get current week days (Mon-Fri)
-  const days = useMemo(() => {
+  const { days, todayIndex, now } = useMemo(() => {
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    return Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
+    const current = new Date();
+    const week = Array.from({ length: 5 }, (_, index) =>
+      addDays(weekStart, index)
+    );
+    const todayKey = format(current, 'yyyy-MM-dd');
+
+    return {
+      days: week,
+      todayIndex: week.findIndex(
+        (day) => format(day, 'yyyy-MM-dd') === todayKey
+      ),
+      now: { hour: current.getHours(), minute: current.getMinutes() },
+    };
   }, []);
 
-  // Reduced hour range for a more compact view
-  const hours = [9, 10, 11, 12, 13, 14, 15, 16];
-
-  const events: DemoEvent[] = [
-    // Multi-day event (Team Offsite)
-    {
-      id: 'multi-1',
-      title: t('events.teamOffsite'),
-      startDay: 2, // Wednesday
-      endDay: 3, // Thursday
-      color: 'green',
-      isMultiDay: true,
-    },
-    // Monday events
-    {
-      id: 'evt-1',
-      title: t('events.standup'),
-      startDay: 0,
-      endDay: 0,
-      startHour: 9,
-      endHour: 9.75,
-      color: 'blue',
-    },
-    {
-      id: 'evt-2',
-      title: t('events.focusTime'),
-      startDay: 0,
-      endDay: 0,
-      startHour: 10,
-      endHour: 12,
-      color: 'purple',
-    },
-    {
-      id: 'evt-mon-pm',
-      title: t('events.teamSync'),
-      startDay: 0,
-      endDay: 0,
-      startHour: 14,
-      endHour: 15,
-      color: 'cyan',
-    },
-    // Tuesday events
-    {
-      id: 'evt-4',
-      title: t('events.planning'),
-      startDay: 1,
-      endDay: 1,
-      startHour: 10,
-      endHour: 11.5,
-      color: 'blue',
-    },
-    {
-      id: 'evt-3',
-      title: t('events.clientCall'),
-      startDay: 1,
-      endDay: 1,
-      startHour: 14,
-      endHour: 15,
-      color: 'orange',
-    },
-    // Wednesday events (with multi-day offsite)
-    {
-      id: 'evt-wed-am',
-      title: t('events.standup'),
-      startDay: 2,
-      endDay: 2,
-      startHour: 9,
-      endHour: 9.5,
-      color: 'blue',
-    },
-    // Thursday events (with multi-day offsite)
-    {
-      id: 'evt-thu-pm',
-      title: t('events.review'),
-      startDay: 3,
-      endDay: 3,
-      startHour: 15,
-      endHour: 16,
-      color: 'cyan',
-    },
-    // Friday events
-    {
-      id: 'evt-fri-am',
-      title: t('events.standup'),
-      startDay: 4,
-      endDay: 4,
-      startHour: 9,
-      endHour: 9.5,
-      color: 'blue',
-    },
-    {
-      id: 'evt-6',
-      title: t('events.oneOnOne'),
-      startDay: 4,
-      endDay: 4,
-      startHour: 11,
-      endHour: 12,
-      color: 'green',
-    },
-    {
-      id: 'evt-fri-pm',
-      title: t('events.weeklyReview'),
-      startDay: 4,
-      endDay: 4,
-      startHour: 14,
-      endHour: 15.5,
-      color: 'purple',
-    },
-  ];
+  const firstHour = GRID_HOURS[0]!;
+  const lastHour = GRID_HOURS[GRID_HOURS.length - 1]!;
+  const showNow = now.hour >= firstHour && now.hour <= lastHour;
+  const timed = events.filter((event) => !event.isMultiDay);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-background/80 shadow-sm backdrop-blur-sm">
-      <CalendarHeader days={days} />
+    <div>
+      <WeekHeader days={days} todayIndex={todayIndex} />
       <AllDayRow days={days} events={events} />
-      <div className="max-h-[260px] overflow-y-auto">
-        <TimeGrid days={days} events={events} hours={hours} />
+
+      <div className="max-h-[268px] overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className={cn(GRID_COLUMNS, 'relative')}>
+          <div>
+            {GRID_HOURS.map((hour) => (
+              <div
+                className="relative"
+                key={hour}
+                style={{ height: `${HOUR_HEIGHT}px` }}
+              >
+                <span className="absolute top-0 right-2 -translate-y-1/2 font-mono-ui text-[0.58rem] text-foreground/25 tabular-nums">
+                  {formatHour(hour)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {days.map((day, dayIndex) => {
+            const isToday = dayIndex === todayIndex;
+
+            return (
+              <div
+                className={cn(
+                  'relative border-foreground/[0.05] border-l',
+                  isToday && 'bg-dynamic-blue/[0.04]'
+                )}
+                key={day.toISOString()}
+              >
+                {GRID_HOURS.map((hour) => (
+                  <div
+                    className="border-foreground/[0.05] border-b"
+                    key={hour}
+                    style={{ height: `${HOUR_HEIGHT}px` }}
+                  />
+                ))}
+
+                {isToday && showNow ? (
+                  <NowLine hour={now.hour} minute={now.minute} />
+                ) : null}
+
+                {timed
+                  .filter((event) => event.startDay === dayIndex)
+                  .map((event, index) => (
+                    <EventBlock
+                      event={event}
+                      index={dayIndex + index}
+                      key={event.id}
+                    />
+                  ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

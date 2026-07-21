@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, Minus } from '@tuturuuu/icons/lucide';
+import { ChevronDown } from '@tuturuuu/icons/lucide';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
@@ -9,206 +9,35 @@ import {
 } from '@tuturuuu/ui/collapsible';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { Fragment, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { Panel } from '../shared/section-shell';
+import { featureCategories, matrixColumns } from './feature-matrix-data';
+import { MatrixValue } from './matrix-value';
 
-const featureCategories = [
-  {
-    category: 'core',
-    features: [
-      { name: 'tasks', free: true, plus: true, pro: true, enterprise: true },
-      {
-        name: 'calendar',
-        free: 'limited',
-        plus: true,
-        pro: true,
-        enterprise: true,
-      },
-      {
-        name: 'aiChat',
-        free: 'limited',
-        plus: true,
-        pro: 'advanced',
-        enterprise: 'advanced',
-      },
-      {
-        name: 'qrGenerator',
-        free: true,
-        plus: true,
-        pro: true,
-        enterprise: true,
-      },
-    ],
-  },
-  {
-    category: 'tools',
-    features: [
-      {
-        name: 'crmInventory',
-        free: 'beta',
-        plus: 'beta',
-        pro: 'beta',
-        enterprise: 'beta',
-      },
-      {
-        name: 'tuwrite',
-        free: false,
-        plus: 'soon',
-        pro: 'soon',
-        enterprise: 'soon',
-      },
-      {
-        name: 'tuchat',
-        free: false,
-        plus: 'soon',
-        pro: 'soon',
-        enterprise: 'soon',
-      },
-      {
-        name: 'tumeet',
-        free: false,
-        plus: 'soon',
-        pro: 'soon',
-        enterprise: 'soon',
-      },
-    ],
-  },
-  {
-    category: 'collaboration',
-    features: [
-      {
-        name: 'whiteboards',
-        free: false,
-        plus: true,
-        pro: true,
-        enterprise: true,
-      },
-      { name: 'drive', free: false, plus: true, pro: true, enterprise: true },
-      {
-        name: 'timeTracker',
-        free: false,
-        plus: true,
-        pro: true,
-        enterprise: true,
-      },
-      {
-        name: 'granularRoles',
-        free: false,
-        plus: true,
-        pro: true,
-        enterprise: true,
-      },
-    ],
-  },
-  {
-    category: 'advanced',
-    features: [
-      {
-        name: 'advancedAI',
-        free: false,
-        plus: false,
-        pro: true,
-        enterprise: true,
-      },
-      {
-        name: 'prioritySupport',
-        free: false,
-        plus: false,
-        pro: true,
-        enterprise: true,
-      },
-      {
-        name: 'analytics',
-        free: false,
-        plus: false,
-        pro: true,
-        enterprise: true,
-      },
-      {
-        name: 'customIntegrations',
-        free: false,
-        plus: false,
-        pro: true,
-        enterprise: true,
-      },
-    ],
-  },
-  {
-    category: 'enterprise',
-    features: [
-      {
-        name: 'customSolutions',
-        free: false,
-        plus: false,
-        pro: false,
-        enterprise: true,
-      },
-      {
-        name: 'dedicatedSupport',
-        free: false,
-        plus: false,
-        pro: false,
-        enterprise: true,
-      },
-      { name: 'sla', free: false, plus: false, pro: false, enterprise: true },
-      {
-        name: 'selfHosting',
-        free: false,
-        plus: false,
-        pro: false,
-        enterprise: true,
-      },
-    ],
-  },
-];
-
-type FeatureValue = boolean | string;
+const CELL = 'px-3 py-3 sm:px-4';
 
 export function FeatureMatrix() {
   const [isOpen, setIsOpen] = useState(false);
   const t = useTranslations('landing.pricing');
 
-  const renderValue = (value: FeatureValue) => {
-    if (value === true) {
-      return <Check className="h-4 w-4 text-dynamic-green" />;
-    }
-    if (value === false) {
-      return <Minus className="h-4 w-4 text-foreground/30" />;
-    }
-    if (value === 'beta') {
-      return (
-        <span className="rounded bg-dynamic-yellow/10 px-1.5 py-0.5 font-medium text-[10px] text-dynamic-yellow">
-          Beta
-        </span>
-      );
-    }
-    if (value === 'soon') {
-      return (
-        <span className="text-[10px] text-foreground/40 italic">
-          {t('matrix.values.soon' as any)}
-        </span>
-      );
-    }
-    // Translate known string values, pass through numbers as-is
-    const translatedValue =
-      value === 'limited' || value === 'unlimited' || value === 'advanced'
-        ? t(`matrix.values.${value}` as any)
-        : value;
-    return (
-      <span className="text-foreground/70 text-xs">{translatedValue}</span>
-    );
-  };
+  /**
+   * The matrix addresses message keys that are only known at runtime
+   * (`matrix.featuresList.<name>`), which the generated `next-intl` key union
+   * cannot express. One narrowing here keeps the rest of the file honest.
+   */
+  const tr = useMemo(() => t as unknown as (key: string) => string, [t]);
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+    <Collapsible onOpenChange={setIsOpen} open={isOpen}>
       <CollapsibleTrigger asChild>
         <Button
+          className="mx-auto flex items-center gap-2.5 rounded-full border border-foreground/[0.09] bg-foreground/[0.02] px-5 py-2 font-mono-ui text-[0.68rem] text-foreground/55 uppercase tracking-[0.16em] transition-colors hover:border-foreground/15 hover:bg-foreground/[0.05] hover:text-foreground"
           variant="ghost"
-          className="mx-auto flex items-center gap-2 text-foreground/60 hover:text-foreground"
         >
           {t('compare')}
           <ChevronDown
             className={cn(
-              'h-4 w-4 transition-transform',
+              'h-3.5 w-3.5 transition-transform duration-300',
               isOpen && 'rotate-180'
             )}
           />
@@ -216,97 +45,84 @@ export function FeatureMatrix() {
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        {/* Horizontal scroll wrapper */}
-        <div className="mt-8 overflow-x-auto rounded-xl border border-foreground/10">
-          <div className="min-w-150">
-            {/* Fixed Header */}
-            <div className="grid grid-cols-[minmax(140px,1fr)_repeat(4,minmax(80px,1fr))] border-foreground/10 border-b bg-muted/50 sm:grid-cols-[minmax(180px,1.5fr)_repeat(4,1fr)]">
-              <div className="px-3 py-3 font-medium text-foreground/60 text-sm sm:px-4">
-                {t('matrix.featuresLabel')}
-              </div>
-              <div className="px-2 py-3 text-center font-medium text-sm sm:px-4">
-                Free
-              </div>
-              <div className="px-2 py-3 text-center font-medium text-dynamic-blue text-sm sm:px-4">
-                Plus
-              </div>
-              <div className="px-2 py-3 text-center font-medium text-dynamic-purple text-sm sm:px-4">
-                Pro
-              </div>
-              <div className="px-2 py-3 text-center font-medium text-dynamic-orange text-sm sm:px-4">
-                Enterprise
-              </div>
-            </div>
+        <Panel className="mt-8">
+          <div className="max-h-[60vh] overflow-auto">
+            <table className="w-full min-w-[42rem] border-collapse text-left">
+              <thead>
+                <tr>
+                  <th
+                    className={cn(
+                      CELL,
+                      'sticky top-0 z-20 border-foreground/10 border-b bg-background/85 text-left font-mono-ui font-normal text-[0.62rem] text-foreground/40 uppercase tracking-[0.18em] backdrop-blur-md'
+                    )}
+                    scope="col"
+                  >
+                    {t('matrix.featuresLabel')}
+                  </th>
+                  {matrixColumns.map((column) => (
+                    <th
+                      className={cn(
+                        CELL,
+                        'sticky top-0 z-20 border-foreground/10 border-b bg-background/85 text-center font-mono-ui font-normal text-[0.62rem] uppercase tracking-[0.18em] backdrop-blur-md',
+                        column.header
+                      )}
+                      key={column.key}
+                      scope="col"
+                    >
+                      {tr(column.nameKey)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
 
-            {/* Scrollable Body - vertical only */}
-            <div className="max-h-[50vh] overflow-y-auto">
-              <div className="grid grid-cols-[minmax(140px,1fr)_repeat(4,minmax(80px,1fr))] sm:grid-cols-[minmax(180px,1.5fr)_repeat(4,1fr)]">
-                {/* Categories */}
-                {featureCategories.map((category) => (
-                  <Fragment key={category.category}>
-                    {/* Category Header */}
-                    <div className="col-span-5 border-foreground/10 border-b bg-foreground/2 px-3 py-2 sm:px-4">
-                      <span className="font-medium text-foreground/70 text-xs uppercase tracking-wider">
-                        {t(`matrix.categories.${category.category}` as any)}
-                      </span>
-                    </div>
+              {featureCategories.map((category) => (
+                <tbody key={category.category}>
+                  <tr>
+                    <th
+                      className="border-foreground/[0.07] border-y bg-foreground/[0.025] px-3 py-2 text-left font-mono-ui font-normal text-[0.58rem] text-foreground/45 uppercase tracking-[0.2em] sm:px-4"
+                      colSpan={matrixColumns.length + 1}
+                      scope="colgroup"
+                    >
+                      {tr(`matrix.categories.${category.category}`)}
+                    </th>
+                  </tr>
 
-                    {/* Features */}
-                    {category.features.map((feature, index) => (
-                      <Fragment key={feature.name}>
-                        <div
-                          className={cn(
-                            'bg-background px-3 py-2.5 text-foreground/70 text-sm sm:px-4',
-                            index < category.features.length - 1 &&
-                              'border-foreground/5 border-b'
-                          )}
-                        >
-                          {t(`matrix.featuresList.${feature.name}` as any)}
-                        </div>
-                        <div
-                          className={cn(
-                            'flex items-center justify-center bg-background px-2 py-2.5 sm:px-4',
-                            index < category.features.length - 1 &&
-                              'border-foreground/5 border-b'
-                          )}
-                        >
-                          {renderValue(feature.free)}
-                        </div>
-                        <div
-                          className={cn(
-                            'flex items-center justify-center bg-background px-2 py-2.5 sm:px-4',
-                            index < category.features.length - 1 &&
-                              'border-foreground/5 border-b'
-                          )}
-                        >
-                          {renderValue(feature.plus)}
-                        </div>
-                        <div
-                          className={cn(
-                            'flex items-center justify-center bg-background px-2 py-2.5 sm:px-4',
-                            index < category.features.length - 1 &&
-                              'border-foreground/5 border-b'
-                          )}
-                        >
-                          {renderValue(feature.pro)}
-                        </div>
-                        <div
-                          className={cn(
-                            'flex items-center justify-center bg-background px-2 py-2.5 sm:px-4',
-                            index < category.features.length - 1 &&
-                              'border-foreground/5 border-b'
-                          )}
-                        >
-                          {renderValue(feature.enterprise)}
-                        </div>
-                      </Fragment>
-                    ))}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
+                  {category.features.map((feature, index) => (
+                    <tr
+                      className={cn(
+                        'group transition-colors duration-200 hover:bg-foreground/[0.035]',
+                        index < category.features.length - 1 &&
+                          '[&>*]:border-foreground/[0.05] [&>*]:border-b'
+                      )}
+                      key={feature.name}
+                    >
+                      <th
+                        className={cn(
+                          CELL,
+                          'text-left font-normal text-foreground/65 text-sm transition-colors duration-200 group-hover:text-foreground'
+                        )}
+                        scope="row"
+                      >
+                        {tr(`matrix.featuresList.${feature.name}`)}
+                      </th>
+
+                      {matrixColumns.map((column) => (
+                        <td className={cn(CELL, column.tint)} key={column.key}>
+                          <span className="flex items-center justify-center">
+                            <MatrixValue
+                              translate={tr}
+                              value={feature[column.key]}
+                            />
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
           </div>
-        </div>
+        </Panel>
       </CollapsibleContent>
     </Collapsible>
   );

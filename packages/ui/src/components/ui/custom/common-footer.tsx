@@ -77,9 +77,11 @@ export function CommonFooter({
   const TUTURUUU_URL = devMode
     ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
     : 'https://tuturuuu.com';
+  // The standalone qr.tuturuuu.com host is retired; the generator now lives
+  // under the tools app.
   const QR_URL = devMode
-    ? getLocalInternalAppUrl('qr', 'http://localhost:7819')
-    : 'https://qr.tuturuuu.com';
+    ? `${getLocalInternalAppUrl('tools', 'http://localhost:7825')}/qr`
+    : 'https://tools.tuturuuu.com/qr';
 
   const columns: Array<{ title: ReactNode; links: FooterLink[] }> = [
     {

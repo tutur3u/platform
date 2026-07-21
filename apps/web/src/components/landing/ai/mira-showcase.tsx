@@ -1,9 +1,13 @@
 'use client';
 
 import {
-  ArrowUpRight,
   Bot,
   Brain,
+  Calendar,
+  Check,
+  CheckCircle2,
+  FileText,
+  Mail,
   Sparkles,
   Zap,
 } from '@tuturuuu/icons/lucide';
@@ -32,31 +36,68 @@ const capabilityStyles = [
   },
 ] as const;
 
-/** Cycles the highlighted prompt so the panel feels alive without autoplay. */
-function useRotatingIndex(length: number, intervalMs = 3200) {
+/** Context sources Mira reads before acting, reusing the product names. */
+const sources = [
+  { key: 'calendar', icon: Calendar, accent: 'text-dynamic-blue' },
+  { key: 'mail', icon: Mail, accent: 'text-dynamic-red' },
+  { key: 'tasks', icon: CheckCircle2, accent: 'text-dynamic-green' },
+  { key: 'documents', icon: FileText, accent: 'text-dynamic-orange' },
+] as const;
+
+/** Outcome shown for each prompt, drawn from the capability list below. */
+const outcomes = ['scheduling', 'insight', 'extraction'] as const;
+
+/**
+ * Runs the cockpit: each prompt is picked up, its sources scanned, then the
+ * outcome lands — and the cycle moves to the next prompt.
+ *
+ * Under reduced motion the run sits at its completed state and never advances,
+ * so the panel is fully legible without anything moving.
+ */
+function useAgentRun(promptCount: number) {
   const reduced = useReducedMotion();
-  const [index, setIndex] = useState(0);
+  const [prompt, setPrompt] = useState(0);
+  const [phase, setPhase] = useState(reduced ? 3 : 0);
 
   useEffect(() => {
-    if (reduced || length < 2) return;
-    const id = setInterval(
-      () => setIndex((value) => (value + 1) % length),
-      intervalMs
-    );
-    return () => clearInterval(id);
-  }, [length, intervalMs, reduced]);
+    if (reduced) {
+      setPhase(3);
+      return;
+    }
 
-  return index;
+    // 0: idle → 1: reading sources → 2: reasoning → 3: acted
+    const timings = [700, 1500, 900, 1700];
+    let timer: ReturnType<typeof setTimeout>;
+
+    const step = (next: number) => {
+      if (next > 3) {
+        setPrompt((value) => (value + 1) % promptCount);
+        setPhase(0);
+        timer = setTimeout(() => step(1), timings[0]);
+        return;
+      }
+      setPhase(next);
+      timer = setTimeout(() => step(next + 1), timings[next]);
+    };
+
+    timer = setTimeout(() => step(1), timings[0]);
+    return () => clearTimeout(timer);
+  }, [promptCount, reduced]);
+
+  return { prompt, phase, reduced: reduced === true };
 }
 
 export function MiraShowcase() {
   const t = useTranslations('landing.ai.mira');
+  const tPipeline = useTranslations('landing.aiCapabilities.pipeline');
+  const tCapabilities = useTranslations('landing.aiCapabilities.capabilities');
+  const tProducts = useTranslations('marketing-nav.products');
+
   const prompts = [t('prompts.0'), t('prompts.1'), t('prompts.2')];
-  const active = useRotatingIndex(prompts.length);
+  const { prompt, phase, reduced } = useAgentRun(prompts.length);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-dynamic-purple/20 bg-foreground/[0.02]">
-      {/* Aura behind the avatar */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 left-[12%] h-72 w-72 animate-bloom-drift rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--purple)_55%,transparent),transparent)] opacity-30 blur-3xl motion-reduce:animate-none dark:opacity-40"
@@ -104,65 +145,166 @@ export function MiraShowcase() {
         </div>
       </div>
 
-      {/* Prompt rail */}
-      <div className="relative p-6 sm:p-8">
-        <div className="mb-4 font-mono-ui text-[0.62rem] text-foreground/35 uppercase tracking-[0.2em]">
-          {t('tryAsking')}
+      {/* Cockpit */}
+      <div className="relative grid gap-px bg-foreground/[0.06] lg:grid-cols-[1.05fr_1fr]">
+        {/* Prompt queue */}
+        <div className="bg-background/20 p-6 sm:p-8">
+          <div className="mb-4 font-mono-ui text-[0.62rem] text-foreground/35 uppercase tracking-[0.2em]">
+            {t('tryAsking')}
+          </div>
+
+          <div className="grid gap-2">
+            {prompts.map((text, index) => {
+              const isActive = index === prompt;
+
+              return (
+                <div
+                  className={cn(
+                    'relative overflow-hidden rounded-xl border px-4 py-3 transition-all duration-500',
+                    isActive
+                      ? 'border-dynamic-purple/35 bg-dynamic-purple/[0.08]'
+                      : 'border-foreground/[0.08] opacity-45'
+                  )}
+                  key={text}
+                >
+                  {isActive && !reduced ? (
+                    <motion.span
+                      animate={{ x: '130%' }}
+                      aria-hidden
+                      className="absolute inset-y-0 w-1/3 bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--purple)_18%,transparent),transparent)]"
+                      initial={{ x: '-130%' }}
+                      transition={{
+                        duration: 2,
+                        ease: 'easeInOut',
+                        repeat: Number.POSITIVE_INFINITY,
+                        repeatDelay: 0.4,
+                      }}
+                    />
+                  ) : null}
+                  <span
+                    className={cn(
+                      'relative text-sm',
+                      isActive ? 'text-foreground' : 'text-foreground/60'
+                    )}
+                  >
+                    {text}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="grid gap-2">
-          {prompts.map((prompt, index) => {
-            const isActive = index === active;
-
-            return (
-              <button
-                className={cn(
-                  'group relative flex items-center justify-between gap-4 overflow-hidden rounded-xl border px-4 py-3 text-left transition-all duration-500',
-                  isActive
-                    ? 'border-dynamic-purple/35 bg-dynamic-purple/[0.08]'
-                    : 'border-foreground/[0.08] bg-transparent hover:border-foreground/15 hover:bg-foreground/[0.03]'
-                )}
-                key={prompt}
-                type="button"
-              >
-                {/* Scanning highlight on the active row */}
-                {isActive ? (
-                  <motion.span
-                    animate={{ x: '120%' }}
-                    aria-hidden
-                    className="absolute inset-y-0 w-1/3 bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--purple)_18%,transparent),transparent)]"
-                    initial={{ x: '-120%' }}
-                    transition={{
-                      duration: 1.8,
-                      ease: 'easeInOut',
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatDelay: 0.6,
-                    }}
-                  />
-                ) : null}
-
-                <span
-                  className={cn(
-                    'relative text-sm transition-colors duration-300',
-                    isActive ? 'text-foreground' : 'text-foreground/60'
-                  )}
+        {/* Live run */}
+        <div className="grid gap-6 bg-background/20 p-6 sm:p-8">
+          <RunStage
+            active={phase >= 1}
+            label={tPipeline('sense.label')}
+            tone="cyan"
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {sources.map((source, index) => (
+                <motion.span
+                  animate={{
+                    opacity: phase >= 1 ? 1 : 0.25,
+                    y: 0,
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/[0.1] bg-foreground/[0.03] px-2 py-1"
+                  initial={reduced ? false : { opacity: 0.25, y: 4 }}
+                  key={source.key}
+                  transition={{ delay: reduced ? 0 : index * 0.14 }}
                 >
-                  {prompt}
-                </span>
+                  <source.icon className={cn('h-3 w-3', source.accent)} />
+                  <span className="font-mono-ui text-[0.58rem] text-foreground/55 uppercase tracking-[0.14em]">
+                    {tProducts(`${source.key}.label` as never)}
+                  </span>
+                </motion.span>
+              ))}
+            </div>
+          </RunStage>
 
-                <ArrowUpRight
-                  className={cn(
-                    'relative h-4 w-4 shrink-0 transition-all duration-300',
-                    isActive
-                      ? 'text-dynamic-purple opacity-100'
-                      : 'text-foreground/30 opacity-0 group-hover:opacity-100'
-                  )}
-                />
-              </button>
-            );
-          })}
+          <RunStage
+            active={phase >= 2}
+            label={tPipeline('reason.label')}
+            tone="blue"
+          >
+            <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.06]">
+              <motion.div
+                animate={{ width: phase >= 2 ? '100%' : '0%' }}
+                className="h-full rounded-full bg-[linear-gradient(90deg,var(--cyan),var(--blue),var(--purple))]"
+                initial={false}
+                transition={{ duration: reduced ? 0 : 0.9, ease: 'easeInOut' }}
+              />
+            </div>
+          </RunStage>
+
+          <RunStage
+            active={phase >= 3}
+            label={tPipeline('act.label')}
+            tone="purple"
+          >
+            <motion.div
+              animate={{
+                opacity: phase >= 3 ? 1 : 0.2,
+                y: phase >= 3 ? 0 : 4,
+              }}
+              className="flex items-center gap-2 rounded-xl border border-dynamic-purple/25 bg-dynamic-purple/[0.08] px-3 py-2.5"
+              initial={false}
+              transition={{ duration: reduced ? 0 : 0.35 }}
+            >
+              <Check className="h-3.5 w-3.5 shrink-0 text-dynamic-purple" />
+              <span className="text-foreground/75 text-sm">
+                {tCapabilities(
+                  `${outcomes[prompt] ?? outcomes[0]}.title` as never
+                )}
+              </span>
+            </motion.div>
+          </RunStage>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Static pairs — Tailwind cannot see a class derived at runtime. */
+const stageTones = {
+  cyan: { text: 'text-dynamic-cyan', dot: 'bg-dynamic-cyan' },
+  blue: { text: 'text-dynamic-blue', dot: 'bg-dynamic-blue' },
+  purple: { text: 'text-dynamic-purple', dot: 'bg-dynamic-purple' },
+} as const;
+
+function RunStage({
+  label,
+  tone,
+  active,
+  children,
+}: {
+  label: string;
+  tone: keyof typeof stageTones;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  const styles = stageTones[tone];
+
+  return (
+    <div>
+      <div className="mb-2.5 flex items-center gap-2">
+        <span
+          className={cn(
+            'h-1.5 w-1.5 rounded-full transition-colors duration-500',
+            active ? styles.dot : 'bg-foreground/15'
+          )}
+        />
+        <span
+          className={cn(
+            'font-mono-ui text-[0.58rem] uppercase tracking-[0.2em] transition-colors duration-500',
+            active ? styles.text : 'text-foreground/30'
+          )}
+        >
+          {label}
+        </span>
+      </div>
+      {children}
     </div>
   );
 }

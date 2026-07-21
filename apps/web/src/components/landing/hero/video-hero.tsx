@@ -8,10 +8,62 @@ import {
   Sparkles,
   TrendingUp,
 } from '@tuturuuu/icons/lucide';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 
 const YOUTUBE_VIDEO_ID = 'JGWbvaAC24Q';
+
+/**
+ * Floating notification card.
+ *
+ * Drifts on a long, offset cycle so the group never pulses in unison. Motion is
+ * dropped entirely under `prefers-reduced-motion` via the global guard on
+ * `.animate-float-y`.
+ */
+function FloatingCard({
+  accent,
+  children,
+  className,
+  delay,
+}: {
+  accent: string;
+  children: React.ReactNode;
+  className?: string;
+  delay: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'animate-float-y rounded-xl border bg-background/80 p-3 shadow-foreground/5 shadow-lg backdrop-blur-md',
+        accent,
+        className
+      )}
+      style={{ animationDelay: delay }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CardLabel({
+  icon: Icon,
+  accent,
+  children,
+}: {
+  icon: typeof Calendar;
+  accent: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <Icon className={cn('h-3.5 w-3.5', accent)} />
+      <span className="font-mono-ui text-[0.58rem] uppercase tracking-[0.16em]">
+        {children}
+      </span>
+    </div>
+  );
+}
 
 export function VideoHero() {
   const t = useTranslations('landing.hero.video');
@@ -20,7 +72,7 @@ export function VideoHero() {
 
   const handlePlay = useCallback(() => {
     setIsPlaying(true);
-    // Scroll to center the video in viewport after a short delay to allow animation
+    // Centre the player after the swap so the video is not half off-screen.
     setTimeout(() => {
       containerRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -30,202 +82,150 @@ export function VideoHero() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative mx-auto w-full max-w-6xl">
-      {/* Floating Elements - Left Side */}
-      {!isPlaying && (
-        <div className="pointer-events-none absolute top-4 left-0 z-10 hidden -translate-x-1/2 lg:block">
-          {/* Task Card */}
-          <div className="mb-4 w-52 rounded-xl border border-dynamic-green/20 bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-dynamic-green/15">
-                <CheckCircle2 className="h-3.5 w-3.5 text-dynamic-green" />
-              </div>
-              <span className="font-medium text-xs">
-                {t('floatingCards.taskCard.title')}
-              </span>
-            </div>
-            <p className="mb-2 text-foreground/60 text-xs">
+    <div className="relative" ref={containerRef}>
+      {/* Floating cards — left. Positioned outside the frame on large screens,
+          which is why the hero reserves horizontal padding for them. */}
+      {isPlaying ? null : (
+        <div className="pointer-events-none absolute top-6 left-0 z-20 hidden -translate-x-1/2 space-y-3 lg:block">
+          <FloatingCard
+            accent="border-dynamic-green/25"
+            className="w-52"
+            delay="0s"
+          >
+            <CardLabel accent="text-dynamic-green" icon={CheckCircle2}>
+              {t('floatingCards.taskCard.title')}
+            </CardLabel>
+            <p className="text-foreground/60 text-xs leading-relaxed">
               {t('floatingCards.taskCard.description')}
             </p>
-            <div className="flex items-center gap-1 text-dynamic-green text-xs">
+            <div className="mt-2 flex items-center gap-1.5 font-mono-ui text-[0.6rem] text-dynamic-green tabular-nums">
               <Sparkles className="h-3 w-3" />
-              <span>{t('floatingCards.taskCard.points')}</span>
+              {t('floatingCards.taskCard.points')}
             </div>
-          </div>
+          </FloatingCard>
 
-          {/* Calendar Event */}
-          <div className="ml-8 w-44 rounded-xl border border-dynamic-blue/20 bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-dynamic-blue/15">
-                <Calendar className="h-3.5 w-3.5 text-dynamic-blue" />
-              </div>
-              <span className="font-medium text-xs">
-                {t('floatingCards.calendarCard.title')}
-              </span>
-            </div>
+          <FloatingCard
+            accent="border-dynamic-blue/25"
+            className="ml-10 w-44"
+            delay="-2.5s"
+          >
+            <CardLabel accent="text-dynamic-blue" icon={Calendar}>
+              {t('floatingCards.calendarCard.title')}
+            </CardLabel>
             <p className="text-foreground/60 text-xs">
               {t('floatingCards.calendarCard.event')}
             </p>
-            <p className="text-dynamic-blue text-xs">
+            <p className="mt-0.5 font-mono-ui text-[0.6rem] text-dynamic-blue">
               {t('floatingCards.calendarCard.time')}
             </p>
-          </div>
+          </FloatingCard>
         </div>
       )}
 
-      {/* Floating Elements - Right Side */}
-      {!isPlaying && (
-        <div className="pointer-events-none absolute top-4 right-0 z-10 hidden translate-x-1/2 lg:block">
-          {/* AI Chat Bubble */}
-          <div className="mb-4 w-52 rounded-xl border border-dynamic-purple/20 bg-background/90 p-3 shadow-lg backdrop-blur-sm">
+      {/* Floating cards — right */}
+      {isPlaying ? null : (
+        <div className="pointer-events-none absolute top-6 right-0 z-20 hidden translate-x-1/2 space-y-3 lg:block">
+          <FloatingCard
+            accent="border-dynamic-purple/25"
+            className="w-52"
+            delay="-1.2s"
+          >
             <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-dynamic-purple/15">
-                <MessageSquare className="h-3.5 w-3.5 text-dynamic-purple" />
-              </div>
-              <span className="font-medium text-xs">
+              <MessageSquare className="h-3.5 w-3.5 text-dynamic-purple" />
+              <span className="font-mono-ui text-[0.58rem] uppercase tracking-[0.16em]">
                 {t('floatingCards.aiCard.title')}
               </span>
-              <span className="ml-auto flex h-2 w-2 rounded-full bg-dynamic-green">
-                <span className="inline-flex h-full w-full animate-ping rounded-full bg-dynamic-green opacity-75" />
+              <span className="relative ml-auto flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-dynamic-green opacity-75 motion-reduce:animate-none" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-dynamic-green" />
               </span>
             </div>
             <p className="text-foreground/60 text-xs leading-relaxed">
               {t('floatingCards.aiCard.message')}
             </p>
-          </div>
+          </FloatingCard>
 
-          {/* Analytics Card */}
-          <div className="mr-8 w-40 rounded-xl border border-dynamic-cyan/20 bg-background/90 p-3 shadow-lg backdrop-blur-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-dynamic-cyan/15">
-                <TrendingUp className="h-3.5 w-3.5 text-dynamic-cyan" />
-              </div>
-              <span className="font-medium text-xs">
-                {t('floatingCards.productivityCard.title')}
-              </span>
-            </div>
-            <div className="mb-0.5 font-bold text-2xl text-dynamic-cyan">
+          <FloatingCard
+            accent="border-dynamic-cyan/25"
+            className="mr-10 w-40"
+            delay="-3.8s"
+          >
+            <CardLabel accent="text-dynamic-cyan" icon={TrendingUp}>
+              {t('floatingCards.productivityCard.title')}
+            </CardLabel>
+            <div className="font-display font-semibold text-2xl text-dynamic-cyan tabular-nums tracking-[-0.03em]">
               {t('floatingCards.productivityCard.stat')}
             </div>
-            <p className="text-foreground/50 text-xs">
+            <p className="mt-0.5 font-mono-ui text-[0.58rem] text-foreground/45">
               {t('floatingCards.productivityCard.change')}
             </p>
-          </div>
+          </FloatingCard>
         </div>
       )}
 
-      {/* Gradient Border Glow */}
-      <div className="absolute -inset-px overflow-hidden rounded-2xl bg-gradient-to-b from-dynamic-purple/40 via-dynamic-blue/20 to-dynamic-cyan/40" />
-
-      {/* Main Video Container */}
-      <div className="relative overflow-hidden rounded-2xl border border-foreground/10 bg-background shadow-2xl">
-        {/* Browser Chrome */}
-        <div className="flex items-center gap-2 overflow-hidden rounded-2xl border-foreground/5 border-b bg-foreground/[0.02] px-4 py-2.5">
+      {/* Player. The hero supplies the outer frame, so this only owns the
+          browser chrome and the video surface. */}
+      <div className="relative overflow-hidden rounded-xl bg-background">
+        {/* Browser chrome */}
+        <div className="flex items-center gap-2 border-foreground/[0.06] border-b bg-foreground/[0.02] px-4 py-2.5">
           <div className="flex gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full bg-dynamic-red/60" />
-            <div className="h-2.5 w-2.5 rounded-full bg-dynamic-yellow/60" />
-            <div className="h-2.5 w-2.5 rounded-full bg-dynamic-green/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-dynamic-red/50" />
+            <span className="h-2.5 w-2.5 rounded-full bg-dynamic-yellow/50" />
+            <span className="h-2.5 w-2.5 rounded-full bg-dynamic-green/50" />
           </div>
           <div className="mx-auto flex-1 text-center">
-            <span className="font-mono text-foreground/40 text-xs">
+            <span className="font-mono-ui text-[0.62rem] text-foreground/35 tracking-[0.12em]">
               tuturuuu.com
             </span>
           </div>
         </div>
 
-        {/* Video Area */}
-        <div className="relative">
-          {!isPlaying ? (
-            <button
-              type="button"
-              onClick={handlePlay}
-              className="group relative block aspect-video w-full cursor-pointer focus:outline-none"
-            >
-              {/* Thumbnail */}
-              {/* biome-ignore lint/performance/noImgElement: Keeps the landing dev compile graph off next/image. */}
-              <img
-                src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
-                alt={t('thumbnail')}
-                className="absolute inset-0 block h-full w-full object-cover opacity-90 transition-all duration-500 group-hover:scale-[1.02] group-hover:opacity-100"
-              />
+        {isPlaying ? (
+          <div className="aspect-video w-full">
+            <iframe
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="h-full w-full"
+              referrerPolicy="strict-origin-when-cross-origin"
+              src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1&showinfo=0`}
+              title={t('title')}
+            />
+          </div>
+        ) : (
+          <button
+            className="group relative block aspect-video w-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            onClick={handlePlay}
+            type="button"
+          >
+            {/* biome-ignore lint/performance/noImgElement: Keeps the landing dev compile graph off next/image. */}
+            <img
+              alt={t('thumbnail')}
+              className="absolute inset-0 block h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              src={`https://img.youtube.com/vi/${YOUTUBE_VIDEO_ID}/maxresdefault.jpg`}
+            />
 
-              {/* Play Button */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  {/* Glow */}
-                  <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-dynamic-purple/50 via-dynamic-blue/50 to-dynamic-cyan/50 opacity-60 blur-xl transition-opacity duration-300 group-hover:opacity-80" />
+            {/* Scrim keeps the control legible over any frame */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent" />
 
-                  {/* Button */}
-                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-purple via-dynamic-blue to-dynamic-cyan shadow-2xl transition-transform duration-300 group-hover:scale-110 sm:h-24 sm:w-24">
-                    <Play className="h-8 w-8 translate-x-0.5 text-white sm:h-10 sm:w-10" />
-                  </div>
-                </div>
-              </div>
-            </button>
-          ) : (
-            <div className="aspect-video w-full">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&rel=0&modestbranding=1&showinfo=0`}
-                title={t('title')}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                referrerPolicy="strict-origin-when-cross-origin"
-                allowFullScreen
-                className="h-full w-full"
-              />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="relative flex h-16 w-16 items-center justify-center sm:h-20 sm:w-20">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 animate-ring-pulse rounded-full bg-white/25"
+                />
+                <span className="relative flex h-full w-full items-center justify-center rounded-full border border-white/25 bg-white/10 backdrop-blur-md transition-all duration-500 group-hover:scale-110 group-hover:bg-white/20">
+                  <Play className="h-6 w-6 translate-x-0.5 fill-white text-white sm:h-7 sm:w-7" />
+                </span>
+              </span>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Gradient Blobs - Vibrant, animated */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        {/* Large ambient blob - Top Left */}
-        <div
-          className="absolute -top-32 -left-32 h-[450px] w-[450px] rounded-full bg-gradient-to-br from-dynamic-purple/50 via-dynamic-indigo/30 to-transparent blur-[80px]"
-          style={{ animation: 'pulse 8s ease-in-out infinite' }}
-        />
-        {/* Large ambient blob - Bottom Right */}
-        <div
-          className="absolute -right-32 -bottom-32 h-[450px] w-[450px] rounded-full bg-gradient-to-tl from-dynamic-blue/50 via-dynamic-cyan/30 to-transparent blur-[80px]"
-          style={{
-            animation: 'pulse 8s ease-in-out infinite',
-            animationDelay: '2s',
-          }}
-        />
-        {/* Center glow - Large ellipse */}
-        <div className="absolute top-1/2 left-1/2 h-100 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-dynamic-purple/35 via-dynamic-blue/25 to-dynamic-cyan/35 blur-[60px]" />
-        {/* Accent blob - Top Right */}
-        <div
-          className="absolute -top-16 -right-16 h-80 w-80 rounded-full bg-gradient-to-bl from-dynamic-cyan/45 via-dynamic-teal/25 to-transparent blur-[50px]"
-          style={{
-            animation: 'pulse 6s ease-in-out infinite',
-            animationDelay: '1s',
-          }}
-        />
-        {/* Accent blob - Bottom Left */}
-        <div
-          className="absolute -bottom-16 -left-16 h-80 w-80 rounded-full bg-gradient-to-tr from-dynamic-pink/40 via-dynamic-violet/25 to-transparent blur-[50px]"
-          style={{
-            animation: 'pulse 7s ease-in-out infinite',
-            animationDelay: '3s',
-          }}
-        />
-        {/* Floating accent - Top Center */}
-        <div
-          className="absolute -top-20 left-1/3 h-64 w-96 rounded-full bg-gradient-to-b from-dynamic-indigo/40 via-dynamic-purple/20 to-transparent blur-[45px]"
-          style={{
-            animation: 'pulse 9s ease-in-out infinite',
-            animationDelay: '4s',
-          }}
-        />
-        {/* Floating accent - Bottom Center */}
-        <div
-          className="absolute right-1/3 -bottom-20 h-64 w-96 rounded-full bg-gradient-to-t from-dynamic-teal/35 via-dynamic-cyan/20 to-transparent blur-[45px]"
-          style={{
-            animation: 'pulse 10s ease-in-out infinite',
-            animationDelay: '5s',
-          }}
-        />
+            <span className="absolute inset-x-0 bottom-4 flex justify-center">
+              <span className="rounded-full border border-white/15 bg-black/40 px-3 py-1.5 font-mono-ui text-[0.6rem] text-white/80 uppercase tracking-[0.18em] backdrop-blur-md">
+                {t('watchNow')}
+              </span>
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

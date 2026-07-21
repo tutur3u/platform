@@ -24,7 +24,7 @@ export default function MarketingPage() {
       {/* The whole suite, at a glance */}
       <ProductMarquee />
 
-      {/* Problem framing */}
+      {/* Problem framing, then the payoff */}
       <DeferredProblemSection />
 
       {/* Products */}

@@ -1,13 +1,19 @@
 import {
   Bot,
+  Boxes,
   Building2,
   Calendar,
+  CalendarClock,
   CheckCircle2,
+  ClipboardList,
   FileText,
   Folder,
   GraduationCap,
   Mail,
+  MessageSquare,
   Package,
+  QrCode,
+  Store,
   Users,
   Wallet,
   Zap,
@@ -15,6 +21,7 @@ import {
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
 
+/** Every app in the suite, in the order the mega-menu groups them. */
 const items: Array<{
   key: string;
   icon: ComponentType<{ className?: string }>;
@@ -24,13 +31,19 @@ const items: Array<{
   { key: 'tasks', icon: CheckCircle2, accent: 'text-dynamic-green' },
   { key: 'meet', icon: Users, accent: 'text-dynamic-purple' },
   { key: 'workflows', icon: Zap, accent: 'text-dynamic-cyan' },
+  { key: 'track', icon: CalendarClock, accent: 'text-dynamic-orange' },
+  { key: 'forms', icon: ClipboardList, accent: 'text-dynamic-indigo' },
   { key: 'documents', icon: FileText, accent: 'text-dynamic-orange' },
   { key: 'drive', icon: Folder, accent: 'text-dynamic-yellow' },
   { key: 'mail', icon: Mail, accent: 'text-dynamic-red' },
+  { key: 'chat', icon: MessageSquare, accent: 'text-dynamic-cyan' },
   { key: 'ai', icon: Bot, accent: 'text-dynamic-purple' },
+  { key: 'qr', icon: QrCode, accent: 'text-dynamic-sky' },
   { key: 'finance', icon: Wallet, accent: 'text-dynamic-pink' },
   { key: 'crm', icon: Building2, accent: 'text-dynamic-blue' },
   { key: 'inventory', icon: Package, accent: 'text-dynamic-green' },
+  { key: 'storefront', icon: Store, accent: 'text-dynamic-teal' },
+  { key: 'hive', icon: Boxes, accent: 'text-dynamic-rose' },
   { key: 'lms', icon: GraduationCap, accent: 'text-dynamic-orange' },
 ];
 

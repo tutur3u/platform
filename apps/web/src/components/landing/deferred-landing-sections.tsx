@@ -18,6 +18,14 @@ const ProblemSection = dynamic(
   { loading: SectionFallback, ssr: false }
 );
 
+const OutcomesSection = dynamic(
+  () =>
+    import('@/components/landing/outcomes/outcomes-section').then(
+      (module) => module.OutcomesSection
+    ),
+  { loading: SectionFallback, ssr: false }
+);
+
 const DemoSection = dynamic(
   () =>
     import('@/components/landing/demo/demo-section').then(
@@ -59,11 +67,16 @@ const CTASection = dynamic(
 );
 
 /**
- * Renders between the hero and the product bento: names the pain before the
- * page shows the product that solves it.
+ * Renders between the hero and the product bento: names the pain, then the
+ * payoff, before the page shows the product that delivers it.
  */
 export function DeferredProblemSection() {
-  return <ProblemSection />;
+  return (
+    <>
+      <ProblemSection />
+      <OutcomesSection />
+    </>
+  );
 }
 
 /** Everything below the product bento. */
