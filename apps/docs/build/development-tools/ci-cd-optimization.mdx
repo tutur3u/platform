@@ -248,11 +248,12 @@ Dependency resolution and the platform build always execute so a cache hit
 cannot skip validation. Managed uv and CodeQL caches remain owned by their
 upstream actions rather than being duplicated.
 
-CodeQL is owned by GitHub's managed `dynamic/github-code-scanning/codeql`
-workflow. Do not add a checked-in `.github/workflows/codeql.yml`: it would run
-alongside the managed JavaScript/TypeScript and Python analysis for the same
-SHA. `bun git-sync` mirrors the already-scanned `main` SHA to `production`, so
-the repository keeps a single managed source of CodeQL runs.
+CodeQL is owned by the checked-in `.github/workflows/codeql.yml`. It scans
+JavaScript/TypeScript and Python on canonical `main` commits and pull requests,
+with a manual fallback and no cron trigger. GitHub's legacy dynamic CodeQL
+workflow must remain disabled; enabling both owners analyzes the same SHA
+twice. `bun git-sync` mirrors the already-scanned `main` SHA to `production`,
+so the custom workflow does not listen for production pushes.
 
 The full Dockerized E2E graph is created for E2E specs, Playwright and Docker
 configuration, database fixtures, package manifests, lockfiles, and its own

@@ -440,6 +440,7 @@ test('mail deployment workflows do not persist checkout credentials', () => {
 test('CI workflows use main instead of retired staging branch filters', () => {
   const workflowsWithoutStagingBranchFilters = [
     'branch-name-check.yaml',
+    'codeql.yml',
     'docker-setup-check.yaml',
     'supabase-production.yaml',
     'supabase-staging.yaml',
@@ -488,12 +489,24 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
-test('CodeQL relies on the single GitHub-managed workflow', () => {
-  assert.equal(
-    fs.existsSync(path.join(repoRoot, '.github', 'workflows', 'codeql.yml')),
-    false,
-    'a checked-in CodeQL workflow would duplicate GitHub managed code scanning'
+test('checked-in CodeQL owns commit scanning without duplicate branch or cron runs', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'codeql.yml'),
+    'utf8'
   );
+
+  assert.match(workflow, /\n {2}push:\n {4}branches: \["main"\]\n/);
+  assert.match(
+    workflow,
+    /\n {2}pull_request:\n {4}branches: \["main", "production"\]\n/
+  );
+  assert.match(workflow, /\n {2}workflow_dispatch:\n/);
+  assert.doesNotMatch(workflow, /\n {2}schedule:/);
+  assert.match(workflow, /- javascript-typescript\n {10}- python/);
+  assert.match(workflow, /queries: security-extended/);
+  assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
+  assert.doesNotMatch(workflow, /needs\.check-ci/);
+
   const config = fs.readFileSync(path.join(repoRoot, 'tuturuuu.ts'), 'utf8');
   assert.doesNotMatch(config, /['"]codeql\.yml['"]\s*:/);
 });

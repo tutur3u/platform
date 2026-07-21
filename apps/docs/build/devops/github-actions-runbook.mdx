@@ -335,7 +335,7 @@ Wrangler or Docker origins in the `cloudflare-workers-preview` Environment.
 - `type-check.yaml`
 - `turbo-unit-tests.yaml`
 - `biome-check.yaml`
-- GitHub-managed CodeQL (`dynamic/github-code-scanning/codeql`)
+- `codeql.yml`
 - `codecov.yaml`
 - `i18n-check.yaml`
 - `check-migrations.yml`
@@ -397,10 +397,11 @@ secret-backed preview builds. The workflow still checks out and builds the
 requested `preview_ref`, so reviewers should treat that ref as code that can
 execute during install/build.
 
-CodeQL uses GitHub's managed `dynamic/github-code-scanning/codeql` workflow.
-Do not add a checked-in `codeql.yml`: GitHub would run both definitions for the
-same SHA. The managed workflow covers JavaScript/TypeScript and Python, while
-`bun git-sync` mirrors the already-scanned `main` commit to `production`.
+CodeQL uses the checked-in `codeql.yml` for JavaScript/TypeScript and Python.
+Keep GitHub's legacy `dynamic/github-code-scanning/codeql` workflow disabled or
+both owners will analyze the same SHA. Automatic scans are commit-driven on
+canonical `main` and pull requests; `bun git-sync` mirrors the already-scanned
+commit to `production`, so production pushes are excluded.
 
 `e2e-tests.yaml` uses native push paths for E2E specs, Playwright and Docker
 configuration, database fixtures, dependency manifests, lockfiles, and its own

@@ -29,9 +29,10 @@ Use this checklist when changing CI, validators, docs, or repo automation.
   contract is intentionally path-simple. The external-app internal-package
   smoke owns `apps/external/**`, `packages/**`, and its build-control files, so
   unrelated app-only commits should not create that workflow at all.
-- Keep CodeQL on GitHub's managed `dynamic/github-code-scanning/codeql`
-  workflow. Do not add a checked-in `codeql.yml`, which would duplicate the
-  managed JavaScript/TypeScript and Python analysis for the same SHA.
+- Keep CodeQL in the checked-in `codeql.yml` and keep GitHub's legacy
+  `dynamic/github-code-scanning/codeql` workflow disabled. Scan
+  JavaScript/TypeScript and Python on canonical commits and pull requests, not
+  mirrored production pushes or cron schedules.
 - Scope the expensive E2E workflow with native push paths for E2E specs,
   Playwright/Docker configuration, database fixtures, dependency manifests,
   lockfiles, and E2E runner scripts. Do not add a cron schedule; automatic E2E

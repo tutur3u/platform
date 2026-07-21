@@ -221,9 +221,10 @@ formatting behavior, or repo-wide verification.
   `cancel-in-progress`. This lets a newer protected-main platform signal or a
   repeated manual preview replace stale work without serializing unrelated
   preview refs behind the same group.
-- Use GitHub's managed `dynamic/github-code-scanning/codeql` workflow as the
-  single CodeQL owner. Do not add a checked-in `codeql.yml`; GitHub would run it
-  beside managed JavaScript/TypeScript and Python analysis for the same SHA.
+- Use the checked-in `codeql.yml` as the single CodeQL owner and keep GitHub's
+  legacy `dynamic/github-code-scanning/codeql` workflow disabled. Cover
+  JavaScript/TypeScript and Python on canonical commits and pull requests, with
+  no mirrored-production push or cron duplicate.
 - Use native push paths for the expensive E2E image producer and consumers.
   Cover E2E specs, Playwright/Docker configuration, database fixtures,
   dependency manifests, lockfiles, and runner scripts. Keep automatic E2E
