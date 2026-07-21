@@ -23,21 +23,19 @@ describe('recharts-tooltip', () => {
   });
 
   it('formats tooltip callbacks against the current recharts formatter type', () => {
-    const formatter: RechartsTooltipFormatter = (value, name) => [
+    const formatter = ((value, name) => [
       formatTooltipValue(
         value,
         (numericValue) => numericValue.toFixed(2),
         (displayValue) => `state:${displayValue}`
       ),
       getTooltipName(name),
-    ];
+    ]) satisfies RechartsTooltipFormatter;
 
-    expect(formatter('12.5', 'Cost', {} as never, 0, [])).toEqual([
-      '12.50',
-      'Cost',
+    expect(formatter('12.5', 'Cost')).toEqual(['12.50', 'Cost']);
+    expect(formatter(['queued', 'pending'], 'Status')).toEqual([
+      'state:queued, pending',
+      'Status',
     ]);
-    expect(
-      formatter(['queued', 'pending'], 'Status', {} as never, 0, [])
-    ).toEqual(['state:queued, pending', 'Status']);
   });
 });
