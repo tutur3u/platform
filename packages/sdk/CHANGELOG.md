@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/tutur3u/platform/compare/sdk-v0.15.0...sdk-v0.15.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/sdk-v0.14.0...sdk-v0.15.0) (2026-07-18)
 
 

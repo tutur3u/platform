@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.4.0...inventory-core-v0.5.0) (2026-07-21)
+
+
+### Features
+
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** improve sales discovery and cart ([cced561](https://github.com/tutur3u/platform/commit/cced5611796e3a0760b65987fbe50afb0876d055))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+
+
+### Bug Fixes
+
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **inventory:** normalize sales revenue units ([99fa671](https://github.com/tutur3u/platform/commit/99fa67173b738f4dc7dc83c7ef4639524a3dc449))
+* **inventory:** repair Square terminal pairing ([d4c297d](https://github.com/tutur3u/platform/commit/d4c297da37bd027ea55b8896fd86aa822b9ff94a))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.3.0...inventory-core-v0.4.0) (2026-07-18)
 
 

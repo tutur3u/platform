@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/calendar-v0.14.0...calendar-v0.15.0) (2026-07-21)
+
+
+### Features
+
+* **calendar:** redesign workspace sidebar ([194e126](https://github.com/tutur3u/platform/commit/194e1267e573e50416f3866826e2a182b3ff8729))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **calendar:** deduplicate mirrored events ([04716f3](https://github.com/tutur3u/platform/commit/04716f3afa84664f9a7396f67bda62d388680fb3))
+* **calendar:** reconcile deleted provider events ([fd0cedb](https://github.com/tutur3u/platform/commit/fd0cedba8fea7212516bf8ba4aae4c83ad2c2293))
+* **calendar:** restore connection visibility controls ([a1cf05b](https://github.com/tutur3u/platform/commit/a1cf05b0c1918367a33884bdbddeb658bdc8d9a4))
+* **calendar:** restore provider calendar management ([68753a8](https://github.com/tutur3u/platform/commit/68753a865dcc25a35cd53e5fc7ced1913b9a10bb))
+* **platform:** repair calendar sync and member auth ([fcf8f89](https://github.com/tutur3u/platform/commit/fcf8f89100fb9fc5de024dccb7605a3b9d197cfb))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/calendar-v0.13.0...calendar-v0.14.0) (2026-07-18)
 
 

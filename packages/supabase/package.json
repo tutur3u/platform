@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/supabase",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Supabase client and utilities for Next.js applications with SSR support, cookie handling, and TypeScript type safety",
   "keywords": [
     "supabase",

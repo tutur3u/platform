@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/internal-api-v0.19.0...internal-api-v0.20.0) (2026-07-21)
+
+
+### Features
+
+* **cms:** redesign media library loading ([d382b3b](https://github.com/tutur3u/platform/commit/d382b3bd254086d344b1b066ccbaf913a303a682))
+* **infrastructure:** improve internal account management ([fa4e535](https://github.com/tutur3u/platform/commit/fa4e535d3193f275cfac4d808455caaab9d6b326))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** improve sales discovery and cart ([cced561](https://github.com/tutur3u/platform/commit/cced5611796e3a0760b65987fbe50afb0876d055))
+* **inventory:** streamline sales entry ([ae22db5](https://github.com/tutur3u/platform/commit/ae22db56b982756fe6f76cdb65cfbac913dda807))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+
+
+### Bug Fixes
+
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* **inventory:** harden sales analytics and access ([53968d3](https://github.com/tutur3u/platform/commit/53968d38a0c5425a3c1065ab2f645e30a0145c8f))
+* **inventory:** honor adjusted sale prices ([1393ac9](https://github.com/tutur3u/platform/commit/1393ac9e44390a54b856ced49fa82229230e2aa8))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/internal-api-v0.18.0...internal-api-v0.19.0) (2026-07-18)
 
 

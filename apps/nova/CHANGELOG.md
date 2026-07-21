@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/nova-v0.26.0...nova-v0.27.0) (2026-07-21)
+
+
+### Features
+
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** standardize fixed app headers ([7b86c42](https://github.com/tutur3u/platform/commit/7b86c4283b39ebc5de8bec971ce3bab5fdaef422))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/nova-v0.25.0...nova-v0.26.0) (2026-07-18)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.2.0...tasks-ui-v0.2.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **ci:** resolve shared task helper during e2e collection ([0319a3b](https://github.com/tutur3u/platform/commit/0319a3bd0df12592b823b7cebdff38cea3e50836))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **tasks:** make board settings dialog singleton ([f6e9093](https://github.com/tutur3u/platform/commit/f6e9093724b90246060cf7151ba749b36fc43629))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.1.0...tasks-ui-v0.2.0) (2026-07-18)
 
 

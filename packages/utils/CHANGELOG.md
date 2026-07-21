@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/utils-v0.16.0...utils-v0.17.0) (2026-07-21)
+
+
+### Features
+
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+
+
+### Bug Fixes
+
+* **chat:** harden personal Zalo integration ([f1d12c6](https://github.com/tutur3u/platform/commit/f1d12c60fe12ab3b01a1be3f0381573d44a32226))
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **e2e:** run tasks lifecycle in CI ([bed2cd5](https://github.com/tutur3u/platform/commit/bed2cd590572748f65e75fcb15b7e4b714b9034c))
+* **inventory:** harden sales analytics and access ([53968d3](https://github.com/tutur3u/platform/commit/53968d38a0c5425a3c1065ab2f645e30a0145c8f))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
+
+### Performance Improvements
+
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/utils-v0.15.1...utils-v0.16.0) (2026-07-18)
 
 

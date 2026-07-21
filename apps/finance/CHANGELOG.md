@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/finance-v0.16.0...finance-v0.17.0) (2026-07-21)
+
+
+### Features
+
+* **inventory:** streamline sales entry ([ae22db5](https://github.com/tutur3u/platform/commit/ae22db56b982756fe6f76cdb65cfbac913dda807))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **inventory:** honor adjusted sale prices ([1393ac9](https://github.com/tutur3u/platform/commit/1393ac9e44390a54b856ced49fa82229230e2aa8))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/finance-v0.15.0...finance-v0.16.0) (2026-07-18)
 
 

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/infra-v0.9.0...infra-v0.10.0) (2026-07-21)
+
+
+### Features
+
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **infrastructure:** improve internal account management ([fa4e535](https://github.com/tutur3u/platform/commit/fa4e535d3193f275cfac4d808455caaab9d6b326))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** standardize fixed app headers ([7b86c42](https://github.com/tutur3u/platform/commit/7b86c4283b39ebc5de8bec971ce3bab5fdaef422))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* **chat:** harden personal Zalo integration ([f1d12c6](https://github.com/tutur3u/platform/commit/f1d12c60fe12ab3b01a1be3f0381573d44a32226))
+* **chat:** keep Zalo phone sync alive ([5cc7a0d](https://github.com/tutur3u/platform/commit/5cc7a0df42c8ad3b7a9e5785cf5d8e9a99c56b76))
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* localize realtime analytics filters ([10c14fa](https://github.com/tutur3u/platform/commit/10c14faadc0e0fc6e82fabb2001038e3005e08b6))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* resolve remaining quality suggestions ([826aec4](https://github.com/tutur3u/platform/commit/826aec4af9e8291eb02dc8430b4adab4b110018a))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/infra-v0.8.0...infra-v0.9.0) (2026-07-18)
 
 

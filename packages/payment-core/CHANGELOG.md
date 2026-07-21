@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/payment-core-v0.3.0...payment-core-v0.3.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* **pay:** serve AI credits from Pay ([cb9a9b5](https://github.com/tutur3u/platform/commit/cb9a9b5d112c17562dea73fd259ea8a03ac08563))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/payment-core-v0.2.0...payment-core-v0.3.0) (2026-07-11)
 
 

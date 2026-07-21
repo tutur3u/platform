@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.11.0...tanstack-web-v0.12.0) (2026-07-21)
+
+
+### Features
+
+* **cms:** redesign media library loading ([d382b3b](https://github.com/tutur3u/platform/commit/d382b3bd254086d344b1b066ccbaf913a303a682))
+
+
+### Bug Fixes
+
+* clear residual quality findings ([3ff6c3f](https://github.com/tutur3u/platform/commit/3ff6c3f91ffc93e3751b3a4ab5d1659db1a68019))
+* **platform:** repair calendar sync and member auth ([fcf8f89](https://github.com/tutur3u/platform/commit/fcf8f89100fb9fc5de024dccb7605a3b9d197cfb))
+* remove unreachable group queries ([0ff2882](https://github.com/tutur3u/platform/commit/0ff288256f74fdb15ebb07c1045e46e22f3802ef))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.10.0...tanstack-web-v0.11.0) (2026-07-18)
 
 

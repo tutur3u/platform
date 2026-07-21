@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/pay-v0.5.0...pay-v0.6.0) (2026-07-21)
+
+
+### Features
+
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+
+
+### Bug Fixes
+
+* **pay:** restore AI credit wallet loading ([9b3aa65](https://github.com/tutur3u/platform/commit/9b3aa65759c50cff972a72bf1cf09917d4992e19))
+* **pay:** serve AI credits from Pay ([cb9a9b5](https://github.com/tutur3u/platform/commit/cb9a9b5d112c17562dea73fd259ea8a03ac08563))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/pay-v0.4.0...pay-v0.5.0) (2026-07-18)
 
 

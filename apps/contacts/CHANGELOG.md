@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/contacts-v0.5.0...contacts-v0.6.0) (2026-07-21)
+
+
+### Features
+
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+
+
+### Bug Fixes
+
+* clear residual quality findings ([3ff6c3f](https://github.com/tutur3u/platform/commit/3ff6c3f91ffc93e3751b3a4ab5d1659db1a68019))
+* **contacts:** restore attendance and translation checks ([3f1587b](https://github.com/tutur3u/platform/commit/3f1587bf99be2d733eb12bba7b6039bda00cd0ca))
+* **inventory:** polish mobile sales and settings ([59ef49c](https://github.com/tutur3u/platform/commit/59ef49cde2095361e2b13ce36848e1e39f772c18))
+* remove unreachable group queries ([0ff2882](https://github.com/tutur3u/platform/commit/0ff288256f74fdb15ebb07c1045e46e22f3802ef))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* resolve remaining quality suggestions ([826aec4](https://github.com/tutur3u/platform/commit/826aec4af9e8291eb02dc8430b4adab4b110018a))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+
+
+### Performance Improvements
+
+* **contacts:** accelerate virtual user listing ([8d0b86c](https://github.com/tutur3u/platform/commit/8d0b86c46f7045b2e7475d2e6211dc0cc2ebb6ab))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/contacts-v0.4.0...contacts-v0.5.0) (2026-07-18)
 
 

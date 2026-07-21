@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/storefront-v0.15.0...storefront-v0.16.0) (2026-07-21)
+
+
+### Features
+
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+
+
+### Bug Fixes
+
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **storefront:** stop registering missing service worker ([655a382](https://github.com/tutur3u/platform/commit/655a3823b1bcfdf8b4a69a4f4a7d7670ed0af430))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+* **storefront:** stabilize navigation and cart rendering ([471c6b7](https://github.com/tutur3u/platform/commit/471c6b75abc6a4d69692e868cc1b220785e03262))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/storefront-v0.14.0...storefront-v0.15.0) (2026-07-18)
 
 
