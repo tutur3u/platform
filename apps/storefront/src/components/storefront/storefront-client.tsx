@@ -1,14 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, RefreshCw } from '@tuturuuu/icons';
+import { RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
   type InventoryPublicStorefrontResponse,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
-import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getStorefrontListingLimit,
@@ -17,11 +16,10 @@ import {
   StorefrontSurface,
   type StorefrontSurfaceLabels,
 } from '@tuturuuu/ui/storefront';
-import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { Link, useRouter } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import {
   openHostedPolarCheckout,
   openSquarePosCheckout,
@@ -34,6 +32,8 @@ import {
   isDemoStorefrontFixture,
 } from './storefront-fixture';
 import { getOptionalInventoryPublicStorefront } from './storefront-loader';
+import { StorefrontOrderScreen } from './storefront-order-screen';
+import { getStorefrontOrderState } from './storefront-order-state';
 import { StorefrontUnavailable } from './storefront-unavailable';
 
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
@@ -105,7 +105,7 @@ export function StorefrontClient({
     ],
     refetchInterval: (query) => {
       const order = query.state.data?.order;
-      if (!order || order.status === 'completed') return false;
+      if (!order || getStorefrontOrderState(order) !== 'pending') return false;
       return 2000;
     },
   });
@@ -257,103 +257,16 @@ export function StorefrontClient({
     const isOrderUnavailable =
       orderQuery.isError || (shouldResolveDemoOrder && storefrontQuery.isError);
     return (
-      <main className="mx-auto grid min-h-dvh w-full max-w-lg place-items-center px-4 py-10">
-        <section className="w-full overflow-hidden rounded-xl border border-border bg-card p-6 text-center">
-          {isOrderUnavailable ? (
-            <>
-              <p className="text-muted-foreground text-sm">{t('order')}</p>
-              <h1 className="mt-2 break-all font-semibold text-2xl">
-                {publicToken}
-              </h1>
-              <RetryPanel
-                description={t('orderErrorDescription')}
-                onRetry={() => {
-                  if (shouldResolveDemoOrder) storefrontQuery.refetch();
-                  orderQuery.refetch();
-                }}
-                title={t('orderErrorTitle')}
-              />
-            </>
-          ) : (
-            <>
-              <div
-                className="-mx-6 -mt-6 mb-6 h-1.5"
-                style={{
-                  backgroundColor: 'var(--storefront-accent, var(--primary))',
-                }}
-              />
-              <span className="mx-auto grid size-16 place-items-center rounded-full bg-primary/10 text-primary ring-8 ring-primary/5">
-                <CheckCircle2 className="size-8" />
-              </span>
-              <h1 className="mt-5 font-semibold text-2xl tracking-tight">
-                {t('orderPlaced')}
-              </h1>
-              <p className="mt-2 text-muted-foreground text-sm leading-6">
-                {order?.checkoutProvider === 'square_terminal'
-                  ? t('squareOrderPlacedDescription')
-                  : order?.checkoutProvider === 'square_pos'
-                    ? t('squarePosOrderPlacedDescription')
-                    : t('orderPlacedDescription')}
-              </p>
-              {order ? (
-                <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 font-medium text-xs">
-                  <span className="size-1.5 rounded-full bg-primary" />
-                  {t('orderStatus', {
-                    status:
-                      order.squareStatus ?? order.polarStatus ?? order.status,
-                  })}
-                </span>
-              ) : (
-                <p className="mt-4 text-muted-foreground text-sm">
-                  {t('loading')}
-                </p>
-              )}
-              {order && order.lines.length > 0 ? (
-                <div className="mt-5 rounded-xl border border-border bg-muted/10 p-4 text-left">
-                  <div className="grid gap-2">
-                    {order.lines.map((line) => (
-                      <div
-                        className="flex items-baseline justify-between gap-3 text-sm"
-                        key={line.id}
-                      >
-                        <span className="min-w-0 truncate">
-                          <span className="text-muted-foreground tabular-nums">
-                            {line.quantity}×{' '}
-                          </span>
-                          {line.title}
-                        </span>
-                        <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
-                          {formatMoneyFromMinor(
-                            line.subtotalAmount,
-                            order.currency
-                          )}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-border border-t pt-3 text-sm">
-                    <span className="text-muted-foreground">{t('total')}</span>
-                    <span className="font-semibold tabular-nums">
-                      {formatMoneyFromMinor(order.totalAmount, order.currency)}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-              <div className="mt-5 rounded-xl border border-border border-dashed bg-muted/20 p-4 text-left">
-                <p className="text-muted-foreground text-xs uppercase tracking-wide">
-                  {t('orderReference')}
-                </p>
-                <p className="mt-1 break-all font-mono text-sm">
-                  {publicToken}
-                </p>
-              </div>
-              <Button asChild className="mt-6 w-full" variant="outline">
-                <Link href={`/${storeSlug}`}>{t('backToStore')}</Link>
-              </Button>
-            </>
-          )}
-        </section>
-      </main>
+      <StorefrontOrderScreen
+        isUnavailable={isOrderUnavailable}
+        onRetry={() => {
+          if (shouldResolveDemoOrder) storefrontQuery.refetch();
+          orderQuery.refetch();
+        }}
+        order={order}
+        publicToken={publicToken}
+        storeSlug={storeSlug}
+      />
     );
   }
 

@@ -379,6 +379,48 @@ describe('StorefrontSurface', () => {
     );
   });
 
+  it('keeps a configured bundle fixed price independent of component count', () => {
+    const fixedBundle: InventoryBundle = {
+      ...categoryBundle,
+      id: 'fixed-bundle',
+      name: 'Three for two dollars',
+      price: 200,
+      pricingMode: 'fixed_price',
+    };
+    const fixedListing: InventoryStorefrontListing = {
+      ...bundleListing,
+      bundleId: fixedBundle.id,
+      id: 'fixed-bundle-listing',
+      price: 200,
+      title: fixedBundle.name,
+    };
+
+    render(
+      <StorefrontSurface
+        bundles={[fixedBundle]}
+        cartLines={[
+          {
+            bundleSelections: {
+              'component-keychains': [
+                { listingId: 'listing-keychain-a', quantity: 1 },
+                { listingId: 'listing-keychain-b', quantity: 1 },
+                { listingId: 'listing-keychain-c', quantity: 1 },
+              ],
+            },
+            listingId: fixedListing.id,
+            quantity: 1,
+          },
+        ]}
+        listings={[fixedListing]}
+        mode="cart"
+        storefront={storefront}
+      />
+    );
+
+    expect(screen.getAllByText('$2.00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('$27.00')).not.toBeInTheDocument();
+  });
+
   it('prefills checkout buyer details while keeping editable form fields', () => {
     render(
       <StorefrontSurface

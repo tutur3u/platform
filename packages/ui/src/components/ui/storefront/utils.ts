@@ -187,7 +187,11 @@ export function getStorefrontBundleSelectionSubtotal(
   bundle: InventoryBundle | undefined,
   line: StorefrontCartLine
 ) {
-  if (!bundle?.categoryComponents?.length || !line.bundleSelections) {
+  if (
+    !bundle?.categoryComponents?.length ||
+    !line.bundleSelections ||
+    bundle.pricingMode === 'fixed_price'
+  ) {
     return null;
   }
 

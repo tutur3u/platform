@@ -210,5 +210,104 @@ describe('simulated checkout tokens', () => {
       title: 'Buy 2 Get 1 Keychains',
       unitPrice: 2700,
     });
+
+    const fixedPriceResponse = createSimulatedCheckoutResponse({
+      payload: {
+        lines: [
+          {
+            bundleId: 'bundle-keychains',
+            bundleSelections: {
+              'component-keychains': [
+                { listingId: 'listing-a', quantity: 1 },
+                { listingId: 'listing-b', quantity: 1 },
+                { listingId: 'listing-c', quantity: 1 },
+              ],
+            },
+            quantity: 1,
+          },
+        ],
+      },
+      storeSlug: 'shop',
+      storefrontPayload: {
+        ...storefrontPayload,
+        bundles: [
+          {
+            ...storefrontPayload.bundles[0]!,
+            price: 200,
+            pricingMode: 'fixed_price',
+          },
+        ],
+      },
+    });
+
+    expect(fixedPriceResponse.checkout).toMatchObject({
+      subtotalAmount: 200,
+      totalAmount: 200,
+    });
+    expect(fixedPriceResponse.checkout.lines[0]).toMatchObject({
+      quantity: 1,
+      subtotalAmount: 200,
+      unitPrice: 200,
+    });
+
+    const fixedPriceListingResponse = createSimulatedCheckoutResponse({
+      payload: {
+        lines: [
+          {
+            bundleSelections: {
+              'component-keychains': [
+                { listingId: 'listing-a', quantity: 1 },
+                { listingId: 'listing-b', quantity: 1 },
+                { listingId: 'listing-c', quantity: 1 },
+              ],
+            },
+            listingId: 'listing-fixed-bundle',
+            quantity: 1,
+          },
+        ],
+      },
+      storeSlug: 'shop',
+      storefrontPayload: {
+        ...storefrontPayload,
+        bundles: [
+          {
+            ...storefrontPayload.bundles[0]!,
+            price: 200,
+            pricingMode: 'fixed_price',
+          },
+        ],
+        listings: [
+          {
+            availableQuantity: 9,
+            bundleId: 'bundle-keychains',
+            compareAtPrice: null,
+            createdAt: '2026-07-03T00:00:00.000Z',
+            description: null,
+            id: 'listing-fixed-bundle',
+            imageUrl: null,
+            listingType: 'bundle',
+            maxPerOrder: 99,
+            price: 250,
+            productId: null,
+            sortOrder: 0,
+            status: 'published',
+            storefrontId: 'storefront-1',
+            title: 'Listed fixed bundle',
+            unitId: null,
+            unitName: null,
+            updatedAt: '2026-07-03T00:00:00.000Z',
+            variants: [],
+            warehouseId: null,
+            warehouseName: null,
+            wsId: 'workspace-1',
+          },
+        ],
+      },
+    });
+
+    expect(fixedPriceListingResponse.checkout).toMatchObject({
+      subtotalAmount: 250,
+      totalAmount: 250,
+    });
   });
 });

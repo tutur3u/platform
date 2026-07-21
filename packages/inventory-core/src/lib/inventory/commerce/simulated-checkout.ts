@@ -207,12 +207,18 @@ function getLinePrice(
   const listing = line.listingId
     ? storefrontPayload.listings.find((item) => item.id === line.listingId)
     : null;
-  const bundle = line.bundleId
-    ? storefrontPayload.bundles.find((item) => item.id === line.bundleId)
+  const resolvedBundleId = line.bundleId ?? listing?.bundleId;
+  const bundle = resolvedBundleId
+    ? storefrontPayload.bundles.find((item) => item.id === resolvedBundleId)
     : null;
 
   if (bundle?.categoryComponents?.length && line.bundleSelections) {
-    return getCategoryBundleLinePrice(line, bundle, storefrontPayload);
+    return getCategoryBundleLinePrice(
+      line,
+      bundle,
+      storefrontPayload,
+      listing?.price
+    );
   }
 
   const variant = listing?.variants?.find((item) => item.id === line.variantId);
@@ -270,7 +276,8 @@ function resolveCandidate(
 function getCategoryBundleLinePrice(
   line: CheckoutPayload['lines'][number],
   bundle: InventoryPublicStorefrontResponse['bundles'][number],
-  storefrontPayload: InventoryPublicStorefrontResponse
+  storefrontPayload: InventoryPublicStorefrontResponse,
+  fixedPrice?: number
 ) {
   const selectedCandidates: Array<{
     candidate: InventoryBundleCategoryCandidate;
@@ -316,6 +323,19 @@ function getCategoryBundleLinePrice(
   }
 
   const firstSelection = selectedCandidates[0]?.candidate;
+
+  if (bundle.pricingMode === 'fixed_price') {
+    const resolvedFixedPrice = fixedPrice ?? bundle.price;
+    return {
+      productId: firstSelection?.productId ?? bundle.id,
+      subtotal: resolvedFixedPrice * line.quantity,
+      title: bundle.name,
+      unitId: firstSelection?.unitId ?? '',
+      unitPrice: resolvedFixedPrice,
+      warehouseId:
+        firstSelection?.warehouseId ?? storefrontPayload.storefront.id,
+    };
+  }
 
   return {
     productId: firstSelection?.productId ?? bundle.id,
