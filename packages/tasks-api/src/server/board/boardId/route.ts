@@ -58,17 +58,11 @@ type BoardUpdatePayload =
   };
 
 function isUniqueViolation(error: unknown) {
-  return (
-    error !== null &&
-    error !== undefined &&
-    typeof error === 'object' &&
-    'code' in error &&
-    error.code === '23505'
-  );
+  return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
 function isDefaultListColumnUnavailable(error: unknown) {
-  if (error === null || error === undefined || typeof error !== 'object') {
+  if (!(error instanceof Object)) {
     return false;
   }
 

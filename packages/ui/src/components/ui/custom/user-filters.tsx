@@ -260,7 +260,7 @@ export function Filter({
                       {selectedSize}
                     </Badge>
                     <div className="hidden space-x-1 lg:flex">
-                      {(multiple && selectedSize > 2) || alwaysShowNumber ? (
+                      {selectedSize > 2 || alwaysShowNumber ? (
                         <Badge
                           variant="secondary"
                           className="rounded-sm bg-background/80 px-1 font-normal text-foreground hover:bg-background/80"
@@ -270,7 +270,7 @@ export function Filter({
                       ) : (
                         options
                           .filter((option) => selectedValues.has(option.value))
-                          .slice(0, multiple ? 2 : 1)
+                          .slice(0, 2)
                           .map((option) => (
                             <Badge
                               variant="secondary"
@@ -404,7 +404,7 @@ export function Filter({
                   <div className="grid items-center gap-1 md:flex">
                     <CommandItem
                       onSelect={() => {
-                        if (selectedSize === 0 && multiple)
+                        if (selectedSize === 0)
                           return setSelectedValues(
                             new Set(options.map((option) => option.value))
                           );
@@ -417,15 +417,12 @@ export function Filter({
                       className="w-full justify-center text-center"
                       disabled={
                         applying ||
-                        (!multiple &&
-                          oldValues.size === 0 &&
-                          selectedSize === 0) ||
                         options.every(
                           (option) => option.checked && option.disabled
                         )
                       }
                     >
-                      {selectedSize === 0 && multiple ? (
+                      {selectedSize === 0 ? (
                         <>
                           <CheckCheck className="mr-2 h-4 w-4" />
                           <span className="line-clamp-1">Select All</span>

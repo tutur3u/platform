@@ -3759,10 +3759,6 @@ function getStandbyRefreshCandidate(
         : 'blue';
   }
 
-  if (!standbyColor) {
-    return null;
-  }
-
   if (now - activeDeployment.activatedAt < refreshAfterMs) {
     return null;
   }
@@ -7764,7 +7760,7 @@ async function restoreTargetBranchIfDetached(
     return false;
   }
 
-  let hasBlockingDirtyWorktree = true;
+  let hasBlockingDirtyWorktree;
   try {
     hasBlockingDirtyWorktree = await hasDirtyWorktree({
       cwd: rootDir,

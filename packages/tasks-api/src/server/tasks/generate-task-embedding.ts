@@ -12,7 +12,7 @@ function extractTextFromTipTap(content: unknown, depth = 0): string {
 
   if (typeof content === 'string') return content;
 
-  if (typeof content === 'object' && content !== null) {
+  if (content instanceof Object) {
     if ('type' in content && content.type === 'text' && 'text' in content) {
       return String(content.text || '');
     }

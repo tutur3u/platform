@@ -89,8 +89,8 @@ export async function SettingsPage({
   );
 }
 
-// Example 3: Client Component Integration
-('use client');
+// Example 3: Client Component Integration. In production, move this component
+// to a separate module with a top-level `use client` directive.
 
 interface WorkspaceCardProps {
   workspace: {

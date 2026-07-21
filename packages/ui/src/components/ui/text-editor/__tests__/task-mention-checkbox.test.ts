@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
+function resolveMentionChecked(
+  manualOverride: boolean | null,
+  nodeChecked: boolean | undefined,
+  allMentionedTasksCompleted: boolean
+) {
+  return manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+}
+
 // Mock the Supabase client
 vi.mock('@tuturuuu/supabase/next/client', () => ({
   createClient: () => ({
@@ -220,8 +228,11 @@ describe('Task Mention Detection', () => {
       const nodeChecked: boolean | undefined = false;
       const allMentionedTasksCompleted = false;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveMentionChecked(
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted
+      );
 
       expect(result).toBe(true);
     });
@@ -231,8 +242,11 @@ describe('Task Mention Detection', () => {
       const nodeChecked: boolean | undefined = true;
       const allMentionedTasksCompleted = false;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveMentionChecked(
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted
+      );
 
       expect(result).toBe(true);
     });
@@ -242,8 +256,11 @@ describe('Task Mention Detection', () => {
       const nodeChecked: boolean | undefined = undefined;
       const allMentionedTasksCompleted = true;
 
-      const result =
-        manualOverride ?? nodeChecked ?? allMentionedTasksCompleted;
+      const result = resolveMentionChecked(
+        manualOverride,
+        nodeChecked,
+        allMentionedTasksCompleted
+      );
 
       expect(result).toBe(true);
     });

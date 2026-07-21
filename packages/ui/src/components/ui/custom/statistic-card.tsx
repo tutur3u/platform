@@ -80,9 +80,7 @@ const StatisticCard = ({
       <Link
         href={href}
         onClick={onClick}
-        className={`group flex flex-col rounded-lg border transition-all duration-300 ${
-          onClick || href ? 'hover:rounded-xl' : 'cursor-default'
-        } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
+        className={`group flex flex-col rounded-lg border transition-all duration-300 hover:rounded-xl ${generateOuterColor(true)} ${className || ''}`}
       >
         {cardContent}
       </Link>
@@ -93,8 +91,8 @@ const StatisticCard = ({
       type="button"
       onClick={onClick}
       className={`group flex flex-col rounded-lg border transition duration-300 ${
-        onClick || href ? 'hover:rounded-xl' : 'cursor-default'
-      } ${generateOuterColor(!!onClick || !!href)} ${className || ''}`}
+        onClick ? 'hover:rounded-xl' : 'cursor-default'
+      } ${generateOuterColor(!!onClick)} ${className || ''}`}
     >
       {cardContent}
     </button>

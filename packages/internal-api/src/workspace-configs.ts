@@ -99,7 +99,7 @@ export async function getOptionalWorkspaceConfig(
 
   if (!response.ok) {
     const fallbackMessage = `Internal API request failed: ${response.status}`;
-    let message = fallbackMessage;
+    let message: string;
 
     try {
       const data = (await response.json()) as {

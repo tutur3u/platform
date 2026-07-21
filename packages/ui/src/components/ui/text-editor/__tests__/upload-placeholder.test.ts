@@ -1,5 +1,5 @@
 import { PluginKey } from '@tiptap/pm/state';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createLoadingPlaceholder,
   findUploadPlaceholder,
@@ -68,19 +68,10 @@ describe('upload-placeholder', () => {
   });
 
   describe('createLoadingPlaceholder', () => {
-    let styleElement: HTMLStyleElement | null;
-
     beforeEach(() => {
       // Clean up any existing style elements
       const existing = document.querySelector('#upload-spinner-styles');
       if (existing) existing.remove();
-      styleElement = null;
-    });
-
-    afterEach(() => {
-      if (styleElement) {
-        styleElement.remove();
-      }
     });
 
     it('should create placeholder for image', () => {

@@ -168,9 +168,7 @@ export function useLiveAPI({
         try {
           await client.connect({
             ...config,
-            ...(sessionHandle == null
-              ? {}
-              : { sessionResumption: { handle: sessionHandle } }),
+            sessionResumption: { handle: sessionHandle },
           });
           console.log('[Live API] Reconnected successfully');
           setConnected(true);

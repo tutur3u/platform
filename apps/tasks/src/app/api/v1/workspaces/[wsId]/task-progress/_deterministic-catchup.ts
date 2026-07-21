@@ -75,7 +75,7 @@ export function buildDeterministicCatchup(
   if (total > 0) highlights.push(`${fmt(total)} ${unitLabel} logged ${label}.`);
   if (previous > 0) {
     const delta = total - previous;
-    const pct = previous > 0 ? Math.round((delta / previous) * 100) : 0;
+    const pct = Math.round((delta / previous) * 100);
     highlights.push(
       `${delta >= 0 ? 'Up' : 'Down'} ${Math.abs(pct)}% vs the previous ${period === 'weekly' ? 'week' : 'month'}.`
     );

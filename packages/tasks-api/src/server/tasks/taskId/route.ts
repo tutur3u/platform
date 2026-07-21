@@ -654,20 +654,10 @@ async function clampTaskScheduleToCompletedWork(sbAdmin: any, taskId: string) {
       continue;
     }
 
-    if (roundedNow <= startAt) {
-      eventIdsToDelete.push(event.id);
-      continue;
-    }
-
     completedMinutes += Math.max(
       0,
       Math.round((roundedNow.getTime() - startAt.getTime()) / 60000)
     );
-
-    if (roundedNow.getTime() <= startAt.getTime()) {
-      eventIdsToDelete.push(event.id);
-      continue;
-    }
 
     await sbAdmin
       .from('workspace_calendar_events')

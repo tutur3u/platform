@@ -253,7 +253,6 @@ def derive_ui_reasoning(prod):
     style = prod.get("Primary Style Recommendation", "")
     landing = prod.get("Landing Page Pattern", "")
     color_focus = prod.get("Color Palette Focus", "")
-    considerations = prod.get("Key Considerations", "")
     keywords = prod.get("Keywords", "")
 
     # Typography mood derived from style

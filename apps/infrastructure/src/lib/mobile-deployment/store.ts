@@ -125,7 +125,7 @@ function nowIso() {
 function assertNoError(error: unknown, message: string): asserts error is null {
   if (error) {
     const detail =
-      typeof error === 'object' && error && 'message' in error
+      typeof error === 'object' && 'message' in error
         ? String((error as { message?: unknown }).message)
         : message;
     throw new MobileDeploymentStoreError(detail || message, 500);

@@ -176,7 +176,7 @@ async function callPrivateRpc<T>(
       message:
         error instanceof Error
           ? error.message
-          : typeof error === 'object' && error !== null && 'message' in error
+          : error instanceof Object && 'message' in error
             ? String((error as { message?: unknown }).message)
             : 'Unknown RPC error',
     });

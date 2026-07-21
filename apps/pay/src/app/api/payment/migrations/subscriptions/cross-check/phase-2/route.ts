@@ -81,7 +81,6 @@ export async function POST() {
         const polarSubs = response.result?.items ?? [];
 
         if (polarSubs.length === 0) {
-          hasMore = false;
           break;
         }
 

@@ -210,16 +210,12 @@ export function Nav({
                 }}
               >
                 <Button
-                  size={isCollapsed ? 'icon' : undefined}
+                  size="icon"
                   variant="secondary"
                   onClick={onClick}
-                  className={cn(isCollapsed || 'w-full')}
                   disabled={pathname === basePath && !searchParams.get('id')}
                 >
                   <CirclePlus className="h-6 w-6" />
-                  {isCollapsed || (
-                    <span className="ml-2">{t('ai_chat.new_chat')}</span>
-                  )}
                 </Button>
               </Link>
             </TooltipTrigger>
@@ -241,15 +237,12 @@ export function Nav({
             }}
           >
             <Button
-              size={isCollapsed ? 'icon' : undefined}
               onClick={onClick}
-              className={cn(isCollapsed || 'w-full')}
+              className="w-full"
               disabled={pathname === basePath && !searchParams.get('id')}
             >
               <CirclePlus className="h-6 w-6" />
-              {isCollapsed || (
-                <span className="ml-2">{t('ai_chat.new_chat')}</span>
-              )}
+              <span className="ml-2">{t('ai_chat.new_chat')}</span>
             </Button>
           </Link>
         )}

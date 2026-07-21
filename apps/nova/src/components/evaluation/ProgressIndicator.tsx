@@ -120,8 +120,7 @@ export function ProgressIndicator({
             : isWarning
               ? 'border-dynamic-amber/30 shadow-dynamic-amber/20'
               : 'border-dynamic-blue/30 shadow-dynamic-blue/20',
-        completionAnimation && 'animate-pulse',
-        !isVisible && 'scale-95 opacity-0'
+        completionAnimation && 'animate-pulse'
       )}
     >
       <CardHeader className="pb-4">

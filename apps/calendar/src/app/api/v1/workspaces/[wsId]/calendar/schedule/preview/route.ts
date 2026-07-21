@@ -9,10 +9,7 @@
  * 3. Applied to the calendar if user confirms
  */
 
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
@@ -50,7 +47,6 @@ export async function POST(
       );
     }
 
-    let supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -59,8 +55,7 @@ export async function POST(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: wsId,

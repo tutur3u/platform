@@ -320,7 +320,7 @@ export function InvoiceCustomerSelectCard({
                               size="sm"
                               className="mx-auto h-8 text-xs"
                               onClick={() => onLoadMore?.()}
-                              disabled={isFetchingNextPage || loading}
+                              disabled={loading}
                             >
                               {t('ws-invoices.load_more')}
                             </Button>

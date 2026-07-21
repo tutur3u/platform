@@ -73,7 +73,7 @@ export async function PUT(
     }
 
     // Validate time if provided
-    let validatedTime = time;
+    let validatedTime: string;
     if (time) {
       const parsedTime = new Date(time);
       if (Number.isNaN(parsedTime.getTime())) {

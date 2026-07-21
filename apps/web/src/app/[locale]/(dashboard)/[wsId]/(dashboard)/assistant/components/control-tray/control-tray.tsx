@@ -312,7 +312,7 @@ function ControlTray({
       client.sendRealtimeInput([{ mimeType: 'image/jpeg', data }]);
 
       // Schedule next frame - 1 second interval like Python example
-      if (connected && isCapturing) {
+      if (isCapturing) {
         timeoutId = setTimeout(captureAndSendFrame, 1000);
       }
     }
@@ -412,17 +412,13 @@ function ControlTray({
                   <span className="absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_25%_30%,rgba(96,165,250,0.45),transparent_60%),radial-gradient(circle_at_70%_25%,rgba(74,222,128,0.4),transparent_55%),radial-gradient(circle_at_50%_80%,rgba(244,114,182,0.45),transparent_58%)] opacity-80 mix-blend-screen blur-3xl" />
                 </motion.span>
                 <Button
-                  variant={!muted && connected ? 'destructive' : 'ghost'}
+                  variant={!muted ? 'destructive' : 'ghost'}
                   size="icon"
                   className="h-12 w-12"
                   disabled={!connected}
                   onClick={() => setMuted(!muted)}
                 >
-                  {!muted && connected ? (
-                    <Mic size={20} />
-                  ) : (
-                    <MicOff size={20} />
-                  )}
+                  {!muted ? <Mic size={20} /> : <MicOff size={20} />}
                 </Button>
               </motion.div>
 

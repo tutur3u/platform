@@ -293,13 +293,7 @@ function buildSeriesTimestamp(date: string, time: string, timezone: string) {
     .toISOString();
 }
 
-function seriesDateBounds(
-  series: SeriesRow,
-  from: string | null | undefined,
-  to: string | null | undefined
-) {
-  if (!from || !to) return null;
-
+function seriesDateBounds(series: SeriesRow, from: string, to: string) {
   const rangeStart = dayjs(from)
     .tz(series.start_timezone || DEFAULT_TIMEZONE)
     .format('YYYY-MM-DD');

@@ -5,10 +5,7 @@ import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
 } from '@tuturuuu/education-core/tulearn/service';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
@@ -73,13 +70,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     // Authenticate caller
-    let sessionSupabase = await createClient(request);
     const auth = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: true,
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    sessionSupabase = auth.supabase;
+    const sessionSupabase = auth.supabase;
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

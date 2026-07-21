@@ -105,6 +105,16 @@ describe('wallets data table infinite loading', () => {
     mocks.searchParams = new URLSearchParams();
 
     globalThis.IntersectionObserver = class IntersectionObserver {
+      readonly callback: IntersectionObserverCallback;
+      readonly options?: IntersectionObserverInit;
+
+      constructor(
+        callback: IntersectionObserverCallback,
+        options?: IntersectionObserverInit
+      ) {
+        this.callback = callback;
+        this.options = options;
+      }
       disconnect() {}
       observe() {}
       takeRecords() {

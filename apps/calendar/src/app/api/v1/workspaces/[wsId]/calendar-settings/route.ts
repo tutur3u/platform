@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   INTERNAL_WORKSPACE_SLUG,
@@ -37,7 +36,6 @@ const normalizeWorkspaceId = (wsIdParam: string, userId: string): string => {
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient();
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -45,8 +43,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = normalizeWorkspaceId(wsId, user.id);
 
     // Verify workspace access
@@ -108,7 +105,6 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient();
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(req, {
@@ -116,8 +112,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = normalizeWorkspaceId(wsId, user.id);
 
     const memberCheck = await verifyWorkspaceMembershipType({

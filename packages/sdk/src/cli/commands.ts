@@ -1542,7 +1542,6 @@ export async function runCli(argv = process.argv.slice(2)) {
       const selection = firstId
         ? { boardId: firstId, config }
         : await selectBoardId(client, config, workspaceId, flags, json);
-      config = selection.config;
       render(
         await client.tasks.updateBoard(
           workspaceId,
@@ -1618,7 +1617,6 @@ export async function runCli(argv = process.argv.slice(2)) {
       const listSelection = firstId
         ? { config, listId: firstId }
         : await selectListId(client, config, workspaceId, flags, json);
-      config = listSelection.config;
       render(
         await client.tasks.updateList(
           workspaceId,
@@ -1732,7 +1730,6 @@ export async function runCli(argv = process.argv.slice(2)) {
         flags,
         json
       );
-      config = listSelection.config;
 
       if (flags.local === true || isLocalTaskTemplateReference(firstId)) {
         render(
@@ -1814,7 +1811,7 @@ export async function runCli(argv = process.argv.slice(2)) {
       action === 'descriptions' ||
       action === 'desc'
     ) {
-      config = await runTaskDescriptionCommand({
+      await runTaskDescriptionCommand({
         client,
         config,
         flags,
@@ -1869,7 +1866,6 @@ export async function runCli(argv = process.argv.slice(2)) {
         json,
         firstId
       );
-      config = selection.config;
       process.stdout.write(`Current task set to ${selection.taskId}\n`);
       return;
     }
@@ -1882,7 +1878,6 @@ export async function runCli(argv = process.argv.slice(2)) {
         json,
         firstId
       );
-      config = selection.config;
       render(
         withTaskDisplayKey(
           await client.tasks.get(workspaceId, selection.taskId),
@@ -1903,7 +1898,6 @@ export async function runCli(argv = process.argv.slice(2)) {
         flags,
         json
       );
-      config = listSelection.config;
       const templateReference = getFlag(flags, 'template');
       const descriptionPayload =
         await getTaskDescriptionPayloadFromFlags(flags);
@@ -1991,7 +1985,6 @@ export async function runCli(argv = process.argv.slice(2)) {
         json,
         firstId
       );
-      config = selection.config;
       const descriptionPayload =
         await getTaskDescriptionPayloadFromFlags(flags);
       const taskUpdatePayload = getTaskUpdatePayload(flags);
@@ -2310,7 +2303,6 @@ export async function runCli(argv = process.argv.slice(2)) {
       json,
       firstId || getFlag(flags, 'task')
     );
-    config = taskSelection.config;
     const taskId = taskSelection.taskId;
     if (action === 'list') {
       render(await client.tasks.getRelationships(workspaceId, taskId), {

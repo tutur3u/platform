@@ -370,7 +370,6 @@ function VirtualizedTaskListInner({
 
   let totalHeight: number | undefined;
   let startIndex = 0;
-  let endIndex = tasks.length;
   let offsetY = 0;
   let visibleTasks = tasks;
 
@@ -406,7 +405,7 @@ function VirtualizedTaskListInner({
       if (midTop <= targetBottom) lo = mid;
       else hi = mid - 1;
     }
-    endIndex = Math.min(tasks.length, lo + 1);
+    const endIndex = Math.min(tasks.length, lo + 1);
     visibleTasks = tasks.slice(startIndex, endIndex);
     offsetY = getOffset(startIndex);
     const lastIndex = tasks.length - 1;

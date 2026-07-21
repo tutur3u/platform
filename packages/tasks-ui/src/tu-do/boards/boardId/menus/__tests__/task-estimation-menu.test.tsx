@@ -8,6 +8,24 @@ import {
   mapEstimationPoints,
 } from '../../../../shared/estimation-mapping';
 
+function isEstimationActive(
+  currentPoints: number | null | undefined,
+  index: number
+) {
+  return currentPoints === index;
+}
+
+function isNoneEstimationActive(currentPoints: number | null | undefined) {
+  return currentPoints == null;
+}
+
+function toggleEstimation(
+  currentPoints: number | null | undefined,
+  index: number
+) {
+  return isEstimationActive(currentPoints, index) ? null : index;
+}
+
 // Test the estimation mapping utilities that are used by the component
 describe('TaskEstimationMenu Utilities', () => {
   describe('mapEstimationPoints', () => {
@@ -174,21 +192,21 @@ describe('TaskEstimationMenu Component Logic', () => {
     it('should be active when currentPoints matches idx', () => {
       const currentPoints = 3;
       const idx = 3;
-      const isActive = currentPoints === idx;
+      const isActive = isEstimationActive(currentPoints, idx);
       expect(isActive).toBe(true);
     });
 
     it('should not be active when currentPoints does not match idx', () => {
       const currentPoints: number = 3;
       const idx: number = 5;
-      const isActive = currentPoints === idx;
+      const isActive = isEstimationActive(currentPoints, idx);
       expect(isActive).toBe(false);
     });
 
     it('should not be active when currentPoints is null', () => {
       const currentPoints = null;
       const idx = 3;
-      const isActive = currentPoints === idx;
+      const isActive = isEstimationActive(currentPoints, idx);
       expect(isActive).toBe(false);
     });
   });
@@ -196,19 +214,19 @@ describe('TaskEstimationMenu Component Logic', () => {
   describe('should determine None option active state', () => {
     it('should be active when currentPoints is null', () => {
       const currentPoints = null;
-      const isActive = currentPoints == null;
+      const isActive = isNoneEstimationActive(currentPoints);
       expect(isActive).toBe(true);
     });
 
     it('should be active when currentPoints is undefined', () => {
       const currentPoints = undefined;
-      const isActive = currentPoints == null;
+      const isActive = isNoneEstimationActive(currentPoints);
       expect(isActive).toBe(true);
     });
 
     it('should not be active when currentPoints has a value', () => {
       const currentPoints = 0;
-      const isActive = currentPoints == null;
+      const isActive = isNoneEstimationActive(currentPoints);
       expect(isActive).toBe(false);
     });
   });
@@ -217,24 +235,21 @@ describe('TaskEstimationMenu Component Logic', () => {
     it('should return null when clicking active item', () => {
       const currentPoints = 3;
       const idx = 3;
-      const isActive = currentPoints === idx;
-      const newValue = isActive ? null : idx;
+      const newValue = toggleEstimation(currentPoints, idx);
       expect(newValue).toBe(null);
     });
 
     it('should return idx when clicking inactive item', () => {
       const currentPoints: number = 3;
       const idx: number = 5;
-      const isActive = currentPoints === idx;
-      const newValue = isActive ? null : idx;
+      const newValue = toggleEstimation(currentPoints, idx);
       expect(newValue).toBe(5);
     });
 
     it('should set idx when clicking from null', () => {
       const currentPoints = null;
       const idx = 3;
-      const isActive = currentPoints === idx;
-      const newValue = isActive ? null : idx;
+      const newValue = toggleEstimation(currentPoints, idx);
       expect(newValue).toBe(3);
     });
   });

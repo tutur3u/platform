@@ -24,7 +24,7 @@ export default function WorkspaceLogoSettings({ workspace, allowEdit }: Props) {
       <LogoInput
         workspace={workspace}
         defaultValue={workspace.name}
-        disabled={!workspace || !allowEdit}
+        disabled={!allowEdit}
       />
     </div>
   );

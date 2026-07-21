@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   encryptWorkspaceKey,
   generateWorkspaceKey,
@@ -35,16 +32,13 @@ export async function GET(request: Request, { params }: Params) {
     });
   }
 
-  let supabase = await createClient();
-
   // Get current user
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: true,
   });
   if (!auth.ok) return auth.response;
   const { user } = auth;
-  supabase = auth.supabase;
-
+  const supabase = auth.supabase;
   // Check if user has access to this workspace (any member can view status)
   const member = await verifyWorkspaceMembershipType({
     wsId: wsId,

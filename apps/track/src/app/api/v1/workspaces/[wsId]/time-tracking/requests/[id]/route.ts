@@ -1,6 +1,5 @@
 import {
   createAdminClient,
-  createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
@@ -128,7 +127,6 @@ export async function PATCH(
       );
     }
 
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -137,8 +135,7 @@ export async function PATCH(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify workspace access and admin permissions
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -234,7 +231,6 @@ export async function PUT(
 ) {
   try {
     const { wsId, id } = await context.params;
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
     // Use createDynamicClient with request to support Bearer token auth for mobile apps
     const storageClient = await createDynamicClient(request);
@@ -245,8 +241,7 @@ export async function PUT(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Verify workspace membership

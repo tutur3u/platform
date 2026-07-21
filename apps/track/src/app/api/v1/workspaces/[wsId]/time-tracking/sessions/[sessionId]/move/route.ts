@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -31,7 +28,6 @@ export async function POST(
         { status: 400 }
       );
     }
-    let supabase = await createClient(request);
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -39,8 +35,7 @@ export async function POST(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access

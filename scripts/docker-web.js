@@ -1329,7 +1329,6 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
     };
     let workflowEnv = workflowBaseEnv;
-    let workflowEnvWithoutLock = workflowBaseEnv;
 
     try {
       const logDrainPostgresState = await ensureLogDrainPostgresReady({
@@ -1342,7 +1341,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         runCommand: run,
         stderr: options.stderr ?? process.stderr,
       });
-      workflowEnvWithoutLock = logDrainPostgresState?.env ?? workflowBaseEnv;
+      const workflowEnvWithoutLock =
+        logDrainPostgresState?.env ?? workflowBaseEnv;
       workflowEnv = blueGreenBuildLock
         ? {
             ...workflowEnvWithoutLock,

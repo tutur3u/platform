@@ -65,9 +65,9 @@ export default function ChatLink({
           className={cn(
             buttonVariants({
               variant: 'ghost',
-              size: isCollapsed ? 'icon' : 'sm',
+              size: 'sm',
             }),
-            isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
+            'w-full justify-start',
             'whitespace-normal font-semibold',
             isActive
               ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
@@ -80,32 +80,26 @@ export default function ChatLink({
           )}
           onClick={onClick}
         >
-          {isCollapsed ? (
-            link.icon
-          ) : (
-            <>
-              {single && link.icon && <span className="mr-2">{link.icon}</span>}
-              <span
-                className={cn(
-                  'line-clamp-1 break-all',
-                  !configs?.showChatName && 'opacity-50'
-                )}
-              >
-                {configs?.showChatName
-                  ? link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')
-                  : `${t('ai_chat.chat_name_hidden')}.`}
-              </span>
-              {configs?.showChatName && link.trailing && (
-                <span
-                  className={cn(
-                    'ml-auto flex-none',
-                    isActive && 'text-background dark:text-white'
-                  )}
-                >
-                  {link.trailing}
-                </span>
+          {single && link.icon && <span className="mr-2">{link.icon}</span>}
+          <span
+            className={cn(
+              'line-clamp-1 break-all',
+              !configs?.showChatName && 'opacity-50'
+            )}
+          >
+            {configs?.showChatName
+              ? link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')
+              : `${t('ai_chat.chat_name_hidden')}.`}
+          </span>
+          {configs?.showChatName && link.trailing && (
+            <span
+              className={cn(
+                'ml-auto flex-none',
+                isActive && 'text-background dark:text-white'
               )}
-            </>
+            >
+              {link.trailing}
+            </span>
           )}
         </Link>
         {configs?.showFavorites && !single && (
@@ -140,9 +134,9 @@ export default function ChatLink({
             className={cn(
               buttonVariants({
                 variant: 'ghost',
-                size: isCollapsed ? 'icon' : 'sm',
+                size: 'icon',
               }),
-              isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
+              'h-9 w-9',
               'whitespace-normal font-semibold',
               isActive
                 ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
@@ -155,35 +149,7 @@ export default function ChatLink({
             )}
             onClick={onClick}
           >
-            {isCollapsed ? (
-              link.icon
-            ) : (
-              <>
-                {single && link.icon && (
-                  <span className="mr-2">{link.icon}</span>
-                )}
-                <span
-                  className={cn(
-                    'line-clamp-1 break-all',
-                    !configs?.showChatName && 'opacity-50'
-                  )}
-                >
-                  {configs?.showChatName
-                    ? link.title.replaceAll(/(\*\*)|(^")|("$)/g, '')
-                    : `${t('ai_chat.chat_name_hidden')}.`}
-                </span>
-                {configs?.showChatName && link.trailing && (
-                  <span
-                    className={cn(
-                      'ml-auto flex-none',
-                      isActive && 'text-background dark:text-white'
-                    )}
-                  >
-                    {link.trailing}
-                  </span>
-                )}
-              </>
-            )}
+            {link.icon}
           </Link>
           {configs?.showFavorites && !single && (
             <Button

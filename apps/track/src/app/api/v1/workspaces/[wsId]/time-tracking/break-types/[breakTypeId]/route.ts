@@ -196,13 +196,6 @@ export async function PATCH(
       breakType = refreshedBreakType;
     }
 
-    if (!breakType) {
-      return NextResponse.json(
-        { error: 'Break type not found' },
-        { status: 404 }
-      );
-    }
-
     return NextResponse.json({ breakType });
   } catch (error) {
     console.error('Error updating break type:', error);

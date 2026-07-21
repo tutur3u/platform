@@ -140,6 +140,8 @@ export function AudioPlayer({
           );
         }
 
+        if (isCancelled) return;
+
         console.log(
           `Successfully loaded recording, duration: ${audioBuffer.duration}s`
         );
@@ -153,6 +155,7 @@ export function AudioPlayer({
           `Audio player initialized with recording, duration: ${audioBuffer.duration}s`
         );
       } catch (error) {
+        if (isCancelled) return;
         console.error('Error initializing audio player:', error);
         setIsLoading(false);
         const errorMessage =
@@ -163,9 +166,7 @@ export function AudioPlayer({
       }
     };
 
-    if (!isCancelled) {
-      initializeAudio();
-    }
+    void initializeAudio();
 
     return () => {
       isCancelled = true;

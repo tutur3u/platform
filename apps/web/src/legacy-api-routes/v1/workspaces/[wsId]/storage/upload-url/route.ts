@@ -243,7 +243,7 @@ export async function POST(
       );
     }
 
-    let uploadContentType = parsed.data.contentType;
+    let uploadContentType: typeof parsed.data.contentType;
     const topicUploadAccess = isReservedTopicAnnouncementPath(sanitizedPath)
       ? await resolveTopicAnnouncementAttachmentUploadAccess({
           contentType: parsed.data.contentType,

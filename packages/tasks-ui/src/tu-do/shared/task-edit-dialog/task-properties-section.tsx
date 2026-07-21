@@ -762,7 +762,7 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   const handleDurationMinutesChange = useCallback(
     (minutes: number, direction?: 'increment' | 'decrement') => {
       let newHours = durationHours;
-      let newMinutes = minutes;
+      let newMinutes: number;
 
       // Handle rollover for increment/decrement
       if (direction === 'increment' && minutes > 45) {

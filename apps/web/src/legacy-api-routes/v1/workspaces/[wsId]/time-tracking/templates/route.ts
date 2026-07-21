@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -9,7 +8,6 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient();
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -17,8 +15,7 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: wsId,

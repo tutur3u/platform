@@ -74,7 +74,7 @@ function sanitizeAuditMetadataValue(value: unknown): InfrastructureJsonValue {
     return value.slice(0, 20).map((entry) => sanitizeAuditMetadataValue(entry));
   }
 
-  if (value && typeof value === 'object') {
+  if (typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
         .slice(0, 20)

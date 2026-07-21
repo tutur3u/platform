@@ -36,7 +36,7 @@ export default function WorkspaceAvatarSettings({
             : workspace
         }
         defaultValue={workspace.name}
-        disabled={!workspace || !allowEdit}
+        disabled={!allowEdit}
       />
     </div>
   );

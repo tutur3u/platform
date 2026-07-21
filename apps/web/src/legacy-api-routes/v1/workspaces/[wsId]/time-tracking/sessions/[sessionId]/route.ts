@@ -1,8 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPermissions,
@@ -306,7 +303,6 @@ async function authenticateAndResolveWorkspace(
     }
   | { error: NextResponse }
 > {
-  let supabase = await createClient(request);
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: true,
   });
@@ -314,8 +310,7 @@ async function authenticateAndResolveWorkspace(
     return { error: auth.response };
   }
   const { user } = auth;
-  supabase = auth.supabase;
-
+  const supabase = auth.supabase;
   let normalizedWsId: string;
   try {
     normalizedWsId = await normalizeWorkspaceId(wsId, supabase);

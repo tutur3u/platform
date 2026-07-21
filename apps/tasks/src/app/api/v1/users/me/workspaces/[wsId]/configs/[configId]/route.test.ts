@@ -50,11 +50,11 @@ vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: mocks.withSessionAuth,
 }));
 
-function createValueQuery(value: string | null) {
+function createValueQuery(data: { value: string } | null) {
   const query = {
     eq: vi.fn(() => query),
     maybeSingle: vi.fn(async () => ({
-      data: value === null ? null : { value },
+      data,
       error: null,
     })),
     select: vi.fn(() => query),
@@ -72,7 +72,7 @@ describe('tasks user workspace config route', () => {
   });
 
   it('serves task workspace preferences locally with tasks app-session auth', async () => {
-    const query = createValueQuery('board-1');
+    const query = createValueQuery({ value: 'board-1' });
     mocks.supabase.from.mockReturnValue(query);
 
     const { GET } = await import('./route');

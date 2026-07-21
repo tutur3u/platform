@@ -460,11 +460,9 @@ async function runTanStackE2EDocker(argv = process.argv.slice(2), deps = {}) {
 
   const plan = buildCommandPlan(options, env);
 
-  let stackTouched = false;
   let runError = null;
 
   try {
-    stackTouched = true;
     output.write(
       `[tanstack-e2e] $ ${plan.up.command} ${plan.up.args.join(' ')}\n`
     );
@@ -505,7 +503,7 @@ async function runTanStackE2EDocker(argv = process.argv.slice(2), deps = {}) {
     }
   }
 
-  if (stackTouched && plan.teardown) {
+  if (plan.teardown) {
     try {
       output.write(
         `[tanstack-e2e] $ ${plan.teardown.command} ${plan.teardown.args.join(

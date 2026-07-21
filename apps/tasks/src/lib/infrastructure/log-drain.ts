@@ -637,7 +637,7 @@ async function persistContext({
             ${status},
             ${durationMs},
             ${normalizedError?.message ?? null},
-            ${null},
+            NULL,
             ${JSON.stringify({})}::jsonb,
             ${new Date(context.startedAt)},
             ${new Date(endedAt)}

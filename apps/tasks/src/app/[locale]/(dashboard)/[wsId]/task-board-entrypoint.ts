@@ -151,7 +151,7 @@ export async function resolveTaskBoardEntrypoint(
   try {
     return await resolution;
   } finally {
-    if (inFlightEntrypointResolutions.get(workspaceId) === resolution) {
+    if (Object.is(inFlightEntrypointResolutions.get(workspaceId), resolution)) {
       inFlightEntrypointResolutions.delete(workspaceId);
     }
   }

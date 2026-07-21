@@ -239,7 +239,7 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                       <div
                         className="h-1.5 rounded-full"
                         style={{
-                          width: `${(insights.high / insights.high) * 100}%`,
+                          width: '100%',
                           backgroundColor: colors.success,
                         }}
                       />

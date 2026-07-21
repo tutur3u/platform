@@ -43,13 +43,7 @@ const TASK_BOARD_ROUTE_APP_SESSION_AUTH = {
 } as const;
 
 function isUniqueViolation(error: unknown) {
-  return (
-    error !== null &&
-    error !== undefined &&
-    typeof error === 'object' &&
-    'code' in error &&
-    error.code === '23505'
-  );
+  return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
 function taskBoardNameExistsResponse() {

@@ -280,9 +280,8 @@ export function HorseRacingVisualization() {
     // Define a wrapper function that adds context about each race
     const wrappedRaceFunction = (horseIds: number[]) => {
       // Determine race type based on patterns
-      let raceType: 'preliminary' | 'championship' | 'candidate' =
-        'preliminary';
-      let description = '';
+      let raceType: 'preliminary' | 'championship' | 'candidate';
+      let description: string;
 
       const currentRaceCount = races.length;
 

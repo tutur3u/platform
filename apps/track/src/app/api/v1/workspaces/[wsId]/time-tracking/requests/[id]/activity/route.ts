@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -31,7 +28,6 @@ export async function GET(
 ) {
   const { wsId, id: requestId } = await params;
 
-  let supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
 
   const auth = await resolveSessionAuthContext(req, {
@@ -39,8 +35,7 @@ export async function GET(
   });
   if (!auth.ok) return auth.response;
   const { user } = auth;
-  supabase = auth.supabase;
-
+  const supabase = auth.supabase;
   // Verify user has access to this workspace
   const member = await verifyWorkspaceMembershipType({
     wsId,

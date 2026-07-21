@@ -152,7 +152,7 @@ module.exports = function createActiveRecovery({
           runCommand: run,
         });
         const activeFinishedAt = now();
-        let history = appendDeploymentHistory(
+        appendDeploymentHistory(
           {
             activatedAt: activeFinishedAt,
             activeColor: recovery.activeColor,
@@ -185,7 +185,7 @@ module.exports = function createActiveRecovery({
           }),
         });
         const standbyFinishedAt = now();
-        history = appendDeploymentHistory(
+        const history = appendDeploymentHistory(
           {
             activatedAt: standbyFinishedAt,
             activeColor: recovery.standbyColor,
@@ -314,8 +314,6 @@ module.exports = function createActiveRecovery({
       }),
     });
 
-    let history;
-
     try {
       await runBlueGreenDeploy({
         deploymentKind: 'pending-restart',
@@ -346,7 +344,7 @@ module.exports = function createActiveRecovery({
         runCommand: run,
       });
 
-      history = appendDeploymentHistory(
+      appendDeploymentHistory(
         {
           activatedAt: deployFinishedAt,
           activeColor,
@@ -391,7 +389,7 @@ module.exports = function createActiveRecovery({
         });
       }
 
-      history = appendDeploymentHistory(
+      const history = appendDeploymentHistory(
         {
           buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
           commitHash: latestCommit.hash,
@@ -467,7 +465,7 @@ module.exports = function createActiveRecovery({
         rootDir,
         runCommand: run,
       });
-      history = appendDeploymentHistory(
+      const history = appendDeploymentHistory(
         {
           activatedAt: standbyFinishedAt,
           activeColor: standbyResult.standbyColor ?? standbyColor,
@@ -517,7 +515,7 @@ module.exports = function createActiveRecovery({
       );
     } catch (error) {
       const standbyFinishedAt = now();
-      history = appendDeploymentHistory(
+      const history = appendDeploymentHistory(
         {
           activeColor: standbyColor,
           buildDurationMs: Math.max(0, standbyFinishedAt - standbyStartedAt),

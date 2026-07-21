@@ -1795,7 +1795,7 @@ const getDefaultLocale = (
       }
     });
 
-  let detectedLocale: string = defaultLocale;
+  let detectedLocale: string;
 
   try {
     detectedLocale = match(

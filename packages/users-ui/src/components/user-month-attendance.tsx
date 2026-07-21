@@ -488,10 +488,7 @@ export default function UserMonthAttendance({
                         key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
                       >
                         <Tooltip>
-                          <TooltipTrigger
-                            disabled={isError || !isCurrentMonth(day)}
-                            asChild
-                          >
+                          <TooltipTrigger asChild>
                             <button
                               type="button"
                               onClick={() => handleDateClick(day)}

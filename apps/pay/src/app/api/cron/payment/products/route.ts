@@ -54,7 +54,6 @@ async function handleGET(req: NextRequest) {
         const products = response.result?.items ?? [];
 
         if (products.length === 0) {
-          hasMore = false;
           break;
         }
 

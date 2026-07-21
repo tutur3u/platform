@@ -347,7 +347,7 @@ export async function handlePostEmailQueueCron(req: NextRequest) {
       failed: number;
       timedOut: boolean;
       results: Array<Record<string, unknown>>;
-    } = { claimed: 0, processed: 0, failed: 0, timedOut: false, results: [] };
+    };
     let phase4SkippedReason: string | null = null;
 
     if (

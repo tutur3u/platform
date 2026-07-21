@@ -40,7 +40,7 @@ export function getCurrencyFractionDigits(currency = 'USD'): number {
   const cached = fractionDigitsCache.get(code);
   if (cached !== undefined) return cached;
 
-  let digits = DEFAULT_FRACTION_DIGITS;
+  let digits: number;
   try {
     digits =
       new Intl.NumberFormat(getCurrencyLocale(code), {

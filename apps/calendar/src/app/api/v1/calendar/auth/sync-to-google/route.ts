@@ -181,7 +181,7 @@ export async function POST(request: Request) {
     );
 
     // Sync each event to Google
-    for (const event of tuturuuuEvents || []) {
+    for (const event of tuturuuuEvents) {
       console.log(
         `🔵 [API] Processing event: "${event.title}" (ID: ${event.id})`,
         {

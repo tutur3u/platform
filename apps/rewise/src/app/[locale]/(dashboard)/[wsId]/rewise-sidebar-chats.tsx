@@ -10,7 +10,6 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import type { NavLink as ChatNavLink } from '@/components/navigation';
 import { Nav } from './nav';
@@ -48,11 +47,7 @@ export function RewiseSidebarChats({
     <>
       <Separator className="mx-2" />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <Accordion
-          className={cn('w-full', isCollapsed && 'hidden')}
-          collapsible
-          type="single"
-        >
+        <Accordion className="w-full" collapsible type="single">
           <AccordionItem className="border-none p-0" value="chats">
             <AccordionTrigger
               className="mx-2 mb-0 rounded-md bg-foreground/5 px-3 py-2 hover:bg-foreground/10"

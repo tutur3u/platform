@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -12,15 +9,13 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient();
 
     const auth = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: true,
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: wsId,
       userId: user.id,
@@ -65,15 +60,13 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient();
 
     const auth = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: true,
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,
       userId: user.id,

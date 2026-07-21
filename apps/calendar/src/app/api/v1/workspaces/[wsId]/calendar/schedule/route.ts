@@ -471,7 +471,6 @@ export async function GET(
       );
     }
 
-    let supabase = await createClient();
     const sbAdmin = await createAdminClient();
     const privateAdmin = getPrivateSchedulingClient(sbAdmin);
 
@@ -481,8 +480,7 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,
       userId: user.id,

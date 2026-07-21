@@ -83,18 +83,12 @@ async function loadChatSdkFactory(
 }
 
 function isAdapter(value: unknown): value is Adapter {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'handleWebhook' in value &&
-    'name' in value
-  );
+  return value instanceof Object && 'handleWebhook' in value && 'name' in value;
 }
 
 function isStateAdapter(value: unknown): value is StateAdapter {
   return (
-    typeof value === 'object' &&
-    value !== null &&
+    value instanceof Object &&
     'get' in value &&
     'set' in value &&
     'delete' in value

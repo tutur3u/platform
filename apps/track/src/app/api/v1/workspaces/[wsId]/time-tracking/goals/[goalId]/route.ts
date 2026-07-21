@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
 import {
   normalizeWorkspaceId,
@@ -46,7 +43,6 @@ export async function PATCH(
     }
 
     const { wsId, goalId } = parsedParams.data;
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -55,8 +51,7 @@ export async function PATCH(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access
@@ -210,7 +205,6 @@ export async function DELETE(
     }
 
     const { wsId, goalId } = parsedParams.data;
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -219,8 +213,7 @@ export async function DELETE(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace access

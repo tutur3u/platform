@@ -554,7 +554,6 @@ export default function CalendarLabClientPage({
                         size="icon"
                         onClick={() => setCurrentStep((prev) => prev + 1)}
                         disabled={
-                          !simulationResult ||
                           currentStep >= playbackStepsWithEvents.length - 1
                         }
                         className="h-8 w-8"

@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
@@ -59,7 +56,6 @@ export async function GET(
 ) {
   try {
     const { wsId: id } = await params;
-    let supabase = await createClient(request);
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -67,8 +63,7 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = await normalizeWorkspaceId(id, supabase);
 
     // Verify workspace access
@@ -121,7 +116,6 @@ export async function POST(
 ) {
   try {
     const { wsId: id } = await params;
-    let supabase = await createClient(request);
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -129,8 +123,7 @@ export async function POST(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const normalizedWsId = await normalizeWorkspaceId(id, supabase);
 
     const memberCheck = await verifyWorkspaceMembershipType({

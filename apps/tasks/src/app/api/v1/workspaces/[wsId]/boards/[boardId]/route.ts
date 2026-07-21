@@ -18,13 +18,7 @@ const TASK_BOARD_NAME_EXISTS_ERROR =
   'A task board with this name already exists';
 
 function isUniqueViolation(error: unknown) {
-  return (
-    error !== null &&
-    error !== undefined &&
-    typeof error === 'object' &&
-    'code' in error &&
-    error.code === '23505'
-  );
+  return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
 function taskBoardNameExistsResponse() {

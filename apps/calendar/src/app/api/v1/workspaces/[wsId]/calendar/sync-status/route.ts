@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
@@ -23,14 +22,12 @@ export async function GET(
       );
     }
 
-    let supabase = await createClient(request);
     const auth = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: true,
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     const membership = await verifyWorkspaceMembershipType({
       wsId: wsId,
       userId: user.id,

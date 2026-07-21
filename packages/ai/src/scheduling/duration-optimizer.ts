@@ -542,12 +542,9 @@ export function calculateIdealStartTimeForTask(
   now: Date
 ): Date {
   // Effective slot start (must be >= now, rounded to next 15-min)
-  let effectiveSlotStart = new Date(slot.start);
-  if (now > slot.start) {
-    effectiveSlotStart = roundToNext15Minutes(now);
-  } else {
-    effectiveSlotStart = roundToNext15Minutes(slot.start);
-  }
+  const effectiveSlotStart = roundToNext15Minutes(
+    now > slot.start ? now : slot.start
+  );
 
   // Latest possible start time to fit the duration
   const latestStart = new Date(slot.end.getTime() - duration * 60000);

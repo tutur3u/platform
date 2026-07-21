@@ -182,7 +182,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             selected={currentDomain}
             mode="single"
             className="w-75"
-            placeholder={loading ? 'Loading domains...' : 'Filter by domain'}
+            placeholder="Filter by domain"
             onChange={(value) => {
               const selectedValue = Array.isArray(value) ? value[0] : value;
               router.push(
@@ -333,11 +333,9 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               </div>
             </>
           ) : (
-            !loading && (
-              <p className="text-center text-muted-foreground">
-                No uncrawled URLs found
-              </p>
-            )
+            <p className="text-center text-muted-foreground">
+              No uncrawled URLs found
+            </p>
           )}
         </div>
       </CardContent>

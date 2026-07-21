@@ -120,10 +120,7 @@ export function DatasetCrawler({
       headerRow: number,
       dataRow: number
     ) => {
-      let preview: { headers: string[]; preview: any[][]; error?: string } = {
-        headers: [],
-        preview: [],
-      };
+      let preview: { headers: string[]; preview: any[][]; error?: string };
       try {
         if (
           dataset.url?.toLowerCase().endsWith('.csv') ||

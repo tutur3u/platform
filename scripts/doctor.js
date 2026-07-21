@@ -702,10 +702,9 @@ async function collectDoctorChecks(deps = {}) {
 
   const checks = [checkNodeVersion(nodeVersion, { minMajor: minNodeMajor })];
 
-  let dockerOk = true;
   if (includeLocalServiceChecks) {
     const dockerCheck = checkDockerStatus(readDockerInfo());
-    dockerOk = dockerCheck.status === 'ok';
+    const dockerOk = dockerCheck.status === 'ok';
     checks.push(dockerCheck);
     checks.push(
       await checkSupabaseStatus({

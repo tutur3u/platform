@@ -191,13 +191,7 @@ export const PostItem = memo(function PostItem({
         </div>
         {groupId && (
           <div className="flex gap-2 text-start">
-            <Link
-              href={
-                groupId
-                  ? `/${wsId}/users/groups/${groupId}/posts/${post.id}`
-                  : '#'
-              }
-            >
+            <Link href={`/${wsId}/users/groups/${groupId}/posts/${post.id}`}>
               <Button
                 size="sm"
                 variant="outline"

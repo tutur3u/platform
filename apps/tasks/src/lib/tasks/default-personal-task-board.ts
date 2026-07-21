@@ -16,13 +16,7 @@ function normalizeTaskBoardName(name: string | null | undefined) {
 }
 
 function isUniqueViolation(error: unknown) {
-  return (
-    error !== null &&
-    error !== undefined &&
-    typeof error === 'object' &&
-    'code' in error &&
-    error.code === '23505'
-  );
+  return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
 function isDefaultPersonalTaskBoard(board: { name?: string | null }) {

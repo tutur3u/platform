@@ -57,7 +57,6 @@ async function handleGET(req: NextRequest) {
         const subscriptions = response.result?.items ?? [];
 
         if (subscriptions.length === 0) {
-          hasMore = false;
           break;
         }
 

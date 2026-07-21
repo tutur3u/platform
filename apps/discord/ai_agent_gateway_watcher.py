@@ -7,7 +7,6 @@ import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
-from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urlencode
@@ -368,8 +367,7 @@ class DiscordAiAgentGatewayWatcher:
                         break
             finally:
                 heartbeat_task.cancel()
-                with suppress(asyncio.CancelledError):
-                    await heartbeat_task
+                await asyncio.gather(heartbeat_task, return_exceptions=True)
 
     async def _heartbeat(self, ws: aiohttp.ClientWebSocketResponse, delay: float) -> None:
         while True:

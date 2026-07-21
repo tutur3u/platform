@@ -44,6 +44,11 @@ describe('UncrawledUrls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     class MockEventSource {
+      readonly url: string;
+
+      constructor(url: string | URL, _eventSourceInitDict?: EventSourceInit) {
+        this.url = url.toString();
+      }
       onmessage = null;
       close = vi.fn();
     }

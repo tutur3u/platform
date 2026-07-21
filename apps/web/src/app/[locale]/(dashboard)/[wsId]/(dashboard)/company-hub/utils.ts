@@ -43,16 +43,14 @@ export function calculateYearInfo(): YearInfo {
     quarterStartDate = quarterStartDate.year(fiscalYear).month(10);
   }
 
-  let quarterEndDate = quarterStartDate;
-  if (quarterIndex === 3) {
-    quarterEndDate = dayjs()
-      .year(fiscalYear + 1)
-      .month(1)
-      .date(1)
-      .startOf('day');
-  } else {
-    quarterEndDate = quarterStartDate.add(3, 'month');
-  }
+  const quarterEndDate =
+    quarterIndex === 3
+      ? dayjs()
+          .year(fiscalYear + 1)
+          .month(1)
+          .date(1)
+          .startOf('day')
+      : quarterStartDate.add(3, 'month');
 
   const totalDaysInQuarter = quarterEndDate.diff(quarterStartDate, 'day');
   const totalWeeksInQuarter = Math.ceil(totalDaysInQuarter / 7);

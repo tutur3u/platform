@@ -1,6 +1,5 @@
 import {
   createAdminClient,
-  createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
@@ -59,7 +58,6 @@ export async function POST(
   try {
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
@@ -68,8 +66,7 @@ export async function POST(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -207,7 +204,6 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 
@@ -217,8 +213,7 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,

@@ -41,7 +41,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations('ws-user-group-tags');
   const router = useRouter();
 
-  const { data: queryData, isPending } = useQuery({
+  const groupsQuery = useQuery({
     queryKey: ['workspaces', wsId, 'user-groups'],
     queryFn: async (): Promise<{ data: UserGroup[]; count: number }> => {
       const res = await fetch(`/api/v1/workspaces/${wsId}/users/groups`, {
@@ -51,8 +51,6 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
       return await res.json();
     },
   });
-
-  const userGroups = queryData?.data;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -146,14 +144,14 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
               icon={<Users className="mr-2 h-4 w-4" />}
               defaultValues={form.watch('group_ids')}
               options={
-                userGroups?.map((group) => ({
+                groupsQuery.data?.data.map((group) => ({
                   label: group.name || 'No name',
                   value: group.id,
                   count: group.amount,
                 })) || []
               }
               onSet={(value) => form.setValue('group_ids', value)}
-              disabled={isPending || !!data?.id}
+              disabled={groupsQuery.isPending || !!data?.id}
               align="center"
               alwaysEnableZero
               alwaysShowNumber

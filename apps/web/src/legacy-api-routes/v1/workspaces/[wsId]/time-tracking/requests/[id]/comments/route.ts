@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   resolveWorkspaceId,
@@ -35,7 +32,6 @@ export async function POST(
 
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get current user
@@ -44,8 +40,7 @@ export async function POST(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({
       wsId: resolvedWorkspaceId,
@@ -146,7 +141,6 @@ export async function GET(
   try {
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get current user
@@ -155,8 +149,7 @@ export async function GET(
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
-    supabase = auth.supabase;
-
+    const supabase = auth.supabase;
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({
       wsId: resolvedWorkspaceId,

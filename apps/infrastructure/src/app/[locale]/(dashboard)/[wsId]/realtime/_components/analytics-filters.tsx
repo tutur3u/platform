@@ -77,7 +77,7 @@ export function RealtimeAnalyticsFilters({
 
   const handleDatePreset = (preset: string) => {
     const now = new Date();
-    let startDate = new Date();
+    let startDate: Date;
 
     switch (preset) {
       case 'last_24h':

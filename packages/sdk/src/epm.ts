@@ -42,7 +42,7 @@ import type {
 import { externalProjectDeliveryOptionsSchema } from './types';
 
 function absolutizeUrl(baseUrl: string, value: string | null | undefined) {
-  if (!value) {
+  if (value === '' || value == null) {
     return value ?? null;
   }
 

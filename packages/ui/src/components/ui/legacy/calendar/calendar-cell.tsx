@@ -804,7 +804,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           maxWidth: 200,
           zIndex: 10000,
           whiteSpace: 'nowrap',
-          opacity: showTooltip ? 1 : 0,
+          opacity: 1,
           transition: 'opacity 0.15s',
         }}
       >

@@ -979,7 +979,7 @@ export function QuickTimeTracker({
                   }
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
-                    recentSessions?.[0] && !runningSession
+                    recentSessions?.[0]
                       ? 'border-blue-200 bg-linear-to-br from-blue-50 to-blue-100/50 hover:shadow-blue-500/20 hover:shadow-md active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
@@ -988,7 +988,7 @@ export function QuickTimeTracker({
                     <div
                       className={cn(
                         'shrink-0 rounded-full p-1 transition-colors',
-                        recentSessions?.[0] && !runningSession
+                        recentSessions?.[0]
                           ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
                           : 'bg-muted-foreground/20'
                       )}
@@ -996,7 +996,7 @@ export function QuickTimeTracker({
                       <RotateCcw
                         className={cn(
                           'h-3 w-3 transition-transform group-hover:rotate-12',
-                          recentSessions?.[0] && !runningSession
+                          recentSessions?.[0]
                             ? 'text-blue-600 dark:text-blue-400'
                             : 'text-muted-foreground'
                         )}
@@ -1006,7 +1006,7 @@ export function QuickTimeTracker({
                       <p
                         className={cn(
                           'font-medium text-xs',
-                          recentSessions?.[0] && !runningSession
+                          recentSessions?.[0]
                             ? 'text-blue-700 dark:text-blue-300'
                             : 'text-muted-foreground'
                         )}
@@ -1057,7 +1057,7 @@ export function QuickTimeTracker({
                   }
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
-                    nextTaskData?.nextTask && !runningSession
+                    nextTaskData?.nextTask
                       ? 'border-purple-200 bg-linear-to-br from-purple-50 to-purple-100/50 hover:shadow-md hover:shadow-purple-500/20 active:scale-[0.98] dark:border-purple-800 dark:from-purple-950/30 dark:to-purple-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
@@ -1066,7 +1066,7 @@ export function QuickTimeTracker({
                     <div
                       className={cn(
                         'shrink-0 rounded-full p-1 transition-colors',
-                        nextTaskData?.nextTask && !runningSession
+                        nextTaskData?.nextTask
                           ? 'bg-purple-500/20 group-hover:bg-purple-500/30'
                           : 'bg-muted-foreground/20'
                       )}
@@ -1074,7 +1074,7 @@ export function QuickTimeTracker({
                       <CheckSquare
                         className={cn(
                           'h-3 w-3 transition-transform group-hover:scale-110',
-                          nextTaskData?.nextTask && !runningSession
+                          nextTaskData?.nextTask
                             ? 'text-purple-600 dark:text-purple-400'
                             : 'text-muted-foreground'
                         )}
@@ -1084,7 +1084,7 @@ export function QuickTimeTracker({
                       <p
                         className={cn(
                           'font-medium text-xs',
-                          nextTaskData?.nextTask && !runningSession
+                          nextTaskData?.nextTask
                             ? 'text-purple-700 dark:text-purple-300'
                             : 'text-muted-foreground'
                         )}
