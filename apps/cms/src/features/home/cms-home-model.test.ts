@@ -1,7 +1,4 @@
-import type {
-  ExternalProjectAttentionItem,
-  ExternalProjectSummary,
-} from '@tuturuuu/types';
+import type { ExternalProjectAttentionItem } from '@tuturuuu/types';
 import { describe, expect, it } from 'vitest';
 import { getCmsHomeAttentionItems } from './cms-home-model';
 import {
@@ -38,7 +35,7 @@ describe('CMS home model', () => {
         ],
         scheduledSoon: [attentionItem('scheduled', 'scheduled_soon')],
       },
-    } as ExternalProjectSummary;
+    };
 
     expect(
       getCmsHomeAttentionItems(summary).map((item) => item.entryId)
@@ -54,7 +51,7 @@ describe('CMS home model', () => {
         recentlyImportedUnpublished: [],
         scheduledSoon: [],
       },
-    } as ExternalProjectSummary;
+    };
 
     expect(getCmsHomeAttentionItems(summary)).toHaveLength(6);
   });

@@ -5,9 +5,14 @@ import type {
 
 const HOME_ATTENTION_LIMIT = 6;
 
-export function getCmsHomeAttentionItems(
-  summary: ExternalProjectSummary
-): ExternalProjectAttentionItem[] {
+type CmsHomeAttentionQueues = Pick<
+  ExternalProjectSummary['queues'],
+  'draftsMissingMedia' | 'recentlyImportedUnpublished' | 'scheduledSoon'
+>;
+
+export function getCmsHomeAttentionItems(summary: {
+  queues: CmsHomeAttentionQueues;
+}): ExternalProjectAttentionItem[] {
   return [
     ...summary.queues.draftsMissingMedia,
     ...summary.queues.scheduledSoon,
