@@ -75,7 +75,7 @@ test('migrated shared hooks no longer import the deprecated Supabase browser cli
     'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/workspace-select-dialog.tsx',
     'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/use-workspace-tasks.ts',
     'apps/track/src/app/[locale]/(dashboard)/[wsId]/components/time-tracker-content.tsx',
-    'apps/web/src/app/[locale]/(marketing)/contact/page.tsx',
+    'apps/web/src/app/[locale]/(marketing)/contact/contact-form.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/inquiries/inquiry-detail-modal.tsx',
     'packages/tasks-ui/src/calendar/components/priority-view.tsx',
     'apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/chat.tsx',

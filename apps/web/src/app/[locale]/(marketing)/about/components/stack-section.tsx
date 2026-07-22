@@ -1,4 +1,4 @@
-import { Brain, Code2, Package, Server } from '@tuturuuu/icons/lucide';
+import { Brain, Code2, Package, Server } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
 import { RevealGroup, RevealItem } from '@/components/landing/shared/reveal';

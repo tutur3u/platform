@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 39,
+        "legacyNext": 45,
         "migrated": 99,
-        "percentComplete": 72.14,
-        "remaining": 39,
+        "percentComplete": 69.18,
+        "remaining": 45,
         "terminal": 101,
-        "total": 140,
+        "total": 146,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 47,
+        "legacyNext": 53,
         "migrated": 148,
-        "percentComplete": 76.14,
-        "remaining": 47,
+        "percentComplete": 73.89,
+        "remaining": 53,
         "terminal": 150,
-        "total": 197,
+        "total": 203,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 532,
+      "legacyNext": 538,
       "migrated": 215,
-      "percentComplete": 30,
-      "remaining": 532,
+      "percentComplete": 29.77,
+      "remaining": 538,
       "terminal": 228,
-      "total": 760,
+      "total": 766,
       "unknownStatus": 0
     }
   },
@@ -6858,6 +6858,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/products/chat:apps/web/src/app/[locale]/(marketing)/products/chat/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/chat",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/chat/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/products/crm:apps/web/src/app/[locale]/(marketing)/products/crm/page.tsx",
       "kind": "page",
       "methods": [],
@@ -6891,6 +6900,24 @@
       "routePath": "/:locale/products/finance",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/finance/page.tsx",
       "status": "migrated",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/products/forms:apps/web/src/app/[locale]/(marketing)/products/forms/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/forms",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/forms/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/products/hive:apps/web/src/app/[locale]/(marketing)/products/hive/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/hive",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/hive/page.tsx",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -6930,12 +6957,39 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/products/qr:apps/web/src/app/[locale]/(marketing)/products/qr/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/qr",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/qr/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/products/storefront:apps/web/src/app/[locale]/(marketing)/products/storefront/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/storefront",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/storefront/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/products/tasks:apps/web/src/app/[locale]/(marketing)/products/tasks/page.tsx",
       "kind": "page",
       "methods": [],
       "routePath": "/:locale/products/tasks",
       "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/tasks/page.tsx",
       "status": "migrated",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/products/track:apps/web/src/app/[locale]/(marketing)/products/track/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products/track",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/track/page.tsx",
+      "status": "legacy-next",
       "targetOwner": "tanstack-start"
     },
     {
@@ -7258,7 +7312,7 @@
     "apiRoutes": 551,
     "cronRoutes": 7,
     "layouts": 54,
-    "pages": 140,
+    "pages": 146,
     "routeHandlers": 563,
     "methodCounts": {
       "GET": 282,
@@ -7269,6 +7323,6 @@
       "DELETE": 97,
       "OPTIONS": 23
     },
-    "total": 760
+    "total": 766
   }
 }

@@ -8,7 +8,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
-} from '@tuturuuu/icons/lucide';
+} from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
 import { CountUp } from '@/components/landing/shared/count-up';

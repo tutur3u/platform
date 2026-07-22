@@ -5,7 +5,7 @@ import {
   Shield,
   Target,
   Zap,
-} from '@tuturuuu/icons/lucide';
+} from '@tuturuuu/icons/lucide-static';
 import type { ComponentType } from 'react';
 import { RevealGroup, RevealItem } from '@/components/landing/shared/reveal';
 import { SectionShell } from '@/components/landing/shared/section-shell';

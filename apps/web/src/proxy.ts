@@ -483,6 +483,16 @@ function handlePublicMarketingRedirectRoute(
     );
   }
 
+  if (
+    pathnameWithoutLocale === '/products/meet-together' ||
+    pathnameWithoutLocale.startsWith('/products/meet-together/')
+  ) {
+    return redirectToPath(
+      req,
+      pathnameWithoutLocale.replace('/products/meet-together', '/meet-together')
+    );
+  }
+
   return null;
 }
 

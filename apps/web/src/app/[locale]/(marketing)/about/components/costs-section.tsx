@@ -1,4 +1,4 @@
-import { Brain, FileText, Lightbulb } from '@tuturuuu/icons/lucide';
+import { Brain, FileText, Lightbulb } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
 import { CountUp } from '@/components/landing/shared/count-up';

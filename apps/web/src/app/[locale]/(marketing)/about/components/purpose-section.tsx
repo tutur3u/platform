@@ -1,4 +1,4 @@
-import { Rocket, Target } from '@tuturuuu/icons/lucide';
+import { Rocket, Target } from '@tuturuuu/icons/lucide-static';
 import { RevealGroup, RevealItem } from '@/components/landing/shared/reveal';
 import { SectionShell } from '@/components/landing/shared/section-shell';
 import { SurfaceCard } from '@/components/landing/shared/surface-card';

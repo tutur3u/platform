@@ -1,4 +1,4 @@
-import { Globe, Layers, Mail } from '@tuturuuu/icons/lucide';
+import { Globe, Layers, Mail } from '@tuturuuu/icons/lucide-static';
 import { Reveal } from '@/components/landing/shared/reveal';
 import { Panel, SectionShell } from '@/components/landing/shared/section-shell';
 import { useAboutTranslations } from './use-about-translations';

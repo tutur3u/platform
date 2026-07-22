@@ -80,6 +80,27 @@ const modelsClientSource = source(
 const contributorsPageSource = source(
   'src/app/[locale]/(marketing)/contributors/page.tsx'
 );
+const aboutComponentSources = [
+  'src/app/[locale]/(marketing)/about/components/beliefs-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/capabilities-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/closing-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/community-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/company-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/costs-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/ecosystem-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/hero-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/journey-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/purpose-section.tsx',
+  'src/app/[locale]/(marketing)/about/components/stack-section.tsx',
+].map(source);
+const contactComponentSources = [
+  'src/app/[locale]/(marketing)/contact/contact-aside.tsx',
+  'src/app/[locale]/(marketing)/contact/contact-channels.tsx',
+  'src/app/[locale]/(marketing)/contact/contact-closing.tsx',
+  'src/app/[locale]/(marketing)/contact/contact-exchange.tsx',
+  'src/app/[locale]/(marketing)/contact/contact-form.tsx',
+  'src/app/[locale]/(marketing)/contact/contact-hero.tsx',
+].map(source);
 const contributorsAnalyticsSource = source(
   'src/app/[locale]/(marketing)/contributors/contribution-analytics.tsx'
 );
@@ -316,11 +337,16 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps public marketing page icons on the static lucide subpath', () => {
-    expect(aboutPageSource).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-    expect(aboutPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons/lucide')
+    for (const sourceText of [aboutPageSource, ...aboutComponentSources]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(
+        staticImportPattern('@tuturuuu/icons/lucide')
+      );
+    }
+
+    expect(aboutComponentSources.join('\n')).toContain(
+      '@tuturuuu/icons/lucide-static'
     );
-    expect(aboutPageSource).toContain('@tuturuuu/icons/lucide-static');
   });
 
   it('keeps the about page off next link', () => {
@@ -416,10 +442,13 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the public contact page off the icon package root', () => {
-    expect(contactPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    for (const sourceText of [contactPageSource, ...contactComponentSources]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+    }
+
+    expect(contactComponentSources.join('\n')).toContain(
+      '@tuturuuu/icons/lucide'
     );
-    expect(contactPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps the public women-in-tech page off the icon package root', () => {

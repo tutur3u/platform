@@ -8,7 +8,7 @@ import {
   MessageSquare,
   Sparkles,
   Users,
-} from '@tuturuuu/icons/lucide';
+} from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
 import {

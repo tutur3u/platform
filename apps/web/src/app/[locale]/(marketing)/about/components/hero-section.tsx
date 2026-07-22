@@ -1,4 +1,4 @@
-import { ArrowRight, Globe, Sparkles } from '@tuturuuu/icons/lucide';
+import { ArrowRight, Globe, Sparkles } from '@tuturuuu/icons/lucide-static';
 import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
 import { useAboutTranslations } from './use-about-translations';
 
