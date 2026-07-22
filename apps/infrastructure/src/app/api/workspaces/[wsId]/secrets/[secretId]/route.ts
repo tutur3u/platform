@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
 
 interface Params {
   params: Promise<{ secretId: string; wsId: string }>;
@@ -14,7 +14,8 @@ const secretUpdateSchema = z
   .refine((value) => Object.keys(value).length > 0, 'No updates provided');
 
 export async function PUT(req: Request, { params }: Params) {
-  const auth = await authorizeInfrastructureAdminRequest();
+  const { secretId, wsId } = await params;
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
   if (!auth.ok) return auth.response;
 
   const parsed = secretUpdateSchema.safeParse(
@@ -27,7 +28,6 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { secretId, wsId } = await params;
   const { data, error } = await auth.sbAdmin
     .from('workspace_secrets')
     .update(parsed.data)
@@ -54,10 +54,10 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_: Request, { params }: Params) {
-  const auth = await authorizeInfrastructureAdminRequest();
+  const { secretId, wsId } = await params;
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
   if (!auth.ok) return auth.response;
 
-  const { secretId, wsId } = await params;
   const { data, error } = await auth.sbAdmin
     .from('workspace_secrets')
     .delete()

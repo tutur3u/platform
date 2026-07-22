@@ -1,6 +1,6 @@
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -13,10 +13,10 @@ const secretSchema = z.object({
 
 export async function GET(_: Request, { params }: Params) {
   await connection();
-  const auth = await authorizeInfrastructureAdminRequest();
+  const { wsId } = await params;
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
   if (!auth.ok) return auth.response;
 
-  const { wsId } = await params;
   const { data, error } = await auth.sbAdmin
     .from('workspace_secrets')
     .select('*')
@@ -35,7 +35,8 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const auth = await authorizeInfrastructureAdminRequest();
+  const { wsId } = await params;
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
   if (!auth.ok) return auth.response;
 
   const parsed = secretSchema.safeParse(await req.json().catch(() => null));
@@ -46,7 +47,6 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { wsId } = await params;
   const { error } = await auth.sbAdmin.from('workspace_secrets').insert({
     ...parsed.data,
     ws_id: wsId,

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getSatelliteAppSessionUser = vi.fn();
 const createAdminClient = vi.fn();
-const verifyWorkspaceMembershipType = vi.fn();
+const getPermissions = vi.fn();
 
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser,
@@ -13,7 +13,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  verifyWorkspaceMembershipType,
+  getPermissions,
 }));
 
 describe('authorizeAiCreditsAdminRequest', () => {
@@ -32,28 +32,35 @@ describe('authorizeAiCreditsAdminRequest', () => {
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('rejects authenticated users outside the root workspace', async () => {
+  it('rejects authenticated users without infrastructure access', async () => {
     const sbAdmin = { from: vi.fn() };
     getSatelliteAppSessionUser.mockResolvedValue({
       email: 'member@example.com',
       id: 'user-1',
     });
     createAdminClient.mockResolvedValue(sbAdmin);
-    verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
+    getPermissions.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(false),
+    });
     const { authorizeAiCreditsAdminRequest } = await import('./access');
 
     const result = await authorizeAiCreditsAdminRequest();
 
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.response.status).toBe(403);
+    expect(createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('returns a no-cookie admin client for root workspace members', async () => {
+  it('returns a no-cookie admin client for infrastructure viewers', async () => {
     const sbAdmin = { from: vi.fn() };
     const user = { email: 'admin@tuturuuu.com', id: 'user-1' };
     getSatelliteAppSessionUser.mockResolvedValue(user);
     createAdminClient.mockResolvedValue(sbAdmin);
-    verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+    getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'view_infrastructure'
+      ),
+    });
     const { authorizeAiCreditsAdminRequest } = await import('./access');
 
     const result = await authorizeAiCreditsAdminRequest();

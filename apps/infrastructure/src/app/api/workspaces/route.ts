@@ -3,7 +3,9 @@ import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-
 
 export async function GET() {
   await connection();
-  const auth = await authorizeInfrastructureAdminRequest();
+  const auth = await authorizeInfrastructureAdminRequest(
+    'manage_workspace_roles'
+  );
   if (!auth.ok) return auth.response;
 
   const { data, error } = await auth.sbAdmin
