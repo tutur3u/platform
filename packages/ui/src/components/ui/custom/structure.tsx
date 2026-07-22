@@ -17,6 +17,7 @@ interface StructureProps {
   sidebarContent?: ReactNode;
   actions?: ReactNode;
   userPopover?: ReactNode;
+  sidebarUtility?: ReactNode;
   feedbackButton?: ReactNode;
   children: ReactNode;
   onMouseEnter?: () => void;
@@ -39,6 +40,7 @@ export function Structure({
   sidebarContent,
   actions,
   userPopover,
+  sidebarUtility,
   feedbackButton,
   children,
   onMouseEnter,
@@ -163,6 +165,16 @@ export function Structure({
               <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden overscroll-contain">
                 {sidebarContent}
               </div>
+              {sidebarUtility && (
+                <div
+                  className={cn(
+                    'flex border-foreground/10 border-t p-2',
+                    isCollapsed ? 'justify-center' : ''
+                  )}
+                >
+                  {sidebarUtility}
+                </div>
+              )}
               {feedbackButton && (
                 <div
                   className={cn(

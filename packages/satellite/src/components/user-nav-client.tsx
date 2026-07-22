@@ -10,7 +10,6 @@ import {
   PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
-  Settings,
   SquareMousePointer,
   User,
 } from '@tuturuuu/icons';
@@ -51,6 +50,8 @@ import { LanguageWrapper } from './language-wrapper';
 import { claimSettingsDialogIntent } from './settings-dialog-intent';
 import { SystemLanguageWrapper } from './system-language-wrapper';
 import { ThemeDropdownItems } from './theme-dropdown-items';
+import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
+import { useWorkspaceSelector } from './workspace-selector-context';
 
 interface UserNavClientProps {
   user: WorkspaceUser | null;
@@ -75,6 +76,7 @@ export default function UserNavClient({
   const t = useTranslations();
 
   const sidebar = useContext(SidebarContext);
+  const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<string>();
@@ -123,6 +125,12 @@ export default function UserNavClient({
     (process.env.NODE_ENV === 'production'
       ? 'https://tuturuuu.com'
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
+  const secondaryLabel = resolveUserNavSecondaryLabel({
+    email: user?.email,
+    workspaceName: workspaceSelector?.workspace.name,
+    workspacePersonal: workspaceSelector?.workspace.personal ?? undefined,
+    workspaceSelectorVisible: workspaceSelector?.visible ?? true,
+  });
 
   const handleLogout = async () => {
     await logoutCurrentWebAccountWithInternalApi({
@@ -186,7 +194,7 @@ export default function UserNavClient({
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
                 <div className="line-clamp-1 break-all text-xs opacity-70">
-                  {user?.email}
+                  {secondaryLabel}
                 </div>
               </div>
             )}
@@ -209,6 +217,17 @@ export default function UserNavClient({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          {workspaceSelector?.renderWorkspaceSelect ? (
+            <>
+              <div className="px-1.5 pb-1.5">
+                {workspaceSelector.renderWorkspaceSelect({
+                  isCollapsed: false,
+                  standalone: true,
+                })}
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          ) : null}
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
               <a
@@ -319,15 +338,6 @@ export default function UserNavClient({
               <AlertTriangle className="h-4 w-4 text-dynamic-yellow" />
               <span>{t('common.report-problem')}</span>
             </DropdownMenuItem>
-            {settingsDialog && (
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={openSettings}
-              >
-                <Settings className="h-4 w-4" />
-                <span>{t('common.settings')}</span>
-              </DropdownMenuItem>
-            )}
           </DropdownMenuGroup>
           {user && (
             <>

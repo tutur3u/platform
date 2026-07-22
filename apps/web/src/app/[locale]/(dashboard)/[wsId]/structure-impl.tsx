@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AppsLauncherDialog } from '@tuturuuu/satellite';
+import { AppsLauncherDialog, SidebarSettingsButton } from '@tuturuuu/satellite';
 import {
   FixedAppBrand,
   WorkspaceSelectVisibilityToggle,
@@ -1022,6 +1022,12 @@ export function StructureImpl({
           sidebarContent={sidebarContent}
           actions={actions}
           userPopover={userPopover}
+          sidebarUtility={
+            <SidebarSettingsButton
+              isCollapsed={isCollapsed}
+              label={t('common.settings')}
+            />
+          }
           feedbackButton={
             <SidebarFooterActions
               wsId={wsId}

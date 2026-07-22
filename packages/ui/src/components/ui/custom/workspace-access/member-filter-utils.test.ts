@@ -5,6 +5,7 @@ import {
   getEffectiveMemberPermissionIds,
   getMemberFilterOptions,
   parseInviteEmails,
+  shouldShowProtectedMemberStatus,
 } from './member-filter-utils';
 
 function member(
@@ -171,5 +172,18 @@ describe('workspace access member filter utilities', () => {
     });
 
     expect([...getEffectiveMemberPermissionIds(disabled)]).toEqual([]);
+  });
+
+  it('only labels the actual creator as a protected member', () => {
+    expect(
+      shouldShowProtectedMemberStatus({
+        isCreator: true,
+      })
+    ).toBe(true);
+    expect(
+      shouldShowProtectedMemberStatus({
+        isCreator: false,
+      })
+    ).toBe(false);
   });
 });

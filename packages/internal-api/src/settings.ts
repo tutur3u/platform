@@ -18,6 +18,7 @@ export interface WorkspacePermissionsSummary {
   manage_subscription: boolean;
   manage_workspace_settings: boolean;
   manage_workspace_members: boolean;
+  manage_workspace_roles: boolean;
 }
 
 export interface WorkspaceRolesListResponse {

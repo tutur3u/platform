@@ -8,12 +8,12 @@ import {
   PanelLeft,
   PanelLeftClose,
   PanelLeftOpen,
-  Settings,
   SquareMousePointer,
   Terminal,
   User,
   Users,
 } from '@tuturuuu/icons/lucide-static';
+import { resolveUserNavSecondaryLabel } from '@tuturuuu/satellite/user-nav-metadata';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -61,7 +61,6 @@ import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
-import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 import type { UserNavSettingsDialogProps } from './user-nav-settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 
@@ -307,6 +306,7 @@ export default function UserNavClient({
               </p>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
           {wsId && (
             <>
               <div className="px-1.5 pb-1.5">
@@ -424,15 +424,13 @@ export default function UserNavClient({
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <ReportProblemMenuItem />
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => openSettingsDialog()}
-            >
-              <Settings className="h-4 w-4" />
-              <span>{t('common.settings')}</span>
-            </DropdownMenuItem>
           </DropdownMenuGroup>
-          <InviteMembersMenuItem />
+          {wsId && (
+            <>
+              <DropdownMenuSeparator />
+              <InviteMembersMenuItem />
+            </>
+          )}
           <DropdownMenuSeparator />
           {accounts.length >= 2 ? (
             <DropdownMenuItem

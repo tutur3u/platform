@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, CreditCard, Loader2 } from '@tuturuuu/icons';
 import {
-  checkWorkspacePermission,
   getWorkspace,
   getWorkspaceMemberSettings,
   getWorkspacePermissionsSummary,
@@ -42,11 +41,14 @@ export function SatelliteWorkspaceSettingsPanel({
   const permissionsQuery = useQuery({
     enabled: Boolean(workspace?.id),
     queryFn: async () => {
-      const [summary, roles] = await Promise.all([
-        getWorkspacePermissionsSummary(workspace?.id ?? ''),
-        checkWorkspacePermission(workspace?.id ?? '', 'manage_workspace_roles'),
-      ]);
-      return { ...summary, manage_workspace_roles: roles.hasPermission };
+      const summary = await getWorkspacePermissionsSummary(workspace?.id ?? '');
+
+      return {
+        ...summary,
+        manage_workspace_roles:
+          'manage_workspace_roles' in summary &&
+          summary.manage_workspace_roles === true,
+      };
     },
     queryKey: ['workspace-settings-permissions', workspace?.id],
     staleTime: 60_000,

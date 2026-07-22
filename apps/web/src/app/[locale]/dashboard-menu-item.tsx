@@ -4,7 +4,6 @@ import { getCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -21,28 +20,25 @@ export default function DashboardMenuItem() {
   const defaultWorkspace = defaultWorkspaceQuery.data;
 
   return (
-    <>
-      <DropdownMenuSeparator />
-      <DropdownMenuGroup>
-        <Link href={`/${defaultWorkspace?.id || 'onboarding'}`}>
+    <DropdownMenuGroup>
+      <Link href={`/${defaultWorkspace?.id || 'onboarding'}`}>
+        <DropdownMenuItem className="cursor-pointer">
+          <ActivitySquare className="h-4 w-4 text-dynamic-green" />
+          <span>{t('dashboard')}</span>
+        </DropdownMenuItem>
+      </Link>
+      {DEV_MODE && (
+        <Link
+          href="http://localhost:8003/project/default/editor"
+          target="_blank"
+        >
           <DropdownMenuItem className="cursor-pointer">
-            <ActivitySquare className="h-4 w-4 text-dynamic-green" />
-            <span>{t('dashboard')}</span>
+            <Database className="h-4 w-4 text-dynamic-yellow" />
+            <span>{t('local_database')}</span>
           </DropdownMenuItem>
         </Link>
-        {DEV_MODE && (
-          <Link
-            href="http://localhost:8003/project/default/editor"
-            target="_blank"
-          >
-            <DropdownMenuItem className="cursor-pointer">
-              <Database className="h-4 w-4 text-dynamic-yellow" />
-              <span>{t('local_database')}</span>
-            </DropdownMenuItem>
-          </Link>
-        )}
-      </DropdownMenuGroup>
-    </>
+      )}
+    </DropdownMenuGroup>
   );
 }
 

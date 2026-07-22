@@ -22,6 +22,7 @@ import {
 } from '../context/sidebar-context';
 import { AppsLauncherDialog } from './apps-launcher';
 import type { AppBrandId } from './fixed-app-brand';
+import { SidebarSettingsButton } from './sidebar-settings-button';
 import { SidebarStructureContent } from './sidebar-structure-content';
 import {
   SidebarStructureHeader,
@@ -33,6 +34,7 @@ import {
   type NavigationState,
   type WorkspaceSelectRenderer,
 } from './sidebar-structure-utils';
+import { WorkspaceSelectorProvider } from './workspace-selector-context';
 
 export interface SidebarStructureProps {
   actions: ReactNode;
@@ -243,88 +245,100 @@ export function SidebarStructure({
         onOpenChange={setAppsLauncherOpen}
         open={appsLauncherOpen}
       />
-      <BaseStructure
-        actions={actions}
-        feedbackButton={
-          <SidebarFooterActions
-            isCollapsed={isCollapsed}
-            showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
-            upgradeExternal={upgradeExternal}
-            upgradeHref={upgradeHref}
-            wsId={wsId}
-          />
-        }
-        header={null}
-        hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
-        isCollapsed={isCollapsed}
-        mobileHeader={
-          <SidebarStructureMobileHeader
-            appHref={appHref ?? `/${wsId}`}
-            appId={appId}
-            brandHref={brandHref}
-            hideWorkspaceSelectLabel={t(
-              'command_launcher.hide_workspace_selector'
-            )}
-            launcherLabel={t('command_launcher.apps')}
-            onOpenApps={() => setAppsLauncherOpen(true)}
-            onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
-            showWorkspaceSelectLabel={t(
-              'command_launcher.show_workspace_selector'
-            )}
-            workspaceSelectVisible={showWorkspaceSelect}
-          />
-        }
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        overlayOnExpand={behavior === 'hover'}
-        sidebarHidden={behavior === 'hidden'}
-        sidebarCollapsedWidth={sidebarCollapsedWidth}
-        sidebarExpandedWidth={sidebarExpandedWidth}
-        sidebarHeaderClassName={sidebarHeaderClassName}
-        sidebarHeaderHeight={sidebarHeaderHeight}
-        setIsCollapsed={handleToggle}
-        sidebarContent={
-          <SidebarStructureContent
-            backButton={backButton}
-            currentTitle={currentTitle}
-            extraContent={extraContent}
-            filteredCurrentLinks={filteredCurrentLinks}
-            isCollapsed={isCollapsed}
-            navState={navState}
-            setIsCollapsed={setIsCollapsed}
-            setNavState={setNavState}
-            workspaceSelect={workspaceSelect}
-            workspaceSelectVisible={showWorkspaceSelect}
-            wsId={wsId}
-          />
-        }
-        sidebarHeader={
-          <SidebarStructureHeader
-            actions={brandActions}
-            appHref={appHref ?? `/${wsId}`}
-            appId={appId}
-            brandHref={brandHref}
-            hideWorkspaceSelectLabel={t(
-              'command_launcher.hide_workspace_selector'
-            )}
-            isCollapsed={isCollapsed}
-            launcherLabel={t('command_launcher.apps')}
-            onOpenApps={() => setAppsLauncherOpen(true)}
-            onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
-            showWorkspaceSelectLabel={t(
-              'command_launcher.show_workspace_selector'
-            )}
-            workspaceSelectVisible={showWorkspaceSelect}
-          />
-        }
-        userPopover={userPopover}
+      <WorkspaceSelectorProvider
+        renderWorkspaceSelect={workspaceSelect}
+        visible={showWorkspaceSelect}
+        workspace={currentWorkspace}
       >
-        {childContainerClassName ? (
-          <div className={childContainerClassName}>{children}</div>
-        ) : (
-          children
-        )}
-      </BaseStructure>
+        <BaseStructure
+          actions={actions}
+          feedbackButton={
+            <SidebarFooterActions
+              isCollapsed={isCollapsed}
+              showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+              upgradeExternal={upgradeExternal}
+              upgradeHref={upgradeHref}
+              wsId={wsId}
+            />
+          }
+          header={null}
+          hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+          isCollapsed={isCollapsed}
+          mobileHeader={
+            <SidebarStructureMobileHeader
+              appHref={appHref ?? `/${wsId}`}
+              appId={appId}
+              brandHref={brandHref}
+              hideWorkspaceSelectLabel={t(
+                'command_launcher.hide_workspace_selector'
+              )}
+              launcherLabel={t('command_launcher.apps')}
+              onOpenApps={() => setAppsLauncherOpen(true)}
+              onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
+              showWorkspaceSelectLabel={t(
+                'command_launcher.show_workspace_selector'
+              )}
+              workspaceSelectVisible={showWorkspaceSelect}
+            />
+          }
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          overlayOnExpand={behavior === 'hover'}
+          sidebarHidden={behavior === 'hidden'}
+          sidebarCollapsedWidth={sidebarCollapsedWidth}
+          sidebarExpandedWidth={sidebarExpandedWidth}
+          sidebarHeaderClassName={sidebarHeaderClassName}
+          sidebarHeaderHeight={sidebarHeaderHeight}
+          setIsCollapsed={handleToggle}
+          sidebarContent={
+            <SidebarStructureContent
+              backButton={backButton}
+              currentTitle={currentTitle}
+              extraContent={extraContent}
+              filteredCurrentLinks={filteredCurrentLinks}
+              isCollapsed={isCollapsed}
+              navState={navState}
+              setIsCollapsed={setIsCollapsed}
+              setNavState={setNavState}
+              workspaceSelect={workspaceSelect}
+              workspaceSelectVisible={showWorkspaceSelect}
+              wsId={wsId}
+            />
+          }
+          sidebarHeader={
+            <SidebarStructureHeader
+              actions={brandActions}
+              appHref={appHref ?? `/${wsId}`}
+              appId={appId}
+              brandHref={brandHref}
+              hideWorkspaceSelectLabel={t(
+                'command_launcher.hide_workspace_selector'
+              )}
+              isCollapsed={isCollapsed}
+              launcherLabel={t('command_launcher.apps')}
+              onOpenApps={() => setAppsLauncherOpen(true)}
+              onToggleWorkspaceSelect={handleToggleWorkspaceSelect}
+              showWorkspaceSelectLabel={t(
+                'command_launcher.show_workspace_selector'
+              )}
+              workspaceSelectVisible={showWorkspaceSelect}
+            />
+          }
+          userPopover={userPopover}
+          sidebarUtility={
+            <SidebarSettingsButton
+              isCollapsed={isCollapsed}
+              label={t('common.settings')}
+            />
+          }
+        >
+          {childContainerClassName ? (
+            <div className={childContainerClassName}>{children}</div>
+          ) : (
+            children
+          )}
+        </BaseStructure>
+      </WorkspaceSelectorProvider>
     </>
   );
 }

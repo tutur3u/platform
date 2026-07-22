@@ -60,6 +60,14 @@ export function getAvailableRolesForMember(
   );
 }
 
+export function shouldShowProtectedMemberStatus({
+  isCreator,
+}: {
+  isCreator: boolean;
+}) {
+  return isCreator;
+}
+
 export function sortMembers(
   members: InternalApiEnhancedWorkspaceMember[]
 ): InternalApiEnhancedWorkspaceMember[] {

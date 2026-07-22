@@ -1,9 +1,11 @@
 export { SatelliteAccountSwitcherMenu } from './components/account-switcher-menu';
 export { AppsLauncherDialog } from './components/apps-launcher';
+export { SidebarSettingsButton } from './components/sidebar-settings-button';
 export {
   SidebarStructure,
   type SidebarStructureProps,
 } from './components/sidebar-structure';
+export { resolveUserNavSecondaryLabel } from './components/user-nav-metadata';
 export { SatelliteWorkspaceShell } from './components/workspace-shell';
 export {
   LOCALE_COOKIE_NAME,

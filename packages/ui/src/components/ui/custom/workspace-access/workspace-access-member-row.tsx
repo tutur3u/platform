@@ -24,6 +24,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import {
   getAvailableRolesForMember,
   getMemberDisplayName,
+  shouldShowProtectedMemberStatus,
 } from './member-filter-utils';
 import type { WorkspaceAccessLabels, WorkspaceAccessRole } from './types';
 
@@ -252,7 +253,9 @@ export function WorkspaceAccessMemberRow({
                   {labels.removeMemberAction}
                 </span>
               </Button>
-            ) : (
+            ) : shouldShowProtectedMemberStatus({
+                isCreator: member.is_creator,
+              }) ? (
               <div className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5">
                 <ShieldUser className="h-3.5 w-3.5" />
                 <span className="hidden text-xs sm:inline">
@@ -262,7 +265,7 @@ export function WorkspaceAccessMemberRow({
                   {labels.protectedMemberLabel}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

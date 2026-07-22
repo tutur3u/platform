@@ -1,5 +1,5 @@
-import { resolveUserNavSecondaryLabel } from '@tuturuuu/satellite/user-nav-metadata';
 import { describe, expect, it } from 'vitest';
+import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 
 const baseInput = {
   email: 'member@example.com',
@@ -9,11 +9,11 @@ const baseInput = {
 };
 
 describe('resolveUserNavSecondaryLabel', () => {
-  it('uses the workspace name when the selector is hidden', () => {
+  it('shows the workspace name when its sidebar selector is hidden', () => {
     expect(resolveUserNavSecondaryLabel(baseInput)).toBe('Studio North');
   });
 
-  it('uses email while the workspace selector is visible', () => {
+  it('shows the email when the sidebar workspace selector is visible', () => {
     expect(
       resolveUserNavSecondaryLabel({
         ...baseInput,
@@ -22,17 +22,14 @@ describe('resolveUserNavSecondaryLabel', () => {
     ).toBe('member@example.com');
   });
 
-  it('always uses email in a personal workspace', () => {
+  it('does not replace the email for personal workspaces', () => {
     expect(
-      resolveUserNavSecondaryLabel({
-        ...baseInput,
-        workspacePersonal: true,
-      })
+      resolveUserNavSecondaryLabel({ ...baseInput, workspacePersonal: true })
     ).toBe('member@example.com');
   });
 
-  it.each(['workspace@example.com', 'workspace@example'])(
-    'falls back to email for email-like workspace name %s',
+  it.each(['owner@example.com', 'owner@', '  '])(
+    'does not expose an email-like workspace name: %s',
     (workspaceName) => {
       expect(
         resolveUserNavSecondaryLabel({ ...baseInput, workspaceName })
