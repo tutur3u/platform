@@ -65,16 +65,16 @@ export function HeroAtmosphere() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
       {/* Primary bloom — sits behind the headline */}
-      <div className="absolute -top-40 left-1/2 h-[42rem] w-[52rem] -translate-x-1/2 animate-bloom-drift rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--purple)_38%,transparent),transparent)] opacity-50 blur-3xl motion-reduce:animate-none dark:opacity-60" />
+      <div className="absolute -top-32 left-1/2 h-[30rem] w-[34rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--purple)_34%,transparent),transparent)] opacity-45 blur-2xl motion-reduce:animate-none sm:-top-40 sm:h-[42rem] sm:w-[52rem] sm:animate-bloom-drift sm:opacity-50 sm:blur-3xl dark:opacity-55 dark:sm:opacity-60" />
 
       {/* Cool counterweight — upper right */}
-      <div className="absolute -top-20 right-[8%] h-[30rem] w-[34rem] animate-bloom-drift-slow rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--blue)_34%,transparent),transparent)] opacity-45 blur-3xl motion-reduce:animate-none dark:opacity-55" />
+      <div className="absolute -top-20 right-[8%] hidden h-[30rem] w-[34rem] animate-bloom-drift-slow rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--blue)_34%,transparent),transparent)] opacity-45 blur-3xl motion-reduce:animate-none sm:block dark:opacity-55" />
 
       {/* Warm-cool accent — under the product frame */}
-      <div className="absolute top-[38%] left-[6%] h-[26rem] w-[30rem] animate-bloom-drift rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--cyan)_28%,transparent),transparent)] opacity-40 blur-3xl [animation-delay:-8s] motion-reduce:animate-none dark:opacity-50" />
+      <div className="absolute top-[38%] left-[6%] hidden h-[26rem] w-[30rem] animate-bloom-drift rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--cyan)_28%,transparent),transparent)] opacity-40 blur-3xl [animation-delay:-8s] motion-reduce:animate-none sm:block dark:opacity-50" />
 
       {/* Light seam across the top — the horizon of the rig */}
-      <div className="absolute inset-x-0 top-0 h-px animate-sheen bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--purple)_55%,transparent)_35%,color-mix(in_oklab,var(--cyan)_55%,transparent)_65%,transparent)] motion-reduce:animate-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--purple)_55%,transparent)_35%,color-mix(in_oklab,var(--cyan)_55%,transparent)_65%,transparent)] motion-reduce:animate-none sm:animate-sheen" />
 
       <GridSubstrate />
 

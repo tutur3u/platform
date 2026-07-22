@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 function SectionFallback() {
   return (
@@ -8,6 +9,43 @@ function SectionFallback() {
       <div className="mx-auto h-64 max-w-6xl animate-pulse rounded-2xl bg-foreground/[0.03]" />
     </section>
   );
+}
+
+function LazyLandingSection({
+  children,
+  rootMargin = '900px 0px',
+}: {
+  children: ReactNode;
+  rootMargin?: string;
+}) {
+  const [shouldRender, setShouldRender] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (shouldRender) return;
+
+    const node = ref.current;
+    if (!node) return;
+
+    if (!('IntersectionObserver' in window)) {
+      setShouldRender(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setShouldRender(true);
+        observer.disconnect();
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [rootMargin, shouldRender]);
+
+  return <div ref={ref}>{shouldRender ? children : <SectionFallback />}</div>;
 }
 
 const ProblemSection = dynamic(
@@ -73,8 +111,12 @@ const CTASection = dynamic(
 export function DeferredProblemSection() {
   return (
     <>
-      <ProblemSection />
-      <OutcomesSection />
+      <LazyLandingSection rootMargin="1200px 0px">
+        <ProblemSection />
+      </LazyLandingSection>
+      <LazyLandingSection rootMargin="1200px 0px">
+        <OutcomesSection />
+      </LazyLandingSection>
     </>
   );
 }
@@ -83,11 +125,21 @@ export function DeferredProblemSection() {
 export function DeferredLandingSections() {
   return (
     <>
-      <DemoSection />
-      <AISection />
-      <GithubStats />
-      <PricingSection />
-      <CTASection />
+      <LazyLandingSection>
+        <DemoSection />
+      </LazyLandingSection>
+      <LazyLandingSection>
+        <AISection />
+      </LazyLandingSection>
+      <LazyLandingSection>
+        <GithubStats />
+      </LazyLandingSection>
+      <LazyLandingSection>
+        <PricingSection />
+      </LazyLandingSection>
+      <LazyLandingSection>
+        <CTASection />
+      </LazyLandingSection>
     </>
   );
 }

@@ -71,7 +71,7 @@ export function ProductMarquee() {
             'linear-gradient(90deg, transparent, black 12%, black 88%, transparent)',
         }}
       >
-        <div className="flex w-max animate-marquee items-center gap-12 pr-12 motion-reduce:animate-none group-hover:[animation-play-state:paused]">
+        <div className="flex w-max items-center gap-8 pr-8 motion-reduce:animate-none sm:animate-marquee sm:gap-12 sm:pr-12 group-hover:[animation-play-state:paused]">
           {[0, 1].map((half) => (
             <div className="flex items-center gap-12" key={half}>
               {items.map((item) => (

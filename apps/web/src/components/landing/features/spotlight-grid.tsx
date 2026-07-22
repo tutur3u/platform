@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useCallback, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 
 /**
  * Pointer-tracking spotlight for the bento grid.
@@ -22,6 +22,7 @@ export function SpotlightGrid({
   const frame = useRef<number | null>(null);
 
   const handlePointerMove = useCallback((event: React.PointerEvent) => {
+    if (event.pointerType !== 'mouse') return;
     if (frame.current !== null) return;
 
     const { clientX, clientY } = event;
@@ -41,6 +42,13 @@ export function SpotlightGrid({
   const handlePointerLeave = useCallback(() => {
     ref.current?.style.setProperty('--spot-opacity', '0');
   }, []);
+
+  useEffect(
+    () => () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+    },
+    []
+  );
 
   return (
     <div
