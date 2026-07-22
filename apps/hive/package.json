@@ -33,7 +33,7 @@
     "@formatjs/intl-localematcher": "^0.8.13",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/hive-ui": "workspace:*",
