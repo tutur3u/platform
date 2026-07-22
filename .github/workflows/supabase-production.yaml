@@ -17,19 +17,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  migrate:
-    name: Migrate production database
-    timeout-minutes: 20
+  evaluate-prerequisites:
+    name: Evaluate production prerequisites
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
-      deployments: write
+      deployments: read
+    outputs:
+      should_deploy: ${{ steps.evaluate.outputs.should_deploy }}
+      target_sha: ${{ steps.evaluate.outputs.target_sha }}
     env:
-      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
-      PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
       TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
       - name: Check out migration target
@@ -212,24 +211,40 @@ jobs:
           echo "should_deploy=$SHOULD_DEPLOY" >> "$GITHUB_OUTPUT"
           echo "target_sha=$TARGET_SHA" >> "$GITHUB_OUTPUT"
 
+  deploy:
+    name: Migrate production database
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    needs: [evaluate-prerequisites]
+    if: needs.evaluate-prerequisites.outputs.should_deploy == 'true'
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out approved migration target
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
+
       - name: Setup Supabase CLI
-        if: steps.evaluate.outputs.should_deploy == 'true'
         uses: ./.github/actions/setup-supabase-cli-with-retry
         with:
           github-token: ${{ github.token }}
 
       - name: Deploy migrations to production
-        if: steps.evaluate.outputs.should_deploy == 'true'
+        env:
+          PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
         run: |
           cd apps/database
-          supabase link --project-ref ${{ env.PRODUCTION_PROJECT_ID }}
+          supabase link --project-ref "$PRODUCTION_PROJECT_ID"
           supabase db push --include-all
 
       - name: Record successful production migration marker
-        if: steps.evaluate.outputs.should_deploy == 'true'
         env:
           DEPLOYMENT_MARKER_REF_NAME: production
-          DEPLOYMENT_MARKER_SHA: ${{ steps.evaluate.outputs.target_sha }}
+          DEPLOYMENT_MARKER_SHA: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: supabase-production.yaml
           GITHUB_TOKEN: ${{ github.token }}
         run: >-

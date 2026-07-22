@@ -1222,10 +1222,11 @@ test('Supabase production migration requires production platform deploy and succ
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
   );
-  const migrateJob = readWorkflowJobBlock(
+  const evaluateJob = readWorkflowJobBlock(
     'supabase-production.yaml',
-    'migrate'
+    'evaluate-prerequisites'
   );
+  const deployJob = readWorkflowJobBlock('supabase-production.yaml', 'deploy');
 
   assert.match(
     workflow,
@@ -1234,76 +1235,132 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(workflow, /\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {6}- main\n/);
   assert.doesNotMatch(workflow, /^ {2}check-ci:/m);
-  assert.match(migrateJob, /Compute pending migration changes/);
-  assert.match(migrateJob, /Check migration configuration/);
-  assert.match(migrateJob, /--ref-name production/);
-  assert.match(migrateJob, /no database changes are pending/);
+  assert.match(evaluateJob, /Compute pending migration changes/);
+  assert.match(evaluateJob, /Check migration configuration/);
+  assert.match(evaluateJob, /--ref-name production/);
+  assert.match(evaluateJob, /no database changes are pending/);
 
   assert.match(
-    migrateJob,
+    evaluateJob,
     /manual dispatches must run from the production branch/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /TRIGGER_WORKFLOW" = "Vercel Production Deployment Planner"/
   );
-  assert.match(migrateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
+  assert.match(evaluateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
   assert.match(
-    migrateJob,
+    evaluateJob,
     /production deployment planner ran on '\$TRIGGER_BRANCH' instead of production/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /staging migration trigger ran on '\$TRIGGER_BRANCH' instead of main/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /Staging migration completed\. Re-checking production migration prerequisites for \$TARGET_SHA/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /vercel-production\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
   );
-  assert.match(migrateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
+  assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
   assert.match(
-    migrateJob,
+    evaluateJob,
     /no production deployment planner run was found for \$TARGET_SHA/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /deployments\?environment=vercel-production-platform&per_page=100/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /no production platform deployment marker was found for \$TARGET_SHA/
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /\(\(\$payload\.markerKind \/\/ "deployment"\) == "deployment"\)/
   );
-  assert.match(migrateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
-  assert.match(migrateJob, /does not include a success status/);
+  assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
+  assert.match(evaluateJob, /does not include a success status/);
   assert.match(
-    migrateJob,
+    evaluateJob,
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
-  assert.match(migrateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
-  assert.match(migrateJob, /STAGING_STATUS" != "completed"/);
-  assert.match(migrateJob, /STAGING_CONCLUSION" != "success"/);
+  assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
+  assert.match(evaluateJob, /STAGING_STATUS" != "completed"/);
+  assert.match(evaluateJob, /STAGING_CONCLUSION" != "success"/);
   assert.doesNotMatch(
-    migrateJob,
+    evaluateJob,
     /STAGING_CONCLUSION" = "skipped"/,
     'production migration must not accept skipped staging migration runs'
   );
   assert.match(
-    migrateJob,
+    evaluateJob,
     /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
   );
 
-  assert.match(migrateJob, /ref: \$\{\{ env\.TARGET_SHA \}\}/);
-  assert.match(migrateJob, /supabase db push --include-all/);
-  assert.match(migrateJob, /Record successful production migration marker/);
-  assert.match(migrateJob, /scripts\/ci\/record-deployment-marker\.ts/);
+  assert.match(evaluateJob, /ref: \$\{\{ env\.TARGET_SHA \}\}/);
+  assert.match(
+    deployJob,
+    /needs: \[evaluate-prerequisites\][\s\S]*if: needs\.evaluate-prerequisites\.outputs\.should_deploy == 'true'/
+  );
+  assert.match(
+    deployJob,
+    /ref: \$\{\{ needs\.evaluate-prerequisites\.outputs\.target_sha \}\}/
+  );
+  assert.match(deployJob, /supabase db push --include-all/);
+  assert.match(deployJob, /Record successful production migration marker/);
+  assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
+});
+
+test('Supabase production credentials are isolated from pre-gate repository code', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
+    'utf8'
+  );
+  const evaluateJob = readWorkflowJobBlock(
+    'supabase-production.yaml',
+    'evaluate-prerequisites'
+  );
+  const deployJob = readWorkflowJobBlock('supabase-production.yaml', 'deploy');
+  const deployStepStart = deployJob.indexOf(
+    '      - name: Deploy migrations to production'
+  );
+  const markerStepStart = deployJob.indexOf(
+    '      - name: Record successful production migration marker'
+  );
+
+  assert.notEqual(deployStepStart, -1);
+  assert.notEqual(markerStepStart, -1);
+  assert.ok(deployStepStart < markerStepStart);
+
+  const beforeDeployStep = deployJob.slice(0, deployStepStart);
+  const deployStep = deployJob.slice(deployStepStart, markerStepStart);
+  const afterDeployStep = deployJob.slice(markerStepStart);
+
+  assert.doesNotMatch(evaluateJob, /\bsecrets\./);
+  assert.doesNotMatch(evaluateJob, /PRODUCTION_DB_URL/);
+  assert.doesNotMatch(evaluateJob, /PRODUCTION_PROJECT_ID/);
+  assert.doesNotMatch(evaluateJob, /SUPABASE_ACCESS_TOKEN/);
+  assert.doesNotMatch(evaluateJob, /SUPABASE_DB_PASSWORD/);
+  assert.doesNotMatch(deployJob, /^ {4}env:/m);
+  assert.doesNotMatch(beforeDeployStep, SECRET_INTERPOLATION_PATTERN);
+  assert.doesNotMatch(afterDeployStep, SECRET_INTERPOLATION_PATTERN);
+  assert.doesNotMatch(workflow, /secrets\.PRODUCTION_DB_URL/);
+
+  for (const secretName of [
+    'PRODUCTION_PROJECT_ID',
+    'SUPABASE_ACCESS_TOKEN',
+    'PRODUCTION_DB_PASSWORD',
+  ]) {
+    assert.match(
+      deployStep,
+      new RegExp(`secrets\\.${secretName}`),
+      `${secretName} must be scoped only to the post-gate migration step`
+    );
+  }
 });
 
 test('environment-scoped Vercel workflows scope project secrets to protected jobs', () => {
