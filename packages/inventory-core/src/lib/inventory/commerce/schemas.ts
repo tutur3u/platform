@@ -316,6 +316,7 @@ export const checkoutCreatePayloadSchema = z.object({
     )
     .min(1),
   note: z.string().trim().max(2000).nullable().optional(),
+  squareDeviceId: z.string().trim().min(1).max(128).nullable().optional(),
 });
 
 export const polarSettingsPayloadSchema = z

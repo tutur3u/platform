@@ -485,6 +485,27 @@ describe('StorefrontSurface', () => {
     expect(screen.getByLabelText('Email')).toBeEnabled();
   });
 
+  it('shows checkout routing guidance and blocks dispatch until it is ready', () => {
+    render(
+      <StorefrontSurface
+        cartLines={[{ listingId: listing.id, quantity: 1 }]}
+        checkoutBlocked
+        checkoutFields={<div>Choose an approved payment station</div>}
+        listings={[listing]}
+        mode="checkout"
+        onCheckoutSubmit={() => undefined}
+        storefront={{ ...storefront, checkoutMode: 'square_terminal' }}
+      />
+    );
+
+    expect(
+      screen.getByText('Choose an approved payment station')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Reserve with Polar' })
+    ).toBeDisabled();
+  });
+
   it('keeps simulated storefront chrome customer-facing', () => {
     render(
       <StorefrontSurface

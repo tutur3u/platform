@@ -4,6 +4,7 @@ import {
   revokeSeatFromMember,
 } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isWorkspaceUuidLiteral,
@@ -14,6 +15,53 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+
+type PendingInvite = {
+  email?: string | null;
+  role_id?: string | null;
+  type: 'MEMBER' | 'GUEST';
+  ws_id: string;
+};
+
+async function assignPendingInviteRole({
+  roleId,
+  sbAdmin,
+  userId,
+  wsId,
+}: {
+  roleId: string | null | undefined;
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+  wsId: string;
+}) {
+  if (!roleId) return;
+
+  const { data: role, error: roleError } = await sbAdmin
+    .from('workspace_roles')
+    .select('id, workspace_role_permissions!inner(permission, enabled)')
+    .eq('id', roleId)
+    .eq('ws_id', wsId)
+    .eq('workspace_role_permissions.permission', 'initiate_pos_checkout')
+    .eq('workspace_role_permissions.enabled', true)
+    .maybeSingle();
+
+  if (roleError || !role) {
+    throw new Error('The limited POS operator role is no longer available.');
+  }
+
+  const { error: assignmentError } = await sbAdmin
+    .from('workspace_role_members')
+    .upsert(
+      { role_id: roleId, user_id: userId },
+      { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
+    );
+
+  if (assignmentError) {
+    throw new Error(
+      assignmentError.message || 'Failed to assign limited POS operator access.'
+    );
+  }
+}
 
 const guestJoinReasonToErrorCodeMap: Record<string, string> = {
   already_member: 'ALREADY_MEMBER',
@@ -106,12 +154,15 @@ export const POST = withSessionAuth<{ wsId: string }>(
     // This route already authenticated the actor and constrains every lookup to
     // the current user's id/email, so use the admin path to avoid browser RLS or
     // app-session differences making valid invites look missing.
-    const { data: pendingInvite, error: pendingInviteError } = await sbAdmin
+    const { data: pendingInvite, error: pendingInviteError } = (await sbAdmin
       .from('workspace_invites')
-      .select('ws_id, type')
+      .select('ws_id, type, role_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
-      .maybeSingle();
+      .maybeSingle()) as unknown as {
+      data: PendingInvite | null;
+      error: { message?: string } | null;
+    };
 
     if (pendingInviteError) {
       console.error('Failed to read pending workspace invite:', {
@@ -129,13 +180,16 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     const { data: pendingEmailInviteRows, error: pendingEmailInviteError } =
-      candidateEmails.length
+      (candidateEmails.length
         ? await sbAdmin
             .from('workspace_email_invites')
-            .select('ws_id, type, email')
+            .select('ws_id, type, email, role_id')
             .eq('ws_id', wsId)
             .in('email', candidateEmails)
-        : { data: null, error: null };
+        : { data: null, error: null }) as unknown as {
+        data: PendingInvite[] | null;
+        error: { message?: string } | null;
+      };
 
     if (pendingEmailInviteError) {
       console.error('Failed to read pending workspace email invite:', {
@@ -165,6 +219,8 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     let inviteMemberType: 'MEMBER' | 'GUEST' =
       pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
+    const pendingRoleId =
+      pendingInvite?.role_id ?? pendingEmailInvite?.role_id ?? null;
     let matchedWorkspaceUserId: string | null = null;
 
     if (!pendingInvite && !pendingEmailInvite) {
@@ -235,6 +291,26 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     if (existingMember.ok) {
+      try {
+        await assignPendingInviteRole({
+          roleId: pendingRoleId,
+          sbAdmin,
+          userId: user.id,
+          wsId,
+        });
+      } catch (roleError) {
+        return NextResponse.json(
+          {
+            error:
+              roleError instanceof Error
+                ? roleError.message
+                : 'Failed to assign invited workspace role',
+            errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
+          },
+          { status: 500 }
+        );
+      }
+
       await sbAdmin
         .from('workspace_invites')
         .delete()
@@ -323,6 +399,26 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     if (error) {
       if (error.code === '23505') {
+        try {
+          await assignPendingInviteRole({
+            roleId: pendingRoleId,
+            sbAdmin,
+            userId: user.id,
+            wsId,
+          });
+        } catch (roleError) {
+          return NextResponse.json(
+            {
+              error:
+                roleError instanceof Error
+                  ? roleError.message
+                  : 'Failed to assign invited workspace role',
+              errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
+            },
+            { status: 500 }
+          );
+        }
+
         await sbAdmin
           .from('workspace_invites')
           .delete()
@@ -359,6 +455,46 @@ export const POST = withSessionAuth<{ wsId: string }>(
         {
           error: getSupabaseErrorMessage(error, 'Failed to accept invite'),
           errorCode: 'ACCEPT_INVITE_FAILED',
+        },
+        { status: 500 }
+      );
+    }
+
+    try {
+      await assignPendingInviteRole({
+        roleId: pendingRoleId,
+        sbAdmin,
+        userId: user.id,
+        wsId,
+      });
+    } catch (roleError) {
+      await sbAdmin
+        .from('workspace_members')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id);
+
+      if (seatAssignment.required && seatAssignment.success) {
+        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      }
+
+      if (matchedWorkspaceUserId) {
+        await sbAdmin
+          .from('workspace_user_linked_users')
+          .delete()
+          .eq('platform_user_id', user.id)
+          .eq('ws_id', wsId)
+          .eq('virtual_user_id', matchedWorkspaceUserId);
+      }
+
+      console.error('Failed to assign invited workspace role:', roleError);
+      return NextResponse.json(
+        {
+          error:
+            roleError instanceof Error
+              ? roleError.message
+              : 'Failed to assign invited workspace role',
+          errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
         },
         { status: 500 }
       );

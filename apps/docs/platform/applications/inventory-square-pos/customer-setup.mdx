@@ -76,6 +76,41 @@ prevents the most common setup failure.
   Payment before completing inventory.
 </Info>
 
+## Prepare event staff access
+
+Do not share a full workspace administrator account at the counter. In
+**Settings → Members & roles**, choose **Invite member**, then select **POS
+operator — start payments only**.
+
+The first limited POS invitation performs one confirmed, atomic access
+migration:
+
+1. every current workspace member receives the explicit **Workspace Admin
+   (preserved)** role;
+2. the member-wide default **Admin** permission is disabled so new members do
+   not inherit it;
+3. Tuturuuu creates a **POS Operator** role containing only **Start POS
+   checkout**; and
+4. the pending invitation records that role so it is assigned as soon as the
+   invited person accepts.
+
+The confirmation panel lists the number of current members being protected and
+explains the resulting access. A POS operator can start an approved Square
+payment, but cannot edit products, stock, sales, payment settings, members, or
+roles.
+
+For multiple standalone Terminals, staff choose the **Payment station** in the
+Storefront checkout form. Tuturuuu validates that the selected device is a
+paired Terminal API device at the configured selling location before it
+reserves stock. Square POS App + Reader remains a same-device flow: open the
+Storefront on the compatible phone or tablet that should launch Square POS.
+
+<Warning>
+  Never use a public shopper account as event staff. The checkout API enforces
+  the POS permission server-side and rate-limits repeated dispatches; hiding the
+  button is not the security boundary.
+</Warning>
+
 ## Open the correct Tuturuuu workspace
 
 1. Sign in to [Inventory](https://inventory.tuturuuu.com).

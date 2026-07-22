@@ -13285,6 +13285,10 @@ export type Database = {
         Args: { p_now?: string; p_payload: Json; p_storefront_slug: string };
         Returns: Json;
       };
+      create_inventory_pos_operator_invite: {
+        Args: { p_actor_id: string; p_email: string; p_ws_id: string };
+        Returns: Json;
+      };
       create_wallet_checkpoint_reconciliation: {
         Args: {
           _actor_id: string;
@@ -14640,6 +14644,10 @@ export type Database = {
       nova_get_user_total_sessions: {
         Args: { challenge_id: string; user_id: string };
         Returns: number;
+      };
+      prepare_inventory_pos_operator_access: {
+        Args: { p_actor_id: string; p_ws_id: string };
+        Returns: Json;
       };
       raise_rate_limit_exceeded: {
         Args: { p_retry_after: number };
@@ -30247,6 +30255,7 @@ export type Database = {
           created_at: string;
           email: string;
           invited_by: string | null;
+          role_id: string | null;
           type: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
@@ -30254,6 +30263,7 @@ export type Database = {
           created_at?: string;
           email: string;
           invited_by?: string | null;
+          role_id?: string | null;
           type?: Database['public']['Enums']['workspace_member_type'];
           ws_id: string;
         };
@@ -30261,6 +30271,7 @@ export type Database = {
           created_at?: string;
           email?: string;
           invited_by?: string | null;
+          role_id?: string | null;
           type?: Database['public']['Enums']['workspace_member_type'];
           ws_id?: string;
         };
@@ -30277,6 +30288,13 @@ export type Database = {
             columns: ['invited_by'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_email_invites_role_id_fkey';
+            columns: ['role_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_roles';
             referencedColumns: ['id'];
           },
           {
@@ -32799,23 +32817,33 @@ export type Database = {
       workspace_invites: {
         Row: {
           created_at: string | null;
+          role_id: string | null;
           type: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Insert: {
           created_at?: string | null;
+          role_id?: string | null;
           type?: Database['public']['Enums']['workspace_member_type'];
           user_id: string;
           ws_id: string;
         };
         Update: {
           created_at?: string | null;
+          role_id?: string | null;
           type?: Database['public']['Enums']['workspace_member_type'];
           user_id?: string;
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_invites_role_id_fkey';
+            columns: ['role_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_roles';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'workspace_invites_user_id_fkey';
             columns: ['user_id'];
@@ -42816,7 +42844,8 @@ export type Database = {
         | 'manage_infrastructure_stress_tests'
         | 'manage_mobile_deployment_vault'
         | 'manage_user_profile_links'
-        | 'manage_internal_accounts';
+        | 'manage_internal_accounts'
+        | 'initiate_pos_checkout';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -45571,6 +45600,7 @@ export const Constants = {
         'manage_mobile_deployment_vault',
         'manage_user_profile_links',
         'manage_internal_accounts',
+        'initiate_pos_checkout',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

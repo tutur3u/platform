@@ -1,5 +1,15 @@
 {
   "routes": {
+    "api:/api/workspaces/:wsId/accept-invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live Next.js invite acceptance flow assigns an optional least-privilege POS Operator role and rolls back membership and seat state if that assignment fails. The Rust port is pending."
+    },
+    "api:/api/workspaces/:wsId/members/invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/members/invite/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live Next.js invitation flow supports the confirmed POS Operator access migration, preserving existing member admins before disabling default Admin and attaching the limited role to the invite. The Rust port is pending."
+    },
     "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

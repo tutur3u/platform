@@ -2423,6 +2423,24 @@
           "sandbox": "Sandbox"
         },
         "environmentLabel": "Môi trường",
+        "eventSafety": {
+          "badge": "Thanh toán được bảo vệ",
+          "description": "Ranh giới thanh toán trực tiếp kết hợp xác thực nhân viên, định tuyến thiết bị rõ ràng và giới hạn tần suất trước khi giữ tồn kho hoặc tạo yêu cầu Square.",
+          "membersNote": "Tạo nhân viên sự kiện có quyền hạn chế tại Cài đặt → Thành viên & vai trò → Mời thành viên → Nhân viên POS. Thành viên hiện tại giữ quyền Quản trị viên qua vai trò rõ ràng trước khi quyền Quản trị viên mặc định bị tắt.",
+          "pos": {
+            "description": "Ứng dụng Square POS chỉ mở trên điện thoại hoặc máy tính bảng tương thích đang chạy storefront; hệ thống không giả vờ định tuyến từ xa tới đầu đọc khác.",
+            "title": "Chuyển tiếp POS trên cùng thiết bị"
+          },
+          "staff": {
+            "description": "Chỉ thành viên đã đăng nhập có quyền Bắt đầu thanh toán POS—hoặc Quản trị viên—mới có thể gửi thanh toán. Người mua và khách bị máy chủ từ chối.",
+            "title": "Chỉ nhân viên được bắt đầu"
+          },
+          "terminal": {
+            "description": "Nhân viên chọn Terminal đã ghép nối cho từng đơn. Tuturuuu xác minh lại thiết bị và địa điểm bán trước khi giữ tồn kho.",
+            "title": "Định tuyến nhiều quầy"
+          },
+          "title": "Kiểm soát thanh toán sự kiện"
+        },
         "guide": {
           "complete": "Đã lưu và nhận diện",
           "configureStep": "Cấu hình trong Tuturuuu",
@@ -2597,11 +2615,11 @@
             "openConsole": "Mở Square Developer Console",
             "title": "Đăng ký URL callback web"
           },
-          "description": "Tuturuuu mở Square POS trên điện thoại này với đúng tổng đơn hàng, sau đó xác minh đơn Square và thanh toán thẻ trả về trước khi hoàn tất tồn kho.",
+          "description": "Tuturuuu mở Square POS trên điện thoại hoặc máy tính bảng tương thích đang chạy storefront với đúng tổng đơn hàng, sau đó xác minh đơn Square và thanh toán thẻ trả về trước khi hoàn tất tồn kho.",
           "device": {
             "description": "Cài đặt hoặc cập nhật Square POS, đăng nhập vào địa điểm đã lưu, rồi kết nối Reader hoặc bật Tap to Pay. Giữ ứng dụng trực tuyến cho thanh toán xác minh đầu tiên.",
             "idHelp": "Tên thiết bị và ID thiết bị Square POS chỉ mang tính thông tin. Không dán chúng vào danh sách Terminal; Tuturuuu mở điện thoại này qua Square Point of Sale API.",
-            "title": "Chuẩn bị điện thoại Square POS và Reader"
+            "title": "Chuẩn bị thiết bị Square POS và Reader"
           },
           "location": {
             "description": "Dùng cùng địa điểm production mà người bán đăng nhập trong Square POS. Nếu không khớp, việc xác minh thanh toán sẽ bị từ chối.",
@@ -4349,6 +4367,7 @@
     "invite_membership_guest": "Khách — quyền hạn chế",
     "invite_membership_label": "Quyền truy cập",
     "invite_membership_member": "Thành viên — truy cập đầy đủ không gian làm việc",
+    "invite_membership_pos_operator": "Nhân viên POS — chỉ bắt đầu thanh toán",
     "invite_no_permission": "Bạn không có quyền mời thành viên.",
     "invite_submit": "Gửi lời mời",
     "invited": "Đã mời",
@@ -4387,6 +4406,12 @@
     "permission_coverage": "Phạm vi Quyền",
     "permission_sources": "Nguồn Quyền",
     "permissions": "Quyền",
+    "pos_operator_admin_migration_note": "Quyền Quản trị viên mặc định cho mọi thành viên sẽ được thay bằng vai trò quản trị được giữ lại rõ ràng trước khi tạo lời mời. Thành viên hiện tại vẫn giữ quyền; thành viên tương lai không tự động nhận quyền Quản trị viên.",
+    "pos_operator_confirmation": "Tôi hiểu việc chuyển đổi quyền này và muốn mời những người này làm nhân viên POS có quyền hạn chế.",
+    "pos_operator_description": "Có thể bắt đầu thanh toán Square POS hoặc Terminal đã được phê duyệt, nhưng không thể sửa sản phẩm, tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
+    "pos_operator_existing_members": "thành viên hiện tại giữ quyền Quản trị viên",
+    "pos_operator_only_permission": "Chỉ một quyền thanh toán",
+    "pos_operator_title": "Nhân viên POS an toàn cho sự kiện",
     "profile_display_name": "Tên hiển thị trong không gian làm việc",
     "profile_display_name_description": "Tên này chỉ được dùng trong không gian làm việc này.",
     "profile_display_name_placeholder": "Tên hiển thị trong không gian này",
@@ -4542,6 +4567,8 @@
     "guest_defaults_tab": "Quyền khách",
     "infrastructure": "Cơ sở hạ tầng",
     "infrastructure_description": "Điều khiển cấp hệ thống cho quản trị nền tảng và vận hành kỹ thuật",
+    "initiate_pos_checkout": "Bắt đầu thanh toán POS",
+    "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "inventory_access_denied": "Quyền truy cập bị từ chối",
     "inventory_access_denied_description": "Bạn không có quyền xem kho.",
     "inventory_batches_access_denied_description": "Bạn không có quyền xem lô hàng.",

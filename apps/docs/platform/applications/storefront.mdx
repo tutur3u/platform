@@ -36,11 +36,17 @@ released immediately.
 
 ## Square Terminal Checkout
 
-Square Terminal checkout is a pay-at-terminal handoff. Storefront validates
-Square readiness, creates a local reservation, and shows the buyer a local order
-reference page instead of redirecting to a hosted payment page. Inventory staff
-then sends that reserved checkout to a paired Square Terminal, cancels it, or
-checks its status from the commerce workflow.
+Square Terminal checkout is a staff-only pay-at-terminal handoff. A signed-in
+member needs the dedicated **Start POS checkout** permission (or Admin), then
+selects the paired payment station that should receive the order. Storefront
+validates the member, device, and selling location before creating a local
+reservation and sending the Square request. Repeated dispatches are rate
+limited before reservation.
+
+Square POS App + Reader uses a different same-device handoff: it opens Square
+POS on the compatible phone or tablet currently running the Storefront and
+cannot target another reader remotely. The checkout UI states this distinction
+instead of presenting phone installation IDs as routable Terminal devices.
 
 Square payment success is accepted only from verified Square webhook or status
 data. Cancellation, failure, or expiry releases the local reservation so stock

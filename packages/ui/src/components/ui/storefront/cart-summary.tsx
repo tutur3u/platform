@@ -3,7 +3,7 @@
 import { ArrowRight, ShoppingCart } from '@tuturuuu/icons';
 import type { InventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { Badge } from '../badge';
 import { AccentButton } from './accent-button';
 import {
@@ -25,6 +25,8 @@ type StorefrontCartSummaryVariant = 'checkout' | 'panel' | 'popover';
 export function StorefrontCartSummary({
   buyerDefaults,
   cartEntries,
+  checkoutBlocked = false,
+  checkoutFields,
   checkoutHref,
   className,
   currency,
@@ -43,6 +45,8 @@ export function StorefrontCartSummary({
 }: {
   buyerDefaults?: StorefrontBuyerDefaults;
   cartEntries: StorefrontCartEntry[];
+  checkoutBlocked?: boolean;
+  checkoutFields?: ReactNode;
   checkoutHref?: string;
   className?: string;
   currency: string;
@@ -63,7 +67,11 @@ export function StorefrontCartSummary({
   const hasCart = cartEntries.length > 0;
   const isCheckoutDisabled = storefront.checkoutMode === 'disabled';
   const submitDisabled =
-    !hasCart || isSubmitting || isCheckoutDisabled || !onCheckoutSubmit;
+    !hasCart ||
+    isSubmitting ||
+    isCheckoutDisabled ||
+    checkoutBlocked ||
+    !onCheckoutSubmit;
   const canOpenCheckout = hasCart && Boolean(checkoutHref || onCheckoutOpen);
 
   if (presentation === 'checkout') {
@@ -100,6 +108,8 @@ export function StorefrontCartSummary({
               labels={labels}
             />
           </CheckoutSection>
+
+          {checkoutFields}
 
           <AccentButton disabled={submitDisabled} radius={radius}>
             {isSubmitting ? labels.reserving : labels.reserve}

@@ -64,12 +64,18 @@ async function inviteStandardWorkspaceMembers(
   payload: WorkspaceAccessInvitePayload
 ) {
   const results = await Promise.allSettled(
-    payload.emails.map((email) =>
-      inviteWorkspaceMember(workspaceId, {
+    payload.emails.map((email) => {
+      const invitePayload: Parameters<typeof inviteWorkspaceMember>[1] & {
+        accessPreset?: 'guest' | 'member' | 'pos_operator';
+        confirmDefaultAdminMigration?: boolean;
+      } = {
+        accessPreset: payload.accessPreset,
+        confirmDefaultAdminMigration: payload.confirmDefaultAdminMigration,
         email,
         memberType: payload.memberType,
-      })
-    )
+      };
+      return inviteWorkspaceMember(workspaceId, invitePayload);
+    })
   );
   const successCount = results.filter(
     (result) => result.status === 'fulfilled'

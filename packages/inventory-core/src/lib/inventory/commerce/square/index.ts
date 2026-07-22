@@ -5,8 +5,10 @@ export {
 export { getInventorySquareSyncState } from './catalog-sync-state';
 export {
   createInventorySquareDeviceCode,
+  getInventorySquareCheckoutRouting,
   listInventorySquareDevices,
   listInventorySquareLocations,
+  resolveInventorySquareTerminalDevice,
   syncInventorySquareDeviceCodePaired,
 } from './devices';
 export {

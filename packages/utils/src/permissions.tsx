@@ -878,6 +878,14 @@ export const permissionGroups = ({
             disabled: false,
           },
           {
+            id: 'initiate_pos_checkout',
+            icon: <CreditCard />,
+            title: t('ws-roles.initiate_pos_checkout'),
+            description: t('ws-roles.initiate_pos_checkout_description'),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'view_inventory_analytics',
             icon: <ChartBar />,
             title: t('ws-roles.view_inventory_analytics'),

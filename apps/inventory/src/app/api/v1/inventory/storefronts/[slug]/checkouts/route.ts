@@ -15,6 +15,7 @@ import {
   assertInventorySquareReady,
   createInventorySquarePosCheckout,
   createInventorySquareTerminalCheckout,
+  resolveInventorySquareTerminalDevice,
 } from '@tuturuuu/inventory-core/commerce/square';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -22,6 +23,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { INVENTORY_APP_URL } from '@/constants/common';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { authorizeSquareCheckoutStaff } from '@/lib/square-checkout-access';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -224,10 +227,11 @@ export async function POST(request: Request, { params }: Params) {
     if (!checkoutAuth.ok) return checkoutAuth.response;
 
     const buyerDefaults = getCheckoutBuyerPayload(checkoutAuth);
+    const { squareDeviceId, ...checkoutInputPayload } = payload;
     // Buyer-entered details win over the session defaults (so a shopper can name
     // a different recipient/contact), but the auth uid stays authoritative.
     const checkoutPayload = {
-      ...payload,
+      ...checkoutInputPayload,
       customerAuthUid: buyerDefaults.customerAuthUid,
       customerEmail:
         payload.customerEmail?.trim() || buyerDefaults.customerEmail,
@@ -263,6 +267,22 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
+    if (checkoutMode === 'square_pos' || checkoutMode === 'square_terminal') {
+      const staffAccess = await authorizeSquareCheckoutStaff(
+        request,
+        storefrontPayload.storefront.wsId
+      );
+      if (!staffAccess.ok) return staffAccess.response;
+
+      const rateLimit = await checkRateLimit(
+        `inventory:square-dispatch:${storefrontPayload.storefront.wsId}:${checkoutAuth.user.id}`,
+        { maxRequests: 8, windowMs: 60_000 }
+      );
+      if (!('allowed' in rateLimit)) return rateLimit;
+    }
+
+    let terminalDeviceId: string | undefined;
+
     if (checkoutMode === 'square_terminal') {
       try {
         await assertInventorySquareReady(storefrontPayload.storefront.wsId);
@@ -277,9 +297,37 @@ export async function POST(request: Request, { params }: Params) {
           { status: 409 }
         );
       }
+
+      try {
+        terminalDeviceId = await resolveInventorySquareTerminalDevice({
+          requestedDeviceId: squareDeviceId,
+          wsId: storefrontPayload.storefront.wsId,
+        });
+      } catch (error) {
+        return NextResponse.json(
+          {
+            code: 'SQUARE_TERMINAL_ROUTE_INVALID',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Select a valid Square Terminal.',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     if (checkoutMode === 'square_pos') {
+      if (squareDeviceId) {
+        return NextResponse.json(
+          {
+            code: 'SQUARE_POS_CURRENT_DEVICE_ONLY',
+            message:
+              'Square POS App checkout opens on the staff device currently using this storefront; it cannot target another reader remotely.',
+          },
+          { status: 400 }
+        );
+      }
       try {
         await assertInventorySquarePosReady(storefrontPayload.storefront.wsId);
       } catch (error) {
@@ -346,6 +394,7 @@ export async function POST(request: Request, { params }: Params) {
         });
         const terminalCheckout = await createInventorySquareTerminalCheckout({
           checkoutId: checkout.id,
+          deviceId: terminalDeviceId,
           wsId: checkout.wsId,
         });
         const nextUrl = `${getStorefrontUrl(request).replace(/\/$/u, '')}/${slug}/orders/${publicToken}`;
@@ -353,7 +402,10 @@ export async function POST(request: Request, { params }: Params) {
           checkoutId: checkout.id,
           customerAuthUid: checkoutPayload.customerAuthUid,
           eventType: 'checkout_created',
-          metadata: { checkoutMode: 'square_terminal' },
+          metadata: {
+            checkoutMode: 'square_terminal',
+            squareDeviceId: terminalDeviceId,
+          },
           storefront: storefrontPayload.storefront,
         });
 

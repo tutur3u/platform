@@ -52,6 +52,8 @@ export type WorkspaceAccessRolePayload = {
 };
 
 export type WorkspaceAccessInvitePayload = {
+  accessPreset: 'guest' | 'member' | 'pos_operator';
+  confirmDefaultAdminMigration?: boolean;
   emails: string[];
   memberType: WorkspaceDefaultPermissionMemberType;
 };

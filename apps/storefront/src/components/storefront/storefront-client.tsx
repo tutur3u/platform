@@ -5,6 +5,7 @@ import { RefreshCw } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
+  getInventorySquareCheckoutOptions,
   type InventoryPublicStorefrontResponse,
   recordInventoryStorefrontAnalyticsEvent,
 } from '@tuturuuu/internal-api/inventory';
@@ -24,6 +25,7 @@ import {
   openHostedPolarCheckout,
   openSquarePosCheckout,
 } from './checkout-window';
+import { SquareCheckoutRouting } from './square-checkout-routing';
 import { useCart } from './storefront-cart';
 import {
   createDemoCheckoutResponse,
@@ -73,6 +75,7 @@ export function StorefrontClient({
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(
     initialCheckoutOpen || mode === 'checkout'
   );
+  const [selectedSquareDeviceId, setSelectedSquareDeviceId] = useState('');
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -92,6 +95,22 @@ export function StorefrontClient({
   const isSquareTerminalCheckout =
     storefront?.checkoutMode === 'square_terminal';
   const isSquarePosCheckout = storefront?.checkoutMode === 'square_pos';
+  const isSquareCheckout = isSquareTerminalCheckout || isSquarePosCheckout;
+  const checkoutOptionsQuery = useQuery({
+    enabled: Boolean(storefront && isSquareCheckout && !isDemoStorefront),
+    queryFn: () => getInventorySquareCheckoutOptions(storeSlug),
+    queryKey: ['storefront', storeSlug, 'square-checkout-options'],
+    refetchOnWindowFocus: true,
+    staleTime: 15_000,
+  });
+  const resolvedSquareDeviceId =
+    selectedSquareDeviceId || checkoutOptionsQuery.data?.defaultDeviceId || '';
+  const checkoutRoutingBlocked =
+    isSquareCheckout &&
+    (checkoutOptionsQuery.isPending ||
+      checkoutOptionsQuery.isError ||
+      !checkoutOptionsQuery.data?.staffAuthorized ||
+      (isSquareTerminalCheckout && !resolvedSquareDeviceId));
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -167,6 +186,7 @@ export function StorefrontClient({
     customerEmail?: string;
     customerPhone?: string | null;
     note?: string | null;
+    squareDeviceId?: string | null;
   };
 
   const navigateToCheckoutResult = (url: string) => {
@@ -205,6 +225,7 @@ export function StorefrontClient({
         customerPhone: input.customerPhone || null,
         lines: input.lines.filter((line) => line.quantity > 0),
         note: input.note ?? null,
+        squareDeviceId: input.squareDeviceId ?? null,
       });
     },
     onError: (error) => {
@@ -412,6 +433,23 @@ export function StorefrontClient({
       cartLines={cart.cart}
       cartHref={`/${storeSlug}/cart`}
       checkoutHref={`/${storeSlug}/checkout`}
+      checkoutBlocked={checkoutRoutingBlocked}
+      checkoutFields={
+        isSquareCheckout ? (
+          <SquareCheckoutRouting
+            errorMessage={
+              checkoutOptionsQuery.error instanceof Error
+                ? checkoutOptionsQuery.error.message
+                : null
+            }
+            isLoading={checkoutOptionsQuery.isPending}
+            onDeviceChange={setSelectedSquareDeviceId}
+            onRetry={() => checkoutOptionsQuery.refetch()}
+            options={checkoutOptionsQuery.data}
+            selectedDeviceId={resolvedSquareDeviceId}
+          />
+        ) : undefined
+      }
       detailListingId={detailListingId}
       headerActions={headerActions}
       isDemo={isDemoStorefront}
@@ -422,6 +460,14 @@ export function StorefrontClient({
       listings={listings}
       mode={surfaceMode}
       onBuyNow={(buyNowListingId, variantId) => {
+        if (checkoutRoutingBlocked) {
+          toast.error(
+            checkoutOptionsQuery.error instanceof Error
+              ? checkoutOptionsQuery.error.message
+              : t('squareStaffRequiredDescription')
+          );
+          return;
+        }
         // Instant checkout for a single product, skipping the cart entirely.
         recordAnalyticsEvent({
           eventType: 'checkout_started',
@@ -438,6 +484,9 @@ export function StorefrontClient({
               variantId: variantId ?? undefined,
             },
           ],
+          squareDeviceId: isSquareTerminalCheckout
+            ? resolvedSquareDeviceId
+            : null,
         });
       }}
       checkoutOpen={isCheckoutOpen}
@@ -455,6 +504,9 @@ export function StorefrontClient({
             String(formData.get('customerPhone') ?? '').trim() || null,
           lines: cartCheckoutLines(),
           note: String(formData.get('note') ?? '') || null,
+          squareDeviceId: isSquareTerminalCheckout
+            ? resolvedSquareDeviceId
+            : null,
         });
       }}
       onCheckoutOpen={() => setIsCheckoutOpen(true)}
@@ -485,6 +537,10 @@ export function StorefrontClient({
         });
       }}
       onInstantCheckout={() => {
+        if (checkoutRoutingBlocked) {
+          setIsCheckoutOpen(true);
+          return;
+        }
         // One-click checkout from the cart: submit directly when we already know
         // the buyer, otherwise send them to the checkout form to fill details.
         if (!buyerDefaults?.email) {
@@ -499,6 +555,9 @@ export function StorefrontClient({
           customerEmail: buyerDefaults.email,
           customerName: buyerDefaults.name ?? undefined,
           lines: cartCheckoutLines(),
+          squareDeviceId: isSquareTerminalCheckout
+            ? resolvedSquareDeviceId
+            : null,
         });
       }}
       selectedListingId={listingId}

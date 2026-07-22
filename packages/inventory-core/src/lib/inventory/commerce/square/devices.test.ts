@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createInventorySquareDeviceCode,
+  getInventorySquareCheckoutRouting,
+  resolveInventorySquareTerminalDevice,
   syncInventorySquareDeviceCodePaired,
 } from './devices';
 
@@ -13,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   getPrivateAdmin: vi.fn(),
   getInventorySquareAccessContext: vi.fn(),
   insert: vi.fn(),
+  listSquareDevicesApi: vi.fn(),
   loadSettingsRow: vi.fn(),
   maybeSingle: vi.fn(),
   select: vi.fn(),
@@ -35,7 +38,8 @@ vi.mock('./client', () => ({
     mocks.createSquareDeviceCodeApi(...args),
   createSquareIdempotencyKey: (...args: unknown[]) =>
     mocks.createSquareIdempotencyKey(...args),
-  listSquareDevicesApi: vi.fn(),
+  listSquareDevicesApi: (...args: unknown[]) =>
+    mocks.listSquareDevicesApi(...args),
   listSquareLocationsApi: vi.fn(),
   SquareApiError: class SquareApiError extends Error {},
 }));
@@ -44,6 +48,17 @@ describe('Square device reconciliation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createSquareIdempotencyKey.mockReturnValue('device-idempotency-key');
+    mocks.getInventorySquareAccessContext.mockResolvedValue({
+      accessToken: 'square-token',
+      environment: 'production',
+    });
+    mocks.loadSettingsRow.mockResolvedValue({
+      device_id: 'terminal-default',
+      environment: 'production',
+      location_id: 'location-1',
+      sandbox_device_id: null,
+    });
+    mocks.listSquareDevicesApi.mockResolvedValue([]);
     mocks.eq.mockReturnValue({ select: mocks.select });
     mocks.insert.mockResolvedValue({ error: null });
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
@@ -241,5 +256,126 @@ describe('Square device reconciliation', () => {
     ).resolves.toBe(false);
 
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('offers only paired Terminal API devices from the selling location', async () => {
+    mocks.listSquareDevicesApi.mockResolvedValue([
+      {
+        attributes: {
+          location_id: 'location-1',
+          name: 'Front counter',
+          product_type: 'TERMINAL_API',
+          status: 'PAIRED',
+        },
+        id: 'terminal-front',
+      },
+      {
+        attributes: {
+          location_id: 'location-2',
+          name: 'Wrong venue',
+          product_type: 'TERMINAL_API',
+          status: 'PAIRED',
+        },
+        id: 'terminal-other-location',
+      },
+      {
+        attributes: {
+          location_id: 'location-1',
+          name: 'Still pairing',
+          product_type: 'TERMINAL_API',
+          status: 'UNPAIRED',
+        },
+        id: 'terminal-unpaired',
+      },
+      {
+        attributes: {
+          location_id: 'location-1',
+          name: 'Phone reader',
+          product_type: 'SQUARE_POS',
+          status: 'PAIRED',
+        },
+        id: 'mobile-reader',
+      },
+    ]);
+
+    await expect(
+      getInventorySquareCheckoutRouting('workspace-1')
+    ).resolves.toMatchObject({
+      defaultDeviceId: 'terminal-default',
+      devices: [
+        expect.objectContaining({
+          id: 'terminal-front',
+          name: 'Front counter',
+        }),
+      ],
+      environment: 'production',
+      locationId: 'location-1',
+    });
+  });
+
+  it('resolves an explicitly selected paired terminal', async () => {
+    mocks.listSquareDevicesApi.mockResolvedValue([
+      {
+        attributes: {
+          location_id: 'location-1',
+          name: 'Side counter',
+          product_type: 'TERMINAL_API',
+          status: 'PAIRED',
+        },
+        id: 'terminal-side',
+      },
+    ]);
+
+    await expect(
+      resolveInventorySquareTerminalDevice({
+        requestedDeviceId: 'terminal-side',
+        wsId: 'workspace-1',
+      })
+    ).resolves.toBe('terminal-side');
+  });
+
+  it('rejects stale, cross-location, and non-Terminal device ids', async () => {
+    mocks.listSquareDevicesApi.mockResolvedValue([
+      {
+        attributes: {
+          location_id: 'location-2',
+          product_type: 'TERMINAL_API',
+          status: 'PAIRED',
+        },
+        id: 'terminal-wrong-location',
+      },
+      {
+        attributes: {
+          location_id: 'location-1',
+          product_type: 'SQUARE_POS',
+          status: 'PAIRED',
+        },
+        id: 'phone-reader',
+      },
+    ]);
+
+    await expect(
+      resolveInventorySquareTerminalDevice({
+        requestedDeviceId: 'phone-reader',
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('not paired to the selected selling location');
+  });
+
+  it('accepts the configured sandbox device id without a physical device list', async () => {
+    mocks.getInventorySquareAccessContext.mockResolvedValue({
+      accessToken: 'sandbox-token',
+      environment: 'sandbox',
+    });
+    mocks.loadSettingsRow.mockResolvedValue({
+      device_id: null,
+      environment: 'sandbox',
+      location_id: 'sandbox-location',
+      sandbox_device_id: 'sandbox-terminal',
+    });
+
+    await expect(
+      resolveInventorySquareTerminalDevice({ wsId: 'workspace-1' })
+    ).resolves.toBe('sandbox-terminal');
   });
 });

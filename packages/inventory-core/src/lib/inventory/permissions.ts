@@ -117,6 +117,12 @@ export function canCreateInventorySales(
   ]);
 }
 
+export function canInitiateInventoryPosCheckout(
+  permissions: Pick<PermissionsResult, 'containsPermission'>
+) {
+  return permissions.containsPermission('initiate_pos_checkout');
+}
+
 export function canUpdateInventorySales(
   permissions: Pick<PermissionsResult, 'containsPermission'>
 ) {

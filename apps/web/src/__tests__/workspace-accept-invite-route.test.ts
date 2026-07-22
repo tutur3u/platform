@@ -17,9 +17,19 @@ const mocks = vi.hoisted(() => {
   const adminInviteMaybeSingle = vi.fn();
   const adminEmailInviteIn = vi.fn();
   const adminMembershipInsert = vi.fn();
+  const adminMembershipDeleteUserEq = vi.fn();
+  const adminRoleMaybeSingle = vi.fn();
+  const adminRoleMemberUpsert = vi.fn();
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
+  const adminMembershipDeleteWsEq = vi.fn(() => ({
+    eq: adminMembershipDeleteUserEq,
+  }));
+  const adminRoleEq = vi.fn(() => ({
+    eq: adminRoleEq,
+    maybeSingle: adminRoleMaybeSingle,
+  }));
   const sessionSupabase = {
     auth: {
       getUser: authGetUser,
@@ -75,7 +85,20 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'workspace_members') {
         return {
+          delete: vi.fn(() => ({ eq: adminMembershipDeleteWsEq })),
           insert: adminMembershipInsert,
+        };
+      }
+
+      if (table === 'workspace_roles') {
+        return {
+          select: vi.fn(() => ({ eq: adminRoleEq })),
+        };
+      }
+
+      if (table === 'workspace_role_members') {
+        return {
+          upsert: adminRoleMemberUpsert,
         };
       }
 
@@ -126,7 +149,10 @@ const mocks = vi.hoisted(() => {
     adminInviteMaybeSingle,
     adminLinkedUsersUpsert,
     adminMembershipInsert,
+    adminMembershipDeleteUserEq,
     adminPrivateEmailMaybeSingle,
+    adminRoleMaybeSingle,
+    adminRoleMemberUpsert,
     adminSupabase,
     adminWorkspaceSingle,
     authGetUser,
@@ -217,6 +243,12 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     mocks.adminMembershipInsert.mockResolvedValue({ error: null });
+    mocks.adminMembershipDeleteUserEq.mockResolvedValue({ error: null });
+    mocks.adminRoleMaybeSingle.mockResolvedValue({
+      data: { id: 'pos-role' },
+      error: null,
+    });
+    mocks.adminRoleMemberUpsert.mockResolvedValue({ error: null });
     mocks.adminLinkedUsersUpsert.mockResolvedValue({ error: null });
     mocks.adminInviteDeleteEq.mockImplementation(() => ({
       eq: vi.fn().mockResolvedValue({ error: null }),
@@ -414,6 +446,68 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       'auth@example.com',
       'private@example.com',
     ]);
+  });
+
+  it('assigns the validated POS operator role from an accepted invite', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          role_id: 'pos-role',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminRoleMemberUpsert).toHaveBeenCalledWith(
+      { role_id: 'pos-role', user_id: 'user-1' },
+      { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
+    );
+  });
+
+  it('rolls membership back when the invited POS role is invalid', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          role_id: 'deleted-role',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+    mocks.adminRoleMaybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
+    });
+    expect(mocks.adminMembershipDeleteUserEq).toHaveBeenCalledWith(
+      'user_id',
+      'user-1'
+    );
+    expect(mocks.adminEmailInviteDeleteIn).not.toHaveBeenCalled();
   });
 
   it('accepts fixture-style Postgres UUID invite paths without workspace normalization', async () => {

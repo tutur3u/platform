@@ -185,6 +185,69 @@ export async function listInventorySquareDevices(wsId: string) {
   }
 }
 
+function isUsableTerminalDevice(
+  device: SquareDevice,
+  locationId: string | null
+) {
+  const productType = device.productType?.toUpperCase();
+  const status = device.status?.toUpperCase();
+
+  return (
+    Boolean(locationId) &&
+    device.locationId === locationId &&
+    productType === 'TERMINAL_API' &&
+    status !== 'UNPAIRED'
+  );
+}
+
+export async function getInventorySquareCheckoutRouting(wsId: string) {
+  const settings = await loadSettingsRow(wsId);
+  const defaultDeviceId =
+    settings.environment === 'sandbox'
+      ? settings.sandbox_device_id || settings.device_id
+      : settings.device_id;
+  const devices = (await listInventorySquareDevices(wsId)).filter((device) =>
+    isUsableTerminalDevice(device, settings.location_id)
+  );
+
+  return {
+    defaultDeviceId: defaultDeviceId ?? null,
+    devices,
+    environment: settings.environment,
+    locationId: settings.location_id ?? null,
+  };
+}
+
+export async function resolveInventorySquareTerminalDevice({
+  requestedDeviceId,
+  wsId,
+}: {
+  requestedDeviceId?: string | null;
+  wsId: string;
+}) {
+  const routing = await getInventorySquareCheckoutRouting(wsId);
+  const deviceId = requestedDeviceId?.trim() || routing.defaultDeviceId;
+
+  if (!deviceId) {
+    throw new Error('Select a Square Terminal before starting checkout.');
+  }
+
+  if (
+    routing.environment === 'sandbox' &&
+    deviceId === routing.defaultDeviceId
+  ) {
+    return deviceId;
+  }
+
+  if (!routing.devices.some((device) => device.id === deviceId)) {
+    throw new Error(
+      'That Square Terminal is not paired to the selected selling location. Refresh the device list and try again.'
+    );
+  }
+
+  return deviceId;
+}
+
 export async function createInventorySquareDeviceCode({
   locationId,
   name,

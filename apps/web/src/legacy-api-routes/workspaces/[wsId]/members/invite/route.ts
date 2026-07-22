@@ -16,9 +16,32 @@ interface Params {
 }
 
 const InviteMemberSchema = z.object({
+  accessPreset: z
+    .enum(['member', 'guest', 'pos_operator'])
+    .optional()
+    .default('member'),
+  confirmDefaultAdminMigration: z.boolean().optional().default(false),
   email: z.email().max(MAX_EMAIL_LENGTH),
   memberType: z.enum(['MEMBER', 'GUEST']).optional().default('MEMBER'),
 });
+
+type PosOperatorSetupResult = {
+  adminRoleId: string | null;
+  defaultAdminWasDisabled: boolean;
+  memberCount: number;
+  posOperatorRoleId: string;
+  preservedMemberCount: number;
+};
+
+type PosOperatorSetupClient = {
+  rpc: (
+    functionName: 'create_inventory_pos_operator_invite',
+    args: { p_actor_id: string; p_email: string; p_ws_id: string }
+  ) => Promise<{
+    data: PosOperatorSetupResult | null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
 
 const DUPLICATE_INVITE_MESSAGE =
   'User is already a member of this workspace or has a pending invite.';
@@ -127,6 +150,21 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const email = payload.email.trim().toLowerCase();
+  const isPosOperatorInvite = payload.accessPreset === 'pos_operator';
+
+  if (
+    isPosOperatorInvite &&
+    (permissions.withoutPermission('manage_workspace_roles') ||
+      !payload.confirmDefaultAdminMigration)
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'POS operator setup requires role management permission and explicit confirmation.',
+      },
+      { status: 403 }
+    );
+  }
 
   const { data: disableInvite, error: disableInviteError } = await sbAdmin
     .from('workspace_secrets')
@@ -166,12 +204,53 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await sbAdmin.from('workspace_email_invites').insert({
-    ws_id: wsId,
-    email,
-    invited_by: user.id,
-    type: payload.memberType,
-  });
+  let posOperatorSetup: PosOperatorSetupResult | null = null;
+  if (isPosOperatorInvite) {
+    const privateAdmin = sbAdmin.schema(
+      'private'
+    ) as unknown as PosOperatorSetupClient;
+    const { data, error } = await privateAdmin.rpc(
+      'create_inventory_pos_operator_invite',
+      {
+        p_actor_id: user.id,
+        p_email: email,
+        p_ws_id: wsId,
+      }
+    );
+
+    if (error || !data?.posOperatorRoleId) {
+      if (error && isUniqueViolation(error)) {
+        return NextResponse.json(
+          { message: DUPLICATE_INVITE_MESSAGE },
+          { status: 409 }
+        );
+      }
+
+      console.error('Failed to prepare POS operator access', {
+        error,
+        wsId,
+      });
+      return NextResponse.json(
+        {
+          message:
+            error?.message ?? 'Unable to prepare limited POS operator access.',
+        },
+        { status: 500 }
+      );
+    }
+
+    posOperatorSetup = data;
+  }
+
+  const { error } = isPosOperatorInvite
+    ? { error: null }
+    : await sbAdmin.from('workspace_email_invites').insert({
+        ws_id: wsId,
+        email,
+        invited_by: user.id,
+        role_id: null,
+        type: payload.accessPreset === 'guest' ? 'GUEST' : payload.memberType,
+      });
 
   if (error) {
     if (isUniqueViolation(error)) {
@@ -198,5 +277,8 @@ export async function POST(req: Request, { params }: Params) {
   // This call ensures it gets processed right away
   triggerImmediateNotification();
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({
+    message: 'success',
+    ...(posOperatorSetup ? { posOperatorSetup } : {}),
+  });
 }

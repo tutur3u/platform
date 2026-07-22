@@ -1585,6 +1585,7 @@ export type InventoryCheckoutCreatePayload = {
   customerEmail?: string;
   customerPhone?: string | null;
   note?: string | null;
+  squareDeviceId?: string | null;
   lines: Array<{
     listingId?: string;
     bundleId?: string;
@@ -1592,6 +1593,14 @@ export type InventoryCheckoutCreatePayload = {
     quantity: number;
     bundleSelections?: InventoryCheckoutBundleSelections;
   }>;
+};
+
+export type InventorySquareCheckoutOptions = {
+  checkoutMode: InventoryStorefrontCheckoutMode;
+  defaultDeviceId?: string | null;
+  devices?: InventorySquareDevice[];
+  routing: 'current_device' | 'not_applicable' | 'selected_terminal';
+  staffAuthorized: boolean;
 };
 
 export type InventoryCostProfileStatus = 'active' | 'archived' | 'draft';
@@ -3508,6 +3517,16 @@ export function createInventoryCheckoutSession(
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'POST',
     }
+  );
+}
+
+export function getInventorySquareCheckoutOptions(
+  slug: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventorySquareCheckoutOptions>(
+    publicStorefrontPath(slug, '/checkout-options'),
+    { cache: 'no-store' }
   );
 }
 

@@ -38,6 +38,7 @@ import {
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
   getInventorySale,
+  getInventorySquareCheckoutOptions,
   getInventorySquareSettings,
   importInventoryCostingCsv,
   listInventoryBundles,
@@ -788,6 +789,7 @@ describe('inventory internal API helpers', () => {
             quantity: 1,
           },
         ],
+        squareDeviceId: 'terminal-front',
       },
       {
         baseUrl: 'https://internal.example.com',
@@ -823,6 +825,7 @@ describe('inventory internal API helpers', () => {
               quantity: 1,
             },
           ],
+          squareDeviceId: 'terminal-front',
         }),
         method: 'POST',
       })
@@ -831,6 +834,31 @@ describe('inventory internal API helpers', () => {
       3,
       'https://internal.example.com/api/v1/inventory/orders/order_token',
       expect.objectContaining({ headers: expect.any(Headers) })
+    );
+  });
+
+  it('loads staff-only Square checkout routing without caching it', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        checkoutMode: 'square_terminal',
+        defaultDeviceId: 'terminal-front',
+        devices: [],
+        routing: 'selected_terminal',
+        staffAuthorized: true,
+      })
+    );
+
+    await getInventorySquareCheckoutOptions('event store', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/inventory/storefronts/event%20store/checkout-options',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
     );
   });
 

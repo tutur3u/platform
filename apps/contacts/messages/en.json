@@ -6677,6 +6677,13 @@
     "invite_membership_guest": "Guest — limited access",
     "invite_membership_label": "Access",
     "invite_membership_member": "Member — full workspace access",
+    "invite_membership_pos_operator": "POS operator — start payments only",
+    "pos_operator_admin_migration_note": "The current member-wide Admin default will be replaced with an explicit preserved admin role before this invitation is created. Existing members keep access; future members do not inherit Admin automatically.",
+    "pos_operator_confirmation": "I understand this access migration and want to invite these people as limited POS operators.",
+    "pos_operator_description": "Can start an approved Square POS or Terminal checkout, but cannot edit products, stock, sales, payments, members, or settings.",
+    "pos_operator_existing_members": "current members retain Admin",
+    "pos_operator_only_permission": "One checkout permission only",
+    "pos_operator_title": "Event-safe POS operator",
     "invite_submit": "Send invitation",
     "invited": "Invited",
     "joined": "Joined",
@@ -7083,6 +7090,8 @@
     "viewing_history_snapshot": "Viewing history snapshot"
   },
   "ws-roles": {
+    "initiate_pos_checkout": "Start POS checkout",
+    "initiate_pos_checkout_description": "Allows members to route an order to an approved Square Terminal or open Square POS on their current device. It does not allow editing inventory, sales, payments, members, or settings.",
     "create": "Create role",
     "create_description": "Create a new role for this workspace.",
     "custom_days": "Custom Days",

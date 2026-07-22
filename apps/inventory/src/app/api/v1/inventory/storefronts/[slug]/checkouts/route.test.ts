@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   createInventorySquareTerminalCheckout: vi.fn(),
   assertInventorySquarePosReady: vi.fn(),
   assertInventorySquareReady: vi.fn(),
+  authorizeSquareCheckoutStaff: vi.fn(),
+  checkRateLimit: vi.fn(),
   getCheckoutByPublicToken: vi.fn(),
   getPublicStorefront: vi.fn(),
   insert: vi.fn(),
@@ -15,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   markCheckoutProvider: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   revalidatePublicStorefront: vi.fn(),
+  resolveInventorySquareTerminalDevice: vi.fn(),
   rpc: vi.fn(),
   schema: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
@@ -45,6 +48,8 @@ vi.mock('@tuturuuu/inventory-core/commerce/square', () => ({
     mocks.createInventorySquarePosCheckout(...args),
   createInventorySquareTerminalCheckout: (...args: unknown[]) =>
     mocks.createInventorySquareTerminalCheckout(...args),
+  resolveInventorySquareTerminalDevice: (...args: unknown[]) =>
+    mocks.resolveInventorySquareTerminalDevice(...args),
 }));
 
 vi.mock('@/constants/common', () => ({
@@ -65,6 +70,15 @@ vi.mock('@tuturuuu/inventory-core/access', () => ({
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: (...args: unknown[]) =>
     mocks.resolveSessionAuthContext(...args),
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: (...args: unknown[]) => mocks.checkRateLimit(...args),
+}));
+
+vi.mock('@/lib/square-checkout-access', () => ({
+  authorizeSquareCheckoutStaff: (...args: unknown[]) =>
+    mocks.authorizeSquareCheckoutStaff(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -112,6 +126,11 @@ describe('inventory storefront checkout route', () => {
     mocks.assertInventorySquarePosReady.mockResolvedValue({
       posReadiness: { issues: [], ready: true },
     });
+    mocks.authorizeSquareCheckoutStaff.mockResolvedValue({ ok: true });
+    mocks.checkRateLimit.mockResolvedValue({ allowed: true, headers: {} });
+    mocks.resolveInventorySquareTerminalDevice.mockResolvedValue(
+      'terminal-device-1'
+    );
     mocks.markCheckoutProvider.mockResolvedValue(undefined);
     mocks.createInventorySquareTerminalCheckout.mockResolvedValue({
       checkout: {
@@ -461,6 +480,7 @@ describe('inventory storefront checkout route', () => {
     });
     expect(mocks.createInventorySquareTerminalCheckout).toHaveBeenCalledWith({
       checkoutId: 'checkout-1',
+      deviceId: 'terminal-device-1',
       wsId: 'ws-1',
     });
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
@@ -521,6 +541,202 @@ describe('inventory storefront checkout route', () => {
     });
     expect(mocks.createInventorySquareTerminalCheckout).not.toHaveBeenCalled();
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+  });
+
+  it('routes a Terminal checkout to the staff-selected paired device', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.resolveInventorySquareTerminalDevice.mockResolvedValue(
+      'terminal-device-2'
+    );
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+          squareDeviceId: 'terminal-device-2',
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.resolveInventorySquareTerminalDevice).toHaveBeenCalledWith({
+      requestedDeviceId: 'terminal-device-2',
+      wsId: 'ws-1',
+    });
+    expect(mocks.createInventorySquareTerminalCheckout).toHaveBeenCalledWith({
+      checkoutId: 'checkout-1',
+      deviceId: 'terminal-device-2',
+      wsId: 'ws-1',
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'create_inventory_checkout_session',
+      expect.objectContaining({
+        p_payload: expect.not.objectContaining({
+          squareDeviceId: expect.anything(),
+        }),
+      })
+    );
+  });
+
+  it('blocks shoppers without POS staff permission before reserving stock', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.authorizeSquareCheckoutStaff.mockResolvedValue({
+      ok: false,
+      response: Response.json(
+        { code: 'POS_INITIATE_PERMISSION_REQUIRED' },
+        { status: 403 }
+      ),
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.assertInventorySquareReady).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale or cross-location Terminal routing before reserving stock', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.resolveInventorySquareTerminalDevice.mockRejectedValue(
+      new Error('That Square Terminal is not paired to this location.')
+    );
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+          squareDeviceId: 'wrong-terminal',
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe('SQUARE_TERMINAL_ROUTE_INVALID');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects remote routing for Square POS App checkout', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_pos',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+          squareDeviceId: 'remote-reader',
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe('SQUARE_POS_CURRENT_DEVICE_ONLY');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('throttles repeated Square dispatches before reserving stock', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.checkRateLimit.mockResolvedValue(
+      Response.json({ code: 'RATE_LIMIT_EXCEEDED' }, { status: 429 })
+    );
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(429);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.assertInventorySquareReady).not.toHaveBeenCalled();
   });
 
   it('releases Square reservations when provider marking fails', async () => {

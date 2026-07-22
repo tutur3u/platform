@@ -2,14 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   canCreateInventorySetup,
   canDeleteInventorySetup,
+  canInitiateInventoryPosCheckout,
   canUpdateInventorySetup,
   canViewInventoryAuditLogs,
 } from './permissions';
 
 function permissionsWith(granted: string[]) {
   return {
-    containsPermission: vi.fn((permission: string) =>
-      granted.includes(permission)
+    containsPermission: vi.fn(
+      (permission: string) =>
+        granted.includes('admin') || granted.includes(permission)
     ),
   };
 }
@@ -66,5 +68,31 @@ describe('inventory audit log permissions', () => {
       )
     ).toBe(true);
     expect(canViewInventoryAuditLogs(permissionsWith(['admin']))).toBe(true);
+  });
+});
+
+describe('inventory POS checkout permissions', () => {
+  it('requires the dedicated POS permission or administrator access', () => {
+    for (const broadPermission of [
+      'view_inventory',
+      'create_inventory',
+      'update_inventory',
+      'manage_inventory_catalog',
+      'manage_inventory_setup',
+      'manage_workspace_members',
+    ]) {
+      expect(
+        canInitiateInventoryPosCheckout(permissionsWith([broadPermission]))
+      ).toBe(false);
+    }
+
+    expect(
+      canInitiateInventoryPosCheckout(
+        permissionsWith(['initiate_pos_checkout'])
+      )
+    ).toBe(true);
+    expect(canInitiateInventoryPosCheckout(permissionsWith(['admin']))).toBe(
+      true
+    );
   });
 });

@@ -50,6 +50,8 @@ export function StorefrontSurface({
   buyerDefaults,
   cartLines = [],
   cartHref,
+  checkoutBlocked = false,
+  checkoutFields,
   checkoutOpen,
   checkoutHref,
   className,
@@ -83,6 +85,8 @@ export function StorefrontSurface({
   buyerDefaults?: StorefrontBuyerDefaults;
   cartLines?: StorefrontCartLine[];
   cartHref?: string;
+  checkoutBlocked?: boolean;
+  checkoutFields?: ReactNode;
   checkoutOpen?: boolean;
   checkoutHref?: string;
   className?: string;
@@ -269,6 +273,8 @@ export function StorefrontSurface({
     <StorefrontCartSummary
       buyerDefaults={buyerDefaults}
       cartEntries={checkoutEntries}
+      checkoutBlocked={checkoutBlocked}
+      checkoutFields={checkoutFields}
       checkoutHref={checkoutHref}
       currency={currency}
       isCheckout

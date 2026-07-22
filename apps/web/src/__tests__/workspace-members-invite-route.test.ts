@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
   const insertInvite = vi.fn();
   const personalWorkspaceMaybeSingle = vi.fn();
+  const posOperatorRpc = vi.fn();
   const resolveAuthenticatedSessionUser = vi.fn();
   const serverLoggerError = vi.fn();
   const serverLoggerWarn = vi.fn();
@@ -55,6 +56,10 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
+    schema: vi.fn((schema: string) => {
+      if (schema === 'private') return { rpc: posOperatorRpc };
+      throw new Error(`Unexpected admin schema: ${schema}`);
+    }),
   };
 
   return {
@@ -69,6 +74,7 @@ const mocks = vi.hoisted(() => {
     personalWorkspaceEq,
     personalWorkspaceMaybeSingle,
     personalWorkspaceSelect,
+    posOperatorRpc,
     resolveAuthenticatedSessionUser,
     serverLoggerError,
     serverLoggerWarn,
@@ -106,24 +112,31 @@ vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
 
 function createPermissions({
   canManageMembers = true,
+  canManageRoles = true,
   membershipType = 'MEMBER',
   wsId = 'canonical-ws',
 }: {
   canManageMembers?: boolean;
+  canManageRoles?: boolean;
   membershipType?: 'GUEST' | 'MEMBER';
   wsId?: string;
 } = {}) {
   return {
-    containsPermission: vi.fn(
-      (permission: string) =>
-        permission === 'manage_workspace_members' && canManageMembers
-    ),
+    containsPermission: vi.fn((permission: string) => {
+      if (permission === 'manage_workspace_members') return canManageMembers;
+      if (permission === 'manage_workspace_roles') return canManageRoles;
+      return false;
+    }),
     membershipType,
-    permissions: canManageMembers ? ['manage_workspace_members'] : [],
-    withoutPermission: vi.fn(
-      (permission: string) =>
-        permission === 'manage_workspace_members' && !canManageMembers
-    ),
+    permissions: [
+      ...(canManageMembers ? ['manage_workspace_members'] : []),
+      ...(canManageRoles ? ['manage_workspace_roles'] : []),
+    ],
+    withoutPermission: vi.fn((permission: string) => {
+      if (permission === 'manage_workspace_members') return !canManageMembers;
+      if (permission === 'manage_workspace_roles') return !canManageRoles;
+      return true;
+    }),
     wsId,
   };
 }
@@ -179,6 +192,16 @@ describe('workspace members invite route', () => {
       status: undefined,
     });
     mocks.insertInvite.mockResolvedValue({ error: null });
+    mocks.posOperatorRpc.mockResolvedValue({
+      data: {
+        adminRoleId: 'admin-role',
+        defaultAdminWasDisabled: true,
+        memberCount: 4,
+        posOperatorRoleId: 'pos-role',
+        preservedMemberCount: 4,
+      },
+      error: null,
+    });
   });
 
   it('inserts a default member invite with the admin client, canonical workspace id, and lowercase email', async () => {
@@ -200,6 +223,7 @@ describe('workspace members invite route', () => {
     expect(mocks.insertInvite).toHaveBeenCalledWith({
       email: 'member@example.com',
       invited_by: 'admin-user',
+      role_id: null,
       type: 'MEMBER',
       ws_id: 'canonical-ws',
     });
@@ -215,9 +239,92 @@ describe('workspace members invite route', () => {
     expect(mocks.insertInvite).toHaveBeenCalledWith({
       email: 'guest@example.com',
       invited_by: 'admin-user',
+      role_id: null,
       type: 'GUEST',
       ws_id: 'canonical-ws',
     });
+  });
+
+  it('requires explicit confirmation before changing default admin access', async () => {
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        email: 'staff@example.com',
+      },
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
+  it('preserves current admins and creates a least-privilege POS invite', async () => {
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        confirmDefaultAdminMigration: true,
+        email: 'Staff@Example.com',
+      },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'success',
+      posOperatorSetup: {
+        defaultAdminWasDisabled: true,
+        posOperatorRoleId: 'pos-role',
+        preservedMemberCount: 4,
+      },
+    });
+    expect(mocks.posOperatorRpc).toHaveBeenCalledWith(
+      'create_inventory_pos_operator_invite',
+      {
+        p_actor_id: 'admin-user',
+        p_email: 'staff@example.com',
+        p_ws_id: 'canonical-ws',
+      }
+    );
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
+  it('returns a conflict without a second insert when the atomic POS invite already exists', async () => {
+    mocks.posOperatorRpc.mockResolvedValue({
+      data: null,
+      error: { code: '23505', message: 'duplicate key value' },
+    });
+
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        confirmDefaultAdminMigration: true,
+        email: 'staff@example.com',
+      },
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'User is already a member of this workspace or has a pending invite.',
+    });
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
+  it('requires role-management permission for limited POS invitations', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      createPermissions({ canManageRoles: false })
+    );
+
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        confirmDefaultAdminMigration: true,
+        email: 'staff@example.com',
+      },
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
   });
 
   it('returns 401 for unauthenticated requests before seat checks or inserts', async () => {

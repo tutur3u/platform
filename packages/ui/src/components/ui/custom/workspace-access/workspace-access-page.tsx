@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TriangleAlert } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { WorkspaceDefaultPermissionMemberType } from '@tuturuuu/types';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
@@ -51,8 +50,11 @@ export function WorkspaceAccessPage({
   const [status, setStatus] = useState<WorkspaceAccessMemberStatus>('all');
   const [search, setSearch] = useState('');
   const [inviteEmails, setInviteEmails] = useState('');
-  const [inviteMemberType, setInviteMemberType] =
-    useState<WorkspaceDefaultPermissionMemberType>('MEMBER');
+  const [inviteAccessPreset, setInviteAccessPreset] = useState<
+    'guest' | 'member' | 'pos_operator'
+  >('member');
+  const [confirmDefaultAdminMigration, setConfirmDefaultAdminMigration] =
+    useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [filters, setFilters] = useState<MemberFiltersState>({
     permissionIds: [],
@@ -158,13 +160,17 @@ export function WorkspaceAccessPage({
   const inviteMutation = useMutation({
     mutationFn: () =>
       adapter.inviteMembers(workspaceId, {
+        accessPreset: inviteAccessPreset,
+        confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
-        memberType: inviteMemberType,
+        memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async (result) => {
       setInviteEmails('');
+      setInviteAccessPreset('member');
+      setConfirmDefaultAdminMigration(false);
       setInviteDialogOpen(false);
       toast.success(result.message ?? t('ws-members.invitation-sent'));
       await invalidateAccessData();
@@ -215,6 +221,11 @@ export function WorkspaceAccessPage({
   });
   const joinedCount = sortedMembers.filter((member) => !member.pending).length;
   const invitedCount = sortedMembers.filter((member) => member.pending).length;
+  const defaultAdminEnabled = Boolean(
+    memberDefaultQuery.data?.permissions.some(
+      (permission) => permission.id === 'admin' && permission.enabled
+    )
+  );
   const filterOptions = getMemberFilterOptions(
     sortedMembers,
     permissionDefinitions
@@ -344,11 +355,21 @@ export function WorkspaceAccessPage({
       </Tabs>
 
       <WorkspaceAccessInviteDialog
+        accessPreset={inviteAccessPreset}
+        canManageRoles={canManageRoles}
+        confirmDefaultAdminMigration={confirmDefaultAdminMigration}
+        defaultAdminEnabled={defaultAdminEnabled}
         emails={inviteEmails}
         isSubmitting={inviteMutation.isPending}
-        memberType={inviteMemberType}
+        joinedMemberCount={joinedCount}
+        onAccessPresetChange={(value) => {
+          setInviteAccessPreset(value);
+          if (value !== 'pos_operator') {
+            setConfirmDefaultAdminMigration(false);
+          }
+        }}
+        onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}
         onEmailsChange={setInviteEmails}
-        onMemberTypeChange={setInviteMemberType}
         onOpenChange={setInviteDialogOpen}
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}

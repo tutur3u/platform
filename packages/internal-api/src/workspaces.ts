@@ -428,7 +428,12 @@ export async function inviteWorkspaceMembers(
 
 export async function inviteWorkspaceMember(
   workspaceId: string,
-  payload: { email: string; memberType: 'MEMBER' | 'GUEST' },
+  payload: {
+    accessPreset?: 'guest' | 'member' | 'pos_operator';
+    confirmDefaultAdminMigration?: boolean;
+    email: string;
+    memberType: 'MEMBER' | 'GUEST';
+  },
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
@@ -451,6 +456,13 @@ export async function inviteWorkspaceMember(
   return (await response.json()) as {
     message?: string;
     errorCode?: string;
+    posOperatorSetup?: {
+      adminRoleId: string;
+      defaultAdminWasDisabled: boolean;
+      memberCount: number;
+      posOperatorRoleId: string;
+      preservedMemberCount: number;
+    } | null;
   };
 }
 

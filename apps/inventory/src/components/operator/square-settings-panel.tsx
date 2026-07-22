@@ -10,6 +10,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { SquareEventSafetyCard } from './square-event-safety-card';
 import { SquareProductionSetupGuide } from './square-production-setup-guide';
 import {
   SquareSettingsEditorDialog,
@@ -154,6 +155,7 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
         settings={settings.data}
         webhookUrl={webhookUrl}
       />
+      <SquareEventSafetyCard />
       <SquareSettingsSummary
         appCredential={activeAppCredential}
         connection={activeConnection}
