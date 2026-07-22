@@ -1,8 +1,5 @@
-'use client';
-
 import { ArrowRight } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useReducedMotion } from 'framer-motion';
 
 /**
  * The problem, drawn.
@@ -40,15 +37,13 @@ const gathered = [
 ];
 
 export function ToolSprawl() {
-  const reduced = useReducedMotion();
-
   return (
     <div
       aria-hidden
-      className="mb-12 grid items-center gap-4 sm:mb-16 sm:grid-cols-[1fr_auto_1fr]"
+      className="mb-10 grid items-center gap-3 sm:mb-16 sm:grid-cols-[1fr_auto_1fr] sm:gap-4"
     >
       {/* Before: scatter */}
-      <div className="relative h-44 overflow-hidden rounded-2xl border border-dynamic-red/15 bg-dynamic-red/[0.02] sm:h-48">
+      <div className="group relative h-36 overflow-hidden rounded-2xl border border-dynamic-red/15 bg-dynamic-red/[0.02] sm:h-48">
         <div
           className="absolute inset-0 opacity-[0.35]"
           style={{
@@ -58,21 +53,18 @@ export function ToolSprawl() {
           }}
         />
         {scattered.map((tile, index) => (
-          <motion.span
-            animate={reduced ? undefined : { y: [0, -3, 0] }}
-            className={cn('absolute rounded-md', tile.tone)}
+          <span
+            className={cn(
+              'absolute rounded-md transition-transform duration-500 group-hover:-translate-y-0.5',
+              index % 3 === 0 && 'opacity-80',
+              tile.tone
+            )}
             key={`${tile.x}-${tile.y}`}
             style={{
               left: `${tile.x}%`,
               top: `${tile.y}%`,
               width: tile.size,
               height: tile.size,
-            }}
-            transition={{
-              duration: 4 + (index % 4),
-              repeat: Number.POSITIVE_INFINITY,
-              ease: 'easeInOut',
-              delay: index * 0.3,
             }}
           />
         ))}
@@ -87,7 +79,7 @@ export function ToolSprawl() {
       </div>
 
       {/* After: one surface */}
-      <div className="relative h-44 overflow-hidden rounded-2xl border border-dynamic-green/20 bg-foreground/[0.015] sm:h-48">
+      <div className="group relative h-36 overflow-hidden rounded-2xl border border-dynamic-green/20 bg-foreground/[0.015] sm:h-48">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-dynamic-green/50 to-transparent"
@@ -95,17 +87,13 @@ export function ToolSprawl() {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="grid grid-cols-3 gap-2.5">
             {gathered.map((tone, index) => (
-              <motion.span
-                className={cn('h-8 w-8 rounded-md sm:h-9 sm:w-9', tone)}
-                initial={reduced ? false : { opacity: 0, scale: 0.6 }}
+              <span
+                className={cn(
+                  'h-8 w-8 rounded-md shadow-foreground/5 shadow-sm transition-transform duration-500 group-hover:scale-[1.03] sm:h-9 sm:w-9',
+                  index === 4 && 'ring-1 ring-foreground/15',
+                  tone
+                )}
                 key={tone}
-                transition={{
-                  delay: reduced ? 0 : 0.3 + index * 0.05,
-                  duration: 0.45,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                viewport={{ once: true, margin: '-60px' }}
-                whileInView={{ opacity: 1, scale: 1 }}
               />
             ))}
           </div>

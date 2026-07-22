@@ -1,6 +1,5 @@
 import type { LucideIcon } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import { CountUp } from '../shared/count-up';
 
 export type StatColor = 'red' | 'orange' | 'yellow' | 'green' | 'blue';
 
@@ -75,13 +74,14 @@ export function StatCard({ icon: Icon, value, label, color }: StatCardProps) {
             styles.icon
           )}
         />
-        <CountUp
+        <span
           className={cn(
             'mt-6 block font-display font-semibold text-5xl tabular-nums tracking-[-0.04em]',
             styles.value
           )}
-          value={value}
-        />
+        >
+          {value}
+        </span>
         <div className="mt-2 font-mono-ui text-[0.68rem] text-foreground/40 uppercase tracking-[0.16em]">
           {label}
         </div>

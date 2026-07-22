@@ -90,7 +90,7 @@ export function FeatureCard({
     <Root
       {...(href ? { href } : {})}
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-500',
+        'group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-500',
         'hover:-translate-y-1 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         styles.border,
@@ -117,8 +117,8 @@ export function FeatureCard({
 
       <div
         className={cn(
-          'relative flex h-full',
-          wide ? 'flex-col gap-5 sm:flex-row sm:items-center' : 'flex-col'
+          'relative flex',
+          wide ? 'flex-col gap-4 sm:flex-row sm:items-center' : 'flex-col'
         )}
       >
         <div className={cn('flex flex-col', wide && 'sm:flex-1')}>
@@ -161,8 +161,8 @@ export function FeatureCard({
         {preview ? (
           <div
             className={cn(
-              'transition-transform duration-500 group-hover:-translate-y-0.5',
-              wide ? 'sm:w-[46%] sm:shrink-0' : 'mt-5'
+              'h-fit transition-transform duration-500 group-hover:-translate-y-0.5',
+              wide ? 'sm:w-[44%] sm:shrink-0' : 'mt-4'
             )}
           >
             {preview}

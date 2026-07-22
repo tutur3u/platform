@@ -1,5 +1,3 @@
-'use client';
-
 import { AppWindow, Brain, Clock } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 import { RevealGroup, RevealItem } from '../shared/reveal';

@@ -20,7 +20,7 @@ function PreviewFrame({
     <div
       aria-hidden
       className={cn(
-        'relative w-full overflow-hidden rounded-xl border border-foreground/10 bg-background/50 p-3 shadow-foreground/5 shadow-sm',
+        'relative h-fit w-full overflow-hidden rounded-xl border border-foreground/10 bg-background/50 p-3 shadow-foreground/5 shadow-sm',
         className
       )}
     >
@@ -48,7 +48,7 @@ export function CalendarPreview() {
         <span>Week</span>
         <span className="text-dynamic-blue/70">Auto</span>
       </div>
-      <div className="grid h-24 grid-cols-5 gap-1.5">
+      <div className="grid h-20 grid-cols-5 gap-1.5 sm:h-24">
         {dayLabels.map((label, day) => (
           <div className="relative" key={`${label}-${day}`}>
             <div className="absolute inset-0 rounded-md bg-foreground/[0.04]" />
@@ -193,7 +193,7 @@ export function FinancePreview() {
           +18.4%
         </span>
       </div>
-      <div className="flex h-20 items-end gap-1.5">
+      <div className="flex h-16 items-end gap-1.5 sm:h-20">
         {bars.map((height, index) => (
           <div
             className={cn(

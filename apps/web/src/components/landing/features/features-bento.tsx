@@ -61,17 +61,14 @@ export function FeaturesBento() {
     >
       <SpotlightGrid>
         <RevealGroup
-          className="grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-4"
           stagger={0.07}
         >
           {products.map((product) => {
             const Preview = productPreviews[product.appKey];
 
             return (
-              <RevealItem
-                className={`h-full ${product.span}`}
-                key={product.appKey}
-              >
+              <RevealItem className={product.span} key={product.appKey}>
                 <FeatureCard
                   color={product.color}
                   description={t(`apps.${product.appKey}.description` as never)}
