@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  deleteStorefront,
   getStorefront,
   listStorefrontListings,
   listStorefronts,
@@ -21,6 +22,10 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
+}));
+
+vi.mock('./public-storefront', () => ({
+  revalidatePublicStorefront: vi.fn(),
 }));
 
 describe('inventory commerce repository RPC reads', () => {
@@ -65,6 +70,7 @@ describe('inventory commerce repository RPC reads', () => {
   it('loads an admin storefront with mapped theme fields', async () => {
     const storefrontBuilder = {
       eq: vi.fn(),
+      is: vi.fn(),
       maybeSingle: vi.fn().mockResolvedValue({
         data: {
           accent_color: '#123abc',
@@ -92,6 +98,7 @@ describe('inventory commerce repository RPC reads', () => {
     };
     storefrontBuilder.select.mockReturnValue(storefrontBuilder);
     storefrontBuilder.eq.mockReturnValue(storefrontBuilder);
+    storefrontBuilder.is.mockReturnValue(storefrontBuilder);
 
     const countBuilder = {
       eq: vi.fn().mockResolvedValue({ count: 3, error: null }),
@@ -131,6 +138,7 @@ describe('inventory commerce repository RPC reads', () => {
     expect(mocks.from).toHaveBeenNthCalledWith(1, 'inventory_storefronts');
     expect(storefrontBuilder.eq).toHaveBeenCalledWith('id', 'storefront-1');
     expect(storefrontBuilder.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
+    expect(storefrontBuilder.is).toHaveBeenCalledWith('deleted_at', null);
     expect(mocks.from).toHaveBeenNthCalledWith(
       2,
       'inventory_storefront_listings'
@@ -143,6 +151,62 @@ describe('inventory commerce repository RPC reads', () => {
       count: 'exact',
       head: true,
     });
+  });
+
+  it('soft deletes storefronts while preserving referenced checkout history', async () => {
+    const sourceBuilder = {
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          id: 'storefront-1',
+          metadata: { campaign: 'summer' },
+          slug: 'preview-shop',
+        },
+        error: null,
+      }),
+      select: vi.fn(),
+    };
+    sourceBuilder.select.mockReturnValue(sourceBuilder);
+    sourceBuilder.eq.mockReturnValue(sourceBuilder);
+    sourceBuilder.is.mockReturnValue(sourceBuilder);
+
+    const updateBuilder = {
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: 'storefront-1' },
+        error: null,
+      }),
+      select: vi.fn(),
+      update: vi.fn(),
+    };
+    updateBuilder.update.mockReturnValue(updateBuilder);
+    updateBuilder.eq.mockReturnValue(updateBuilder);
+    updateBuilder.is.mockReturnValue(updateBuilder);
+    updateBuilder.select.mockReturnValue(updateBuilder);
+
+    mocks.from
+      .mockReturnValueOnce(sourceBuilder)
+      .mockReturnValueOnce(updateBuilder);
+
+    await expect(deleteStorefront('ws-1', 'storefront-1')).resolves.toBe(true);
+
+    expect(sourceBuilder.select).toHaveBeenCalledWith('id, slug, metadata');
+    expect(updateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deleted_at: expect.any(String),
+        metadata: expect.objectContaining({
+          campaign: 'summer',
+          deletedAt: expect.any(String),
+          deletedSlug: 'preview-shop',
+        }),
+        slug: 'deleted-storefront-1',
+        status: 'archived',
+        updated_at: expect.any(String),
+      })
+    );
+    expect(updateBuilder.is).toHaveBeenCalledWith('deleted_at', null);
   });
 
   it('lists storefront listings through the private listings RPC', async () => {

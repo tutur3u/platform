@@ -5769,6 +5769,7 @@ export type Database = {
           cover_image_url: string | null;
           created_at: string | null;
           currency: string;
+          deleted_at: string | null;
           description: string | null;
           hero_image_url: string | null;
           id: string;
@@ -5793,6 +5794,7 @@ export type Database = {
           cover_image_url?: string | null;
           created_at?: string | null;
           currency?: string;
+          deleted_at?: string | null;
           description?: string | null;
           hero_image_url?: string | null;
           id?: string;
@@ -5817,6 +5819,7 @@ export type Database = {
           cover_image_url?: string | null;
           created_at?: string | null;
           currency?: string;
+          deleted_at?: string | null;
           description?: string | null;
           hero_image_url?: string | null;
           id?: string;

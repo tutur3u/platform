@@ -24,12 +24,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { InventoryImageUploadField } from './inventory-image-upload';
 import {
-  ColorField,
   SelectValueField,
   TextAreaField,
   TextField,
   ToggleField,
 } from './operator-form-fields';
+import { StorefrontAccentField } from './storefront-accent-field';
 import {
   checkoutModes,
   cornerStyles,
@@ -131,13 +131,11 @@ export function StorefrontBrandFields({
           wsId={wsId}
         />
       </div>
-      <ColorField
-        hint={t('hints.accentColor')}
-        label={t('accentColor')}
+      <StorefrontAccentField
+        className="md:col-span-2"
         onChange={(accentColor) =>
           setForm((current) => ({ ...current, accentColor }))
         }
-        placeholder={t('placeholders.accentColor')}
         value={form.accentColor}
       />
       <SelectValueField

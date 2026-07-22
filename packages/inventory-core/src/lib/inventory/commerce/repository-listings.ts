@@ -98,6 +98,7 @@ async function assertStorefrontTarget(wsId: string, storefrontId: string) {
     .select('id')
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (error) throw error;

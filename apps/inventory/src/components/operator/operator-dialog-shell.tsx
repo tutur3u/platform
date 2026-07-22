@@ -22,11 +22,11 @@ const sizeClass: Record<OperatorDialogSize, string> = {
   // ~28rem — single-field / confirm dialogs
   sm: 'sm:max-w-md',
   // ~42rem — standard forms
-  md: 'sm:max-w-2xl',
+  md: 'sm:max-w-3xl',
   // ~56rem — multi-column forms (product, bundle, storefront)
-  lg: 'sm:max-w-4xl',
+  lg: 'sm:max-w-5xl',
   // ~72rem — dense workflow / listing dialogs
-  xl: 'sm:max-w-6xl',
+  xl: 'sm:max-w-7xl',
 };
 
 /**
@@ -49,9 +49,9 @@ export function OperatorDialogContent({
   return (
     <DialogContent
       className={cn(
-        'flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0',
+        'flex max-h-[calc(100dvh-1rem)] flex-col gap-0 overflow-hidden p-0',
         mobileFullscreen &&
-          'inset-0 top-0 left-0 h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 sm:top-1/2 sm:left-1/2 sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border',
+          'inset-0 top-0 left-0 h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 rounded-none border-0 sm:top-1/2 sm:left-1/2 sm:h-[min(92dvh,60rem)] sm:max-h-[calc(100dvh-1rem)] sm:w-[calc(100vw-1rem)] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-lg sm:border',
         sizeClass[size],
         className
       )}

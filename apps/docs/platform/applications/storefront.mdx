@@ -23,6 +23,21 @@ Published public storefronts are readable anonymously. Published private
 storefronts require a Tuturuuu app session and workspace membership; guest-type
 workspace members are accepted.
 
+## Theme and lifecycle
+
+The Inventory storefront editor offers a **Native** accent mode as the safe
+default. Native mode leaves `accent_color` unset so Storefront inherits its
+theme-aware primary, focus, and contrast tokens in both light and dark mode.
+Choose **Custom** only when a fixed hexadecimal brand color must override those
+tokens.
+
+Removing a storefront is deliberately non-destructive. Inventory marks the
+storefront as removed, releases its former public slug for reuse, invalidates
+the old public cache entry, and hides it from operator and buyer discovery.
+Checkout sessions, order history, stock movements, and audit references keep
+their original storefront row. Archiving remains the reversible choice for a
+storefront that may return later.
+
 ## Polar Checkout
 
 Each workspace can save sandbox and production Polar organization tokens from

@@ -54,6 +54,7 @@ export async function getStorefront(wsId: string, storefrontId: string) {
     .select(storefrontSelect as never)
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
+    .is('deleted_at', null)
     .maybeSingle();
 
   if (error) throw error;
@@ -177,6 +178,7 @@ export async function updateStorefront(
     .update(update as never)
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
+    .is('deleted_at', null)
     .select(storefrontSelect as never)
     .maybeSingle();
 
@@ -201,16 +203,43 @@ export async function updateStorefront(
 
 export async function deleteStorefront(wsId: string, storefrontId: string) {
   const { inventory } = await createPrivateInventoryClient();
-  const { data, error } = await inventory
+  const { data: storefront, error: storefrontError } = await inventory
     .from('inventory_storefronts')
-    .delete()
+    .select('id, slug, metadata')
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
-    .select('id, slug')
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (storefrontError) throw storefrontError;
+  if (!storefront) return false;
+
+  const current = storefront as unknown as {
+    id: string;
+    metadata: Record<string, unknown> | null;
+    slug: string;
+  };
+  const deletedAt = new Date().toISOString();
+  const { data, error } = await inventory
+    .from('inventory_storefronts')
+    .update({
+      deleted_at: deletedAt,
+      metadata: {
+        ...(current.metadata ?? {}),
+        deletedAt,
+        deletedSlug: current.slug,
+      },
+      slug: `deleted-${current.id}`,
+      status: 'archived',
+      updated_at: deletedAt,
+    } as never)
+    .eq('id', storefrontId)
+    .eq('ws_id', wsId)
+    .is('deleted_at', null)
+    .select('id')
     .maybeSingle();
 
   if (error) throw error;
-  const slug = (data as { slug?: string | null } | null)?.slug;
-  if (slug) revalidatePublicStorefront(slug);
+  if (data) revalidatePublicStorefront(current.slug);
   return Boolean(data);
 }

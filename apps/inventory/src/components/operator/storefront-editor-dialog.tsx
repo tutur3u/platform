@@ -36,13 +36,13 @@ import {
   OperatorDialogTabs,
 } from './operator-dialog-shell';
 import {
-  ColorField,
   SelectValueField,
   TextAreaField,
   TextField,
   ToggleField,
 } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
+import { StorefrontAccentField } from './storefront-accent-field';
 import {
   checkoutModes,
   cornerStyles,
@@ -110,10 +110,10 @@ export function StorefrontEditorDialog({
   });
   const deleteMutation = useMutation({
     mutationFn: () => deleteInventoryStorefront(wsId, storefront.id),
-    onError: () => toast.error(t('deleteError')),
+    onError: () => toast.error(t('storefrontDeleteError')),
     onSuccess: () => {
       setOpen(false);
-      toast.success(t('deleteSuccess'));
+      toast.success(t('storefrontDeleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory', wsId] });
     },
   });
@@ -140,7 +140,7 @@ export function StorefrontEditorDialog({
           </Button>
         </DialogTrigger>
       )}
-      <OperatorDialogContent mobileFullscreen size="lg">
+      <OperatorDialogContent mobileFullscreen size="xl">
         <OperatorDialogHeader
           description={t('editStorefrontDescription')}
           title={t('editStorefrontTitle')}
@@ -218,13 +218,11 @@ export function StorefrontEditorDialog({
                         placeholder={t('placeholders.currency')}
                         value={form.currency}
                       />
-                      <ColorField
-                        hint={t('hints.accentColor')}
-                        label={t('accentColor')}
+                      <StorefrontAccentField
+                        className="md:col-span-2"
                         onChange={(accentColor) =>
                           setForm((current) => ({ ...current, accentColor }))
                         }
-                        placeholder={t('placeholders.accentColor')}
                         value={form.accentColor}
                       />
                     </div>
@@ -434,7 +432,14 @@ export function StorefrontEditorDialog({
                 content: (
                   <LifecyclePanel
                     archivePending={archiveMutation.isPending}
+                    deleteConfirmDescription={t(
+                      'storefrontDeleteConfirmDescription'
+                    )}
+                    deleteConfirmTitle={t('storefrontDeleteConfirmTitle')}
+                    deleteDescription={t('storefrontDeleteDescription')}
                     deletePending={deleteMutation.isPending}
+                    deleteTitle={t('storefrontDeleteTitle')}
+                    description={t('storefrontLifecycleDescription')}
                     onArchive={() => archiveMutation.mutate()}
                     onDelete={() => deleteMutation.mutate()}
                     title={t('lifecycle')}

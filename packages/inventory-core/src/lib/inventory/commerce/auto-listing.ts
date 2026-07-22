@@ -25,6 +25,7 @@ async function findDefaultStorefront(
     .from('inventory_storefronts')
     .select('id, currency, created_at')
     .eq('ws_id', wsId)
+    .is('deleted_at', null)
     .neq('status', 'archived')
     .order('created_at', { ascending: true })
     .limit(1)

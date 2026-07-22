@@ -109,16 +109,6 @@ export function StorefrontForm({
         title: t('suggestions.slugTitle'),
       });
     }
-    if (!form.accentColor) {
-      next.push({
-        actionLabel: t('suggestions.apply'),
-        description: t('suggestions.storefrontAccentDescription'),
-        key: 'storefront-accent',
-        onApply: () =>
-          setForm((current) => ({ ...current, accentColor: '#111827' })),
-        title: t('suggestions.storefrontAccentTitle'),
-      });
-    }
     if (form.checkoutMode === 'polar') {
       next.push({
         actionLabel: t('suggestions.apply'),
@@ -130,7 +120,7 @@ export function StorefrontForm({
       });
     }
     return next;
-  }, [form.accentColor, form.checkoutMode, form.name, form.slug, t]);
+  }, [form.checkoutMode, form.name, form.slug, t]);
 
   return (
     <div className="flex justify-end">
@@ -143,7 +133,7 @@ export function StorefrontForm({
             </Button>
           )}
         </DialogTrigger>
-        <OperatorDialogContent mobileFullscreen size="lg">
+        <OperatorDialogContent mobileFullscreen size="xl">
           <OperatorDialogHeader
             description={t('createStorefrontDescription')}
             title={t('createStorefrontTitle')}

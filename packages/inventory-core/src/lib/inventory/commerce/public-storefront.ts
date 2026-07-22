@@ -79,6 +79,7 @@ export async function revalidateWorkspaceStorefronts(wsId: string) {
     .from('inventory_storefronts')
     .select('slug')
     .eq('ws_id', wsId)
+    .is('deleted_at', null)
     .neq('status', 'archived');
 
   if (error) throw error;

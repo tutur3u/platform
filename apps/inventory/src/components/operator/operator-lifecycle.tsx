@@ -20,6 +20,9 @@ export function LifecyclePanel({
   archivePending,
   archiveTitle,
   deleteDisabled,
+  deleteConfirmDescription,
+  deleteConfirmTitle,
+  deleteDescription,
   deletePending,
   deleteTitle,
   description,
@@ -31,6 +34,9 @@ export function LifecyclePanel({
   archivePending?: boolean;
   archiveTitle?: string;
   deleteDisabled?: boolean;
+  deleteConfirmDescription?: string;
+  deleteConfirmTitle?: string;
+  deleteDescription?: string;
   deletePending?: boolean;
   deleteTitle?: string;
   description?: string;
@@ -102,7 +108,7 @@ export function LifecyclePanel({
                 {deleteTitle ?? t('delete')}
               </p>
               <p className="mt-1 text-muted-foreground text-xs leading-5">
-                {t('deleteDescription')}
+                {deleteDescription ?? t('deleteDescription')}
               </p>
             </div>
             <AlertDialog>
@@ -119,9 +125,11 @@ export function LifecyclePanel({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {deleteConfirmTitle ?? t('deleteConfirmTitle')}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    {t('deleteConfirmDescription')}
+                    {deleteConfirmDescription ?? t('deleteConfirmDescription')}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
