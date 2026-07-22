@@ -43,6 +43,7 @@ export function WorkspaceAccessPage({
   initialContext,
   initialTab = 'people',
   mode = 'workspace',
+  showHeader = true,
 }: WorkspaceAccessPageProps) {
   const t = useTranslations() as (key: string) => string;
   const queryClient = useQueryClient();
@@ -233,7 +234,7 @@ export function WorkspaceAccessPage({
 
   if (contextQuery.isPending) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <Skeleton className="h-32 rounded-xl" />
         <Skeleton className="h-10 rounded-xl" />
         <Skeleton className="h-96 rounded-xl" />
@@ -242,14 +243,16 @@ export function WorkspaceAccessPage({
   }
 
   return (
-    <div className="space-y-6">
-      <WorkspaceAccessPageHeader
-        context={context}
-        invitedCount={invitedCount}
-        joinedCount={joinedCount}
-        mode={mode}
-        totalCount={sortedMembers.length}
-      />
+    <div className="space-y-4 sm:space-y-6">
+      {showHeader ? (
+        <WorkspaceAccessPageHeader
+          context={context}
+          invitedCount={invitedCount}
+          joinedCount={joinedCount}
+          mode={mode}
+          totalCount={sortedMembers.length}
+        />
+      ) : null}
 
       <Tabs
         value={activeTab}
@@ -266,7 +269,7 @@ export function WorkspaceAccessPage({
           search={search}
         />
 
-        <TabsContent value="people" className="mt-6 space-y-4">
+        <TabsContent value="people" className="mt-4 space-y-3 sm:mt-6">
           <WorkspaceAccessPeopleFilters
             filterOptions={filterOptions}
             filters={filters}
@@ -298,7 +301,7 @@ export function WorkspaceAccessPage({
           />
         </TabsContent>
 
-        <TabsContent value="roles" className="mt-6">
+        <TabsContent value="roles" className="mt-4 sm:mt-6">
           <WorkspaceAccessRoles
             canManageRoles={canManageRoles}
             isLoading={rolesQuery.isPending}
@@ -317,7 +320,7 @@ export function WorkspaceAccessPage({
           />
         </TabsContent>
 
-        <TabsContent value="defaults-member" className="mt-6">
+        <TabsContent value="defaults-member" className="mt-4 sm:mt-6">
           <WorkspaceAccessDefaultRoleCard
             canManageRoles={canManageRoles}
             isLoading={memberDefaultQuery.isPending}
@@ -335,7 +338,7 @@ export function WorkspaceAccessPage({
           />
         </TabsContent>
 
-        <TabsContent value="defaults-guest" className="mt-6">
+        <TabsContent value="defaults-guest" className="mt-4 sm:mt-6">
           <WorkspaceAccessDefaultRoleCard
             canManageRoles={canManageRoles}
             isLoading={guestDefaultQuery.isPending}

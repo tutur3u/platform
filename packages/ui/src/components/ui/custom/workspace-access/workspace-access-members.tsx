@@ -43,7 +43,7 @@ export function WorkspaceAccessMembers({
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Skeleton className="h-48 rounded-xl" />
         <Skeleton className="h-48 rounded-xl" />
         <Skeleton className="h-48 rounded-xl" />
@@ -70,7 +70,7 @@ export function WorkspaceAccessMembers({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-3 lg:grid-cols-2">
       {members.map((member) => (
         <WorkspaceAccessMemberRow
           key={`${member.id ?? member.email ?? member.handle}`}

@@ -109,6 +109,7 @@ describe('WorkspaceMembersSettingsPanel', () => {
           workspaceId: 'ws_1',
         },
         initialTab: 'people',
+        showHeader: false,
       })
     );
   });

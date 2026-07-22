@@ -14,9 +14,11 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -64,49 +66,70 @@ export function WorkspaceAccessInviteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader className="space-y-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-muted/50">
-            <UserPlus className="h-4 w-4" />
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-b-none p-0 max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 sm:max-h-[min(88dvh,52rem)] sm:max-w-xl sm:rounded-lg">
+        <DialogHeader className="shrink-0 gap-0 border-b p-4 pr-12 text-left sm:p-6 sm:pr-12">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-dynamic-blue/25 bg-dynamic-blue/10 text-dynamic-blue">
+              <UserPlus className="size-4" />
+            </div>
+            <div className="min-w-0 space-y-1">
+              <DialogTitle>{t('ws-members.invite_member')}</DialogTitle>
+              <DialogDescription className="leading-5">
+                {t('ws-members.invite_dialog_description')}
+              </DialogDescription>
+            </div>
           </div>
-          <DialogTitle>{t('ws-members.invite_member')}</DialogTitle>
-          <DialogDescription>
-            {t('ws-members.invite_dialog_description')}
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <Textarea
-            rows={7}
-            value={emails}
-            onChange={(event) => onEmailsChange(event.target.value)}
-            placeholder={'one@example.com\ntwo@example.com'}
-          />
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
+          <div className="grid gap-2">
+            <Label htmlFor="workspace-access-invite-emails">
+              {t('ws-members.invite_member')}
+            </Label>
+            <Textarea
+              id="workspace-access-invite-emails"
+              rows={5}
+              value={emails}
+              onChange={(event) => onEmailsChange(event.target.value)}
+              placeholder={'one@example.com\ntwo@example.com'}
+              className="min-h-28 resize-y"
+            />
+          </div>
 
-          <Select
-            value={accessPreset}
-            onValueChange={(value) =>
-              onAccessPresetChange(value as 'guest' | 'member' | 'pos_operator')
-            }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="member">
-                {t('ws-members.invite_membership_member')}
-              </SelectItem>
-              <SelectItem value="guest">
-                {t('ws-members.invite_membership_guest')}
-              </SelectItem>
-              <SelectItem value="pos_operator" disabled={!canManageRoles}>
-                {t('ws-members.invite_membership_pos_operator')}
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid gap-2">
+            <Label htmlFor="workspace-access-invite-membership">
+              {t('ws-members.invite_membership_label')}
+            </Label>
+            <Select
+              value={accessPreset}
+              onValueChange={(value) =>
+                onAccessPresetChange(
+                  value as 'guest' | 'member' | 'pos_operator'
+                )
+              }
+            >
+              <SelectTrigger
+                id="workspace-access-invite-membership"
+                className="w-full"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="member">
+                  {t('ws-members.invite_membership_member')}
+                </SelectItem>
+                <SelectItem value="guest">
+                  {t('ws-members.invite_membership_guest')}
+                </SelectItem>
+                <SelectItem value="pos_operator" disabled={!canManageRoles}>
+                  {t('ws-members.invite_membership_pos_operator')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {accessPreset === 'pos_operator' ? (
-            <div className="space-y-3 rounded-xl border border-dynamic-blue/25 bg-dynamic-blue/5 p-4">
+            <div className="space-y-3 rounded-xl border border-dynamic-blue/25 bg-dynamic-blue/5 p-3.5 sm:p-4">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 rounded-lg border border-dynamic-blue/20 bg-background p-2 text-dynamic-blue">
                   <CreditCard className="h-4 w-4" />
@@ -160,25 +183,26 @@ export function WorkspaceAccessInviteDialog({
               </label>
             </div>
           ) : null}
-
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Badge variant="secondary" className="rounded-full">
-              {count} {t('ws-members.pending_invitations').toLowerCase()}
-            </Badge>
-            <Button
-              disabled={
-                isSubmitting ||
-                count === 0 ||
-                (accessPreset === 'pos_operator' &&
-                  (!canManageRoles || !confirmDefaultAdminMigration))
-              }
-              onClick={onSubmit}
-            >
-              <MailPlus className="mr-2 h-4 w-4" />
-              {t('ws-members.invite_submit')}
-            </Button>
-          </div>
         </div>
+
+        <DialogFooter className="grid shrink-0 grid-cols-[auto_1fr] items-center gap-3 border-t bg-muted/20 p-3 sm:flex sm:p-4">
+          <Badge variant="secondary" className="rounded-full">
+            {count} {t('ws-members.pending_invitations').toLowerCase()}
+          </Badge>
+          <Button
+            className="min-w-0"
+            disabled={
+              isSubmitting ||
+              count === 0 ||
+              (accessPreset === 'pos_operator' &&
+                (!canManageRoles || !confirmDefaultAdminMigration))
+            }
+            onClick={onSubmit}
+          >
+            <MailPlus className="mr-2 size-4" />
+            <span className="truncate">{t('ws-members.invite_submit')}</span>
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

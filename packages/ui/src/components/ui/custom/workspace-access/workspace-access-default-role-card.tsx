@@ -39,8 +39,8 @@ export function WorkspaceAccessDefaultRoleCard({
   const barColor = isGuest ? 'bg-dynamic-blue' : 'bg-dynamic-green';
 
   return (
-    <div className="rounded-xl border border-border bg-background p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 gap-3">
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${accent}`}
@@ -68,10 +68,12 @@ export function WorkspaceAccessDefaultRoleCard({
           <Button
             variant="outline"
             size="sm"
+            className="size-9 shrink-0 px-0 sm:w-auto sm:px-3"
             onClick={() => onEdit(memberType)}
           >
-            <Pencil className="mr-2 h-4 w-4" />
-            {t('common.edit')}
+            <Pencil className="size-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t('common.edit')}</span>
+            <span className="sr-only sm:hidden">{t('common.edit')}</span>
           </Button>
         ) : null}
       </div>

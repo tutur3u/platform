@@ -129,6 +129,7 @@ export function SatelliteWorkspaceSettingsPanel({
             workspaceId: workspace.id,
           }}
           initialTab="people"
+          showHeader={false}
         />
       </div>
     );

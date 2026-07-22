@@ -18,10 +18,10 @@ export function WorkspaceAccessPermissionChecklist({
   selectedPermissions,
 }: Props) {
   return (
-    <ScrollArea className="h-[52vh] rounded-lg border">
-      <div className="space-y-4 p-4">
+    <ScrollArea className="h-auto rounded-lg border sm:h-[52vh]">
+      <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
         {groups.map((group) => (
-          <section key={group.id} className="rounded-lg border p-4">
+          <section key={group.id} className="rounded-lg border p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <span className="text-muted-foreground">{group.icon}</span>
               <div>
@@ -33,7 +33,7 @@ export function WorkspaceAccessPermissionChecklist({
                 ) : null}
               </div>
             </div>
-            <div className="mt-4 grid gap-2">
+            <div className="mt-3 grid gap-2 sm:mt-4">
               {group.permissions.map((permission) => {
                 const checked = selectedPermissions.has(permission.id);
                 const adminLocked =
@@ -43,7 +43,7 @@ export function WorkspaceAccessPermissionChecklist({
                   <label
                     key={permission.id}
                     className={cn(
-                      'flex items-start gap-3 rounded-lg border p-3',
+                      'flex items-start gap-3 rounded-lg border p-2.5 sm:p-3',
                       checked || adminLocked
                         ? 'border-dynamic-green/30 bg-dynamic-green/10'
                         : 'bg-background'

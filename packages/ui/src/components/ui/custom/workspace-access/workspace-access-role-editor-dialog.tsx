@@ -1,12 +1,14 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ShieldCheck } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
@@ -131,13 +133,22 @@ export function WorkspaceAccessRoleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{labels.title}</DialogTitle>
-          <DialogDescription>{labels.description}</DialogDescription>
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100%-1rem)] max-w-none flex-col gap-0 overflow-hidden rounded-b-none p-0 max-sm:top-auto max-sm:bottom-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 sm:max-h-[min(90dvh,56rem)] sm:max-w-3xl sm:rounded-lg">
+        <DialogHeader className="shrink-0 gap-0 border-b p-4 pr-12 text-left sm:p-6 sm:pr-12">
+          <div className="flex items-start gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-dynamic-purple/25 bg-dynamic-purple/10 text-dynamic-purple">
+              <ShieldCheck className="size-4" />
+            </div>
+            <div className="min-w-0 space-y-1">
+              <DialogTitle>{labels.title}</DialogTitle>
+              <DialogDescription className="leading-5">
+                {labels.description}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {state.mode !== 'default' ? (
             <div className="grid gap-2">
               <Label htmlFor="workspace-access-role-name">
@@ -152,9 +163,9 @@ export function WorkspaceAccessRoleEditorDialog({
             </div>
           ) : null}
 
-          <div className="flex items-center justify-between rounded-lg border bg-muted/35 px-4 py-3 text-sm">
+          <div className="flex items-center justify-between rounded-lg border bg-muted/35 px-3 py-2.5 text-sm sm:px-4 sm:py-3">
             <span className="font-medium">{t('ws-roles.permissions')}</span>
-            <span className="tabular-nums">
+            <span className="rounded-full bg-background px-2 py-0.5 font-medium tabular-nums">
               {selectedCount}/{totalCount}
             </span>
           </div>
@@ -164,16 +175,17 @@ export function WorkspaceAccessRoleEditorDialog({
             onSelectedPermissionsChange={setSelectedPermissions}
             selectedPermissions={selectedPermissions}
           />
-
-          <div className="flex justify-end">
-            <Button
-              disabled={disabled || saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              {saveMutation.isPending ? t('common.processing') : labels.save}
-            </Button>
-          </div>
         </div>
+
+        <DialogFooter className="shrink-0 border-t bg-muted/20 p-3 sm:p-4">
+          <Button
+            className="w-full sm:w-auto"
+            disabled={disabled || saveMutation.isPending}
+            onClick={() => saveMutation.mutate()}
+          >
+            {saveMutation.isPending ? t('common.processing') : labels.save}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

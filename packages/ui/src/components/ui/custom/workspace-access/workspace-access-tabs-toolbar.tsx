@@ -27,7 +27,7 @@ type Props = {
 };
 
 const TAB_TRIGGER_CLASS =
-  'rounded-none border-transparent border-b-2 bg-transparent px-1 pt-1 pb-3 text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-dynamic-blue data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none';
+  'h-9 min-w-0 gap-1.5 rounded-lg px-2 text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-3';
 
 export function WorkspaceAccessTabsToolbar({
   activeTab,
@@ -73,8 +73,8 @@ export function WorkspaceAccessTabsToolbar({
   ];
 
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-      <TabsList className="h-auto w-full justify-start gap-5 overflow-x-auto rounded-none border-border border-b bg-transparent p-0 lg:w-auto">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl border bg-muted/30 p-1 lg:w-auto">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -83,13 +83,14 @@ export function WorkspaceAccessTabsToolbar({
             className={TAB_TRIGGER_CLASS}
           >
             {tab.icon}
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="sr-only sm:hidden">{tab.label}</span>
           </TabsTrigger>
         ))}
       </TabsList>
 
-      <div className="flex w-full shrink-0 flex-col gap-2 sm:flex-row lg:w-auto">
-        <div className="relative min-w-0 sm:min-w-[280px]">
+      <div className="flex w-full shrink-0 gap-2 lg:w-auto">
+        <div className="relative min-w-0 flex-1 lg:w-80 lg:flex-none">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -99,11 +100,20 @@ export function WorkspaceAccessTabsToolbar({
           />
         </div>
         {activeTab === 'people' ? (
-          <Button disabled={!canInvite} onClick={onInviteClick}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            {disableInvite
-              ? t('ws-members.invite_member_disabled')
-              : t('ws-members.invite_member')}
+          <Button
+            disabled={!canInvite}
+            onClick={onInviteClick}
+            className="shrink-0 px-3 sm:px-4"
+          >
+            <UserPlus className="size-4 sm:mr-2" />
+            <span className="hidden sm:inline">
+              {disableInvite
+                ? t('ws-members.invite_member_disabled')
+                : t('ws-members.invite_member')}
+            </span>
+            <span className="sr-only sm:hidden">
+              {t('ws-members.invite_member')}
+            </span>
           </Button>
         ) : null}
       </div>

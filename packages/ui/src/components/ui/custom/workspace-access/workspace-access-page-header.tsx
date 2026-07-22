@@ -51,25 +51,25 @@ export function WorkspaceAccessPageHeader({
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-background">
-      <div className="flex flex-col gap-6 p-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue">
+    <section className="overflow-hidden rounded-xl border border-border bg-background">
+      <div className="flex flex-col gap-4 p-4 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex min-w-0 gap-3 sm:gap-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue sm:size-11">
             <Users className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="truncate font-bold text-2xl tracking-tight">
+              <h1 className="truncate font-bold text-xl tracking-tight sm:text-2xl">
                 {mode === 'cms'
                   ? t('external-projects.settings.members_title')
                   : t('workspace-settings-layout.members')}
               </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 py-0.5 font-medium text-dynamic-purple text-xs">
+              <span className="hidden items-center gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 py-0.5 font-medium text-dynamic-purple text-xs sm:inline-flex">
                 <ShieldCheck className="h-3 w-3" />
                 {t('ws-roles.plural')}
               </span>
             </div>
-            <p className="mt-1.5 max-w-2xl text-muted-foreground text-sm leading-6">
+            <p className="mt-1 max-w-2xl text-muted-foreground text-sm leading-5 sm:mt-1.5 sm:leading-6">
               {mode === 'cms'
                 ? t('external-projects.settings.members_description')
                 : t('ws-members.description')}
@@ -85,21 +85,21 @@ export function WorkspaceAccessPageHeader({
           </div>
         </div>
 
-        <div className="grid shrink-0 grid-cols-3 divide-x divide-border overflow-hidden rounded-lg border border-border bg-foreground/[0.02]">
+        <div className="grid w-full shrink-0 grid-cols-3 divide-x divide-border overflow-hidden rounded-lg border border-border bg-foreground/[0.02] lg:w-auto">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-col gap-1 px-4 py-3 text-center"
+              className="flex min-w-0 flex-col gap-0.5 px-2 py-2.5 text-center sm:gap-1 sm:px-4 sm:py-3"
             >
               <span
                 className={`inline-flex items-center justify-center gap-1.5 ${stat.accent}`}
               >
                 {stat.icon}
-                <span className="font-bold text-foreground text-xl tabular-nums">
+                <span className="font-bold text-foreground text-lg tabular-nums sm:text-xl">
                   {stat.value}
                 </span>
               </span>
-              <span className="text-muted-foreground text-xs">
+              <span className="truncate text-[11px] text-muted-foreground sm:text-xs">
                 {stat.label}
               </span>
             </div>

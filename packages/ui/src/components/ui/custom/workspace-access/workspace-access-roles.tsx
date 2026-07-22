@@ -49,7 +49,7 @@ export function WorkspaceAccessRoles({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-semibold text-lg">{labels.accessLevelsLabel}</h2>
           <p className="text-muted-foreground text-sm">
@@ -57,9 +57,13 @@ export function WorkspaceAccessRoles({
           </p>
         </div>
         {canManageRoles ? (
-          <Button onClick={onCreateRole}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('ws-roles.create')}
+          <Button
+            onClick={onCreateRole}
+            className="size-9 shrink-0 px-0 sm:w-auto sm:px-4"
+          >
+            <Plus className="size-4 sm:mr-2" />
+            <span className="hidden sm:inline">{t('ws-roles.create')}</span>
+            <span className="sr-only sm:hidden">{t('ws-roles.create')}</span>
           </Button>
         ) : null}
       </div>
@@ -95,7 +99,7 @@ export function WorkspaceAccessRoles({
             return (
               <div
                 key={role.id}
-                className="rounded-xl border border-border bg-background p-5 transition-colors hover:border-foreground/20"
+                className="rounded-xl border border-border bg-background p-4 transition-colors hover:border-foreground/20 sm:p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-3">
@@ -133,22 +137,34 @@ export function WorkspaceAccessRoles({
                   </div>
 
                   {canManageRoles ? (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex shrink-0 gap-1.5 sm:gap-2">
                       <Button
                         variant="outline"
                         size="sm"
+                        className="size-8 px-0 sm:w-auto sm:px-3"
                         onClick={() => onEditRole(role)}
                       >
-                        <Pencil className="mr-2 h-4 w-4" />
-                        {t('common.edit')}
+                        <Pencil className="size-3.5 sm:mr-2" />
+                        <span className="hidden sm:inline">
+                          {t('common.edit')}
+                        </span>
+                        <span className="sr-only sm:hidden">
+                          {t('common.edit')}
+                        </span>
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="size-8 px-0 sm:w-auto sm:px-3"
                         onClick={() => onDeleteRole(role)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t('common.delete')}
+                        <Trash2 className="size-3.5 sm:mr-2" />
+                        <span className="hidden sm:inline">
+                          {t('common.delete')}
+                        </span>
+                        <span className="sr-only sm:hidden">
+                          {t('common.delete')}
+                        </span>
                       </Button>
                     </div>
                   ) : null}

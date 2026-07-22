@@ -78,11 +78,11 @@ export function WorkspaceAccessMemberRow({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-xl border bg-background pl-5 transition-all before:absolute before:inset-y-0 before:left-0 before:w-1 hover:border-foreground/20 hover:shadow-sm ${accent} ${member.pending ? 'border-dashed' : ''}`}
+      className={`group relative overflow-hidden rounded-xl border bg-background pl-4 transition-colors before:absolute before:inset-y-0 before:left-0 before:w-1 hover:border-foreground/20 sm:pl-5 ${accent} ${member.pending ? 'border-dashed' : ''}`}
     >
-      <div className="p-4 pl-0">
-        <div className="flex items-start gap-3">
-          <Avatar className="h-11 w-11 border border-border">
+      <div className="p-3 pl-0 sm:p-4 sm:pl-0">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <Avatar className="size-10 border border-border sm:size-11">
             <AvatarImage src={member.avatar_url ?? undefined} />
             <AvatarFallback className="font-semibold">
               {member.display_name ? (
@@ -95,7 +95,9 @@ export function WorkspaceAccessMemberRow({
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <p className="truncate font-semibold text-base">{memberName}</p>
+              <p className="truncate font-semibold text-sm sm:text-base">
+                {memberName}
+              </p>
               {member.is_creator ? (
                 <Badge className="h-5 gap-1 border-dynamic-yellow/50 bg-dynamic-yellow/10 px-1.5 text-dynamic-yellow text-xs">
                   <Crown className="h-3 w-3" />
@@ -122,14 +124,14 @@ export function WorkspaceAccessMemberRow({
                 </Badge>
               ) : null}
             </div>
-            <p className="mt-0.5 truncate text-muted-foreground text-sm">
+            <p className="mt-0.5 truncate text-muted-foreground text-xs sm:text-sm">
               {member.email ||
                 (member.handle ? `@${member.handle}` : t('common.unknown'))}
             </p>
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        <div className="mt-2.5 flex flex-wrap gap-1.5 sm:mt-3">
           {member.roles.length > 0 ? (
             member.roles.map((role) => (
               <Badge
@@ -159,7 +161,7 @@ export function WorkspaceAccessMemberRow({
         </div>
 
         {guest.direct_board_guest ? (
-          <div className="mt-3 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-sm">
+          <div className="mt-3 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-2.5 text-sm sm:p-3">
             <div className="font-medium text-dynamic-blue">
               {t('ws-members.direct_board_guest_scope_title')}
             </div>
@@ -185,7 +187,7 @@ export function WorkspaceAccessMemberRow({
           </div>
         ) : null}
 
-        <div className="mt-3 flex flex-col gap-3 border-border border-t pt-3 text-sm md:flex-row md:items-center md:justify-between">
+        <div className="mt-3 grid gap-2 border-border border-t pt-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
           {member.created_at ? (
             <div className="text-muted-foreground text-xs">
               <span>
@@ -203,14 +205,14 @@ export function WorkspaceAccessMemberRow({
             <span />
           )}
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-2">
             {canRemoveRoles ? (
               <Select
                 onValueChange={(roleId) =>
                   onAssignRole({ roleId, userId: memberId })
                 }
               >
-                <SelectTrigger className="h-9 min-w-[180px]">
+                <SelectTrigger className="h-9 min-w-0 flex-1 sm:min-w-[180px]">
                   <SelectValue placeholder={labels.assignRolePlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -233,6 +235,7 @@ export function WorkspaceAccessMemberRow({
               <Button
                 variant="outline"
                 size="sm"
+                className="size-9 shrink-0 px-0 sm:w-auto sm:px-3"
                 disabled={isMutating}
                 onClick={() =>
                   onRemoveMember({
@@ -241,13 +244,23 @@ export function WorkspaceAccessMemberRow({
                   })
                 }
               >
-                <UserMinus className="mr-2 h-4 w-4" />
-                {labels.removeMemberAction}
+                <UserMinus className="size-4 sm:mr-2" />
+                <span className="hidden sm:inline">
+                  {labels.removeMemberAction}
+                </span>
+                <span className="sr-only sm:hidden">
+                  {labels.removeMemberAction}
+                </span>
               </Button>
             ) : (
-              <div className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-muted-foreground text-xs">
+              <div className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5">
                 <ShieldUser className="h-3.5 w-3.5" />
-                {labels.protectedMemberLabel}
+                <span className="hidden text-xs sm:inline">
+                  {labels.protectedMemberLabel}
+                </span>
+                <span className="sr-only sm:hidden">
+                  {labels.protectedMemberLabel}
+                </span>
               </div>
             )}
           </div>

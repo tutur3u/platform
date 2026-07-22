@@ -113,6 +113,7 @@ export type WorkspaceAccessPageProps = {
   initialContext: WorkspaceAccessContext;
   initialTab?: WorkspaceAccessTab;
   mode?: WorkspaceAccessMode;
+  showHeader?: boolean;
 };
 
 export type WorkspaceAccessRoleEditorState =

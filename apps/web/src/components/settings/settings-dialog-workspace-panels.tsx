@@ -162,6 +162,7 @@ export function WorkspaceMembersSettingsPanel({
             workspaceId: workspace.id,
           }}
           initialTab="people"
+          showHeader={false}
         />
       </div>
     </div>

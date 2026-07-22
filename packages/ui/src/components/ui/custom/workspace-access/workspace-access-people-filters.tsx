@@ -52,9 +52,9 @@ export function WorkspaceAccessPeopleFilters({
     filters.permissionIds.length + filters.roleIds.length;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-border bg-foreground/[0.02] p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="mr-1 flex items-center gap-2 text-muted-foreground text-sm">
+    <div className="grid gap-2 rounded-xl border border-border bg-foreground/[0.02] p-2.5 sm:p-3 lg:grid-cols-[auto_1fr] lg:items-center">
+      <div className="grid min-w-0 gap-2 sm:grid-cols-[auto_1fr] sm:items-center">
+        <div className="hidden items-center gap-2 text-muted-foreground text-sm sm:flex">
           <ListFilter className="h-4 w-4" />
           <span className="font-medium">{t('ws-members.filters')}</span>
         </div>
@@ -65,7 +65,7 @@ export function WorkspaceAccessPeopleFilters({
             onStatusChange(value as WorkspaceAccessMemberStatus)
           }
         >
-          <TabsList className="h-8">
+          <TabsList className="grid h-8 w-full grid-cols-3 sm:w-auto">
             <TabsTrigger value="all">{t('ws-members.all')}</TabsTrigger>
             <TabsTrigger value="joined">{t('ws-members.joined')}</TabsTrigger>
             <TabsTrigger value="invited">{t('ws-members.invited')}</TabsTrigger>
@@ -73,17 +73,19 @@ export function WorkspaceAccessPeopleFilters({
         </Tabs>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-w-0 items-center justify-end gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-dashed bg-background/60"
+              className="h-8 min-w-0 flex-1 gap-1.5 border-dashed bg-background/60 px-2 sm:flex-none sm:px-3"
               disabled={filterOptions.roles.length === 0}
             >
               <ShieldCheck className="h-4 w-4 text-dynamic-purple" />
-              {labels.filterByRole}
+              <span className="truncate sm:max-w-36">
+                {labels.filterByRole}
+              </span>
               {filters.roleIds.length > 0 ? (
                 <>
                   <Separator className="mx-1 h-4" orientation="vertical" />
@@ -132,11 +134,13 @@ export function WorkspaceAccessPeopleFilters({
             <Button
               variant="outline"
               size="sm"
-              className="h-8 gap-1.5 border-dashed bg-background/60"
+              className="h-8 min-w-0 flex-1 gap-1.5 border-dashed bg-background/60 px-2 sm:flex-none sm:px-3"
               disabled={filterOptions.permissions.length === 0}
             >
               <KeyRound className="h-4 w-4 text-dynamic-blue" />
-              {labels.filterByPermission}
+              <span className="truncate sm:max-w-44">
+                {labels.filterByPermission}
+              </span>
               {filters.permissionIds.length > 0 ? (
                 <>
                   <Separator className="mx-1 h-4" orientation="vertical" />
@@ -181,16 +185,19 @@ export function WorkspaceAccessPeopleFilters({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
+            className="size-8 shrink-0 px-0 text-muted-foreground hover:text-foreground"
             onClick={() => onFiltersChange({ permissionIds: [], roleIds: [] })}
+            aria-label={labels.clearFiltersAction}
           >
             <X className="h-3.5 w-3.5" />
-            {labels.clearFiltersAction}
           </Button>
         ) : null}
 
         {activeFilterCount > 0 ? (
-          <Badge variant="outline" className="rounded-full">
+          <Badge
+            variant="outline"
+            className="hidden rounded-full sm:inline-flex"
+          >
             {activeFilterCount}
           </Badge>
         ) : null}
