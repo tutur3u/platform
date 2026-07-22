@@ -22,6 +22,7 @@ import { useTranslations } from 'next-intl';
 
 type Props = {
   errorMessage?: string | null;
+  isDeviceRemembered: boolean;
   isLoading: boolean;
   onDeviceChange: (deviceId: string) => void;
   onRetry: () => void;
@@ -31,6 +32,7 @@ type Props = {
 
 export function SquareCheckoutRouting({
   errorMessage,
+  isDeviceRemembered,
   isLoading,
   onDeviceChange,
   onRetry,
@@ -124,19 +126,27 @@ export function SquareCheckoutRouting({
       </div>
 
       {devices.length > 0 ? (
-        <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t('squareChooseTerminal')} />
-          </SelectTrigger>
-          <SelectContent>
-            {devices.map((device) => (
-              <SelectItem key={device.id} value={device.id}>
-                {device.name}
-                {device.status ? ` · ${device.status.toLowerCase()}` : ''}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid gap-2">
+          <Select value={selectedDeviceId} onValueChange={onDeviceChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t('squareChooseTerminal')} />
+            </SelectTrigger>
+            <SelectContent>
+              {devices.map((device) => (
+                <SelectItem key={device.id} value={device.id}>
+                  {device.name}
+                  {device.status ? ` · ${device.status.toLowerCase()}` : ''}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="flex items-center gap-2 text-muted-foreground text-xs">
+            <ShieldCheck className="size-3.5 text-dynamic-green" />
+            {isDeviceRemembered
+              ? t('squareDeviceRemembered')
+              : t('squareDeviceRememberHint')}
+          </p>
+        </div>
       ) : (
         <div className="flex items-start gap-2 rounded-md border border-dashed bg-muted/25 p-3 text-muted-foreground text-sm leading-5">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" />

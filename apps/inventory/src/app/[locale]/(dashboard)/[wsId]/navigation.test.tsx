@@ -31,6 +31,7 @@ describe('Inventory navigation', () => {
       '/acme/promotions',
       '/acme/storefront',
       '/acme/payments',
+      '/acme/pos-devices',
       '/acme/setup',
       '/acme/audits',
     ]);
@@ -62,6 +63,12 @@ describe('Inventory navigation', () => {
       titleKey: 'payments.title',
     });
     expect(visibleLinks[11]).toMatchObject({
+      aliases: ['/acme/terminals'],
+      href: '/acme/pos-devices',
+      icon: 'posDevices',
+      titleKey: 'posDevices.title',
+    });
+    expect(visibleLinks[12]).toMatchObject({
       sectionKey: 'sections.controls',
     });
   });

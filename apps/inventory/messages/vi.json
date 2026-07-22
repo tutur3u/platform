@@ -961,6 +961,9 @@
       "polar": {
         "title": "Thanh toán"
       },
+      "posDevices": {
+        "title": "Thiết bị POS"
+      },
       "promotions": {
         "description": "Quản lý chiến dịch, phần thưởng giới thiệu và lượt dùng giảm giá.",
         "title": "Khuyến mãi"
@@ -2233,6 +2236,82 @@
         "webhookSecretLabel": "Khóa ký webhook",
         "webhookSecretPlaceholder": "Khóa ký webhook Polar",
         "webhookTitle": "Tiếp nhận webhook"
+      },
+      "posDevices": {
+        "connectionRequired": {
+          "action": "Mở thiết lập Thanh toán",
+          "description": "Kết nối đúng tài khoản Square và lưu địa điểm bán trước khi ghép nối hoặc định tuyến thiết bị.",
+          "title": "Cần kết nối Square"
+        },
+        "connectionSettings": "Cài đặt kết nối",
+        "defaultActive": "Tuyến mặc định",
+        "defaultBadge": "Mặc định",
+        "defaultSaved": "Đã cập nhật thiết bị POS mặc định.",
+        "description": "Ghép nối Square Terminal, theo dõi trạng thái quầy và kiểm soát nơi nhận từng khoản thanh toán từ cửa hàng.",
+        "deviceLoadErrorDescription": "Square không trả về danh sách thiết bị đã ghép nối. Hãy thử lại trước khi thay đổi tuyến mặc định.",
+        "deviceLoadErrorTitle": "Không thể làm mới thiết bị đã ghép nối",
+        "empty": {
+          "productionDescription": "Ghép nối Square Terminal đầu tiên cho không gian làm việc, sau đó đặt làm tuyến mặc định hoặc để nhân viên chọn theo từng thanh toán.",
+          "sandboxDescription": "Thêm ID thiết bị Sandbox trong thiết lập Thanh toán để diễn tập định tuyến mà không chuyển tiền thật.",
+          "title": "Chưa có Terminal được định tuyến"
+        },
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "loadErrorDescription": "Không thể tải cài đặt Square. Hãy làm mới trước khi thay đổi định tuyến thiết bị.",
+        "loadErrorTitle": "Không thể tải thiết bị POS",
+        "makeDefault": "Đặt làm mặc định",
+        "metrics": {
+          "default": "Tuyến mặc định",
+          "paired": "Thiết bị đã ghép nối",
+          "ready": "Sẵn sàng"
+        },
+        "notSelected": "Chưa chọn",
+        "pairDevice": "Ghép nối thiết bị",
+        "pairedDescription": "Chỉ những thiết bị do tài khoản Square đã kết nối trả về mới khả dụng cho nhân viên cửa hàng.",
+        "pairedTitle": "Square Terminal có thể định tuyến",
+        "pairing": {
+          "codeEmpty": "Tạo mã sau khi chọn địa điểm bán. Việc tạo mã không bao giờ tạo đơn hàng hoặc khoản phí.",
+          "copy": "Sao chép mã",
+          "create": "Tạo mã ghép nối",
+          "created": "Đã tạo mã ghép nối.",
+          "creating": "Đang tạo mã...",
+          "description": "Tạo mã ngắn hạn, nhập mã trên Square Terminal vật lý rồi làm mới danh sách thiết bị. Không có thanh toán nào được tạo tại đây.",
+          "done": "Hoàn tất",
+          "enter": "Nhập mã trên Square Terminal",
+          "enterDescription": "Trên màn hình đăng nhập Terminal, chọn dùng mã thiết bị và nhập mã này trước khi hết hạn.",
+          "error": "Không thể tạo mã ghép nối Square.",
+          "expires": "Hết hạn {date}",
+          "finish": "Làm mới và xác minh",
+          "finishDescription": "Sau khi Square xác nhận ghép nối trên Terminal, hãy làm mới tại đây. Thiết bị mới sẽ xuất hiện trên trang quản lý.",
+          "location": "Chọn địa điểm bán",
+          "locationDescription": "Terminal và đơn hàng cửa hàng phải dùng cùng một địa điểm Square.",
+          "locationPlaceholder": "Chọn địa điểm",
+          "name": "Đặt tên cho quầy",
+          "nameDescription": "Dùng tên dễ nhận biết để nhân viên định tuyến đơn hàng chính xác.",
+          "namePlaceholder": "Quầy phía trước",
+          "ready": "Sẵn sàng nhập",
+          "title": "Ghép nối Square Terminal"
+        },
+        "posApp": {
+          "badge": "Cùng thiết bị",
+          "description": "Ứng dụng Square POS và Reader được kết nối chạy trên điện thoại hoặc máy tính bảng nhân viên đã mở cửa hàng. Square không cung cấp các reader này như thiết bị Terminal API có thể định tuyến từ xa.",
+          "guide": "Hướng dẫn thiết lập Square Reader",
+          "title": "Ứng dụng Square POS + Reader"
+        },
+        "refresh": "Làm mới thiết bị",
+        "retry": "Thử lại",
+        "sandboxTerminal": "Square Sandbox Terminal",
+        "saveError": "Không thể cập nhật thiết bị POS mặc định.",
+        "terminal": {
+          "description": "Thiết bị Square Terminal API có thể nhận đơn hàng từ xa. Nhân viên cửa hàng có thể chọn quầy trước khi giữ tồn kho.",
+          "title": "Định tuyến Square Terminal"
+        },
+        "terminalProduct": "Square Terminal",
+        "title": "Quản lý thiết bị POS",
+        "unknownLocation": "Không rõ địa điểm",
+        "unknownStatus": "Không rõ"
       },
       "preview": {
         "back": "Quay lại cửa hàng",

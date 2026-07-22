@@ -38,6 +38,7 @@ import { StorefrontOrderScreen } from './storefront-order-screen';
 import { getStorefrontOrderState } from './storefront-order-state';
 import { StorefrontSkeleton } from './storefront-skeleton';
 import { StorefrontUnavailable } from './storefront-unavailable';
+import { useStorefrontSquareDevice } from './use-storefront-square-device';
 
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
 
@@ -75,7 +76,6 @@ export function StorefrontClient({
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(
     initialCheckoutOpen || mode === 'checkout'
   );
-  const [selectedSquareDeviceId, setSelectedSquareDeviceId] = useState('');
   const shouldResolveDemoOrder =
     mode === 'order' && publicToken === DEMO_ORDER_PUBLIC_TOKEN;
   const storefrontQuery = useQuery({
@@ -103,8 +103,12 @@ export function StorefrontClient({
     refetchOnWindowFocus: true,
     staleTime: 15_000,
   });
-  const resolvedSquareDeviceId =
-    selectedSquareDeviceId || checkoutOptionsQuery.data?.defaultDeviceId || '';
+  const squareDevice = useStorefrontSquareDevice({
+    defaultDeviceId: checkoutOptionsQuery.data?.defaultDeviceId,
+    devices: checkoutOptionsQuery.data?.devices ?? [],
+    storeSlug,
+  });
+  const resolvedSquareDeviceId = squareDevice.selectedDeviceId;
   const checkoutRoutingBlocked =
     isSquareCheckout &&
     (checkoutOptionsQuery.isPending ||
@@ -443,7 +447,8 @@ export function StorefrontClient({
                 : null
             }
             isLoading={checkoutOptionsQuery.isPending}
-            onDeviceChange={setSelectedSquareDeviceId}
+            isDeviceRemembered={squareDevice.isRemembered}
+            onDeviceChange={squareDevice.selectDevice}
             onRetry={() => checkoutOptionsQuery.refetch()}
             options={checkoutOptionsQuery.data}
             selectedDeviceId={resolvedSquareDeviceId}

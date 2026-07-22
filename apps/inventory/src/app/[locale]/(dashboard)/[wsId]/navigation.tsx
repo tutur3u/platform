@@ -6,6 +6,7 @@ import {
   CreditCard,
   Layers3,
   LayoutDashboard,
+  MonitorSmartphone,
   PackageSearch,
   ReceiptText,
   Settings2,
@@ -42,6 +43,8 @@ function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
       return <LayoutDashboard className={className} />;
     case 'payments':
       return <CreditCard className={className} />;
+    case 'posDevices':
+      return <MonitorSmartphone className={className} />;
     case 'promotions':
       return <TicketPercent className={className} />;
     case 'sales':

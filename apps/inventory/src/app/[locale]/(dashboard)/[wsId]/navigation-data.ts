@@ -13,6 +13,7 @@ export type InventoryNavigationItem = {
     | 'costing'
     | 'overview'
     | 'payments'
+    | 'posDevices'
     | 'promotions'
     | 'sales'
     | 'setup'
@@ -93,6 +94,12 @@ export function getInventoryNavigationItems({
       href: `/${workspaceSlug}/payments`,
       aliases: [`/${workspaceSlug}/polar`],
       icon: 'payments',
+    },
+    {
+      titleKey: 'posDevices.title',
+      href: `/${workspaceSlug}/pos-devices`,
+      aliases: [`/${workspaceSlug}/terminals`],
+      icon: 'posDevices',
     },
     null,
     {

@@ -22,6 +22,8 @@ describe('SquareCheckoutRouting UI contract', () => {
     expect(source).toContain('<SelectItem key={device.id} value={device.id}>');
     expect(source).toContain("t('squareChooseTerminal')");
     expect(source).toContain("t('squareNoTerminalDescription')");
+    expect(source).toContain("t('squareDeviceRemembered')");
+    expect(source).toContain("t('squareDeviceRememberHint')");
   });
 
   it('exposes a retry action after staff access or routing failures', () => {

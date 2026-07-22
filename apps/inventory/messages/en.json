@@ -961,6 +961,9 @@
       "polar": {
         "title": "Payments"
       },
+      "posDevices": {
+        "title": "POS devices"
+      },
       "promotions": {
         "description": "Manage campaigns, referral rewards, and discount usage.",
         "title": "Promotions"
@@ -2233,6 +2236,82 @@
         "webhookSecretLabel": "Webhook signing secret",
         "webhookSecretPlaceholder": "Polar webhook signing secret",
         "webhookTitle": "Webhook ingestion"
+      },
+      "posDevices": {
+        "connectionRequired": {
+          "action": "Open Payments setup",
+          "description": "Connect the intended Square account and save its selling location before pairing or routing devices.",
+          "title": "Square connection required"
+        },
+        "connectionSettings": "Connection settings",
+        "defaultActive": "Default route",
+        "defaultBadge": "Default",
+        "defaultSaved": "Default POS device updated.",
+        "description": "Pair Square Terminals, monitor counter readiness, and control where each storefront payment is routed.",
+        "deviceLoadErrorDescription": "Square did not return the paired device list. Retry before changing the default route.",
+        "deviceLoadErrorTitle": "Paired devices could not be refreshed",
+        "empty": {
+          "productionDescription": "Pair the first Square Terminal for this workspace, then make it the default route or let staff choose it per checkout.",
+          "sandboxDescription": "Add a Sandbox device ID from Payments setup to rehearse routing without sending real money.",
+          "title": "No routed Terminal yet"
+        },
+        "environment": {
+          "production": "Production",
+          "sandbox": "Sandbox"
+        },
+        "loadErrorDescription": "Square settings could not be loaded. Refresh before changing device routing.",
+        "loadErrorTitle": "POS devices could not be loaded",
+        "makeDefault": "Make default",
+        "metrics": {
+          "default": "Default route",
+          "paired": "Paired devices",
+          "ready": "Ready now"
+        },
+        "notSelected": "Not selected",
+        "pairDevice": "Pair device",
+        "pairedDescription": "Only devices returned by the connected Square seller are available to storefront staff.",
+        "pairedTitle": "Routable Square Terminals",
+        "pairing": {
+          "codeEmpty": "Create a code after choosing the selling location. Creating a code never creates an order or charge.",
+          "copy": "Copy code",
+          "create": "Create pairing code",
+          "created": "Pairing code created.",
+          "creating": "Creating code...",
+          "description": "Create a short-lived code, enter it on the physical Square Terminal, then refresh the device list. No payment is created here.",
+          "done": "Done",
+          "enter": "Enter the code on Square Terminal",
+          "enterDescription": "On the Terminal sign-in screen, choose Use a device code and enter this code before it expires.",
+          "error": "Could not create a Square pairing code.",
+          "expires": "Expires {date}",
+          "finish": "Refresh and verify",
+          "finishDescription": "After Square confirms pairing on the Terminal, refresh here. The new device will appear on the management page.",
+          "location": "Choose the selling location",
+          "locationDescription": "The Terminal and storefront order must use the same Square location.",
+          "locationPlaceholder": "Select a location",
+          "name": "Name this counter",
+          "nameDescription": "Use a recognizable name so staff can route orders confidently.",
+          "namePlaceholder": "Front counter",
+          "ready": "Ready to enter",
+          "title": "Pair a Square Terminal"
+        },
+        "posApp": {
+          "badge": "Same device",
+          "description": "Square POS App and a connected Reader run on the staff phone or tablet that opened the storefront. Square does not expose these readers as remotely routable Terminal API devices.",
+          "guide": "Square Reader setup guide",
+          "title": "Square POS App + Reader"
+        },
+        "refresh": "Refresh devices",
+        "retry": "Retry",
+        "sandboxTerminal": "Square Sandbox Terminal",
+        "saveError": "Could not update the default POS device.",
+        "terminal": {
+          "description": "Square Terminal API devices can receive an order remotely. Storefront staff can choose among these counters before reserving stock.",
+          "title": "Square Terminal routing"
+        },
+        "terminalProduct": "Square Terminal",
+        "title": "POS device management",
+        "unknownLocation": "Unknown location",
+        "unknownStatus": "Unknown"
       },
       "preview": {
         "back": "Back to storefronts",
