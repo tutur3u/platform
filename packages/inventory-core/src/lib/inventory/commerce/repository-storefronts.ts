@@ -22,6 +22,15 @@ import {
   storefrontSelect,
 } from './repository-shared';
 
+const DELETED_STOREFRONT_SLUG_PATTERN =
+  /^deleted-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+
+function isMissingDeletedAtColumn(error: SupabaseErrorLike) {
+  return (
+    error?.code === '42703' && error.message?.includes('deleted_at') === true
+  );
+}
+
 export async function listStorefronts(
   wsId: string,
   query: ListQuery<InventoryStorefrontStatus> = {}
@@ -44,18 +53,40 @@ export async function listStorefronts(
   };
 
   if (error) throw error;
-  return mapRpcList(data, 'storefront');
+
+  // A tombstone can be created by the rollout-safe fallback before the
+  // deleted_at migration reaches an environment. Keep it out of the operator
+  // list during that narrow deployment window; the migrated RPC applies the
+  // authoritative database filter afterward.
+  const result = mapRpcList(data, 'storefront');
+  const visible = result.data.filter(
+    (storefront) => !DELETED_STOREFRONT_SLUG_PATTERN.test(storefront.slug)
+  );
+  return {
+    count: Math.max(0, result.count - (result.data.length - visible.length)),
+    data: visible,
+  };
 }
 
 export async function getStorefront(wsId: string, storefrontId: string) {
   const { inventory } = await createPrivateInventoryClient();
-  const { data, error } = await inventory
+  let { data, error } = await inventory
     .from('inventory_storefronts')
     .select(storefrontSelect as never)
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
     .is('deleted_at', null)
     .maybeSingle();
+
+  if (isMissingDeletedAtColumn(error)) {
+    ({ data, error } = await inventory
+      .from('inventory_storefronts')
+      .select(storefrontSelect as never)
+      .eq('id', storefrontId)
+      .eq('ws_id', wsId)
+      .neq('slug', `deleted-${storefrontId}`)
+      .maybeSingle());
+  }
 
   if (error) throw error;
   if (!data) return null;
@@ -173,7 +204,7 @@ export async function updateStorefront(
     update.accent_color = payload.accentColor ?? null;
   }
 
-  const { data, error } = await inventory
+  let { data, error } = await inventory
     .from('inventory_storefronts')
     .update(update as never)
     .eq('id', storefrontId)
@@ -181,6 +212,17 @@ export async function updateStorefront(
     .is('deleted_at', null)
     .select(storefrontSelect as never)
     .maybeSingle();
+
+  if (isMissingDeletedAtColumn(error)) {
+    ({ data, error } = await inventory
+      .from('inventory_storefronts')
+      .update(update as never)
+      .eq('id', storefrontId)
+      .eq('ws_id', wsId)
+      .neq('slug', `deleted-${storefrontId}`)
+      .select(storefrontSelect as never)
+      .maybeSingle());
+  }
 
   if (error) throw error;
   if (!data) return null;
@@ -203,13 +245,25 @@ export async function updateStorefront(
 
 export async function deleteStorefront(wsId: string, storefrontId: string) {
   const { inventory } = await createPrivateInventoryClient();
-  const { data: storefront, error: storefrontError } = await inventory
+  let { data: storefront, error: storefrontError } = await inventory
     .from('inventory_storefronts')
     .select('id, slug, metadata')
     .eq('id', storefrontId)
     .eq('ws_id', wsId)
     .is('deleted_at', null)
     .maybeSingle();
+
+  let usesLegacySoftDelete = false;
+  if (isMissingDeletedAtColumn(storefrontError)) {
+    usesLegacySoftDelete = true;
+    ({ data: storefront, error: storefrontError } = await inventory
+      .from('inventory_storefronts')
+      .select('id, slug, metadata')
+      .eq('id', storefrontId)
+      .eq('ws_id', wsId)
+      .neq('slug', `deleted-${storefrontId}`)
+      .maybeSingle());
+  }
 
   if (storefrontError) throw storefrontError;
   if (!storefront) return false;
@@ -220,24 +274,46 @@ export async function deleteStorefront(wsId: string, storefrontId: string) {
     slug: string;
   };
   const deletedAt = new Date().toISOString();
-  const { data, error } = await inventory
-    .from('inventory_storefronts')
-    .update({
-      deleted_at: deletedAt,
-      metadata: {
-        ...(current.metadata ?? {}),
-        deletedAt,
-        deletedSlug: current.slug,
-      },
-      slug: `deleted-${current.id}`,
-      status: 'archived',
-      updated_at: deletedAt,
-    } as never)
-    .eq('id', storefrontId)
-    .eq('ws_id', wsId)
-    .is('deleted_at', null)
-    .select('id')
-    .maybeSingle();
+  const tombstone = {
+    metadata: {
+      ...(current.metadata ?? {}),
+      deletedAt,
+      deletedSlug: current.slug,
+    },
+    slug: `deleted-${current.id}`,
+    status: 'archived',
+    updated_at: deletedAt,
+  };
+  let result = usesLegacySoftDelete
+    ? await inventory
+        .from('inventory_storefronts')
+        .update(tombstone as never)
+        .eq('id', storefrontId)
+        .eq('ws_id', wsId)
+        .eq('slug', current.slug)
+        .select('id')
+        .maybeSingle()
+    : await inventory
+        .from('inventory_storefronts')
+        .update({ ...tombstone, deleted_at: deletedAt } as never)
+        .eq('id', storefrontId)
+        .eq('ws_id', wsId)
+        .is('deleted_at', null)
+        .select('id')
+        .maybeSingle();
+
+  if (!usesLegacySoftDelete && isMissingDeletedAtColumn(result.error)) {
+    result = await inventory
+      .from('inventory_storefronts')
+      .update(tombstone as never)
+      .eq('id', storefrontId)
+      .eq('ws_id', wsId)
+      .eq('slug', current.slug)
+      .select('id')
+      .maybeSingle();
+  }
+
+  const { data, error } = result;
 
   if (error) throw error;
   if (data) revalidatePublicStorefront(current.slug);

@@ -67,6 +67,31 @@ describe('inventory commerce repository RPC reads', () => {
     });
   });
 
+  it('hides rollout tombstones returned by a pre-migration storefront RPC', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          storefront: { id: 'storefront-1', name: 'Shop', slug: 'shop' },
+          total_count: 2,
+        },
+        {
+          storefront: {
+            id: '0d364b69-51be-4405-bcb6-4cbdca3526a0',
+            name: 'Removed shop',
+            slug: 'deleted-0d364b69-51be-4405-bcb6-4cbdca3526a0',
+          },
+          total_count: 2,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(listStorefronts('ws-1')).resolves.toEqual({
+      count: 1,
+      data: [{ id: 'storefront-1', name: 'Shop', slug: 'shop' }],
+    });
+  });
+
   it('loads an admin storefront with mapped theme fields', async () => {
     const storefrontBuilder = {
       eq: vi.fn(),
@@ -153,6 +178,77 @@ describe('inventory commerce repository RPC reads', () => {
     });
   });
 
+  it('loads a storefront before deleted_at reaches the environment', async () => {
+    const missingColumnBuilder = {
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: '42703',
+          message: 'column inventory_storefronts.deleted_at does not exist',
+        },
+      }),
+      select: vi.fn(),
+    };
+    missingColumnBuilder.select.mockReturnValue(missingColumnBuilder);
+    missingColumnBuilder.eq.mockReturnValue(missingColumnBuilder);
+    missingColumnBuilder.is.mockReturnValue(missingColumnBuilder);
+
+    const fallbackStorefrontBuilder = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          checkout_mode: 'simulated',
+          currency: 'USD',
+          id: 'storefront-1',
+          name: 'Preview Shop',
+          slug: 'preview-shop',
+          status: 'published',
+          visibility: 'public',
+          ws_id: 'ws-1',
+        },
+        error: null,
+      }),
+      neq: vi.fn(),
+      select: vi.fn(),
+    };
+    fallbackStorefrontBuilder.select.mockReturnValue(fallbackStorefrontBuilder);
+    fallbackStorefrontBuilder.eq.mockReturnValue(fallbackStorefrontBuilder);
+    fallbackStorefrontBuilder.neq.mockReturnValue(fallbackStorefrontBuilder);
+
+    const countBuilder = {
+      eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
+      select: vi.fn(),
+    };
+    countBuilder.select.mockReturnValue(countBuilder);
+    const sectionsBuilder = {
+      eq: vi.fn(),
+      order: vi.fn(),
+      select: vi.fn(),
+    };
+    sectionsBuilder.select.mockReturnValue(sectionsBuilder);
+    sectionsBuilder.eq.mockReturnValue(sectionsBuilder);
+    sectionsBuilder.order
+      .mockReturnValueOnce(sectionsBuilder)
+      .mockResolvedValueOnce({ data: [], error: null });
+    mocks.from
+      .mockReturnValueOnce(missingColumnBuilder)
+      .mockReturnValueOnce(fallbackStorefrontBuilder)
+      .mockReturnValueOnce(countBuilder)
+      .mockReturnValueOnce(sectionsBuilder);
+
+    await expect(getStorefront('ws-1', 'storefront-1')).resolves.toMatchObject({
+      id: 'storefront-1',
+      slug: 'preview-shop',
+    });
+
+    expect(fallbackStorefrontBuilder.neq).toHaveBeenCalledWith(
+      'slug',
+      'deleted-storefront-1'
+    );
+  });
+
   it('soft deletes storefronts while preserving referenced checkout history', async () => {
     const sourceBuilder = {
       eq: vi.fn(),
@@ -207,6 +303,84 @@ describe('inventory commerce repository RPC reads', () => {
       })
     );
     expect(updateBuilder.is).toHaveBeenCalledWith('deleted_at', null);
+  });
+
+  it('falls back to a metadata tombstone when deleted_at is not deployed yet', async () => {
+    const missingColumnBuilder = {
+      eq: vi.fn(),
+      is: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: '42703',
+          message: 'column inventory_storefronts.deleted_at does not exist',
+        },
+      }),
+      select: vi.fn(),
+    };
+    missingColumnBuilder.select.mockReturnValue(missingColumnBuilder);
+    missingColumnBuilder.eq.mockReturnValue(missingColumnBuilder);
+    missingColumnBuilder.is.mockReturnValue(missingColumnBuilder);
+
+    const fallbackSourceBuilder = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          id: 'storefront-1',
+          metadata: { campaign: 'summer' },
+          slug: 'preview-shop',
+        },
+        error: null,
+      }),
+      neq: vi.fn(),
+      select: vi.fn(),
+    };
+    fallbackSourceBuilder.select.mockReturnValue(fallbackSourceBuilder);
+    fallbackSourceBuilder.eq.mockReturnValue(fallbackSourceBuilder);
+    fallbackSourceBuilder.neq.mockReturnValue(fallbackSourceBuilder);
+
+    const fallbackUpdateBuilder = {
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: 'storefront-1' },
+        error: null,
+      }),
+      select: vi.fn(),
+      update: vi.fn(),
+    };
+    fallbackUpdateBuilder.update.mockReturnValue(fallbackUpdateBuilder);
+    fallbackUpdateBuilder.eq.mockReturnValue(fallbackUpdateBuilder);
+    fallbackUpdateBuilder.select.mockReturnValue(fallbackUpdateBuilder);
+
+    mocks.from
+      .mockReturnValueOnce(missingColumnBuilder)
+      .mockReturnValueOnce(fallbackSourceBuilder)
+      .mockReturnValueOnce(fallbackUpdateBuilder);
+
+    await expect(deleteStorefront('ws-1', 'storefront-1')).resolves.toBe(true);
+
+    expect(fallbackSourceBuilder.neq).toHaveBeenCalledWith(
+      'slug',
+      'deleted-storefront-1'
+    );
+    expect(fallbackUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.not.objectContaining({ deleted_at: expect.anything() })
+    );
+    expect(fallbackUpdateBuilder.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          campaign: 'summer',
+          deletedAt: expect.any(String),
+          deletedSlug: 'preview-shop',
+        }),
+        slug: 'deleted-storefront-1',
+        status: 'archived',
+      })
+    );
+    expect(fallbackUpdateBuilder.eq).toHaveBeenCalledWith(
+      'slug',
+      'preview-shop'
+    );
   });
 
   it('lists storefront listings through the private listings RPC', async () => {

@@ -554,9 +554,12 @@ production SHA. When related package releases are queued or running, the helper
 sets `packages_ready=false`; the platform build skips successfully instead of
 polling npm until the runner times out. npm publish authority remains isolated to
 package `publish-npm` jobs. A skipped package gate must not count as production
-deployment for database migrations: `supabase-production.yaml` requires the
-successful `vercel-production-platform` deployment marker for the same SHA
-before it can run production migrations.
+deployment for database migrations. Database paths therefore select the
+platform deployment in the production planner, and `supabase-production.yaml`
+requires both the successful planner run and the `vercel-production-platform`
+deployment marker for the same SHA before it can run production migrations.
+The gate queries the planner run because reusable app workflows do not create
+standalone Actions runs.
 
 Filtered production Docker installs only include the selected app and the
 dependencies that app needs. Workspace packages with direct `tsc` build scripts
@@ -591,11 +594,11 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
   trigger unless manually dispatched.
 - Its deploy step links the staging project and runs
   `supabase db push --include-all`.
-- `supabase-production.yaml` runs after production platform deployment and also
-  re-evaluates after a matching `main` staging migration succeeds. It still
-  checks both the latest production platform workflow result, a successful
-  production deployment marker, and a completed successful staging migration for
-  the same commit before running
+- `supabase-production.yaml` runs after the production deployment planner and
+  also re-evaluates after a matching `main` staging migration succeeds. It still
+  checks the latest planner result, a successful production platform deployment
+  marker, and a completed successful staging migration for the same commit
+  before running
   `supabase db push --include-all`.
 
 ### Mobile iOS native assets

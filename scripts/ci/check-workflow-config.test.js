@@ -465,6 +465,35 @@ test('Supabase migration gating tracks database changes and fails open safely', 
   assert.match(markerCoveredDecision.reason, /marker already covers/u);
 });
 
+test('database migrations select the platform deployment used by the production gate', () => {
+  const rootDir = createFixtureRoot();
+
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
+      rootDir,
+      workflowName: 'vercel-production-platform.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
+      rootDir,
+      workflowName: 'vercel-preview-platform.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
+      rootDir,
+      workflowName: 'vercel-production-calendar.yaml',
+    },
+    false
+  );
+});
+
 test('release-please workflow uses static switchboard gating', () => {
   const rootDir = createFixtureRoot();
   const decision = assertWorkflowDecision(

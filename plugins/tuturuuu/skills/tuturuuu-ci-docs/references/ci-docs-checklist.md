@@ -12,8 +12,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Keep path-sensitive checks deterministic and run them from the repo root.
 - Keep staging and production Supabase migration CI on
   `supabase db push --include-all`; production migration CI stays
-  prerequisite-gated on the production platform deployment marker and same-SHA
-  staging success.
+  triggered by the production deployment planner and prerequisite-gated on the
+  production platform deployment marker plus same-SHA staging success. Database
+  migration paths must select the platform deployment so that marker exists.
 - Keep `vercel-preview-platform.yaml` on a protected `main` push trigger because
   `supabase-staging.yaml` depends on its completed workflow-run event; other
   preview Vercel workflows remain trusted manual-dispatch only.

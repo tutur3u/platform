@@ -1229,7 +1229,7 @@ test('Supabase production migration requires production platform deploy and succ
 
   assert.match(
     workflow,
-    /workflows:\n {6}- "Vercel Platform Production Deployment"\n {6}- "Supabase Staging Migration"\n/
+    /workflows:\n {6}- "Vercel Production Deployment Planner"\n {6}- "Supabase Staging Migration"\n/
   );
   assert.match(workflow, /\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {6}- main\n/);
@@ -1245,12 +1245,12 @@ test('Supabase production migration requires production platform deploy and succ
   );
   assert.match(
     migrateJob,
-    /TRIGGER_WORKFLOW" = "Vercel Platform Production Deployment"/
+    /TRIGGER_WORKFLOW" = "Vercel Production Deployment Planner"/
   );
   assert.match(migrateJob, /TRIGGER_WORKFLOW" = "Supabase Staging Migration"/);
   assert.match(
     migrateJob,
-    /production platform deployment trigger ran on '\$TRIGGER_BRANCH' instead of production/
+    /production deployment planner ran on '\$TRIGGER_BRANCH' instead of production/
   );
   assert.match(
     migrateJob,
@@ -1262,12 +1262,12 @@ test('Supabase production migration requires production platform deploy and succ
   );
   assert.match(
     migrateJob,
-    /vercel-production-platform\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
+    /vercel-production\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
   );
   assert.match(migrateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
   assert.match(
     migrateJob,
-    /no production platform deployment workflow run was found for \$TARGET_SHA/
+    /no production deployment planner run was found for \$TARGET_SHA/
   );
   assert.match(
     migrateJob,

@@ -331,6 +331,17 @@ function isOwnWorkflowChange(filePath: string, workflowName: string): boolean {
   return filePath === `.github/workflows/${workflowName}`;
 }
 
+function isDatabaseSchemaPath(filePath: string): boolean {
+  return filePath === 'apps/database' || filePath.startsWith('apps/database/');
+}
+
+function isDatabaseMigrationAffectingPath(filePath: string): boolean {
+  return (
+    isDatabaseSchemaPath(filePath) ||
+    databaseMigrationAffectingPaths.has(filePath)
+  );
+}
+
 function getWorkspaceDirFromPath(filePath: string): string | null {
   const match = /^(apps|packages)\/[^/]+(?:\/|$)/.exec(filePath);
   return match?.[0].replace(/\/$/, '') ?? null;
@@ -528,10 +539,7 @@ export function getWorkflowDecision({
     }
 
     const matchedPaths = normalizedChangedFiles.filter(
-      (filePath) =>
-        filePath === 'apps/database' ||
-        filePath.startsWith('apps/database/') ||
-        databaseMigrationAffectingPaths.has(filePath)
+      isDatabaseMigrationAffectingPath
     );
 
     return {
@@ -563,6 +571,18 @@ export function getWorkflowDecision({
       reason: 'changed-file state is unavailable, so Vercel gating is open',
       shouldRun: true,
     };
+  }
+
+  if (target.app === 'platform') {
+    const databasePaths = normalizedChangedFiles.filter(isDatabaseSchemaPath);
+    if (databasePaths.length > 0) {
+      return {
+        matchedPaths: databasePaths,
+        reason:
+          'platform deployment is required to gate production database migrations',
+        shouldRun: true,
+      };
+    }
   }
 
   const dependencyClosure = buildWorkspaceDependencyClosure(

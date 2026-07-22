@@ -201,9 +201,12 @@ formatting behavior, or repo-wide verification.
   waiting for npm. The deploy job therefore needs `actions: write` for workflow
   dispatch recovery; keep npm publish authority isolated to package
   `publish-npm` jobs. Because a package-gate skip is still a successful workflow
-  conclusion, production database migration gates must require the successful
-  `vercel-production-platform` deployment marker for the same SHA before
-  running `supabase db push`.
+  conclusion, the production planner must select the platform deploy for
+  database changes. Production database migration gates must require both the
+  successful planner run and `vercel-production-platform` deployment marker for
+  the same SHA before running `supabase db push`. Reusable `workflow_call` jobs
+  do not appear as standalone workflow runs, so migration gates query the
+  planner run through the Actions API.
   Every active Vercel project must keep its root-Turbo `buildCommand` checked in.
   Generate deterministic source metadata first, then run `vercel build` through
   `.github/actions/run-with-turbo-remote-cache`; do not add a separate workspace
@@ -246,8 +249,9 @@ formatting behavior, or repo-wide verification.
   marker and diff the entire pending range, not only the latest commit. Fail
   open without a trustworthy marker, keep staging/production jobs serialized,
   and combine evaluation with deployment so a no-op workflow-run signal uses
-  one short runner. Never weaken production's same-SHA platform deployment and
-  successful staging checks.
+  one short runner. The production workflow-run trigger and Actions API lookup
+  must follow the production planner; the same-SHA platform deployment marker
+  and successful staging checks remain mandatory.
 - Keep remote-cache values out of workflow/job environments and `GITHUB_ENV`.
   Pass them only to the composite wrapper's command step. Repository
   `TURBO_TOKEN` is for trusted jobs only; `TURBO_TEAM` is a repository variable

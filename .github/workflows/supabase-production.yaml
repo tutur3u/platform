@@ -3,7 +3,7 @@ name: Supabase Production Migration
 on:
   workflow_run:
     workflows:
-      - "Vercel Platform Production Deployment"
+      - "Vercel Production Deployment Planner"
       - "Supabase Staging Migration"
     types:
       - completed
@@ -86,14 +86,14 @@ jobs:
               TARGET_SHA="$CURRENT_SHA"
               echo "Manual dispatch detected on production. Checking production migration prerequisites for $TARGET_SHA."
             fi
-          elif [ "$TRIGGER_WORKFLOW" = "Vercel Platform Production Deployment" ]; then
+          elif [ "$TRIGGER_WORKFLOW" = "Vercel Production Deployment Planner" ]; then
             if [ "$TRIGGER_BRANCH" != "production" ]; then
-              echo "::notice::Skipping production migration because the production platform deployment trigger ran on '$TRIGGER_BRANCH' instead of production."
+              echo "::notice::Skipping production migration because the production deployment planner ran on '$TRIGGER_BRANCH' instead of production."
             elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
-              echo "::notice::Skipping production migration because the production platform deployment trigger concluded with '$TRIGGER_CONCLUSION'."
+              echo "::notice::Skipping production migration because the production deployment planner concluded with '$TRIGGER_CONCLUSION'."
             else
               TARGET_SHA="$TRIGGER_SHA"
-              echo "Production platform deployment completed. Checking prerequisites for production migration at $TARGET_SHA..."
+              echo "Production deployment planner completed. Checking prerequisites for production migration at $TARGET_SHA..."
             fi
           elif [ "$TRIGGER_WORKFLOW" = "Supabase Staging Migration" ]; then
             if [ "$TRIGGER_BRANCH" != "main" ]; then
@@ -109,9 +109,9 @@ jobs:
           fi
 
           if [ -n "$TARGET_SHA" ]; then
-            echo "Checking production platform deployment workflow status..."
+            echo "Checking production deployment planner status..."
             VERCEL_RUN=$(gh api \
-              "repos/${{ github.repository }}/actions/workflows/vercel-production-platform.yaml/runs?branch=production&head_sha=$TARGET_SHA&per_page=1" \
+              "repos/${{ github.repository }}/actions/workflows/vercel-production.yaml/runs?branch=production&head_sha=$TARGET_SHA&per_page=1" \
               --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
 
             VERCEL_CONCLUSION=$(echo "$VERCEL_RUN" | jq -r '.conclusion // "missing"')
@@ -119,17 +119,17 @@ jobs:
             VERCEL_BRANCH=$(echo "$VERCEL_RUN" | jq -r '.head_branch // "missing"')
             VERCEL_SHA=$(echo "$VERCEL_RUN" | jq -r '.head_sha // "missing"')
 
-            echo "Production platform deployment status: $VERCEL_STATUS"
-            echo "Production platform deployment conclusion: $VERCEL_CONCLUSION"
-            echo "Production platform deployment branch: $VERCEL_BRANCH"
-            echo "Production platform deployment SHA: $VERCEL_SHA"
+            echo "Production deployment planner status: $VERCEL_STATUS"
+            echo "Production deployment planner conclusion: $VERCEL_CONCLUSION"
+            echo "Production deployment planner branch: $VERCEL_BRANCH"
+            echo "Production deployment planner SHA: $VERCEL_SHA"
 
             if [ "$VERCEL_SHA" != "$TARGET_SHA" ]; then
-              echo "::notice::Skipping production migration because no production platform deployment workflow run was found for $TARGET_SHA."
+              echo "::notice::Skipping production migration because no production deployment planner run was found for $TARGET_SHA."
             elif [ "$VERCEL_BRANCH" != "production" ]; then
-              echo "::notice::Skipping production migration because the matching production platform deployment ran on '$VERCEL_BRANCH'."
+              echo "::notice::Skipping production migration because the matching production deployment planner ran on '$VERCEL_BRANCH'."
             elif [ "$VERCEL_CONCLUSION" != "success" ]; then
-              echo "::notice::Skipping production migration because the production platform deployment for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
+              echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
             else
               echo "Checking successful production platform deployment marker..."
               DEPLOYMENT_MARKER_DEPLOYMENT=$(gh api \
