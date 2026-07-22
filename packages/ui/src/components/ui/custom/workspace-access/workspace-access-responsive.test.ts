@@ -39,9 +39,16 @@ describe('workspace access responsive layout', () => {
     const memberRow = readWorkspaceAccessSource(
       'workspace-access-member-row.tsx'
     );
+    const peopleFilters = readWorkspaceAccessSource(
+      'workspace-access-people-filters.tsx'
+    );
 
     expect(toolbar).toContain('grid-cols-4');
+    expect(toolbar).toContain('shrink-0 grid-cols-4');
+    expect(toolbar).not.toContain('2xl:flex-row');
     expect(toolbar).toContain('sr-only sm:hidden');
     expect(memberRow).toContain('size-9 shrink-0 px-0 sm:w-auto');
+    expect(memberRow).not.toContain('sm:grid-cols-[1fr_auto]');
+    expect(peopleFilters).toContain('className="h-full min-h-0"');
   });
 });

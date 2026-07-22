@@ -52,7 +52,7 @@ export function WorkspaceAccessPeopleFilters({
     filters.permissionIds.length + filters.roleIds.length;
 
   return (
-    <div className="grid gap-2 rounded-xl border border-border bg-foreground/[0.02] p-2.5 sm:p-3 lg:grid-cols-[auto_1fr] lg:items-center">
+    <div className="grid gap-2 rounded-xl border border-border bg-foreground/[0.02] p-2.5 sm:p-3">
       <div className="grid min-w-0 gap-2 sm:grid-cols-[auto_1fr] sm:items-center">
         <div className="hidden items-center gap-2 text-muted-foreground text-sm sm:flex">
           <ListFilter className="h-4 w-4" />
@@ -60,15 +60,22 @@ export function WorkspaceAccessPeopleFilters({
         </div>
 
         <Tabs
+          className="w-full sm:w-auto"
           value={status}
           onValueChange={(value) =>
             onStatusChange(value as WorkspaceAccessMemberStatus)
           }
         >
-          <TabsList className="grid h-8 w-full grid-cols-3 sm:w-auto">
-            <TabsTrigger value="all">{t('ws-members.all')}</TabsTrigger>
-            <TabsTrigger value="joined">{t('ws-members.joined')}</TabsTrigger>
-            <TabsTrigger value="invited">{t('ws-members.invited')}</TabsTrigger>
+          <TabsList className="grid h-9 w-full grid-cols-3 p-1 sm:w-auto">
+            <TabsTrigger className="h-full min-h-0" value="all">
+              {t('ws-members.all')}
+            </TabsTrigger>
+            <TabsTrigger className="h-full min-h-0" value="joined">
+              {t('ws-members.joined')}
+            </TabsTrigger>
+            <TabsTrigger className="h-full min-h-0" value="invited">
+              {t('ws-members.invited')}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

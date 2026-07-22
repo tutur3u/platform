@@ -100,6 +100,9 @@ export function SatelliteWorkspaceSettingsPanel({
   }
 
   if (activeTab === 'workspace_members') {
+    const invitationsDisabled =
+      workspace.personal || (memberSettingsQuery.data?.disableInvite ?? false);
+
     return (
       <div className="space-y-4">
         <PanelIntro
@@ -110,18 +113,17 @@ export function SatelliteWorkspaceSettingsPanel({
           <RestrictedNotice />
         )}
         <GuestSelfJoinSetting
-          disabled={!canManageMembers}
+          disabled={workspace.personal || !canManageMembers}
           wsId={workspace.id}
         />
-        <InviteLinksSection
-          disabled={
-            !canManageMembers ||
-            (memberSettingsQuery.data?.disableInvite ?? false)
-          }
-          wsId={workspace.id}
-        />
+        {!workspace.personal ? (
+          <InviteLinksSection
+            disabled={!canManageMembers || invitationsDisabled}
+            wsId={workspace.id}
+          />
+        ) : null}
         <StandardWorkspaceAccessPage
-          disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
+          disableInvite={invitationsDisabled}
           initialContext={{
             canManageMembers,
             canManageRoles: permissions?.manage_workspace_roles ?? false,

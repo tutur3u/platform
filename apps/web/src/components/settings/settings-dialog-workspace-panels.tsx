@@ -137,24 +137,27 @@ export function WorkspaceMembersSettingsPanel({
     return <div className="h-full">{state}</div>;
   }
 
+  const invitationsDisabled =
+    workspace.personal || (memberSettingsQuery.data?.disableInvite ?? false);
+
   return (
     <div className="h-full">
       <div className="space-y-6">
         <GuestSelfJoinSetting
           wsId={workspace.id}
-          disabled={!canManageWorkspaceMembers}
+          disabled={workspace.personal || !canManageWorkspaceMembers}
           embedded
         />
-        {canManageWorkspaceMembers ? (
+        {canManageWorkspaceMembers && !workspace.personal ? (
           <InviteLinksSection
             wsId={workspace.id}
             canManageMembers
-            disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
+            disableInvite={invitationsDisabled}
             embedded
           />
         ) : null}
         <StandardWorkspaceAccessPage
-          disableInvite={memberSettingsQuery.data?.disableInvite ?? false}
+          disableInvite={invitationsDisabled}
           initialContext={{
             canManageMembers: canManageWorkspaceMembers,
             canManageRoles: canManageWorkspaceRoles,

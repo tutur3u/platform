@@ -27,7 +27,7 @@ type Props = {
 };
 
 const TAB_TRIGGER_CLASS =
-  'h-9 min-w-0 gap-1.5 rounded-lg px-2 text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-3';
+  'h-full min-w-0 w-full gap-1.5 overflow-hidden rounded-lg px-2 text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm sm:px-3';
 
 export function WorkspaceAccessTabsToolbar({
   activeTab,
@@ -73,8 +73,8 @@ export function WorkspaceAccessTabsToolbar({
   ];
 
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <TabsList className="grid h-auto w-full grid-cols-4 gap-1 rounded-xl border bg-muted/30 p-1 lg:w-auto">
+    <div className="flex flex-col gap-3">
+      <TabsList className="grid h-11 w-full shrink-0 grid-cols-4 gap-1 overflow-hidden rounded-xl border bg-muted/30 p-1">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -83,14 +83,16 @@ export function WorkspaceAccessTabsToolbar({
             className={TAB_TRIGGER_CLASS}
           >
             {tab.icon}
-            <span className="hidden sm:inline">{tab.label}</span>
+            <span className="hidden min-w-0 truncate sm:inline">
+              {tab.label}
+            </span>
             <span className="sr-only sm:hidden">{tab.label}</span>
           </TabsTrigger>
         ))}
       </TabsList>
 
-      <div className="flex w-full shrink-0 gap-2 lg:w-auto">
-        <div className="relative min-w-0 flex-1 lg:w-80 lg:flex-none">
+      <div className="flex w-full min-w-0 gap-2">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}

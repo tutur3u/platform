@@ -187,7 +187,7 @@ export function WorkspaceAccessMemberRow({
           </div>
         ) : null}
 
-        <div className="mt-3 grid gap-2 border-border border-t pt-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+        <div className="mt-3 grid gap-2 border-border border-t pt-3 text-sm">
           {member.created_at ? (
             <div className="text-muted-foreground text-xs">
               <span>
@@ -212,7 +212,7 @@ export function WorkspaceAccessMemberRow({
                   onAssignRole({ roleId, userId: memberId })
                 }
               >
-                <SelectTrigger className="h-9 min-w-0 flex-1 sm:min-w-[180px]">
+                <SelectTrigger className="h-9 min-w-0 flex-1">
                   <SelectValue placeholder={labels.assignRolePlaceholder} />
                 </SelectTrigger>
                 <SelectContent>

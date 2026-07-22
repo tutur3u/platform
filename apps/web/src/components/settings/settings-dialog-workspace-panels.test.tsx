@@ -5,15 +5,19 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkspaceMembersSettingsPanel } from './settings-dialog-workspace-panels';
 
-const { inviteLinksMock, standardWorkspaceAccessMock, queryState } = vi.hoisted(
-  () => ({
-    inviteLinksMock: vi.fn(),
-    queryState: {
-      disableInvite: false,
-    },
-    standardWorkspaceAccessMock: vi.fn(),
-  })
-);
+const {
+  guestSelfJoinMock,
+  inviteLinksMock,
+  standardWorkspaceAccessMock,
+  queryState,
+} = vi.hoisted(() => ({
+  guestSelfJoinMock: vi.fn(),
+  inviteLinksMock: vi.fn(),
+  queryState: {
+    disableInvite: false,
+  },
+  standardWorkspaceAccessMock: vi.fn(),
+}));
 
 vi.mock(
   '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/invite-links-section',
@@ -47,7 +51,10 @@ vi.mock('next-intl', () => ({
 vi.mock(
   '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting',
   () => ({
-    GuestSelfJoinSetting: () => <div data-testid="guest-self-join-setting" />,
+    GuestSelfJoinSetting: (props: Record<string, unknown>) => {
+      guestSelfJoinMock(props);
+      return <div data-testid="guest-self-join-setting" />;
+    },
   })
 );
 
@@ -93,6 +100,11 @@ describe('WorkspaceMembersSettingsPanel', () => {
 
     expect(screen.getByTestId('standard-workspace-access-page')).toBeVisible();
     expect(screen.getByTestId('invite-links-section')).toBeVisible();
+    expect(guestSelfJoinMock).toHaveBeenCalledWith({
+      disabled: false,
+      embedded: true,
+      wsId: 'ws_1',
+    });
     expect(inviteLinksMock).toHaveBeenCalledWith({
       canManageMembers: true,
       disableInvite: true,
@@ -155,5 +167,31 @@ describe('WorkspaceMembersSettingsPanel', () => {
       screen.queryByTestId('invite-links-section')
     ).not.toBeInTheDocument();
     expect(screen.getByTestId('standard-workspace-access-page')).toBeVisible();
+  });
+
+  it('disables guest access and invitations in personal workspaces', () => {
+    render(
+      <WorkspaceMembersSettingsPanel
+        canManageWorkspaceMembers
+        canManageWorkspaceRoles
+        currentUserEmail="ada@example.com"
+        isLoadingWorkspace={false}
+        workspace={{ ...workspace, personal: true }}
+        workspaceError={null}
+      />
+    );
+
+    expect(guestSelfJoinMock).toHaveBeenCalledWith({
+      disabled: true,
+      embedded: true,
+      wsId: 'ws_1',
+    });
+    expect(inviteLinksMock).not.toHaveBeenCalled();
+    expect(
+      screen.queryByTestId('invite-links-section')
+    ).not.toBeInTheDocument();
+    expect(standardWorkspaceAccessMock).toHaveBeenCalledWith(
+      expect.objectContaining({ disableInvite: true })
+    );
   });
 });
