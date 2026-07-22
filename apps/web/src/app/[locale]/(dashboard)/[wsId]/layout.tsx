@@ -95,7 +95,13 @@ async function createNavigationLinks({
   });
 }
 
-async function NavbarActionsSlot({ user }: { user: WorkspaceUser }) {
+async function NavbarActionsSlot({
+  user,
+  workspace,
+}: {
+  user: WorkspaceUser;
+  workspace: DashboardLayoutWorkspace;
+}) {
   const { default: NavbarActions } = await import('../../navbar-actions');
 
   return (
@@ -103,6 +109,7 @@ async function NavbarActionsSlot({ user }: { user: WorkspaceUser }) {
       renderCommandLauncher={false}
       renderSettingsDialog={false}
       user={user}
+      workspace={workspace}
     />
   );
 }
@@ -349,7 +356,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
           }
         >
-          <NavbarActionsSlot user={user} />
+          <NavbarActionsSlot user={user} workspace={workspace} />
         </Suspense>
       }
       userPopover={

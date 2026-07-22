@@ -156,6 +156,7 @@ export function WorkspaceSelect({
   createWorkspaceDescription,
   fallbackLogoUrl = TUTURUUU_LOGO_URL,
   resolveNextPathname,
+  triggerClassName,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -171,6 +172,7 @@ export function WorkspaceSelect({
     currentPathname: string;
     nextSlug: string;
   }) => string;
+  triggerClassName?: string;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -563,7 +565,8 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full whitespace-normal text-start',
+                triggerClassName
               )}
               disabled={!hasSelectableWorkspaces}
             >

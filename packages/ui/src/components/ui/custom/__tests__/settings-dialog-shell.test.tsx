@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../../dialog';
 import {
@@ -55,7 +55,7 @@ const navItems: SettingsNavGroup[] = [
   },
 ];
 
-function renderShell() {
+function renderShell(activeGroupBreadcrumb?: ReactNode) {
   function Harness() {
     const [activeTab, setActiveTab] = useState('profile');
 
@@ -63,6 +63,7 @@ function renderShell() {
       <Dialog open>
         <SettingsDialogShell
           activeTab={activeTab}
+          activeGroupBreadcrumb={activeGroupBreadcrumb}
           keyboardNavigation
           navItems={navItems}
           onActiveTabChange={setActiveTab}
@@ -146,6 +147,17 @@ describe('SettingsDialogShell keyboard navigation', () => {
     expect(screen.getAllByText('Profile').length).toBeGreaterThan(0);
     expect(screen.getByText('Appearance')).toBeVisible();
     expect(screen.getByText('Forms')).toBeVisible();
+  });
+
+  it('can replace the active group crumb with an interactive context control', () => {
+    renderShell(<button type="button">Switch workspace</button>);
+
+    const breadcrumb = screen.getByTestId('settings-active-group-breadcrumb');
+
+    expect(breadcrumb).toContainElement(
+      screen.getByRole('button', { name: 'Switch workspace' })
+    );
+    expect(breadcrumb).not.toHaveTextContent('Account');
   });
 
   it('focuses settings search with slash and modifier search shortcuts', () => {

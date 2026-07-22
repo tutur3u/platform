@@ -51,6 +51,7 @@ import {
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
 import type { NavigationState, StructureProps } from './structure-types';
+import { WorkspaceSelectorVisibilityProvider } from './workspace-selector-visibility-context';
 
 const WorkspaceSelect = dynamic(
   () => import('./workspace-select').then((module) => module.WorkspaceSelect),
@@ -1011,30 +1012,32 @@ export function StructureImpl({
         onOpenChange={setAppsLauncherOpen}
         open={appsLauncherOpen}
       />
-      <BaseStructure
-        isCollapsed={isCollapsed}
-        setIsCollapsed={handleToggle}
-        header={header}
-        mobileHeader={mobileHeader}
-        sidebarHeader={sidebarHeader}
-        sidebarContent={sidebarContent}
-        actions={actions}
-        userPopover={userPopover}
-        feedbackButton={
-          <SidebarFooterActions
-            wsId={wsId}
-            isCollapsed={isCollapsed}
-            showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
-          />
-        }
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
-        overlayOnExpand={behavior === 'hover'}
-        sidebarHidden={behavior === 'hidden'}
-      >
-        {children}
-      </BaseStructure>
+      <WorkspaceSelectorVisibilityProvider visible={showWorkspaceSelect}>
+        <BaseStructure
+          isCollapsed={isCollapsed}
+          setIsCollapsed={handleToggle}
+          header={header}
+          mobileHeader={mobileHeader}
+          sidebarHeader={sidebarHeader}
+          sidebarContent={sidebarContent}
+          actions={actions}
+          userPopover={userPopover}
+          feedbackButton={
+            <SidebarFooterActions
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
+            />
+          }
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          hideSizeToggle={behavior === 'hover' || behavior === 'hidden'}
+          overlayOnExpand={behavior === 'hover'}
+          sidebarHidden={behavior === 'hidden'}
+        >
+          {children}
+        </BaseStructure>
+      </WorkspaceSelectorVisibilityProvider>
     </>
   );
 }

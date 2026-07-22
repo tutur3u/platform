@@ -99,6 +99,8 @@ export interface SettingsDialogShellProps {
   expandAllAccordions?: boolean;
   /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
   keyboardNavigation?: boolean;
+  /** Optional context control that replaces the active group breadcrumb */
+  activeGroupBreadcrumb?: ReactNode;
   /** Content to render in the main area */
   children: ReactNode;
 }
@@ -134,6 +136,7 @@ export function SettingsDialogShell({
   primaryGroupLabels,
   expandAllAccordions = true,
   keyboardNavigation = false,
+  activeGroupBreadcrumb,
   children,
 }: SettingsDialogShellProps) {
   const t = useTranslations();
@@ -491,10 +494,12 @@ export function SettingsDialogShell({
                   <BreadcrumbSeparator />
                   {activeGroup && (
                     <>
-                      <BreadcrumbItem>
-                        <BreadcrumbPage className="text-muted-foreground">
-                          {activeGroup.label}
-                        </BreadcrumbPage>
+                      <BreadcrumbItem data-testid="settings-active-group-breadcrumb">
+                        {activeGroupBreadcrumb ?? (
+                          <BreadcrumbPage className="text-muted-foreground">
+                            {activeGroup.label}
+                          </BreadcrumbPage>
+                        )}
                       </BreadcrumbItem>
                       <BreadcrumbSeparator />
                     </>

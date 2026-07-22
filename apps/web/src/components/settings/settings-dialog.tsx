@@ -16,6 +16,7 @@ import {
   getSettingsDialogAvailability,
   type WorkspaceSettingsPermissions,
 } from './settings-dialog-permissions';
+import { SettingsWorkspaceBreadcrumb } from './settings-workspace-breadcrumb';
 
 interface SettingsDialogProps {
   boardId?: string;
@@ -160,6 +161,12 @@ export function SettingsDialog({
   const fallbackTab = navItems
     .flatMap((group) => group.items)
     .find((item) => !item.disabled)?.name;
+  const workspaceGroup = navItems.find((group) =>
+    group.items.some((item) => item.name === 'workspace_general')
+  );
+  const isWorkspaceSettingsTab = workspaceGroup?.items.some(
+    (item) => item.name === activeTab
+  );
   useEffect(() => {
     if (isBillingPermissionLoading || activeTabIsVisible) return;
 
@@ -170,6 +177,11 @@ export function SettingsDialog({
 
   return (
     <SettingsDialogShell
+      activeGroupBreadcrumb={
+        wsId && isWorkspaceSettingsTab ? (
+          <SettingsWorkspaceBreadcrumb activeTab={activeTab} wsId={wsId} />
+        ) : undefined
+      }
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}

@@ -182,6 +182,7 @@
     "server-only": "^0.0.1",
     "sharp": "^0.35.3",
     "shiki": "^4.3.1",
+    "slot-text": "^0.3.3",
     "speaker": "^0.5.5",
     "streamdown": "^2.5.0",
     "superjson": "^2.2.6",

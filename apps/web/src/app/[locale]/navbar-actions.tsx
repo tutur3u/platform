@@ -1,3 +1,4 @@
+import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
 async function hasAuthenticatedSessionUser() {
@@ -18,11 +19,13 @@ export default async function NavbarActions({
   renderCommandLauncher = true,
   renderSettingsDialog = true,
   user: providedUser,
+  workspace,
 }: {
   hideMetadata?: boolean;
   renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
   user?: WorkspaceUser | null;
+  workspace?: Workspace | null;
 }) {
   const hasUser =
     providedUser === undefined
@@ -46,6 +49,7 @@ export default async function NavbarActions({
                 user={providedUser}
                 renderCommandLauncher={renderCommandLauncher}
                 renderSettingsDialog={renderSettingsDialog}
+                workspace={workspace}
               />
             </div>
             <NotificationPopover />

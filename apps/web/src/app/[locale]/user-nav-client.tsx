@@ -17,6 +17,8 @@ import {
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
@@ -41,6 +43,7 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useContext, useEffect, useState } from 'react';
+import { SlotText } from 'slot-text/react';
 import type { NavLink } from '@/components/navigation';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
@@ -51,11 +54,14 @@ import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
+import { fetchWorkspaces } from './(dashboard)/[wsId]/workspace-list-actions';
+import { useWorkspaceSelectorVisibility } from './(dashboard)/[wsId]/workspace-selector-visibility-context';
 import DashboardMenuItem from './dashboard-menu-item';
 import InviteMembersMenuItem from './invite-members-menu-item';
 import MeetTogetherMenuItem from './meet-together-menu-item';
 import ReportProblemMenuItem from './report-problem-menu-item';
 import RewiseMenuItem from './rewise-menu-item';
+import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 import type { UserNavSettingsDialogProps } from './user-nav-settings-dialog';
 import UserPresenceIndicator from './user-presence-indicator';
 
@@ -115,6 +121,7 @@ export default function UserNavClient({
   const params = useParams();
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
+  const workspaceSelectorVisible = useWorkspaceSelectorVisibility();
   const { accounts } = useAccountSwitcher();
   const { modKey } = usePlatform();
   const settingsDialogEnabled = Boolean(user && renderSettingsDialog);
@@ -149,6 +156,13 @@ export default function UserNavClient({
   });
 
   const wsId = workspace?.id ?? resolvedWorkspace?.id;
+  const displayedWorkspace = workspace ?? resolvedWorkspace;
+  const secondaryLabel = resolveUserNavSecondaryLabel({
+    email: user?.email,
+    workspaceName: displayedWorkspace?.name,
+    workspacePersonal: displayedWorkspace?.personal,
+    workspaceSelectorVisible,
+  });
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -264,9 +278,11 @@ export default function UserNavClient({
                 <div className="line-clamp-1 break-all font-semibold text-sm">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
-                  {user?.email}
-                </div>
+                <SlotText
+                  className="line-clamp-1 break-all text-xs opacity-70"
+                  options={{ bounce: 0.1, duration: 180, stagger: 12 }}
+                  text={secondaryLabel}
+                />
               </div>
             )}
           </button>
@@ -291,6 +307,22 @@ export default function UserNavClient({
               </p>
             </div>
           </DropdownMenuLabel>
+          {wsId && (
+            <>
+              <div className="px-1.5 pb-1.5">
+                <WorkspaceSelect
+                  disableCreateNewWorkspace
+                  fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}
+                  fetchWorkspaces={fetchWorkspaces}
+                  showTierBadges={false}
+                  standalone
+                  triggerClassName="h-8 border-border/70 bg-muted/30 px-2 shadow-none hover:bg-muted/60"
+                  wsId={wsId}
+                />
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DashboardMenuItem />
           <RewiseMenuItem />
           <MeetTogetherMenuItem />
