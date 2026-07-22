@@ -1106,7 +1106,7 @@ describe('web proxy api handling', () => {
     },
     {
       expectedLocation:
-        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+        'https://tools.tuturuuu.localhost/qr?utm_source=e2e&tag=a&tag=b',
       url: 'http://localhost/en/qr-generator?utm_source=e2e&tag=a&tag=b',
     },
     {
@@ -1116,7 +1116,7 @@ describe('web proxy api handling', () => {
     },
     {
       expectedLocation:
-        'https://qr.tuturuuu.localhost/?utm_source=e2e&tag=a&tag=b',
+        'https://tools.tuturuuu.localhost/qr?utm_source=e2e&tag=a&tag=b',
       url: 'http://localhost/qr-generator?utm_source=e2e&tag=a&tag=b',
     },
     {
