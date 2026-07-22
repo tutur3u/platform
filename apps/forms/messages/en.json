@@ -7165,6 +7165,7 @@
   },
   "ws-members": {
     "active_members": "Active",
+    "admin_has_all_permissions": "As the workspace administrator, this member has full access to all permissions",
     "all": "All",
     "board_guest_can_edit": "Can edit shared boards",
     "board_guest_can_view": "Can view shared boards",
@@ -7607,6 +7608,9 @@
     "viewing_history_snapshot": "Viewing history snapshot"
   },
   "ws-roles": {
+    "admin": "Administrator",
+    "admin_enabled_description": "All permissions below are automatically granted. Individual permission toggles are disabled while administrator access is active.",
+    "admin_enabled_title": "Administrator Access Enabled",
     "initiate_pos_checkout": "Start POS checkout",
     "initiate_pos_checkout_description": "Allows members to route an order to an approved Square Terminal or open Square POS on their current device. It does not allow editing inventory, sales, payments, members, or settings.",
     "create": "Create role",
@@ -7621,6 +7625,7 @@
     "guest_defaults": "Guest defaults",
     "guest_defaults_description": "Guest defaults are disabled unless explicitly enabled. They use the same permission catalog as members, but unmapped routes stay denied.",
     "guest_defaults_tab": "Guest defaults",
+    "granted_via_admin": "Granted via administrator",
     "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
     "member_defaults": "Member defaults",
     "member_defaults_description": "Member defaults apply to workspace members and API keys. Existing default permissions remain member-scoped.",

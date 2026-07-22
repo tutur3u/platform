@@ -870,10 +870,19 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/posts/permissions by preserving the legacy quiet-failure contract: missing auth, inaccessible workspaces, RPC failures, and missing permissions all return HTTP 200 with canApprovePosts=false and canForceSendPosts=false. Authenticated callers are revalidated with Supabase Auth, then the backend calls the server-owned has_workspace_permission RPC for workspace approve_posts and root workspace manage_workspace_roles."
     },
+    "api:/api/v1/workspaces/:wsId/roles:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/route.ts": {
+      "methods": {
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Workspace role creation remains Next-owned migration backlog until Rust ports creator/admin authorization, role insertion, initial permission assignment, and the response contract that returns the created role id for immediate member assignment."
+        }
+      }
+    },
     "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by accepting current-user satellite app sessions or revalidating a normal Supabase browser session, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, and manage_workspace_members flags with the private 30-second success cache directive."
+      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by accepting current-user satellite app sessions or revalidating a normal Supabase browser session, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, manage_workspace_members, and manage_workspace_roles flags with the private 30-second success cache directive."
     },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",

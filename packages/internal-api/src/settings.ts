@@ -105,7 +105,7 @@ export async function createWorkspaceRole(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<{ id: string; message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles`,
     {
       method: 'POST',

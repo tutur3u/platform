@@ -164,5 +164,5 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json({ id: role.id, message: 'success' });
 }

@@ -2,6 +2,8 @@
 
 import {
   Crown,
+  Ellipsis,
+  Plus,
   ShieldUser,
   User as UserIcon,
   UserMinus,
@@ -12,12 +14,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';
@@ -38,6 +44,7 @@ type GuestContext = InternalApiEnhancedWorkspaceMember & {
 type Props = {
   canManageMembers: boolean;
   canManageRoles: boolean;
+  defaultAdminEnabled: boolean;
   isMutating: boolean;
   labels: WorkspaceAccessLabels;
   member: InternalApiEnhancedWorkspaceMember;
@@ -53,6 +60,7 @@ type Props = {
 export function WorkspaceAccessMemberRow({
   canManageMembers,
   canManageRoles,
+  defaultAdminEnabled,
   isMutating,
   labels,
   member,
@@ -68,6 +76,15 @@ export function WorkspaceAccessMemberRow({
   const memberName = getMemberDisplayName(member, t('common.unknown'));
   const guest = member as GuestContext;
   const canRemoveRoles = canManageRoles && memberId && !member.pending;
+  const inheritsAdministrator =
+    defaultAdminEnabled &&
+    !member.pending &&
+    !guest.direct_board_guest &&
+    member.workspace_member_type !== 'GUEST';
+  const hasActions =
+    Boolean(canRemoveRoles) ||
+    (canManageMembers && !member.is_creator) ||
+    shouldShowProtectedMemberStatus({ isCreator: member.is_creator });
 
   const accent = member.pending
     ? 'before:bg-dynamic-orange'
@@ -130,6 +147,110 @@ export function WorkspaceAccessMemberRow({
                 (member.handle ? `@${member.handle}` : t('common.unknown'))}
             </p>
           </div>
+
+          {hasActions ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 shrink-0"
+                  disabled={isMutating}
+                  aria-label={t('common.actions')}
+                >
+                  <Ellipsis className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {canRemoveRoles ? (
+                  <>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Plus className="size-4" />
+                        {labels.assignRolePlaceholder}
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-52">
+                        {availableRoles.length === 0 ? (
+                          <DropdownMenuItem disabled>
+                            {labels.noAdditionalRoles}
+                          </DropdownMenuItem>
+                        ) : (
+                          availableRoles.map((role) => (
+                            <DropdownMenuItem
+                              key={role.id}
+                              onSelect={() =>
+                                onAssignRole({
+                                  roleId: role.id,
+                                  userId: memberId,
+                                })
+                              }
+                            >
+                              <ShieldUser className="size-4" />
+                              {role.name}
+                            </DropdownMenuItem>
+                          ))
+                        )}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+
+                    {member.roles.length > 0 ? (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <X className="size-4" />
+                          {t('common.remove')}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-52">
+                          {member.roles.map((role) => (
+                            <DropdownMenuItem
+                              key={role.id}
+                              variant="destructive"
+                              onSelect={() =>
+                                onRemoveRole({
+                                  roleId: role.id,
+                                  userId: memberId,
+                                })
+                              }
+                            >
+                              <X className="size-4" />
+                              {role.name}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    ) : null}
+                  </>
+                ) : null}
+
+                {member.is_creator ? (
+                  <>
+                    {canRemoveRoles ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuLabel className="flex items-center gap-2 text-muted-foreground">
+                      <ShieldUser className="size-4" />
+                      {labels.protectedMemberLabel}
+                    </DropdownMenuLabel>
+                  </>
+                ) : null}
+
+                {canManageMembers && !member.is_creator ? (
+                  <>
+                    {canRemoveRoles ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onSelect={() =>
+                        onRemoveMember({
+                          email: member.email,
+                          userId: member.pending ? null : member.id,
+                        })
+                      }
+                    >
+                      <UserMinus className="size-4" />
+                      {labels.removeMemberAction}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
 
         <div className="mt-2.5 flex flex-wrap gap-1.5 sm:mt-3">
@@ -140,20 +261,13 @@ export function WorkspaceAccessMemberRow({
                 className="h-5 gap-1 border-dynamic-purple/40 bg-dynamic-purple/10 px-1.5 text-dynamic-purple text-xs"
               >
                 <span>{role.name}</span>
-                {canRemoveRoles ? (
-                  <button
-                    type="button"
-                    className="rounded-full p-0.5 transition-colors hover:bg-dynamic-purple/20"
-                    onClick={() =>
-                      onRemoveRole({ roleId: role.id, userId: memberId })
-                    }
-                    aria-label={t('common.delete')}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                ) : null}
               </Badge>
             ))
+          ) : inheritsAdministrator ? (
+            <Badge className="h-5 gap-1 border-dynamic-green/40 bg-dynamic-green/10 px-1.5 text-dynamic-green text-xs">
+              <ShieldUser className="size-3" />
+              {t('ws-roles.admin')}
+            </Badge>
           ) : (
             <Badge variant="outline" className="h-5 px-1.5 text-xs">
               {labels.noRolesLabel}
@@ -188,7 +302,7 @@ export function WorkspaceAccessMemberRow({
           </div>
         ) : null}
 
-        <div className="mt-3 grid gap-2 border-border border-t pt-3 text-sm">
+        <div className="mt-3 border-border border-t pt-3 text-sm">
           {member.created_at ? (
             <div className="text-muted-foreground text-xs">
               <span>
@@ -205,68 +319,6 @@ export function WorkspaceAccessMemberRow({
           ) : (
             <span />
           )}
-
-          <div className="flex min-w-0 items-center gap-2">
-            {canRemoveRoles ? (
-              <Select
-                onValueChange={(roleId) =>
-                  onAssignRole({ roleId, userId: memberId })
-                }
-              >
-                <SelectTrigger className="h-9 min-w-0 flex-1">
-                  <SelectValue placeholder={labels.assignRolePlaceholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.length === 0 ? (
-                    <SelectItem value="__no_roles__" disabled>
-                      {labels.noAdditionalRoles}
-                    </SelectItem>
-                  ) : (
-                    availableRoles.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
-                        {role.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            ) : null}
-
-            {canManageMembers && !member.is_creator ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="size-9 shrink-0 px-0 sm:w-auto sm:px-3"
-                disabled={isMutating}
-                onClick={() =>
-                  onRemoveMember({
-                    email: member.email,
-                    userId: member.pending ? null : member.id,
-                  })
-                }
-              >
-                <UserMinus className="size-4 sm:mr-2" />
-                <span className="hidden sm:inline">
-                  {labels.removeMemberAction}
-                </span>
-                <span className="sr-only sm:hidden">
-                  {labels.removeMemberAction}
-                </span>
-              </Button>
-            ) : shouldShowProtectedMemberStatus({
-                isCreator: member.is_creator,
-              }) ? (
-              <div className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground sm:w-auto sm:gap-2 sm:px-3 sm:py-1.5">
-                <ShieldUser className="h-3.5 w-3.5" />
-                <span className="hidden text-xs sm:inline">
-                  {labels.protectedMemberLabel}
-                </span>
-                <span className="sr-only sm:hidden">
-                  {labels.protectedMemberLabel}
-                </span>
-              </div>
-            ) : null}
-          </div>
         </div>
       </div>
     </article>

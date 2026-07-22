@@ -91,6 +91,7 @@ struct WorkspaceSettingsPermissionsResponse {
     manage_subscription: bool,
     manage_workspace_settings: bool,
     manage_workspace_members: bool,
+    manage_workspace_roles: bool,
 }
 
 pub(crate) async fn handle_workspace_permission_check_route(
@@ -904,6 +905,10 @@ fn workspace_settings_permissions_success_response(
                 || permissions
                     .iter()
                     .any(|value| value == "manage_workspace_members"),
+            manage_workspace_roles: has_all_permissions
+                || permissions
+                    .iter()
+                    .any(|value| value == "manage_workspace_roles"),
         },
     );
     response.cache_control = Some(WORKSPACE_PERMISSIONS_CACHE_CONTROL);
@@ -1175,7 +1180,7 @@ mod tests {
             outbound_response(200, r#"[{"creator_id":"owner-1"}]"#),
             outbound_response(
                 200,
-                r#"[{"workspace_roles":{"workspace_role_permissions":[{"permission":"manage_subscription"},{"permission":"manage_workspace_members"}]}}]"#,
+                r#"[{"workspace_roles":{"workspace_role_permissions":[{"permission":"manage_subscription"},{"permission":"manage_workspace_members"},{"permission":"manage_workspace_roles"}]}}]"#,
             ),
             outbound_response(200, r#"[{"permission":"manage_workspace_settings"}]"#),
         ]);
@@ -1194,6 +1199,7 @@ mod tests {
                 "manage_subscription": true,
                 "manage_workspace_settings": true,
                 "manage_workspace_members": true,
+                "manage_workspace_roles": true,
             })
         );
         assert_eq!(
@@ -1241,6 +1247,7 @@ mod tests {
                 "manage_subscription": false,
                 "manage_workspace_settings": false,
                 "manage_workspace_members": false,
+                "manage_workspace_roles": false,
             })
         );
     }
@@ -1285,6 +1292,7 @@ mod tests {
                 "manage_subscription": true,
                 "manage_workspace_settings": true,
                 "manage_workspace_members": true,
+                "manage_workspace_roles": true,
             })
         );
         assert_eq!(outbound.calls().len(), 4);

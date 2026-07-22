@@ -13,6 +13,7 @@
     "./user-nav-wrapper": "./src/components/user-nav-wrapper.tsx",
     "./user-nav-client": "./src/components/user-nav-client.tsx",
     "./user-nav-metadata": "./src/components/user-nav-metadata.ts",
+    "./settings-dialog-intent": "./src/components/settings-dialog-intent.ts",
     "./account-switcher-menu": "./src/components/account-switcher-menu.tsx",
     "./create-user-nav": "./src/components/create-user-nav.tsx",
     "./create-user-nav-client": "./src/components/create-user-nav-client.tsx",

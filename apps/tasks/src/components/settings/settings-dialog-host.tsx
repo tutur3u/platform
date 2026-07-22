@@ -1,10 +1,12 @@
 'use client';
 
+import { claimSettingsDialogIntent } from '@tuturuuu/satellite/settings-dialog-intent';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
+import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SettingsDialog } from './settings-dialog';
 
 interface SettingsDialogHostProps {
@@ -31,8 +33,18 @@ export function SettingsDialogHost({
   const searchParams = useSearchParams();
   const [openIntent, setOpenIntent] = useState<SettingsOpenIntent | null>(null);
 
+  const openSettings = useCallback(() => {
+    setOpenIntent({});
+  }, []);
+  useSettingsDialogShortcut({
+    enabled: Boolean(user),
+    onOpen: openSettings,
+  });
+
   useEffect(() => {
     const handleSettingsIntent = (event: Event) => {
+      if (!claimSettingsDialogIntent(event)) return;
+
       const detail =
         event instanceof CustomEvent &&
         event.detail &&

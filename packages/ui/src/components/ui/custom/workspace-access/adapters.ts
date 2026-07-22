@@ -106,6 +106,30 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
       normalizeWorkspaceAccessRole(
         await getWorkspaceDefaultPermissions(workspaceId, memberType)
       ),
+    hardenDefaultAdmin: async (
+      workspaceId,
+      { memberIds, permissions, roleId, roleName }
+    ) => {
+      const role = roleId
+        ? { id: roleId, message: 'existing' }
+        : await createWorkspaceRole(workspaceId, {
+            name: roleName,
+            permissions,
+          } as WorkspaceRole);
+
+      if (memberIds.length > 0) {
+        await addRoleMembers(workspaceId, role.id, memberIds);
+      }
+
+      await updateWorkspaceDefaultPermissions(workspaceId, 'MEMBER', {
+        permissions: permissions.map((permission) => ({
+          ...permission,
+          enabled: false,
+        })) as WorkspaceRole['permissions'],
+      });
+
+      return role;
+    },
     inviteMembers: inviteStandardWorkspaceMembers,
     listMembers: listEnhancedWorkspaceMembers,
     listRoles: async (workspaceId, query) => {

@@ -90,7 +90,10 @@ export function WorkspaceAccessRoles({
               role.members && role.members.length > 0
                 ? role.members
                 : assignedMembersForRole(role.id, members);
-            const enabled = enabledPermissionCount(role);
+            const enabled = enabledPermissionCount(role, permissionCount);
+            const isAdministrator = role.permissions.some(
+              (permission) => permission.id === 'admin' && permission.enabled
+            );
             const pct =
               permissionCount > 0
                 ? Math.round((enabled / permissionCount) * 100)
@@ -177,6 +180,11 @@ export function WorkspaceAccessRoles({
                     role={role}
                   />
                 </div>
+                {isAdministrator ? (
+                  <p className="mt-2 text-dynamic-green text-sm">
+                    {t('ws-members.admin_has_all_permissions')}
+                  </p>
+                ) : null}
 
                 {assignedMembers.length > 0 ? (
                   <div className="mt-3 flex flex-wrap gap-1.5 border-border border-t pt-3">

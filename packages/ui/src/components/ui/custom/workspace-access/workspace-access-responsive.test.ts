@@ -47,7 +47,8 @@ describe('workspace access responsive layout', () => {
     expect(toolbar).toContain('shrink-0 grid-cols-4');
     expect(toolbar).not.toContain('2xl:flex-row');
     expect(toolbar).toContain('sr-only sm:hidden');
-    expect(memberRow).toContain('size-9 shrink-0 px-0 sm:w-auto');
+    expect(memberRow).toContain('size-8 shrink-0');
+    expect(memberRow).toContain('<DropdownMenuContent');
     expect(memberRow).not.toContain('sm:grid-cols-[1fr_auto]');
     expect(peopleFilters).toContain('className="h-full min-h-0"');
   });

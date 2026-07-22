@@ -17,6 +17,7 @@ import { resolveUserNavSecondaryLabel } from '@tuturuuu/satellite/user-nav-metad
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -43,7 +44,6 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import type { ComponentType } from 'react';
 import { useCallback, useContext, useEffect, useState } from 'react';
-import { SlotText } from 'slot-text/react';
 import type { NavLink } from '@/components/navigation';
 import { SettingsDialogFullscreenSkeleton } from '@/components/settings/settings-dialog-skeleton';
 import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
@@ -277,9 +277,8 @@ export default function UserNavClient({
                 <div className="line-clamp-1 break-all font-semibold text-sm">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <SlotText
-                  className="line-clamp-1 break-all text-xs opacity-70"
-                  options={{ bounce: 0.1, duration: 180, stagger: 12 }}
+                <AnimatedSlotText
+                  className="text-xs opacity-70"
                   text={secondaryLabel}
                 />
               </div>

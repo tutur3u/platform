@@ -6648,6 +6648,7 @@
   },
   "ws-members": {
     "active_members": "Đang hoạt động",
+    "admin_has_all_permissions": "Là quản trị viên của không gian làm việc, thành viên này có quyền truy cập đầy đủ vào tất cả các quyền",
     "all": "Tất cả",
     "board_guest_can_edit": "Có thể sửa bảng đã chia sẻ",
     "board_guest_can_view": "Có thể xem bảng đã chia sẻ",
@@ -7090,6 +7091,9 @@
     "viewing_history_snapshot": "Đang xem ảnh chụp lịch sử"
   },
   "ws-roles": {
+    "admin": "Quản trị viên",
+    "admin_enabled_description": "Tất cả các quyền bên dưới đều được cấp tự động. Các nút chuyển đổi quyền riêng lẻ sẽ bị vô hiệu hóa khi quyền quản trị viên đang hoạt động.",
+    "admin_enabled_title": "Quyền Quản trị viên Đang Bật",
     "initiate_pos_checkout": "Bắt đầu thanh toán POS",
     "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "create": "Tạo vai trò",
@@ -7104,6 +7108,7 @@
     "guest_defaults": "Quyền mặc định của khách",
     "guest_defaults_description": "Quyền mặc định của khách bị tắt trừ khi được bật rõ ràng. Khách dùng cùng danh mục quyền với thành viên, nhưng các tuyến chưa được ánh xạ quyền vẫn bị từ chối.",
     "guest_defaults_tab": "Quyền khách",
+    "granted_via_admin": "Được cấp qua quyền quản trị",
     "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
     "member_defaults": "Quyền mặc định của thành viên",
     "member_defaults_description": "Quyền mặc định của thành viên áp dụng cho thành viên không gian làm việc và khóa API. Các quyền mặc định hiện có vẫn thuộc phạm vi thành viên.",

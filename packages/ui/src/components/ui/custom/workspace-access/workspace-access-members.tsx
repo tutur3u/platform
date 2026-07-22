@@ -10,6 +10,7 @@ import { WorkspaceAccessMemberRow } from './workspace-access-member-row';
 type Props = {
   canManageMembers: boolean;
   canManageRoles: boolean;
+  defaultAdminEnabled: boolean;
   isLoading: boolean;
   isMutating: boolean;
   labels: WorkspaceAccessLabels;
@@ -28,6 +29,7 @@ type Props = {
 export function WorkspaceAccessMembers({
   canManageMembers,
   canManageRoles,
+  defaultAdminEnabled,
   isLoading,
   isMutating,
   labels,
@@ -76,6 +78,7 @@ export function WorkspaceAccessMembers({
           key={`${member.id ?? member.email ?? member.handle}`}
           canManageMembers={canManageMembers}
           canManageRoles={canManageRoles}
+          defaultAdminEnabled={defaultAdminEnabled}
           isMutating={isMutating}
           labels={labels}
           member={member}

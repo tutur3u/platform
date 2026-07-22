@@ -292,6 +292,10 @@
       "types": "./src/components/ui/custom/sidebar-context.tsx",
       "import": "./src/components/ui/custom/sidebar-context.tsx"
     },
+    "./custom/animated-slot-text": {
+      "types": "./src/components/ui/custom/animated-slot-text.tsx",
+      "import": "./src/components/ui/custom/animated-slot-text.tsx"
+    },
     "./custom/nav": {
       "types": "./src/components/ui/custom/nav.tsx",
       "import": "./src/components/ui/custom/nav.tsx"

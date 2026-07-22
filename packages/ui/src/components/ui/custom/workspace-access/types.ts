@@ -74,6 +74,15 @@ export type WorkspaceAccessAdapter = {
     workspaceId: string,
     memberType: WorkspaceDefaultPermissionMemberType
   ) => Promise<WorkspaceAccessRole>;
+  hardenDefaultAdmin?: (
+    workspaceId: string,
+    payload: {
+      memberIds: string[];
+      permissions: WorkspaceAccessRolePermission[];
+      roleId?: string;
+      roleName: string;
+    }
+  ) => Promise<unknown>;
   inviteMembers: (
     workspaceId: string,
     payload: WorkspaceAccessInvitePayload

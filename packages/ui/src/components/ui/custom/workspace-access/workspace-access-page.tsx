@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TriangleAlert } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
@@ -212,6 +213,47 @@ export function WorkspaceAccessPage({
       await invalidateAccessData();
     },
   });
+  const hardenDefaultAdminMutation = useMutation({
+    mutationFn: async () => {
+      if (!adapter.hardenDefaultAdmin) {
+        throw new Error(t('common.error'));
+      }
+
+      const existingAdminRole = (rolesQuery.data?.data ?? []).find((role) =>
+        role.permissions.some(
+          (permission) => permission.id === 'admin' && permission.enabled
+        )
+      );
+      const alreadyAssigned = new Set(
+        existingAdminRole?.members?.map((member) => member.id) ?? []
+      );
+      const memberIds = (membersQuery.data ?? [])
+        .filter(
+          (member) =>
+            !member.pending &&
+            member.id &&
+            member.workspace_member_type !== 'GUEST' &&
+            !alreadyAssigned.has(member.id)
+        )
+        .map((member) => member.id as string);
+
+      return adapter.hardenDefaultAdmin(workspaceId, {
+        memberIds,
+        permissions: permissionDefinitions.map((permission) => ({
+          enabled: permission.id === 'admin',
+          id: permission.id,
+        })),
+        roleId: existingAdminRole?.id,
+        roleName: t('ws-roles.admin'),
+      });
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('common.error')),
+    onSuccess: async () => {
+      toast.success(t('common.saved'));
+      await invalidateAccessData();
+    },
+  });
 
   const roles = rolesQuery.data?.data ?? [];
   const sortedMembers = sortMembers(membersQuery.data ?? []);
@@ -254,6 +296,33 @@ export function WorkspaceAccessPage({
         />
       ) : null}
 
+      {mode === 'workspace' &&
+      canManageRoles &&
+      defaultAdminEnabled &&
+      adapter.hardenDefaultAdmin ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-dynamic-orange/25 bg-dynamic-orange/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-dynamic-orange" />
+            <div>
+              <div className="font-medium text-sm">
+                {t('ws-roles.admin_enabled_title')}
+              </div>
+              <p className="mt-1 text-muted-foreground text-sm">
+                {t('ws-members.pos_operator_admin_migration_note')}
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="shrink-0"
+            disabled={hardenDefaultAdminMutation.isPending}
+            onClick={() => hardenDefaultAdminMutation.mutate()}
+          >
+            {t('ws-roles.create')}: {t('ws-roles.admin')}
+          </Button>
+        </div>
+      ) : null}
+
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as WorkspaceAccessTab)}
@@ -282,6 +351,7 @@ export function WorkspaceAccessPage({
           <WorkspaceAccessMembers
             canManageMembers={canManageMembers}
             canManageRoles={canManageRoles}
+            defaultAdminEnabled={defaultAdminEnabled}
             isLoading={membersQuery.isPending}
             isMutating={
               removeMemberMutation.isPending || roleMembershipMutation.isPending

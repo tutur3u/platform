@@ -30,7 +30,10 @@ export function WorkspaceAccessDefaultRoleCard({
 }) {
   const t = useTranslations() as (key: string) => string;
   const isGuest = memberType === 'GUEST';
-  const enabled = enabledPermissionCount(role);
+  const enabled = enabledPermissionCount(role, permissionCount);
+  const isAdministrator = role?.permissions.some(
+    (permission) => permission.id === 'admin' && permission.enabled
+  );
   const pct =
     permissionCount > 0 ? Math.round((enabled / permissionCount) * 100) : 0;
   const accent = isGuest
@@ -111,6 +114,11 @@ export function WorkspaceAccessDefaultRoleCard({
                 role={role}
               />
             </div>
+            {isAdministrator ? (
+              <p className="text-dynamic-green text-sm">
+                {t('ws-members.admin_has_all_permissions')}
+              </p>
+            ) : null}
           </>
         )}
       </div>

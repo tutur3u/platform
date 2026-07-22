@@ -9715,7 +9715,7 @@ paths:
   /api/v1/workspaces/{wsId}/settings/permissions:
     get:
       summary: Workspace settings permission flags
-      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts GET. The Rust backend accepts current-user satellite app sessions or revalidates a normal Supabase browser session with Supabase Auth, resolves personal and workspace handles, verifies workspace access, mirrors getPermissions-style role/default/creator/admin behavior, and returns the three legacy settings permission flags.
+      description: Migrated replacement for apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts GET. The Rust backend accepts current-user satellite app sessions or revalidates a normal Supabase browser session with Supabase Auth, resolves personal and workspace handles, verifies workspace access, mirrors getPermissions-style role/default/creator/admin behavior, and returns the four shared settings permission flags.
       security:
         - AppSessionBearer: []
         - AppSessionCookie: []
@@ -11337,6 +11337,7 @@ components:
         - manage_subscription
         - manage_workspace_settings
         - manage_workspace_members
+        - manage_workspace_roles
       properties:
         manage_subscription:
           type: boolean
@@ -11347,6 +11348,9 @@ components:
         manage_workspace_members:
           type: boolean
           description: Whether the caller can manage workspace members.
+        manage_workspace_roles:
+          type: boolean
+          description: Whether the caller can manage workspace roles.
     WorkspacePermissionCheckError:
       type: object
       required:

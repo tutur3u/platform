@@ -16,6 +16,7 @@ import {
 import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/auth';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { AnimatedSlotText } from '@tuturuuu/ui/custom/animated-slot-text';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
@@ -193,9 +194,10 @@ export default function UserNavClient({
                 <div className="line-clamp-1 break-all font-semibold text-sm">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
-                  {secondaryLabel}
-                </div>
+                <AnimatedSlotText
+                  className="text-xs opacity-70"
+                  text={secondaryLabel}
+                />
               </div>
             )}
           </button>
@@ -219,7 +221,7 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
           {workspaceSelector?.renderWorkspaceSelect ? (
             <>
-              <div className="px-1.5 pb-1.5">
+              <div className="w-full px-1 pb-1">
                 {workspaceSelector.renderWorkspaceSelect({
                   isCollapsed: false,
                   standalone: true,
