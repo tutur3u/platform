@@ -1,58 +1,31 @@
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
-import { TUTURUUU_PORTLESS_ROOT_HOST } from '@tuturuuu/utils/portless';
+import { getToolsAppOrigin } from './tools-app-url';
 
-const localRuntimeOriginKeys = [
-  'BASE_URL',
-  'PORTLESS_URL',
-  'NEXT_PUBLIC_APP_URL',
-  'NEXT_PUBLIC_WEB_APP_URL',
-  'WEB_APP_URL',
-] as const;
+/**
+ * The QR generator's route inside the tools app.
+ *
+ * The standalone `qr.tuturuuu.com` host is retired; the generator now lives at
+ * `<tools origin>/qr`. Everything still routes through here so there is one
+ * place that knows where the generator moved to.
+ */
+const QR_APP_PATHNAME = '/qr';
 
-function isLocalPortlessUrl(value: string | undefined) {
-  if (!value?.trim()) {
-    return false;
-  }
+/**
+ * Base URL of the QR generator, including its path within the tools app.
+ *
+ * Deliberately not called `getQrAppOrigin`: this is no longer an origin, and
+ * callers must not drop the path.
+ */
+export function getQrAppBaseUrl() {
+  const url = new URL(getToolsAppOrigin());
+  url.pathname = QR_APP_PATHNAME;
 
-  try {
-    const hostname = new URL(value).hostname;
-
-    return (
-      hostname === TUTURUUU_PORTLESS_ROOT_HOST ||
-      hostname.endsWith(`.${TUTURUUU_PORTLESS_ROOT_HOST}`)
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isLocalPortlessRuntime() {
-  return localRuntimeOriginKeys.some((key) =>
-    isLocalPortlessUrl(process.env[key])
-  );
-}
-
-function getQrAppFallbackOrigin() {
-  const localOrigin = getLocalInternalAppUrl('qr', 'http://localhost:7819');
-
-  return isLocalPortlessRuntime() || process.env.NODE_ENV !== 'production'
-    ? localOrigin
-    : 'https://qr.tuturuuu.com';
-}
-
-export function getQrAppOrigin() {
-  return resolveInternalAppUrl({
-    appName: 'qr',
-    candidates: [process.env.QR_APP_URL, process.env.NEXT_PUBLIC_QR_APP_URL],
-    fallback: getQrAppFallbackOrigin(),
-  });
+  return url;
 }
 
 export function buildQrAppUrl(
   searchParams: Record<string, string | string[] | undefined>
 ) {
-  const url = new URL(getQrAppOrigin());
+  const url = getQrAppBaseUrl();
 
   for (const [key, value] of Object.entries(searchParams)) {
     if (Array.isArray(value)) {

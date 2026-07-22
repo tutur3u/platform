@@ -105,16 +105,16 @@ describe('public redirect helpers', () => {
     );
   });
 
-  it('redirects the QR generator to the QR app origin and preserves query entries', () => {
-    vi.stubEnv('QR_APP_URL', 'https://qr.example.com');
+  it('redirects the QR generator into the tools app and preserves query entries', () => {
+    vi.stubEnv('TOOLS_APP_URL', 'https://tools.example.com');
 
     expect(
       buildQrGeneratorRedirectHref('?content=hello&tag=one&tag=two&empty=')
-    ).toBe('https://qr.example.com/?content=hello&tag=one&tag=two&empty=');
+    ).toBe('https://tools.example.com/qr?content=hello&tag=one&tag=two&empty=');
   });
 
   it('preserves parsed TanStack QR redirect arrays', () => {
-    vi.stubEnv('QR_APP_URL', 'https://qr.example.com');
+    vi.stubEnv('TOOLS_APP_URL', 'https://tools.example.com');
 
     expect(
       buildQrGeneratorRedirectHref({
@@ -122,26 +122,26 @@ describe('public redirect helpers', () => {
         tag: ['one', 'two'],
         unset: undefined,
       })
-    ).toBe('https://qr.example.com/?empty=&tag=one&tag=two');
+    ).toBe('https://tools.example.com/qr?empty=&tag=one&tag=two');
   });
 
-  it('uses local QR app origins for local Portless production checks', () => {
+  it('uses the local tools origin for local Portless production checks', () => {
     vi.stubEnv('BASE_URL', 'https://tuturuuu.localhost:1355');
     vi.stubEnv('NODE_ENV', 'production');
 
     expect(buildQrGeneratorRedirectHref('?utm_source=e2e')).toBe(
-      'https://qr.tuturuuu.localhost/?utm_source=e2e'
+      'https://tools.tuturuuu.localhost/qr?utm_source=e2e'
     );
   });
 
   it('accepts URLSearchParams input for server-side call sites', () => {
-    vi.stubEnv('QR_APP_URL', 'https://qr.example.com');
+    vi.stubEnv('TOOLS_APP_URL', 'https://tools.example.com');
 
     const searchParams = new URLSearchParams();
     searchParams.append('url', 'https://tuturuuu.com/docs');
 
     expect(buildQrGeneratorRedirectHref(searchParams)).toBe(
-      'https://qr.example.com/?url=https%3A%2F%2Ftuturuuu.com%2Fdocs'
+      'https://tools.example.com/qr?url=https%3A%2F%2Ftuturuuu.com%2Fdocs'
     );
   });
 

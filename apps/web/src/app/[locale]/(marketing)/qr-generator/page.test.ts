@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  buildQrAppUrl: vi.fn(() => new URL('https://qr.tuturuuu.com/?value=hello')),
+  buildQrAppUrl: vi.fn(
+    () => new URL('https://tools.tuturuuu.com/qr?value=hello')
+  ),
   redirect: vi.fn((url: string) => {
     throw new Error(`redirect:${url}`);
   }),
@@ -18,7 +20,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('marketing QR generator canonical redirect', () => {
-  it('redirects to the QR app root and preserves the query string', async () => {
+  it('redirects to the QR generator in the tools app and preserves the query string', async () => {
     const QRGeneratorPage = (await import('./page')).default;
 
     await expect(
@@ -27,7 +29,7 @@ describe('marketing QR generator canonical redirect', () => {
           value: 'hello',
         }),
       })
-    ).rejects.toThrow('redirect:https://qr.tuturuuu.com/?value=hello');
+    ).rejects.toThrow('redirect:https://tools.tuturuuu.com/qr?value=hello');
 
     expect(mocks.buildQrAppUrl).toHaveBeenCalledWith({
       value: 'hello',

@@ -16,6 +16,34 @@ const localRuntimeOriginKeys = [
   'WEB_APP_URL',
 ] as const;
 
+function isLocalPortlessUrl(value: string | undefined) {
+  if (!value?.trim()) {
+    return false;
+  }
+
+  try {
+    const hostname = new URL(value).hostname;
+
+    return (
+      hostname === TUTURUUU_PORTLESS_ROOT_HOST ||
+      hostname.endsWith(`.${TUTURUUU_PORTLESS_ROOT_HOST}`)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * E2E suites run a production build against local Portless hosts, so the
+ * fallback must stay local there rather than redirecting out to the real
+ * deployment mid-test.
+ */
+function isLocalPortlessRuntime() {
+  return localRuntimeOriginKeys.some((key) =>
+    isLocalPortlessUrl(process.env[key])
+  );
+}
+
 export function pricingRedirectHref(options: { localized?: boolean } = {}) {
   if (options.localized) {
     return '/pricing';
@@ -97,45 +125,6 @@ export function meetTogetherCalendarRedirectHref(splat?: string) {
     : '/meet-together';
 }
 
-function isLocalPortlessUrl(value: string | undefined) {
-  if (!value?.trim()) {
-    return false;
-  }
-
-  try {
-    const hostname = new URL(value).hostname;
-
-    return (
-      hostname === TUTURUUU_PORTLESS_ROOT_HOST ||
-      hostname.endsWith(`.${TUTURUUU_PORTLESS_ROOT_HOST}`)
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isLocalPortlessRuntime() {
-  return localRuntimeOriginKeys.some((key) =>
-    isLocalPortlessUrl(process.env[key])
-  );
-}
-
-function getQrAppFallbackOrigin() {
-  const localOrigin = getLocalInternalAppUrl('qr', 'http://localhost:7819');
-
-  return isLocalPortlessRuntime() || process.env.NODE_ENV !== 'production'
-    ? localOrigin
-    : 'https://qr.tuturuuu.com';
-}
-
-export function getQrAppOrigin() {
-  return resolveInternalAppUrl({
-    appName: 'qr',
-    candidates: [process.env.QR_APP_URL, process.env.NEXT_PUBLIC_QR_APP_URL],
-    fallback: getQrAppFallbackOrigin(),
-  });
-}
-
 export function getMailAppOrigin() {
   return resolveInternalAppUrl({
     appName: 'mail',
@@ -162,6 +151,8 @@ export function getPayAppOrigin() {
 }
 
 export function getToolsAppOrigin() {
+  const localOrigin = getLocalInternalAppUrl('tools', 'http://localhost:7825');
+
   return resolveInternalAppUrl({
     appName: 'tools',
     candidates: [
@@ -169,9 +160,9 @@ export function getToolsAppOrigin() {
       process.env.NEXT_PUBLIC_TOOLS_APP_URL,
     ],
     fallback:
-      process.env.NODE_ENV === 'production'
-        ? 'https://tools.tuturuuu.com'
-        : getLocalInternalAppUrl('tools', 'http://localhost:7825'),
+      isLocalPortlessRuntime() || process.env.NODE_ENV !== 'production'
+        ? localOrigin
+        : 'https://tools.tuturuuu.com',
   });
 }
 
@@ -323,7 +314,9 @@ function appendSearchParams(
 export function buildQrGeneratorRedirectHref(
   search: LegacySearchParams | string | URLSearchParams
 ) {
-  const url = new URL(getQrAppOrigin());
+  // The standalone qr.tuturuuu.com host is retired; the generator now lives in
+  // the tools app, mirroring apps/web.
+  const url = new URL('/qr', `${getToolsAppOrigin()}/`);
 
   appendSearchParams(url, search, { preserveEmptyStringValues: true });
 

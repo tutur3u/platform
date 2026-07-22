@@ -4,7 +4,7 @@ const mocks = vi.hoisted(() => ({
   buildQrAppUrl: vi.fn(
     () =>
       new URL(
-        'https://qr.tuturuuu.com/?format=png&format=webp&value=https%3A%2F%2Ftuturuuu.com'
+        'https://tools.tuturuuu.com/qr?format=png&format=webp&value=https%3A%2F%2Ftuturuuu.com'
       )
   ),
   redirect: vi.fn((url: string) => {
@@ -23,7 +23,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('workspace QR generator canonical redirect', () => {
-  it('redirects to the QR app root without forwarding the workspace id', async () => {
+  it('redirects to the QR generator in the tools app without forwarding the workspace id', async () => {
     const QRGeneratorPage = (await import('./page')).default;
 
     await expect(
@@ -34,7 +34,7 @@ describe('workspace QR generator canonical redirect', () => {
         }),
       })
     ).rejects.toThrow(
-      'redirect:https://qr.tuturuuu.com/?format=png&format=webp&value=https%3A%2F%2Ftuturuuu.com'
+      'redirect:https://tools.tuturuuu.com/qr?format=png&format=webp&value=https%3A%2F%2Ftuturuuu.com'
     );
 
     expect(mocks.buildQrAppUrl).toHaveBeenCalledWith({

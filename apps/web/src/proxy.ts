@@ -50,7 +50,6 @@ import { getFinanceAppOrigin } from './lib/finance-app-url';
 import { getFormsAppOrigin } from './lib/forms-app-url';
 import { getMailAppOrigin } from './lib/mail-app-url';
 import { getMeetAppOrigin } from './lib/meet-app-url';
-import { getQrAppOrigin } from './lib/qr-app-url';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import {
@@ -277,13 +276,6 @@ function redirectToPath(req: NextRequest, pathname: string) {
   return NextResponse.redirect(new URL(pathname, req.nextUrl));
 }
 
-function redirectToQrApp(req: NextRequest) {
-  const redirectUrl = new URL(getQrAppOrigin());
-  redirectUrl.search = req.nextUrl.search;
-
-  return NextResponse.redirect(redirectUrl);
-}
-
 function redirectToToolsApp(req: NextRequest, pathname: string) {
   const redirectUrl = new URL(getToolsAppOrigin());
   redirectUrl.pathname = pathname;
@@ -465,7 +457,8 @@ function handlePublicMarketingRedirectRoute(
   }
 
   if (pathnameWithoutLocale === '/qr-generator') {
-    return redirectToQrApp(req);
+    // The standalone QR app is retired; the generator lives in the tools app.
+    return redirectToToolsApp(req, '/qr');
   }
 
   if (pathnameWithoutLocale === '/tools/random') {

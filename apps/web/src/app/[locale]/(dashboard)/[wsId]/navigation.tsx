@@ -26,13 +26,14 @@ import { getInventoryAppOrigin } from '@/lib/inventory-app-url';
 import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 import { getMindAppOrigin } from '@/lib/mind-app-url';
-import { getQrAppOrigin } from '@/lib/qr-app-url';
+import { getQrAppBaseUrl } from '@/lib/qr-app-url';
 import { getTasksAppOrigin } from '@/lib/tasks-app-url';
 import { getTrackAppOrigin } from '@/lib/track-app-url';
 import {
   createDashboardNavigationIcon,
   type DashboardNavigationLink,
 } from './navigation-icon-descriptor';
+import { createWorkspaceMembersNavigationLink } from './workspace-members-navigation';
 
 type NavigationUser = {
   email?: string;
@@ -104,7 +105,7 @@ export async function WorkspaceNavigationLinks({
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
   const ENABLE_HABITS = hasSecret(HABITS_ENABLED_SECRET, 'true');
-  const qrAppHref = getQrAppOrigin();
+  const qrAppHref = getQrAppBaseUrl().toString();
   const isMailUser = isExactTuturuuuDotComEmail(user?.email);
   const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
   const inventoryAppHref = `${getInventoryAppOrigin()}/${personalOrWsId}`;
@@ -948,6 +949,12 @@ export async function WorkspaceNavigationLinks({
         },
       ],
     },
+    createWorkspaceMembersNavigationLink({
+      canManageMembers: !withoutPermission('manage_workspace_members'),
+      isPersonal,
+      preferenceSectionLabel: sidebarSections.utilities,
+      t,
+    }),
     {
       id: 'settings',
       title: t('common.settings'),
