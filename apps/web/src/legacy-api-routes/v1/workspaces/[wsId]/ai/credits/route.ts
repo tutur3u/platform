@@ -4,10 +4,7 @@ import {
 } from '@tuturuuu/payment-core';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-
-const AI_CREDITS_APP_SESSION_AUTH = {
-  targetApp: ['chat', 'mind', 'pay', 'tasks'],
-} as const;
+import { CURRENT_USER_APP_SESSION_AUTH } from '../../../../users/me/session-auth';
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (_request, { user, supabase }, { wsId }) => {
@@ -35,7 +32,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
     }
   },
   {
-    allowAppSessionAuth: AI_CREDITS_APP_SESSION_AUTH,
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 30, swr: 30 },
   }
 );

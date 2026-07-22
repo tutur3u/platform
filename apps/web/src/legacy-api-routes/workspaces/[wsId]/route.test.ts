@@ -108,16 +108,12 @@ describe('legacy workspace detail route DELETE', () => {
     });
   });
 
-  it('does not opt into app-session auth', async () => {
+  it('opts GET, PUT, and DELETE into app-session auth', async () => {
     await import('./route');
 
-    const deleteCall = mocks.withSessionAuth.mock.calls.find(
-      ([, options]) => options === undefined
-    );
-
-    expect(deleteCall).toBeDefined();
+    expect(mocks.withSessionAuth).toHaveBeenCalledTimes(3);
     expect(
-      mocks.withSessionAuth.mock.calls.some(
+      mocks.withSessionAuth.mock.calls.every(
         ([, options]) => options?.allowAppSessionAuth !== undefined
       )
     ).toBe(true);

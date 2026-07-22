@@ -15,10 +15,31 @@ export interface WorkspacePermissionSetupStatus {
 }
 
 export interface WorkspacePermissionsSummary {
+  can_access_billing: boolean;
   manage_subscription: boolean;
+  manage_workspace_billing: boolean;
   manage_workspace_settings: boolean;
   manage_workspace_members: boolean;
   manage_workspace_roles: boolean;
+}
+
+export interface WorkspaceSettingsAiCreditStatus {
+  included: {
+    remaining: number;
+    totalAllocated: number;
+    totalUsed: number;
+  };
+  payg: {
+    nextExpiry: string | null;
+    remaining: number;
+    totalGranted: number;
+    totalUsed: number;
+  };
+  percentUsed: number;
+  remaining: number;
+  tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  totalAllocated: number;
+  totalUsed: number;
 }
 
 export interface WorkspaceRolesListResponse {
@@ -59,6 +80,19 @@ export async function getWorkspacePermissionsSummary(
   const client = getInternalApiClient(options);
   return client.json<WorkspacePermissionsSummary>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/permissions`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceAiCreditStatus(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceSettingsAiCreditStatus>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/ai/credits`,
     {
       cache: 'no-store',
     }

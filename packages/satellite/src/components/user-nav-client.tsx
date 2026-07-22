@@ -221,7 +221,7 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
           {workspaceSelector?.renderWorkspaceSelect ? (
             <>
-              <div className="w-full px-1 pb-1">
+              <div className="w-full p-1 [&_[data-slot=popover-trigger]]:h-9">
                 {workspaceSelector.renderWorkspaceSelect({
                   isCollapsed: false,
                   standalone: true,

@@ -239,16 +239,15 @@ export function WorkspaceAccessPage({
 
       return adapter.hardenDefaultAdmin(workspaceId, {
         memberIds,
-        permissions: permissionDefinitions.map((permission) => ({
-          enabled: permission.id === 'admin',
-          id: permission.id,
-        })),
+        permissions: [{ enabled: true, id: 'admin' }],
         roleId: existingAdminRole?.id,
         roleName: t('ws-roles.admin'),
       });
     },
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('common.error')),
+    onError: async (error) => {
+      toast.error(error instanceof Error ? error.message : t('common.error'));
+      await invalidateAccessData();
+    },
     onSuccess: async () => {
       toast.success(t('common.saved'));
       await invalidateAccessData();

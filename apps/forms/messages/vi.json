@@ -49,6 +49,9 @@
     "switch_failed_description": "Tài khoản này đã bị xóa. Vui lòng thêm lại để tiếp tục sử dụng.",
     "unknown_user": "Người dùng không xác định"
   },
+  "ai_chat": {
+    "incorrect": "không chính xác"
+  },
   "ai-credits": {
     "beta": "Beta",
     "error_credits_exhausted": "Đã dùng hết tín dụng AI hàng tháng. Nâng cấp gói để có thêm. Mua thêm tín dụng sẽ sớm ra mắt.",
@@ -62,9 +65,6 @@
     "tier_label": "Gói {tier}",
     "title": "Tín dụng AI",
     "usage_tooltip": "Đã dùng {used} / {total} tín dụng trong tháng này"
-  },
-  "ai_chat": {
-    "incorrect": "không chính xác"
   },
   "approvals": {
     "actions": {
@@ -1138,6 +1138,7 @@
       "docs": "Đọc hướng dẫn sản phẩm, tài liệu tham khảo và hướng dẫn thiết lập.",
       "drive": "Lưu trữ, sắp xếp và chia sẻ tệp trong không gian làm việc.",
       "finance": "Quản lý ví, giao dịch, hóa đơn và ngân sách.",
+      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace.",
       "hive": "Khám phá các mô phỏng cộng tác và trải nghiệm không gian.",
       "inventory": "Quản lý sản phẩm, tồn kho, nhập hàng và bán hàng.",
       "learn": "Theo dõi khóa học, bài tập và tiến độ học tập.",
@@ -1153,8 +1154,7 @@
       "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
       "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
       "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
-      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao.",
-      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace."
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
     },
     "app_names": {
       "apps": "Ứng dụng",
@@ -1165,6 +1165,7 @@
       "docs": "Tài liệu",
       "drive": "Tệp",
       "finance": "Tài chính",
+      "forms": "Biểu mẫu",
       "hive": "Hive",
       "infrastructure": "Hạ tầng",
       "inventory": "Kho hàng",
@@ -1181,8 +1182,7 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi",
-      "forms": "Biểu mẫu"
+      "track": "Theo dõi"
     },
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
@@ -1358,9 +1358,9 @@
     "guest_access": "Quyền khách",
     "guest_workspaces": "Được chia sẻ với tôi",
     "hidden": "Ẩn",
-    "hide-all": "Ẩn tất cả",
     "hide_column": "Ẩn cột",
     "hide_sidebar": "Ẩn thanh bên",
+    "hide-all": "Ẩn tất cả",
     "history": "Lịch sử",
     "home": "Trang chủ",
     "import": "Nhập dữ liệu",
@@ -1406,9 +1406,6 @@
     "new": "Mới",
     "next": "Tiếp theo",
     "next_week": "Tuần sau",
-    "no-results": "Không có kết quả",
-    "no-selection": "Chưa chọn người dùng nào",
-    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "no_changes_to_save": "Không có thay đổi để lưu",
     "no_content_yet": "Chưa có nội dung",
     "no_labels_available": "Không có nhãn nào",
@@ -1418,6 +1415,9 @@
     "no_other_boards": "Không có bảng khác",
     "no_projects_found": "Không tìm thấy dự án",
     "no_results_found": "Không tìm thấy kết quả",
+    "no-results": "Không có kết quả",
+    "no-selection": "Chưa chọn người dùng nào",
+    "no-sheets-found": "Không tìm thấy trang tính nào.",
     "none": "Không có",
     "of": "trên",
     "open": "Mở",
@@ -3739,10 +3739,24 @@
     "avatar_removed": "Đã xóa ảnh đại diện không gian làm việc.",
     "avatar_updated": "Đã cập nhật ảnh đại diện không gian làm việc.",
     "billing": "Thanh toán",
+    "billing_ai_credits": "Tín dụng AI",
+    "billing_ai_credits_description": "Dùng cho các tính năng AI trong không gian làm việc này.",
+    "billing_credit_usage": "Mức sử dụng tín dụng AI",
+    "billing_credits_remaining": "tín dụng còn lại",
+    "billing_credits_used": "Đã dùng {used}",
+    "billing_current_plan": "Gói hiện tại",
     "billing_description": "Quản lý gói, số lượng thành viên và thanh toán.",
     "billing_manage": "Gói và thanh toán không gian làm việc",
     "billing_manage_description": "Mở Tuturuuu Pay để quản lý gói, số lượng thành viên, hóa đơn và phương thức thanh toán.",
     "billing_open": "Mở thanh toán",
+    "billing_open_pay": "Mở trong Pay",
+    "billing_overview_unavailable": "Chưa thể tải tổng quan",
+    "billing_plan_description": "Gói đang được sử dụng cho không gian làm việc này.",
+    "billing_plan_enterprise": "Doanh nghiệp",
+    "billing_plan_free": "Miễn phí",
+    "billing_plan_plus": "Plus",
+    "billing_plan_pro": "Pro",
+    "billing_retry": "Thử lại",
     "general": "Chung",
     "general_description": "Quản lý danh tính, định danh và ảnh đại diện của không gian làm việc.",
     "load_error": "Không thể tải cài đặt không gian làm việc",
@@ -4399,6 +4413,148 @@
       "name": "Tên thư mục"
     }
   },
+  "task_project_detail": {
+    "common": {
+      "untitled_list": "Danh sách chưa đặt tên"
+    },
+    "configuration": {
+      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
+      "archive_project": "Lưu trữ dự án",
+      "end_date_label": "Ngày kết thúc",
+      "health_status": {
+        "at_risk": "Có rủi ro",
+        "off_track": "Lệch tiến độ",
+        "on_track": "Đúng tiến độ"
+      },
+      "health_status_label": "Tình trạng sức khỏe",
+      "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "priority": {
+        "critical": "Nghiêm trọng",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "priority_label": "Mức độ ưu tiên",
+      "priority_placeholder": "Chọn mức độ ưu tiên",
+      "project_lead_label": "Trưởng dự án",
+      "start_date_label": "Ngày bắt đầu",
+      "status": {
+        "active": "Đang hoạt động",
+        "backlog": "Tồn đọng",
+        "cancelled": "Đã hủy",
+        "completed": "Hoàn thành",
+        "in_progress": "Đang thực hiện",
+        "in_review": "Đang xem xét",
+        "in_testing": "Đang kiểm tra",
+        "on_hold": "Tạm dừng",
+        "planned": "Đã lên kế hoạch"
+      },
+      "status_label": "Trạng thái",
+      "title": "Cấu hình dự án"
+    },
+    "documents_tab": {
+      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
+      "document_list": "Danh sách tài liệu",
+      "documents": "tài liệu",
+      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
+      "empty_title": "Chưa có tài liệu liên kết",
+      "title": "Tài liệu đã liên kết"
+    },
+    "header": {
+      "cancel": "Hủy",
+      "edit_name_aria": "Chỉnh sửa tên dự án",
+      "project_name_placeholder": "Tên dự án",
+      "save_changes": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "lead_selector": {
+      "loading": "Đang tải...",
+      "no_lead": "Không có trưởng dự án",
+      "select_lead": "Chọn trưởng dự án"
+    },
+    "link_dialog": {
+      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
+      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
+      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
+      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
+      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
+      "title": "Liên kết công việc vào dự án"
+    },
+    "metadata": {
+      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
+      "page_title": "Dự Án Nhiệm Vụ"
+    },
+    "overview": {
+      "describe_placeholder": "Mô tả dự án của bạn...",
+      "description": "Mô tả",
+      "document": "Tài liệu",
+      "document_list": "Danh sách tài liệu",
+      "done": "Hoàn thành",
+      "edit_description_aria": "Chỉnh sửa mô tả dự án",
+      "hide_configuration": "Ẩn cấu hình",
+      "link_tasks": "Liên kết công việc",
+      "linked_documents": "Tài Liệu Đã Liên Kết",
+      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
+      "linked_tasks": "Công việc đã liên kết",
+      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
+      "no_documents_linked": "Chưa liên kết tài liệu nào",
+      "no_tasks_linked": "Chưa liên kết công việc nào",
+      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
+      "post_update": "Đăng cập nhật",
+      "recent_updates": "Cập nhật gần đây",
+      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
+      "show_configuration": "Hiện cấu hình",
+      "unknown_user": "Không xác định",
+      "view_all": "Xem tất cả"
+    },
+    "sidebar": {
+      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
+      "click_set_timeline": "Nhấp để đặt tiến độ",
+      "completed": "Đã hoàn thành",
+      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
+      "edit_timeline_aria": "Chỉnh sửa tiến độ",
+      "end_date": "Ngày kết thúc",
+      "end_label": "Kết thúc:",
+      "in_progress": "Đang thực hiện",
+      "project_lead": "Trưởng dự án",
+      "project_stats": "Thống kê dự án",
+      "select_lead_label": "Chọn trưởng dự án",
+      "start_date": "Ngày bắt đầu",
+      "start_label": "Bắt đầu:",
+      "timeline": "Tiến độ",
+      "total_tasks": "Tổng công việc",
+      "unknown": "Không xác định"
+    },
+    "tabs": {
+      "documents": "Tài liệu",
+      "overview": "Tổng quan",
+      "tasks": "Công việc",
+      "updates": "Cập nhật"
+    },
+    "tasks_tab": {
+      "link_tasks": "Liên kết công việc",
+      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
+      "no_tasks_title": "Chưa liên kết công việc nào"
+    },
+    "update_card": {
+      "actions_aria": "Hành động cập nhật",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "edit": "Chỉnh sửa",
+      "edited_badge": "Đã chỉnh sửa",
+      "save": "Lưu",
+      "unknown_user": "Không xác định"
+    },
+    "updates_tab": {
+      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
+      "no_updates_title": "Chưa có cập nhật nào",
+      "post_update": "Đăng cập nhật",
+      "posting": "Đang đăng...",
+      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
+      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
+      "share_update": "Chia sẻ cập nhật"
+    }
+  },
   "task-drafts": {
     "board_view_description": "Bản nháp đã lưu",
     "cancel": "Hủy",
@@ -4784,148 +4940,6 @@
       "sort_priority": "Độ Ưu Tiên",
       "sort_status": "Trạng Thái",
       "sort_task_count": "Số Lượng Nhiệm Vụ"
-    }
-  },
-  "task_project_detail": {
-    "common": {
-      "untitled_list": "Danh sách chưa đặt tên"
-    },
-    "configuration": {
-      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
-      "archive_project": "Lưu trữ dự án",
-      "end_date_label": "Ngày kết thúc",
-      "health_status": {
-        "at_risk": "Có rủi ro",
-        "off_track": "Lệch tiến độ",
-        "on_track": "Đúng tiến độ"
-      },
-      "health_status_label": "Tình trạng sức khỏe",
-      "health_status_placeholder": "Chọn tình trạng sức khỏe",
-      "priority": {
-        "critical": "Nghiêm trọng",
-        "high": "Cao",
-        "low": "Thấp",
-        "normal": "Bình thường"
-      },
-      "priority_label": "Mức độ ưu tiên",
-      "priority_placeholder": "Chọn mức độ ưu tiên",
-      "project_lead_label": "Trưởng dự án",
-      "start_date_label": "Ngày bắt đầu",
-      "status": {
-        "active": "Đang hoạt động",
-        "backlog": "Tồn đọng",
-        "cancelled": "Đã hủy",
-        "completed": "Hoàn thành",
-        "in_progress": "Đang thực hiện",
-        "in_review": "Đang xem xét",
-        "in_testing": "Đang kiểm tra",
-        "on_hold": "Tạm dừng",
-        "planned": "Đã lên kế hoạch"
-      },
-      "status_label": "Trạng thái",
-      "title": "Cấu hình dự án"
-    },
-    "documents_tab": {
-      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
-      "document_list": "Danh sách tài liệu",
-      "documents": "tài liệu",
-      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
-      "empty_title": "Chưa có tài liệu liên kết",
-      "title": "Tài liệu đã liên kết"
-    },
-    "header": {
-      "cancel": "Hủy",
-      "edit_name_aria": "Chỉnh sửa tên dự án",
-      "project_name_placeholder": "Tên dự án",
-      "save_changes": "Lưu thay đổi",
-      "saving": "Đang lưu..."
-    },
-    "lead_selector": {
-      "loading": "Đang tải...",
-      "no_lead": "Không có trưởng dự án",
-      "select_lead": "Chọn trưởng dự án"
-    },
-    "link_dialog": {
-      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
-      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
-      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
-      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
-      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
-      "title": "Liên kết công việc vào dự án"
-    },
-    "metadata": {
-      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
-      "page_title": "Dự Án Nhiệm Vụ"
-    },
-    "overview": {
-      "describe_placeholder": "Mô tả dự án của bạn...",
-      "description": "Mô tả",
-      "document": "Tài liệu",
-      "document_list": "Danh sách tài liệu",
-      "done": "Hoàn thành",
-      "edit_description_aria": "Chỉnh sửa mô tả dự án",
-      "hide_configuration": "Ẩn cấu hình",
-      "link_tasks": "Liên kết công việc",
-      "linked_documents": "Tài Liệu Đã Liên Kết",
-      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
-      "linked_tasks": "Công việc đã liên kết",
-      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
-      "no_documents_linked": "Chưa liên kết tài liệu nào",
-      "no_tasks_linked": "Chưa liên kết công việc nào",
-      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
-      "post_update": "Đăng cập nhật",
-      "recent_updates": "Cập nhật gần đây",
-      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
-      "show_configuration": "Hiện cấu hình",
-      "unknown_user": "Không xác định",
-      "view_all": "Xem tất cả"
-    },
-    "sidebar": {
-      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
-      "click_set_timeline": "Nhấp để đặt tiến độ",
-      "completed": "Đã hoàn thành",
-      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
-      "edit_timeline_aria": "Chỉnh sửa tiến độ",
-      "end_date": "Ngày kết thúc",
-      "end_label": "Kết thúc:",
-      "in_progress": "Đang thực hiện",
-      "project_lead": "Trưởng dự án",
-      "project_stats": "Thống kê dự án",
-      "select_lead_label": "Chọn trưởng dự án",
-      "start_date": "Ngày bắt đầu",
-      "start_label": "Bắt đầu:",
-      "timeline": "Tiến độ",
-      "total_tasks": "Tổng công việc",
-      "unknown": "Không xác định"
-    },
-    "tabs": {
-      "documents": "Tài liệu",
-      "overview": "Tổng quan",
-      "tasks": "Công việc",
-      "updates": "Cập nhật"
-    },
-    "tasks_tab": {
-      "link_tasks": "Liên kết công việc",
-      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
-      "no_tasks_title": "Chưa liên kết công việc nào"
-    },
-    "update_card": {
-      "actions_aria": "Hành động cập nhật",
-      "cancel": "Hủy",
-      "delete": "Xóa",
-      "edit": "Chỉnh sửa",
-      "edited_badge": "Đã chỉnh sửa",
-      "save": "Lưu",
-      "unknown_user": "Không xác định"
-    },
-    "updates_tab": {
-      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
-      "no_updates_title": "Chưa có cập nhật nào",
-      "post_update": "Đăng cập nhật",
-      "posting": "Đang đăng...",
-      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
-      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
-      "share_update": "Chia sẻ cập nhật"
     }
   },
   "tasks": {
@@ -6556,6 +6570,25 @@
     "topic_announcements": "Thông báo chủ đề",
     "tutoring": "Phụ đạo"
   },
+  "ws_post_details": {
+    "bulk_update_error": "Không thể cập nhật trạng thái hoàn thành. Vui lòng thử lại.",
+    "check_all": "Đã kiểm tra tất cả",
+    "check_all_success": "Đã đánh dấu tất cả thành viên là hoàn thành",
+    "completed": "Hoàn thành",
+    "history": "Lịch sử",
+    "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
+    "history_empty": "Chưa ghi nhận thay đổi nào.",
+    "reset_check": "Đặt lại",
+    "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
+    "reset_check_error": "Không thể đặt lại trạng thái hoàn thành. Vui lòng thử lại.",
+    "reset_check_success": "Đã đặt lại trạng thái hoàn thành",
+    "status_pending": "Đang chờ",
+    "status_save_error": "Không thể lưu trạng thái hoàn thành. Vui lòng thử lại.",
+    "status_save_success": "Đã lưu trạng thái hoàn thành",
+    "uncheck_all": "Bỏ đánh dấu tất cả",
+    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý",
+    "uncheck_all_success": "Đã đưa tất cả thành viên về trạng thái chưa xử lý"
+  },
   "ws-ai-workflows": {
     "include_module_content": "Bao gồm nội dung mô-đun",
     "include_resources": "Bao gồm các tài nguyên tải lên",
@@ -7196,12 +7229,6 @@
     "invite_membership_label": "Quyền truy cập",
     "invite_membership_member": "Thành viên — truy cập đầy đủ không gian làm việc",
     "invite_membership_pos_operator": "Nhân viên POS — chỉ bắt đầu thanh toán",
-    "pos_operator_admin_migration_note": "Quyền Quản trị viên mặc định cho mọi thành viên sẽ được thay bằng vai trò quản trị được giữ lại rõ ràng trước khi tạo lời mời. Thành viên hiện tại vẫn giữ quyền; thành viên tương lai không tự động nhận quyền Quản trị viên.",
-    "pos_operator_confirmation": "Tôi hiểu việc chuyển đổi quyền này và muốn mời những người này làm nhân viên POS có quyền hạn chế.",
-    "pos_operator_description": "Có thể bắt đầu thanh toán Square POS hoặc Terminal đã được phê duyệt, nhưng không thể sửa sản phẩm, tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
-    "pos_operator_existing_members": "thành viên hiện tại giữ quyền Quản trị viên",
-    "pos_operator_only_permission": "Chỉ một quyền thanh toán",
-    "pos_operator_title": "Nhân viên POS an toàn cho sự kiện",
     "invite_submit": "Gửi lời mời",
     "invited": "Đã mời",
     "joined": "Đã tham gia",
@@ -7214,6 +7241,12 @@
     "no_permissions": "Chưa được gán quyền",
     "no_roles_found": "Không tìm thấy vai trò",
     "pending_invitations": "Lời mời đang chờ",
+    "pos_operator_admin_migration_note": "Quyền Quản trị viên mặc định cho mọi thành viên sẽ được thay bằng vai trò quản trị được giữ lại rõ ràng trước khi tạo lời mời. Thành viên hiện tại vẫn giữ quyền; thành viên tương lai không tự động nhận quyền Quản trị viên.",
+    "pos_operator_confirmation": "Tôi hiểu việc chuyển đổi quyền này và muốn mời những người này làm nhân viên POS có quyền hạn chế.",
+    "pos_operator_description": "Có thể bắt đầu thanh toán Square POS hoặc Terminal đã được phê duyệt, nhưng không thể sửa sản phẩm, tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
+    "pos_operator_existing_members": "thành viên hiện tại giữ quyền Quản trị viên",
+    "pos_operator_only_permission": "Chỉ một quyền thanh toán",
+    "pos_operator_title": "Nhân viên POS an toàn cho sự kiện",
     "remove_member": "Xóa thành viên",
     "role-placeholder": "Chọn vai trò",
     "search_members": "Tìm kiếm thành viên",
@@ -7611,8 +7644,6 @@
     "admin": "Quản trị viên",
     "admin_enabled_description": "Tất cả các quyền bên dưới đều được cấp tự động. Các nút chuyển đổi quyền riêng lẻ sẽ bị vô hiệu hóa khi quyền quản trị viên đang hoạt động.",
     "admin_enabled_title": "Quyền Quản trị viên Đang Bật",
-    "initiate_pos_checkout": "Bắt đầu thanh toán POS",
-    "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "create": "Tạo vai trò",
     "create_description": "Tạo một vai trò mới cho không gian làm việc này.",
     "custom_days": "Số Ngày Tùy chỉnh",
@@ -7622,10 +7653,12 @@
     "description": "Vai trò được sử dụng để quản lý quyền của người dùng trong không gian làm việc bằng cách tạo vai trò và gán chúng cho người dùng.",
     "edit": "Chỉnh sửa vai trò",
     "edit_description": "Chỉnh sửa một vai trò hiện có trong không gian làm việc này.",
+    "granted_via_admin": "Được cấp qua quyền quản trị",
     "guest_defaults": "Quyền mặc định của khách",
     "guest_defaults_description": "Quyền mặc định của khách bị tắt trừ khi được bật rõ ràng. Khách dùng cùng danh mục quyền với thành viên, nhưng các tuyến chưa được ánh xạ quyền vẫn bị từ chối.",
     "guest_defaults_tab": "Quyền khách",
-    "granted_via_admin": "Được cấp qua quyền quản trị",
+    "initiate_pos_checkout": "Bắt đầu thanh toán POS",
+    "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
     "member_defaults": "Quyền mặc định của thành viên",
     "member_defaults_description": "Quyền mặc định của thành viên áp dụng cho thành viên không gian làm việc và khóa API. Các quyền mặc định hiện có vẫn thuộc phạm vi thành viên.",
@@ -9642,24 +9675,5 @@
     "try_different_search_term": "Thử từ khóa tìm kiếm khác",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
-  },
-  "ws_post_details": {
-    "bulk_update_error": "Không thể cập nhật trạng thái hoàn thành. Vui lòng thử lại.",
-    "check_all": "Đã kiểm tra tất cả",
-    "check_all_success": "Đã đánh dấu tất cả thành viên là hoàn thành",
-    "completed": "Hoàn thành",
-    "history": "Lịch sử",
-    "history_description": "Mọi thay đổi hoàn thành của bài đăng này, mới nhất trước.",
-    "history_empty": "Chưa ghi nhận thay đổi nào.",
-    "reset_check": "Đặt lại",
-    "reset_check_description": "Đưa thành viên này về trạng thái chưa xử lý (xóa dấu hoàn thành)",
-    "reset_check_error": "Không thể đặt lại trạng thái hoàn thành. Vui lòng thử lại.",
-    "reset_check_success": "Đã đặt lại trạng thái hoàn thành",
-    "status_pending": "Đang chờ",
-    "status_save_error": "Không thể lưu trạng thái hoàn thành. Vui lòng thử lại.",
-    "status_save_success": "Đã lưu trạng thái hoàn thành",
-    "uncheck_all": "Bỏ đánh dấu tất cả",
-    "uncheck_all_description": "Đưa tất cả thành viên về trạng thái chưa xử lý",
-    "uncheck_all_success": "Đã đưa tất cả thành viên về trạng thái chưa xử lý"
   }
 }

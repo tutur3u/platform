@@ -19,9 +19,9 @@ describe('workspace AI credits route authentication', () => {
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
-        allowAppSessionAuth: {
-          targetApp: ['chat', 'mind', 'pay', 'tasks'],
-        },
+        allowAppSessionAuth: expect.objectContaining({
+          targetApp: expect.arrayContaining(['pay']),
+        }),
       })
     );
   });

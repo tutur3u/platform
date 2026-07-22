@@ -4004,6 +4004,7 @@
       "docs": "Đọc hướng dẫn sản phẩm, tài liệu tham khảo và hướng dẫn thiết lập.",
       "drive": "Lưu trữ, sắp xếp và chia sẻ tệp trong không gian làm việc.",
       "finance": "Quản lý ví, giao dịch, hóa đơn và ngân sách.",
+      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace.",
       "hive": "Khám phá các mô phỏng cộng tác và trải nghiệm không gian.",
       "inventory": "Quản lý sản phẩm, tồn kho, nhập hàng và bán hàng.",
       "learn": "Theo dõi khóa học, bài tập và tiến độ học tập.",
@@ -4019,8 +4020,7 @@
       "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
       "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
       "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
-      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao.",
-      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace."
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
     },
     "app_names": {
       "apps": "Ứng dụng",
@@ -4031,6 +4031,7 @@
       "docs": "Tài liệu",
       "drive": "Tệp",
       "finance": "Tài chính",
+      "forms": "Biểu mẫu",
       "hive": "Hive",
       "infrastructure": "Hạ tầng",
       "inventory": "Kho hàng",
@@ -4047,8 +4048,7 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi",
-      "forms": "Biểu mẫu"
+      "track": "Theo dõi"
     },
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",
@@ -8195,118 +8195,6 @@
       "workspaces": "không gian làm việc"
     }
   },
-  "internal-accounts": {
-    "actions": {
-      "cancel": "Hủy",
-      "disable_access": "Vô hiệu hóa truy cập",
-      "edit_profile": "Sửa hồ sơ",
-      "enable_access": "Khôi phục truy cập",
-      "load_more": "Tải thêm",
-      "open_menu": "Mở thao tác tài khoản",
-      "refresh": "Làm mới tài khoản",
-      "reset_password": "Đặt lại mật khẩu",
-      "retry": "Thử lại",
-      "search": "Tìm kiếm"
-    },
-    "count": "{count, plural, one {# tài khoản nội bộ} other {# tài khoản nội bộ}}",
-    "count_loading": "Đang tải số lượng tài khoản...",
-    "dates": {
-      "created": "Đã tạo {date}",
-      "last_sign_in": "Đăng nhập gần nhất {date}",
-      "never": "Chưa bao giờ"
-    },
-    "description": "Quản lý danh tính, quyền truy cập xác thực và dung lượng Drive cá nhân cho các tài khoản chính xác thuộc @tuturuuu.com.",
-    "dialog": {
-      "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
-      "confirmation_label": "Xác nhận email tài khoản",
-      "done": "Xong",
-      "generate_password": "Tạo mật khẩu",
-      "hide_password": "Ẩn mật khẩu",
-      "disable_access": {
-        "confirm": "Vô hiệu hóa truy cập",
-        "description": "Thao tác này sẽ chặn ngay {email} đăng nhập cho đến khi quyền truy cập được khôi phục.",
-        "title": "Vô hiệu hóa quyền truy cập?"
-      },
-      "enable_access": {
-        "confirm": "Khôi phục truy cập",
-        "description": "Thao tác này sẽ khôi phục ngay quyền đăng nhập cho {email}.",
-        "title": "Khôi phục quyền truy cập?"
-      },
-      "new_password": "Mật khẩu tạm thời mới",
-      "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
-      "reset_password": {
-        "copied": "Đã sao chép",
-        "copy_message": "Sao chép tin nhắn",
-        "confirm": "Đặt mật khẩu mới",
-        "description": "Thao tác này thay thế mật khẩu hiện tại của {email}. Các phiên hiện có có thể vẫn hoạt động cho đến khi bị thu hồi riêng.",
-        "handoff_label": "Tin nhắn bàn giao bảo mật",
-        "handoff_message": "Mật khẩu tài khoản Tuturuuu của bạn đã được đặt lại.\n\nEmail: {email}\nMật khẩu tạm thời: {password}\n\nVui lòng đăng nhập và đổi mật khẩu tạm thời này ngay. Không chuyển tiếp tin nhắn này.",
-        "success_description": "Hãy sao chép tin nhắn bàn giao ngay. Mật khẩu tạm thời sẽ không còn hiển thị trên màn hình quản trị sau khi bạn đóng hộp thoại.",
-        "success_title": "Đặt lại mật khẩu thành công",
-        "title": "Buộc đặt lại mật khẩu?"
-      },
-      "show_password": "Hiện mật khẩu"
-    },
-    "empty": {
-      "description": "Hãy thử tìm kiếm khác hoặc nới lỏng bộ lọc đang hoạt động và đã xác minh.",
-      "title": "Không tìm thấy tài khoản nội bộ"
-    },
-    "end_of_list": "Đã tải tất cả tài khoản nội bộ phù hợp.",
-    "error": {
-      "description": "Không thể tải danh bạ tài khoản nội bộ. Quyền truy cập của bạn có thể đã thay đổi.",
-      "title": "Không thể tải tài khoản nội bộ"
-    },
-    "filters": {
-      "active_description": "Ẩn các tài khoản đã bị vô hiệu hóa quyền đăng nhập.",
-      "active_only": "Chỉ tài khoản đang hoạt động",
-      "description": "Cả hai bộ lọc an toàn đều được bật mặc định.",
-      "title": "Lọc tài khoản",
-      "verified_description": "Ẩn các tài khoản chưa xác nhận email.",
-      "verified_only": "Chỉ tài khoản đã xác minh"
-    },
-    "notice": {
-      "description": "Thay đổi quyền truy cập và mật khẩu có hiệu lực ngay lập tức, yêu cầu email chính xác và không thể áp dụng cho chính tài khoản của bạn. Thông tin hồ sơ có thể được chỉnh sửa riêng.",
-      "title": "Thao tác giới hạn trong không gian làm việc gốc"
-    },
-    "profile": {
-      "description": "Cập nhật danh tính công khai của {email} trên các ứng dụng Tuturuuu.",
-      "display_name": "Tên hiển thị",
-      "save": "Lưu hồ sơ",
-      "title": "Sửa hồ sơ nội bộ",
-      "username": "Tên người dùng",
-      "username_help": "Không bắt buộc. Dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới.",
-      "username_invalid": "Bắt đầu và kết thúc bằng chữ hoặc số; chỉ dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới."
-    },
-    "search": {
-      "label": "Tìm kiếm tài khoản nội bộ",
-      "placeholder": "Tìm tên, tên người dùng hoặc email"
-    },
-    "sorting": {
-      "asc": "Tăng dần",
-      "createdAt": "Ngày tạo",
-      "desc": "Giảm dần",
-      "displayName": "Tên hiển thị",
-      "email": "Địa chỉ email",
-      "lastSignInAt": "Đăng nhập gần nhất",
-      "title": "Sắp xếp tài khoản"
-    },
-    "status": {
-      "active": "Đang hoạt động",
-      "disabled": "Đã vô hiệu hóa",
-      "unconfirmed": "Email chưa xác nhận",
-      "you": "Bạn"
-    },
-    "storage": {
-      "title": "Drive cá nhân",
-      "unavailable": "Không có không gian cá nhân",
-      "value": "{used} / {limit}"
-    },
-    "title": "Tài khoản nội bộ",
-    "toasts": {
-      "update_failed": "Không thể cập nhật tài khoản nội bộ.",
-      "updated": "Đã cập nhật tài khoản nội bộ."
-    }
-  },
   "infrastructure-navigation": {
     "groups": {
       "ai_operations": {
@@ -8403,6 +8291,118 @@
     "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
     "sepay-error-provisioning-description": "SePay đã kết nối, nhưng bước đồng bộ tài khoản ngân hàng hoặc cấu hình webhook ban đầu chưa hoàn tất. Hãy thử lại các thao tác thiết lập từ không gian làm việc này.",
     "sepay-error-title": "Thiết lập SePay cần được xử lý"
+  },
+  "internal-accounts": {
+    "actions": {
+      "cancel": "Hủy",
+      "disable_access": "Vô hiệu hóa truy cập",
+      "edit_profile": "Sửa hồ sơ",
+      "enable_access": "Khôi phục truy cập",
+      "load_more": "Tải thêm",
+      "open_menu": "Mở thao tác tài khoản",
+      "refresh": "Làm mới tài khoản",
+      "reset_password": "Đặt lại mật khẩu",
+      "retry": "Thử lại",
+      "search": "Tìm kiếm"
+    },
+    "count": "{count, plural, one {# tài khoản nội bộ} other {# tài khoản nội bộ}}",
+    "count_loading": "Đang tải số lượng tài khoản...",
+    "dates": {
+      "created": "Đã tạo {date}",
+      "last_sign_in": "Đăng nhập gần nhất {date}",
+      "never": "Chưa bao giờ"
+    },
+    "description": "Quản lý danh tính, quyền truy cập xác thực và dung lượng Drive cá nhân cho các tài khoản chính xác thuộc @tuturuuu.com.",
+    "dialog": {
+      "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
+      "confirmation_label": "Xác nhận email tài khoản",
+      "disable_access": {
+        "confirm": "Vô hiệu hóa truy cập",
+        "description": "Thao tác này sẽ chặn ngay {email} đăng nhập cho đến khi quyền truy cập được khôi phục.",
+        "title": "Vô hiệu hóa quyền truy cập?"
+      },
+      "done": "Xong",
+      "enable_access": {
+        "confirm": "Khôi phục truy cập",
+        "description": "Thao tác này sẽ khôi phục ngay quyền đăng nhập cho {email}.",
+        "title": "Khôi phục quyền truy cập?"
+      },
+      "generate_password": "Tạo mật khẩu",
+      "hide_password": "Ẩn mật khẩu",
+      "new_password": "Mật khẩu tạm thời mới",
+      "password_help": "Sử dụng ít nhất {count} ký tự và chỉ chia sẻ qua kênh bảo mật được phê duyệt.",
+      "reset_password": {
+        "confirm": "Đặt mật khẩu mới",
+        "copied": "Đã sao chép",
+        "copy_message": "Sao chép tin nhắn",
+        "description": "Thao tác này thay thế mật khẩu hiện tại của {email}. Các phiên hiện có có thể vẫn hoạt động cho đến khi bị thu hồi riêng.",
+        "handoff_label": "Tin nhắn bàn giao bảo mật",
+        "handoff_message": "Mật khẩu tài khoản Tuturuuu của bạn đã được đặt lại.\n\nEmail: {email}\nMật khẩu tạm thời: {password}\n\nVui lòng đăng nhập và đổi mật khẩu tạm thời này ngay. Không chuyển tiếp tin nhắn này.",
+        "success_description": "Hãy sao chép tin nhắn bàn giao ngay. Mật khẩu tạm thời sẽ không còn hiển thị trên màn hình quản trị sau khi bạn đóng hộp thoại.",
+        "success_title": "Đặt lại mật khẩu thành công",
+        "title": "Buộc đặt lại mật khẩu?"
+      },
+      "show_password": "Hiện mật khẩu"
+    },
+    "empty": {
+      "description": "Hãy thử tìm kiếm khác hoặc nới lỏng bộ lọc đang hoạt động và đã xác minh.",
+      "title": "Không tìm thấy tài khoản nội bộ"
+    },
+    "end_of_list": "Đã tải tất cả tài khoản nội bộ phù hợp.",
+    "error": {
+      "description": "Không thể tải danh bạ tài khoản nội bộ. Quyền truy cập của bạn có thể đã thay đổi.",
+      "title": "Không thể tải tài khoản nội bộ"
+    },
+    "filters": {
+      "active_description": "Ẩn các tài khoản đã bị vô hiệu hóa quyền đăng nhập.",
+      "active_only": "Chỉ tài khoản đang hoạt động",
+      "description": "Cả hai bộ lọc an toàn đều được bật mặc định.",
+      "title": "Lọc tài khoản",
+      "verified_description": "Ẩn các tài khoản chưa xác nhận email.",
+      "verified_only": "Chỉ tài khoản đã xác minh"
+    },
+    "notice": {
+      "description": "Thay đổi quyền truy cập và mật khẩu có hiệu lực ngay lập tức, yêu cầu email chính xác và không thể áp dụng cho chính tài khoản của bạn. Thông tin hồ sơ có thể được chỉnh sửa riêng.",
+      "title": "Thao tác giới hạn trong không gian làm việc gốc"
+    },
+    "profile": {
+      "description": "Cập nhật danh tính công khai của {email} trên các ứng dụng Tuturuuu.",
+      "display_name": "Tên hiển thị",
+      "save": "Lưu hồ sơ",
+      "title": "Sửa hồ sơ nội bộ",
+      "username": "Tên người dùng",
+      "username_help": "Không bắt buộc. Dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới.",
+      "username_invalid": "Bắt đầu và kết thúc bằng chữ hoặc số; chỉ dùng chữ thường, số, dấu gạch ngang hoặc gạch dưới."
+    },
+    "search": {
+      "label": "Tìm kiếm tài khoản nội bộ",
+      "placeholder": "Tìm tên, tên người dùng hoặc email"
+    },
+    "sorting": {
+      "asc": "Tăng dần",
+      "createdAt": "Ngày tạo",
+      "desc": "Giảm dần",
+      "displayName": "Tên hiển thị",
+      "email": "Địa chỉ email",
+      "lastSignInAt": "Đăng nhập gần nhất",
+      "title": "Sắp xếp tài khoản"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "disabled": "Đã vô hiệu hóa",
+      "unconfirmed": "Email chưa xác nhận",
+      "you": "Bạn"
+    },
+    "storage": {
+      "title": "Drive cá nhân",
+      "unavailable": "Không có không gian cá nhân",
+      "value": "{used} / {limit}"
+    },
+    "title": "Tài khoản nội bộ",
+    "toasts": {
+      "update_failed": "Không thể cập nhật tài khoản nội bộ.",
+      "updated": "Đã cập nhật tài khoản nội bộ."
+    }
   },
   "inventory": {
     "default_referral_promotion": "Khuyến mãi được cấp mặc định",
@@ -11984,10 +11984,24 @@
     "avatar_removed": "Đã xóa ảnh đại diện không gian làm việc.",
     "avatar_updated": "Đã cập nhật ảnh đại diện không gian làm việc.",
     "billing": "Thanh toán",
+    "billing_ai_credits": "Tín dụng AI",
+    "billing_ai_credits_description": "Dùng cho các tính năng AI trong không gian làm việc này.",
+    "billing_credit_usage": "Mức sử dụng tín dụng AI",
+    "billing_credits_remaining": "tín dụng còn lại",
+    "billing_credits_used": "Đã dùng {used}",
+    "billing_current_plan": "Gói hiện tại",
     "billing_description": "Quản lý gói, số lượng thành viên và thanh toán.",
     "billing_manage": "Gói và thanh toán không gian làm việc",
     "billing_manage_description": "Mở Tuturuuu Pay để quản lý gói, số lượng thành viên, hóa đơn và phương thức thanh toán.",
     "billing_open": "Mở thanh toán",
+    "billing_open_pay": "Mở trong Pay",
+    "billing_overview_unavailable": "Chưa thể tải tổng quan",
+    "billing_plan_description": "Gói đang được sử dụng cho không gian làm việc này.",
+    "billing_plan_enterprise": "Doanh nghiệp",
+    "billing_plan_free": "Miễn phí",
+    "billing_plan_plus": "Plus",
+    "billing_plan_pro": "Pro",
+    "billing_retry": "Thử lại",
     "general": "Chung",
     "general_description": "Quản lý danh tính, định danh và ảnh đại diện của không gian làm việc.",
     "load_error": "Không thể tải cài đặt không gian làm việc",
@@ -19126,15 +19140,15 @@
     "owner": "Chủ sở hữu",
     "pending_invitation": "Lời mời đang chờ",
     "pending_invitations": "Lời mời đang chờ",
+    "permission_coverage": "Phạm vi Quyền",
+    "permission_sources": "Nguồn Quyền",
+    "permissions": "Quyền",
     "pos_operator_admin_migration_note": "Quyền Quản trị viên mặc định cho mọi thành viên sẽ được thay bằng vai trò quản trị được giữ lại rõ ràng trước khi tạo lời mời. Thành viên hiện tại vẫn giữ quyền; thành viên tương lai không tự động nhận quyền Quản trị viên.",
     "pos_operator_confirmation": "Tôi hiểu việc chuyển đổi quyền này và muốn mời những người này làm nhân viên POS có quyền hạn chế.",
     "pos_operator_description": "Có thể bắt đầu thanh toán Square POS hoặc Terminal đã được phê duyệt, nhưng không thể sửa sản phẩm, tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "pos_operator_existing_members": "thành viên hiện tại giữ quyền Quản trị viên",
     "pos_operator_only_permission": "Chỉ một quyền thanh toán",
     "pos_operator_title": "Nhân viên POS an toàn cho sự kiện",
-    "permission_coverage": "Phạm vi Quyền",
-    "permission_sources": "Nguồn Quyền",
-    "permissions": "Quyền",
     "profile_display_name": "Tên hiển thị trong không gian làm việc",
     "profile_display_name_description": "Tên này chỉ được dùng trong không gian làm việc này.",
     "profile_display_name_placeholder": "Tên hiển thị trong không gian này",
@@ -19884,6 +19898,8 @@
     "guest_defaults_tab": "Quyền khách",
     "infrastructure": "Cơ sở hạ tầng",
     "infrastructure_description": "Điều khiển cấp hệ thống cho quản trị nền tảng và vận hành kỹ thuật",
+    "initiate_pos_checkout": "Bắt đầu thanh toán POS",
+    "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "inventory_access_denied": "Quyền truy cập bị từ chối",
     "inventory_access_denied_description": "Bạn không có quyền xem kho.",
     "inventory_batches_access_denied_description": "Bạn không có quyền xem lô hàng.",
@@ -19933,8 +19949,6 @@
     "manage_inventory_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa các mặt hàng trong kho không gian làm việc.",
     "manage_inventory_setup": "Quản lý thiết lập kho",
     "manage_inventory_setup_description": "Cho phép thành viên cấu hình địa điểm, đơn vị, danh mục và dữ liệu thiết lập kho.",
-    "initiate_pos_checkout": "Bắt đầu thanh toán POS",
-    "initiate_pos_checkout_description": "Cho phép thành viên gửi đơn hàng tới Square Terminal đã được phê duyệt hoặc mở Square POS trên thiết bị hiện tại. Quyền này không cho phép sửa tồn kho, doanh số, thanh toán, thành viên hoặc cài đặt.",
     "manage_members": "Quản lý thành viên",
     "manage_mobile_deployment_vault": "Quản lý kho triển khai di động",
     "manage_mobile_deployment_vault_description": "Cho phép thành viên không gian làm việc gốc quản lý bí mật triển khai di động, tệp ký và token CI qua API triển khai di động.",

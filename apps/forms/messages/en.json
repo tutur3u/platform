@@ -49,6 +49,9 @@
     "switch_failed_description": "This account has been removed. Please add it again to continue using it.",
     "unknown_user": "Unknown User"
   },
+  "ai_chat": {
+    "incorrect": "incorrect"
+  },
   "ai-credits": {
     "beta": "Beta",
     "error_credits_exhausted": "Monthly AI credits used up. Upgrade your plan for more. Credit top-up coming soon.",
@@ -62,9 +65,6 @@
     "tier_label": "{tier} plan",
     "title": "AI Credits",
     "usage_tooltip": "{used} / {total} credits used this month"
-  },
-  "ai_chat": {
-    "incorrect": "incorrect"
   },
   "approvals": {
     "actions": {
@@ -1138,6 +1138,7 @@
       "docs": "Read product guides, references, and setup instructions.",
       "drive": "Store, organize, and share workspace files.",
       "finance": "Manage wallets, transactions, invoices, and budgets.",
+      "forms": "Build, share, and analyze workspace forms and their responses.",
       "hive": "Explore collaborative simulations and spatial experiences.",
       "inventory": "Manage products, stock, purchasing, and sales.",
       "learn": "Follow courses, assignments, and learning progress.",
@@ -1153,8 +1154,7 @@
       "tasks": "Plan projects, assign work, and track progress.",
       "teach": "Plan courses, manage classes, and support learners.",
       "tools": "Open focused utilities for QR codes and quick tasks.",
-      "track": "Record time and understand where work goes.",
-      "forms": "Build, share, and analyze workspace forms and their responses."
+      "track": "Record time and understand where work goes."
     },
     "app_names": {
       "apps": "Apps",
@@ -1165,6 +1165,7 @@
       "docs": "Docs",
       "drive": "Drive",
       "finance": "Finance",
+      "forms": "Forms",
       "hive": "Hive",
       "infrastructure": "Infrastructure",
       "inventory": "Inventory",
@@ -1181,8 +1182,7 @@
       "tasks": "Tasks",
       "teach": "Teach",
       "tools": "Tools",
-      "track": "Track",
-      "forms": "Forms"
+      "track": "Track"
     },
     "apps": "Apps",
     "apps_count": "{count, plural, one {# app} other {# apps}}",
@@ -1358,9 +1358,9 @@
     "guest_access": "Guest access",
     "guest_workspaces": "Shared with me",
     "hidden": "Hidden",
-    "hide-all": "Hide All",
     "hide_column": "Hide column",
     "hide_sidebar": "Hide sidebar",
+    "hide-all": "Hide All",
     "history": "History",
     "home": "Home",
     "import": "Import",
@@ -1406,9 +1406,6 @@
     "new": "New",
     "next": "Next",
     "next_week": "Next Week",
-    "no-results": "No Results",
-    "no-selection": "No users selected",
-    "no-sheets-found": "No sheets found.",
     "no_changes_to_save": "No changes to save",
     "no_content_yet": "No content yet",
     "no_labels_available": "No labels available",
@@ -1418,6 +1415,9 @@
     "no_other_boards": "No other boards",
     "no_projects_found": "No projects found",
     "no_results_found": "No results found",
+    "no-results": "No Results",
+    "no-selection": "No users selected",
+    "no-sheets-found": "No sheets found.",
     "none": "None",
     "of": "of",
     "open": "Open",
@@ -3739,10 +3739,24 @@
     "avatar_removed": "Workspace avatar removed.",
     "avatar_updated": "Workspace avatar updated.",
     "billing": "Billing",
+    "billing_ai_credits": "AI credits",
+    "billing_ai_credits_description": "Available for AI features across this workspace.",
+    "billing_credit_usage": "AI credit usage",
+    "billing_credits_remaining": "credits remaining",
+    "billing_credits_used": "{used} used",
+    "billing_current_plan": "Current plan",
     "billing_description": "Manage plans, seats, and workspace billing.",
     "billing_manage": "Workspace plan and billing",
     "billing_manage_description": "Open Tuturuuu Pay to manage the plan, member seats, invoices, and payment method.",
     "billing_open": "Open billing",
+    "billing_open_pay": "Open in Pay",
+    "billing_overview_unavailable": "Overview unavailable",
+    "billing_plan_description": "The plan currently active for this workspace.",
+    "billing_plan_enterprise": "Enterprise",
+    "billing_plan_free": "Free",
+    "billing_plan_plus": "Plus",
+    "billing_plan_pro": "Pro",
+    "billing_retry": "Retry",
     "general": "General",
     "general_description": "Manage workspace identity, handle, and avatar.",
     "load_error": "Workspace settings unavailable",
@@ -4399,6 +4413,148 @@
       "name": "Folder name"
     }
   },
+  "task_project_detail": {
+    "common": {
+      "untitled_list": "Untitled List"
+    },
+    "configuration": {
+      "archive_description": "Archived projects are hidden from default views",
+      "archive_project": "Archive Project",
+      "end_date_label": "End Date",
+      "health_status": {
+        "at_risk": "At Risk",
+        "off_track": "Off Track",
+        "on_track": "On Track"
+      },
+      "health_status_label": "Health Status",
+      "health_status_placeholder": "Select health status",
+      "priority": {
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "priority_label": "Priority",
+      "priority_placeholder": "Select priority",
+      "project_lead_label": "Project Lead",
+      "start_date_label": "Start Date",
+      "status": {
+        "active": "Active",
+        "backlog": "Backlog",
+        "cancelled": "Cancelled",
+        "completed": "Completed",
+        "in_progress": "In Progress",
+        "in_review": "In Review",
+        "in_testing": "In Testing",
+        "on_hold": "On Hold",
+        "planned": "Planned"
+      },
+      "status_label": "Status",
+      "title": "Project Configuration"
+    },
+    "documents_tab": {
+      "description": "{count} reference items linked through document lists.",
+      "document_list": "Document list",
+      "documents": "documents",
+      "empty_description": "Document-list tasks linked to this project will appear here, separate from delivery work.",
+      "empty_title": "No linked documents",
+      "title": "Linked documents"
+    },
+    "header": {
+      "cancel": "Cancel",
+      "edit_name_aria": "Edit project name",
+      "project_name_placeholder": "Project name",
+      "save_changes": "Save Changes",
+      "saving": "Saving..."
+    },
+    "lead_selector": {
+      "loading": "Loading...",
+      "no_lead": "No lead",
+      "select_lead": "Select lead"
+    },
+    "link_dialog": {
+      "description": "Search for existing tasks to link to this project",
+      "no_tasks_found": "No tasks found matching \"{query}\"",
+      "search_placeholder": "Search tasks by title...",
+      "start_typing": "Start typing to search for tasks",
+      "tip": "Tip: Create new tasks directly in the Tasks tab and they will automatically be linked to this project.",
+      "title": "Link Tasks to Project"
+    },
+    "metadata": {
+      "page_description": "View and manage task project details.",
+      "page_title": "Task Project"
+    },
+    "overview": {
+      "describe_placeholder": "Describe your project...",
+      "description": "Description",
+      "document": "Document",
+      "document_list": "Document list",
+      "done": "Done",
+      "edit_description_aria": "Edit project description",
+      "hide_configuration": "Hide Configuration",
+      "link_tasks": "Link Tasks",
+      "linked_documents": "Linked Documents",
+      "linked_documents_description": "Reference items kept out of task counts.",
+      "linked_tasks": "Linked Tasks",
+      "no_description": "No description provided. Click the edit icon to add one.",
+      "no_documents_linked": "No documents linked yet",
+      "no_tasks_linked": "No tasks linked yet",
+      "no_updates_yet": "No updates yet. Share the first one!",
+      "post_update": "Post Update",
+      "recent_updates": "Recent Updates",
+      "rich_text_note": "Note: Rich text editing will be added in a future update",
+      "show_configuration": "Show Configuration",
+      "unknown_user": "Unknown",
+      "view_all": "View all"
+    },
+    "sidebar": {
+      "click_assign_lead": "Click to assign a lead",
+      "click_set_timeline": "Click to set timeline",
+      "completed": "Completed",
+      "edit_lead_aria": "Edit project lead",
+      "edit_timeline_aria": "Edit timeline",
+      "end_date": "End Date",
+      "end_label": "End:",
+      "in_progress": "In Progress",
+      "project_lead": "Project Lead",
+      "project_stats": "Project Stats",
+      "select_lead_label": "Select Lead",
+      "start_date": "Start Date",
+      "start_label": "Start:",
+      "timeline": "Timeline",
+      "total_tasks": "Total Tasks",
+      "unknown": "Unknown"
+    },
+    "tabs": {
+      "documents": "Documents",
+      "overview": "Overview",
+      "tasks": "Tasks",
+      "updates": "Updates"
+    },
+    "tasks_tab": {
+      "link_tasks": "Link Tasks",
+      "no_tasks_description": "Link existing tasks or create new ones to get started",
+      "no_tasks_title": "No tasks linked yet"
+    },
+    "update_card": {
+      "actions_aria": "Update actions",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "edit": "Edit",
+      "edited_badge": "Edited",
+      "save": "Save",
+      "unknown_user": "Unknown"
+    },
+    "updates_tab": {
+      "no_updates_description": "Be the first to share progress on this project!",
+      "no_updates_title": "No updates yet",
+      "post_update": "Post Update",
+      "posting": "Posting...",
+      "rich_text_coming_soon": "Rich text editor, reactions, and attachments coming soon",
+      "share_placeholder": "Share progress, celebrate wins, or discuss challenges...",
+      "share_update": "Share an Update"
+    }
+  },
   "task-drafts": {
     "board_view_description": "Saved drafts",
     "cancel": "Cancel",
@@ -4784,148 +4940,6 @@
       "sort_priority": "Priority",
       "sort_status": "Status",
       "sort_task_count": "Task Count"
-    }
-  },
-  "task_project_detail": {
-    "common": {
-      "untitled_list": "Untitled List"
-    },
-    "configuration": {
-      "archive_description": "Archived projects are hidden from default views",
-      "archive_project": "Archive Project",
-      "end_date_label": "End Date",
-      "health_status": {
-        "at_risk": "At Risk",
-        "off_track": "Off Track",
-        "on_track": "On Track"
-      },
-      "health_status_label": "Health Status",
-      "health_status_placeholder": "Select health status",
-      "priority": {
-        "critical": "Critical",
-        "high": "High",
-        "low": "Low",
-        "normal": "Normal"
-      },
-      "priority_label": "Priority",
-      "priority_placeholder": "Select priority",
-      "project_lead_label": "Project Lead",
-      "start_date_label": "Start Date",
-      "status": {
-        "active": "Active",
-        "backlog": "Backlog",
-        "cancelled": "Cancelled",
-        "completed": "Completed",
-        "in_progress": "In Progress",
-        "in_review": "In Review",
-        "in_testing": "In Testing",
-        "on_hold": "On Hold",
-        "planned": "Planned"
-      },
-      "status_label": "Status",
-      "title": "Project Configuration"
-    },
-    "documents_tab": {
-      "description": "{count} reference items linked through document lists.",
-      "document_list": "Document list",
-      "documents": "documents",
-      "empty_description": "Document-list tasks linked to this project will appear here, separate from delivery work.",
-      "empty_title": "No linked documents",
-      "title": "Linked documents"
-    },
-    "header": {
-      "cancel": "Cancel",
-      "edit_name_aria": "Edit project name",
-      "project_name_placeholder": "Project name",
-      "save_changes": "Save Changes",
-      "saving": "Saving..."
-    },
-    "lead_selector": {
-      "loading": "Loading...",
-      "no_lead": "No lead",
-      "select_lead": "Select lead"
-    },
-    "link_dialog": {
-      "description": "Search for existing tasks to link to this project",
-      "no_tasks_found": "No tasks found matching \"{query}\"",
-      "search_placeholder": "Search tasks by title...",
-      "start_typing": "Start typing to search for tasks",
-      "tip": "Tip: Create new tasks directly in the Tasks tab and they will automatically be linked to this project.",
-      "title": "Link Tasks to Project"
-    },
-    "metadata": {
-      "page_description": "View and manage task project details.",
-      "page_title": "Task Project"
-    },
-    "overview": {
-      "describe_placeholder": "Describe your project...",
-      "description": "Description",
-      "document": "Document",
-      "document_list": "Document list",
-      "done": "Done",
-      "edit_description_aria": "Edit project description",
-      "hide_configuration": "Hide Configuration",
-      "link_tasks": "Link Tasks",
-      "linked_documents": "Linked Documents",
-      "linked_documents_description": "Reference items kept out of task counts.",
-      "linked_tasks": "Linked Tasks",
-      "no_description": "No description provided. Click the edit icon to add one.",
-      "no_documents_linked": "No documents linked yet",
-      "no_tasks_linked": "No tasks linked yet",
-      "no_updates_yet": "No updates yet. Share the first one!",
-      "post_update": "Post Update",
-      "recent_updates": "Recent Updates",
-      "rich_text_note": "Note: Rich text editing will be added in a future update",
-      "show_configuration": "Show Configuration",
-      "unknown_user": "Unknown",
-      "view_all": "View all"
-    },
-    "sidebar": {
-      "click_assign_lead": "Click to assign a lead",
-      "click_set_timeline": "Click to set timeline",
-      "completed": "Completed",
-      "edit_lead_aria": "Edit project lead",
-      "edit_timeline_aria": "Edit timeline",
-      "end_date": "End Date",
-      "end_label": "End:",
-      "in_progress": "In Progress",
-      "project_lead": "Project Lead",
-      "project_stats": "Project Stats",
-      "select_lead_label": "Select Lead",
-      "start_date": "Start Date",
-      "start_label": "Start:",
-      "timeline": "Timeline",
-      "total_tasks": "Total Tasks",
-      "unknown": "Unknown"
-    },
-    "tabs": {
-      "documents": "Documents",
-      "overview": "Overview",
-      "tasks": "Tasks",
-      "updates": "Updates"
-    },
-    "tasks_tab": {
-      "link_tasks": "Link Tasks",
-      "no_tasks_description": "Link existing tasks or create new ones to get started",
-      "no_tasks_title": "No tasks linked yet"
-    },
-    "update_card": {
-      "actions_aria": "Update actions",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "edit": "Edit",
-      "edited_badge": "Edited",
-      "save": "Save",
-      "unknown_user": "Unknown"
-    },
-    "updates_tab": {
-      "no_updates_description": "Be the first to share progress on this project!",
-      "no_updates_title": "No updates yet",
-      "post_update": "Post Update",
-      "posting": "Posting...",
-      "rich_text_coming_soon": "Rich text editor, reactions, and attachments coming soon",
-      "share_placeholder": "Share progress, celebrate wins, or discuss challenges...",
-      "share_update": "Share an Update"
     }
   },
   "tasks": {
@@ -6556,6 +6570,25 @@
     "topic_announcements": "Topic Announcements",
     "tutoring": "Tutoring"
   },
+  "ws_post_details": {
+    "bulk_update_error": "Could not update completion statuses. Please try again.",
+    "check_all": "Check all",
+    "check_all_success": "Marked all members as completed",
+    "completed": "Completed",
+    "history": "History",
+    "history_description": "Every completion change for this post, newest first.",
+    "history_empty": "No changes recorded yet.",
+    "reset_check": "Reset",
+    "reset_check_description": "Clear this member back to pending (removes the completion mark)",
+    "reset_check_error": "Could not reset the completion status. Please try again.",
+    "reset_check_success": "Completion status reset",
+    "status_pending": "Pending",
+    "status_save_error": "Could not save the completion status. Please try again.",
+    "status_save_success": "Completion status saved",
+    "uncheck_all": "Uncheck all",
+    "uncheck_all_description": "Clear every member back to pending",
+    "uncheck_all_success": "Reset all members to pending"
+  },
   "ws-ai-workflows": {
     "include_module_content": "Include module content",
     "include_resources": "Include uploaded resources",
@@ -7196,12 +7229,6 @@
     "invite_membership_label": "Access",
     "invite_membership_member": "Member — full workspace access",
     "invite_membership_pos_operator": "POS operator — start payments only",
-    "pos_operator_admin_migration_note": "The current member-wide Admin default will be replaced with an explicit preserved admin role before this invitation is created. Existing members keep access; future members do not inherit Admin automatically.",
-    "pos_operator_confirmation": "I understand this access migration and want to invite these people as limited POS operators.",
-    "pos_operator_description": "Can start an approved Square POS or Terminal checkout, but cannot edit products, stock, sales, payments, members, or settings.",
-    "pos_operator_existing_members": "current members retain Admin",
-    "pos_operator_only_permission": "One checkout permission only",
-    "pos_operator_title": "Event-safe POS operator",
     "invite_submit": "Send invitation",
     "invited": "Invited",
     "joined": "Joined",
@@ -7214,6 +7241,12 @@
     "no_permissions": "No permissions assigned",
     "no_roles_found": "No roles found",
     "pending_invitations": "Pending invitations",
+    "pos_operator_admin_migration_note": "The current member-wide Admin default will be replaced with an explicit preserved admin role before this invitation is created. Existing members keep access; future members do not inherit Admin automatically.",
+    "pos_operator_confirmation": "I understand this access migration and want to invite these people as limited POS operators.",
+    "pos_operator_description": "Can start an approved Square POS or Terminal checkout, but cannot edit products, stock, sales, payments, members, or settings.",
+    "pos_operator_existing_members": "current members retain Admin",
+    "pos_operator_only_permission": "One checkout permission only",
+    "pos_operator_title": "Event-safe POS operator",
     "remove_member": "Remove member",
     "role-placeholder": "Select a role",
     "search_members": "Search members",
@@ -7611,8 +7644,6 @@
     "admin": "Administrator",
     "admin_enabled_description": "All permissions below are automatically granted. Individual permission toggles are disabled while administrator access is active.",
     "admin_enabled_title": "Administrator Access Enabled",
-    "initiate_pos_checkout": "Start POS checkout",
-    "initiate_pos_checkout_description": "Allows members to route an order to an approved Square Terminal or open Square POS on their current device. It does not allow editing inventory, sales, payments, members, or settings.",
     "create": "Create role",
     "create_description": "Create a new role for this workspace.",
     "custom_days": "Custom Days",
@@ -7622,10 +7653,12 @@
     "description": "Roles are used to manage user permissions in your workspace by creating roles and assigning them to users.",
     "edit": "Edit role",
     "edit_description": "Edit an existing role in this workspace.",
+    "granted_via_admin": "Granted via administrator",
     "guest_defaults": "Guest defaults",
     "guest_defaults_description": "Guest defaults are disabled unless explicitly enabled. They use the same permission catalog as members, but unmapped routes stay denied.",
     "guest_defaults_tab": "Guest defaults",
-    "granted_via_admin": "Granted via administrator",
+    "initiate_pos_checkout": "Start POS checkout",
+    "initiate_pos_checkout_description": "Allows members to route an order to an approved Square Terminal or open Square POS on their current device. It does not allow editing inventory, sales, payments, members, or settings.",
     "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
     "member_defaults": "Member defaults",
     "member_defaults_description": "Member defaults apply to workspace members and API keys. Existing default permissions remain member-scoped.",
@@ -9642,24 +9675,5 @@
     "try_different_search_term": "Try a different search term",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
-  },
-  "ws_post_details": {
-    "bulk_update_error": "Could not update completion statuses. Please try again.",
-    "check_all": "Check all",
-    "check_all_success": "Marked all members as completed",
-    "completed": "Completed",
-    "history": "History",
-    "history_description": "Every completion change for this post, newest first.",
-    "history_empty": "No changes recorded yet.",
-    "reset_check": "Reset",
-    "reset_check_description": "Clear this member back to pending (removes the completion mark)",
-    "reset_check_error": "Could not reset the completion status. Please try again.",
-    "reset_check_success": "Completion status reset",
-    "status_pending": "Pending",
-    "status_save_error": "Could not save the completion status. Please try again.",
-    "status_save_success": "Completion status saved",
-    "uncheck_all": "Uncheck all",
-    "uncheck_all_description": "Clear every member back to pending",
-    "uncheck_all_success": "Reset all members to pending"
   }
 }

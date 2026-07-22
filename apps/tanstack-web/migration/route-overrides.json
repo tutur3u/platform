@@ -1,5 +1,14 @@
 {
   "routes": {
+    "api:/api/workspaces/:wsId:apps/web/src/legacy-api-routes/workspaces/[wsId]/route.ts": {
+      "methods": {
+        "PUT": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Workspace identity updates remain Next-owned migration backlog. The live PUT accepts current-user satellite app sessions so workspace name and handle changes work from Inventory and every registered satellite settings dialog."
+        }
+      }
+    },
     "api:/api/workspaces/:wsId/accept-invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

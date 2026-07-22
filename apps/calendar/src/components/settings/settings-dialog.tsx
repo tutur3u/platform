@@ -15,6 +15,7 @@ import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteWorkspaceSettingsPanel,
+  SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import CalendarConnectionsUnified from '@tuturuuu/ui/calendar-app/components/calendar-connections-unified';
@@ -161,6 +162,11 @@ export function SettingsDialog({
 
   return (
     <SettingsDialogShell
+      activeGroupBreadcrumb={
+        wsId && activeTab.startsWith('workspace_') ? (
+          <SettingsWorkspaceBreadcrumb activeTab={activeTab} wsId={wsId} />
+        ) : undefined
+      }
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}

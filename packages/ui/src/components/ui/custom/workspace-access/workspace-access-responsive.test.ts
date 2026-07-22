@@ -52,4 +52,13 @@ describe('workspace access responsive layout', () => {
     expect(memberRow).not.toContain('sm:grid-cols-[1fr_auto]');
     expect(peopleFilters).toContain('className="h-full min-h-0"');
   });
+
+  it('creates the recommended administrator role with only the admin grant', () => {
+    const page = readWorkspaceAccessSource('workspace-access-page.tsx');
+
+    expect(page).toContain("permissions: [{ enabled: true, id: 'admin' }]");
+    expect(page).not.toContain(
+      'permissions: permissionDefinitions.map((permission)'
+    );
+  });
 });

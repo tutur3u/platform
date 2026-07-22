@@ -2,7 +2,7 @@
 
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { fetchWorkspaces } from '@/app/[locale]/(dashboard)/[wsId]/workspace-list-actions';
+import { fetchSatelliteWorkspaces } from '../../utils/workspace-actions';
 
 export function SettingsWorkspaceBreadcrumb({
   activeTab,
@@ -15,7 +15,7 @@ export function SettingsWorkspaceBreadcrumb({
     <WorkspaceSelect
       disableCreateNewWorkspace
       fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}
-      fetchWorkspaces={fetchWorkspaces}
+      fetchWorkspaces={fetchSatelliteWorkspaces}
       popoverModal
       resolveNextPathname={({ nextSlug }) =>
         `/${nextSlug}?settingsDialog=open&settingsTab=${encodeURIComponent(activeTab)}`

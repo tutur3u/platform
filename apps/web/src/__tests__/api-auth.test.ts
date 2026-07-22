@@ -946,7 +946,15 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'mail' });
   });
 
-  it.each(['chat', 'inventory', 'mail'] as const)(
+  it.each([
+    'chat',
+    'forms',
+    'infra',
+    'inventory',
+    'mail',
+    'pay',
+    'storefront',
+  ] as const)(
     'should accept %s app-session auth for current-user bootstrap APIs',
     async (targetApp) => {
       const { token } = createAppSessionToken({

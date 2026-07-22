@@ -1,9 +1,17 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CreditCard, Loader2 } from '@tuturuuu/icons';
+import {
+  AlertTriangle,
+  Coins,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  RefreshCw,
+} from '@tuturuuu/icons';
 import {
   getWorkspace,
+  getWorkspaceAiCreditStatus,
   getWorkspaceMemberSettings,
   getWorkspacePermissionsSummary,
 } from '@tuturuuu/internal-api';
@@ -11,7 +19,10 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
+import { Progress } from '@tuturuuu/ui/progress';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import type { ComponentType, ReactNode } from 'react';
 import { GuestSelfJoinSetting } from './guest-self-join-setting';
 import { InviteLinksSection } from './invite-links-section';
 import { WorkspaceAvatarEditor } from './workspace-avatar-editor';
@@ -64,6 +75,12 @@ export function SatelliteWorkspaceSettingsPanel({
     queryKey: ['workspace-member-settings', workspace?.id],
     staleTime: 30_000,
   });
+  const aiCreditsQuery = useQuery({
+    enabled: Boolean(workspace?.id && activeTab === 'workspace_billing'),
+    queryFn: () => getWorkspaceAiCreditStatus(workspace?.id ?? ''),
+    queryKey: ['workspace-ai-credit-status', workspace?.id],
+    staleTime: 30_000,
+  });
 
   if (!activeTab.startsWith('workspace_')) return null;
   if ((!workspace && workspaceQuery.isPending) || permissionsQuery.isPending) {
@@ -84,10 +101,6 @@ export function SatelliteWorkspaceSettingsPanel({
   if (activeTab === 'workspace_general') {
     return (
       <div className="space-y-4">
-        <PanelIntro
-          description={t('general_description')}
-          title={t('general')}
-        />
         {!permissions?.manage_workspace_settings && <RestrictedNotice />}
         <WorkspaceAvatarEditor
           canEdit={permissions?.manage_workspace_settings ?? false}
@@ -107,10 +120,6 @@ export function SatelliteWorkspaceSettingsPanel({
 
     return (
       <div className="space-y-4">
-        <PanelIntro
-          description={t('members_description')}
-          title={t('members')}
-        />
         {!canManageMembers && !permissions?.manage_workspace_roles && (
           <RestrictedNotice />
         )}
@@ -140,13 +149,75 @@ export function SatelliteWorkspaceSettingsPanel({
   }
 
   const billingUrl = `https://pay.tuturuuu.com/${workspace.id}/billing`;
+  const creditStatus = aiCreditsQuery.data;
   return (
     <div className="space-y-4">
-      <PanelIntro description={t('billing_description')} title={t('billing')} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <BillingMetricCard
+          description={t('billing_plan_description')}
+          icon={CreditCard}
+          label={t('billing_current_plan')}
+          tone="purple"
+        >
+          {aiCreditsQuery.isPending ? (
+            <Skeleton className="h-8 w-28" />
+          ) : creditStatus ? (
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-2xl">
+                {t(getPlanTranslationKey(creditStatus.tier))}
+              </span>
+              <span className="rounded-full border bg-muted/60 px-2 py-0.5 font-medium text-muted-foreground text-xs">
+                {creditStatus.tier}
+              </span>
+            </div>
+          ) : (
+            <BillingMetricError onRetry={() => aiCreditsQuery.refetch()} />
+          )}
+        </BillingMetricCard>
+
+        <BillingMetricCard
+          description={t('billing_ai_credits_description')}
+          icon={Coins}
+          label={t('billing_ai_credits')}
+          tone="blue"
+        >
+          {aiCreditsQuery.isPending ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-36" />
+              <Skeleton className="h-2 w-full" />
+            </div>
+          ) : creditStatus ? (
+            <div className="space-y-3">
+              <div className="flex items-end justify-between gap-3">
+                <p className="font-semibold text-2xl tabular-nums">
+                  {formatCredits(creditStatus.remaining)}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {t('billing_credits_used', {
+                    used: formatCredits(creditStatus.totalUsed),
+                  })}
+                </p>
+              </div>
+              <Progress
+                aria-label={t('billing_credit_usage')}
+                className="h-2"
+                value={Math.min(100, Math.max(0, creditStatus.percentUsed))}
+              />
+              <p className="text-muted-foreground text-xs">
+                {t('billing_credits_remaining')}
+              </p>
+            </div>
+          ) : (
+            <BillingMetricError onRetry={() => aiCreditsQuery.refetch()} />
+          )}
+        </BillingMetricCard>
+      </div>
+
       <div className="relative overflow-hidden rounded-2xl border bg-card/40 p-5">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="absolute inset-y-0 right-0 w-1/3 bg-linear-to-l from-dynamic-purple/10 to-transparent" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/10 p-3 text-dynamic-purple">
-            <CreditCard />
+            <CreditCard className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="font-semibold">{t('billing_manage')}</h3>
@@ -154,14 +225,18 @@ export function SatelliteWorkspaceSettingsPanel({
               {t('billing_manage_description')}
             </p>
           </div>
-          {permissions?.manage_subscription ? (
+          {permissions?.can_access_billing ? (
             <Button asChild>
               <a href={billingUrl} rel="noopener noreferrer" target="_blank">
-                {t('billing_open')}
+                {t('billing_open_pay')}
+                <ExternalLink className="ml-2 size-4" />
               </a>
             </Button>
           ) : (
-            <Button disabled>{t('billing_open')}</Button>
+            <Button disabled>
+              {t('billing_open_pay')}
+              <ExternalLink className="ml-2 size-4" />
+            </Button>
           )}
         </div>
       </div>
@@ -169,19 +244,71 @@ export function SatelliteWorkspaceSettingsPanel({
   );
 }
 
-function PanelIntro({
+function BillingMetricCard({
+  children,
   description,
-  title,
+  icon: Icon,
+  label,
+  tone,
 }: {
+  children: ReactNode;
   description: string;
-  title: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  tone: 'blue' | 'purple';
 }) {
+  const toneClass =
+    tone === 'blue'
+      ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue'
+      : 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple';
+
   return (
-    <div className="rounded-2xl border bg-linear-to-br from-primary/[0.06] to-transparent p-5">
-      <h2 className="font-semibold text-xl">{title}</h2>
-      <p className="mt-1 text-muted-foreground text-sm">{description}</p>
+    <div className="rounded-2xl border bg-card/40 p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <div className={`rounded-xl border p-2.5 ${toneClass}`}>
+          <Icon className="size-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium">{label}</p>
+          <p className="text-muted-foreground text-xs">{description}</p>
+        </div>
+      </div>
+      {children}
     </div>
   );
+}
+
+function BillingMetricError({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations('satellite-workspace-settings');
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed p-3">
+      <p className="text-muted-foreground text-sm">
+        {t('billing_overview_unavailable')}
+      </p>
+      <Button onClick={onRetry} size="sm" type="button" variant="ghost">
+        <RefreshCw className="mr-1.5 size-3.5" />
+        {t('billing_retry')}
+      </Button>
+    </div>
+  );
+}
+
+function formatCredits(value: number) {
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0,
+    notation: value >= 1_000_000 ? 'compact' : 'standard',
+  }).format(value);
+}
+
+function getPlanTranslationKey(tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE') {
+  const keys = {
+    ENTERPRISE: 'billing_plan_enterprise',
+    FREE: 'billing_plan_free',
+    PLUS: 'billing_plan_plus',
+    PRO: 'billing_plan_pro',
+  } as const;
+
+  return keys[tier];
 }
 
 function RestrictedNotice() {

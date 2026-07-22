@@ -75,6 +75,16 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
       "t('common.join_workspace_action')"
     );
   });
+
+  it('supports a modal popover so nested settings pickers remain scrollable', () => {
+    const workspaceSelectSource = readFileSync(
+      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
+      'utf8'
+    );
+
+    expect(workspaceSelectSource).toContain('popoverModal = false');
+    expect(workspaceSelectSource).toContain('<Popover modal={popoverModal}');
+  });
 });
 
 describe('normalizeWorkspaceSwitchPath', () => {

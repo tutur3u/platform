@@ -308,14 +308,14 @@ export default function UserNavClient({
           <DropdownMenuSeparator />
           {wsId && (
             <>
-              <div className="px-1.5 pb-1.5">
+              <div className="w-full p-1">
                 <WorkspaceSelect
                   disableCreateNewWorkspace
                   fallbackLogoUrl={TUTURUUU_LOCAL_LOGO_URL}
                   fetchWorkspaces={fetchWorkspaces}
                   showTierBadges={false}
                   standalone
-                  triggerClassName="h-8 border-border/70 bg-muted/30 px-2 shadow-none hover:bg-muted/60"
+                  triggerClassName="h-9 w-full border-border/70 bg-muted/30 px-2 shadow-none hover:bg-muted/60"
                   wsId={wsId}
                 />
               </div>

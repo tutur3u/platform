@@ -10,6 +10,7 @@ import {
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteWorkspaceSettingsPanel,
+  SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
@@ -99,6 +100,11 @@ export function SettingsDialog({
 
   return (
     <SettingsDialogShell
+      activeGroupBreadcrumb={
+        wsId && activeTab.startsWith('workspace_') ? (
+          <SettingsWorkspaceBreadcrumb activeTab={activeTab} wsId={wsId} />
+        ) : undefined
+      }
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}

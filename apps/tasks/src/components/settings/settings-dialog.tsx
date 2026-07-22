@@ -26,6 +26,7 @@ import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteWorkspaceSettingsPanel,
+  SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
 import { TaskSettings } from '@tuturuuu/tasks-ui/settings/task-settings';
 import type { Workspace } from '@tuturuuu/types';
@@ -276,6 +277,11 @@ export function SettingsDialog({
 
   return (
     <SettingsDialogShell
+      activeGroupBreadcrumb={
+        wsId && activeTab.startsWith('workspace_') ? (
+          <SettingsWorkspaceBreadcrumb activeTab={activeTab} wsId={wsId} />
+        ) : undefined
+      }
       navItems={navItems}
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}

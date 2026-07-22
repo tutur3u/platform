@@ -1299,11 +1299,13 @@ export {
 export {
   checkWorkspacePermission,
   getPostsFilterOptions,
+  getWorkspaceAiCreditStatus,
   getWorkspaceCalendarHours,
   getWorkspaceCalendarSettings,
   getWorkspacePermissionSetupStatus,
   getWorkspacePermissionsSummary,
   updateWorkspaceCalendarHours,
+  type WorkspaceSettingsAiCreditStatus,
 } from './settings';
 export {
   createWorkspaceStorageFolder,

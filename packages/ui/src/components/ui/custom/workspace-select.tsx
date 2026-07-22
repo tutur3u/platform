@@ -157,6 +157,7 @@ export function WorkspaceSelect({
   fallbackLogoUrl = TUTURUUU_LOGO_URL,
   resolveNextPathname,
   triggerClassName,
+  popoverModal = false,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -173,6 +174,8 @@ export function WorkspaceSelect({
     nextSlug: string;
   }) => string;
   triggerClassName?: string;
+  /** Keep the picker interactive and scrollable when rendered inside a modal. */
+  popoverModal?: boolean;
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -556,7 +559,7 @@ export function WorkspaceSelect({
           setShowNewWorkspaceDialog(open);
         }}
       >
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover modal={popoverModal} open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild disabled={!hasSelectableWorkspaces}>
             <Button
               size="xs"
