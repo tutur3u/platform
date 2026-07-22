@@ -37,10 +37,16 @@ export function getPaymentsNextStep({
       return 'prepareProduction';
     }
     if (activeLinks.length === 0) return 'importProductionCatalog';
-    if (squareSettings.readiness.issues.includes('device_missing')) {
+    if (
+      squareSettings.readiness.issues.includes('device_missing') &&
+      !squareSettings.posReadiness?.ready
+    ) {
       return 'pairProductionTerminal';
     }
-    if (!squareSettings.readiness.ready && !squareSettings.posReadiness.ready) {
+    if (
+      !squareSettings.readiness.ready &&
+      !squareSettings.posReadiness?.ready
+    ) {
       return 'prepareProduction';
     }
     return 'monitor';
@@ -83,7 +89,7 @@ export function getPaymentReadinessScore({
     activeConnection?.status === 'ready',
     Boolean(squareSettings?.locationId),
     activeEnvironment === 'production'
-      ? Boolean(squareSettings?.deviceId)
+      ? Boolean(squareSettings?.deviceId || squareSettings?.posReadiness?.ready)
       : Boolean(squareSettings?.sandboxDeviceId),
     Boolean(activeConnection?.webhookSignatureKeyLast4),
     activeLinks.length > 0,

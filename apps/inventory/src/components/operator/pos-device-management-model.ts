@@ -8,12 +8,16 @@ export function isSquareDeviceReady(status: string | null) {
 
 export function getPosDeviceSummary(
   devices: InventorySquareDevice[],
-  defaultDeviceId?: string | null
+  defaultDeviceId?: string | null,
+  posAppReady = false
 ) {
+  const readyTerminals = devices.filter((device) =>
+    isSquareDeviceReady(device.status)
+  ).length;
   return {
+    configuredMethods: devices.length + (posAppReady ? 1 : 0),
     defaultDevice: devices.find((device) => device.id === defaultDeviceId),
-    ready: devices.filter((device) => isSquareDeviceReady(device.status))
-      .length,
-    total: devices.length,
+    readyMethods: readyTerminals + (posAppReady ? 1 : 0),
+    routableTerminals: devices.length,
   };
 }

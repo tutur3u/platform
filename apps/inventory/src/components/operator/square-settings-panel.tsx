@@ -18,6 +18,7 @@ import {
 } from './square-settings-editor-dialog';
 import { SquareSettingsSummary } from './square-settings-summary';
 import {
+  getEffectiveSquareSetupProgress,
   getSquareSetupProgress,
   type SquareSetupStepId,
 } from './square-setup-progress';
@@ -65,15 +66,12 @@ export function SquareSettingsPanel({ wsId }: { wsId: string }) {
       ? (settings.data?.sandboxDeviceId ?? null)
       : null,
   });
-  const effectiveProgress =
-    selectedEnvironment === 'production' && settings.data?.posReadiness.ready
-      ? {
-          ...progress,
-          completed: progress.total,
-          firstIncompleteId: null,
-          ready: true,
-        }
-      : progress;
+  const effectiveProgress = getEffectiveSquareSetupProgress({
+    posReady:
+      selectedEnvironment === 'production' &&
+      Boolean(settings.data?.posReadiness.ready),
+    progress,
+  });
   const webhookUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const resolvedWsId = settings.data?.wsId ?? wsId;

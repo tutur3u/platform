@@ -36,10 +36,20 @@ describe('POS device management model', () => {
   });
 
   it('summarizes paired devices and resolves the saved default', () => {
-    expect(getPosDeviceSummary(devices, 'front')).toEqual({
+    expect(getPosDeviceSummary(devices, 'front', false)).toEqual({
+      configuredMethods: 2,
       defaultDevice: devices[0],
-      ready: 1,
-      total: 2,
+      readyMethods: 1,
+      routableTerminals: 2,
+    });
+  });
+
+  it('counts the same-device POS app path without inventing a remote Terminal', () => {
+    expect(getPosDeviceSummary([], null, true)).toEqual({
+      configuredMethods: 1,
+      defaultDevice: undefined,
+      readyMethods: 1,
+      routableTerminals: 0,
     });
   });
 });

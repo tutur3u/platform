@@ -25,6 +25,8 @@ export type SquareSetupStep = {
   id: SquareSetupStepId;
 };
 
+export type SquareSetupDevicePath = 'missing' | 'pos_app' | 'terminal';
+
 export function getSquareSetupProgress({
   appCredential,
   connection,
@@ -62,6 +64,37 @@ export function getSquareSetupProgress({
 
   return {
     completed,
+    firstIncompleteId: steps.find((step) => !step.complete)?.id ?? null,
+    ready: completed === steps.length,
+    steps,
+    total: steps.length,
+  };
+}
+
+export function getEffectiveSquareSetupProgress({
+  posReady,
+  progress,
+}: {
+  posReady: boolean;
+  progress: ReturnType<typeof getSquareSetupProgress>;
+}) {
+  const terminalReady =
+    progress.steps.find((step) => step.id === 'device')?.complete ?? false;
+  const devicePath: SquareSetupDevicePath = terminalReady
+    ? 'terminal'
+    : posReady
+      ? 'pos_app'
+      : 'missing';
+  const steps = progress.steps.map((step) =>
+    step.id === 'device' && devicePath === 'pos_app'
+      ? { ...step, complete: true }
+      : step
+  );
+  const completed = steps.filter((step) => step.complete).length;
+
+  return {
+    completed,
+    devicePath,
     firstIncompleteId: steps.find((step) => !step.complete)?.id ?? null,
     ready: completed === steps.length,
     steps,

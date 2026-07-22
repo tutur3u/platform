@@ -2122,14 +2122,14 @@
       },
       "payments": {
         "checking": "Đang kiểm tra",
-        "description": "Cung cấp checkout trực tuyến an toàn với Polar hoặc gửi thanh toán trực tiếp tới Square Terminal đã ghép nối. Thiết lập từng nhà cung cấp độc lập rồi chọn chế độ checkout cho từng cửa hàng.",
+        "description": "Cung cấp checkout trực tuyến an toàn với Polar hoặc nhận thanh toán trực tiếp qua ứng dụng Square POS + Reader hay Square Terminal được định tuyến. Thiết lập từng nhà cung cấp độc lập rồi chọn chế độ checkout cho từng cửa hàng.",
         "eyebrow": "Nhà cung cấp thanh toán",
         "polarDescription": "Checkout trực tuyến",
         "polarTitle": "Polar",
         "ready": "Sẵn sàng",
         "setupRequired": "Cần thiết lập",
-        "squareDescription": "POS trực tiếp",
-        "squareTitle": "Square Terminal",
+        "squareDescription": "Ứng dụng POS, Reader hoặc Terminal",
+        "squareTitle": "Thanh toán trực tiếp qua Square",
         "title": "Một nơi cho mọi cách khách hàng thanh toán"
       },
       "paymentsHub": {
@@ -2267,13 +2267,14 @@
         "defaultActive": "Tuyến mặc định",
         "defaultBadge": "Mặc định",
         "defaultSaved": "Đã cập nhật thiết bị POS mặc định.",
-        "description": "Ghép nối Square Terminal, theo dõi trạng thái quầy và kiểm soát nơi nhận từng khoản thanh toán từ cửa hàng.",
+        "description": "Quản lý checkout Square POS cùng thiết bị, ghép nối Terminal định tuyến và làm rõ từng đường thanh toán tại quầy.",
         "deviceLoadErrorDescription": "Square không trả về danh sách thiết bị đã ghép nối. Hãy thử lại trước khi thay đổi tuyến mặc định.",
         "deviceLoadErrorTitle": "Không thể làm mới thiết bị đã ghép nối",
         "empty": {
+          "posAppDescription": "Ứng dụng Square POS + Reader đã sẵn sàng trên thiết bị nhân viên được hỗ trợ. Thiết bị này không xuất hiện trong danh sách Terminal từ xa; chỉ ghép nối Terminal độc lập khi cần quầy khác nhận đơn từ xa.",
           "productionDescription": "Ghép nối Square Terminal đầu tiên cho không gian làm việc, sau đó đặt làm tuyến mặc định hoặc để nhân viên chọn theo từng thanh toán.",
           "sandboxDescription": "Thêm ID thiết bị Sandbox trong thiết lập Thanh toán để diễn tập định tuyến mà không chuyển tiền thật.",
-          "title": "Chưa có Terminal được định tuyến"
+          "title": "Chưa có Terminal được định tuyến từ xa"
         },
         "environment": {
           "production": "Production",
@@ -2284,8 +2285,9 @@
         "makeDefault": "Đặt làm mặc định",
         "metrics": {
           "default": "Tuyến mặc định",
+          "methods": "Phương thức checkout",
           "paired": "Thiết bị đã ghép nối",
-          "ready": "Sẵn sàng"
+          "ready": "Phương thức sẵn sàng"
         },
         "notSelected": "Chưa chọn",
         "pairDevice": "Ghép nối thiết bị",
@@ -2318,6 +2320,10 @@
           "badge": "Cùng thiết bị",
           "description": "Ứng dụng Square POS và Reader được kết nối chạy trên điện thoại hoặc máy tính bảng nhân viên đã mở cửa hàng. Square không cung cấp các reader này như thiết bị Terminal API có thể định tuyến từ xa.",
           "guide": "Hướng dẫn thiết lập Square Reader",
+          "ready": "Sẵn sàng trên thiết bị nhân viên",
+          "readyDescription": "Đường checkout này đã được cấu hình. Reader vẫn gắn với thiết bị nhân viên nên không cần có một dòng thiết bị từ xa riêng ở bên dưới.",
+          "setupDescription": "Hoàn tất thiết lập ứng dụng, tài khoản và địa điểm Production trong Thanh toán trước khi dùng checkout cùng thiết bị.",
+          "setupRequired": "Cần thiết lập",
           "title": "Ứng dụng Square POS + Reader"
         },
         "refresh": "Làm mới thiết bị",
@@ -2625,6 +2631,12 @@
           },
           "needsAction": "Cần bạn thực hiện",
           "openSquareGuide": "Mở hướng dẫn Square",
+          "posPath": {
+            "badge": "Đường cùng thiết bị đã sẵn sàng",
+            "description": "Tuturuuu sẽ mở Square POS trên điện thoại hoặc máy tính bảng nhân viên được hỗ trợ đang chạy storefront. Reader được kết nối chủ ý không hiển thị như Terminal có thể định tuyến từ xa trên trang thiết bị POS.",
+            "guide": "Mở hướng dẫn Square POS",
+            "title": "Ứng dụng Square POS + Reader là đường thanh toán tại quầy đã cấu hình"
+          },
           "production": {
             "description": "Làm theo các bước theo thứ tự. Tuturuuu kiểm tra từng thiết lập thực tế đã lưu nhưng không tự tạo giao dịch thu tiền thật.",
             "safety": "Môi trường thực tế sử dụng tài khoản khách hàng, phí xử lý và thiết bị thật. Hãy diễn tập trong Sandbox trước, sau đó chỉ kiểm tra thực tế khi đã được nhân viên phê duyệt.",
@@ -2664,6 +2676,8 @@
               "title": "Cấp quyền cho tài khoản Square"
             },
             "device": {
+              "posProduction": "Ứng dụng Square POS + Reader đã được cấu hình làm đường checkout cùng thiết bị. Reader vẫn kết nối với điện thoại hoặc máy tính bảng nhân viên và không được Square trả về như Terminal có thể định tuyến từ xa.",
+              "posTitle": "Xác nhận đường checkout trực tiếp",
               "production": "Nhập tên thiết bị rõ ràng, tạo mã ghép đôi rồi nhập mã đó trên Square Terminal thật. Làm mới danh sách thiết bị và lưu terminal đã ghép đôi làm mặc định.",
               "sandbox": "Dán ID thiết bị mô phỏng Sandbox của Square và lưu làm mặc định. Dùng ID mô phỏng thành công hoặc thất bại để diễn tập cả hai kết quả.",
               "title": "Ghép đôi và chọn terminal"

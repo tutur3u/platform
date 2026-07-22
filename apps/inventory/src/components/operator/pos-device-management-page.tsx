@@ -92,7 +92,9 @@ export function PosDeviceManagementPage({ wsId }: { wsId: string }) {
     environment === 'sandbox'
       ? settings.data?.sandboxDeviceId
       : settings.data?.deviceId;
-  const summary = getPosDeviceSummary(deviceRows, defaultDeviceId);
+  const posAppReady =
+    environment === 'production' && Boolean(settings.data?.posReadiness.ready);
+  const summary = getPosDeviceSummary(deviceRows, defaultDeviceId, posAppReady);
   const setDefault = useMutation({
     mutationFn: (device: InventorySquareDevice) => {
       const locationId = device.locationId ?? settings.data?.locationId ?? null;
@@ -170,13 +172,13 @@ export function PosDeviceManagementPage({ wsId }: { wsId: string }) {
           <div className="grid gap-3 sm:grid-cols-3">
             <PosDeviceSummaryCard
               icon={<MonitorSmartphone className="size-4" />}
-              label={t('metrics.paired')}
-              value={summary.total}
+              label={t('metrics.methods')}
+              value={summary.configuredMethods}
             />
             <PosDeviceSummaryCard
               icon={<ShieldCheck className="size-4" />}
               label={t('metrics.ready')}
-              value={summary.ready}
+              value={summary.readyMethods}
             />
             <PosDeviceSummaryCard
               icon={<Star className="size-4" />}
@@ -209,10 +211,19 @@ export function PosDeviceManagementPage({ wsId }: { wsId: string }) {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-semibold text-sm">{t('posApp.title')}</p>
-                  <Badge variant="secondary">{t('posApp.badge')}</Badge>
+                  <Badge variant={posAppReady ? 'success' : 'secondary'}>
+                    {posAppReady
+                      ? t('posApp.ready')
+                      : t('posApp.setupRequired')}
+                  </Badge>
                 </div>
                 <p className="mt-1 text-muted-foreground text-sm leading-6">
                   {t('posApp.description')}
+                </p>
+                <p className="mt-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2 text-muted-foreground text-xs leading-5">
+                  {posAppReady
+                    ? t('posApp.readyDescription')
+                    : t('posApp.setupDescription')}
                 </p>
                 <Button
                   asChild
@@ -319,9 +330,11 @@ export function PosDeviceManagementPage({ wsId }: { wsId: string }) {
                     </span>
                     <p className="mt-3 font-semibold">{t('empty.title')}</p>
                     <p className="mt-1 text-muted-foreground text-sm leading-6">
-                      {environment === 'production'
-                        ? t('empty.productionDescription')
-                        : t('empty.sandboxDescription')}
+                      {environment === 'production' && posAppReady
+                        ? t('empty.posAppDescription')
+                        : environment === 'production'
+                          ? t('empty.productionDescription')
+                          : t('empty.sandboxDescription')}
                     </p>
                     {environment === 'production' ? (
                       <Button

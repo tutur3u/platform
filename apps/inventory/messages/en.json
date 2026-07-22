@@ -2122,14 +2122,14 @@
       },
       "payments": {
         "checking": "Checking",
-        "description": "Offer secure online checkout with Polar or send in-person payments to a paired Square Terminal. Configure each provider independently, then choose the checkout mode per storefront.",
+        "description": "Offer secure online checkout with Polar or accept in-person payments through Square POS App + Reader or a routed Square Terminal. Configure each provider independently, then choose the checkout mode per storefront.",
         "eyebrow": "Payment providers",
         "polarDescription": "Online checkout",
         "polarTitle": "Polar",
         "ready": "Ready",
         "setupRequired": "Setup required",
-        "squareDescription": "In-person POS",
-        "squareTitle": "Square Terminal",
+        "squareDescription": "POS App, Reader, or Terminal",
+        "squareTitle": "Square in-person payments",
         "title": "One place for every way customers pay"
       },
       "paymentsHub": {
@@ -2267,13 +2267,14 @@
         "defaultActive": "Default route",
         "defaultBadge": "Default",
         "defaultSaved": "Default POS device updated.",
-        "description": "Pair Square Terminals, monitor counter readiness, and control where each storefront payment is routed.",
+        "description": "Manage same-device Square POS checkout, pair routed Terminals, and keep every counter path clear.",
         "deviceLoadErrorDescription": "Square did not return the paired device list. Retry before changing the default route.",
         "deviceLoadErrorTitle": "Paired devices could not be refreshed",
         "empty": {
+          "posAppDescription": "Square POS App + Reader is ready on supported staff devices. It does not appear in this remote Terminal list; pair a standalone Terminal only when you need another counter to receive orders remotely.",
           "productionDescription": "Pair the first Square Terminal for this workspace, then make it the default route or let staff choose it per checkout.",
           "sandboxDescription": "Add a Sandbox device ID from Payments setup to rehearse routing without sending real money.",
-          "title": "No routed Terminal yet"
+          "title": "No remotely routed Terminal yet"
         },
         "environment": {
           "production": "Production",
@@ -2284,8 +2285,9 @@
         "makeDefault": "Make default",
         "metrics": {
           "default": "Default route",
+          "methods": "Checkout methods",
           "paired": "Paired devices",
-          "ready": "Ready now"
+          "ready": "Ready methods"
         },
         "notSelected": "Not selected",
         "pairDevice": "Pair device",
@@ -2318,6 +2320,10 @@
           "badge": "Same device",
           "description": "Square POS App and a connected Reader run on the staff phone or tablet that opened the storefront. Square does not expose these readers as remotely routable Terminal API devices.",
           "guide": "Square Reader setup guide",
+          "ready": "Ready on staff device",
+          "readyDescription": "This checkout path is configured. The connected Reader stays attached to the staff device, so no separate remote device row is expected below.",
+          "setupDescription": "Complete the Production app, account, and location setup in Payments before using the same-device checkout path.",
+          "setupRequired": "Setup required",
           "title": "Square POS App + Reader"
         },
         "refresh": "Refresh devices",
@@ -2625,6 +2631,12 @@
           },
           "needsAction": "Needs your attention",
           "openSquareGuide": "Open Square guide",
+          "posPath": {
+            "badge": "Same-device path ready",
+            "description": "Tuturuuu will open Square POS on the supported staff phone or tablet running the storefront. Its connected Reader is intentionally not shown as a remotely routable Terminal on the POS devices page.",
+            "guide": "Open Square POS guide",
+            "title": "Square POS App + Reader is the configured counter path"
+          },
           "production": {
             "description": "Follow these steps in order. Tuturuuu checks each saved production setting, but never creates a real charge on its own.",
             "safety": "Production uses real customer accounts, processing fees, and physical terminals. Rehearse in Sandbox first, then run one staff-approved live check.",
@@ -2664,6 +2676,8 @@
               "title": "Authorize the Square account"
             },
             "device": {
+              "posProduction": "Square POS App + Reader is configured as the same-device checkout path. The Reader stays connected to the staff phone or tablet and is not returned by Square as a remotely routable Terminal.",
+              "posTitle": "Confirm the in-person checkout path",
               "production": "Enter a clear device name, create a pairing code, then enter that code on the physical Square Terminal. Refresh the device list and save the paired terminal as the default.",
               "sandbox": "Paste Square's Sandbox simulator device ID and save it as the default. Use success or failure simulator IDs to rehearse both outcomes.",
               "title": "Pair and select the terminal"

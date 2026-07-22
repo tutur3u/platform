@@ -237,4 +237,26 @@ describe('SquareSettingsPanel', () => {
       'https://developer.squareup.com/docs/pos-api/build-mobile-web'
     );
   });
+
+  it('does not present POS App readiness as a remotely paired Terminal', () => {
+    const panelSource = readFileSync(
+      join(inventoryRoot, 'src/components/operator/square-settings-panel.tsx'),
+      'utf8'
+    );
+    const guideSource = readFileSync(
+      join(
+        inventoryRoot,
+        'src/components/operator/square-production-setup-guide.tsx'
+      ),
+      'utf8'
+    );
+
+    expect(panelSource).toContain('getEffectiveSquareSetupProgress');
+    expect(guideSource).toContain("effectiveProgress.devicePath === 'pos_app'");
+    expect(guideSource).toContain("t('steps.device.posTitle')");
+    expect(guideSource).toContain("t('posPath.title')");
+    expect(guideSource).not.toContain(
+      'progress.steps.map((step) => ({ ...step, complete: true }))'
+    );
+  });
 });

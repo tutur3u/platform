@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Settings2,
   ShieldCheck,
+  SmartphoneNfc,
 } from '@tuturuuu/icons';
 import type {
   InventorySquareEnvironment,
@@ -23,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { SquareFirstPaymentDialog } from './square-production-launch-dialog';
 import { SquareProductionLaunchGuide } from './square-production-launch-guide';
 import {
+  getEffectiveSquareSetupProgress,
   getSquareSetupProgress,
   type SquareSetupStepId,
 } from './square-setup-progress';
@@ -72,22 +74,17 @@ export function SquareProductionSetupGuide({
   });
   const posReady =
     environment === 'production' && Boolean(settings?.posReadiness.ready);
-  const effectiveProgress = posReady
-    ? {
-        ...progress,
-        completed: progress.total,
-        firstIncompleteId: null,
-        ready: true,
-        steps: progress.steps.map((step) => ({ ...step, complete: true })),
-      }
-    : progress;
+  const effectiveProgress = getEffectiveSquareSetupProgress({
+    posReady,
+    progress,
+  });
+  const posAppPathReady = effectiveProgress.devicePath === 'pos_app';
   const defaultStep = effectiveProgress.firstIncompleteId ?? 'device';
   const connectionReady = progress.steps
     .filter((step) => step.id !== 'device')
     .every((step) => step.complete);
   const deviceReady =
-    posReady ||
-    (progress.steps.find((step) => step.id === 'device')?.complete ?? false);
+    progress.steps.find((step) => step.id === 'device')?.complete ?? false;
 
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
@@ -136,59 +133,68 @@ export function SquareProductionSetupGuide({
           defaultValue={defaultStep}
           type="single"
         >
-          {effectiveProgress.steps.map((step, index) => (
-            <AccordionItem key={step.id} value={step.id}>
-              <AccordionTrigger className="gap-3 py-4 hover:no-underline">
-                <span className="flex min-w-0 items-start gap-3">
-                  <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 font-mono text-xs">
-                    {step.complete ? (
-                      <CheckCircle2 className="size-4 text-primary" />
-                    ) : (
-                      index + 1
-                    )}
-                  </span>
-                  <span className="grid min-w-0 gap-1">
-                    <span>{t(`steps.${step.id}.title`)}</span>
-                    <span className="font-normal text-muted-foreground text-xs">
-                      {step.complete ? t('complete') : t('needsAction')}
+          {effectiveProgress.steps.map((step, index) => {
+            const isPosAppDeviceStep = step.id === 'device' && posAppPathReady;
+            return (
+              <AccordionItem key={step.id} value={step.id}>
+                <AccordionTrigger className="gap-3 py-4 hover:no-underline">
+                  <span className="flex min-w-0 items-start gap-3">
+                    <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 font-mono text-xs">
+                      {step.complete ? (
+                        <CheckCircle2 className="size-4 text-primary" />
+                      ) : (
+                        index + 1
+                      )}
+                    </span>
+                    <span className="grid min-w-0 gap-1">
+                      <span>
+                        {isPosAppDeviceStep
+                          ? t('steps.device.posTitle')
+                          : t(`steps.${step.id}.title`)}
+                      </span>
+                      <span className="font-normal text-muted-foreground text-xs">
+                        {step.complete ? t('complete') : t('needsAction')}
+                      </span>
                     </span>
                   </span>
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="pl-9">
-                <p className="max-w-2xl text-muted-foreground leading-6">
-                  {t(`steps.${step.id}.${environment}`)}
-                </p>
-                {step.id === 'webhook' && webhookUrl ? (
-                  <code className="mt-3 block overflow-x-auto rounded-md border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
-                    {webhookUrl}
-                  </code>
-                ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {!step.complete ? (
-                    <Button
-                      onClick={() => onConfigureStep(step.id)}
-                      size="sm"
-                      type="button"
-                    >
-                      <Settings2 className="size-3.5" />
-                      {t('configureStep')}
-                    </Button>
+                </AccordionTrigger>
+                <AccordionContent className="pl-9">
+                  <p className="max-w-2xl text-muted-foreground leading-6">
+                    {isPosAppDeviceStep
+                      ? t('steps.device.posProduction')
+                      : t(`steps.${step.id}.${environment}`)}
+                  </p>
+                  {step.id === 'webhook' && webhookUrl ? (
+                    <code className="mt-3 block overflow-x-auto rounded-md border border-border bg-muted/30 px-3 py-2 font-mono text-xs">
+                      {webhookUrl}
+                    </code>
                   ) : null}
-                  <Button asChild size="sm" variant="outline">
-                    <a
-                      href={SQUARE_DOCS[step.id]}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {t('openSquareGuide')}
-                      <ExternalLink className="size-3.5" />
-                    </a>
-                  </Button>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {!step.complete ? (
+                      <Button
+                        onClick={() => onConfigureStep(step.id)}
+                        size="sm"
+                        type="button"
+                      >
+                        <Settings2 className="size-3.5" />
+                        {t('configureStep')}
+                      </Button>
+                    ) : null}
+                    <Button asChild size="sm" variant="outline">
+                      <a
+                        href={SQUARE_DOCS[step.id]}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {t('openSquareGuide')}
+                        <ExternalLink className="size-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
         </Accordion>
 
         <aside className="h-fit rounded-lg border border-border bg-muted/20 p-4">
@@ -204,7 +210,34 @@ export function SquareProductionSetupGuide({
           </div>
         </aside>
       </div>
-      {environment === 'production' ? (
+      {environment === 'production' && posAppPathReady ? (
+        <div className="flex flex-col gap-4 border-border border-t bg-muted/15 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green">
+              <SmartphoneNfc className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold">{t('posPath.title')}</p>
+                <Badge variant="success">{t('posPath.badge')}</Badge>
+              </div>
+              <p className="mt-1 max-w-3xl text-muted-foreground text-sm leading-6">
+                {t('posPath.description')}
+              </p>
+            </div>
+          </div>
+          <Button asChild className="shrink-0" size="sm" variant="outline">
+            <a
+              href="https://developer.squareup.com/docs/pos-api/build-mobile-web"
+              rel="noreferrer"
+              target="_blank"
+            >
+              {t('posPath.guide')}
+              <ExternalLink className="size-3.5" />
+            </a>
+          </Button>
+        </div>
+      ) : environment === 'production' ? (
         <SquareProductionLaunchGuide
           connectionReady={connectionReady}
           deviceReady={deviceReady}
