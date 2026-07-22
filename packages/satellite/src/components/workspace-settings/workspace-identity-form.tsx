@@ -86,7 +86,7 @@ export function WorkspaceIdentityForm({
 
       <WorkspaceField label={t('id')}>
         <div className="flex min-w-0 gap-2">
-          <Input className="font-mono text-xs" readOnly value={workspace.id} />
+          <Input className="font-mono text-xs" disabled value={workspace.id} />
           <Button
             aria-label={t('copy_id')}
             onClick={async () => {

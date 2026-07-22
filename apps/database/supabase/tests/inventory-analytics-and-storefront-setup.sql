@@ -102,7 +102,7 @@ values (
 );
 
 select ok(
-  to_regprocedure('private.get_inventory_analytics(uuid,integer)') is not null,
+  to_regprocedure('private.get_inventory_analytics(uuid,integer,text)') is not null,
   'inventory analytics RPC exists'
 );
 select ok(
@@ -114,7 +114,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'private.get_inventory_analytics(uuid,integer)',
+    'private.get_inventory_analytics(uuid,integer,text)',
     'execute'
   ),
   'service role can read inventory analytics'
@@ -122,7 +122,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'private.get_inventory_analytics(uuid,integer)',
+    'private.get_inventory_analytics(uuid,integer,text)',
     'execute'
   ),
   'authenticated clients cannot call analytics directly'

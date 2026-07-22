@@ -38,7 +38,8 @@
     "./constants": "./src/constants/common.ts",
     "./sidebar-context": "./src/context/sidebar-context.tsx",
     "./workspace-layout-helpers": "./src/utils/workspace-layout-helpers.ts",
-    "./workspace-actions": "./src/utils/workspace-actions.ts"
+    "./workspace-actions": "./src/utils/workspace-actions.ts",
+    "./workspace-settings-route-handlers": "./src/routes/workspace-settings.ts"
   },
   "license": "MIT",
   "scripts": {
@@ -52,6 +53,7 @@
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/payment-core": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

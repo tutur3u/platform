@@ -1337,11 +1337,18 @@
           "trigger": "Change revenue wallet from {wallet}",
           "unassigned": "No wallet"
         },
+        "referenceLabel": "Sale reference {reference}",
         "release": "Release",
         "releaseHint": "Frees the inventory this reservation is holding back into available stock and cancels the checkout. Use it for abandoned or stuck reservations.",
         "releaseUnavailable": "Only live reserved holds can be released. This checkout has already been finalized or released.",
         "retryLineItems": "Retry",
         "saleFallback": "Invoice {id}",
+        "saleTitles": {
+          "inventory": "Inventory sale",
+          "online": "Online checkout",
+          "square": "Square POS sale",
+          "storefront": "Storefront sale"
+        },
         "sendSquare": "Send to terminal",
         "source": {
           "checkout": "Checkout",

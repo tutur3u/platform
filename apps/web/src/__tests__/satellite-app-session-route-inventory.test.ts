@@ -99,6 +99,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/drive/src/app/api/auth/logout/route.ts',
   'apps/drive/src/app/api/auth/refresh-app-session/route.ts',
   'apps/drive/src/app/api/auth/verify-app-token/route.ts',
+  'apps/drive/src/app/api/workspaces/[wsId]/route.ts',
+  'apps/drive/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts',
   'apps/mail/src/app/api/auth/logout/route.ts',
   'apps/mail/src/app/api/auth/refresh-app-session/route.ts',
   'apps/mail/src/app/api/auth/verify-app-token/route.ts',

@@ -37,16 +37,15 @@ export async function GET(request: Request, { params }: Params) {
     const { wsId } = authorization.value;
     const sbAdmin = await createAdminClient();
     const queryStartedAt = performance.now();
-    const [{ data, error }, currency] = await Promise.all([
-      sbAdmin.schema('private').rpc(
-        'get_inventory_analytics' as never,
-        {
-          p_days: parsed.data.days,
-          p_ws_id: wsId,
-        } as never
-      ),
-      getWorkspaceDefaultCurrency(wsId),
-    ]);
+    const currency = await getWorkspaceDefaultCurrency(wsId);
+    const { data, error } = await sbAdmin.schema('private').rpc(
+      'get_inventory_analytics' as never,
+      {
+        p_currency: currency,
+        p_days: parsed.data.days,
+        p_ws_id: wsId,
+      } as never
+    );
 
     if (error) throw error;
     if (!data) throw new Error('Inventory analytics returned no data');

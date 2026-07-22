@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   CreditCard,
+  Hash,
   Loader2,
   MonitorSmartphone,
   Package,
@@ -53,6 +54,10 @@ import { currency, money } from './operator-format';
 import { EmptyRow } from './operator-shell';
 import { groupInventorySalesByDate, localDateKey } from './sale-date-groups';
 import { SaleNoteDialog } from './sale-detail-panel';
+import {
+  getInventorySaleDisplayTitle,
+  getInventorySaleShortReference,
+} from './sale-display';
 import { filterAndSortInventorySales } from './sale-filters';
 import { loadInventorySaleLines, SaleLineItems } from './sale-line-items';
 import {
@@ -445,6 +450,13 @@ export function SaleRows({
               const amount = isCheckoutSale
                 ? money(row.paid_amount, row.currency ?? workspaceCurrency)
                 : currency(row.paid_amount, row.currency ?? workspaceCurrency);
+              const title = getInventorySaleDisplayTitle(row, {
+                inventory: t('commerce.saleTitles.inventory'),
+                online: t('commerce.saleTitles.online'),
+                square: t('commerce.saleTitles.square'),
+                storefront: t('commerce.saleTitles.storefront'),
+              });
+              const shortReference = getInventorySaleShortReference(row);
 
               return (
                 <AccordionItem
@@ -476,11 +488,7 @@ export function SaleRows({
                               <User className="h-4 w-4 shrink-0 text-muted-foreground" />
                             )}
                             <p className="min-w-0 flex-1 truncate font-medium">
-                              {row.notice?.trim() ||
-                                row.customer_name?.trim() ||
-                                t('commerce.saleFallback', {
-                                  id: row.id.slice(0, 8),
-                                })}
+                              {title}
                             </p>
                             <StatusBadge
                               value={
@@ -501,11 +509,15 @@ export function SaleRows({
                                 {date}
                               </span>
                             ) : null}
-                            {isCheckoutSale && row.public_token ? (
-                              <span className="font-mono">
-                                {row.public_token}
-                              </span>
-                            ) : null}
+                            <span
+                              className="inline-flex min-w-0 items-center gap-1 font-mono"
+                              title={t('commerce.referenceLabel', {
+                                reference: row.public_token ?? row.id,
+                              })}
+                            >
+                              <Hash className="h-3 w-3 shrink-0" />
+                              {shortReference}
+                            </span>
                           </div>
                           <div className="mt-1.5 flex flex-wrap gap-1">
                             <SaleMetaBadge

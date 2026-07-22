@@ -13619,6 +13619,10 @@ export type Database = {
         Returns: Json;
       };
       get_inventory_analytics: {
+        Args: { p_currency?: string; p_days?: number; p_ws_id: string };
+        Returns: Json;
+      };
+      get_inventory_analytics_base_20260722: {
         Args: { p_days?: number; p_ws_id: string };
         Returns: Json;
       };
@@ -13702,6 +13706,10 @@ export type Database = {
           sale: Json;
           total_count: number;
         }[];
+      };
+      get_inventory_sales_analytics: {
+        Args: { p_currency?: string; p_days?: number; p_ws_id: string };
+        Returns: Json;
       };
       get_post_email_queue_age_buckets: {
         Args: { p_now?: string };

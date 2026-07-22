@@ -1337,11 +1337,18 @@
           "trigger": "Đổi ví doanh thu từ {wallet}",
           "unassigned": "Không có ví"
         },
+        "referenceLabel": "Mã giao dịch {reference}",
         "release": "Giải phóng",
         "releaseHint": "Giải phóng lượng tồn kho mà phiên giữ chỗ này đang giữ trở lại kho khả dụng và hủy phiên thanh toán. Dùng cho các phiên giữ chỗ bị bỏ dở hoặc treo.",
         "releaseUnavailable": "Chỉ có thể giải phóng các phiên giữ chỗ đang hoạt động. Phiên thanh toán này đã hoàn tất hoặc đã được giải phóng.",
         "retryLineItems": "Thử lại",
         "saleFallback": "Hóa đơn {id}",
+        "saleTitles": {
+          "inventory": "Đơn bán hàng tồn kho",
+          "online": "Thanh toán trực tuyến",
+          "square": "Đơn bán qua Square POS",
+          "storefront": "Đơn bán từ cửa hàng"
+        },
         "sendSquare": "Gửi tới terminal",
         "source": {
           "checkout": "Checkout",

@@ -78,6 +78,12 @@ describe('inventory analytics summary route', () => {
     );
     const client = await mocks.createAdminClient.mock.results[0]?.value;
     expect(client.schema).toHaveBeenCalledWith('private');
+    const privateSchema = client.schema.mock.results[0]?.value;
+    expect(privateSchema.rpc).toHaveBeenCalledWith('get_inventory_analytics', {
+      p_currency: 'USD',
+      p_days: 90,
+      p_ws_id: 'ws-real',
+    });
   });
 
   it('rejects unsupported ranges before reading data', async () => {
