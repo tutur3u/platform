@@ -12,6 +12,25 @@ const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? LOCAL_E2E_SUPABASE_URL;
 const SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY ?? LOCAL_E2E_SUPABASE_SECRET_KEY;
+const FORMS_BASE_URL = process.env.FORMS_BASE_URL ?? 'http://localhost:7828';
+
+function assertSafeFormsBaseUrl(): void {
+  const url = new URL(FORMS_BASE_URL);
+  const isDirectLocalhost =
+    url.protocol === 'http:' &&
+    ['127.0.0.1', 'localhost'].includes(url.hostname) &&
+    url.port === '7828';
+  const isPortlessLocalhost =
+    url.protocol === 'https:' &&
+    url.hostname === 'forms.tuturuuu.localhost' &&
+    url.port === '1355';
+
+  if (!isDirectLocalhost && !isPortlessLocalhost) {
+    throw new Error(
+      `Refusing to run Forms lifecycle E2E against non-local origin: ${url.origin}`
+    );
+  }
+}
 
 function privateServiceHeaders(prefer?: string) {
   return {
@@ -27,6 +46,7 @@ function privateServiceHeaders(prefer?: string) {
 test.describe('Forms private schema APIs', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
+    assertSafeFormsBaseUrl();
   });
 
   test('serves a shared form through the app API while rows live in private', async ({
@@ -123,9 +143,12 @@ test.describe('Forms private schema APIs', () => {
       );
       expect(shareLinkResponse.status()).toBe(201);
 
-      const response = await request.get(`/api/v1/shared/forms/${shareCode}`, {
-        failOnStatusCode: false,
-      });
+      const response = await request.get(
+        `${FORMS_BASE_URL}/api/v1/shared/forms/${shareCode}`,
+        {
+          failOnStatusCode: false,
+        }
+      );
 
       expect(response.status()).toBe(200);
       const body = await response.json();

@@ -8,47 +8,58 @@ import {
 const productRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/products/ai`,
-    heading: 'AI-Powered Solutions',
+    heading: 'Five systems, one assistant you talk to',
+    primaryCta: 'Start with Mira',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/calendar`,
-    heading: 'Smart Calendar Management',
+    heading: 'A calendar that defends your day',
+    primaryCta: 'Open Calendar',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/crm`,
-    heading: 'Customer Relationship Management',
+    heading: 'Every customer, and everything you promised them',
+    primaryCta: 'Open Contacts',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/documents`,
-    heading: 'Intelligent Document Management',
+    heading: 'Write it down where the work already lives',
+    primaryCta: 'Start writing',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/drive`,
-    heading: 'Cloud Storage Solution',
+    heading: 'Your files, where the rest of the work is',
+    primaryCta: 'Open Drive',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/finance`,
-    heading: 'Smart Financial Management',
+    heading: 'Know where the money went, without the spreadsheet',
+    primaryCta: 'Open Finance',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/inventory`,
-    heading: 'Smart Inventory Management',
+    heading: 'Stock counts that match the shelf',
+    primaryCta: 'Open Inventory',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/lms`,
-    heading: 'Learning Management System',
+    heading: 'Courses, assignments and where each learner stands',
+    primaryCta: 'Open Learn',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/mail`,
-    heading: 'Smart Email Management',
+    heading: 'An inbox that hands work to the rest of your day',
+    primaryCta: 'Open Mail',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/tasks`,
-    heading: 'Smart Task Management',
+    heading: 'Work that stays where you left it',
+    primaryCta: 'Open Tasks',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/workflows`,
-    heading: 'Workflow Automation',
+    heading: 'The routine parts, handled without you',
+    primaryCta: 'Set up your workspace',
   },
 ];
 
@@ -239,8 +250,8 @@ const landingRoutes =
     ? [{ path: `/${DEFAULT_LOCALE}` }]
     : [{ path: '/' }, { path: `/${DEFAULT_LOCALE}` }];
 
-const qrAppRedirectLocation =
-  /^https:\/\/(?:[a-z0-9-]+\.)?qr\.tuturuuu\.localhost(?::\d+)?\/\?utm_source=e2e&tag=a&tag=b$/u;
+const toolsAppQrRedirectLocation =
+  /^https:\/\/(?:(?:[a-z0-9-]+\.)?tools\.tuturuuu\.localhost(?::\d+)?|tools\.tuturuuu\.com)\/qr\?utm_source=e2e&tag=a&tag=b$/u;
 const toolsAppRandomRedirectLocation =
   /^https:\/\/(?:(?:[a-z0-9-]+\.)?tools\.tuturuuu\.localhost(?::\d+)?|tools\.tuturuuu\.com)\/random\?utm_source=e2e&tag=a&tag=b$/u;
 
@@ -267,7 +278,7 @@ const redirects = [
   },
   {
     path: `/${DEFAULT_LOCALE}/qr-generator?utm_source=e2e&tag=a&tag=b`,
-    location: qrAppRedirectLocation,
+    location: toolsAppQrRedirectLocation,
   },
   {
     path: `/${DEFAULT_LOCALE}/tools/random?utm_source=e2e&tag=a&tag=b`,
@@ -283,7 +294,7 @@ const redirects = [
   },
   {
     path: '/qr-generator?utm_source=e2e&tag=a&tag=b',
-    location: qrAppRedirectLocation,
+    location: toolsAppQrRedirectLocation,
   },
   {
     path: '/tools/random?utm_source=e2e&tag=a&tag=b',
@@ -302,8 +313,12 @@ test.describe('Public migrated marketing routes', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }).first()
       ).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByText('Coming Soon').first()).toBeVisible();
-      await expect(page.getByText('Contact Sales').first()).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: route.primaryCta }).first()
+      ).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'Talk to us' }).first()
+      ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });
   }
@@ -341,11 +356,10 @@ test.describe('Public migrated marketing routes', () => {
           .first()
       ).toBeVisible({ timeout: 30_000 });
       await expect(
-        page.getByRole('heading', { name: 'Everything you need' }).first()
-      ).toBeVisible();
-      await expect(
         page
-          .getByRole('heading', { name: 'Simple pricing. No surprises.' })
+          .getByRole('heading', {
+            name: 'One workspace. Every part of the job.',
+          })
           .first()
       ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);

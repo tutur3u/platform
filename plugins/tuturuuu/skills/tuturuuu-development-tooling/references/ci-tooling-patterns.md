@@ -245,6 +245,10 @@ formatting behavior, or repo-wide verification.
   dependency manifests, lockfiles, and runner scripts. Keep automatic E2E
   commit-driven with no cron schedule; retain manual dispatch for deliberate
   full validation.
+- Keep E2E requests aligned with current route ownership. When a spec exercises
+  a satellite-owned API or UI, discover it from Playwright's shard-specific
+  `--list` output, start only that satellite, and route the request through its
+  Portless origin instead of relying on a removed proxy in `apps/web`.
 - Gate Supabase migrations against a successful per-environment deployment
   marker and diff the entire pending range, not only the latest commit. Fail
   open without a trustworthy marker, keep staging/production jobs serialized,

@@ -394,17 +394,25 @@ preview origins before resuming canary traffic.
    against that shared-cookie origin, and
 6. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
-Full web E2E runs also start the Tasks satellite on its native port, register
-`https://tasks.tuturuuu.localhost:1355` with the shared Portless proxy, and wait
-for its login route before Playwright begins. This lets cross-app scenarios use
-the same Apps picker, token exchange, shared-session cookie, and satellite UI
-that users operate. Before starting Tasks, the runner builds the satellite's
-compiled workspace dependencies so a fresh CI checkout matches a prepared local
-checkout. For sharded runs, it asks Playwright which tests belong to the current
-shard and starts Tasks only for the shard that owns the lifecycle spec, so suite
-redistribution cannot strand that spec or make unrelated shards pay the
-satellite startup cost. Set `E2E_TASKS_SATELLITE_ENABLED=0` only when a focused
-local spec cannot reach Tasks and does not exercise cross-app navigation.
+Full web E2E runs also start satellite apps on their native ports when the
+selected Playwright tests exercise routes those apps own. The runner currently
+registers Tasks, Forms, and Infrastructure as
+`https://<app>.tuturuuu.localhost:1355` routes through the shared Portless proxy
+and waits for each app on its direct loopback port before Playwright begins.
+The direct readiness probe avoids trusting local TLS in the Node runner, while
+the browser still exercises the shared HTTPS origins. This lets cross-app
+scenarios use the same Apps picker, token exchange, shared-session cookie, and
+satellite UI that users operate, while direct API coverage reaches the app that
+actually owns the route.
+
+Before starting a satellite, the runner builds its compiled workspace
+dependencies so a fresh CI checkout matches a prepared local checkout. For
+sharded runs, it asks Playwright which tests belong to the current shard and
+starts only the satellites required by that shard, so suite redistribution
+cannot strand a spec or make unrelated shards pay the startup cost. Set the
+matching `E2E_TASKS_SATELLITE_ENABLED`, `E2E_FORMS_SATELLITE_ENABLED`, or
+`E2E_INFRASTRUCTURE_SATELLITE_ENABLED` variable to `0` only when a focused local
+run cannot reach that satellite and does not exercise its routes.
 
 Pass `--frontend next`, `--frontend tanstack`, or `--frontend compare` to select
 the legacy Next.js host, the TanStack host, or both sequentially:

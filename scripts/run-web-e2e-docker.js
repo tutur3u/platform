@@ -32,6 +32,17 @@ const {
   stopTasksSatellite,
   waitForTasksSatellite,
 } = require('./e2e-tasks-satellite.js');
+const {
+  getOwnedSatelliteDependencyBuildArgs,
+  getOwnedSatellitePortlessEnv,
+  getOwnedSatellitesPlaywrightEnv,
+  getRequiredOwnedSatellites,
+  printOwnedSatelliteLog,
+  shouldDiscoverOwnedSatellitesFromTestList,
+  startOwnedSatellite,
+  stopOwnedSatellite,
+  waitForOwnedSatellite,
+} = require('./e2e-owned-satellites.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
@@ -2028,18 +2039,21 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
   let stackTouched = false;
   let runError = null;
   let tasksSatellite = null;
+  const ownedSatelliteRuntimes = [];
 
   let playwrightEnv = env;
 
   try {
-    let tasksSatelliteRequired = shouldStartTasksSatellite(
+    const discoverTasksSatellite = shouldDiscoverTasksSatelliteFromTestList(
       frontendArgs.playwrightArgs,
       env
     );
-    if (
-      !tasksSatelliteRequired &&
-      shouldDiscoverTasksSatelliteFromTestList(frontendArgs.playwrightArgs, env)
-    ) {
+    const discoverOwnedSatellites = shouldDiscoverOwnedSatellitesFromTestList(
+      frontendArgs.playwrightArgs,
+      env
+    );
+    let playwrightTestList = '';
+    if (discoverTasksSatellite || discoverOwnedSatellites) {
       const listedTests = await runCommandForOutput(
         'bunx',
         ['playwright', 'test', '--list', ...frontendArgs.playwrightArgs],
@@ -2048,14 +2062,27 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
           env,
         }
       );
-      tasksSatelliteRequired = shouldStartTasksSatellite(
-        frontendArgs.playwrightArgs,
-        env,
-        `${listedTests.stdout}\n${listedTests.stderr}`
-      );
+      playwrightTestList = `${listedTests.stdout}\n${listedTests.stderr}`;
     }
+
+    const tasksSatelliteRequired = shouldStartTasksSatellite(
+      frontendArgs.playwrightArgs,
+      env,
+      playwrightTestList
+    );
+    const ownedSatellites = getRequiredOwnedSatellites(
+      frontendArgs.playwrightArgs,
+      env,
+      playwrightTestList
+    );
     if (tasksSatelliteRequired) {
       await runCommand('bun', getTasksSatelliteDependencyBuildArgs(), {
+        cwd: ROOT_DIR,
+        env,
+      });
+    }
+    for (const satellite of ownedSatellites) {
+      await runCommand('bun', getOwnedSatelliteDependencyBuildArgs(satellite), {
         cwd: ROOT_DIR,
         env,
       });
@@ -2076,6 +2103,19 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       acceptedStatusCodes: DEFAULT_PORTLESS_READY_STATUS_CODES,
       timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
     });
+    for (const satellite of ownedSatellites) {
+      const runtime = startOwnedSatellite(satellite, { env });
+      ownedSatelliteRuntimes.push(runtime);
+      await ensurePortlessRoute({
+        env: getOwnedSatellitePortlessEnv(satellite, env),
+      });
+      await waitForOwnedSatellite(runtime, (url) =>
+        waitForUrl(url, {
+          timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
+        })
+      );
+    }
+    playwrightEnv = getOwnedSatellitesPlaywrightEnv(ownedSatellites, env);
     if (tasksSatelliteRequired) {
       tasksSatellite = startTasksSatellite({ env });
       await ensurePortlessRoute({
@@ -2086,7 +2126,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
           timeoutMs: DEFAULT_PORTLESS_READY_TIMEOUT_MS,
         })
       );
-      playwrightEnv = getTasksSatellitePlaywrightEnv(env);
+      playwrightEnv = getTasksSatellitePlaywrightEnv(playwrightEnv);
     }
     await runCommand(
       'bunx',
@@ -2100,6 +2140,9 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     runError = error;
     await printE2EFailureDiagnostics({ env, error });
     printTasksSatelliteLog(tasksSatellite);
+    for (const runtime of ownedSatelliteRuntimes) {
+      printOwnedSatelliteLog(runtime);
+    }
   }
 
   if (tasksSatellite) {
@@ -2113,6 +2156,22 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
           tasksCleanupError instanceof Error
             ? tasksCleanupError.message
             : tasksCleanupError
+        );
+      }
+    }
+  }
+
+  for (const runtime of ownedSatelliteRuntimes.reverse()) {
+    try {
+      await stopOwnedSatellite(runtime);
+    } catch (satelliteCleanupError) {
+      if (!runError) {
+        runError = satelliteCleanupError;
+      } else {
+        console.error(
+          satelliteCleanupError instanceof Error
+            ? satelliteCleanupError.message
+            : satelliteCleanupError
         );
       }
     }
