@@ -13,6 +13,8 @@ describe('SquareCheckoutRouting UI contract', () => {
     expect(source).toContain('if (errorMessage || !options?.staffAuthorized)');
     expect(source).toContain("if (options.routing === 'current_device')");
     expect(source).toContain("t('squareCurrentDeviceDescription')");
+    expect(source).toContain("t('squareFallbackBadge')");
+    expect(source).toContain("t('squareFallbackDescription')");
     expect(source).toContain("t('squareStaffProtection')");
     expect(source).toContain("t('squarePaymentStationDescription')");
   });

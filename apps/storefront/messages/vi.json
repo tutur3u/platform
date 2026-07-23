@@ -1040,6 +1040,8 @@
     "squareCurrentDeviceTitle": "Thiết bị nhân viên này",
     "squareDeviceRemembered": "Quầy này đã được ghi nhớ trên trình duyệt này.",
     "squareDeviceRememberHint": "Chọn quầy một lần và trình duyệt này sẽ ghi nhớ cho cửa hàng này.",
+    "squareFallbackBadge": "Tự động chuyển phương thức",
+    "squareFallbackDescription": "Không có Square Terminal có thể định tuyến, vì vậy thanh toán sẽ tiếp tục trong ứng dụng Square POS đã sẵn sàng trên thiết bị nhân viên tương thích này.",
     "squareNoTerminalDescription": "Không có Square Terminal đã ghép nối tại địa điểm bán này. Hãy ghép nối hoặc làm mới danh sách terminal trong Thanh toán của ứng dụng Kho trước khi thanh toán.",
     "squareOrderPlacedDescription": "Yêu cầu thanh toán đã được gửi tới Square Terminal đã ghép nối. Hãy hoàn tất trên thiết bị; trang này sẽ tự cập nhật.",
     "squarePaymentStationDescription": "Chọn quầy sẽ nhận đơn hàng này. Tuturuuu xác minh lại terminal và địa điểm bán trước khi giữ tồn kho.",

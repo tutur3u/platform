@@ -25,6 +25,7 @@ import { INVENTORY_APP_URL } from '@/constants/common';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { authorizeSquareCheckoutStaff } from '@/lib/square-checkout-access';
+import { resolveSquareCheckoutMethod } from '@/lib/square-checkout-method';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -240,16 +241,16 @@ export async function POST(request: Request, { params }: Params) {
         payload.customerPhone?.trim() || buyerDefaults.customerPhone,
     };
 
-    const checkoutMode = storefrontPayload.storefront.checkoutMode;
+    const configuredCheckoutMode = storefrontPayload.storefront.checkoutMode;
 
-    if (checkoutMode === 'disabled') {
+    if (configuredCheckoutMode === 'disabled') {
       return NextResponse.json(
         { message: 'Checkout is disabled for this storefront' },
         { status: 409 }
       );
     }
 
-    if (checkoutMode === 'simulated') {
+    if (configuredCheckoutMode === 'simulated') {
       await recordCheckoutAnalyticsEventWithAdmin({
         customerAuthUid: checkoutPayload.customerAuthUid,
         eventType: 'checkout_created',
@@ -267,10 +268,16 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    if (checkoutMode === 'square_pos' || checkoutMode === 'square_terminal') {
+    let checkoutMode = configuredCheckoutMode;
+
+    if (
+      configuredCheckoutMode === 'square_pos' ||
+      configuredCheckoutMode === 'square_terminal'
+    ) {
       const staffAccess = await authorizeSquareCheckoutStaff(
         request,
-        storefrontPayload.storefront.wsId
+        storefrontPayload.storefront.wsId,
+        checkoutAuth.user
       );
       if (!staffAccess.ok) return staffAccess.response;
 
@@ -279,6 +286,12 @@ export async function POST(request: Request, { params }: Params) {
         { maxRequests: 8, windowMs: 60_000 }
       );
       if (!('allowed' in rateLimit)) return rateLimit;
+
+      const method = await resolveSquareCheckoutMethod({
+        configuredCheckoutMode,
+        wsId: storefrontPayload.storefront.wsId,
+      });
+      checkoutMode = method.checkoutMode;
     }
 
     let terminalDeviceId: string | undefined;

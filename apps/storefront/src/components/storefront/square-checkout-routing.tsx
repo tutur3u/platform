@@ -91,9 +91,14 @@ export function SquareCheckoutRouting({
                 {t('squareCurrentDeviceTitle')}
               </p>
               <Badge variant="secondary">{t('squarePosApp')}</Badge>
+              {options.fallbackApplied ? (
+                <Badge variant="outline">{t('squareFallbackBadge')}</Badge>
+              ) : null}
             </div>
             <p className="text-muted-foreground text-sm leading-5">
-              {t('squareCurrentDeviceDescription')}
+              {options.fallbackApplied
+                ? t('squareFallbackDescription')
+                : t('squareCurrentDeviceDescription')}
             </p>
           </div>
         </div>

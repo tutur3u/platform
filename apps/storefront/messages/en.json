@@ -1040,6 +1040,8 @@
     "squareCurrentDeviceTitle": "This staff device",
     "squareDeviceRemembered": "This counter is remembered on this browser.",
     "squareDeviceRememberHint": "Choose a counter once and this browser will remember it for this storefront.",
+    "squareFallbackBadge": "Automatic fallback",
+    "squareFallbackDescription": "No routable Square Terminal is linked, so checkout will continue in the ready Square POS App on this compatible staff device.",
     "squareNoTerminalDescription": "No paired Square Terminal is available at this selling location. Pair or refresh terminals in Inventory Payments before checkout.",
     "squareOrderPlacedDescription": "The payment request is on the paired Square Terminal. Complete payment on the device; this page updates automatically.",
     "squarePaymentStationDescription": "Choose the counter that should receive this order. Tuturuuu validates the terminal and selling location again before reserving stock.",

@@ -92,10 +92,12 @@ export function StorefrontClient({
   const isDemoStorefront = isDemoStorefrontFixture(storefront);
   const isSimulatedCheckout =
     isDemoStorefront || storefront?.checkoutMode === 'simulated';
-  const isSquareTerminalCheckout =
+  const isConfiguredSquareTerminalCheckout =
     storefront?.checkoutMode === 'square_terminal';
-  const isSquarePosCheckout = storefront?.checkoutMode === 'square_pos';
-  const isSquareCheckout = isSquareTerminalCheckout || isSquarePosCheckout;
+  const isConfiguredSquarePosCheckout =
+    storefront?.checkoutMode === 'square_pos';
+  const isSquareCheckout =
+    isConfiguredSquareTerminalCheckout || isConfiguredSquarePosCheckout;
   const checkoutOptionsQuery = useQuery({
     enabled: Boolean(storefront && isSquareCheckout && !isDemoStorefront),
     queryFn: () => getInventorySquareCheckoutOptions(storeSlug),
@@ -109,12 +111,19 @@ export function StorefrontClient({
     storeSlug,
   });
   const resolvedSquareDeviceId = squareDevice.selectedDeviceId;
+  const effectiveSquareCheckoutMode =
+    checkoutOptionsQuery.data?.checkoutMode ?? storefront?.checkoutMode;
+  const isSquareTerminalCheckout =
+    effectiveSquareCheckoutMode === 'square_terminal';
+  const isSquarePosCheckout = effectiveSquareCheckoutMode === 'square_pos';
+  const usesSelectedSquareTerminal =
+    checkoutOptionsQuery.data?.routing === 'selected_terminal';
   const checkoutRoutingBlocked =
     isSquareCheckout &&
     (checkoutOptionsQuery.isPending ||
       checkoutOptionsQuery.isError ||
       !checkoutOptionsQuery.data?.staffAuthorized ||
-      (isSquareTerminalCheckout && !resolvedSquareDeviceId));
+      (usesSelectedSquareTerminal && !resolvedSquareDeviceId));
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -350,8 +359,9 @@ export function StorefrontClient({
     bundle: t('bundle'),
     bundles: t('bundles'),
     bundleSelectionTitle: t('bundleSelectionTitle'),
-    buyNow:
-      isSquareTerminalCheckout || isSquarePosCheckout
+    buyNow: isSquarePosCheckout
+      ? t('squarePosReserve')
+      : isSquareTerminalCheckout
         ? t('squareBuyNow')
         : t('buyNow'),
     cart: t('cart'),
@@ -489,7 +499,7 @@ export function StorefrontClient({
               variantId: variantId ?? undefined,
             },
           ],
-          squareDeviceId: isSquareTerminalCheckout
+          squareDeviceId: usesSelectedSquareTerminal
             ? resolvedSquareDeviceId
             : null,
         });
@@ -509,7 +519,7 @@ export function StorefrontClient({
             String(formData.get('customerPhone') ?? '').trim() || null,
           lines: cartCheckoutLines(),
           note: String(formData.get('note') ?? '') || null,
-          squareDeviceId: isSquareTerminalCheckout
+          squareDeviceId: usesSelectedSquareTerminal
             ? resolvedSquareDeviceId
             : null,
         });
@@ -560,7 +570,7 @@ export function StorefrontClient({
           customerEmail: buyerDefaults.email,
           customerName: buyerDefaults.name ?? undefined,
           lines: cartCheckoutLines(),
-          squareDeviceId: isSquareTerminalCheckout
+          squareDeviceId: usesSelectedSquareTerminal
             ? resolvedSquareDeviceId
             : null,
         });

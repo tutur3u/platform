@@ -1597,8 +1597,10 @@ export type InventoryCheckoutCreatePayload = {
 
 export type InventorySquareCheckoutOptions = {
   checkoutMode: InventoryStorefrontCheckoutMode;
+  configuredCheckoutMode?: InventoryStorefrontCheckoutMode;
   defaultDeviceId?: string | null;
   devices?: InventorySquareDevice[];
+  fallbackApplied?: boolean;
   routing: 'current_device' | 'not_applicable' | 'selected_terminal';
   staffAuthorized: boolean;
 };

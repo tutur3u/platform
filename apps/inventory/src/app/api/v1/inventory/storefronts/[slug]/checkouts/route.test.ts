@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   resolveSessionAuthContext: vi.fn(),
   revalidatePublicStorefront: vi.fn(),
   resolveInventorySquareTerminalDevice: vi.fn(),
+  resolveSquareCheckoutMethod: vi.fn(),
   rpc: vi.fn(),
   schema: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
@@ -81,6 +82,11 @@ vi.mock('@/lib/square-checkout-access', () => ({
     mocks.authorizeSquareCheckoutStaff(...args),
 }));
 
+vi.mock('@/lib/square-checkout-method', () => ({
+  resolveSquareCheckoutMethod: (...args: unknown[]) =>
+    mocks.resolveSquareCheckoutMethod(...args),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: (...args: unknown[]) =>
     mocks.verifyWorkspaceMembershipType(...args),
@@ -127,6 +133,14 @@ describe('inventory storefront checkout route', () => {
       posReadiness: { issues: [], ready: true },
     });
     mocks.authorizeSquareCheckoutStaff.mockResolvedValue({ ok: true });
+    mocks.resolveSquareCheckoutMethod.mockImplementation(
+      ({ configuredCheckoutMode }: { configuredCheckoutMode: string }) =>
+        Promise.resolve({
+          checkoutMode: configuredCheckoutMode,
+          fallbackApplied: false,
+          terminalRouting: null,
+        })
+    );
     mocks.checkRateLimit.mockResolvedValue({ allowed: true, headers: {} });
     mocks.resolveInventorySquareTerminalDevice.mockResolvedValue(
       'terminal-device-1'
@@ -541,6 +555,56 @@ describe('inventory storefront checkout route', () => {
     });
     expect(mocks.createInventorySquareTerminalCheckout).not.toHaveBeenCalled();
     expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+  });
+
+  it('falls back to ready same-device POS when no routed Terminal exists', async () => {
+    mocks.getPublicStorefront.mockResolvedValue({
+      listings: [],
+      storefront: {
+        analyticsEnabled: true,
+        checkoutMode: 'square_terminal',
+        id: 'storefront-1',
+        visibility: 'public',
+        wsId: 'ws-1',
+      },
+    });
+    mocks.resolveSquareCheckoutMethod.mockResolvedValue({
+      checkoutMode: 'square_pos',
+      fallbackApplied: true,
+      terminalRouting: {
+        defaultDeviceId: null,
+        devices: [],
+        environment: 'production',
+        locationId: 'location-1',
+      },
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(mocks.assertInventorySquarePosReady).toHaveBeenCalledWith('ws-1');
+    expect(mocks.assertInventorySquareReady).not.toHaveBeenCalled();
+    expect(mocks.resolveInventorySquareTerminalDevice).not.toHaveBeenCalled();
+    expect(mocks.markCheckoutProvider).toHaveBeenCalledWith({
+      checkoutId: 'checkout-1',
+      provider: 'square_pos',
+      wsId: 'ws-1',
+    });
+    expect(body.checkoutMode).toBe('square_pos');
   });
 
   it('routes a Terminal checkout to the staff-selected paired device', async () => {

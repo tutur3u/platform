@@ -1,8 +1,8 @@
 import { isInventoryEnabled } from '@tuturuuu/inventory-core/access';
 import { getPublicStorefront } from '@tuturuuu/inventory-core/commerce/public-storefront';
-import { getInventorySquareCheckoutRouting } from '@tuturuuu/inventory-core/commerce/square';
 import { NextResponse } from 'next/server';
 import { authorizeSquareCheckoutStaff } from '@/lib/square-checkout-access';
+import { resolveSquareCheckoutMethod } from '@/lib/square-checkout-method';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -17,10 +17,13 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 });
     }
 
-    const checkoutMode = payload.storefront.checkoutMode;
-    if (checkoutMode !== 'square_pos' && checkoutMode !== 'square_terminal') {
+    const configuredCheckoutMode = payload.storefront.checkoutMode;
+    if (
+      configuredCheckoutMode !== 'square_pos' &&
+      configuredCheckoutMode !== 'square_terminal'
+    ) {
       return NextResponse.json({
-        checkoutMode,
+        checkoutMode: configuredCheckoutMode,
         routing: 'not_applicable',
         staffAuthorized: true,
       });
@@ -32,19 +35,27 @@ export async function GET(request: Request, { params }: Params) {
     );
     if (!authorization.ok) return authorization.response;
 
-    if (checkoutMode === 'square_pos') {
+    const method = await resolveSquareCheckoutMethod({
+      configuredCheckoutMode,
+      wsId: payload.storefront.wsId,
+    });
+
+    if (method.checkoutMode === 'square_pos') {
       return NextResponse.json({
-        checkoutMode,
+        checkoutMode: method.checkoutMode,
+        configuredCheckoutMode,
         defaultDeviceId: null,
         devices: [],
+        fallbackApplied: method.fallbackApplied,
         routing: 'current_device',
         staffAuthorized: true,
       });
     }
 
-    const routing = await getInventorySquareCheckoutRouting(
-      payload.storefront.wsId
-    );
+    const routing = method.terminalRouting;
+    if (!routing) {
+      throw new Error('Square Terminal routing was not resolved.');
+    }
     const devices =
       routing.devices.length === 0 &&
       routing.environment === 'sandbox' &&
@@ -64,9 +75,11 @@ export async function GET(request: Request, { params }: Params) {
         : routing.devices;
 
     return NextResponse.json({
-      checkoutMode,
+      checkoutMode: method.checkoutMode,
+      configuredCheckoutMode,
       defaultDeviceId: routing.defaultDeviceId,
       devices,
+      fallbackApplied: false,
       routing: 'selected_terminal',
       staffAuthorized: true,
     });
