@@ -1,13 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  MAX_NAME_LENGTH,
-  PERSONAL_WORKSPACE_SLUG,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{
@@ -36,16 +32,6 @@ const updateWorkspaceMemberProfileSchema = z
     message: 'Either userId or email is required',
     path: ['userId'],
   });
-
-const normalizeWorkspaceId = async (wsId: string): Promise<string | null> => {
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    const workspace = await getWorkspace(wsId);
-    if (!workspace) return null;
-    return workspace.id;
-  }
-
-  return resolveWorkspaceId(wsId);
-};
 
 function normalizeEmail(email: string | null | undefined) {
   return email?.trim().toLowerCase() || null;
@@ -249,30 +235,15 @@ async function linkProfileToUser({
 
 export async function PUT(request: NextRequest, { params }: Params) {
   const { wsId: rawWsId } = await params;
-  const wsId = await normalizeWorkspaceId(rawWsId);
+  const access = await resolveWorkspaceRouteAccess(request, rawWsId, [
+    'manage_workspace_members',
+  ]);
 
-  if (!wsId) {
-    return NextResponse.json(
-      { message: 'Workspace not found' },
-      { status: 404 }
-    );
+  if (!access.ok) {
+    return access.response;
   }
 
-  const permissions = await getPermissions({ request, wsId });
-  if (!permissions) {
-    return NextResponse.json(
-      { message: 'Workspace not found' },
-      { status: 404 }
-    );
-  }
-
-  if (permissions.withoutPermission('manage_workspace_members')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions to update workspace members' },
-      { status: 403 }
-    );
-  }
-
+  const wsId = access.permissions.wsId;
   const payload = updateWorkspaceMemberProfileSchema.safeParse(
     await request.json().catch(() => null)
   );
@@ -287,7 +258,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const displayName = normalizeDisplayName(payload.data.displayName);
   const email = normalizeEmail(payload.data.email);
   const userId = payload.data.userId ?? null;

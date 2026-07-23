@@ -114,6 +114,13 @@ export async function DELETE(
   const userEmail = searchParams.get('email');
   const normalizedUserEmail = userEmail?.trim().toLowerCase() || null;
 
+  if (!userId && !normalizedUserEmail) {
+    return NextResponse.json(
+      { message: 'Member id or invitation email is required' },
+      { status: 400 }
+    );
+  }
+
   const supabase = authContext?.supabase ?? (await createClient(req));
   const resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
 
@@ -135,74 +142,48 @@ export async function DELETE(
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  // Revoke Polar seat BEFORE deleting member (best-effort)
+  // Authorization is complete above. Use the admin client for the scoped
+  // mutations so satellite app sessions do not depend on browser RLS cookies.
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   if (userId) {
-    const polar = createPolarClient();
-    const sbAdmin = await createAdminClient();
-    await revokeSeatFromMember(polar, sbAdmin, resolvedWsId, userId);
-  }
+    const { data: workspace, error: workspaceError } = await sbAdmin
+      .from('workspaces')
+      .select('creator_id')
+      .eq('id', resolvedWsId)
+      .single();
 
-  let inviteUserIds: string[] = [];
-  if (normalizedUserEmail) {
-    const { data: matchingInvites, error: matchingInvitesError } =
-      await supabase
-        .from('workspace_members_and_invites')
-        .select('id')
-        .eq('ws_id', resolvedWsId)
-        .eq('email', normalizedUserEmail);
-
-    if (matchingInvitesError) {
-      console.error('Error resolving invite identities:', matchingInvitesError);
+    if (workspaceError) {
+      console.error('Error resolving workspace creator:', workspaceError);
       return NextResponse.json(
         { message: 'Error deleting workspace member' },
         { status: 500 }
       );
     }
 
-    inviteUserIds = ((matchingInvites ?? []) as Array<{ id: string | null }>)
-      .map((row) => row.id)
-      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    if (workspace?.creator_id === userId) {
+      return NextResponse.json(
+        { message: 'Workspace creator cannot be removed' },
+        { status: 409 }
+      );
+    }
   }
 
-  const inviteQuery = userId
-    ? supabase
-        .from('workspace_invites')
-        .delete()
-        .eq('ws_id', resolvedWsId)
-        .eq('user_id', userId)
-    : inviteUserIds.length > 0
-      ? supabase
-          .from('workspace_invites')
-          .delete()
-          .eq('ws_id', resolvedWsId)
-          .in('user_id', inviteUserIds)
-      : { error: undefined };
+  // Revoke Polar seat BEFORE deleting member (best-effort)
+  if (userId) {
+    const polar = createPolarClient();
+    await revokeSeatFromMember(polar, sbAdmin, resolvedWsId, userId);
+  }
 
-  const emailInviteQuery = normalizedUserEmail
-    ? supabase
-        .from('workspace_email_invites')
-        .delete()
-        .eq('ws_id', resolvedWsId)
-        .eq('email', normalizedUserEmail)
-    : { error: undefined };
-
-  const memberQuery = userId
-    ? supabase
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', resolvedWsId)
-        .eq('user_id', userId)
-    : { error: undefined };
-
-  // use Promise.all to run all queries in parallel
-  const [inviteData, emailInviteData, memberData] = await Promise.all([
-    inviteQuery,
-    emailInviteQuery,
-    memberQuery,
-  ]);
-
-  if (inviteData.error || emailInviteData.error || memberData.error) {
-    console.log(inviteData.error, emailInviteData.error, memberData.error);
+  try {
+    await revokeWorkspaceMemberAccessRecords({
+      sbAdmin,
+      userEmail: normalizedUserEmail,
+      userId,
+      wsId: resolvedWsId,
+    });
+  } catch (error) {
+    console.error('Error deleting workspace member access:', error);
     return NextResponse.json(
       { message: 'Error deleting workspace member' },
       { status: 500 }
@@ -210,7 +191,6 @@ export async function DELETE(
   }
 
   try {
-    const sbAdmin = await createAdminClient({ noCookie: true });
     await revokeDirectBoardGuestAccess({
       sbAdmin,
       wsId: resolvedWsId,
@@ -234,6 +214,74 @@ export async function DELETE(
     message: 'success',
     workspace_deleted: workspaceDeleted,
   });
+}
+
+export async function revokeWorkspaceMemberAccessRecords({
+  sbAdmin,
+  userEmail,
+  userId,
+  wsId,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  userEmail: string | null;
+  userId: string | null;
+  wsId: string;
+}) {
+  let inviteUserIds: string[] = [];
+  if (userEmail) {
+    const { data: matchingInvites, error: matchingInvitesError } = await sbAdmin
+      .from('workspace_members_and_invites')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('pending', true)
+      .ilike('email', userEmail);
+
+    if (matchingInvitesError) throw matchingInvitesError;
+
+    inviteUserIds = ((matchingInvites ?? []) as Array<{ id: string | null }>)
+      .map((row) => row.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+  }
+
+  const inviteQuery = userId
+    ? sbAdmin
+        .from('workspace_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+    : inviteUserIds.length > 0
+      ? sbAdmin
+          .from('workspace_invites')
+          .delete()
+          .eq('ws_id', wsId)
+          .in('user_id', inviteUserIds)
+      : Promise.resolve({ error: null });
+
+  const emailInviteQuery = userEmail
+    ? sbAdmin
+        .from('workspace_email_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .ilike('email', userEmail)
+    : Promise.resolve({ error: null });
+
+  const memberQuery = userId
+    ? sbAdmin
+        .from('workspace_members')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', userId)
+    : Promise.resolve({ error: null });
+
+  const results = await Promise.all([
+    inviteQuery,
+    emailInviteQuery,
+    memberQuery,
+  ]);
+  const mutationError = (results as Array<{ error: unknown }>).find(
+    (result) => result.error
+  )?.error;
+  if (mutationError) throw mutationError;
 }
 
 export async function revokeDirectBoardGuestAccess({

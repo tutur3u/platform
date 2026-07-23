@@ -104,6 +104,14 @@ export type WorkspaceAccessAdapter = {
     roleId: string,
     userId: string
   ) => Promise<unknown>;
+  updateMemberProfile?: (
+    workspaceId: string,
+    payload: {
+      displayName: string | null;
+      email?: null | string;
+      userId?: null | string;
+    }
+  ) => Promise<unknown>;
   updateDefaultRole: (
     workspaceId: string,
     memberType: WorkspaceDefaultPermissionMemberType,

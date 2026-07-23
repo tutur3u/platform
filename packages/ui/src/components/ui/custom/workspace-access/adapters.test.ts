@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeWorkspaceAccessRole } from './adapters';
+import {
+  createStandardWorkspaceAccessAdapter,
+  normalizeWorkspaceAccessRole,
+} from './adapters';
 
 describe('workspace access adapters', () => {
   it('normalizes role permissions into the shared access role shape', () => {
@@ -27,5 +30,11 @@ describe('workspace access adapters', () => {
       user_count: 2,
       ws_id: 'ws_123',
     });
+  });
+
+  it('exposes linked workspace profile updates to every standard satellite app', () => {
+    expect(
+      createStandardWorkspaceAccessAdapter().updateMemberProfile
+    ).toBeTypeOf('function');
   });
 });

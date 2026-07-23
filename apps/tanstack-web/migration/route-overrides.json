@@ -29,6 +29,11 @@
       "targetOwner": "rust-backend",
       "note": "The legacy GET and DELETE route remains in Next.js while the Rust port is pending. It accepts current-user satellite app sessions through withSessionAuth, normalizes workspace aliases with the attached session client, and injects the authenticated actor into the shared members handler so satellite workspace member management does not fall back to unavailable browser cookies."
     },
+    "api:/api/workspaces/:wsId/members/profile:apps/web/src/legacy-api-routes/workspaces/[wsId]/members/profile/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live PUT resolves current-user satellite app sessions before authorizing manage_workspace_members, then performs the scoped workspace_users profile link and display-name update with an admin client. The Rust port is pending."
+    },
     "api:/api/billing/:wsId/invoice:apps/web/src/legacy-api-routes/billing/[wsId]/invoice/route.ts": {
       "status": "accepted-removal",
       "targetOwner": "satellite-app",

@@ -8,6 +8,7 @@ import type { WorkspaceAccessLabels, WorkspaceAccessRole } from './types';
 import { WorkspaceAccessMemberRow } from './workspace-access-member-row';
 
 type Props = {
+  canEditProfiles: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
   defaultAdminEnabled: boolean;
@@ -16,6 +17,7 @@ type Props = {
   labels: WorkspaceAccessLabels;
   members: InternalApiEnhancedWorkspaceMember[];
   onAssignRole: (payload: { roleId: string; userId: string }) => void;
+  onEditMemberProfile: (member: InternalApiEnhancedWorkspaceMember) => void;
   onRemoveMember: (payload: {
     email?: null | string;
     userId?: null | string;
@@ -27,6 +29,7 @@ type Props = {
 };
 
 export function WorkspaceAccessMembers({
+  canEditProfiles,
   canManageMembers,
   canManageRoles,
   defaultAdminEnabled,
@@ -35,6 +38,7 @@ export function WorkspaceAccessMembers({
   labels,
   members,
   onAssignRole,
+  onEditMemberProfile,
   onRemoveMember,
   onRemoveRole,
   roles,
@@ -76,6 +80,7 @@ export function WorkspaceAccessMembers({
       {members.map((member) => (
         <WorkspaceAccessMemberRow
           key={`${member.id ?? member.email ?? member.handle}`}
+          canEditProfiles={canEditProfiles}
           canManageMembers={canManageMembers}
           canManageRoles={canManageRoles}
           defaultAdminEnabled={defaultAdminEnabled}
@@ -83,6 +88,7 @@ export function WorkspaceAccessMembers({
           labels={labels}
           member={member}
           onAssignRole={onAssignRole}
+          onEditMemberProfile={onEditMemberProfile}
           onRemoveMember={onRemoveMember}
           onRemoveRole={onRemoveRole}
           roles={roles}

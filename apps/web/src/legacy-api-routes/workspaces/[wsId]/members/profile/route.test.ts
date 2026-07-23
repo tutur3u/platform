@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const getPermissions = vi.fn();
+  const resolveWorkspaceRouteAccess = vi.fn();
   const adminEmailInviteMaybeSingle = vi.fn();
   const adminProfilesLimit = vi.fn();
   const adminInsertSingle = vi.fn();
@@ -60,7 +60,7 @@ const mocks = vi.hoisted(() => {
     adminSupabase,
     adminUpdateSingle,
     adminUpdateSelect,
-    getPermissions,
+    resolveWorkspaceRouteAccess,
   };
 });
 
@@ -68,9 +68,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: mocks.getPermissions,
-  getWorkspace: vi.fn(),
+vi.mock('@/lib/workspace-route-access', () => ({
+  resolveWorkspaceRouteAccess: mocks.resolveWorkspaceRouteAccess,
 }));
 
 const WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
@@ -89,8 +88,9 @@ describe('PUT /api/workspaces/[wsId]/members/profile', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => false),
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: true,
+      permissions: { wsId: WORKSPACE_ID },
     });
     mocks.adminEmailInviteMaybeSingle.mockResolvedValue({
       data: { email: 'invite@example.com' },
@@ -172,8 +172,12 @@ describe('PUT /api/workspaces/[wsId]/members/profile', () => {
 
   it('requires manage_workspace_members permission', async () => {
     const { PUT } = await import('./route');
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => true),
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: false,
+      response: new Response(
+        JSON.stringify({ message: 'Workspace permission denied' }),
+        { status: 403 }
+      ),
     });
 
     const response = await PUT(
@@ -185,5 +189,24 @@ describe('PUT /api/workspaces/[wsId]/members/profile', () => {
     );
 
     expect(response.status).toBe(403);
+  });
+
+  it('uses satellite-aware access resolution and its canonical workspace id', async () => {
+    const { PUT } = await import('./route');
+
+    const response = await PUT(
+      createRequest({
+        displayName: 'Server Alice',
+        email: 'invite@example.com',
+      }),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      'personal',
+      ['manage_workspace_members']
+    );
   });
 });

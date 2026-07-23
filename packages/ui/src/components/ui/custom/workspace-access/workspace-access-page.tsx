@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { TriangleAlert } from '@tuturuuu/icons';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -31,6 +32,7 @@ import type {
 import { WorkspaceAccessDefaultRoleCard } from './workspace-access-default-role-card';
 import { WorkspaceAccessInviteDialog } from './workspace-access-invite-dialog';
 import { getWorkspaceAccessLabels } from './workspace-access-labels';
+import { WorkspaceAccessMemberProfileDialog } from './workspace-access-member-profile-dialog';
 import { WorkspaceAccessMembers } from './workspace-access-members';
 import { WorkspaceAccessPageHeader } from './workspace-access-page-header';
 import { WorkspaceAccessPeopleFilters } from './workspace-access-people-filters';
@@ -64,6 +66,8 @@ export function WorkspaceAccessPage({
   });
   const [roleEditorState, setRoleEditorState] =
     useState<WorkspaceAccessRoleEditorState | null>(null);
+  const [profileMember, setProfileMember] =
+    useState<InternalApiEnhancedWorkspaceMember | null>(null);
 
   const contextQuery = useQuery({
     enabled: Boolean(adapter.getContext),
@@ -185,6 +189,36 @@ export function WorkspaceAccessPage({
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async () => {
       toast.success(t('common.deleted'));
+      await invalidateAccessData();
+    },
+  });
+  const updateMemberProfileMutation = useMutation({
+    mutationFn: ({
+      displayName,
+      member,
+    }: {
+      displayName: null | string;
+      member: InternalApiEnhancedWorkspaceMember;
+    }) => {
+      if (!adapter.updateMemberProfile) {
+        throw new Error(t('common.error'));
+      }
+
+      return adapter.updateMemberProfile(workspaceId, {
+        displayName,
+        email: member.id ? null : member.email,
+        userId: member.id,
+      });
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-members.profile_display_name_update_error')
+      ),
+    onSuccess: async () => {
+      setProfileMember(null);
+      toast.success(t('ws-members.profile_display_name_updated'));
       await invalidateAccessData();
     },
   });
@@ -348,18 +382,22 @@ export function WorkspaceAccessPage({
           />
 
           <WorkspaceAccessMembers
+            canEditProfiles={Boolean(adapter.updateMemberProfile)}
             canManageMembers={canManageMembers}
             canManageRoles={canManageRoles}
             defaultAdminEnabled={defaultAdminEnabled}
             isLoading={membersQuery.isPending}
             isMutating={
-              removeMemberMutation.isPending || roleMembershipMutation.isPending
+              removeMemberMutation.isPending ||
+              roleMembershipMutation.isPending ||
+              updateMemberProfileMutation.isPending
             }
             labels={labels}
             members={visibleMembers}
             onAssignRole={(payload) =>
               roleMembershipMutation.mutate({ ...payload, action: 'add' })
             }
+            onEditMemberProfile={setProfileMember}
             onRemoveMember={(payload) => removeMemberMutation.mutate(payload)}
             onRemoveRole={(payload) =>
               roleMembershipMutation.mutate({ ...payload, action: 'remove' })
@@ -446,6 +484,24 @@ export function WorkspaceAccessPage({
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}
       />
+
+      {profileMember ? (
+        <WorkspaceAccessMemberProfileDialog
+          key={`${profileMember.id ?? profileMember.email}-profile`}
+          isSubmitting={updateMemberProfileMutation.isPending}
+          member={profileMember}
+          onOpenChange={(open) => {
+            if (!open) setProfileMember(null);
+          }}
+          onSubmit={(displayName) =>
+            updateMemberProfileMutation.mutate({
+              displayName,
+              member: profileMember,
+            })
+          }
+          open
+        />
+      ) : null}
 
       {roleEditorState ? (
         <WorkspaceAccessRoleEditorDialog

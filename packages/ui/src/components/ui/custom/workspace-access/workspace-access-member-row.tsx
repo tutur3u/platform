@@ -3,6 +3,7 @@
 import {
   Crown,
   Ellipsis,
+  Pencil,
   Plus,
   ShieldUser,
   User as UserIcon,
@@ -42,6 +43,7 @@ type GuestContext = InternalApiEnhancedWorkspaceMember & {
 };
 
 type Props = {
+  canEditProfiles: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
   defaultAdminEnabled: boolean;
@@ -49,6 +51,7 @@ type Props = {
   labels: WorkspaceAccessLabels;
   member: InternalApiEnhancedWorkspaceMember;
   onAssignRole: (payload: { roleId: string; userId: string }) => void;
+  onEditMemberProfile: (member: InternalApiEnhancedWorkspaceMember) => void;
   onRemoveMember: (payload: {
     email?: null | string;
     userId?: null | string;
@@ -58,6 +61,7 @@ type Props = {
 };
 
 export function WorkspaceAccessMemberRow({
+  canEditProfiles,
   canManageMembers,
   canManageRoles,
   defaultAdminEnabled,
@@ -65,6 +69,7 @@ export function WorkspaceAccessMemberRow({
   labels,
   member,
   onAssignRole,
+  onEditMemberProfile,
   onRemoveMember,
   onRemoveRole,
   roles,
@@ -76,6 +81,11 @@ export function WorkspaceAccessMemberRow({
   const memberName = getMemberDisplayName(member, t('common.unknown'));
   const guest = member as GuestContext;
   const canRemoveRoles = canManageRoles && memberId && !member.pending;
+  const canEditProfile =
+    canEditProfiles &&
+    canManageMembers &&
+    !guest.direct_board_guest &&
+    Boolean(memberId || member.email);
   const inheritsAdministrator =
     defaultAdminEnabled &&
     !member.pending &&
@@ -83,6 +93,7 @@ export function WorkspaceAccessMemberRow({
     member.workspace_member_type !== 'GUEST';
   const hasActions =
     Boolean(canRemoveRoles) ||
+    canEditProfile ||
     (canManageMembers && !member.is_creator) ||
     shouldShowProtectedMemberStatus({ isCreator: member.is_creator });
 
@@ -221,9 +232,23 @@ export function WorkspaceAccessMemberRow({
                   </>
                 ) : null}
 
-                {member.is_creator ? (
+                {canEditProfile ? (
                   <>
                     {canRemoveRoles ? <DropdownMenuSeparator /> : null}
+                    <DropdownMenuItem
+                      onSelect={() => onEditMemberProfile(member)}
+                    >
+                      <Pencil className="size-4" />
+                      {t('ws-members.profile_display_name')}
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+
+                {member.is_creator ? (
+                  <>
+                    {canRemoveRoles || canEditProfile ? (
+                      <DropdownMenuSeparator />
+                    ) : null}
                     <DropdownMenuLabel className="flex items-center gap-2 text-muted-foreground">
                       <ShieldUser className="size-4" />
                       {labels.protectedMemberLabel}
@@ -233,13 +258,15 @@ export function WorkspaceAccessMemberRow({
 
                 {canManageMembers && !member.is_creator ? (
                   <>
-                    {canRemoveRoles ? <DropdownMenuSeparator /> : null}
+                    {canRemoveRoles || canEditProfile ? (
+                      <DropdownMenuSeparator />
+                    ) : null}
                     <DropdownMenuItem
                       variant="destructive"
                       onSelect={() =>
                         onRemoveMember({
                           email: member.email,
-                          userId: member.pending ? null : member.id,
+                          userId: member.id,
                         })
                       }
                     >

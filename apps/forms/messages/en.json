@@ -7247,7 +7247,13 @@
     "pos_operator_existing_members": "current members retain Admin",
     "pos_operator_only_permission": "One checkout permission only",
     "pos_operator_title": "Event-safe POS operator",
+    "profile_display_name": "Workspace display name",
+    "profile_display_name_description": "This name is only used in this workspace.",
+    "profile_display_name_placeholder": "Name shown in this workspace",
+    "profile_display_name_update_error": "Failed to update workspace display name.",
+    "profile_display_name_updated": "Workspace display name updated.",
     "remove_member": "Remove member",
+    "save_profile_display_name": "Save display name",
     "role-placeholder": "Select a role",
     "search_members": "Search members",
     "total": "Total"

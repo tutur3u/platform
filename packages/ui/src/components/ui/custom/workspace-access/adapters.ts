@@ -25,6 +25,7 @@ import {
   inviteWorkspaceMember,
   listEnhancedWorkspaceMembers,
   removeWorkspaceMember,
+  updateWorkspaceMemberProfile,
 } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceRole } from '@tuturuuu/types';
 import type {
@@ -146,6 +147,7 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
     },
     removeMember: removeWorkspaceMember,
     removeRoleMember,
+    updateMemberProfile: updateWorkspaceMemberProfile,
     updateDefaultRole: (workspaceId, memberType, payload) =>
       updateWorkspaceDefaultPermissions(workspaceId, memberType, {
         permissions: payload.permissions as WorkspaceRole['permissions'],

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => {
   const listSeats = vi.fn();
   const revokeSeat = vi.fn();
   const workspaceBoardsEq = vi.fn();
+  const workspaceCreatorSingle = vi.fn();
   const withSessionAuth = vi.fn(
     (
       handler: (
@@ -78,6 +79,36 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (table === 'workspaces') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: workspaceCreatorSingle,
+            })),
+          })),
+        };
+      }
+
+      if (table === 'workspace_invites') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: inviteDeleteByUserId,
+            })),
+          })),
+        };
+      }
+
+      if (table === 'workspace_members') {
+        return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: memberDeleteByUserId,
+            })),
+          })),
+        };
+      }
+
       if (table === 'workspace_subscriptions') {
         return {
           select: vi.fn(() => ({
@@ -148,6 +179,7 @@ const mocks = vi.hoisted(() => {
     subscriptionProductMaybeSingle,
     workspaceSubscriptionSingle,
     workspaceBoardsEq,
+    workspaceCreatorSingle,
     withSessionAuth,
   };
 });
@@ -214,6 +246,10 @@ describe('workspace members delete route', () => {
     mocks.inviteDeleteByUserId.mockResolvedValue({ error: null });
     mocks.memberDeleteByUserId.mockResolvedValue({ error: null });
     mocks.workspaceBoardsEq.mockResolvedValue({ data: [], error: null });
+    mocks.workspaceCreatorSingle.mockResolvedValue({
+      data: { creator_id: 'creator-user' },
+      error: null,
+    });
   });
 
   it('revokes the Polar seat using the Polar customer id during member removal', async () => {
@@ -252,6 +288,8 @@ describe('workspace members delete route', () => {
     expect(mocks.revokeSeat).toHaveBeenCalledWith({
       seatId: 'seat-1',
     });
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_members');
     expect(mocks.sessionSupabase.auth.getUser).not.toHaveBeenCalled();
+    expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
   });
 });
