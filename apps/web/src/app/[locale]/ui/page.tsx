@@ -65,6 +65,10 @@ export default async function UiDocsOverviewPage({ params }: Props) {
     locale: normalizedLocale,
     namespace: 'ui-showcase.docs',
   });
+  const tCategories = await getTranslations({
+    locale: normalizedLocale,
+    namespace: 'ui-showcase.categories',
+  });
   const baseHref = `/${normalizedLocale}/ui`;
 
   return (
@@ -130,6 +134,33 @@ export default async function UiDocsOverviewPage({ params }: Props) {
             meta={t('overview.internal')}
             title={t('overview.contributingTitle')}
           />
+        </LinkGrid>
+      </DocsSection>
+
+      {/* The shape of the library, so the entry page answers "what is in here?"
+          without a click. Counts come from the registry and the labels reuse
+          the same `ui-showcase.categories` namespace the components page
+          renders, so this adds no new copy to translate. */}
+      <DocsSection
+        description={t('components.description', {
+          count: componentDocs.length,
+        })}
+        id="categories"
+        title={t('nav.components')}
+      >
+        <LinkGrid className="lg:grid-cols-3">
+          {componentDocsByCategory.map((group) => (
+            <LinkPanel
+              accent={group.category}
+              description={t('components.categoryDescription', {
+                count: group.docs.length,
+              })}
+              href={`${baseHref}/components#${group.category}`}
+              key={group.category}
+              meta={String(group.docs.length)}
+              title={tCategories(group.category)}
+            />
+          ))}
         </LinkGrid>
       </DocsSection>
 
