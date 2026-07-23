@@ -19,9 +19,11 @@ type ProfileField = 'display_name' | 'email' | 'full_name';
 export function ProfileFieldForm({
   field,
   initialValue,
+  placeholder,
 }: {
   field: ProfileField;
   initialValue: string | null;
+  placeholder?: string | null;
 }) {
   const t = useTranslations('settings-account');
   const commonT = useTranslations('common');
@@ -69,6 +71,7 @@ export function ProfileFieldForm({
               : 'email-address'
         )}
         autoComplete={field === 'email' ? 'email' : 'name'}
+        placeholder={placeholder ?? undefined}
         type={field === 'email' ? 'email' : 'text'}
         value={value}
         onChange={(event) => setValue(event.target.value)}

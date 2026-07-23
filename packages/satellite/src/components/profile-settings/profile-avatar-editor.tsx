@@ -52,10 +52,22 @@ export function ProfileAvatarEditor({
   const name = profile.display_name || profile.full_name || profile.email || '';
 
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <Avatar className="size-20 border">
-        <AvatarImage alt={name} src={profile.avatar_url ?? undefined} />
-        <AvatarFallback className="text-lg">{getInitials(name)}</AvatarFallback>
+    <div className="flex flex-wrap items-center gap-3">
+      <Avatar
+        className="border bg-background shadow-sm"
+        style={{ height: '4rem', padding: '0.25rem', width: '4rem' }}
+      >
+        <AvatarImage
+          alt={name}
+          src={profile.avatar_url ?? undefined}
+          style={{ borderRadius: '9999px' }}
+        />
+        <AvatarFallback
+          className="font-semibold text-base"
+          style={{ borderRadius: '9999px' }}
+        >
+          {getInitials(name)}
+        </AvatarFallback>
       </Avatar>
       <div className="flex flex-wrap gap-2">
         <input
@@ -72,6 +84,7 @@ export function ProfileAvatarEditor({
         />
         <Button
           disabled={busy}
+          size="sm"
           type="button"
           variant="outline"
           onClick={() => inputRef.current?.click()}
@@ -86,6 +99,7 @@ export function ProfileAvatarEditor({
         {profile.avatar_url ? (
           <Button
             disabled={busy}
+            size="sm"
             type="button"
             variant="outline"
             onClick={() => removeMutation.mutate(undefined)}

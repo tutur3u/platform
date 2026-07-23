@@ -24,7 +24,7 @@ export function SatelliteProfileSettingsPanel({
 }) {
   const t = useTranslations('settings-account');
   const profileQuery = useQuery({
-    initialData: {
+    placeholderData: {
       id: user.id,
       avatar_url: user.avatar_url ?? null,
       created_at: user.created_at ?? new Date(0).toISOString(),
@@ -96,7 +96,13 @@ export function SatelliteProfileSettingsPanel({
         title={t('full-name')}
         description={t('full-name-description')}
       >
-        <ProfileFieldForm field="full_name" initialValue={profile.full_name} />
+        <ProfileFieldForm
+          field="full_name"
+          initialValue={profile.full_name}
+          placeholder={
+            profile.full_name ? undefined : (profile.display_name ?? undefined)
+          }
+        />
       </SettingItemTab>
       <SettingItemTab
         title={t('email-address')}
