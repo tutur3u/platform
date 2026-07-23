@@ -7,19 +7,19 @@ import {
   Shield,
   ShieldCheck,
   Trophy,
-  Users,
 } from '@tuturuuu/icons/lucide';
-import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import {
+  Reveal,
+  RevealGroup,
+  RevealItem,
+} from '@/components/landing/shared/reveal';
+import { Panel, SectionShell } from '@/components/landing/shared/section-shell';
+import { ActionLink } from '@/components/marketing/action-link';
+import { PageHero } from '@/components/marketing/page-hero';
 import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import {
-  SecuritySubpageBadge as Badge,
-  SecuritySubpageCard as Card,
-  SecuritySubpageLinkButton,
-} from '../security-subpage-primitives';
-import {
-  badgeAccentClasses,
   LedgerMetric,
   type ProgramStep,
   ProgramStepCard,
@@ -99,148 +99,111 @@ export default async function BugBountyPage() {
   ];
 
   return (
-    <main className="relative w-full overflow-x-hidden text-balance">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:56px_56px] opacity-30" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-linear-to-br from-dynamic-green/10 via-transparent to-dynamic-orange/10" />
-
-      <section className="px-4 pt-24 pb-10 sm:px-6 sm:pt-28 sm:pb-12 lg:px-8 lg:pt-32 lg:pb-16">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center">
-          <div>
-            <Badge
-              variant="secondary"
-              className={cn('mb-6', badgeAccentClasses.green)}
-            >
-              <Shield className="mr-1.5 h-3.5 w-3.5" />
-              {t('hero.badge')}
-            </Badge>
-
-            <h1 className="max-w-5xl font-bold text-4xl tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              {t('hero.title_prefix')}{' '}
-              <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-orange bg-clip-text text-transparent">
-                {t('hero.title_highlight')}
-              </span>
-            </h1>
-
-            <p className="mt-6 max-w-3xl text-foreground/70 text-lg leading-relaxed sm:text-xl">
-              {t('hero.description')}
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <SecuritySubpageLinkButton
-                href="mailto:security@tuturuuu.com"
-                size="lg"
-              >
-                <Mail className="mr-2 h-5 w-5" />
-                {t('hero.report_cta')}
-              </SecuritySubpageLinkButton>
-              <SecuritySubpageLinkButton
-                href="/security/policy"
-                size="lg"
-                variant="outline"
-              >
-                <FileText className="mr-2 h-5 w-5" />
-                {t('hero.policy_cta')}
-              </SecuritySubpageLinkButton>
-            </div>
-          </div>
-
-          <Card className="border-dynamic-blue/30 bg-background/80 p-6 shadow-lg backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-medium text-dynamic-blue text-sm uppercase tracking-wider">
-                  {t('community.eyebrow')}
-                </p>
-                <h2 className="mt-3 font-semibold text-2xl">
-                  {t('community.title')}
-                </h2>
-                <p className="mt-3 text-foreground/60 text-sm leading-relaxed">
-                  {t('community.description')}
-                </p>
-              </div>
-              <Trophy className="h-10 w-10 shrink-0 text-dynamic-yellow" />
-            </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <LedgerMetric label={t('community.metrics.reports')} value="2" />
-              <LedgerMetric
-                label={t('community.metrics.credit')}
-                value={t('community.public_credit')}
-              />
-              <LedgerMetric
-                className="sm:col-span-2"
-                label={t('community.metrics.channel')}
-                value="security@tuturuuu.com"
-              />
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <section className="px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div>
-              <Badge
-                variant="secondary"
-                className={cn('mb-4', badgeAccentClasses.yellow)}
-              >
-                <Users className="mr-1.5 h-3.5 w-3.5" />
-                {t('hall.badge')}
-              </Badge>
-              <h2 className="font-semibold text-3xl sm:text-4xl">
-                {t('hall.title')}
-              </h2>
-            </div>
-            <p className="max-w-xl text-foreground/60 leading-relaxed">
-              {t('hall.description')}
-            </p>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            {researchers.map((researcher) => (
-              <ResearcherCard key={researcher.name} researcher={researcher} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-14 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-            <div>
-              <h2 className="font-semibold text-3xl sm:text-4xl">
-                {t('program.title')}
-              </h2>
-              <p className="mt-4 text-foreground/70 leading-relaxed">
-                {t('program.description')}
+    <main className="relative w-full overflow-x-hidden">
+      <PageHero
+        accent="green"
+        actions={
+          <>
+            <ActionLink href="mailto:security@tuturuuu.com">
+              <Mail className="h-4 w-4" />
+              {t('hero.report_cta')}
+            </ActionLink>
+            <ActionLink href="/security/policy" variant="ghost">
+              <FileText className="h-4 w-4" />
+              {t('hero.policy_cta')}
+            </ActionLink>
+          </>
+        }
+        description={t('hero.description')}
+        eyebrow={t('hero.badge')}
+        eyebrowIcon={Shield}
+        highlight={t('hero.title_highlight')}
+        title={t('hero.title_prefix')}
+      >
+        <Panel className="p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-mono-ui text-[0.62rem] text-dynamic-blue/80 uppercase tracking-[0.18em]">
+                {t('community.eyebrow')}
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <SecuritySubpageLinkButton
-                  href="mailto:security@tuturuuu.com"
-                  size="lg"
-                >
-                  <Mail className="mr-2 h-5 w-5" />
-                  {t('program.contact_cta')}
-                </SecuritySubpageLinkButton>
-                <SecuritySubpageLinkButton
-                  href="/security"
-                  size="lg"
-                  variant="outline"
-                >
-                  <Shield className="mr-2 h-5 w-5" />
-                  {t('program.security_cta')}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </SecuritySubpageLinkButton>
-              </div>
+              <h2 className="mt-2 font-display font-semibold text-2xl tracking-[-0.02em]">
+                {t('community.title')}
+              </h2>
+              <p className="mt-2 max-w-xl text-foreground/55 text-sm leading-relaxed">
+                {t('community.description')}
+              </p>
             </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {programSteps.map((step) => (
-                <ProgramStepCard key={step.title} step={step} />
-              ))}
-            </div>
+            <Trophy className="h-8 w-8 shrink-0 text-dynamic-yellow/80" />
           </div>
-        </div>
-      </section>
+
+          {/* The report count is the length of the roster below, so the
+              ledger and the hall of fame can never disagree. */}
+          <div className="mt-8 grid divide-y divide-foreground/[0.07] border-foreground/[0.07] border-t sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+            <LedgerMetric
+              label={t('community.metrics.reports')}
+              value={String(researchers.length)}
+            />
+            <LedgerMetric
+              label={t('community.metrics.credit')}
+              value={t('community.public_credit')}
+            />
+            <LedgerMetric
+              label={t('community.metrics.channel')}
+              value="security@tuturuuu.com"
+            />
+          </div>
+        </Panel>
+      </PageHero>
+
+      <SectionShell
+        bloom="green"
+        eyebrow={t('hall.badge')}
+        index="01"
+        subtitle={t('hall.description')}
+        title={t('hall.title')}
+        width="wide"
+      >
+        <RevealGroup className="grid gap-3 lg:grid-cols-2" stagger={0.1}>
+          {researchers.map((researcher) => (
+            <RevealItem className="h-full" key={researcher.name}>
+              <ResearcherCard researcher={researcher} />
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </SectionShell>
+
+      <SectionShell
+        bloom="cyan"
+        eyebrow={t('hall.badge')}
+        index="02"
+        subtitle={t('program.description')}
+        title={t('program.title')}
+        width="wide"
+      >
+        <Reveal>
+          <RevealGroup className="grid gap-3 sm:grid-cols-2" stagger={0.06}>
+            {programSteps.map((step) => (
+              <RevealItem className="h-full" key={step.title}>
+                <ProgramStepCard step={step} />
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <ActionLink href="mailto:security@tuturuuu.com">
+              <Mail className="h-4 w-4" />
+              {t('program.contact_cta')}
+            </ActionLink>
+            <ActionLink href="/security" variant="ghost">
+              <Shield className="h-4 w-4" />
+              {t('program.security_cta')}
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </ActionLink>
+          </div>
+        </Reveal>
+      </SectionShell>
     </main>
   );
 }

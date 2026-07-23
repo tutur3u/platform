@@ -1,5 +1,4 @@
 import { ArrowRight } from '@tuturuuu/icons/lucide-static';
-import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ComponentType, ReactNode } from 'react';
@@ -43,18 +42,24 @@ export function DocsPageHeader({
         </div>
       ) : null}
       {badge ? (
-        <Badge
-          className={cn('w-fit border', a.bg, a.text, a.border)}
-          variant="secondary"
+        <span
+          className={cn(
+            'inline-flex w-fit items-center rounded-full border px-3 py-1 font-mono-ui text-[0.62rem] uppercase tracking-[0.2em]',
+            a.bg,
+            a.text,
+            a.border
+          )}
         >
           {badge}
-        </Badge>
+        </span>
       ) : null}
       <div className="grid max-w-3xl gap-3">
-        <h1 className="text-balance bg-gradient-to-br from-foreground via-foreground to-foreground/60 bg-clip-text font-semibold text-4xl text-transparent leading-tight md:text-5xl">
+        <h1 className="text-balance font-display font-semibold text-4xl leading-[1.05] tracking-[-0.03em] md:text-5xl">
           {title}
         </h1>
-        <p className="text-lg text-muted-foreground leading-8">{description}</p>
+        <p className="text-foreground/55 text-lg leading-relaxed">
+          {description}
+        </p>
       </div>
       {children}
     </header>
@@ -80,11 +85,17 @@ export function DocsSection({
     <section className="scroll-mt-24 py-8" id={id}>
       <div className="grid gap-3">
         <div className="flex items-center gap-2.5">
-          <span className={cn('size-2 rounded-full', a.dot)} />
-          <h2 className="font-semibold text-2xl">{title}</h2>
+          <span className={cn('size-1.5 rounded-full', a.dot)} />
+          <span
+            aria-hidden
+            className="h-px w-6 bg-gradient-to-r from-foreground/25 to-transparent"
+          />
+          <h2 className="font-display font-semibold text-2xl tracking-[-0.02em]">
+            {title}
+          </h2>
         </div>
         {description ? (
-          <p className="max-w-3xl text-muted-foreground leading-7">
+          <p className="max-w-3xl text-foreground/50 leading-relaxed">
             {description}
           </p>
         ) : null}
@@ -172,14 +183,16 @@ export function LinkPanel({
   return (
     <Link
       className={cn(
-        'group relative grid gap-3 overflow-hidden rounded-xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-transparent hover:shadow-md focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-4',
+        'group relative grid gap-3 overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-4 transition-all duration-500 hover:-translate-y-1 hover:border-foreground/15 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5 focus-visible:outline-1 focus-visible:outline-ring focus-visible:ring-4',
         a.ring
       )}
       href={href}
     >
+      {/* Lit top edge, matching the marketing card language */}
       <span
+        aria-hidden
         className={cn(
-          'absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r transition-transform duration-300 group-hover:scale-x-100',
+          'pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r opacity-40 transition-opacity duration-500 group-hover:opacity-100',
           a.gradient
         )}
       />
@@ -201,9 +214,11 @@ export function LinkPanel({
         </div>
         <ArrowRight className="size-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
       </div>
-      <p className="text-muted-foreground text-sm leading-6">{description}</p>
+      <p className="text-foreground/50 text-sm leading-relaxed">
+        {description}
+      </p>
       {meta ? (
-        <div className="font-medium font-mono text-muted-foreground text-xs">
+        <div className="font-mono-ui text-[0.62rem] text-foreground/35 uppercase tracking-[0.14em]">
           {meta}
         </div>
       ) : null}

@@ -1,4 +1,4 @@
-import { Clock, FileText } from '@tuturuuu/icons/lucide';
+import { Clock } from '@tuturuuu/icons/lucide';
 
 interface TocItem {
   id: string;
@@ -11,51 +11,54 @@ interface TableOfContentsProps {
   effectiveDate: string;
 }
 
+/**
+ * The document index.
+ *
+ * Numbers are monospace and the rows hang off a hairline rail, so it reads as
+ * a contents list rather than another card of links.
+ */
 export function TableOfContents({
   items,
   effectiveDate,
 }: TableOfContentsProps) {
   return (
-    <div
-      className="rounded-xl border bg-card p-6 text-card-foreground shadow-sm"
-      style={{
-        animation: 'legal-slide-in-left 0.6s ease-out 0.2s both',
-      }}
-    >
-      <h2 className="mb-4 flex items-center font-semibold text-lg">
-        <FileText className="mr-2 h-5 w-5 text-primary" />
-        Table of Contents
+    <nav className="relative overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+      />
+
+      <h2 className="font-mono-ui text-[0.62rem] text-foreground/40 uppercase tracking-[0.2em]">
+        Contents
       </h2>
-      <div className="mb-3 flex items-center text-muted-foreground text-xs">
-        <Clock className="mr-1 h-3 w-3" />
+
+      <p className="mt-2 flex items-center gap-1.5 text-[0.7rem] text-foreground/35">
+        <Clock className="h-3 w-3" />
         <span>
-          Updated:{' '}
+          Updated{' '}
           {new Date(effectiveDate).toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
           })}
         </span>
-      </div>
-      <div className="my-2 h-px bg-border" />
-      <div className="max-h-[calc(100vh-350px)] overflow-y-auto pr-3">
-        <div className="space-y-1 py-2">
-          {items.map((item) => (
+      </p>
+
+      <ol className="mt-4 max-h-[calc(100vh-16rem)] space-y-0.5 overflow-y-auto border-foreground/[0.07] border-t pt-3 pr-1">
+        {items.map((item) => (
+          <li key={item.id}>
             <a
-              key={item.id}
+              className="group flex items-start gap-2.5 rounded-lg px-2 py-1.5 text-foreground/50 text-sm transition-colors duration-300 hover:bg-foreground/[0.03] hover:text-foreground"
               href={`#${item.id}`}
-              className="flex items-center justify-between rounded-md px-3 py-2 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
             >
-              <div className="flex items-center">
-                <span className="mr-2 w-5 text-primary/70 text-xs">
-                  {item.number.toString().padStart(2, '0')}
-                </span>
-                {item.title}
-              </div>
+              <span className="mt-0.5 shrink-0 font-mono-ui text-[0.58rem] text-foreground/25 tabular-nums transition-colors duration-300 group-hover:text-foreground/50">
+                {item.number.toString().padStart(2, '0')}
+              </span>
+              <span className="min-w-0 leading-snug">{item.title}</span>
             </a>
-          ))}
-        </div>
-      </div>
-    </div>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

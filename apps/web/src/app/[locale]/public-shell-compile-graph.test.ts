@@ -49,6 +49,12 @@ const securityPolicyPageSource = source(
 const securityPolicyComponentsSource = source(
   'src/app/[locale]/(marketing)/security/policy/policy-components.tsx'
 );
+const legalKitSources = [
+  'src/components/legal/legal-page-layout.tsx',
+  'src/components/legal/legal-section-card.tsx',
+  'src/components/legal/legal-summary-card.tsx',
+  'src/components/legal/table-of-contents.tsx',
+].map(source);
 const securityBugBountyPageSource = source(
   'src/app/[locale]/(marketing)/security/bug-bounty/page.tsx'
 );
@@ -419,6 +425,10 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps public security subpages off shared UI primitives', () => {
+    // They used to satisfy this by routing through a local
+    // `security-subpage-primitives` module that re-declared Badge/Card/Button.
+    // Those subpages now use the shared marketing kit, so that module is gone
+    // and the ban is asserted directly.
     for (const sourceText of [
       securityPolicyPageSource,
       securityPolicyComponentsSource,
@@ -432,8 +442,24 @@ describe('public shell compile graph', () => {
       ] as const) {
         expect(sourceText).not.toMatch(staticImportPattern(modulePath));
       }
+    }
+  });
 
-      expect(sourceText).toContain('../security-subpage-primitives');
+  it('keeps the legal kit off heavy primitives and dead colour classes', () => {
+    for (const sourceText of legalKitSources) {
+      for (const modulePath of [
+        '@tuturuuu/icons',
+        '@tuturuuu/ui/badge',
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+        'next/link',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
+
+      // Every legal section card used to build `bg-dynamic-${color}` at
+      // render time, which Tailwind never emits, so no legal page had accents.
+      expect(sourceText).not.toMatch(/dynamic-\$\{/u);
     }
   });
 

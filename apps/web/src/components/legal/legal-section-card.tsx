@@ -1,5 +1,7 @@
 import { ChevronRight } from '@tuturuuu/icons/lucide';
+import { cn } from '@tuturuuu/utils/format';
 import { AnimateInView } from './animate-in-view';
+import { getLegalAccent } from './legal-accents';
 import { LegalMarkdown } from './legal-markdown';
 import type { LegalSection } from './legal-types';
 
@@ -15,6 +17,12 @@ function getSectionId(title: string) {
   return title.toLowerCase().replace(/\s+/g, '-');
 }
 
+/**
+ * One clause of a legal document.
+ *
+ * Accents come from a static map now; the previous version built them by
+ * interpolation, so every card on every legal page rendered without one.
+ */
 export function LegalSectionCard({
   section,
   index,
@@ -23,23 +31,58 @@ export function LegalSectionCard({
   nextSectionTitle,
 }: LegalSectionCardProps) {
   const Icon = section.icon;
-  const color = section.color;
+  const accent = getLegalAccent(section.color);
 
   return (
-    <AnimateInView id={getSectionId(section.title)} className="scroll-mt-32">
-      <div
-        className={`group overflow-hidden rounded-xl border border-l-4 bg-card text-card-foreground shadow-sm border-l-dynamic-${color}/30 transition-all duration-200 hover:border-l-dynamic-${color}`}
-      >
-        <div className="bg-card p-8">
-          <div className="mb-5 flex items-center gap-3">
-            <div
-              className={`flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-${color}/10 text-dynamic-${color} transition-transform duration-300 group-hover:scale-110`}
+    <AnimateInView className="scroll-mt-28" id={getSectionId(section.title)}>
+      <article className="group relative overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] transition-all duration-500 hover:border-foreground/15">
+        {/* Left spine — the section's colour, carried down the full card */}
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-y-0 left-0 w-0.5 transition-opacity duration-500 group-hover:opacity-100',
+            accent.spine,
+            'opacity-60'
+          )}
+        />
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent to-transparent opacity-40 transition-opacity duration-500 group-hover:opacity-100',
+            accent.rule
+          )}
+        />
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute -top-20 -right-12 h-48 w-48 rounded-full opacity-0 blur-3xl transition-opacity duration-700 group-hover:opacity-100',
+            accent.bloom
+          )}
+        />
+
+        <div className="relative p-6 sm:p-8">
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-transform duration-500 group-hover:scale-105',
+                accent.plate,
+                accent.text
+              )}
             >
-              <Icon className="h-6 w-6" />
+              <Icon className="h-4 w-4" />
+            </span>
+
+            <div className="min-w-0">
+              <span className="block font-mono-ui text-[0.58rem] text-foreground/30 tabular-nums tracking-[0.2em]">
+                {String(index + 1).padStart(2, '0')} / {totalSections}
+              </span>
+              <h2 className="mt-0.5 text-balance font-display font-semibold text-xl tracking-[-0.02em] sm:text-2xl">
+                {section.title}
+              </h2>
             </div>
-            <h2 className="font-semibold text-2xl">{section.title}</h2>
           </div>
-          <div className="prose prose-gray dark:prose-invert max-w-none text-card-foreground">
+
+          <div className="prose prose-gray dark:prose-invert mt-6 max-w-none prose-headings:font-display prose-a:text-dynamic-blue prose-strong:text-foreground text-foreground/70 prose-headings:tracking-[-0.01em]">
             {typeof section.content === 'string' ? (
               <LegalMarkdown>{section.content}</LegalMarkdown>
             ) : (
@@ -47,23 +90,19 @@ export function LegalSectionCard({
             )}
           </div>
         </div>
-        <div className="bg-muted/50 px-8 py-3 text-muted-foreground text-xs">
-          <div className="flex justify-between">
-            <span>
-              Section {index + 1} of {totalSections}
-            </span>
-            {nextSectionId && nextSectionTitle && (
-              <a
-                href={`#${nextSectionId}`}
-                className="flex items-center hover:text-primary"
-              >
-                Next: {nextSectionTitle}
-                <ChevronRight className="ml-1 h-3 w-3" />
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
+
+        {nextSectionId && nextSectionTitle ? (
+          <footer className="relative border-foreground/[0.07] border-t px-6 py-3 sm:px-8">
+            <a
+              className="group/next flex items-center justify-end gap-1.5 font-mono-ui text-[0.62rem] text-foreground/35 uppercase tracking-[0.14em] transition-colors hover:text-foreground/70"
+              href={`#${nextSectionId}`}
+            >
+              Next: {nextSectionTitle}
+              <ChevronRight className="h-3 w-3 transition-transform duration-300 group-hover/next:translate-x-0.5" />
+            </a>
+          </footer>
+        ) : null}
+      </article>
     </AnimateInView>
   );
 }

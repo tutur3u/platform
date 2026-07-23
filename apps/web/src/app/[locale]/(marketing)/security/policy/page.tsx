@@ -2,7 +2,6 @@ import {
   ArrowRight,
   Bug,
   CheckCircle2,
-  FileText,
   ListChecks,
   Lock,
   Mail,
@@ -13,12 +12,15 @@ import {
 } from '@tuturuuu/icons/lucide';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import {
-  SecuritySubpageBadge as Badge,
-  SecuritySubpageCard as Card,
-  SecuritySubpageLinkButton,
-} from '../security-subpage-primitives';
+  Reveal,
+  RevealGroup,
+  RevealItem,
+} from '@/components/landing/shared/reveal';
+import { Panel, SectionShell } from '@/components/landing/shared/section-shell';
+import { ActionLink } from '@/components/marketing/action-link';
+import { PageHero } from '@/components/marketing/page-hero';
+import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import {
   type ListPanel,
   type PolicyCard,
@@ -26,7 +28,7 @@ import {
   PolicyInfoCard,
   PolicyListPanel,
   PolicyMetric,
-  SectionHeader,
+  PolicyMetrics,
 } from './policy-components';
 
 interface MetadataProps {
@@ -146,209 +148,186 @@ export default async function SecurityPolicyPage() {
   ];
 
   return (
-    <main className="relative w-full overflow-x-hidden text-balance">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:56px_56px] opacity-25" />
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-linear-to-br from-dynamic-blue/10 via-transparent to-dynamic-green/10" />
+    <main className="relative w-full overflow-x-hidden">
+      <PageHero
+        accent="blue"
+        actions={
+          <>
+            <ActionLink href="mailto:security@tuturuuu.com">
+              <Mail className="h-4 w-4" />
+              {t('hero.report_cta')}
+            </ActionLink>
+            <ActionLink href="/security/bug-bounty" variant="ghost">
+              <Trophy className="h-4 w-4" />
+              {t('hero.hall_cta')}
+            </ActionLink>
+          </>
+        }
+        description={t('hero.description')}
+        eyebrow={t('hero.badge')}
+        eyebrowIcon={Shield}
+        highlight={t('hero.title_highlight')}
+        title={t('hero.title_prefix')}
+      >
+        {/* Where to send it, and what happens after — the three facts a
+            researcher needs before reading any of the policy below. */}
+        <Panel className="p-6 sm:p-8">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dynamic-cyan/25 bg-dynamic-cyan/10 text-dynamic-cyan">
+              <Lock className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="font-mono-ui text-[0.62rem] text-dynamic-cyan/80 uppercase tracking-[0.18em]">
+                {t('reporting.eyebrow')}
+              </p>
+              <h2 className="mt-2 font-display font-semibold text-2xl tracking-[-0.02em]">
+                {t('reporting.title')}
+              </h2>
+              <p className="mt-2 text-foreground/55 text-sm leading-relaxed">
+                {t('reporting.description')}
+              </p>
+            </div>
+          </div>
 
-      <section className="px-4 pt-24 pb-12 sm:px-6 sm:pt-28 lg:px-8 lg:pt-32 lg:pb-16">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(340px,0.72fr)] lg:items-center">
-          <div>
-            <Badge
-              variant="secondary"
-              className="mb-6 border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
-            >
-              <Shield className="mr-1.5 h-3.5 w-3.5" />
-              {t('hero.badge')}
-            </Badge>
+          <PolicyMetrics>
+            <PolicyMetric
+              label={t('reporting.email_label')}
+              value="security@tuturuuu.com"
+            />
+            <PolicyMetric
+              label={t('reporting.ack_label')}
+              value={t('reporting.ack_value')}
+            />
+            <PolicyMetric
+              label={t('reporting.credit_label')}
+              value={t('reporting.credit_value')}
+            />
+          </PolicyMetrics>
+        </Panel>
+      </PageHero>
 
-            <h1 className="max-w-5xl font-bold text-4xl tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              {t('hero.title_prefix')}{' '}
-              <span className="bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
-                {t('hero.title_highlight')}
-              </span>
-            </h1>
+      <SectionShell
+        bloom="blue"
+        eyebrow={t('workflow.badge')}
+        index="01"
+        subtitle={t('workflow.description')}
+        title={t('workflow.title')}
+        width="wide"
+      >
+        <RevealGroup className="grid gap-3 md:grid-cols-3" stagger={0.08}>
+          {workflowCards.map((card) => (
+            <RevealItem className="h-full" key={card.title}>
+              <PolicyInfoCard card={card} />
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </SectionShell>
 
-            <p className="mt-6 max-w-3xl text-foreground/70 text-lg leading-relaxed sm:text-xl">
-              {t('hero.description')}
-            </p>
+      <SectionShell
+        bloom="cyan"
+        eyebrow={t('scope.badge')}
+        index="02"
+        subtitle={t('scope.description')}
+        title={t('scope.title')}
+        width="wide"
+      >
+        <RevealGroup className="grid gap-3 lg:grid-cols-2" stagger={0.1}>
+          {scopePanels.map((panel) => (
+            <RevealItem className="h-full" key={panel.title}>
+              <PolicyListPanel panel={panel} />
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </SectionShell>
+
+      <SectionShell
+        bloom="orange"
+        eyebrow={t('rules.badge')}
+        index="03"
+        subtitle={t('rules.description')}
+        title={t('rules.title')}
+        width="wide"
+      >
+        <Reveal>
+          <div className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
+            <Panel className="p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-dynamic-orange/25 bg-dynamic-orange/10 text-dynamic-orange">
+                  <Bug className="h-4 w-4" />
+                </span>
+                <h3 className="font-display font-semibold text-xl tracking-[-0.02em]">
+                  {t('rules.badge')}
+                </h3>
+              </div>
+              <ul className="mt-6 grid gap-2">
+                {rules.map((rule) => (
+                  <PolicyChecklistItem key={rule}>{rule}</PolicyChecklistItem>
+                ))}
+              </ul>
+            </Panel>
+
+            <Panel className="p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-dynamic-blue/25 bg-dynamic-blue/10 text-dynamic-blue">
+                  <ListChecks className="h-4 w-4" />
+                </span>
+                <h3 className="font-display font-semibold text-xl tracking-[-0.02em]">
+                  {t('rules.include.title')}
+                </h3>
+              </div>
+              <ul className="mt-6 grid gap-2">
+                {reportDetails.map((item) => (
+                  <PolicyChecklistItem key={item}>{item}</PolicyChecklistItem>
+                ))}
+              </ul>
+            </Panel>
+          </div>
+        </Reveal>
+      </SectionShell>
+
+      <SectionShell
+        bloom="green"
+        eyebrow={t('response.badge')}
+        index="04"
+        subtitle={t('response.description')}
+        title={t('response.title')}
+        width="wide"
+      >
+        <RevealGroup className="grid gap-3 md:grid-cols-3" stagger={0.08}>
+          {responseCards.map((card) => (
+            <RevealItem className="h-full" key={card.title}>
+              <PolicyInfoCard card={card} />
+            </RevealItem>
+          ))}
+        </RevealGroup>
+      </SectionShell>
+
+      <SectionShell
+        bloom="green"
+        eyebrow={t('response.badge')}
+        index="05"
+        subtitle={t('cta.description')}
+        title={t('cta.title')}
+      >
+        <Reveal>
+          <Panel className="flex flex-col items-center px-6 py-12 text-center sm:px-12">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-dynamic-green/25 bg-dynamic-green/10">
+              <ShieldCheck className="h-6 w-6 text-dynamic-green" />
+            </span>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <SecuritySubpageLinkButton
-                href="mailto:security@tuturuuu.com"
-                size="lg"
-              >
-                <Mail className="mr-2 h-5 w-5" />
-                {t('hero.report_cta')}
-              </SecuritySubpageLinkButton>
-              <SecuritySubpageLinkButton
-                href="/security/bug-bounty"
-                size="lg"
-                variant="outline"
-              >
-                <Trophy className="mr-2 h-5 w-5" />
-                {t('hero.hall_cta')}
-              </SecuritySubpageLinkButton>
+              <ActionLink href="mailto:security@tuturuuu.com">
+                <Mail className="h-4 w-4" />
+                {t('cta.report_cta')}
+              </ActionLink>
+              <ActionLink href="/security/bug-bounty" variant="ghost">
+                {t('cta.hall_cta')}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </ActionLink>
             </div>
-          </div>
-
-          <Card className="border-dynamic-cyan/30 bg-background/85 p-6 shadow-lg backdrop-blur">
-            <div className="mb-6 flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-dynamic-cyan/10 text-dynamic-cyan">
-                <Lock className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="font-medium text-dynamic-cyan text-sm uppercase tracking-wider">
-                  {t('reporting.eyebrow')}
-                </p>
-                <h2 className="mt-2 font-semibold text-2xl">
-                  {t('reporting.title')}
-                </h2>
-                <p className="mt-2 text-foreground/60 text-sm leading-relaxed">
-                  {t('reporting.description')}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-3">
-              <PolicyMetric
-                label={t('reporting.email_label')}
-                value="security@tuturuuu.com"
-              />
-              <PolicyMetric
-                label={t('reporting.ack_label')}
-                value={t('reporting.ack_value')}
-              />
-              <PolicyMetric
-                label={t('reporting.credit_label')}
-                value={t('reporting.credit_value')}
-              />
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            badge={t('workflow.badge')}
-            description={t('workflow.description')}
-            icon={FileText}
-            title={t('workflow.title')}
-          />
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {workflowCards.map((card) => (
-              <PolicyInfoCard key={card.title} card={card} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            badge={t('scope.badge')}
-            description={t('scope.description')}
-            icon={Shield}
-            title={t('scope.title')}
-          />
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            {scopePanels.map((panel) => (
-              <PolicyListPanel key={panel.title} panel={panel} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <Card className="border-dynamic-orange/25 bg-background/85 p-6 shadow-sm sm:p-8">
-            <Badge
-              variant="secondary"
-              className="mb-5 border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange"
-            >
-              <Bug className="mr-1.5 h-3.5 w-3.5" />
-              {t('rules.badge')}
-            </Badge>
-            <h2 className="font-semibold text-3xl sm:text-4xl">
-              {t('rules.title')}
-            </h2>
-            <p className="mt-4 text-foreground/65 leading-relaxed">
-              {t('rules.description')}
-            </p>
-
-            <div className="mt-6 grid gap-3">
-              {rules.map((rule) => (
-                <PolicyChecklistItem key={rule}>{rule}</PolicyChecklistItem>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="border-dynamic-blue/25 bg-linear-to-br from-dynamic-blue/10 via-background to-background p-6 shadow-sm sm:p-8">
-            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-dynamic-blue/10 text-dynamic-blue">
-              <ListChecks className="h-6 w-6" />
-            </div>
-            <h3 className="font-semibold text-2xl">
-              {t('rules.include.title')}
-            </h3>
-            <div className="mt-6 grid gap-3">
-              {reportDetails.map((item) => (
-                <PolicyChecklistItem key={item}>{item}</PolicyChecklistItem>
-              ))}
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            badge={t('response.badge')}
-            description={t('response.description')}
-            icon={ShieldCheck}
-            title={t('response.title')}
-          />
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {responseCards.map((card) => (
-              <PolicyInfoCard key={card.title} card={card} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="px-4 pt-10 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <Card className="overflow-hidden border-dynamic-green/30 bg-linear-to-r from-dynamic-green/10 via-background to-dynamic-cyan/10 p-6 sm:p-8">
-            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
-              <div>
-                <h2 className="font-semibold text-3xl">{t('cta.title')}</h2>
-                <p className="mt-3 max-w-3xl text-foreground/65 leading-relaxed">
-                  {t('cta.description')}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <SecuritySubpageLinkButton
-                  href="mailto:security@tuturuuu.com"
-                  size="lg"
-                >
-                  <Mail className="mr-2 h-5 w-5" />
-                  {t('cta.report_cta')}
-                </SecuritySubpageLinkButton>
-                <SecuritySubpageLinkButton
-                  href="/security/bug-bounty"
-                  size="lg"
-                  variant="outline"
-                >
-                  {t('cta.hall_cta')}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </SecuritySubpageLinkButton>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
+          </Panel>
+        </Reveal>
+      </SectionShell>
     </main>
   );
 }

@@ -9,30 +9,45 @@ import { motion } from 'framer-motion';
 export function SectionHeader({
   description,
   eyebrow,
+  index,
   inverted = false,
   title,
 }: {
   description: string;
   eyebrow: string;
+  /** Two-digit marker rendered in the rule, matching the marketing sections. */
+  index?: string;
   inverted?: boolean;
   title: string;
 }) {
   return (
     <div className="mb-12 grid gap-6 lg:grid-cols-[0.72fr_0.58fr] lg:items-end">
       <div>
-        <p
+        {/* Same eyebrow language as every marketing section: mono, tracked,
+            with an index and a hairline running off it. */}
+        <div
           className={cn(
-            'mb-4 font-medium text-sm',
-            inverted ? 'text-dynamic-blue' : 'text-foreground/45'
+            'flex items-center gap-3 font-mono-ui text-[0.7rem] uppercase tracking-[0.22em]',
+            inverted ? 'text-dynamic-blue/90' : 'text-foreground/45'
           )}
         >
-          {eyebrow}
-        </p>
-        <h2 className="text-pretty font-semibold text-4xl tracking-tight sm:text-6xl">
+          {index ? (
+            <>
+              <span className="text-foreground/30 tabular-nums">{index}</span>
+              <span
+                aria-hidden
+                className="h-px w-8 bg-gradient-to-r from-foreground/25 to-transparent"
+              />
+            </>
+          ) : null}
+          <span>{eyebrow}</span>
+        </div>
+
+        <h2 className="mt-6 text-balance font-display font-semibold text-4xl tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
           {title}
         </h2>
       </div>
-      <p className={cn('text-foreground/58 text-lg leading-8')}>
+      <p className="text-balance text-foreground/55 text-lg leading-relaxed">
         {description}
       </p>
     </div>

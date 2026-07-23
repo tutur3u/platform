@@ -7,6 +7,12 @@ interface MarketingNavShellProps {
   logo: ReactNode;
   menu: ReactNode;
   actions: ReactNode;
+  /**
+   * `overlay` floats the pill over a full-bleed page (marketing routes).
+   * `column` pins it to the top of a scrolling column that is not the
+   * viewport — the docs shell, where the sidebar owns the left edge.
+   */
+  placement?: 'overlay' | 'column';
 }
 
 /**
@@ -20,6 +26,7 @@ export function MarketingNavShell({
   logo,
   menu,
   actions,
+  placement = 'overlay',
 }: MarketingNavShellProps) {
   const [scrolled, setScrolled] = useState(false);
 
@@ -46,14 +53,21 @@ export function MarketingNavShell({
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-4 sm:pt-4"
+      className={cn(
+        'z-50 px-3 pt-3 sm:px-4 sm:pt-4',
+        placement === 'overlay'
+          ? 'fixed inset-x-0 top-0'
+          : // Sticky rather than fixed: the docs column scrolls inside the
+            // page, so a fixed bar would detach from it.
+            'sticky top-0 w-full'
+      )}
       id="navbar"
     >
       <div
         className={cn(
           // overflow-visible so the Products/Resources panels can escape the pill
           'relative mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 overflow-visible rounded-2xl px-3 transition-all duration-500 sm:px-4',
-          scrolled
+          scrolled || placement === 'column'
             ? 'border border-foreground/10 bg-background/70 shadow-foreground/5 shadow-lg backdrop-blur-xl'
             : 'border border-transparent bg-transparent'
         )}
@@ -64,7 +78,7 @@ export function MarketingNavShell({
           aria-hidden
           className={cn(
             'pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-foreground/25 to-transparent transition-opacity duration-500',
-            scrolled ? 'opacity-100' : 'opacity-0'
+            scrolled || placement === 'column' ? 'opacity-100' : 'opacity-0'
           )}
         />
 

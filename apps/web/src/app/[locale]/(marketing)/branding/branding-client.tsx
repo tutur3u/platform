@@ -89,13 +89,13 @@ export default function BrandingClient() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="space-y-7">
-              <h1 className="max-w-5xl text-pretty font-semibold text-5xl tracking-tight sm:text-7xl lg:text-[6.75rem] lg:leading-[0.88]">
+              <h1 className="max-w-5xl text-balance font-display font-extrabold text-5xl tracking-[-0.045em] sm:text-7xl lg:text-[6.5rem] lg:leading-[0.9]">
                 {t('hero.title')}{' '}
                 <span className="block pl-[0.02em] text-dynamic-blue">
                   {t('hero.titleAccent')}
                 </span>
               </h1>
-              <p className="max-w-2xl text-foreground/62 text-lg leading-8 sm:text-xl">
+              <p className="max-w-2xl text-balance text-foreground/55 text-lg leading-relaxed sm:text-xl">
                 {t('hero.description')}
               </p>
             </div>
@@ -164,6 +164,7 @@ export default function BrandingClient() {
           <SectionHeader
             description={t('assets.description')}
             eyebrow={t('assets.eyebrow')}
+            index="01"
             title={t('assets.title')}
           />
 
@@ -254,6 +255,7 @@ export default function BrandingClient() {
           <SectionHeader
             description={t('colors.description')}
             eyebrow={t('colors.eyebrow')}
+            index="02"
             inverted
             title={t('colors.title')}
           />
@@ -308,6 +310,7 @@ export default function BrandingClient() {
           <SectionHeader
             description={t('typography.description')}
             eyebrow={t('typography.eyebrow')}
+            index="03"
             title={t('typography.title')}
           />
 
@@ -371,6 +374,7 @@ export default function BrandingClient() {
           <SectionHeader
             description={t('guidelines.description')}
             eyebrow={t('guidelines.eyebrow')}
+            index="04"
             inverted
             title={t('guidelines.title')}
           />

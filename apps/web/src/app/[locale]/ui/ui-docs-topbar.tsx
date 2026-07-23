@@ -1,27 +1,29 @@
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
-import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
 import { Suspense } from 'react';
+import { MarketingNavMenu } from '../marketing-nav/marketing-nav-menu';
+import { MarketingNavShell } from '../marketing-nav/marketing-nav-shell';
 import Menu from '../menu';
 import NavbarLogoLink from '../navbar-logo-link';
-import NavbarSeparator from '../navbar-separator';
-import { MainNavigationMenu } from '../navigation-menu';
 import PublicNavbarActions from '../public-navbar-actions';
 
 /**
- * Docs-scoped variant of {@link MarketingNavbar}. Unlike the marketing navbar it
- * is rendered inside the docs right-column (not as a viewport-fixed overlay), so
- * the position is overridden to `sticky` and it gets a solid background instead
- * of the transparent marketing treatment.
+ * Docs-scoped variant of the marketing navbar.
+ *
+ * It is the same shell, the same floating pill and the same
+ * Products/Resources menu as the rest of the site — the docs previously ran
+ * the older shared `Navbar` with `MainNavigationMenu`, so moving between /ui
+ * and any marketing page swapped navigation systems mid-session.
+ *
+ * The only difference is placement: the docs bar lives at the top of the
+ * right-hand column rather than over the viewport, so it sticks to the column
+ * and always carries its surface instead of fading one in on scroll.
  */
 export function UiDocsTopbar() {
   return (
-    <SharedNavbar
+    <MarketingNavShell
       actions={
         <>
-          <Suspense>
-            <Menu sbUser={null} user={null} />
-          </Suspense>
           <Suspense
             fallback={
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
@@ -29,11 +31,12 @@ export function UiDocsTopbar() {
           >
             <PublicNavbarActions />
           </Suspense>
+          <Suspense>
+            <Menu sbUser={null} user={null} />
+          </Suspense>
         </>
       }
-      className="!static !z-40 lg:!sticky lg:!top-0 border-b"
-      contentClassName="bg-background/80 !px-4 backdrop-blur md:!px-8 lg:!px-10"
-      customLogoLink={
+      logo={
         <Suspense>
           <NavbarLogoLink
             logo={TUTURUUU_LOCAL_LOGO_URL}
@@ -41,10 +44,8 @@ export function UiDocsTopbar() {
           />
         </Suspense>
       }
-      logo={TUTURUUU_LOCAL_LOGO_URL}
-      navigationMenu={<MainNavigationMenu />}
-      separator={<NavbarSeparator />}
-      title={<LogoTitle />}
+      menu={<MarketingNavMenu />}
+      placement="column"
     />
   );
 }
