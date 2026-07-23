@@ -1,5 +1,4 @@
 import { Gauge } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -47,11 +46,12 @@ export default async function InfrastructureRateLimitsPage({ params }: Props) {
           </div>
           <p className="text-foreground/80">{t('description')}</p>
         </div>
-        <Button asChild type="button" variant="secondary">
-          <Link href={`/${wsId}/rate-limit-appeals`}>
-            {t('actions.open_appeals')}
-          </Link>
-        </Button>
+        <Link
+          className="inline-flex h-9 items-center justify-center rounded-md bg-secondary px-4 font-medium text-secondary-foreground text-sm transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          href={`/${wsId}/rate-limit-appeals`}
+        >
+          {t('actions.open_appeals')}
+        </Link>
       </div>
 
       <Separator className="my-4" />

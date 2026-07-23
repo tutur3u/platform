@@ -6,7 +6,6 @@ import {
   Server,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Table,
   TableBody,
@@ -45,6 +44,9 @@ import {
   getRunnerCapabilitySummary,
   RunnerCapabilitiesCell,
 } from './devbox-runner-capabilities';
+
+const actionButtonClassName =
+  'inline-flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-input bg-background px-3 font-medium text-sm shadow-xs transition-[color,box-shadow] hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0';
 
 export function RunnersTable({
   canManage,
@@ -179,17 +181,16 @@ export function RunnersTable({
                               !runner.heartbeat_enabled
                             )}
                           >
-                            <Button
+                            <button
+                              className={actionButtonClassName}
                               disabled={runner.status === 'revoked'}
-                              size="sm"
                               type="submit"
-                              variant="outline"
                             >
                               <Activity className="h-4 w-4" />
                               {runner.heartbeat_enabled
                                 ? t('actions.disable_heartbeat')
                                 : t('actions.enable_heartbeat')}
-                            </Button>
+                            </button>
                           </form>
                           <form
                             action={revokeDevboxRunnerAction.bind(
@@ -198,15 +199,14 @@ export function RunnersTable({
                               runner.id
                             )}
                           >
-                            <Button
+                            <button
+                              className={actionButtonClassName}
                               disabled={runner.status === 'revoked'}
-                              size="sm"
                               type="submit"
-                              variant="outline"
                             >
                               <RotateCcw className="h-4 w-4" />
                               {t('actions.revoke')}
-                            </Button>
+                            </button>
                           </form>
                         </div>
                       </TableCell>
@@ -289,15 +289,14 @@ export function RunsTable({
                       <form
                         action={stopDevboxRunAction.bind(null, wsId, run.id)}
                       >
-                        <Button
+                        <button
+                          className={actionButtonClassName}
                           disabled={!['queued', 'running'].includes(run.status)}
-                          size="sm"
                           type="submit"
-                          variant="outline"
                         >
                           <CircleStop className="h-4 w-4" />
                           {t('actions.stop')}
-                        </Button>
+                        </button>
                       </form>
                     </TableCell>
                   ) : null}
@@ -377,15 +376,14 @@ export function LeasesTable({
                           lease.id
                         )}
                       >
-                        <Button
+                        <button
+                          className={actionButtonClassName}
                           disabled={lease.status !== 'active'}
-                          size="sm"
                           type="submit"
-                          variant="outline"
                         >
                           <CircleStop className="h-4 w-4" />
                           {t('actions.release')}
-                        </Button>
+                        </button>
                       </form>
                     </TableCell>
                   ) : null}

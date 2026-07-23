@@ -1,6 +1,5 @@
 import { Plus } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -62,11 +61,12 @@ export default async function InfrastructureChangelogPage({
               Total: {count}
             </span>
           </div>
-          <Link href={`/${wsId}/changelog/new`}>
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              New Entry
-            </Button>
+          <Link
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href={`/${wsId}/changelog/new`}
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            New Entry
           </Link>
         </div>
       </div>

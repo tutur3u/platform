@@ -1,7 +1,6 @@
 import type { JSONContent } from '@tiptap/react';
 import { ArrowLeft } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
@@ -57,13 +56,17 @@ export default async function EditChangelogPage({ params }: Props) {
     <>
       <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div className="flex items-center gap-4">
-          <Link href={`/${wsId}/changelog`}>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+          <Link
+            aria-labelledby="edit-changelog-heading"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href={`/${wsId}/changelog`}
+          >
+            <ArrowLeft aria-hidden="true" className="size-4" />
           </Link>
           <div>
-            <h1 className="font-bold text-2xl">Edit Changelog Entry</h1>
+            <h1 className="font-bold text-2xl" id="edit-changelog-heading">
+              Edit Changelog Entry
+            </h1>
             <p className="text-foreground/80">
               Update the changelog entry details.
             </p>
