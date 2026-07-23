@@ -144,7 +144,7 @@
       },
       "tuchat": {
         "description": "Giao tiếp thống nhất",
-        "name": "TuChat"
+        "name": "Tuturuuu Chat"
       },
       "tudo": {
         "description": "Quản lý công việc thông minh",
@@ -8355,35 +8355,65 @@
     },
     "features": {
       "apps": {
+        "calendar": {
+          "description": "Cuộc họp, hạn chót và các khối tập trung trong một khung nhìn, với lịch trình tôn trọng những gì bạn đã cam kết.",
+          "subtitle": "Lịch Thông Minh",
+          "title": "Tuturuuu Calendar"
+        },
+        "chat": {
+          "description": "Kênh, tin nhắn riêng và tệp trong cùng không gian làm việc với công việc, lịch và tài liệu của bạn.",
+          "subtitle": "Giao Tiếp Nhóm",
+          "title": "Tuturuuu Chat"
+        },
+        "crm": {
+          "description": "Liên hệ, cơ hội và lịch sử trao đổi trong một hồ sơ, để việc cần theo dõi thành một công việc có hạn thay vì một ghi chú.",
+          "subtitle": "Quản Lý Khách Hàng",
+          "title": "Tuturuuu CRM"
+        },
+        "documents": {
+          "description": "Tài liệu nằm ngay cạnh công việc, lịch và tệp liên quan, để một bản mô tả không còn là đường link phải đi tìm.",
+          "subtitle": "Tài Liệu Cộng Tác",
+          "title": "Tuturuuu Docs"
+        },
+        "drive": {
+          "description": "Lưu trữ ngay trong không gian làm việc, để tệp, công việc liên quan và người cần dùng không nằm ở ba sản phẩm khác nhau.",
+          "subtitle": "Lưu Trữ Chung",
+          "title": "Tuturuuu Drive"
+        },
+        "finance": {
+          "description": "Chi tiêu, ngân sách, hoá đơn và dòng tiền, với hoá đơn được đọc và phân loại sẵn để chốt sổ không mất cả cuối tuần.",
+          "subtitle": "Quản Lý Tài Chính",
+          "title": "Tuturuuu Finance"
+        },
+        "inventory": {
+          "description": "Theo dõi tồn kho ở mọi địa điểm, với quét mã, điểm đặt lại hàng và cảnh báo trước khi một mặt hàng hết.",
+          "subtitle": "Quản Lý Kho",
+          "title": "Tuturuuu Inventory"
+        },
+        "meet": {
+          "description": "So sánh lịch rảnh của mọi người và chốt đúng khung giờ phù hợp, không cần chuỗi email trả lời tất cả.",
+          "subtitle": "Cuộc Họp Thông Minh",
+          "title": "Tuturuuu Meet"
+        },
         "nova": {
           "description": "Thực hành kỹ thuật prompt, tham gia thử thách AI và nâng cao kỹ năng của bạn với việc học thực hành.",
           "subtitle": "Nền Tảng Học Tập",
           "title": "Nova"
         },
-        "tuchat": {
-          "description": "Trung tâm giao tiếp tích hợp nơi AI phát hiện cam kết và chuyển chúng thành công việc và lịch.",
-          "subtitle": "Giao Tiếp Thông Minh",
-          "title": "TuChat"
-        },
-        "tudo": {
-          "description": "Trung tâm quản lý công việc tập trung với tổ chức phân cấp, tính năng ghi chú nhanh và tích hợp lịch liền mạch.",
-          "subtitle": "Quản Lý Công Việc Thông Minh",
+        "tasks": {
+          "description": "Danh sách, bảng và dòng thời gian trên cùng một tập công việc, với người phụ trách, thời hạn và mức ưu tiên trụ vững cả khi tuần bận rộn.",
+          "subtitle": "Quản Lý Công Việc",
           "title": "Tuturuuu Tasks"
         },
-        "tufinance": {
-          "description": "Theo dõi chi tiêu, quản lý ngân sách và nhận thông tin chuyên sâu do AI cung cấp về sức khỏe tài chính của bạn.",
-          "subtitle": "Quản Lý Tài Chính",
-          "title": "Tuturuuu Finance"
+        "track": {
+          "description": "Bấm giờ cho một công việc thật, dừng khi bạn chuyển việc, và kết tuần biết rõ thời gian đã đi đâu.",
+          "subtitle": "Theo Dõi Thời Gian",
+          "title": "Tuturuuu Track"
         },
-        "tumeet": {
-          "description": "Giải pháp cuộc họp toàn diện với lập kế hoạch cộng tác, thông tin vị trí và tóm tắt do AI tạo ra.",
-          "subtitle": "Cuộc Họp Thông Minh",
-          "title": "Tuturuuu Meet"
-        },
-        "tuplan": {
-          "description": "Tự động lập lịch bằng AI dựa trên thời hạn, ưu tiên và nhịp điệu làm việc cá nhân của bạn.",
-          "subtitle": "Lịch Thông Minh",
-          "title": "Tuturuuu Calendar"
+        "workflows": {
+          "description": "Dựng quy trình một lần với trình kích hoạt và điều kiện, rồi để phê duyệt, bàn giao và cập nhật tự chạy mà không cần ai nhắc.",
+          "subtitle": "Tự Động Hoá",
+          "title": "Tuturuuu Workflows"
         }
       },
       "eyebrow": "Một nền tảng",
@@ -8635,6 +8665,16 @@
       }
     },
     "problem": {
+      "day": {
+        "consolidated": {
+          "label": "Cũng ngày đó, trong một không gian",
+          "meta": "{count} khối làm việc thật sự"
+        },
+        "fragmented": {
+          "label": "Một ngày trải trên cả chục app",
+          "meta": "{count} lần chuyển ngữ cảnh"
+        }
+      },
       "eyebrow": "Vấn đề",
       "stats": {
         "apps": {
@@ -8650,8 +8690,22 @@
           "value": "3 giờ"
         }
       },
-      "subtitle": "Tuturuuu gom tất cả vào một chỗ duy nhất.",
-      "title": "Quá nhiều app. Quá ít thời gian. Mình hiểu mà."
+      "subtitle": "Mỗi công cụ đều muốn làm trung tâm, và chẳng công cụ nào nói chuyện với nhau. Thế là bạn thành lớp tích hợp: sao chép giữa các app, giải thích lại cùng một ngữ cảnh, mở bốn nơi để trả lời một câu hỏi.",
+      "symptoms": {
+        "duplicated": {
+          "description": "Bắt đầu từ một tin nhắn, lặp lại trong công cụ quản lý, rơi vào bảng tính, rồi kết thúc trên một mẩu giấy nhớ. Bốn bản sao, bốn phiên bản sự thật.",
+          "title": "Cùng một việc, nhập bốn lần"
+        },
+        "glue": {
+          "description": "Mọi bàn giao đều đi qua một người: chép cái này sang kia, dán cái kia vào đây, rồi nhắc lại lần nữa. Không phải công việc, nhưng ngốn cả ngày.",
+          "title": "Bạn chính là lớp tích hợp"
+        },
+        "stale": {
+          "description": "Một mốc thời gian đổi ở app này và vẫn sai ở ba app kia. Không có sợi dây nào nối chúng, nên bản cập nhật phụ thuộc vào việc ai đó nhớ ra.",
+          "title": "Không cái nào báo cho cái nào"
+        }
+      },
+      "title": "Công việc không phải vấn đề. Việc nhảy qua nhảy lại mới là."
     },
     "socialProof": {
       "backedBy": "Được hỗ trợ bởi",

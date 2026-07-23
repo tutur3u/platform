@@ -636,7 +636,7 @@ export default function CareersPage() {
                 name: 'TuApps Suite',
                 subtitle: '7 Integrated Products',
                 description:
-                  'Tuturuuu Calendar, Tuturuuu Tasks, Tuturuuu Meet, TuMail, TuChat, TuDrive, TuTrack—unified by Mira.',
+                  'Tuturuuu Calendar, Tuturuuu Tasks, Tuturuuu Meet, Tuturuuu Mail, Tuturuuu Chat, Tuturuuu Drive, Tuturuuu Track—unified by Mira.',
                 icon: Layers,
                 color: 'green',
                 features: [

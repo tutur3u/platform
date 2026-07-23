@@ -26,9 +26,15 @@ export { PricingCard } from './pricing/pricing-card';
 export { PricingSection } from './pricing/pricing-section';
 export { PricingToggle } from './pricing/pricing-toggle';
 // Problem Section
+export { DayStrip } from './problem/day-strip';
 export { ProblemSection } from './problem/problem-section';
-export { StatCard } from './problem/stat-card';
-export { ToolSprawl } from './problem/tool-sprawl';
+export { type Stat, StatRail } from './problem/stat-rail';
+export {
+  DuplicateFigure,
+  GlueFigure,
+  StaleFigure,
+  SymptomCard,
+} from './problem/symptom-cards';
 // Shared primitives
 export {
   Grain,

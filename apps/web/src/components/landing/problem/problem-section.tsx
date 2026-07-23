@@ -1,19 +1,24 @@
 import { AppWindow, Brain, Clock } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
-import { RevealGroup, RevealItem } from '../shared/reveal';
+import { Reveal, RevealGroup, RevealItem } from '../shared/reveal';
 import { SectionShell } from '../shared/section-shell';
-import { StatCard, type StatColor } from './stat-card';
-import { ToolSprawl } from './tool-sprawl';
+import { BLOCK_COUNT, DayStrip, FRAGMENT_COUNT } from './day-strip';
+import { type Stat, StatRail } from './stat-rail';
+import {
+  DuplicateFigure,
+  GlueFigure,
+  StaleFigure,
+  SymptomCard,
+} from './symptom-cards';
 
+/**
+ * The problem, argued in three moves: what a day looks like now, the three
+ * ways that shows up in the week, and what it costs.
+ */
 export function ProblemSection() {
   const t = useTranslations('landing.problem');
 
-  const stats: Array<{
-    icon: typeof AppWindow;
-    value: string;
-    label: string;
-    color: StatColor;
-  }> = [
+  const stats: Stat[] = [
     {
       icon: AppWindow,
       value: t('stats.apps.value'),
@@ -34,6 +39,24 @@ export function ProblemSection() {
     },
   ];
 
+  const symptoms = [
+    {
+      key: 'duplicated',
+      tone: 'red' as const,
+      figure: <DuplicateFigure />,
+    },
+    {
+      key: 'stale',
+      tone: 'orange' as const,
+      figure: <StaleFigure />,
+    },
+    {
+      key: 'glue',
+      tone: 'yellow' as const,
+      figure: <GlueFigure />,
+    },
+  ];
+
   return (
     <SectionShell
       bloom="red"
@@ -41,17 +64,33 @@ export function ProblemSection() {
       index="01"
       subtitle={t('subtitle')}
       title={t('title')}
-      width="narrow"
     >
-      <ToolSprawl />
+      <Reveal>
+        <DayStrip
+          consolidatedLabel={t('day.consolidated.label')}
+          consolidatedMeta={t('day.consolidated.meta', { count: BLOCK_COUNT })}
+          fragmentedLabel={t('day.fragmented.label')}
+          fragmentedMeta={t('day.fragmented.meta', { count: FRAGMENT_COUNT })}
+        />
+      </Reveal>
 
-      <RevealGroup className="grid gap-3 sm:grid-cols-3" stagger={0.1}>
-        {stats.map((stat) => (
-          <RevealItem className="h-full" key={stat.label}>
-            <StatCard {...stat} />
+      <RevealGroup className="mb-3 grid gap-3 sm:grid-cols-3" stagger={0.08}>
+        {symptoms.map((symptom, index) => (
+          <RevealItem className="h-full" key={symptom.key}>
+            <SymptomCard
+              description={t(`symptoms.${symptom.key}.description` as never)}
+              figure={symptom.figure}
+              index={`0${index + 1}`}
+              title={t(`symptoms.${symptom.key}.title` as never)}
+              tone={symptom.tone}
+            />
           </RevealItem>
         ))}
       </RevealGroup>
+
+      <Reveal delay={0.1}>
+        <StatRail stats={stats} />
+      </Reveal>
     </SectionShell>
   );
 }

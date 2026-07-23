@@ -64,7 +64,7 @@ export const englishLandingContent = {
           'Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.',
         highlights: ['Team chat', 'AI insights', 'Auto-routing'],
         subtitle: 'Smart Communications',
-        title: 'TuChat',
+        title: 'Tuturuuu Chat',
       },
       tudo: {
         description:

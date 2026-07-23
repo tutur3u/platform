@@ -451,6 +451,7 @@
   --animate-float-y: float-y 6s ease-in-out infinite;
   --animate-scroll-cue: scroll-cue 2.2s ease-in-out infinite;
   --animate-ring-pulse: ring-pulse 3s ease-out infinite;
+  --animate-day-scan: day-scan 9s ease-in-out infinite;
 
   /* Marketing type scale. The variables resolve only where the marketing
      layout loads the fonts; everywhere else these fall back to the app font. */
@@ -557,6 +558,20 @@
   }
 }
 
+/* Restless light crossing the fragmented day on the landing page. Driving
+   background-position (rather than a transform) keeps the highlight clipped to
+   the strip, so it never has to be masked. Symmetric endpoints let it sweep
+   out and back on one eased loop with no seam. */
+@keyframes day-scan {
+  0%,
+  100% {
+    background-position: 130% 0;
+  }
+  50% {
+    background-position: -30% 0;
+  }
+}
+
 @keyframes ring-pulse {
   0% {
     opacity: 0.6;
@@ -577,6 +592,7 @@
   .animate-float-y,
   .animate-scroll-cue,
   .animate-ring-pulse,
+  .animate-day-scan,
   .animate-bloom-drift,
   .animate-bloom-drift-slow,
   .animate-sheen,

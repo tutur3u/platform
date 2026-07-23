@@ -2,17 +2,11 @@
 
 import {
   Boxes,
-  Building2,
-  CalendarClock,
   ClipboardList,
-  FileText,
-  Folder,
   Mail,
-  MessageSquare,
-  Package,
   QrCode,
+  Sparkles,
   Store,
-  Zap,
 } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
@@ -22,9 +16,10 @@ import { type SurfaceAccent, SurfaceCard } from '../shared/surface-card';
 /**
  * The rest of the suite.
  *
- * The bento above gives six apps a full card each; the remaining twelve get a
- * compact tile, so the page shows the whole platform without eighteen identical
- * boxes. Copy is reused from the navigation bundle rather than duplicated.
+ * Twelve apps get a full bento card above; the remaining six get a compact
+ * tile, so the page shows all eighteen without eighteen identical boxes. Copy
+ * is reused from the navigation bundle rather than duplicated, and six tiles on
+ * a three-column grid fill exactly two rows.
  *
  * Every tile leads to a marketing `/products/*` page, never straight into an
  * app: the page is where the link into the running product lives.
@@ -35,39 +30,13 @@ const moreApps: Array<{
   icon: ComponentType<{ className?: string }>;
   accent: SurfaceAccent;
 }> = [
-  { key: 'workflows', href: '/products/workflows', icon: Zap, accent: 'cyan' },
-  {
-    key: 'documents',
-    href: '/products/documents',
-    icon: FileText,
-    accent: 'orange',
-  },
-  { key: 'drive', href: '/products/drive', icon: Folder, accent: 'yellow' },
+  { key: 'ai', href: '/products/ai', icon: Sparkles, accent: 'purple' },
   { key: 'mail', href: '/products/mail', icon: Mail, accent: 'red' },
-  { key: 'crm', href: '/products/crm', icon: Building2, accent: 'blue' },
-  {
-    key: 'inventory',
-    href: '/products/inventory',
-    icon: Package,
-    accent: 'green',
-  },
-  {
-    key: 'track',
-    href: '/products/track',
-    icon: CalendarClock,
-    accent: 'orange',
-  },
   {
     key: 'forms',
     href: '/products/forms',
     icon: ClipboardList,
-    accent: 'purple',
-  },
-  {
-    key: 'chat',
-    href: '/products/chat',
-    icon: MessageSquare,
-    accent: 'cyan',
+    accent: 'blue',
   },
   {
     key: 'storefront',
@@ -75,8 +44,8 @@ const moreApps: Array<{
     icon: Store,
     accent: 'green',
   },
-  { key: 'hive', href: '/products/hive', icon: Boxes, accent: 'purple' },
-  { key: 'qr', href: '/products/qr', icon: QrCode, accent: 'blue' },
+  { key: 'hive', href: '/products/hive', icon: Boxes, accent: 'pink' },
+  { key: 'qr', href: '/products/qr', icon: QrCode, accent: 'cyan' },
 ];
 
 export function MoreApps() {
@@ -97,7 +66,7 @@ export function MoreApps() {
 
       <RevealGroup
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-        stagger={0.04}
+        stagger={0.05}
       >
         {moreApps.map((app) => (
           <RevealItem className="h-full" key={app.key}>

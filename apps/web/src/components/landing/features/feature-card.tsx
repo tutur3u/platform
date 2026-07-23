@@ -1,4 +1,4 @@
-import type { LucideIcon } from '@tuturuuu/icons/lucide';
+import { ArrowUpRight, type LucideIcon } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
 
@@ -8,8 +8,11 @@ export type FeatureColor =
   | 'purple'
   | 'cyan'
   | 'orange'
-  | 'pink';
+  | 'pink'
+  | 'yellow'
+  | 'red';
 
+// Static class maps: Tailwind cannot resolve a class assembled at runtime.
 const colorStyles: Record<
   FeatureColor,
   { border: string; bloom: string; icon: string; label: string; rule: string }
@@ -56,6 +59,20 @@ const colorStyles: Record<
     label: 'text-dynamic-pink/80',
     rule: 'via-dynamic-pink/40',
   },
+  yellow: {
+    border: 'hover:border-dynamic-yellow/35',
+    bloom: 'bg-dynamic-yellow/25',
+    icon: 'text-dynamic-yellow',
+    label: 'text-dynamic-yellow/80',
+    rule: 'via-dynamic-yellow/40',
+  },
+  red: {
+    border: 'hover:border-dynamic-red/35',
+    bloom: 'bg-dynamic-red/25',
+    icon: 'text-dynamic-red',
+    label: 'text-dynamic-red/80',
+    rule: 'via-dynamic-red/40',
+  },
 };
 
 interface FeatureCardProps {
@@ -64,14 +81,22 @@ interface FeatureCardProps {
   subtitle: string;
   description: string;
   color: FeatureColor;
-  /** Miniature product visual rendered above the copy. */
+  /** Miniature product visual rendered beside (wide) or below (narrow) the copy. */
   preview?: ReactNode;
-  /** Wide cards run the preview beside the copy instead of above it. */
+  /** Wide cards run the preview beside the copy instead of under it. */
   wide?: boolean;
   href?: string;
   className?: string;
 }
 
+/**
+ * A bento cell.
+ *
+ * The card always fills its grid row (`h-full`) and pins its preview to the
+ * bottom, so a row of cards with different amounts of copy still lines its
+ * previews up along one edge. That is what keeps the grid free of the ragged
+ * holes an `items-start` layout produces.
+ */
 export function FeatureCard({
   icon: Icon,
   title,
@@ -90,7 +115,7 @@ export function FeatureCard({
     <Root
       {...(href ? { href } : {})}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-500',
+        'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-500',
         'hover:-translate-y-1 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         styles.border,
@@ -99,7 +124,7 @@ export function FeatureCard({
       )}
     >
       {/* Lit top edge — brightens on hover so the card reads as catching light */}
-      <div
+      <span
         aria-hidden
         className={cn(
           'pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent to-transparent opacity-40 transition-opacity duration-500 group-hover:opacity-100',
@@ -107,7 +132,7 @@ export function FeatureCard({
         )}
       />
       {/* Corner bloom */}
-      <div
+      <span
         aria-hidden
         className={cn(
           'pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100',
@@ -117,8 +142,8 @@ export function FeatureCard({
 
       <div
         className={cn(
-          'relative flex',
-          wide ? 'flex-col gap-4 sm:flex-row sm:items-center' : 'flex-col'
+          'relative flex flex-1',
+          wide ? 'flex-col gap-5 sm:flex-row sm:items-center' : 'flex-col'
         )}
       >
         <div className={cn('flex flex-col', wide && 'sm:flex-1')}>
@@ -137,6 +162,9 @@ export function FeatureCard({
             >
               {subtitle}
             </span>
+            {href ? (
+              <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 text-foreground/20 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground/50" />
+            ) : null}
           </div>
 
           <h3
@@ -161,8 +189,12 @@ export function FeatureCard({
         {preview ? (
           <div
             className={cn(
-              'h-fit transition-transform duration-500 group-hover:-translate-y-0.5',
-              wide ? 'sm:w-[44%] sm:shrink-0' : 'mt-4'
+              'transition-transform duration-500 group-hover:-translate-y-0.5',
+              // Wide: sits beside the copy. Narrow: pushed to the card's floor
+              // so every preview in a row shares one baseline.
+              wide
+                ? 'sm:w-[46%] sm:shrink-0'
+                : 'mt-5 pt-1 max-sm:mt-4 sm:mt-auto'
             )}
           >
             {preview}

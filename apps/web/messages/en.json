@@ -144,7 +144,7 @@
       },
       "tuchat": {
         "description": "Unified communications",
-        "name": "TuChat"
+        "name": "Tuturuuu Chat"
       },
       "tudo": {
         "description": "Smart task management",
@@ -8355,35 +8355,65 @@
     },
     "features": {
       "apps": {
+        "calendar": {
+          "description": "Meetings, deadlines and focus blocks in one view, with scheduling that respects what you already committed to.",
+          "subtitle": "Smart Calendar",
+          "title": "Tuturuuu Calendar"
+        },
+        "chat": {
+          "description": "Channels, direct messages and files in the same workspace as your tasks, calendar and documents.",
+          "subtitle": "Team Communication",
+          "title": "Tuturuuu Chat"
+        },
+        "crm": {
+          "description": "Contacts, deals and conversation history in one record, so the follow-up you meant to send becomes a task with a date.",
+          "subtitle": "Customer Pipeline",
+          "title": "Tuturuuu CRM"
+        },
+        "documents": {
+          "description": "Docs that sit next to the tasks, calendar and files they belong to, so a spec stops being a link somebody has to find.",
+          "subtitle": "Collaborative Docs",
+          "title": "Tuturuuu Docs"
+        },
+        "drive": {
+          "description": "Storage inside the workspace, so a file, the task it belongs to and the person who needs it are never three products apart.",
+          "subtitle": "Shared Storage",
+          "title": "Tuturuuu Drive"
+        },
+        "finance": {
+          "description": "Expenses, budgets, invoices and cash flow, with receipts read and categorised so the month closes without a weekend of data entry.",
+          "subtitle": "Finance Management",
+          "title": "Tuturuuu Finance"
+        },
+        "inventory": {
+          "description": "Track what you hold across every location, with scanning, reorder points, and an alert before a line runs dry.",
+          "subtitle": "Stock Control",
+          "title": "Tuturuuu Inventory"
+        },
+        "meet": {
+          "description": "Compare everyone's availability and land on the one slot that actually works, without the reply-all thread.",
+          "subtitle": "Smart Meetings",
+          "title": "Tuturuuu Meet"
+        },
         "nova": {
           "description": "Practice prompt engineering, compete in AI challenges, and level up your skills with hands-on learning.",
           "subtitle": "Learning Platform",
           "title": "Nova"
         },
-        "tuchat": {
-          "description": "Integrated communications hub where AI surfaces commitments and routes them to tasks and calendar.",
-          "subtitle": "Smart Communications",
-          "title": "TuChat"
-        },
-        "tudo": {
-          "description": "Centralized task hub with hierarchical organization, bucket dump feature, and seamless calendar integration.",
+        "tasks": {
+          "description": "Lists, boards and timelines over the same tasks, with owners, dates and priorities that hold up when the week gets busy.",
           "subtitle": "Smart Tasks",
           "title": "Tuturuuu Tasks"
         },
-        "tufinance": {
-          "description": "Track expenses, manage budgets, and gain AI-powered insights into your financial health.",
-          "subtitle": "Finance Management",
-          "title": "Tuturuuu Finance"
+        "track": {
+          "description": "Start a timer against a real task, stop it when you move on, and end the week knowing where the hours went.",
+          "subtitle": "Time Tracking",
+          "title": "Tuturuuu Track"
         },
-        "tumeet": {
-          "description": "End-to-end meeting solution with collaborative planning, location intelligence, and AI-generated summaries.",
-          "subtitle": "Smart Meetings",
-          "title": "Tuturuuu Meet"
-        },
-        "tuplan": {
-          "description": "AI-powered auto-scheduling that allocates time based on deadlines, priorities, and your personal work rhythms.",
-          "subtitle": "Smart Calendar",
-          "title": "Tuturuuu Calendar"
+        "workflows": {
+          "description": "Build the process once with triggers and conditions, then let approvals, handoffs and updates run without chasing.",
+          "subtitle": "Automation",
+          "title": "Tuturuuu Workflows"
         }
       },
       "eyebrow": "One platform",
@@ -8635,6 +8665,16 @@
       }
     },
     "problem": {
+      "day": {
+        "consolidated": {
+          "label": "The same day, in one workspace",
+          "meta": "{count} blocks of real work"
+        },
+        "fragmented": {
+          "label": "A day across a dozen apps",
+          "meta": "{count} context switches"
+        }
+      },
       "eyebrow": "The problem",
       "stats": {
         "apps": {
@@ -8650,8 +8690,22 @@
           "value": "3 hrs"
         }
       },
-      "subtitle": "Tuturuuu brings everything into one place.",
-      "title": "You're drowning in tools. We get it."
+      "subtitle": "Every tool wants to be your home base, and none of them talk to each other. So you become the integration layer: copying between apps, re-explaining the same context, checking four places to answer one question.",
+      "symptoms": {
+        "duplicated": {
+          "description": "It starts in a message, gets repeated in a tracker, lands in a spreadsheet, and ends up on a sticky note. Four copies, four versions of the truth.",
+          "title": "The same task, entered four times"
+        },
+        "glue": {
+          "description": "Every handoff routes through a human relay: copy this there, paste that here, remind them again. It is not work, but it takes all day.",
+          "title": "You are the integration"
+        },
+        "stale": {
+          "description": "A date moves in one app and stays wrong in the other three. There is no wire between them, so the update depends on a person remembering.",
+          "title": "Nothing tells anything else"
+        }
+      },
+      "title": "The work isn't the problem. The switching is."
     },
     "socialProof": {
       "backedBy": "Powered by",

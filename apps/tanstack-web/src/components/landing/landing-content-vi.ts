@@ -68,7 +68,7 @@ export const vietnameseLandingContent = {
           'Tự động phân loại',
         ],
         subtitle: 'Giao Tiếp Thông Minh',
-        title: 'TuChat',
+        title: 'Tuturuuu Chat',
       },
       tudo: {
         description:
