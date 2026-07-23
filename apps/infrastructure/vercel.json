@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/infrastructure",
+  "installCommand": "bun install --frozen-lockfile",
   "git": {
     "deploymentEnabled": false
   },
