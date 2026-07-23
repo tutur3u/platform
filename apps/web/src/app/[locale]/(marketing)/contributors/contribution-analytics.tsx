@@ -1,15 +1,10 @@
 'use client';
 
-import { Card } from '@tuturuuu/ui/card';
-import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -17,6 +12,16 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+
+/**
+ * Charts of what the repository actually reports.
+ *
+ * The version this replaces drew three charts, two of which — "Monthly
+ * Contributions" and "Activity Trend" — were produced by `Math.random()` and
+ * presented as GitHub data. They also re-rolled on every render, so the same
+ * visitor saw a different "trend" each time. Both are gone. What remains is
+ * derived only from the commit counts the contributors endpoint returns.
+ */
 
 interface ContributorChartDatum {
   login: string;
@@ -27,309 +32,150 @@ interface ContributionAnalyticsProps {
   contributors: ContributorChartDatum[];
 }
 
-function generateContributionTimeline(contributors: ContributorChartDatum[]) {
-  const months = Array.from({ length: 12 }, (_, i) =>
-    new Date(0, i).toLocaleString('en', { month: 'short' })
-  );
-
-  const monthlyContributions = months.map((month) => ({
-    month,
-    contributions: 0,
-  }));
-
-  const totalContributions = contributors.reduce(
-    (sum, contributor) => sum + contributor.contributions,
-    0
-  );
-
-  let remainingContributions = totalContributions;
-  for (let i = 0; i < months.length - 1; i++) {
-    const allocation = Math.floor(
-      remainingContributions * (0.1 + Math.random() * 0.2)
-    );
-    monthlyContributions[i]!.contributions = allocation;
-    remainingContributions -= allocation;
-  }
-
-  monthlyContributions[months.length - 1]!.contributions =
-    remainingContributions;
-
-  return monthlyContributions;
-}
-
-function generateActivityTrend(contributors: ContributorChartDatum[]) {
-  const weeks = Array.from({ length: 12 }, (_, i) => ({
-    name: `Week ${i + 1}`,
-    contributions: 0,
-  }));
-
-  const totalContributions = contributors.reduce(
-    (sum, contributor) => sum + contributor.contributions,
-    0
-  );
-
-  const baseValue = totalContributions / 20;
-
-  weeks.forEach((week, i) => {
-    const trendFactor = 1 + (i / weeks.length) * 0.5;
-    const variationFactor = 0.7 + Math.random() * 0.6;
-    const periodFactor = Math.sin((i / weeks.length) * Math.PI * 2) * 0.3 + 1;
-
-    week.contributions = Math.floor(
-      baseValue * trendFactor * variationFactor * periodFactor
-    );
-  });
-
-  return weeks;
-}
+const sliceColors = [
+  'var(--purple)',
+  'var(--blue)',
+  'var(--cyan)',
+  'var(--green)',
+  'var(--orange)',
+];
 
 function ChartCard({
-  children,
-  className,
-  description,
   title,
+  description,
+  children,
 }: {
-  children: React.ReactNode;
-  className: string;
-  description: string;
   title: string;
+  description: string;
+  children: ReactNode;
 }) {
   return (
-    <Card className={className}>
-      <div className="mb-6">
-        <h3 className="mb-2 font-bold text-2xl">{title}</h3>
-        <p className="text-foreground/60 text-sm">{description}</p>
-      </div>
-      {children}
-    </Card>
+    <div className="relative h-full overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-6">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+      />
+      <h3 className="font-display font-semibold text-lg tracking-[-0.01em]">
+        {title}
+      </h3>
+      <p className="mt-1.5 text-foreground/45 text-sm">{description}</p>
+      <div className="mt-6">{children}</div>
+    </div>
   );
 }
+
+const tooltipStyle = {
+  background: 'var(--background)',
+  border: '1px solid color-mix(in oklab, var(--foreground) 12%, transparent)',
+  borderRadius: '0.75rem',
+  fontSize: '0.75rem',
+};
 
 export function ContributionAnalytics({
   contributors,
 }: ContributionAnalyticsProps) {
+  const ranked = [...contributors].sort(
+    (a, b) => b.contributions - a.contributions
+  );
+  const topFive = ranked.slice(0, 5);
+  const topTwelve = ranked.slice(0, 12);
+
+  if (ranked.length === 0) return null;
+
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        whileHover={{ y: -4 }}
-        transition={{ type: 'spring', stiffness: 300 }}
+    <div className="grid gap-3 lg:grid-cols-2">
+      <ChartCard
+        description="Share of commits among the five most active contributors."
+        title="Top five by commits"
       >
-        <ChartCard
-          title="Top 5 Contributors"
-          description="Distribution of commits among leading contributors"
-          className="h-full overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/5 via-background to-background p-8 transition-all duration-300 hover:border-dynamic-purple/50 hover:shadow-md"
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <defs>
-                {[
-                  { id: 'color1', color: '#8884d8' },
-                  { id: 'color2', color: '#82ca9d' },
-                  { id: 'color3', color: '#ffc658' },
-                  { id: 'color4', color: '#ff8042' },
-                  { id: 'color5', color: '#0088fe' },
-                ].map((item) => (
-                  <linearGradient
-                    key={item.id}
-                    id={item.id}
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor={item.color}
-                      stopOpacity={0.8}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor={item.color}
-                      stopOpacity={0.5}
-                    />
-                  </linearGradient>
-                ))}
-              </defs>
-              <Pie
-                data={contributors.slice(0, 5).map((contributor) => ({
-                  name: contributor.login,
-                  value: contributor.contributions,
-                }))}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-                nameKey="name"
-                animationDuration={2000}
-                animationBegin={300}
-              >
-                {contributors.slice(0, 5).map((_, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={`url(#color${index + 1})`}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value, name) => [`${value} commits`, `@${name}`]}
-              />
-              <Legend
-                iconType="circle"
-                iconSize={10}
-                layout="horizontal"
-                verticalAlign="bottom"
-                align="center"
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        whileHover={{ y: -4 }}
-        transition={{ type: 'spring', stiffness: 300 }}
-      >
-        <ChartCard
-          title="Monthly Contributions"
-          description="Activity patterns throughout the year"
-          className="h-full overflow-hidden border-dynamic-blue/30 bg-linear-to-br from-dynamic-blue/5 via-background to-background p-8 transition-all duration-300 hover:border-dynamic-blue/50 hover:shadow-md"
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart
-              data={generateContributionTimeline(contributors)}
-              barGap={2}
-              barSize={24}
+        <ResponsiveContainer height={260} width="100%">
+          <PieChart>
+            <Pie
+              data={topFive}
+              dataKey="contributions"
+              innerRadius={58}
+              nameKey="login"
+              outerRadius={92}
+              paddingAngle={2}
+              strokeWidth={0}
             >
-              <defs>
-                <linearGradient
-                  id="colorContribBar"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.5}
-                  />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis
-                dataKey="month"
-                axisLine={{ stroke: 'var(--border)' }}
-                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-              />
-              <YAxis
-                axisLine={{ stroke: 'var(--border)' }}
-                tick={{ fill: 'var(--muted-foreground)' }}
-              />
-              <Tooltip
-                animationDuration={300}
-                contentStyle={{
-                  backgroundColor: 'var(--background)',
-                  borderColor: 'var(--border)',
-                  borderRadius: '0.5rem',
-                  boxShadow:
-                    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                }}
-                formatter={(value) => [`${value} commits`, 'Contributions']}
-              />
-              <Bar
-                dataKey="contributions"
-                fill="url(#colorContribBar)"
-                radius={[4, 4, 0, 0]}
-                animationDuration={2000}
-                animationBegin={500}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </motion.div>
+              {topFive.map((entry, index) => (
+                <Cell
+                  fill={sliceColors[index % sliceColors.length]}
+                  key={entry.login}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(value) => [Number(value).toLocaleString(), 'commits']}
+            />
+          </PieChart>
+        </ResponsiveContainer>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.3 }}
-        className="lg:col-span-2"
-        whileHover={{ y: -4 }}
-      >
-        <ChartCard
-          title="Activity Trend"
-          description="Weekly contribution patterns showing community growth"
-          className="overflow-hidden border-dynamic-green/30 bg-linear-to-br from-dynamic-green/5 via-background to-background p-8 transition-all duration-300 hover:border-dynamic-green/50 hover:shadow-md"
-        >
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={generateActivityTrend(contributors)}>
-              <defs>
-                <linearGradient
-                  id="colorContributions"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.1}
-                  />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-              <XAxis
-                dataKey="name"
-                axisLine={{ stroke: 'var(--border)' }}
-                tick={{ fill: 'var(--muted-foreground)' }}
-              />
-              <YAxis
-                axisLine={{ stroke: 'var(--border)' }}
-                tick={{ fill: 'var(--muted-foreground)' }}
-              />
-              <Tooltip
-                animationDuration={300}
-                contentStyle={{
-                  backgroundColor: 'var(--background)',
-                  borderColor: 'var(--border)',
-                  borderRadius: '0.5rem',
-                  boxShadow:
-                    '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        <ul className="mt-4 grid gap-1.5">
+          {topFive.map((entry, index) => (
+            <li
+              className="flex items-center gap-2 text-xs"
+              key={`legend-${entry.login}`}
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  background: sliceColors[index % sliceColors.length],
                 }}
-                formatter={(value) => [`${value} commits`, 'Activity']}
               />
-              <Area
-                type="monotone"
-                dataKey="contributions"
-                stroke="var(--primary)"
-                fillOpacity={1}
-                fill="url(#colorContributions)"
-                animationDuration={2000}
-                animationBegin={800}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </motion.div>
+              <span className="min-w-0 flex-1 truncate text-foreground/60">
+                {entry.login}
+              </span>
+              <span className="font-mono-ui text-[0.62rem] text-foreground/40 tabular-nums">
+                {entry.contributions.toLocaleString()}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </ChartCard>
+
+      <ChartCard
+        description="How commits are spread across the wider group, most active first."
+        title="Distribution across the group"
+      >
+        <ResponsiveContainer height={340} width="100%">
+          <BarChart
+            data={topTwelve}
+            layout="vertical"
+            margin={{ left: 8, right: 8 }}
+          >
+            <XAxis hide type="number" />
+            <YAxis
+              axisLine={false}
+              dataKey="login"
+              tick={{
+                fill: 'color-mix(in oklab, var(--foreground) 45%, transparent)',
+                fontSize: 11,
+              }}
+              tickLine={false}
+              type="category"
+              width={92}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{
+                fill: 'color-mix(in oklab, var(--foreground) 4%, transparent)',
+              }}
+              formatter={(value) => [Number(value).toLocaleString(), 'commits']}
+            />
+            <Bar dataKey="contributions" radius={[0, 4, 4, 0]}>
+              {topTwelve.map((entry, index) => (
+                <Cell
+                  fill={sliceColors[index % sliceColors.length]}
+                  key={`bar-${entry.login}`}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </div>
   );
 }

@@ -80,6 +80,37 @@ const modelsClientSource = source(
 const contributorsPageSource = source(
   'src/app/[locale]/(marketing)/contributors/page.tsx'
 );
+// These four pages were rebuilt from single client files into server sections,
+// so the import boundaries they are pinned to now live in their component
+// modules. Each group is asserted as a whole, the same way `contact` is.
+const securityComponentSources = [
+  'src/app/[locale]/(marketing)/security/components/defence-grid.tsx',
+  'src/app/[locale]/(marketing)/security/components/defence-rings.tsx',
+  'src/app/[locale]/(marketing)/security/components/disclosure-section.tsx',
+  'src/app/[locale]/(marketing)/security/components/security-hero.tsx',
+  'src/app/[locale]/(marketing)/security/components/trust-section.tsx',
+].map(source);
+const partnersComponentSources = [
+  'src/app/[locale]/(marketing)/partners/components/partner-card.tsx',
+  'src/app/[locale]/(marketing)/partners/components/partners-sections.tsx',
+].map(source);
+const careersComponentSources = [
+  'src/app/[locale]/(marketing)/careers/components/careers-sections.tsx',
+  'src/app/[locale]/(marketing)/careers/components/role-card.tsx',
+].map(source);
+const blogComponentSources = [
+  'src/app/[locale]/(marketing)/blog/components/blog-sections.tsx',
+].map(source);
+const contributorsComponentSources = [
+  'src/app/[locale]/(marketing)/contributors/components/analytics-section.tsx',
+  'src/app/[locale]/(marketing)/contributors/components/contributor-grid.tsx',
+  'src/app/[locale]/(marketing)/contributors/components/contributors-hero.tsx',
+].map(source);
+const marketingKitSources = [
+  'src/components/marketing/action-link.tsx',
+  'src/components/marketing/page-hero.tsx',
+  'src/components/marketing/stat-strip.tsx',
+].map(source);
 const aboutComponentSources = [
   'src/app/[locale]/(marketing)/about/components/beliefs-section.tsx',
   'src/app/[locale]/(marketing)/about/components/capabilities-section.tsx',
@@ -354,10 +385,16 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the public security page off the icon package root', () => {
-    expect(securityPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    for (const sourceText of [
+      securityPageSource,
+      ...securityComponentSources,
+    ]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+    }
+
+    expect(securityComponentSources.join('\n')).toContain(
+      '@tuturuuu/icons/lucide'
     );
-    expect(securityPageSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps public security subpages off the icon package root', () => {
@@ -401,44 +438,77 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps the public security page off shared UI primitives', () => {
-    for (const modulePath of [
-      '@tuturuuu/ui/badge',
-      '@tuturuuu/ui/button',
-      '@tuturuuu/ui/card',
-      'next/link',
-    ] as const) {
-      expect(securityPageSource).not.toMatch(staticImportPattern(modulePath));
+    for (const sourceText of [
+      securityPageSource,
+      ...securityComponentSources,
+    ]) {
+      for (const modulePath of [
+        '@tuturuuu/ui/badge',
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+        'next/link',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
     }
   });
 
   it('keeps the public partners page off heavy shared primitives', () => {
-    expect(partnersPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
-    );
-    expect(partnersPageSource).toContain('@tuturuuu/icons/lucide');
+    for (const sourceText of [
+      partnersPageSource,
+      ...partnersComponentSources,
+    ]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
 
-    for (const modulePath of [
-      '@tuturuuu/ui/button',
-      '@tuturuuu/ui/card',
-      'next/image',
-      'next/link',
-    ] as const) {
-      expect(partnersPageSource).not.toMatch(staticImportPattern(modulePath));
+      for (const modulePath of [
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+        'next/image',
+        'next/link',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
     }
+
+    expect(partnersComponentSources.join('\n')).toContain(
+      '@tuturuuu/icons/lucide'
+    );
   });
 
   it('keeps the public careers page off the icon package root', () => {
-    expect(careersPageSource).not.toMatch(
-      staticImportPattern('@tuturuuu/icons')
+    for (const sourceText of [careersPageSource, ...careersComponentSources]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+    }
+
+    expect(careersComponentSources.join('\n')).toContain(
+      '@tuturuuu/icons/lucide'
     );
-    expect(careersPageSource).toContain('@tuturuuu/icons/lucide');
-    expect(careersPageSource).not.toMatch(staticImportPattern('next/link'));
   });
 
   it('keeps the public blog page off Next link', () => {
-    expect(blogPageSource).not.toMatch(staticImportPattern('@tuturuuu/icons'));
-    expect(blogPageSource).toContain('@tuturuuu/icons/lucide');
-    expect(blogPageSource).not.toMatch(staticImportPattern('next/link'));
+    for (const sourceText of [blogPageSource, ...blogComponentSources]) {
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+    }
+
+    expect(blogComponentSources.join('\n')).toContain('@tuturuuu/icons/lucide');
+  });
+
+  it('keeps the shared marketing kit off heavy primitives', () => {
+    for (const sourceText of marketingKitSources) {
+      for (const modulePath of [
+        '@tuturuuu/icons',
+        '@tuturuuu/ui/badge',
+        '@tuturuuu/ui/button',
+        '@tuturuuu/ui/card',
+        'next/image',
+        'next/link',
+        'framer-motion',
+      ] as const) {
+        expect(sourceText).not.toMatch(staticImportPattern(modulePath));
+      }
+    }
   });
 
   it('keeps the public contact page off the icon package root', () => {
@@ -548,25 +618,43 @@ describe('public shell compile graph', () => {
   });
 
   it('keeps contributors charts out of the initial route graph', () => {
-    expect(contributorsPageSource).not.toMatch(staticImportPattern('recharts'));
-    expect(contributorsPageSource).toContain(
-      "import('./contribution-analytics')"
+    for (const sourceText of [
+      contributorsPageSource,
+      ...contributorsComponentSources,
+    ]) {
+      expect(sourceText).not.toMatch(staticImportPattern('recharts'));
+    }
+
+    // The dynamic boundary moved into the section that renders the charts.
+    expect(contributorsComponentSources.join('\n')).toContain(
+      "import('../contribution-analytics')"
     );
     expect(contributorsAnalyticsSource).toMatch(
       staticImportPattern('recharts')
     );
   });
 
-  it('keeps the contributors page off Next link', () => {
-    expect(contributorsPageSource).not.toMatch(
-      staticImportPattern('next/link')
-    );
+  it('keeps the contributors page off Next link and image', () => {
+    for (const sourceText of [
+      contributorsPageSource,
+      ...contributorsComponentSources,
+    ]) {
+      expect(sourceText).not.toMatch(staticImportPattern('next/link'));
+      expect(sourceText).not.toMatch(staticImportPattern('next/image'));
+    }
   });
 
-  it('keeps the contributors page off Next image', () => {
-    expect(contributorsPageSource).not.toMatch(
-      staticImportPattern('next/image')
-    );
+  it('keeps the contributors charts free of fabricated data', () => {
+    // Two of the three charts here were generated with `Math.random()` and
+    // captioned as repository analytics. Nothing on this page may invent a
+    // number again.
+    // Comments are stripped first: the module's own header explains what was
+    // removed, and naming the thing is not using it.
+    const withoutComments = contributorsAnalyticsSource
+      .replace(/\/\*[\s\S]*?\*\//gu, '')
+      .replace(/\/\/.*$/gmu, '');
+
+    expect(withoutComments).not.toContain('Math.random');
   });
 
   it('keeps the Facebook mockup widget off the icon package root', () => {
