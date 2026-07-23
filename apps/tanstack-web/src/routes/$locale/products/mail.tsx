@@ -17,7 +17,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -106,15 +105,23 @@ export default function MailProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Email Management</h1>
+        <ProductBadge className="mb-4">Mail</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          An inbox that hands work to the rest of your day
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your email experience with AI-powered organization,
-          intelligent filtering, and seamless integration with your workflow.
+          Mail that knows about your tasks and your calendar, so the promise
+          made in a thread becomes something with an owner and a date.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://mail.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Mail
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,16 +104,23 @@ export default function TasksProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Task Management</h1>
+        <ProductBadge className="mb-4">Tasks</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          Work that stays where you left it
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your productivity with intelligent task management.
-          Organize, prioritize, and complete tasks efficiently with AI-powered
-          assistance and team collaboration features.
+          Lists, boards and timelines over the same set of tasks, with owners,
+          dates and priorities that hold up when the week gets busy.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://tasks.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Tasks
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

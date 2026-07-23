@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,16 +104,23 @@ export default function DriveProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Cloud Storage Solution</h1>
+        <ProductBadge className="mb-4">Drive</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          Your files, where the rest of the work is
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Secure, scalable, and efficient cloud storage for your business.
-          Store, share, and manage files with enterprise-grade security and
-          collaboration features.
+          Storage that sits inside the workspace, so a file, the task it belongs
+          to and the person who needs it are never three products apart.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://drive.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Drive
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

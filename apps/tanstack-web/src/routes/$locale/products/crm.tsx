@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,18 +104,24 @@ export default function CRMProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
+        <ProductBadge className="mb-4">Contacts</ProductBadge>
         <h1 className="mb-4 font-bold text-4xl">
-          Customer Relationship Management
+          Every customer, and everything you promised them
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Build stronger customer relationships and drive business growth with
-          our intelligent CRM platform. Streamline sales, track interactions,
-          and make data-driven decisions.
+          Contacts, deals and conversation history in one record that the rest
+          of your workspace can see. The follow-up you meant to send becomes a
+          task with a date instead of a note to yourself.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://contacts.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Contacts
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -104,16 +103,24 @@ export default function InventoryProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Inventory Management</h1>
+        <ProductBadge className="mb-4">Inventory</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          Stock counts that match the shelf
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your inventory operations with our intelligent management
-          system. Track stock, automate orders, and optimize your supply chain
-          with powerful analytics.
+          Track what you hold, across every location, with scanning, reorder
+          points and a full movement history. The stockout you would have found
+          out about from a customer shows up as an alert instead.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://inventory.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Inventory
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

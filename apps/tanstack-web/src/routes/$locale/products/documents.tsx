@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,18 +104,19 @@ export default function DocumentsProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
+        <ProductBadge className="mb-4">Documents</ProductBadge>
         <h1 className="mb-4 font-bold text-4xl">
-          Intelligent Document Management
+          Write it down where the work already lives
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your document workflow with AI-powered analysis,
-          collaboration tools, and intelligent organization. Create, manage, and
-          share documents smarter.
+          Docs sit next to the tasks, calendar and files they belong to, so a
+          spec stops being a link somebody has to go find.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton href="/onboarding">
+            Start writing
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

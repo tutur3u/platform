@@ -14,7 +14,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -103,16 +102,20 @@ export default function WorkflowsProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Workflow Automation</h1>
+        <ProductBadge className="mb-4">Workflows</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          The routine parts, handled without you
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your business processes with intelligent workflow
-          automation. Design, automate, and optimize your workflows with our
-          powerful visual builder and AI-powered suggestions.
+          Build the process once with triggers and conditions, and the
+          approvals, handoffs and updates run whether or not anyone remembers to
+          chase them.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton href="/onboarding">
+            Set up your workspace
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

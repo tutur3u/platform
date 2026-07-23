@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -101,15 +100,19 @@ export default function AIProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">AI-Powered Solutions</h1>
+        <ProductBadge className="mb-4">AI</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          Five systems, one assistant you talk to
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your business operations with intelligent automation and
-          data-driven insights powered by cutting-edge artificial intelligence.
+          Tuturuuu&apos;s AI is not a chat box bolted onto the side. Mira plans
+          and acts; Aurora, Rewise, Nova and Crystal are what make her useful.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton href="/onboarding">
+            Start with Mira
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

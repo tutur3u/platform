@@ -108,7 +108,7 @@ export const vietnameseLandingContent = {
       },
     },
     subtitle: 'Một nền tảng cho mọi thứ bạn làm',
-    title: 'Đầy đủ. Không thiếu gì.',
+    title: 'Một không gian làm việc. Mọi phần của công việc.',
   },
   demo: {
     badge: 'Trải Nghiệm Trực Tiếp',

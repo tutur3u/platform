@@ -108,7 +108,7 @@ export const englishLandingContent = {
       },
     },
     subtitle: 'One platform for your entire workflow',
-    title: 'Everything you need',
+    title: 'One workspace. Every part of the job.',
   },
   demo: {
     badge: 'Live Demo',

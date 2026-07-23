@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,16 +104,23 @@ export default function CalendarProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Calendar Management</h1>
+        <ProductBadge className="mb-4">Calendar</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          A calendar that defends your day
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Streamline your scheduling and time management with our intelligent
-          calendar system. Coordinate meetings, manage events, and boost
-          productivity across teams.
+          Meetings, deadlines and focus blocks in one view, with scheduling that
+          accounts for time zones and the work you already committed to.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://calendar.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Calendar
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 

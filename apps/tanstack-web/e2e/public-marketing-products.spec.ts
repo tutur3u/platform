@@ -8,51 +8,65 @@ import {
 /**
  * Public, no-auth product marketing routes confirmed `migrated` in
  * apps/tanstack-web/migration/route-manifest.json with a matching route file
- * under apps/tanstack-web/src/routes/$locale/products/*. Headings mirror the
- * legacy apps/web/e2e/public-marketing-routes.noauth.spec.ts assertions and the
- * rendered <h1> text in each migrated route.
+ * under apps/tanstack-web/src/routes/$locale/products/*. Headings and calls to
+ * action mirror apps/web/e2e/public-marketing-routes.noauth.spec.ts so the
+ * migration smoke suite catches stale product positioning or dead launch CTAs.
  */
 const productRoutes = [
-  { path: `/${DEFAULT_LOCALE}/products/ai`, heading: 'AI-Powered Solutions' },
+  {
+    path: `/${DEFAULT_LOCALE}/products/ai`,
+    heading: 'Five systems, one assistant you talk to',
+    primaryCta: 'Start with Mira',
+  },
   {
     path: `/${DEFAULT_LOCALE}/products/calendar`,
-    heading: 'Smart Calendar Management',
+    heading: 'A calendar that defends your day',
+    primaryCta: 'Open Calendar',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/crm`,
-    heading: 'Customer Relationship Management',
+    heading: 'Every customer, and everything you promised them',
+    primaryCta: 'Open Contacts',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/documents`,
-    heading: 'Intelligent Document Management',
+    heading: 'Write it down where the work already lives',
+    primaryCta: 'Start writing',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/drive`,
-    heading: 'Cloud Storage Solution',
+    heading: 'Your files, where the rest of the work is',
+    primaryCta: 'Open Drive',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/finance`,
-    heading: 'Smart Financial Management',
+    heading: 'Know where the money went, without the spreadsheet',
+    primaryCta: 'Open Finance',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/inventory`,
-    heading: 'Smart Inventory Management',
+    heading: 'Stock counts that match the shelf',
+    primaryCta: 'Open Inventory',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/lms`,
-    heading: 'Learning Management System',
+    heading: 'Courses, assignments and where each learner stands',
+    primaryCta: 'Open Learn',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/mail`,
-    heading: 'Smart Email Management',
+    heading: 'An inbox that hands work to the rest of your day',
+    primaryCta: 'Open Mail',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/tasks`,
-    heading: 'Smart Task Management',
+    heading: 'Work that stays where you left it',
+    primaryCta: 'Open Tasks',
   },
   {
     path: `/${DEFAULT_LOCALE}/products/workflows`,
-    heading: 'Workflow Automation',
+    heading: 'The routine parts, handled without you',
+    primaryCta: 'Set up your workspace',
   },
 ];
 
@@ -69,8 +83,12 @@ test.describe('Public migrated product routes', () => {
       await expect(
         page.getByRole('heading', { name: route.heading }).first()
       ).toBeVisible({ timeout: 30_000 });
-      await expect(page.getByText('Coming Soon').first()).toBeVisible();
-      await expect(page.getByText('Contact Sales').first()).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: route.primaryCta }).first()
+      ).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: 'Talk to us' }).first()
+      ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });
   }

@@ -15,7 +15,6 @@ import {
 } from '@tuturuuu/icons/lucide';
 import {
   ProductBadge,
-  ProductButton,
   ProductCard,
   ProductLinkButton,
 } from '../../../components/products/product-page-primitives';
@@ -105,16 +104,24 @@ export default function LMSProductPage() {
     <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
       {/* Hero Section */}
       <div className="mb-16 text-center">
-        <ProductBadge className="mb-4">Coming Soon</ProductBadge>
-        <h1 className="mb-4 font-bold text-4xl">Learning Management System</h1>
+        <ProductBadge className="mb-4">Learn</ProductBadge>
+        <h1 className="mb-4 font-bold text-4xl">
+          Courses, assignments and where each learner stands
+        </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-          Transform your educational and training programs with our
-          comprehensive learning management system. Deliver engaging content,
-          track progress, and enhance learning outcomes.
+          Build a course, set the work, and see progress as it happens. Learners
+          get one place for what is due; you get an honest picture of who is
+          falling behind while there is still time to help.
         </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <ProductButton disabled>Join Waitlist</ProductButton>
-          <ProductLinkButton href="/contact">Contact Sales</ProductLinkButton>
+        <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+          <ProductLinkButton
+            href="https://learn.tuturuuu.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Open Learn
+          </ProductLinkButton>
+          <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>
 
