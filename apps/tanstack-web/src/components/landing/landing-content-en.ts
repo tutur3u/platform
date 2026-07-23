@@ -7,7 +7,6 @@ export const englishLandingContent = {
     title: 'Tuturuuu - Intelligent Workspace Platform',
   },
   hero: {
-    badge: 'Intelligent Workspace Platform',
     description:
       'The all-in-one workspace that brings your tasks, calendar, documents, and team together.',
     previewCards: [

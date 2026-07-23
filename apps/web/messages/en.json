@@ -8425,7 +8425,6 @@
       "title": "One workspace. Every part of the job."
     },
     "hero": {
-      "badge": "Intelligent Workspace Platform",
       "cta": {
         "primary": "Get Started Free",
         "secondary": "Watch Demo"
@@ -8444,25 +8443,27 @@
       "video": {
         "floatingCards": {
           "aiCard": {
-            "message": "\"3 hours of focus time blocked for tomorrow.\"",
-            "title": "Mira AI"
+            "action": "Added to calendar",
+            "message": "\"Three hours of focus time blocked for tomorrow.\"",
+            "title": "Mira"
           },
           "calendarCard": {
-            "event": "Team Standup",
-            "time": "in 25 minutes",
-            "title": "Next Meeting"
-          },
-          "productivityCard": {
-            "change": "+12% this week",
-            "stat": "87%",
-            "title": "Productivity"
+            "event": "Focus block",
+            "time": "09:00 – 11:00",
+            "title": "Calendar"
           },
           "taskCard": {
-            "description": "Design review finished",
-            "points": "+15 points",
-            "title": "Task Completed"
+            "description": "Design review",
+            "status": "Done",
+            "title": "Tasks"
+          },
+          "trackCard": {
+            "period": "This week",
+            "title": "Time tracked",
+            "value": "24h 10m"
           }
         },
+        "tab": "Tuturuuu — Workspace",
         "thumbnail": "Tuturuuu Platform Demo",
         "title": "Tuturuuu Platform Demo Video",
         "watchNow": "Watch the demo"

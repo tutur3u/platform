@@ -8728,7 +8728,6 @@
       }
     },
     "hero": {
-      "badge": "Intelligent Workspace Platform",
       "cta": {
         "exploreFeatures": "Explore Features",
         "getStarted": "Get Started Free",
@@ -8752,29 +8751,31 @@
       },
       "video": {
         "floatingCards": {
-          "aiCard": {
-            "message": "\"3 hours of focus time blocked for tomorrow.\"",
-            "title": "Mira AI"
+          "taskCard": {
+            "title": "Tasks",
+            "description": "Design review",
+            "status": "Done"
           },
           "calendarCard": {
-            "event": "Team Standup",
-            "time": "in 25 minutes",
-            "title": "Next Meeting"
+            "title": "Calendar",
+            "event": "Focus block",
+            "time": "09:00 – 11:00"
           },
-          "productivityCard": {
-            "change": "+12% this week",
-            "stat": "87%",
-            "title": "Productivity"
+          "aiCard": {
+            "title": "Mira",
+            "message": "\"Three hours of focus time blocked for tomorrow.\"",
+            "action": "Added to calendar"
           },
-          "taskCard": {
-            "description": "Design review finished",
-            "points": "+15 points",
-            "title": "Task Completed"
+          "trackCard": {
+            "title": "Time tracked",
+            "value": "24h 10m",
+            "period": "This week"
           }
         },
         "thumbnail": "Tuturuuu Platform Demo",
         "title": "Tuturuuu Platform Demo Video",
-        "watchNow": "Watch the demo"
+        "watchNow": "Watch the demo",
+        "tab": "Tuturuuu — Workspace"
       }
     },
     "pricing": {

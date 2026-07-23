@@ -8728,7 +8728,6 @@
       }
     },
     "hero": {
-      "badge": "Nền Tảng Làm Việc Thông Minh",
       "cta": {
         "exploreFeatures": "Khám Phá Ngay",
         "getStarted": "Bắt Đầu Miễn Phí",
@@ -8752,29 +8751,31 @@
       },
       "video": {
         "floatingCards": {
-          "aiCard": {
-            "message": "\"Mình đã chặn 3 tiếng focus cho ngày mai nhé!\"",
-            "title": "Mira AI"
+          "taskCard": {
+            "title": "Công việc",
+            "description": "Duyệt thiết kế",
+            "status": "Xong"
           },
           "calendarCard": {
-            "event": "Standup nhanh",
-            "time": "còn 25 phút",
-            "title": "Sắp họp"
+            "title": "Lịch",
+            "event": "Khối tập trung",
+            "time": "09:00 – 11:00"
           },
-          "productivityCard": {
-            "change": "+12% tuần này",
-            "stat": "87%",
-            "title": "Năng suất"
+          "aiCard": {
+            "title": "Mira",
+            "message": "\"Đã chặn ba giờ tập trung cho ngày mai.\"",
+            "action": "Đã thêm vào lịch"
           },
-          "taskCard": {
-            "description": "Review thiết kế xong rồi",
-            "points": "+15 điểm",
-            "title": "Hoàn thành!"
+          "trackCard": {
+            "title": "Thời gian đã ghi",
+            "value": "24h 10m",
+            "period": "Tuần này"
           }
         },
         "thumbnail": "Demo Tuturuuu",
         "title": "Video Demo Tuturuuu",
-        "watchNow": "Xem demo"
+        "watchNow": "Xem demo",
+        "tab": "Tuturuuu — Không gian làm việc"
       }
     },
     "pricing": {

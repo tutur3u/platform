@@ -15,6 +15,10 @@ export { FeaturesBento } from './features/features-bento';
 export { productPreviews } from './features/product-previews';
 export { SpotlightGrid } from './features/spotlight-grid';
 export { HeroSection } from './hero/hero-section';
+export {
+  HeroVignettesLeft,
+  HeroVignettesRight,
+} from './hero/hero-vignettes';
 export { TrustBadges } from './hero/trust-badges';
 export { VideoHero } from './hero/video-hero';
 // Outcomes Section

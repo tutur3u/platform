@@ -8425,7 +8425,6 @@
       "title": "Một không gian làm việc. Mọi phần của công việc."
     },
     "hero": {
-      "badge": "Nền Tảng Làm Việc Thông Minh",
       "cta": {
         "primary": "Bắt Đầu Miễn Phí",
         "secondary": "Xem Demo"
@@ -8444,25 +8443,27 @@
       "video": {
         "floatingCards": {
           "aiCard": {
-            "message": "\"Mình đã chặn 3 tiếng focus cho ngày mai nhé!\"",
-            "title": "Mira AI"
+            "action": "Đã thêm vào lịch",
+            "message": "\"Đã chặn ba giờ tập trung cho ngày mai.\"",
+            "title": "Mira"
           },
           "calendarCard": {
-            "event": "Standup nhanh",
-            "time": "còn 25 phút",
-            "title": "Sắp họp"
-          },
-          "productivityCard": {
-            "change": "+12% tuần này",
-            "stat": "87%",
-            "title": "Năng suất"
+            "event": "Khối tập trung",
+            "time": "09:00 – 11:00",
+            "title": "Lịch"
           },
           "taskCard": {
-            "description": "Review thiết kế xong rồi",
-            "points": "+15 điểm",
-            "title": "Hoàn thành!"
+            "description": "Duyệt thiết kế",
+            "status": "Xong",
+            "title": "Công việc"
+          },
+          "trackCard": {
+            "period": "Tuần này",
+            "title": "Thời gian đã ghi",
+            "value": "24h 10m"
           }
         },
+        "tab": "Tuturuuu — Không gian làm việc",
         "thumbnail": "Demo Tuturuuu",
         "title": "Video Demo Tuturuuu",
         "watchNow": "Xem demo"

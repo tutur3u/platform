@@ -1,42 +1,38 @@
-import { ArrowRight, PlayCircle, Sparkles } from '@tuturuuu/icons/lucide';
+import { ArrowRight, PlayCircle } from '@tuturuuu/icons/lucide';
 import { useTranslations } from 'next-intl';
 import { HeroAtmosphere } from '../shared/atmosphere';
 import { rise } from '../shared/rise';
 import { TrustBadges } from './trust-badges';
 import { VideoHero } from './video-hero';
 
+/**
+ * The hero opens on the headline.
+ *
+ * There is no eyebrow badge: a generic label above the title only delayed the
+ * one line that actually says what this is, and the suite is introduced
+ * properly by the marquee and bento immediately below.
+ */
 export function HeroSection() {
   const t = useTranslations('landing.hero');
 
   return (
-    <section className="relative overflow-hidden px-4 pt-32 pb-20 sm:px-6 sm:pt-36 lg:px-8 lg:pt-44 lg:pb-24">
+    <section className="relative overflow-hidden px-4 pt-36 pb-20 sm:px-6 sm:pt-40 lg:px-8 lg:pt-48 lg:pb-24">
       <HeroAtmosphere />
 
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex flex-col items-center text-center">
-          {/* Eyebrow */}
-          <span
-            {...rise(
-              0,
-              'group inline-flex items-center gap-2 rounded-full border border-foreground/10 bg-background/40 py-1.5 pr-4 pl-2.5 font-mono-ui text-[0.65rem] text-foreground/60 uppercase tracking-[0.2em] backdrop-blur-md'
-            )}
-          >
-            <span className="relative flex h-4 w-4 items-center justify-center">
-              <span
-                aria-hidden
-                className="absolute inset-0 animate-ring-pulse rounded-full bg-dynamic-purple/40"
-              />
-              <Sparkles className="relative h-3 w-3 text-dynamic-purple" />
-            </span>
-            {t('badge')}
-          </span>
-
           {/* Headline — each line rises independently */}
-          <h1 className="mt-8 max-w-5xl text-balance font-display font-extrabold text-5xl leading-[0.98] tracking-[-0.045em] sm:text-6xl md:text-7xl lg:text-[5.5rem]">
-            <span {...rise(1, 'block')}>{t('title.line1')}</span>
+          <h1 className="relative max-w-5xl text-balance font-display font-extrabold text-[3.25rem] leading-[0.95] tracking-[-0.05em] sm:text-7xl lg:text-[6rem]">
+            {/* Light behind the second line, so the gradient reads as lit
+                rather than merely coloured. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-[radial-gradient(ellipse_60%_100%_at_50%_100%,color-mix(in_oklab,var(--blue)_28%,transparent),transparent)] blur-2xl"
+            />
+            <span {...rise(0, 'block')}>{t('title.line1')}</span>
             <span
               {...rise(
-                2,
+                1,
                 'block animate-text-sheen bg-[linear-gradient(100deg,var(--purple),var(--blue)_35%,var(--cyan)_50%,var(--blue)_65%,var(--purple))] bg-[length:250%_auto] bg-clip-text text-transparent'
               )}
             >
@@ -47,8 +43,8 @@ export function HeroSection() {
           {/* Description */}
           <p
             {...rise(
-              3,
-              'mt-7 max-w-xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg'
+              2,
+              'mt-8 max-w-xl text-balance text-base text-foreground/55 leading-relaxed sm:text-lg'
             )}
           >
             {t('description')}
@@ -57,7 +53,7 @@ export function HeroSection() {
           {/* CTAs */}
           <div
             {...rise(
-              4,
+              3,
               'mt-9 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row'
             )}
           >
@@ -84,9 +80,9 @@ export function HeroSection() {
           </div>
         </div>
 
-        {/* Product frame. Padding leaves room for the video's floating cards,
-            which sit outside the frame edges on large screens. */}
-        <div {...rise(5, 'relative mt-16 sm:mt-20 lg:px-24')}>
+        {/* Product frame. Padding leaves room for the floating vignettes, which
+            sit outside the frame edges on large screens. */}
+        <div {...rise(4, 'relative mt-16 sm:mt-20 lg:px-24')}>
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-12 -bottom-10 h-28 rounded-[50%] bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--blue)_50%,transparent),transparent)] opacity-50 blur-2xl"
@@ -103,7 +99,7 @@ export function HeroSection() {
         {/* Scroll cue */}
         <div
           {...rise(
-            6,
+            5,
             'mt-14 flex justify-center sm:mt-16 [&_span]:animate-scroll-cue'
           )}
         >

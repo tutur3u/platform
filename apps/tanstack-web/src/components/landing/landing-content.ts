@@ -16,7 +16,6 @@ export type LandingContent = {
     description: string;
   };
   hero: {
-    badge: string;
     title: {
       line1: string;
       line2: string;

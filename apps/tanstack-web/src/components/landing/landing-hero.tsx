@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   MessageSquare,
   Play,
-  Sparkles,
 } from '@tuturuuu/icons/lucide';
 import type { LandingContent } from './landing-content';
 import { ActionLink, joinClassNames } from './landing-primitives';
@@ -32,11 +31,6 @@ export function LandingHero({
 
       <div className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="text-center lg:text-left">
-          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/5 px-3 py-1.5 font-medium text-foreground/70 text-xs backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            {content.badge}
-          </span>
-
           <h1
             aria-label={`${content.title.line1} ${content.title.line2}`}
             className="mx-auto max-w-4xl font-bold text-4xl tracking-normal sm:text-5xl lg:mx-0 lg:text-6xl"

@@ -7,7 +7,6 @@ export const vietnameseLandingContent = {
     title: 'Tuturuuu - Nền tảng làm việc thông minh',
   },
   hero: {
-    badge: 'Nền Tảng Làm Việc Thông Minh',
     description:
       'Một nền tảng duy nhất cho công việc, lịch trình, tài liệu và cả đội của bạn.',
     previewCards: [
