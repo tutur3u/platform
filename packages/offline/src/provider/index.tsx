@@ -1,2 +1,6 @@
-export type { SerwistProviderProps } from './serwist-provider';
-export { SerwistProvider } from './serwist-provider';
+export {
+  OfflineProvider,
+  type OfflineProviderProps,
+  SerwistProvider,
+  type SerwistProviderProps,
+} from './offline-provider';

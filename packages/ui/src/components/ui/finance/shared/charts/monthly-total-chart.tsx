@@ -215,7 +215,7 @@ export function MonthlyTotalChart({
                   return Intl.DateTimeFormat(locale, {
                     month: 'long',
                     year: 'numeric',
-                  }).format(new Date(value));
+                  }).format(new Date(String(value ?? '')));
                 } catch {
                   return value;
                 }

@@ -1,4 +1,4 @@
-import { createServiceWorker } from '@tuturuuu/offline/worker';
+import { createOfflineWorker } from '@tuturuuu/offline/worker';
 
-const serwist = createServiceWorker();
-serwist.addEventListeners();
+const worker = createOfflineWorker();
+worker.addEventListeners();

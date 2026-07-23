@@ -1,11 +1,9 @@
 import type { NextConfig } from 'next';
 
 /**
- * @deprecated Use `SerwistRouteConfig` from `@tuturuuu/offline/route` instead.
- * This configuration is for the webpack-based approach which is being replaced
- * by the Turbopack-compatible route handler pattern.
+ * Compatibility options for the retired webpack integration.
  */
-export interface SerwistNextConfig {
+export interface OfflineNextConfig {
   /**
    * Path to the service worker source file (relative to app root)
    * @default 'src/app/sw.ts'
@@ -37,9 +35,9 @@ export interface SerwistNextConfig {
 }
 
 /**
- * Configuration for the Turbopack-compatible Serwist setup.
+ * Configuration for the internally owned Turbopack worker setup.
  */
-export interface TurbopackSerwistConfig {
+export interface TurbopackOfflineConfig {
   /**
    * Absolute path to the Next.js project root used as the base for output file
    * tracing includes.
@@ -54,10 +52,16 @@ export interface TurbopackSerwistConfig {
   additionalExternalPackages?: string[];
 
   /**
-   * Additional Next.js output file tracing includes to merge with the Serwist
+   * Additional Next.js output file tracing includes to merge with the worker
    * route defaults.
    */
   outputFileTracingIncludes?: NonNullable<
     NextConfig['outputFileTracingIncludes']
   >;
 }
+
+/** @deprecated Use `OfflineNextConfig`. */
+export type SerwistNextConfig = OfflineNextConfig;
+
+/** @deprecated Use `TurbopackOfflineConfig`. */
+export type TurbopackSerwistConfig = TurbopackOfflineConfig;

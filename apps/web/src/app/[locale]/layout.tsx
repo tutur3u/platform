@@ -62,15 +62,15 @@ async function ServiceWorkerBoundary({
     return <>{children}</>;
   }
 
-  const { SerwistProvider } = await import('@tuturuuu/offline/provider');
+  const { OfflineProvider } = await import('@tuturuuu/offline/provider');
 
   return (
-    <SerwistProvider
+    <OfflineProvider
       options={{ updateViaCache: 'none' }}
       swUrl={serviceWorkerUrl}
     >
       {children}
-    </SerwistProvider>
+    </OfflineProvider>
   );
 }
 

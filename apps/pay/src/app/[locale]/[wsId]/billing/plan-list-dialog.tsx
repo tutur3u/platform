@@ -80,7 +80,7 @@ export default function PlanListDialog({
 
       const isSeatBased = firstPrice?.amountType === 'seat_based';
       const isFixed = firstPrice?.amountType === 'fixed';
-      const isFreeModel = firstPrice?.amountType === 'free';
+      const isFreeModel = product.metadata.product_tier === 'FREE';
 
       const price = isFixed ? firstPrice.priceAmount : null;
 
@@ -119,7 +119,9 @@ export default function PlanListDialog({
         isPlus: product.metadata.product_tier === 'PLUS',
         isFree: product.metadata.product_tier === 'FREE',
         // Seat-based pricing fields
-        pricingModel: firstPrice?.amountType || 'free',
+        pricingModel: isFreeModel
+          ? 'free'
+          : (firstPrice?.amountType ?? 'custom'),
         pricePerSeat,
         minSeats,
         maxSeats,

@@ -1,12 +1,11 @@
 import type { BuildOptions } from 'esbuild-wasm';
-import type { NextResponse } from 'next/server';
 
 type ServiceWorkerEsbuildOptions = Pick<
   BuildOptions,
   'define' | 'supported' | 'target'
 >;
 
-export interface SerwistRouteConfig {
+export interface OfflineRouteConfig {
   /**
    * Path to the service worker source file (relative to app root)
    * @default 'src/app/sw.ts'
@@ -37,7 +36,7 @@ export interface SerwistRouteConfig {
   globDirectory?: string;
 
   /**
-   * Next.js configuration options that Serwist needs.
+   * Next.js configuration options used to generate public asset URLs.
    */
   nextConfig?: {
     /**
@@ -57,7 +56,7 @@ export interface SerwistRouteConfig {
   };
 
   /**
-   * Options forwarded to Serwist's esbuild worker bundle.
+   * Options forwarded to the internal esbuild worker bundle.
    */
   esbuildOptions?: ServiceWorkerEsbuildOptions;
 
@@ -69,22 +68,7 @@ export interface SerwistRouteConfig {
   publicPrecachePatterns?: readonly string[] | false;
 }
 
-export interface SerwistRouteResult {
-  /**
-   * Route segment config: force static generation
-   */
-  dynamic: 'force-static';
-
-  /**
-   * Route segment config: no dynamic params
-   */
-  dynamicParams: false;
-
-  /**
-   * Route segment config: no revalidation
-   */
-  revalidate: false;
-
+export interface OfflineRouteResult {
   /**
    * Generates static params for the route
    */
@@ -96,5 +80,11 @@ export interface SerwistRouteResult {
   GET: (
     request: Request,
     context: { params: Promise<{ path: string }> }
-  ) => Promise<NextResponse<unknown>>;
+  ) => Promise<Response>;
 }
+
+/** @deprecated Use `OfflineRouteConfig`. */
+export type SerwistRouteConfig = OfflineRouteConfig;
+
+/** @deprecated Use `OfflineRouteResult`. */
+export type SerwistRouteResult = OfflineRouteResult;

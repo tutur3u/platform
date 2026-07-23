@@ -13,7 +13,7 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@azure/msal-node": "^5.4.1",
+    "@azure/msal-node": "^5.4.2",
     "@microsoft/microsoft-graph-client": "^3.0.7"
   },
   "devDependencies": {

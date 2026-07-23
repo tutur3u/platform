@@ -1,4 +1,29 @@
-import type { RuntimeCaching } from 'serwist';
+export type OfflineCacheStrategy =
+  | 'cache-first'
+  | 'network-first'
+  | 'stale-while-revalidate'
+  | 'network-only'
+  | 'cache-only';
+
+export interface OfflineRequestContext {
+  request: Request;
+  url: URL;
+}
+
+export interface RuntimeCachingRule {
+  /**
+   * Match a request by URL pattern or a custom synchronous predicate.
+   */
+  matcher: string | RegExp | ((context: OfflineRequestContext) => boolean);
+
+  strategy: OfflineCacheStrategy;
+  cacheName?: string;
+}
+
+export interface PrecacheEntry {
+  revision?: string | null;
+  url: string;
+}
 
 export interface ServiceWorkerConfig {
   /**
@@ -28,5 +53,5 @@ export interface ServiceWorkerConfig {
   /**
    * Additional runtime caching strategies
    */
-  additionalCaching?: RuntimeCaching[];
+  additionalCaching?: RuntimeCachingRule[];
 }

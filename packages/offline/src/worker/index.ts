@@ -1,2 +1,12 @@
-export { createServiceWorker } from './create-service-worker';
-export type { ServiceWorkerConfig } from './types';
+export {
+  createOfflineWorker,
+  createServiceWorker,
+  TuturuuuServiceWorker,
+} from './create-offline-worker';
+export type {
+  OfflineCacheStrategy,
+  OfflineRequestContext,
+  PrecacheEntry,
+  RuntimeCachingRule,
+  ServiceWorkerConfig,
+} from './types';

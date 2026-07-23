@@ -19,7 +19,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.101.4",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
@@ -28,11 +28,11 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "next": "^16.3.0-preview.6",
-    "next-intl": "^4.13.2",
+    "next": "^16.3.0-preview.9",
+    "next-intl": "^4.13.4",
     "nuqs": "^2.9.1",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -43,7 +43,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
-    "postcss": "^8.5.20",
+    "postcss": "^8.5.22",
     "typescript": "7.0.2"
   }
 }

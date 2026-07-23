@@ -1,2 +1,10 @@
-export { createSerwistRoute } from './create-serwist-route';
-export type { SerwistRouteConfig, SerwistRouteResult } from './types';
+export {
+  createOfflineRoute,
+  createSerwistRoute,
+} from './create-offline-route';
+export type {
+  OfflineRouteConfig,
+  OfflineRouteResult,
+  SerwistRouteConfig,
+  SerwistRouteResult,
+} from './types';

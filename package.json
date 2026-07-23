@@ -1,24 +1,24 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.5.4",
+    "@biomejs/biome": "^2.5.5",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.1.10",
-    "lucide-static": "^1.25.0",
+    "lucide-static": "^1.26.0",
     "portless": "^0.15.4",
-    "turbo": "^2.10.5",
+    "turbo": "^2.10.6",
     "typescript": "7.0.2",
     "vite": "^8.1.5",
     "vitest": "4.1.10",
-    "wrangler": "^4.112.0"
+    "wrangler": "^4.113.0"
   },
   "engines": {
     "node": ">=22"
   },
   "overrides": {
     "google-auth-library": "10.9.0",
-    "@polar-sh/sdk": "0.48.1",
+    "@polar-sh/sdk": "0.49.0",
     "lodash": "4.18.1",
     "vitest": "4.1.10",
     "@polar-sh/checkout": "0.4.0",

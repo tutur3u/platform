@@ -1,4 +1,4 @@
-import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { Providers } from '@tuturuuu/satellite/providers';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
@@ -67,7 +67,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider register={false}>
+        <OfflineProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>
@@ -79,7 +79,7 @@ export default async function RootLayout({ children, params }: Props) {
           <ProductionIndicator />
           <StaffToolbar />
           <Toaster />
-        </SerwistProvider>
+        </OfflineProvider>
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
@@ -78,7 +78,7 @@ export default async function RootLayout({ children, params }: Props) {
   return (
     <html className="dark" lang={locale} suppressHydrationWarning>
       <body className={cn(HIVE_BODY_CLASS_NAME, outfit.className)}>
-        <SerwistProvider register={false}>
+        <OfflineProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>
@@ -95,7 +95,7 @@ export default async function RootLayout({ children, params }: Props) {
           <ProductionIndicator />
           <StaffToolbar />
           <Toaster />
-        </SerwistProvider>
+        </OfflineProvider>
       </body>
     </html>
   );

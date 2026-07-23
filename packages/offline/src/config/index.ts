@@ -1,3 +1,14 @@
-export { createSerwistConfig } from './create-serwist-config';
-export { getTurbopackConfig } from './create-turbopack-config';
-export type { SerwistNextConfig, TurbopackSerwistConfig } from './types';
+export {
+  createOfflineConfig,
+  createSerwistConfig,
+} from './create-offline-config';
+export {
+  getOfflineTurbopackConfig,
+  getTurbopackConfig,
+} from './create-offline-turbopack-config';
+export type {
+  OfflineNextConfig,
+  SerwistNextConfig,
+  TurbopackOfflineConfig,
+  TurbopackSerwistConfig,
+} from './types';

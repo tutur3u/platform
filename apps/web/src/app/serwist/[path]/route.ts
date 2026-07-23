@@ -1,14 +1,13 @@
-import { createSerwistRoute } from '@tuturuuu/offline/route';
+import { createOfflineRoute } from '@tuturuuu/offline/route';
 
-export const { GET, dynamic, dynamicParams, revalidate, generateStaticParams } =
-  createSerwistRoute({
-    // Service worker source file
-    swSrc: 'src/app/sw.ts',
-    // Offline fallback page to precache
-    offlineFallbackUrl: '/~offline',
-    // Enable service worker in development for testing (default: disabled)
-    disableInDev: true,
-    // Avoid precaching every public asset on first visit; runtime/static HTTP
-    // caching still serves public files normally.
-    publicPrecachePatterns: false,
-  });
+export const { GET, generateStaticParams } = createOfflineRoute({
+  // Service worker source file
+  swSrc: 'src/app/sw.ts',
+  // Offline fallback page to precache
+  offlineFallbackUrl: '/~offline',
+  // Enable service worker in development for testing (default: disabled)
+  disableInDev: true,
+  // Avoid precaching every public asset on first visit; runtime/static HTTP
+  // caching still serves public files normally.
+  publicPrecachePatterns: false,
+});

@@ -1,4 +1,4 @@
-import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -73,7 +73,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
+        <OfflineProvider>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>
@@ -85,7 +85,7 @@ export default async function RootLayout({ children, params }: Props) {
           <ProductionIndicator />
           <StaffToolbar />
           <Toaster />
-        </SerwistProvider>
+        </OfflineProvider>
       </body>
     </html>
   );

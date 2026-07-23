@@ -26,6 +26,6 @@ describe('PaymentSettingsPanel', () => {
       'utf8'
     );
 
-    expect(source).toContain('<SerwistProvider register={false}>');
+    expect(source).toContain('<OfflineProvider register={false}>');
   });
 });

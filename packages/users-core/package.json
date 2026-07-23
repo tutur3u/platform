@@ -30,9 +30,9 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "date-fns": "^4.4.0",
-    "dayjs": "^1.11.13",
-    "next": "^16.3.0-preview.6",
-    "react": "^19.2.7",
+    "dayjs": "^1.11.21",
+    "next": "^16.3.0-preview.9",
+    "react": "^19.2.8",
     "server-only": "^0.0.1",
     "zod": "^4.4.3"
   },
@@ -41,6 +41,6 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "typescript": "7.0.2",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   }
 }

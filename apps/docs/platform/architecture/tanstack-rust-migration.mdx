@@ -947,7 +947,7 @@ preflight or placeholder method is implemented in Rust.
 
 The manifest check compares both aggregate method counts and each route's method
 list against the current `apps/web/src/app` tree, including generated export
-patterns such as `createSerwistRoute(...)` exports. Regenerate
+patterns such as `createOfflineRoute(...)` exports. Regenerate
 the manifest after adding, removing, or changing exported methods in a legacy
 `route.ts`. Non-terminal routes with `methods: []` are still artifacts in the
 ownership inventory; port, restore an exported method, or mark them

@@ -2,7 +2,7 @@ import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
-import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -76,7 +76,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <SerwistProvider>
+        <OfflineProvider>
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>
@@ -90,7 +90,7 @@ export default async function RootLayout({ children, params }: Props) {
           <ProductionIndicator />
           <StaffToolbar />
           <Toaster />
-        </SerwistProvider>
+        </OfflineProvider>
       </body>
     </html>
   );

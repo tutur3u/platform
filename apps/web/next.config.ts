@@ -1,4 +1,4 @@
-import { getTurbopackConfig } from '@tuturuuu/offline/config';
+import { getOfflineTurbopackConfig } from '@tuturuuu/offline/config';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import {
@@ -10,7 +10,7 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 const withNextIntl = createNextIntlPlugin();
-const serwistConfig = getTurbopackConfig({ projectRoot: __dirname });
+const offlineConfig = getOfflineTurbopackConfig({ projectRoot: __dirname });
 const INFRASTRUCTURE_APP_URL = resolveTuturuuuInfrastructureAppUrl();
 const CALENDAR_APP_URL = resolveInternalAppUrl({
   appName: 'calendar',
@@ -73,14 +73,14 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
   isDockerStandaloneBuild && !isNativeDockerStandaloneBuild ? 4 : undefined
 );
 const nextConfig = createTuturuuuNextConfig({
-  ...serwistConfig,
+  ...offlineConfig,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
-  outputFileTracingIncludes: serwistConfig.outputFileTracingIncludes,
+  outputFileTracingIncludes: offlineConfig.outputFileTracingIncludes,
   reactCompiler: true,
-  serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
+  serverExternalPackages: [...(offlineConfig.serverExternalPackages ?? [])],
   experimental: {
-    ...(serwistConfig.experimental ?? {}),
+    ...(offlineConfig.experimental ?? {}),
     // Reuse static route stages and shared shells across similar navigations.
     // Personalized runtime stages remain request-bound unless a segment opts in.
     cachedNavigations: true,

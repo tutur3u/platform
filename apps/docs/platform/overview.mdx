@@ -40,6 +40,19 @@ front of the routable apps as a launcher and redirect layer — it surfaces app
 cards and redirects to each app's canonical domain rather than reverse-proxying
 them.
 
+## Offline Runtime Ownership
+
+Tuturuuu owns service-worker registration, precache-manifest generation,
+worker compilation, navigation fallback, and runtime cache strategies in
+`packages/offline`. Applications consume `OfflineProvider`; the live Web app
+builds the worker through `createOfflineRoute` and
+`getOfflineTurbopackConfig`.
+
+The worker continues to use `/serwist/sw.js` as a compatibility URL so existing
+browser registrations upgrade in place. Do not add Serwist packages to an app
+or depend on that project's release schedule. Extend the shared internal
+runtime and its focused tests instead.
+
 ## How It All Fits Together
 
 ```mermaid

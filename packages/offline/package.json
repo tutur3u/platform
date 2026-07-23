@@ -11,29 +11,27 @@
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@serwist/build": "10.0.0-preview.14",
-    "@serwist/next": "^10.0.0-preview.14",
-    "@serwist/turbopack": "^10.0.0-preview.14",
     "esbuild-wasm": "0.28.1",
-    "serwist": "^10.0.0-preview.14"
+    "glob": "^13.0.6"
   },
   "peerDependencies": {
-    "next": ">=16.3.0-preview.6",
+    "next": ">=16.3.0-preview.9",
     "react": ">=19.2.7"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
-    "react": "^19.2.7",
+    "react": "^19.2.8",
     "typescript": "7.0.2",
     "vitest": "^4.1.10",
-    "next": "^16.3.0-preview.6"
+    "next": "16.3.0-preview.9"
   },
   "exports": {
     "./worker": "./src/worker/index.ts",
     "./config": "./src/config/index.ts",
     "./manifest": "./src/manifest/index.ts",
+    "./precache": "./src/precache/index.ts",
     "./components": "./src/components/index.tsx",
     "./route": "./src/route/index.ts",
     "./provider": "./src/provider/index.tsx"
