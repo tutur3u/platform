@@ -118,8 +118,21 @@ describe('Contacts-compatible user group post creation', () => {
     query.eq.mockReturnValue(query);
     query.order.mockReturnValue(query);
     query.limit.mockReturnValue(query);
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          completed_count: 1,
+          failed_count: 0,
+          missing_check_count: 1,
+          post_id: 'post-1',
+          sent_count: 1,
+          total_count: 2,
+        },
+      ],
+      error: null,
+    });
     mocks.createAdminClient.mockResolvedValue({
-      schema: () => ({ from: () => query }),
+      schema: () => ({ from: () => query, rpc }),
     });
 
     const response = await GET(
@@ -132,7 +145,22 @@ describe('Contacts-compatible user group post creation', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       count: 2,
-      data: queryResult.data,
+      data: [
+        {
+          ...queryResult.data[0],
+          recipient_summary: {
+            checked: 1,
+            count: 2,
+            failed: 0,
+            missing_check: 1,
+            sent: 1,
+          },
+        },
+        {
+          ...queryResult.data[1],
+          recipient_summary: undefined,
+        },
+      ],
       nextCursor: '2026-07-12T01:00:00.000Z',
     });
     expect(mocks.hasGroup).toHaveBeenCalledWith(
@@ -142,6 +170,11 @@ describe('Contacts-compatible user group post creation', () => {
       'created_at',
       '2026-07-14T00:00:00.000Z'
     );
+    expect(rpc).toHaveBeenCalledWith('get_user_group_posts_status_summaries', {
+      p_group_id: GROUP_ID,
+      p_post_ids: ['post-1', 'post-2'],
+      p_ws_id: WS_ID,
+    });
   });
 
   it('rejects a request that has no satellite or Supabase actor', async () => {

@@ -671,15 +671,15 @@ export async function WorkspaceNavigationLinks({
         },
         {
           id: 'posts',
-          title: t('sidebar_tabs.posts'),
-          href: `${contactsAppHref}/posts`,
-          icon: createDashboardNavigationIcon('GalleryVerticalEnd', 'h-5 w-5'),
+          title: t('workspace-users-tabs.reports'),
+          href: `${contactsAppHref}/reports`,
+          icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
           disabled:
-            !hasSecret('ENABLE_EMAIL_SENDING', 'true') ||
             (!DEV_MODE && ENABLE_AI_ONLY) ||
             (withoutPermission('view_user_groups_posts') &&
-              withoutPermission('approve_posts')),
-          experimental: 'beta',
+              withoutPermission('approve_posts') &&
+              withoutPermission('view_user_groups_reports') &&
+              withoutPermission('approve_reports')),
           external: true,
           preferenceSectionLabel: sidebarSections.operations,
         },

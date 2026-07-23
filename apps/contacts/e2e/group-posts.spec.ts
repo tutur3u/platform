@@ -74,6 +74,7 @@ test.describe('Contacts group posts API', () => {
     );
     const appHeaders = { authorization: `Bearer ${token}` };
     let postId: string | null = null;
+    let periodicReportId: string | null = null;
 
     try {
       const workspaceResponse = await request.post(
@@ -313,6 +314,112 @@ test.describe('Contacts group posts API', () => {
       await expect.poll(async () => (await readChecks()).length).toBe(0);
       await expect(page.getByText('Completion status reset')).toBeVisible();
 
+      const periodicTitle = `Contacts E2E monthly report ${groupId}`;
+      const createPeriodicResponse = await request.post(
+        `/api/v1/workspaces/${workspaceId}/users/reports`,
+        {
+          data: {
+            cadence: 'monthly',
+            content: 'A manually authored monthly summary.',
+            feedback: 'Continue the current learning plan.',
+            generation_mode: 'manual',
+            group_id: groupId,
+            period_end: '2026-07-31',
+            period_start: '2026-07-01',
+            title: periodicTitle,
+            user_id: virtualUserId,
+          },
+          failOnStatusCode: false,
+          headers: appHeaders,
+        }
+      );
+      const createPeriodicBody = (await createPeriodicResponse.json()) as {
+        id?: string;
+      };
+      expect(
+        createPeriodicResponse.status(),
+        JSON.stringify(createPeriodicBody)
+      ).toBe(200);
+      periodicReportId = createPeriodicBody.id ?? null;
+      expect(periodicReportId).toBeTruthy();
+
+      const listPeriodicResponse = await request.get(
+        `/api/v1/workspaces/${workspaceId}/users/reports?cadence=monthly&page=1&pageSize=10&q=${encodeURIComponent(periodicTitle)}`,
+        { failOnStatusCode: false, headers: appHeaders }
+      );
+      expect(listPeriodicResponse.status()).toBe(200);
+      await expect(listPeriodicResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          counts: expect.objectContaining({ total: 1 }),
+          data: expect.arrayContaining([
+            expect.objectContaining({
+              cadence: 'monthly',
+              id: periodicReportId,
+              title: periodicTitle,
+            }),
+          ]),
+        })
+      );
+
+      const approvePeriodicResponse = await request.put(
+        `/api/v1/workspaces/${workspaceId}/users/reports/${periodicReportId}`,
+        {
+          data: { report_approval_status: 'APPROVED' },
+          failOnStatusCode: false,
+          headers: appHeaders,
+        }
+      );
+      expect(approvePeriodicResponse.status()).toBe(200);
+
+      const previewPeriodicResponse = await request.post(
+        `/api/v1/workspaces/${workspaceId}/users/reports/${periodicReportId}/delivery`,
+        {
+          data: { action: 'preview' },
+          failOnStatusCode: false,
+          headers: appHeaders,
+        }
+      );
+      expect(previewPeriodicResponse.status()).toBe(200);
+      await expect(previewPeriodicResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          preview: expect.objectContaining({
+            recipient: TEST_USER.email,
+            title: periodicTitle,
+          }),
+          queued: false,
+        })
+      );
+
+      const blockedDeliveryResponse = await request.post(
+        `/api/v1/workspaces/${workspaceId}/users/reports/${periodicReportId}/delivery`,
+        {
+          data: { action: 'send' },
+          failOnStatusCode: false,
+          headers: appHeaders,
+        }
+      );
+      expect(blockedDeliveryResponse.status()).toBe(409);
+      await expect(blockedDeliveryResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          message:
+            'Both workspace email gates must be enabled before periodic reports can send.',
+        })
+      );
+
+      await page.goto(`/${workspaceId}/posts?status=published&q=lesson`);
+      await expect(page).toHaveURL(
+        new RegExp(
+          `/${workspaceId}/reports\\?(?=.*view=daily)(?=.*status=published)(?=.*q=lesson)`
+        )
+      );
+
+      const deletePeriodicResponse = await request.delete(
+        `/api/v1/workspaces/${workspaceId}/users/reports/${periodicReportId}`,
+        { failOnStatusCode: false, headers: appHeaders }
+      );
+      expect(deletePeriodicResponse.status()).toBe(200);
+      periodicReportId = null;
+
       const deleteResponse = await request.delete(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/posts/${postId}`,
         { failOnStatusCode: false, headers: appHeaders }
@@ -320,6 +427,15 @@ test.describe('Contacts group posts API', () => {
       expect(deleteResponse.status()).toBe(200);
       postId = null;
     } finally {
+      if (periodicReportId) {
+        await request.delete(
+          `${supabaseUrl}/rest/v1/external_user_monthly_reports?id=eq.${periodicReportId}`,
+          {
+            failOnStatusCode: false,
+            headers: serviceHeaders('private'),
+          }
+        );
+      }
       if (postId) {
         await request.delete(
           `${supabaseUrl}/rest/v1/user_group_posts?id=eq.${postId}`,

@@ -720,6 +720,26 @@ export const permissionGroups = ({
             disabled: false,
           },
           {
+            id: 'manage_user_report_automation',
+            icon: <Settings2 />,
+            title: t('ws-roles.manage_user_report_automation'),
+            description: t(
+              'ws-roles.manage_user_report_automation_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
+            id: 'send_user_group_report_emails',
+            icon: <Send />,
+            title: t('ws-roles.send_user_group_report_emails'),
+            description: t(
+              'ws-roles.send_user_group_report_emails_description'
+            ),
+            disableOnProduction: false,
+            disabled: false,
+          },
+          {
             id: 'approve_reports',
             icon: <ShieldCheck />,
             title: t('ws-roles.approve_reports'),

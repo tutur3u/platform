@@ -167,7 +167,8 @@ export function useReportMutations({
       if (isGroupContext) {
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
+        sp.set('view', 'periodic');
+        router.replace(`/${wsId}/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {
@@ -297,7 +298,8 @@ export function useReportMutations({
       if (isGroupContext) {
         router.replace(`${pathname}?${sp.toString()}`);
       } else {
-        router.replace(`/${wsId}/users/reports?${sp.toString()}`);
+        sp.set('view', 'periodic');
+        router.replace(`/${wsId}/reports?${sp.toString()}`);
       }
     },
     onError: (err) => {

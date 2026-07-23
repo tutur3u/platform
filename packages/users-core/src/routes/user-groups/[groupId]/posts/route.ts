@@ -27,6 +27,15 @@ interface Params {
   params: Promise<{ groupId: string; wsId: string }>;
 }
 
+interface GroupPostStatusSummary {
+  completed_count: number;
+  failed_count: number;
+  missing_check_count: number;
+  post_id: string;
+  sent_count: number;
+  total_count: number;
+}
+
 export async function GET(req: Request, { params }: Params) {
   const { groupId, wsId: rawWsId } = await params;
   const parsedParams = GroupUuidSchema.safeParse({ groupId });
@@ -96,9 +105,57 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const posts = data ?? [];
+  const privateDb = sbAdmin.schema('private') as unknown as {
+    rpc: (
+      fn: 'get_user_group_posts_status_summaries',
+      args: {
+        p_group_id: string;
+        p_post_ids: string[];
+        p_ws_id: string;
+      }
+    ) => Promise<{
+      data: GroupPostStatusSummary[] | null;
+      error: { message?: string } | null;
+    }>;
+  };
+  const summaries = posts.length
+    ? await privateDb.rpc('get_user_group_posts_status_summaries', {
+        p_group_id: groupId,
+        p_post_ids: posts.map((post) => post.id),
+        p_ws_id: wsId,
+      })
+    : { data: [], error: null };
+  if (summaries.error) {
+    console.error('Error fetching batched group post summaries', {
+      error: summaries.error,
+      groupId,
+      wsId,
+    });
+    return NextResponse.json(
+      { message: 'Error fetching group post summaries' },
+      { status: 500 }
+    );
+  }
+  const summariesByPostId = new Map(
+    (summaries.data ?? []).map((summary) => [summary.post_id, summary])
+  );
   return NextResponse.json({
     count: count ?? 0,
-    data: posts,
+    data: posts.map((post) => {
+      const summary = summariesByPostId.get(post.id);
+      return {
+        ...post,
+        recipient_summary: summary
+          ? {
+              checked: Number(summary.completed_count ?? 0),
+              count: Number(summary.total_count ?? 0),
+              failed: Number(summary.failed_count ?? 0),
+              missing_check: Number(summary.missing_check_count ?? 0),
+              sent: Number(summary.sent_count ?? 0),
+            }
+          : undefined,
+      };
+    }),
     nextCursor:
       posts.length === limit
         ? (posts[posts.length - 1]?.created_at ?? null)

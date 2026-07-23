@@ -1,1 +1,4 @@
-export { POST } from '@tuturuuu/users-core/routes/users/reports/route';
+export {
+  GET,
+  POST,
+} from '@tuturuuu/users-core/routes/users/reports/route';

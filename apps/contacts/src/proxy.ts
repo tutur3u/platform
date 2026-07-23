@@ -125,6 +125,7 @@ const CONTACTS_OWNED_EXACT_ROUTES = new Set(['', 'users']);
 // the freshly-migrated route straight back to web.
 const CONTACTS_OWNED_ROUTE_PREFIXES = [
   'posts',
+  'reports',
   'workforce',
   'users/approvals',
   'users/attendance',

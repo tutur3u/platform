@@ -684,6 +684,12 @@
     "guest_self_join_update_success": "Guest self-join setting updated.",
     "invite_membership_label": "Access"
   },
+  "ws-roles": {
+    "manage_user_report_automation": "Manage Report Automation",
+    "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
+    "send_user_group_report_emails": "Send Periodic Report Emails",
+    "send_user_group_report_emails_description": "Preview, test, queue, retry, and cancel approved periodic report email delivery."
+  },
   "ws-settings": {
     "copy_id": "Copy ID",
     "handle": "Workspace Slug",

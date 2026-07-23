@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 481,
+        "legacyNext": 484,
         "migrated": 62,
-        "percentComplete": 13.18,
-        "remaining": 481,
+        "percentComplete": 13.11,
+        "remaining": 484,
         "terminal": 73,
-        "total": 554,
+        "total": 557,
         "unknownStatus": 0
       },
       {
@@ -42,12 +42,12 @@
         "acceptedRemoval": 0,
         "key": "cron",
         "label": "cron",
-        "legacyNext": 5,
+        "legacyNext": 6,
         "migrated": 2,
-        "percentComplete": 28.57,
-        "remaining": 5,
+        "percentComplete": 25,
+        "remaining": 6,
         "terminal": 2,
-        "total": 7,
+        "total": 8,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 488,
+        "legacyNext": 492,
         "migrated": 67,
-        "percentComplete": 13.78,
-        "remaining": 488,
+        "percentComplete": 13.68,
+        "remaining": 492,
         "terminal": 78,
-        "total": 566,
+        "total": 570,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 541,
+      "legacyNext": 545,
       "migrated": 215,
-      "percentComplete": 29.65,
-      "remaining": 541,
+      "percentComplete": 29.5,
+      "remaining": 545,
       "terminal": 228,
-      "total": 769,
+      "total": 773,
       "unknownStatus": 0
     }
   },
@@ -5001,7 +5001,7 @@
     {
       "id": "api:/api/v1/workspaces/:wsId/users/reports:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/route.ts",
       "status": "legacy-next",
@@ -5013,6 +5013,24 @@
       "methods": ["PUT", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/delivery:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId/delivery",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/:reportId/generate:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/users/reports/:reportId/generate",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5049,6 +5067,15 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/users/reports/groups/:groupId/dashboard",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/groups/[groupId]/dashboard/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/users/reports/schedules:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PUT"],
+      "routePath": "/api/v1/workspaces/:wsId/users/reports/schedules",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5460,6 +5487,15 @@
       "methods": ["GET"],
       "routePath": "/api/cron/process-post-email-queue",
       "sourceFile": "apps/web/src/legacy-api-routes/cron/process-post-email-queue/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "cron:/api/cron/process-report-automation:apps/web/src/legacy-api-routes/cron/process-report-automation/route.ts",
+      "kind": "cron",
+      "methods": ["GET"],
+      "routePath": "/api/cron/process-report-automation",
+      "sourceFile": "apps/web/src/legacy-api-routes/cron/process-report-automation/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7346,20 +7382,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 554,
-    "cronRoutes": 7,
+    "apiRoutes": 557,
+    "cronRoutes": 8,
     "layouts": 54,
     "pages": 146,
-    "routeHandlers": 566,
+    "routeHandlers": 570,
     "methodCounts": {
-      "GET": 282,
+      "GET": 285,
       "HEAD": 1,
-      "POST": 280,
-      "PUT": 50,
+      "POST": 282,
+      "PUT": 51,
       "PATCH": 59,
       "DELETE": 97,
       "OPTIONS": 23
     },
-    "total": 769
+    "total": 773
   }
 }

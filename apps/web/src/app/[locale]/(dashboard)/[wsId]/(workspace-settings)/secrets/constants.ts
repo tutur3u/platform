@@ -235,6 +235,13 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
     defaultValue: 'false',
   },
   {
+    name: 'ENABLE_REPORT_EMAIL_SENDING',
+    description:
+      'Allows approved weekly, monthly, quarterly, and yearly reports to enter the email queue. Requires ENABLE_EMAIL_SENDING too.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
     name: 'ENABLE_EDUCATION',
     description: 'Enables education-related features.',
     type: 'boolean',

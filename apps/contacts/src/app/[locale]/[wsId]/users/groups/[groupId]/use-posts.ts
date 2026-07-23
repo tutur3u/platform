@@ -5,6 +5,13 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
+import {
+  createUserGroupPost,
+  deleteUserGroupPost,
+  listUserGroupPosts,
+  type UserGroupPostRecipientSummary,
+  updateUserGroupPost,
+} from '@tuturuuu/internal-api/posts';
 import type { UserGroupPost as DBUserGroupPost } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -13,7 +20,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 const PAGINATION_LIMIT = 10;
 
 // Re-export the generated DB type for backward compatibility
-export type UserGroupPost = DBUserGroupPost;
+export type UserGroupPost = DBUserGroupPost & {
+  recipient_summary?: UserGroupPostRecipientSummary;
+};
 
 // Form input type for creating/editing posts (only fields that can be edited)
 export interface UserGroupPostFormInput {
@@ -64,22 +73,12 @@ export function useGroupPostsInfiniteQuery(
         search.set('cursor', pageParam as string);
       }
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts?${search.toString()}`,
-        { cache: 'no-store' }
-      );
+      const payload = await listUserGroupPosts(wsId, groupId, {
+        cursor: search.get('cursor'),
+        limit: PAGINATION_LIMIT,
+      });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch group posts');
-      }
-
-      const payload = (await response.json()) as {
-        data?: UserGroupPost[];
-        count?: number;
-        nextCursor?: string | null;
-      };
-
-      const posts = payload.data ?? [];
+      const posts = (payload.data ?? []) as unknown as UserGroupPost[];
       const hasMore = Boolean(payload.nextCursor);
 
       return {
@@ -154,37 +153,11 @@ export function useUpsertPostMutation(
       };
 
       if (post.id) {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${post.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to update group post');
-        }
+        await updateUserGroupPost(wsId, groupId, post.id, payload);
         return { kind: 'update' as const, id: post.id };
       }
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create group post');
-      }
+      await createUserGroupPost(wsId, groupId, payload);
       return { kind: 'create' as const, id: post.id ?? '' };
     },
     onSuccess: () => {
@@ -209,16 +182,7 @@ export function useDeletePostMutation(
   return useMutation({
     mutationFn: async (postId: string) => {
       if (!groupId) throw new Error('Missing groupId');
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to delete group post');
-      }
+      await deleteUserGroupPost(wsId, groupId, postId);
       return { postId };
     },
     onSuccess: () => {

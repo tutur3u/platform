@@ -231,6 +231,7 @@
                   "platform/applications/drive",
                   "platform/applications/finance",
                   "platform/applications/inventory",
+                  "platform/applications/reports",
                   {
                     "group": "Square POS",
                     "pages": [

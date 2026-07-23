@@ -25,6 +25,18 @@ const UpdateReportSchema = z.object({
   approved_at: z.string().nullable().optional(),
   rejected_at: z.string().nullable().optional(),
   rejection_reason: z.string().nullable().optional(),
+  cadence: z.enum(['weekly', 'monthly', 'quarterly', 'yearly']).optional(),
+  period_start: z.iso.date().nullable().optional(),
+  period_end: z.iso.date().nullable().optional(),
+  generation_mode: z.enum(['manual', 'ai']).optional(),
+  generation_status: z
+    .enum(['draft', 'generating', 'ready', 'failed'])
+    .optional(),
+  manager_instruction: z
+    .string()
+    .max(MAX_MONTHLY_REPORT_TEXT_LENGTH)
+    .nullable()
+    .optional(),
 });
 
 interface Params {
@@ -79,7 +91,7 @@ export async function PUT(request: Request, context: Params) {
     const privateDb = sbAdmin.schema('private');
     const existing = await privateDb
       .from('external_user_monthly_reports_workspace_view')
-      .select('id')
+      .select('id, generation_mode')
       .eq('id', reportId)
       .eq('user_ws_id', wsId)
       .maybeSingle();
@@ -94,10 +106,29 @@ export async function PUT(request: Request, context: Params) {
       { schema: 'private' },
       'external_user_monthly_reports'
     > = { ...parsed.data, updated_at: new Date().toISOString() };
+    const narrativeChanged =
+      parsed.data.content !== undefined ||
+      parsed.data.feedback !== undefined ||
+      parsed.data.generation_status === 'ready';
+    const isAiReport =
+      parsed.data.generation_mode === 'ai' ||
+      existing.data.generation_mode === 'ai';
+    if (isAiReport && narrativeChanged && !approvalTouched) {
+      Object.assign(updatePayload, {
+        report_approval_status: 'PENDING',
+        approved_by: null,
+        approved_at: null,
+        rejected_by: null,
+        rejected_at: null,
+        rejection_reason: null,
+      });
+    }
     if (approvalTouched) {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
-        ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid)
+        ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
+            authorizationClient: sbAdmin,
+          })
         : null;
       if (!actorLink?.virtual_user_id) {
         return NextResponse.json(

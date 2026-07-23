@@ -36,7 +36,7 @@ export default async function UserReportsStatistics({
     <StatisticCard
       title={t('workspace-users-tabs.reports')}
       value={reports}
-      href={`/${wsId}/users/reports`}
+      href={`/${wsId}/reports?view=periodic`}
     />
   );
 }

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, ChevronsUpDown } from '@tuturuuu/icons';
+import { listWorkspaceReportGroups } from '@tuturuuu/internal-api/reports';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -71,36 +72,11 @@ export default function GroupReportsSelector({
       debouncedQuery,
       selectedGroupId,
     ],
-    queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      if (debouncedQuery) {
-        searchParams.set('q', debouncedQuery);
-      }
-      if (selectedGroupId) {
-        searchParams.set('selectedGroupId', selectedGroupId);
-      }
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/reports/groups?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch report groups');
-      }
-
-      return (await response.json()) as {
-        groupStatusSummary: Array<{
-          approved_count: number;
-          group_id: string;
-          pending_count: number;
-          rejected_count: number;
-        }>;
-        groups: Array<{ id: string; name: string | null }>;
-        selectedGroup: { id: string; name: string | null } | null;
-        selectedGroupManagers: Array<{ id: string; full_name: string | null }>;
-      };
-    },
+    queryFn: () =>
+      listWorkspaceReportGroups(wsId, {
+        query: debouncedQuery || undefined,
+        selectedGroupId,
+      }),
     enabled: !!wsId,
     staleTime: 2 * 60 * 1000,
   });

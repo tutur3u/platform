@@ -196,7 +196,7 @@ export default async function WorkspaceUserDetailsPage({
               label: report.title || 'No title',
               value: report.id,
             }))}
-            href={`/${wsId}/users/reports`}
+            href={`/${wsId}/reports?view=periodic`}
             disabled={!userId && !report.user_id}
             resetSignals={['groupId', 'userId']}
             sortCheckedFirst={false}

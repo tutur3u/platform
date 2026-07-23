@@ -1,90 +1,30 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { getTranslations } from 'next-intl/server';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { getContactsWorkspacePermissions } from '@/lib/workspace';
-import GroupReportsSelector from './group-reports-selector';
-
-export const metadata: Metadata = {
-  title: 'Reports',
-  description: 'Manage Reports in the Users area of your Tuturuuu workspace.',
-};
+import { Suspense } from 'react';
 
 interface Props {
-  params: Promise<{
-    locale: string;
-    wsId: string;
-  }>;
+  params: Promise<{ wsId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceUserReportsPage({ params }: Props) {
-  await connection();
-
+export default function LegacyPeriodicReportsPage(props: Props) {
   return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const t = await getTranslations();
-        // Satellites resolve the actor from Tuturuuu app-session auth, never via
-        // Supabase-backed user helpers (see the internal-app-auth guard).
-        const actor = await getSatelliteAppSessionUser('contacts');
-        const user = actor?.id
-          ? await getWorkspaceUserLinkForUser(wsId, actor.id)
-          : null;
-
-        if (!user) {
-          console.error('Failed to fetch current workspace user');
-          notFound();
-        }
-
-        const permissions = await getContactsWorkspacePermissions(wsId);
-        if (!permissions) notFound();
-        const { containsPermission } = permissions;
-
-        const canViewUserGroupsReports = containsPermission(
-          'view_user_groups_reports'
-        );
-        if (!canViewUserGroupsReports) {
-          notFound();
-        }
-
-        const canCheckUserAttendance = containsPermission(
-          'check_user_attendance'
-        );
-        const canApproveReports = containsPermission('approve_reports');
-        const canCreateReports = containsPermission(
-          'create_user_groups_reports'
-        );
-        const canUpdateReports = containsPermission(
-          'update_user_groups_reports'
-        );
-        const canDeleteReports = containsPermission(
-          'delete_user_groups_reports'
-        );
-
-        return (
-          <>
-            <FeatureSummary
-              pluralTitle={t('ws-user-reports.plural')}
-              singularTitle={t('ws-user-reports.singular')}
-              description={t('ws-user-reports.description')}
-            />
-            <Separator className="my-4" />
-            <GroupReportsSelector
-              wsId={wsId}
-              canCheckUserAttendance={canCheckUserAttendance}
-              canApproveReports={canApproveReports}
-              canCreateReports={canCreateReports}
-              canUpdateReports={canUpdateReports}
-              canDeleteReports={canDeleteReports}
-            />
-          </>
-        );
-      }}
-    </WorkspaceWrapper>
+    <Suspense fallback={null}>
+      <LegacyPeriodicReportsRedirect {...props} />
+    </Suspense>
   );
+}
+
+async function LegacyPeriodicReportsRedirect({ params, searchParams }: Props) {
+  await connection();
+  const { wsId } = await params;
+  const query = new URLSearchParams();
+  const raw = await searchParams;
+  for (const [key, value] of Object.entries(raw)) {
+    for (const item of Array.isArray(value) ? value : [value]) {
+      if (item !== undefined) query.append(key, item);
+    }
+  }
+  query.set('view', 'periodic');
+  return redirect(`/${wsId}/reports?${query.toString()}`);
 }

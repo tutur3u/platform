@@ -32,12 +32,14 @@ import type {
 import { createPostEmailKey, usePosts } from './use-posts';
 
 interface PostsClientProps {
+  embedded?: boolean;
   wsId: string;
   locale: string;
   searchParams: PostsSearchParams;
 }
 
 export default function PostsClient({
+  embedded = false,
   wsId,
   locale,
   searchParams,
@@ -279,12 +281,14 @@ export default function PostsClient({
   }, [posts, posts.selected, postsData, setPosts]);
 
   return (
-    <div className="space-y-6 p-6">
-      <FeatureSummary
-        pluralTitle={t('ws-post-emails.plural')}
-        singularTitle={t('ws-post-emails.singular')}
-        description={t('ws-post-emails.description')}
-      />
+    <div className={embedded ? 'space-y-6' : 'space-y-6 p-2 md:p-6'}>
+      {!embedded && (
+        <FeatureSummary
+          pluralTitle={t('ws-post-emails.plural')}
+          singularTitle={t('ws-post-emails.singular')}
+          description={t('ws-post-emails.description')}
+        />
+      )}
 
       <PostStatusSummary
         activeStage={activeStage}

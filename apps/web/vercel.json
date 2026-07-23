@@ -17,6 +17,10 @@
       "schedule": "*/30 * * * *"
     },
     {
+      "path": "/api/cron/process-report-automation",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/process-topic-announcement-queue",
       "schedule": "*/15 * * * *"
     },

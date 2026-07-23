@@ -1,5 +1,3 @@
-import { useInViewport } from '@mantine/hooks';
-import { useQuery } from '@tanstack/react-query';
 import {
   AlertCircle,
   Check,
@@ -27,49 +25,21 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { memo } from 'react';
-import { PostEmailStatus } from './post';
 import type { UserGroupPost } from './use-posts';
 
 function PostCompletionBadge({
-  wsId,
-  groupId,
-  postId,
+  summary,
 }: {
-  wsId: string;
-  groupId: string;
-  postId: string;
+  summary: UserGroupPost['recipient_summary'];
 }) {
-  const { ref, inViewport } = useInViewport();
+  if (!summary?.count) return null;
 
-  const { data } = useQuery<{
-    sent: number | null;
-    checked: number | null;
-    failed: number | null;
-    tentative: number | null;
-    missing_check?: number | null;
-    count: number | null;
-  }>({
-    queryKey: ['user-group-post-email-status', groupId, postId],
-    enabled: Boolean(inViewport && wsId && groupId && postId),
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/posts/${postId}/status`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch post status');
-      return response.json();
-    },
-    staleTime: 30_000,
-  });
-
-  if (!data?.count) return <div ref={ref} />;
-
-  const completed = data.checked ?? 0;
-  const total = data.count;
+  const completed = summary.checked ?? 0;
+  const total = summary.count;
   const allDone = completed >= total;
 
   return (
-    <div ref={ref}>
+    <div>
       <div
         className={cn(
           'flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold text-xs',
@@ -181,11 +151,7 @@ export const PostItem = memo(function PostItem({
               </div>
             )}
             {groupId && post.id && (
-              <PostCompletionBadge
-                wsId={wsId}
-                groupId={groupId}
-                postId={post.id}
-              />
+              <PostCompletionBadge summary={post.recipient_summary} />
             )}
           </div>
         </div>
@@ -254,8 +220,30 @@ export const PostItem = memo(function PostItem({
           {post.content}
         </div>
       )}
-      {configs.showStatus && groupId && post.id && (
-        <PostEmailStatus wsId={wsId} groupId={groupId} postId={post.id} />
+      {configs.showStatus && post.recipient_summary && (
+        <div className="flex flex-wrap gap-2 text-muted-foreground text-xs">
+          <span>
+            {t('reports-hub.completed_count', {
+              count: post.recipient_summary.checked,
+            })}
+          </span>
+          <span>·</span>
+          <span>
+            {t('reports-hub.delivered_count', {
+              count: post.recipient_summary.sent,
+            })}
+          </span>
+          {post.recipient_summary.failed > 0 && (
+            <>
+              <span>·</span>
+              <span className="text-destructive">
+                {t('reports-hub.failed_count', {
+                  count: post.recipient_summary.failed,
+                })}
+              </span>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

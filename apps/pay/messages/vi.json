@@ -1318,6 +1318,12 @@
     "true_false": "Đúng / Sai",
     "type": "Loại"
   },
+  "ws-roles": {
+    "manage_user_report_automation": "Quản lý tự động hóa báo cáo",
+    "manage_user_report_automation_description": "Cấu hình lịch báo cáo định kỳ, chế độ tạo và mặc định cho không gian làm việc hoặc nhóm.",
+    "send_user_group_report_emails": "Gửi email báo cáo định kỳ",
+    "send_user_group_report_emails_description": "Xem trước, gửi thử, xếp hàng, thử lại và hủy gửi email báo cáo định kỳ đã được duyệt."
+  },
   "ws-settings": {
     "copy_id": "Sao chép ID",
     "handle": "Slug không gian làm việc",

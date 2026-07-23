@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bot, KeyRound, Settings } from '@tuturuuu/icons';
 import {
+  getPeriodicReportSchedules,
   getWorkspaceMemberSettings,
   listEnhancedWorkspaceMembers,
   listWorkspaceApiKeys,
@@ -16,6 +17,7 @@ import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import SecretForm from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/form';
+import { PeriodicReportDeliveryReadiness } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/periodic-report-delivery-readiness';
 import {
   leadGenerationConfigs,
   reportConfigs,
@@ -157,6 +159,10 @@ function SecretsNativePanel({ wsId }: { wsId: string }) {
     queryFn: () => listWorkspaceSecrets(wsId),
     queryKey: ['native-settings', 'secrets', wsId],
   });
+  const reportReadinessQuery = useQuery({
+    queryFn: () => getPeriodicReportSchedules(wsId),
+    queryKey: ['native-settings', 'report-delivery-readiness', wsId],
+  });
 
   const secretNames =
     secretsQuery.data
@@ -165,6 +171,21 @@ function SecretsNativePanel({ wsId }: { wsId: string }) {
 
   return (
     <div className="space-y-4">
+      {reportReadinessQuery.data && (
+        <PeriodicReportDeliveryReadiness
+          existingSecrets={secretNames}
+          globalGateEnabled={
+            reportReadinessQuery.data.emailDelivery.globalGateEnabled
+          }
+          periodicGateEnabled={
+            reportReadinessQuery.data.emailDelivery.periodicGateEnabled
+          }
+          senderConfigured={
+            reportReadinessQuery.data.emailDelivery.senderConfigured
+          }
+          wsId={wsId}
+        />
+      )}
       <div className="rounded-lg border p-4">
         <SecretForm
           existingSecrets={secretNames}

@@ -2325,18 +2325,29 @@ export type Database = {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
+          cadence: string;
           content: string;
           created_at: string;
           creator_id: string | null;
+          delivered_at: string | null;
+          delivery_requested_at: string | null;
+          delivery_status: string;
           feedback: string;
+          generation_mode: string;
+          generation_status: string;
           group_id: string;
           id: string;
+          last_delivery_error: string | null;
+          manager_instruction: string | null;
+          period_end: string | null;
+          period_start: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
           report_approval_status: Database['public']['Enums']['approval_status'];
           score: number | null;
           scores: number[] | null;
+          source_context: Json;
           title: string;
           updated_at: string;
           updated_by: string | null;
@@ -2345,18 +2356,29 @@ export type Database = {
         Insert: {
           approved_at?: string | null;
           approved_by?: string | null;
+          cadence?: string;
           content: string;
           created_at?: string;
           creator_id?: string | null;
+          delivered_at?: string | null;
+          delivery_requested_at?: string | null;
+          delivery_status?: string;
           feedback: string;
+          generation_mode?: string;
+          generation_status?: string;
           group_id: string;
           id?: string;
+          last_delivery_error?: string | null;
+          manager_instruction?: string | null;
+          period_end?: string | null;
+          period_start?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
           report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
+          source_context?: Json;
           title: string;
           updated_at: string;
           updated_by?: string | null;
@@ -2365,18 +2387,29 @@ export type Database = {
         Update: {
           approved_at?: string | null;
           approved_by?: string | null;
+          cadence?: string;
           content?: string;
           created_at?: string;
           creator_id?: string | null;
+          delivered_at?: string | null;
+          delivery_requested_at?: string | null;
+          delivery_status?: string;
           feedback?: string;
+          generation_mode?: string;
+          generation_status?: string;
           group_id?: string;
           id?: string;
+          last_delivery_error?: string | null;
+          manager_instruction?: string | null;
+          period_end?: string | null;
+          period_start?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejection_reason?: string | null;
           report_approval_status?: Database['public']['Enums']['approval_status'];
           score?: number | null;
           scores?: number[] | null;
+          source_context?: Json;
           title?: string;
           updated_at?: string;
           updated_by?: string | null;
@@ -11044,6 +11077,259 @@ export type Database = {
           },
         ];
       };
+      user_report_automation_runs: {
+        Row: {
+          attempt_count: number;
+          cadence: string;
+          completed_at: string | null;
+          created_at: string;
+          generation_mode: string;
+          group_id: string | null;
+          id: string;
+          last_error: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          next_attempt_at: string;
+          period_end: string;
+          period_start: string;
+          result: Json;
+          schedule_id: string;
+          started_at: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          cadence: string;
+          completed_at?: string | null;
+          created_at?: string;
+          generation_mode: string;
+          group_id?: string | null;
+          id?: string;
+          last_error?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          next_attempt_at?: string;
+          period_end: string;
+          period_start: string;
+          result?: Json;
+          schedule_id: string;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          attempt_count?: number;
+          cadence?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          generation_mode?: string;
+          group_id?: string | null;
+          id?: string;
+          last_error?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          next_attempt_at?: string;
+          period_end?: string;
+          period_start?: string;
+          result?: Json;
+          schedule_id?: string;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_report_automation_runs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_report_automation_runs_schedule_id_fkey';
+            columns: ['schedule_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_report_schedules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_report_email_attempts: {
+        Row: {
+          attempted_at: string;
+          error_message: string | null;
+          id: string;
+          provider_message_id: string | null;
+          queue_id: string;
+          status: string;
+        };
+        Insert: {
+          attempted_at?: string;
+          error_message?: string | null;
+          id?: string;
+          provider_message_id?: string | null;
+          queue_id: string;
+          status: string;
+        };
+        Update: {
+          attempted_at?: string;
+          error_message?: string | null;
+          id?: string;
+          provider_message_id?: string | null;
+          queue_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_report_email_attempts_queue_id_fkey';
+            columns: ['queue_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_report_email_queue';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_report_email_queue: {
+        Row: {
+          attempt_count: number;
+          created_at: string;
+          delivery_kind: string;
+          id: string;
+          last_error: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          report_id: string;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          attempt_count?: number;
+          created_at?: string;
+          delivery_kind?: string;
+          id?: string;
+          last_error?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email: string;
+          report_id: string;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          attempt_count?: number;
+          created_at?: string;
+          delivery_kind?: string;
+          id?: string;
+          last_error?: string | null;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          next_attempt_at?: string;
+          provider_message_id?: string | null;
+          recipient_email?: string;
+          report_id?: string;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_report_email_queue_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: true;
+            referencedRelation: 'external_user_monthly_reports';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_report_email_queue_report_id_fkey';
+            columns: ['report_id'];
+            isOneToOne: true;
+            referencedRelation: 'external_user_monthly_reports_workspace_view';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      user_report_schedules: {
+        Row: {
+          cadence: string;
+          created_at: string;
+          created_by: string | null;
+          delivery_time: string;
+          enabled: boolean;
+          generation_mode: string;
+          group_id: string | null;
+          id: string;
+          locked_at: string | null;
+          locked_by: string | null;
+          manager_instruction: string | null;
+          next_run_at: string | null;
+          timezone: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          cadence?: string;
+          created_at?: string;
+          created_by?: string | null;
+          delivery_time?: string;
+          enabled?: boolean;
+          generation_mode?: string;
+          group_id?: string | null;
+          id?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          manager_instruction?: string | null;
+          next_run_at?: string | null;
+          timezone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          cadence?: string;
+          created_at?: string;
+          created_by?: string | null;
+          delivery_time?: string;
+          enabled?: boolean;
+          generation_mode?: string;
+          group_id?: string | null;
+          id?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          manager_instruction?: string | null;
+          next_run_at?: string | null;
+          timezone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_report_schedules_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+        ];
+      };
       web_account_devices: {
         Row: {
           active_user_id: string | null;
@@ -12152,20 +12438,30 @@ export type Database = {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
+          cadence: string | null;
           content: string | null;
           created_at: string | null;
           creator_display_name: string | null;
           creator_email: string | null;
           creator_full_name: string | null;
           creator_id: string | null;
+          delivered_at: string | null;
+          delivery_requested_at: string | null;
+          delivery_status: string | null;
           feedback: string | null;
+          generation_mode: string | null;
+          generation_status: string | null;
           group_id: string | null;
           group_name: string | null;
           group_ws_id: string | null;
           id: string | null;
+          last_delivery_error: string | null;
+          manager_instruction: string | null;
           modifier_display_name: string | null;
           modifier_email: string | null;
           modifier_full_name: string | null;
+          period_end: string | null;
+          period_start: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
@@ -12174,6 +12470,7 @@ export type Database = {
             | null;
           score: number | null;
           scores: number[] | null;
+          source_context: Json | null;
           title: string | null;
           updated_at: string | null;
           updated_by: string | null;
@@ -13150,6 +13447,63 @@ export type Database = {
           updated_at: string;
         }[];
       };
+      claim_periodic_report_emails: {
+        Args: { p_limit?: number; p_now?: string; p_worker_id: string };
+        Returns: {
+          attempt_count: number;
+          created_at: string;
+          delivery_kind: string;
+          id: string;
+          last_error: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          next_attempt_at: string;
+          provider_message_id: string | null;
+          recipient_email: string;
+          report_id: string;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'user_report_email_queue';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
+      claim_periodic_report_runs: {
+        Args: { p_limit?: number; p_now?: string; p_worker_id: string };
+        Returns: {
+          attempt_count: number;
+          cadence: string;
+          completed_at: string | null;
+          created_at: string;
+          generation_mode: string;
+          group_id: string | null;
+          id: string;
+          last_error: string | null;
+          locked_at: string | null;
+          locked_by: string | null;
+          next_attempt_at: string;
+          period_end: string;
+          period_start: string;
+          result: Json;
+          schedule_id: string;
+          started_at: string | null;
+          status: string;
+          updated_at: string;
+          ws_id: string;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'user_report_automation_runs';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       complete_devbox_run: {
@@ -13922,6 +14276,17 @@ export type Database = {
           total_count: number;
           unchecked_count: number;
           undeliverable_count: number;
+        }[];
+      };
+      get_user_group_posts_status_summaries: {
+        Args: { p_group_id: string; p_post_ids: string[]; p_ws_id: string };
+        Returns: {
+          completed_count: number;
+          failed_count: number;
+          missing_check_count: number;
+          post_id: string;
+          sent_count: number;
+          total_count: number;
         }[];
       };
       get_wallet_checkpoint_audit_status: {
@@ -42856,7 +43221,9 @@ export type Database = {
         | 'manage_mobile_deployment_vault'
         | 'manage_user_profile_links'
         | 'manage_internal_accounts'
-        | 'initiate_pos_checkout';
+        | 'initiate_pos_checkout'
+        | 'manage_user_report_automation'
+        | 'send_user_group_report_emails';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -45612,6 +45979,8 @@ export const Constants = {
         'manage_user_profile_links',
         'manage_internal_accounts',
         'initiate_pos_checkout',
+        'manage_user_report_automation',
+        'send_user_group_report_emails',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

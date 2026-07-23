@@ -5,12 +5,17 @@ import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  verifySecret,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { secretColumns } from './columns';
 import SecretForm from './form';
+import { PeriodicReportDeliveryReadiness } from './periodic-report-delivery-readiness';
 import { StorageRolloutPanel } from './storage-rollout-panel';
 
 export const metadata: Metadata = {
@@ -51,11 +56,43 @@ export default async function WorkspaceSecretsPage({
   }
 
   const { data: secrets, count } = await getSecrets(wsId, await searchParams);
-  const rolloutState = await getWorkspaceStorageRolloutState(wsId);
+  const [rolloutState, globalGateEnabled, periodicGateEnabled, senderResult] =
+    await Promise.all([
+      getWorkspaceStorageRolloutState(wsId),
+      verifySecret({
+        forceAdmin: true,
+        name: 'ENABLE_EMAIL_SENDING',
+        value: 'true',
+        wsId,
+      }),
+      verifySecret({
+        forceAdmin: true,
+        name: 'ENABLE_REPORT_EMAIL_SENDING',
+        value: 'true',
+        wsId,
+      }),
+      createClient().then((client) =>
+        client
+          .from('workspace_email_credentials')
+          .select('id')
+          .eq('ws_id', wsId)
+          .maybeSingle()
+      ),
+    ]);
   const t = await getTranslations();
+  const existingSecretNames = secrets
+    .filter((secret) => Boolean(secret.name))
+    .map((secret) => secret.name!);
 
   return (
     <>
+      <PeriodicReportDeliveryReadiness
+        existingSecrets={existingSecretNames}
+        globalGateEnabled={globalGateEnabled}
+        periodicGateEnabled={periodicGateEnabled}
+        senderConfigured={Boolean(senderResult.data)}
+        wsId={wsId}
+      />
       <StorageRolloutPanel
         wsId={wsId}
         secrets={secrets}
@@ -67,14 +104,7 @@ export default async function WorkspaceSecretsPage({
         description={t('ws-secrets.description')}
         createTitle={t('ws-secrets.create')}
         createDescription={t('ws-secrets.create_description')}
-        form={
-          <SecretForm
-            wsId={wsId}
-            existingSecrets={secrets
-              .filter((s) => !!s.name)
-              .map((s) => s.name!)}
-          />
-        }
+        form={<SecretForm wsId={wsId} existingSecrets={existingSecretNames} />}
       />
       <Separator className="my-4" />
       <CustomDataTable

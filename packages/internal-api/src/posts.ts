@@ -30,6 +30,35 @@ export interface UserGroupPostCheckLogEntry {
   created_at: string;
 }
 
+export interface UserGroupPostRecipientSummary {
+  checked: number;
+  count: number;
+  failed: number;
+  missing_check: number;
+  sent: number;
+}
+
+export interface UserGroupPostRecord {
+  content: string | null;
+  created_at: string;
+  creator_id: string | null;
+  group_id: string;
+  id: string;
+  notes: string | null;
+  post_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
+  recipient_summary?: UserGroupPostRecipientSummary;
+  rejection_reason: string | null;
+  title: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+export interface UserGroupPostsResponse {
+  count: number;
+  data: UserGroupPostRecord[];
+  nextCursor: string | null;
+}
+
 function userGroupPostChecksPath(
   workspaceId: string,
   groupId: string,
@@ -39,6 +68,75 @@ function userGroupPostChecksPath(
   return postId
     ? `${collectionPath}/${encodePathSegment(postId)}`
     : collectionPath;
+}
+
+function userGroupPostsPath(workspaceId: string, groupId: string) {
+  return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/posts`;
+}
+
+export function listUserGroupPosts(
+  workspaceId: string,
+  groupId: string,
+  query?: { cursor?: string | null; limit?: number },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<UserGroupPostsResponse>(
+    userGroupPostsPath(workspaceId, groupId),
+    {
+      cache: 'no-store',
+      query: {
+        cursor: query?.cursor ?? undefined,
+        limit: query?.limit,
+      },
+    }
+  );
+}
+
+export function createUserGroupPost(
+  workspaceId: string,
+  groupId: string,
+  payload: Pick<UserGroupPostRecord, 'content' | 'notes' | 'title'>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    userGroupPostsPath(workspaceId, groupId),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export function updateUserGroupPost(
+  workspaceId: string,
+  groupId: string,
+  postId: string,
+  payload: Pick<UserGroupPostRecord, 'content' | 'notes' | 'title'>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    `${userGroupPostsPath(workspaceId, groupId)}/${encodePathSegment(postId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
+    }
+  );
+}
+
+export function deleteUserGroupPost(
+  workspaceId: string,
+  groupId: string,
+  postId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    `${userGroupPostsPath(workspaceId, groupId)}/${encodePathSegment(postId)}`,
+    { cache: 'no-store', method: 'DELETE' }
+  );
 }
 
 export function createUserGroupPostCheck(
