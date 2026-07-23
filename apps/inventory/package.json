@@ -64,7 +64,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@next/playwright": "16.3.0-preview.6",
+    "@next/playwright": "16.3.0-preview.9",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
