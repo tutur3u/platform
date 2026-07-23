@@ -963,43 +963,6 @@ async fn send_contact_data_request(
         .map_err(|_| contact_data_layer_request_failed_response())
 }
 
-async fn send_contact_authenticated_request(
-    contact_data: &ContactDataConfig,
-    outbound: &impl OutboundHttpClient,
-    method: OutboundMethod,
-    url: &str,
-    access_token: &str,
-    body: Option<&str>,
-    prefer: Option<&'static str>,
-) -> Result<OutboundResponse, BackendResponse> {
-    let Some(service_role_key) = contact_data.service_role_key() else {
-        return Err(contact_data_layer_request_failed_response());
-    };
-
-    let authorization = format!("Bearer {access_token}");
-    let mut request = OutboundRequest::new(method, url)
-        .with_header("Accept", APPLICATION_JSON)
-        .with_header("Authorization", &authorization)
-        .with_header("apikey", service_role_key);
-
-    if body.is_some() {
-        request = request.with_header("Content-Type", APPLICATION_JSON);
-    }
-
-    if let Some(prefer) = prefer {
-        request = request.with_header("Prefer", prefer);
-    }
-
-    if let Some(body) = body {
-        request = request.with_body(body);
-    }
-
-    outbound
-        .send(request)
-        .await
-        .map_err(|_| contact_data_layer_request_failed_response())
-}
-
 fn contact_data_layer_request_failed_response() -> BackendResponse {
     no_store_response(json_response(
         502,
