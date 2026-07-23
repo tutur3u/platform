@@ -67,6 +67,25 @@ describe('Infrastructure admin access', () => {
     expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
+  it('accepts any matching permission when multiple permissions are allowed', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      containsPermission: vi.fn(
+        (permission: string) => permission === 'manage_workspace_secrets'
+      ),
+    });
+    const { authorizeInfrastructureAdminRequest } = await import(
+      './infrastructure-admin-access'
+    );
+
+    const result = await authorizeInfrastructureAdminRequest([
+      'manage_workspace_roles',
+      'manage_workspace_secrets',
+    ]);
+
+    expect(result.ok).toBe(true);
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
   it('allows workspace secret managers only for their workspace', async () => {
     const targetPermissions = {
       containsPermission: vi.fn(

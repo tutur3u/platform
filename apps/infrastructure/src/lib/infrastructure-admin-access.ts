@@ -19,7 +19,7 @@ async function getInfrastructureSessionUser() {
 }
 
 export async function authorizeInfrastructureAdminRequest(
-  requiredPermission: PermissionId = 'view_infrastructure'
+  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure'
 ) {
   const session = await getInfrastructureSessionUser();
   if (!session.ok) return session;
@@ -28,8 +28,15 @@ export async function authorizeInfrastructureAdminRequest(
     wsId: ROOT_WORKSPACE_ID,
     user: session.user,
   });
+  const requiredPermissions = Array.isArray(requiredPermission)
+    ? requiredPermission
+    : [requiredPermission];
 
-  if (!permissions?.containsPermission(requiredPermission)) {
+  if (
+    !requiredPermissions.some((permission) =>
+      permissions?.containsPermission(permission)
+    )
+  ) {
     return {
       ok: false as const,
       response: NextResponse.json(
