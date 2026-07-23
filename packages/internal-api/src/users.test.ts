@@ -6,6 +6,8 @@ import {
   listWorkspaceUserLinkCandidates,
   repairWorkspaceUserPlatformLinks,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
+  updateCurrentUserEmail,
+  updateCurrentUserFullName,
   updateUserConfig,
   updateUserWorkspaceConfig,
 } from './users';
@@ -39,6 +41,40 @@ describe('users internal-api helpers', () => {
           value: null,
         }),
         method: 'PUT',
+      })
+    );
+  });
+
+  it('updates the current user full name through the profile route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await updateCurrentUserFullName('Ada Lovelace', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/full-name',
+      expect.objectContaining({
+        body: JSON.stringify({ full_name: 'Ada Lovelace' }),
+        method: 'PATCH',
+      })
+    );
+  });
+
+  it('starts a verified current user email change through the profile route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(createJsonResponse({}));
+
+    await updateCurrentUserEmail('ada@example.com', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/users/me/email',
+      expect.objectContaining({
+        body: JSON.stringify({ email: 'ada@example.com' }),
+        method: 'PATCH',
       })
     );
   });

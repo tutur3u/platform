@@ -4043,7 +4043,7 @@
       "profile_description": "Quản lý thông tin hồ sơ của bạn",
       "sessions": "Phiên & Thiết bị",
       "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
-      "title": "Cài đặt người dùng"
+      "title": "Hồ sơ"
     },
     "user_management": {
       "database_filters": "Bộ lọc Cơ sở dữ liệu",
@@ -4284,6 +4284,8 @@
     "upgrade-plan": "Nâng cấp gói",
     "upload_avatar": "Hình đại diện mới",
     "use-strong-passwords-tip": "Sử dụng mật khẩu mạnh và duy nhất cho tất cả tài khoản",
+    "user-id": "ID Người dùng",
+    "user-id-description": "Mã định danh duy nhất cho tài khoản của bạn. Cài đặt này được quản lý tự động bởi Tuturuuu và không thể thay đổi.",
     "verification-code": "Mã xác minh",
     "verification-failed": "Xác minh thất bại",
     "verified": "Đã xác minh",

@@ -1,3 +1,4 @@
+export { SatelliteProfileSettingsPanel } from '../profile-settings/profile-settings-panel';
 export {
   createWorkspaceMembersNavLink,
   createWorkspaceSettingsNavGroup,

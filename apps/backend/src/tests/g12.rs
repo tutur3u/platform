@@ -573,7 +573,7 @@ async fn current_user_profile_patch_persists_to_supabase() {
 }
 
 #[tokio::test]
-async fn current_user_full_name_requires_authenticated_supabase_session() {
+async fn current_user_full_name_requires_app_session_auth() {
     let config = backend_config_with_contact_data();
     let outbound = RecordingOutboundClient::default();
     let response = handle_backend_request(
@@ -589,17 +589,14 @@ async fn current_user_full_name_requires_authenticated_supabase_session() {
 
     assert_eq!(response.status, 401);
     assert_eq!(response.cache_control, Some(NO_STORE_CACHE_CONTROL));
-    assert_eq!(response.body["error"], "Unauthorized");
+    assert_eq!(response.body["message"], "Unauthorized");
     assert_eq!(outbound.calls().len(), 0);
 }
 
 #[tokio::test]
 async fn current_user_full_name_validates_body_after_auth() {
     let config = backend_config_with_contact_data();
-    let outbound = RecordingOutboundClient::with_response(
-        200,
-        r#"{"id":"user-123","email":"ada@example.com"}"#,
-    );
+    let outbound = RecordingOutboundClient::default();
     let response = handle_backend_request(
         &config,
         BackendRequest {
@@ -607,7 +604,7 @@ async fn current_user_full_name_validates_body_after_auth() {
             ..request_with_bearer(
                 "PATCH",
                 CURRENT_USER_FULL_NAME_PATH,
-                "browser-access-token".to_owned(),
+                valid_app_session_token(),
             )
         },
         &outbound,
@@ -617,5 +614,5 @@ async fn current_user_full_name_validates_body_after_auth() {
     assert_eq!(response.status, 400);
     assert_eq!(response.body["message"], "Invalid full name");
     assert_eq!(response.body["errors"][0]["path"], json!(["full_name"]));
-    assert_eq!(outbound.calls().len(), 1);
+    assert_eq!(outbound.calls().len(), 0);
 }

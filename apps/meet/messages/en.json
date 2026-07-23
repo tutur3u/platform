@@ -4684,6 +4684,8 @@
     "upgrade-plan": "Upgrade Plan",
     "upload_avatar": "Upload avatar",
     "use-strong-passwords-tip": "Use strong, unique passwords for all accounts",
+    "user-id": "User ID",
+    "user-id-description": "Your account's unique identifier. This is automatically managed by Tuturuuu, and cannot be changed.",
     "verification-code": "Verification Code",
     "verification-failed": "Verification Failed",
     "verified": "Verified",

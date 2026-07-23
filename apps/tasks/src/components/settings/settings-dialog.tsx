@@ -25,6 +25,7 @@ import {
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
   createWorkspaceSettingsNavGroup,
+  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -36,7 +37,6 @@ import { KeyboardShortcutsSettings } from '@tuturuuu/ui/custom/settings/keyboard
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
-import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -356,26 +356,7 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'profile' && user && (
-        <div className="space-y-8">
-          <div className="grid gap-6">
-            <SettingItemTab
-              title={t('settings-account.display-name')}
-              description={t('settings-account.display-name-description')}
-            >
-              <span className="text-muted-foreground text-sm">
-                {user?.display_name || t('common.unnamed')}
-              </span>
-            </SettingItemTab>
-            <SettingItemTab
-              title="Email"
-              description={t('settings-account.email-description')}
-            >
-              <span className="text-muted-foreground text-sm">
-                {user?.email || '—'}
-              </span>
-            </SettingItemTab>
-          </div>
-        </div>
+        <SatelliteProfileSettingsPanel user={user} />
       )}
 
       {activeTab === 'appearance' && (

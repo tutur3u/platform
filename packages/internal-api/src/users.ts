@@ -536,6 +536,32 @@ export async function updateCurrentUserProfile(
   });
 }
 
+export async function updateCurrentUserFullName(
+  fullName: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>('/api/v1/users/me/full-name', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ full_name: fullName }),
+    cache: 'no-store',
+  });
+}
+
+export async function updateCurrentUserEmail(
+  email: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>('/api/v1/users/me/email', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+    cache: 'no-store',
+  });
+}
+
 export async function updatePlatformUserRoles(
   userId: string,
   payload: UpdatePlatformUserRolesPayload,

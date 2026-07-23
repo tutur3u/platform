@@ -6881,7 +6881,7 @@
       "profile_description": "Manage your profile information",
       "sessions": "Sessions & Devices",
       "sessions_description": "Manage your active sessions and devices",
-      "title": "User Settings"
+      "title": "Profile"
     },
     "user_management": {
       "database_filters": "Database Filters",
@@ -7122,6 +7122,8 @@
     "upgrade-plan": "Upgrade Plan",
     "upload_avatar": "Upload avatar",
     "use-strong-passwords-tip": "Use strong, unique passwords for all accounts",
+    "user-id": "User ID",
+    "user-id-description": "Your account's unique identifier. This is automatically managed by Tuturuuu, and cannot be changed.",
     "verification-code": "Verification Code",
     "verification-failed": "Verification Failed",
     "verified": "Verified",

@@ -380,17 +380,20 @@ async fn current_user_full_name_patch_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(access_token) = supabase_auth::request_access_token(request) else {
-        return full_name_unauthorized_response();
-    };
-    let Some(user) =
-        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
-            .await
-    else {
-        return full_name_unauthorized_response();
-    };
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
-        return full_name_unauthorized_response();
+    let actor =
+        match session::resolve_app_session(config, request, &CURRENT_USER_APP_SESSION_TARGETS) {
+            Ok(actor) => actor,
+            Err(response) => return no_store_response(*response),
+        };
+
+    if actor.source == session::AppSessionAuthSource::Cookie && !is_same_origin_api_request(request)
+    {
+        return no_store_response(json_response(
+            403,
+            json!({
+                "message": "Profile updates require same-origin confirmation",
+            }),
+        ));
     };
 
     let full_name = match full_name_from_body(request.body_text) {
@@ -409,7 +412,7 @@ async fn current_user_full_name_patch_response(
         return contact_data_layer_not_ready_response(request);
     };
     let upsert = CurrentUserFullNameUpsert {
-        user_id: &user_id,
+        user_id: &actor.claims.sub,
         full_name: &full_name,
     };
     let body = match serde_json::to_string(&upsert) {
@@ -422,12 +425,11 @@ async fn current_user_full_name_patch_response(
         }
     };
 
-    match send_contact_authenticated_request(
+    match send_contact_data_request(
         &config.contact_data,
         outbound,
         OutboundMethod::Post,
         &full_name_url,
-        &access_token,
         Some(&body),
         Some("resolution=merge-duplicates,return=minimal"),
     )
@@ -1235,15 +1237,6 @@ fn invalid_support_inquiry_update_response(details: Vec<serde_json::Value>) -> B
             "error": "Invalid request body",
         }),
     )
-}
-
-fn full_name_unauthorized_response() -> BackendResponse {
-    no_store_response(json_response(
-        401,
-        json!({
-            "error": "Unauthorized",
-        }),
-    ))
 }
 
 fn support_inquiry_admin_unauthorized_response() -> BackendResponse {

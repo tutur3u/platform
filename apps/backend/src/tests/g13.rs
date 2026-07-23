@@ -1,12 +1,9 @@
 use super::*;
 
 #[tokio::test]
-async fn current_user_full_name_upserts_private_details_with_caller_token() {
+async fn current_user_full_name_upserts_private_details_for_app_session_actor() {
     let config = backend_config_with_contact_data();
-    let outbound = RecordingOutboundClient::with_responses(vec![
-        outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
-        outbound_response(204, ""),
-    ]);
+    let outbound = RecordingOutboundClient::with_response(204, "");
     let response = handle_backend_request(
         &config,
         BackendRequest {
@@ -14,7 +11,7 @@ async fn current_user_full_name_upserts_private_details_with_caller_token() {
             ..request_with_bearer(
                 "PATCH",
                 CURRENT_USER_FULL_NAME_PATH,
-                "browser-access-token".to_owned(),
+                valid_app_session_token(),
             )
         },
         &outbound,
@@ -28,35 +25,29 @@ async fn current_user_full_name_upserts_private_details_with_caller_token() {
     );
 
     let calls = outbound.calls();
-    assert_eq!(calls.len(), 2);
-    assert_eq!(calls[0].method, OutboundMethod::Get);
-    assert_eq!(calls[0].url, "https://project-ref.supabase.co/auth/v1/user");
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].method, OutboundMethod::Post);
     assert_eq!(
-        recorded_header(&calls[0], "Authorization"),
-        Some("Bearer browser-access-token")
-    );
-    assert_eq!(calls[1].method, OutboundMethod::Post);
-    assert_eq!(
-        calls[1].url,
+        calls[0].url,
         "https://project-ref.supabase.co/rest/v1/user_private_details?on_conflict=user_id"
     );
     assert_eq!(
-        recorded_header(&calls[1], "Authorization"),
-        Some("Bearer browser-access-token")
+        recorded_header(&calls[0], "Authorization"),
+        Some("Bearer test-service-role-secret")
     );
     assert_eq!(
-        recorded_header(&calls[1], "apikey"),
+        recorded_header(&calls[0], "apikey"),
         Some("test-service-role-secret")
     );
     assert_eq!(
-        recorded_header(&calls[1], "Prefer"),
+        recorded_header(&calls[0], "Prefer"),
         Some("resolution=merge-duplicates,return=minimal")
     );
     assert_eq!(
-        serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap(),
+        serde_json::from_str::<Value>(calls[0].body.as_deref().unwrap()).unwrap(),
         json!({
             "full_name": "Ada Lovelace",
-            "user_id": "user-123",
+            "user_id": "app-session-user-1",
         })
     );
 }
@@ -64,10 +55,8 @@ async fn current_user_full_name_upserts_private_details_with_caller_token() {
 #[tokio::test]
 async fn current_user_full_name_returns_update_error_for_supabase_failure() {
     let config = backend_config_with_contact_data();
-    let outbound = RecordingOutboundClient::with_responses(vec![
-        outbound_response(200, r#"{"id":"user-123","email":"ada@example.com"}"#),
-        outbound_response(500, r#"{"message":"database unavailable"}"#),
-    ]);
+    let outbound =
+        RecordingOutboundClient::with_response(500, r#"{"message":"database unavailable"}"#);
     let response = handle_backend_request(
         &config,
         BackendRequest {
@@ -75,7 +64,7 @@ async fn current_user_full_name_returns_update_error_for_supabase_failure() {
             ..request_with_bearer(
                 "PATCH",
                 CURRENT_USER_FULL_NAME_PATH,
-                "browser-access-token".to_owned(),
+                valid_app_session_token(),
             )
         },
         &outbound,

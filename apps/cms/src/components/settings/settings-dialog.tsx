@@ -16,6 +16,7 @@ import {
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import {
   createWorkspaceSettingsNavGroup,
+  SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
   SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
@@ -259,26 +260,7 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'profile' && user && (
-        <div className="space-y-8">
-          <div className="grid gap-6">
-            <SettingItemTab
-              title={t('settings-account.display-name')}
-              description={t('settings-account.display-name-description')}
-            >
-              <span className="text-muted-foreground text-sm">
-                {user?.display_name || t('common.unnamed')}
-              </span>
-            </SettingItemTab>
-            <SettingItemTab
-              title={t('common.email')}
-              description={t('settings-account.email-description')}
-            >
-              <span className="text-muted-foreground text-sm">
-                {user?.email || '—'}
-              </span>
-            </SettingItemTab>
-          </div>
-        </div>
+        <SatelliteProfileSettingsPanel user={user} />
       )}
 
       {activeTab === 'appearance' && (

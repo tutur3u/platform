@@ -1746,6 +1746,7 @@ export {
 } from './user-groups';
 export {
   type CurrentUserHiveAccessResponse,
+  type CurrentUserProfileResponse,
   type CurrentWorkspaceUserLink,
   type CurrentWorkspaceUserResponse,
   createCurrentUserAvatarUploadUrl,
@@ -1797,6 +1798,8 @@ export {
   type UpdateWorkspaceUserApprovalPayload,
   type UpdateWorkspaceUserApprovalResponse,
   updateCurrentUserDefaultWorkspace,
+  updateCurrentUserEmail,
+  updateCurrentUserFullName,
   updateCurrentUserProfile,
   updatePlatformUserRoles,
   updateUserConfig,

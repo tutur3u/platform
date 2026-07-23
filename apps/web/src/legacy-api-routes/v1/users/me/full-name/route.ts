@@ -2,6 +2,7 @@ import { MAX_FULL_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '../session-auth';
 
 const PatchFullNameSchema = z.object({
   full_name: z.string().min(1).max(MAX_FULL_NAME_LENGTH),
@@ -42,5 +43,9 @@ export const PATCH = withSessionAuth(
     }
   },
   // Profile name changes — moderate limit
-  { rateLimit: { windowMs: 60000, maxRequests: 10 } }
+  {
+    allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
+    rateLimit: { windowMs: 60000, maxRequests: 10 },
+    skipAppSessionStepUpChallenge: true,
+  }
 );

@@ -12729,7 +12729,7 @@
       "profile_description": "Quản lý thông tin hồ sơ của bạn",
       "sessions": "Phiên & Thiết bị",
       "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
-      "title": "Cài đặt người dùng"
+      "title": "Hồ sơ"
     },
     "user_management": {
       "auto_add_new_groups_to_default_included_groups_help": "Tự động thêm mỗi nhóm người dùng mới tạo vào danh sách nhóm được bao gồm mặc định.",

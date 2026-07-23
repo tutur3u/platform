@@ -9688,7 +9688,7 @@
       "profile_description": "Manage your profile information",
       "sessions": "Sessions & Devices",
       "sessions_description": "Manage your active sessions and devices",
-      "title": "User Settings"
+      "title": "Profile"
     },
     "user_management": {
       "auto_add_new_groups_to_default_included_groups_help": "Automatically append each newly created user group to the default included groups list.",
