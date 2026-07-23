@@ -16,8 +16,10 @@ const submissionSchema = z.object({
   country: z.string().trim().max(120).optional(),
   email: z.string().trim().max(200).pipe(z.email()),
   inquiryType: z.string().trim().min(1).max(120),
-  message: z.string().trim().min(1).max(2000),
+  message: z.string().trim().min(1).max(5000),
   name: z.string().trim().min(1).max(160),
+  formSlug: z.string().trim().min(1).max(120).default('contact'),
+  formVersion: z.number().int().positive().max(1000).default(1),
   receivedAt: z.iso.datetime().optional(),
 });
 
@@ -161,8 +163,11 @@ export async function POST(
         actorId: null,
         collection_id: collection.id,
         metadata: {
+          externalAppId: payload.appId,
+          formSlug: payload.formSlug,
+          formVersion: payload.formVersion,
           privateDelivery: true,
-          source: 'richfield-contact-form',
+          source: 'external-project-form',
         } as Json,
         profile_data: {
           company: payload.company,

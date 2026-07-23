@@ -270,6 +270,7 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         collectionSlugs: [
           'contact-page',
           'contact-channels',
+          'contact-form',
           'contact-submissions',
         ],
         createCollection: {
@@ -287,6 +288,23 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         id: 'contacts',
         label: 'Contacts',
         navigationLabel: 'Contacts',
+      },
+      {
+        collectionSlugs: ['articles'],
+        createCollection: {
+          collectionType: 'articles',
+          description:
+            'Richfield news, insights, and company updates published to the public feed.',
+          emptyHint: 'Create the first insight for the Richfield feed.',
+          entryTitle: 'Article',
+          slug: 'articles',
+          title: 'Insights',
+        },
+        description:
+          'Richfield news, insights, and company updates published to the public feed.',
+        id: 'articles',
+        label: 'Insights',
+        navigationLabel: 'Insights',
       },
       {
         collectionSlugs: ['jobs'],
@@ -323,6 +341,8 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
       'brands',
       'contact-page',
       'contact-channels',
+      'contact-form',
+      'articles',
       'jobs',
       'image-library',
     ],

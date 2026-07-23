@@ -520,6 +520,29 @@ const richfieldSchema = {
     },
     {
       blockTypes: ['markdown'],
+      collection_type: 'contact-form',
+      description:
+        'Public form fields, inquiry choices, recipient routing, and success messaging.',
+      profileFields: [
+        { key: 'recipientEmail', label: 'Recipient email', type: 'string' },
+        { key: 'submitLabel', label: 'Submit button label', type: 'string' },
+        { key: 'successMessage', label: 'Success message', type: 'string' },
+        {
+          key: 'inquiryTypes',
+          label: 'Inquiry types',
+          type: 'string-array',
+        },
+        {
+          key: 'maxMessageLength',
+          label: 'Maximum message length',
+          type: 'number',
+        },
+      ],
+      slug: 'contact-form',
+      title: 'Contact Form',
+    },
+    {
+      blockTypes: ['markdown'],
       collection_type: 'contact-submissions',
       description:
         'Private inbound contact form messages saved for Richfield admins.',
@@ -547,12 +570,39 @@ const richfieldSchema = {
       title: 'Contact Inbox',
     },
     {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'articles',
+      description:
+        'Self-serve Richfield news, insights, and company updates published to the public feed.',
+      profileFields: [
+        { key: 'author', label: 'Author', type: 'string' },
+        { key: 'category', label: 'Category', type: 'string' },
+        { key: 'publishedAt', label: 'Published at', type: 'datetime' },
+        { key: 'feature', label: 'Featured', type: 'boolean' },
+        { key: 'sortOrder', label: 'Sort order', type: 'number' },
+      ],
+      slug: 'articles',
+      title: 'Insights',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
       collection_type: 'jobs',
-      description: 'Careers vacancies shown on the Richfield careers page.',
+      description:
+        'Careers vacancies, application details, and rich position descriptions shown on the public site.',
       profileFields: [
         { key: 'positions', label: 'Positions', type: 'number' },
+        { key: 'department', label: 'Department', type: 'string' },
+        {
+          key: 'employmentType',
+          label: 'Employment type',
+          type: 'string',
+        },
+        { key: 'workMode', label: 'Work mode', type: 'string' },
         { key: 'location', label: 'Location', type: 'string' },
         { key: 'deadline', label: 'Deadline', type: 'string' },
+        { key: 'applyEmail', label: 'Application email', type: 'string' },
         { key: 'href', label: 'External link', type: 'string' },
         { key: 'sortOrder', label: 'Sort order', type: 'number' },
       ],
@@ -1848,6 +1898,49 @@ export const externalProjectAdapterFixtures: Record<
         ],
       },
       {
+        collectionType: 'contact-form',
+        description:
+          'Public form fields, inquiry choices, recipient routing, and success messaging.',
+        slug: 'contact-form',
+        sourceId: 'richfield:collection:contact-form',
+        title: 'Contact Form',
+        entries: [
+          {
+            blocks: [
+              {
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'Thank you. Our team will review your message and respond within two business days.',
+                },
+                sourceId: 'richfield:contact-form:main:success',
+                title: 'Success message',
+              },
+            ],
+            profileData: {
+              inquiryTypes: [
+                'Brand partnership',
+                'Distribution opportunity',
+                'Careers',
+                'Press',
+                'Other',
+              ],
+              maxMessageLength: 1200,
+              recipientEmail: 'cskh@richfieldvn.com.vn',
+              submitLabel: 'Send message',
+              successMessage:
+                'Thank you. Our team will review your message and respond within two business days.',
+            },
+            slug: 'main',
+            sourceId: 'richfield:contact-form:main',
+            status: 'published',
+            subtitle: 'External project form',
+            summary: 'Self-serve configuration for the public contact form.',
+            title: 'Contact Form',
+          },
+        ],
+      },
+      {
         collectionType: 'contact-submissions',
         description:
           'Private inbound contact form messages saved for Richfield admins.',
@@ -1857,8 +1950,18 @@ export const externalProjectAdapterFixtures: Record<
         title: 'Contact Inbox',
       },
       {
+        collectionType: 'articles',
+        description:
+          'Self-serve Richfield news, insights, and company updates published to the public feed.',
+        entries: [],
+        slug: 'articles',
+        sourceId: 'richfield:collection:articles',
+        title: 'Insights',
+      },
+      {
         collectionType: 'jobs',
-        description: 'Careers vacancies shown on the Richfield careers page.',
+        description:
+          'Careers vacancies, application details, and rich position descriptions shown on the public site.',
         entries: [],
         slug: 'jobs',
         sourceId: 'richfield:collection:jobs',

@@ -89,7 +89,9 @@ describe('external project adapter fixtures', () => {
       'milestones',
       'contact-page',
       'contact-channels',
+      'contact-form',
       'contact-submissions',
+      'articles',
       'jobs',
       'image-library',
     ]);
@@ -183,6 +185,18 @@ describe('external project adapter fixtures', () => {
         [],
       ],
       [
+        'contact-form',
+        [
+          'recipientEmail',
+          'submitLabel',
+          'successMessage',
+          'inquiryTypes',
+          'maxMessageLength',
+        ],
+        ['markdown'],
+        [],
+      ],
+      [
         'contact-submissions',
         [
           'name',
@@ -198,10 +212,26 @@ describe('external project adapter fixtures', () => {
         [],
       ],
       [
+        'articles',
+        ['author', 'category', 'publishedAt', 'feature', 'sortOrder'],
+        ['markdown'],
+        ['image'],
+      ],
+      [
         'jobs',
-        ['positions', 'location', 'deadline', 'href', 'sortOrder'],
-        [],
-        [],
+        [
+          'positions',
+          'department',
+          'employmentType',
+          'workMode',
+          'location',
+          'deadline',
+          'applyEmail',
+          'href',
+          'sortOrder',
+        ],
+        ['markdown'],
+        ['image'],
       ],
       [
         'image-library',

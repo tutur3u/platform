@@ -19,7 +19,9 @@ describe('CMS editor Richfield adapter registration', () => {
       'milestones',
       'contact-page',
       'contact-channels',
+      'contact-form',
       'contact-submissions',
+      'articles',
       'jobs',
       'image-library',
     ]);
@@ -33,6 +35,7 @@ describe('CMS editor Richfield adapter registration', () => {
       'leadership',
       'timeline',
       'contacts',
+      'articles',
       'careers',
       'gallery',
     ]);
@@ -40,7 +43,13 @@ describe('CMS editor Richfield adapter registration', () => {
       ['brands'],
       ['leadership'],
       ['milestones'],
-      ['contact-page', 'contact-channels', 'contact-submissions'],
+      [
+        'contact-page',
+        'contact-channels',
+        'contact-form',
+        'contact-submissions',
+      ],
+      ['articles'],
       ['jobs'],
       ['image-library'],
     ]);
@@ -48,6 +57,8 @@ describe('CMS editor Richfield adapter registration', () => {
       'brands',
       'contact-page',
       'contact-channels',
+      'contact-form',
+      'articles',
       'jobs',
       'image-library',
     ]);
