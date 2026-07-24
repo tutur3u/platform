@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 interface TaskDialogWrapperProps {
   children: ReactNode;
   isPersonalWorkspace: boolean;
+  routePrefix?: string;
   wsId: string;
 }
 
@@ -17,12 +18,13 @@ interface TaskDialogWrapperProps {
 export function TaskDialogWrapper({
   children,
   isPersonalWorkspace,
+  routePrefix = '/tasks',
   wsId,
 }: TaskDialogWrapperProps) {
   return (
     <TaskDialogProvider isPersonalWorkspace={isPersonalWorkspace}>
       {children}
-      <TaskDialogManager wsId={wsId} />
+      <TaskDialogManager routePrefix={routePrefix} wsId={wsId} />
     </TaskDialogProvider>
   );
 }

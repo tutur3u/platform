@@ -39,7 +39,8 @@ export function TaskLegacyRouteRecovery({
       taskId,
       workspaceId,
       isPersonalWorkspace: workspaceId === 'personal',
-    }).replace('/tasks/boards/', `${routePrefix}/boards/`);
+      routePrefix,
+    });
 
     if (window.location.pathname + window.location.search !== canonicalUrl) {
       router.replace(canonicalUrl);
@@ -54,7 +55,7 @@ export function TaskLegacyRouteRecovery({
             {t('error_loading_data')}
           </p>
           <p className="mt-2 text-muted-foreground text-sm">
-            Task ID: {taskId}
+            {t('please_try_again_later')}
           </p>
         </div>
       </div>

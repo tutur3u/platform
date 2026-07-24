@@ -232,7 +232,7 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
   const handleDialogPresentationChange = (value: string) => {
     const nextValue: TaskDialogPresentation = normalizeTaskDialogPresentation(
       value,
-      'compact'
+      'focused'
     );
     updateDialogPresentation.mutate({
       configId: TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
@@ -348,6 +348,9 @@ export function TaskSettings({ workspace }: TaskSettingsProps) {
             <SelectContent>
               <SelectItem value="compact">
                 {t('dialog_presentation_compact')}
+              </SelectItem>
+              <SelectItem value="focused">
+                {t('dialog_presentation_focused')}
               </SelectItem>
               <SelectItem value="fullscreen">
                 {t('dialog_presentation_immersive')}

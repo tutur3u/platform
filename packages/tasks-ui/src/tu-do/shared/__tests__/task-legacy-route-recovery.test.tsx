@@ -96,6 +96,7 @@ describe('TaskLegacyRouteRecovery', () => {
       expect(screen.getByText('error_loading_data')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Task ID: task-1')).toBeInTheDocument();
+    expect(screen.getByText('please_try_again_later')).toBeInTheDocument();
+    expect(screen.queryByText('Task ID: task-1')).not.toBeInTheDocument();
   });
 });

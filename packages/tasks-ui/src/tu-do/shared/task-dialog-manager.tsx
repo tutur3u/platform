@@ -11,6 +11,7 @@ import {
   type RequestOpenTaskPayload,
 } from '@tuturuuu/ui/lib/task-open-events';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
@@ -33,8 +34,15 @@ import { buildWorkspaceTaskUrl } from './task-url';
  * instant dialog opening when clicking tasks. This is a core interaction
  * that benefits from immediate availability over bundle size optimization.
  */
-export function TaskDialogManager({ wsId }: { wsId: string }) {
+export function TaskDialogManager({
+  routePrefix = '/tasks',
+  wsId,
+}: {
+  routePrefix?: string;
+  wsId: string;
+}) {
   const searchParams = useSearchParams();
+  const t = useTranslations('common');
   const {
     state,
     isPersonalWorkspace,
@@ -70,6 +78,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
         taskId: state.task.id,
         workspaceId: effectiveWsId,
         isPersonalWorkspace: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+        routePrefix,
       });
 
       if (currentPath !== taskUrl) {
@@ -101,6 +110,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     state.taskWsId,
     state.taskWorkspacePersonal,
     isPersonalWorkspace,
+    routePrefix,
     wsId,
   ]);
 
@@ -161,7 +171,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     queryKey: ['user-config', TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID],
     queryFn: async () =>
       (await getUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID)).value ??
-      'compact',
+      'focused',
     staleTime: 5 * 60 * 1000,
   });
   const defaultPresentation = normalizeTaskDialogPresentation(
@@ -313,10 +323,16 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     void (async () => {
       const opened = await openTaskFromCurrentWorkspace(canonicalTaskId);
       if (!opened) {
-        await openTaskById(canonicalTaskId);
+        const fallbackOpened = await openTaskById(canonicalTaskId);
+        if (!fallbackOpened) {
+          const { toast } = await import('@tuturuuu/ui/sonner');
+          toast.error(t('error_loading_data'), {
+            description: t('please_try_again_later'),
+          });
+        }
       }
     })();
-  }, [openTaskById, openTaskFromCurrentWorkspace, searchParams]);
+  }, [openTaskById, openTaskFromCurrentWorkspace, searchParams, t]);
 
   useEffect(() => {
     const legacyTaskId = searchParams.get('openTaskId');
@@ -488,6 +504,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       taskId,
       workspaceId: targetWsId,
       isPersonalWorkspace: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+      routePrefix,
     });
     const taskName = taskWithLocation?.name || '';
     const boardName = taskWithLocation?.list?.board?.name || '';
@@ -520,6 +537,7 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
     state.taskWorkspacePersonal,
     state.taskLoadError,
     isPersonalWorkspace,
+    routePrefix,
     wsId,
   ]);
 

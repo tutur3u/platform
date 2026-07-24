@@ -6,6 +6,8 @@ import {
   Link2,
   ListTodo,
   Loader2,
+  Maximize2,
+  Minimize2,
   ShieldAlert,
 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -17,6 +19,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getTicketIdentifier } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useState } from 'react';
+import type { TaskDialogPresentation } from '../../task-dialog-presentation';
 import { TaskViewerAvatarsComponent } from '../../user-presence-avatars';
 import { TaskDialogActions } from '../task-dialog-actions';
 import type {
@@ -229,6 +232,8 @@ interface TaskDialogHeaderProps {
   controlsDisabled?: boolean;
   /** Callback to scroll the editor to a collaborator's cursor position */
   onScrollToUserCursor?: (userId: string, displayName: string) => void;
+  presentation: TaskDialogPresentation;
+  onPresentationChange: (presentation: TaskDialogPresentation) => void;
 }
 
 export function TaskDialogHeader({
@@ -271,6 +276,8 @@ export function TaskDialogHeader({
   disabled = false,
   controlsDisabled = false,
   onScrollToUserCursor,
+  presentation,
+  onPresentationChange,
 }: TaskDialogHeaderProps) {
   const t = useTranslations();
   const [activeHeaderOverlay, setActiveHeaderOverlay] = useState<
@@ -466,6 +473,58 @@ export function TaskDialogHeader({
             />
             {t('ws-task-boards.dialog.create_multiple')}
           </label>
+        )}
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label={
+                presentation === 'fullscreen'
+                  ? t('common.minimize')
+                  : t('common.maximize')
+              }
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={() =>
+                onPresentationChange(
+                  presentation === 'focused' ? 'fullscreen' : 'focused'
+                )
+              }
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              {presentation === 'fullscreen' ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            {presentation === 'fullscreen'
+              ? t('common.minimize')
+              : t('common.maximize')}
+          </TooltipContent>
+        </Tooltip>
+
+        {!draftId && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label={t('common.collapse')}
+                className="hidden h-8 w-8 text-muted-foreground hover:text-foreground sm:inline-flex"
+                onClick={() => onPresentationChange('compact')}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {t('common.collapse')}
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {/* Quick Settings */}

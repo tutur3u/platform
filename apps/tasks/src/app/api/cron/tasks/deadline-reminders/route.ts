@@ -294,7 +294,7 @@ async function handleGET(req: NextRequest) {
             // Build task URL
             const baseUrl =
               process.env.NEXT_PUBLIC_APP_URL || 'https://tuturuuu.com';
-            const taskUrl = `${baseUrl}/${wsId}/tasks/boards/${boardInfo.id}?task=${task.id}`;
+            const taskUrl = `${baseUrl}/${wsId}/boards/${boardInfo.id}?task=${task.id}`;
 
             // Create notification using the database function
             const { data: notificationId, error: notifError } =

@@ -9,6 +9,7 @@ interface Props {
     taskId: string;
   }>;
   routePrefix?: string;
+  sessionUser?: { id: string } | null;
 }
 
 /**
@@ -19,10 +20,11 @@ interface Props {
 export default async function TaskDetailServerPage({
   params,
   routePrefix = '/tasks',
+  sessionUser,
 }: Props) {
   const { wsId, taskId } = await params;
 
-  const user = await getCurrentUser();
+  const user = sessionUser === undefined ? await getCurrentUser() : sessionUser;
   if (!user) {
     redirect('/login');
   }

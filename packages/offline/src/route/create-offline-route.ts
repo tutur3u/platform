@@ -64,7 +64,9 @@ export function createOfflineRoute(
 
   const cwd = process.cwd();
   const distDir = normalizeDistDir(nextConfig.distDir ?? '.next');
-  const swSrcPath = path.isAbsolute(swSrc) ? swSrc : path.join(cwd, swSrc);
+  const swSrcPath = path.isAbsolute(swSrc)
+    ? swSrc
+    : path.join(/* turbopackIgnore: true */ cwd, swSrc);
   let outputFiles: Map<string, string> | null = null;
 
   const loadOutputFiles = async () => {
@@ -84,7 +86,10 @@ export function createOfflineRoute(
           globDirectory,
           globIgnores: [
             '**/node_modules/**/*',
-            path.relative(path.resolve(cwd, globDirectory), swSrcPath),
+            path.relative(
+              path.resolve(/* turbopackIgnore: true */ cwd, globDirectory),
+              swSrcPath
+            ),
           ],
           globPatterns: generateGlobPatterns(distDir, publicPrecachePatterns),
         });
@@ -130,7 +135,9 @@ export function createOfflineRoute(
     GET: async (_, context) => {
       const { path: filePath } = await context.params;
       const files = await loadOutputFiles();
-      const contents = files.get(path.join(cwd, filePath));
+      const contents = files.get(
+        path.join(/* turbopackIgnore: true */ cwd, filePath)
+      );
 
       if (contents === undefined) {
         return new Response('Not found', { status: 404 });

@@ -1,14 +1,16 @@
 export const TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID =
   'TASK_DIALOG_DEFAULT_PRESENTATION';
 
-export type TaskDialogPresentation = 'compact' | 'fullscreen';
+export type TaskDialogPresentation = 'compact' | 'focused' | 'fullscreen';
 export type TaskDialogMode = 'edit' | 'create';
 
 export function normalizeTaskDialogPresentation(
   value: unknown,
-  fallback: TaskDialogPresentation = 'compact'
+  fallback: TaskDialogPresentation = 'focused'
 ): TaskDialogPresentation {
-  return value === 'fullscreen' || value === 'compact' ? value : fallback;
+  return value === 'fullscreen' || value === 'focused' || value === 'compact'
+    ? value
+    : fallback;
 }
 
 export function resolveTaskDialogOpeningPresentation({

@@ -124,6 +124,20 @@ describe('task sound settings controls', () => {
     });
   });
 
+  it('persists focused mode as the balanced task dialog preference', async () => {
+    renderWithQueryClient(<TaskSettings />);
+
+    fireEvent.click(
+      await screen.findByRole('combobox', { name: 'dialog_presentation' })
+    );
+    fireEvent.click(screen.getByText('dialog_presentation_focused'));
+
+    expect(mockUpdateUserConfigMutate).toHaveBeenCalledWith({
+      configId: 'TASK_DIALOG_DEFAULT_PRESENTATION',
+      value: 'focused',
+    });
+  });
+
   it('renders the quick settings sound switch and persists changes', async () => {
     renderWithQueryClient(<QuickSettingsPopover />);
 

@@ -233,7 +233,7 @@ export function TaskEditDialog({
   currentUser: propsCurrentUser,
   sharedContext,
   draftModeEnabled = false,
-  defaultPresentation = 'compact',
+  defaultPresentation = 'focused',
   draftId,
   onClose,
   onUpdate,
@@ -2339,6 +2339,7 @@ export function TaskEditDialog({
   ]);
 
   const showCompactDialog = presentation === 'compact' && !draftId;
+  const showFocusedDialog = presentation === 'focused' && !draftId;
   const compactDescriptionPreview = useMemo(() => {
     if (isCreateMode) return null;
 
@@ -2559,11 +2560,15 @@ export function TaskEditDialog({
       <Dialog open={isOpen} onOpenChange={handleDialogOpenChange} modal={true}>
         <DialogContent
           showCloseButton={false}
-          presentation={showCompactDialog ? 'default' : 'fullscreen'}
+          presentation={
+            presentation === 'fullscreen' ? 'fullscreen' : 'default'
+          }
           className={
             showCompactDialog
               ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
-              : undefined
+              : showFocusedDialog
+                ? 'h-[min(90dvh,56rem)] w-[min(calc(100vw-2rem),72rem)] max-w-[72rem] gap-0 overflow-hidden rounded-xl border p-0 shadow-2xl'
+                : undefined
           }
           onContextMenu={(e) => {
             if (shouldPreserveNativeContextMenu(e.target)) {
@@ -2639,8 +2644,8 @@ export function TaskEditDialog({
                 isCreateMode ? setCreateMultiple : undefined
               }
               onClose={handleAttemptClose}
-              onFullscreen={() => setPresentation('fullscreen')}
-              onDescriptionPreviewClick={() => setPresentation('fullscreen')}
+              onFullscreen={() => setPresentation('focused')}
+              onDescriptionPreviewClick={() => setPresentation('focused')}
               onSave={
                 isCreateMode && !taskControlsDisabled ? handleSave : undefined
               }
@@ -2702,6 +2707,8 @@ export function TaskEditDialog({
                         : undefined
                     }
                     isPersonalWorkspace={isPersonalWorkspace}
+                    presentation={presentation}
+                    onPresentationChange={setPresentation}
                     onOpenShareDialog={
                       !isCreateMode && task?.id
                         ? () => setShowShareDialog(true)

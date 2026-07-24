@@ -45,8 +45,13 @@ function toPublicUrl(
 export async function createPrecacheManifest(
   options: PrecacheManifestOptions
 ): Promise<PrecacheEntry[]> {
-  const cwd = path.resolve(options.cwd ?? process.cwd());
-  const globDirectory = path.resolve(cwd, options.globDirectory ?? '.');
+  const cwd = path.resolve(
+    /* turbopackIgnore: true */ options.cwd ?? process.cwd()
+  );
+  const globDirectory = path.resolve(
+    /* turbopackIgnore: true */ cwd,
+    options.globDirectory ?? '.'
+  );
   const files = await glob(options.globPatterns, {
     cwd: globDirectory,
     dot: false,
@@ -60,14 +65,17 @@ export async function createPrecacheManifest(
     options.maximumFileSizeToCacheInBytes ?? DEFAULT_MAXIMUM_FILE_SIZE;
 
   for (const file of files.sort()) {
-    const absolutePath = path.resolve(globDirectory, file);
-    const metadata = await stat(absolutePath);
+    const absolutePath = path.resolve(
+      /* turbopackIgnore: true */ globDirectory,
+      file
+    );
+    const metadata = await stat(/* turbopackIgnore: true */ absolutePath);
 
     if (metadata.size > maximumFileSize) {
       continue;
     }
 
-    const contents = await readFile(absolutePath);
+    const contents = await readFile(/* turbopackIgnore: true */ absolutePath);
     entries.set(toPublicUrl(file, options), {
       revision: createHash('sha256').update(contents).digest('hex'),
       url: toPublicUrl(file, options),

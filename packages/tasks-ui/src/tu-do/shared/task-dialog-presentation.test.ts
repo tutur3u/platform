@@ -33,11 +33,34 @@ describe('resolveTaskDialogOpeningPresentation', () => {
 
     expect(
       resolveTaskDialogOpeningPresentation({
+        defaultPresentation: 'focused',
+        mode: 'edit',
+        selectedListStatus: 'active',
+      })
+    ).toBe('focused');
+
+    expect(
+      resolveTaskDialogOpeningPresentation({
         defaultPresentation: 'fullscreen',
         mode: 'edit',
         selectedListStatus: 'not_started',
       })
     ).toBe('fullscreen');
+  });
+
+  it('uses the focused view when a saved preference is missing or invalid', () => {
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        defaultPresentation: undefined,
+        mode: 'edit',
+      })
+    ).toBe('focused');
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        defaultPresentation: 'unknown',
+        mode: 'edit',
+      })
+    ).toBe('focused');
   });
 
   it('keeps drafts fullscreen', () => {

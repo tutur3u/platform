@@ -122,6 +122,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             >
               <TaskDialogWrapper
                 isPersonalWorkspace={!!workspace.personal}
+                routePrefix=""
                 wsId={wsId}
               >
                 <SettingsDialogHost

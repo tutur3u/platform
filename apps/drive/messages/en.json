@@ -6781,6 +6781,7 @@
       "dialog_presentation": "Open tasks in",
       "dialog_presentation_compact": "Compact",
       "dialog_presentation_description": "Choose the default task dialog layout for task cards, links, and new task actions",
+      "dialog_presentation_focused": "Focused",
       "dialog_presentation_immersive": "Immersive",
       "draft_mode": "Draft mode",
       "draft_mode_description": "When enabled, new tasks are saved as drafts instead of being published directly to the board",

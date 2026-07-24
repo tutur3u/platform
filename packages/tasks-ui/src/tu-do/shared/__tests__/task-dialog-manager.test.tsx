@@ -36,6 +36,10 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({ wsId: 'workspace-1' }),
 }));
 
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
 const {
   mockGetCurrentUserProfile,
   mockGetTaskDialogHydration,

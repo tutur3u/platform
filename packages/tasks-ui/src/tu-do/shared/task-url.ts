@@ -7,6 +7,7 @@ interface BuildWorkspaceTaskUrlOptions {
   taskId: string;
   workspaceId: string;
   isPersonalWorkspace?: boolean;
+  routePrefix?: string;
 }
 
 function getLocalePrefixFromPathname(
@@ -30,6 +31,22 @@ function getLocalePrefixFromPathname(
   return '';
 }
 
+function inferRoutePrefix(
+  currentPathname: string,
+  workspaceSlug: string,
+  workspaceId: string
+) {
+  const segments = currentPathname.split('/').filter(Boolean);
+  const workspaceSegmentIndex = segments.findIndex(
+    (segment) => segment === workspaceSlug || segment === workspaceId
+  );
+
+  return workspaceSegmentIndex >= 0 &&
+    segments[workspaceSegmentIndex + 1] === 'boards'
+    ? ''
+    : '/tasks';
+}
+
 export function buildWorkspaceTaskUrl({
   boardId,
   currentPathname,
@@ -37,6 +54,7 @@ export function buildWorkspaceTaskUrl({
   taskId,
   workspaceId,
   isPersonalWorkspace = false,
+  routePrefix,
 }: BuildWorkspaceTaskUrlOptions) {
   const workspaceSlug = toWorkspaceSlug(workspaceId, {
     personal: isPersonalWorkspace,
@@ -46,7 +64,13 @@ export function buildWorkspaceTaskUrl({
     workspaceSlug,
     workspaceId
   );
-  const relativeUrl = `${localePrefix}/${workspaceSlug}/tasks/boards/${boardId}?task=${taskId}`;
+  const resolvedRoutePrefix =
+    routePrefix ??
+    inferRoutePrefix(currentPathname, workspaceSlug, workspaceId);
+  const normalizedRoutePrefix = resolvedRoutePrefix
+    ? `/${resolvedRoutePrefix.replace(/^\/+|\/+$/g, '')}`
+    : '';
+  const relativeUrl = `${localePrefix}/${workspaceSlug}${normalizedRoutePrefix}/boards/${boardId}?task=${taskId}`;
 
   if (!origin) {
     return relativeUrl;
