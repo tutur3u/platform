@@ -209,14 +209,13 @@ describe('Tasks proxy auth mode', () => {
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
-  it('rewrites Supabase-authenticated root requests to the personal task entrypoint', async () => {
+  it('rewrites auth-approved root requests to the personal task entrypoint', async () => {
     const authRequestHeaders = new Headers({
       cookie: 'sb-test-auth-token=shared',
     });
     mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
       authRequestHeaders
     );
-    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     const request = new NextRequest('https://tasks.tuturuuu.com/');
 
     const response = await proxy(request);
@@ -225,16 +224,22 @@ describe('Tasks proxy auth mode', () => {
     expect(response.headers.get('x-middleware-rewrite')).toBe(
       'https://tasks.tuturuuu.com/personal/tasks'
     );
-    expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalledWith(
-      authRequestHeaders
+    expect(mocks.withForwardedInternalApiAuth).not.toHaveBeenCalled();
+    expect(mocks.getUserConfig).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the personal task entrypoint when preferred workspace lookup fails', async () => {
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.getUserConfig.mockRejectedValueOnce(
+      new Error('Forwarded session unavailable')
     );
-    expect(mocks.getUserConfig).toHaveBeenCalledWith(
-      'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-      expect.objectContaining({
-        defaultHeaders: expect.objectContaining({
-          authorization: 'Bearer satellite-session',
-        }),
-      })
+    const request = new NextRequest('https://tasks.tuturuuu.com/');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://tasks.tuturuuu.com/personal/tasks'
     );
   });
 

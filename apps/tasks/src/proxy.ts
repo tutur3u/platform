@@ -286,44 +286,51 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     (isRootPath || isLocaleRootPath) &&
     !skipWorkspaceRedirect &&
     !isHashNavigation &&
-    !isMultiAccountFlow &&
-    hasSatelliteSession
+    !isMultiAccountFlow
   ) {
-    try {
-      const internalApiAuth = withForwardedInternalApiAuth(authRequestHeaders);
-      const config = await getUserConfig(
-        'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-        internalApiAuth
-      );
+    if (hasSatelliteSession) {
+      try {
+        const internalApiAuth =
+          withForwardedInternalApiAuth(authRequestHeaders);
+        const config = await getUserConfig(
+          'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
+          internalApiAuth
+        );
 
-      if (config?.value === 'true') {
-        const defaultWorkspace =
-          await getCurrentUserDefaultWorkspace(internalApiAuth);
+        if (config?.value === 'true') {
+          const defaultWorkspace =
+            await getCurrentUserDefaultWorkspace(internalApiAuth);
 
-        if (defaultWorkspace) {
-          const target = defaultWorkspace.personal
-            ? 'personal'
-            : defaultWorkspace.id === ROOT_WORKSPACE_ID
-              ? 'internal'
-              : defaultWorkspace.id;
-          const entrypointUrl = new URL(`/${target}/tasks`, req.nextUrl);
-          entrypointUrl.search = req.nextUrl.search;
-          const wsRewrite = NextResponse.rewrite(entrypointUrl);
-          propagateAuthCookies(authRes, wsRewrite);
-          return wsRewrite;
+          if (defaultWorkspace) {
+            const target = defaultWorkspace.personal
+              ? 'personal'
+              : defaultWorkspace.id === ROOT_WORKSPACE_ID
+                ? 'internal'
+                : defaultWorkspace.id;
+            const entrypointUrl = new URL(`/${target}/tasks`, req.nextUrl);
+            entrypointUrl.search = req.nextUrl.search;
+            const wsRewrite = NextResponse.rewrite(entrypointUrl);
+            propagateAuthCookies(authRes, wsRewrite);
+            return wsRewrite;
+          }
         }
+      } catch (error) {
+        console.warn(
+          'Could not resolve the preferred Tasks workspace; using personal:',
+          error
+        );
       }
-
-      // Default: resolve the personal task board without exposing the
-      // intermediate /personal/tasks entrypoint in the browser.
-      const entrypointUrl = new URL('/personal/tasks', req.nextUrl);
-      entrypointUrl.search = req.nextUrl.search;
-      const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
-      propagateAuthCookies(authRes, fallbackRewrite);
-      return fallbackRewrite;
-    } catch (error) {
-      console.error('Error handling root path redirect:', error);
     }
+
+    // Reaching this point means the centralized auth proxy already approved
+    // the protected root request. Always resolve the personal task board even
+    // when the refreshed session is only present on the response or the
+    // preferred-workspace lookup is temporarily unavailable.
+    const entrypointUrl = new URL('/personal/tasks', req.nextUrl);
+    entrypointUrl.search = req.nextUrl.search;
+    const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
+    propagateAuthCookies(authRes, fallbackRewrite);
+    return fallbackRewrite;
   }
 
   // Continue with locale handling
