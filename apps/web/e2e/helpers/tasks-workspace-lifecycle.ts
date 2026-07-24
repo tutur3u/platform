@@ -106,7 +106,10 @@ export async function launchTasksFromAppsPicker(page: Page): Promise<string> {
     tasksUrl.origin,
     'expected the Apps picker to target the running Tasks test server'
   ).toBe(new URL(TASKS_E2E_ORIGIN).origin);
-  await tasksLink.click({ timeout: 30_000 });
+  // The cross-origin handoff can keep Playwright's implicit navigation waiter
+  // alive while the Tasks satellite finishes bootstrapping. The caller already
+  // waits for the destination UI (or login), so avoid double-waiting here.
+  await tasksLink.click({ noWaitAfter: true, timeout: 30_000 });
   return tasksUrl.origin;
 }
 

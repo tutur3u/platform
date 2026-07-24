@@ -543,7 +543,11 @@ test.describe('Tasks workspace lifecycle', () => {
           })
           .toBe(renamedMemberTaskName);
 
-        await memberPage.getByRole('button', { name: /delete task/i }).click();
+        const taskDialog = memberPage.getByRole('dialog').filter({
+          has: memberTaskInput,
+        });
+        await taskDialog.getByRole('button', { name: /more options/i }).click();
+        await memberPage.getByRole('menuitem', { name: /^delete$/i }).click();
         await expect(
           memberPage.getByRole('heading', { name: 'Delete task?' })
         ).toBeVisible();
