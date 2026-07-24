@@ -288,6 +288,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !isHashNavigation &&
     !isMultiAccountFlow
   ) {
+    // This branch returns before next-intl gets a chance to add its internal
+    // locale segment. Rewrites must therefore target the actual App Router
+    // pathname; otherwise `/personal/tasks` is interpreted as
+    // `[locale]/[wsId]` and renders the locale-level 404.
+    const { locale } = getLocale(req);
+
     if (hasSatelliteSession) {
       try {
         const internalApiAuth =
@@ -307,7 +313,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
               : defaultWorkspace.id === ROOT_WORKSPACE_ID
                 ? 'internal'
                 : defaultWorkspace.id;
-            const entrypointUrl = new URL(`/${target}/tasks`, req.nextUrl);
+            const entrypointUrl = new URL(
+              `/${locale}/${target}/tasks`,
+              req.nextUrl
+            );
             entrypointUrl.search = req.nextUrl.search;
             const wsRewrite = NextResponse.rewrite(entrypointUrl);
             propagateAuthCookies(authRes, wsRewrite);
@@ -326,7 +335,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     // the protected root request. Always resolve the personal task board even
     // when the refreshed session is only present on the response or the
     // preferred-workspace lookup is temporarily unavailable.
-    const entrypointUrl = new URL('/personal/tasks', req.nextUrl);
+    const entrypointUrl = new URL(`/${locale}/personal/tasks`, req.nextUrl);
     entrypointUrl.search = req.nextUrl.search;
     const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
     propagateAuthCookies(authRes, fallbackRewrite);

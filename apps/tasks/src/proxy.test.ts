@@ -222,7 +222,7 @@ describe('Tasks proxy auth mode', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/personal/tasks'
+      'https://tasks.tuturuuu.com/en/personal/tasks'
     );
     expect(mocks.withForwardedInternalApiAuth).not.toHaveBeenCalled();
     expect(mocks.getUserConfig).not.toHaveBeenCalled();
@@ -239,7 +239,7 @@ describe('Tasks proxy auth mode', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/personal/tasks'
+      'https://tasks.tuturuuu.com/en/personal/tasks'
     );
   });
 
@@ -264,7 +264,7 @@ describe('Tasks proxy auth mode', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/workspace-1/tasks?settingsDialog=open'
+      'https://tasks.tuturuuu.com/en/workspace-1/tasks?settingsDialog=open'
     );
   });
 });
