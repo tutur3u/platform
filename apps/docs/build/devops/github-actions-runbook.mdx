@@ -511,6 +511,37 @@ file from the merged manifest bump and current `production` changelogs, then the
 normal Release Please action can create the releases. If the script reports
 `skipped`, inspect the pending labels and merged release PR body before retrying.
 
+`release-please-auto-merge.yaml` closes the loop on the generated release PR. It
+runs every third day at 06:00 UTC (`cron: "0 6 */3 * *"`) and on manual dispatch,
+and it does not reimplement the merge in YAML: it runs `bun git-release-please`
+and then `bun git-sync`, the same two commands the release flow uses locally, so
+the scheduled path and the manual path cannot drift. Those scripts own the merge
+rules — platform version sync, conflict detection, `bun check`, and
+fast-forward safety — and are covered by `scripts/git-release-please.test.js`
+and `scripts/git-sync.test.js`.
+
+The workflow resolves what to do before it installs anything. It prefers
+`origin/release-please--branches--production`, ignores the companion
+`--release-notes` overflow branch, and skips the merge entirely when the release
+branch is already an ancestor of `origin/main` — so a run with nothing to merge
+is a clean no-op rather than a red run. It separately checks whether
+`origin/production` has drifted from `origin/main` and syncs even when there was
+no merge, which is what makes the schedule self-healing. Every run that pushes
+ends by asserting the two refs resolve to the same commit and fails loudly if
+they do not.
+
+Day-of-month cron stepping restarts each month, so the 31st and the 1st can land
+a day apart. That is harmless here precisely because an empty run does nothing.
+
+The job checks out `main` with `fetch-depth: 0` and
+`secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The token must be
+able to push to `main` and `production`; with only the default token the push
+fails against branch protection. Top-level `permissions` is `{}` and
+`contents: write` is granted on the job alone, and `concurrency` is grouped with
+`cancel-in-progress: false` because cancelling a half-finished release merge
+would leave `main` and `production` split. Use the `dry_run` dispatch input to
+exercise the merge and run `bun git-sync --no-push` without publishing anything.
+
 Keep internal Tuturuuu dependencies as `workspace:*` in source package
 manifests so local builds always use the checked-out workspace. Package release
 workflows must first run

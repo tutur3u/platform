@@ -1,0 +1,177 @@
+name: Release Please Auto Merge
+
+# Runs `bun git-release-please` and `bun git-sync` on a schedule — the same two
+# commands the release flow uses locally, rather than a YAML reimplementation of
+# them. Those scripts already own the merge rules (platform version sync,
+# conflict detection, `bun check`, fast-forward safety) and are covered by
+# scripts/git-release-please.test.js and scripts/git-sync.test.js, so keeping
+# CI on top of them means the cloud path and the local path cannot drift.
+#
+# The end state this guarantees is that origin/main and origin/production point
+# at the same commit — the merge commit, when there was something to merge.
+
+on:
+  schedule:
+    # Every third day at 06:00 UTC. Day-of-month stepping restarts at the turn
+    # of each month, so the 31st and the 1st can land a day apart; that is
+    # harmless because a run with nothing to merge is a clean no-op.
+    - cron: "0 6 */3 * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Merge and verify locally without pushing anything.
+        type: boolean
+        default: false
+
+# Never let two release merges race for main and production.
+concurrency:
+  group: release-please-auto-merge
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  merge:
+    name: Merge release-please and align production
+    runs-on: ubuntu-latest
+    # `bun git-release-please` runs the full repo check before committing.
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          # The merge needs real history, and the push needs credentials that
+          # can write to protected branches.
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+      - name: Setup Bun
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.3.14
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Resolve work to do
+        id: plan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Explicit refspec: checking out a single ref can leave the remote
+          # configured to track only that branch, and this step needs
+          # origin/production and the release branches too.
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+          # Same selection rule as scripts/git-release-please.js: prefer the
+          # branch cut against production, fall back to the newest, and never
+          # pick the overflow release-notes branch.
+          preferred="origin/release-please--branches--production"
+          branch=""
+
+          if git show-ref --verify --quiet "refs/remotes/${preferred}"; then
+            branch="${preferred}"
+          else
+            branch="$(git for-each-ref \
+              --sort=-committerdate \
+              --format='%(refname:short)' \
+              'refs/remotes/origin/release-please--branches--*' \
+              | grep -v -- '--release-notes$' \
+              | head -n 1 || true)"
+          fi
+
+          should_merge=false
+          if [ -z "${branch}" ]; then
+            echo "No release-please branch on origin."
+          elif git merge-base --is-ancestor "${branch}" origin/main; then
+            echo "${branch} is already merged into origin/main."
+          else
+            echo "${branch} is unmerged and will be merged into main."
+            should_merge=true
+          fi
+
+          main_sha="$(git rev-parse origin/main)"
+          prod_sha="$(git rev-parse origin/production)"
+          needs_sync=false
+          if [ "${main_sha}" != "${prod_sha}" ]; then
+            echo "production (${prod_sha}) is not aligned with main (${main_sha})."
+            needs_sync=true
+          fi
+
+          {
+            echo "branch=${branch}"
+            echo "should_merge=${should_merge}"
+            echo "needs_sync=${needs_sync}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        if: steps.plan.outputs.should_merge == 'true'
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+
+      - name: Configure git identity
+        if: steps.plan.outputs.should_merge == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Merge release-please branch into main
+        if: steps.plan.outputs.should_merge == 'true'
+        run: bun git-release-please
+
+      - name: Sync main and production
+        if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
+        run: bun git-sync
+
+      - name: Sync main and production (dry run)
+        if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run == true
+        run: bun git-sync --no-push
+
+      - name: Verify main and production point at the same commit
+        if: inputs.dry_run != true
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          main_sha="$(git rev-parse origin/main)"
+          prod_sha="$(git rev-parse origin/production)"
+
+          if [ "${main_sha}" != "${prod_sha}" ]; then
+            echo "::error::main (${main_sha}) and production (${prod_sha}) are not aligned."
+            exit 1
+          fi
+
+          echo "main and production are both at ${main_sha}."
+          echo "aligned_sha=${main_sha}" >> "$GITHUB_ENV"
+
+      - name: Write run summary
+        if: always()
+        shell: bash
+        # Values reach the script through the environment rather than being
+        # pasted into it, so a ref name can never be read as shell.
+        env:
+          MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
+          SHOULD_MERGE: ${{ steps.plan.outputs.should_merge }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### Release Please Auto Merge"
+            echo
+            if [ "${SHOULD_MERGE:-}" = "true" ]; then
+              echo "- Merged \`${MERGED_BRANCH}\` into \`main\`."
+            else
+              echo "- Nothing to merge (no unmerged release-please branch)."
+            fi
+            if [ -n "${aligned_sha:-}" ]; then
+              echo "- \`main\` and \`production\` are aligned at \`${aligned_sha}\`."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
