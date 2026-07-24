@@ -9,17 +9,25 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
   toWorkspaceSlug,
 } from '@tuturuuu/utils/constants';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  getWorkspaceTier,
+} from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
-import { hasRootExternalProjectsAdminPermission } from '@/lib/external-projects/access';
+import {
+  hasRootExternalProjectsAdminPermission,
+  resolveWorkspaceExternalProjectBinding,
+} from '@/lib/external-projects/access';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -32,6 +40,26 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+type CmsWorkspace = NonNullable<Awaited<ReturnType<typeof getWorkspace>>>;
+
+async function getRootManagedWorkspace(
+  workspaceId: string
+): Promise<CmsWorkspace | null> {
+  const admin = await createAdminClient({ noCookie: true });
+  const [{ data, error }, tier] = await Promise.all([
+    admin.from('workspaces').select('*').eq('id', workspaceId).maybeSingle(),
+    getWorkspaceTier(workspaceId, { useAdmin: true }),
+  ]);
+
+  if (error || !data) return null;
+
+  return {
+    ...data,
+    joined: true,
+    tier,
+  } as CmsWorkspace;
+}
+
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const resolvedWorkspaceId = resolveWorkspaceId(id);
@@ -41,17 +69,19 @@ export default async function Layout({ children, params }: LayoutProps) {
   if (!user?.id) redirect('/login');
 
   const isInternalWorkspace = resolvedWorkspaceId === ROOT_WORKSPACE_ID;
-  const workspace = isInternalWorkspace
-    ? {
+  let workspace: CmsWorkspace | null = isInternalWorkspace
+    ? ({
         id: ROOT_WORKSPACE_ID,
         joined: true,
         personal: false,
         tier: null,
-      }
+      } as CmsWorkspace)
     : await getWorkspace(resolvedWorkspaceId, {
         useAdmin: true,
         user,
       });
+
+  let canManageBoundWorkspace = false;
 
   if (isInternalWorkspace) {
     const rootPermissions = await getPermissions({
@@ -61,6 +91,23 @@ export default async function Layout({ children, params }: LayoutProps) {
 
     if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
       redirect('/no-access');
+    }
+  } else if (!workspace?.joined) {
+    const rootPermissions = await getPermissions({
+      user,
+      wsId: ROOT_WORKSPACE_ID,
+    });
+
+    if (hasRootExternalProjectsAdminPermission(rootPermissions)) {
+      const binding =
+        await resolveWorkspaceExternalProjectBinding(resolvedWorkspaceId);
+
+      canManageBoundWorkspace =
+        binding.enabled && Boolean(binding.canonical_project);
+
+      if (canManageBoundWorkspace && !workspace) {
+        workspace = await getRootManagedWorkspace(resolvedWorkspaceId);
+      }
     }
   }
 
@@ -83,7 +130,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace.joined) redirect('/');
+  if (!workspace.joined && !canManageBoundWorkspace) redirect('/');
 
   const wsId = workspace.id;
   const workspaceSlug = toWorkspaceSlug(wsId, {

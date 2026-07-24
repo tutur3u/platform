@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Layout from './layout';
 
 const mocks = vi.hoisted(() => ({
+  adminMaybeSingle: vi.fn(),
   cookieGet: vi.fn(),
+  createAdminClient: vi.fn(),
   getNavigationLinks: vi.fn(),
   getPendingWorkspaceInvitation: vi.fn(),
   getPermissions: vi.fn(),
@@ -13,9 +15,11 @@ const mocks = vi.hoisted(() => ({
   getSidebarCollapsedState: vi.fn(),
   getSidebarBehaviorUpdatedAt: vi.fn(),
   getWorkspace: vi.fn(),
+  getWorkspaceTier: vi.fn(),
   hasRootExternalProjectsAdminPermission: vi.fn(),
   parseSidebarBehavior: vi.fn(),
   redirect: vi.fn(),
+  resolveWorkspaceExternalProjectBinding: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -47,11 +51,18 @@ vi.mock('@tuturuuu/supabase/next/realtime-log-provider', () => ({
   RealtimeLogProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
+    mocks.createAdminClient(...args),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
   getWorkspace: (...args: Parameters<typeof mocks.getWorkspace>) =>
     mocks.getWorkspace(...args),
+  getWorkspaceTier: (...args: Parameters<typeof mocks.getWorkspaceTier>) =>
+    mocks.getWorkspaceTier(...args),
 }));
 
 vi.mock('next/headers', () => ({
@@ -79,6 +90,9 @@ vi.mock('@/lib/external-projects/access', () => ({
   hasRootExternalProjectsAdminPermission: (
     ...args: Parameters<typeof mocks.hasRootExternalProjectsAdminPermission>
   ) => mocks.hasRootExternalProjectsAdminPermission(...args),
+  resolveWorkspaceExternalProjectBinding: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceExternalProjectBinding>
+  ) => mocks.resolveWorkspaceExternalProjectBinding(...args),
 }));
 
 vi.mock('../../navbar-actions', () => ({
@@ -111,6 +125,24 @@ describe('CMS dashboard layout', () => {
     });
     mocks.getPermissions.mockResolvedValue({ containsPermission: vi.fn() });
     mocks.hasRootExternalProjectsAdminPermission.mockReturnValue(true);
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
+      adapter: null,
+      canonical_id: null,
+      canonical_project: null,
+      enabled: false,
+      workspace_id: 'bea7429c-28e2-4159-b1b0-9212f803dcdf',
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: mocks.adminMaybeSingle,
+          })),
+        })),
+      })),
+    });
+    mocks.adminMaybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.getWorkspaceTier.mockResolvedValue('FREE');
     mocks.getSidebarCollapsedState.mockReturnValue(false);
     mocks.getSidebarBehaviorUpdatedAt.mockReturnValue(null);
     mocks.parseSidebarBehavior.mockReturnValue('expanded');
@@ -176,5 +208,64 @@ describe('CMS dashboard layout', () => {
       }
     );
     expect(mocks.getPendingWorkspaceInvitation).not.toHaveBeenCalled();
+  });
+
+  it('allows root admins to manage an enabled bound workspace before it has members', async () => {
+    const workspaceId = 'bea7429c-28e2-4159-b1b0-9212f803dcdf';
+    mocks.getWorkspace.mockResolvedValue(null);
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
+      adapter: 'richfield',
+      canonical_id: 'richfield',
+      canonical_project: { id: 'richfield', is_active: true },
+      enabled: true,
+      workspace_id: workspaceId,
+    });
+    mocks.adminMaybeSingle.mockResolvedValue({
+      data: {
+        id: workspaceId,
+        personal: false,
+      },
+      error: null,
+    });
+
+    await Layout({
+      children: createElement('main'),
+      params: Promise.resolve({ wsId: workspaceId }),
+    });
+
+    expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
+      workspaceId
+    );
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.getWorkspaceTier).toHaveBeenCalledWith(workspaceId, {
+      useAdmin: true,
+    });
+    expect(mocks.getPendingWorkspaceInvitation).not.toHaveBeenCalled();
+    expect(mocks.getNavigationLinks).toHaveBeenCalledWith({
+      personalOrWsId: workspaceId,
+      workspaceId,
+    });
+  });
+
+  it('does not grant root-admin shell access to an unbound workspace', async () => {
+    const workspaceId = 'bea7429c-28e2-4159-b1b0-9212f803dcdf';
+    mocks.getWorkspace.mockResolvedValue({
+      id: workspaceId,
+      joined: false,
+      personal: false,
+      tier: 'FREE',
+    });
+
+    await expect(
+      Layout({
+        children: createElement('main'),
+        params: Promise.resolve({ wsId: workspaceId }),
+      })
+    ).rejects.toThrow('redirect:/');
+
+    expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
+      workspaceId
+    );
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 });
