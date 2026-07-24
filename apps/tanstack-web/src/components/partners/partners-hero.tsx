@@ -13,9 +13,9 @@ export function PartnersHero() {
         </div>
 
         <h1 className="mb-6 text-balance font-bold text-4xl text-foreground tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
-          Our{' '}
+          Better{' '}
           <span className="animate-gradient bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
-            Partners
+            together
           </span>
         </h1>
 

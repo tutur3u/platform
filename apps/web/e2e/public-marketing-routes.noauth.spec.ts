@@ -97,7 +97,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/contributors`,
-    heading: 'Contributors',
+    heading: 'Built in the open',
   },
   {
     path: `/${DEFAULT_LOCALE}/models`,
@@ -118,7 +118,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/partners`,
-    heading: 'Our Partners',
+    heading: 'Better together',
   },
   {
     path: `/${DEFAULT_LOCALE}/branding`,
@@ -126,7 +126,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/blog`,
-    heading: 'Insights & Innovation',
+    heading: 'Coming, not yet',
   },
   {
     path: `/${DEFAULT_LOCALE}/careers`,
@@ -138,7 +138,7 @@ const staticMarketingRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/security`,
-    heading: 'Your Security is Our Top Priority',
+    heading: 'Every layer, secured',
   },
   {
     path: `/${DEFAULT_LOCALE}/security/bug-bounty`,
@@ -337,7 +337,7 @@ test.describe('Public migrated marketing routes', () => {
         page.getByRole('heading', { name: route.summaryHeading }).first()
       ).toBeVisible();
       await expect(
-        page.getByText('Effective Date: February 6, 2026').first()
+        page.getByText('Effective February 6, 2026').first()
       ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });

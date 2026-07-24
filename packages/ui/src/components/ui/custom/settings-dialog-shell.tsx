@@ -60,8 +60,9 @@ import {
 } from '@tuturuuu/ui/sidebar';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { parseAsString, useQueryState } from 'nuqs';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 
@@ -148,6 +149,14 @@ export function SettingsDialogShell({
   const [searchEngineFactory, setSearchEngineFactory] =
     useState<SettingsSearchEngineFactory | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [persistedTab, setPersistedTab] = useQueryState(
+    'settingsTab',
+    parseAsString.withOptions({
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    })
+  );
 
   const searchEngine = useMemo<SettingsSearchEngine | null>(
     () => searchEngineFactory?.(navItems) ?? null,
@@ -168,6 +177,23 @@ export function SettingsDialogShell({
     allNavItems.find((item) => !item.disabled) ||
     allNavItems[0];
   const showContentHeader = !activeItem?.hideContentHeader;
+  const persistedItem = allNavItems.find(
+    (item) => !item.disabled && item.name === persistedTab
+  );
+
+  useEffect(() => {
+    if (persistedItem && persistedItem.name !== activeTab) {
+      onActiveTabChange(persistedItem.name);
+    }
+  }, [activeTab, onActiveTabChange, persistedItem]);
+
+  const selectActiveTab = useCallback(
+    (tab: string) => {
+      onActiveTabChange(tab);
+      void setPersistedTab(tab);
+    },
+    [onActiveTabChange, setPersistedTab]
+  );
 
   const ensureSearchEngine = useCallback(() => {
     if (searchEngineFactory || searchEngineLoadRef.current) return;
@@ -227,9 +253,9 @@ export function SettingsDialogShell({
   const changeActiveItem = useCallback(
     (targetIndex: number) => {
       const targetItem = filteredEnabledItems[targetIndex];
-      if (targetItem) onActiveTabChange(targetItem.name);
+      if (targetItem) selectActiveTab(targetItem.name);
     },
-    [filteredEnabledItems, onActiveTabChange]
+    [filteredEnabledItems, selectActiveTab]
   );
 
   const moveActiveItem = useCallback(
@@ -378,7 +404,7 @@ export function SettingsDialogShell({
                               isActive={activeTab === item.name}
                               onClick={() => {
                                 if (!item.disabled) {
-                                  onActiveTabChange(item.name);
+                                  selectActiveTab(item.name);
                                 }
                               }}
                               className={cn(
@@ -457,7 +483,7 @@ export function SettingsDialogShell({
                                 value={`${group.label} ${item.label} ${item.description || ''} ${item.keywords?.join(' ') || ''} ${item.aliases?.join(' ') || ''} ${item.searchLabels?.join(' ') || ''}`}
                                 onSelect={() => {
                                   if (item.disabled) return;
-                                  onActiveTabChange(item.name);
+                                  selectActiveTab(item.name);
                                   setMobileNavOpen(false);
                                 }}
                                 className={cn(

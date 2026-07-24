@@ -115,9 +115,9 @@ export function BlogPage() {
             Blog
           </span>
           <h1 className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
-            Insights &{' '}
+            Coming,{' '}
             <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
-              Innovation
+              not yet
             </span>
           </h1>
           <p className="mx-auto mb-8 max-w-3xl text-balance text-base text-foreground/70 leading-relaxed sm:text-lg md:text-xl lg:text-2xl">

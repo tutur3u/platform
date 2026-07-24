@@ -1,5 +1,9 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  type OnUrlUpdateFunction,
+  withNuqsTestingAdapter,
+} from 'nuqs/adapters/testing';
 import { type ReactNode, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Dialog } from '../../dialog';
@@ -55,7 +59,13 @@ const navItems: SettingsNavGroup[] = [
   },
 ];
 
-function renderShell(activeGroupBreadcrumb?: ReactNode) {
+function renderShell(
+  activeGroupBreadcrumb?: ReactNode,
+  options?: {
+    onUrlUpdate?: OnUrlUpdateFunction;
+    searchParams?: string;
+  }
+) {
   function Harness() {
     const [activeTab, setActiveTab] = useState('profile');
 
@@ -75,7 +85,9 @@ function renderShell(activeGroupBreadcrumb?: ReactNode) {
     );
   }
 
-  return render(<Harness />);
+  return render(<Harness />, {
+    wrapper: withNuqsTestingAdapter(options),
+  });
 }
 
 describe('SettingsDialogShell keyboard navigation', () => {
@@ -195,6 +207,26 @@ describe('SettingsDialogShell keyboard navigation', () => {
 
     fireEvent.keyDown(dialog, { altKey: true, key: 'Home' });
     expect(activeTab).toHaveTextContent('profile');
+  });
+
+  it('restores the active section from the URL and persists tab changes', async () => {
+    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
+
+    renderShell(undefined, {
+      onUrlUpdate,
+      searchParams: '?settingsDialog=open&settingsTab=appearance',
+    });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('active-tab')).toHaveTextContent('appearance')
+    );
+
+    fireEvent.click(screen.getAllByText('Profile')[0]!);
+
+    await waitFor(() => {
+      const update = onUrlUpdate.mock.calls.at(-1)?.[0];
+      expect(update?.searchParams.get('settingsTab')).toBe('profile');
+    });
   });
 
   it('does not handle navigation shortcuts outside the dialog content', () => {

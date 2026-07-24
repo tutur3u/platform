@@ -195,9 +195,9 @@ export default function SecurityPage() {
           </SecurityBadge>
 
           <h1 className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl">
-            Your Security is Our{' '}
+            Every layer,{' '}
             <span className="animate-gradient bg-linear-to-r from-dynamic-blue via-dynamic-cyan to-dynamic-green bg-clip-text text-transparent">
-              Top Priority
+              secured
             </span>
           </h1>
 

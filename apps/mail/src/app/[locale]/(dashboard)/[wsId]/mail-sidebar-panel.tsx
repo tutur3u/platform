@@ -21,7 +21,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import type { ReactNode } from 'react';
 import { isMailFolder } from './mail-folders';
 import { MailSettingsDialog } from './mail-settings-dialog';
 import {
@@ -62,7 +63,24 @@ export function MailSidebarPanel({
     queryFn: () => getMailboxOrganization(workspaceId, activeMailboxId ?? ''),
     queryKey: ['mail', workspaceId, activeMailboxId, 'organization'],
   });
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsQuery, setSettingsQuery] = useQueryStates(
+    {
+      settingsDialog: parseAsStringLiteral(['open']),
+      settingsTab: parseAsString,
+    },
+    {
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    }
+  );
+  const settingsOpen = settingsQuery.settingsDialog === 'open';
+  const setSettingsOpen = (open: boolean) => {
+    void setSettingsQuery({
+      settingsDialog: open ? 'open' : null,
+      settingsTab: null,
+    });
+  };
   const activeMailbox =
     mailboxes.find((mailbox) => mailbox.id === activeMailboxId) ?? null;
   const customFolders = (organizationQuery.data?.folders ?? []).filter(

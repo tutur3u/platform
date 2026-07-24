@@ -99,7 +99,7 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
           </h1>
 
           <p className="mx-auto max-w-2xl text-foreground/70 text-lg">
-            Effective Date:{' '}
+            Effective{' '}
             {new Date(config.effectiveDate).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',

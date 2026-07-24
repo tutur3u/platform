@@ -36,6 +36,7 @@ import { ReportProblemDialog } from '@tuturuuu/ui/report-problem-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
+import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import {
   cloneElement,
   isValidElement,
@@ -79,15 +80,27 @@ export default function UserNavClient({
   const sidebar = useContext(SidebarContext);
   const workspaceSelector = useWorkspaceSelector();
   const [reportOpen, setReportOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<string>();
+  const [settingsQuery, setSettingsQuery] = useQueryStates(
+    {
+      settingsDialog: parseAsStringLiteral(['open']),
+      settingsTab: parseAsString,
+    },
+    {
+      history: 'replace',
+      shallow: true,
+      scroll: false,
+    }
+  );
+  const settingsOpen = settingsQuery.settingsDialog === 'open';
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
   // once here so every satellite app (calendar/tasks/finance/…) gets it.
   const openSettings = useCallback(() => {
-    setSettingsTab(undefined);
-    setSettingsOpen(true);
-  }, []);
+    void setSettingsQuery({
+      settingsDialog: 'open',
+      settingsTab: null,
+    });
+  }, [setSettingsQuery]);
   useSettingsDialogShortcut({
     enabled: Boolean(user && settingsDialog),
     onOpen: openSettings,
@@ -99,8 +112,10 @@ export default function UserNavClient({
 
       const tab = (event as CustomEvent<{ settingsTab?: string }>).detail
         ?.settingsTab;
-      setSettingsTab(tab);
-      setSettingsOpen(true);
+      void setSettingsQuery({
+        settingsDialog: 'open',
+        settingsTab: tab ?? null,
+      });
     };
 
     window.addEventListener(
@@ -112,12 +127,12 @@ export default function UserNavClient({
         'tuturuuu:settings-dialog-open-intent',
         handleSettingsIntent
       );
-  }, []);
+  }, [setSettingsQuery]);
 
   const renderedSettingsDialog = isValidElement(settingsDialog)
     ? cloneElement(settingsDialog, {
-        defaultTab: settingsTab,
-        key: settingsTab ?? 'default',
+        defaultTab: settingsQuery.settingsTab ?? undefined,
+        key: settingsQuery.settingsTab ?? 'default',
       } as Record<string, unknown>)
     : settingsDialog;
 
@@ -153,7 +168,16 @@ export default function UserNavClient({
       />
 
       {user && settingsDialog && (
-        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <Dialog
+          open={settingsOpen}
+          onOpenChange={(open) => {
+            if (open) return;
+            void setSettingsQuery({
+              settingsDialog: null,
+              settingsTab: null,
+            });
+          }}
+        >
           {renderedSettingsDialog}
         </Dialog>
       )}
