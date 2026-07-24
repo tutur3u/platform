@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
   const schema = vi.fn(() => ({ rpc }));
   return {
     createAdminClient: vi.fn(),
+    safelyRevalidateWorkspaceStorefronts: vi.fn(),
     rpc,
     schema,
   };
@@ -19,6 +20,11 @@ const mocks = vi.hoisted(() => {
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: () => mocks.createAdminClient(),
+}));
+
+vi.mock('./public-storefront', () => ({
+  safelyRevalidateWorkspaceStorefronts: (...args: unknown[]) =>
+    mocks.safelyRevalidateWorkspaceStorefronts(...args),
 }));
 
 describe('inventory bundle commerce helpers', () => {
@@ -81,6 +87,9 @@ describe('inventory bundle commerce helpers', () => {
         p_pricing_mode: null,
         p_ws_id: 'ws-1',
       })
+    );
+    expect(mocks.safelyRevalidateWorkspaceStorefronts).toHaveBeenCalledWith(
+      'ws-1'
     );
   });
 

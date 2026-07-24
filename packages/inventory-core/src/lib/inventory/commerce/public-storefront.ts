@@ -14,6 +14,34 @@ export function publicStorefrontTag(slug: string) {
   return `inventory-storefront:${slug}`;
 }
 
+function resolveBundleListingImages(
+  payload: InventoryPublicStorefrontResponse
+): InventoryPublicStorefrontResponse {
+  const bundleImages = new Map(
+    (payload.bundles ?? []).flatMap((bundle) =>
+      bundle.imageUrl?.trim() ? [[bundle.id, bundle.imageUrl] as const] : []
+    )
+  );
+  let changed = false;
+  const listings = (payload.listings ?? []).map((listing) => {
+    if (
+      listing.listingType !== 'bundle' ||
+      listing.imageUrl?.trim() ||
+      !listing.bundleId
+    ) {
+      return listing;
+    }
+
+    const imageUrl = bundleImages.get(listing.bundleId);
+    if (!imageUrl) return listing;
+
+    changed = true;
+    return { ...listing, imageUrl };
+  });
+
+  return changed ? { ...payload, listings } : payload;
+}
+
 async function loadPublicStorefront(slug: string) {
   // noCookie keeps this read free of request scope so it can run inside the
   // shared `use cache` scope (which forbids cookies()/headers()).
@@ -26,7 +54,8 @@ async function loadPublicStorefront(slug: string) {
 
   if (error) throw error;
 
-  return (data as InventoryPublicStorefrontResponse | null) ?? null;
+  const payload = (data as InventoryPublicStorefrontResponse | null) ?? null;
+  return payload ? resolveBundleListingImages(payload) : null;
 }
 
 export async function getPublicStorefront(slug: string) {
@@ -41,7 +70,8 @@ export async function getPublicStorefront(slug: string) {
 
   if (error) throw error;
 
-  return (data as InventoryPublicStorefrontResponse | null) ?? null;
+  const payload = (data as InventoryPublicStorefrontResponse | null) ?? null;
+  return payload ? resolveBundleListingImages(payload) : null;
 }
 
 /**

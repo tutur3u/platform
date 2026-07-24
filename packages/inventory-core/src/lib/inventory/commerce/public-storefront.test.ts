@@ -62,6 +62,44 @@ describe('getPublicStorefront', () => {
     });
   });
 
+  it('uses the uploaded bundle image when its storefront listing has no override', async () => {
+    const payload = {
+      bundles: [
+        {
+          id: 'bundle-1',
+          imageUrl: 'https://assets.example.com/bundle.webp',
+        },
+      ],
+      listings: [
+        {
+          bundleId: 'bundle-1',
+          id: 'listing-1',
+          imageUrl: null,
+          listingType: 'bundle',
+        },
+        {
+          bundleId: 'bundle-1',
+          id: 'listing-2',
+          imageUrl: 'https://assets.example.com/listing-override.webp',
+          listingType: 'bundle',
+        },
+      ],
+      storefront: { slug: 'demo' },
+    };
+    mocks.rpc.mockResolvedValue({ data: payload, error: null });
+
+    await expect(getPublicStorefront('demo')).resolves.toMatchObject({
+      listings: [
+        {
+          imageUrl: 'https://assets.example.com/bundle.webp',
+        },
+        {
+          imageUrl: 'https://assets.example.com/listing-override.webp',
+        },
+      ],
+    });
+  });
+
   it('uses the event-driven storefront cache profile and tag', async () => {
     const payload = { listings: [], storefront: { slug: 'demo' } };
     mocks.rpc.mockResolvedValue({ data: payload, error: null });

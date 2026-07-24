@@ -11,7 +11,7 @@ import {
   scheduleBundlePolarSync,
   scheduleInventoryPolarProductArchive,
 } from './polar-product-sync';
-import { revalidatePublicStorefront } from './public-storefront';
+import { safelyRevalidateWorkspaceStorefronts } from './public-storefront';
 
 type SupabaseErrorLike = { code?: string; message?: string } | null;
 
@@ -136,18 +136,6 @@ async function upsertBundle(
   return data;
 }
 
-async function revalidateBundleStorefront(storefrontId: string | null) {
-  if (!storefrontId) return;
-  const inventory = await createPrivateInventoryClient();
-  const { data } = await inventory
-    .from('inventory_storefronts')
-    .select('slug')
-    .eq('id', storefrontId)
-    .maybeSingle();
-  const slug = (data as { slug?: string | null } | null)?.slug;
-  if (slug) revalidatePublicStorefront(slug);
-}
-
 export async function createBundle(
   wsId: string,
   payload: InventoryBundlePayload
@@ -155,7 +143,7 @@ export async function createBundle(
   const bundle = await upsertBundle(wsId, payload);
   if (bundle) {
     scheduleBundlePolarSync(bundle);
-    await revalidateBundleStorefront(bundle.storefrontId);
+    await safelyRevalidateWorkspaceStorefronts(wsId);
   }
   return bundle;
 }
@@ -211,7 +199,7 @@ export async function updateBundle(
   const bundle = await upsertBundle(wsId, merged, bundleId);
   if (bundle) {
     scheduleBundlePolarSync(bundle);
-    await revalidateBundleStorefront(bundle.storefrontId);
+    await safelyRevalidateWorkspaceStorefronts(wsId);
   }
   return bundle;
 }
@@ -238,7 +226,7 @@ export async function deleteBundle(wsId: string, bundleId: string) {
       storefrontId: row.storefront_id ?? null,
       wsId,
     });
-    await revalidateBundleStorefront(row.storefront_id ?? null);
+    await safelyRevalidateWorkspaceStorefronts(wsId);
   }
   return Boolean(data);
 }
