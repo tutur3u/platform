@@ -14,6 +14,7 @@ import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import {
   hasRootExternalProjectsAdminPermission,
   requireWorkspaceExternalProjectAccess,
+  requireWorkspaceExternalProjectMemberBootstrapAccess,
 } from './access';
 
 type WorkspaceRolePermissionValue =
@@ -88,11 +89,22 @@ export async function requireExternalProjectTeamAccess({
   request: Request;
   wsId: string;
 }) {
-  const access = await requireWorkspaceExternalProjectAccess({
+  let access = await requireWorkspaceExternalProjectAccess({
     mode: 'read',
     request,
     wsId,
   });
+
+  if (
+    !access.ok &&
+    capability === 'manage-members' &&
+    access.response.status === 403
+  ) {
+    access = await requireWorkspaceExternalProjectMemberBootstrapAccess({
+      request,
+      wsId,
+    });
+  }
 
   if (!access.ok) {
     return access;

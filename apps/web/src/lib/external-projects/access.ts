@@ -1398,3 +1398,90 @@ export async function requireWorkspaceExternalProjectAccess({
     workspacePermissions,
   };
 }
+
+export async function requireWorkspaceExternalProjectMemberBootstrapAccess({
+  request,
+  wsId,
+}: {
+  request: Request;
+  wsId: string;
+}) {
+  if (!getAppSessionTokenFromRequest(request)) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  let verification: ReturnType<typeof verifyAppSessionRequest>;
+
+  try {
+    verification = verifyAppSessionRequest(request, { targetApp: 'cms' });
+  } catch {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'App coordination is not configured' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!verification.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const admin = (await createAdminClient()) as TypedSupabaseClient;
+  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+    admin,
+    userId: verification.claims.sub,
+    wsId,
+  });
+  const [binding, rootPermissions, workspacePermissions] = await Promise.all([
+    resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId, admin),
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: ROOT_WORKSPACE_ID,
+    }),
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: normalizedWorkspaceId,
+    }),
+  ]);
+
+  if (!binding.enabled || !binding.canonical_project) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'External project studio unavailable for this workspace' },
+        { status: 404 }
+      ),
+    };
+  }
+
+  if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    admin,
+    binding,
+    normalizedWorkspaceId,
+    rootPermissions,
+    user: {
+      app: verification.claims.target_app,
+      email: verification.claims.email,
+      id: verification.claims.sub,
+    },
+    workspacePermissions,
+  };
+}

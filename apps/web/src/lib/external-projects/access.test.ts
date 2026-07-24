@@ -108,6 +108,7 @@ import {
   appTokenHasRequiredScope,
   ensureWorkspaceExternalProjectStudio,
   requireWorkspaceExternalProjectAccess,
+  requireWorkspaceExternalProjectMemberBootstrapAccess,
   requireWorkspaceExternalProjectSetupAccess,
 } from './access';
 
@@ -544,6 +545,66 @@ describe('external project access auth dispatch', () => {
     expect(
       appCoordinationMocks.verifyAppCoordinationToken
     ).not.toHaveBeenCalled();
+  });
+
+  it('allows a root EPM admin to bootstrap membership from a CMS app session', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_cms_session');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    workspaceMocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_missing',
+      ok: false,
+    });
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID ? ['manage_external_projects'] : [],
+          wsId
+        )
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectMemberBootstrapAccess({
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(true);
+    if (access.ok) {
+      expect(access.normalizedWorkspaceId).toBe(workspaceId);
+      expect(access.rootPermissions?.containsPermission).toHaveBeenCalledWith(
+        'manage_external_projects'
+      );
+    }
+    expect(workspaceMocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+  });
+
+  it('does not allow external app tokens to bootstrap CMS membership', async () => {
+    const request = createAccessRequest('ttr_app_external');
+
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(null);
+
+    const access = await requireWorkspaceExternalProjectMemberBootstrapAccess({
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(401);
+    }
+    expect(appSessionMocks.verifyAppSessionRequest).not.toHaveBeenCalled();
   });
 
   it('returns unauthorized for an invalid app session without falling through to Supabase auth', async () => {
