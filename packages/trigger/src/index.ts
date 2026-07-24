@@ -1,13 +1,4 @@
-// Export the main sync functions
-export {
-  googleCalendarFullSync,
-  googleCalendarFullSyncOrchestrator,
-  performFullSyncForWorkspace,
-} from './google-calendar-full-sync';
-
-// Export unified scheduling functions
-export {
-  unifiedScheduleManualTrigger,
-  unifiedScheduleTask,
-} from './unified-schedule';
+export { performFullSyncForWorkspace } from './google-calendar-full-sync';
+export { performIncrementalSyncForWorkspace } from './google-calendar-incremental-sync';
+export { schedulableTasksHelper } from './schedule-tasks-helper';
 export { unifiedScheduleHelper } from './unified-schedule-helper';

@@ -43,6 +43,8 @@ const activeVercelProjects = {
   tools: '@tuturuuu/tools',
   track: '@tuturuuu/track',
 };
+const vercelInstallCommand =
+  'cd ../.. && bun install --frozen-lockfile --minimum-release-age=0';
 
 function readWorkflow(workflowName) {
   return fs.readFileSync(path.join(workflowsDir, workflowName), 'utf8');
@@ -113,6 +115,11 @@ test('all 25 active Vercel projects cache their full Turbo build', () => {
       `cd ../.. && bun turbo:local run build --filter=${workspace}`,
       `${project} must build through root Turbo`
     );
+    assert.equal(
+      config.installCommand,
+      vercelInstallCommand,
+      `${project} must preserve the dependency refresh override inside Vercel`
+    );
 
     for (const target of ['preview', 'production']) {
       const workflowName = `vercel-${target}-${project}.yaml`;
@@ -144,6 +151,69 @@ test('all 25 active Vercel projects cache their full Turbo build', () => {
       )
     );
     assert.equal(config.buildCommand, undefined);
+  }
+});
+
+test('all locked Next.js packages bypass the dependency release-age delay', () => {
+  const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
+  const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  const nextPackages = new Set(['next']);
+
+  for (const match of lockfile.matchAll(/"(@next\/[^"@]+)(?:@[^"]*)?"/gu)) {
+    nextPackages.add(match[1]);
+  }
+
+  for (const packageName of nextPackages) {
+    assert.match(
+      bunfig,
+      new RegExp(`^  "${packageName.replaceAll('/', '\\/')}",$`, 'mu'),
+      `${packageName} must bypass the release-age delay`
+    );
+  }
+});
+
+test('trusted AI SDK and next-intl packages bypass the release-age delay', () => {
+  const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
+  const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  const trustedPackages = new Set([
+    'ai',
+    'next-intl',
+    'next-intl-swc-plugin-extractor',
+    'use-intl',
+  ]);
+
+  for (const match of lockfile.matchAll(
+    /^\s+"[^"]+": \["(@ai-sdk\/[^@"]+)@/gmu
+  )) {
+    trustedPackages.add(match[1]);
+  }
+
+  for (const packageName of trustedPackages) {
+    assert.match(
+      bunfig,
+      new RegExp(`^  "${packageName.replaceAll('/', '\\/')}",$`, 'mu'),
+      `${packageName} must bypass the release-age delay`
+    );
+  }
+});
+
+test('trusted Lucide and Cloudflare packages bypass the release-age delay', () => {
+  const bunfig = fs.readFileSync(path.join(repoRoot, 'bunfig.toml'), 'utf8');
+  const lockfile = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  const trustedPackages = new Set(['miniflare', 'workerd', 'wrangler']);
+
+  for (const match of lockfile.matchAll(
+    /^\s+"[^"]+": \["((?:@cloudflare\/|@lucide\/|lucide-)[^@"]+)@/gmu
+  )) {
+    trustedPackages.add(match[1]);
+  }
+
+  for (const packageName of trustedPackages) {
+    assert.match(
+      bunfig,
+      new RegExp(`^  "${packageName.replaceAll('/', '\\/')}",$`, 'mu'),
+      `${packageName} must bypass the release-age delay`
+    );
   }
 });
 

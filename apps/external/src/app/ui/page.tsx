@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from '@tuturuuu/ui/button';
 
 export default function UI() {

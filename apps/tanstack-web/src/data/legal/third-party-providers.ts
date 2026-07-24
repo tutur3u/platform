@@ -92,16 +92,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
     ],
   },
   {
-    name: 'Background Jobs',
-    providers: [
-      {
-        name: 'Trigger.dev',
-        purpose: 'Background job processing and scheduling',
-        url: 'https://trigger.dev/legal/privacy',
-      },
-    ],
-  },
-  {
     name: 'Compute',
     providers: [
       {

@@ -19,10 +19,6 @@ process.env.GOOGLE_CLIENT_ID = 'test-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
-const { schedulesTaskMock } = vi.hoisted(() => ({
-  schedulesTaskMock: vi.fn(),
-}));
-
 // Mock the google-calendar-sync module
 vi.mock('../src/google-calendar-sync', async () => {
   const actual = await vi.importActual('../src/google-calendar-sync');
@@ -103,19 +99,6 @@ vi.mock('@tuturuuu/google', () => ({
   },
 }));
 
-// Mock @trigger.dev/sdk/v3
-vi.mock('@trigger.dev/sdk/v3', () => ({
-  task: vi.fn((config) => ({
-    id: config.id,
-    trigger: vi.fn(),
-    run: config.run,
-    queue: config.queue,
-  })),
-  schedules: {
-    task: schedulesTaskMock,
-  },
-}));
-
 dayjs.extend(utc);
 
 // Dynamically import the actual functions after env and mocks are set
@@ -186,10 +169,6 @@ describe('Google Calendar Incremental Sync', () => {
   });
 
   describe('Sync Token Handling', () => {
-    it('does not register a Trigger.dev scheduled cron task', () => {
-      expect(schedulesTaskMock).not.toHaveBeenCalled();
-    });
-
     it('should handle existing sync token correctly', async () => {
       const { getSyncToken } = await import('../src/google-calendar-sync.js');
 
