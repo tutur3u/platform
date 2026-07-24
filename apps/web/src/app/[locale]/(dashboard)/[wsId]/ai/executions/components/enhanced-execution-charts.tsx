@@ -578,7 +578,7 @@ export function EnhancedExecutionCharts({
                           stroke={colors.axis}
                           tick={{ fill: colors.axis, fontSize: 12 }}
                           tickFormatter={(value) =>
-                            new Date(value).toLocaleDateString()
+                            new Date(String(value)).toLocaleDateString()
                           }
                         />
                         <YAxis
@@ -615,7 +615,7 @@ export function EnhancedExecutionCharts({
                             ];
                           }}
                           labelFormatter={(value) =>
-                            new Date(value).toLocaleDateString()
+                            new Date(String(value)).toLocaleDateString()
                           }
                         />
                         <Legend />
@@ -736,7 +736,7 @@ export function EnhancedExecutionCharts({
                         stroke={colors.axis}
                         tick={{ fill: colors.axis, fontSize: 12 }}
                         tickFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <YAxis
@@ -771,7 +771,7 @@ export function EnhancedExecutionCharts({
                           ];
                         }}
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <Legend />
@@ -833,7 +833,7 @@ export function EnhancedExecutionCharts({
                         stroke={colors.axis}
                         tick={{ fill: colors.axis, fontSize: 12 }}
                         tickFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <YAxis
@@ -847,7 +847,7 @@ export function EnhancedExecutionCharts({
                           color: colors.tooltip.text,
                         }}
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <Legend />

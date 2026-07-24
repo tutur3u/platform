@@ -511,7 +511,7 @@ export function PerformanceMetrics({
                           stroke={colors.axis}
                           tick={{ fill: colors.axis, fontSize: 12 }}
                           tickFormatter={(value) =>
-                            new Date(value).toLocaleDateString()
+                            new Date(String(value)).toLocaleDateString()
                           }
                         />
                         <YAxis
@@ -548,7 +548,7 @@ export function PerformanceMetrics({
                             ];
                           }}
                           labelFormatter={(value) =>
-                            new Date(value).toLocaleDateString()
+                            new Date(String(value)).toLocaleDateString()
                           }
                         />
                         <Legend />
@@ -661,7 +661,7 @@ export function PerformanceMetrics({
                         stroke={colors.axis}
                         tick={{ fill: colors.axis, fontSize: 12 }}
                         tickFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <YAxis
@@ -698,7 +698,7 @@ export function PerformanceMetrics({
                           ];
                         }}
                         labelFormatter={(value) =>
-                          new Date(value).toLocaleDateString()
+                          new Date(String(value)).toLocaleDateString()
                         }
                       />
                       <Legend />

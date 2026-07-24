@@ -49,13 +49,13 @@ export function DatasetCharts({
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) => {
-                    return new Date(value).toLocaleDateString();
+                    return new Date(String(value)).toLocaleDateString();
                   }}
                 />
                 <YAxis />
                 <Tooltip
                   labelFormatter={(value) => {
-                    return new Date(value).toLocaleDateString();
+                    return new Date(String(value)).toLocaleDateString();
                   }}
                 />
                 <Line

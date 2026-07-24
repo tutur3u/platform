@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { execFileSync } = require('node:child_process');
+const { execFileSync, spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -802,7 +802,28 @@ test('Bun workflow helpers use bounded exponential backoff', () => {
   assert.match(setupScript, /delay=\$\(\(delay \* 2\)\)/);
   assert.match(retryScript, /CI_RETRY_MAX_ATTEMPTS/);
   assert.match(retryScript, /bun pm cache rm/);
+  assert.match(retryScript, /--minimum-release-age=0/);
   assert.match(retryScript, /delay=\$\(\(delay \* 2\)\)/);
+
+  const failedCommand = spawnSync(
+    'bash',
+    [
+      path.join(repoRoot, 'scripts', 'ci', 'run-with-backoff.sh'),
+      'bash',
+      '-c',
+      'exit 37',
+    ],
+    {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CI_RETRY_MAX_ATTEMPTS: '1',
+      },
+    }
+  );
+
+  assert.equal(failedCommand.status, 37);
+  assert.match(failedCommand.stderr, /exit code 37/);
 });
 
 test('secretless Turbo fallback caches are task-scoped and trusted-write only', () => {

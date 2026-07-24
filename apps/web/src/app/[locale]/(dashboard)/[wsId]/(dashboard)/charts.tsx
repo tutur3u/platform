@@ -54,7 +54,7 @@ export function HourlyTotalChart({
                 hour: 'numeric',
                 minute: 'numeric',
                 hour12: false,
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
           />
@@ -84,7 +84,7 @@ export function HourlyTotalChart({
                 hour: 'numeric',
                 minute: 'numeric',
                 hour12: false,
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             formatter={(value, name) => {
               return (
@@ -161,7 +161,7 @@ export function DailyTotalChart({
               return Intl.DateTimeFormat(locale, {
                 day: 'numeric',
                 month: locale === 'vi' ? 'numeric' : 'short',
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
           />
@@ -192,7 +192,7 @@ export function DailyTotalChart({
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             formatter={(value, name) => {
               return (
@@ -269,7 +269,7 @@ export function MonthlyTotalChart({
               return Intl.DateTimeFormat(locale, {
                 month: locale === 'vi' ? 'numeric' : 'short',
                 year: 'numeric',
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
           />
@@ -298,7 +298,7 @@ export function MonthlyTotalChart({
               return Intl.DateTimeFormat(locale, {
                 month: 'long',
                 year: 'numeric',
-              }).format(new Date(value));
+              }).format(new Date(String(value)));
             }}
             formatter={(value, name) => {
               return (

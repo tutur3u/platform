@@ -322,11 +322,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
                         ]}
                         labelStyle={{ color: colors.tooltip.text }}
                       />
-                      <Legend
-                        stroke={colors.high}
-                        strokeDasharray="3 3"
-                        name={t('aurora.90_confidence_high')}
-                      />
+                      <Legend />
                       <Line
                         type="monotone"
                         dataKey={selectedModel}
