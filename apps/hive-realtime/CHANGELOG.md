@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.5.0...hive-realtime-v0.6.0) (2026-07-24)
+
+
+### Features
+
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.4.0...hive-realtime-v0.5.0) (2026-07-11)
 
 

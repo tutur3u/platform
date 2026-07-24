@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/apps-v0.10.0...apps-v0.11.0) (2026-07-24)
+
+
+### Features
+
+* **apps:** unify and redesign app catalog ([b679068](https://github.com/tutur3u/platform/commit/b679068339143a83b38610f363bec7f53ddc3706))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* open pay billing links in new tabs ([c6c565f](https://github.com/tutur3u/platform/commit/c6c565f56bc08252fce1a1b96aed9c22b778b11c))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/apps-v0.9.0...apps-v0.10.0) (2026-07-21)
 
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/internal-api-v0.20.0...internal-api-v0.21.0) (2026-07-24)
+
+
+### Features
+
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **inventory:** authorize admin POS fallback ([9ba0fbc](https://github.com/tutur3u/platform/commit/9ba0fbc6765913a83b5ba1a5b1709a608eb7f46c))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **web:** repair Mira model picker routing ([5ad8a23](https://github.com/tutur3u/platform/commit/5ad8a231c5b9e3e955ec0deee0bc5ef5c9056868))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/internal-api-v0.19.0...internal-api-v0.20.0) (2026-07-21)
 
 

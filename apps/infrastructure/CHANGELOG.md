@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/infra-v0.10.0...infra-v0.11.0) (2026-07-24)
+
+
+### Features
+
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **e2e:** follow satellite route ownership ([591190c](https://github.com/tutur3u/platform/commit/591190cd24aa15ba6cde1eb17a98409a461e0201))
+* **infrastructure:** authorize external app registry sessions ([a09e8f7](https://github.com/tutur3u/platform/commit/a09e8f7a3290bdd814c0dddbbd9b6771db5f6ef0))
+* **infrastructure:** freeze Vercel dependency installs ([96cd10c](https://github.com/tutur3u/platform/commit/96cd10cd0f59d32a4ed1570944d469cfb3418393))
+* **infrastructure:** guard whitelist request rendering ([a84acac](https://github.com/tutur3u/platform/commit/a84acacbb1de012293f76ab2cf60fd014e89478c))
+* **infrastructure:** own admin APIs and paginate models ([a73514c](https://github.com/tutur3u/platform/commit/a73514cbdac132a9bd05f69979cd48561a223ee0))
+* **infrastructure:** own AI credit admin APIs ([4606857](https://github.com/tutur3u/platform/commit/46068572bb741155973a7602e21026b8e8beb02b))
+* **infrastructure:** pin Vercel Bun installer ([2dcaef0](https://github.com/tutur3u/platform/commit/2dcaef0dd6d87a89ebef87b34368ba926d949b50))
+* **infrastructure:** restore production builds ([a9adc4a](https://github.com/tutur3u/platform/commit/a9adc4adc728114d7153511e77dbfddd58714700))
+* **infrastructure:** use satellite database runtime ([ee4044e](https://github.com/tutur3u/platform/commit/ee4044edada1b69615e2cb62765e81c51c315d2e))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **security:** enforce infrastructure workspace permissions ([00b469c](https://github.com/tutur3u/platform/commit/00b469c2345e9f13cf44ed27322e6536eaa90faa))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/infra-v0.9.0...infra-v0.10.0) (2026-07-21)
 
 
