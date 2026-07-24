@@ -59,6 +59,7 @@ describe('satellite workspace settings panels', () => {
       );
 
       expect(source, app).toContain('<SettingsWorkspaceBreadcrumb');
+      expect(source, app).toContain(`appId="${app}"`);
       expect(source, app).toContain('activeGroupBreadcrumb=');
     }
 
@@ -70,6 +71,6 @@ describe('satellite workspace settings panels', () => {
       'utf8'
     );
     expect(breadcrumbSource).toContain('popoverModal');
-    expect(breadcrumbSource).toContain('settingsDialog=open');
+    expect(breadcrumbSource).toContain('resolveSatelliteSettingsWorkspacePath');
   });
 });

@@ -270,8 +270,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Handle authenticated users accessing the root path or root with locale
-  // Redirect to their default workspace's boards page
+  // Handle authenticated users accessing the root path or root with locale.
+  // Rewrite to the task entrypoint so its board resolution can issue the only
+  // visible redirect, directly to the user's canonical board URL.
   const isRootPath = req.nextUrl.pathname === '/';
   const isLocaleRootPath =
     pathSegments.length === 1 &&
@@ -305,18 +306,21 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             : defaultWorkspace.id === ROOT_WORKSPACE_ID
               ? 'internal'
               : defaultWorkspace.id;
-          const redirectUrl = new URL(`/${target}/tasks`, req.nextUrl);
-          const wsRedirect = NextResponse.redirect(redirectUrl);
-          propagateAuthCookies(authRes, wsRedirect);
-          return wsRedirect;
+          const entrypointUrl = new URL(`/${target}/tasks`, req.nextUrl);
+          entrypointUrl.search = req.nextUrl.search;
+          const wsRewrite = NextResponse.rewrite(entrypointUrl);
+          propagateAuthCookies(authRes, wsRewrite);
+          return wsRewrite;
         }
       }
 
-      // Default: redirect to personal tasks
-      const redirectUrl = new URL('/personal/tasks', req.nextUrl);
-      const fallbackRedirect = NextResponse.redirect(redirectUrl);
-      propagateAuthCookies(authRes, fallbackRedirect);
-      return fallbackRedirect;
+      // Default: resolve the personal task board without exposing the
+      // intermediate /personal/tasks entrypoint in the browser.
+      const entrypointUrl = new URL('/personal/tasks', req.nextUrl);
+      entrypointUrl.search = req.nextUrl.search;
+      const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
+      propagateAuthCookies(authRes, fallbackRewrite);
+      return fallbackRewrite;
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }

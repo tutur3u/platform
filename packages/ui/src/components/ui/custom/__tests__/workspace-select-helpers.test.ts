@@ -88,6 +88,18 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
 });
 
 describe('normalizeWorkspaceSwitchPath', () => {
+  it('lands on tasks when switching workspace from a canonical task board detail route', () => {
+    expect(
+      normalizeWorkspaceSwitchPath('/personal/boards/board-1', 'personal')
+    ).toBe('/personal/tasks');
+  });
+
+  it('lands on tasks when switching workspace from the canonical task boards index', () => {
+    expect(normalizeWorkspaceSwitchPath('/personal/boards', 'personal')).toBe(
+      '/personal/tasks'
+    );
+  });
+
   it('lands on tasks when switching workspace from a task board detail route', () => {
     expect(
       normalizeWorkspaceSwitchPath('/personal/tasks/boards/board-1', 'personal')

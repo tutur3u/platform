@@ -2,13 +2,17 @@
 
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { fetchSatelliteWorkspaces } from '../../utils/workspace-actions';
+import { resolveSatelliteSettingsWorkspacePath } from './settings-workspace-navigation';
 
 export function SettingsWorkspaceBreadcrumb({
   activeTab,
+  appId,
   wsId,
 }: {
   activeTab: string;
+  appId: LaunchableAppSlug;
   wsId: string;
 }) {
   return (
@@ -18,7 +22,7 @@ export function SettingsWorkspaceBreadcrumb({
       fetchWorkspaces={fetchSatelliteWorkspaces}
       popoverModal
       resolveNextPathname={({ nextSlug }) =>
-        `/${nextSlug}?settingsDialog=open&settingsTab=${encodeURIComponent(activeTab)}`
+        resolveSatelliteSettingsWorkspacePath({ activeTab, appId, nextSlug })
       }
       showTierBadges={false}
       standalone

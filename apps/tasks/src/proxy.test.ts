@@ -209,7 +209,7 @@ describe('Tasks proxy auth mode', () => {
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
-  it('redirects Supabase-authenticated root requests to personal tasks', async () => {
+  it('rewrites Supabase-authenticated root requests to the personal task entrypoint', async () => {
     const authRequestHeaders = new Headers({
       cookie: 'sb-test-auth-token=shared',
     });
@@ -221,7 +221,8 @@ describe('Tasks proxy auth mode', () => {
 
     const response = await proxy(request);
 
-    expect(response.headers.get('location')).toBe(
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
       'https://tasks.tuturuuu.com/personal/tasks'
     );
     expect(mocks.withForwardedInternalApiAuth).toHaveBeenCalledWith(
@@ -234,6 +235,31 @@ describe('Tasks proxy auth mode', () => {
           authorization: 'Bearer satellite-session',
         }),
       })
+    );
+  });
+
+  it('rewrites root requests to the configured default workspace task entrypoint', async () => {
+    const authRequestHeaders = new Headers({
+      cookie: 'sb-test-auth-token=shared',
+    });
+    mocks.getRequestHeadersWithResponseCookies.mockReturnValue(
+      authRequestHeaders
+    );
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
+    mocks.getUserConfig.mockResolvedValueOnce({ value: 'true' });
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValueOnce({
+      id: 'workspace-1',
+      personal: false,
+    });
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.com/?settingsDialog=open'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://tasks.tuturuuu.com/workspace-1/tasks?settingsDialog=open'
     );
   });
 });

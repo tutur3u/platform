@@ -23,11 +23,13 @@ export function normalizeWorkspaceSwitchPath(
   pathname: string,
   nextSlug: string
 ) {
-  const taskBoardsPath = `/${nextSlug}/tasks/boards`;
+  const taskBoardPaths = [`/${nextSlug}/boards`, `/${nextSlug}/tasks/boards`];
 
   if (
-    pathname === taskBoardsPath ||
-    pathname.startsWith(`${taskBoardsPath}/`)
+    taskBoardPaths.some(
+      (taskBoardsPath) =>
+        pathname === taskBoardsPath || pathname.startsWith(`${taskBoardsPath}/`)
+    )
   ) {
     return `/${nextSlug}/tasks`;
   }

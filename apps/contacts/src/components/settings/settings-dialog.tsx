@@ -209,7 +209,11 @@ export function SettingsDialog({
     <SettingsDialogShell
       activeGroupBreadcrumb={
         wsId && activeTab.startsWith('workspace_') ? (
-          <SettingsWorkspaceBreadcrumb activeTab={activeTab} wsId={wsId} />
+          <SettingsWorkspaceBreadcrumb
+            activeTab={activeTab}
+            appId="contacts"
+            wsId={wsId}
+          />
         ) : undefined
       }
       activeTab={activeTab}
