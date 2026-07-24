@@ -22,7 +22,7 @@ import {
 const utilityRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/security`,
-    heading: 'Your Security is Our Top Priority',
+    heading: 'Every layer, secured',
   },
   {
     path: `/${DEFAULT_LOCALE}/security/policy`,

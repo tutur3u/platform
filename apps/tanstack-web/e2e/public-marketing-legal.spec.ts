@@ -54,7 +54,7 @@ test.describe('Public migrated legal routes', () => {
         page.getByRole('heading', { name: route.summaryHeading }).first()
       ).toBeVisible();
       await expect(
-        page.getByText('Effective Date: February 6, 2026').first()
+        page.getByText('Effective February 6, 2026').first()
       ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });

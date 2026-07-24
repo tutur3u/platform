@@ -33,7 +33,7 @@ const staticRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/blog`,
-    heading: 'Insights & Innovation',
+    heading: 'Coming, not yet',
   },
   {
     path: `/${DEFAULT_LOCALE}/branding`,
@@ -53,7 +53,7 @@ const staticRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/contributors`,
-    heading: 'Meet Our Contributors',
+    heading: 'Built in the open',
   },
   {
     path: `/${DEFAULT_LOCALE}/models`,
@@ -61,7 +61,7 @@ const staticRoutes = [
   },
   {
     path: `/${DEFAULT_LOCALE}/partners`,
-    heading: 'Our Partners',
+    heading: 'Better together',
   },
   {
     path: `/${DEFAULT_LOCALE}/women-in-tech`,
