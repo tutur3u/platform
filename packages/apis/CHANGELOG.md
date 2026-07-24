@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/apis-v0.9.2...apis-v0.10.0) (2026-07-24)
+
+
+### Features
+
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* **workspaces:** repair shared member administration ([8a1515b](https://github.com/tutur3u/platform/commit/8a1515ba970adbe690b9d92f77a447adb93c339f))
+
 ## [0.9.2](https://github.com/tutur3u/platform/compare/apis-v0.9.1...apis-v0.9.2) (2026-07-21)
 
 

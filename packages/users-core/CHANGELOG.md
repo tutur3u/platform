@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/users-core-v0.4.2...users-core-v0.5.0) (2026-07-24)
+
+
+### Features
+
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/users-core-v0.4.1...users-core-v0.4.2) (2026-07-21)
 
 

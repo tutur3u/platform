@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.5.0...inventory-core-v0.6.0) (2026-07-24)
+
+
+### Features
+
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** repair storefront removal rollout ([cb5828b](https://github.com/tutur3u/platform/commit/cb5828bc3cc16ba2cf1b823e8af0841c6f663e8f))
+* **storefront:** show uploaded bundle images ([beff755](https://github.com/tutur3u/platform/commit/beff75501d8b6ecd54aa3f62b55fc3cbed269279))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.4.0...inventory-core-v0.5.0) (2026-07-21)
 
 

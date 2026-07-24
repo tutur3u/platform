@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/ai-v0.3.0...ai-v0.4.0) (2026-07-24)
+
+
+### Features
+
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* **ai:** repair Mira reasoning streams ([c04386a](https://github.com/tutur3u/platform/commit/c04386a9742c85d0af149d27850d7e6c591a54bc))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/ai-v0.2.2...ai-v0.3.0) (2026-07-21)
 
 
