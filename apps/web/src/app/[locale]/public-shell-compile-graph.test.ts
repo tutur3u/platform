@@ -209,9 +209,15 @@ const uiDocsOverviewIconBoundarySources = [
 ] as const;
 const uiDocsComponentsIconBoundarySources = [
   source('src/app/[locale]/ui/component-index-card.tsx'),
-  source('src/app/[locale]/ui/docs-navigation.tsx'),
+  source('src/app/[locale]/ui/docs-prev-next-pager.tsx'),
   source('src/app/[locale]/ui/ui-docs-command-trigger.tsx'),
 ] as const;
+const uiDocsServerNavigationSource = source(
+  'src/app/[locale]/ui/docs-navigation.tsx'
+);
+const uiDocsPrevNextPagerSource = source(
+  'src/app/[locale]/ui/docs-prev-next-pager.tsx'
+);
 const uiDocsComponentPreviewSource = source(
   'src/app/[locale]/ui/component-preview.tsx'
 );
@@ -587,6 +593,22 @@ describe('public shell compile graph', () => {
       );
       expect(sourceText).toContain('@tuturuuu/icons/lucide-static');
     }
+  });
+
+  it('keeps the UI docs pager UI behind a client boundary', () => {
+    expect(uiDocsServerNavigationSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/button')
+    );
+    expect(uiDocsServerNavigationSource).not.toMatch(
+      staticImportPattern('@tuturuuu/ui/separator')
+    );
+    expect(uiDocsPrevNextPagerSource).toMatch(/^'use client';/u);
+    expect(uiDocsPrevNextPagerSource).toMatch(
+      staticImportPattern('@tuturuuu/ui/button')
+    );
+    expect(uiDocsPrevNextPagerSource).toMatch(
+      staticImportPattern('@tuturuuu/ui/separator')
+    );
   });
 
   it('keeps UI docs live previews out of the server-rendered detail route', () => {
