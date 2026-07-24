@@ -96,7 +96,15 @@ const changelogComponentSources = [
   'src/app/[locale]/(marketing)/changelog/components/changelog-chrome.tsx',
   'src/app/[locale]/(marketing)/changelog/components/changelog-data.ts',
   'src/app/[locale]/(marketing)/changelog/components/changelog-sections.tsx',
+  'src/app/[locale]/(marketing)/changelog/components/release-feed.tsx',
+  'src/app/[locale]/(marketing)/changelog/components/release-filters.tsx',
+  'src/app/[locale]/(marketing)/changelog/components/release-pagination.tsx',
+  'src/app/[locale]/(marketing)/changelog/components/release-styles.ts',
+  'src/app/[locale]/(marketing)/changelog/components/releases-section.tsx',
 ].map(source);
+const githubReleasesSource = source(
+  'src/app/[locale]/(marketing)/changelog/components/github-releases.ts'
+);
 const sharedButtonSource = source(
   '../../packages/ui/src/components/ui/button.tsx'
 );
@@ -342,6 +350,14 @@ describe('public shell compile graph', () => {
     for (const sourceText of changelogComponentSources) {
       expect(sourceText).not.toMatch(/(?:bg|text|border)-dynamic-\$\{/u);
     }
+  });
+
+  // The GitHub release feed must stay cached. Fetching it per request would
+  // spend the repository's unauthenticated quota (sixty calls an hour, shared
+  // across every visitor) within minutes of any real traffic.
+  it('caches the GitHub release feed rather than fetching it per visit', () => {
+    expect(githubReleasesSource).toContain('next: { revalidate: 3600 }');
+    expect(githubReleasesSource).not.toContain("cache: 'no-store'");
   });
 
   it('marks the shared Radix-backed button as a client boundary', () => {

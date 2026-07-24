@@ -11,7 +11,6 @@ import {
   type ChangelogEntry,
   categoryKeys,
   groupByMonth,
-  summarise,
 } from './components/changelog-data';
 import {
   type ChangelogCopy,
@@ -19,33 +18,65 @@ import {
   LatestRelease,
   ReleaseTimeline,
 } from './components/changelog-sections';
+import {
+  type ChangeType,
+  changeTypes,
+  getReleaseFeed,
+} from './components/github-releases';
+import type { ReleaseFeedLabels } from './components/release-feed';
+import type { ReleaseFilterLabels } from './components/release-filters';
+import {
+  packageFacets,
+  parseQuery,
+  type RawSearchParams,
+  type ReleaseSort,
+  SORTS,
+  typeFacets,
+} from './components/release-query';
+import { ReleasesSection } from './components/releases-section';
 
 export const generateMetadata = createMarketingMetadata({
   title: 'Product Changelog',
   description:
-    'Stay up to date with the latest features, improvements, and updates to the Tuturuuu platform.',
+    'Every Tuturuuu release, filterable by package, change type and version — plus the product updates behind them.',
   pathname: '/changelog',
 });
 
 /**
- * The changelog index, rebuilt as a release timeline on the marketing kit.
+ * The changelog: curated product updates, then the full platform release feed.
  *
- * What changed beyond the surface: the page used to promote, per month, the
- * first entry that happened to carry a cover image — so hierarchy tracked
- * whether someone uploaded a picture rather than what shipped. Now exactly one
- * entry is promoted (the newest, which is a fact) and the rest run down a dated
- * spine. The category table it shared with the entry page is one module, and
- * both the category names and the summary labels come from the message bundle
- * instead of being hardcoded English inside a translated page.
+ * Two sources, deliberately kept apart rather than merged. The curated entries
+ * are authored in the infrastructure CMS and are the human account of what
+ * shipped. The release feed is read from GitHub, where Release Please cuts one
+ * release per package per train — hundreds of entries that would bury the
+ * editorial ones if they shared a list, but which are exactly what you want
+ * when the question is "when did that fix land in `tasks`".
+ *
+ * The GitHub response is cached for an hour and filtered on the server, so a
+ * visitor costs no GitHub quota and receives one page of results.
  */
-export default async function ChangelogPage() {
+export default async function ChangelogPage({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>;
+}) {
   const t = await getTranslations('changelog-page');
   const locale = await getLocale();
-  const entries = await getChangelogs();
+  const params = await searchParams;
+  const query = parseQuery(params);
+
+  const [entries, feed] = await Promise.all([
+    getChangelogs(),
+    getReleaseFeed(),
+  ]);
 
   const categoryLabels: CategoryLabels = Object.fromEntries(
     categoryKeys.map((key) => [key, t(`categories.${key}`)])
   );
+
+  const typeLabels = Object.fromEntries(
+    changeTypes.map((type) => [type, t(`type_${type}`)])
+  ) as Record<ChangeType, string>;
 
   const copy: ChangelogCopy = {
     categoryLabels,
@@ -56,29 +87,79 @@ export default async function ChangelogPage() {
   };
 
   const [latest, ...earlier] = entries;
-  const allMonths = groupByMonth(entries, locale);
   const earlierMonths = groupByMonth(earlier, locale);
 
-  const stats = summarise(entries, allMonths.length, {
-    releases: t('stat_releases'),
-    months: t('stat_months'),
-    types: t('stat_types'),
-    version: t('stat_version'),
-  });
+  const facets = typeFacets(feed.releases);
+  const countFor = (type: ChangeType) =>
+    facets.find((facet) => facet.value === type)?.count ?? 0;
+
+  const stats = [
+    {
+      value: String(feed.releases.length),
+      label: t('stat_releases'),
+      tone: 'purple' as const,
+    },
+    {
+      value: String(packageFacets(feed.releases).length),
+      label: t('stat_packages'),
+      tone: 'blue' as const,
+    },
+    {
+      value: String(countFor('features')),
+      label: t('stat_features'),
+      tone: 'green' as const,
+    },
+    {
+      value: String(countFor('fixes')),
+      label: t('stat_fixes'),
+      tone: 'orange' as const,
+    },
+  ];
+
+  const filterLabels: ReleaseFilterLabels = {
+    allPackages: t('all_packages'),
+    packageLabel: t('package_label'),
+    reset: t('reset_filters'),
+    searchLabel: t('search_label'),
+    searchPlaceholder: t('search_placeholder'),
+    sortLabel: t('sort_label'),
+    sortOptions: Object.fromEntries(
+      SORTS.map((sort) => [sort, t(`sort_${sort}`)])
+    ) as Record<ReleaseSort, string>,
+    typeLabels,
+    typesLabel: t('types_label'),
+  };
+
+  const feedLabels: ReleaseFeedLabels = {
+    changes: t('changes'),
+    locale,
+    more: (count: number) => t('more_changes', { count }),
+    noResults: t('no_results'),
+    noResultsDescription: t('no_results_description'),
+    typeLabels,
+    unavailable: t('releases_unavailable'),
+    unavailableDescription: t('releases_unavailable_description'),
+    viewOnGithub: t('view_on_github'),
+  };
 
   return (
     <main className="relative w-full overflow-x-hidden">
       <PageHero
         accent="purple"
         actions={
-          <ActionLink
-            external
-            href="https://github.com/tutur3u/platform"
-            variant="ghost"
-          >
-            {t('cta_button')}
-            <ArrowRight className="h-4 w-4" />
-          </ActionLink>
+          <>
+            <ActionLink href="#releases">
+              {t('browse_releases')}
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </ActionLink>
+            <ActionLink
+              external
+              href="https://github.com/tutur3u/platform/releases"
+              variant="ghost"
+            >
+              {t('cta_button')}
+            </ActionLink>
+          </>
         }
         description={t('hero_description')}
         eyebrow={t('badge')}
@@ -86,7 +167,9 @@ export default async function ChangelogPage() {
         highlight="Tuturuuu"
         title={t('hero_title')}
       >
-        {entries.length > 0 ? <StatStrip stats={stats} /> : null}
+        {feed.ok && feed.releases.length > 0 ? (
+          <StatStrip stats={stats} />
+        ) : null}
       </PageHero>
 
       {latest ? (
@@ -109,6 +192,23 @@ export default async function ChangelogPage() {
           title={t('no_updates')}
         />
       ) : null}
+
+      <ReleasesSection
+        eyebrow={t('releases_eyebrow')}
+        feed={feed}
+        feedLabels={feedLabels}
+        filterLabels={filterLabels}
+        paginationLabels={{
+          next: t('pagination_next'),
+          pageOf: ({ page, total }) => t('pagination_page', { page, total }),
+          previous: t('pagination_previous'),
+        }}
+        query={query}
+        resultsLabel={(count: number) => t('results_count', { count })}
+        subtitle={t('releases_description')}
+        title={t('releases_title')}
+        truncatedNote={feed.truncated ? t('truncated_note') : null}
+      />
 
       <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
         <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-foreground/10 bg-gradient-to-b from-foreground/[0.045] to-transparent px-6 py-14 text-center sm:px-10">
