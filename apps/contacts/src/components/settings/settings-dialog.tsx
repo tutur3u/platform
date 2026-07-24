@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  ClipboardList,
+  FileText,
   Keyboard,
   Paintbrush,
   PanelLeft,
@@ -32,6 +34,9 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
+import { ApprovalsSettings } from './approvals-settings';
+import AttendanceDisplaySettings from './attendance-display-settings';
+import { ReportDefaultTitleSettings } from './report-default-title-settings';
 import { DatabaseDefaultFiltersSettings } from './users/database-default-filters-settings';
 import FeaturedGroupsSettings from './users/featured-groups-settings';
 import { RequireAttentionColorSettings } from './users/require-attention-color-settings';
@@ -123,6 +128,37 @@ export function SettingsDialog({
                   'settings.user_management.require_attention_color_description'
                 ),
                 keywords: ['Users', 'Feedback', 'Attention', 'Color'],
+              },
+              {
+                name: 'approvals',
+                label: t('settings.approvals.title'),
+                icon: ClipboardList,
+                description: t('settings.approvals.description'),
+                keywords: ['Approvals', 'Posts', 'Reports'],
+              },
+            ],
+          },
+          {
+            label: t('settings.attendance.title'),
+            items: [
+              {
+                name: 'attendance_display',
+                label: t('settings.attendance.display'),
+                icon: ClipboardList,
+                description: t('settings.attendance.display_description'),
+                keywords: ['Attendance', 'Managers', 'Totals'],
+              },
+            ],
+          },
+          {
+            label: t('settings.reports.title'),
+            items: [
+              {
+                name: 'report_default_title',
+                label: t('settings.reports.default_title'),
+                icon: FileText,
+                description: t('settings.reports.default_title_description'),
+                keywords: ['Reports', 'Default title'],
               },
             ],
           },
@@ -217,6 +253,16 @@ export function SettingsDialog({
         <div className="h-full">
           <RequireAttentionColorSettings />
         </div>
+      )}
+
+      {activeTab === 'attendance_display' && wsId && (
+        <AttendanceDisplaySettings wsId={wsId} />
+      )}
+
+      {activeTab === 'approvals' && wsId && <ApprovalsSettings wsId={wsId} />}
+
+      {activeTab === 'report_default_title' && wsId && (
+        <ReportDefaultTitleSettings workspaceId={wsId} />
       )}
 
       {activeTab === 'profile' && user && (

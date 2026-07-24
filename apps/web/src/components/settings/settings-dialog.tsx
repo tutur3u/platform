@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { CalendarConnection, Workspace } from '@tuturuuu/types';
+import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
@@ -10,7 +10,6 @@ import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
 import { SettingsDialogContent } from './settings-dialog-content';
-import { preloadBoardSettingsPanel } from './settings-dialog-lazy-panels';
 import { buildSettingsNavItems } from './settings-dialog-nav-items';
 import {
   getSettingsDialogAvailability,
@@ -27,8 +26,6 @@ interface SettingsDialogProps {
   linkedProvider?: string;
 }
 
-const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
-
 function normalizeSettingsTab(tab: string) {
   return tab === 'sidebar' ? 'navigation' : tab;
 }
@@ -42,22 +39,6 @@ export function SettingsDialog({
   linkedProvider,
 }: SettingsDialogProps) {
   const t = useTranslations();
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    window.addEventListener(
-      BOARD_SETTINGS_PRELOAD_EVENT,
-      preloadBoardSettingsPanel
-    );
-
-    return () => {
-      window.removeEventListener(
-        BOARD_SETTINGS_PRELOAD_EVENT,
-        preloadBoardSettingsPanel
-      );
-    };
-  }, []);
 
   const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
   const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
@@ -128,26 +109,6 @@ export function SettingsDialog({
     normalizedDefaultTab,
   ]);
 
-  const { data: calendarConnections } = useQuery({
-    queryKey: ['calendar-connections', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return [];
-
-      const payload = await apiFetch<{
-        connections?: CalendarConnection[];
-      }>(`/api/v1/calendar/connections?wsId=${workspace.id}`, {
-        cache: 'no-store',
-      });
-
-      return payload.connections ?? [];
-    },
-    enabled: !!workspace?.id && activeTab === 'calendar_integrations',
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
   const navItems = buildSettingsNavItems({
     availability,
     boardId,
@@ -191,17 +152,13 @@ export function SettingsDialog({
       <SettingsDialogContent
         activeTab={activeTab}
         allowWorkspaceBasicsEdit={availability.allowWorkspaceBasicsEdit}
-        boardId={boardId}
-        calendarConnections={calendarConnections}
         canManageVersionBadge={canManageVersionBadge}
         canManageWorkspaceMembers={availability.canManageWorkspaceMembers}
         canManageWorkspaceRoles={availability.canManageWorkspaceRoles}
-        canManageWorkspaceSettings={availability.canManageWorkspaceSettings}
         hasBillingPermission={availability.hasBillingPermission}
         isLoadingWorkspace={isLoadingWorkspace}
         linkedProvider={linkedProvider}
         setActiveTab={setActiveTab}
-        t={t}
         user={user}
         workspace={workspace}
         workspaceError={workspaceError ?? null}

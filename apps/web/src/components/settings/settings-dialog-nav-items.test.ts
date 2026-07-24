@@ -83,7 +83,10 @@ describe('settings dialog nav items', () => {
 
     expect(names).toContain('workspace_members');
     expect(names).toContain('workspace_billing');
-    expect(names).toContain('workspace_reports');
+    expect(names).not.toContain('workspace_reports');
+    expect(names).not.toContain('tasks_general');
+    expect(names).not.toContain('calendar_general');
+    expect(names).not.toContain('finance_navigation');
     expect(names).toContain('usage');
     expect(names).toContain('integrations');
     expect(names).toContain('api_keys');

@@ -4,12 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { SettingsDialogNativeRoutePanels } from './settings-dialog-native-route-panels';
 
 const { adminTabs } = vi.hoisted(() => ({
-  adminTabs: new Set([
-    'api_keys',
-    'integrations',
-    'secrets',
-    'workspace_reports',
-  ]),
+  adminTabs: new Set(['api_keys', 'integrations', 'secrets']),
 }));
 
 vi.mock('./settings-dialog-native-admin-panels', () => ({
@@ -21,7 +16,7 @@ vi.mock('./settings-dialog-native-admin-panels', () => ({
 }));
 
 describe('SettingsDialogNativeRoutePanels', () => {
-  it.each(['integrations', 'api_keys', 'secrets', 'workspace_reports'])(
+  it.each(['integrations', 'api_keys', 'secrets'])(
     'renders a native panel for %s',
     (activeTab) => {
       render(

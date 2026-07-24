@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -55,22 +56,8 @@ export function ReportDefaultTitleSettings({ workspaceId }: Props) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (values: z.infer<typeof formSchema>) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${workspaceId}/settings/${configId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value: values.default_title.trim() }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error('Failed to update settings');
-      }
-
-      return res.json();
-    },
+    mutationFn: (values: z.infer<typeof formSchema>) =>
+      updateWorkspaceConfig(workspaceId, configId, values.default_title.trim()),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['workspace-config', workspaceId, configId],

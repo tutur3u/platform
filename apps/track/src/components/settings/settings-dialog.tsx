@@ -2,7 +2,12 @@
 
 import {
   CalendarDays,
+  ClipboardList,
+  Clock,
+  Coffee,
+  Goal,
   Keyboard,
+  LayoutGrid,
   Paintbrush,
   PanelLeft,
   User,
@@ -24,6 +29,11 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
+import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
+import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
+import { TimeTrackerGoalsSettings } from './time-tracker/time-tracker-goals-settings';
+import { TimeTrackerRequestsSettings } from './time-tracker/time-tracker-requests-settings';
+import { WorkspaceBreakTypesSettings } from './time-tracker/workspace-break-types-settings';
 
 interface SettingsDialogProps {
   wsId?: string;
@@ -45,6 +55,50 @@ export function SettingsDialog({
   );
 
   const navItems = [
+    ...(wsId
+      ? [
+          {
+            label: t('settings.time_tracker.title'),
+            items: [
+              {
+                name: 'time_tracker_general',
+                label: t('settings.time_tracker.general'),
+                icon: Clock,
+                description: t('settings.time_tracker.general_description'),
+                keywords: ['Time tracker', 'Sessions', 'Heatmap'],
+              },
+              {
+                name: 'time_tracker_categories',
+                label: t('settings.time_tracker.categories'),
+                icon: LayoutGrid,
+                description: t('settings.time_tracker.categories_description'),
+                keywords: ['Time tracker', 'Categories'],
+              },
+              {
+                name: 'time_tracker_goals',
+                label: t('settings.time_tracker.goals'),
+                icon: Goal,
+                description: t('settings.time_tracker.goals_description'),
+                keywords: ['Time tracker', 'Goals', 'Productivity'],
+              },
+              {
+                name: 'time_tracker_requests',
+                label: t('settings.time_tracker.requests'),
+                icon: ClipboardList,
+                description: t('settings.time_tracker.requests_description'),
+                keywords: ['Time tracker', 'Requests', 'Threshold'],
+              },
+              {
+                name: 'break_types',
+                label: t('settings.time_tracker.break_types'),
+                icon: Coffee,
+                description: t('settings.time_tracker.break_types_description'),
+                keywords: ['Time tracker', 'Breaks'],
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: t('settings.calendar.title'),
       items: [
@@ -117,6 +171,21 @@ export function SettingsDialog({
         user={user}
         wsId={wsId}
       />
+      {activeTab === 'time_tracker_general' && wsId && (
+        <TimeTrackerGeneralSettings wsId={wsId} />
+      )}
+      {activeTab === 'time_tracker_categories' && wsId && (
+        <TimeTrackerCategoriesSettings wsId={wsId} />
+      )}
+      {activeTab === 'time_tracker_goals' && wsId && (
+        <TimeTrackerGoalsSettings wsId={wsId} />
+      )}
+      {activeTab === 'time_tracker_requests' && wsId && (
+        <TimeTrackerRequestsSettings wsId={wsId} canManageWorkspaceSettings />
+      )}
+      {activeTab === 'break_types' && wsId && (
+        <WorkspaceBreakTypesSettings wsId={wsId} />
+      )}
       {activeTab === 'calendar_general' && (
         <div className="h-full">
           <LunarCalendarSettings />

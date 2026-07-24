@@ -36,12 +36,6 @@ const lazyPanelsSource = readFileSync(
   resolveSourcePath('src/components/settings/settings-dialog-lazy-panels.tsx'),
   { encoding: 'utf8' }
 );
-const lazyCalendarPanelsSource = readFileSync(
-  resolveSourcePath(
-    'src/components/settings/settings-dialog-lazy-calendar-panels.tsx'
-  ),
-  { encoding: 'utf8' }
-);
 const nativeRoutePanelsSource = [
   'src/components/settings/settings-dialog-native-route-panels.tsx',
   'src/components/settings/settings-dialog-native-admin-panels.tsx',
@@ -53,7 +47,6 @@ const nativeRoutePanelsSource = [
 const registrySource = [
   'src/components/settings/settings-dialog-nav-core.ts',
   'src/components/settings/settings-dialog-nav-developer.ts',
-  'src/components/settings/settings-dialog-nav-domain.ts',
   'src/components/settings/settings-dialog-nav-workspace.ts',
 ]
   .map((relativePath) =>
@@ -95,7 +88,6 @@ const formerRouteOnlyEntries = [
   'integrations',
   'secrets',
   'usage',
-  'workspace_reports',
 ] as const;
 
 describe('settings dialog compile graph', () => {
@@ -106,7 +98,6 @@ describe('settings dialog compile graph', () => {
       './account/security-settings',
       './account/session-settings',
       './appearance-settings',
-      './forms/forms-autosave-settings',
       './keyboard-shortcuts-settings',
       './sidebar-settings',
       './workspace/billing-settings',
@@ -123,7 +114,6 @@ describe('settings dialog compile graph', () => {
 
     for (const modulePath of [
       './settings-dialog-profile-panel',
-      './settings-dialog-task-general-panel',
       './settings-dialog-workspace-panels',
       './settings-dialog-native-route-panels',
     ]) {
@@ -135,24 +125,20 @@ describe('settings dialog compile graph', () => {
       );
       expect(lazyPanelsSource).toMatch(dynamicImportPattern(modulePath));
     }
+  });
 
-    for (const modulePath of [
-      '@tuturuuu/ui/calendar-app/components/calendar-connections-unified',
-      '@tuturuuu/ui/custom/settings/lunar-calendar-settings',
-      '@tuturuuu/ui/hooks/use-calendar-sync',
-      './calendar/calendar-settings-content',
-      './calendar/calendar-settings-layout',
-      './calendar/calendar-settings-wrapper',
+  it('does not compile settings owned by satellite apps', () => {
+    for (const ownedSetting of [
+      'FormsAutosaveSettings',
+      'TaskGeneralSettingsPanel',
+      'GoogleCalendarSettings',
+      'TimeTrackerGeneralSettings',
+      'FinanceNavigationSettings',
+      'AttendanceDisplaySettings',
     ]) {
-      expect(settingsDialogRuntimeSource).not.toMatch(
-        staticImportPattern(modulePath)
-      );
-      expect(settingsDialogContentRuntimeSource).not.toMatch(
-        staticImportPattern(modulePath)
-      );
-      expect(lazyCalendarPanelsSource).toMatch(
-        dynamicImportPattern(modulePath)
-      );
+      expect(settingsDialogContentSource).not.toContain(ownedSetting);
+      expect(lazyPanelsSource).not.toContain(ownedSetting);
+      expect(registrySource).not.toContain(ownedSetting);
     }
   });
 

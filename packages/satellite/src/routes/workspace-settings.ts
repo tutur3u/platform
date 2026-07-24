@@ -3,7 +3,10 @@ import {
   AiCreditsStatusError,
   getAiCreditsStatus,
 } from '@tuturuuu/payment-core/ai-credits-helper';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createDynamicAdminClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   MAX_ID_LENGTH,
   MAX_WORKSPACE_NAME_LENGTH,
@@ -21,6 +24,13 @@ const RESERVED_WORKSPACE_HANDLES = new Set([
   'login',
   'onboarding',
   'personal',
+]);
+const WORKSPACE_AVATAR_EXTENSIONS = new Set([
+  'gif',
+  'jpeg',
+  'jpg',
+  'png',
+  'webp',
 ]);
 
 async function authorizeWorkspaceRequest(
@@ -90,7 +100,7 @@ export function createSatelliteWorkspaceRouteHandlers(
       const name = typeof payload?.name === 'string' ? payload.name.trim() : '';
       const handle =
         typeof payload?.handle === 'string'
-          ? payload.handle.trim().toLowerCase()
+          ? payload.handle.trim().toLowerCase() || undefined
           : undefined;
 
       if (!name || name.length > MAX_WORKSPACE_NAME_LENGTH) {
@@ -102,8 +112,7 @@ export function createSatelliteWorkspaceRouteHandlers(
 
       if (
         handle !== undefined &&
-        (!handle ||
-          handle.length > MAX_ID_LENGTH ||
+        (handle.length > MAX_ID_LENGTH ||
           !WORKSPACE_HANDLE_PATTERN.test(handle) ||
           RESERVED_WORKSPACE_HANDLES.has(handle))
       ) {
@@ -130,7 +139,7 @@ export function createSatelliteWorkspaceRouteHandlers(
       const { data, error } = await sbAdmin
         .from('workspaces')
         .update({
-          handle: workspace.personal ? undefined : handle,
+          ...(workspace.personal || handle === undefined ? {} : { handle }),
           name,
         })
         .eq('id', authorization.permissions.wsId)
@@ -160,6 +169,199 @@ export function createSatelliteWorkspaceRouteHandlers(
 
       return NextResponse.json({ message: 'success' });
     },
+  };
+}
+
+function extractWorkspaceAvatarPath(avatarUrl: string | null | undefined) {
+  if (!avatarUrl) return null;
+
+  try {
+    const url = new URL(avatarUrl);
+    return url.pathname.split('/avatars/')[1] || null;
+  } catch {
+    return null;
+  }
+}
+
+function hasWorkspaceSettingsPermission(
+  authorization: Awaited<ReturnType<typeof authorizeWorkspaceRequest>>
+) {
+  return Boolean(
+    authorization?.permissions.containsPermission('manage_workspace_settings')
+  );
+}
+
+export function createSatelliteWorkspaceAvatarRouteHandlers(
+  targetApp: AppSessionTargetApp
+) {
+  return {
+    async PATCH(request: Request, { params }: RouteContext) {
+      const { wsId } = await params;
+      const authorization = await authorizeWorkspaceRequest(targetApp, wsId);
+      if (!authorization) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+      if (!hasWorkspaceSettingsPermission(authorization)) {
+        return NextResponse.json(
+          { message: 'Insufficient permissions to update workspace' },
+          { status: 403 }
+        );
+      }
+
+      const payload = await request.json().catch(() => null);
+      const filePath =
+        typeof payload?.filePath === 'string' ? payload.filePath.trim() : '';
+      const workspacePath = `workspaces/${authorization.permissions.wsId}/`;
+      if (!filePath?.startsWith(workspacePath)) {
+        return NextResponse.json(
+          { message: 'Invalid file path' },
+          { status: 400 }
+        );
+      }
+
+      const sbAdmin = await createAdminClient({ noCookie: true });
+      const { data: publicUrlData } = sbAdmin.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      const { error } = await sbAdmin
+        .from('workspaces')
+        .update({ avatar_url: publicUrlData.publicUrl })
+        .eq('id', authorization.permissions.wsId);
+
+      if (error) {
+        console.error('Failed to update satellite workspace avatar:', error);
+        return NextResponse.json(
+          { message: 'Error updating workspace avatar' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        avatarUrl: publicUrlData.publicUrl,
+        success: true,
+      });
+    },
+
+    async DELETE(_request: Request, { params }: RouteContext) {
+      const { wsId } = await params;
+      const authorization = await authorizeWorkspaceRequest(targetApp, wsId);
+      if (!authorization) {
+        return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      }
+      if (!hasWorkspaceSettingsPermission(authorization)) {
+        return NextResponse.json(
+          { message: 'Insufficient permissions to update workspace' },
+          { status: 403 }
+        );
+      }
+
+      const sbAdmin = await createAdminClient({ noCookie: true });
+      const { data: workspace, error: workspaceError } = await sbAdmin
+        .from('workspaces')
+        .select('avatar_url')
+        .eq('id', authorization.permissions.wsId)
+        .single();
+
+      if (workspaceError || !workspace) {
+        return NextResponse.json(
+          { message: 'Workspace not found' },
+          { status: 404 }
+        );
+      }
+
+      const { error: updateError } = await sbAdmin
+        .from('workspaces')
+        .update({ avatar_url: null })
+        .eq('id', authorization.permissions.wsId);
+      if (updateError) {
+        console.error(
+          'Failed to remove satellite workspace avatar:',
+          updateError
+        );
+        return NextResponse.json(
+          { message: 'Error removing workspace avatar' },
+          { status: 500 }
+        );
+      }
+
+      const existingPath = extractWorkspaceAvatarPath(workspace.avatar_url);
+      if (existingPath) {
+        const { error: storageError } = await sbAdmin.storage
+          .from('avatars')
+          .remove([existingPath]);
+        if (storageError) {
+          console.warn(
+            'Failed to remove the previous satellite workspace avatar file:',
+            storageError
+          );
+        }
+      }
+
+      return NextResponse.json({ success: true });
+    },
+  };
+}
+
+export function createSatelliteWorkspaceAvatarUploadRouteHandler(
+  targetApp: AppSessionTargetApp
+) {
+  return async function POST(request: Request, { params }: RouteContext) {
+    const { wsId } = await params;
+    const authorization = await authorizeWorkspaceRequest(targetApp, wsId);
+    if (!authorization) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (!hasWorkspaceSettingsPermission(authorization)) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to update workspace' },
+        { status: 403 }
+      );
+    }
+
+    const payload = await request.json().catch(() => null);
+    const filename =
+      typeof payload?.filename === 'string' ? payload.filename.trim() : '';
+    const filenameParts = filename.split('.');
+    const fileExtension = filenameParts.at(-1)?.toLowerCase();
+    if (
+      filename.length < 3 ||
+      filename.includes('/') ||
+      filename.includes('\\') ||
+      filenameParts.length < 2 ||
+      !fileExtension ||
+      !WORKSPACE_AVATAR_EXTENSIONS.has(fileExtension)
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid avatar filename' },
+        { status: 400 }
+      );
+    }
+
+    const filePath = `workspaces/${authorization.permissions.wsId}/avatar-${Date.now()}.${fileExtension}`;
+    const sbStorageAdmin = await createDynamicAdminClient();
+    const { data, error } = await sbStorageAdmin.storage
+      .from('avatars')
+      .createSignedUploadUrl(filePath, { upsert: false });
+    if (error || !data) {
+      console.error(
+        'Failed to create satellite workspace avatar upload target:',
+        error
+      );
+      return NextResponse.json(
+        { message: 'Failed to generate upload URL' },
+        { status: 500 }
+      );
+    }
+
+    const { data: publicUrlData } = sbStorageAdmin.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+    return NextResponse.json({
+      filePath,
+      publicUrl: publicUrlData.publicUrl,
+      signedUrl: data.signedUrl,
+      token: data.token,
+    });
   };
 }
 

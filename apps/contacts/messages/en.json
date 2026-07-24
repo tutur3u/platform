@@ -3329,6 +3329,36 @@
     "search-placeholder": "Enter a keyword to search"
   },
   "settings": {
+    "approvals": {
+      "auto_approved_pending_toast": "{count, plural, one {Auto-approved # pending item} other {Auto-approved # pending items}} ({posts, plural, one {# post} other {# posts}}, {reports, plural, one {# report} other {# reports}}).",
+      "description": "Configure approval workflows for posts and reports",
+      "enable_post_approval": "Enable Post Approval",
+      "enable_post_approval_description": "When enabled, all posts in user groups will require approval from a person with adequate permissions.",
+      "enable_report_approval": "Enable Report Approval",
+      "enable_report_approval_description": "When enabled, all reports in user groups will require approval from a person with adequate permissions.",
+      "enable_report_export_only_approved": "Export approved reports only",
+      "enable_report_export_only_approved_description": "When enabled, report export actions are disabled until a report is approved.",
+      "enable_report_pending_watermark": "Show pending watermark on reports",
+      "enable_report_pending_watermark_description": "When enabled, pending reports display a visible watermark on the report preview page.",
+      "insufficient_permissions": "You do not have permission to manage approval settings.",
+      "pending_auto_approve_posts_count": "{count, plural, one {# pending post will be approved.} other {# pending posts will be approved.}}",
+      "pending_auto_approve_reports_count": "{count, plural, one {# pending report will be approved.} other {# pending reports will be approved.}}",
+      "pending_auto_approve_warning_description": "Turning off approval will immediately approve all currently pending items.",
+      "pending_auto_approve_warning_title": "Warning: pending items will be auto-approved",
+      "pending_auto_approve_warning_unknown": "Pending counts could not be loaded, but disabling approval may still auto-approve pending items.",
+      "permissions_load_error": "Failed to load approval settings permissions. Try again.",
+      "requires_report_approval_enabled": "This setting applies only when report approval is enabled.",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "title": "Approvals",
+      "update_error": "Failed to update approval settings",
+      "update_success": "Approval settings updated successfully"
+    },
+    "attendance": {
+      "display": "Display & Totals",
+      "display_description": "Configure which members appear in attendance views and count toward attendance totals",
+      "title": "Attendance"
+    },
     "back_to_app": "Back to app",
     "calendar": {
       "show_lunar_calendar": "Show Lunar Calendar",
@@ -3478,6 +3508,11 @@
       "sidebar_local_override": "Local Override",
       "sidebar_local_override_description": "Use a different sidebar setting for this browser only, instead of your account-wide preference.",
       "title": "Preferences"
+    },
+    "reports": {
+      "default_title": "Default Report Title",
+      "default_title_description": "Set the base title used when creating new reports",
+      "title": "Reports"
     },
     "search_settings_placeholder": "Search settings...",
     "tasks": {
@@ -9203,6 +9238,29 @@
     "user_id": "User ID",
     "user_id_tooltip": "The identification number of this user in your workspace. This is automatically managed by Tuturuuu, and cannot be changed.",
     "virtual_badge": "Virtual"
+  },
+  "ws-attendance-settings": {
+    "count_managers_help": "When enabled, managers are included in attendance totals on group list summaries. When disabled, those totals exclude group managers.",
+    "count_managers_label": "Count managers in attendance totals",
+    "display_description": "Configure how members are displayed and counted in attendance views",
+    "display_title": "Attendance Display",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "show_managers_help": "When enabled, managers (teachers) are shown in attendance lists. When disabled, only non-manager members are displayed.",
+    "show_managers_label": "Show Managers in Attendance",
+    "update_error": "Failed to update settings",
+    "update_success": "Settings updated successfully"
+  },
+  "ws-reports-settings": {
+    "default_title_help": "This value is used as the base title; the current month is added automatically.",
+    "default_title_label": "Report title",
+    "default_title_placeholder": "Monthly report",
+    "description": "Configure the base title used for new reports. The current month is appended automatically.",
+    "save": "Save",
+    "saving": "Saving...",
+    "title": "Default report title",
+    "update_error": "Failed to update report title",
+    "update_success": "Report title updated successfully"
   },
   "ws-wallets": {
     "add_role": "Add Role",

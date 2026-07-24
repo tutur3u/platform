@@ -3329,6 +3329,36 @@
     "search-placeholder": "Nhập từ khóa để tìm kiếm"
   },
   "settings": {
+    "approvals": {
+      "auto_approved_pending_toast": "Đã tự động phê duyệt {count, plural, one {# mục đang chờ} other {# mục đang chờ}} ({posts, plural, one {# bài viết} other {# bài viết}}, {reports, plural, one {# báo cáo} other {# báo cáo}}).",
+      "description": "Cấu hình quy trình phê duyệt cho bài viết và báo cáo",
+      "enable_post_approval": "Bật phê duyệt bài viết",
+      "enable_post_approval_description": "Khi được bật, tất cả bài viết trong nhóm người dùng sẽ yêu cầu sự phê duyệt từ người có quyền hạn phù hợp.",
+      "enable_report_approval": "Bật phê duyệt báo cáo",
+      "enable_report_approval_description": "Khi được bật, tất cả báo cáo trong nhóm người dùng sẽ yêu cầu sự phê duyệt từ người có quyền hạn phù hợp.",
+      "enable_report_export_only_approved": "Chỉ cho xuất báo cáo đã duyệt",
+      "enable_report_export_only_approved_description": "Khi bật, các thao tác xuất báo cáo sẽ bị vô hiệu cho đến khi báo cáo được phê duyệt.",
+      "enable_report_pending_watermark": "Hiển thị watermark cho báo cáo chờ duyệt",
+      "enable_report_pending_watermark_description": "Khi bật, báo cáo đang chờ duyệt sẽ hiển thị watermark rõ ràng trên trang xem trước báo cáo.",
+      "insufficient_permissions": "Bạn không có quyền quản lý cài đặt phê duyệt.",
+      "pending_auto_approve_posts_count": "{count, plural, one {# bài viết đang chờ sẽ được phê duyệt.} other {# bài viết đang chờ sẽ được phê duyệt.}}",
+      "pending_auto_approve_reports_count": "{count, plural, one {# báo cáo đang chờ sẽ được phê duyệt.} other {# báo cáo đang chờ sẽ được phê duyệt.}}",
+      "pending_auto_approve_warning_description": "Khi tắt phê duyệt, tất cả mục đang chờ hiện tại sẽ được phê duyệt ngay lập tức.",
+      "pending_auto_approve_warning_title": "Cảnh báo: các mục đang chờ sẽ được tự động phê duyệt",
+      "pending_auto_approve_warning_unknown": "Không thể tải số lượng mục đang chờ, nhưng việc tắt phê duyệt vẫn có thể tự động phê duyệt các mục đang chờ.",
+      "permissions_load_error": "Không thể tải quyền cho cài đặt phê duyệt. Vui lòng thử lại.",
+      "requires_report_approval_enabled": "Cài đặt này chỉ áp dụng khi phê duyệt báo cáo được bật.",
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "title": "Phê duyệt",
+      "update_error": "Không thể cập nhật cài đặt phê duyệt",
+      "update_success": "Cập nhật cài đặt phê duyệt thành công"
+    },
+    "attendance": {
+      "display": "Hiển thị & tổng số",
+      "display_description": "Cấu hình thành viên nào hiển thị trong điểm danh và được tính vào tổng điểm danh",
+      "title": "Điểm danh"
+    },
     "back_to_app": "Quay lại ứng dụng",
     "calendar": {
       "show_lunar_calendar": "Hiển thị Âm lịch",
@@ -3478,6 +3508,11 @@
       "sidebar_local_override": "Ghi đè cục bộ",
       "sidebar_local_override_description": "Sử dụng cài đặt thanh bên riêng cho trình duyệt này, thay vì tùy chọn chung của tài khoản.",
       "title": "Tùy chọn"
+    },
+    "reports": {
+      "default_title": "Tiêu đề báo cáo mặc định",
+      "default_title_description": "Đặt tiêu đề cơ bản khi tạo báo cáo mới",
+      "title": "Báo cáo"
     },
     "search_settings_placeholder": "Tìm cài đặt...",
     "tasks": {
@@ -9203,6 +9238,29 @@
     "user_id": "Mã người dùng",
     "user_id_tooltip": "Mã định danh của người dùng này trong không gian làm việc của bạn. Hệ thống Tuturuuu tự động quản lý và không thể thay đổi.",
     "virtual_badge": "Ảo"
+  },
+  "ws-attendance-settings": {
+    "count_managers_help": "Khi bật, quản lý được tính vào tổng điểm danh trong tóm tắt danh sách nhóm. Khi tắt, các tổng này không tính quản lý nhóm.",
+    "count_managers_label": "Tính quản lý vào tổng điểm danh",
+    "display_description": "Cấu hình cách hiển thị và tính thành viên trong giao diện điểm danh",
+    "display_title": "Hiển thị điểm danh",
+    "save": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "show_managers_help": "Khi bật, quản lý (giáo viên) sẽ được hiển thị trong danh sách điểm danh. Khi tắt, chỉ các thành viên không phải quản lý được hiển thị.",
+    "show_managers_label": "Hiển thị quản lý trong điểm danh",
+    "update_error": "Cập nhật cài đặt thất bại",
+    "update_success": "Cập nhật cài đặt thành công"
+  },
+  "ws-reports-settings": {
+    "default_title_help": "Giá trị này dùng làm tiêu đề cơ bản; tháng hiện tại sẽ được thêm tự động.",
+    "default_title_label": "Tiêu đề báo cáo",
+    "default_title_placeholder": "Báo cáo hàng tháng",
+    "description": "Cấu hình tiêu đề cơ bản cho báo cáo mới. Tháng hiện tại sẽ được thêm tự động.",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "title": "Tiêu đề báo cáo mặc định",
+    "update_error": "Không thể cập nhật tiêu đề báo cáo",
+    "update_success": "Đã cập nhật tiêu đề báo cáo"
   },
   "ws-wallets": {
     "add_role": "Thêm vai trò",

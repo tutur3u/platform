@@ -33,11 +33,16 @@ export function WorkspaceIdentityForm({
   }, [workspace.handle, workspace.name]);
 
   const mutation = useMutation({
-    mutationFn: () =>
-      updateWorkspace(workspace.id, {
-        handle: workspace.personal ? undefined : handle.trim().toLowerCase(),
+    mutationFn: () => {
+      const normalizedHandle = handle.trim().toLowerCase();
+      return updateWorkspace(workspace.id, {
+        handle:
+          workspace.personal || !normalizedHandle
+            ? undefined
+            : normalizedHandle,
         name: name.trim(),
-      }),
+      });
+    },
     onError: (error) => {
       toast.error(t('name_update_error'), {
         description: error instanceof Error ? error.message : undefined,
@@ -54,10 +59,13 @@ export function WorkspaceIdentityForm({
   const normalizedHandle = handle.trim().toLowerCase();
   const handleValid = workspace.personal
     ? true
-    : workspaceHandleSchema.safeParse(normalizedHandle).success;
+    : !normalizedHandle ||
+      workspaceHandleSchema.safeParse(normalizedHandle).success;
   const dirty =
     name.trim() !== (workspace.name ?? '') ||
-    (!workspace.personal && normalizedHandle !== (workspace.handle ?? ''));
+    (!workspace.personal &&
+      Boolean(normalizedHandle) &&
+      normalizedHandle !== (workspace.handle ?? ''));
 
   return (
     <div className="grid gap-5 rounded-2xl border bg-card/40 p-4 sm:p-5">

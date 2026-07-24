@@ -7,7 +7,7 @@ const settingsRoot = join(process.cwd(), 'src/components/settings');
 describe('promotions settings migration', () => {
   it('does not expose the legacy referral editor after Inventory takes ownership', () => {
     const navigation = readFileSync(
-      join(settingsRoot, 'settings-dialog-nav-domain.ts'),
+      join(settingsRoot, 'settings-dialog-nav-items.ts'),
       'utf8'
     );
     const content = readFileSync(

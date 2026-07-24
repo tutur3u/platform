@@ -13,15 +13,10 @@ import {
 import { listWorkspaceRoles } from '@tuturuuu/internal-api/settings';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import SecretForm from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/form';
 import { PeriodicReportDeliveryReadiness } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/secrets/periodic-report-delivery-readiness';
-import {
-  leadGenerationConfigs,
-  reportConfigs,
-} from '../../constants/configs/reports';
 import {
   NativeApiPreviewPanel,
   NativeMetricGrid,
@@ -47,7 +42,6 @@ export const WORKSPACE_ADMIN_NATIVE_TABS = new Set([
   'integrations',
   'secrets',
   'usage',
-  'workspace_reports',
 ]);
 
 export function WorkspaceAdminNativeSettingsPanels({
@@ -61,9 +55,6 @@ export function WorkspaceAdminNativeSettingsPanels({
       {activeTab === 'api_keys' && <ApiKeysNativePanel wsId={wsId} />}
       {activeTab === 'secrets' && <SecretsNativePanel wsId={wsId} />}
       {activeTab === 'usage' && <UsageNativePanel wsId={wsId} />}
-      {activeTab === 'workspace_reports' && (
-        <WorkspaceReportsNativePanel wsId={wsId} />
-      )}
       {activeTab === 'integrations' && <IntegrationsNativePanel />}
       {activeTab === 'inquiries' && <InquiriesNativePanel />}
     </NativePanelFrame>
@@ -251,24 +242,6 @@ function UsageNativePanel({ wsId }: { wsId: string }) {
           value: usageQuery.data.invitesDisabled ? 'Yes' : 'No',
         },
       ]}
-    />
-  );
-}
-
-function WorkspaceReportsNativePanel({ wsId }: { wsId: string }) {
-  const configs = [...reportConfigs, ...leadGenerationConfigs];
-  const ids = configs.map((config) => config.id).filter(Boolean) as string[];
-  const { data = {}, isLoading } = useWorkspaceConfigs(wsId, ids);
-
-  if (isLoading) return <NativePanelLoading />;
-
-  return (
-    <NativeSimpleTable
-      columns={['id', 'value']}
-      rows={configs.map((config) => ({
-        id: config.id,
-        value: data[config.id ?? ''] ?? config.defaultValue,
-      }))}
     />
   );
 }

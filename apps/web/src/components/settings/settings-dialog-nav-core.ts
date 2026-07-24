@@ -1,21 +1,12 @@
 import {
   Bell,
-  Bookmark,
-  Box,
   Brain,
-  CheckSquare,
-  ClipboardList,
   Compass,
-  FileText,
-  Goal,
-  KanbanSquare,
   Keyboard,
   Laptop,
   Paintbrush,
-  Share2,
   Shield,
   Sparkles,
-  Tags,
   User,
   Users,
 } from '@tuturuuu/icons';
@@ -23,8 +14,6 @@ import type { SettingsNavGroup } from '@tuturuuu/ui/custom/settings-dialog-shell
 import type { SettingsNavBuilderParams } from './settings-dialog-nav-types';
 
 export function buildCoreSettingsNavGroups({
-  availability,
-  boardId,
   t,
   wsId,
 }: SettingsNavBuilderParams): SettingsNavGroup[] {
@@ -98,81 +87,12 @@ export function buildCoreSettingsNavGroups({
           ],
         },
         {
-          name: 'forms',
-          label: t('settings.preferences.forms'),
-          icon: FileText,
-          description: t('settings.preferences.forms_description'),
-          keywords: ['Forms', 'Auto-save', 'Form builder'],
-        },
-        {
           name: 'keyboard_shortcuts',
           label: t('settings.preferences.keyboard_shortcuts'),
           icon: Keyboard,
           description: t('settings.preferences.keyboard_shortcuts_description'),
           keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
         },
-      ],
-    },
-    {
-      label: t('settings.tasks.title'),
-      items: [
-        ...(wsId && boardId
-          ? [
-              {
-                name: 'task_board',
-                label: t('settings.tasks.board'),
-                icon: KanbanSquare,
-                description: t('settings.tasks.board_description'),
-                keywords: ['Tasks', 'Board', 'Layout', 'Estimates', 'Logs'],
-              },
-            ]
-          : []),
-        {
-          name: 'tasks_general',
-          label: t('settings.tasks.general'),
-          icon: CheckSquare,
-          description: t('settings.tasks.general_description'),
-          keywords: ['Tasks', 'General', 'Review', 'Due date'],
-        },
-        {
-          name: 'task_share',
-          label: t('settings.tasks.share'),
-          icon: Share2,
-          description: t('settings.tasks.share_description'),
-          keywords: ['Tasks', 'Share', 'Guests', 'Access'],
-        },
-        ...(wsId
-          ? [
-              {
-                name: 'task_labels',
-                label: t('settings.tasks.labels'),
-                icon: Tags,
-                description: t('settings.tasks.labels_description'),
-                keywords: ['Tasks', 'Labels', 'Tags'],
-              },
-              {
-                name: 'task_projects',
-                label: t('settings.tasks.projects'),
-                icon: Box,
-                description: t('settings.tasks.projects_description'),
-                keywords: ['Tasks', 'Projects'],
-              },
-              {
-                name: 'task_initiatives',
-                label: t('settings.tasks.initiatives'),
-                icon: Goal,
-                description: t('settings.tasks.initiatives_description'),
-                keywords: ['Tasks', 'Initiatives'],
-              },
-              {
-                name: 'task_templates',
-                label: t('settings.tasks.templates'),
-                icon: Bookmark,
-                description: t('settings.tasks.templates_description'),
-                keywords: ['Tasks', 'Templates'],
-              },
-            ]
-          : []),
       ],
     },
     {
@@ -195,47 +115,6 @@ export function buildCoreSettingsNavGroups({
       ],
     },
   ];
-
-  if (!wsId) return groups;
-
-  groups.push({
-    label: t('settings.user_management.title'),
-    items: [
-      {
-        name: 'approvals',
-        label: t('settings.approvals.title'),
-        icon: ClipboardList,
-        description: t('settings.approvals.description'),
-        keywords: ['Approvals', 'Posts', 'Reports'],
-      },
-    ],
-  });
-
-  if (availability.canAccessReports) {
-    groups.push({
-      label: t('settings.reports.title'),
-      items: [
-        {
-          name: 'workspace_reports',
-          label: t('workspace-settings-layout.reports'),
-          icon: FileText,
-          keywords: [
-            'Reports',
-            'Templates',
-            'Report settings',
-            'Lead generation',
-          ],
-        },
-        {
-          name: 'report_default_title',
-          label: t('settings.reports.default_title'),
-          icon: FileText,
-          description: t('settings.reports.default_title_description'),
-          keywords: ['Reports', 'Templates', 'Title', 'Default'],
-        },
-      ],
-    });
-  }
 
   return groups;
 }

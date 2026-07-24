@@ -1,6 +1,12 @@
 'use client';
 
-import { Keyboard, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
+import {
+  FileText,
+  Keyboard,
+  Paintbrush,
+  PanelLeft,
+  User,
+} from '@tuturuuu/icons';
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteProfileSettingsPanel,
@@ -17,6 +23,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
+import { FormsAutosaveSettings } from './forms-autosave-settings';
 
 interface SettingsDialogProps {
   wsId?: string;
@@ -37,6 +44,18 @@ export function SettingsDialog({
   );
 
   const navItems = [
+    {
+      label: t('settings.preferences.forms'),
+      items: [
+        {
+          name: 'forms_autosave',
+          label: t('settings.preferences.forms_autosave'),
+          icon: FileText,
+          description: t('settings.preferences.forms_autosave_description'),
+          keywords: ['Forms', 'Auto-save', 'Drafts'],
+        },
+      ],
+    },
     ...(wsId ? [createWorkspaceSettingsNavGroup(t)] : []),
     {
       label: t('settings.user.title'),
@@ -96,6 +115,8 @@ export function SettingsDialog({
         user={user}
         wsId={wsId}
       />
+
+      {activeTab === 'forms_autosave' && <FormsAutosaveSettings />}
 
       {activeTab === 'profile' && user && (
         <SatelliteProfileSettingsPanel user={user} />
