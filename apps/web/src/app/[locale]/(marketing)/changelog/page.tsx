@@ -9,9 +9,8 @@ import {
   Zap,
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -33,6 +32,25 @@ interface ChangelogEntry {
   version: string | null;
   cover_image_url: string | null;
   published_at: string | null;
+}
+
+function ChangelogBadge({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-md border px-2 py-0.5 font-semibold text-xs',
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 const categoryConfig: Record<
@@ -127,13 +145,10 @@ export default async function ChangelogPage() {
       {/* Hero Section */}
       <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
         <div className="mx-auto max-w-4xl text-center">
-          <Badge
-            variant="secondary"
-            className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple"
-          >
+          <ChangelogBadge className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple">
             <Megaphone className="mr-1.5 h-3.5 w-3.5" />
             {t('badge')}
-          </Badge>
+          </ChangelogBadge>
 
           <h1 className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl">
             {t('hero_title')}{' '}
@@ -219,22 +234,18 @@ export default async function ChangelogPage() {
                                       'bg-muted text-muted-foreground',
                                   };
                                   return (
-                                    <Badge
-                                      variant="outline"
+                                    <ChangelogBadge
                                       className={`gap-1.5 ${config.colorClass}`}
                                     >
                                       {config.icon}
                                       {config.label}
-                                    </Badge>
+                                    </ChangelogBadge>
                                   );
                                 })()}
                                 {featuredEntry.version && (
-                                  <Badge
-                                    variant="secondary"
-                                    className="font-mono"
-                                  >
+                                  <ChangelogBadge className="border-transparent bg-secondary font-mono text-secondary-foreground">
                                     {featuredEntry.version}
-                                  </Badge>
+                                  </ChangelogBadge>
                                 )}
                               </div>
 
@@ -296,20 +307,16 @@ export default async function ChangelogPage() {
                                 {/* Content */}
                                 <div className="flex flex-1 flex-col p-5">
                                   <div className="mb-2 flex flex-wrap items-center gap-2">
-                                    <Badge
-                                      variant="outline"
+                                    <ChangelogBadge
                                       className={`gap-1 text-xs ${config.colorClass}`}
                                     >
                                       {config.icon}
                                       {config.label}
-                                    </Badge>
+                                    </ChangelogBadge>
                                     {entry.version && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="font-mono text-xs"
-                                      >
+                                      <ChangelogBadge className="border-transparent bg-secondary font-mono text-secondary-foreground text-xs">
                                         {entry.version}
-                                      </Badge>
+                                      </ChangelogBadge>
                                     )}
                                   </div>
 
@@ -354,16 +361,15 @@ export default async function ChangelogPage() {
             <p className="mx-auto mb-6 max-w-xl text-foreground/70">
               {t('cta_description')}
             </p>
-            <Button asChild>
-              <a
-                href="https://github.com/tutur3u/platform"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t('cta_button')}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
+            <a
+              href="https://github.com/tutur3u/platform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-sm transition-[color,box-shadow] hover:bg-primary/90 focus-visible:outline-1 focus-visible:ring-4 focus-visible:ring-ring/10"
+            >
+              {t('cta_button')}
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </Card>
         </div>
       </section>

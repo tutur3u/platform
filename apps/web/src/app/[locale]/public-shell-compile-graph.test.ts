@@ -86,6 +86,12 @@ const modelsClientSource = source(
 const contributorsPageSource = source(
   'src/app/[locale]/(marketing)/contributors/page.tsx'
 );
+const changelogPageSource = source(
+  'src/app/[locale]/(marketing)/changelog/page.tsx'
+);
+const sharedButtonSource = source(
+  '../../packages/ui/src/components/ui/button.tsx'
+);
 // These four pages were rebuilt from single client files into server sections,
 // so the import boundaries they are pinned to now live in their component
 // modules. Each group is asserted as a whole, the same way `contact` is.
@@ -302,6 +308,17 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('public shell compile graph', () => {
+  it('keeps the prerendered changelog page free of Radix-backed UI primitives', () => {
+    expect(changelogPageSource).not.toContain('@tuturuuu/ui/badge');
+    expect(changelogPageSource).not.toContain('@tuturuuu/ui/button');
+  });
+
+  it('marks the shared Radix-backed button as a client boundary', () => {
+    expect(sharedButtonSource.trimStart().startsWith("'use client';")).toBe(
+      true
+    );
+  });
+
   it('keeps desktop marketing dropdowns visible outside the navbar pill', () => {
     expect(marketingNavShellSource).toContain('overflow-visible');
     expect(marketingNavShellSource).not.toContain('overflow-hidden');
