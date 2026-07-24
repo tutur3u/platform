@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/sdk-v0.15.1...sdk-v0.16.0) (2026-07-24)
+
+
+### Features
+
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
 ## [0.15.1](https://github.com/tutur3u/platform/compare/sdk-v0.15.0...sdk-v0.15.1) (2026-07-21)
 
 

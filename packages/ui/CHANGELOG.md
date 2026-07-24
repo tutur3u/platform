@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/ui-v0.19.1...ui-v0.20.0) (2026-07-24)
+
+
+### Features
+
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+* **web:** improve workspace navigation context ([73959e3](https://github.com/tutur3u/platform/commit/73959e3c6745f60513d23740f30024c5d24e7ee4))
+* **web:** redesign marketing landing page ([13ede78](https://github.com/tutur3u/platform/commit/13ede784ac03af9f25bbb7df61095826c335e002))
+* **web:** refine marketing experience ([c7f1cec](https://github.com/tutur3u/platform/commit/c7f1cec0dd667e6d5f59aaf0bab82069b79c7376))
+
+
+### Bug Fixes
+
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **ui:** make member management mobile responsive ([104c812](https://github.com/tutur3u/platform/commit/104c8120949ef34bfdc48da74fdc0e2d35eb4ce7))
+* **ui:** refine member access settings ([b5b1ebf](https://github.com/tutur3u/platform/commit/b5b1ebf49a4a3b93532da74357899927f6e5d988))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **web:** harden prerender client boundaries ([ab1596a](https://github.com/tutur3u/platform/commit/ab1596a769e5a6ae43b0247c651ecbecea52d20d))
+* **workspaces:** repair shared member administration ([8a1515b](https://github.com/tutur3u/platform/commit/8a1515ba970adbe690b9d92f77a447adb93c339f))
+
 ## [0.19.1](https://github.com/tutur3u/platform/compare/ui-v0.19.0...ui-v0.19.1) (2026-07-21)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.2.1...tasks-ui-v0.3.0) (2026-07-24)
+
+
+### Features
+
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+
 ## [0.2.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.2.0...tasks-ui-v0.2.1) (2026-07-21)
 
 
