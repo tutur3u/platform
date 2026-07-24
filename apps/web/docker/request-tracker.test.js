@@ -1,5 +1,6 @@
 import http from 'node:http';
 import { createRequire } from 'node:module';
+import net from 'node:net';
 import { expect, test } from 'vitest';
 
 const require = createRequire(import.meta.url);
@@ -63,31 +64,42 @@ async function createServer() {
 function requestPath(baseUrl, path, headers = {}) {
   return new Promise((resolve, reject) => {
     const base = new URL(baseUrl);
-    const request = http.request(
+    let rawResponse = '';
+    const socket = net.createConnection(
       {
-        headers,
-        hostname: base.hostname,
-        path,
-        port: base.port,
+        host: base.hostname,
+        port: Number(base.port),
       },
-      (response) => {
-        let body = '';
+      () => {
+        const serializedHeaders = Object.entries(headers)
+          .map(([name, value]) => `${name}: ${value}`)
+          .join('\r\n');
+        const requestHeaders = [
+          `Host: ${base.host}`,
+          'Connection: close',
+          serializedHeaders,
+        ]
+          .filter(Boolean)
+          .join('\r\n');
 
-        response.setEncoding('utf8');
-        response.on('data', (chunk) => {
-          body += chunk;
-        });
-        response.on('end', () => {
-          resolve({
-            body,
-            statusCode: response.statusCode,
-          });
-        });
+        socket.write(`GET ${path} HTTP/1.1\r\n${requestHeaders}\r\n\r\n`);
       }
     );
 
-    request.on('error', reject);
-    request.end();
+    socket.setEncoding('utf8');
+    socket.on('data', (chunk) => {
+      rawResponse += chunk;
+    });
+    socket.on('error', reject);
+    socket.on('end', () => {
+      const [rawHead = '', ...bodyParts] = rawResponse.split('\r\n\r\n');
+      const statusCode = Number(rawHead.split('\r\n')[0]?.split(' ')[1]);
+
+      resolve({
+        body: bodyParts.join('\r\n\r\n'),
+        statusCode,
+      });
+    });
   });
 }
 

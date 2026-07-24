@@ -12,7 +12,6 @@ import {
 } from '@tuturuuu/icons';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -20,6 +19,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import { ChangelogContentRenderer } from './content-renderer';
+import { ChangelogDiscussionLink } from './discussion-link';
 
 interface ChangelogEntry {
   id: string;
@@ -279,16 +279,7 @@ export default async function ChangelogEntryPage({ params }: Props) {
                 We'd love to hear from you! Open an issue or start a discussion
                 on GitHub.
               </p>
-              <Button variant="outline" asChild>
-                <a
-                  href="https://github.com/tutur3u/platform/discussions"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Start a Discussion
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
+              <ChangelogDiscussionLink />
             </Card>
           </div>
         </div>
