@@ -1,20 +1,24 @@
-import {
-  AlertTriangle,
-  ArrowRight,
-  Bug,
-  Megaphone,
-  Shield,
-  Sparkles,
-  TrendingUp,
-  Zap,
-} from '@tuturuuu/icons';
+import { ArrowRight, Megaphone } from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Card } from '@tuturuuu/ui/card';
-import { cn } from '@tuturuuu/utils/format';
-import Image from 'next/image';
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { SectionEyebrow } from '@/components/landing/shared/section-shell';
+import { ActionLink } from '@/components/marketing/action-link';
+import { PageHero } from '@/components/marketing/page-hero';
+import { StatStrip } from '@/components/marketing/stat-strip';
 import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import {
+  type CategoryLabels,
+  type ChangelogEntry,
+  categoryKeys,
+  groupByMonth,
+  summarise,
+} from './components/changelog-data';
+import {
+  type ChangelogCopy,
+  ChangelogEmpty,
+  LatestRelease,
+  ReleaseTimeline,
+} from './components/changelog-sections';
 
 export const generateMetadata = createMarketingMetadata({
   title: 'Product Changelog',
@@ -23,354 +27,113 @@ export const generateMetadata = createMarketingMetadata({
   pathname: '/changelog',
 });
 
-interface ChangelogEntry {
-  id: string;
-  title: string;
-  slug: string;
-  summary: string | null;
-  category: string;
-  version: string | null;
-  cover_image_url: string | null;
-  published_at: string | null;
-}
-
-function ChangelogBadge({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      className={cn(
-        'inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-md border px-2 py-0.5 font-semibold text-xs',
-        className
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
-const categoryConfig: Record<
-  string,
-  {
-    label: string;
-    icon: React.ReactNode;
-    colorClass: string;
-  }
-> = {
-  feature: {
-    label: 'New Feature',
-    icon: <Sparkles className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
-  },
-  improvement: {
-    label: 'Improvement',
-    icon: <TrendingUp className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
-  },
-  bugfix: {
-    label: 'Bug Fix',
-    icon: <Bug className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
-  },
-  breaking: {
-    label: 'Breaking Change',
-    icon: <AlertTriangle className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20',
-  },
-  security: {
-    label: 'Security',
-    icon: <Shield className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
-  },
-  performance: {
-    label: 'Performance',
-    icon: <Zap className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-cyan/10 text-dynamic-cyan border-dynamic-cyan/20',
-  },
-};
-
-function formatDate(dateString: string | null): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-function groupByMonth(
-  entries: ChangelogEntry[]
-): Record<string, ChangelogEntry[]> {
-  return entries.reduce(
-    (groups, entry) => {
-      if (!entry.published_at) return groups;
-      const date = new Date(entry.published_at);
-      const monthYear = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-      });
-
-      if (!groups[monthYear]) {
-        groups[monthYear] = [];
-      }
-      groups[monthYear].push(entry);
-      return groups;
-    },
-    {} as Record<string, ChangelogEntry[]>
-  );
-}
-
+/**
+ * The changelog index, rebuilt as a release timeline on the marketing kit.
+ *
+ * What changed beyond the surface: the page used to promote, per month, the
+ * first entry that happened to carry a cover image — so hierarchy tracked
+ * whether someone uploaded a picture rather than what shipped. Now exactly one
+ * entry is promoted (the newest, which is a fact) and the rest run down a dated
+ * spine. The category table it shared with the entry page is one module, and
+ * both the category names and the summary labels come from the message bundle
+ * instead of being hardcoded English inside a translated page.
+ */
 export default async function ChangelogPage() {
   const t = await getTranslations('changelog-page');
-  const changelogs = await getChangelogs();
-  const groupedChangelogs = groupByMonth(changelogs);
-  const months = Object.keys(groupedChangelogs);
+  const locale = await getLocale();
+  const entries = await getChangelogs();
+
+  const categoryLabels: CategoryLabels = Object.fromEntries(
+    categoryKeys.map((key) => [key, t(`categories.${key}`)])
+  );
+
+  const copy: ChangelogCopy = {
+    categoryLabels,
+    locale,
+    readMore: t('read_more'),
+    update: t('update'),
+    updates: t('updates'),
+  };
+
+  const [latest, ...earlier] = entries;
+  const allMonths = groupByMonth(entries, locale);
+  const earlierMonths = groupByMonth(earlier, locale);
+
+  const stats = summarise(entries, allMonths.length, {
+    releases: t('stat_releases'),
+    months: t('stat_months'),
+    types: t('stat_types'),
+    version: t('stat_version'),
+  });
 
   return (
-    <main className="relative mx-auto w-full overflow-x-hidden">
-      {/* Background effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160" />
-        <div className="absolute top-[30%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140" />
-      </div>
+    <main className="relative w-full overflow-x-hidden">
+      <PageHero
+        accent="purple"
+        actions={
+          <ActionLink
+            external
+            href="https://github.com/tutur3u/platform"
+            variant="ghost"
+          >
+            {t('cta_button')}
+            <ArrowRight className="h-4 w-4" />
+          </ActionLink>
+        }
+        description={t('hero_description')}
+        eyebrow={t('badge')}
+        eyebrowIcon={Megaphone}
+        highlight="Tuturuuu"
+        title={t('hero_title')}
+      >
+        {entries.length > 0 ? <StatStrip stats={stats} /> : null}
+      </PageHero>
 
-      {/* Hero Section */}
-      <section className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 sm:pb-20 lg:px-8 lg:pt-40 lg:pb-24">
-        <div className="mx-auto max-w-4xl text-center">
-          <ChangelogBadge className="mb-6 border-dynamic-purple/30 bg-dynamic-purple/10 text-dynamic-purple">
-            <Megaphone className="mr-1.5 h-3.5 w-3.5" />
-            {t('badge')}
-          </ChangelogBadge>
+      {latest ? (
+        <LatestRelease
+          copy={copy}
+          entry={latest}
+          eyebrow={t('latest_release')}
+        />
+      ) : null}
 
-          <h1 className="mb-6 text-balance font-bold text-4xl tracking-tight sm:text-5xl md:text-6xl">
-            {t('hero_title')}{' '}
-            <span className="bg-linear-to-r from-dynamic-purple via-dynamic-pink to-dynamic-orange bg-clip-text text-transparent">
-              Tuturuuu
-            </span>
-          </h1>
+      <ReleaseTimeline
+        copy={copy}
+        eyebrow={t('earlier_releases')}
+        groups={earlierMonths}
+      />
 
-          <p className="mx-auto mb-8 max-w-2xl text-balance text-foreground/70 text-lg">
-            {t('hero_description')}
+      {entries.length === 0 ? (
+        <ChangelogEmpty
+          description={t('no_updates_description')}
+          title={t('no_updates')}
+        />
+      ) : null}
+
+      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
+        <div className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-foreground/10 bg-gradient-to-b from-foreground/[0.045] to-transparent px-6 py-14 text-center sm:px-10">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-24 top-0 h-px bg-gradient-to-r from-transparent via-dynamic-purple/50 to-transparent"
+          />
+
+          <div className="flex justify-center">
+            <SectionEyebrow>{t('badge')}</SectionEyebrow>
+          </div>
+
+          <h2 className="mt-6 text-balance font-display font-semibold text-3xl tracking-[-0.03em] sm:text-4xl">
+            {t('cta_title')}
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-balance text-foreground/55 leading-relaxed">
+            {t('cta_description')}
           </p>
-        </div>
-      </section>
 
-      {/* Changelog List */}
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          {months.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Megaphone className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <h2 className="mb-2 font-semibold text-xl">{t('no_updates')}</h2>
-              <p className="text-muted-foreground">
-                {t('no_updates_description')}
-              </p>
-            </Card>
-          ) : (
-            <div className="space-y-16">
-              {months.map((month) => {
-                const entries = groupedChangelogs[month] || [];
-                // Featured entry is the first one with a cover image, or just the first one
-                const featuredEntry =
-                  entries.find((e) => e.cover_image_url) || entries[0];
-                const otherEntries = entries.filter(
-                  (e) => e.id !== featuredEntry?.id
-                );
-
-                return (
-                  <div key={month}>
-                    <div className="mb-8 flex items-center gap-4">
-                      <h2 className="font-bold text-2xl">{month}</h2>
-                      <div className="h-px flex-1 bg-border" />
-                      <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground text-sm">
-                        {entries.length}{' '}
-                        {entries.length === 1 ? t('update') : t('updates')}
-                      </span>
-                    </div>
-
-                    {/* Featured Entry */}
-                    {featuredEntry && (
-                      <Link
-                        href={`/changelog/${featuredEntry.slug}`}
-                        className="group mb-6 block"
-                      >
-                        <Card className="overflow-hidden transition-all hover:border-dynamic-purple/30 hover:shadow-xl">
-                          <div className="grid gap-0 md:grid-cols-2">
-                            {/* Cover Image */}
-                            <div className="relative aspect-video bg-muted">
-                              {featuredEntry.cover_image_url ? (
-                                <Image
-                                  src={featuredEntry.cover_image_url}
-                                  alt={featuredEntry.title}
-                                  fill
-                                  className="object-cover transition-transform duration-300"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-dynamic-blue/20">
-                                  <Megaphone className="h-16 w-16 text-muted-foreground/50" />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Content */}
-                            <div className="flex flex-col justify-center p-6 md:p-8">
-                              <div className="mb-3 flex flex-wrap items-center gap-2">
-                                {(() => {
-                                  const config = categoryConfig[
-                                    featuredEntry.category
-                                  ] || {
-                                    label: featuredEntry.category,
-                                    icon: null,
-                                    colorClass:
-                                      'bg-muted text-muted-foreground',
-                                  };
-                                  return (
-                                    <ChangelogBadge
-                                      className={`gap-1.5 ${config.colorClass}`}
-                                    >
-                                      {config.icon}
-                                      {config.label}
-                                    </ChangelogBadge>
-                                  );
-                                })()}
-                                {featuredEntry.version && (
-                                  <ChangelogBadge className="border-transparent bg-secondary font-mono text-secondary-foreground">
-                                    {featuredEntry.version}
-                                  </ChangelogBadge>
-                                )}
-                              </div>
-
-                              <h3 className="mb-3 font-bold text-2xl transition-colors group-hover:text-dynamic-purple">
-                                {featuredEntry.title}
-                              </h3>
-
-                              {featuredEntry.summary && (
-                                <p className="mb-4 line-clamp-3 text-foreground/70">
-                                  {featuredEntry.summary}
-                                </p>
-                              )}
-
-                              <div className="mt-auto flex items-center justify-between">
-                                <span className="text-muted-foreground text-sm">
-                                  {formatDate(featuredEntry.published_at)}
-                                </span>
-                                <span className="flex items-center font-medium text-dynamic-purple text-sm">
-                                  {t('read_more')}
-                                  <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      </Link>
-                    )}
-
-                    {/* Other Entries Grid */}
-                    {otherEntries.length > 0 && (
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {otherEntries.map((entry) => {
-                          const config = categoryConfig[entry.category] || {
-                            label: entry.category,
-                            icon: null,
-                            colorClass: 'bg-muted text-muted-foreground',
-                          };
-
-                          return (
-                            <Link
-                              key={entry.id}
-                              href={`/changelog/${entry.slug}`}
-                              className="group block"
-                            >
-                              <Card className="flex h-full flex-col overflow-hidden transition-all hover:border-dynamic-purple/30 hover:shadow-lg">
-                                {/* Cover Image */}
-                                {entry.cover_image_url && (
-                                  <div className="relative aspect-video bg-muted">
-                                    <Image
-                                      src={entry.cover_image_url}
-                                      alt={entry.title}
-                                      fill
-                                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                      unoptimized
-                                    />
-                                  </div>
-                                )}
-
-                                {/* Content */}
-                                <div className="flex flex-1 flex-col p-5">
-                                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                                    <ChangelogBadge
-                                      className={`gap-1 text-xs ${config.colorClass}`}
-                                    >
-                                      {config.icon}
-                                      {config.label}
-                                    </ChangelogBadge>
-                                    {entry.version && (
-                                      <ChangelogBadge className="border-transparent bg-secondary font-mono text-secondary-foreground text-xs">
-                                        {entry.version}
-                                      </ChangelogBadge>
-                                    )}
-                                  </div>
-
-                                  <h3 className="mb-2 line-clamp-2 font-semibold text-lg transition-colors group-hover:text-dynamic-purple">
-                                    {entry.title}
-                                  </h3>
-
-                                  {entry.summary && (
-                                    <p className="mb-3 line-clamp-2 text-foreground/70 text-sm">
-                                      {entry.summary}
-                                    </p>
-                                  )}
-
-                                  <div className="mt-auto flex items-center justify-between pt-2">
-                                    <span className="text-muted-foreground text-xs">
-                                      {formatDate(entry.published_at)}
-                                    </span>
-                                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-1 group-hover:text-dynamic-purple" />
-                                  </div>
-                                </div>
-                              </Card>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Subscribe CTA */}
-      <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <Card className="overflow-hidden border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-8 text-center sm:p-12">
-            <h2 className="mb-4 font-bold text-2xl sm:text-3xl">
-              {t('cta_title')}
-            </h2>
-            <p className="mx-auto mb-6 max-w-xl text-foreground/70">
-              {t('cta_description')}
-            </p>
-            <a
-              href="https://github.com/tutur3u/platform"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm shadow-sm transition-[color,box-shadow] hover:bg-primary/90 focus-visible:outline-1 focus-visible:ring-4 focus-visible:ring-ring/10"
-            >
+          <div className="mt-8 flex justify-center">
+            <ActionLink external href="https://github.com/tutur3u/platform">
               {t('cta_button')}
-              <ArrowRight className="h-4 w-4" />
-            </a>
-          </Card>
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </ActionLink>
+          </div>
         </div>
       </section>
     </main>

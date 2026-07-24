@@ -10,14 +10,12 @@ export function SectionHeader({
   description,
   eyebrow,
   index,
-  inverted = false,
   title,
 }: {
   description: string;
   eyebrow: string;
   /** Two-digit marker rendered in the rule, matching the marketing sections. */
   index?: string;
-  inverted?: boolean;
   title: string;
 }) {
   return (
@@ -25,12 +23,7 @@ export function SectionHeader({
       <div>
         {/* Same eyebrow language as every marketing section: mono, tracked,
             with an index and a hairline running off it. */}
-        <div
-          className={cn(
-            'flex items-center gap-3 font-mono-ui text-[0.7rem] uppercase tracking-[0.22em]',
-            inverted ? 'text-dynamic-blue/90' : 'text-foreground/45'
-          )}
-        >
+        <div className="flex items-center gap-3 font-mono-ui text-[0.7rem] text-foreground/45 uppercase tracking-[0.22em]">
           {index ? (
             <>
               <span className="text-foreground/30 tabular-nums">{index}</span>
@@ -43,7 +36,7 @@ export function SectionHeader({
           <span>{eyebrow}</span>
         </div>
 
-        <h2 className="mt-6 text-balance font-display font-semibold text-4xl tracking-[-0.03em] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]">
+        <h2 className="mt-6 text-balance font-display font-semibold text-4xl tracking-[-0.03em] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.05]">
           {title}
         </h2>
       </div>
@@ -54,6 +47,14 @@ export function SectionHeader({
   );
 }
 
+/**
+ * A brand colour.
+ *
+ * The swatch used to be a `116%`-wide band sliding back and forth forever,
+ * which read as a loading state rather than a colour chip. It now sits still
+ * and carries its own reading — a colour reference is something you look at
+ * and copy, not something that moves.
+ */
 export function ColorTokenCard({
   copied,
   color,
@@ -71,43 +72,37 @@ export function ColorTokenCard({
 }) {
   return (
     <motion.div
-      className="overflow-hidden rounded-lg border border-border bg-root-background"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] transition-all duration-500 hover:-translate-y-1 hover:border-foreground/[0.18] hover:shadow-2xl hover:shadow-foreground/5"
       initial={{ opacity: 0, y: 22 }}
       transition={{ delay: index * 0.04, duration: 0.4 }}
       viewport={{ once: true, margin: '-80px' }}
-      whileHover={{ rotate: index % 2 === 0 ? -1 : 1, scale: 1.015 }}
       whileInView={{ opacity: 1, y: 0 }}
     >
-      <motion.div
-        animate={{ x: ['-8%', '0%', '-8%'] }}
-        className="h-20 w-[116%] border-border border-b"
-        style={{ backgroundColor: color }}
-        transition={{
-          duration: 5 + index * 0.25,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <div className="grid min-h-52 grid-rows-[1fr_auto] p-5">
-        <div>
-          <p className="mb-5 font-semibold text-foreground/35 text-sm tabular-nums">
-            0{index}
-          </p>
-          <h3 className="font-semibold text-2xl">{title}</h3>
-          <p className="mt-3 text-foreground/62 leading-7">{description}</p>
-        </div>
-        <button
-          className="mt-8 inline-flex w-fit items-center gap-2 rounded-md border border-border bg-background px-3 py-2 font-mono text-foreground text-sm transition hover:bg-muted"
-          onClick={onCopy}
-          type="button"
-        >
-          {copied ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Copy className="h-4 w-4" />
-          )}
-          {color}
-        </button>
+      <div className="relative h-28 w-full" style={{ backgroundColor: color }}>
+        {/* Sheen: gives a flat fill a light source so it reads as a surface. */}
+        <span
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.22),transparent_46%)]"
+        />
+        <span className="absolute top-3 left-4 font-mono-ui text-[0.6rem] text-white/70 uppercase tabular-nums tracking-[0.18em] mix-blend-overlay">
+          {String(index).padStart(2, '0')}
+        </span>
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="font-display font-semibold text-xl tracking-[-0.02em]">
+          {title}
+        </h3>
+        <p className="mt-2.5 text-foreground/55 text-sm leading-relaxed">
+          {description}
+        </p>
+
+        <CopyChip
+          className="mt-6"
+          copied={copied}
+          onCopy={onCopy}
+          value={color}
+        />
       </div>
     </motion.div>
   );
@@ -129,23 +124,59 @@ export function SystemTokenCard({
   return (
     <motion.button
       className={cn(
-        'flex min-h-52 flex-col items-start justify-between rounded-lg border border-border p-5 text-left transition hover:scale-[1.01]',
+        'group flex min-h-44 flex-col items-start justify-between overflow-hidden rounded-2xl border border-foreground/[0.12] p-5 text-left transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-foreground/5',
         contentClassName
       )}
       initial={{ opacity: 0, y: 22 }}
       onClick={onCopy}
-      transition={{ duration: 0.42 }}
-      viewport={{ once: true, margin: '-80px' }}
-      whileHover={{ scale: 1.015, y: -3 }}
-      whileInView={{ opacity: 1, y: 0 }}
       style={{ backgroundColor: color }}
+      transition={{ duration: 0.42 }}
       type="button"
+      viewport={{ once: true, margin: '-80px' }}
+      whileInView={{ opacity: 1, y: 0 }}
     >
-      <span className="font-semibold text-xl">{title}</span>
-      <span className="inline-flex items-center gap-2 font-mono text-sm">
-        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      <span className="font-display font-semibold text-lg tracking-[-0.02em]">
+        {title}
+      </span>
+      <span className="inline-flex items-center gap-2 font-mono-ui text-xs tabular-nums opacity-70 transition-opacity duration-300 group-hover:opacity-100">
+        {copied ? (
+          <Check className="h-3.5 w-3.5" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
         {color}
       </span>
     </motion.button>
+  );
+}
+
+/** Shared copy affordance: mono value, state-swapping icon. */
+export function CopyChip({
+  className,
+  copied,
+  onCopy,
+  value,
+}: {
+  className?: string;
+  copied: boolean;
+  onCopy: () => void;
+  value: string;
+}) {
+  return (
+    <button
+      className={cn(
+        'inline-flex w-fit items-center gap-2 rounded-full border border-foreground/[0.09] bg-foreground/[0.03] px-3 py-1.5 font-mono-ui text-[0.68rem] text-foreground/60 tabular-nums transition-colors hover:border-foreground/25 hover:text-foreground',
+        className
+      )}
+      onClick={onCopy}
+      type="button"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-dynamic-green" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+      {value}
+    </button>
   );
 }

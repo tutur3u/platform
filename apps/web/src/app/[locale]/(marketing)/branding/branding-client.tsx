@@ -1,14 +1,14 @@
 'use client';
 
 import { ArrowRight, Download, FileText } from '@tuturuuu/icons/lucide';
-import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'framer-motion';
 import { Inter, Noto_Sans } from 'next/font/google';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
+import { ActionLink } from '@/components/marketing/action-link';
 import { AssetPanel, ProductMark } from './brand-assets';
 import {
   brandColors,
@@ -19,11 +19,12 @@ import {
   systemColors,
 } from './brand-data';
 import {
-  BrandIntroTransition,
+  BrandIntroSweep,
   HeroBrandStage,
   KineticAssetStrip,
 } from './brand-stage';
 import { ColorTokenCard, SectionHeader, SystemTokenCard } from './brand-tokens';
+import { TypeSpecimen } from './brand-typography';
 
 const inter = Inter({ subsets: ['latin'] });
 const notoSans = Noto_Sans({ subsets: ['latin', 'vietnamese'] });
@@ -31,12 +32,15 @@ const notoSans = Noto_Sans({ subsets: ['latin', 'vietnamese'] });
 /**
  * Brand guidelines: marks, colour, type and the downloadable kit.
  *
- * The page's own design is deliberate and stays as it was; what changed is the
- * shape of the file. It was a single 1,343-line client component, well over
- * the repo's hard ceiling, so the stage, preview, asset and token pieces now
- * live in siblings and this file is the composition.
+ * Rebuilt onto the marketing system. Three structural things changed beyond
+ * the styling. The page alternated `bg-root-background` and `bg-background`
+ * section by section, which banded the whole scroll into visible stripes;
+ * there is now one substrate with hairline rules, like every other marketing
+ * page. Four sections were pinned to `min-h-[calc(100dvh-5rem)]` regardless of
+ * how much they contained, so short sections opened huge voids on a desktop
+ * display; they are sized by their content now. And the scroll-margin rule
+ * that shipped as an inline `<style>` block is a utility class.
  */
-
 export default function BrandingClient() {
   const t = useTranslations('branding');
   const reduceMotion = useReducedMotion();
@@ -49,405 +53,372 @@ export default function BrandingClient() {
     setTimeout(() => setCopiedValue(null), 2000);
   };
 
-  const typography = [
+  const typefaces = [
     {
-      name: 'Inter',
       className: inter.className,
-      usage: t('typography.inter.usage'),
+      name: 'Inter',
       sample: t('typography.sampleLatin'),
+      usage: t('typography.inter.usage'),
       weights: ['400 Regular', '500 Medium', '600 Semibold', '700 Bold'],
     },
     {
-      name: 'Noto Sans',
       className: notoSans.className,
-      usage: t('typography.notoSans.usage'),
+      name: 'Noto Sans',
       sample: t('typography.sampleVietnamese'),
+      usage: t('typography.notoSans.usage'),
       weights: ['400 Regular', '500 Medium', '600 Semibold', '700 Bold'],
     },
   ];
 
+  const previewLabelsFor = (name: string) => ({
+    dark: t('preview.dark'),
+    description: t('preview.description', { name }),
+    fullscreen: t('preview.fullscreen'),
+    light: t('preview.light'),
+    monoDark: t('preview.monoDark'),
+    monoLight: t('preview.monoLight'),
+    title: t('preview.title'),
+  });
+
   return (
-    <main className="relative overflow-hidden text-pretty bg-root-background text-foreground">
-      <style>{`
-        @supports (scroll-snap-type: y proximity) {
-          [data-brand-snap='true'] {
-            scroll-margin-top: 5rem;
-          }
-        }
-      `}</style>
-      <section
-        className="relative isolate overflow-hidden border-border border-b px-4 pt-16 pb-8 sm:px-6 lg:px-8"
-        data-brand-snap="true"
-      >
-        <BrandIntroTransition reduceMotion={reduceMotion} />
+    <main className="relative w-full overflow-x-hidden text-pretty">
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
+        <BrandIntroSweep reduceMotion={reduceMotion} />
+        <HeroAtmosphere />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 py-12 lg:min-h-[calc(100dvh-18rem)] lg:grid-cols-[0.95fr_0.72fr] lg:py-16">
-          <motion.div
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl space-y-8"
-            initial={{ opacity: 0, y: 28 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="space-y-7">
-              <h1 className="max-w-5xl text-balance font-display font-extrabold text-5xl tracking-[-0.045em] sm:text-7xl lg:text-[6.5rem] lg:leading-[0.9]">
-                {t('hero.title')}{' '}
-                <span className="block pl-[0.02em] text-dynamic-blue">
-                  {t('hero.titleAccent')}
-                </span>
-              </h1>
-              <p className="max-w-2xl text-balance text-foreground/55 text-lg leading-relaxed sm:text-xl">
-                {t('hero.description')}
-              </p>
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-14 lg:grid-cols-[1fr_0.85fr]">
+          <div>
+            <span className="inline-flex animate-rise-in items-center rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 px-4 py-1.5 font-mono-ui text-[0.65rem] text-dynamic-blue uppercase tracking-[0.2em] backdrop-blur-md">
+              {t('hero.badge')}
+            </span>
+
+            <h1
+              className="mt-8 animate-rise-in text-balance font-display font-extrabold text-5xl leading-[0.95] tracking-[-0.045em] sm:text-7xl lg:text-[5.5rem]"
+              style={{ animationDelay: '90ms' }}
+            >
+              {t('hero.title')}{' '}
+              <span className="block text-dynamic-blue">
+                {t('hero.titleAccent')}
+              </span>
+            </h1>
+
+            <p
+              className="mt-7 max-w-xl animate-rise-in text-balance text-foreground/55 text-lg leading-relaxed"
+              style={{ animationDelay: '180ms' }}
+            >
+              {t('hero.description')}
+            </p>
+
+            <div
+              className="mt-9 flex animate-rise-in flex-col gap-3 sm:flex-row"
+              style={{ animationDelay: '270ms' }}
+            >
+              <ActionLink href="#brand-assets">
+                <Download className="h-4 w-4" />
+                {t('hero.primaryAction')}
+              </ActionLink>
+              <ActionLink href="/contact" variant="ghost">
+                {t('hero.secondaryAction')}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </ActionLink>
             </div>
+          </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="justify-center" size="lg">
-                <Link href="#brand-assets">
-                  <Download className="mr-2 h-5 w-5" />
-                  {t('hero.primaryAction')}
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="justify-center border-border bg-background/40 text-foreground hover:bg-muted hover:text-foreground"
-                size="lg"
-                variant="outline"
-              >
-                <Link href="/contact">
-                  {t('hero.secondaryAction')}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
-
-          <HeroBrandStage reduceMotion={reduceMotion} />
+          <HeroBrandStage
+            readings={{
+              clearSpace: t('plate.clearSpaceLabel'),
+              clearSpaceValue: t('plate.clearSpaceValue'),
+              format: t('plate.formatLabel'),
+              minWidth: t('plate.minWidthLabel'),
+            }}
+            reduceMotion={reduceMotion}
+          />
         </div>
 
-        <div className="mx-auto grid max-w-7xl border-border border-t md:grid-cols-3">
+        {/* Summary rail: the three things this page gives you. */}
+        <div className="relative mx-auto mt-20 grid w-full max-w-7xl divide-y divide-foreground/[0.07] overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] md:grid-cols-3 md:divide-x md:divide-y-0">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-24 top-0 h-px bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
+          />
           {summaryKeys.map((key, index) => (
-            <div
-              className="border-border border-b py-6 md:border-r md:border-b-0 md:px-8 md:last:border-r-0 md:first:pl-0"
-              key={key}
-            >
-              <p className="mb-4 font-medium text-dynamic-blue text-sm">
-                {t(`summary.${key}.eyebrow` as any)}
-              </p>
-              <h2 className="mb-3 font-semibold text-2xl">
-                {t(`summary.${key}.title` as any)}
+            <div className="p-7" key={key}>
+              <div className="flex items-center gap-3">
+                <span
+                  className="h-1 w-8 rounded-full"
+                  style={{
+                    backgroundColor:
+                      brandColors[index]?.color ?? brandColors[0].color,
+                  }}
+                />
+                <p className="font-mono-ui text-[0.62rem] text-foreground/40 uppercase tracking-[0.18em]">
+                  {t(`summary.${key}.eyebrow` as never)}
+                </p>
+              </div>
+              <h2 className="mt-5 font-display font-semibold text-2xl tracking-[-0.02em]">
+                {t(`summary.${key}.title` as never)}
               </h2>
-              <p className="max-w-sm text-foreground/54 leading-7">
-                {t(`summary.${key}.description` as any)}
+              <p className="mt-3 text-foreground/55 leading-relaxed">
+                {t(`summary.${key}.description` as never)}
               </p>
-              <div
-                className="mt-6 h-1 w-20"
-                style={{
-                  backgroundColor: brandColors[index]?.color ?? '#4180E9',
-                }}
-              />
             </div>
           ))}
         </div>
 
         <KineticAssetStrip
-          getName={(key) => t(`assets.${key}.name` as any)}
+          getName={(key) => t(`assets.${key}.name` as never)}
           items={productAssets}
         />
       </section>
 
-      <section
-        className="min-h-[calc(100dvh-5rem)] scroll-mt-20 bg-root-background px-4 py-24 text-foreground sm:px-6 lg:px-8"
-        data-brand-snap="true"
-        id="brand-assets"
-      >
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            description={t('assets.description')}
-            eyebrow={t('assets.eyebrow')}
-            index="01"
-            title={t('assets.title')}
-          />
+      {/* ── Assets ───────────────────────────────────────────────────────── */}
+      <BrandSection id="brand-assets">
+        <SectionHeader
+          description={t('assets.description')}
+          eyebrow={t('assets.eyebrow')}
+          index="01"
+          title={t('assets.title')}
+        />
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            {primaryAssets.map((asset) => (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {primaryAssets.map((asset) => {
+            const name = t(`assets.${asset.key}.name` as never);
+
+            return (
               <AssetPanel
-                copyLabel={t('assetActions.copyPath')}
                 copied={copiedValue === asset.src}
                 copiedLabel={t('assetActions.copiedPath')}
+                copyLabel={t('assetActions.copyPath')}
                 defaultMode={asset.defaultMode}
                 downloadLabel={t('assetActions.downloadSvg')}
                 imageClassName={asset.imageClassName}
                 key={asset.key}
                 locked={asset.locked}
                 monoClassName={asset.monoClassName}
-                name={t(`assets.${asset.key}.name` as any)}
+                name={name}
                 onCopy={() =>
                   copyToClipboard(
                     asset.src,
                     t('assetActions.pathCopied', { path: asset.src })
                   )
                 }
-                previewLabels={{
-                  dark: t('preview.dark'),
-                  description: t('preview.description', {
-                    name: t(`assets.${asset.key}.name` as any),
-                  }),
-                  fullscreen: t('preview.fullscreen'),
-                  light: t('preview.light'),
-                  monoDark: t('preview.monoDark'),
-                  monoLight: t('preview.monoLight'),
-                  title: t('preview.title'),
-                }}
+                previewLabels={previewLabelsFor(name)}
                 src={asset.src}
               />
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          <div className="mt-5 grid auto-rows-[17rem] gap-5 md:grid-cols-3">
-            {productAssets.map((asset, index) => (
+        <div className="mt-5 grid auto-rows-[17rem] gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {productAssets.map((asset, index) => {
+            const name = t(`assets.${asset.key}.name` as never);
+
+            return (
               <ProductMark
-                copyLabel={t('assetActions.copyPath')}
                 copied={copiedValue === asset.src}
                 copiedLabel={t('assetActions.copiedPath')}
+                copyLabel={t('assetActions.copyPath')}
+                downloadLabel={t('assetActions.downloadSvg')}
                 frameClassName={asset.frameClassName}
                 imageClassName={asset.imageClassName}
                 index={index}
                 key={asset.key}
                 monoClassName={asset.monoClassName}
-                name={t(`assets.${asset.key}.name` as any)}
+                name={name}
                 onCopy={() =>
                   copyToClipboard(
                     asset.src,
                     t('assetActions.pathCopied', { path: asset.src })
                   )
                 }
-                previewLabels={{
-                  dark: t('preview.dark'),
-                  description: t('preview.description', {
-                    name: t(`assets.${asset.key}.name` as any),
-                  }),
-                  fullscreen: t('preview.fullscreen'),
-                  light: t('preview.light'),
-                  monoDark: t('preview.monoDark'),
-                  monoLight: t('preview.monoLight'),
-                  title: t('preview.title'),
-                }}
-                downloadLabel={t('assetActions.downloadSvg')}
+                previewLabels={previewLabelsFor(name)}
                 src={asset.src}
+              />
+            );
+          })}
+        </div>
+      </BrandSection>
+
+      {/* ── Colour ───────────────────────────────────────────────────────── */}
+      <BrandSection id="color-system">
+        <SectionHeader
+          description={t('colors.description')}
+          eyebrow={t('colors.eyebrow')}
+          index="02"
+          title={t('colors.title')}
+        />
+
+        <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {brandColors.map((value, index) => (
+              <ColorTokenCard
+                color={value.color}
+                copied={copiedValue === value.color}
+                description={t(`colors.primary.${value.token}.description`)}
+                index={index + 1}
+                key={value.color}
+                onCopy={() =>
+                  copyToClipboard(
+                    value.color,
+                    t('colorCopied', { color: value.color })
+                  )
+                }
+                title={t(`colors.primary.${value.token}.title`)}
+              />
+            ))}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {systemColors.map((item) => (
+              <SystemTokenCard
+                color={item.color}
+                contentClassName={item.contentClassName}
+                copied={copiedValue === item.color}
+                key={item.color}
+                onCopy={() =>
+                  copyToClipboard(
+                    item.color,
+                    t('colorCopied', { color: item.color })
+                  )
+                }
+                title={t(`colors.system.${item.token}`)}
               />
             ))}
           </div>
         </div>
-      </section>
+      </BrandSection>
 
-      <section
-        className="relative min-h-[calc(100dvh-5rem)] overflow-hidden bg-background px-4 py-20 text-foreground sm:px-6 lg:px-8"
-        data-brand-snap="true"
-        id="color-system"
-      >
-        <div className="absolute inset-x-0 top-0 h-1.5 grid-cols-4 sm:grid">
-          {brandColors.map((item) => (
-            <div key={item.color} style={{ backgroundColor: item.color }} />
+      {/* ── Typography ───────────────────────────────────────────────────── */}
+      <BrandSection id="typography">
+        <SectionHeader
+          description={t('typography.description')}
+          eyebrow={t('typography.eyebrow')}
+          index="03"
+          title={t('typography.title')}
+        />
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          {typefaces.map((face) => (
+            <TypeSpecimen
+              face={face}
+              key={face.name}
+              weightsLabel={t('typography.weightsLabel')}
+            />
           ))}
         </div>
+      </BrandSection>
 
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            description={t('colors.description')}
-            eyebrow={t('colors.eyebrow')}
-            index="02"
-            inverted
-            title={t('colors.title')}
-          />
+      {/* ── Guidelines ───────────────────────────────────────────────────── */}
+      <BrandSection id="usage-guidelines">
+        <SectionHeader
+          description={t('guidelines.description')}
+          eyebrow={t('guidelines.eyebrow')}
+          index="04"
+          title={t('guidelines.title')}
+        />
 
-          <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {brandColors.map((value, index) => (
-                <ColorTokenCard
-                  copied={copiedValue === value.color}
-                  color={value.color}
-                  description={t(`colors.primary.${value.token}.description`)}
-                  index={index + 1}
-                  key={value.color}
-                  onCopy={() =>
-                    copyToClipboard(
-                      value.color,
-                      t('colorCopied', { color: value.color })
-                    )
-                  }
-                  title={t(`colors.primary.${value.token}.title`)}
-                />
-              ))}
-            </div>
+        <div className="grid gap-5 md:grid-cols-3">
+          {guidelineCards.map((guideline) => (
+            <div
+              className="group relative overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-6 transition-all duration-500 hover:-translate-y-1 hover:border-foreground/[0.18]"
+              key={guideline.key}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'pointer-events-none absolute inset-x-8 top-0 h-px opacity-60',
+                  guideline.lineClassName
+                )}
+              />
+              <guideline.icon
+                className={cn(
+                  'h-5 w-5 transition-transform duration-500 group-hover:scale-110',
+                  guideline.tintClassName
+                )}
+              />
+              <h3 className="mt-5 font-display font-semibold text-xl tracking-[-0.02em]">
+                {t(`guidelines.${guideline.key}.title` as never)}
+              </h3>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {systemColors.map((item) => (
-                <SystemTokenCard
-                  contentClassName={item.contentClassName}
-                  copied={copiedValue === item.color}
-                  color={item.color}
-                  key={item.color}
-                  onCopy={() =>
-                    copyToClipboard(
-                      item.color,
-                      t('colorCopied', { color: item.color })
-                    )
-                  }
-                  title={t(`colors.system.${item.token}`)}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="min-h-[calc(100dvh-5rem)] bg-root-background px-4 py-24 text-foreground sm:px-6 lg:px-8"
-        data-brand-snap="true"
-        id="typography"
-      >
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            description={t('typography.description')}
-            eyebrow={t('typography.eyebrow')}
-            index="03"
-            title={t('typography.title')}
-          />
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            {typography.map((font) => (
-              <div
-                className="overflow-hidden rounded-lg border border-border bg-background"
-                key={font.name}
-              >
-                <div className="grid min-h-72 place-items-center border-border border-b bg-foreground p-8 text-background">
-                  <p
-                    className={cn(
-                      'max-w-xl text-balance text-center font-semibold text-5xl tracking-tight sm:text-6xl',
-                      font.className
-                    )}
+              <ul className="mt-5 divide-y divide-foreground/[0.07] border-foreground/[0.07] border-t">
+                {[1, 2, 3, 4].map((rule) => (
+                  <li
+                    className="grid grid-cols-[1.75rem_1fr] gap-2 py-3 text-foreground/55 text-sm leading-relaxed"
+                    key={rule}
                   >
-                    Aa
-                  </p>
-                </div>
-                <div className="p-6">
-                  <h3 className={cn('font-semibold text-3xl', font.className)}>
-                    {font.name}
-                  </h3>
-                  <p className="mt-3 text-foreground/60 leading-7">
-                    {font.usage}
-                  </p>
-                  <div className="mt-8 space-y-4">
-                    {font.weights.map((weight) => (
-                      <div
-                        className="grid gap-3 border-border border-t pt-4 sm:grid-cols-[1fr_auto]"
-                        key={`${font.name}-${weight}`}
-                      >
-                        <p
-                          className={cn(
-                            'text-pretty text-2xl leading-8',
-                            font.className
-                          )}
-                          style={{ fontWeight: Number(weight.split(' ')[0]) }}
-                        >
-                          {font.sample}
-                        </p>
-                        <p className="font-medium text-foreground/45 text-sm">
-                          {weight}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                    <span className="font-mono-ui text-[0.62rem] text-foreground/30 tabular-nums">
+                      0{rule}
+                    </span>
+                    <span>
+                      {t(`guidelines.${guideline.key}.rule${rule}` as never)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-      </section>
+      </BrandSection>
 
-      <section
-        className="min-h-[calc(100dvh-5rem)] bg-background px-4 py-24 text-foreground sm:px-6 lg:px-8"
-        data-brand-snap="true"
-        id="usage-guidelines"
-      >
-        <div className="mx-auto max-w-7xl">
-          <SectionHeader
-            description={t('guidelines.description')}
-            eyebrow={t('guidelines.eyebrow')}
-            index="04"
-            inverted
-            title={t('guidelines.title')}
+      {/* ── Media kit ────────────────────────────────────────────────────── */}
+      <section className="relative px-4 pb-24 sm:px-6 lg:px-8" id="media-kit">
+        <div className="relative mx-auto grid w-full max-w-7xl items-end gap-10 overflow-hidden rounded-3xl border border-foreground/10 bg-gradient-to-b from-foreground/[0.045] to-transparent p-8 sm:p-12 md:grid-cols-[1fr_auto]">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-24 top-0 h-px bg-gradient-to-r from-transparent via-dynamic-blue/50 to-transparent"
           />
 
-          <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
-            {guidelineCards.map((guideline) => (
-              <div className="bg-background p-7" key={guideline.key}>
-                <div
-                  className={cn('mb-10 h-1 w-16', guideline.lineClassName)}
-                />
-                <guideline.icon
-                  className={cn('mb-6 h-7 w-7', guideline.tintClassName)}
-                />
-                <h3 className="mb-6 font-semibold text-2xl">
-                  {t(`guidelines.${guideline.key}.title` as any)}
-                </h3>
-                <ul className="space-y-4">
-                  {[1, 2, 3, 4].map((rule) => (
-                    <li
-                      className="grid grid-cols-[1.5rem_1fr] gap-3 text-foreground/62 leading-7"
-                      key={rule}
-                    >
-                      <span className="font-medium text-foreground/30 text-sm">
-                        0{rule}
-                      </span>
-                      <span>
-                        {t(`guidelines.${guideline.key}.rule${rule}` as any)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section
-        className="bg-root-background px-4 py-24 text-foreground sm:px-6 lg:px-8"
-        data-brand-snap="true"
-        id="media-kit"
-      >
-        <div className="mx-auto grid max-w-7xl items-end gap-10 border-border border-y py-14 md:grid-cols-[1fr_auto]">
           <div>
-            <FileText className="mb-8 h-12 w-12 text-foreground/50" />
-            <h2 className="max-w-3xl text-pretty font-semibold text-4xl tracking-tight sm:text-6xl">
+            <FileText className="h-7 w-7 text-foreground/35" />
+            <h2 className="mt-7 max-w-2xl text-balance font-display font-semibold text-4xl tracking-[-0.03em] sm:text-5xl">
               {t('cta.title')}
             </h2>
-            <p className="mt-5 max-w-2xl text-foreground/58 text-lg leading-8">
+            <p className="mt-5 max-w-2xl text-balance text-foreground/55 text-lg leading-relaxed">
               {t('cta.description')}
             </p>
           </div>
+
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild className="justify-center" size="lg">
-              <Link href="/contact">
-                <Download className="mr-2 h-5 w-5" />
-                {t('cta.primaryAction')}
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="justify-center"
-              size="lg"
-              variant="outline"
-            >
-              <Link href="/about">
-                {t('cta.secondaryAction')}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <ActionLink href="/contact">
+              <Download className="h-4 w-4" />
+              {t('cta.primaryAction')}
+            </ActionLink>
+            <ActionLink href="/about" variant="ghost">
+              {t('cta.secondaryAction')}
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </ActionLink>
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+/**
+ * One section rhythm for the whole page.
+ *
+ * Replaces the alternating background colours and the per-section
+ * `min-h-[calc(100dvh-5rem)]`: sections are separated by a hairline rule and
+ * consistent padding, and take exactly the height their content needs.
+ */
+function BrandSection({
+  children,
+  id,
+}: {
+  children: React.ReactNode;
+  id: string;
+}) {
+  return (
+    <section
+      className="relative scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24 lg:px-8"
+      id={id}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--foreground)_12%,transparent)_25%,color-mix(in_oklab,var(--foreground)_12%,transparent)_75%,transparent)]"
+      />
+      <div className="relative mx-auto w-full max-w-7xl">{children}</div>
+    </section>
   );
 }

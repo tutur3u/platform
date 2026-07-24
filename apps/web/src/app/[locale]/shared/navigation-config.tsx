@@ -72,11 +72,13 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Users className="h-4 w-4" />,
     },
     {
-      href: `/partners`,
+      // Internal route: `external` here made the nav open our own partners page
+      // in a new tab, and tagged it rel="noopener noreferrer" as if it left the
+      // site. Every other first-party entry in this list is a plain link.
+      href: '/partners',
       label: t('common.partners'),
       description: t('common.partners-description'),
       icon: <HeartHandshake className="h-4 w-4" />,
-      external: true,
     },
     {
       href: '/contributors',

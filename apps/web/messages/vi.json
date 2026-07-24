@@ -3125,6 +3125,12 @@
         "description": "Logo chính thể hiện sự đổi mới, đáng tin cậy và xuất sắc của chúng tôi."
       }
     },
+    "plate": {
+      "clearSpaceLabel": "Khoảng trống",
+      "clearSpaceValue": "1x biểu tượng",
+      "formatLabel": "Định dạng",
+      "minWidthLabel": "Chiều rộng tối thiểu"
+    },
     "preview": {
       "dark": "Nền tối",
       "description": "Bản xem trước toàn màn hình cho {name} trên các chế độ nền khả dụng.",
@@ -3162,7 +3168,8 @@
       },
       "sampleLatin": "Build calm, capable software for ambitious teams.",
       "sampleVietnamese": "Xây dựng phần mềm rõ ràng cho đội ngũ tham vọng.",
-      "title": "Hệ Thống Chữ"
+      "title": "Hệ Thống Chữ",
+      "weightsLabel": "độ đậm"
     }
   },
   "breaks": {
@@ -3615,15 +3622,35 @@
     "version": "Phiên bản"
   },
   "changelog-page": {
+    "back_to_changelog": "Quay lại nhật ký thay đổi",
     "badge": "Cập Nhật Nền Tảng",
+    "categories": {
+      "breaking": "Thay đổi phá vỡ",
+      "bugfix": "Sửa lỗi",
+      "feature": "Tính năng mới",
+      "improvement": "Cải tiến",
+      "performance": "Hiệu năng",
+      "security": "Bảo mật"
+    },
     "cta_button": "Theo dõi trên GitHub",
     "cta_description": "Theo dõi kho GitHub của chúng tôi để cập nhật những phát triển mới nhất và đóng góp cho dự án.",
     "cta_title": "Không bỏ lỡ cập nhật nào",
+    "earlier_releases": "Các bản phát hành trước",
+    "feedback_action": "Bắt đầu thảo luận",
+    "feedback_description": "Chúng tôi rất mong nhận được phản hồi từ bạn. Hãy tạo một issue hoặc bắt đầu thảo luận trên GitHub.",
+    "feedback_title": "Bạn có góp ý hoặc đề xuất?",
     "hero_description": "Cập nhật những tính năng, cải tiến và thay đổi mới nhất để nâng cao hiệu suất làm việc của bạn.",
     "hero_title": "Có Gì Mới Tại",
+    "latest_release": "Bản phát hành mới nhất",
+    "next_release": "Tiếp theo",
     "no_updates": "Chưa có cập nhật nào",
     "no_updates_description": "Chúng tôi đang phát triển các tính năng mới thú vị. Hãy quay lại sau!",
+    "previous_release": "Trước",
     "read_more": "Xem thêm",
+    "stat_months": "Số tháng đã phát hành",
+    "stat_releases": "Bản phát hành",
+    "stat_types": "Loại thay đổi",
+    "stat_version": "Phiên bản mới nhất",
     "update": "cập nhật",
     "updates": "cập nhật"
   },

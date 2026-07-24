@@ -1,27 +1,44 @@
 import type { JSONContent } from '@tiptap/react';
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Bug,
   Calendar,
-  Shield,
-  Sparkles,
-  TrendingUp,
-  Zap,
-} from '@tuturuuu/icons';
+  MessagesSquare,
+} from '@tuturuuu/icons/lucide';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Card } from '@tuturuuu/ui/card';
+import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import Image from 'next/image';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
+import { ActionLink } from '@/components/marketing/action-link';
 import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import {
+  CategoryChip,
+  CoverArt,
+  VersionPlate,
+} from '../components/changelog-chrome';
+import {
+  type CategoryLabels,
+  categoryKeys,
+  formatDate,
+  labelFor,
+  styleFor,
+} from '../components/changelog-data';
 import { ChangelogContentRenderer } from './content-renderer';
-import { ChangelogDiscussionLink } from './discussion-link';
 
-interface ChangelogEntry {
+/**
+ * A single release.
+ *
+ * Rebuilt onto the marketing kit: this page was the last public route still
+ * pulling the shared Radix-backed Badge and Card primitives — both client
+ * boundaries — into the changelog's route graph, which the index is explicitly
+ * pinned against. Its "Have feedback?" panel was also hardcoded English on a
+ * translated page, and its discussion button was a `'use client'` component
+ * wrapping a link that has no interactivity at all.
+ */
+
+interface ChangelogEntryRecord {
   id: string;
   title: string;
   slug: string;
@@ -39,58 +56,6 @@ interface Props {
     locale: string;
     slug: string;
   }>;
-}
-
-const categoryConfig: Record<
-  string,
-  {
-    label: string;
-    icon: React.ReactNode;
-    colorClass: string;
-  }
-> = {
-  feature: {
-    label: 'New Feature',
-    icon: <Sparkles className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20',
-  },
-  improvement: {
-    label: 'Improvement',
-    icon: <TrendingUp className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/20',
-  },
-  bugfix: {
-    label: 'Bug Fix',
-    icon: <Bug className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/20',
-  },
-  breaking: {
-    label: 'Breaking Change',
-    icon: <AlertTriangle className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-red/10 text-dynamic-red border-dynamic-red/20',
-  },
-  security: {
-    label: 'Security',
-    icon: <Shield className="h-4 w-4" />,
-    colorClass:
-      'bg-dynamic-purple/10 text-dynamic-purple border-dynamic-purple/20',
-  },
-  performance: {
-    label: 'Performance',
-    icon: <Zap className="h-4 w-4" />,
-    colorClass: 'bg-dynamic-cyan/10 text-dynamic-cyan border-dynamic-cyan/20',
-  },
-};
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -112,8 +77,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${changelog.title} — Changelog`;
   const description =
     changelog.summary || `Read about ${changelog.title} on Tuturuuu`;
-  const categoryLabel =
-    categoryConfig[changelog.category]?.label || changelog.category;
   const metadata = getMarketingMetadata(
     {
       title,
@@ -124,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'changelog',
         'updates',
         'tuturuuu',
-        categoryLabel.toLowerCase(),
+        changelog.category,
         changelog.version ? `v${changelog.version}` : '',
       ].filter(Boolean),
       pathname: `/changelog/${slug}`,
@@ -141,7 +104,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: changelog.published_at,
       modifiedTime: changelog.created_at,
       authors: ['Tuturuuu Team'],
-      tags: [categoryLabel, 'changelog', 'update'],
+      tags: [changelog.category, 'changelog', 'update'],
     },
   };
 }
@@ -154,137 +117,164 @@ export default async function ChangelogEntryPage({ params }: Props) {
     notFound();
   }
 
+  const t = await getTranslations('changelog-page');
+  const locale = await getLocale();
   const { previous, next } = await getAdjacentChangelogs(
     changelog.published_at
   );
-  const config = categoryConfig[changelog.category] || {
-    label: changelog.category,
-    icon: null,
-    colorClass: 'bg-muted text-muted-foreground',
-  };
+
+  const categoryLabels: CategoryLabels = Object.fromEntries(
+    categoryKeys.map((key) => [key, t(`categories.${key}`)])
+  );
+  const style = styleFor(changelog.category);
 
   return (
-    <main className="relative mx-auto w-full overflow-x-hidden">
-      {/* Background effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute top-0 -left-32 h-96 w-96 rounded-full bg-linear-to-br from-dynamic-purple/20 via-dynamic-pink/10 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160" />
-        <div className="absolute top-[30%] -right-32 h-80 w-80 rounded-full bg-linear-to-br from-dynamic-blue/20 via-dynamic-cyan/10 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140" />
-      </div>
+    <main className="relative w-full overflow-x-hidden">
+      <article className="relative px-4 pt-28 pb-16 sm:px-6 sm:pt-32 lg:px-8">
+        <HeroAtmosphere />
 
-      <article className="relative px-4 pt-24 pb-16 sm:px-6 sm:pt-32 lg:px-8">
-        <div className="mx-auto max-w-3xl">
-          {/* Back Link */}
-          <Link
+        <div className="relative mx-auto w-full max-w-3xl">
+          <a
+            className="group inline-flex items-center gap-2 font-mono-ui text-[0.65rem] text-foreground/45 uppercase tracking-[0.16em] transition-colors hover:text-foreground"
             href="/changelog"
-            className="mb-8 inline-flex items-center text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Changelog
-          </Link>
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-translate-x-1" />
+            {t('back_to_changelog')}
+          </a>
 
-          {/* Header */}
-          <header className="mb-8">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={`gap-1.5 ${config.colorClass}`}
-              >
-                {config.icon}
-                {config.label}
-              </Badge>
-              {changelog.version && (
-                <Badge variant="secondary" className="font-mono">
-                  {changelog.version}
-                </Badge>
-              )}
+          <header className="mt-8">
+            <div className="flex flex-wrap items-center gap-2">
+              <CategoryChip
+                category={changelog.category}
+                label={labelFor(changelog.category, categoryLabels)}
+              />
+              {changelog.version ? (
+                <VersionPlate version={changelog.version} />
+              ) : null}
             </div>
 
-            <h1 className="mb-4 text-balance font-bold text-3xl tracking-tight sm:text-4xl md:text-5xl">
+            <h1 className="mt-6 text-balance font-display font-extrabold text-4xl leading-[1.04] tracking-[-0.04em] sm:text-5xl">
               {changelog.title}
             </h1>
 
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4" />
+            {changelog.summary ? (
+              <p className="mt-5 text-balance text-foreground/55 text-lg leading-relaxed">
+                {changelog.summary}
+              </p>
+            ) : null}
+
+            <div className="mt-7 flex items-center gap-2 border-foreground/[0.07] border-t pt-6 font-mono-ui text-[0.62rem] text-foreground/40 uppercase tracking-[0.14em]">
+              <Calendar className="h-3.5 w-3.5" />
               <time dateTime={changelog.published_at}>
-                {formatDate(changelog.published_at)}
+                {formatDate(changelog.published_at, locale)}
               </time>
             </div>
           </header>
 
-          {/* Cover Image */}
-          {changelog.cover_image_url && (
-            <div className="mb-8 overflow-hidden rounded-lg">
-              <Image
-                src={changelog.cover_image_url}
+          {changelog.cover_image_url ? (
+            <div className="relative mt-10 overflow-hidden rounded-2xl border border-foreground/10">
+              <span
+                aria-hidden
+                className={cn('block h-0.5 w-full opacity-70', style.dot)}
+              />
+              <CoverArt
                 alt={changelog.title}
-                className="w-full object-cover"
-                width={1200}
-                height={600}
+                category={changelog.category}
+                className="aspect-[16/9]"
+                priority
+                src={changelog.cover_image_url}
               />
             </div>
-          )}
+          ) : null}
 
-          {/* Content */}
-          <div className="prose prose-lg dark:prose-invert max-w-none">
+          <div className="prose prose-lg dark:prose-invert mt-10 max-w-none">
             <ChangelogContentRenderer content={changelog.content} />
           </div>
 
-          {/* Navigation */}
-          <nav className="mt-12 border-t pt-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-              {previous ? (
-                <Link href={`/changelog/${previous.slug}`} className="group">
-                  <Card className="p-4 transition-all hover:border-dynamic-purple/30 hover:shadow-md">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                      Previous
-                    </div>
-                    <div className="mt-1 font-medium group-hover:text-dynamic-purple">
-                      {previous.title}
-                    </div>
-                  </Card>
-                </Link>
-              ) : (
-                <div />
-              )}
-
-              {next ? (
-                <Link
-                  href={`/changelog/${next.slug}`}
-                  className="group text-right"
-                >
-                  <Card className="p-4 transition-all hover:border-dynamic-purple/30 hover:shadow-md">
-                    <div className="flex items-center justify-end gap-2 text-muted-foreground text-sm">
-                      Next
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
-                    <div className="mt-1 font-medium group-hover:text-dynamic-purple">
-                      {next.title}
-                    </div>
-                  </Card>
-                </Link>
-              ) : (
-                <div />
-              )}
-            </div>
+          <nav className="mt-14 grid gap-3 border-foreground/[0.07] border-t pt-8 sm:grid-cols-2">
+            {previous ? (
+              <AdjacentLink
+                direction="previous"
+                label={t('previous_release')}
+                slug={previous.slug}
+                title={previous.title}
+              />
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <AdjacentLink
+                direction="next"
+                label={t('next_release')}
+                slug={next.slug}
+                title={next.title}
+              />
+            ) : null}
           </nav>
 
-          {/* CTA */}
-          <div className="mt-12">
-            <Card className="border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-dynamic-pink/5 to-background p-6 text-center">
-              <h2 className="mb-2 font-semibold text-lg">
-                Have feedback or suggestions?
-              </h2>
-              <p className="mb-4 text-muted-foreground">
-                We'd love to hear from you! Open an issue or start a discussion
-                on GitHub.
-              </p>
-              <ChangelogDiscussionLink />
-            </Card>
-          </div>
+          <aside className="relative mt-12 overflow-hidden rounded-2xl border border-foreground/10 bg-gradient-to-b from-foreground/[0.045] to-transparent p-7 text-center sm:p-9">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-16 top-0 h-px bg-gradient-to-r from-transparent via-dynamic-purple/50 to-transparent"
+            />
+            <MessagesSquare className="mx-auto h-5 w-5 text-foreground/30" />
+            <h2 className="mt-5 font-display font-semibold text-xl tracking-[-0.02em]">
+              {t('feedback_title')}
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-balance text-foreground/50 text-sm leading-relaxed">
+              {t('feedback_description')}
+            </p>
+            <div className="mt-6 flex justify-center">
+              <ActionLink
+                external
+                href="https://github.com/tutur3u/platform/discussions"
+                variant="ghost"
+              >
+                {t('feedback_action')}
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </ActionLink>
+            </div>
+          </aside>
         </div>
       </article>
     </main>
+  );
+}
+
+function AdjacentLink({
+  direction,
+  label,
+  slug,
+  title,
+}: {
+  direction: 'previous' | 'next';
+  label: string;
+  slug: string;
+  title: string;
+}) {
+  const isNext = direction === 'next';
+
+  return (
+    <a
+      className={cn(
+        'group flex flex-col gap-2 rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-400 hover:-translate-y-0.5 hover:border-foreground/[0.18] hover:bg-foreground/[0.03]',
+        isNext && 'sm:col-start-2 sm:items-end sm:text-right'
+      )}
+      href={`/changelog/${slug}`}
+    >
+      <span className="flex items-center gap-2 font-mono-ui text-[0.6rem] text-foreground/40 uppercase tracking-[0.14em]">
+        {isNext ? null : (
+          <ArrowLeft className="h-3 w-3 transition-transform duration-300 group-hover:-translate-x-1" />
+        )}
+        {label}
+        {isNext ? (
+          <ArrowRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" />
+        ) : null}
+      </span>
+      <span className="line-clamp-2 font-medium transition-colors duration-300 group-hover:text-dynamic-purple">
+        {title}
+      </span>
+    </a>
   );
 }
 
@@ -293,16 +283,20 @@ const defaultContent: JSONContent = {
   content: [{ type: 'paragraph', content: [] }],
 };
 
-async function getChangelog(slug: string): Promise<ChangelogEntry | null> {
+async function getChangelog(
+  slug: string
+): Promise<ChangelogEntryRecord | null> {
   const supabase = await createClient();
 
+  // `maybeSingle` rather than `single`: a slug that does not exist is a 404,
+  // not an error, and `single` made every bad URL log a PostgREST failure.
   const { data, error } = await supabase
     .from('changelog_entries')
     .select('*')
     .eq('slug', slug)
     .eq('is_published', true)
     .not('published_at', 'is', null)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching changelog:', error);
@@ -313,7 +307,6 @@ async function getChangelog(slug: string): Promise<ChangelogEntry | null> {
     return null;
   }
 
-  // Transform database types to component types
   return {
     ...data,
     content: (data.content as JSONContent | null) ?? defaultContent,
@@ -328,27 +321,29 @@ async function getAdjacentChangelogs(publishedAt: string): Promise<{
 }> {
   const supabase = await createClient();
 
-  // Get previous (older)
-  const { data: prevData } = await supabase
-    .from('changelog_entries')
-    .select('slug, title')
-    .eq('is_published', true)
-    .not('published_at', 'is', null)
-    .lt('published_at', publishedAt)
-    .order('published_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  // Get next (newer)
-  const { data: nextData } = await supabase
-    .from('changelog_entries')
-    .select('slug, title')
-    .eq('is_published', true)
-    .not('published_at', 'is', null)
-    .gt('published_at', publishedAt)
-    .order('published_at', { ascending: true })
-    .limit(1)
-    .single();
+  // Both ends are legitimately empty at the edges of the list, so these are
+  // `maybeSingle` too — `single` treated "this is the newest release" as an
+  // error condition.
+  const [{ data: prevData }, { data: nextData }] = await Promise.all([
+    supabase
+      .from('changelog_entries')
+      .select('slug, title')
+      .eq('is_published', true)
+      .not('published_at', 'is', null)
+      .lt('published_at', publishedAt)
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('changelog_entries')
+      .select('slug, title')
+      .eq('is_published', true)
+      .not('published_at', 'is', null)
+      .gt('published_at', publishedAt)
+      .order('published_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   return {
     previous: prevData || null,

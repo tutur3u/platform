@@ -3125,6 +3125,12 @@
         "description": "Our primary brand mark represents innovation, trust, and excellence."
       }
     },
+    "plate": {
+      "clearSpaceLabel": "Clear space",
+      "clearSpaceValue": "1x mark",
+      "formatLabel": "Format",
+      "minWidthLabel": "Min width"
+    },
     "preview": {
       "dark": "Dark",
       "description": "Fullscreen preview for {name} across available background modes.",
@@ -3162,7 +3168,8 @@
       },
       "sampleLatin": "Build calm, capable software for ambitious teams.",
       "sampleVietnamese": "Xây dựng phần mềm rõ ràng cho đội ngũ tham vọng.",
-      "title": "Typography"
+      "title": "Typography",
+      "weightsLabel": "weights"
     }
   },
   "breaks": {
@@ -3615,15 +3622,35 @@
     "version": "Version"
   },
   "changelog-page": {
+    "back_to_changelog": "Back to changelog",
     "badge": "Platform Updates",
+    "categories": {
+      "breaking": "Breaking change",
+      "bugfix": "Bug fix",
+      "feature": "New feature",
+      "improvement": "Improvement",
+      "performance": "Performance",
+      "security": "Security"
+    },
     "cta_button": "Follow on GitHub",
     "cta_description": "Follow our GitHub repository to stay informed about the latest developments and contribute to the project.",
     "cta_title": "Never miss an update",
+    "earlier_releases": "Earlier releases",
+    "feedback_action": "Start a discussion",
+    "feedback_description": "We'd love to hear from you. Open an issue or start a discussion on GitHub.",
+    "feedback_title": "Have feedback or suggestions?",
     "hero_description": "Stay up to date with the latest features, improvements, and updates to make your workflow even better.",
     "hero_title": "What's New in",
+    "latest_release": "Latest release",
+    "next_release": "Next",
     "no_updates": "No updates yet",
     "no_updates_description": "We're working on exciting new features. Check back soon!",
+    "previous_release": "Previous",
     "read_more": "Read more",
+    "stat_months": "Months shipped",
+    "stat_releases": "Releases",
+    "stat_types": "Change types",
+    "stat_version": "Latest version",
     "update": "update",
     "updates": "updates"
   },

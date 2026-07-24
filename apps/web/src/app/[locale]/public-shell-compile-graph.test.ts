@@ -89,6 +89,14 @@ const contributorsPageSource = source(
 const changelogPageSource = source(
   'src/app/[locale]/(marketing)/changelog/page.tsx'
 );
+const changelogEntryPageSource = source(
+  'src/app/[locale]/(marketing)/changelog/[slug]/page.tsx'
+);
+const changelogComponentSources = [
+  'src/app/[locale]/(marketing)/changelog/components/changelog-chrome.tsx',
+  'src/app/[locale]/(marketing)/changelog/components/changelog-data.ts',
+  'src/app/[locale]/(marketing)/changelog/components/changelog-sections.tsx',
+].map(source);
 const sharedButtonSource = source(
   '../../packages/ui/src/components/ui/button.tsx'
 );
@@ -311,6 +319,29 @@ describe('public shell compile graph', () => {
   it('keeps the prerendered changelog page free of Radix-backed UI primitives', () => {
     expect(changelogPageSource).not.toContain('@tuturuuu/ui/badge');
     expect(changelogPageSource).not.toContain('@tuturuuu/ui/button');
+  });
+
+  // The entry page was the hole in the rule above: the index was pinned, but
+  // /changelog/<slug> still pulled Badge and Card — both client boundaries —
+  // into the same public route graph.
+  it('keeps the changelog entry page and its parts off the same primitives', () => {
+    for (const sourceText of [
+      changelogEntryPageSource,
+      ...changelogComponentSources,
+    ]) {
+      expect(sourceText).not.toContain('@tuturuuu/ui/badge');
+      expect(sourceText).not.toContain('@tuturuuu/ui/button');
+      expect(sourceText).not.toContain('@tuturuuu/ui/card');
+      expect(sourceText).not.toMatch(staticImportPattern('@tuturuuu/icons'));
+    }
+  });
+
+  // Category colours are looked up in an authored table rather than assembled
+  // as `bg-dynamic-${category}`, which Tailwind's scanner cannot see.
+  it('keeps changelog category accents out of interpolated class names', () => {
+    for (const sourceText of changelogComponentSources) {
+      expect(sourceText).not.toMatch(/(?:bg|text|border)-dynamic-\$\{/u);
+    }
   });
 
   it('marks the shared Radix-backed button as a client boundary', () => {
