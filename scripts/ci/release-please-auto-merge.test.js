@@ -138,6 +138,16 @@ test('release merge deletes both release-please branches once they are merged', 
     /RELEASE_NOTES_SUFFIX: "--release-notes"/,
     'the notes suffix must stay in step with scripts/git-release-please.js'
   );
+  assert.match(
+    cleanupStep,
+    /labels=autorelease: pending/,
+    'the notes branch may only go once release-please has tagged the release'
+  );
+  assert.match(
+    cleanupStep,
+    /\|\| echo 1/,
+    'an unreadable label must be treated as pending so the branch is kept'
+  );
   assert.ok(
     cleanupIndex >
       workflow.indexOf(
