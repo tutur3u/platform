@@ -152,6 +152,55 @@ jobs:
           echo "main and production are both at ${main_sha}."
           echo "aligned_sha=${main_sha}" >> "$GITHUB_ENV"
 
+      - name: Delete merged release-please branches
+        # Release-please recreates these branches from scratch on its next run,
+        # so a merged one left on origin is only noise. This is deliberately not
+        # gated on should_merge: a run whose merge landed but whose cleanup did
+        # not still tidies up the next time round.
+        if: inputs.dry_run != true
+        shell: bash
+        # Values reach the script through the environment rather than being
+        # pasted into it, so a ref name can never be read as shell.
+        env:
+          MERGED_BRANCH: ${{ steps.plan.outputs.branch }}
+          # Mirrors RELEASE_NOTES_SUFFIX in scripts/git-release-please.js.
+          RELEASE_NOTES_SUFFIX: "--release-notes"
+        run: |
+          set -euo pipefail
+
+          # The plan step reports the remote-tracking name (origin/<branch>);
+          # a delete refspec needs the plain branch name.
+          branch="${MERGED_BRANCH#origin/}"
+
+          if [ -z "${branch}" ]; then
+            echo "No release-please branch to delete."
+            exit 0
+          fi
+
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+          if ! git show-ref --verify --quiet "refs/remotes/origin/${branch}"; then
+            echo "origin/${branch} is already deleted."
+          elif ! git merge-base --is-ancestor "origin/${branch}" origin/main; then
+            # Never delete unmerged release commits, whatever else went on.
+            echo "::warning::origin/${branch} is not merged into main; leaving it in place."
+            exit 0
+          else
+            echo "Deleting origin/${branch}."
+            git push origin --delete "${branch}"
+          fi
+
+          # The overflow notes branch is metadata for that same release and is
+          # never merged, so it is retired alongside the branch it describes.
+          notes="${branch}${RELEASE_NOTES_SUFFIX}"
+
+          if git show-ref --verify --quiet "refs/remotes/origin/${notes}"; then
+            echo "Deleting origin/${notes}."
+            git push origin --delete "${notes}"
+          else
+            echo "origin/${notes} is already deleted."
+          fi
+
       - name: Write run summary
         if: always()
         shell: bash

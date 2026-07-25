@@ -75,6 +75,68 @@ test('release merge ends with main and production on the same commit', () => {
   );
 });
 
+test('release merge deletes both release-please branches once they are merged', () => {
+  const cleanupIndex = workflow.indexOf(
+    '- name: Delete merged release-please branches'
+  );
+
+  assert.ok(
+    cleanupIndex !== -1,
+    'the merged release branches must be cleaned up'
+  );
+
+  const cleanupStep = workflow.slice(
+    cleanupIndex,
+    workflow.indexOf('- name: Write run summary')
+  );
+
+  assert.match(
+    cleanupStep,
+    /git push origin --delete "\$\{branch\}"/,
+    'the merged release branch must be deleted from origin'
+  );
+  assert.match(
+    cleanupStep,
+    /git push origin --delete "\$\{notes\}"/,
+    'the overflow release-notes branch must be deleted from origin too'
+  );
+  assert.match(
+    cleanupStep,
+    /RELEASE_NOTES_SUFFIX: "--release-notes"/,
+    'the notes suffix must stay in step with scripts/git-release-please.js'
+  );
+  assert.ok(
+    cleanupIndex >
+      workflow.indexOf(
+        '- name: Verify main and production point at the same commit'
+      ),
+    'branches may only be deleted after main and production are verified aligned'
+  );
+});
+
+test('release merge never deletes an unmerged release branch', () => {
+  const cleanupStep = workflow.slice(
+    workflow.indexOf('- name: Delete merged release-please branches'),
+    workflow.indexOf('- name: Write run summary')
+  );
+
+  assert.match(
+    cleanupStep,
+    /merge-base --is-ancestor "origin\/\$\{branch\}" origin\/main/,
+    'deleting a branch whose commits are not on main would lose the release'
+  );
+  assert.match(
+    cleanupStep,
+    /if: inputs\.dry_run != true/,
+    'a dry run must not delete anything'
+  );
+  assert.doesNotMatch(
+    cleanupStep,
+    /run: \|[\s\S]*\$\{\{ steps\.plan\.outputs\.branch \}\}/,
+    'ref names must reach the script through the environment'
+  );
+});
+
 test('release merge holds write access at the job, not the workflow', () => {
   const jobsIndex = workflow.indexOf('\njobs:');
   const preamble = workflow.slice(0, jobsIndex);
