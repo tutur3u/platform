@@ -116,6 +116,26 @@ function getDisplayWidth(str) {
 /**
  * Filter node --test TAP output down to failures and summary lines
  */
+// `node --test` only emits TAP when asked; by default it uses the spec
+// reporter, and check.js runs it with FORCE_COLOR, so the TAP parser below sees
+// neither `not ok` lines nor uncoloured text and reports nothing at all. That
+// left failing CI runs with no way to tell which test broke. Recover the spec
+// reporter's own trailing failure summary instead.
+function formatSpecTestErrors(strippedLines) {
+  const summaryIndex = strippedLines.findIndex((line) =>
+    /^\s*✖ failing tests:/.test(line)
+  );
+
+  if (summaryIndex !== -1) {
+    return strippedLines.slice(summaryIndex).join('\n').trimEnd();
+  }
+
+  // No recognisable summary: surface the tail rather than staying silent.
+  const tail = strippedLines.filter(Boolean).slice(-80);
+
+  return tail.length > 0 ? tail.join('\n') : '';
+}
+
 function formatScriptTestErrors(stdout, stderr) {
   const lines = stdout.split(/\r?\n/);
   const failureBlocks = [];
@@ -173,6 +193,14 @@ function formatScriptTestErrors(stdout, stderr) {
 
   if (summaryLines.length > 0) {
     sections.push(summaryLines.join('\n'));
+  }
+
+  if (sections.length === 0) {
+    const specSection = formatSpecTestErrors(stripAnsi(stdout).split(/\r?\n/));
+
+    if (specSection) {
+      sections.push(specSection);
+    }
   }
 
   if (stderrLines.length > 0) {
@@ -1310,6 +1338,7 @@ module.exports = {
   checks,
   discordPythonCheck,
   forceClearCheckQueue,
+  formatScriptTestErrors,
   formatSignalError,
   getActiveChecks,
   getCheckQueuePaths,

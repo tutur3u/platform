@@ -9,6 +9,7 @@ const {
   checks,
   discordPythonCheck,
   forceClearCheckQueue,
+  formatScriptTestErrors,
   getActiveChecks,
   getChangedFiles,
   getCheckQueuePaths,
@@ -659,4 +660,55 @@ test('acquireCheckQueueLock forceNow clears earlier checks before taking the loc
   handle.release();
 
   assert.equal(fs.existsSync(paths.lockDir), false);
+});
+
+test('formatScriptTestErrors surfaces TAP failures when node emits TAP', () => {
+  const output = formatScriptTestErrors(
+    [
+      '# Subtest: does a thing',
+      'not ok 1 - does a thing',
+      '  AssertionError: nope',
+      'ok 2 - does another thing',
+      '# tests 2',
+      '# fail 1',
+      '',
+    ].join('\n'),
+    ''
+  );
+
+  assert.match(output, /not ok 1 - does a thing/u);
+  assert.match(output, /AssertionError: nope/u);
+  assert.match(output, /# fail 1/u);
+});
+
+test('formatScriptTestErrors surfaces spec-reporter failures too', () => {
+  // node --test defaults to the spec reporter, and check.js runs it with
+  // FORCE_COLOR, so a TAP-only parser reported nothing at all and made CI
+  // failures undiagnosable.
+  const red = `${String.fromCharCode(27)}[31m`;
+  const reset = `${String.fromCharCode(27)}[0m`;
+  const output = formatScriptTestErrors(
+    [
+      `${red}✖ runPortlessSetup starts the proxy daemon (1.0ms)${reset}`,
+      'ℹ pass 6',
+      'ℹ fail 4',
+      `${red}✖ failing tests:${reset}`,
+      '',
+      `${red}✖ runPortlessSetup starts the proxy daemon (1.0ms)${reset}`,
+      '  AssertionError [ERR_ASSERTION]: Expected values to be deep-equal',
+      '',
+    ].join('\n'),
+    ''
+  );
+
+  assert.match(output, /✖ failing tests:/u);
+  assert.match(output, /runPortlessSetup starts the proxy daemon/u);
+  assert.match(output, /AssertionError/u);
+  assert.doesNotMatch(output, /\[31m/u, 'ANSI codes must be stripped');
+});
+
+test('formatScriptTestErrors never stays silent on an unrecognised failure', () => {
+  const output = formatScriptTestErrors('something exploded\n', '');
+
+  assert.match(output, /something exploded/u);
 });

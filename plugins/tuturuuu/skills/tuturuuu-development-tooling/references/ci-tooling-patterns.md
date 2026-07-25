@@ -115,6 +115,31 @@ formatting behavior, or repo-wide verification.
   If a manual merge is already in progress, run
   `bun release:sync-platform-version` before staging the resolved
   `TUTURUUU_PLATFORM_VERSION` files.
+- A CI job that runs `bun check` (or any turbo `test` task) on a fresh checkout
+  must first build the dist-only packages, the way `codecov.yaml` and
+  `release-please-auto-merge.yaml` do:
+  `bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase
+  --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu`.
+  The turbo `test` task dependsOn `transit`, a no-op marker, **not** `^build`, so
+  nothing else produces `dist/**`. Locally this is invisible because `bun setup`
+  builds exactly those packages; in CI, `bun install` alone leaves 24 packages
+  failing with `ERR_MODULE_NOT_FOUND`. Those packages expose only built
+  entrypoints to Node resolution — `@tuturuuu/supabase` points its `bun`
+  condition at source, but vitest resolves under Node conditions, so that does
+  not help. Route the build through
+  `.github/actions/run-with-turbo-remote-cache`; `ci-cache-policy` rejects a
+  bare `run:` for cacheable turbo tasks.
+- Reproduce a CI-only `bun check` failure with `CI=true bun check`, not
+  `bun check`. The turbo `test` task passes `CI` through, so anything gated on
+  `process.env.CI` fails only under the first. To reproduce a *fresh checkout*,
+  delete every `packages/*/dist` as well — a stale local `dist` hides exactly
+  the class of failure above.
+- Tests must pin any environment they depend on rather than inheriting the
+  runner's. `scripts/setup-portless.test.js` injected `isTTY`/`log`/`runner` but
+  let `env` default to `process.env`, so it passed locally and failed under
+  `CI=true`. Pass an explicit `env`.
+- New `scripts/*.test.js` files must be added to the `test:scripts` list in
+  `package.json`; a test file that is not listed never runs and is not coverage.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
