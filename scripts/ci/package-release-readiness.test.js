@@ -505,6 +505,9 @@ test('platform changed package gate reports ready when changed versions are visi
     dispatchWorkflow: async () => {
       throw new Error('ready package gate should not dispatch workflows');
     },
+    // Pin GITHUB_SHA: the gate diffs against it, and an ambient value from the
+    // real checkout is not a valid object inside this temporary fixture repo.
+    env: { GITHUB_SHA: 'HEAD' },
     getRelatedWorkflowStatus: async () => {
       throw new Error('ready package gate should not inspect workflows');
     },
@@ -539,6 +542,7 @@ test('platform changed package gate defers pending workflows without sleeping', 
     dispatchWorkflow: async ({ workflowName }) => {
       dispatchedWorkflows.push(workflowName);
     },
+    env: { GITHUB_SHA: 'HEAD' },
     getRelatedWorkflowStatus: async ({ workflowName }) => {
       inspectedWorkflows.push(workflowName);
       return { state: 'pending', status: 'queued' };
@@ -577,6 +581,7 @@ test('platform changed package gate dispatches missing workflows and defers', as
     dispatchWorkflow: async ({ workflowName }) => {
       dispatchedWorkflows.push(workflowName);
     },
+    env: { GITHUB_SHA: 'HEAD' },
     getRelatedWorkflowStatus: async () => ({ state: 'missing' }),
     logger: silentLogger,
     repoRoot: rootDir,
@@ -611,6 +616,7 @@ test('platform changed package gate re-dispatches and defers when a release work
     dispatchWorkflow: async ({ workflowName }) => {
       dispatchedWorkflows.push(workflowName);
     },
+    env: { GITHUB_SHA: 'HEAD' },
     getRelatedWorkflowStatus: async () => ({
       state: 'success',
       url: 'https://example.test/run',

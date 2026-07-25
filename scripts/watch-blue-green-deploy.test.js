@@ -142,6 +142,7 @@ const {
   readDeploymentStagesHandoff,
   writeDeploymentStagesHandoff,
 } = require('./watch-blue-green/history.js');
+const { formatClockTime } = require('./watch-blue-green/dashboard.js');
 const {
   BUILD_FAILURE_ALERT_RECIPIENTS_ENV,
   DOCKER_RECOVERY_SETTINGS_FILE: BUILD_FAILURE_ALERT_SETTINGS_FILE,
@@ -2676,7 +2677,15 @@ test('buildDashboardView shows blue/green runtime and the top 3 prioritized depl
   );
   assert.match(plainOutput, /╭/);
   assert.match(plainOutput, /Current promotion in flight/);
-  assert.match(plainOutput, /\[18:10:00\]/);
+  // Derive the clock label with the same formatter the dashboard uses; it
+  // renders in local time, so hard-coding a wall-clock string only passes in
+  // the timezone it was written in (and fails on UTC CI runners).
+  assert.match(
+    plainOutput,
+    new RegExp(
+      `\\[${formatClockTime(Date.parse('2026-04-18T11:10:00.000Z'))}\\]`
+    )
+  );
   assert.match(plainOutput, /ACTIVE/);
   assert.match(plainOutput, /green/);
   assert.match(plainOutput, /DEPLOYED/);
@@ -3300,7 +3309,11 @@ test('deployment build lock clears Linux PID reuse when cmdline does not match d
     mkdirSync: (...args) => fs.mkdirSync(...args),
     readFileSync: (p, enc) => {
       if (String(p) === `/proc/${ownerPid}/cmdline`) {
-        return Buffer.from('node\u0000/usr/bin/node\u0000', 'utf8');
+        // Must be a string: the caller passes 'utf8', so the real
+        // readFileSync returns one, and normalizeProcessCmdline treats
+        // anything else as empty — which silently skipped the PID-reuse
+        // check this test exists to cover.
+        return 'node\u0000/usr/bin/node\u0000';
       }
 
       return fs.readFileSync(p, enc);
