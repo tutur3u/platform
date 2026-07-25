@@ -75,6 +75,39 @@ test('release merge ends with main and production on the same commit', () => {
   );
 });
 
+test('release merge builds the dist-only packages before running bun check', () => {
+  // The turbo `test` task depends on `transit`, not `^build`, so nothing else
+  // in the run produces `dist/**`. Locally `bun setup` covers this; CI has to
+  // do it explicitly or every suite importing @tuturuuu/types,
+  // @tuturuuu/supabase or @tuturuuu/internal-api dies on ERR_MODULE_NOT_FOUND.
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
+  );
+  const setupFilters = [...packageJson.scripts.setup.matchAll(/-F (\S+)/g)].map(
+    ([, name]) => name
+  );
+
+  assert.ok(
+    setupFilters.length > 0,
+    'the setup script must still build packages with -F filters'
+  );
+
+  const buildIndex = workflow.indexOf('- name: Build workspace setup');
+
+  assert.ok(buildIndex !== -1, 'the workspace build step must exist');
+  assert.ok(
+    buildIndex < workflow.indexOf('- name: Merge release-please branch'),
+    'the workspace must be built before bun check runs'
+  );
+
+  for (const filter of setupFilters) {
+    assert.ok(
+      workflow.includes(`--filter=${filter}`),
+      `the workflow must build ${filter}, the same package bun setup builds`
+    );
+  }
+});
+
 test('release merge deletes both release-please branches once they are merged', () => {
   const cleanupIndex = workflow.indexOf(
     '- name: Delete merged release-please branches'

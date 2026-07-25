@@ -114,6 +114,23 @@ jobs:
         if: steps.plan.outputs.should_merge == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
+      # `bun git-release-please` runs `bun check`, and the turbo `test` task
+      # depends on `transit` (a no-op marker), not `^build`. Locally that is
+      # invisible because `bun setup` builds these five packages, but a fresh CI
+      # checkout has no `dist/**`, and @tuturuuu/types, @tuturuuu/supabase and
+      # @tuturuuu/internal-api expose only built entrypoints to Node resolution.
+      # Without this the suites fail with ERR_MODULE_NOT_FOUND. Keep the filter
+      # list in step with the `setup` script in package.json.
+      - name: Build workspace setup
+        if: steps.plan.outputs.should_merge == 'true'
+        run: >-
+          bun turbo:local run build --concurrency=4
+          --filter=@tuturuuu/types
+          --filter=@tuturuuu/supabase
+          --filter=@tuturuuu/masonry
+          --filter=@tuturuuu/internal-api
+          --filter=tuturuuu
+
       - name: Configure git identity
         if: steps.plan.outputs.should_merge == 'true'
         shell: bash
