@@ -158,6 +158,23 @@ export function RichTextEditor({
     []
   );
 
+  // Collaboration bindings decide which extensions the editor is built with, and
+  // `Editor.setOptions({ extensions })` does NOT rebuild the extension manager —
+  // it only refreshes editor props. So a binding change has to recreate the
+  // editor through `useEditor`'s dependency array. Without this, an editor first
+  // created while collaboration was still off (e.g. a task dialog opened from a
+  // deep link, which mounts before the task has hydrated) never gains the
+  // Collaboration extension, and content that lives only in the Yjs document can
+  // never render.
+  //
+  // Only identity-stable values belong here: `collaborationUser` is often a fresh
+  // object every render, so the caret binding is tracked as a boolean instead.
+  const collaborationDoc = allowCollaboration ? yjsDoc : undefined;
+  const collaborationProvider = allowCollaboration ? yjsProvider : undefined;
+  const hasCollaborationCaret = Boolean(
+    collaborationProvider && collaborationUser
+  );
+
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
     workspaceIdRef.current = workspaceId;
@@ -303,271 +320,234 @@ export function RichTextEditor({
     return baseClasses.join(' ');
   }, [className, readOnly]);
 
-  const editor = useEditor({
-    extensions: getEditorExtensions({
-      titlePlaceholder,
-      writePlaceholder,
-      doc: allowCollaboration ? yjsDoc : undefined,
-      provider: allowCollaboration ? yjsProvider : undefined,
-      collaborationUser: allowCollaboration ? collaborationUser : undefined,
-      onImageUpload,
-      onVideoUpload: onImageUpload,
-      getOnImageUpload: getDelegatedImageUpload,
-      getOnVideoUpload: getDelegatedImageUpload,
-      mentionTranslations,
-      renderTaskMention,
-      readOnly,
-    }),
-    // Migrate inline images to block-level for backward compatibility
-    content: allowCollaboration
-      ? undefined
-      : migrateInlineImagesToBlock(content),
-    editable: !readOnly,
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class: getEditorClasses,
-      },
-      handleKeyDown: (view, event) => {
-        // Prevent Ctrl+Enter / Cmd+Enter from creating a new line
-        // Let the parent component handle the save action
-        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-          event.preventDefault();
-          return true;
-        }
-
-        if (handlePlainEnterFallback(view, event)) {
-          return true;
-        }
-
-        const { state, dispatch } = view;
-        const { selection } = state;
-        const { $from } = selection;
-
-        // Handle Backspace
-        if (event.key === 'Backspace' && onArrowUpRef.current) {
-          // If there's a text selection, let default behavior handle deletion
-          if (!selection.empty) {
-            return false;
+  const editor = useEditor(
+    {
+      extensions: getEditorExtensions({
+        titlePlaceholder,
+        writePlaceholder,
+        doc: collaborationDoc,
+        provider: collaborationProvider,
+        collaborationUser: allowCollaboration ? collaborationUser : undefined,
+        onImageUpload,
+        onVideoUpload: onImageUpload,
+        getOnImageUpload: getDelegatedImageUpload,
+        getOnVideoUpload: getDelegatedImageUpload,
+        mentionTranslations,
+        renderTaskMention,
+        readOnly,
+      }),
+      // Migrate inline images to block-level for backward compatibility
+      content: allowCollaboration
+        ? undefined
+        : migrateInlineImagesToBlock(content),
+      editable: !readOnly,
+      immediatelyRender: false,
+      editorProps: {
+        attributes: {
+          class: getEditorClasses,
+        },
+        handleKeyDown: (view, event) => {
+          // Prevent Ctrl+Enter / Cmd+Enter from creating a new line
+          // Let the parent component handle the save action
+          if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            return true;
           }
 
-          console.log('Backspace at pos:', $from.pos);
+          if (handlePlainEnterFallback(view, event)) {
+            return true;
+          }
 
-          // Check if we're on the first line
-          const coordsAtCursor = view.coordsAtPos($from.pos);
-          const coordsAtStart = view.coordsAtPos(1);
-          const isOnFirstLine =
-            coordsAtCursor &&
-            coordsAtStart &&
-            Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5;
+          const { state, dispatch } = view;
+          const { selection } = state;
+          const { $from } = selection;
 
-          console.log('Is on first line:', isOnFirstLine);
+          // Handle Backspace
+          if (event.key === 'Backspace' && onArrowUpRef.current) {
+            // If there's a text selection, let default behavior handle deletion
+            if (!selection.empty) {
+              return false;
+            }
 
-          if (isOnFirstLine) {
-            const firstChild = state.doc.firstChild;
-            console.log('First child:', {
-              type: firstChild?.type.name,
-              text: firstChild?.textContent,
-              isEmpty: firstChild?.textContent.trim() === '',
-              nodeSize: firstChild?.nodeSize,
-            });
+            console.log('Backspace at pos:', $from.pos);
 
-            // If cursor is at the absolute start (position 1)
-            if ($from.pos === 1) {
+            // Check if we're on the first line
+            const coordsAtCursor = view.coordsAtPos($from.pos);
+            const coordsAtStart = view.coordsAtPos(1);
+            const isOnFirstLine =
+              coordsAtCursor &&
+              coordsAtStart &&
+              Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5;
+
+            console.log('Is on first line:', isOnFirstLine);
+
+            if (isOnFirstLine) {
               const firstChild = state.doc.firstChild;
+              console.log('First child:', {
+                type: firstChild?.type.name,
+                text: firstChild?.textContent,
+                isEmpty: firstChild?.textContent.trim() === '',
+                nodeSize: firstChild?.nodeSize,
+              });
 
-              // If first line is empty and there's a second line, delete the empty line
-              if (firstChild && firstChild.textContent.trim() === '') {
-                const secondChild = state.doc.maybeChild(1);
-                if (secondChild) {
-                  console.log(
-                    'Empty first line - manually deleting via commands'
-                  );
-                  event.preventDefault();
+              // If cursor is at the absolute start (position 1)
+              if ($from.pos === 1) {
+                const firstChild = state.doc.firstChild;
 
-                  // Use commands to delete the node
-                  const tr = state.tr;
-                  const nodeSize = firstChild.nodeSize;
+                // If first line is empty and there's a second line, delete the empty line
+                if (firstChild && firstChild.textContent.trim() === '') {
+                  const secondChild = state.doc.maybeChild(1);
+                  if (secondChild) {
+                    console.log(
+                      'Empty first line - manually deleting via commands'
+                    );
+                    event.preventDefault();
 
-                  // Delete from position 0 to end of first child (including the node itself)
-                  tr.delete(0, nodeSize);
+                    // Use commands to delete the node
+                    const tr = state.tr;
+                    const nodeSize = firstChild.nodeSize;
 
-                  // Dispatch and trigger onChange manually
-                  dispatch(tr);
+                    // Delete from position 0 to end of first child (including the node itself)
+                    tr.delete(0, nodeSize);
 
-                  // Manually trigger onChange since we're in handleKeyDown
-                  if (!readOnly && onChangeRef.current) {
-                    const newJson = tr.doc.toJSON();
-                    onChangeRef.current(hasContent(newJson) ? newJson : null);
+                    // Dispatch and trigger onChange manually
+                    dispatch(tr);
+
+                    // Manually trigger onChange since we're in handleKeyDown
+                    if (!readOnly && onChangeRef.current) {
+                      const newJson = tr.doc.toJSON();
+                      onChangeRef.current(hasContent(newJson) ? newJson : null);
+                    }
+
+                    return true;
                   }
-
-                  return true;
                 }
-              }
 
-              // If first line is NOT empty, go to title
-              console.log('Non-empty first line - going to title');
+                // If first line is NOT empty, go to title
+                console.log('Non-empty first line - going to title');
+                event.preventDefault();
+                onArrowUpRef.current();
+                return true;
+              }
+            }
+          }
+
+          // Handle ArrowUp when on the first line
+          if (event.key === 'ArrowUp' && onArrowUpRef.current) {
+            // Try to resolve a position one line up by checking textBetween
+            // If we're at the very start of the document (pos 1), go to title
+            if ($from.pos === 1) {
               event.preventDefault();
-              onArrowUpRef.current();
+              onArrowUpRef.current(0); // At the start, offset is 0
+              return true;
+            }
+
+            // Check if we're in a position where up arrow won't move us
+            // This happens when we're on the first line of the first block
+            const coordsAtCursor = view.coordsAtPos($from.pos);
+            const coordsAtStart = view.coordsAtPos(1);
+
+            // If cursor is on the same line as the start, go to title
+            if (
+              coordsAtCursor &&
+              coordsAtStart &&
+              Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5
+            ) {
+              event.preventDefault();
+
+              // Calculate character offset from start of the first line
+              // Position 1 is the start of the document, $from.pos is current cursor
+              // Since we're on the first line, the offset is simply the distance from position 1
+              const offset = $from.pos - 1;
+
+              onArrowUpRef.current(offset);
               return true;
             }
           }
-        }
 
-        // Handle ArrowUp when on the first line
-        if (event.key === 'ArrowUp' && onArrowUpRef.current) {
-          // Try to resolve a position one line up by checking textBetween
-          // If we're at the very start of the document (pos 1), go to title
-          if ($from.pos === 1) {
-            event.preventDefault();
-            onArrowUpRef.current(0); // At the start, offset is 0
-            return true;
-          }
-
-          // Check if we're in a position where up arrow won't move us
-          // This happens when we're on the first line of the first block
-          const coordsAtCursor = view.coordsAtPos($from.pos);
-          const coordsAtStart = view.coordsAtPos(1);
-
-          // If cursor is on the same line as the start, go to title
-          if (
-            coordsAtCursor &&
-            coordsAtStart &&
-            Math.abs(coordsAtCursor.top - coordsAtStart.top) < 5
-          ) {
-            event.preventDefault();
-
-            // Calculate character offset from start of the first line
-            // Position 1 is the start of the document, $from.pos is current cursor
-            // Since we're on the first line, the offset is simply the distance from position 1
-            const offset = $from.pos - 1;
-
-            onArrowUpRef.current(offset);
-            return true;
-          }
-        }
-
-        // Handle ArrowLeft when at the very start of the document
-        if (event.key === 'ArrowLeft' && onArrowLeftRef.current) {
-          // If we're at position 1 (start of document), go back to title
-          if ($from.pos === 1) {
-            event.preventDefault();
-            onArrowLeftRef.current();
-            return true;
-          }
-        }
-
-        // Handle Tab for list indentation while maintaining focus
-        if (event.key === 'Tab') {
-          // Always prevent default Tab behavior to avoid focus loss
-          event.preventDefault();
-          event.stopPropagation();
-
-          const { $from } = selection;
-
-          // Check if we're in a regular list item (bullet or ordered)
-          const isInListItem =
-            $from.node(-1)?.type.name === 'listItem' ||
-            $from.node(-2)?.type.name === 'listItem';
-
-          // Check if we're in a task item (checkbox)
-          const isInTaskItem =
-            $from.node(-1)?.type.name === 'taskItem' ||
-            $from.node(-2)?.type.name === 'taskItem';
-
-          if (isInListItem) {
-            if (event.shiftKey) {
-              // Shift+Tab: Outdent (lift) the list item
-              editor?.chain().focus().liftListItem('listItem').run();
-            } else {
-              // Tab: Indent (sink) the list item
-              editor?.chain().focus().sinkListItem('listItem').run();
-            }
-          } else if (isInTaskItem) {
-            if (event.shiftKey) {
-              // Shift+Tab: Outdent (lift) the task item
-              editor?.chain().focus().liftListItem('taskItem').run();
-            } else {
-              // Tab: Indent (sink) the task item
-              editor?.chain().focus().sinkListItem('taskItem').run();
+          // Handle ArrowLeft when at the very start of the document
+          if (event.key === 'ArrowLeft' && onArrowLeftRef.current) {
+            // If we're at position 1 (start of document), go back to title
+            if ($from.pos === 1) {
+              event.preventDefault();
+              onArrowLeftRef.current();
+              return true;
             }
           }
 
-          // Ensure focus stays in the editor
-          setTimeout(() => {
-            view.focus();
-          }, 0);
+          // Handle Tab for list indentation while maintaining focus
+          if (event.key === 'Tab') {
+            // Always prevent default Tab behavior to avoid focus loss
+            event.preventDefault();
+            event.stopPropagation();
 
-          return true; // We handled the event
-        }
+            const { $from } = selection;
 
-        return false;
+            // Check if we're in a regular list item (bullet or ordered)
+            const isInListItem =
+              $from.node(-1)?.type.name === 'listItem' ||
+              $from.node(-2)?.type.name === 'listItem';
+
+            // Check if we're in a task item (checkbox)
+            const isInTaskItem =
+              $from.node(-1)?.type.name === 'taskItem' ||
+              $from.node(-2)?.type.name === 'taskItem';
+
+            if (isInListItem) {
+              if (event.shiftKey) {
+                // Shift+Tab: Outdent (lift) the list item
+                editor?.chain().focus().liftListItem('listItem').run();
+              } else {
+                // Tab: Indent (sink) the list item
+                editor?.chain().focus().sinkListItem('listItem').run();
+              }
+            } else if (isInTaskItem) {
+              if (event.shiftKey) {
+                // Shift+Tab: Outdent (lift) the task item
+                editor?.chain().focus().liftListItem('taskItem').run();
+              } else {
+                // Tab: Indent (sink) the task item
+                editor?.chain().focus().sinkListItem('taskItem').run();
+              }
+            }
+
+            // Ensure focus stays in the editor
+            setTimeout(() => {
+              view.focus();
+            }, 0);
+
+            return true; // We handled the event
+          }
+
+          return false;
+        },
       },
+      onCreate: ({ editor }) => {
+        if (externalEditorRef) {
+          externalEditorRef.current = editor;
+        }
+        onEditorReady?.(editor);
+      },
+      onUpdate: ({ editor }) => {
+        const currentJson = editor.getJSON();
+        const normalizedContent = hasContent(currentJson) ? currentJson : null;
+
+        if (!readOnly) {
+          onImmediateChangeRef.current?.(normalizedContent);
+        }
+
+        // Don't call onChange when using collaboration - Yjs doc is the source of truth
+        if (!readOnly && !allowCollaboration) {
+          debouncedOnChange(currentJson);
+        }
+      },
+      // Rebuild the editor whenever the collaboration binding changes, so the
+      // Collaboration / CollaborationCaret extensions are attached at creation
+      // time. `yjsDoc` and `yjsProvider` are identity-stable (memo/state in
+      // useYjsCollaboration), so a plain non-collaborative editor never recreates.
     },
-    onCreate: ({ editor }) => {
-      if (externalEditorRef) {
-        externalEditorRef.current = editor;
-      }
-      onEditorReady?.(editor);
-    },
-    onUpdate: ({ editor }) => {
-      const currentJson = editor.getJSON();
-      const normalizedContent = hasContent(currentJson) ? currentJson : null;
-
-      if (!readOnly) {
-        onImmediateChangeRef.current?.(normalizedContent);
-      }
-
-      // Don't call onChange when using collaboration - Yjs doc is the source of truth
-      if (!readOnly && !allowCollaboration) {
-        debouncedOnChange(currentJson);
-      }
-    },
-  });
-
-  // Recreate editor when collaboration provider becomes available so the
-  // CollaborationCaret extension is included. The provider is null on first
-  // render because it's created asynchronously in useEffect; this dep
-  // ensures the editor re-initializes once the provider connects.
-  const prevProviderRef = useRef(yjsProvider);
-  useEffect(() => {
-    if (!editor) return;
-    if (prevProviderRef.current === yjsProvider) return;
-    prevProviderRef.current = yjsProvider;
-
-    // Provider transitioned from null → available: recreate with extensions
-    if (yjsProvider && allowCollaboration) {
-      editor.setOptions({
-        extensions: getEditorExtensions({
-          titlePlaceholder,
-          writePlaceholder,
-          doc: yjsDoc,
-          provider: yjsProvider,
-          collaborationUser: collaborationUser,
-          onImageUpload,
-          onVideoUpload: onImageUpload,
-          getOnImageUpload: getDelegatedImageUpload,
-          getOnVideoUpload: getDelegatedImageUpload,
-          mentionTranslations,
-          renderTaskMention,
-          readOnly,
-        }),
-      });
-    }
-  }, [
-    editor,
-    yjsProvider,
-    yjsDoc,
-    allowCollaboration,
-    collaborationUser,
-    onImageUpload,
-    titlePlaceholder,
-    writePlaceholder,
-    mentionTranslations,
-    renderTaskMention,
-    readOnly,
-    getDelegatedImageUpload,
-  ]);
+    [collaborationDoc, collaborationProvider, hasCollaborationCaret]
+  );
 
   useEffect(() => {
     if (!editor || !allowCollaboration || !yjsProvider || !collaborationUser) {

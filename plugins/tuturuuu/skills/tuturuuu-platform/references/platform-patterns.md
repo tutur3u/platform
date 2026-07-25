@@ -18,6 +18,20 @@ shared-package changes.
   acceptable.
 - If a client admin surface grows large, keep the main shell focused on query
   state, mutations, and routing; extract heavy render branches nearby.
+- **Tiptap extensions are fixed at editor creation.** `Editor.setOptions({
+  extensions })` only refreshes editor props — it does **not** rebuild the
+  extension manager or schema (verified in `@tiptap/core` 3.28), so "attach the
+  Collaboration extension once the provider connects" silently does nothing. The
+  only way to change a binding after mount is `useEditor(options, deps)` with the
+  binding in `deps`, and only identity-stable values may go there (a
+  `collaborationUser` object literal would rebuild the editor every render). When
+  collaboration is on, content lives **only** in the Yjs doc: the `content` prop is
+  ignored, so an editor that was created before collaboration turned on shows an
+  empty document forever — and that empty document then reads as an unsaved local
+  edit ("a tracked description version is available", "still syncing" on close).
+- Do not mount a collaborative editor against a placeholder record. Render a
+  skeleton until the real row has hydrated, so the editor is created once with its
+  final binding (`isHydratingTask` in the task dialog is the reference).
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
@@ -63,7 +77,18 @@ shared-package changes.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc
   regex checks.
 - Initialize Supabase with `createClient(request)` in API routes that must
-  honor both web cookies and mobile Bearer tokens.
+  honor both web cookies and mobile Bearer tokens. **`createClient(request)` is
+  not enough for a route satellites proxy** — see the app-session bullet under
+  Satellite Apps; it returns an intentionally unauthenticated client as soon as
+  the request carries an app-session cookie.
+- New or substantially reworked web API routes belong in
+  `apps/web/src/app/api/**`, not `apps/web/src/legacy-api-routes/**`. Moving one
+  out means `git mv` route + colocated test, deleting the legacy file (so
+  `bun web:api-routes:check` stops wanting a generated wrapper), re-keying the
+  entry in `apps/tanstack-web/migration/route-overrides.json` (the id embeds
+  `sourceFile`), and `bun migration:tanstack:manifest`. Validators that scan web
+  API routes must cover **both** trees — `check-workspace-member-type-guard`
+  scanned only the legacy tree, so a moved route would have escaped it.
 - When using admin clients after access checks, re-apply explicit workspace,
   owner, or resource predicates before reading or mutating protected rows.
 - Admin-backed lookup/status routes must not return workspace, user, invite, or
@@ -199,6 +224,23 @@ Rules:
   one. Give the app a `src/lib/workspace.ts` that resolves the actor once
   (`getSatelliteAppSessionUser`) and threads it through
   `getWorkspace(id, { useAdmin: true, user })` / `getPermissions({ user, wsId })`.
+- **The mirror image of that bug lives in `apps/web`.** A web route that
+  satellites proxy must opt into app-session actors. `createClient(request)`
+  short-circuits to a deliberately *unauthenticated* isolated client the moment the
+  forwarded request carries the host-only `tuturuuu_app_session` cookie, so
+  `resolveAuthenticatedSessionUser` / `getPermissions({ request })` find no user
+  and the route answers `401 Unauthorized` — from every satellite, while the exact
+  same code keeps working on tuturuuu.com. Opt in explicitly:
+  `resolveWorkspaceRouteAccess(request, wsId, [permissions])` for workspace routes,
+  or `withSessionAuth(handler, { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH })`,
+  then authorize on workspace permissions (the actor's app grants nothing). A
+  narrow per-app allowlist such as `{ targetApp: 'teach' }` silently 401s every
+  other app, so widen it when a second app starts calling the route.
+  Symptom to recognise: **one action inside an otherwise-working panel fails while
+  its neighbours succeed** — workspace member invites 401'd from every satellite
+  while the member list, roles, and invite links all worked, because those had been
+  migrated and `members/invite` had not. When you fix one route, audit its whole
+  surface: `grep -L 'resolveWorkspaceRouteAccess\|allowAppSessionAuth' <route dir>`.
 - **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
   bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built

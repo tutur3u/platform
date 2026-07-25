@@ -177,4 +177,32 @@ describe('TaskNameInput', () => {
 
     expect(focusEditor).not.toHaveBeenCalled();
   });
+
+  // Regression: a deep-link open mounts the dialog against an empty placeholder
+  // task, and rendering the real title field made it read as a brand-new task
+  // before flickering into the hydrated one.
+  it.each(['fullscreen', 'compact'] as const)(
+    'renders a placeholder instead of an empty title field while hydrating (%s)',
+    (variant) => {
+      render(
+        <TaskNameInput
+          editorRef={{ current: null }}
+          flushNameUpdate={vi.fn()}
+          isCreateMode={false}
+          isHydrating
+          lastCursorPositionRef={{ current: null }}
+          name=""
+          setName={vi.fn()}
+          targetEditorCursorRef={{ current: null }}
+          titleInputRef={{ current: null }}
+          updateName={vi.fn()}
+          variant={variant}
+        />
+      );
+
+      expect(
+        screen.queryByPlaceholderText('task_name_placeholder')
+      ).not.toBeInTheDocument();
+    }
+  );
 });

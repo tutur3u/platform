@@ -19,6 +19,7 @@ import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provi
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
@@ -279,6 +280,13 @@ export function TaskEditDialog({
     realtimeEnabled && !isHydratingTask && !taskLoadError;
   const effectiveCollaborationMode =
     collaborationMode && !isHydratingTask && !taskLoadError;
+  // A deep-link open mounts this dialog against an empty placeholder task while
+  // the real one hydrates. Rendering the live form against that placeholder is
+  // what made the dialog flicker (empty title, then a full re-layout), so show
+  // placeholders until the task lands. The description editor in particular must
+  // not mount yet: its content lives in the Yjs document, which only exists once
+  // realtime is enabled after hydration.
+  const isAwaitingTaskHydration = isHydratingTask && !taskLoadError;
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -2618,6 +2626,7 @@ export function TaskEditDialog({
                   updateName={updateName}
                   flushNameUpdate={flushNameUpdate}
                   disabled={taskTitleDisabled}
+                  isHydrating={isAwaitingTaskHydration && !formState.name}
                   variant="compact"
                   onSubmit={
                     isCreateMode && !taskControlsDisabled
@@ -2747,6 +2756,7 @@ export function TaskEditDialog({
                       updateName={updateName}
                       flushNameUpdate={flushNameUpdate}
                       disabled={taskTitleDisabled}
+                      isHydrating={isAwaitingTaskHydration && !formState.name}
                     />
 
                     {smartSuggestionsButton && (
@@ -2851,76 +2861,80 @@ export function TaskEditDialog({
                       />
                     )}
 
-                    <TaskDescriptionEditor
-                      description={formState.description}
-                      setDescription={formState.setDescription}
-                      isOpen={isOpen}
-                      isCreateMode={isCreateMode}
-                      collaborationMode={effectiveCollaborationMode}
-                      realtimeEnabled={effectiveRealtimeEnabled}
-                      isYjsSyncing={isYjsSyncing}
-                      wsId={effectiveTaskWsId}
-                      boardId={boardId}
-                      taskId={task?.id}
-                      availableLists={availableLists}
-                      queryClient={queryClient}
-                      editorRef={editorRef}
-                      richTextEditorRef={richTextEditorRef}
-                      titleInputRef={titleInputRef}
-                      lastCursorPositionRef={lastCursorPositionRef}
-                      targetEditorCursorRef={targetEditorCursorRef}
-                      flushEditorPendingRef={flushEditorPendingRef}
-                      yjsDoc={doc}
-                      yjsProvider={provider ?? undefined}
-                      collaborationUser={
-                        user
-                          ? {
-                              id: user.id || '',
-                              name: userDisplayName,
-                              color: userColor || '',
-                            }
-                          : null
-                      }
-                      onImageUpload={imageUploadHandler}
-                      onEditorReady={handleEditorReady}
-                      onConvertToTask={handleConvertToTask}
-                      onDescriptionSnapshotChange={recordDescriptionSnapshot}
-                      onDescriptionStorageLengthChange={
-                        handleDescriptionStorageLengthChange
-                      }
-                      descriptionStorageLength={descriptionStorageLength}
-                      descriptionPercentLeft={descriptionPercentLeft}
-                      descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
-                      isDescriptionOverLimit={isDescriptionOverLimit}
-                      disabled={taskControlsDisabled}
-                      mentionTranslations={{
-                        delete_task: t('delete_task'),
-                        delete_task_confirmation: (name: string) =>
-                          t('delete_task_confirmation', { name }),
-                        cancel: t('cancel'),
-                        deleting: t('deleting'),
-                        set_custom_due_date: t('set_custom_due_date'),
-                        custom_due_date_description: t(
-                          'custom_due_date_description'
-                        ),
-                        remove_due_date: t('remove_due_date'),
-                        create_new_label: t('create_new_label'),
-                        create_new_label_description: t(
-                          'create_new_label_description'
-                        ),
-                        label_name: t('label_name'),
-                        color: t('color'),
-                        preview: t('preview'),
-                        creating: t('creating'),
-                        create_label: t('create_label'),
-                        create_new_project: t('create_new_project'),
-                        create_new_project_description: t(
-                          'create_new_project_description'
-                        ),
-                        project_name: t('project_name'),
-                        create_project: t('create_project'),
-                      }}
-                    />
+                    {isAwaitingTaskHydration ? (
+                      <TaskDescriptionHydrationPlaceholder />
+                    ) : (
+                      <TaskDescriptionEditor
+                        description={formState.description}
+                        setDescription={formState.setDescription}
+                        isOpen={isOpen}
+                        isCreateMode={isCreateMode}
+                        collaborationMode={effectiveCollaborationMode}
+                        realtimeEnabled={effectiveRealtimeEnabled}
+                        isYjsSyncing={isYjsSyncing}
+                        wsId={effectiveTaskWsId}
+                        boardId={boardId}
+                        taskId={task?.id}
+                        availableLists={availableLists}
+                        queryClient={queryClient}
+                        editorRef={editorRef}
+                        richTextEditorRef={richTextEditorRef}
+                        titleInputRef={titleInputRef}
+                        lastCursorPositionRef={lastCursorPositionRef}
+                        targetEditorCursorRef={targetEditorCursorRef}
+                        flushEditorPendingRef={flushEditorPendingRef}
+                        yjsDoc={doc}
+                        yjsProvider={provider ?? undefined}
+                        collaborationUser={
+                          user
+                            ? {
+                                id: user.id || '',
+                                name: userDisplayName,
+                                color: userColor || '',
+                              }
+                            : null
+                        }
+                        onImageUpload={imageUploadHandler}
+                        onEditorReady={handleEditorReady}
+                        onConvertToTask={handleConvertToTask}
+                        onDescriptionSnapshotChange={recordDescriptionSnapshot}
+                        onDescriptionStorageLengthChange={
+                          handleDescriptionStorageLengthChange
+                        }
+                        descriptionStorageLength={descriptionStorageLength}
+                        descriptionPercentLeft={descriptionPercentLeft}
+                        descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
+                        isDescriptionOverLimit={isDescriptionOverLimit}
+                        disabled={taskControlsDisabled}
+                        mentionTranslations={{
+                          delete_task: t('delete_task'),
+                          delete_task_confirmation: (name: string) =>
+                            t('delete_task_confirmation', { name }),
+                          cancel: t('cancel'),
+                          deleting: t('deleting'),
+                          set_custom_due_date: t('set_custom_due_date'),
+                          custom_due_date_description: t(
+                            'custom_due_date_description'
+                          ),
+                          remove_due_date: t('remove_due_date'),
+                          create_new_label: t('create_new_label'),
+                          create_new_label_description: t(
+                            'create_new_label_description'
+                          ),
+                          label_name: t('label_name'),
+                          color: t('color'),
+                          preview: t('preview'),
+                          creating: t('creating'),
+                          create_label: t('create_label'),
+                          create_new_project: t('create_new_project'),
+                          create_new_project_description: t(
+                            'create_new_project_description'
+                          ),
+                          project_name: t('project_name'),
+                          create_project: t('create_project'),
+                        }}
+                      />
+                    )}
 
                     {!isCreateMode && localCalendarEvents && (
                       <TaskInstancesSection
@@ -3180,5 +3194,22 @@ export function TaskEditDialog({
         />
       )}
     </>
+  );
+}
+
+/**
+ * Stand-in for the description editor while a task hydrates. The real editor is
+ * bound to the task's Yjs document, which only exists once realtime turns on
+ * after hydration, so mounting it earlier would show a permanently empty
+ * description and read as an unsaved local edit.
+ */
+function TaskDescriptionHydrationPlaceholder() {
+  return (
+    <div aria-hidden className="space-y-3 px-4 pt-6 pb-4 md:px-8">
+      <Skeleton className="h-4 w-11/12" />
+      <Skeleton className="h-4 w-9/12" />
+      <Skeleton className="h-4 w-10/12" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
   );
 }

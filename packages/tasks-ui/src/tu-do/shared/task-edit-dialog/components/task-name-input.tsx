@@ -1,4 +1,5 @@
 import { Input } from '@tuturuuu/ui/input';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   getNormalizedCursorPosition,
   normalizeLiveTextReplacements,
@@ -24,6 +25,12 @@ interface TaskNameInputProps {
   disabled?: boolean;
   variant?: 'fullscreen' | 'compact';
   onSubmit?: () => void;
+  /**
+   * The task is still hydrating and no title is known yet (deep-link opens).
+   * Renders a placeholder instead of an empty title field, so the dialog does
+   * not momentarily read as a brand-new, empty task.
+   */
+  isHydrating?: boolean;
 }
 
 export function TaskNameInput({
@@ -39,6 +46,7 @@ export function TaskNameInput({
   disabled,
   variant = 'fullscreen',
   onSubmit,
+  isHydrating = false,
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
   const isCompact = variant === 'compact';
@@ -176,6 +184,18 @@ export function TaskNameInput({
       }
     }
   };
+
+  if (isHydrating) {
+    return isCompact ? (
+      <div className="flex min-h-11 items-center">
+        <Skeleton className="h-5 w-2/3" />
+      </div>
+    ) : (
+      <div className="px-4 pt-4 pb-2 md:px-8">
+        <Skeleton className="h-8 w-3/4" />
+      </div>
+    );
+  }
 
   if (isCompact) {
     return (
