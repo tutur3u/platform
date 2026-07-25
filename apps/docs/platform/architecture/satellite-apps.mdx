@@ -181,6 +181,46 @@ Never add a catch-all page (`[...slug]`) under `[locale]/[wsId]` in a satellite
 that proxies `/api/*`.
 </Warning>
 
+### The proxied web route must accept app sessions
+
+<Warning>
+A web route that satellites proxy has to opt into app-session actors.
+`createClient(request)` deliberately returns an **unauthenticated** client as soon
+as the forwarded request carries the host-only `tuturuuu_app_session` cookie, so
+`resolveAuthenticatedSessionUser` / `getPermissions({ request })` find no user and
+the route answers `401 Unauthorized` — from every satellite, while the identical
+code keeps working on `tuturuuu.com`.
+</Warning>
+
+Opt in explicitly, then authorize on workspace permissions (the calling app grants
+nothing by itself):
+
+```ts
+// Workspace routes
+const access = await resolveWorkspaceRouteAccess(req, wsId, [
+  'manage_workspace_members',
+]);
+if (!access.ok) return access.response;
+
+// Or, for withSessionAuth routes
+export const GET = withSessionAuth(handler, {
+  allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+});
+```
+
+The tell-tale symptom is **one action failing inside an otherwise-working panel**.
+Workspace member invites returned "Unauthorized" from Inventory and every other
+satellite while the member list, roles, and invite links worked, because those
+routes had been migrated and `members/invite` had not. A narrow allowlist behaves
+the same way for the apps it omits: `{ targetApp: 'teach' }` on the user-group
+storage route 401'd every Contacts request for group files. When you fix one route,
+sweep the rest of its surface:
+
+```bash
+grep -rL "resolveWorkspaceRouteAccess\|allowAppSessionAuth" \
+  "apps/web/src/app/api/workspaces/[wsId]/members"
+```
+
 ### Public (anonymous) API routes on a satellite
 
 <Warning>

@@ -5,6 +5,11 @@ const path = require('node:path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
 const API_DIR_RELATIVE_PATHS = [
+  // Web API routes live in two places while the legacy tree is drained: new and
+  // reworked routes are first-class under `app/api`, and everything not migrated
+  // yet still sits in `legacy-api-routes` behind generated wrappers. Scan both so
+  // moving a route out of the legacy tree does not drop it from this guard.
+  'apps/web/src/app/api',
   'apps/web/src/legacy-api-routes',
   'apps/finance/src/app/api',
   'apps/inventory/src/app/api',

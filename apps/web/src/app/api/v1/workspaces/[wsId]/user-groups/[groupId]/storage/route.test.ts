@@ -25,11 +25,15 @@ vi.mock('@tuturuuu/utils/uuid-helper', () => ({
   generateRandomUUID: mocks.generateRandomUUID,
 }));
 
+const sessionAuthOptions = vi.hoisted(() => [] as unknown[]);
+
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
-    (handler: unknown) =>
-    async (request: Request, routeContext?: { params?: Promise<unknown> }) =>
-      (
+    (handler: unknown, options?: unknown) =>
+    async (request: Request, routeContext?: { params?: Promise<unknown> }) => {
+      sessionAuthOptions.push(options);
+
+      return (
         handler as (
           request: Request,
           context: { user: { id: string } },
@@ -39,7 +43,8 @@ vi.mock('@/lib/api-auth', () => ({
         request,
         { user: { id: 'user-1' } },
         (await routeContext?.params) as { groupId: string; wsId: string }
-      ),
+      );
+    },
 }));
 
 vi.mock('@tuturuuu/education-core/teach/api', () => ({
@@ -117,6 +122,7 @@ describe('workspace user-group storage route', () => {
     groupLookup.eq.mockClear();
     groupLookup.maybeSingle.mockReset();
     groupLookup.select.mockClear();
+    sessionAuthOptions.length = 0;
 
     groupLookup.maybeSingle.mockResolvedValue({
       data: { id: GROUP_ID },
@@ -266,5 +272,32 @@ describe('workspace user-group storage route', () => {
     expect(response.status).toBe(403);
     expect(groupLookup.select).not.toHaveBeenCalled();
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+  // Regression: the Contacts app owns the workspace_users CRM surface (including
+  // group files) and proxies this route to web with a `contacts` app session.
+  // Accepting only `teach` made every Contacts group storage call 401.
+  it('accepts contacts and teach app sessions on every method', async () => {
+    const { DELETE, GET, POST } = await import('./route');
+
+    for (const handler of [GET, POST, DELETE]) {
+      expect(typeof handler).toBe('function');
+    }
+
+    await Promise.allSettled([
+      GET(createJsonRequest({}), {
+        params: Promise.resolve({ groupId: GROUP_ID, wsId: 'workspace-1' }),
+      }),
+      postGroupStorageJson({}),
+      DELETE(createJsonRequest({}), {
+        params: Promise.resolve({ groupId: GROUP_ID, wsId: 'workspace-1' }),
+      }),
+    ]);
+
+    expect(sessionAuthOptions).toHaveLength(3);
+    for (const options of sessionAuthOptions) {
+      expect(options).toEqual({
+        allowAppSessionAuth: { targetApp: ['contacts', 'teach'] },
+      });
+    }
   });
 });

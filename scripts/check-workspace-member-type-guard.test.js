@@ -141,3 +141,40 @@ test('findViolations scans finance API routes too', () => {
     ),
   ]);
 });
+
+test('findViolations scans first-class web app/api routes', () => {
+  const root = createTempRepo();
+
+  writeFile(
+    root,
+    'apps/web/src/app/api/v1/workspaces/[wsId]/unsafe/route.ts',
+    `
+      export async function GET() {
+        const { data } = await supabase
+          .from('workspace_members')
+          .select('user_id')
+          .eq('ws_id', wsId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        return data;
+      }
+    `
+  );
+
+  const violations = findViolations(root);
+  assert.deepEqual(violations, [
+    path.join(
+      'apps',
+      'web',
+      'src',
+      'app',
+      'api',
+      'v1',
+      'workspaces',
+      '[wsId]',
+      'unsafe',
+      'route.ts'
+    ),
+  ]);
+});

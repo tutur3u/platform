@@ -1,4 +1,6 @@
+import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 
 const mocks = vi.hoisted(() => {
   const canCreateInvitation = vi.fn();
@@ -7,7 +9,7 @@ const mocks = vi.hoisted(() => {
   const insertInvite = vi.fn();
   const personalWorkspaceMaybeSingle = vi.fn();
   const posOperatorRpc = vi.fn();
-  const resolveAuthenticatedSessionUser = vi.fn();
+  const resolveSessionAuthContext = vi.fn();
   const serverLoggerError = vi.fn();
   const serverLoggerWarn = vi.fn();
 
@@ -75,7 +77,7 @@ const mocks = vi.hoisted(() => {
     personalWorkspaceMaybeSingle,
     personalWorkspaceSelect,
     posOperatorRpc,
-    resolveAuthenticatedSessionUser,
+    resolveSessionAuthContext,
     serverLoggerError,
     serverLoggerWarn,
     sessionSupabase,
@@ -84,9 +86,9 @@ const mocks = vi.hoisted(() => {
 
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: (...args: unknown[]) =>
-    mocks.resolveAuthenticatedSessionUser(...args),
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: (...args: unknown[]) =>
+    mocks.resolveSessionAuthContext(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -149,7 +151,7 @@ async function postInvite({
   requestedWsId?: string;
 } = {}) {
   const { POST } = await import(
-    '@/legacy-api-routes/workspaces/[wsId]/members/invite/route'
+    '@/app/api/workspaces/[wsId]/members/invite/route'
   );
 
   return POST(
@@ -175,8 +177,10 @@ describe('workspace members invite route', () => {
     vi.clearAllMocks();
     process.env.CRON_SECRET = '';
 
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
-      user: { id: 'admin-user' },
+    mocks.resolveSessionAuthContext.mockResolvedValue({
+      ok: true,
+      supabase: mocks.sessionSupabase,
+      user: { email: 'admin@example.com', id: 'admin-user' },
     });
     mocks.getPermissions.mockResolvedValue(createPermissions());
     mocks.personalWorkspaceMaybeSingle.mockResolvedValue({
@@ -213,7 +217,7 @@ describe('workspace members invite route', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ message: 'success' });
     expect(mocks.getPermissions).toHaveBeenCalledWith({
-      request: expect.any(Request),
+      user: { email: 'admin@example.com', id: 'admin-user' },
       wsId: 'workspace-slug',
     });
     expect(mocks.canCreateInvitation).toHaveBeenCalledWith(
@@ -328,17 +332,37 @@ describe('workspace members invite route', () => {
   });
 
   it('returns 401 for unauthenticated requests before seat checks or inserts', async () => {
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({ user: null });
+    mocks.resolveSessionAuthContext.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
 
     const response = await postInvite();
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({
-      message: 'Unauthorized',
+      error: 'Unauthorized',
     });
     expect(mocks.getPermissions).not.toHaveBeenCalled();
     expect(mocks.canCreateInvitation).not.toHaveBeenCalled();
     expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
+  // Regression: satellite apps (inventory, contacts, finance, …) proxy this
+  // route to web carrying an app-session token instead of a Supabase auth
+  // cookie. Reading Supabase auth directly made every satellite invite fail
+  // with "Unauthorized".
+  it('accepts app-session actors so satellite apps can invite members', async () => {
+    const response = await postInvite();
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+    );
+    expect(mocks.insertInvite).toHaveBeenCalledWith(
+      expect.objectContaining({ invited_by: 'admin-user' })
+    );
   });
 
   it('returns 403 when the user lacks member management permission', async () => {

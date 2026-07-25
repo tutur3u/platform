@@ -113,6 +113,15 @@ surface you are changing:
     `bun migration:tanstack:manifest` so the route is tracked as backlog instead
     of becoming invisible debt. Never silently diverge web behavior from a route
     Rust already serves.
+  - Web API routes you add or substantially rework must be FIRST-CLASS route
+    handlers under `apps/web/src/app/api/**`, never new or reworked
+    implementations inside `apps/web/src/legacy-api-routes/**` (that tree is being
+    drained; only untouched routes stay behind its generated wrappers). When you
+    move a route out, `git mv` its colocated test too, delete the legacy file so
+    `bun web:api-routes:check` stops generating a wrapper for it, update the
+    matching key in `apps/tanstack-web/migration/route-overrides.json` (the
+    override id embeds `sourceFile`), and re-run
+    `bun migration:tanstack:manifest`.
   - When you ADD or CHANGE a dashboard page/route, mirror the same registration
     so `apps/tanstack-web` migration tracking stays accurate, and route shared
     data access through `packages/internal-api` (which both frontends use)

@@ -1,9 +1,11 @@
+import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 
 const mocks = vi.hoisted(() => {
   const adminInsert = vi.fn();
   const getEffectiveAvailableSeats = vi.fn();
-  const resolveAuthenticatedSessionUser = vi.fn();
+  const resolveSessionAuthContext = vi.fn();
   const verifyWorkspaceMembershipType = vi.fn();
   const progressMaybeSingle = vi.fn();
   const progressUpsert = vi.fn();
@@ -37,14 +39,14 @@ const mocks = vi.hoisted(() => {
     getEffectiveAvailableSeats,
     progressMaybeSingle,
     progressUpsert,
-    resolveAuthenticatedSessionUser,
+    resolveSessionAuthContext,
     sessionSupabase,
     verifyWorkspaceMembershipType,
   };
 });
 
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: mocks.resolveAuthenticatedSessionUser,
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: mocks.resolveSessionAuthContext,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -62,7 +64,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 async function postBatchInvite(body: unknown) {
   const { POST } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/members/batch-invite/route'
+    '@/app/api/v1/workspaces/[wsId]/members/batch-invite/route'
   );
 
   return POST(
@@ -83,7 +85,9 @@ describe('workspace members batch invite route', () => {
     vi.resetModules();
     vi.clearAllMocks();
     process.env.CRON_SECRET = '';
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+    mocks.resolveSessionAuthContext.mockResolvedValue({
+      ok: true,
+      supabase: mocks.sessionSupabase,
       user: { id: 'owner-1' },
     });
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
@@ -122,5 +126,29 @@ describe('workspace members batch invite route', () => {
       invited_by: 'owner-1',
       ws_id: 'workspace-1',
     });
+  });
+
+  // Regression: satellite apps proxy this route to web with an app-session
+  // token instead of a Supabase auth cookie.
+  it('resolves the actor through app-session-aware auth', async () => {
+    await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
+      expect.any(Request),
+      { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+    );
+  });
+
+  it('returns the auth failure response for unauthenticated requests', async () => {
+    mocks.resolveSessionAuthContext.mockResolvedValue({
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
+
+    const response = await postBatchInvite({ emails: ['member@example.com'] });
+
+    expect(response.status).toBe(401);
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+    expect(mocks.adminInsert).not.toHaveBeenCalled();
   });
 });

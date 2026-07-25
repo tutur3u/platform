@@ -3573,11 +3573,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/members/batch-invite:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/batch-invite/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/members/batch-invite:apps/web/src/app/api/v1/workspaces/[wsId]/members/batch-invite/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/members/batch-invite",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/batch-invite/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/members/batch-invite/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -4648,11 +4648,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/storage:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/storage/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/user-groups/:groupId/storage:apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/storage/route.ts",
       "kind": "api",
       "methods": ["GET", "POST", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/user-groups/:groupId/storage",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/storage/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/storage/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5320,11 +5320,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces/:wsId/members/invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/members/invite/route.ts",
+      "id": "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/workspaces/:wsId/members/invite",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/members/invite/route.ts",
+      "sourceFile": "apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
