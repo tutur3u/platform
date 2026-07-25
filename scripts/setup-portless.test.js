@@ -70,6 +70,9 @@ test('runPortlessSetup starts the proxy daemon by default', () => {
   });
 
   const exitCode = runPortlessSetup({
+    // Pin the environment: this exercises the path where setup proceeds, so it
+    // must not inherit an ambient CI=true and silently test the skip branch.
+    env: {},
     isTTY: true,
     log: () => {},
     runner,
@@ -92,6 +95,7 @@ test('runPortlessSetup can install the startup service on request', () => {
 
   const exitCode = runPortlessSetup({
     args: ['--service'],
+    env: {},
     isTTY: true,
     log: () => {},
     runner,
@@ -143,6 +147,7 @@ test('runPortlessSetup --reset restarts even when the proxy is already up', () =
 
   const exitCode = runPortlessSetup({
     args: ['--reset'],
+    env: {},
     isTTY: true,
     log: () => {},
     runner,
@@ -169,6 +174,7 @@ test('runPortlessSetup --reset returns the final start status, ignoring stop/pru
 
   const exitCode = runPortlessSetup({
     args: ['--reset'],
+    env: {},
     isTTY: true,
     log: () => {},
     runner,
