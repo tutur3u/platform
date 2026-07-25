@@ -5,6 +5,8 @@ const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_SEARCH_ROOTS = ['apps', 'packages'];
+const SEARCH_PATTERN = '\\b(serverLogger|installConsoleLogDrain)\\b';
+const SEARCH_EXTENSIONS = ['.ts', '.tsx', '.js'];
 const ALLOWED_FRAGMENTS = [
   '/lib/infrastructure/log-drain.ts:',
   '.test.',
@@ -25,26 +27,38 @@ function filterServerLoggingPolicyViolations(lines) {
     );
 }
 
+function hasSearchableExtension(line) {
+  const separatorIndex = line.indexOf(':');
+  const filePath = separatorIndex === -1 ? line : line.slice(0, separatorIndex);
+
+  return SEARCH_EXTENSIONS.some((extension) => filePath.endsWith(extension));
+}
+
 function collectServerLoggingPolicyViolations({
   rootDir = ROOT_DIR,
   searchRoots = DEFAULT_SEARCH_ROOTS,
   spawn = spawnSync,
 } = {}) {
-  const result = spawn(
+  const spawnOptions = { cwd: rootDir, encoding: 'utf8' };
+  let result = spawn(
     'rg',
-    [
-      '-n',
-      '\\b(serverLogger|installConsoleLogDrain)\\b',
-      ...searchRoots,
-      '-g',
-      '*.{ts,tsx,js}',
-    ],
-    {
-      cwd: rootDir,
-      encoding: 'utf8',
-    }
+    ['-n', SEARCH_PATTERN, ...searchRoots, '-g', '*.{ts,tsx,js}'],
+    spawnOptions
   );
 
+  // Ripgrep is not installed on GitHub runners, and is only ever optional
+  // locally, so fall back to git grep — every checkout running this already has
+  // it. `--untracked` keeps the file set close to ripgrep's default, which
+  // searches new files but still skips anything gitignored.
+  if (result.error?.code === 'ENOENT') {
+    result = spawn(
+      'git',
+      ['grep', '-n', '--untracked', '-E', SEARCH_PATTERN, '--', ...searchRoots],
+      spawnOptions
+    );
+  }
+
+  // Both tools report "nothing matched" as exit code 1.
   if (result.status === 1) {
     return [];
   }
@@ -53,7 +67,11 @@ function collectServerLoggingPolicyViolations({
     throw result.error;
   }
 
-  return filterServerLoggingPolicyViolations(result.stdout.split(/\r?\n/));
+  // git grep has no extension filter, so narrow to the same files ripgrep's
+  // `-g` glob would have matched.
+  return filterServerLoggingPolicyViolations(
+    result.stdout.split(/\r?\n/).filter(hasSearchableExtension)
+  );
 }
 
 function main() {
@@ -79,4 +97,5 @@ if (require.main === module) {
 module.exports = {
   collectServerLoggingPolicyViolations,
   filterServerLoggingPolicyViolations,
+  hasSearchableExtension,
 };

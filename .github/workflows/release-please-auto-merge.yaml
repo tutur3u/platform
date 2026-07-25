@@ -123,13 +123,11 @@ jobs:
       # list in step with the `setup` script in package.json.
       - name: Build workspace setup
         if: steps.plan.outputs.should_merge == 'true'
-        run: >-
-          bun turbo:local run build --concurrency=4
-          --filter=@tuturuuu/types
-          --filter=@tuturuuu/supabase
-          --filter=@tuturuuu/masonry
-          --filter=@tuturuuu/internal-api
-          --filter=tuturuuu
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
+          token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Configure git identity
         if: steps.plan.outputs.should_merge == 'true'
