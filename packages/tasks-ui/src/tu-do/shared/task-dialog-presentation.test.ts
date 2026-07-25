@@ -1,5 +1,21 @@
+import { cn } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
-import { resolveTaskDialogOpeningPresentation } from './task-dialog-presentation';
+import {
+  resolveTaskDialogOpeningPresentation,
+  TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
+} from './task-dialog-presentation';
+
+describe('TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME', () => {
+  it('overrides the shared dialog width with the large product-dialog size', () => {
+    const resolvedClassName = cn(
+      'w-full sm:max-w-lg',
+      TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
+    );
+
+    expect(resolvedClassName).toContain('sm:max-w-5xl');
+    expect(resolvedClassName).not.toContain('sm:max-w-lg');
+  });
+});
 
 describe('resolveTaskDialogOpeningPresentation', () => {
   it('opens existing document-list tasks fullscreen', () => {

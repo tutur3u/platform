@@ -52,6 +52,7 @@ import { SyncWarningDialog } from './sync-warning-dialog';
 import {
   normalizeTaskDialogPresentation,
   resolveTaskDialogOpeningPresentation,
+  TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
@@ -2567,7 +2568,7 @@ export function TaskEditDialog({
             showCompactDialog
               ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
               : showFocusedDialog
-                ? 'h-[min(92dvh,60rem)] w-[min(calc(100vw-1.5rem),92rem)] max-w-[92rem] gap-0 overflow-hidden rounded-xl border p-0 shadow-2xl'
+                ? TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
                 : undefined
           }
           onContextMenu={(e) => {
