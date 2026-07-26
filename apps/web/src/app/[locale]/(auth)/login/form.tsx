@@ -1051,8 +1051,13 @@ export default function LoginForm({
 
       if (!result.success) {
         toast.error(t('login.account_switch_failed'), {
+          // A dead stored session is the common failure, and the raw server
+          // wording ("Account not found") reads like the account is gone. Say
+          // what actually helps: sign into it again.
           description: formatDiagnosticDescription(
-            result.error,
+            result.requiresReauth
+              ? t('login.account_switch_requires_reauth')
+              : result.error,
             result.diagnosticCode
           ),
         });

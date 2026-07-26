@@ -38,6 +38,7 @@ export interface AccountOperationResult {
   diagnosticCode?: string;
   error?: string;
   redirectTo?: string;
+  requiresReauth?: boolean;
   success: boolean;
 }
 
@@ -86,6 +87,7 @@ function toAccountOperationResult(
     diagnosticCode: response.diagnosticCode,
     error: response.error,
     redirectTo: response.redirectTo,
+    requiresReauth: response.requiresReauth,
     success: response.success,
   };
 }
@@ -271,6 +273,12 @@ export function AccountSwitcherProvider({
 
         if (result.success) {
           await navigateAfterMutation(result);
+        } else {
+          // A switch usually fails because the stored session died, and the
+          // server drops that account when it does. Re-read the list so the
+          // dead entry disappears instead of staying clickable and reporting
+          // "account not found" on every retry.
+          await invalidateAccounts();
         }
 
         return result;
@@ -282,7 +290,7 @@ export function AccountSwitcherProvider({
         };
       }
     },
-    [navigateAfterMutation, switchMutation]
+    [invalidateAccounts, navigateAfterMutation, switchMutation]
   );
 
   const removeAccount = useCallback(

@@ -161,6 +161,33 @@ describe('AccountSwitcherProvider', () => {
     expect(mocks.routerRefresh).toHaveBeenCalled();
   });
 
+  // Regression: a failed switch left the dead account visible and clickable, so
+  // every retry produced another "account not found" — the server had already
+  // dropped it, we just never re-read the list.
+  it('re-reads the account list when a switch fails', async () => {
+    mocks.switchWebAccountWithInternalApi.mockResolvedValue({
+      accounts: [],
+      activeAccountId: 'user-1',
+      error: 'Stored session is no longer valid',
+      requiresReauth: true,
+      success: false,
+    });
+    const { result } = renderHook(() => useAccountSwitcher(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
+    mocks.listWebAccountsWithInternalApi.mockClear();
+
+    const outcome = await result.current.switchAccount('user-2');
+
+    expect(outcome).toMatchObject({ requiresReauth: true, success: false });
+    await waitFor(() =>
+      expect(mocks.listWebAccountsWithInternalApi).toHaveBeenCalled()
+    );
+    expect(mocks.routerRefresh).not.toHaveBeenCalled();
+  });
+
   it('saves add-account completion with the intended return route', async () => {
     mocks.pathname = '/add-account';
     mocks.search = 'returnUrl=%2Fen%2Fpersonal%2Ftasks';

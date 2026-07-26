@@ -31,6 +31,12 @@ export interface WebAccountMutationResponse extends WebAccountsResponse {
   accountId?: string;
   error?: string;
   redirectTo?: string;
+  /**
+   * The stored session for that account can no longer be used, so the only way
+   * forward is signing into it again. Lets the UI say that instead of surfacing
+   * a raw "account not found".
+   */
+  requiresReauth?: boolean;
   success: boolean;
 }
 

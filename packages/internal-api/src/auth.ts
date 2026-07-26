@@ -240,6 +240,8 @@ export interface WebAccountsResponse {
 export interface WebAccountMutationResponse extends WebAccountsResponse {
   accountId?: string;
   redirectTo?: string;
+  /** The stored session is unusable; that account has to be signed into again. */
+  requiresReauth?: boolean;
   success: boolean;
 }
 

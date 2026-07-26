@@ -8958,6 +8958,7 @@
   },
   "login": {
     "account_switch_failed": "Không thể chuyển tài khoản.",
+    "account_switch_requires_reauth": "Phiên đăng nhập đã lưu của tài khoản đó đã hết hạn. Hãy chọn \"Dùng tài khoản khác\" để đăng nhập lại.",
     "back_to_email": "Quay lại nhập email",
     "captcha_domain_not_authorized": "Bước xác minh bảo mật chưa được cho phép trên tên miền này. Hãy thêm tên miền local này vào widget Turnstile trong Cloudflare rồi tải lại.",
     "captcha_error": "Kiểm tra bảo mật thất bại. Đang thử lại...",

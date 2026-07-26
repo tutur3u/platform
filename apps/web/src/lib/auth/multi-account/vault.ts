@@ -454,6 +454,51 @@ async function revokeCurrentUserTempAuth(supabase: {
   }
 }
 
+/**
+ * Copy the signed-in account's live session into its vault row before we hand
+ * the browser over to a different account.
+ *
+ * A row's session is written when the account is added and then only when it is
+ * switched *to*, but Supabase rotates the refresh token every time the browser
+ * refreshes the session — so the stored copy of whoever is currently signed in
+ * goes stale within the hour. Switching away and back then failed on
+ * `setSession`, which deletes the row, and the next attempt reported the
+ * account as missing entirely.
+ */
+async function refreshActiveAccountSession(
+  device: WebAccountDevice,
+  supabase: {
+    auth: {
+      getSession: () => Promise<{
+        data: { session: SupabaseSession | null };
+      }>;
+    };
+  }
+) {
+  if (!device.activeUserId) {
+    return;
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session || session.user.id !== device.activeUserId) {
+    return;
+  }
+
+  const db = await getPrivateDb();
+  await db
+    .from('web_account_sessions')
+    .update({
+      session_ciphertext: encryptSession(session),
+      session_expires_at: getSessionExpiresAt(session),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('device_id', device.deviceId)
+    .eq('user_id', device.activeUserId);
+}
+
 async function switchToStoredWebAccount(
   request: Request,
   device: WebAccountDevice,
@@ -466,6 +511,7 @@ async function switchToStoredWebAccount(
     return {
       ...(await listAccountsForDevice(device)),
       error: 'Account not found',
+      requiresReauth: true,
       success: false,
     } as WebAccountMutationResponse & { error: string };
   }
@@ -473,6 +519,7 @@ async function switchToStoredWebAccount(
   const db = await getPrivateDb();
   const supabase = await createClient(request);
 
+  await refreshActiveAccountSession(device, supabase);
   await revokeCurrentUserTempAuth(supabase);
 
   if (payload.currentRoute && device.activeUserId) {
@@ -497,6 +544,7 @@ async function switchToStoredWebAccount(
     return {
       ...(await listAccountsForDevice(device)),
       error: error?.message ?? 'Stored session is no longer valid',
+      requiresReauth: true,
       success: false,
     } as WebAccountMutationResponse & { error: string };
   }
