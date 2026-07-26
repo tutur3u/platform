@@ -17,6 +17,8 @@ import {
 type ReportApprovalRow = {
   approved_at: string | null;
   created_at: string | null;
+  creator_display_name: string | null;
+  creator_email: string | null;
   creator_full_name: string | null;
   creator_id: string | null;
   feedback: string | null;
@@ -34,6 +36,8 @@ type ReportApprovalRow = {
   title: string | null;
   content: string | null;
   updated_by: string | null;
+  user_display_name: string | null;
+  user_email: string | null;
   user_full_name: string | null;
   user_id: string | null;
 };
@@ -84,7 +88,7 @@ export async function handleGetApprovalsRequest(
       let dataQuery = privateDb
         .from('external_user_monthly_reports_workspace_view')
         .select(
-          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier_display_name, modifier_full_name, modifier_email, creator_full_name, user_full_name, group_name'
+          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier_display_name, modifier_full_name, modifier_email, creator_full_name, creator_display_name, creator_email, user_full_name, user_display_name, user_email, group_name'
         )
         .eq('user_ws_id', wsId);
 
@@ -122,14 +126,24 @@ export async function handleGetApprovalsRequest(
       return NextResponse.json({
         items: rows.map((row) => ({
           ...row,
-          creator_name: row.creator_full_name,
+          creator_name:
+            row.creator_full_name ||
+            row.creator_display_name ||
+            row.creator_email ||
+            null,
           modifier_name:
             row.modifier_display_name ||
             row.modifier_full_name ||
             row.modifier_email ||
             row.creator_full_name ||
+            row.creator_display_name ||
+            row.creator_email ||
             null,
-          user_name: row.user_full_name,
+          user_name:
+            row.user_full_name ||
+            row.user_display_name ||
+            row.user_email ||
+            null,
         })),
         totalCount: count ?? 0,
         totalPages: Math.ceil((count ?? 0) / limit),

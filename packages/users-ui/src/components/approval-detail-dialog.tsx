@@ -1,41 +1,25 @@
 'use client';
 
 import {
-  Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
   FileText,
-  Loader2,
   MessageSquare,
   Shield as ShieldIcon,
   Star,
   Trophy,
-  X,
-  XIcon,
 } from '@tuturuuu/icons';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@tuturuuu/ui/dialog';
+import { Dialog, DialogContent } from '@tuturuuu/ui/dialog';
 import { DiffViewer } from '@tuturuuu/ui/diff-viewer';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Textarea } from '@tuturuuu/ui/textarea';
-import { getStatusColorClasses } from '@tuturuuu/users-core/lib/approvals-utils';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -48,6 +32,10 @@ import {
   useLatestApprovedLog,
   useLatestApprovedPostLog,
 } from '../hooks/use-approvals';
+import {
+  ApprovalDetailHeader,
+  ApprovalDetailSidebar,
+} from './approval-detail-dialog-chrome';
 
 interface ApprovalDetailDialogProps {
   wsId: string;
@@ -489,217 +477,39 @@ export function ApprovalDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 md:max-w-6xl">
-        <DialogHeader className="border-b px-8 pt-8 pb-4">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <DialogTitle className="font-semibold text-lg leading-none">
-                {item.title || t('labels.untitled')}
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-sm">
-                {isReport
-                  ? t('detail.reportSubtitle')
-                  : t('detail.postSubtitle')}
-              </DialogDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              {items.length > 1 && onNavigateToItem && (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (hasPrev) onNavigateToItem(items[currentIndex - 1]!);
-                    }}
-                    disabled={!hasPrev || isApproving || isRejecting}
-                    className="h-7 w-7 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  {positionLabel && (
-                    <span className="min-w-12 text-center text-muted-foreground text-xs tabular-nums">
-                      {positionLabel}
-                    </span>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (hasNext) onNavigateToItem(items[currentIndex + 1]!);
-                    }}
-                    disabled={!hasNext || isApproving || isRejecting}
-                    className="h-7 w-7 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              {isReport && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1"
-                  asChild
-                >
-                  <Link
-                    href={`/${wsId}/users/reports?groupId=${item.group_id ?? ''}&userId=${item.user_id ?? ''}&reportId=${item.id}`}
-                    target="_blank"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {t('actions.openReport')}
-                  </Link>
-                </Button>
-              )}
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border px-2 py-0.5 font-medium text-xs',
-                  getStatusColorClasses(status)
-                )}
-              >
-                {t(
-                  `status.${status.toLowerCase() as 'pending' | 'approved' | 'rejected'}`
-                )}
-              </span>
-            </div>
-          </div>
-          <div className="flex justify-between">
-            <div className="flex items-center gap-4 pt-2 text-muted-foreground text-xs">
-              <span>
-                {t('labels.created_at')} {formatDate(item.created_at)}
-              </span>
-              {item.group_name && (
-                <span className="flex items-center gap-1">
-                  {t('labels.group')}:
-                  {item.group_id ? (
-                    <Link href={`/${wsId}/users/groups/${item.group_id}`}>
-                      <Badge
-                        variant="outline"
-                        className="cursor-pointer hover:bg-muted"
-                      >
-                        {item.group_name}
-                      </Badge>
-                    </Link>
-                  ) : (
-                    <Badge variant="outline">{item.group_name}</Badge>
-                  )}
-                </span>
-              )}
-              {isReport && item.user_name && (
-                <span className="flex items-center gap-1">
-                  {t('labels.user')}:
-                  {item.user_id ? (
-                    <Link href={`/${wsId}/users/database/${item.user_id}`}>
-                      <Badge
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-secondary/80"
-                      >
-                        {item.user_name}
-                      </Badge>
-                    </Link>
-                  ) : (
-                    <Badge variant="secondary">{item.user_name}</Badge>
-                  )}
-                </span>
-              )}
-            </div>
-            {/* Action Buttons in Header */}
-            {canApprove &&
-              (status === 'PENDING' ||
-                (status === 'APPROVED' && item.kind === 'posts')) &&
-              (showRejectForm ? (
-                <div className="flex items-center gap-2">
-                  <Textarea
-                    placeholder={t('detail.rejectionReasonPlaceholder')}
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    className="h-8 min-h-0 w-48 resize-none text-xs"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowRejectForm(false);
-                      setRejectReason('');
-                    }}
-                    className="h-8 w-8 p-0"
-                  >
-                    <XIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      if (!item) return;
-                      onReject({
-                        id: item.id,
-                        reason: rejectReason.trim(),
-                      });
-                    }}
-                    disabled={isRejecting || !rejectReason.trim()}
-                    className="h-8 gap-1"
-                  >
-                    {isRejecting && (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    )}
-                    <X className="h-3 w-3" />
-                    {t('actions.confirmReject')}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowRejectForm(true)}
-                    className="h-8 gap-1"
-                  >
-                    <X className="h-3 w-3" />
-                    {t('actions.reject')}
-                  </Button>
-                  {status === 'APPROVED' && item.kind === 'posts' ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onUnapprove(item.id)}
-                      disabled={!item.can_remove_approval || isUnapproving}
-                      className="h-8 gap-1"
-                    >
-                      {isUnapproving && (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      )}
-                      <X className="h-3 w-3" />
-                      {t('actions.unapprove')}
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (!item) return;
-                        onApprove(item.id);
-                      }}
-                      disabled={isApproving}
-                      className="h-8 gap-1 bg-dynamic-green hover:bg-dynamic-green/90"
-                    >
-                      {isApproving && (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      )}
-                      <Check className="h-3 w-3" />
-                      {t('actions.approve')}
-                    </Button>
-                  )}
-                </div>
-              ))}
-          </div>
-        </DialogHeader>
+      <DialogContent className="flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] flex-col overflow-hidden p-0 sm:max-h-[92dvh] sm:max-w-[calc(100vw-2rem)] xl:max-w-6xl">
+        <ApprovalDetailHeader
+          canApprove={canApprove}
+          currentIndex={currentIndex}
+          formatDate={formatDate}
+          hasNext={hasNext}
+          hasPrev={hasPrev}
+          isApproving={isApproving}
+          isRejecting={isRejecting}
+          isUnapproving={isUnapproving}
+          item={item}
+          items={items}
+          onApprove={onApprove}
+          onNavigateToItem={onNavigateToItem}
+          onReject={onReject}
+          onUnapprove={onUnapprove}
+          positionLabel={positionLabel}
+          rejectReason={rejectReason}
+          setRejectReason={setRejectReason}
+          setShowRejectForm={setShowRejectForm}
+          showRejectForm={showRejectForm}
+          status={status}
+          wsId={wsId}
+        />
 
-        <div className="flex max-h-[calc(90vh-10rem)] flex-col gap-0 overflow-y-auto md:grid md:grid-cols-[1fr,320px]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:overflow-hidden">
           {/* Left Column - Main Content */}
-          <div className="order-2 space-y-0 lg:order-1">
+          <div className="order-2 min-h-0 xl:order-1">
             {isCompareMode ? (
               // Diff comparison for reports with previous version
-              <div className="flex h-[calc(90vh-8rem)] flex-col">
-                <div className="flex items-center justify-between border-border border-b bg-muted/30 px-4 py-3">
-                  <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+              <div className="flex min-h-[28rem] flex-col xl:h-full xl:min-h-0">
+                <div className="grid min-w-0 gap-2 border-border border-b bg-muted/30 px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 font-medium text-muted-foreground text-sm">
                     {t('detail.previousApprovedVersion')}
                     {previousVersion?.approved_at && (
                       <span className="font-normal text-muted-foreground text-xs">
@@ -711,12 +521,17 @@ export function ApprovalDetailDialog({
                       {t('detail.currentVersion')}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1 text-muted-foreground text-xs sm:justify-end">
                     <span>{t('labels.last_modified_by')}</span>
-                    <span className="font-medium">{modifierName}</span>
+                    <span
+                      className="min-w-0 break-words font-medium"
+                      title={modifierName}
+                    >
+                      {modifierName}
+                    </span>
                   </div>
                 </div>
-                <ScrollArea className="flex-1">
+                <ScrollArea className="min-h-0 flex-1">
                   <div className="space-y-4 p-4">
                     {/* Content Diff */}
                     <div className="space-y-2">
@@ -825,9 +640,9 @@ export function ApprovalDetailDialog({
               </div>
             ) : (
               // Single view for posts or reports without previous version
-              <div className="flex h-[calc(90vh-8rem)] flex-col">
+              <div className="flex min-h-[28rem] flex-col xl:h-full xl:min-h-0">
                 <div className="border-border border-b bg-dynamic-blue/5 px-6 py-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 font-medium text-dynamic-blue text-sm">
                       {t('detail.currentVersion')}
                     </div>
@@ -835,12 +650,17 @@ export function ApprovalDetailDialog({
                       {t('detail.pendingApproval')}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                  <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1 text-muted-foreground text-xs">
                     <span>{t('labels.last_modified_by')}</span>
-                    <span className="font-medium">{modifierName}</span>
+                    <span
+                      className="min-w-0 break-words font-medium"
+                      title={modifierName}
+                    >
+                      {modifierName}
+                    </span>
                   </div>
                 </div>
-                <ScrollArea className="flex-1">
+                <ScrollArea className="min-h-0 flex-1">
                   <div className="p-6">
                     <CurrentVersionContent />
                   </div>
@@ -851,103 +671,13 @@ export function ApprovalDetailDialog({
           {/* End Left Column */}
 
           {/* Right Column - Metadata & Status */}
-          <div className="order-1 border-border border-b bg-muted/20 lg:order-2 lg:border-b-0 lg:border-l lg:bg-transparent">
-            <div className="space-y-4 p-4 lg:h-[calc(90vh-8rem)] lg:overflow-y-auto">
-              {/* Metadata Card */}
-              <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-                <h4 className="mb-3 font-semibold text-sm">
-                  {t('detail.metadata')}
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t('labels.created_at')}
-                    </span>
-                    <span>{formatDate(item.created_at)}</span>
-                  </div>
-                  {isReport && item.user_name && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        {t('labels.user')}
-                      </span>
-                      {item.user_id ? (
-                        <Link href={`/${wsId}/users/database/${item.user_id}`}>
-                          <Badge
-                            variant="secondary"
-                            className="cursor-pointer hover:bg-secondary/80"
-                          >
-                            {item.user_name}
-                          </Badge>
-                        </Link>
-                      ) : (
-                        <Badge variant="secondary">{item.user_name}</Badge>
-                      )}
-                    </div>
-                  )}
-                  {item.group_name && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">
-                        {t('labels.group')}
-                      </span>
-                      {item.group_id ? (
-                        <Link href={`/${wsId}/users/groups/${item.group_id}`}>
-                          <Badge
-                            variant="outline"
-                            className="cursor-pointer hover:bg-muted"
-                          >
-                            {item.group_name}
-                          </Badge>
-                        </Link>
-                      ) : (
-                        <Badge variant="outline">{item.group_name}</Badge>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">
-                      {t('labels.last_modified_by')}
-                    </span>
-                    <span>{modifierName}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Info */}
-              {item.approved_at || item.rejected_at || item.rejection_reason ? (
-                <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-                  <h4 className="mb-3 font-semibold text-sm">
-                    {t('detail.statusHistory')}
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    {item.approved_at && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {t('labels.approved_at')}
-                        </span>
-                        <span>{formatDate(item.approved_at)}</span>
-                      </div>
-                    )}
-                    {item.rejected_at && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {t('labels.rejected_at')}
-                        </span>
-                        <span>{formatDate(item.rejected_at)}</span>
-                      </div>
-                    )}
-                    {item.rejection_reason && (
-                      <div className="pt-2">
-                        <span className="text-muted-foreground">
-                          {t('labels.rejection_reason')}:
-                        </span>
-                        <p className="mt-1 rounded bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
-                          {item.rejection_reason}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : null}
+          <div className="order-1 border-border border-b bg-muted/20 xl:order-2 xl:min-h-0 xl:border-b-0 xl:border-l xl:bg-transparent">
+            <div className="p-4 xl:h-full xl:overflow-y-auto">
+              <ApprovalDetailSidebar
+                formatDate={formatDate}
+                item={item}
+                wsId={wsId}
+              />
             </div>
           </div>
           {/* End Right Column */}

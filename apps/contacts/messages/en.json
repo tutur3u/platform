@@ -75,7 +75,9 @@
       "approved": "Approval recorded.",
       "cancel": "Cancel",
       "confirmReject": "Confirm Rejection",
+      "next": "Next item",
       "openReport": "Open report",
+      "previous": "Previous item",
       "reject": "Reject",
       "rejected": "Rejection recorded.",
       "sessionSummary": "This session: {approved} approved, {rejected} rejected",
@@ -133,6 +135,7 @@
     "labels": {
       "approved_at": "Approved",
       "created_at": "Created",
+      "creator": "Creator",
       "group": "Group",
       "last_modified_by": "Last modified by",
       "rejected_at": "Rejected",

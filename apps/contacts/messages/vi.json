@@ -75,7 +75,9 @@
       "approved": "Đã ghi nhận phê duyệt.",
       "cancel": "Hủy",
       "confirmReject": "Xác Nhận Từ Chối",
+      "next": "Mục tiếp theo",
       "openReport": "Mở báo cáo",
+      "previous": "Mục trước",
       "reject": "Từ chối",
       "rejected": "Đã ghi nhận từ chối.",
       "sessionSummary": "Phiên này: {approved} đã duyệt, {rejected} đã từ chối",
@@ -133,6 +135,7 @@
     "labels": {
       "approved_at": "Duyệt lúc",
       "created_at": "Tạo lúc",
+      "creator": "Người tạo",
       "group": "Nhóm",
       "last_modified_by": "Chỉnh sửa gần nhất bởi",
       "rejected_at": "Từ chối lúc",
