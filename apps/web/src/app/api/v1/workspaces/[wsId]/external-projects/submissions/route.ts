@@ -268,7 +268,7 @@ export async function GET(
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
-) {
+): Promise<NextResponse> {
   const { wsId } = await params;
   const admin = (await createAdminClient()) as TypedSupabaseClient;
 
@@ -281,7 +281,7 @@ export async function POST(
       wsId,
     });
 
-    if ('response' in access) return access.response;
+    if (access.response) return access.response;
 
     // After authorization (so an unauthenticated caller cannot probe whether
     // Turnstile is on) but before anything is written.
