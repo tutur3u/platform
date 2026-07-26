@@ -296,6 +296,12 @@ const checks = [
     parseOutput: () => 'Apps only register service workers they serve',
   },
   {
+    name: 'multi-account-vault-owner',
+    command: 'node',
+    args: ['scripts/check-multi-account-vault-owner.js'],
+    parseOutput: () => 'Only apps/web carries the multi-account vault',
+  },
+  {
     name: 'tanstack-api-access',
     command: 'node',
     args: ['scripts/check-tanstack-api-access.js'],

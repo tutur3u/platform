@@ -54,6 +54,15 @@ shared-package changes.
   drifted that way. Either add the route or pass
   `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
   enforces it.
+- **Never copy the multi-account vault into another app.**
+  `apps/web/src/lib/auth/multi-account` (device cookies, encrypted Supabase
+  sessions, the account-switch handover) belongs to the app that serves
+  `/api/v1/auth/accounts/*`, which is only `apps/web`. `apps/infrastructure`
+  carried a byte-for-byte copy with no consumers: nothing imported it, so
+  nothing tested it and nothing broke when it drifted — it was hand-synced once
+  during a cross-app change and then missed two production auth fixes while
+  still reading as live code. If another app needs the behavior, extract it into
+  a shared package. `bun check` → `multi-account-vault-owner` enforces it.
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
