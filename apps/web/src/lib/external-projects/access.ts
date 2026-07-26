@@ -37,6 +37,10 @@ import {
   type WorkspaceInvitationRecord,
 } from '@/lib/workspace-invitations/status';
 import {
+  authorizeExternalAppRequest,
+  readExternalAppCredentials,
+} from './app-credentials';
+import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_DISPLAY_NAMES,
@@ -176,7 +180,7 @@ async function ensureCanonicalExternalProject({
 }: {
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
-  actorId: string;
+  actorId: string | null;
   canonicalProjectId?: string;
   schema?: ExternalProjectSyncSchema;
 }) {
@@ -254,7 +258,7 @@ async function bindWorkspaceExternalProject({
   previousCanonicalId,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   admin: AdminDb;
   canonicalProjectId: string;
   previousCanonicalId: string | null;
@@ -317,7 +321,7 @@ async function importExternalProjectFieldDefinitions({
   schema,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   admin: AdminDb;
   schema?: ExternalProjectSyncSchema;
   workspaceId: string;
@@ -346,7 +350,8 @@ export async function ensureWorkspaceExternalProjectStudio({
   schema,
   workspaceId,
 }: {
-  actorId: string;
+  /** Null when a linked app provisions its own schema, with no user acting. */
+  actorId: string | null;
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   schema?: ExternalProjectSyncSchema;
@@ -1237,6 +1242,34 @@ export async function requireWorkspaceExternalProjectSetupAccess({
   request: Request;
   wsId: string;
 }) {
+  // A linked app provisioning its own schema has no user to speak for, so it
+  // presents its app credentials instead. Scoped to the project it is already
+  // bound to, which is the same surface it can already write entries through —
+  // this lets a satellite install and repair its own content model without an
+  // operator having to click through the studio first.
+  const appCredentials = readExternalAppCredentials(request);
+
+  if (appCredentials.appSecret) {
+    const admin = (await createAdminClient()) as TypedSupabaseClient;
+    const appAccess = await authorizeExternalAppRequest({
+      admin,
+      appId: appCredentials.appId,
+      appSecret: appCredentials.appSecret,
+      wsId,
+    });
+
+    if (appAccess.response) {
+      return { ok: false as const, response: appAccess.response };
+    }
+
+    return {
+      ok: true as const,
+      admin,
+      normalizedWorkspaceId: wsId,
+      user: null,
+    };
+  }
+
   const appCoordinationToken = getBearerAppCoordinationToken(request);
 
   if (getAppSessionTokenFromRequest(request)) {

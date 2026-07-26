@@ -1508,7 +1508,7 @@ type UpsertFieldDefinitionPayload = {
   options?: string[];
   sort_order?: number;
   source?: string;
-  actorId: string;
+  actorId: string | null;
   workspaceId: string;
 };
 
@@ -1559,7 +1559,7 @@ export async function updateWorkspaceExternalProjectFieldDefinition(
   payload: Partial<
     Omit<UpsertFieldDefinitionPayload, 'actorId' | 'workspaceId'>
   > & {
-    actorId: string;
+    actorId: string | null;
     workspaceId: string;
   },
   db?: AdminDb
@@ -1719,7 +1719,7 @@ function syncFieldToPayload({
   definition,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   definition: FieldDefinitionSchemaScope;
   workspaceId: string;
 }): UpsertFieldDefinitionPayload {
@@ -1752,7 +1752,7 @@ export async function upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
     schema,
     workspaceId,
   }: {
-    actorId: string;
+    actorId: string | null;
     collectionBySlug?: Map<
       string,
       Pick<ExternalProjectCollection, 'id' | 'slug'>

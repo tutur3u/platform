@@ -58,7 +58,7 @@ async function setupExternalProjectStudio(
       | ExternalProjectSyncSchema
       | undefined;
     const result = await ensureWorkspaceExternalProjectStudio({
-      actorId: access.user.id,
+      actorId: access.user?.id ?? null,
       adapter,
       admin: access.admin,
       schema,
