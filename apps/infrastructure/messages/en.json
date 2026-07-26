@@ -8254,7 +8254,7 @@
     "github_bot": "GitHub Bot",
     "infrastructure": "Infrastructure",
     "integrations": "Integrations",
-    "internal_accounts": "Internal Accounts",
+    "internal_accounts": "Account Security",
     "internal_projects": "Internal Projects",
     "managed_cron_whitelisted_domains": "Managed Cron Domains",
     "mobile_deployment": "Mobile Deployment",
@@ -8312,7 +8312,7 @@
       "last_sign_in": "Last sign-in {date}",
       "never": "Never"
     },
-    "description": "Manage identity, authentication access, and personal Drive capacity for exact @tuturuuu.com accounts.",
+    "description": "Recover any Tuturuuu platform account while keeping internal identity, access, and Drive controls in one restricted workspace.",
     "dialog": {
       "confirmation_help": "Enter {email} exactly to confirm this sensitive action.",
       "confirmation_label": "Confirm account email",
@@ -8344,6 +8344,10 @@
       },
       "show_password": "Show password"
     },
+    "directory": {
+      "description": "Profile, access, and personal Drive controls remain limited to exact @tuturuuu.com accounts.",
+      "title": "Internal account directory"
+    },
     "empty": {
       "description": "Try a different search or loosen the active and verified filters.",
       "title": "No internal accounts found"
@@ -8362,8 +8366,21 @@
       "verified_only": "Verified accounts only"
     },
     "notice": {
-      "description": "Access and password changes take effect immediately, require the exact target email, and cannot target your own account. Profile details can be corrected independently.",
+      "description": "Password resets can target any platform account by exact email. Access and profile controls remain internal-only, and you cannot target your own account.",
       "title": "Restricted root-workspace operation"
+    },
+    "password_recovery": {
+      "action": "Reset any password",
+      "confirm": "Set temporary password",
+      "description": "Help any Tuturuuu account regain access by assigning a secure temporary password.",
+      "dialog_description": "Enter the exact account email and create a temporary password. This takes effect immediately and does not automatically revoke existing sessions.",
+      "dialog_title": "Reset a platform account password",
+      "email_help": "The email can belong to an internal team member, customer, or any other Tuturuuu account.",
+      "email_label": "Account email",
+      "email_placeholder": "account@example.com",
+      "title": "Platform account recovery",
+      "toast_error": "The account password could not be reset. Verify the email and try again.",
+      "toast_success": "Account password reset successfully."
     },
     "profile": {
       "description": "Update the public identity associated with {email} across Tuturuuu apps.",
@@ -8398,7 +8415,7 @@
       "unavailable": "No personal workspace",
       "value": "{used} / {limit}"
     },
-    "title": "Internal Accounts",
+    "title": "Account Security",
     "toasts": {
       "update_failed": "The internal account could not be updated.",
       "updated": "Internal account updated."
@@ -19942,8 +19959,8 @@
     "manage_forms_description": "Allows members to create, edit, and manage workspace forms.",
     "manage_infrastructure_stress_tests": "Manage infrastructure stress tests",
     "manage_infrastructure_stress_tests_description": "Allows root workspace members to start and abort controlled infrastructure stress tests.",
-    "manage_internal_accounts": "Manage internal accounts",
-    "manage_internal_accounts_description": "Allows root workspace members to reset passwords and disable or restore access for exact @tuturuuu.com accounts.",
+    "manage_internal_accounts": "Manage account security",
+    "manage_internal_accounts_description": "Allows root workspace members to reset any account password and manage access for exact @tuturuuu.com accounts.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_catalog": "Manage Inventory Catalog",
     "manage_inventory_catalog_description": "Allows members to create, edit, and remove inventory catalog items.",

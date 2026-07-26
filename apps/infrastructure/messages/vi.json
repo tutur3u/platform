@@ -8254,7 +8254,7 @@
     "github_bot": "Bot GitHub",
     "infrastructure": "Cơ sở hạ tầng",
     "integrations": "Dịch vụ tích hợp",
-    "internal_accounts": "Tài khoản nội bộ",
+    "internal_accounts": "Bảo mật tài khoản",
     "internal_projects": "Dự án nội bộ",
     "managed_cron_whitelisted_domains": "Tên miền Cron được quản lý",
     "mobile_deployment": "Triển khai di động",
@@ -8312,7 +8312,7 @@
       "last_sign_in": "Đăng nhập gần nhất {date}",
       "never": "Chưa bao giờ"
     },
-    "description": "Quản lý danh tính, quyền truy cập xác thực và dung lượng Drive cá nhân cho các tài khoản chính xác thuộc @tuturuuu.com.",
+    "description": "Khôi phục mọi tài khoản trên nền tảng Tuturuuu, đồng thời quản lý danh tính, quyền truy cập và Drive nội bộ trong một không gian làm việc hạn chế.",
     "dialog": {
       "confirmation_help": "Nhập chính xác {email} để xác nhận thao tác nhạy cảm này.",
       "confirmation_label": "Xác nhận email tài khoản",
@@ -8344,6 +8344,10 @@
       },
       "show_password": "Hiện mật khẩu"
     },
+    "directory": {
+      "description": "Các quyền quản lý hồ sơ, truy cập và Drive cá nhân vẫn chỉ áp dụng cho tài khoản chính xác thuộc @tuturuuu.com.",
+      "title": "Danh bạ tài khoản nội bộ"
+    },
     "empty": {
       "description": "Hãy thử tìm kiếm khác hoặc nới lỏng bộ lọc đang hoạt động và đã xác minh.",
       "title": "Không tìm thấy tài khoản nội bộ"
@@ -8362,8 +8366,21 @@
       "verified_only": "Chỉ tài khoản đã xác minh"
     },
     "notice": {
-      "description": "Thay đổi quyền truy cập và mật khẩu có hiệu lực ngay lập tức, yêu cầu email chính xác và không thể áp dụng cho chính tài khoản của bạn. Thông tin hồ sơ có thể được chỉnh sửa riêng.",
+      "description": "Có thể đặt lại mật khẩu cho mọi tài khoản nền tảng bằng email chính xác. Quyền quản lý truy cập và hồ sơ vẫn chỉ dành cho tài khoản nội bộ, đồng thời bạn không thể thao tác trên chính tài khoản của mình.",
       "title": "Thao tác giới hạn trong không gian làm việc gốc"
+    },
+    "password_recovery": {
+      "action": "Đặt lại mật khẩu bất kỳ",
+      "confirm": "Đặt mật khẩu tạm thời",
+      "description": "Giúp bất kỳ tài khoản Tuturuuu nào lấy lại quyền truy cập bằng một mật khẩu tạm thời an toàn.",
+      "dialog_description": "Nhập chính xác email tài khoản và tạo mật khẩu tạm thời. Thay đổi có hiệu lực ngay lập tức và không tự động thu hồi các phiên hiện có.",
+      "dialog_title": "Đặt lại mật khẩu tài khoản nền tảng",
+      "email_help": "Email có thể thuộc về thành viên nội bộ, khách hàng hoặc bất kỳ tài khoản Tuturuuu nào khác.",
+      "email_label": "Email tài khoản",
+      "email_placeholder": "taikhoan@example.com",
+      "title": "Khôi phục tài khoản nền tảng",
+      "toast_error": "Không thể đặt lại mật khẩu tài khoản. Hãy kiểm tra email và thử lại.",
+      "toast_success": "Đã đặt lại mật khẩu tài khoản."
     },
     "profile": {
       "description": "Cập nhật danh tính công khai của {email} trên các ứng dụng Tuturuuu.",
@@ -8398,7 +8415,7 @@
       "unavailable": "Không có không gian cá nhân",
       "value": "{used} / {limit}"
     },
-    "title": "Tài khoản nội bộ",
+    "title": "Bảo mật tài khoản",
     "toasts": {
       "update_failed": "Không thể cập nhật tài khoản nội bộ.",
       "updated": "Đã cập nhật tài khoản nội bộ."
@@ -19942,8 +19959,8 @@
     "manage_forms_description": "Cho phép thành viên tạo, chỉnh sửa và quản lý biểu mẫu trong không gian làm việc.",
     "manage_infrastructure_stress_tests": "Quản lý stress test hạ tầng",
     "manage_infrastructure_stress_tests_description": "Cho phép thành viên không gian làm việc gốc bắt đầu và dừng các stress test hạ tầng có kiểm soát.",
-    "manage_internal_accounts": "Quản lý tài khoản nội bộ",
-    "manage_internal_accounts_description": "Cho phép thành viên không gian làm việc gốc đặt lại mật khẩu và vô hiệu hóa hoặc khôi phục truy cập cho các tài khoản chính xác thuộc @tuturuuu.com.",
+    "manage_internal_accounts": "Quản lý bảo mật tài khoản",
+    "manage_internal_accounts_description": "Cho phép thành viên không gian làm việc gốc đặt lại mật khẩu cho mọi tài khoản và quản lý truy cập cho các tài khoản chính xác thuộc @tuturuuu.com.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_catalog": "Quản lý danh mục kho",
     "manage_inventory_catalog_description": "Cho phép thành viên tạo, chỉnh sửa và xóa mặt hàng trong danh mục kho.",

@@ -6,6 +6,7 @@ import {
   type InternalAccountAdminError,
   listInternalAccountUsers,
   mutateInternalAccount,
+  resetAccountPasswordByEmail,
   toInternalAccount,
 } from './service';
 
@@ -270,5 +271,110 @@ describe('internal account service', () => {
     expect(updated.displayName).toBe('Local Operator');
     expect(updated.username).toBe('operator');
     expect(from).toHaveBeenCalledWith('handles');
+  });
+
+  it('resets an external account password by exact normalized email', async () => {
+    const target = authUser({
+      email: 'Customer@Example.com',
+      id: 'customer-user',
+    });
+    const listUsers = vi.fn().mockResolvedValue({
+      data: { nextPage: null, users: [target] },
+      error: null,
+    });
+    const updateUserById = vi.fn().mockResolvedValue({
+      data: { user: target },
+      error: null,
+    });
+
+    const result = await resetAccountPasswordByEmail({
+      actorUserId: 'operator-user',
+      email: ' customer@example.com ',
+      newPassword: 'secure-temporary-password',
+      sbAdmin: adminClient({ listUsers, updateUserById }),
+    });
+
+    expect(updateUserById).toHaveBeenCalledWith('customer-user', {
+      password: 'secure-temporary-password',
+    });
+    expect(result).toEqual({ email: 'customer@example.com' });
+  });
+
+  it('searches subsequent auth pages for a password reset target', async () => {
+    const listUsers = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          nextPage: 2,
+          users: [authUser({ email: 'other@example.com', id: 'other-user' })],
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: {
+          nextPage: null,
+          users: [authUser({ email: 'target@example.com', id: 'target-user' })],
+        },
+        error: null,
+      });
+    const updateUserById = vi.fn().mockResolvedValue({
+      data: {
+        user: authUser({
+          email: 'target@example.com',
+          id: 'target-user',
+        }),
+      },
+      error: null,
+    });
+
+    await resetAccountPasswordByEmail({
+      actorUserId: 'operator-user',
+      email: 'target@example.com',
+      newPassword: 'secure-temporary-password',
+      sbAdmin: adminClient({ listUsers, updateUserById }),
+    });
+
+    expect(listUsers).toHaveBeenNthCalledWith(1, { page: 1, perPage: 1000 });
+    expect(listUsers).toHaveBeenNthCalledWith(2, { page: 2, perPage: 1000 });
+  });
+
+  it('rejects platform-wide self password resets and unknown accounts', async () => {
+    const target = authUser({
+      email: 'operator@tuturuuu.com',
+      id: 'operator-user',
+    });
+    const updateUserById = vi.fn();
+
+    await expect(
+      resetAccountPasswordByEmail({
+        actorUserId: 'operator-user',
+        email: 'operator@tuturuuu.com',
+        newPassword: 'secure-temporary-password',
+        sbAdmin: adminClient({
+          listUsers: vi.fn().mockResolvedValue({
+            data: { nextPage: null, users: [target] },
+            error: null,
+          }),
+          updateUserById,
+        }),
+      })
+    ).rejects.toEqual(expect.objectContaining({ status: 409 }));
+
+    await expect(
+      resetAccountPasswordByEmail({
+        actorUserId: 'operator-user',
+        email: 'missing@example.com',
+        newPassword: 'secure-temporary-password',
+        sbAdmin: adminClient({
+          listUsers: vi.fn().mockResolvedValue({
+            data: { nextPage: null, users: [] },
+            error: null,
+          }),
+          updateUserById,
+        }),
+      })
+    ).rejects.toEqual(expect.objectContaining({ status: 404 }));
+
+    expect(updateUserById).not.toHaveBeenCalled();
   });
 });

@@ -95,6 +95,37 @@ async function loadAuthUsers(sbAdmin: AdminClient) {
   throw new InternalAccountAdminError('Unable to load internal accounts', 500);
 }
 
+async function findAuthUserByEmail(sbAdmin: AdminClient, email: string) {
+  let page = 1;
+
+  while (page <= MAX_AUTH_USER_PAGES) {
+    const { data, error } = await sbAdmin.auth.admin.listUsers({
+      page,
+      perPage: AUTH_USERS_PAGE_SIZE,
+    });
+
+    if (error) {
+      console.error('Failed to locate auth account for password reset', {
+        code: error.code,
+        page,
+      });
+      throw new InternalAccountAdminError('Unable to locate the account', 500);
+    }
+
+    const match = data.users.find(
+      (user) => user.email?.trim().toLowerCase() === email
+    );
+    if (match) return match;
+    if (!data.nextPage) return null;
+    page = data.nextPage;
+  }
+
+  console.error(
+    'Account password reset lookup exceeded the safety page budget'
+  );
+  throw new InternalAccountAdminError('Unable to locate the account', 500);
+}
+
 async function enrichPublicProfiles(
   accounts: InternalAccount[],
   sbAdmin: AdminClient
@@ -288,6 +319,58 @@ export async function listInternalAccountUsers({
     nextCursor:
       nextOffset < filteredAccounts.length ? String(nextOffset) : null,
   };
+}
+
+export async function resetAccountPasswordByEmail({
+  actorUserId,
+  email,
+  newPassword,
+  sbAdmin,
+}: {
+  actorUserId: string;
+  email: string;
+  newPassword: string;
+  sbAdmin: AdminClient;
+}) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (newPassword.length < 12 || newPassword.length > 72) {
+    throw new InternalAccountAdminError(
+      'A password between 12 and 72 characters is required',
+      400
+    );
+  }
+
+  const target = await findAuthUserByEmail(sbAdmin, normalizedEmail);
+  if (!target) {
+    throw new InternalAccountAdminError('Account not found', 404);
+  }
+  if (target.id === actorUserId) {
+    throw new InternalAccountAdminError(
+      'You cannot reset your own password here',
+      409
+    );
+  }
+
+  const { data, error } = await sbAdmin.auth.admin.updateUserById(target.id, {
+    password: newPassword,
+  });
+  if (error || !data.user) {
+    console.error('Failed to reset account password', {
+      code: error?.code,
+      targetUserId: target.id,
+    });
+    throw new InternalAccountAdminError(
+      'Unable to reset the account password',
+      500
+    );
+  }
+
+  console.info('Platform account password reset completed', {
+    actorUserId,
+    targetUserId: target.id,
+  });
+
+  return { email: normalizedEmail };
 }
 
 export async function mutateInternalAccount({

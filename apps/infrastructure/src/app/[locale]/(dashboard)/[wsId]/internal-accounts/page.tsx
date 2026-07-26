@@ -18,8 +18,8 @@ const MANAGE_INTERNAL_ACCOUNTS_PERMISSION =
 
 export const metadata: Metadata = {
   description:
-    'Securely manage access and credentials for internal Tuturuuu accounts.',
-  title: 'Internal Accounts',
+    'Securely recover platform accounts and manage internal Tuturuuu access.',
+  title: 'Account Security',
 };
 
 interface Props {

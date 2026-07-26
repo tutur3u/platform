@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
+  nuqsAdapter: vi.fn(),
   setRequestLocale: vi.fn(),
 }));
 
@@ -35,6 +36,13 @@ vi.mock('@/components/providers', () => ({
       {children}
     </section>
   ),
+}));
+
+vi.mock('nuqs/adapters/next/app', () => ({
+  NuqsAdapter: ({ children }: { children: ReactNode }) => {
+    mocks.nuqsAdapter();
+    return <div data-testid="nuqs-adapter">{children}</div>;
+  },
 }));
 
 vi.mock('next-intl/server', () => ({
@@ -78,7 +86,7 @@ describe('Infrastructure locale layout', () => {
     vi.clearAllMocks();
   });
 
-  it('mounts the shared satellite provider for dashboard client components', async () => {
+  it('mounts the Nuqs adapter around the shared satellite provider', async () => {
     const Layout = (await import('./layout')).default;
 
     const result = await Layout({
@@ -89,6 +97,10 @@ describe('Infrastructure locale layout', () => {
     render(result);
 
     expect(mocks.setRequestLocale).toHaveBeenCalledWith('en');
+    expect(mocks.nuqsAdapter).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('nuqs-adapter')).toContainElement(
+      screen.getByTestId('satellite-provider')
+    );
     expect(screen.getByTestId('satellite-provider')).toHaveAttribute(
       'data-app-name',
       'Tuturuuu Infra'

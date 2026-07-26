@@ -67,6 +67,17 @@ export interface UpdateInternalAccountResponse {
   message: string;
 }
 
+export interface ResetAccountPasswordPayload {
+  action: 'reset_password';
+  email: string;
+  newPassword: string;
+}
+
+export interface ResetAccountPasswordResponse {
+  email: string;
+  message: string;
+}
+
 export async function listInternalAccounts(
   params: ListInternalAccountsParams = {},
   options?: InternalApiClientOptions
@@ -106,6 +117,25 @@ export async function updateInternalAccount(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
+    }
+  );
+}
+
+export async function resetAccountPassword(
+  payload: ResetAccountPasswordPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<ResetAccountPasswordResponse>(
+    '/api/v1/infrastructure/internal-accounts',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
     }
   );
 }

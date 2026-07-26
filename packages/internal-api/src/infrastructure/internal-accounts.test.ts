@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   listInternalAccounts,
+  resetAccountPassword,
   updateInternalAccount,
 } from './internal-accounts';
 
@@ -69,6 +70,34 @@ describe('internal account API helpers', () => {
         body: JSON.stringify(payload),
         cache: 'no-store',
         method: 'PATCH',
+      })
+    );
+  });
+
+  it('resets a platform account password by exact email', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        email: 'customer@example.com',
+        message: 'Account password updated',
+      })
+    );
+    const payload = {
+      action: 'reset_password' as const,
+      email: 'customer@example.com',
+      newPassword: 'secure-temporary-password',
+    };
+
+    await resetAccountPassword(payload, {
+      baseUrl: 'https://infra.test',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://infra.test/api/v1/infrastructure/internal-accounts',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
       })
     );
   });

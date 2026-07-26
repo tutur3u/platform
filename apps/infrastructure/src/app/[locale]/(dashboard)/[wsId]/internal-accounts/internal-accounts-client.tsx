@@ -19,6 +19,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useCallback, useRef, useState } from 'react';
+import { AccountPasswordRecovery } from './account-password-recovery';
 import { InternalAccountRow } from './internal-account-row';
 import { InternalAccountsToolbar } from './internal-accounts-toolbar';
 
@@ -100,6 +101,15 @@ export function InternalAccountsClient() {
 
   return (
     <div className="space-y-4">
+      <AccountPasswordRecovery />
+
+      <div>
+        <h2 className="font-semibold">{t('directory.title')}</h2>
+        <p className="mt-1 text-muted-foreground text-sm">
+          {t('directory.description')}
+        </p>
+      </div>
+
       <InternalAccountsToolbar
         activeOnly={activeOnly}
         count={count}
