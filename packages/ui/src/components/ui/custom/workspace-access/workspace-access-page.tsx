@@ -69,8 +69,9 @@ export function WorkspaceAccessPage({
   const [profileMember, setProfileMember] =
     useState<InternalApiEnhancedWorkspaceMember | null>(null);
 
+  const fetchesOwnContext = Boolean(adapter.getContext);
   const contextQuery = useQuery({
-    enabled: Boolean(adapter.getContext),
+    enabled: fetchesOwnContext,
     initialData: initialContext,
     queryFn: async () =>
       adapter.getContext
@@ -79,7 +80,15 @@ export function WorkspaceAccessPage({
     queryKey: ['workspace-access', initialContext.workspaceId, 'context'],
     staleTime: 30_000,
   });
-  const context = contextQuery.data ?? initialContext;
+  // Only trust the query when the adapter actually fetches a context. Otherwise
+  // `initialData` seeds a *disabled* query, which then serves that first snapshot
+  // forever — and callers resolve their permissions asynchronously, so the first
+  // snapshot is the one taken before they arrived. That is what left admins
+  // looking at a permanently disabled Roles tab: the permission turned true a
+  // moment later and this component never saw it.
+  const context = fetchesOwnContext
+    ? (contextQuery.data ?? initialContext)
+    : initialContext;
   const workspaceId = context.workspaceId;
   const canManageMembers = context.canManageMembers;
   const canManageRoles = context.canManageRoles;

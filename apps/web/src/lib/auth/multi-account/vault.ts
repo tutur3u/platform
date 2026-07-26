@@ -21,8 +21,9 @@ import {
 } from './crypto';
 import {
   getWorkspaceIdFromMultiAccountRoute,
-  normalizeMultiAccountRedirectPath,
   normalizePersistableMultiAccountRoute,
+  resolveMultiAccountAddRedirect,
+  resolveMultiAccountSwitchRedirect,
 } from './routes';
 import {
   MAX_WEB_ACCOUNT_SESSIONS,
@@ -430,7 +431,7 @@ export async function saveCurrentWebAccount(
   return {
     ...accounts,
     accountId,
-    redirectTo: normalizeMultiAccountRedirectPath(payload.returnUrl, request),
+    redirectTo: resolveMultiAccountAddRedirect(payload.returnUrl, request),
     success: true,
   };
 }
@@ -513,12 +514,13 @@ async function switchToStoredWebAccount(
     .eq('user_id', accountId);
   await updateDeviceActiveUser(device.deviceId, accountId);
 
-  const redirectTo =
-    normalizePersistableMultiAccountRoute(
-      payload.targetRoute ?? stored.metadata.lastRoute,
-      request,
-      '/'
-    ) ?? '/';
+  const redirectTo = resolveMultiAccountSwitchRedirect(
+    {
+      lastRoute: stored.metadata.lastRoute,
+      targetRoute: payload.targetRoute,
+    },
+    request
+  );
   const accounts = await listAccountsForDevice({
     ...device,
     activeUserId: accountId,
