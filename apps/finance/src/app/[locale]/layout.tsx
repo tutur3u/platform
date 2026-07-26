@@ -74,7 +74,7 @@ export default async function RootLayout({ children, params }: Props) {
           font.className
         )}
       >
-        <OfflineProvider>
+        <OfflineProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
           <NuqsAdapter>

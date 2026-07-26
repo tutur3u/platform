@@ -284,6 +284,12 @@ const checks = [
     parseOutput: () => 'Registered app auth surfaces use app sessions',
   },
   {
+    name: 'offline-worker-wiring',
+    command: 'node',
+    args: ['scripts/check-offline-worker-wiring.js'],
+    parseOutput: () => 'Apps only register service workers they serve',
+  },
+  {
     name: 'tanstack-api-access',
     command: 'node',
     args: ['scripts/check-tanstack-api-access.js'],

@@ -38,6 +38,22 @@ shared-package changes.
 - Do not mount a collaborative editor against a placeholder record. Render a
   skeleton until the real row has hydrated, so the editor is created once with its
   final binding (`isHydratingTask` in the task dialog is the reference).
+- **A fixed-height `DialogContent` needs its content column to declare
+  `min-h-0`.** The shared default variant is `display: grid`; a grid item defaults
+  to `min-height: auto`, so a `flex-1` column inside it grows to its content
+  instead of the dialog. The inner `overflow-y-auto` region is then sized to the
+  content too, the dialog clips the overflow, and **nothing scrolls at all** — the
+  focused task dialog shipped that way (`TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME`).
+  The fullscreen variant escaped it only because it lays out with flex. jsdom does
+  not compute layout, so no unit test can catch this: assert the class contract
+  instead, and verify real scrolling in a browser.
+- **Never register a service worker an app does not serve.** `OfflineProvider`
+  registers `/serwist/sw.js`, which only exists in apps that also expose
+  `src/app/serwist/[path]/route.ts` (`createOfflineRoute`). Copying a layout
+  without that route logs a failed registration on every page load; seven apps had
+  drifted that way. Either add the route or pass
+  `<OfflineProvider register={false}>`. `bun check` → `offline-worker-wiring`
+  enforces it.
 - If a file exceeds about 400 LOC or a component/widget exceeds about 200 LOC
   after significant edits, split it by concern and keep import paths stable
   with a thin barrel when needed.
