@@ -65,7 +65,7 @@ function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
  * the toolbar would disappear on mousedown, before the click could land.
  */
 export const REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME =
-  'opacity-0 transition-opacity duration-200 group-focus-within:opacity-100';
+  'pointer-events-none opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100';
 
 function serializeEditorContent(content: JSONContent | null) {
   return JSON.stringify(content ?? { type: 'doc', content: [] });
@@ -741,36 +741,6 @@ export function RichTextEditor({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const toolbar = fixedToolbarRef.current;
-
-    if (!(toolbar && editor) || !revealToolbarOnFocus) return;
-
-    // Capture phase: intercept before the button underneath reacts.
-    const focusEditorInstead = (event: MouseEvent) => {
-      if (hasFocusWithinRef.current) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      editor.commands.focus();
-    };
-
-    const swallowClick = (event: MouseEvent) => {
-      if (hasFocusWithinRef.current) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    toolbar.addEventListener('mousedown', focusEditorInstead, true);
-    toolbar.addEventListener('click', swallowClick, true);
-
-    return () => {
-      toolbar.removeEventListener('mousedown', focusEditorInstead, true);
-      toolbar.removeEventListener('click', swallowClick, true);
-    };
-  }, [editor, revealToolbarOnFocus]);
-
   return (
     <div
       className="group relative h-full"
@@ -781,6 +751,20 @@ export function RichTextEditor({
       }}
       onFocusCapture={() => {
         hasFocusWithinRef.current = true;
+      }}
+      onMouseDown={(event) => {
+        // While the toolbar is hidden it is `pointer-events-none`, so it never
+        // shows a hover state or a tooltip — and a press in that strip lands
+        // here instead. Put the caret in the text rather than swallowing it, so
+        // reaching for a formatting control still gets you into the description.
+        if (!revealToolbarOnFocus || hasFocusWithinRef.current || !editor) {
+          return;
+        }
+
+        if (event.target !== event.currentTarget) return;
+
+        event.preventDefault();
+        editor.commands.focus();
       }}
     >
       {!readOnly && (

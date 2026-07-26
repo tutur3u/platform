@@ -537,6 +537,41 @@ describe('TaskDialogManager', () => {
     });
   });
 
+  // Regression: the presence-provider wrapper used to appear as soon as
+  // hydration revealed `taskWsId`, which moves the dialog to a different
+  // position in the tree — React unmounts the open dialog and mounts a new one,
+  // so the user watches it open, close and open again.
+  it('keeps the dialog mounted when hydration reveals the task workspace', async () => {
+    mockSearchParams.set('task', 'task-9');
+    mockGetTaskDialogHydration.mockResolvedValue({
+      availableLists: [mockList],
+      task: { ...mockTask, id: 'task-9', list: { board_id: 'board-1' } },
+      // A workspace the board route knows nothing about, which is exactly what
+      // used to trigger the extra provider wrapper mid-flight.
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'PRO',
+      taskWsId: 'other-workspace',
+    });
+
+    const { getByTestId } = render(
+      <Wrapper>
+        <TaskDialogManager wsId="workspace-1" />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
+        'data-hydrating',
+        'false'
+      );
+    });
+
+    expect(taskDialogRenderStats).toMatchObject({
+      mounts: 1,
+      unmounts: 0,
+    });
+  });
+
   it('dispatches a recent visit snapshot when an edit dialog opens', async () => {
     const listener = vi.fn();
     window.addEventListener(

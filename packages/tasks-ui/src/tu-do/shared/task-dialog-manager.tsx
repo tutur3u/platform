@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { getUserConfig } from '@tuturuuu/internal-api/users';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   dispatchTaskOpenResult,
@@ -548,11 +549,42 @@ export function TaskDialogManager({
   ]);
 
   // Determine if the task needs its own presence provider (cross-workspace tasks).
-  // Keep the provider shell mounted from the initial snapshot when taskWsId is
-  // already known, otherwise hydration can wrap the open dialog in a new
-  // provider and Radix replays the compact dialog entrance animation.
-  const needsOwnProvider =
+  //
+  // This decision is latched for as long as the dialog stays open, and that is
+  // the whole point. Adding or removing the provider wrapper moves the dialog to
+  // a different position in the React tree, so React unmounts the mounted dialog
+  // and mounts a fresh one — which the user sees as the dialog opening, closing
+  // and opening again. `taskWsId` is unknown until a deep link finishes
+  // hydrating, so without the latch every deep-linked open flickers exactly that
+  // way (most visibly in a personal workspace, where the outer presence provider
+  // is disabled and the wrapper is therefore always wanted once the id lands).
+  //
+  // The cost is that a deep-linked cross-workspace task opens without its own
+  // presence channel, i.e. no live cursors. That is cosmetic; a remounting dialog
+  // is not.
+  const needsOwnProviderNow =
     state.taskWsId && (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId);
+  const presenceShellRef = useRef<{
+    tier: WorkspaceProductTier | null;
+    wsId: string;
+  } | null>(null);
+  const presenceShellOpenRef = useRef(false);
+
+  if (!state.isOpen) {
+    presenceShellOpenRef.current = false;
+    presenceShellRef.current = null;
+  } else if (!presenceShellOpenRef.current) {
+    presenceShellOpenRef.current = true;
+    presenceShellRef.current =
+      needsOwnProviderNow && state.taskWsId
+        ? {
+            tier: state.taskWorkspaceTier ?? null,
+            wsId: state.taskWsId,
+          }
+        : null;
+  }
+
+  const presenceShell = presenceShellRef.current;
   const ownProviderEnabled =
     !!state.realtimeEnabled && !state.taskWorkspacePersonal;
 
@@ -604,11 +636,11 @@ export function TaskDialogManager({
     />
   );
 
-  if (needsOwnProvider && state.taskWsId) {
+  if (presenceShell) {
     return (
       <WorkspacePresenceProvider
-        wsId={state.taskWsId}
-        tier={state.taskWorkspaceTier ?? null}
+        wsId={presenceShell.wsId}
+        tier={state.taskWorkspaceTier ?? presenceShell.tier}
         enabled={ownProviderEnabled}
       >
         {dialog}
