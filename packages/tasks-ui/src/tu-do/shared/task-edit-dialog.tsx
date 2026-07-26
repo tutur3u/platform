@@ -101,6 +101,7 @@ import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskDescriptionRestoreBanner } from './task-edit-dialog/task-description-restore-banner';
 import { TaskDescriptionVersionRestoreDialog } from './task-edit-dialog/task-description-version-restore-dialog';
+import { TaskDetailsSection } from './task-edit-dialog/task-details-section';
 import { TaskInstancesSection } from './task-edit-dialog/task-instances-section';
 import {
   type TaskMediaPermissionAccess,
@@ -2461,7 +2462,7 @@ export function TaskEditDialog({
   handleConvertToTaskRef.current = handleConvertToTask;
 
   const renderTaskPropertiesSection = (
-    variant: 'default' | 'compact' = 'default'
+    variant: 'compact' | 'default' | 'embedded' = 'default'
   ) => (
     <TaskPropertiesSection
       wsId={effectiveTaskWsId}
@@ -2614,7 +2615,7 @@ export function TaskEditDialog({
               iconRingClass={compactHeaderInfo.iconRingClass}
               showHeaderTitle={isCreateMode}
               descriptionPreview={compactDescriptionPreview}
-              descriptionPreviewLabel={dialogT('open_fullscreen')}
+              descriptionPreviewLabel={dialogT('enlarge_dialog')}
               titleInput={
                 <TaskNameInput
                   name={formState.name}
@@ -2766,7 +2767,98 @@ export function TaskEditDialog({
                       </div>
                     )}
 
-                    {!disabled && renderTaskPropertiesSection()}
+                    {!disabled && (
+                      <TaskDetailsSection
+                        assigneeCount={formState.selectedAssignees.length}
+                        defaultTab={
+                          seededPendingRelationships.initialActiveTab
+                            ? 'relationships'
+                            : 'properties'
+                        }
+                        endDate={formState.endDate}
+                        estimationPoints={formState.estimationPoints}
+                        labelCount={formState.selectedLabels.length}
+                        personal={
+                          !taskControlsDisabled && !isCreateMode ? (
+                            <PersonalOverridesSection
+                              boardConfig={boardConfig}
+                              embedded
+                              isCreateMode={isCreateMode}
+                              onUpdate={onUpdate}
+                              taskId={task?.id}
+                            />
+                          ) : undefined
+                        }
+                        priority={formState.priority}
+                        properties={renderTaskPropertiesSection('embedded')}
+                        relationshipCount={
+                          (parentTask ? 1 : 0) +
+                          childTasks.length +
+                          blockingTasks.length +
+                          blockedByTasks.length +
+                          relatedTasks.length
+                        }
+                        relationships={
+                          !taskControlsDisabled &&
+                          !draftId &&
+                          !(isCreateMode && saveAsDraft) ? (
+                            <TaskRelationshipsProperties
+                              wsId={effectiveTaskWsId}
+                              taskId={task?.id}
+                              boardId={boardId}
+                              listId={task?.list_id}
+                              isCreateMode={isCreateMode}
+                              initialActiveTab={
+                                seededPendingRelationships.initialActiveTab
+                              }
+                              initialDependencySubTab={
+                                seededPendingRelationships.initialDependencySubTab
+                              }
+                              parentTask={parentTask}
+                              childTasks={childTasks}
+                              blockingTasks={blockingTasks}
+                              blockedByTasks={blockedByTasks}
+                              relatedTasks={relatedTasks}
+                              isLoading={dependenciesLoading}
+                              onSetParent={setParentTask}
+                              onRemoveParent={() => setParentTask(null)}
+                              onAddBlockingTask={addBlockingTask}
+                              onRemoveBlockingTask={removeBlockingTask}
+                              onAddBlockedByTask={addBlockedByTask}
+                              onRemoveBlockedByTask={removeBlockedByTask}
+                              onAddRelatedTask={addRelatedTask}
+                              onRemoveRelatedTask={removeRelatedTask}
+                              onNavigateToTask={async (taskId) => {
+                                if (onNavigateToTask)
+                                  await onNavigateToTask(taskId);
+                              }}
+                              onAddSubtask={
+                                isCreateMode ? undefined : onAddSubtask
+                              }
+                              onAddParentTask={
+                                isCreateMode ? undefined : onAddParentTask
+                              }
+                              onAddBlockingTaskDialog={
+                                isCreateMode ? undefined : onAddBlockingTask
+                              }
+                              onAddBlockedByTaskDialog={
+                                isCreateMode ? undefined : onAddBlockedByTask
+                              }
+                              onAddRelatedTaskDialog={
+                                isCreateMode ? undefined : onAddRelatedTask
+                              }
+                              onAddExistingAsSubtask={addChildTask}
+                              isSaving={!!savingRelationship}
+                              savingTaskId={savingRelationship}
+                              disabled={taskControlsDisabled}
+                              embedded
+                            />
+                          ) : undefined
+                        }
+                        startDate={formState.startDate}
+                        taskId={task?.id}
+                      />
+                    )}
 
                     {taskHydrationNotice}
 
@@ -2775,68 +2867,6 @@ export function TaskEditDialog({
                         {smartSuggestionsPanel}
                       </div>
                     )}
-
-                    {!taskControlsDisabled && !isCreateMode && (
-                      <PersonalOverridesSection
-                        taskId={task?.id}
-                        isCreateMode={isCreateMode}
-                        boardConfig={boardConfig}
-                        onUpdate={onUpdate}
-                      />
-                    )}
-
-                    {!taskControlsDisabled &&
-                      !draftId &&
-                      !(isCreateMode && saveAsDraft) && (
-                        <TaskRelationshipsProperties
-                          wsId={effectiveTaskWsId}
-                          taskId={task?.id}
-                          boardId={boardId}
-                          listId={task?.list_id}
-                          isCreateMode={isCreateMode}
-                          initialActiveTab={
-                            seededPendingRelationships.initialActiveTab
-                          }
-                          initialDependencySubTab={
-                            seededPendingRelationships.initialDependencySubTab
-                          }
-                          parentTask={parentTask}
-                          childTasks={childTasks}
-                          blockingTasks={blockingTasks}
-                          blockedByTasks={blockedByTasks}
-                          relatedTasks={relatedTasks}
-                          isLoading={dependenciesLoading}
-                          onSetParent={setParentTask}
-                          onRemoveParent={() => setParentTask(null)}
-                          onAddBlockingTask={addBlockingTask}
-                          onRemoveBlockingTask={removeBlockingTask}
-                          onAddBlockedByTask={addBlockedByTask}
-                          onRemoveBlockedByTask={removeBlockedByTask}
-                          onAddRelatedTask={addRelatedTask}
-                          onRemoveRelatedTask={removeRelatedTask}
-                          onNavigateToTask={async (taskId) => {
-                            if (onNavigateToTask)
-                              await onNavigateToTask(taskId);
-                          }}
-                          onAddSubtask={isCreateMode ? undefined : onAddSubtask}
-                          onAddParentTask={
-                            isCreateMode ? undefined : onAddParentTask
-                          }
-                          onAddBlockingTaskDialog={
-                            isCreateMode ? undefined : onAddBlockingTask
-                          }
-                          onAddBlockedByTaskDialog={
-                            isCreateMode ? undefined : onAddBlockedByTask
-                          }
-                          onAddRelatedTaskDialog={
-                            isCreateMode ? undefined : onAddRelatedTask
-                          }
-                          onAddExistingAsSubtask={addChildTask}
-                          isSaving={!!savingRelationship}
-                          savingTaskId={savingRelationship}
-                          disabled={taskControlsDisabled}
-                        />
-                      )}
 
                     {!taskControlsDisabled && !isCreateMode && (
                       <TaskDescriptionRestoreBanner

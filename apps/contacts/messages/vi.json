@@ -7450,7 +7450,10 @@
       "unsaved": "chưa lưu",
       "will_be_blocked_by": "Sẽ bị chặn bởi",
       "will_block": "Sẽ chặn",
-      "work_hours": "Giờ làm việc"
+      "work_hours": "Giờ làm việc",
+      "enlarge_dialog": "Mở rộng hộp thoại",
+      "details": "Chi tiết",
+      "details_empty": "Chưa có thuộc tính nào"
     },
     "duplicate_dialog": {
       "confirm": "Nhân bản",

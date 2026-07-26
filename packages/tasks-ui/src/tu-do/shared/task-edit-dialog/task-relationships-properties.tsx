@@ -55,9 +55,10 @@ export function TaskRelationshipsProperties({
   isSaving,
   savingTaskId,
   disabled,
+  embedded = false,
 }: TaskRelationshipsPropertiesProps) {
   const t = useTranslations();
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(embedded);
   const [activeTab, setActiveTab] = React.useState<RelationshipTab>(
     initialActiveTab ?? 'parent'
   );
@@ -127,81 +128,88 @@ export function TaskRelationshipsProperties({
   const dependencyCount = blockingTasks.length + blockedByTasks.length;
 
   return (
-    <div className="border-b bg-linear-to-b from-muted/30 via-muted/15 to-transparent">
+    <div
+      className={cn(
+        !embedded &&
+          'border-b bg-linear-to-b from-muted/30 via-muted/15 to-transparent'
+      )}
+    >
       {/* Header with toggle button */}
-      <button
-        type="button"
-        onClick={() => {
-          setIsExpanded((current) => !current);
-          setActiveSearchPopover(null);
-        }}
-        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-background/40 md:px-8"
-      >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-              !isExpanded && '-rotate-90'
+      {!embedded && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsExpanded((current) => !current);
+            setActiveSearchPopover(null);
+          }}
+          className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-background/40 md:px-8"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                !isExpanded && '-rotate-90'
+              )}
+            />
+            <span className="shrink-0 font-semibold text-foreground text-sm">
+              {t('ws-task-boards.dialog.relationships')}
+            </span>
+
+            {/* Summary badges when collapsed */}
+            {!isExpanded && totalCount > 0 && (
+              <div className="ml-2 flex items-center gap-1.5">
+                {parentTask && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
+                  >
+                    <ArrowUpCircle className="h-2.5 w-2.5" />
+                    {t('ws-task-boards.dialog.parent')}
+                    <span className="rounded-full bg-background/80 px-1.5 py-0.5 leading-none">
+                      1
+                    </span>
+                  </Badge>
+                )}
+                {childTasks.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
+                  >
+                    <ListTree className="h-2.5 w-2.5" />
+                    {childTasks.length}
+                  </Badge>
+                )}
+                {dependencyCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
+                  >
+                    <Ban className="h-2.5 w-2.5" />
+                    {dependencyCount}
+                  </Badge>
+                )}
+                {relatedTasks.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
+                  >
+                    <Link2 className="h-2.5 w-2.5" />
+                    {relatedTasks.length}
+                  </Badge>
+                )}
+              </div>
             )}
-          />
-          <span className="shrink-0 font-semibold text-foreground text-sm">
-            {t('ws-task-boards.dialog.relationships')}
-          </span>
+          </div>
 
-          {/* Summary badges when collapsed */}
-          {!isExpanded && totalCount > 0 && (
-            <div className="ml-2 flex items-center gap-1.5">
-              {parentTask && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-purple/30 bg-dynamic-purple/10 px-2 font-medium text-[10px] text-dynamic-purple"
-                >
-                  <ArrowUpCircle className="h-2.5 w-2.5" />
-                  {t('ws-task-boards.dialog.parent')}
-                  <span className="rounded-full bg-background/80 px-1.5 py-0.5 leading-none">
-                    1
-                  </span>
-                </Badge>
-              )}
-              {childTasks.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-green/30 bg-dynamic-green/10 px-2 font-medium text-[10px] text-dynamic-green"
-                >
-                  <ListTree className="h-2.5 w-2.5" />
-                  {childTasks.length}
-                </Badge>
-              )}
-              {dependencyCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-red/30 bg-dynamic-red/10 px-2 font-medium text-[10px] text-dynamic-red"
-                >
-                  <Ban className="h-2.5 w-2.5" />
-                  {dependencyCount}
-                </Badge>
-              )}
-              {relatedTasks.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="h-5 shrink-0 gap-1 rounded-full border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 font-medium text-[10px] text-dynamic-blue"
-                >
-                  <Link2 className="h-2.5 w-2.5" />
-                  {relatedTasks.length}
-                </Badge>
-              )}
-            </div>
+          {isLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
           )}
-        </div>
-
-        {isLoading && (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-        )}
-      </button>
+        </button>
+      )}
 
       {/* Expandable content */}
       {isExpanded && (
-        <div className="space-y-3 px-4 pb-4 md:px-8">
+        <div className={cn('space-y-3', !embedded && 'px-4 pb-4 md:px-8')}>
           {/* Tab navigation */}
           <div className="flex gap-2 overflow-x-auto rounded-full border border-border/60 bg-muted/15 p-1">
             {tabs.map((tab) => (

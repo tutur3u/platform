@@ -153,7 +153,7 @@ interface TaskPropertiesSectionProps {
   /** When true, hides fields not supported by drafts (projects, scheduling) */
   isDraftMode?: boolean;
   /** Compact icon-only controls for the create popover. */
-  variant?: 'default' | 'compact';
+  variant?: 'compact' | 'default' | 'embedded';
 }
 
 type TaskPropertyPopoverId =
@@ -425,6 +425,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
 
   const t = useTranslations();
   const isCompact = variant === 'compact';
+  // Rendered inside the shared Details disclosure: no header, no chrome,
+  // no padding of its own — the disclosure owns all three.
+  const isEmbedded = variant === 'embedded';
   const triggerBaseClass = cn(
     'inline-flex shrink-0 items-center border font-medium text-xs transition-colors',
     isCompact
@@ -862,9 +865,9 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
   );
 
   return (
-    <div className={cn(!isCompact && 'border-y bg-muted/30')}>
+    <div className={cn(!isCompact && !isEmbedded && 'border-y bg-muted/30')}>
       {/* Header with toggle button */}
-      {!isCompact && (
+      {!isCompact && !isEmbedded && (
         <button
           type="button"
           onClick={() => setIsMetadataExpanded(!isMetadataExpanded)}
@@ -1007,9 +1010,11 @@ export function TaskPropertiesSection(props: TaskPropertiesSectionProps) {
       )}
 
       {/* Expandable badges section */}
-      {(isCompact || isMetadataExpanded) && (
+      {(isCompact || isEmbedded || isMetadataExpanded) && (
         <div
-          className={cn(isCompact ? 'px-0 py-0' : 'border-t px-4 py-3 md:px-8')}
+          className={cn(
+            isCompact || isEmbedded ? 'px-0 py-0' : 'border-t px-4 py-3 md:px-8'
+          )}
         >
           <div
             className={cn(

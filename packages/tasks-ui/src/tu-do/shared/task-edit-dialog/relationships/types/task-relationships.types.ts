@@ -54,6 +54,12 @@ export interface TaskRelationshipsPropertiesProps {
   // Add existing task as relationship
   onAddExistingAsSubtask?: (task: RelatedTaskInfo) => Promise<void>;
 
+  /**
+   * Rendered inside the shared Details disclosure, which already provides the
+   * heading, chrome and padding — so drop this component's own collapsible.
+   */
+  embedded?: boolean;
+
   // Saving state
   isSaving: boolean;
   savingTaskId?: string | null;

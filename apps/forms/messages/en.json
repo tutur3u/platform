@@ -7858,7 +7858,10 @@
       "unsaved": "unsaved",
       "will_be_blocked_by": "Will be blocked by",
       "will_block": "Will block",
-      "work_hours": "Work Hours"
+      "work_hours": "Work Hours",
+      "enlarge_dialog": "Enlarge dialog",
+      "details": "Details",
+      "details_empty": "No properties set yet"
     },
     "duplicate_dialog": {
       "confirm": "Duplicate",

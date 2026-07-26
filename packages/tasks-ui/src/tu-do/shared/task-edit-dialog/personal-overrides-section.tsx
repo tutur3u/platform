@@ -36,6 +36,11 @@ interface PersonalOverridesSectionProps {
   isCreateMode: boolean;
   boardConfig: any;
   onUpdate?: () => void;
+  /**
+   * Rendered inside the shared Details disclosure, which already provides the
+   * heading, chrome and padding — so drop this component's own collapsible.
+   */
+  embedded?: boolean;
 }
 
 type PersonalOverridePopoverId = 'priority' | 'estimation';
@@ -45,6 +50,7 @@ export function PersonalOverridesSection({
   isCreateMode,
   boardConfig,
   onUpdate,
+  embedded = false,
 }: PersonalOverridesSectionProps) {
   const t = useTranslations();
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
@@ -52,7 +58,7 @@ export function PersonalOverridesSection({
     taskId,
     onUpdate
   );
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(embedded);
   const [activePopover, setActivePopover] =
     useState<PersonalOverridePopoverId | null>(null);
   const [notes, setNotes] = useState('');
@@ -123,42 +129,46 @@ export function PersonalOverridesSection({
     : [];
 
   return (
-    <div className="border-t bg-muted/20">
-      <button
-        type="button"
-        onClick={() => {
-          setIsExpanded(!isExpanded);
-          setActivePopover(null);
-        }}
-        className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-muted/40 md:px-8"
-      >
-        <div className="flex items-center gap-2">
-          <ChevronDown
-            className={cn(
-              'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
-              !isExpanded && '-rotate-90'
+    <div className={cn(!embedded && 'border-t bg-muted/20')}>
+      {!embedded && (
+        <button
+          type="button"
+          onClick={() => {
+            setIsExpanded(!isExpanded);
+            setActivePopover(null);
+          }}
+          className="flex w-full items-center justify-between px-4 py-2 text-left transition-colors hover:bg-muted/40 md:px-8"
+        >
+          <div className="flex items-center gap-2">
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+                !isExpanded && '-rotate-90'
+              )}
+            />
+            <UserRoundCog className="h-4 w-4 text-dynamic-purple" />
+            <span className="font-semibold text-sm">
+              {t('ws-tasks.personal_overrides')}
+            </span>
+            {selfManaged && (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-2 text-[10px] text-dynamic-purple"
+              >
+                {t('ws-tasks.self_managed')}
+              </Badge>
             )}
-          />
-          <UserRoundCog className="h-4 w-4 text-dynamic-purple" />
-          <span className="font-semibold text-sm">
-            {t('ws-tasks.personal_overrides')}
-          </span>
-          {selfManaged && (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 border-dynamic-purple/30 bg-dynamic-purple/15 px-2 text-[10px] text-dynamic-purple"
-            >
-              {t('ws-tasks.self_managed')}
-            </Badge>
-          )}
-          {isLoading && (
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          )}
-        </div>
-      </button>
+            {isLoading && (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            )}
+          </div>
+        </button>
+      )}
 
       {isExpanded && (
-        <div className="space-y-3 border-t px-4 py-3 md:px-8">
+        <div
+          className={cn('space-y-3', !embedded && 'border-t px-4 py-3 md:px-8')}
+        >
           {/* Self-managed toggle */}
           <div className="flex items-center justify-between">
             <Label
