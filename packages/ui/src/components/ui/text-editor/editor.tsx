@@ -59,6 +59,14 @@ function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
   }
 }
 
+/**
+ * Hides the formatting toolbar until focus lands inside the editor. Scoped to the
+ * `group` wrapper below so focus on a toolbar button keeps it visible — otherwise
+ * the toolbar would disappear on mousedown, before the click could land.
+ */
+export const REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME =
+  'pointer-events-none opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100';
+
 function serializeEditorContent(content: JSONContent | null) {
   return JSON.stringify(content ?? { type: 'doc', content: [] });
 }
@@ -90,6 +98,14 @@ export interface RichTextEditorProps {
   queryClient?: QueryClient;
   onConvertToTask?: () => void | Promise<void>;
   allowCollaboration?: boolean;
+  /**
+   * Keep the formatting toolbar transparent until focus is somewhere inside the
+   * editor, so a read-first surface (like the task dialog) is not fronted by a
+   * row of controls. Focus-within — not editor focus — because clicking a
+   * toolbar button moves focus out of the text and would otherwise hide the
+   * toolbar mid-click.
+   */
+  revealToolbarOnFocus?: boolean;
   /** Translations for mention chip dialogs */
   mentionTranslations?: {
     delete_task?: string;
@@ -137,6 +153,7 @@ export function RichTextEditor({
   yjsProvider,
   collaborationUser,
   allowCollaboration = false,
+  revealToolbarOnFocus = false,
   mentionTranslations,
   renderTaskMention,
 }: RichTextEditorProps) {
@@ -726,6 +743,11 @@ export function RichTextEditor({
       {!readOnly && (
         <FixedToolbar
           ref={fixedToolbarRef}
+          className={
+            revealToolbarOnFocus
+              ? REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME
+              : undefined
+          }
           editor={editor}
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}

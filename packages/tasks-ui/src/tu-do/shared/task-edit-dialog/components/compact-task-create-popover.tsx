@@ -165,7 +165,7 @@ export function CompactTaskDialogPanel({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  aria-label={t('ws-task-boards.dialog.open_fullscreen')}
+                  aria-label={t('ws-task-boards.dialog.enlarge_dialog')}
                   className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   onClick={onFullscreen}
                 >
@@ -173,7 +173,7 @@ export function CompactTaskDialogPanel({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {t('ws-task-boards.dialog.open_fullscreen')}
+                {t('ws-task-boards.dialog.enlarge_dialog')}
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -250,8 +250,7 @@ export function CompactTaskDialogPanel({
           type="button"
           data-testid="compact-task-description-preview"
           aria-label={
-            descriptionPreviewLabel ??
-            t('ws-task-boards.dialog.open_fullscreen')
+            descriptionPreviewLabel ?? t('ws-task-boards.dialog.enlarge_dialog')
           }
           className="absolute top-full left-1/2 mt-2 w-full max-w-[30rem] -translate-x-1/2 rounded-lg border bg-background/95 px-4 py-3 text-left opacity-70 shadow-xl ring-1 ring-border/60 backdrop-blur transition hover:bg-muted/70 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onClick={onDescriptionPreviewClick}

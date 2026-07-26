@@ -12,7 +12,9 @@ vi.mock('@tiptap/react', async (importOriginal) => ({
 }));
 
 vi.mock('../tool-bar', () => ({
-  FixedToolbar: () => null,
+  FixedToolbar: ({ className }: { className?: string }) => (
+    <div className={className} data-testid="fixed-toolbar" />
+  ),
   ToolBar: () => null,
 }));
 
@@ -122,5 +124,36 @@ describe('RichTextEditor collaboration binding', () => {
     );
 
     expect(lastCall()[1]).toEqual(initialDeps);
+  });
+});
+
+describe('RichTextEditor toolbar reveal', () => {
+  beforeEach(() => {
+    useEditorMock.mockClear();
+  });
+
+  // The toolbar must reveal on focus *within* the editor wrapper, not on editor
+  // focus alone: clicking a toolbar button moves focus out of the text, so a
+  // stricter rule would hide the toolbar on mousedown and swallow the click.
+  it('hides the toolbar until focus lands inside the editor', () => {
+    const { container } = render(
+      <RichTextEditor content={null} revealToolbarOnFocus />
+    );
+
+    const toolbar = container.querySelector('[data-testid="fixed-toolbar"]');
+    expect(toolbar?.className).toContain('opacity-0');
+    expect(toolbar?.className).toContain('group-focus-within:opacity-100');
+    expect(toolbar?.className).toContain('pointer-events-none');
+    expect(toolbar?.className).toContain(
+      'group-focus-within:pointer-events-auto'
+    );
+    expect(container.firstElementChild?.className).toContain('group');
+  });
+
+  it('leaves the toolbar visible by default', () => {
+    const { container } = render(<RichTextEditor content={null} />);
+
+    const toolbar = container.querySelector('[data-testid="fixed-toolbar"]');
+    expect(toolbar?.className ?? '').not.toContain('opacity-0');
   });
 });

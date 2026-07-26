@@ -72,7 +72,7 @@ describe('CompactTaskCreatePopover', () => {
     );
     expect(screen.getByLabelText('Priority: High')).toBeTruthy();
     expect(
-      screen.getByLabelText('ws-task-boards.dialog.open_fullscreen')
+      screen.getByLabelText('ws-task-boards.dialog.enlarge_dialog')
     ).toBeTruthy();
     expect(screen.getByLabelText('common.close')).toBeTruthy();
     expect(screen.getByLabelText('task-drafts.save_as_draft')).toBeTruthy();
@@ -86,7 +86,7 @@ describe('CompactTaskCreatePopover', () => {
     const props = renderCompactTaskCreatePopover();
 
     fireEvent.click(
-      screen.getByLabelText('ws-task-boards.dialog.open_fullscreen')
+      screen.getByLabelText('ws-task-boards.dialog.enlarge_dialog')
     );
     fireEvent.click(screen.getByLabelText('task-drafts.save_as_draft'));
     fireEvent.click(

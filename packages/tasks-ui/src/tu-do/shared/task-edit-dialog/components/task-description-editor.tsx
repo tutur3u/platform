@@ -352,6 +352,9 @@ export function TaskDescriptionEditor({
               : undefined
           }
           allowCollaboration={allowYjsSync}
+          // The dialog is read-first: keep the formatting controls out of the
+          // way until the description is actually being edited.
+          revealToolbarOnFocus
           readOnly={isYjsSyncing || disabled}
           mentionTranslations={mentionTranslations}
         />
