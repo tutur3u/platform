@@ -97,4 +97,30 @@ describe('RichTextEditor collaboration binding', () => {
 
     expect(lastCall()[1]).toEqual(initialDeps);
   });
+
+  // The provider only drives CollaborationCaret (cosmetic remote cursors).
+  // Rebuilding a live editor for it would tear down the ProseMirror view and
+  // re-run the Yjs binding over the whole document mid-session — expensive and
+  // user-visible on a large document, for no content benefit.
+  it('does not rebuild the editor when only the provider arrives', () => {
+    const doc = new Y.Doc();
+    const provider = { awareness: { setLocalStateField: () => {} } };
+    const { rerender } = render(
+      <RichTextEditor allowCollaboration content={null} yjsDoc={doc} />
+    );
+
+    const initialDeps = lastCall()[1];
+
+    rerender(
+      <RichTextEditor
+        allowCollaboration
+        collaborationUser={{ color: '#fff', name: 'Ada' }}
+        content={null}
+        yjsDoc={doc}
+        yjsProvider={provider as never}
+      />
+    );
+
+    expect(lastCall()[1]).toEqual(initialDeps);
+  });
 });

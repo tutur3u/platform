@@ -167,13 +167,16 @@ export function RichTextEditor({
   // Collaboration extension, and content that lives only in the Yjs document can
   // never render.
   //
-  // Only identity-stable values belong here: `collaborationUser` is often a fresh
-  // object every render, so the caret binding is tracked as a boolean instead.
+  // ONLY the document binding belongs in that dependency array. The Yjs document
+  // is what the content lives in, so getting it wrong is a correctness bug worth
+  // a rebuild. The provider only feeds CollaborationCaret (remote cursor labels),
+  // which is cosmetic and normally already attached because the provider exists
+  // before this subtree mounts — rebuilding a live editor for it would tear down
+  // the ProseMirror view (losing selection and scroll position) and re-run the
+  // Yjs binding over the whole document mid-session, which on a large document is
+  // an expensive, user-visible hiccup for no content benefit.
   const collaborationDoc = allowCollaboration ? yjsDoc : undefined;
   const collaborationProvider = allowCollaboration ? yjsProvider : undefined;
-  const hasCollaborationCaret = Boolean(
-    collaborationProvider && collaborationUser
-  );
 
   useEffect(() => {
     onImageUploadRef.current = onImageUpload;
@@ -541,12 +544,12 @@ export function RichTextEditor({
           debouncedOnChange(currentJson);
         }
       },
-      // Rebuild the editor whenever the collaboration binding changes, so the
-      // Collaboration / CollaborationCaret extensions are attached at creation
-      // time. `yjsDoc` and `yjsProvider` are identity-stable (memo/state in
-      // useYjsCollaboration), so a plain non-collaborative editor never recreates.
+      // Rebuild the editor when the Yjs document binding changes, so the
+      // Collaboration extension is attached at creation time. `yjsDoc` is
+      // identity-stable (memoized in useYjsCollaboration), so a plain
+      // non-collaborative editor never recreates.
     },
-    [collaborationDoc, collaborationProvider, hasCollaborationCaret]
+    [collaborationDoc]
   );
 
   useEffect(() => {

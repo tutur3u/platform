@@ -29,6 +29,12 @@ shared-package changes.
   ignored, so an editor that was created before collaboration turned on shows an
   empty document forever — and that empty document then reads as an unsaved local
   edit ("a tracked description version is available", "still syncing" on close).
+- Keep that `deps` array as narrow as correctness demands — **the Yjs document
+  only**. A rebuild tears down the ProseMirror view (losing selection and scroll)
+  and re-runs the Yjs binding over the whole document, which is a visible hiccup
+  on a large one. The provider only feeds `CollaborationCaret` (cosmetic remote
+  cursors) and is normally already present when the subtree mounts, so it does not
+  justify rebuilding a live editor.
 - Do not mount a collaborative editor against a placeholder record. Render a
   skeleton until the real row has hydrated, so the editor is created once with its
   final binding (`isHydratingTask` in the task dialog is the reference).
