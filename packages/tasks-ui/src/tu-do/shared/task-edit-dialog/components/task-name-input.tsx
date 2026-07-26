@@ -191,8 +191,10 @@ export function TaskNameInput({
         <Skeleton className="h-5 w-2/3" />
       </div>
     ) : (
+      // Same box as the title input below (text-2xl, leading-tight, pt-4 pb-2)
+      // so the real title lands exactly where the placeholder sat.
       <div className="px-4 pt-4 pb-2 md:px-8">
-        <Skeleton className="h-8 w-3/4" />
+        <Skeleton className="h-[1.875rem] w-3/4" />
       </div>
     );
   }

@@ -2283,10 +2283,23 @@ export function TaskEditDialog({
       return;
     }
 
-    if (!isCreateMode && currentList?.status === 'documents') {
+    // Wait for hydration before applying the documents rule. Otherwise a
+    // deep-linked document task resizes the dialog a beat after it opens —
+    // skeletons first, then a jump to fullscreen — instead of settling once.
+    if (
+      !isCreateMode &&
+      !isHydratingTask &&
+      currentList?.status === 'documents'
+    ) {
       setPresentation('fullscreen');
     }
-  }, [currentList?.status, isCreateMode, isOpen, openingPresentation]);
+  }, [
+    currentList?.status,
+    isCreateMode,
+    isHydratingTask,
+    isOpen,
+    openingPresentation,
+  ]);
 
   // Track whether the title input is scrolled out of view
   useEffect(() => {
@@ -2771,7 +2784,7 @@ export function TaskEditDialog({
                       <TaskDetailsSection
                         assigneeCount={formState.selectedAssignees.length}
                         defaultTab={
-                          seededPendingRelationships.initialActiveTab
+                          parentTaskId || pendingRelationship?.relatedTaskId
                             ? 'relationships'
                             : 'properties'
                         }
@@ -3236,11 +3249,20 @@ export function TaskEditDialog({
  */
 function TaskDescriptionHydrationPlaceholder() {
   return (
-    <div aria-hidden className="space-y-3 px-4 pt-6 pb-4 md:px-8">
-      <Skeleton className="h-4 w-11/12" />
-      <Skeleton className="h-4 w-9/12" />
-      <Skeleton className="h-4 w-10/12" />
-      <Skeleton className="h-4 w-1/2" />
+    <div aria-hidden className="relative">
+      {/* Mirrors the editor's footprint — a toolbar strip above a tall body — so
+          swapping the real editor in does not move everything below it. */}
+      <div className="flex h-11 items-center gap-1 border-dynamic-border border-b px-2">
+        {Array.from({ length: 8 }, (_, index) => (
+          <Skeleton className="size-7 rounded-md" key={index} />
+        ))}
+      </div>
+      <div className="min-h-[calc(100vh-16rem)] space-y-3 px-4 pt-6 md:px-8">
+        <Skeleton className="h-4 w-11/12" />
+        <Skeleton className="h-4 w-9/12" />
+        <Skeleton className="h-4 w-10/12" />
+        <Skeleton className="h-4 w-1/2" />
+      </div>
     </div>
   );
 }

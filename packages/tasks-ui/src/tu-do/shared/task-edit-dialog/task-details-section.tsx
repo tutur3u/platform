@@ -126,7 +126,9 @@ export function TaskDetailsSection({
       <button
         aria-controls={panelId}
         aria-expanded={isExpanded}
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
+        // min-h keeps the row the same height whether it is showing summary
+        // chips or the empty hint, so hydration does not nudge the layout.
+        className="flex min-h-11 w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
         onClick={() => setIsExpanded((expanded) => !expanded)}
         type="button"
       >

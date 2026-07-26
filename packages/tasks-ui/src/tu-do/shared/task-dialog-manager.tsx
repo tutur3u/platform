@@ -249,13 +249,22 @@ export function TaskDialogManager({
     ]
   );
 
-  const openTaskFromCurrentWorkspace = useCallback(
+  /**
+   * Open a `?task=` deep link.
+   *
+   * Deliberately does NOT pin the lookup to the workspace in the URL. That
+   * workspace is often wrong — a board can be reached through the `personal`
+   * alias while living in a team workspace — and pinning it meant the first
+   * attempt 404'd, flashed the dialog's error state, and only then retried
+   * unpinned. One unpinned lookup resolves the task's real workspace itself, so
+   * the dialog hydrates once instead of failing and re-hydrating.
+   */
+  const openCanonicalTask = useCallback(
     async (taskId: string) => {
       return openTaskById(taskId, {
-        taskWsId: wsId,
-        taskWorkspacePersonal: isPersonalWorkspace,
-        canUseBoardAssignees: state.canUseBoardAssignees,
         assigneeMemberSource: state.assigneeMemberSource,
+        canUseBoardAssignees: state.canUseBoardAssignees,
+        taskWorkspacePersonal: isPersonalWorkspace,
       });
     },
     [
@@ -263,7 +272,6 @@ export function TaskDialogManager({
       openTaskById,
       state.assigneeMemberSource,
       state.canUseBoardAssignees,
-      wsId,
     ]
   );
 
@@ -321,18 +329,16 @@ export function TaskDialogManager({
 
     handledCanonicalTaskQueryRef.current = canonicalTaskId;
     void (async () => {
-      const opened = await openTaskFromCurrentWorkspace(canonicalTaskId);
+      const opened = await openCanonicalTask(canonicalTaskId);
+
       if (!opened) {
-        const fallbackOpened = await openTaskById(canonicalTaskId);
-        if (!fallbackOpened) {
-          const { toast } = await import('@tuturuuu/ui/sonner');
-          toast.error(t('error_loading_data'), {
-            description: t('please_try_again_later'),
-          });
-        }
+        const { toast } = await import('@tuturuuu/ui/sonner');
+        toast.error(t('error_loading_data'), {
+          description: t('please_try_again_later'),
+        });
       }
     })();
-  }, [openTaskById, openTaskFromCurrentWorkspace, searchParams, t]);
+  }, [openCanonicalTask, searchParams, t]);
 
   useEffect(() => {
     const legacyTaskId = searchParams.get('openTaskId');
