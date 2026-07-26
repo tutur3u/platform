@@ -102,10 +102,17 @@ export async function GET(
       );
     }
 
+    // Authorize with the admin client, filtered by the already-authenticated
+    // user id. This is a satellite app: a session here is normally an
+    // app-session JWT with no Supabase auth cookie, so the cookie-backed client
+    // is anonymous and every RLS-scoped membership lookup comes back empty. That
+    // turned this route — the cross-workspace fallback behind task deep links —
+    // into a permanent 404, so any link to a task outside the workspace named in
+    // the URL failed to open.
     const membership = await verifyWorkspaceMembershipType({
       wsId: taskWsId,
       userId: user.id,
-      supabase: supabase,
+      supabase: sbAdmin,
     });
 
     if (membership.error === 'membership_lookup_failed') {
