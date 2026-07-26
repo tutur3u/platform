@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   applyWorkspaceExternalProjectSyncManifest: vi.fn(),
-  requireWorkspaceExternalProjectAccess: vi.fn(),
+  requireWorkspaceExternalProjectSyncAccess: vi.fn(),
   serverLoggerError: vi.fn(),
 }));
 
 vi.mock('@/lib/external-projects/access', () => ({
-  requireWorkspaceExternalProjectAccess: (
-    ...args: Parameters<typeof mocks.requireWorkspaceExternalProjectAccess>
-  ) => mocks.requireWorkspaceExternalProjectAccess(...args),
+  requireWorkspaceExternalProjectSyncAccess: (
+    ...args: Parameters<typeof mocks.requireWorkspaceExternalProjectSyncAccess>
+  ) => mocks.requireWorkspaceExternalProjectSyncAccess(...args),
 }));
 
 vi.mock('@/lib/external-projects/sync', () => ({
@@ -49,7 +49,7 @@ describe('external project sync apply route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+    mocks.requireWorkspaceExternalProjectSyncAccess.mockResolvedValue({
       admin: {},
       binding: {
         adapter: 'yoola',
@@ -109,7 +109,9 @@ describe('external project sync apply route', () => {
       }
     );
 
-    expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith({
+    expect(
+      mocks.requireWorkspaceExternalProjectSyncAccess
+    ).toHaveBeenCalledWith({
       mode: 'manage',
       request: expect.any(Request),
       wsId: 'ws-1',
