@@ -860,6 +860,11 @@
       "targetOwner": "rust-backend",
       "note": "External-project form submission creation and the header-authenticated submission listing (used by the scheduled response-forwarding job) remain Next-owned migration backlog until the Rust backend ports canonical Richfield binding verification, contact-submissions collection creation, private-delivery and form identity metadata, service-role entry insertion, and profile_data emailNotificationStatus filtering."
     },
+    "api:/api/v1/workspaces/:wsId/external-projects/emails:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/emails/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Outbound SES mail for linked external projects remains Next-owned migration backlog until the Rust backend ports header-based app credential verification, workspace binding ownership checks, and the @tuturuuu/email-service send path with its rate limiting, blacklist checks, and audit trail."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/submissions/:entryId:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/[entryId]/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

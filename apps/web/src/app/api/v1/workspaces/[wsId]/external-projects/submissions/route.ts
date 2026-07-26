@@ -1,10 +1,15 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isTurnstileError, verifyTurnstileToken } from '@tuturuuu/turnstile';
 import type { ExternalProjectCollection, Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
+import {
+  authorizeExternalAppRequest,
+  readExternalAppCredentials,
+} from '@/lib/external-projects/app-credentials';
 import { createWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const CONTACT_SUBMISSIONS_COLLECTION_SLUG = 'contact-submissions';
@@ -21,7 +26,37 @@ const submissionSchema = z.object({
   formSlug: z.string().trim().min(1).max(120).default('contact'),
   formVersion: z.number().int().positive().max(1000).default(1),
   receivedAt: z.iso.datetime().optional(),
+  turnstileToken: z.string().trim().max(2048).optional(),
 });
+
+/**
+ * Bot protection for public forms on linked external projects.
+ *
+ * Verified here rather than in each satellite so every bound project gets the
+ * same protection without shipping the secret to it. Enforcement is driven by
+ * whether the platform has a secret configured: with one, a valid token is
+ * mandatory; without one, submissions still flow, so turning Turnstile on is a
+ * matter of setting the secret rather than redeploying every site.
+ */
+async function verifySubmissionTurnstile(request: Request, token?: string) {
+  if (!process.env.TURNSTILE_SECRET_KEY) {
+    return null;
+  }
+
+  try {
+    await verifyTurnstileToken(request, token);
+    return null;
+  } catch (error) {
+    if (isTurnstileError(error)) {
+      return NextResponse.json(
+        { code: error.code, error: 'Turnstile verification failed' },
+        { status: 403 }
+      );
+    }
+
+    throw error;
+  }
+}
 
 // Explicit union with `?: never` on the absent arm: inferring it lets
 // TypeScript normalise the members to `response?: undefined`, which defeats
@@ -180,22 +215,11 @@ export async function GET(
   const admin = (await createAdminClient()) as TypedSupabaseClient;
 
   try {
-    const appId = (request.headers.get('x-app-id') ?? 'richfield')
-      .trim()
-      .toLowerCase();
-    const appSecret = request.headers.get('x-app-secret')?.trim() ?? '';
-
-    if (!appSecret) {
-      return NextResponse.json(
-        { error: 'Missing x-app-secret header' },
-        { status: 401 }
-      );
-    }
-
-    const access = await authorizeRichfieldSubmission({
+    const credentials = readExternalAppCredentials(request);
+    const access = await authorizeExternalAppRequest({
       admin,
-      appId,
-      appSecret,
+      appId: credentials.appId || 'richfield',
+      appSecret: credentials.appSecret,
       wsId,
     });
 
@@ -258,6 +282,15 @@ export async function POST(
     });
 
     if ('response' in access) return access.response;
+
+    // After authorization (so an unauthenticated caller cannot probe whether
+    // Turnstile is on) but before anything is written.
+    const turnstileFailure = await verifySubmissionTurnstile(
+      request,
+      payload.turnstileToken
+    );
+
+    if (turnstileFailure) return turnstileFailure;
 
     const receivedAt = payload.receivedAt ?? new Date().toISOString();
     const collection = await ensureContactSubmissionsCollection(wsId, admin);
