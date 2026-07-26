@@ -3238,7 +3238,7 @@
     {
       "id": "api:/api/v1/workspaces/:wsId/external-projects/submissions:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["GET", "POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/submissions",
       "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts",
       "status": "legacy-next",
@@ -7388,7 +7388,7 @@
     "pages": 146,
     "routeHandlers": 570,
     "methodCounts": {
-      "GET": 285,
+      "GET": 286,
       "HEAD": 1,
       "POST": 282,
       "PUT": 51,

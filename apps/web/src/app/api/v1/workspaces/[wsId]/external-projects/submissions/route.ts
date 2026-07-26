@@ -23,6 +23,18 @@ const submissionSchema = z.object({
   receivedAt: z.iso.datetime().optional(),
 });
 
+// Explicit union with `?: never` on the absent arm: inferring it lets
+// TypeScript normalise the members to `response?: undefined`, which defeats
+// `'response' in access` narrowing at the call sites.
+type RichfieldSubmissionAccess =
+  | { binding?: never; response: NextResponse }
+  | {
+      binding: Awaited<
+        ReturnType<typeof resolveWorkspaceExternalProjectBinding>
+      >;
+      response?: never;
+    };
+
 async function authorizeRichfieldSubmission({
   admin,
   appId,
@@ -33,7 +45,7 @@ async function authorizeRichfieldSubmission({
   appId: string;
   appSecret: string;
   wsId: string;
-}) {
+}): Promise<RichfieldSubmissionAccess> {
   const verification = await verifyExternalAppSecret({ appId, appSecret });
 
   if (!verification.ok) {
@@ -131,6 +143,102 @@ function slugifySubmission(value: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
+}
+
+const EMAIL_NOTIFICATION_STATUSES = ['pending', 'sent', 'failed'] as const;
+const DEFAULT_SUBMISSION_PAGE_SIZE = 50;
+const MAX_SUBMISSION_PAGE_SIZE = 200;
+
+function readSubmissionQuery(request: Request) {
+  const url = new URL(request.url);
+  const status = url.searchParams.get('emailNotificationStatus') ?? 'pending';
+  const limitParam = Number.parseInt(url.searchParams.get('limit') ?? '', 10);
+
+  return {
+    limit: Number.isFinite(limitParam)
+      ? Math.min(Math.max(limitParam, 1), MAX_SUBMISSION_PAGE_SIZE)
+      : DEFAULT_SUBMISSION_PAGE_SIZE,
+    status: (EMAIL_NOTIFICATION_STATUSES as readonly string[]).includes(status)
+      ? status
+      : null,
+  };
+}
+
+/**
+ * List inbound form submissions for the owning external app.
+ *
+ * Exists so an unattended job (Richfield forwards responses to a configured
+ * inbox on a schedule) can find what still needs sending. It authenticates with
+ * the same app id/secret pair as POST, but reads them from headers rather than
+ * the query string so the secret never lands in a URL, access log, or referrer.
+ */
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> }
+): Promise<NextResponse> {
+  const { wsId } = await params;
+  const admin = (await createAdminClient()) as TypedSupabaseClient;
+
+  try {
+    const appId = (request.headers.get('x-app-id') ?? 'richfield')
+      .trim()
+      .toLowerCase();
+    const appSecret = request.headers.get('x-app-secret')?.trim() ?? '';
+
+    if (!appSecret) {
+      return NextResponse.json(
+        { error: 'Missing x-app-secret header' },
+        { status: 401 }
+      );
+    }
+
+    const access = await authorizeRichfieldSubmission({
+      admin,
+      appId,
+      appSecret,
+      wsId,
+    });
+
+    if (access.response) return access.response;
+
+    const { limit, status } = readSubmissionQuery(request);
+
+    if (!status) {
+      return NextResponse.json(
+        { error: 'Invalid emailNotificationStatus filter' },
+        { status: 400 }
+      );
+    }
+
+    const collection = await getContactSubmissionsCollection(wsId, admin);
+
+    // No collection yet simply means nothing has ever been submitted; that is
+    // an empty inbox, not a failure.
+    if (!collection) {
+      return NextResponse.json({ submissions: [] });
+    }
+
+    const { data, error } = await admin
+      .from('workspace_external_project_entries')
+      .select('id, title, subtitle, summary, profile_data, created_at')
+      .eq('ws_id', wsId)
+      .eq('collection_id', collection.id)
+      .eq('profile_data->>emailNotificationStatus', status)
+      .order('created_at', { ascending: true })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return NextResponse.json({ submissions: data ?? [] });
+  } catch (error) {
+    console.error('Failed to list Richfield contact submissions', error);
+    return NextResponse.json(
+      { error: 'Failed to list contact submissions' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(
