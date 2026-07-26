@@ -284,6 +284,12 @@ const checks = [
     parseOutput: () => 'Registered app auth surfaces use app sessions',
   },
   {
+    name: 'satellite-cookie-auth',
+    command: 'node',
+    args: ['scripts/check-satellite-cookie-auth.js'],
+    parseOutput: () => 'Satellites authorize with app-session-aware clients',
+  },
+  {
     name: 'offline-worker-wiring',
     command: 'node',
     args: ['scripts/check-offline-worker-wiring.js'],

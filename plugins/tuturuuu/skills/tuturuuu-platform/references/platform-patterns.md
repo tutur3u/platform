@@ -263,6 +263,17 @@ Rules:
   while the member list, roles, and invite links all worked, because those had been
   migrated and `members/invite` had not. When you fix one route, audit its whole
   surface: `grep -L 'resolveWorkspaceRouteAccess\|allowAppSessionAuth' <route dir>`.
+- **The same trap bites satellite API routes, not just pages.** A route that does
+  `const supabase = await createClient()` and then passes that client to
+  `verifyWorkspaceMembershipType` (or any RLS-scoped authorization query) denies
+  every app-session caller: the cookie client is anonymous, the membership row
+  comes back empty, and the route answers 403 or "not found". It reads as missing
+  data, not as an auth bug, which is why it shipped three times — satellite member
+  invites, every cross-workspace task deep link, and a dozen tasks/pay endpoints.
+  Resolve the actor with the app-session-aware helper and authorize with the
+  client it returns, or with an admin client filtered by the authenticated user id
+  (then keep explicit `ws_id`/owner predicates on the data queries, since admin
+  bypasses RLS). `bun check` → `satellite-cookie-auth` enforces it.
 - **A satellite must not use `@tuturuuu/ui/custom/workspace-wrapper`** — it calls
   bare `getWorkspace(wsId)` internally, so every page rendering it inherits the
   bug above (it broke all 20 contacts users pages). Use an app-local wrapper built
