@@ -304,7 +304,9 @@ export function TaskDescriptionEditor({
           }}
           writePlaceholder={t('description_placeholder')}
           titlePlaceholder=""
-          className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
+          // pt-6: the base editor styles reset the first block's top margin, so
+          // without this the first line sits flush against the toolbar.
+          className="min-h-[calc(100vh-16rem)] border-0 bg-transparent px-4 pt-6 focus-visible:outline-0 focus-visible:ring-0 md:px-8"
           workspaceId={wsId || undefined}
           onImageUpload={onImageUpload}
           flushPendingRef={flushEditorPendingRef}

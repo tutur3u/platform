@@ -143,10 +143,9 @@ describe('RichTextEditor toolbar reveal', () => {
     const toolbar = container.querySelector('[data-testid="fixed-toolbar"]');
     expect(toolbar?.className).toContain('opacity-0');
     expect(toolbar?.className).toContain('group-focus-within:opacity-100');
-    expect(toolbar?.className).toContain('pointer-events-none');
-    expect(toolbar?.className).toContain(
-      'group-focus-within:pointer-events-auto'
-    );
+    // Pointer events stay on while hidden: a click there hands focus to the
+    // description instead of firing an invisible formatting command.
+    expect(toolbar?.className).not.toContain('pointer-events-none');
     expect(container.firstElementChild?.className).toContain('group');
   });
 

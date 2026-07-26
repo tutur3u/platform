@@ -65,7 +65,7 @@ function syncEditorContent(editor: Editor, nextContent: JSONContent | null) {
  * the toolbar would disappear on mousedown, before the click could land.
  */
 export const REVEAL_TOOLBAR_ON_FOCUS_CLASS_NAME =
-  'pointer-events-none opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100';
+  'opacity-0 transition-opacity duration-200 group-focus-within:opacity-100';
 
 function serializeEditorContent(content: JSONContent | null) {
   return JSON.stringify(content ?? { type: 'doc', content: [] });
@@ -721,6 +721,9 @@ export function RichTextEditor({
   // Track whether the fixed toolbar is visible in the viewport.
   // When it is, we suppress the floating BubbleMenu to avoid duplication.
   const fixedToolbarRef = useRef<HTMLDivElement>(null);
+  // Mirrors focus-within for the toolbar handlers below. A ref (not state)
+  // because the listeners are attached once and read it at event time.
+  const hasFocusWithinRef = useRef(false);
   const [fixedToolbarVisible, setFixedToolbarVisible] = useState(true);
 
   useEffect(() => {
@@ -738,8 +741,48 @@ export function RichTextEditor({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const toolbar = fixedToolbarRef.current;
+
+    if (!(toolbar && editor) || !revealToolbarOnFocus) return;
+
+    // Capture phase: intercept before the button underneath reacts.
+    const focusEditorInstead = (event: MouseEvent) => {
+      if (hasFocusWithinRef.current) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      editor.commands.focus();
+    };
+
+    const swallowClick = (event: MouseEvent) => {
+      if (hasFocusWithinRef.current) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    toolbar.addEventListener('mousedown', focusEditorInstead, true);
+    toolbar.addEventListener('click', swallowClick, true);
+
+    return () => {
+      toolbar.removeEventListener('mousedown', focusEditorInstead, true);
+      toolbar.removeEventListener('click', swallowClick, true);
+    };
+  }, [editor, revealToolbarOnFocus]);
+
   return (
-    <div className="group relative h-full">
+    <div
+      className="group relative h-full"
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          hasFocusWithinRef.current = false;
+        }
+      }}
+      onFocusCapture={() => {
+        hasFocusWithinRef.current = true;
+      }}
+    >
       {!readOnly && (
         <FixedToolbar
           ref={fixedToolbarRef}

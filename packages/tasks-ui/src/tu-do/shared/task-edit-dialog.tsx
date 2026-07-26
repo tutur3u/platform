@@ -70,7 +70,10 @@ import {
 } from './task-edit-dialog/components/task-dialog-header';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSuggestionMenus } from './task-edit-dialog/components/task-suggestion-menus';
-import { NAME_UPDATE_DEBOUNCE_MS } from './task-edit-dialog/constants';
+import {
+  MAX_DESCRIPTION_SETTLE_MS,
+  NAME_UPDATE_DEBOUNCE_MS,
+} from './task-edit-dialog/constants';
 import {
   buildRecoverableTaskDescriptionVersions,
   type RecoverableTaskDescriptionVersion,
@@ -289,6 +292,9 @@ export function TaskEditDialog({
   // not mount yet: its content lives in the Yjs document, which only exists once
   // realtime is enabled after hydration.
   const isAwaitingTaskHydration = isHydratingTask && !taskLoadError;
+  // Skeletons must not outlive a stalled connection: if realtime never syncs
+  // (offline, channel error) the content still has to appear.
+  const [hasWaitedForDescription, setHasWaitedForDescription] = useState(false);
 
   // Core loading state
   const [isLoading, setIsLoading] = useState(false);
@@ -578,6 +584,30 @@ export function TaskEditDialog({
     task?.id,
     synced,
   ]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setHasWaitedForDescription(false);
+      return;
+    }
+
+    const timeout = setTimeout(
+      () => setHasWaitedForDescription(true),
+      MAX_DESCRIPTION_SETTLE_MS
+    );
+
+    return () => clearTimeout(timeout);
+  }, [isOpen]);
+
+  /**
+   * The dialog shows one skeleton until everything behind it is ready.
+   *
+   * Hydrating the task and syncing its Yjs document used to surface as two
+   * separate loading states back to back — skeleton, then a half-faded empty
+   * editor — which read as the dialog loading twice.
+   */
+  const isDialogSettling =
+    isAwaitingTaskHydration || (isYjsSyncing && !hasWaitedForDescription);
 
   const { data: descriptionHistoryData } = useQuery({
     queryKey: ['task-history', effectiveTaskWsId, task?.id, 'description'],
@@ -2908,76 +2938,89 @@ export function TaskEditDialog({
                     {isAwaitingTaskHydration ? (
                       <TaskDescriptionHydrationPlaceholder />
                     ) : (
-                      <TaskDescriptionEditor
-                        description={formState.description}
-                        setDescription={formState.setDescription}
-                        isOpen={isOpen}
-                        isCreateMode={isCreateMode}
-                        collaborationMode={effectiveCollaborationMode}
-                        realtimeEnabled={effectiveRealtimeEnabled}
-                        isYjsSyncing={isYjsSyncing}
-                        wsId={effectiveTaskWsId}
-                        boardId={boardId}
-                        taskId={task?.id}
-                        availableLists={availableLists}
-                        queryClient={queryClient}
-                        editorRef={editorRef}
-                        richTextEditorRef={richTextEditorRef}
-                        titleInputRef={titleInputRef}
-                        lastCursorPositionRef={lastCursorPositionRef}
-                        targetEditorCursorRef={targetEditorCursorRef}
-                        flushEditorPendingRef={flushEditorPendingRef}
-                        yjsDoc={doc}
-                        yjsProvider={provider ?? undefined}
-                        collaborationUser={
-                          user
-                            ? {
-                                id: user.id || '',
-                                name: userDisplayName,
-                                color: userColor || '',
-                              }
-                            : null
-                        }
-                        onImageUpload={imageUploadHandler}
-                        onEditorReady={handleEditorReady}
-                        onConvertToTask={handleConvertToTask}
-                        onDescriptionSnapshotChange={recordDescriptionSnapshot}
-                        onDescriptionStorageLengthChange={
-                          handleDescriptionStorageLengthChange
-                        }
-                        descriptionStorageLength={descriptionStorageLength}
-                        descriptionPercentLeft={descriptionPercentLeft}
-                        descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
-                        isDescriptionOverLimit={isDescriptionOverLimit}
-                        disabled={taskControlsDisabled}
-                        mentionTranslations={{
-                          delete_task: t('delete_task'),
-                          delete_task_confirmation: (name: string) =>
-                            t('delete_task_confirmation', { name }),
-                          cancel: t('cancel'),
-                          deleting: t('deleting'),
-                          set_custom_due_date: t('set_custom_due_date'),
-                          custom_due_date_description: t(
-                            'custom_due_date_description'
-                          ),
-                          remove_due_date: t('remove_due_date'),
-                          create_new_label: t('create_new_label'),
-                          create_new_label_description: t(
-                            'create_new_label_description'
-                          ),
-                          label_name: t('label_name'),
-                          color: t('color'),
-                          preview: t('preview'),
-                          creating: t('creating'),
-                          create_label: t('create_label'),
-                          create_new_project: t('create_new_project'),
-                          create_new_project_description: t(
-                            'create_new_project_description'
-                          ),
-                          project_name: t('project_name'),
-                          create_project: t('create_project'),
-                        }}
-                      />
+                      <div className="relative">
+                        {/* The editor is mounted underneath so its realtime
+                            document can settle, but stays covered by the same
+                            skeleton until it has content to show — one loading
+                            state for the dialog instead of two in a row. */}
+                        {isDialogSettling && (
+                          <div className="absolute inset-0 z-10 bg-background">
+                            <TaskDescriptionHydrationPlaceholder />
+                          </div>
+                        )}
+                        <TaskDescriptionEditor
+                          description={formState.description}
+                          setDescription={formState.setDescription}
+                          isOpen={isOpen}
+                          isCreateMode={isCreateMode}
+                          collaborationMode={effectiveCollaborationMode}
+                          realtimeEnabled={effectiveRealtimeEnabled}
+                          isYjsSyncing={isYjsSyncing}
+                          wsId={effectiveTaskWsId}
+                          boardId={boardId}
+                          taskId={task?.id}
+                          availableLists={availableLists}
+                          queryClient={queryClient}
+                          editorRef={editorRef}
+                          richTextEditorRef={richTextEditorRef}
+                          titleInputRef={titleInputRef}
+                          lastCursorPositionRef={lastCursorPositionRef}
+                          targetEditorCursorRef={targetEditorCursorRef}
+                          flushEditorPendingRef={flushEditorPendingRef}
+                          yjsDoc={doc}
+                          yjsProvider={provider ?? undefined}
+                          collaborationUser={
+                            user
+                              ? {
+                                  id: user.id || '',
+                                  name: userDisplayName,
+                                  color: userColor || '',
+                                }
+                              : null
+                          }
+                          onImageUpload={imageUploadHandler}
+                          onEditorReady={handleEditorReady}
+                          onConvertToTask={handleConvertToTask}
+                          onDescriptionSnapshotChange={
+                            recordDescriptionSnapshot
+                          }
+                          onDescriptionStorageLengthChange={
+                            handleDescriptionStorageLengthChange
+                          }
+                          descriptionStorageLength={descriptionStorageLength}
+                          descriptionPercentLeft={descriptionPercentLeft}
+                          descriptionLimit={MAX_TASK_DESCRIPTION_LENGTH}
+                          isDescriptionOverLimit={isDescriptionOverLimit}
+                          disabled={taskControlsDisabled}
+                          mentionTranslations={{
+                            delete_task: t('delete_task'),
+                            delete_task_confirmation: (name: string) =>
+                              t('delete_task_confirmation', { name }),
+                            cancel: t('cancel'),
+                            deleting: t('deleting'),
+                            set_custom_due_date: t('set_custom_due_date'),
+                            custom_due_date_description: t(
+                              'custom_due_date_description'
+                            ),
+                            remove_due_date: t('remove_due_date'),
+                            create_new_label: t('create_new_label'),
+                            create_new_label_description: t(
+                              'create_new_label_description'
+                            ),
+                            label_name: t('label_name'),
+                            color: t('color'),
+                            preview: t('preview'),
+                            creating: t('creating'),
+                            create_label: t('create_label'),
+                            create_new_project: t('create_new_project'),
+                            create_new_project_description: t(
+                              'create_new_project_description'
+                            ),
+                            project_name: t('project_name'),
+                            create_project: t('create_project'),
+                          }}
+                        />
+                      </div>
                     )}
 
                     {!isCreateMode && localCalendarEvents && (

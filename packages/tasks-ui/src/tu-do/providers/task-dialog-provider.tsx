@@ -500,13 +500,29 @@ export function TaskDialogProvider({
         taskOpenRequestId: requestId,
       };
       const currentState = stateRef.current;
+      const isSameTaskAlreadyOpen =
+        currentState.isOpen && currentState.task?.id === taskId;
 
-      if (
-        currentState.isOpen &&
-        currentState.task?.id === taskId &&
-        currentState.taskLoadError
-      ) {
-        setState(initialDialogState);
+      if (isSameTaskAlreadyOpen) {
+        // Re-opening the task that is already on screen must never go through
+        // the queue: that closes the dialog and opens a second one, so the user
+        // watches a skeleton appear, vanish, and appear again before the content
+        // lands. Refresh in place instead — this covers a retry after a load
+        // error and any duplicate open (a re-fired effect, a double click, a
+        // notification for the task already open).
+        setState(
+          currentState.taskLoadError
+            ? // The visible dialog is an error state, so there is nothing worth
+              // keeping: fall back to the loading skeleton.
+              initialDialogState
+            : // Otherwise keep what is on screen and let the fresh data swap in
+              // when it arrives, so a duplicate open is invisible.
+              {
+                ...currentState,
+                taskLoadError: false,
+                taskOpenRequestId: requestId,
+              }
+        );
       } else {
         queueDialogState(initialDialogState);
       }

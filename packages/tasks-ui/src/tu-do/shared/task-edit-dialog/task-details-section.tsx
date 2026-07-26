@@ -49,7 +49,7 @@ function SummaryChip({ children, className, icon }: SummaryChipProps) {
   return (
     <Badge
       className={cn(
-        'h-5 shrink-0 gap-1 border px-2 font-medium text-[10px]',
+        'h-[1.125rem] shrink-0 gap-1 border px-1.5 font-medium text-[10px]',
         className ?? 'border-border bg-muted/50 text-muted-foreground'
       )}
       variant="secondary"
@@ -126,19 +126,20 @@ export function TaskDetailsSection({
       <button
         aria-controls={panelId}
         aria-expanded={isExpanded}
-        // min-h keeps the row the same height whether it is showing summary
-        // chips or the empty hint, so hydration does not nudge the layout.
-        className="flex min-h-11 w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/50 md:px-8"
+        // Deliberately tight: collapsed, this is a one-line summary that should
+        // cost as little vertical space as possible above the description. The
+        // min-h keeps it stable whether it shows chips or the empty hint.
+        className="flex min-h-8 w-full items-center gap-1.5 px-4 py-1 text-left transition-colors hover:bg-muted/50 md:px-8"
         onClick={() => setIsExpanded((expanded) => !expanded)}
         type="button"
       >
         <ChevronDown
           className={cn(
-            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            'h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200',
             !isExpanded && '-rotate-90'
           )}
         />
-        <span className="shrink-0 font-semibold text-foreground text-sm">
+        <span className="shrink-0 font-semibold text-foreground text-xs">
           {t('ws-task-boards.dialog.details')}
         </span>
 

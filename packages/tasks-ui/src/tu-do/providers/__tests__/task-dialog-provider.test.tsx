@@ -470,6 +470,78 @@ describe('TaskDialogProvider', () => {
     expect(result.current.state.isOpen).toBe(true);
   });
 
+  // Regression: a duplicate open for the task already on screen used to go
+  // through the queue, which closes the dialog and opens a second one — the user
+  // saw a skeleton appear, vanish, and appear again before the content landed.
+  it('refreshes in place when the task already on screen is re-opened', async () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+    const requestClose = vi.fn().mockResolvedValue(true);
+
+    mockGetTaskDialogHydration.mockResolvedValue({
+      availableLists: [mockList],
+      task: mockTask,
+      taskWorkspacePersonal: false,
+      taskWorkspaceTier: 'FREE',
+      taskWsId: 'ws-1',
+    });
+
+    await act(async () => {
+      await result.current.openTaskById(mockTask.id);
+    });
+
+    act(() => {
+      result.current.registerCloseRequestHandler(requestClose);
+    });
+
+    expect(result.current.state.isOpen).toBe(true);
+    expect(result.current.state.task?.name).toBe('Test Task');
+
+    await act(async () => {
+      await result.current.openTaskById(mockTask.id);
+    });
+
+    // No close was requested, and the dialog never blanked out.
+    expect(requestClose).not.toHaveBeenCalled();
+    expect(result.current.state.isOpen).toBe(true);
+    expect(result.current.state.task?.name).toBe('Test Task');
+    expect(result.current.state.isHydratingTask).toBe(false);
+  });
+
+  it('falls back to the loading state when re-opening a failed task', async () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    mockGetTaskDialogHydration.mockResolvedValueOnce(null);
+
+    await act(async () => {
+      await result.current.openTaskById(mockTask.id);
+    });
+
+    expect(result.current.state.taskLoadError).toBe(true);
+
+    const deferred = createDeferred<unknown>();
+    mockGetTaskDialogHydration.mockReturnValueOnce(deferred.promise);
+
+    act(() => {
+      void result.current.openTaskById(mockTask.id);
+    });
+
+    expect(result.current.state.taskLoadError).toBe(false);
+    expect(result.current.state.isHydratingTask).toBe(true);
+
+    await act(async () => {
+      deferred.resolve({
+        availableLists: [mockList],
+        task: mockTask,
+        taskWorkspacePersonal: false,
+        taskWorkspaceTier: 'FREE',
+        taskWsId: 'ws-1',
+      });
+      await deferred.promise;
+    });
+
+    expect(result.current.state.task?.name).toBe('Test Task');
+  });
+
   it('allows queued task opens to retry after the active dialog blocks close', async () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 
