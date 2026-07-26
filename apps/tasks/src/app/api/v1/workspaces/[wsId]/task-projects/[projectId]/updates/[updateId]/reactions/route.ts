@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -20,12 +19,14 @@ export async function POST(
 ) {
   try {
     const { wsId, updateId } = await params;
-    const supabase = await createClient();
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
+    const {
+      supabase,
+      user,
+      authError: userError,
+    } = await resolveAuthenticatedSessionUser();
+    if (userError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -112,12 +113,14 @@ export async function DELETE(
 ) {
   try {
     const { wsId, updateId } = await params;
-    const supabase = await createClient();
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
+    const {
+      supabase,
+      user,
+      authError: userError,
+    } = await resolveAuthenticatedSessionUser();
+    if (userError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

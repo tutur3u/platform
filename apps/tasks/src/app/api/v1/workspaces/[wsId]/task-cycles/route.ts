@@ -1,4 +1,3 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -67,12 +66,13 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const {
+      supabase,
+      user,
+      authError: userError,
+    } = await resolveAuthenticatedSessionUser();
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-
-    if (userError || !user) {
+    if (userError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -135,12 +135,13 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const {
+      supabase,
+      user,
+      authError: userError,
+    } = await resolveAuthenticatedSessionUser();
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-
-    if (userError || !user) {
+    if (userError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

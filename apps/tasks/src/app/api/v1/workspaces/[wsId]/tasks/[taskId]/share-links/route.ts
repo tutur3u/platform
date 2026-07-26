@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -51,10 +50,9 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -268,10 +266,9 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createClient();
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -448,10 +445,9 @@ export async function DELETE(
       );
     }
 
-    const supabase = await createClient();
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

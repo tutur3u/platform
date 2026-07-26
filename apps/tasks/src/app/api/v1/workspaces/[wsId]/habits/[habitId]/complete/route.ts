@@ -4,10 +4,7 @@
  * POST - Mark an occurrence as completed/uncompleted
  */
 
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -44,13 +41,13 @@ export async function POST(
       return habitsNotFoundResponse();
     }
 
-    const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
 
-    if (authError || !user) {
+    if (authError || !user || !supabase) {
       return NextResponse.json(
         { error: 'Please sign in to complete habits' },
         { status: 401 }

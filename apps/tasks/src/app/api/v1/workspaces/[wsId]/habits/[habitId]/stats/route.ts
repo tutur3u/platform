@@ -5,10 +5,7 @@
  */
 
 import { getOccurrencesInRange } from '@tuturuuu/ai/scheduling';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import {
   normalizeWorkspaceId,
@@ -36,13 +33,13 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid habit ID' }, { status: 400 });
     }
 
-    const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
 
-    if (authError || !user) {
+    if (authError || !user || !supabase) {
       return NextResponse.json(
         { error: 'Please sign in to view stats' },
         { status: 401 }

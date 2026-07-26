@@ -1,3 +1,4 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { SEAT_ACTIVE_STATUSES } from '@tuturuuu/payment-core/subscription-constants';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
@@ -8,6 +9,27 @@ import {
 import type { WorkspaceSubscriptionProduct } from '@tuturuuu/types/db';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+
+/**
+ * Resolve the caller on a satellite.
+ *
+ * A session on pay.tuturuuu.com is normally an app-session JWT, and the
+ * cookie-backed Supabase client is anonymous in that case — resolving (or
+ * authorizing) through it alone silently rejects valid callers. Prefer the app
+ * session and fall back to the Supabase cookie session.
+ */
+async function resolveSeatsActor(request: Request) {
+  const appSessionUser = getAppSessionUserFromRequest(request, {
+    targetApp: ['pay', 'platform'],
+  });
+
+  if (appSessionUser) return appSessionUser;
+
+  const supabase = await createClient();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+  return user;
+}
 
 /**
  * GET /api/payment/seats?wsId=xxx
@@ -25,19 +47,20 @@ export async function GET(req: Request) {
       );
     }
 
-    const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Verify user has access to the workspace
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const user = await resolveSeatsActor(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Authorize with the admin client filtered by the authenticated user id:
+    // the cookie client is anonymous for app-session callers.
     const workspaceMember = await verifyWorkspaceMembershipType({
       wsId: wsId,
       userId: user.id,
-      supabase: supabase,
+      supabase: sbAdmin,
     });
 
     if (workspaceMember.error === 'membership_lookup_failed') {
@@ -120,11 +143,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Verify user is authenticated and has permission
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const user = await resolveSeatsActor(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
