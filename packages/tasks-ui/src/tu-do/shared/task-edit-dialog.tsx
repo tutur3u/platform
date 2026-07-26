@@ -53,6 +53,7 @@ import { SyncWarningDialog } from './sync-warning-dialog';
 import {
   normalizeTaskDialogPresentation,
   resolveTaskDialogOpeningPresentation,
+  TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
 } from './task-dialog-presentation';
@@ -2662,7 +2663,7 @@ export function TaskEditDialog({
             />
           ) : (
             <>
-              <div className="flex min-w-0 flex-1 flex-col bg-background transition-all duration-300">
+              <div className={TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME}>
                 {disabled && (
                   <DialogTitle className="sr-only">Task Details</DialogTitle>
                 )}

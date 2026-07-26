@@ -2,6 +2,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
 import {
   resolveTaskDialogOpeningPresentation,
+  TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
 } from './task-dialog-presentation';
 
@@ -14,6 +15,25 @@ describe('TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME', () => {
 
     expect(resolvedClassName).toContain('sm:max-w-5xl');
     expect(resolvedClassName).not.toContain('sm:max-w-lg');
+  });
+
+  // Regression: the focused dialog is a fixed-height `display: grid` box with
+  // `overflow-hidden`, so its content column must be allowed to shrink below its
+  // content. Without `min-h-0` the grid row grew to the full description height
+  // and the dialog clipped it — the task dialog could not be scrolled at all.
+  it('keeps the fixed height and clipping the content column depends on', () => {
+    expect(TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME).toContain(
+      'h-[min(92dvh,60rem)]'
+    );
+    expect(TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME).toContain('overflow-hidden');
+  });
+});
+
+describe('TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME', () => {
+  it('can shrink below its content so the inner scroll area is bounded', () => {
+    expect(TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME).toContain('min-h-0');
+    expect(TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME).toContain('flex-1');
+    expect(TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME).toContain('flex-col');
   });
 });
 
