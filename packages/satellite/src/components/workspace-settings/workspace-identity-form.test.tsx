@@ -14,7 +14,9 @@ import { WorkspaceIdentityForm } from './workspace-identity-form';
 const routerRefresh = vi.fn();
 const updateWorkspace = vi.fn();
 
-vi.mock('@tuturuuu/internal-api', () => ({
+// The form renames through `useUpdateWorkspaceIdentity`, which imports the
+// workspaces subpath directly.
+vi.mock('@tuturuuu/internal-api/workspaces', () => ({
   updateWorkspace: (...args: unknown[]) => updateWorkspace(...args),
 }));
 

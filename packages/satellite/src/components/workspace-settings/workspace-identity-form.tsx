@@ -1,15 +1,13 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Check, Copy, Loader2 } from '@tuturuuu/icons';
-import { updateWorkspace } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { useUpdateWorkspaceIdentity } from '@tuturuuu/ui/hooks/use-workspace-identity-mutation';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -23,65 +21,29 @@ export function WorkspaceIdentityForm({
   workspace,
 }: WorkspaceIdentityFormProps) {
   const t = useTranslations('ws-settings');
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [name, setName] = useState(workspace.name ?? '');
   const [handle, setHandle] = useState(workspace.handle ?? '');
   const [savedName, setSavedName] = useState(workspace.name ?? '');
   const [savedHandle, setSavedHandle] = useState(workspace.handle ?? '');
   const [copied, setCopied] = useState(false);
 
-  const workspaceQueryFilter = {
-    predicate: ({ queryKey }: { queryKey: readonly unknown[] }) =>
-      queryKey[0] === 'workspaces' ||
-      queryKey[0] === 'user-workspaces' ||
-      queryKey.includes(workspace.id),
-  };
-
-  const mutation = useMutation({
-    mutationFn: (values: { handle?: string; name: string }) => {
-      return updateWorkspace(workspace.id, values);
-    },
-    onMutate: async (values) => {
-      await queryClient.cancelQueries(workspaceQueryFilter);
-      const previousQueries = queryClient.getQueriesData(workspaceQueryFilter);
-      const optimisticPatch = {
-        ...(values.handle ? { handle: values.handle } : {}),
-        name: values.name,
-      };
-
-      queryClient.setQueriesData(workspaceQueryFilter, (previous) =>
-        patchWorkspaceCacheValue(previous, workspace.id, optimisticPatch)
-      );
-
-      return { previousQueries };
-    },
-    onError: (error, _values, context) => {
-      for (const [queryKey, previous] of context?.previousQueries ?? []) {
-        queryClient.setQueryData(queryKey, previous);
-      }
+  const mutation = useUpdateWorkspaceIdentity({
+    onError: (error) => {
       toast.error(t('name_update_error'), {
         description: error instanceof Error ? error.message : undefined,
       });
     },
-    onSuccess: async (_response, values) => {
+    onSuccess: (values) => {
+      const nextName = values.name ?? savedName;
       const nextHandle = values.handle ?? savedHandle;
 
-      setName(values.name);
-      setSavedName(values.name);
+      setName(nextName);
+      setSavedName(nextName);
       setHandle(nextHandle);
       setSavedHandle(nextHandle);
-      queryClient.setQueriesData(workspaceQueryFilter, (previous) =>
-        patchWorkspaceCacheValue(previous, workspace.id, {
-          handle: nextHandle,
-          name: values.name,
-        })
-      );
-
-      await queryClient.invalidateQueries(workspaceQueryFilter);
-      router.refresh();
       toast.success(t('name_updated'));
     },
+    workspaceId: workspace.id,
   });
 
   useEffect(() => {
@@ -175,40 +137,6 @@ export function WorkspaceIdentityForm({
       )}
     </div>
   );
-}
-
-function patchWorkspaceCacheValue(
-  value: unknown,
-  workspaceId: string,
-  patch: Pick<Workspace, 'name'> & Partial<Pick<Workspace, 'handle'>>
-): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) =>
-      patchWorkspaceCacheValue(entry, workspaceId, patch)
-    );
-  }
-
-  if (!value || typeof value !== 'object') {
-    return value;
-  }
-
-  const record = value as Record<string, unknown>;
-  if (record.id === workspaceId) {
-    return { ...record, ...patch };
-  }
-
-  let changed = false;
-  const nextRecord = { ...record };
-  for (const key of ['data', 'workspace', 'workspaces'] as const) {
-    if (!(key in record)) continue;
-    const nextValue = patchWorkspaceCacheValue(record[key], workspaceId, patch);
-    if (nextValue !== record[key]) {
-      nextRecord[key] = nextValue;
-      changed = true;
-    }
-  }
-
-  return changed ? nextRecord : value;
 }
 
 function WorkspaceField({

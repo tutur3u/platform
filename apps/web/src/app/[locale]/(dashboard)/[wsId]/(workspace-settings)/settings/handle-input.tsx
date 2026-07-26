@@ -1,8 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
-import { updateWorkspace } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -14,11 +12,11 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useUpdateWorkspaceIdentity } from '@tuturuuu/ui/hooks/use-workspace-identity-mutation';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import * as z from 'zod';
@@ -41,14 +39,11 @@ export default function HandleInput({
   disabled,
 }: Props) {
   const t = useTranslations('ws-settings');
-  const router = useRouter();
 
-  const updateWorkspaceMutation = useMutation({
-    mutationFn: async ({ handle }: { handle: string }) =>
-      updateWorkspace(wsId, {
-        name: defaultName ?? '',
-        handle,
-      }),
+  // Shared hook, not a bare `updateWorkspace` call: the handle shows up in the
+  // same cached surfaces as the name.
+  const updateWorkspaceMutation = useUpdateWorkspaceIdentity({
+    workspaceId: wsId,
   });
 
   const form = useForm({
@@ -70,11 +65,13 @@ export default function HandleInput({
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      await updateWorkspaceMutation.mutateAsync({ handle: data.handle });
+      await updateWorkspaceMutation.mutateAsync({
+        handle: data.handle,
+        name: defaultName ?? '',
+      });
       toast.success(t('handle_updated'), {
         description: t('handle_updated_description'),
       });
-      router.refresh();
       form.reset({ handle: data.handle.toLowerCase() });
     } catch (error) {
       const message =

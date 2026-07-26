@@ -1,8 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
 import { Check, Loader2 } from '@tuturuuu/icons';
-import { updateWorkspace } from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -13,10 +11,10 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useUpdateWorkspaceIdentity } from '@tuturuuu/ui/hooks/use-workspace-identity-mutation';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import * as z from 'zod';
@@ -37,13 +35,11 @@ export default function NameInput({
   disabled,
 }: Props) {
   const t = useTranslations('ws-settings');
-  const router = useRouter();
 
-  const updateWorkspaceMutation = useMutation({
-    mutationFn: async ({ name }: { name: string }) =>
-      updateWorkspace(wsId, {
-        name,
-      }),
+  // Shared hook, not a bare `updateWorkspace` call: renaming has to reach the
+  // client caches the workspace selector reads from, not just the server tree.
+  const updateWorkspaceMutation = useUpdateWorkspaceIdentity({
+    workspaceId: wsId,
   });
 
   const form = useForm({
@@ -70,7 +66,6 @@ export default function NameInput({
         description: t('name_updated_description'),
       });
 
-      router.refresh();
       form.reset({ name: data.name });
     } catch {
       toast.error(t('name_update_error'), {
