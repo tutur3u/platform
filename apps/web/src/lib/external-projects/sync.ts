@@ -808,7 +808,7 @@ async function upsertCollections({
   db,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   collections: ExternalProjectSyncCollectionSchema[];
   db: AdminDb;
   workspaceId: string;
@@ -908,7 +908,7 @@ async function upsertEntry({
   existing,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   adapter: WorkspaceExternalProjectBinding['adapter'];
   collectionId: string;
   db: AdminDb;
@@ -971,7 +971,7 @@ async function upsertBlocks({
   existingBlocks,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   blocks: ExternalProjectSyncBlock[];
   db: AdminDb;
   entryId: string;
@@ -1047,7 +1047,7 @@ async function upsertAssets({
   existingAssets,
   workspaceId,
 }: {
-  actorId: string;
+  actorId: string | null;
   assets: ExternalProjectSyncAsset[];
   blockIdByStableSourceId: Map<string, string>;
   db: AdminDb;
@@ -1222,7 +1222,7 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     manifest: manifestInput,
     workspaceId,
   }: {
-    actorId: string;
+    actorId: string | null;
     binding: WorkspaceExternalProjectBinding;
     force?: boolean;
     manifest: ExternalProjectSyncManifest;

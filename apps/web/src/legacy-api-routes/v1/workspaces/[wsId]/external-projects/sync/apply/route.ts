@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { requireWorkspaceExternalProjectSyncAccess } from '@/lib/external-projects/access';
 import { applyWorkspaceExternalProjectSyncManifest } from '@/lib/external-projects/sync';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
@@ -16,7 +16,7 @@ interface Params {
 
 async function applyManifest(request: NextRequest, { params }: Params) {
   const { wsId } = await params;
-  const access = await requireWorkspaceExternalProjectAccess({
+  const access = await requireWorkspaceExternalProjectSyncAccess({
     mode: 'manage',
     request,
     wsId,
@@ -27,7 +27,7 @@ async function applyManifest(request: NextRequest, { params }: Params) {
     const { force, manifest } = await readSyncManifestRequest(request);
     const result = await applyWorkspaceExternalProjectSyncManifest(
       {
-        actorId: access.user.id,
+        actorId: access.user?.id ?? null,
         binding: access.binding,
         force: force === true,
         manifest,

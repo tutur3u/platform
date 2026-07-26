@@ -1338,6 +1338,62 @@ export async function requireWorkspaceExternalProjectSetupAccess({
   };
 }
 
+/**
+ * Access for applying a schema sync, which a linked app may do for itself.
+ *
+ * Kept separate from `requireWorkspaceExternalProjectAccess` rather than
+ * folded into it: most callers of that helper (assets, blocks, entries) act on
+ * behalf of a real person and dereference `access.user`, so widening its result
+ * to a null user there would push an impossible case into a dozen routes.
+ * Installing a schema is setup followed by a sync, so an app that can provision
+ * must also be able to apply — otherwise it can create a binding it can never
+ * populate.
+ */
+export async function requireWorkspaceExternalProjectSyncAccess({
+  mode,
+  request,
+  wsId,
+}: {
+  mode: WorkspaceExternalProjectMode;
+  request: Request;
+  wsId: string;
+}): Promise<
+  | { ok: false; response: NextResponse }
+  | {
+      ok: true;
+      admin: AdminDb;
+      binding: WorkspaceExternalProjectBinding;
+      normalizedWorkspaceId: string;
+      user: { id: string } | null;
+    }
+> {
+  const appCredentials = readExternalAppCredentials(request);
+
+  if (appCredentials.appSecret) {
+    const admin = (await createAdminClient()) as TypedSupabaseClient;
+    const appAccess = await authorizeExternalAppRequest({
+      admin,
+      appId: appCredentials.appId,
+      appSecret: appCredentials.appSecret,
+      wsId,
+    });
+
+    if (appAccess.response) {
+      return { ok: false as const, response: appAccess.response };
+    }
+
+    return {
+      admin,
+      binding: appAccess.binding,
+      normalizedWorkspaceId: wsId,
+      ok: true as const,
+      user: null,
+    };
+  }
+
+  return requireWorkspaceExternalProjectAccess({ mode, request, wsId });
+}
+
 export async function requireWorkspaceExternalProjectAccess({
   mode,
   request,
