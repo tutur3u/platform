@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
 import { getUserConfig } from '@tuturuuu/internal-api/users';
-import type { WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   dispatchTaskOpenResult,
@@ -548,44 +547,20 @@ export function TaskDialogManager({
     wsId,
   ]);
 
-  // Determine if the task needs its own presence provider (cross-workspace tasks).
+  // A task can live in a different workspace than the board route it was opened
+  // from — a deep link is the common case — and then it needs presence on *its*
+  // workspace channel rather than this route's.
   //
-  // This decision is latched for as long as the dialog stays open, and that is
-  // the whole point. Adding or removing the provider wrapper moves the dialog to
-  // a different position in the React tree, so React unmounts the mounted dialog
-  // and mounts a fresh one — which the user sees as the dialog opening, closing
-  // and opening again. `taskWsId` is unknown until a deep link finishes
-  // hydrating, so without the latch every deep-linked open flickers exactly that
-  // way (most visibly in a personal workspace, where the outer presence provider
-  // is disabled and the wrapper is therefore always wanted once the id lands).
-  //
-  // The cost is that a deep-linked cross-workspace task opens without its own
-  // presence channel, i.e. no live cursors. That is cosmetic; a remounting dialog
-  // is not.
-  const needsOwnProviderNow =
-    state.taskWsId && (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId);
-  const presenceShellRef = useRef<{
-    tier: WorkspaceProductTier | null;
-    wsId: string;
-  } | null>(null);
-  const presenceShellOpenRef = useRef(false);
-
-  if (!state.isOpen) {
-    presenceShellOpenRef.current = false;
-    presenceShellRef.current = null;
-  } else if (!presenceShellOpenRef.current) {
-    presenceShellOpenRef.current = true;
-    presenceShellRef.current =
-      needsOwnProviderNow && state.taskWsId
-        ? {
-            tier: state.taskWorkspaceTier ?? null,
-            wsId: state.taskWsId,
-          }
-        : null;
-  }
-
-  const presenceShell = presenceShellRef.current;
-  const ownProviderEnabled =
+  // The wrapper below is therefore always rendered and switches mode instead of
+  // appearing once `taskWsId` lands. Mounting a provider around the open dialog
+  // moves it in the React tree, and React responds by unmounting the dialog and
+  // mounting a new one: the user sees it open, close and open again. Keeping the
+  // element in place makes that a prop change, so the dialog survives and still
+  // gets a real channel for the task's workspace once the id is known.
+  const ownsTaskPresence = Boolean(
+    state.taskWsId && (!wsPresence?.realtimeEnabled || state.taskWsId !== wsId)
+  );
+  const presenceEnabled =
     !!state.realtimeEnabled && !state.taskWorkspacePersonal;
 
   if (!state.isOpen || !state.task) {
@@ -636,17 +611,14 @@ export function TaskDialogManager({
     />
   );
 
-  if (presenceShell) {
-    return (
-      <WorkspacePresenceProvider
-        wsId={presenceShell.wsId}
-        tier={state.taskWorkspaceTier ?? presenceShell.tier}
-        enabled={ownProviderEnabled}
-      >
-        {dialog}
-      </WorkspacePresenceProvider>
-    );
-  }
-
-  return dialog;
+  return (
+    <WorkspacePresenceProvider
+      enabled={presenceEnabled}
+      inherit={!ownsTaskPresence}
+      tier={state.taskWorkspaceTier ?? null}
+      wsId={state.taskWsId ?? wsId}
+    >
+      {dialog}
+    </WorkspacePresenceProvider>
+  );
 }

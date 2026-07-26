@@ -10,14 +10,31 @@ import {
   TaskDialogProvider,
   useTaskDialogContext,
 } from '../../providers/task-dialog-provider';
+import { WorkspacePresenceProvider } from '../../providers/workspace-presence-provider';
 import { RECENT_SIDEBAR_VISIT_EVENT } from '../recent-sidebar-events';
 import { TaskDialogManager } from '../task-dialog-manager';
 
-const { mockSearchParams, taskDialogRenderStats } = vi.hoisted(() => ({
-  mockSearchParams: new URLSearchParams(),
-  taskDialogRenderStats: {
-    mounts: 0,
-    unmounts: 0,
+const { mockSearchParams, mockUseWorkspacePresence, taskDialogRenderStats } =
+  vi.hoisted(() => ({
+    mockSearchParams: new URLSearchParams(),
+    mockUseWorkspacePresence: vi.fn(),
+    taskDialogRenderStats: {
+      mounts: 0,
+      unmounts: 0,
+    },
+  }));
+
+vi.mock('@tuturuuu/ui/hooks/use-workspace-presence', () => ({
+  useWorkspacePresence: (options: { enabled?: boolean; wsId: string }) => {
+    mockUseWorkspacePresence(options);
+
+    return {
+      activeViewers: [],
+      cursors: [],
+      updateCursor: vi.fn(),
+      updateLocation: vi.fn(),
+      viewers: [],
+    };
   },
 }));
 
@@ -543,6 +560,7 @@ describe('TaskDialogManager', () => {
   // so the user watches it open, close and open again.
   it('keeps the dialog mounted when hydration reveals the task workspace', async () => {
     mockSearchParams.set('task', 'task-9');
+    mockUseWorkspacePresence.mockClear();
     mockGetTaskDialogHydration.mockResolvedValue({
       availableLists: [mockList],
       task: { ...mockTask, id: 'task-9', list: { board_id: 'board-1' } },
@@ -555,7 +573,12 @@ describe('TaskDialogManager', () => {
 
     const { getByTestId } = render(
       <Wrapper>
-        <TaskDialogManager wsId="workspace-1" />
+        {/* The route's own presence provider, as the workspace layout renders
+            it — without this the dialog has nothing to inherit and the switch
+            under test never happens. */}
+        <WorkspacePresenceProvider enabled tier="PRO" wsId="workspace-1">
+          <TaskDialogManager wsId="workspace-1" />
+        </WorkspacePresenceProvider>
       </Wrapper>
     );
 
@@ -570,6 +593,12 @@ describe('TaskDialogManager', () => {
       mounts: 1,
       unmounts: 0,
     });
+
+    // …and the dialog still gets realtime for the workspace the task actually
+    // lives in, rather than trading presence away for a stable mount.
+    expect(mockUseWorkspacePresence).toHaveBeenCalledWith(
+      expect.objectContaining({ enabled: true, wsId: 'other-workspace' })
+    );
   });
 
   it('dispatches a recent visit snapshot when an edit dialog opens', async () => {
