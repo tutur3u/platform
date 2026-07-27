@@ -52,7 +52,7 @@ export function RichTextEditor({
     content: content ?? { type: 'doc', content: [] },
     editable: !readOnly,
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       Link.configure({ openOnClick: readOnly }),
       Image,
       Placeholder.configure({
