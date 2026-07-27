@@ -10,13 +10,3 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "monthly"
-
-  - package-ecosystem: "pub"
-    directory: "/apps/mobile"
-    schedule:
-      interval: "monthly"
