@@ -3,6 +3,11 @@
   "version": "0.2.0",
   "description": "Lightweight localized rich-text editor and rendering utilities",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/editor"
+  },
   "type": "module",
   "files": ["dist", "README.md"],
   "publishConfig": {

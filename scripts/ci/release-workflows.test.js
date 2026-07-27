@@ -1632,6 +1632,21 @@ const packageReleaseWorkflows = [
     workflowName: 'release-devbox-package.yaml',
   },
   {
+    artifactDir: 'editor-package',
+    artifactName: 'tuturuuu-editor-npm-package',
+    environment: 'editor-release-production',
+    packageName: '@tuturuuu/editor',
+    packagePath: 'packages/editor',
+    rejectMessagePattern:
+      /Editor releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /Build editor workspace dependencies/,
+      /--filter=@tuturuuu\/editor/,
+      /Run tests/,
+    ],
+    workflowName: 'release-editor-package.yaml',
+  },
+  {
     artifactDir: 'google-package',
     artifactName: 'tuturuuu-google-npm-package',
     environment: 'google-release-production',

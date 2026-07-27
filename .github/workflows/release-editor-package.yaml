@@ -4,6 +4,7 @@ on:
   push:
     branches: [production]
     paths:
+      - ".github/workflows/release-editor-package.yaml"
       - "packages/editor/package.json"
   workflow_dispatch:
 
