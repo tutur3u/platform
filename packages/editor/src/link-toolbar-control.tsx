@@ -1,7 +1,14 @@
 'use client';
 
 import { Check, Link2, X } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { ToolbarAction } from './toolbar-action.js';
 import type { EditorMessages } from './types.js';
 import { normalizeRichTextUrl } from './url.js';
@@ -55,7 +62,7 @@ export function LinkToolbarControl({
     });
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     positionForm();
     window.addEventListener('resize', positionForm);
@@ -77,7 +84,7 @@ export function LinkToolbarControl({
       <ToolbarAction
         active={active}
         buttonRef={buttonRef}
-        controls={formId}
+        controls={open ? formId : undefined}
         expanded={open}
         icon={Link2}
         label={messages.link}
