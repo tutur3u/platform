@@ -18,24 +18,24 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 45,
+        "legacyNext": 48,
         "migrated": 99,
-        "percentComplete": 69.18,
-        "remaining": 45,
+        "percentComplete": 67.79,
+        "remaining": 48,
         "terminal": 101,
-        "total": 146,
+        "total": 149,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 7,
+        "legacyNext": 10,
         "migrated": 47,
-        "percentComplete": 87.04,
-        "remaining": 7,
+        "percentComplete": 82.46,
+        "remaining": 10,
         "terminal": 47,
-        "total": 54,
+        "total": 57,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 53,
+        "legacyNext": 59,
         "migrated": 148,
-        "percentComplete": 73.89,
-        "remaining": 53,
+        "percentComplete": 71.77,
+        "remaining": 59,
         "terminal": 150,
-        "total": 203,
+        "total": 209,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 547,
+      "legacyNext": 553,
       "migrated": 214,
-      "percentComplete": 29.33,
-      "remaining": 547,
+      "percentComplete": 29.1,
+      "remaining": 553,
       "terminal": 227,
-      "total": 774,
+      "total": 780,
       "unknownStatus": 0
     }
   },
@@ -5734,6 +5734,33 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale/legal/dpa:apps/web/src/app/[locale]/(marketing)/legal/dpa/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/legal/dpa",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/dpa/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "layout:/:locale/legal/sla:apps/web/src/app/[locale]/(marketing)/legal/sla/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/legal/sla",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/sla/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "layout:/:locale/legal/subprocessors:apps/web/src/app/[locale]/(marketing)/legal/subprocessors/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/legal/subprocessors",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/subprocessors/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale/login:apps/web/src/app/[locale]/(auth)/login/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -6832,6 +6859,33 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/legal/dpa:apps/web/src/app/[locale]/(marketing)/legal/dpa/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/legal/dpa",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/dpa/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/legal/sla:apps/web/src/app/[locale]/(marketing)/legal/sla/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/legal/sla",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/sla/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
+      "id": "page:/:locale/legal/subprocessors:apps/web/src/app/[locale]/(marketing)/legal/subprocessors/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/legal/subprocessors",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/legal/subprocessors/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/login:apps/web/src/app/[locale]/(auth)/login/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7393,8 +7447,8 @@
   "summary": {
     "apiRoutes": 558,
     "cronRoutes": 8,
-    "layouts": 54,
-    "pages": 146,
+    "layouts": 57,
+    "pages": 149,
     "routeHandlers": 571,
     "methodCounts": {
       "GET": 286,
@@ -7405,6 +7459,6 @@
       "DELETE": 97,
       "OPTIONS": 23
     },
-    "total": 774
+    "total": 780
   }
 }

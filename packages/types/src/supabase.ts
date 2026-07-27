@@ -623,6 +623,1047 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_studio_agent_version_tools: {
+        Row: {
+          agent_version_id: string;
+          config: Json;
+          tool_id: string;
+        };
+        Insert: {
+          agent_version_id: string;
+          config?: Json;
+          tool_id: string;
+        };
+        Update: {
+          agent_version_id?: string;
+          config?: Json;
+          tool_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_agent_version_tools_agent_version_id_fkey';
+            columns: ['agent_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_agent_versions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_agent_version_tools_tool_id_fkey';
+            columns: ['tool_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_curated_tools';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_agent_versions: {
+        Row: {
+          agent_id: string;
+          change_note: string | null;
+          config: Json;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          instructions: string;
+          model_id: string;
+          prompt_version_id: string | null;
+          version: number;
+        };
+        Insert: {
+          agent_id: string;
+          change_note?: string | null;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instructions: string;
+          model_id: string;
+          prompt_version_id?: string | null;
+          version: number;
+        };
+        Update: {
+          agent_id?: string;
+          change_note?: string | null;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          instructions?: string;
+          model_id?: string;
+          prompt_version_id?: string | null;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_agent_versions_agent_id_fkey';
+            columns: ['agent_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_agents';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_agent_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_agent_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_agent_versions_prompt_version_id_fkey';
+            columns: ['prompt_version_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_prompt_versions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_agents: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          latest_version: number;
+          name: string;
+          slug: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          latest_version?: number;
+          name: string;
+          slug: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          latest_version?: number;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_agents_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_agents_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      ai_studio_api_keys: {
+        Row: {
+          allowed_models: string[];
+          created_at: string;
+          created_by: string | null;
+          credit_budget: number | null;
+          credits_reserved: number;
+          credits_used: number;
+          environment: string;
+          expires_at: string | null;
+          id: string;
+          last_used_at: string | null;
+          last_used_ip_hash: string | null;
+          name: string;
+          prefix: string;
+          requests_per_minute: number | null;
+          revoked_at: string | null;
+          rotated_to: string | null;
+          secret_hash: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          allowed_models?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          credit_budget?: number | null;
+          credits_reserved?: number;
+          credits_used?: number;
+          environment?: string;
+          expires_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          last_used_ip_hash?: string | null;
+          name: string;
+          prefix: string;
+          requests_per_minute?: number | null;
+          revoked_at?: string | null;
+          rotated_to?: string | null;
+          secret_hash: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          allowed_models?: string[];
+          created_at?: string;
+          created_by?: string | null;
+          credit_budget?: number | null;
+          credits_reserved?: number;
+          credits_used?: number;
+          environment?: string;
+          expires_at?: string | null;
+          id?: string;
+          last_used_at?: string | null;
+          last_used_ip_hash?: string | null;
+          name?: string;
+          prefix?: string;
+          requests_per_minute?: number | null;
+          revoked_at?: string | null;
+          rotated_to?: string | null;
+          secret_hash?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_api_keys_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_api_keys_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_api_keys_rotated_to_fkey';
+            columns: ['rotated_to'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_api_keys';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_curated_tools: {
+        Row: {
+          capability: string;
+          created_at: string;
+          description: string;
+          globally_enabled: boolean;
+          id: string;
+          input_schema: Json;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          capability: string;
+          created_at?: string;
+          description: string;
+          globally_enabled?: boolean;
+          id: string;
+          input_schema?: Json;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          capability?: string;
+          created_at?: string;
+          description?: string;
+          globally_enabled?: boolean;
+          id?: string;
+          input_schema?: Json;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ai_studio_dataset_items: {
+        Row: {
+          created_at: string;
+          dataset_id: string;
+          expected: Json | null;
+          id: string;
+          input: Json;
+          metadata: Json;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_id: string;
+          expected?: Json | null;
+          id?: string;
+          input: Json;
+          metadata?: Json;
+        };
+        Update: {
+          created_at?: string;
+          dataset_id?: string;
+          expected?: Json | null;
+          id?: string;
+          input?: Json;
+          metadata?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_dataset_items_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_datasets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_datasets: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          schema: Json;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          schema?: Json;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          schema?: Json;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_datasets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_datasets_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      ai_studio_evaluation_results: {
+        Row: {
+          created_at: string;
+          dataset_item_id: string | null;
+          experiment_id: string;
+          grader_name: string;
+          id: string;
+          metadata: Json;
+          passed: boolean | null;
+          reason: string | null;
+          run_id: string | null;
+          score: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          dataset_item_id?: string | null;
+          experiment_id: string;
+          grader_name: string;
+          id?: string;
+          metadata?: Json;
+          passed?: boolean | null;
+          reason?: string | null;
+          run_id?: string | null;
+          score?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          dataset_item_id?: string | null;
+          experiment_id?: string;
+          grader_name?: string;
+          id?: string;
+          metadata?: Json;
+          passed?: boolean | null;
+          reason?: string | null;
+          run_id?: string | null;
+          score?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_evaluation_results_dataset_item_id_fkey';
+            columns: ['dataset_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_dataset_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_evaluation_results_experiment_id_fkey';
+            columns: ['experiment_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_experiments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_evaluation_results_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_evaluation_suites: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          dataset_id: string | null;
+          description: string | null;
+          graders: Json;
+          id: string;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id?: string | null;
+          description?: string | null;
+          graders?: Json;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          dataset_id?: string | null;
+          description?: string | null;
+          graders?: Json;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_evaluation_suites_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_evaluation_suites_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_evaluation_suites_dataset_id_fkey';
+            columns: ['dataset_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_datasets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_experiments: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          model_id: string | null;
+          name: string;
+          started_at: string | null;
+          status: string;
+          suite_id: string;
+          summary: Json;
+          target_type: string;
+          target_version_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id?: string | null;
+          name: string;
+          started_at?: string | null;
+          status?: string;
+          suite_id: string;
+          summary?: Json;
+          target_type: string;
+          target_version_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id?: string | null;
+          name?: string;
+          started_at?: string | null;
+          status?: string;
+          suite_id?: string;
+          summary?: Json;
+          target_type?: string;
+          target_version_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_experiments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_experiments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_experiments_suite_id_fkey';
+            columns: ['suite_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_evaluation_suites';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_global_settings: {
+        Row: {
+          capture_default_enabled: boolean;
+          content_retention_days: number;
+          default_models: string[];
+          globally_enabled: boolean;
+          metadata_retention_days: number;
+          singleton: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          workspace_default_enabled: boolean;
+        };
+        Insert: {
+          capture_default_enabled?: boolean;
+          content_retention_days?: number;
+          default_models?: string[];
+          globally_enabled?: boolean;
+          metadata_retention_days?: number;
+          singleton?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_default_enabled?: boolean;
+        };
+        Update: {
+          capture_default_enabled?: boolean;
+          content_retention_days?: number;
+          default_models?: string[];
+          globally_enabled?: boolean;
+          metadata_retention_days?: number;
+          singleton?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_default_enabled?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_global_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_global_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      ai_studio_prompt_versions: {
+        Row: {
+          change_note: string | null;
+          config: Json;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          prompt_id: string;
+          template: string;
+          variables: Json;
+          version: number;
+        };
+        Insert: {
+          change_note?: string | null;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          prompt_id: string;
+          template: string;
+          variables?: Json;
+          version: number;
+        };
+        Update: {
+          change_note?: string | null;
+          config?: Json;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          prompt_id?: string;
+          template?: string;
+          variables?: Json;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_prompt_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_prompt_versions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_prompt_versions_prompt_id_fkey';
+            columns: ['prompt_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_prompts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_prompts: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          id: string;
+          latest_version: number;
+          name: string;
+          slug: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          latest_version?: number;
+          name: string;
+          slug: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          id?: string;
+          latest_version?: number;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_prompts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_prompts_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      ai_studio_run_content: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          output: Json | null;
+          prompt: Json | null;
+          run_id: string;
+          tool_arguments: Json | null;
+          tool_results: Json | null;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          output?: Json | null;
+          prompt?: Json | null;
+          run_id: string;
+          tool_arguments?: Json | null;
+          tool_results?: Json | null;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          output?: Json | null;
+          prompt?: Json | null;
+          run_id?: string;
+          tool_arguments?: Json | null;
+          tool_results?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_run_content_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'ai_studio_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_run_steps: {
+        Row: {
+          billed_credits: number;
+          completed_at: string | null;
+          error_class: string | null;
+          id: string;
+          input_tokens: number;
+          kind: string;
+          latency_ms: number | null;
+          metadata: Json;
+          model_id: string | null;
+          name: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          run_id: string;
+          sequence: number;
+          started_at: string;
+          status: string;
+        };
+        Insert: {
+          billed_credits?: number;
+          completed_at?: string | null;
+          error_class?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind: string;
+          latency_ms?: number | null;
+          metadata?: Json;
+          model_id?: string | null;
+          name: string;
+          output_tokens?: number;
+          provider_cost_usd?: number;
+          run_id: string;
+          sequence: number;
+          started_at?: string;
+          status: string;
+        };
+        Update: {
+          billed_credits?: number;
+          completed_at?: string | null;
+          error_class?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind?: string;
+          latency_ms?: number | null;
+          metadata?: Json;
+          model_id?: string | null;
+          name?: string;
+          output_tokens?: number;
+          provider_cost_usd?: number;
+          run_id?: string;
+          sequence?: number;
+          started_at?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_run_steps_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_runs: {
+        Row: {
+          actor_id: string | null;
+          agent_version_id: string | null;
+          api_key_id: string | null;
+          billed_credits: number;
+          completed_at: string | null;
+          created_at: string;
+          embedding_units: number;
+          error_class: string | null;
+          error_message: string | null;
+          feature: string;
+          first_token_latency_ms: number | null;
+          id: string;
+          idempotency_key: string | null;
+          image_units: number;
+          input_tokens: number;
+          latency_ms: number | null;
+          metadata: Json;
+          model_id: string;
+          output_tokens: number;
+          prompt_version_id: string | null;
+          provider_cost_usd: number;
+          reasoning_tokens: number;
+          request_id: string;
+          reservation_id: string | null;
+          reserved_credits: number;
+          started_at: string | null;
+          status: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          agent_version_id?: string | null;
+          api_key_id?: string | null;
+          billed_credits?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          embedding_units?: number;
+          error_class?: string | null;
+          error_message?: string | null;
+          feature: string;
+          first_token_latency_ms?: number | null;
+          id?: string;
+          idempotency_key?: string | null;
+          image_units?: number;
+          input_tokens?: number;
+          latency_ms?: number | null;
+          metadata?: Json;
+          model_id: string;
+          output_tokens?: number;
+          prompt_version_id?: string | null;
+          provider_cost_usd?: number;
+          reasoning_tokens?: number;
+          request_id: string;
+          reservation_id?: string | null;
+          reserved_credits?: number;
+          started_at?: string | null;
+          status?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          agent_version_id?: string | null;
+          api_key_id?: string | null;
+          billed_credits?: number;
+          completed_at?: string | null;
+          created_at?: string;
+          embedding_units?: number;
+          error_class?: string | null;
+          error_message?: string | null;
+          feature?: string;
+          first_token_latency_ms?: number | null;
+          id?: string;
+          idempotency_key?: string | null;
+          image_units?: number;
+          input_tokens?: number;
+          latency_ms?: number | null;
+          metadata?: Json;
+          model_id?: string;
+          output_tokens?: number;
+          prompt_version_id?: string | null;
+          provider_cost_usd?: number;
+          reasoning_tokens?: number;
+          request_id?: string;
+          reservation_id?: string | null;
+          reserved_credits?: number;
+          started_at?: string | null;
+          status?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_runs_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_runs_api_key_id_fkey';
+            columns: ['api_key_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_api_keys';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_runs_reservation_id_fkey';
+            columns: ['reservation_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_credit_reservations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_usage: {
+        Row: {
+          api_key_id: string | null;
+          billed_credits: number;
+          created_at: string;
+          feature: string;
+          id: string;
+          input_tokens: number;
+          model_id: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          run_id: string;
+          units: number;
+          ws_id: string;
+        };
+        Insert: {
+          api_key_id?: string | null;
+          billed_credits: number;
+          created_at?: string;
+          feature: string;
+          id?: string;
+          input_tokens?: number;
+          model_id: string;
+          output_tokens?: number;
+          provider_cost_usd?: number;
+          run_id: string;
+          units?: number;
+          ws_id: string;
+        };
+        Update: {
+          api_key_id?: string | null;
+          billed_credits?: number;
+          created_at?: string;
+          feature?: string;
+          id?: string;
+          input_tokens?: number;
+          model_id?: string;
+          output_tokens?: number;
+          provider_cost_usd?: number;
+          run_id?: string;
+          units?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_usage_api_key_id_fkey';
+            columns: ['api_key_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_studio_api_keys';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_usage_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: true;
+            referencedRelation: 'ai_studio_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_studio_workspace_model_grants: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          granted_by: string | null;
+          model_id: string;
+          source: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          granted_by?: string | null;
+          model_id: string;
+          source?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          granted_by?: string | null;
+          model_id?: string;
+          source?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_studio_workspace_model_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_studio_workspace_model_grants_granted_by_fkey';
+            columns: ['granted_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       ai_whitelisted_domains: {
         Row: {
           created_at: string;
@@ -5931,6 +6972,106 @@ export type Database = {
           id?: string;
           name?: string | null;
           ws_id?: string;
+        };
+        Relationships: [];
+      };
+      legal_document_acceptances: {
+        Row: {
+          accepted_at: string;
+          enterprise_order_reference: string | null;
+          id: string;
+          ip_hash: string | null;
+          kind: string;
+          locale: string;
+          metadata: Json;
+          source: string;
+          user_agent_hash: string | null;
+          user_id: string;
+          version: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          accepted_at?: string;
+          enterprise_order_reference?: string | null;
+          id?: string;
+          ip_hash?: string | null;
+          kind: string;
+          locale: string;
+          metadata?: Json;
+          source?: string;
+          user_agent_hash?: string | null;
+          user_id: string;
+          version: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          accepted_at?: string;
+          enterprise_order_reference?: string | null;
+          id?: string;
+          ip_hash?: string | null;
+          kind?: string;
+          locale?: string;
+          metadata?: Json;
+          source?: string;
+          user_agent_hash?: string | null;
+          user_id?: string;
+          version?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'legal_acceptance_document_fk';
+            columns: ['kind', 'version', 'locale'];
+            isOneToOne: false;
+            referencedRelation: 'legal_document_versions';
+            referencedColumns: ['kind', 'version', 'locale'];
+          },
+          {
+            foreignKeyName: 'legal_document_acceptances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'legal_document_acceptances_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      legal_document_versions: {
+        Row: {
+          content_hash: string;
+          created_at: string;
+          effective_at: string;
+          kind: string;
+          locale: string;
+          published_at: string;
+          superseded_at: string | null;
+          version: string;
+        };
+        Insert: {
+          content_hash: string;
+          created_at?: string;
+          effective_at: string;
+          kind: string;
+          locale: string;
+          published_at: string;
+          superseded_at?: string | null;
+          version: string;
+        };
+        Update: {
+          content_hash?: string;
+          created_at?: string;
+          effective_at?: string;
+          kind?: string;
+          locale?: string;
+          published_at?: string;
+          superseded_at?: string | null;
+          version?: string;
         };
         Relationships: [];
       };
@@ -11413,6 +12554,86 @@ export type Database = {
           },
         ];
       };
+      workspace_ai_studio_policies: {
+        Row: {
+          allowed_models: string[];
+          capture_enabled: boolean | null;
+          content_retention_days: number | null;
+          created_at: string;
+          created_by: string | null;
+          denied_models: string[];
+          metadata_retention_days: number | null;
+          monthly_credit_budget: number | null;
+          no_training_enforced: boolean;
+          requests_per_minute: number | null;
+          state: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          allowed_models?: string[];
+          capture_enabled?: boolean | null;
+          content_retention_days?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          denied_models?: string[];
+          metadata_retention_days?: number | null;
+          monthly_credit_budget?: number | null;
+          no_training_enforced?: boolean;
+          requests_per_minute?: number | null;
+          state?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          allowed_models?: string[];
+          capture_enabled?: boolean | null;
+          content_retention_days?: number | null;
+          created_at?: string;
+          created_by?: string | null;
+          denied_models?: string[];
+          metadata_retention_days?: number | null;
+          monthly_credit_budget?: number | null;
+          no_training_enforced?: boolean;
+          requests_per_minute?: number | null;
+          state?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       workspace_calendar_sync_log: {
         Row: {
           created_at: string;
@@ -13091,6 +14312,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      ai_studio_model_allowed: {
+        Args: { p_api_key_id: string; p_model_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };
         Returns: undefined;
@@ -13108,6 +14333,26 @@ export type Database = {
           status: string;
         }[];
       };
+      begin_ai_studio_run: {
+        Args: {
+          p_api_key_id: string;
+          p_feature: string;
+          p_idempotency_key?: string;
+          p_metadata?: Json;
+          p_model_id: string;
+          p_request_id: string;
+          p_reserved_credits: number;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          error_code: string;
+          remaining_credits: number;
+          reservation_id: string;
+          run_id: string;
+          success: boolean;
+        }[];
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       bulk_create_inventory_storefront_listings_from_stock: {
         Args: {
@@ -13116,6 +14361,21 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      calculate_ai_studio_usage_cost: {
+        Args: {
+          p_image_count?: number;
+          p_input_tokens?: number;
+          p_model_id: string;
+          p_output_tokens?: number;
+          p_reasoning_tokens?: number;
+          p_search_count?: number;
+          p_ws_id: string;
+        };
+        Returns: {
+          billed_credits: number;
+          provider_cost_usd: number;
+        }[];
       };
       calculate_invoice_values: {
         Args: {
@@ -13505,6 +14765,13 @@ export type Database = {
         };
       };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
+      cleanup_ai_studio_retention: {
+        Args: never;
+        Returns: {
+          content_rows_deleted: number;
+          metadata_rows_deleted: number;
+        }[];
+      };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       complete_devbox_run: {
         Args: {
@@ -14064,6 +15331,18 @@ export type Database = {
       get_inventory_sales_analytics: {
         Args: { p_currency?: string; p_days?: number; p_ws_id: string };
         Returns: Json;
+      };
+      get_periodic_report_counts: {
+        Args: { p_cadence?: string; p_group_ids?: string[]; p_ws_id: string };
+        Returns: {
+          approved: number;
+          blocked: number;
+          delivered: number;
+          draft: number;
+          failed: number;
+          pending_review: number;
+          total: number;
+        }[];
       };
       get_post_email_queue_age_buckets: {
         Args: { p_now?: string };
@@ -15102,6 +16381,31 @@ export type Database = {
       };
       restore_cascaded_user_group_attendance: { Args: never; Returns: number };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
+      settle_ai_studio_run: {
+        Args: {
+          p_actual_credits: number;
+          p_embedding_units?: number;
+          p_error_class?: string;
+          p_error_message?: string;
+          p_first_token_latency_ms?: number;
+          p_image_units?: number;
+          p_input_tokens?: number;
+          p_latency_ms?: number;
+          p_metadata?: Json;
+          p_output_tokens?: number;
+          p_provider_cost_usd?: number;
+          p_reasoning_tokens?: number;
+          p_run_id: string;
+          p_status: string;
+        };
+        Returns: {
+          credits_deducted: number;
+          error_code: string;
+          remaining_credits: number;
+          success: boolean;
+        }[];
+      };
+      skip_rejected_post_email_queue: { Args: never; Returns: number };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };
         Returns: boolean;
@@ -43223,7 +44527,15 @@ export type Database = {
         | 'manage_internal_accounts'
         | 'initiate_pos_checkout'
         | 'manage_user_report_automation'
-        | 'send_user_group_report_emails';
+        | 'send_user_group_report_emails'
+        | 'use_ai_studio'
+        | 'manage_ai_keys'
+        | 'manage_ai_policy'
+        | 'manage_ai_prompts'
+        | 'manage_ai_agents'
+        | 'manage_ai_evaluations'
+        | 'view_ai_usage'
+        | 'view_ai_logs';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -45981,6 +47293,14 @@ export const Constants = {
         'initiate_pos_checkout',
         'manage_user_report_automation',
         'send_user_group_report_emails',
+        'use_ai_studio',
+        'manage_ai_keys',
+        'manage_ai_policy',
+        'manage_ai_prompts',
+        'manage_ai_agents',
+        'manage_ai_evaluations',
+        'view_ai_usage',
+        'view_ai_logs',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

@@ -62,6 +62,7 @@
       "track": "Record time and understand where work goes."
     },
     "app_names": {
+      "ai": "AI Studio",
       "apps": "Apps",
       "calendar": "Calendar",
       "chat": "Chat",

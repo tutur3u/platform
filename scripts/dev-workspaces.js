@@ -16,6 +16,15 @@ const PORTLESS_ROUTE_LOCK_RETRY_DELAY_MS = 11_000;
 const PORTLESS_ROUTE_LOCK_EXIT_TIMEOUT_MS = 1500;
 
 const DEV_TARGETS = Object.freeze({
+  ai: {
+    apps: ['ai', 'web'],
+    shared: [
+      '@tuturuuu/types',
+      '@tuturuuu/supabase',
+      '@tuturuuu/internal-api',
+      '@tuturuuu/ai',
+    ],
+  },
   apps: {
     apps: ['apps'],
     shared: ['@tuturuuu/types'],

@@ -43,6 +43,12 @@ jobs:
     uses: ./.github/workflows/vercel-production-apps.yaml
     secrets: inherit
 
+  deploy-ai:
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-ai.yaml')
+    uses: ./.github/workflows/vercel-production-ai.yaml
+    secrets: inherit
+
   deploy-calendar:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-calendar.yaml')

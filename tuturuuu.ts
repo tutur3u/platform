@@ -36,6 +36,7 @@ export const ci = {
   // Satellite previews are trusted workflow_dispatch-only jobs and bypass
   // affected-path gating. Only the automatic platform preview belongs here.
   'vercel-preview-platform.yaml': true,
+  'vercel-production-ai.yaml': true,
   'vercel-production-apps.yaml': true,
   'vercel-production-calendar.yaml': true,
   'vercel-production-chat.yaml': true,
@@ -98,6 +99,13 @@ export type VercelWorkflowTarget = {
 };
 
 export const vercelWorkflowTargets = [
+  {
+    app: 'ai',
+    appPath: 'apps/ai',
+    packageName: '@tuturuuu/ai-studio',
+    previewWorkflow: 'vercel-preview-ai.yaml',
+    productionWorkflow: 'vercel-production-ai.yaml',
+  },
   {
     app: 'apps',
     appPath: 'apps/apps',

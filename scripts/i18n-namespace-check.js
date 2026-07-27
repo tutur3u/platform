@@ -90,6 +90,7 @@ const APP_NAMESPACE_ALLOWLIST = new Map([
 // conscious choice (wire it into APPS, or record it here). Remove an entry when
 // you move the app into APPS.
 const UNCHECKED_APPS = new Set([
+  'apps/ai',
   'apps/apps',
   'apps/chat',
   'apps/infrastructure',

@@ -287,6 +287,7 @@ describe('Portless app origin registry', () => {
       '*.tuturuuu.localhost',
     ]);
     expect(Object.values(TUTURUUU_PORTLESS_APP_ORIGINS)).toEqual([
+      'https://ai.tuturuuu.localhost',
       'https://apps.tuturuuu.localhost',
       'https://calendar.tuturuuu.localhost',
       'https://chat.tuturuuu.localhost',

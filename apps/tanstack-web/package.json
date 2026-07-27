@@ -36,6 +36,7 @@
     "@tiptap/react": "3.28.0",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/legal": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/tasks-ui": "workspace:*",

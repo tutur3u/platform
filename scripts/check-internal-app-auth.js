@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const ROOT = path.resolve(__dirname, '..');
 const REGISTERED_APPS = [
+  'ai',
   'calendar',
   'cms',
   'contacts',
@@ -24,6 +25,7 @@ const REGISTERED_APPS = [
   'track',
 ];
 const REGISTERED_APP_TARGETS = {
+  ai: 'ai',
   calendar: 'calendar',
   cms: 'cms',
   contacts: 'contacts',
@@ -358,6 +360,7 @@ if (/\bsupabase-session-user\b/u.test(authIndexSource)) {
 }
 
 const registeredProxyPaths = [
+  'apps/ai/src/proxy.ts',
   'apps/calendar/src/proxy.ts',
   'apps/cms/src/proxy.ts',
   'apps/contacts/src/proxy.ts',
@@ -387,6 +390,7 @@ for (const proxyPath of registeredProxyPaths) {
 }
 
 const registeredAppConstantPaths = [
+  ['apps/ai/src/constants/common.ts', REGISTERED_APP_TARGETS.ai],
   ['apps/calendar/src/constants/common.ts', REGISTERED_APP_TARGETS.calendar],
   ['apps/cms/src/constants/common.ts', REGISTERED_APP_TARGETS.cms],
   ['apps/contacts/src/constants/common.ts', REGISTERED_APP_TARGETS.contacts],

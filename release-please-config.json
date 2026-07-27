@@ -26,6 +26,10 @@
         }
       ]
     },
+    "apps/ai": {
+      "component": "ai-studio",
+      "package-name": "@tuturuuu/ai-studio"
+    },
     "apps/apps": {
       "component": "apps",
       "package-name": "@tuturuuu/apps"
@@ -214,6 +218,10 @@
     "packages/inventory-core": {
       "component": "inventory-core",
       "package-name": "@tuturuuu/inventory-core"
+    },
+    "packages/legal": {
+      "component": "legal",
+      "package-name": "@tuturuuu/legal"
     },
     "packages/masonry": {
       "component": "masonry",

@@ -1,0 +1,90 @@
+---
+title: AI Studio
+description: Operate Tuturuuu AI Studio policies, credentials, traces, evaluations, and workspace credit metering.
+---
+
+AI Studio is the workspace-scoped development surface at
+`https://ai.tuturuuu.com`. It is a registered satellite app and uses the same
+workspace session, permissions, settings, and billing context as other Tuturuuu
+apps.
+
+## Rollout controls
+
+AI Studio is disabled by default. Access requires all of the following:
+
+1. the root global Studio policy is enabled;
+2. the workspace policy resolves to enabled;
+3. the requested model is enabled globally and granted to the workspace;
+4. the caller or AI-only key has the required Studio permission and model
+   scope; and
+5. the workspace has enough AI credits and is within its request and budget
+   limits.
+
+Root administrators configure global defaults and workspace overrides in
+Infrastructure → AI Studio. Workspace administrators manage prompts, agents,
+evaluations, keys, retention, and model restrictions from AI Studio.
+
+## AI-only keys
+
+Studio keys use the `ttr_ai_` prefix. The plaintext key is revealed once; only
+its SHA-256 digest is stored. A key is a workspace service credential, not a
+human session, and it cannot authorize non-AI Tuturuuu APIs.
+
+Keys can be limited by environment, model, expiry, request rate, and credit
+budget. Rotate or revoke a key immediately when its value may have been
+exposed. Never write plaintext keys to logs, database columns, issue trackers,
+or committed configuration.
+
+## Metering lifecycle
+
+Every model call follows one transactionally guarded lifecycle:
+
+1. authenticate the session or AI-only key;
+2. resolve the global, workspace, plan, and key policy intersection;
+3. reserve the maximum permitted credits;
+4. execute the provider call;
+5. persist the run and trace metadata; and
+6. settle exact provider usage and release unused credits.
+
+Provider failures and aborted streams still settle billable usage. Runs record
+model, key, prompt or agent version, latency, first-token latency, token or
+media units, provider cost, billed credits, status, and a stable request ID.
+
+## Trace retention
+
+Run metadata is retained for 365 days by default. Prompt content, model output,
+tool arguments, and tool results are not captured unless the workspace
+explicitly enables content capture. Captured content defaults to 30 days and
+must be redacted before persistence.
+
+Customer AI content is not used for general-purpose model training by default.
+Provider-specific no-training and data-control options should be enabled when
+the provider supports them.
+
+## Curated tools
+
+Agents can use only tools declared in the root tool catalog and explicitly
+enabled for the workspace. Tools must enforce workspace scope and normal
+Tuturuuu permissions. Arbitrary HTTP requests, undeclared data access, and code
+execution are not supported.
+
+## Local verification
+
+Apply and test the private-schema migrations before running the app:
+
+```bash
+bun sb:up
+cd apps/database
+node scripts/run-supabase.js test db supabase/tests/ai-studio-foundations.sql
+```
+
+Then run the focused checks:
+
+```bash
+bun --filter @tuturuuu/ai-studio test
+bun --filter @tuturuuu/ai-studio type-check
+bun --filter @tuturuuu/ai-studio build
+```
+
+Keep the global kill switch disabled outside dedicated test workspaces until
+security, billing, privacy, and legal publication reviews are complete.

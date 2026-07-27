@@ -8,6 +8,7 @@ ENV NODE_ENV=production
 
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
+COPY apps/ai/package.json ./apps/ai/package.json
 COPY apps/apps/package.json ./apps/apps/package.json
 COPY apps/calendar/package.json ./apps/calendar/package.json
 COPY apps/chat/package.json ./apps/chat/package.json
@@ -48,6 +49,7 @@ COPY packages/auth/package.json ./packages/auth/package.json
 COPY packages/devbox/package.json ./packages/devbox/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/education-core/package.json ./packages/education-core/package.json
+COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/finance-core/package.json ./packages/finance-core/package.json
 COPY packages/payment-core/package.json ./packages/payment-core/package.json
 COPY packages/email-service/package.json ./packages/email-service/package.json
@@ -58,6 +60,7 @@ COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
 COPY packages/inventory-core/package.json ./packages/inventory-core/package.json
+COPY packages/legal/package.json ./packages/legal/package.json
 COPY packages/storage-core/package.json ./packages/storage-core/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json

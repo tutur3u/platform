@@ -1,5 +1,6 @@
 {
   ".": "0.27.0",
+  "apps/ai": "0.1.0",
   "apps/apps": "0.11.0",
   "apps/calendar": "0.16.1",
   "apps/chat": "0.12.0",
@@ -47,6 +48,7 @@
   "packages/icons": "0.1.0",
   "packages/internal-api": "0.22.0",
   "packages/inventory-core": "0.6.0",
+  "packages/legal": "0.1.0",
   "packages/masonry": "0.5.0",
   "packages/microsoft": "0.1.0",
   "packages/mind-core": "0.2.0",

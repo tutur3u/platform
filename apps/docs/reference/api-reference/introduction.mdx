@@ -20,10 +20,11 @@ integrators calling Tuturuuu endpoints from outside the platform.
 
 ## What this API covers
 
-Today this section documents the public **AI generate** endpoint, which lets you
-run text completions against supported models using a workspace API key. See
-[Generate AI Completion](/reference/api-reference/endpoint/generate). More public
-endpoints will be documented here over time.
+This section documents the OpenAI-compatible **AI Studio API**, including
+responses, chat completions, embeddings, images, and versioned agents. See
+[AI Studio API](/reference/api-reference/ai-studio). The older
+[Generate AI Completion](/reference/api-reference/endpoint/generate) endpoint
+remains available as a compatibility adapter.
 
 The full surface of internal and migrated platform routes is defined by the
 backend OpenAPI contract rather than enumerated here.
@@ -32,10 +33,13 @@ backend OpenAPI contract rather than enumerated here.
 
 Authentication depends on the endpoint:
 
-- **Workspace API keys.** The public AI generate endpoint authenticates with a
-  workspace-scoped API key, supplied in the request body as an `accessKey`
-  object containing an `id` and a `value`. Keys are validated against the
-  `workspace_api_keys` table and must carry the scope for the model you request.
+- **AI-only bearer keys.** AI Studio endpoints authenticate with a hash-only
+  `ttr_ai_` workspace credential in the `Authorization: Bearer` header. These
+  keys can call only AI Studio endpoints and are restricted by workspace,
+  model, expiry, rate, and optional credit-budget policy.
+- **Legacy workspace API keys.** The compatibility AI generate endpoint still
+  accepts its existing request-body `accessKey` contract while integrations
+  migrate to AI Studio.
 - **Bearer tokens / session cookies.** Migrated platform routes behind the Rust
   backend authenticate the caller's Supabase session — either a browser session
   cookie or a `Bearer` token — and some accept app-session tokens. These routes

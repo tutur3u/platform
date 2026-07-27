@@ -1365,6 +1365,7 @@ test('Supabase production credentials are isolated from pre-gate repository code
 
 test('environment-scoped Vercel workflows scope project secrets to protected jobs', () => {
   const projectSecretsByApp = {
+    ai: 'VERCEL_AI_PROJECT_ID',
     apps: 'VERCEL_APPS_PROJECT_ID',
     calendar: 'VERCEL_CALENDAR_PROJECT_ID',
     chat: 'VERCEL_CHAT_PROJECT_ID',

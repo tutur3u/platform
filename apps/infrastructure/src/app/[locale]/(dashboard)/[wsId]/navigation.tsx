@@ -157,6 +157,11 @@ function getTopLevelNavigation({
           title: t('infrastructure-tabs.ai_credits'),
         },
         {
+          href: href(wsId, '/ai/studio'),
+          icon: icon(Settings),
+          title: t('infrastructure-tabs.ai_studio'),
+        },
+        {
           href: href(wsId, '/ai/whitelist/emails'),
           icon: icon(Mail),
           title: t('infrastructure-tabs.ai_whitelisted_emails'),

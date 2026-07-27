@@ -7,6 +7,7 @@ const path = require('node:path');
 const repoRoot = path.resolve(__dirname, '..', '..');
 
 const targetApps = [
+  ['ai', '@tuturuuu/ai-studio'],
   ['apps', '@tuturuuu/apps'],
   ['calendar', '@tuturuuu/calendar'],
   ['chat', '@tuturuuu/chat'],
@@ -34,6 +35,7 @@ const targetApps = [
 ];
 
 const vercelWorkflows = [
+  'ai',
   'apps',
   'calendar',
   'chat',
@@ -96,6 +98,18 @@ function createFixtureRoot() {
 
   for (const [app, packageName] of targetApps) {
     const dependenciesByApp = {
+      ai: [
+        '@tuturuuu/ai',
+        '@tuturuuu/auth',
+        '@tuturuuu/icons',
+        '@tuturuuu/internal-api',
+        '@tuturuuu/satellite',
+        '@tuturuuu/supabase',
+        '@tuturuuu/types',
+        '@tuturuuu/ui',
+        '@tuturuuu/utils',
+        '@tuturuuu/vercel',
+      ],
       apps: [
         '@tuturuuu/icons',
         '@tuturuuu/ui',

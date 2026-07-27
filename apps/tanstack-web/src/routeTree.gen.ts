@@ -78,6 +78,9 @@ import { Route as LocaleCalendarMeetTogetherRouteImport } from './routes/$locale
 import { Route as LocaleChangelogSlugRouteImport } from './routes/$locale/changelog.$slug';
 import { Route as LocaleDocumentsDocumentIdRouteImport } from './routes/$locale/documents/$documentId';
 import { Route as LocaleGamesFarmRouteImport } from './routes/$locale/games/farm';
+import { Route as LocaleLegalDpaRouteImport } from './routes/$locale/legal/dpa';
+import { Route as LocaleLegalSlaRouteImport } from './routes/$locale/legal/sla';
+import { Route as LocaleLegalSubprocessorsRouteImport } from './routes/$locale/legal/subprocessors';
 import { Route as LocaleProductsAiRouteImport } from './routes/$locale/products/ai';
 import { Route as LocaleProductsCalendarRouteImport } from './routes/$locale/products/calendar';
 import { Route as LocaleProductsCrmRouteImport } from './routes/$locale/products/crm';
@@ -520,6 +523,22 @@ const LocaleGamesFarmRoute = LocaleGamesFarmRouteImport.update({
   path: '/games/farm',
   getParentRoute: () => LocaleRouteRoute,
 } as any);
+const LocaleLegalDpaRoute = LocaleLegalDpaRouteImport.update({
+  id: '/legal/dpa',
+  path: '/legal/dpa',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleLegalSlaRoute = LocaleLegalSlaRouteImport.update({
+  id: '/legal/sla',
+  path: '/legal/sla',
+  getParentRoute: () => LocaleRouteRoute,
+} as any);
+const LocaleLegalSubprocessorsRoute =
+  LocaleLegalSubprocessorsRouteImport.update({
+    id: '/legal/subprocessors',
+    path: '/legal/subprocessors',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any);
 const LocaleProductsAiRoute = LocaleProductsAiRouteImport.update({
   id: '/products/ai',
   path: '/products/ai',
@@ -1107,6 +1126,9 @@ export interface FileRoutesByFullPath {
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
   '/$locale/games/farm': typeof LocaleGamesFarmRoute;
+  '/$locale/legal/dpa': typeof LocaleLegalDpaRoute;
+  '/$locale/legal/sla': typeof LocaleLegalSlaRoute;
+  '/$locale/legal/subprocessors': typeof LocaleLegalSubprocessorsRoute;
   '/$locale/products/ai': typeof LocaleProductsAiRoute;
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute;
   '/$locale/products/crm': typeof LocaleProductsCrmRoute;
@@ -1269,6 +1291,9 @@ export interface FileRoutesByTo {
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
   '/$locale/games/farm': typeof LocaleGamesFarmRoute;
+  '/$locale/legal/dpa': typeof LocaleLegalDpaRoute;
+  '/$locale/legal/sla': typeof LocaleLegalSlaRoute;
+  '/$locale/legal/subprocessors': typeof LocaleLegalSubprocessorsRoute;
   '/$locale/products/ai': typeof LocaleProductsAiRoute;
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute;
   '/$locale/products/crm': typeof LocaleProductsCrmRoute;
@@ -1433,6 +1458,9 @@ export interface FileRoutesById {
   '/$locale/changelog/$slug': typeof LocaleChangelogSlugRoute;
   '/$locale/documents/$documentId': typeof LocaleDocumentsDocumentIdRoute;
   '/$locale/games/farm': typeof LocaleGamesFarmRoute;
+  '/$locale/legal/dpa': typeof LocaleLegalDpaRoute;
+  '/$locale/legal/sla': typeof LocaleLegalSlaRoute;
+  '/$locale/legal/subprocessors': typeof LocaleLegalSubprocessorsRoute;
   '/$locale/products/ai': typeof LocaleProductsAiRoute;
   '/$locale/products/calendar': typeof LocaleProductsCalendarRoute;
   '/$locale/products/crm': typeof LocaleProductsCrmRoute;
@@ -1598,6 +1626,9 @@ export interface FileRouteTypes {
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
+    | '/$locale/legal/dpa'
+    | '/$locale/legal/sla'
+    | '/$locale/legal/subprocessors'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -1760,6 +1791,9 @@ export interface FileRouteTypes {
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
+    | '/$locale/legal/dpa'
+    | '/$locale/legal/sla'
+    | '/$locale/legal/subprocessors'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -1923,6 +1957,9 @@ export interface FileRouteTypes {
     | '/$locale/changelog/$slug'
     | '/$locale/documents/$documentId'
     | '/$locale/games/farm'
+    | '/$locale/legal/dpa'
+    | '/$locale/legal/sla'
+    | '/$locale/legal/subprocessors'
     | '/$locale/products/ai'
     | '/$locale/products/calendar'
     | '/$locale/products/crm'
@@ -2510,6 +2547,27 @@ declare module '@tanstack/react-router' {
       path: '/games/farm';
       fullPath: '/$locale/games/farm';
       preLoaderRoute: typeof LocaleGamesFarmRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/legal/dpa': {
+      id: '/$locale/legal/dpa';
+      path: '/legal/dpa';
+      fullPath: '/$locale/legal/dpa';
+      preLoaderRoute: typeof LocaleLegalDpaRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/legal/sla': {
+      id: '/$locale/legal/sla';
+      path: '/legal/sla';
+      fullPath: '/$locale/legal/sla';
+      preLoaderRoute: typeof LocaleLegalSlaRouteImport;
+      parentRoute: typeof LocaleRouteRoute;
+    };
+    '/$locale/legal/subprocessors': {
+      id: '/$locale/legal/subprocessors';
+      path: '/legal/subprocessors';
+      fullPath: '/$locale/legal/subprocessors';
+      preLoaderRoute: typeof LocaleLegalSubprocessorsRouteImport;
       parentRoute: typeof LocaleRouteRoute;
     };
     '/$locale/products/ai': {
@@ -3487,6 +3545,9 @@ interface LocaleRouteRouteChildren {
   LocaleCalendarMeetTogetherRoute: typeof LocaleCalendarMeetTogetherRouteWithChildren;
   LocaleDocumentsDocumentIdRoute: typeof LocaleDocumentsDocumentIdRoute;
   LocaleGamesFarmRoute: typeof LocaleGamesFarmRoute;
+  LocaleLegalDpaRoute: typeof LocaleLegalDpaRoute;
+  LocaleLegalSlaRoute: typeof LocaleLegalSlaRoute;
+  LocaleLegalSubprocessorsRoute: typeof LocaleLegalSubprocessorsRoute;
   LocaleProductsAiRoute: typeof LocaleProductsAiRoute;
   LocaleProductsCalendarRoute: typeof LocaleProductsCalendarRoute;
   LocaleProductsCrmRoute: typeof LocaleProductsCrmRoute;
@@ -3613,6 +3674,9 @@ const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
   LocaleCalendarMeetTogetherRoute: LocaleCalendarMeetTogetherRouteWithChildren,
   LocaleDocumentsDocumentIdRoute: LocaleDocumentsDocumentIdRoute,
   LocaleGamesFarmRoute: LocaleGamesFarmRoute,
+  LocaleLegalDpaRoute: LocaleLegalDpaRoute,
+  LocaleLegalSlaRoute: LocaleLegalSlaRoute,
+  LocaleLegalSubprocessorsRoute: LocaleLegalSubprocessorsRoute,
   LocaleProductsAiRoute: LocaleProductsAiRoute,
   LocaleProductsCalendarRoute: LocaleProductsCalendarRoute,
   LocaleProductsCrmRoute: LocaleProductsCrmRoute,

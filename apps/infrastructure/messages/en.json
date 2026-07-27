@@ -794,6 +794,50 @@
     "title": "AI Credits",
     "usage_tooltip": "{used} / {total} credits used this month"
   },
+  "ai-studio-admin": {
+    "description": "Control the global AI Studio kill switch, inherited defaults, model access, retention, and workspace exceptions.",
+    "global": {
+      "capture_default": "Capture AI content by default",
+      "capture_default_description": "Keep prompts, outputs, and tool payloads only when a workspace inherits this enabled setting.",
+      "content_retention": "Content retention (days)",
+      "default_models": "Default enabled models",
+      "description": "These controls apply before workspace, plan, and API key restrictions.",
+      "kill_switch": "Enable AI Studio globally",
+      "kill_switch_description": "The global kill switch must be on before any workspace can access Studio.",
+      "metadata_retention": "Metadata retention (days)",
+      "models_hint": "Comma-separated gateway model IDs. Workspace and key policies can only narrow this catalog.",
+      "title": "Global access policy",
+      "workspace_default": "Enable for inheriting workspaces",
+      "workspace_default_description": "New and inheriting workspaces remain disabled unless this default is enabled."
+    },
+    "save": "Save policy",
+    "save_error": "Could not save the AI Studio policy",
+    "saved": "AI Studio policy saved",
+    "status": {
+      "disabled": "Disabled",
+      "enabled": "Enabled",
+      "inherit": "Inherit"
+    },
+    "title": "AI Studio Policy",
+    "workspaces": {
+      "allowed_models": "Allowed models",
+      "capture": "Content capture",
+      "content_retention": "Content retention (days)",
+      "credit_budget": "Monthly credit budget",
+      "denied_models": "Denied models",
+      "description": "Apply explicit workspace exceptions without widening global or plan entitlements.",
+      "empty": "No matching workspaces",
+      "inherit": "Inherit",
+      "inherit_models": "Inherit global models",
+      "metadata_retention": "Metadata retention (days)",
+      "no_training": "Enforce no-training controls",
+      "none": "No models denied",
+      "rate_limit": "Requests per minute",
+      "search": "Search workspaces",
+      "title": "Workspace policies",
+      "unnamed": "Unnamed workspace"
+    }
+  },
   "ai-credits-admin": {
     "active": "Active",
     "add": "Add",
@@ -4023,6 +4067,7 @@
       "track": "Record time and understand where work goes."
     },
     "app_names": {
+      "ai": "AI Studio",
       "apps": "Apps",
       "calendar": "Calendar",
       "chat": "Chat",
@@ -8238,6 +8283,7 @@
     "ai_credits_allocations": "Credit Allocations",
     "ai_credits_balances": "Credit Balances",
     "ai_credits_models": "Gateway Models",
+    "ai_studio": "AI Studio Policy",
     "ai_whitelisted_emails": "AI Whitelisted Emails",
     "app_coordination": "App Coordination",
     "auth_recovery": "Auth Recovery",

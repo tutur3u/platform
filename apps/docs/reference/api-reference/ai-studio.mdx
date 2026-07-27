@@ -1,0 +1,51 @@
+---
+title: AI Studio API
+description: OpenAI-compatible Tuturuuu AI endpoints, bearer authentication, streaming, and native extensions.
+---
+
+The AI Studio API is served from `https://ai.tuturuuu.com` and accepts
+workspace-scoped `ttr_ai_` credentials through the standard bearer header:
+
+```http
+Authorization: Bearer ttr_ai_...
+```
+
+The plaintext credential is shown once. Store it in a secret manager and never
+place it in browser bundles, URLs, logs, or source control.
+
+## OpenAI-compatible endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/v1/models` | List models visible to the key |
+| `POST` | `/v1/responses` | Generate text or structured output |
+| `POST` | `/v1/chat/completions` | OpenAI chat-completions compatibility |
+| `POST` | `/v1/embeddings` | Generate embeddings |
+| `POST` | `/v1/images/generations` | Generate images |
+| `POST` | `/v1/agents/{agentId}/responses` | Run a versioned workspace agent |
+
+Requests support stable `x-request-id` values and the `idempotency-key` header.
+Streaming responses use server-sent events. Errors use an OpenAI-compatible
+`error` object and include the stable request ID for support correlation.
+
+Model access is the intersection of the globally enabled catalog, global Studio
+defaults, workspace policy, plan or root grants, and the key's own model
+restrictions. A model visible elsewhere in Tuturuuu is not necessarily
+available to a Studio key.
+
+## Native extensions
+
+Tuturuuu-native response metadata reports billed workspace credits, provider
+cost when permitted, run and trace IDs, token or media units, and timing
+information. These fields extend the compatible response without changing the
+standard OpenAI fields.
+
+The legacy `/api/ai/generate` endpoint remains available as a compatibility
+adapter. New integrations should use the `/v1` Studio endpoints.
+
+## Retention and content capture
+
+Metadata logging is enabled by default. Prompt, output, and tool content is
+captured only when the workspace enables content capture. Use the Studio
+retention controls to review the active policy before submitting sensitive
+data.

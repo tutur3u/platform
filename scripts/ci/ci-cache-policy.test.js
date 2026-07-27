@@ -17,6 +17,7 @@ const remoteCredentialNames = new Set([
   'TURBO_TOKEN',
 ]);
 const activeVercelProjects = {
+  ai: '@tuturuuu/ai-studio',
   apps: '@tuturuuu/apps',
   calendar: '@tuturuuu/calendar',
   chat: '@tuturuuu/chat',
@@ -97,9 +98,9 @@ function findBroadEnvCredentials(source) {
   return violations;
 }
 
-test('all 25 active Vercel projects cache their full Turbo build', () => {
-  assert.equal(Object.keys(activeVercelProjects).length, 25);
-  assert.equal(vercelWorkflows.length, 50);
+test('all 26 active Vercel projects cache their full Turbo build', () => {
+  assert.equal(Object.keys(activeVercelProjects).length, 26);
+  assert.equal(vercelWorkflows.length, 52);
 
   for (const [project, workspace] of Object.entries(activeVercelProjects)) {
     const appDirectory = project === 'platform' ? 'web' : project;

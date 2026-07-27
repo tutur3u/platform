@@ -94,6 +94,7 @@
     "dev:web": "node scripts/dev-workspaces.js web",
     "dev:tanstack-web": "node scripts/dev-workspaces.js tanstack-web",
     "diagnose:dev:web": "node scripts/diagnose-web-dev-speed.js",
+    "dev:ai": "node scripts/dev-workspaces.js ai",
     "dev:apps": "node scripts/dev-workspaces.js apps",
     "dev:web:docker": "node scripts/docker-web.js up",
     "dev:web:docker:down": "node scripts/docker-web.js down",

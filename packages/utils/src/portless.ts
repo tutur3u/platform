@@ -6,6 +6,7 @@ export const TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS = [
 ] as const;
 
 export const TUTURUUU_PORTLESS_APP_ORIGINS = {
+  ai: `https://ai.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   apps: `https://apps.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   calendar: `https://calendar.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   chat: `https://chat.${TUTURUUU_PORTLESS_ROOT_HOST}`,

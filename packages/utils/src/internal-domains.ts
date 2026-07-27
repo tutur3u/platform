@@ -5,6 +5,10 @@ import {
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   {
+    name: 'ai',
+    url: 'https://ai.tuturuuu.com',
+  },
+  {
     name: 'apps',
     url: 'https://apps.tuturuuu.com',
   },
@@ -124,6 +128,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
   {
+    name: 'ai',
+    url: getTuturuuuPortlessAppOrigin('ai'),
+  },
+  {
     name: 'apps',
     url: getTuturuuuPortlessAppOrigin('apps'),
   },
@@ -234,6 +242,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const LOCALHOST_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'ai',
+    url: 'http://localhost:7829',
+  },
   {
     name: 'apps',
     url: 'http://localhost:7818',

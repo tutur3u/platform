@@ -1,0 +1,45 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getTranslations } from 'next-intl/server';
+import { StudioPage } from '@/components/studio-page';
+import { getAiStudioWorkspaceContext } from '@/lib/access';
+import { getAiStudioOverview } from '@/lib/studio-data';
+
+export default async function OverviewPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId } = await params;
+  const t = await getTranslations('ai-studio');
+  const context = await getAiStudioWorkspaceContext(wsId);
+  const data =
+    context?.enabled && context.permissions.containsPermission('use_ai_studio')
+      ? await getAiStudioOverview({
+          sbAdmin: await createAdminClient({ noCookie: true }),
+          workspaceId: context.workspace.id,
+          workspaceName: context.workspace.name ?? t('studio'),
+        })
+      : null;
+
+  return (
+    <StudioPage
+      data={data}
+      labels={{
+        activeKeys: t('active-keys'),
+        activeModels: t('active-models'),
+        costThisMonth: t('cost-this-month'),
+        creditsUsed: t('credits-used'),
+        empty: t('empty'),
+        feature: t('feature'),
+        model: t('model'),
+        recentRuns: t('recent-runs'),
+        request: t('request'),
+        status: t('status'),
+        tokens: t('tokens'),
+      }}
+      section="overview"
+      title={t('overview')}
+      description={t('studio-description')}
+    />
+  );
+}

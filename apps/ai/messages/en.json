@@ -1,0 +1,33 @@
+{
+  "ai-studio": {
+    "access-disabled": "AI Studio is not enabled for this workspace.",
+    "access-disabled-description": "Ask a root administrator to enable AI Studio globally and for this workspace.",
+    "active-keys": "Active API keys",
+    "active-models": "Active models",
+    "agents": "Agents",
+    "api-keys": "API keys",
+    "cost": "Cost",
+    "cost-this-month": "Provider cost this month",
+    "credits-used": "Credits used",
+    "credits": "Credits",
+    "datasets": "Datasets",
+    "evaluations": "Evaluations",
+    "empty": "No workspace data yet",
+    "experiments": "Experiments",
+    "feature": "Feature",
+    "logs": "Logs",
+    "model": "Model",
+    "model-policy": "Model policy",
+    "overview": "Overview",
+    "playground": "Playground",
+    "prompts": "Prompts",
+    "recent-runs": "Recent runs",
+    "request": "Request",
+    "runs": "Runs",
+    "studio": "AI Studio",
+    "studio-description": "Build, evaluate, and observe reliable AI systems using workspace credits.",
+    "status": "Status",
+    "tokens": "tokens",
+    "usage": "Usage"
+  }
+}

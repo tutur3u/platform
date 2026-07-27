@@ -207,6 +207,7 @@
                 "group": "AI",
                 "pages": [
                   "platform/ai/ai-agent-deployment",
+                  "platform/ai/ai-studio",
                   "platform/ai/memory-service",
                   "platform/ai/model-catalog",
                   "platform/ai/omni-channel-chat-sdk",
@@ -383,6 +384,7 @@
                 "group": "API Reference",
                 "pages": [
                   "reference/api-reference/introduction",
+                  "reference/api-reference/ai-studio",
                   "reference/api-reference/endpoint/generate"
                 ]
               }

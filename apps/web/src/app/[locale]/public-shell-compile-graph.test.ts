@@ -281,6 +281,9 @@ const legalIconBoundarySources = [
   source('src/data/legal/privacy-sections.tsx'),
   source('src/data/legal/terms-sections.tsx'),
 ] as const;
+const canonicalLegalConfigSource = source(
+  'src/components/legal/canonical-legal-config.ts'
+);
 const thirdPartyProvidersSource = source(
   'src/data/legal/third-party-providers.ts'
 );
@@ -840,8 +843,9 @@ describe('public shell compile graph', () => {
     for (const sourceText of legalIconBoundarySources) {
       expect(sourceText).not.toContain("from '@tuturuuu/icons'");
       expect(sourceText).not.toContain('from "@tuturuuu/icons"');
-      expect(sourceText).toContain('@tuturuuu/icons/lucide');
     }
+
+    expect(canonicalLegalConfigSource).toContain('@tuturuuu/icons/lucide');
   });
 
   it('keeps third-party legal provider data icon-free', () => {
