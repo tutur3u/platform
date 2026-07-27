@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { getWorkspacePermissionsSummary } from '@tuturuuu/internal-api/settings';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
@@ -11,10 +12,7 @@ import { useUserBooleanConfig } from '@/hooks/use-user-config';
 import { apiFetch } from '@/lib/api-fetch';
 import { SettingsDialogContent } from './settings-dialog-content';
 import { buildSettingsNavItems } from './settings-dialog-nav-items';
-import {
-  getSettingsDialogAvailability,
-  type WorkspaceSettingsPermissions,
-} from './settings-dialog-permissions';
+import { getSettingsDialogAvailability } from './settings-dialog-permissions';
 import { SettingsWorkspaceBreadcrumb } from './settings-workspace-breadcrumb';
 
 interface SettingsDialogProps {
@@ -68,14 +66,10 @@ export function SettingsDialog({
 
   const { data: workspacePermissions, isLoading: isBillingPermissionLoading } =
     useQuery({
+      // Same cache entry and same fetcher the satellites use, so every surface
+      // reading this key sees one complete summary.
       queryKey: ['workspace-settings-permissions', wsId],
-      queryFn: () =>
-        apiFetch<WorkspaceSettingsPermissions>(
-          `/api/v1/workspaces/${wsId}/settings/permissions`,
-          {
-            cache: 'no-store',
-          }
-        ),
+      queryFn: () => getWorkspacePermissionsSummary(wsId ?? ''),
       enabled: !!wsId,
       staleTime: 5 * 60 * 1000,
     });

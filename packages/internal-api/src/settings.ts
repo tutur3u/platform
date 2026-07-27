@@ -14,14 +14,88 @@ export interface WorkspacePermissionSetupStatus {
   hasConfiguredPermissions: boolean;
 }
 
+export type WorkspaceSettingsAvailabilityKey =
+  | 'api_keys'
+  | 'billing'
+  | 'inquiries'
+  | 'integrations'
+  | 'reports'
+  | 'secrets'
+  | 'usage'
+  | 'workspace_members'
+  | 'workspace_roles'
+  | 'workspace_settings';
+
+/**
+ * The complete `/settings/permissions` response.
+ *
+ * Every field is required on purpose. Consumers read these flags as
+ * `?? false`, so a payload that omits one is indistinguishable from a denial —
+ * apps/contacts once answered this endpoint with a single field and locked its
+ * whole settings dialog to read-only. Keeping the contract total means the
+ * producer fails to compile rather than the UI failing quietly.
+ */
 export interface WorkspacePermissionsSummary {
+  allow_discord_integrations: boolean;
+  available: Record<WorkspaceSettingsAvailabilityKey, boolean>;
+  can_access_api_keys: boolean;
   can_access_billing: boolean;
+  can_access_inquiries: boolean;
+  can_access_integrations: boolean;
+  can_access_secrets: boolean;
+  enable_api_keys: boolean;
+  is_root_workspace: boolean;
+  is_tuturuuu_member: boolean;
+  manage_api_keys: boolean;
   manage_subscription: boolean;
+  manage_user_report_templates: boolean;
   manage_workspace_billing: boolean;
-  manage_workspace_settings: boolean;
+  manage_workspace_integrations: boolean;
   manage_workspace_members: boolean;
   manage_workspace_roles: boolean;
+  manage_workspace_secrets: boolean;
+  manage_workspace_settings: boolean;
+  view_usage: boolean;
 }
+
+/**
+ * The summary for someone with no access at all, for callers that treat a 403
+ * as a denial rather than a failure. Lives beside the type so widening the
+ * contract updates every caller at once.
+ */
+export const DENIED_WORKSPACE_PERMISSIONS: WorkspacePermissionsSummary = {
+  allow_discord_integrations: false,
+  available: {
+    api_keys: false,
+    billing: false,
+    inquiries: false,
+    integrations: false,
+    reports: false,
+    secrets: false,
+    usage: false,
+    workspace_members: false,
+    workspace_roles: false,
+    workspace_settings: false,
+  },
+  can_access_api_keys: false,
+  can_access_billing: false,
+  can_access_inquiries: false,
+  can_access_integrations: false,
+  can_access_secrets: false,
+  enable_api_keys: false,
+  is_root_workspace: false,
+  is_tuturuuu_member: false,
+  manage_api_keys: false,
+  manage_subscription: false,
+  manage_user_report_templates: false,
+  manage_workspace_billing: false,
+  manage_workspace_integrations: false,
+  manage_workspace_members: false,
+  manage_workspace_roles: false,
+  manage_workspace_secrets: false,
+  manage_workspace_settings: false,
+  view_usage: false,
+};
 
 export interface WorkspaceSettingsAiCreditStatus {
   included: {

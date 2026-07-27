@@ -898,10 +898,10 @@
         }
       }
     },
-    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route.ts": {
-      "status": "migrated",
+    "api:/api/v1/workspaces/:wsId/settings/permissions:apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts": {
+      "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/v1/workspaces/:wsId/settings/permissions by accepting current-user satellite app sessions or revalidating a normal Supabase browser session, resolving personal/workspace identifiers, requiring workspace access, mirroring getPermissions role/default/creator/admin behavior, and returning the legacy manage_subscription, manage_workspace_settings, manage_workspace_members, and manage_workspace_roles flags with the private 30-second success cache directive."
+      "note": "Downgraded from migrated: the Rust handler is not at source parity. WorkspaceSettingsPermissionsResponse returns only manage_subscription, manage_workspace_settings, manage_workspace_members and manage_workspace_roles, while the contract (WorkspacePermissionsSummary in packages/internal-api) is total and also carries allow_discord_integrations, the can_access_* flags, enable_api_keys, is_root_workspace, is_tuturuuu_member, manage_api_keys, manage_user_report_templates, manage_workspace_billing, manage_workspace_integrations, manage_workspace_secrets, view_usage and the available.* map the settings dialog reads. Consumers treat missing flags as denials, so cutting over as-is would render workspace settings read-only for everyone, which is the contacts regression fixed in 1a8989280a. Next also serves HEAD for this GET, which the Rust port does not implement. Restore 'migrated' only once the handler returns the whole summary and HEAD is covered."
     },
     "api:/api/v1/workspaces/:wsId/settings/permissions/check:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/check/route.ts": {
       "status": "migrated",

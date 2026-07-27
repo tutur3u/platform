@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
+  DENIED_WORKSPACE_PERMISSIONS,
   getWorkspacePermissionsSummary,
   type WorkspacePermissionsSummary,
 } from '@tuturuuu/internal-api/settings';
@@ -29,15 +30,6 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
 }
-
-const NO_WORKSPACE_PERMISSIONS: WorkspacePermissionsSummary = {
-  can_access_billing: false,
-  manage_subscription: false,
-  manage_workspace_billing: false,
-  manage_workspace_members: false,
-  manage_workspace_roles: false,
-  manage_workspace_settings: false,
-};
 
 const formSchema = z.object({
   enable_post_approval: z.boolean(),
@@ -90,7 +82,7 @@ export function ApprovalsSettings({ wsId }: Props) {
       } catch (error) {
         // Not a member of this workspace: a denial, not a failure to load.
         if (error instanceof InternalApiError && error.status === 403) {
-          return NO_WORKSPACE_PERMISSIONS;
+          return DENIED_WORKSPACE_PERMISSIONS;
         }
 
         throw error;

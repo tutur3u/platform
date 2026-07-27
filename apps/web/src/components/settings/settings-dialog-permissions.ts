@@ -1,35 +1,18 @@
+import type {
+  WorkspacePermissionsSummary,
+  WorkspaceSettingsAvailabilityKey,
+} from '@tuturuuu/internal-api/settings';
 import type { Workspace } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
-export type SettingsAvailabilityKey =
-  | 'api_keys'
-  | 'billing'
-  | 'inquiries'
-  | 'integrations'
-  | 'reports'
-  | 'secrets'
-  | 'usage'
-  | 'workspace_members'
-  | 'workspace_roles'
-  | 'workspace_settings';
+export type SettingsAvailabilityKey = WorkspaceSettingsAvailabilityKey;
 
-export type WorkspaceSettingsPermissions = {
-  allow_discord_integrations?: boolean;
-  available?: Partial<Record<SettingsAvailabilityKey, boolean>>;
-  can_access_billing?: boolean;
-  enable_api_keys?: boolean;
-  is_root_workspace?: boolean;
-  manage_api_keys?: boolean;
-  manage_subscription: boolean;
-  manage_user_report_templates?: boolean;
-  manage_workspace_billing?: boolean;
-  manage_workspace_integrations?: boolean;
-  manage_workspace_members: boolean;
-  manage_workspace_roles?: boolean;
-  manage_workspace_secrets?: boolean;
-  manage_workspace_settings: boolean;
-  view_usage?: boolean;
-};
+/**
+ * One shared wire contract with the satellites, rather than a local copy whose
+ * optional fields let a truncated response read as a denial. The fields stay
+ * required; `undefined` is only ever the whole summary while it loads.
+ */
+export type WorkspaceSettingsPermissions = WorkspacePermissionsSummary;
 
 export type SettingsDialogAvailability = {
   allowWorkspaceBasicsEdit: boolean;

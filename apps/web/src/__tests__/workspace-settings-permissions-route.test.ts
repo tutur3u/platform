@@ -98,7 +98,7 @@ function permissionsResult(wsId: string, permissions: string[]) {
 
 async function callRoute(wsId = 'ws-1') {
   const { GET } = await import(
-    '@/legacy-api-routes/v1/workspaces/[wsId]/settings/permissions/route'
+    '@/app/api/v1/workspaces/[wsId]/settings/permissions/route'
   );
 
   return GET(
