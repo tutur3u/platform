@@ -20,7 +20,7 @@ import {
   Undo2,
   X,
 } from '@tuturuuu/icons';
-import type { ComponentType, SVGProps } from 'react';
+import type { ComponentType, Ref, SVGProps } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { extractPlainText } from './codec.js';
 import { editorMessages } from './messages.js';
@@ -32,12 +32,14 @@ function ToolbarAction({
   active,
   icon: Icon,
   label,
+  ref,
   run,
   type = 'button',
 }: {
   active?: boolean;
   icon: ToolbarIcon;
   label: string;
+  ref?: Ref<HTMLButtonElement>;
   run?: () => void;
   type?: 'button' | 'submit';
 }) {
@@ -47,6 +49,7 @@ function ToolbarAction({
         aria-label={label}
         aria-pressed={active}
         onClick={run}
+        ref={ref}
         type={type}
       >
         <Icon aria-hidden="true" />
@@ -64,6 +67,7 @@ export function RichTextEditor({
   messages: messageOverrides,
   onChange,
   onImageUpload,
+  onImageUploadError,
   placeholder,
   readOnly = false,
 }: {
@@ -72,10 +76,12 @@ export function RichTextEditor({
   messages?: Partial<Omit<EditorMessages, 'words'>>;
   onChange?: (content: JSONContent | null) => void;
   onImageUpload?: (file: File) => Promise<string>;
+  onImageUploadError?: (error: unknown) => void;
   placeholder?: string;
   readOnly?: boolean;
 }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const linkButtonRef = useRef<HTMLButtonElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const [linkEditorOpen, setLinkEditorOpen] = useState(false);
   const [linkHref, setLinkHref] = useState('');
@@ -169,16 +175,17 @@ export function RichTextEditor({
             editor.chain().focus().setHorizontalRule().run()
           )}
           <div className="tuturuuu-editor-link-control">
-            {action(
-              messages.link,
-              Link2,
-              () => {
+            <ToolbarAction
+              active={editor.isActive('link')}
+              icon={Link2}
+              label={messages.link}
+              ref={linkButtonRef}
+              run={() => {
                 const currentHref = editor.getAttributes('link').href;
                 setLinkHref(typeof currentHref === 'string' ? currentHref : '');
                 setLinkEditorOpen((open) => !open);
-              },
-              editor.isActive('link')
-            )}
+              }}
+            />
             {linkEditorOpen ? (
               <form
                 className="tuturuuu-editor-link-form"
@@ -196,7 +203,10 @@ export function RichTextEditor({
                   inputMode="url"
                   onChange={(event) => setLinkHref(event.currentTarget.value)}
                   onKeyDown={(event) => {
-                    if (event.key === 'Escape') setLinkEditorOpen(false);
+                    if (event.key === 'Escape') {
+                      setLinkEditorOpen(false);
+                      linkButtonRef.current?.focus();
+                    }
                   }}
                   placeholder={messages.linkPlaceholder}
                   ref={linkInputRef}
@@ -211,7 +221,10 @@ export function RichTextEditor({
                 <ToolbarAction
                   icon={X}
                   label={messages.cancel}
-                  run={() => setLinkEditorOpen(false)}
+                  run={() => {
+                    setLinkEditorOpen(false);
+                    linkButtonRef.current?.focus();
+                  }}
                 />
               </form>
             ) : null}
@@ -229,14 +242,20 @@ export function RichTextEditor({
                 accept="image/*"
                 hidden
                 onChange={async (event) => {
-                  const file = event.currentTarget.files?.[0];
-                  if (file)
-                    editor
-                      .chain()
-                      .focus()
-                      .setImage({ src: await onImageUpload(file) })
-                      .run();
-                  event.currentTarget.value = '';
+                  const input = event.currentTarget;
+                  const file = input.files?.[0];
+                  try {
+                    if (file)
+                      editor
+                        .chain()
+                        .focus()
+                        .setImage({ src: await onImageUpload(file) })
+                        .run();
+                  } catch (error) {
+                    onImageUploadError?.(error);
+                  } finally {
+                    input.value = '';
+                  }
                 }}
                 ref={imageInputRef}
                 type="file"
