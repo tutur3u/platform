@@ -356,6 +356,10 @@
       "types": "./src/components/ui/custom/structure.tsx",
       "import": "./src/components/ui/custom/structure.tsx"
     },
+    "./custom/app-error-boundary": {
+      "types": "./src/components/ui/custom/app-error-boundary.tsx",
+      "import": "./src/components/ui/custom/app-error-boundary.tsx"
+    },
     "./custom/settings-dialog-shell": {
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"

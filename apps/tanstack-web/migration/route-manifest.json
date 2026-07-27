@@ -64,6 +64,18 @@
       },
       {
         "acceptedRemoval": 0,
+        "key": "error",
+        "label": "error",
+        "legacyNext": 1,
+        "migrated": 1,
+        "percentComplete": 50,
+        "remaining": 1,
+        "terminal": 1,
+        "total": 2,
+        "unknownStatus": 0
+      },
+      {
+        "acceptedRemoval": 0,
         "key": "loading",
         "label": "loading",
         "legacyNext": 1,
@@ -83,18 +95,6 @@
         "percentComplete": 0,
         "remaining": 1,
         "terminal": 0,
-        "total": 1,
-        "unknownStatus": 0
-      },
-      {
-        "acceptedRemoval": 0,
-        "key": "error",
-        "label": "error",
-        "legacyNext": 0,
-        "migrated": 1,
-        "percentComplete": 100,
-        "remaining": 0,
-        "terminal": 1,
         "total": 1,
         "unknownStatus": 0
       },
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 59,
+        "legacyNext": 60,
         "migrated": 148,
-        "percentComplete": 71.77,
-        "remaining": 59,
+        "percentComplete": 71.43,
+        "remaining": 60,
         "terminal": 150,
-        "total": 209,
+        "total": 210,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 553,
+      "legacyNext": 554,
       "migrated": 214,
-      "percentComplete": 29.1,
-      "remaining": 553,
+      "percentComplete": 29.07,
+      "remaining": 554,
       "terminal": 227,
-      "total": 780,
+      "total": 781,
       "unknownStatus": 0
     }
   },
@@ -5527,6 +5527,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "error:/:locale/:wsId:apps/web/src/app/[locale]/(dashboard)/[wsId]/error.tsx",
+      "kind": "error",
+      "methods": [],
+      "routePath": "/:locale/:wsId",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/error.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale:apps/web/src/app/[locale]/(auth)/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -7459,6 +7468,6 @@
       "DELETE": 97,
       "OPTIONS": 23
     },
-    "total": 780
+    "total": 781
   }
 }

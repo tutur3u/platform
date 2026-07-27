@@ -1,15 +1,17 @@
-import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
+import { Providers } from '@tuturuuu/satellite/providers';
+import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
-import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
@@ -61,16 +63,16 @@ export default async function LocaleLayout({
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Suspense>
-          <Providers>
-            <NextIntlClientProvider>
+        <NuqsAdapter>
+          <Suspense>
+            <Providers appName="AI Studio" currentApp="ai">
               {children}
-              <Suspense fallback={null}>
-                <SatelliteVersionBadge appName="AI Studio" />
-              </Suspense>
-            </NextIntlClientProvider>
-          </Providers>
-        </Suspense>
+              <ProductionIndicator />
+              <StaffToolbar />
+              <TailwindIndicator />
+            </Providers>
+          </Suspense>
+        </NuqsAdapter>
         <Toaster />
       </body>
     </html>

@@ -1,23 +1,13 @@
 'use client';
 
-// Error components must be Client Components
-import { Button } from '@tuturuuu/ui/button';
+import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 
-export default function ErrorPage({
+export default function ErrorBoundary({
   error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return (
-    <div className="absolute inset-0 mx-4 mt-24 mb-8 flex flex-col items-center justify-center text-center md:mx-32 lg:mx-64">
-      <h1 className="font-bold text-xl">Something went wrong.</h1>
-      <p className="mb-4 font-semibold opacity-75">
-        {error?.message || error?.digest || 'Unknown error'}
-      </p>
-
-      <Button onClick={() => reset()}>Try again</Button>
-    </div>
-  );
+  return <AppErrorBoundary appName="Tuturuuu" error={error} reset={reset} />;
 }
