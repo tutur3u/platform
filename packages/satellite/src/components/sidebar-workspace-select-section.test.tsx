@@ -1,12 +1,22 @@
 import { render } from '@testing-library/react';
+import { useOpenWorkspaceSelectWhenRevealed } from '@tuturuuu/ui/custom/workspace-select-reveal';
+import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 import { SidebarWorkspaceSelectSection } from './sidebar-workspace-select-section';
+
+function RevealProbe() {
+  const [open, setOpen] = useState(false);
+  useOpenWorkspaceSelectWhenRevealed(true, setOpen);
+
+  return <span data-reveal-state={open ? 'open' : 'closed'} />;
+}
 
 describe('SidebarWorkspaceSelectSection', () => {
   it('expands the selector without changing the navigation spacing contract', () => {
     const { container } = render(
       <SidebarWorkspaceSelectSection visible>
         <span>Workspace selector</span>
+        <RevealProbe />
       </SidebarWorkspaceSelectSection>
     );
 
@@ -22,6 +32,11 @@ describe('SidebarWorkspaceSelectSection', () => {
     expect((section as HTMLElement | null)?.style.transitionProperty).toBe(
       'grid-template-rows, opacity, border-color, padding'
     );
+    expect(
+      container
+        .querySelector('[data-reveal-state]')
+        ?.getAttribute('data-reveal-state')
+    ).toBe('open');
   });
 
   it('collapses to an invisible and inert zero-height row', () => {

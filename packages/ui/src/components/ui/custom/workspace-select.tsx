@@ -72,6 +72,7 @@ import {
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
 } from './workspace-select-helpers';
+import { useOpenWorkspaceSelectWhenRevealed } from './workspace-select-reveal';
 
 const FormSchema = z.object({
   name: z.string().min(1).max(100),
@@ -449,14 +450,15 @@ export function WorkspaceSelect({
     }
   };
 
+  const hasSelectableWorkspaces = workspaces.length > 0;
+  useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
+
   const workspace =
     wsId === PERSONAL_WORKSPACE_SLUG
       ? personalWorkspace
       : (workspaces.find((ws) => ws.id === resolvedWorkspaceId) ??
         guestWorkspaces.find((ws) => ws.id === resolvedWorkspaceId));
   if (!wsId) return <div />;
-
-  const hasSelectableWorkspaces = workspaces.length > 0;
 
   async function onJoinByHandleSubmit(
     formData: z.infer<typeof JoinWorkspaceByHandleFormSchema>
@@ -622,7 +624,7 @@ export function WorkspaceSelect({
           </PopoverTrigger>
           <PopoverContent className="w-full max-w-[16rem] p-0">
             <Command>
-              <CommandInput placeholder="Search workspace..." />
+              <CommandInput autoFocus placeholder="Search workspace..." />
               <CommandEmpty>No workspace found.</CommandEmpty>
               <CommandList className="max-h-64">
                 {groups.map((group) => (

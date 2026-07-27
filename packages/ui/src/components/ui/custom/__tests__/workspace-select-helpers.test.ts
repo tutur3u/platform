@@ -85,6 +85,17 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
     expect(workspaceSelectSource).toContain('popoverModal = false');
     expect(workspaceSelectSource).toContain('<Popover modal={popoverModal}');
   });
+
+  it('focuses workspace search as soon as the picker opens', () => {
+    const workspaceSelectSource = readFileSync(
+      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
+      'utf8'
+    );
+
+    expect(workspaceSelectSource).toContain(
+      '<CommandInput autoFocus placeholder="Search workspace..." />'
+    );
+  });
 });
 
 describe('normalizeWorkspaceSwitchPath', () => {

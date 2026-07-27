@@ -340,6 +340,10 @@
       "types": "./src/components/ui/custom/workspace-select.tsx",
       "import": "./src/components/ui/custom/workspace-select.tsx"
     },
+    "./custom/workspace-select-reveal": {
+      "types": "./src/components/ui/custom/workspace-select-reveal.tsx",
+      "import": "./src/components/ui/custom/workspace-select-reveal.tsx"
+    },
     "./custom/notification-popover-client": {
       "types": "./src/components/ui/custom/notification-popover-client.tsx",
       "import": "./src/components/ui/custom/notification-popover-client.tsx"

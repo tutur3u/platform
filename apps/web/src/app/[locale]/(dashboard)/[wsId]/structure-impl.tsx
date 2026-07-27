@@ -10,6 +10,7 @@ import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { WorkspaceSelectRevealProvider } from '@tuturuuu/ui/custom/workspace-select-reveal';
 import { cn } from '@tuturuuu/utils/format';
 import type { LaunchableWorkspace } from '@tuturuuu/utils/launchable-apps';
 import { setCookie } from 'cookies-next';
@@ -875,35 +876,37 @@ export function StructureImpl({
 
   const sidebarContent = (
     <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
-      <div
-        aria-hidden={!showWorkspaceSelect}
-        className={cn(
-          'grid shrink-0 overflow-hidden px-2 transition-[grid-template-rows,opacity,border-color,padding] duration-200 ease-out',
-          showWorkspaceSelect
-            ? 'grid-rows-[1fr] border-b pb-2 opacity-100'
-            : 'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'
-        )}
-        data-sidebar-workspace-select
-        data-state={showWorkspaceSelect ? 'open' : 'closed'}
-        id="sidebar-workspace-selector"
-        inert={showWorkspaceSelect ? undefined : true}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <Suspense
-            key={user?.id}
-            fallback={
-              <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
-            }
-          >
-            <WorkspaceSelect
-              disableCreateNewWorkspace={disableCreateNewWorkspace}
-              hideLeading={isCollapsed}
-              standalone
-              wsId={wsId}
-            />
-          </Suspense>
+      <WorkspaceSelectRevealProvider revealed={showWorkspaceSelect}>
+        <div
+          aria-hidden={!showWorkspaceSelect}
+          className={cn(
+            'grid shrink-0 overflow-hidden px-2 transition-[grid-template-rows,opacity,border-color,padding] duration-200 ease-out',
+            showWorkspaceSelect
+              ? 'grid-rows-[1fr] border-b pb-2 opacity-100'
+              : 'pointer-events-none grid-rows-[0fr] border-transparent pb-0 opacity-0'
+          )}
+          data-sidebar-workspace-select
+          data-state={showWorkspaceSelect ? 'open' : 'closed'}
+          id="sidebar-workspace-selector"
+          inert={showWorkspaceSelect ? undefined : true}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <Suspense
+              key={user?.id}
+              fallback={
+                <div className="h-8 w-full animate-pulse rounded-md bg-foreground/5" />
+              }
+            >
+              <WorkspaceSelect
+                disableCreateNewWorkspace={disableCreateNewWorkspace}
+                hideLeading={isCollapsed}
+                standalone
+                wsId={wsId}
+              />
+            </Suspense>
+          </div>
         </div>
-      </div>
+      </WorkspaceSelectRevealProvider>
       {SidebarActiveTimer && (
         <SidebarActiveTimer wsId={wsId} isCollapsed={isCollapsed} />
       )}
