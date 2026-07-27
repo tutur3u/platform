@@ -611,7 +611,7 @@ export class EpmClient {
           : ''
       }`,
       {
-      requiresAuth: true,
+        requiresAuth: true,
       }
     );
 

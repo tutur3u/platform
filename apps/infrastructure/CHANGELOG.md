@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/infra-v0.11.0...infra-v0.12.0) (2026-07-27)
+
+
+### Features
+
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/infra-v0.10.0...infra-v0.11.0) (2026-07-25)
 
 

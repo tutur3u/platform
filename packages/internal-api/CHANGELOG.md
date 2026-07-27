@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/internal-api-v0.21.0...internal-api-v0.22.0) (2026-07-27)
+
+
+### Features
+
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+
+
+### Bug Fixes
+
+* **auth:** keep a stored account session usable across switches ([fb882cd](https://github.com/tutur3u/platform/commit/fb882cd6f83b394a1bd36730ec2e8ecb16771e6f))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/internal-api-v0.20.0...internal-api-v0.21.0) (2026-07-25)
 
 

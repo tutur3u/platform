@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/tutur3u/platform/compare/users-ui-v0.5.0...users-ui-v0.5.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **contacts:** repair approval detail dialog ([a948ea2](https://github.com/tutur3u/platform/commit/a948ea2be85906cec81e9484acc041b7b637a351))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/users-ui-v0.4.1...users-ui-v0.5.0) (2026-07-25)
 
 

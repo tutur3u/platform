@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/platform-v0.26.0...platform-v0.27.0) (2026-07-27)
+
+
+### Features
+
+* **auth:** offer Microsoft sign-in again ([fe981ee](https://github.com/tutur3u/platform/commit/fe981ee7bb4f0be3fac2b1196b8469ce55a3370c))
+* **editor:** add localized external project editing ([38cae2c](https://github.com/tutur3u/platform/commit/38cae2c08d0586491c8695b671d46eaef509e693))
+* **external-projects:** let a linked app apply its own schema sync ([4bcb90a](https://github.com/tutur3u/platform/commit/4bcb90a0878ba475fd3c0ddf1d302dc4b0b1e200))
+* **external-projects:** let a linked app install its own content model ([cf0d668](https://github.com/tutur3u/platform/commit/cf0d66813892d3e23f71135b9983fcabedbde711))
+* **external-projects:** list form submissions for scheduled forwarding ([d0ca353](https://github.com/tutur3u/platform/commit/d0ca3530363d1fe36569b47b634ec0ad6e3cdc77))
+* **external-projects:** send mail via SES and gate forms with Turnstile ([0fe6851](https://github.com/tutur3u/platform/commit/0fe6851b98b8340d915b34fb8bec49b78c67d405))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+* **tasks:** keep realtime on deep-linked cross-workspace tasks ([5a29e78](https://github.com/tutur3u/platform/commit/5a29e78d9d1aec736bb77f9ee35f8dee73e62e7e))
+* **tooling:** guard satellites against cookie-client authorization ([5c8fbd3](https://github.com/tutur3u/platform/commit/5c8fbd34b3db6ceaeec908a8dea105eb985a3403))
+
+
+### Bug Fixes
+
+* **apps:** stop registering a service worker the apps do not serve ([16688e9](https://github.com/tutur3u/platform/commit/16688e9fadefd5a373a318480627126eb1748650))
+* **auth:** keep a stored account session usable across switches ([fb882cd](https://github.com/tutur3u/platform/commit/fb882cd6f83b394a1bd36730ec2e8ecb16771e6f))
+* **auth:** resume a pending sign-in after switching accounts ([5403718](https://github.com/tutur3u/platform/commit/54037189ee895863eac621239eb54b8ea94c6ed0))
+* **ci:** keep the release-notes branch until the release is tagged ([833ceeb](https://github.com/tutur3u/platform/commit/833ceebb02198ed26f84a0c5ca78cf33f0ed25ef))
+* **ci:** repair the two failing checks on main ([c6848fe](https://github.com/tutur3u/platform/commit/c6848fe2860f0bd5509056e267617d12c608c788))
+* **contacts:** repair approval detail dialog ([a948ea2](https://github.com/tutur3u/platform/commit/a948ea2be85906cec81e9484acc041b7b637a351))
+* **contacts:** stop shadowing the workspace permissions summary ([1a89892](https://github.com/tutur3u/platform/commit/1a8989280afa2897f8a92a972fd102c9aca8c17c))
+* **e2e:** align workspace fixtures with creator membership ([cfb13b6](https://github.com/tutur3u/platform/commit/cfb13b66c6b4d3c9a609c2118d51a314c015346b))
+* **external-projects:** pin the submissions POST return type ([0b0f900](https://github.com/tutur3u/platform/commit/0b0f900cfc53848e99124696ef0d75183a74c4dd))
+* **satellites:** stop authorizing app-session callers with the cookie client ([b0d0242](https://github.com/tutur3u/platform/commit/b0d0242c211959cb3c676695149bb3692e566e71))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+* **tasks:** open task links that point outside the current workspace ([8f46e08](https://github.com/tutur3u/platform/commit/8f46e08e362b6eaf70e4b49d1b588adeb4e03e74))
+* **tasks:** open the dialog on Properties and settle it in one step ([2780950](https://github.com/tutur3u/platform/commit/2780950d7aa3ca7f3f3d382bc3675a23201408f5))
+* **tasks:** quiet the description toolbar and name the compact action honestly ([51838a0](https://github.com/tutur3u/platform/commit/51838a08a1875a44cd4c7f539b35203f890e1a39))
+* **tasks:** restore scrolling in the focused task dialog ([ee2d312](https://github.com/tutur3u/platform/commit/ee2d31292ff44b7a725c2f7520b7f47cf3e467c8))
+* **tasks:** show one skeleton per task dialog open ([944288b](https://github.com/tutur3u/platform/commit/944288bdc869ee80b3cdf537ee10feb17fdada22))
+* **tasks:** stop the task dialog remounting after it opens ([9a423da](https://github.com/tutur3u/platform/commit/9a423daf7e7c1e901a63ddcc1a8a94ddff9192c9))
+* **workspaces:** keep the creator a member of the workspace they create ([8b33f42](https://github.com/tutur3u/platform/commit/8b33f42470149a51e864fc5bf22020f961121014))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/platform-v0.25.0...platform-v0.26.0) (2026-07-25)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/rewise-v0.28.0...rewise-v0.28.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **apps:** stop registering a service worker the apps do not serve ([16688e9](https://github.com/tutur3u/platform/commit/16688e9fadefd5a373a318480627126eb1748650))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/rewise-v0.27.0...rewise-v0.28.0) (2026-07-25)
 
 

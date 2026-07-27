@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/satellite-v0.10.0...satellite-v0.10.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **contacts:** stop shadowing the workspace permissions summary ([1a89892](https://github.com/tutur3u/platform/commit/1a8989280afa2897f8a92a972fd102c9aca8c17c))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/satellite-v0.9.0...satellite-v0.10.0) (2026-07-25)
 
 

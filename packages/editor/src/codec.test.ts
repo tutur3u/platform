@@ -11,6 +11,8 @@ describe('rich text codecs', () => {
   });
 
   it('escapes untrusted text in server rendering', () => {
-    expect(renderRichTextToHTML(markdownToJSON('<script>x</script>'))).not.toContain('<script>');
+    expect(
+      renderRichTextToHTML(markdownToJSON('<script>x</script>'))
+    ).not.toContain('<script>');
   });
 });
