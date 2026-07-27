@@ -82,7 +82,7 @@
       "name": "@tuturuuu/apps",
       "version": "0.11.0",
       "dependencies": {
-        "@tuturuuu/icons": "workspace:*",
+        "lucide-react": "^1.26.0",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
@@ -1832,6 +1832,7 @@
         "@tiptap/extension-placeholder": "3.28.0",
         "@tiptap/react": "3.28.0",
         "@tiptap/starter-kit": "3.28.0",
+        "@tuturuuu/icons": "workspace:*",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
