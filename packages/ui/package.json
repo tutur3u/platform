@@ -105,7 +105,7 @@
     "@tiptap/extension-text-align": "3.28.0",
     "@tiptap/extension-text-style": "3.28.0",
     "@tiptap/extension-youtube": "3.28.0",
-    "@tiptap/pm": "3.28.0",
+    "@tiptap/pm": "3.29.1",
     "@tiptap/react": "3.28.0",
     "@tiptap/starter-kit": "3.28.0",
     "@tuturuuu/ai": "workspace:*",
