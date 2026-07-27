@@ -15,6 +15,9 @@ export type EditorMessages = {
   bulletList: string;
   cancel: string;
   heading: string;
+  heading1?: string;
+  heading2?: string;
+  heading3?: string;
   horizontalRule: string;
   image: string;
   invalidLink: string;
