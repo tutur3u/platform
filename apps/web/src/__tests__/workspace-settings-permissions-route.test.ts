@@ -194,6 +194,34 @@ describe('workspace settings permissions route', () => {
     });
   });
 
+  it('returns full workspace flags for an effective creator member', async () => {
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve({
+        ...permissionsResult(wsId, []),
+        membershipType: 'MEMBER',
+        containsPermission: () => true,
+        withoutPermission: () => false,
+      })
+    );
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      manage_subscription: true,
+      manage_workspace_billing: true,
+      manage_workspace_members: true,
+      manage_workspace_roles: true,
+      manage_workspace_settings: true,
+      available: {
+        billing: true,
+        workspace_members: true,
+        workspace_roles: true,
+        workspace_settings: true,
+      },
+    });
+  });
+
   it('returns false instead of denying a member permission check', async () => {
     mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
       Promise.resolve(permissionsResult(wsId, []))

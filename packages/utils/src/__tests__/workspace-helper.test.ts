@@ -560,22 +560,151 @@ describe('getPermissions membership type gate', () => {
     expect(adminAuthGetUser).not.toHaveBeenCalled();
     expect(personalWorkspaceQuery.eq).toHaveBeenCalledWith('personal', true);
     expect(personalWorkspaceQuery.eq).toHaveBeenCalledWith(
-      'workspace_members.user_id',
+      'creator_id',
       'user-1'
     );
     expect(membershipQuery.eq).toHaveBeenCalledWith(
       'ws_id',
       personalWorkspaceId
     );
-    expect(roleMembersQuery.eq).toHaveBeenCalledWith(
-      'workspace_roles.ws_id',
-      personalWorkspaceId
-    );
     expect(workspaceQuery.eq).toHaveBeenCalledWith('id', personalWorkspaceId);
-    expect(defaultPermissionsQuery.eq).toHaveBeenCalledWith(
-      'ws_id',
-      personalWorkspaceId
+    expect(roleMembersQuery.select).not.toHaveBeenCalled();
+    expect(defaultPermissionsQuery.select).not.toHaveBeenCalled();
+  });
+
+  it('grants full member permissions to a creator with a missing membership row', async () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'user-1' },
+      error: null,
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspaces') return workspaceQuery;
+        throw new Error(`Unexpected admin table lookup: ${table}`);
+      }),
+    });
+
+    const permissions = await getPermissions({
+      user: { id: 'user-1', email: 'creator@example.com' },
+      wsId: workspaceId,
+    });
+
+    expect(permissions?.membershipType).toBe('MEMBER');
+    expect(permissions?.containsPermission('manage_workspace_settings')).toBe(
+      true
     );
+    expect(permissions?.containsPermission('manage_workspace_members')).toBe(
+      true
+    );
+  });
+
+  it('normalizes a creator GUEST membership to effective MEMBER permissions', async () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: { type: 'GUEST' },
+      error: null,
+    });
+
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'user-1' },
+      error: null,
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspaces') return workspaceQuery;
+        throw new Error(`Unexpected admin table lookup: ${table}`);
+      }),
+    });
+
+    const permissions = await getPermissions({
+      user: { id: 'user-1', email: 'creator@example.com' },
+      wsId: workspaceId,
+    });
+
+    expect(permissions?.membershipType).toBe('MEMBER');
+    expect(permissions?.containsPermission('manage_workspace_roles')).toBe(
+      true
+    );
+  });
+
+  it('denies an unrelated user when the membership row is missing', async () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'owner-1' },
+      error: null,
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspaces') return workspaceQuery;
+        throw new Error(`Unexpected admin table lookup: ${table}`);
+      }),
+    });
+
+    const permissions = await getPermissions({
+      user: { id: 'user-1', email: 'unrelated@example.com' },
+      wsId: workspaceId,
+    });
+
+    expect(permissions).toBeNull();
   });
 
   it('returns a read-only permission context for a guest without defaults', async () => {

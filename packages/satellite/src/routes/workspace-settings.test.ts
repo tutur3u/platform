@@ -43,6 +43,8 @@ describe('satellite workspace settings route handlers', () => {
     getPermissions.mockResolvedValue({
       containsPermission: (permission: string) =>
         permission === 'manage_workspace_settings',
+      membershipType: 'MEMBER',
+      permissions: [],
       wsId: 'resolved-workspace-id',
     });
   });
@@ -127,6 +129,10 @@ describe('satellite workspace settings route handlers', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(getPermissions).toHaveBeenCalledWith({
+      user: expect.objectContaining({ id: 'user-1' }),
+      wsId: 'workspace-one',
+    });
     expect(update).toHaveBeenCalledWith({
       handle: 'next-handle',
       name: 'Next name',

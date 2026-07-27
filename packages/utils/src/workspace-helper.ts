@@ -689,19 +689,32 @@ async function resolveWorkspaceIdForPermissions({
     return normalizeWorkspaceId(wsId, authorizationClient);
   }
 
-  const { data: workspace, error } = await authorizationClient
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', principal.id)
-    .eq('workspace_members.type', 'MEMBER')
-    .maybeSingle();
+  const { data: creatorWorkspace, error: creatorWorkspaceError } =
+    await authorizationClient
+      .from('workspaces')
+      .select('id')
+      .eq('personal', true)
+      .eq('creator_id', principal.id)
+      .maybeSingle();
 
-  if (error || !workspace?.id) {
+  if (!creatorWorkspaceError && creatorWorkspace?.id) {
+    return creatorWorkspace.id;
+  }
+
+  const { data: memberWorkspace, error: memberWorkspaceError } =
+    await authorizationClient
+      .from('workspaces')
+      .select('id, workspace_members!inner(user_id, type)')
+      .eq('personal', true)
+      .eq('workspace_members.user_id', principal.id)
+      .eq('workspace_members.type', 'MEMBER')
+      .maybeSingle();
+
+  if (memberWorkspaceError || !memberWorkspace?.id) {
     throw new Error('Personal workspace not found');
   }
 
-  return workspace.id;
+  return memberWorkspace.id;
 }
 
 /**
@@ -761,7 +774,7 @@ async function getPermissionsImpl({
   let resolvedWorkspaceId: string;
   try {
     resolvedWorkspaceId = await resolveWorkspaceIdForPermissions({
-      authorizationClient: authorizationClient as TypedSupabaseClient,
+      authorizationClient: sbAdmin,
       principal,
       wsId,
     });
@@ -769,21 +782,39 @@ async function getPermissionsImpl({
     return null;
   }
 
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: resolvedWorkspaceId,
-    userId,
-    supabase: authorizationClient as TypedSupabaseClient,
-    requiredType: 'ANY',
-  });
+  const [membership, workspaceRes] = await Promise.all([
+    verifyWorkspaceMembershipType({
+      wsId: resolvedWorkspaceId,
+      userId,
+      supabase: authorizationClient as TypedSupabaseClient,
+      requiredType: 'ANY',
+    }),
+    sbAdmin
+      .from('workspaces')
+      .select('creator_id')
+      .eq('id', resolvedWorkspaceId)
+      .single(),
+  ]);
 
-  if (!membership.ok) {
+  const { data: workspaceData, error: workspaceError } = workspaceRes;
+
+  if (workspaceError || !workspaceData) {
+    console.info('Workspace not found in getPermissions', resolvedWorkspaceId);
     return null;
   }
 
-  const membershipType = membership.membershipType ?? 'MEMBER';
+  const isCreator = workspaceData.creator_id === userId;
+
+  if (!isCreator && !membership.ok) {
+    return null;
+  }
+
+  const membershipType = isCreator
+    ? 'MEMBER'
+    : (membership.membershipType ?? 'MEMBER');
 
   const permissionsQuery =
-    membershipType === 'MEMBER'
+    membershipType === 'MEMBER' && !isCreator
       ? sbAdmin
           .from('workspace_role_members')
           .select(
@@ -794,40 +825,26 @@ async function getPermissionsImpl({
           .eq('workspace_roles.workspace_role_permissions.enabled', true)
       : Promise.resolve({ data: [], error: null });
 
-  const workspaceQuery = sbAdmin
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', resolvedWorkspaceId)
-    .single();
+  const defaultQuery = isCreator
+    ? Promise.resolve({ data: [], error: null })
+    : sbAdmin
+        .from('workspace_default_permissions')
+        .select('permission')
+        .eq('ws_id', resolvedWorkspaceId)
+        .eq('member_type', membershipType)
+        .eq('enabled', true);
 
-  const defaultQuery = sbAdmin
-    .from('workspace_default_permissions')
-    .select('permission')
-    .eq('ws_id', resolvedWorkspaceId)
-    .eq('member_type', membershipType)
-    .eq('enabled', true);
-
-  const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
+  const [permissionsRes, defaultRes] = await Promise.all([
     permissionsQuery,
-    workspaceQuery,
     defaultQuery,
   ]);
 
   const { data: permissionsData, error: permissionsError } = permissionsRes;
-  const { data: workspaceData, error: workspaceError } = workspaceRes;
   const { data: defaultData, error: defaultError } = defaultRes;
 
-  if (!workspaceData) {
-    console.info('Workspace not found in getPermissions', resolvedWorkspaceId);
-    return null;
-  }
-
   if (permissionsError) return null;
-  if (workspaceError) return null;
   if (defaultError) return null;
 
-  const isCreator =
-    membershipType === 'MEMBER' && workspaceData.creator_id === userId;
   // if (DEV_MODE) {
   //   console.log('--------------------');
   //   console.log('Is creator', isCreator);
