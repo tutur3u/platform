@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/nova-v0.28.0...nova-v0.29.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/nova-v0.27.0...nova-v0.28.0) (2026-07-25)
 
 

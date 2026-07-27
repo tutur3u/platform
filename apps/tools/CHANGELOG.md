@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/tools-v0.9.0...tools-v0.10.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/tools-v0.8.0...tools-v0.9.0) (2026-07-25)
 
 
