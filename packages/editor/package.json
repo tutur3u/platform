@@ -30,7 +30,7 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
-    "@tiptap/extension-image": "3.28.0",
+    "@tiptap/extension-image": "3.29.1",
     "@tiptap/extension-link": "3.28.0",
     "@tiptap/extension-placeholder": "3.28.0",
     "@tiptap/react": "3.28.0",
