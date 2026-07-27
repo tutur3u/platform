@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.13.0...tanstack-web-v0.14.0) (2026-07-27)
+
+
+### Features
+
+* **external-projects:** list form submissions for scheduled forwarding ([d0ca353](https://github.com/tutur3u/platform/commit/d0ca3530363d1fe36569b47b634ec0ad6e3cdc77))
+* **external-projects:** send mail via SES and gate forms with Turnstile ([0fe6851](https://github.com/tutur3u/platform/commit/0fe6851b98b8340d915b34fb8bec49b78c67d405))
+
+
+### Bug Fixes
+
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.12.0...tanstack-web-v0.13.0) (2026-07-25)
 
 

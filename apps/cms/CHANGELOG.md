@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/cms-v0.21.0...cms-v0.22.0) (2026-07-27)
+
+
+### Features
+
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/cms-v0.20.0...cms-v0.21.0) (2026-07-25)
 
 

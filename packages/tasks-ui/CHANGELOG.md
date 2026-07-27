@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.3.0...tasks-ui-v0.4.0) (2026-07-27)
+
+
+### Features
+
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+* **tasks:** keep realtime on deep-linked cross-workspace tasks ([5a29e78](https://github.com/tutur3u/platform/commit/5a29e78d9d1aec736bb77f9ee35f8dee73e62e7e))
+
+
+### Bug Fixes
+
+* **tasks:** open the dialog on Properties and settle it in one step ([2780950](https://github.com/tutur3u/platform/commit/2780950d7aa3ca7f3f3d382bc3675a23201408f5))
+* **tasks:** quiet the description toolbar and name the compact action honestly ([51838a0](https://github.com/tutur3u/platform/commit/51838a08a1875a44cd4c7f539b35203f890e1a39))
+* **tasks:** restore scrolling in the focused task dialog ([ee2d312](https://github.com/tutur3u/platform/commit/ee2d31292ff44b7a725c2f7520b7f47cf3e467c8))
+* **tasks:** show one skeleton per task dialog open ([944288b](https://github.com/tutur3u/platform/commit/944288bdc869ee80b3cdf537ee10feb17fdada22))
+* **tasks:** stop the task dialog remounting after it opens ([9a423da](https://github.com/tutur3u/platform/commit/9a423daf7e7c1e901a63ddcc1a8a94ddff9192c9))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.2.1...tasks-ui-v0.3.0) (2026-07-25)
 
 

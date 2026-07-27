@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/types-v0.20.0...types-v0.21.0) (2026-07-27)
+
+
+### Features
+
+* **editor:** add localized external project editing ([38cae2c](https://github.com/tutur3u/platform/commit/38cae2c08d0586491c8695b671d46eaef509e693))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/types-v0.19.0...types-v0.20.0) (2026-07-25)
 
 
