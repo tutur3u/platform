@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/sdk-v0.18.0...sdk-v0.19.0) (2026-07-27)
+
+
+### Features
+
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **editor:** add localized external project editing ([38cae2c](https://github.com/tutur3u/platform/commit/38cae2c08d0586491c8695b671d46eaef509e693))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/sdk-v0.17.0...sdk-v0.18.0) (2026-07-27)
 
 

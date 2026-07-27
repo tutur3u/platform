@@ -1,1 +1,5 @@
-export { default } from '@tuturuuu/satellite/verify-token-page';
+import { TokenVerifier } from '@tuturuuu/auth/cross-app/token-verifier';
+
+export default function VerifyTokenPage() {
+  return <TokenVerifier failurePath="/auth-error" />;
+}

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.7.0...hive-realtime-v0.8.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.6.0...hive-realtime-v0.7.0) (2026-07-27)
 
 
