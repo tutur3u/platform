@@ -1786,6 +1786,27 @@
         "vitest": "^4.1.10",
       },
     },
+    "packages/editor": {
+      "name": "@tuturuuu/editor",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tiptap/extension-image": "3.28.0",
+        "@tiptap/extension-link": "3.28.0",
+        "@tiptap/extension-placeholder": "3.28.0",
+        "@tiptap/react": "3.28.0",
+        "@tiptap/starter-kit": "3.28.0",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/react": "^19.2.0",
+        "typescript": "7.0.2",
+        "vitest": "^4.1.10",
+      },
+      "peerDependencies": {
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+      },
+    },
     "packages/education-core": {
       "name": "@tuturuuu/education-core",
       "version": "0.3.0",
@@ -4156,6 +4177,8 @@
     "@tuturuuu/devbox": ["@tuturuuu/devbox@workspace:packages/devbox"],
 
     "@tuturuuu/drive": ["@tuturuuu/drive@workspace:apps/drive"],
+
+    "@tuturuuu/editor": ["@tuturuuu/editor@workspace:packages/editor"],
 
     "@tuturuuu/education-core": ["@tuturuuu/education-core@workspace:packages/education-core"],
 

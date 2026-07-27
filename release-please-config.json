@@ -171,6 +171,10 @@
       "component": "education-core",
       "package-name": "@tuturuuu/education-core"
     },
+    "packages/editor": {
+      "component": "editor",
+      "package-name": "@tuturuuu/editor"
+    },
     "packages/finance-core": {
       "component": "finance-core",
       "package-name": "@tuturuuu/finance-core"

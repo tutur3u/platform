@@ -158,6 +158,7 @@ function normalizeSyncField(
     description: value.description ?? null,
     key: value.key,
     label: value.label ?? null,
+    localizable: value.localizable ?? false,
     options: value.options ?? [],
     required: value.required ?? false,
     type: value.type,
@@ -186,6 +187,7 @@ export function normalizeExternalProjectSyncManifest(
       entries: (value.content?.entries ?? []).map((entry) => ({
         assets: (entry.assets ?? []).map((asset, index) => ({
           altText: asset.altText ?? null,
+          altTextLocalizable: asset.altTextLocalizable ?? false,
           assetType: asset.assetType,
           blockStableSourceId: asset.blockStableSourceId ?? null,
           metadata: asRecord(asset.metadata),
@@ -200,6 +202,7 @@ export function normalizeExternalProjectSyncManifest(
           sortOrder: block.sortOrder ?? index,
           stableSourceId: block.stableSourceId ?? null,
           title: block.title ?? null,
+          localizable: block.localizable ?? false,
         })),
         collectionSlug: entry.collectionSlug,
         delete: entry.delete === true,
@@ -214,6 +217,12 @@ export function normalizeExternalProjectSyncManifest(
         title: entry.title,
       })),
     },
+    localization: value.localization
+      ? {
+          defaultLocale: value.localization.defaultLocale,
+          supportedLocales: [...new Set(value.localization.supportedLocales)],
+        }
+      : undefined,
     schema: normalizeSyncSchema(value.schema),
     version: 1,
   };

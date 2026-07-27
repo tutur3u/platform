@@ -36,6 +36,7 @@
   "packages/auth": "0.3.0",
   "packages/devbox": "0.3.1",
   "packages/education-core": "0.4.0",
+  "packages/editor": "0.1.0",
   "packages/finance-core": "0.4.0",
   "packages/payment-core": "0.4.0",
   "packages/email-service": "0.5.0",

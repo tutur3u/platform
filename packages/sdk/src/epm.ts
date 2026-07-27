@@ -591,7 +591,10 @@ export class EpmClient {
     }
   }
 
-  async getStudio(workspaceId: string): Promise<
+  async getStudio(
+    workspaceId: string,
+    options: { collectionSlugs?: string[] } = {}
+  ): Promise<
     {
       binding: WorkspaceExternalProjectBinding;
     } & ExternalProjectStudioData
@@ -601,9 +604,16 @@ export class EpmClient {
       {
         binding: WorkspaceExternalProjectBinding;
       } & ExternalProjectStudioData
-    >(`/workspaces/${encodeURIComponent(workspaceId)}/external-projects`, {
+    >(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects${
+        options.collectionSlugs?.length
+          ? `?${new URLSearchParams({ collectionSlugs: options.collectionSlugs.join(',') })}`
+          : ''
+      }`,
+      {
       requiresAuth: true,
-    });
+      }
+    );
 
     return normalizeStudioPayloadUrls(payload, this.baseUrl);
   }

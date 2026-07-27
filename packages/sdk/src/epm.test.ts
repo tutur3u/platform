@@ -152,6 +152,29 @@ describe('EpmClient', () => {
     );
   });
 
+  it('scopes studio reads to requested collections', async () => {
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        assets: [],
+        binding: {},
+        blocks: [],
+        collections: [],
+        entries: [],
+      })
+    );
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    await client.getStudio('ws_123', { collectionSlugs: ['stories'] });
+
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects?collectionSlugs=stories'
+    );
+  });
+
   it('posts bulk workflow payloads', async () => {
     mockFetch.mockResolvedValueOnce(createMockResponse([]));
 

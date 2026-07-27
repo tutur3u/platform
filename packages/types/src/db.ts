@@ -1192,7 +1192,14 @@ export type ExternalProjectSyncField = {
   label?: string | null;
   options?: string[];
   required?: boolean;
+  /** Store and publish this visitor-facing value independently per locale. */
+  localizable?: boolean;
   type: ExternalProjectSyncFieldType;
+};
+
+export type ExternalProjectLocalizationConfig = {
+  defaultLocale: string;
+  supportedLocales: string[];
 };
 
 export type ExternalProjectSyncCollectionSchema = {
@@ -1220,10 +1227,12 @@ export type ExternalProjectSyncBlock = {
   sortOrder?: number;
   stableSourceId?: string | null;
   title?: string | null;
+  localizable?: boolean;
 };
 
 export type ExternalProjectSyncAsset = {
   altText?: string | null;
+  altTextLocalizable?: boolean;
   assetType: string;
   blockStableSourceId?: string | null;
   id?: string;
@@ -1262,6 +1271,7 @@ export type ExternalProjectSyncManifest = {
   adapter: ExternalProjectAdapterKind;
   canonicalProjectId?: string | null;
   content: ExternalProjectSyncContent;
+  localization?: ExternalProjectLocalizationConfig;
   schema: ExternalProjectSyncSchema;
   version: 1;
 };

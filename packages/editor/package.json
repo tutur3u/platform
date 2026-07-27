@@ -1,0 +1,41 @@
+{
+  "name": "@tuturuuu/editor",
+  "version": "0.1.0",
+  "description": "Lightweight localized rich-text editor and rendering utilities",
+  "license": "MIT",
+  "type": "module",
+  "files": ["dist", "README.md"],
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "type-check": "tsc --project tsconfig.build.json",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    }
+  },
+  "dependencies": {
+    "@tiptap/extension-image": "3.28.0",
+    "@tiptap/extension-link": "3.28.0",
+    "@tiptap/extension-placeholder": "3.28.0",
+    "@tiptap/react": "3.28.0",
+    "@tiptap/starter-kit": "3.28.0"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/react": "^19.2.0",
+    "typescript": "7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
