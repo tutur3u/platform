@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/contacts-v0.7.0...contacts-v0.8.0) (2026-07-27)
+
+
+### Features
+
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+
+
+### Bug Fixes
+
+* **contacts:** repair approval detail dialog ([a948ea2](https://github.com/tutur3u/platform/commit/a948ea2be85906cec81e9484acc041b7b637a351))
+* **contacts:** stop shadowing the workspace permissions summary ([1a89892](https://github.com/tutur3u/platform/commit/1a8989280afa2897f8a92a972fd102c9aca8c17c))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/contacts-v0.6.0...contacts-v0.7.0) (2026-07-25)
 
 

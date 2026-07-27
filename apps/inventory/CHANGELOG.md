@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/inventory-v0.18.0...inventory-v0.19.0) (2026-07-27)
+
+
+### Features
+
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+
+
+### Bug Fixes
+
+* **e2e:** align workspace fixtures with creator membership ([cfb13b6](https://github.com/tutur3u/platform/commit/cfb13b66c6b4d3c9a609c2118d51a314c015346b))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/inventory-v0.17.0...inventory-v0.18.0) (2026-07-25)
 
 

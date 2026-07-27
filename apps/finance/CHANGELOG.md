@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/tutur3u/platform/compare/finance-v0.18.0...finance-v0.18.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **apps:** stop registering a service worker the apps do not serve ([16688e9](https://github.com/tutur3u/platform/commit/16688e9fadefd5a373a318480627126eb1748650))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/finance-v0.17.0...finance-v0.18.0) (2026-07-25)
 
 

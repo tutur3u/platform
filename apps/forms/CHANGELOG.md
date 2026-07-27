@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/forms-v0.2.0...forms-v0.3.0) (2026-07-27)
+
+
+### Features
+
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/forms-v0.1.0...forms-v0.2.0) (2026-07-25)
 
 

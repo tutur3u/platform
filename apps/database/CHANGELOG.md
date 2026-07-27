@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.1](https://github.com/tutur3u/platform/compare/database-v1.20.0...database-v1.20.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **workspaces:** keep the creator a member of the workspace they create ([8b33f42](https://github.com/tutur3u/platform/commit/8b33f42470149a51e864fc5bf22020f961121014))
+
 ## [1.20.0](https://github.com/tutur3u/platform/compare/database-v1.19.0...database-v1.20.0) (2026-07-25)
 
 

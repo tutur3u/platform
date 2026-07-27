@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/tasks-v0.17.0...tasks-v0.18.0) (2026-07-27)
+
+
+### Features
+
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+
+
+### Bug Fixes
+
+* **apps:** stop registering a service worker the apps do not serve ([16688e9](https://github.com/tutur3u/platform/commit/16688e9fadefd5a373a318480627126eb1748650))
+* **satellites:** stop authorizing app-session callers with the cookie client ([b0d0242](https://github.com/tutur3u/platform/commit/b0d0242c211959cb3c676695149bb3692e566e71))
+* **tasks:** open task links that point outside the current workspace ([8f46e08](https://github.com/tutur3u/platform/commit/8f46e08e362b6eaf70e4b49d1b588adeb4e03e74))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/tasks-v0.16.0...tasks-v0.17.0) (2026-07-25)
 
 

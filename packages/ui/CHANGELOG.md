@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.20.1](https://github.com/tutur3u/platform/compare/ui-v0.20.0...ui-v0.20.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **auth:** resume a pending sign-in after switching accounts ([5403718](https://github.com/tutur3u/platform/commit/54037189ee895863eac621239eb54b8ea94c6ed0))
+* **tasks:** quiet the description toolbar and name the compact action honestly ([51838a0](https://github.com/tutur3u/platform/commit/51838a08a1875a44cd4c7f539b35203f890e1a39))
+* **tasks:** show one skeleton per task dialog open ([944288b](https://github.com/tutur3u/platform/commit/944288bdc869ee80b3cdf537ee10feb17fdada22))
+* **tasks:** stop the task dialog remounting after it opens ([9a423da](https://github.com/tutur3u/platform/commit/9a423daf7e7c1e901a63ddcc1a8a94ddff9192c9))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/ui-v0.19.1...ui-v0.20.0) (2026-07-25)
 
 

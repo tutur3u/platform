@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/pay-v0.7.0...pay-v0.7.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **satellites:** stop authorizing app-session callers with the cookie client ([b0d0242](https://github.com/tutur3u/platform/commit/b0d0242c211959cb3c676695149bb3692e566e71))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/pay-v0.6.0...pay-v0.7.0) (2026-07-25)
 
 

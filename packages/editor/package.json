@@ -1,11 +1,16 @@
 {
   "name": "@tuturuuu/editor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lightweight localized rich-text editor and rendering utilities",
   "license": "MIT",
   "type": "module",
-  "files": ["dist", "README.md"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "type-check": "tsc --project tsconfig.build.json",
