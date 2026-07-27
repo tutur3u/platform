@@ -61,9 +61,11 @@ export default async function LocaleLayout({
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </Providers>
+        <Suspense>
+          <Providers>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </Providers>
+        </Suspense>
         <Suspense fallback={null}>
           <SatelliteVersionBadge appName="AI Studio" />
         </Suspense>
