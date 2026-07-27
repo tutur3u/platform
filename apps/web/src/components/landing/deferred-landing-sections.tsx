@@ -11,6 +11,11 @@ function SectionFallback() {
   );
 }
 
+/** True when the current URL points at an on-page anchor (e.g. `#pricing`). */
+function hasHashTarget() {
+  return typeof window !== 'undefined' && window.location.hash.length > 1;
+}
+
 function LazyLandingSection({
   children,
   rootMargin = '900px 0px',
@@ -23,6 +28,15 @@ function LazyLandingSection({
 
   useEffect(() => {
     if (shouldRender) return;
+
+    // A deep link (`/#pricing`, or `/pricing` → `/?hash-nav=1#pricing`) needs
+    // every section below the fold laid out at its true height; otherwise the
+    // scroll lands where the anchor *would* be behind shrunken placeholders.
+    // When the URL carries a hash we skip the lazy gate and render immediately.
+    if (hasHashTarget()) {
+      setShouldRender(true);
+      return;
+    }
 
     const node = ref.current;
     if (!node) return;
@@ -46,6 +60,75 @@ function LazyLandingSection({
   }, [rootMargin, shouldRender]);
 
   return <div ref={ref}>{shouldRender ? children : <SectionFallback />}</div>;
+}
+
+/**
+ * Scrolls to the URL's hash target on load and keeps it pinned while the
+ * deferred sections above it mount and grow the page.
+ *
+ * The browser's native scroll-to-hash fires before those `ssr: false` sections
+ * exist, so it finds nothing. This re-pins on every frame — with `instant` to
+ * override the global `scroll-behavior: smooth` — until the target's position
+ * settles or a manual scroll takes over.
+ */
+export function HashScroll() {
+  useEffect(() => {
+    const id = window.location.hash.replace(/^#/, '');
+    if (!id) return;
+
+    let frame = 0;
+    let cancelled = false;
+    let startTime = -1;
+    let stableSince = -1;
+    let lastTop = Number.NaN;
+
+    const cleanup = () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('touchstart', stop);
+      window.removeEventListener('keydown', stop);
+    };
+
+    function stop() {
+      cancelled = true;
+    }
+
+    const tick = (now: number) => {
+      if (cancelled) {
+        cleanup();
+        return;
+      }
+      if (startTime < 0) startTime = now;
+
+      const el = document.getElementById(id);
+      if (el) {
+        const top = el.getBoundingClientRect().top;
+        el.scrollIntoView({ block: 'start', behavior: 'instant' });
+
+        if (Math.abs(top - lastTop) < 1) {
+          if (stableSince < 0) stableSince = now;
+        } else {
+          stableSince = -1;
+          lastTop = top;
+        }
+      }
+
+      const settled = stableSince >= 0 && now - stableSince > 400;
+      const timedOut = now - startTime > 2500;
+      if (settled || timedOut) cleanup();
+      else frame = requestAnimationFrame(tick);
+    };
+
+    // A manual scroll means the reader has taken over; stop fighting them.
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('touchstart', stop, { passive: true });
+    window.addEventListener('keydown', stop);
+    frame = requestAnimationFrame(tick);
+
+    return cleanup;
+  }, []);
+
+  return null;
 }
 
 const ProblemSection = dynamic(

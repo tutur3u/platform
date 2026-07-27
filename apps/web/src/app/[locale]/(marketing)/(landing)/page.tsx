@@ -1,6 +1,7 @@
 import {
   DeferredLandingSections,
   DeferredProblemSection,
+  HashScroll,
 } from '@/components/landing/deferred-landing-sections';
 import { FeaturesBento } from '@/components/landing/features/features-bento';
 import { HeroSection } from '@/components/landing/hero/hero-section';
@@ -17,6 +18,10 @@ export default function MarketingPage() {
         aria-hidden
         className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(ellipse_100%_60%_at_50%_0%,transparent,color-mix(in_oklab,var(--foreground)_4%,transparent))]"
       />
+
+      {/* Deep links (`/#pricing`, `/pricing`) scroll to their section once the
+          deferred sections below have mounted. */}
+      <HashScroll />
 
       {/* Hero */}
       <HeroSection />
