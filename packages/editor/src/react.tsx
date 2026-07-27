@@ -51,7 +51,7 @@ function ToolbarAction({
       >
         <Icon aria-hidden="true" />
       </button>
-      <span className="tuturuuu-editor-tooltip" role="tooltip">
+      <span aria-hidden="true" className="tuturuuu-editor-tooltip">
         {label}
       </span>
     </span>
@@ -241,7 +241,7 @@ export function RichTextEditor({
                 ref={imageInputRef}
                 type="file"
               />
-              <span className="tuturuuu-editor-tooltip" role="tooltip">
+              <span aria-hidden="true" className="tuturuuu-editor-tooltip">
                 {messages.image}
               </span>
             </span>

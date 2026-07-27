@@ -66,11 +66,13 @@
   font-weight: 500;
   line-height: 1rem;
   opacity: 0;
+  overflow-wrap: anywhere;
   pointer-events: none;
+  text-align: center;
   transition:
     opacity 120ms ease,
     transform 120ms ease;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .tuturuuu-editor-tool:hover > .tuturuuu-editor-tooltip,
