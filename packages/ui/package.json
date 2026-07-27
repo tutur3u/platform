@@ -187,7 +187,7 @@
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.0",
     "postcss": "^8.5.22",
     "postcss-load-config": "^6.0.1",
     "tailwindcss": "^4.3.3",
