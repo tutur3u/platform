@@ -78,7 +78,9 @@ test('invalidates cached availability and preserves the shared storefront shell'
       await expect(page.locator('main[aria-busy="true"]')).toBeVisible();
     });
     await expect(page).toHaveURL(new RegExp(`/${fixture.slug}/?$`, 'u'));
-    await expect(page.getByText('Cache Test Product').first()).toBeVisible();
+    await expect(
+      page.getByText('Cache Test Product').filter({ visible: true })
+    ).toBeVisible();
     expect(documentRequests).toBe(1);
     await page.screenshot({
       fullPage: true,
