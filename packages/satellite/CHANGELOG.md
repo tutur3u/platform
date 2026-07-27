@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/satellite-v0.10.1...satellite-v0.11.0) (2026-07-27)
+
+
+### Features
+
+* **apps:** unify and redesign app catalog ([b679068](https://github.com/tutur3u/platform/commit/b679068339143a83b38610f363bec7f53ddc3706))
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **mail:** focus mailbox shell ([4c2604d](https://github.com/tutur3u/platform/commit/4c2604d38e34f9e201902daa2434da1359e5d093))
+* **navigation:** open workspace selector on reveal ([c760d42](https://github.com/tutur3u/platform/commit/c760d42b5e0b8f7bd141e26e2ace956b7f39912e))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** emphasize app picker icons ([7a13608](https://github.com/tutur3u/platform/commit/7a13608a9a1b076af7edaeb1352ae432fcc09edc))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** refine apps picker navigation ([f84b553](https://github.com/tutur3u/platform/commit/f84b5533906f34e7772947a64605cc24ab64fa2e))
+* **satellite:** standardize fixed app headers ([7b86c42](https://github.com/tutur3u/platform/commit/7b86c4283b39ebc5de8bec971ce3bab5fdaef422))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+
+
+### Bug Fixes
+
+* **contacts:** authenticate users database requests ([54ddc74](https://github.com/tutur3u/platform/commit/54ddc741b9833ca835ce13adabb196aabff78fb8))
+* **contacts:** stop shadowing the workspace permissions summary ([1a89892](https://github.com/tutur3u/platform/commit/1a8989280afa2897f8a92a972fd102c9aca8c17c))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* open pay billing links in new tabs ([c6c565f](https://github.com/tutur3u/platform/commit/c6c565f56bc08252fce1a1b96aed9c22b778b11c))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* **satellite:** align app picker header ([96758ef](https://github.com/tutur3u/platform/commit/96758ef1344c2f62434b2de92551b0c0891a1353))
+* **satellite:** align sidebar workspace spacing ([199de40](https://github.com/tutur3u/platform/commit/199de404c484f626f9763af7bd82bd808369c081))
+* **satellite:** clarify apps picker controls ([528bf51](https://github.com/tutur3u/platform/commit/528bf51b566e10267070828ac94ac5496a3c8b26))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **satellite:** share apps picker preference ([fb80637](https://github.com/tutur3u/platform/commit/fb80637fe0767836c58bba2ef3f97000fefe6f05))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** hydrate shared profile data ([7890e61](https://github.com/tutur3u/platform/commit/7890e61a86557bde1460526e0f0cfeed6ec30440))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **settings:** restore satellite workspace management ([be1fb5a](https://github.com/tutur3u/platform/commit/be1fb5aade1955ce0a73be29a090a3d7488aa8a6))
+* **ui:** make member management mobile responsive ([104c812](https://github.com/tutur3u/platform/commit/104c8120949ef34bfdc48da74fdc0e2d35eb4ce7))
+* **ui:** refine member access settings ([b5b1ebf](https://github.com/tutur3u/platform/commit/b5b1ebf49a4a3b93532da74357899927f6e5d988))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/satellite-v0.10.0...satellite-v0.10.1) (2026-07-27)
 
 

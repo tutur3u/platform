@@ -1,5 +1,79 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/ui-v0.20.1...ui-v0.21.0) (2026-07-27)
+
+
+### Features
+
+* **calendar:** redesign workspace sidebar ([194e126](https://github.com/tutur3u/platform/commit/194e1267e573e50416f3866826e2a182b3ff8729))
+* **contacts:** migrate reports + groups and complete the users cutover ([2ee89cd](https://github.com/tutur3u/platform/commit/2ee89cd2257c2a9824df53d4be99436416d85c13))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **navigation:** open workspace selector on reveal ([c760d42](https://github.com/tutur3u/platform/commit/c760d42b5e0b8f7bd141e26e2ace956b7f39912e))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+* **storefront:** refine the buyer experience ([45d0e76](https://github.com/tutur3u/platform/commit/45d0e763ff2adc858aa7c76024eb4554879b3977))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** add leaderboard leave button and per-member sparklines ([5b65238](https://github.com/tutur3u/platform/commit/5b65238c5388345acebacc6cbc612c738cdc3079))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+* **tasks:** promote progress tracking workspace ([058503a](https://github.com/tutur3u/platform/commit/058503a96c8df10725ecd3f88738d574760fc944))
+* **tasks:** revamp progress, goals, analytics & leaderboards with TrackBear parity ([d1bda0e](https://github.com/tutur3u/platform/commit/d1bda0e37a6ed45eb22aaa3bb20c4d62dc41a19f))
+* **tasks:** streamline bulk selection and progress ([3bd2934](https://github.com/tutur3u/platform/commit/3bd2934b3d2dce31b0be8a55ee553069df1f5b5d))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+* **web:** improve workspace navigation context ([73959e3](https://github.com/tutur3u/platform/commit/73959e3c6745f60513d23740f30024c5d24e7ee4))
+* **web:** redesign marketing landing page ([13ede78](https://github.com/tutur3u/platform/commit/13ede784ac03af9f25bbb7df61095826c335e002))
+* **web:** refine marketing experience ([c7f1cec](https://github.com/tutur3u/platform/commit/c7f1cec0dd667e6d5f59aaf0bab82069b79c7376))
+
+
+### Bug Fixes
+
+* **auth:** resume a pending sign-in after switching accounts ([5403718](https://github.com/tutur3u/platform/commit/54037189ee895863eac621239eb54b8ea94c6ed0))
+* **calendar:** restore provider calendar management ([68753a8](https://github.com/tutur3u/platform/commit/68753a865dcc25a35cd53e5fc7ced1913b9a10bb))
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **ci:** resolve shared task helper during e2e collection ([0319a3b](https://github.com/tutur3u/platform/commit/0319a3bd0df12592b823b7cebdff38cea3e50836))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **inventory:** polish mobile sales and settings ([59ef49c](https://github.com/tutur3u/platform/commit/59ef49cde2095361e2b13ce36848e1e39f772c18))
+* **mail:** stabilize layout and managed sender identity ([a22205e](https://github.com/tutur3u/platform/commit/a22205e98a8671ffb628586107de09a7ba8dd1c4))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tasks:** polish task card indicators ([d34966f](https://github.com/tutur3u/platform/commit/d34966fe8939dde56990718acada5a7899a990ed))
+* **tasks:** preserve bulk task list rows ([5aac158](https://github.com/tutur3u/platform/commit/5aac158d38969be83499a5fec114197d0378bac7))
+* **tasks:** quiet the description toolbar and name the compact action honestly ([51838a0](https://github.com/tutur3u/platform/commit/51838a08a1875a44cd4c7f539b35203f890e1a39))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+* **tasks:** repair task media permissions ([28a0bf1](https://github.com/tutur3u/platform/commit/28a0bf1f1ff11359828a335ac81bb20860062942))
+* **tasks:** restore task description on deep-link opens ([56d4efa](https://github.com/tutur3u/platform/commit/56d4efabd2f036e7dae39588d8aed7b129fa9a11))
+* **tasks:** show one skeleton per task dialog open ([944288b](https://github.com/tutur3u/platform/commit/944288bdc869ee80b3cdf537ee10feb17fdada22))
+* **tasks:** show select all for empty lists ([485ccd7](https://github.com/tutur3u/platform/commit/485ccd737d93d63d00cf582871a9055d819ba694))
+* **tasks:** stabilize task card selection layout ([5754a9c](https://github.com/tutur3u/platform/commit/5754a9c9edcc1fdee5fff116cb809d3d2dc2bf8c))
+* **tasks:** stop the task dialog remounting after it opens ([9a423da](https://github.com/tutur3u/platform/commit/9a423daf7e7c1e901a63ddcc1a8a94ddff9192c9))
+* **ui:** make member management mobile responsive ([104c812](https://github.com/tutur3u/platform/commit/104c8120949ef34bfdc48da74fdc0e2d35eb4ce7))
+* **ui:** prevent iOS form focus zoom ([a0e3f3c](https://github.com/tutur3u/platform/commit/a0e3f3cc10e0ef0676714857088ff8d2b826dcd2))
+* **ui:** publish portable vendored dependencies ([99ad359](https://github.com/tutur3u/platform/commit/99ad35903a27b8f9df26f22fc5f1003aed363d6f))
+* **ui:** refine member access settings ([b5b1ebf](https://github.com/tutur3u/platform/commit/b5b1ebf49a4a3b93532da74357899927f6e5d988))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **web:** harden prerender client boundaries ([ab1596a](https://github.com/tutur3u/platform/commit/ab1596a769e5a6ae43b0247c651ecbecea52d20d))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+* **workspaces:** repair shared member administration ([8a1515b](https://github.com/tutur3u/platform/commit/8a1515ba970adbe690b9d92f77a447adb93c339f))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+* **storefront:** stabilize navigation and cart rendering ([471c6b7](https://github.com/tutur3u/platform/commit/471c6b75abc6a4d69692e868cc1b220785e03262))
+* **web:** reduce dashboard request overhead ([93f4b2b](https://github.com/tutur3u/platform/commit/93f4b2b354286b33c5cf8ff9ee0e54a31b18a022))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/ui-v0.20.0...ui-v0.20.1) (2026-07-27)
 
 

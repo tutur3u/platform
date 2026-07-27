@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/teach-v0.12.0...teach-v0.13.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/teach-v0.11.0...teach-v0.12.0) (2026-07-25)
 
 
