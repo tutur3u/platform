@@ -17,6 +17,7 @@ export type EditorMessages = {
   heading: string;
   horizontalRule: string;
   image: string;
+  invalidLink: string;
   italic: string;
   link: string;
   linkPlaceholder: string;

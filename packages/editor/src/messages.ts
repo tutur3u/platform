@@ -10,6 +10,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     heading: 'Heading',
     horizontalRule: 'Divider',
     image: 'Image',
+    invalidLink: 'Enter a safe web, email, phone, or relative link.',
     italic: 'Italic',
     link: 'Link',
     linkPlaceholder: 'Paste a URL',
@@ -29,6 +30,8 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     heading: 'Tiêu đề',
     horizontalRule: 'Đường phân cách',
     image: 'Hình ảnh',
+    invalidLink:
+      'Nhập liên kết web, email, số điện thoại hoặc liên kết tương đối an toàn.',
     italic: 'In nghiêng',
     link: 'Liên kết',
     linkPlaceholder: 'Dán URL',

@@ -1,4 +1,5 @@
 import type { JSONContent } from './types.js';
+import { normalizeRichTextUrl } from './url.js';
 
 const escapeHtml = (value: string) =>
   value.replace(
@@ -20,8 +21,10 @@ function renderNode(node: JSONContent): string {
     for (const mark of node.marks ?? []) {
       if (mark.type === 'bold') children = `<strong>${children}</strong>`;
       if (mark.type === 'italic') children = `<em>${children}</em>`;
-      if (mark.type === 'link')
-        children = `<a href="${escapeHtml(String(mark.attrs?.href ?? ''))}">${children}</a>`;
+      if (mark.type === 'link') {
+        const href = normalizeRichTextUrl(mark.attrs?.href);
+        if (href) children = `<a href="${escapeHtml(href)}">${children}</a>`;
+      }
     }
     return children;
   }
@@ -34,8 +37,12 @@ function renderNode(node: JSONContent): string {
   if (node.type === 'orderedList') return `<ol>${children}</ol>`;
   if (node.type === 'listItem') return `<li>${children}</li>`;
   if (node.type === 'horizontalRule') return '<hr>';
-  if (node.type === 'image')
-    return `<img src="${escapeHtml(String(node.attrs?.src ?? ''))}" alt="${escapeHtml(String(node.attrs?.alt ?? ''))}">`;
+  if (node.type === 'image') {
+    const src = normalizeRichTextUrl(node.attrs?.src);
+    return src
+      ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(String(node.attrs?.alt ?? ''))}">`
+      : '';
+  }
   return children;
 }
 

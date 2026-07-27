@@ -7,59 +7,23 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
   Bold,
-  Check,
   Heading2,
-  ImagePlus,
   Italic,
-  Link2,
   List,
   ListOrdered,
   Minus,
   Quote,
   Redo2,
   Undo2,
-  X,
 } from 'lucide-react';
-import type { ComponentType, Ref, SVGProps } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { extractPlainText } from './codec.js';
+import { ImageUploadControl } from './image-upload-control.js';
+import { LinkToolbarControl } from './link-toolbar-control.js';
 import { editorMessages } from './messages.js';
+import type { ToolbarIcon } from './toolbar-action.js';
+import { ToolbarAction } from './toolbar-action.js';
 import type { EditorLocale, EditorMessages, JSONContent } from './types.js';
-
-type ToolbarIcon = ComponentType<SVGProps<SVGSVGElement>>;
-
-function ToolbarAction({
-  active,
-  icon: Icon,
-  label,
-  ref,
-  run,
-  type = 'button',
-}: {
-  active?: boolean;
-  icon: ToolbarIcon;
-  label: string;
-  ref?: Ref<HTMLButtonElement>;
-  run?: () => void;
-  type?: 'button' | 'submit';
-}) {
-  return (
-    <span className="tuturuuu-editor-tool">
-      <button
-        aria-label={label}
-        aria-pressed={active}
-        onClick={run}
-        ref={ref}
-        type={type}
-      >
-        <Icon aria-hidden="true" />
-      </button>
-      <span aria-hidden="true" className="tuturuuu-editor-tooltip">
-        {label}
-      </span>
-    </span>
-  );
-}
 
 export function RichTextEditor({
   content,
@@ -80,18 +44,10 @@ export function RichTextEditor({
   placeholder?: string;
   readOnly?: boolean;
 }) {
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const linkButtonRef = useRef<HTMLButtonElement>(null);
-  const linkInputRef = useRef<HTMLInputElement>(null);
-  const [linkEditorOpen, setLinkEditorOpen] = useState(false);
-  const [linkHref, setLinkHref] = useState('');
   const messages = useMemo(
     () => ({ ...editorMessages[locale], ...messageOverrides }),
     [locale, messageOverrides]
   );
-  useEffect(() => {
-    if (linkEditorOpen) linkInputRef.current?.focus();
-  }, [linkEditorOpen]);
   const editor = useEditor({
     content: content ?? { type: 'doc', content: [] },
     editable: !readOnly,
@@ -174,96 +130,26 @@ export function RichTextEditor({
           {action(messages.horizontalRule, Minus, () =>
             editor.chain().focus().setHorizontalRule().run()
           )}
-          <div className="tuturuuu-editor-link-control">
-            <ToolbarAction
-              active={editor.isActive('link')}
-              icon={Link2}
-              label={messages.link}
-              ref={linkButtonRef}
-              run={() => {
-                const currentHref = editor.getAttributes('link').href;
-                setLinkHref(typeof currentHref === 'string' ? currentHref : '');
-                setLinkEditorOpen((open) => !open);
-              }}
-            />
-            {linkEditorOpen ? (
-              <form
-                className="tuturuuu-editor-link-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const href = linkHref.trim();
-                  const chain = editor.chain().focus().extendMarkRange('link');
-                  if (href) chain.setLink({ href }).run();
-                  else chain.unsetLink().run();
-                  setLinkEditorOpen(false);
-                }}
-              >
-                <input
-                  aria-label={messages.link}
-                  inputMode="url"
-                  onChange={(event) => setLinkHref(event.currentTarget.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') {
-                      setLinkEditorOpen(false);
-                      linkButtonRef.current?.focus();
-                    }
-                  }}
-                  placeholder={messages.linkPlaceholder}
-                  ref={linkInputRef}
-                  type="text"
-                  value={linkHref}
-                />
-                <ToolbarAction
-                  icon={Check}
-                  label={messages.applyLink}
-                  type="submit"
-                />
-                <ToolbarAction
-                  icon={X}
-                  label={messages.cancel}
-                  run={() => {
-                    setLinkEditorOpen(false);
-                    linkButtonRef.current?.focus();
-                  }}
-                />
-              </form>
-            ) : null}
-          </div>
+          <LinkToolbarControl
+            active={editor.isActive('link')}
+            currentHref={() => {
+              const currentHref = editor.getAttributes('link').href;
+              return typeof currentHref === 'string' ? currentHref : '';
+            }}
+            messages={messages}
+            onApply={(href) => {
+              const chain = editor.chain().focus().extendMarkRange('link');
+              if (href) chain.setLink({ href }).run();
+              else chain.unsetLink().run();
+            }}
+          />
           {onImageUpload ? (
-            <span className="tuturuuu-editor-tool">
-              <button
-                aria-label={messages.image}
-                onClick={() => imageInputRef.current?.click()}
-                type="button"
-              >
-                <ImagePlus aria-hidden="true" />
-              </button>
-              <input
-                accept="image/*"
-                hidden
-                onChange={async (event) => {
-                  const input = event.currentTarget;
-                  const file = input.files?.[0];
-                  try {
-                    if (file)
-                      editor
-                        .chain()
-                        .focus()
-                        .setImage({ src: await onImageUpload(file) })
-                        .run();
-                  } catch (error) {
-                    onImageUploadError?.(error);
-                  } finally {
-                    input.value = '';
-                  }
-                }}
-                ref={imageInputRef}
-                type="file"
-              />
-              <span aria-hidden="true" className="tuturuuu-editor-tooltip">
-                {messages.image}
-              </span>
-            </span>
+            <ImageUploadControl
+              label={messages.image}
+              onError={onImageUploadError}
+              onInsert={(src) => editor.chain().focus().setImage({ src }).run()}
+              onUpload={onImageUpload}
+            />
           ) : null}
           <span
             aria-hidden="true"

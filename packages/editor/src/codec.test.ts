@@ -15,4 +15,34 @@ describe('rich text codecs', () => {
       renderRichTextToHTML(markdownToJSON('<script>x</script>'))
     ).not.toContain('<script>');
   });
+
+  it('rejects unsafe link and image URL schemes during server rendering', () => {
+    const content = {
+      content: [
+        {
+          content: [
+            {
+              marks: [{ attrs: { href: 'javascript:alert(1)' }, type: 'link' }],
+              text: 'Unsafe link',
+              type: 'text',
+            },
+          ],
+          type: 'paragraph',
+        },
+        {
+          attrs: {
+            alt: 'Unsafe image',
+            src: 'data:text/html,<script>x</script>',
+          },
+          type: 'image',
+        },
+      ],
+      type: 'doc',
+    };
+
+    const html = renderRichTextToHTML(content);
+    expect(html).toBe('<p>Unsafe link</p>');
+    expect(html).not.toContain('javascript:');
+    expect(html).not.toContain('data:');
+  });
 });
