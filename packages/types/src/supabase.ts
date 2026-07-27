@@ -14353,6 +14353,23 @@ export type Database = {
           success: boolean;
         }[];
       };
+      begin_external_ai_studio_run: {
+        Args: {
+          p_external_app_id: string;
+          p_feature: string;
+          p_idempotency_key?: string;
+          p_metadata?: Json;
+          p_model_id: string;
+          p_request_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          error_code: string;
+          run_id: string;
+          success: boolean;
+        }[];
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       bulk_create_inventory_storefront_listings_from_stock: {
         Args: {
@@ -16402,6 +16419,27 @@ export type Database = {
           credits_deducted: number;
           error_code: string;
           remaining_credits: number;
+          success: boolean;
+        }[];
+      };
+      settle_external_ai_studio_run: {
+        Args: {
+          p_embedding_units?: number;
+          p_error_class?: string;
+          p_error_message?: string;
+          p_first_token_latency_ms?: number;
+          p_image_units?: number;
+          p_input_tokens?: number;
+          p_latency_ms?: number;
+          p_metadata?: Json;
+          p_output_tokens?: number;
+          p_provider_cost_usd?: number;
+          p_reasoning_tokens?: number;
+          p_run_id: string;
+          p_status: string;
+        };
+        Returns: {
+          error_code: string;
           success: boolean;
         }[];
       };

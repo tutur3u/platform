@@ -1,12 +1,10 @@
-import {
-  type AiStudioCredential,
-  authenticateAiStudioRequest,
-} from '@tuturuuu/ai/studio/auth';
 import { AiStudioError, toOpenAiError } from '@tuturuuu/ai/studio/errors';
 import {
   beginAiStudioRun,
+  beginExternalAiStudioRun,
   calculateAiStudioUsageCost,
   settleAiStudioRun,
+  settleExternalAiStudioRun,
 } from '@tuturuuu/ai/studio/metering';
 import {
   getAiStudioRequestId,
@@ -14,6 +12,13 @@ import {
 } from '@tuturuuu/ai/studio/request';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
+import {
+  authenticatePublicAiRequest,
+  EXTERNAL_AI_SCOPE,
+  type PublicAiCredential,
+} from './public-credential';
+
+export { authenticatePublicAiRequest } from './public-credential';
 
 export type MeteredUsage = {
   embeddingUnits?: number;
@@ -24,7 +29,7 @@ export type MeteredUsage = {
 };
 
 export type MeteredExecutionContext = {
-  credential: AiStudioCredential;
+  credential: PublicAiCredential;
   modelId: string;
   requestId: string;
   runId: string;
@@ -37,6 +42,7 @@ type PrepareMeteredExecutionInput = {
   metadata?: Json;
   modelId: string;
   request: Request;
+  requiredExternalScope?: string;
 };
 
 function positiveReservation(value: number): number {
@@ -55,8 +61,12 @@ export async function prepareMeteredExecution({
   metadata,
   modelId,
   request,
+  requiredExternalScope = EXTERNAL_AI_SCOPE,
 }: PrepareMeteredExecutionInput): Promise<MeteredExecutionContext> {
-  const credential = await authenticateAiStudioRequest(request);
+  const credential = await authenticatePublicAiRequest(
+    request,
+    requiredExternalScope
+  );
   const requestId = getAiStudioRequestId(request);
   const estimatedCost = await calculateAiStudioUsageCost({
     imageCount: maxUsage.imageUnits,
@@ -67,17 +77,32 @@ export async function prepareMeteredExecution({
     workspaceId: credential.workspaceId,
   });
 
-  const reservation = await beginAiStudioRun({
-    actorId: credential.actorId,
-    apiKeyId: credential.apiKey.id,
-    feature,
-    idempotencyKey: getIdempotencyKey(request),
-    metadata,
-    modelId,
-    requestId,
-    reservedCredits: positiveReservation(estimatedCost.billedCredits),
-    workspaceId: credential.workspaceId,
-  });
+  const idempotencyKey = getIdempotencyKey(request);
+  const reservation =
+    credential.kind === 'external-app'
+      ? await beginExternalAiStudioRun({
+          actorId: credential.actorId,
+          externalAppId: credential.appId,
+          feature,
+          idempotencyKey: idempotencyKey
+            ? `${credential.appId}:${idempotencyKey}`
+            : null,
+          metadata,
+          modelId,
+          requestId,
+          workspaceId: credential.workspaceId,
+        })
+      : await beginAiStudioRun({
+          actorId: credential.actorId,
+          apiKeyId: credential.apiKey.id,
+          feature,
+          idempotencyKey,
+          metadata,
+          modelId,
+          requestId,
+          reservedCredits: positiveReservation(estimatedCost.billedCredits),
+          workspaceId: credential.workspaceId,
+        });
 
   return {
     credential,
@@ -113,8 +138,7 @@ export async function settleMeteredExecution(
     workspaceId: context.credential.workspaceId,
   }).catch(() => ({ billedCredits: 0, providerCostUsd: 0 }));
 
-  await settleAiStudioRun({
-    actualCredits: cost.billedCredits,
+  const settlement = {
     embeddingUnits: usage.embeddingUnits,
     errorClass: error instanceof Error ? error.name : null,
     errorMessage: error instanceof Error ? error.message.slice(0, 500) : null,
@@ -128,7 +152,16 @@ export async function settleMeteredExecution(
     reasoningTokens: usage.reasoningTokens,
     runId: context.runId,
     status,
-  });
+  };
+
+  if (context.credential.kind === 'external-app') {
+    await settleExternalAiStudioRun(settlement);
+  } else {
+    await settleAiStudioRun({
+      ...settlement,
+      actualCredits: cost.billedCredits,
+    });
+  }
 }
 
 export async function captureAiStudioContent(
@@ -185,7 +218,7 @@ export async function captureAiStudioContent(
   }
 }
 
-export async function listAllowedModels(credential: AiStudioCredential) {
+export async function listAllowedModels(credential: PublicAiCredential) {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data: models, error } = await sbAdmin
     .schema('private')
@@ -207,7 +240,10 @@ export async function listAllowedModels(credential: AiStudioCredential) {
       const { data } = await sbAdmin
         .schema('private')
         .rpc('ai_studio_model_allowed', {
-          p_api_key_id: credential.apiKey.id,
+          p_api_key_id:
+            credential.kind === 'api-key'
+              ? credential.apiKey.id
+              : (null as unknown as string),
           p_model_id: model.id,
           p_ws_id: credential.workspaceId,
         });

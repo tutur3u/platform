@@ -66,10 +66,16 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
-  // Public AI endpoints authenticate exclusively with hash-only ttr_ai_ keys.
-  // They must never inherit or refresh a human browser session.
+  // Public AI endpoints authenticate exclusively with hash-only ttr_ai_ keys
+  // or scoped, registered external-app tokens. They never inherit or refresh a
+  // human browser session, but still pass the shared API abuse guard before
+  // credential verification and workspace-level rate enforcement.
   if (request.nextUrl.pathname.startsWith('/v1/')) {
-    return NextResponse.next();
+    return (
+      (await guardApiProxyRequest(request, {
+        prefixBase: 'proxy:ai:public',
+      })) ?? NextResponse.next()
+    );
   }
 
   if (request.nextUrl.pathname.startsWith('/api')) {

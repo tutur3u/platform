@@ -17,8 +17,9 @@ AI Studio is disabled by default. Access requires all of the following:
 3. the requested model is enabled globally and granted to the workspace;
 4. the caller or AI-only key has the required Studio permission and model
    scope; and
-5. the workspace has enough AI credits and is within its request and budget
-   limits.
+5. the request either has enough workspace AI credits and remains within its
+   request and budget limits, or is a verified registered external app using
+   the temporary zero-credit integration policy.
 
 Root administrators configure global defaults and workspace overrides in
 Infrastructure → AI Studio. Workspace administrators manage prompts, agents,
@@ -37,7 +38,8 @@ or committed configuration.
 
 ## Metering lifecycle
 
-Every model call follows one transactionally guarded lifecycle:
+Ordinary Studio keys and non-external callers follow one transactionally
+guarded lifecycle:
 
 1. authenticate the session or AI-only key;
 2. resolve the global, workspace, plan, and key policy intersection;
@@ -49,6 +51,13 @@ Every model call follows one transactionally guarded lifecycle:
 Provider failures and aborted streams still settle billable usage. Runs record
 model, key, prompt or agent version, latency, first-token latency, token or
 media units, provider cost, billed credits, status, and a stable request ID.
+
+Registered external apps are the only temporary billing exception. Their
+short-lived token must include `workspace:session` plus `ai:use` or `tts:use`,
+the app must remain enabled and linked to the requested workspace, and the user
+must still be a current workspace member. These calls reserve no workspace
+credits, but they still enforce model and workspace policy, workspace request
+limits, abuse controls, payload limits, and full run/provider-cost auditing.
 
 ## Trace retention
 

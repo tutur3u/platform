@@ -1,8 +1,14 @@
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
+import { resolveAiMemoryWorkspaceIdForUser } from '@tuturuuu/ai/memory/workspace';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withSessionAuth } from '@/lib/api-auth';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 
 const GEMINI_TIMEOUT_MS = 15_000;
+const PRONUNCIATION_MODEL = 'gemini-2.5-flash';
 
 function parseJsonObject(value: string) {
   const match = value.match(/\{[\s\S]*\}/u);
@@ -89,7 +95,10 @@ function textFromGeminiResponse(value: unknown) {
   );
 }
 
-async function analyzePronunciation(request: NextRequest) {
+async function analyzePronunciation(
+  request: NextRequest,
+  { supabase, user }: SessionAuthContext
+) {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -146,13 +155,44 @@ async function analyzePronunciation(request: NextRequest) {
     );
   }
 
+  const billingWorkspaceId = await resolveAiMemoryWorkspaceIdForUser({
+    fallbackWsId: '',
+    supabase,
+    userId: user.id,
+  });
+  const estimatedInputTokens = Math.max(
+    1,
+    Math.ceil(targetText.length / 4) + Math.ceil(audioData.length / 1000)
+  );
+  const creditCheck = await checkAiCredits(
+    billingWorkspaceId,
+    PRONUNCIATION_MODEL,
+    'generate',
+    {
+      estimatedInputTokens,
+      userId: user.id,
+    }
+  );
+
+  if (!creditCheck.allowed) {
+    return NextResponse.json(
+      {
+        code: creditCheck.errorCode,
+        message:
+          creditCheck.errorMessage ??
+          'AI credits are required for pronunciation analysis.',
+      },
+      { status: 403 }
+    );
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
   let response: Response;
   try {
     response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      `https://generativelanguage.googleapis.com/v1beta/models/${PRONUNCIATION_MODEL}:generateContent`,
       {
         body: JSON.stringify({
           contents: [
@@ -207,7 +247,40 @@ async function analyzePronunciation(request: NextRequest) {
     );
   }
 
-  const parsed = parseJsonObject(textFromGeminiResponse(await response.json()));
+  const providerPayload = (await response.json()) as {
+    usageMetadata?: {
+      candidatesTokenCount?: number;
+      promptTokenCount?: number;
+      thoughtsTokenCount?: number;
+    };
+  };
+  const outputText = textFromGeminiResponse(providerPayload);
+  const usage = providerPayload.usageMetadata;
+  const deduction = await deductAiCredits({
+    feature: 'generate',
+    inputTokens: usage?.promptTokenCount ?? estimatedInputTokens,
+    metadata: { surface: 'learn_vocabulary_pronunciation' },
+    modelId: PRONUNCIATION_MODEL,
+    outputTokens:
+      usage?.candidatesTokenCount ??
+      Math.max(1, Math.ceil(outputText.length / 4)),
+    reasoningTokens: usage?.thoughtsTokenCount ?? 0,
+    userId: user.id,
+    wsId: billingWorkspaceId,
+  });
+
+  if (!deduction.success) {
+    return NextResponse.json(
+      {
+        code: deduction.errorCode,
+        message:
+          'Pronunciation was analyzed but its AI credits could not be settled.',
+      },
+      { status: 503 }
+    );
+  }
+
+  const parsed = parseJsonObject(outputText);
 
   if (!parsed) {
     return NextResponse.json(

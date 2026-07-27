@@ -13,6 +13,23 @@ Authorization: Bearer ttr_ai_...
 The plaintext credential is shown once. Store it in a secret manager and never
 place it in browser bundles, URLs, logs, or source control.
 
+Registered external apps may instead use a short-lived `ttr_app_` access token.
+The app registration and issued token must both include `workspace:session` and
+`ai:use`; speech requests require `tts:use`. These requests must also send the
+normalized workspace ID returned by the app-token exchange:
+
+```http
+Authorization: Bearer ttr_app_...
+X-Tuturuuu-Workspace-Id: 00000000-0000-0000-0000-000000000000
+```
+
+The external-app path is temporarily exempt from workspace credit deductions.
+It is not unrestricted access: registration status, linked workspace, current
+user membership, model policy, payload bounds, workspace request rate, stable
+request IDs, and usage auditing remain enforced. Browser sessions, internal
+satellite sessions, ordinary Studio keys, and unrecognized callers never
+receive this exemption.
+
 ## OpenAI-compatible endpoints
 
 | Method | Path | Purpose |
@@ -22,6 +39,7 @@ place it in browser bundles, URLs, logs, or source control.
 | `POST` | `/v1/chat/completions` | OpenAI chat-completions compatibility |
 | `POST` | `/v1/embeddings` | Generate embeddings |
 | `POST` | `/v1/images/generations` | Generate images |
+| `POST` | `/v1/audio/speech` | Generate downloadable WAV or PCM speech |
 | `POST` | `/v1/agents/{agentId}/responses` | Run a versioned workspace agent |
 
 Requests support stable `x-request-id` values and the `idempotency-key` header.
@@ -42,6 +60,15 @@ standard OpenAI fields.
 
 The legacy `/api/ai/generate` endpoint remains available as a compatibility
 adapter. New integrations should use the `/v1` Studio endpoints.
+
+### Speech
+
+`POST /v1/audio/speech` accepts `input`, optional `voice`, optional
+`response_format` (`wav` or `pcm`), and the
+`google/gemini-3.1-flash-tts-preview` model. The response is downloadable audio
+and is never cached. Google currently prices the model by text input tokens and
+audio output tokens; Tuturuuu records both provider cost and generated audio
+duration-derived token usage.
 
 ## Retention and content capture
 

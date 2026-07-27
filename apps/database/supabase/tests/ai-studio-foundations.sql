@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(30);
+select plan(34);
 
 select ok(
   not exists (
@@ -292,6 +292,47 @@ select ok(
       and indexname = 'legal_acceptances_workspace_time_idx'
   ),
   'workspace legal acceptance history has a bounded time index'
+);
+
+select ok(
+  to_regprocedure(
+    'private.begin_external_ai_studio_run(text,uuid,uuid,text,text,text,text,jsonb)'
+  ) is not null,
+  'registered external apps have a dedicated audited zero-credit run boundary'
+);
+
+select ok(
+  to_regprocedure(
+    'private.settle_external_ai_studio_run(uuid,text,numeric,integer,integer,integer,integer,integer,integer,integer,text,text,jsonb)'
+  ) is not null,
+  'registered external app runs have a dedicated zero-credit settlement boundary'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.begin_external_ai_studio_run(text,uuid,uuid,text,text,text,text,jsonb)',
+    'execute'
+  )
+    and has_function_privilege(
+      'service_role',
+      'private.begin_external_ai_studio_run(text,uuid,uuid,text,text,text,text,jsonb)',
+      'execute'
+    ),
+  'only the service role may start external-app AI runs'
+);
+
+select ok(
+  exists (
+    select 1
+    from private.ai_gateway_models
+    where id = 'google/gemini-3.1-flash-tts-preview'
+      and type = 'audio'
+      and is_enabled
+      and input_price_per_token = 0.000001
+      and output_price_per_token = 0.000020
+  ),
+  'Gemini 3.1 Flash TTS has explicit credit pricing and is enabled'
 );
 
 select * from finish();

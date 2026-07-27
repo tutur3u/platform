@@ -7,6 +7,10 @@ export type AiStudioRunReservation = {
   runId: string;
 };
 
+export type ExternalAiStudioRun = {
+  runId: string;
+};
+
 export type AiStudioUsageCost = {
   billedCredits: number;
   providerCostUsd: number;
@@ -126,6 +130,42 @@ export async function beginAiStudioRun(
   };
 }
 
+export type BeginExternalAiStudioRunInput = {
+  actorId: string;
+  externalAppId: string;
+  feature: string;
+  idempotencyKey?: string | null;
+  metadata?: Json;
+  modelId: string;
+  requestId: string;
+  workspaceId: string;
+};
+
+export async function beginExternalAiStudioRun(
+  input: BeginExternalAiStudioRunInput
+): Promise<ExternalAiStudioRun> {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('begin_external_ai_studio_run', {
+      p_external_app_id: input.externalAppId,
+      p_feature: input.feature,
+      p_idempotency_key: input.idempotencyKey ?? undefined,
+      p_metadata: input.metadata,
+      p_model_id: input.modelId,
+      p_request_id: input.requestId,
+      p_user_id: input.actorId,
+      p_ws_id: input.workspaceId,
+    });
+
+  const result = data?.[0];
+  if (error || !result?.success || !result.run_id) {
+    throw reservationError(result?.error_code ?? null);
+  }
+
+  return { runId: result.run_id };
+}
+
 export type SettleAiStudioRunInput = {
   actualCredits: number;
   embeddingUnits?: number;
@@ -168,6 +208,37 @@ export async function settleAiStudioRun(
 
   if (error || !data?.[0]?.success) {
     throw new AiStudioError('AI usage could not be settled.', {
+      code: 'server_error',
+      status: 500,
+      type: 'server_error',
+    });
+  }
+}
+
+export async function settleExternalAiStudioRun(
+  input: Omit<SettleAiStudioRunInput, 'actualCredits'>
+): Promise<void> {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('settle_external_ai_studio_run', {
+      p_embedding_units: input.embeddingUnits ?? 0,
+      p_error_class: input.errorClass ?? undefined,
+      p_error_message: input.errorMessage ?? undefined,
+      p_first_token_latency_ms: input.firstTokenLatencyMs ?? undefined,
+      p_image_units: input.imageUnits ?? 0,
+      p_input_tokens: input.inputTokens ?? 0,
+      p_latency_ms: input.latencyMs ?? undefined,
+      p_metadata: input.metadata,
+      p_output_tokens: input.outputTokens ?? 0,
+      p_provider_cost_usd: input.providerCostUsd ?? 0,
+      p_reasoning_tokens: input.reasoningTokens ?? 0,
+      p_run_id: input.runId,
+      p_status: input.status,
+    });
+
+  if (error || !data?.[0]?.success) {
+    throw new AiStudioError('External-app AI usage could not be settled.', {
       code: 'server_error',
       status: 500,
       type: 'server_error',

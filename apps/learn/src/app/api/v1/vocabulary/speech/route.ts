@@ -1,6 +1,11 @@
+import {
+  checkAiCredits,
+  deductAiCredits,
+} from '@tuturuuu/ai/credits/check-credits';
+import { resolveAiMemoryWorkspaceIdForUser } from '@tuturuuu/ai/memory/workspace';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withSessionAuth } from '@/lib/api-auth';
+import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 
 const GOOGLE_TTS_MODEL =
   process.env.GOOGLE_TTS_MODEL ?? 'gemini-3.1-flash-tts-preview';
@@ -102,7 +107,10 @@ function findBase64AudioData(value: unknown): string | null {
   return null;
 }
 
-async function generateSpeech(request: NextRequest) {
+async function generateSpeech(
+  request: NextRequest,
+  { supabase, user }: SessionAuthContext
+) {
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 
@@ -141,6 +149,32 @@ async function generateSpeech(request: NextRequest) {
     kind === 'word'
       ? `Read this vocabulary word in clear American English. Speak only the word: ${text}`
       : `Read this example sentence in clear American English. Speak only the sentence: ${text}`;
+  const billingWorkspaceId = await resolveAiMemoryWorkspaceIdForUser({
+    fallbackWsId: '',
+    supabase,
+    userId: user.id,
+  });
+  const creditCheck = await checkAiCredits(
+    billingWorkspaceId,
+    GOOGLE_TTS_MODEL,
+    'generate',
+    {
+      estimatedInputTokens: Math.max(1, Math.ceil(prompt.length / 4)),
+      userId: user.id,
+    }
+  );
+
+  if (!creditCheck.allowed) {
+    return NextResponse.json(
+      {
+        code: creditCheck.errorCode,
+        message:
+          creditCheck.errorMessage ??
+          'AI credits are required to generate speech.',
+      },
+      { status: 403 }
+    );
+  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), GOOGLE_TTS_TIMEOUT_MS);
@@ -211,6 +245,32 @@ async function generateSpeech(request: NextRequest) {
   }
 
   const wav = pcmToWav(pcm);
+  const inputTokens = Math.max(1, Math.ceil(prompt.length / 4));
+  const audioSeconds = pcm.length / (SAMPLE_RATE * 2);
+  const outputTokens = Math.max(1, Math.ceil(audioSeconds * 25));
+  const deduction = await deductAiCredits({
+    feature: 'generate',
+    inputTokens,
+    metadata: {
+      kind,
+      surface: 'learn_vocabulary_speech',
+    },
+    modelId: GOOGLE_TTS_MODEL,
+    outputTokens,
+    userId: user.id,
+    wsId: billingWorkspaceId,
+  });
+
+  if (!deduction.success) {
+    return NextResponse.json(
+      {
+        code: deduction.errorCode,
+        message:
+          'Speech was generated but its AI credits could not be settled.',
+      },
+      { status: 503 }
+    );
+  }
 
   return new NextResponse(wav, {
     headers: {

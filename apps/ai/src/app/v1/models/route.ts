@@ -1,14 +1,17 @@
-import { authenticateAiStudioRequest } from '@tuturuuu/ai/studio/auth';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import { connection } from 'next/server';
-import { listAllowedModels, publicApiError } from '@/lib/public-api';
+import {
+  authenticatePublicAiRequest,
+  listAllowedModels,
+  publicApiError,
+} from '@/lib/public-api';
 
 export async function GET(request: Request) {
   await connection();
   const requestId = getAiStudioRequestId(request);
 
   try {
-    const credential = await authenticateAiStudioRequest(request);
+    const credential = await authenticatePublicAiRequest(request);
     const models = await listAllowedModels(credential);
 
     return Response.json(
