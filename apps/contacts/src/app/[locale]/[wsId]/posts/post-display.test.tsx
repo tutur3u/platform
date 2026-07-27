@@ -67,4 +67,25 @@ describe('PostDisplay', () => {
     expect(screen.getByText('review_stage')).toBeInTheDocument();
     expect(screen.getAllByText('delivery_status').length).toBeGreaterThan(0);
   });
+
+  it('fills the large preview dialog without preserving panel minimum height', () => {
+    const { container } = render(
+      <PostDisplay
+        presentation="dialog"
+        wsId="ws-1"
+        postEmail={{
+          group_id: 'group-1',
+          group_name: 'Group 1',
+          has_check: true,
+          post_id: 'post-1',
+          recipient: 'Recipient',
+          stage: 'pending_approval',
+        }}
+      />
+    );
+
+    const root = container.firstElementChild;
+    expect(root).toHaveClass('h-full', 'min-h-0');
+    expect(root).not.toHaveClass('min-h-[36rem]');
+  });
 });

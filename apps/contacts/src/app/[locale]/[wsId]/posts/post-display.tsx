@@ -35,12 +35,14 @@ export function PostDisplay({
   canApprovePosts = false,
   canForceSendPosts = false,
   onApprovalCompleted,
+  presentation = 'panel',
 }: {
   wsId: string;
   postEmail: PostEmail | null;
   canApprovePosts?: boolean;
   canForceSendPosts?: boolean;
   onApprovalCompleted?: (postEmail: PostEmail) => void | Promise<void>;
+  presentation?: 'dialog' | 'panel';
 }) {
   const locale = useLocale();
   const t = useTranslations('post-email-data-table');
@@ -89,8 +91,15 @@ export function PostDisplay({
     postEmail.stage !== 'sent';
 
   return (
-    <div className="flex min-h-[36rem] flex-col rounded-lg border border-border/60 shadow-sm">
-      <div className="flex flex-col gap-3 rounded-t-lg border-b px-4 py-4 backdrop-blur-sm">
+    <div
+      className={cn(
+        'flex flex-col overflow-hidden',
+        presentation === 'dialog'
+          ? 'h-full min-h-0 border-0 shadow-none'
+          : 'min-h-[36rem] rounded-lg border border-border/60 shadow-sm'
+      )}
+    >
+      <div className="flex shrink-0 flex-col gap-3 border-b px-4 py-4 pr-12 backdrop-blur-sm sm:px-6 sm:py-5 sm:pr-14">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold text-lg">{t('details_title')}</h3>
           <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-3">
