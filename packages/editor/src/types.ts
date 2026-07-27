@@ -20,6 +20,7 @@ export type EditorMessages = {
   orderedList: string;
   placeholder: string;
   redo: string;
+  toolbar: string;
   undo: string;
   words: (count: number) => string;
 };

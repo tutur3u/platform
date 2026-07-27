@@ -9,7 +9,7 @@
     "directory": "packages/editor"
   },
   "type": "module",
-  "files": ["dist", "README.md"],
+  "files": ["dist", "README.md", "styles.css"],
   "publishConfig": {
     "access": "public"
   },
@@ -26,14 +26,16 @@
     "./react": {
       "types": "./dist/react.d.ts",
       "import": "./dist/react.js"
-    }
+    },
+    "./styles.css": "./styles.css"
   },
   "dependencies": {
     "@tiptap/extension-image": "3.28.0",
     "@tiptap/extension-link": "3.28.0",
     "@tiptap/extension-placeholder": "3.28.0",
     "@tiptap/react": "3.28.0",
-    "@tiptap/starter-kit": "3.28.0"
+    "@tiptap/starter-kit": "3.28.0",
+    "@tuturuuu/icons": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.2.0",

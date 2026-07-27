@@ -1795,6 +1795,7 @@
         "@tiptap/extension-placeholder": "3.28.0",
         "@tiptap/react": "3.28.0",
         "@tiptap/starter-kit": "3.28.0",
+        "@tuturuuu/icons": "workspace:*",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
