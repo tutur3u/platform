@@ -3,6 +3,12 @@
   display: inline-flex;
 }
 
+.tuturuuu-editor-toolbar {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
 .tuturuuu-editor-tool > button,
 .tuturuuu-editor-tool > label {
   display: inline-flex;
@@ -79,14 +85,17 @@
 .tuturuuu-editor-tooltip {
   position: absolute;
   z-index: 50;
-  bottom: calc(100% + 0.5rem);
+  top: calc(100% + 0.5rem);
   left: 50%;
   width: max-content;
   max-width: 12rem;
   padding: 0.375rem 0.5rem;
   transform: translate(-50%, 0.25rem);
+  border: 1px solid
+    var(--tuturuuu-editor-tooltip-border, rgb(255 255 255 / 0.12));
   border-radius: 0.375rem;
   background: var(--tuturuuu-editor-tooltip-background, #111827);
+  box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 0.16);
   color: var(--tuturuuu-editor-tooltip-foreground, #f9fafb);
   font-size: 0.75rem;
   font-weight: 500;

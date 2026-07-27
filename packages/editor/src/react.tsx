@@ -7,7 +7,9 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import {
   Bold,
+  Heading1,
   Heading2,
+  Heading3,
   Italic,
   List,
   ListOrdered,
@@ -82,6 +84,11 @@ export function RichTextEditor({
   const words = extractPlainText(editor.getJSON())
     .split(/\s+/u)
     .filter(Boolean).length;
+  const headingLabels = {
+    1: messages.heading1 ?? `${messages.heading} 1`,
+    2: messages.heading2 ?? `${messages.heading} 2`,
+    3: messages.heading3 ?? `${messages.heading} 3`,
+  } as const;
 
   return (
     <div className="tuturuuu-editor" data-read-only={readOnly || undefined}>
@@ -104,10 +111,22 @@ export function RichTextEditor({
             editor.isActive('italic')
           )}
           {action(
-            messages.heading,
+            headingLabels[1],
+            Heading1,
+            () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+            editor.isActive('heading', { level: 1 })
+          )}
+          {action(
+            headingLabels[2],
             Heading2,
             () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-            editor.isActive('heading')
+            editor.isActive('heading', { level: 2 })
+          )}
+          {action(
+            headingLabels[3],
+            Heading3,
+            () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+            editor.isActive('heading', { level: 3 })
           )}
           {action(
             messages.bulletList,
