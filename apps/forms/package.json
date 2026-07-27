@@ -47,7 +47,7 @@
     "nuqs": "^2.9.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "recharts": "3.10.0",
+    "recharts": "3.10.1",
     "server-only": "^0.0.1",
     "streamdown": "^2.5.0",
     "use-debounce": "^10.1.1",

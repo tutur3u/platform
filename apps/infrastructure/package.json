@@ -61,7 +61,7 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.82.0",
-    "recharts": "3.10.0",
+    "recharts": "3.10.1",
     "server-only": "^0.0.1",
     "undici": "^8.8.0",
     "uuid": "^14.0.1",
