@@ -129,6 +129,8 @@ export default function PeriodicReportsPanel({
   });
   const reports = reportsQuery.data?.pages.flatMap((page) => page.data) ?? [];
   const counts = reportsQuery.data?.pages[0]?.counts;
+  const totalReports = reportsQuery.data?.pages[0]?.total ?? 0;
+  const numberFormatter = new Intl.NumberFormat();
   const invalidate = () =>
     queryClient.invalidateQueries({
       queryKey: ['periodic-reports', wsId],
@@ -184,7 +186,9 @@ export default function PeriodicReportsPanel({
           <Card key={String(label)}>
             <CardContent className="p-3 md:p-4">
               <p className="text-muted-foreground text-xs">{label}</p>
-              <p className="mt-1 font-semibold text-xl">{value}</p>
+              <p className="mt-1 font-semibold text-xl">
+                {numberFormatter.format(Number(value))}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -431,6 +435,14 @@ export default function PeriodicReportsPanel({
           )}
           {t('load_more')}
         </Button>
+      )}
+      {reports.length > 0 && (
+        <p className="text-center text-muted-foreground text-xs">
+          {t('showing_periodic', {
+            loaded: numberFormatter.format(reports.length),
+            total: numberFormatter.format(totalReports),
+          })}
+        </p>
       )}
 
       <AlertDialog

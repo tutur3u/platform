@@ -3278,6 +3278,7 @@
     "search_periodic": "Search periodic reports",
     "send": "Send",
     "sender_ready": "Workspace sender",
+    "showing_periodic": "Showing {loaded} of {total} reports",
     "title": "Reports",
     "total": "Total",
     "test_send": "Test send",

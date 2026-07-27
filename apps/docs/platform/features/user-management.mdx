@@ -18,6 +18,7 @@ The post email queue now treats provider-accepted delivery as durable once it is
 
 - The queue worker should only claim rows that it can start in the current processing slice.
 - Avoid front-claiming the whole `sendLimit`; stranded `processing` rows interact badly with stale cleanup and can create duplicate delivery attempts after requeue.
+- Rejected-recipient cleanup must remain a set-wise private RPC. Scanning every rejected check and updating recipient pairs one at a time can consume the cron's runtime before approved messages are claimed.
 
 ### Operations Dashboard
 

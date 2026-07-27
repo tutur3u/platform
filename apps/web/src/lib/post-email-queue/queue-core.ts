@@ -74,6 +74,11 @@ type ReconcileOrphanedApprovedPostsRpcResponse = {
   error: unknown | null;
 };
 
+type SkipRejectedPostEmailsRpcResponse = {
+  data: number | null;
+  error: unknown | null;
+};
+
 type CheckEligibilityRow = Pick<
   GroupPostCheck,
   'post_id' | 'user_id' | 'is_completed' | 'approval_status'
@@ -148,6 +153,16 @@ function callReconcileOrphanedApprovedPostsRpc(
       rpcArgs: ReconcileOrphanedApprovedPostsRpcArgs
     ) => Promise<ReconcileOrphanedApprovedPostsRpcResponse>
   )('reconcile_orphaned_approved_post_email_queue', args);
+}
+
+function callSkipRejectedPostEmailsRpc(
+  client: RpcCapableSupabaseClient
+): Promise<SkipRejectedPostEmailsRpcResponse> {
+  return (
+    client.schema('private').rpc as unknown as (
+      fn: string
+    ) => Promise<SkipRejectedPostEmailsRpcResponse>
+  )('skip_rejected_post_email_queue');
 }
 
 function getRpcErrorMessage(error: unknown): string {
@@ -1271,52 +1286,19 @@ export async function cleanupStaleProcessingRows(
 export async function autoSkipRejectedPosts(
   sbAdmin: TypedSupabaseClient
 ): Promise<number> {
-  const rejectedChecks = await fetchAllPaginatedRows<
-    Pick<GroupPostCheck, 'post_id' | 'user_id'>
-  >(
-    (from, to) =>
-      sbAdmin
-        .schema('private')
-        .from('user_group_post_checks')
-        .select('post_id, user_id')
-        .eq('approval_status', 'REJECTED')
-        .order('post_id', { ascending: true })
-        .order('user_id', { ascending: true })
-        .range(from, to),
-    { maxRows: POST_EMAIL_MAINTENANCE_MAX_SCAN_ROWS }
-  );
-  if (rejectedChecks.length === 0) return 0;
-
-  const now = new Date().toISOString();
-  let updatedRows = 0;
-  const userIdsByPostId = new Map<string, Set<string>>();
-  for (const check of rejectedChecks) {
-    const existing = userIdsByPostId.get(check.post_id) ?? new Set<string>();
-    existing.add(check.user_id);
-    userIdsByPostId.set(check.post_id, existing);
-  }
-
-  for (const [postId, userIds] of userIdsByPostId) {
-    for (const userIdChunk of chunkArray([...userIds])) {
-      const { data, error: updateError } = await getQueueTable(sbAdmin)
-        .update({
-          status: 'skipped',
-          batch_id: null,
-          claimed_at: null,
-          cancelled_at: now,
-          last_error: 'Post was rejected - auto-skipped',
-        })
-        .eq('post_id', postId)
-        .in('user_id', userIdChunk)
-        .eq('status', 'queued')
-        .select('id');
-
-      if (updateError) throw updateError;
-      updatedRows += data?.length ?? 0;
+  const rpcClient = getRpcClient(sbAdmin);
+  if (rpcClient?.rpc) {
+    const { data, error } = await callSkipRejectedPostEmailsRpc(rpcClient);
+    if (!error) return Number(data ?? 0);
+    if (!shouldFallbackToAppRpc(error, 'skip_rejected_post_email_queue')) {
+      throw error;
     }
   }
 
-  return updatedRows;
+  // Queue processing revalidates approval before sending, so deployments that
+  // briefly precede the RPC migration remain safe without the old unbounded
+  // row-by-row maintenance scan.
+  return 0;
 }
 
 async function reconcileOrphanedApprovedPostsInApp(

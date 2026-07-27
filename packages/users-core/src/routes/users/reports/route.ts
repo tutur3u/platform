@@ -12,6 +12,10 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '../../../lib/user-groups/route-helpers';
+import {
+  normalizePeriodicReportCounts,
+  type PeriodicReportCountsRpcRow,
+} from './report-counts';
 
 const CreateReportSchema = z.object({
   user_id: z.guid(),
@@ -57,6 +61,11 @@ const ListReportsSchema = z.object({
 
 interface Params {
   params: Promise<{ wsId: string }>;
+}
+
+interface PeriodicReportCountsRpcResponse {
+  data: PeriodicReportCountsRpcRow[] | PeriodicReportCountsRpcRow | null;
+  error: unknown | null;
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -138,37 +147,102 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    let countsQuery = privateDb
-      .from('external_user_monthly_reports_workspace_view')
-      .select('report_approval_status, delivery_status, generation_status')
-      .eq('user_ws_id', wsId)
-      .eq('cadence', parsed.data.cadence);
-    if (accessibleGroupIds) {
-      countsQuery = countsQuery.in('group_id', accessibleGroupIds);
-    }
+    const countsRpcPromise = (
+      privateDb.rpc as unknown as (
+        name: string,
+        args: {
+          p_cadence: string;
+          p_group_ids: string[] | null;
+          p_ws_id: string;
+        }
+      ) => Promise<PeriodicReportCountsRpcResponse>
+    )('get_periodic_report_counts', {
+      p_cadence: parsed.data.cadence,
+      p_group_ids: accessibleGroupIds,
+      p_ws_id: wsId,
+    });
 
-    const [listResult, countsResult, workspaceResult] = await Promise.all([
+    const [listResult, countsRpcResult, workspaceResult] = await Promise.all([
       listQuery,
-      countsQuery,
+      countsRpcPromise,
       sbAdmin.from('workspaces').select('id, timezone').eq('id', wsId).single(),
     ]);
     if (listResult.error) throw listResult.error;
-    if (countsResult.error) throw countsResult.error;
     if (workspaceResult.error) throw workspaceResult.error;
 
-    const rows = countsResult.data ?? [];
-    const counts = {
-      approved: rows.filter((row) => row.report_approval_status === 'APPROVED')
-        .length,
-      blocked: rows.filter((row) => row.delivery_status === 'blocked').length,
-      delivered: rows.filter((row) => row.delivery_status === 'sent').length,
-      draft: rows.filter((row) => row.generation_status === 'draft').length,
-      failed: rows.filter((row) => row.delivery_status === 'failed').length,
-      pendingReview: rows.filter(
-        (row) => row.report_approval_status === 'PENDING'
-      ).length,
-      total: rows.length,
-    };
+    let counts: ReturnType<typeof normalizePeriodicReportCounts>;
+    if (!countsRpcResult.error) {
+      const rpcRow = Array.isArray(countsRpcResult.data)
+        ? countsRpcResult.data[0]
+        : countsRpcResult.data;
+      counts = normalizePeriodicReportCounts(rpcRow);
+    } else {
+      const createCountQuery = (filter?: {
+        column:
+          | 'delivery_status'
+          | 'generation_status'
+          | 'report_approval_status';
+        value: string;
+      }) => {
+        let query = privateDb
+          .from('external_user_monthly_reports_workspace_view')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_ws_id', wsId)
+          .eq('cadence', parsed.data.cadence);
+        if (accessibleGroupIds) {
+          query = query.in('group_id', accessibleGroupIds);
+        }
+        return filter ? query.eq(filter.column, filter.value) : query;
+      };
+      const [
+        totalResult,
+        draftResult,
+        pendingResult,
+        approvedResult,
+        deliveredResult,
+        failedResult,
+        blockedResult,
+      ] = await Promise.all([
+        createCountQuery(),
+        createCountQuery({
+          column: 'generation_status',
+          value: 'draft',
+        }),
+        createCountQuery({
+          column: 'report_approval_status',
+          value: 'PENDING',
+        }),
+        createCountQuery({
+          column: 'report_approval_status',
+          value: 'APPROVED',
+        }),
+        createCountQuery({ column: 'delivery_status', value: 'sent' }),
+        createCountQuery({ column: 'delivery_status', value: 'failed' }),
+        createCountQuery({ column: 'delivery_status', value: 'blocked' }),
+      ]);
+      const fallbackResults = [
+        totalResult,
+        draftResult,
+        pendingResult,
+        approvedResult,
+        deliveredResult,
+        failedResult,
+        blockedResult,
+      ];
+      const fallbackError = fallbackResults.find(
+        (result) => result.error
+      )?.error;
+      if (fallbackError) throw fallbackError;
+      counts = normalizePeriodicReportCounts({
+        approved: approvedResult.count,
+        blocked: blockedResult.count,
+        delivered: deliveredResult.count,
+        draft: draftResult.count,
+        failed: failedResult.count,
+        pending_review: pendingResult.count,
+        total: totalResult.count,
+      });
+    }
     const data = (listResult.data ?? []).map((row) => ({
       ...row,
       user_name:

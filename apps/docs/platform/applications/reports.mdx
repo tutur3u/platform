@@ -1,7 +1,7 @@
 ---
 title: 'Daily and Periodic Reports'
 description: 'Configure, approve, deliver, and troubleshoot daily, weekly, monthly, quarterly, and yearly workspace reports.'
-updatedAt: '2026-07-24'
+updatedAt: '2026-07-27'
 ---
 
 The Contacts Reports hub at `/{wsId}/reports` is the canonical workspace surface
@@ -16,7 +16,9 @@ giving managers one consistent workflow:
   generation runs, sender readiness, and delivery history.
 
 Legacy `/posts` and `/users/reports` links redirect into the corresponding hub
-tab and preserve their filters.
+tab and preserve their filters. The canonical hub opens **Daily** by default
+when the actor can view daily reports; explicit Periodic and Automations links
+still open their requested tab.
 
 ```mermaid
 flowchart LR
@@ -157,6 +159,11 @@ before retrying.
 Daily reports count group-post completion and delivery. Periodic reports count
 subject reports by cadence and approval/delivery state. They intentionally use
 different underlying models and should not be summed as the same metric.
+
+Periodic summary cards use a private aggregate RPC rather than materializing
+report rows in the application. This keeps totals exact beyond PostgREST's
+default row limit. The report list remains independently paginated and can load
+every matching record without using the summary result as a page.
 
 ## Verification
 

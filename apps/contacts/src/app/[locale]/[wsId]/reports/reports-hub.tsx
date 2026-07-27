@@ -9,9 +9,11 @@ import PostsClient from '../posts/client';
 import type { PostsSearchParams } from '../posts/types';
 import AutomationsPanel from './automations-panel';
 import PeriodicReportsPanel from './periodic-reports-panel';
-
-const reportViews = ['daily', 'periodic', 'automations'] as const;
-type ReportView = (typeof reportViews)[number];
+import {
+  type ReportView,
+  reportViews,
+  resolveDefaultReportView,
+} from './report-view';
 
 export default function ReportsHub({
   canManageAutomation,
@@ -40,14 +42,11 @@ export default function ReportsHub({
   wsId: string;
 }) {
   const t = useTranslations('reports-hub');
-  const defaultView: ReportView =
-    initialView === 'daily' && canViewDaily
-      ? 'daily'
-      : initialView === 'automations' && canViewPeriodic
-        ? 'automations'
-        : canViewPeriodic
-          ? 'periodic'
-          : 'daily';
+  const defaultView = resolveDefaultReportView({
+    canViewDaily,
+    canViewPeriodic,
+    initialView,
+  });
   const [view, setView] = useQueryState(
     'view',
     parseAsStringEnum<ReportView>([...reportViews]).withDefault(defaultView)

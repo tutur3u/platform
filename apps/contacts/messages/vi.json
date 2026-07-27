@@ -3278,6 +3278,7 @@
     "search_periodic": "Tìm báo cáo định kỳ",
     "send": "Gửi",
     "sender_ready": "Người gửi của không gian làm việc",
+    "showing_periodic": "Đang hiển thị {loaded} trong tổng số {total} báo cáo",
     "title": "Báo cáo",
     "total": "Tổng",
     "test_send": "Gửi thử",

@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(24);
+select plan(28);
 
 select ok(
   exists (
@@ -143,6 +143,18 @@ select has_function(
   array['uuid', 'uuid', 'uuid[]']
 );
 
+select has_function(
+  'private',
+  'get_periodic_report_counts',
+  array['uuid', 'text', 'uuid[]']
+);
+
+select has_function(
+  'private',
+  'skip_rejected_post_email_queue',
+  array[]::text[]
+);
+
 select ok(
   not has_function_privilege(
     'authenticated',
@@ -159,6 +171,24 @@ select ok(
     'execute'
   ),
   'service role can claim automation runs'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.get_periodic_report_counts(uuid,text,uuid[])',
+    'execute'
+  ),
+  'service role can aggregate periodic report counts'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'private.get_periodic_report_counts(uuid,text,uuid[])',
+    'execute'
+  ),
+  'authenticated clients cannot call private report aggregates'
 );
 
 select ok(

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  autoSkipRejectedPosts,
   enqueueApprovedPostEmails,
   fetchAllPaginatedRows,
   hasPostEmailBeenSent,
@@ -421,6 +422,51 @@ describe('enqueueApprovedPostEmails', () => {
       processedPosts: 2,
       remainingPosts: 5,
     });
+  });
+});
+
+describe('autoSkipRejectedPosts', () => {
+  it('uses set-wise database maintenance when the RPC is available', async () => {
+    const rpc = async (name: string) => {
+      expect(name).toBe('skip_rejected_post_email_queue');
+      return { data: 4_821, error: null };
+    };
+
+    await expect(
+      autoSkipRejectedPosts({
+        rpc,
+        schema: () => ({ rpc }),
+      } as never)
+    ).resolves.toBe(4_821);
+  });
+
+  it('avoids the legacy row scan while the RPC migration is rolling out', async () => {
+    const rpc = async () => ({
+      data: null,
+      error: {
+        message:
+          'Could not find the function private.skip_rejected_post_email_queue',
+      },
+    });
+
+    await expect(
+      autoSkipRejectedPosts({
+        rpc,
+        schema: () => ({ rpc }),
+      } as never)
+    ).resolves.toBe(0);
+  });
+
+  it('surfaces operational RPC failures instead of hiding maintenance errors', async () => {
+    const error = new Error('database unavailable');
+    const rpc = async () => ({ data: null, error });
+
+    await expect(
+      autoSkipRejectedPosts({
+        rpc,
+        schema: () => ({ rpc }),
+      } as never)
+    ).rejects.toBe(error);
   });
 });
 
