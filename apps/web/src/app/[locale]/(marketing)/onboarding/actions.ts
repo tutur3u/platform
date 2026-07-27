@@ -237,13 +237,18 @@ export async function createWorkspaceFromOnboarding(
       return { success: false, error: 'Failed to create workspace' };
     }
 
-    // Add the user as a workspace member with admin role
+    // Add the user as a workspace member. `add_ws_creator()` has already done
+    // this for the creator, so a plain insert collides on the primary key and
+    // the cleanup below would delete the workspace that was just created.
     const { error: memberError } = await supabase
       .from('workspace_members')
-      .insert({
-        ws_id: workspace.id,
-        user_id: userId,
-      });
+      .upsert(
+        {
+          ws_id: workspace.id,
+          user_id: userId,
+        },
+        { ignoreDuplicates: true, onConflict: 'ws_id,user_id' }
+      );
 
     if (memberError) {
       console.error('Error adding user as workspace member:', memberError);

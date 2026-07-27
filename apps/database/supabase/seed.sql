@@ -455,7 +455,10 @@ values
     (
         '00000000-0000-0000-0000-000000000002',
         '00000000-0000-0000-0000-000000000004'
-    );
+    )
+-- `add_ws_creator()` already added each workspace's creator as a member, so the
+-- rows above that name a creator are duplicates by the time this runs.
+on conflict (ws_id, user_id) do nothing;
 
 -- Populate workspace_invites with remaining users
 insert into
