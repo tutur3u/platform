@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/ai-v0.5.0...ai-v0.6.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **ai:** enforce external app usage policy ([e229116](https://github.com/tutur3u/platform/commit/e229116990ee03cab2197f41d48134b652252dbe))
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+
+
+### Bug Fixes
+
+* **ai:** repair Mira reasoning streams ([c04386a](https://github.com/tutur3u/platform/commit/c04386a9742c85d0af149d27850d7e6c591a54bc))
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/ai-v0.4.0...ai-v0.5.0) (2026-07-27)
 
 

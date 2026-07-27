@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/tutur3u/platform/compare/auth-v0.3.0...auth-v0.3.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* **ai:** prevent satellite auth loops ([80f264c](https://github.com/tutur3u/platform/commit/80f264cc91e1709a96148f203ab12bca8a8e392b))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/auth-v0.2.5...auth-v0.3.0) (2026-07-25)
 
 

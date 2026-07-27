@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/teach-v0.13.0...teach-v0.14.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* **education:** align teach and learn navigation ([48896cd](https://github.com/tutur3u/platform/commit/48896cd9eaee11a8efae58f46901f2c60d7cf637))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* implement AI-assisted feedback generation for student quiz submissions ([e347a46](https://github.com/tutur3u/platform/commit/e347a46ff86769c33a5312e2d5ea606c17d3e1a5))
+* improve vocabulary details ([#4958](https://github.com/tutur3u/platform/issues/4958)) ([9e01bd1](https://github.com/tutur3u/platform/commit/9e01bd1e9017a4341487d1e9582e17c27a1a4404))
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* migrate vocabulary details and suggestions from OED to Laban Dictionary ([0f549c2](https://github.com/tutur3u/platform/commit/0f549c2767c0082fff733e0fe747c2681c50c2db))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **seo:** improve discovery metadata ([a574409](https://github.com/tutur3u/platform/commit/a57440984df45086c4989db07b02d402dd93c828))
+* **seo:** improve discovery metadata ([8e2420d](https://github.com/tutur3u/platform/commit/8e2420d49e7b94c462d92222ea8f239ab92564f6))
+* **seo:** improve page metadata ([0c621cb](https://github.com/tutur3u/platform/commit/0c621cb7fc1253b0a11ea21992503274052c6be0))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
+
+### Bug Fixes
+
+* **apps:** opt authed pages and GET routes into request-time rendering under cacheComponents ([9496ec3](https://github.com/tutur3u/platform/commit/9496ec37deaa3bfd6796a5fd0506f8d942d26c0e))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **edu:** address follow-up vocabulary review ([c21565f](https://github.com/tutur3u/platform/commit/c21565f28eb2872d342b65fe7332f9ce7227fa20))
+* **edu:** resolve vocabulary journey review feedback ([46e4180](https://github.com/tutur3u/platform/commit/46e4180994add3417b84779433a5cd2f21737bf7))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **teach:** address final AI review feedback ([05fc697](https://github.com/tutur3u/platform/commit/05fc697e951d2c66f8661ba9d47cafbabd9aba37))
+* **teach:** address vocabulary review feedback ([4efa1a8](https://github.com/tutur3u/platform/commit/4efa1a8037038f5fc3ba018e8ef4e3a128021b54))
+* **teach:** harden AI feedback concurrency ([f470e6e](https://github.com/tutur3u/platform/commit/f470e6e415603e850b34b09fffb9516ea45d40a2))
+* **teach:** preserve saved vocabulary feedback ([976fd2c](https://github.com/tutur3u/platform/commit/976fd2c8f3e42bfd61b979e58ffe0039b7c90901))
+* **vocabulary:** stabilize CI and OED lookup ([0d153a7](https://github.com/tutur3u/platform/commit/0d153a74a3cccdc003c90e38fd339e5ec5081ee1))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/teach-v0.12.0...teach-v0.13.0) (2026-07-27)
 
 

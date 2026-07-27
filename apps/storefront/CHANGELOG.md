@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/storefront-v0.18.0...storefront-v0.19.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **inventory:** add POS device management ([822a171](https://github.com/tutur3u/platform/commit/822a171ae280511d6453fd5547f584f9c796d077))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **seo:** improve discovery metadata ([a574409](https://github.com/tutur3u/platform/commit/a57440984df45086c4989db07b02d402dd93c828))
+* **seo:** improve discovery metadata ([8e2420d](https://github.com/tutur3u/platform/commit/8e2420d49e7b94c462d92222ea8f239ab92564f6))
+* **seo:** improve page metadata ([0c621cb](https://github.com/tutur3u/platform/commit/0c621cb7fc1253b0a11ea21992503274052c6be0))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **storefront:** add inventory management deep link ([c59bc71](https://github.com/tutur3u/platform/commit/c59bc712a0e19b01430c5387ec5555ca9c493578))
+* **storefront:** refine the buyer experience ([45d0e76](https://github.com/tutur3u/platform/commit/45d0e763ff2adc858aa7c76024eb4554879b3977))
+
+
+### Bug Fixes
+
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **inventory:** authorize admin POS fallback ([9ba0fbc](https://github.com/tutur3u/platform/commit/9ba0fbc6765913a83b5ba1a5b1709a608eb7f46c))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **storefront:** route inventory requests correctly ([d924e8f](https://github.com/tutur3u/platform/commit/d924e8fd02c85cbd7637340191b5173a5079e2dd))
+* **storefront:** stop registering missing service worker ([655a382](https://github.com/tutur3u/platform/commit/655a3823b1bcfdf8b4a69a4f4a7d7670ed0af430))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+* **storefront:** stabilize navigation and cart rendering ([471c6b7](https://github.com/tutur3u/platform/commit/471c6b75abc6a4d69692e868cc1b220785e03262))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/storefront-v0.17.0...storefront-v0.18.0) (2026-07-27)
 
 
