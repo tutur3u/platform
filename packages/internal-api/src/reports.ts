@@ -148,6 +148,8 @@ export interface ListPeriodicReportsParams {
   page?: number;
   pageSize?: number;
   query?: string;
+  sortBy?: 'period' | 'title' | 'updated' | 'user';
+  sortDirection?: 'asc' | 'desc';
 }
 
 export interface ListPeriodicReportsResponse {
@@ -359,6 +361,8 @@ export async function listPeriodicReports(
         page: params.page,
         pageSize: params.pageSize,
         q: params.query,
+        sortBy: params.sortBy,
+        sortDirection: params.sortDirection,
       },
     }
   );

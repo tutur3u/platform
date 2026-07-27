@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@tuturuuu/icons';
 import {
   type GetWorkspacePostsQuery,
   getWorkspacePosts,
@@ -17,7 +16,11 @@ import { useQueryStates } from 'nuqs';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
-import { PostDisplay } from './post-display';
+import {
+  PostStatusSummarySkeleton,
+  PostsTableSkeleton,
+} from './loading-skeletons';
+import { PostPreviewDialog } from './post-preview-dialog';
 import {
   applyDefaultPostStageFilter,
   postsSearchParamParsers,
@@ -48,6 +51,7 @@ export default function PostsClient({
   const [queryState, setQueryState] = useQueryStates(postsSearchParamParsers);
   const [posts, setPosts] = usePosts();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const currentPage = queryState.page ?? searchParams.page ?? 1;
   const currentPageSize = queryState.pageSize ?? searchParams.pageSize ?? 10;
   const {
@@ -62,7 +66,7 @@ export default function PostsClient({
   });
   const resolvedWsId = bootstrap?.wsId;
   const defaultDateRange = bootstrap?.defaultDateRange;
-  const { data: permissions } = useQuery({
+  const { data: permissions, isLoading: isPermissionsLoading } = useQuery({
     queryKey: ['workspace-posts-permissions', resolvedWsId ?? wsId],
     queryFn: () => getWorkspacePostsPermissions(resolvedWsId ?? wsId),
     staleTime: 60_000,
@@ -236,6 +240,9 @@ export default function PostsClient({
           : (currentPosts[0] ?? null);
 
       setSelectedPost(nextPost);
+      if (!nextPost) {
+        setIsPreviewOpen(false);
+      }
       setPosts({
         ...posts,
         selected: nextPost ? createPostEmailKey(nextPost) : null,
@@ -290,115 +297,118 @@ export default function PostsClient({
         />
       )}
 
-      <PostStatusSummary
-        activeStage={activeStage}
-        filteredCount={postsData?.count || 0}
-        summary={postsStatus}
-        toolbar={
-          resolvedWsId && defaultDateRange ? (
-            <PostsFilters
-              wsId={resolvedWsId}
-              statusSummary={postsStatus}
-              defaultDateRange={defaultDateRange}
-              onRefreshPosts={() => {
-                void refetch();
-              }}
-              isRefreshing={isFetching}
-            />
-          ) : null
-        }
-      />
+      {isInitialLoading ? (
+        <PostStatusSummarySkeleton />
+      ) : (
+        <PostStatusSummary
+          activeStage={activeStage}
+          filteredCount={postsData?.count || 0}
+          summary={postsStatus}
+          toolbar={
+            resolvedWsId && defaultDateRange ? (
+              <PostsFilters
+                wsId={resolvedWsId}
+                statusSummary={postsStatus}
+                defaultDateRange={defaultDateRange}
+                onRefreshPosts={() => {
+                  void refetch();
+                }}
+                isRefreshing={isFetching}
+              />
+            ) : null
+          }
+        />
+      )}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(22rem,0.95fr)] xl:items-start">
-        <Card className="min-w-0 border-border/60 shadow-sm">
-          <CardHeader className="space-y-1 pb-3">
-            <CardTitle className="text-base">
-              {t('ws-post-emails.matching_recipients', {
-                filtered: postsData?.count || 0,
-                total: postsStatus.total,
-              })}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="min-w-0">
-            <div className="relative min-h-144 overflow-y-auto">
-              {loadError && !postsResponse ? (
-                <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-muted-foreground">
-                  <p>{t('common.error_loading_data')}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      void refetchBootstrap();
-                      if (canFetchPosts) {
-                        void refetch();
-                      }
-                    }}
-                  >
-                    {t('common.refresh')}
-                  </Button>
-                </div>
-              ) : isInitialLoading ? (
-                <div className="flex min-h-72 items-center justify-center text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                </div>
-              ) : (
-                <>
-                  <DataTable
-                    data={postsData?.data || []}
-                    namespace="post-email-data-table"
-                    columnGenerator={getPostEmailColumns}
-                    t={t}
-                    extraData={{ locale }}
-                    count={postsData?.count || 0}
-                    pageIndex={Math.max(currentPage - 1, 0)}
-                    pageSize={currentPageSize}
-                    defaultVisibility={{
-                      id: false,
-                      email: false,
-                      subject: false,
-                      is_completed: false,
-                      notes: false,
-                      created_at: false,
-                      queue_attempt_count: false,
-                      queue_status: false,
-                      stage: true,
-                      approval_status: false,
-                      post_title: false,
-                      post_content: false,
-                    }}
-                    disableSearch
-                    onRefresh={() => {
+      <Card className="min-w-0 border-border/60 shadow-sm">
+        <CardHeader className="space-y-1 pb-3">
+          <CardTitle className="text-base">
+            {t('ws-post-emails.matching_recipients', {
+              filtered: postsData?.count || 0,
+              total: postsStatus.total,
+            })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="min-w-0">
+          <div className="relative min-h-144 overflow-y-auto">
+            {loadError && !postsResponse ? (
+              <div className="flex min-h-72 flex-col items-center justify-center gap-3 text-muted-foreground">
+                <p>{t('common.error_loading_data')}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void refetchBootstrap();
+                    if (canFetchPosts) {
                       void refetch();
-                    }}
-                    resetParams={() => {}}
-                    setParams={handleSetParams}
-                    onRowClick={(row) => {
-                      setPosts({
-                        ...posts,
-                        selected: createPostEmailKey(row),
-                      });
-                    }}
-                  />
-                  {isFetching ? (
-                    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/55 backdrop-blur-[1px]">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto">
-          <PostDisplay
-            wsId={resolvedWsId ?? wsId}
-            postEmail={selectedPost}
-            canApprovePosts={canApprovePosts}
-            canForceSendPosts={canForceSendPosts}
-            onApprovalCompleted={handleApprovalCompleted}
-          />
-        </div>
-      </div>
+                    }
+                  }}
+                >
+                  {t('common.refresh')}
+                </Button>
+              </div>
+            ) : isInitialLoading ? (
+              <PostsTableSkeleton rows={Math.min(currentPageSize, 10)} />
+            ) : (
+              <>
+                <DataTable
+                  data={postsData?.data || []}
+                  namespace="post-email-data-table"
+                  columnGenerator={getPostEmailColumns}
+                  t={t}
+                  extraData={{ locale }}
+                  count={postsData?.count || 0}
+                  pageIndex={Math.max(currentPage - 1, 0)}
+                  pageSize={currentPageSize}
+                  defaultVisibility={{
+                    id: false,
+                    email: false,
+                    subject: false,
+                    is_completed: false,
+                    notes: false,
+                    created_at: false,
+                    queue_attempt_count: false,
+                    queue_status: false,
+                    stage: true,
+                    approval_status: false,
+                    post_title: false,
+                    post_content: false,
+                  }}
+                  disableSearch
+                  onRefresh={() => {
+                    void refetch();
+                  }}
+                  resetParams={() => {}}
+                  setParams={handleSetParams}
+                  onRowClick={(row) => {
+                    setSelectedPost(row);
+                    setPosts({
+                      ...posts,
+                      selected: createPostEmailKey(row),
+                    });
+                    setIsPreviewOpen(true);
+                  }}
+                />
+                {isFetching ? (
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-1 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      <PostPreviewDialog
+        wsId={resolvedWsId ?? wsId}
+        postEmail={selectedPost}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        canApprovePosts={canApprovePosts}
+        canForceSendPosts={canForceSendPosts}
+        isPermissionsLoading={isPermissionsLoading}
+        onApprovalCompleted={handleApprovalCompleted}
+      />
     </div>
   );
 }

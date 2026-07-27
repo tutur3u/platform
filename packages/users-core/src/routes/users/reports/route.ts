@@ -16,6 +16,7 @@ import {
   normalizePeriodicReportCounts,
   type PeriodicReportCountsRpcRow,
 } from './report-counts';
+import { getPeriodicReportSortColumn } from './report-sorting';
 
 const CreateReportSchema = z.object({
   user_id: z.guid(),
@@ -57,6 +58,8 @@ const ListReportsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(120).optional(),
+  sortBy: z.enum(['period', 'title', 'updated', 'user']).default('period'),
+  sortDirection: z.enum(['asc', 'desc']).default('desc'),
 });
 
 interface Params {
@@ -119,13 +122,19 @@ export async function GET(request: Request, { params }: Params) {
     const privateDb = sbAdmin.schema('private');
     const from = (parsed.data.page - 1) * parsed.data.pageSize;
     const to = from + parsed.data.pageSize - 1;
+    const sortColumn = getPeriodicReportSortColumn(parsed.data.sortBy);
     let listQuery = privateDb
       .from('external_user_monthly_reports_workspace_view')
       .select('*', { count: 'exact' })
       .eq('user_ws_id', wsId)
       .eq('cadence', parsed.data.cadence)
-      .order('period_start', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
+      .order(sortColumn, {
+        ascending: parsed.data.sortDirection === 'asc',
+        nullsFirst: false,
+      })
+      .order('created_at', {
+        ascending: parsed.data.sortDirection === 'asc',
+      })
       .range(from, to);
     if (accessibleGroupIds)
       listQuery = listQuery.in('group_id', accessibleGroupIds);
