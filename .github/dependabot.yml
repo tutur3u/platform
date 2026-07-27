@@ -14,9 +14,9 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "monthly"
 
   - package-ecosystem: "pub"
     directory: "/apps/mobile"
     schedule:
-      interval: "daily"
+      interval: "monthly"
