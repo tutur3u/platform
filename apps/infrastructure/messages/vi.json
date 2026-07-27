@@ -794,50 +794,6 @@
     "title": "Tín dụng AI",
     "usage_tooltip": "Đã dùng {used} / {total} tín dụng trong tháng này"
   },
-  "ai-studio-admin": {
-    "description": "Kiểm soát công tắc AI Studio toàn cục, mặc định kế thừa, quyền truy cập mô hình, thời gian lưu trữ và ngoại lệ theo không gian làm việc.",
-    "global": {
-      "capture_default": "Mặc định lưu nội dung AI",
-      "capture_default_description": "Chỉ lưu prompt, kết quả và dữ liệu công cụ khi không gian làm việc kế thừa cài đặt đang bật này.",
-      "content_retention": "Lưu nội dung (ngày)",
-      "default_models": "Mô hình mặc định được bật",
-      "description": "Các kiểm soát này được áp dụng trước giới hạn của không gian làm việc, gói dịch vụ và khóa API.",
-      "kill_switch": "Bật AI Studio toàn cục",
-      "kill_switch_description": "Công tắc toàn cục phải được bật trước khi bất kỳ không gian làm việc nào có thể truy cập Studio.",
-      "metadata_retention": "Lưu siêu dữ liệu (ngày)",
-      "models_hint": "Các mã mô hình gateway, phân tách bằng dấu phẩy. Chính sách không gian làm việc và khóa chỉ có thể thu hẹp danh mục này.",
-      "title": "Chính sách truy cập toàn cục",
-      "workspace_default": "Bật cho không gian làm việc kế thừa",
-      "workspace_default_description": "Không gian làm việc mới và đang kế thừa vẫn tắt trừ khi mặc định này được bật."
-    },
-    "save": "Lưu chính sách",
-    "save_error": "Không thể lưu chính sách AI Studio",
-    "saved": "Đã lưu chính sách AI Studio",
-    "status": {
-      "disabled": "Đã tắt",
-      "enabled": "Đã bật",
-      "inherit": "Kế thừa"
-    },
-    "title": "Chính sách AI Studio",
-    "workspaces": {
-      "allowed_models": "Mô hình được phép",
-      "capture": "Lưu nội dung",
-      "content_retention": "Lưu nội dung (ngày)",
-      "credit_budget": "Ngân sách tín dụng hàng tháng",
-      "denied_models": "Mô hình bị chặn",
-      "description": "Áp dụng ngoại lệ rõ ràng cho từng không gian làm việc mà không mở rộng quyền toàn cục hoặc quyền theo gói.",
-      "empty": "Không có không gian làm việc phù hợp",
-      "inherit": "Kế thừa",
-      "inherit_models": "Kế thừa mô hình toàn cục",
-      "metadata_retention": "Lưu siêu dữ liệu (ngày)",
-      "no_training": "Thực thi kiểm soát không huấn luyện",
-      "none": "Không chặn mô hình nào",
-      "rate_limit": "Yêu cầu mỗi phút",
-      "search": "Tìm không gian làm việc",
-      "title": "Chính sách không gian làm việc",
-      "unnamed": "Không gian làm việc chưa đặt tên"
-    }
-  },
   "ai-credits-admin": {
     "active": "Hoạt động",
     "add": "Thêm",
@@ -1166,6 +1122,50 @@
     "model": "Mô hình AI",
     "name": "Tên",
     "output": "Đầu ra"
+  },
+  "ai-studio-admin": {
+    "description": "Kiểm soát công tắc AI Studio toàn cục, mặc định kế thừa, quyền truy cập mô hình, thời gian lưu trữ và ngoại lệ theo không gian làm việc.",
+    "global": {
+      "capture_default": "Mặc định lưu nội dung AI",
+      "capture_default_description": "Chỉ lưu prompt, kết quả và dữ liệu công cụ khi không gian làm việc kế thừa cài đặt đang bật này.",
+      "content_retention": "Lưu nội dung (ngày)",
+      "default_models": "Mô hình mặc định được bật",
+      "description": "Các kiểm soát này được áp dụng trước giới hạn của không gian làm việc, gói dịch vụ và khóa API.",
+      "kill_switch": "Bật AI Studio toàn cục",
+      "kill_switch_description": "Công tắc toàn cục phải được bật trước khi bất kỳ không gian làm việc nào có thể truy cập Studio.",
+      "metadata_retention": "Lưu siêu dữ liệu (ngày)",
+      "models_hint": "Các mã mô hình gateway, phân tách bằng dấu phẩy. Chính sách không gian làm việc và khóa chỉ có thể thu hẹp danh mục này.",
+      "title": "Chính sách truy cập toàn cục",
+      "workspace_default": "Bật cho không gian làm việc kế thừa",
+      "workspace_default_description": "Không gian làm việc mới và đang kế thừa vẫn tắt trừ khi mặc định này được bật."
+    },
+    "save": "Lưu chính sách",
+    "save_error": "Không thể lưu chính sách AI Studio",
+    "saved": "Đã lưu chính sách AI Studio",
+    "status": {
+      "disabled": "Đã tắt",
+      "enabled": "Đã bật",
+      "inherit": "Kế thừa"
+    },
+    "title": "Chính sách AI Studio",
+    "workspaces": {
+      "allowed_models": "Mô hình được phép",
+      "capture": "Lưu nội dung",
+      "content_retention": "Lưu nội dung (ngày)",
+      "credit_budget": "Ngân sách tín dụng hàng tháng",
+      "denied_models": "Mô hình bị chặn",
+      "description": "Áp dụng ngoại lệ rõ ràng cho từng không gian làm việc mà không mở rộng quyền toàn cục hoặc quyền theo gói.",
+      "empty": "Không có không gian làm việc phù hợp",
+      "inherit": "Kế thừa",
+      "inherit_models": "Kế thừa mô hình toàn cục",
+      "metadata_retention": "Lưu siêu dữ liệu (ngày)",
+      "no_training": "Thực thi kiểm soát không huấn luyện",
+      "none": "Không chặn mô hình nào",
+      "rate_limit": "Yêu cầu mỗi phút",
+      "search": "Tìm không gian làm việc",
+      "title": "Chính sách không gian làm việc",
+      "unnamed": "Không gian làm việc chưa đặt tên"
+    }
   },
   "ai-whitelist": {
     "add_domain": "Thêm tên miền",
@@ -4040,6 +4040,7 @@
       "productivity": "Ứng dụng năng suất cho lịch, tác vụ, tin nhắn và họp."
     },
     "app_descriptions": {
+      "ai": "Xây dựng, kiểm thử và quan sát câu lệnh, tác nhân cùng quy trình mô hình AI.",
       "apps": "Duyệt và mở mọi ứng dụng có trong không gian làm việc của bạn.",
       "calendar": "Lên lịch, quản lý sự kiện và chia sẻ thời gian rảnh.",
       "chat": "Nhắn tin với đồng đội và tập trung các cuộc trò chuyện trong không gian làm việc.",
@@ -20713,9 +20714,12 @@
       "description_storage_warning": "Gần hết chỗ trong mô tả — còn {percent}%.",
       "description_too_long_description": "Hãy rút gọn mô tả xuống dưới {max} ký tự trước khi lưu.",
       "description_too_long_title": "Mô tả quá dài",
+      "details": "Chi tiết",
+      "details_empty": "Chưa có thuộc tính nào",
       "disconnected": "Đã ngắt kết nối",
       "due_date": "Ngày đến hạn",
       "edit_task": "Chỉnh sửa công việc",
+      "enlarge_dialog": "Mở rộng hộp thoại",
       "estimate": "Ước lượng",
       "estimated_duration": "Thời lượng ước tính",
       "event_after_deadline_plural": "{count} sự kiện được lên lịch sau hạn chót",
@@ -20828,10 +20832,7 @@
       "view_snapshot": "Xem lịch sử & khôi phục",
       "will_be_blocked_by": "Sẽ bị chặn bởi",
       "will_block": "Sẽ chặn",
-      "work_hours": "Giờ làm việc",
-      "enlarge_dialog": "Mở rộng hộp thoại",
-      "details": "Chi tiết",
-      "details_empty": "Chưa có thuộc tính nào"
+      "work_hours": "Giờ làm việc"
     },
     "duplicate_dialog": {
       "confirm": "Nhân bản",

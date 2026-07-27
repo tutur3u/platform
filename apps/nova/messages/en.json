@@ -590,6 +590,7 @@
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },
     "app_descriptions": {
+      "ai": "Build, test, and observe AI prompts, agents, and model workflows.",
       "apps": "Browse and launch every app available in your workspace.",
       "calendar": "Plan schedules, events, and shared availability.",
       "chat": "Message teammates and keep workspace conversations together.",

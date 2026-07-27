@@ -1130,6 +1130,7 @@
       "productivity": "Productivity apps for schedule, tasks, messages, and meetings."
     },
     "app_descriptions": {
+      "ai": "Build, test, and observe AI prompts, agents, and model workflows.",
       "apps": "Browse and launch every app available in your workspace.",
       "calendar": "Plan schedules, events, and shared availability.",
       "chat": "Message teammates and keep workspace conversations together.",
@@ -7755,9 +7756,12 @@
       "description_storage_warning": "Running low on description space — {percent}% left.",
       "description_too_long_description": "Trim the description below {max} characters before saving.",
       "description_too_long_title": "Description is too long",
+      "details": "Details",
+      "details_empty": "No properties set yet",
       "disconnected": "Disconnected",
       "due_date": "Due Date",
       "edit_task": "Edit Task",
+      "enlarge_dialog": "Enlarge dialog",
       "estimate": "Estimate",
       "estimated_duration": "Estimated Duration",
       "event_after_deadline_plural": "{count} events scheduled after deadline",
@@ -7859,10 +7863,7 @@
       "unsaved": "unsaved",
       "will_be_blocked_by": "Will be blocked by",
       "will_block": "Will block",
-      "work_hours": "Work Hours",
-      "enlarge_dialog": "Enlarge dialog",
-      "details": "Details",
-      "details_empty": "No properties set yet"
+      "work_hours": "Work Hours"
     },
     "duplicate_dialog": {
       "confirm": "Duplicate",
