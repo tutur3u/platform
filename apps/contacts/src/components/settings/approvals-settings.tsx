@@ -3,6 +3,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
+import {
+  getWorkspacePermissionsSummary,
+  type WorkspacePermissionsSummary,
+} from '@tuturuuu/internal-api/settings';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,6 +29,15 @@ import * as z from 'zod';
 interface Props {
   wsId: string;
 }
+
+const NO_WORKSPACE_PERMISSIONS: WorkspacePermissionsSummary = {
+  can_access_billing: false,
+  manage_subscription: false,
+  manage_workspace_billing: false,
+  manage_workspace_members: false,
+  manage_workspace_roles: false,
+  manage_workspace_settings: false,
+};
 
 const formSchema = z.object({
   enable_post_approval: z.boolean(),
@@ -64,29 +78,23 @@ export function ApprovalsSettings({ wsId }: Props) {
     data: workspacePermissions,
     isError: isPermissionsError,
     isLoading: isLoadingPermissions,
-  } = useQuery<{ manage_workspace_settings: boolean }>({
+  } = useQuery<WorkspacePermissionsSummary>({
+    // Shared with the workspace settings dialog, which reads the member and
+    // role flags off this same entry. Anything cached here must be the whole
+    // summary: a narrower object would leave those flags undefined, and the
+    // dialog reads them as `?? false` and locks itself to read-only.
     queryKey: ['workspace-settings-permissions', wsId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/settings/permissions`,
-        {
-          cache: 'no-store',
+      try {
+        return await getWorkspacePermissionsSummary(wsId);
+      } catch (error) {
+        // Not a member of this workspace: a denial, not a failure to load.
+        if (error instanceof InternalApiError && error.status === 403) {
+          return NO_WORKSPACE_PERMISSIONS;
         }
-      );
 
-      if (response.status === 403) {
-        return {
-          manage_workspace_settings: false,
-        };
+        throw error;
       }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace settings permissions');
-      }
-
-      return (await response.json()) as {
-        manage_workspace_settings: boolean;
-      };
     },
     enabled: !!wsId,
     staleTime: 30_000,
