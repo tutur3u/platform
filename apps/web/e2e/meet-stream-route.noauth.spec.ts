@@ -144,20 +144,6 @@ test.describe('Meet stream route boundaries', () => {
       );
       expect(workspaceResponse.status()).toBe(201);
 
-      const hostMembershipResponse = await request.post(
-        `${SUPABASE_URL}/rest/v1/workspace_members`,
-        {
-          data: {
-            type: 'MEMBER',
-            user_id: hostUserId,
-            ws_id: workspaceId,
-          },
-          failOnStatusCode: false,
-          headers: serviceHeaders({ prefer: 'return=minimal' }),
-        }
-      );
-      expect(hostMembershipResponse.status()).toBe(201);
-
       const viewerMembershipResponse = await request.post(
         `${SUPABASE_URL}/rest/v1/workspace_members`,
         {

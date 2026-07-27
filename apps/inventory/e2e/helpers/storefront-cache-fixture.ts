@@ -84,11 +84,6 @@ export async function createStorefrontCacheFixture(
     value: 'true',
     ws_id: workspaceId,
   });
-  await insert(request, 'workspace_members', {
-    type: 'MEMBER',
-    user_id: TEST_USER_ID,
-    ws_id: workspaceId,
-  });
   await insert(request, 'product_categories', {
     id: categoryId,
     name: 'E2E Products',

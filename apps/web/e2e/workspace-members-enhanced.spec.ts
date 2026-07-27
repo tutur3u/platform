@@ -23,6 +23,7 @@ const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? LOCAL_E2E_SUPABASE_URL;
 const SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY ?? LOCAL_E2E_SUPABASE_SECRET_KEY;
+const WORKSPACE_CREATOR_ID = '00000000-0000-0000-0000-000000000002';
 
 function serviceHeaders(prefer?: string) {
   return {
@@ -94,7 +95,7 @@ test.describe('Workspace members enhanced API', () => {
         `${SUPABASE_URL}/rest/v1/workspaces`,
         {
           data: {
-            creator_id: TEST_USER.id,
+            creator_id: WORKSPACE_CREATOR_ID,
             handle,
             id: workspaceId,
             name: 'E2E Private Members Handle Workspace',
@@ -152,7 +153,7 @@ test.describe('Workspace members enhanced API', () => {
         `${SUPABASE_URL}/rest/v1/workspaces`,
         {
           data: {
-            creator_id: TEST_USER.id,
+            creator_id: WORKSPACE_CREATOR_ID,
             handle: `e2e-members-${workspaceId.slice(0, 8)}`,
             id: workspaceId,
             name: 'E2E Members CMS Workspace',

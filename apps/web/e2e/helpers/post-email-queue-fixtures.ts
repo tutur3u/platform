@@ -203,18 +203,6 @@ export async function seedPostEmailQueueScaleFixture({
         },
       ],
     });
-    await insertRows({
-      request,
-      table: 'workspace_members',
-      data: [
-        {
-          type: 'MEMBER',
-          user_id: TEST_USER.id,
-          ws_id: fixture.workspaceId,
-        },
-      ],
-    });
-
     fixture.senderWorkspaceUserId = await fetchLinkedWorkspaceUserId({
       request,
       workspaceId: fixture.workspaceId,

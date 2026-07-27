@@ -87,6 +87,7 @@ const SUPABASE_SECRET_KEY =
   process.env.SUPABASE_SECRET_KEY ??
   LOCAL_ENV_SUPABASE_SECRET_KEY ??
   LOCAL_E2E_SUPABASE_SECRET_KEY;
+const WORKSPACE_CREATOR_ID = '00000000-0000-0000-0000-000000000002';
 
 type InvitationRecord = {
   matchedEmail: string | null;
@@ -192,7 +193,7 @@ async function createWorkspace(
 ) {
   const response = await request.post(`${SUPABASE_URL}/rest/v1/workspaces`, {
     data: {
-      creator_id: TEST_USER.id,
+      creator_id: WORKSPACE_CREATOR_ID,
       handle: `${handlePrefix}-${workspaceId.slice(0, 8)}`,
       id: workspaceId,
       name: `E2E Invite ${handlePrefix}`,
