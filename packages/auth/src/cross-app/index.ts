@@ -212,9 +212,10 @@ async function readVerificationError(response: Response): Promise<string> {
 }
 
 function redirectAfterVerificationFailure(
-  router: ReturnType<typeof useRouter>
+  router: ReturnType<typeof useRouter>,
+  failurePath?: string
 ) {
-  router.push('/');
+  router.push(normalizeClientRedirectPath(failurePath));
   router.refresh();
 }
 
@@ -286,10 +287,12 @@ export const verifyRouteToken = async ({
   searchParams,
   token,
   router,
+  failurePath,
 }: {
   searchParams: URLSearchParams;
   token: string | null;
   router: ReturnType<typeof useRouter>;
+  failurePath?: string;
 }) => {
   try {
     const safeNextUrl = normalizeClientRedirectPath(
@@ -318,21 +321,28 @@ export const verifyRouteToken = async ({
       return;
     }
 
-    const verification = verifyRouteTokenOnce({ router, searchParams, token });
+    const verification = verifyRouteTokenOnce({
+      failurePath,
+      router,
+      searchParams,
+      token,
+    });
     activeRouteTokenVerifications.set(token, verification);
 
     await verification;
   } catch (error) {
     console.error('[cross-app] Unexpected token verification error:', error);
-    redirectAfterVerificationFailure(router);
+    redirectAfterVerificationFailure(router, failurePath);
   }
 };
 
 async function verifyRouteTokenOnce({
+  failurePath,
   searchParams,
   token,
   router,
 }: {
+  failurePath?: string;
   searchParams: URLSearchParams;
   token: string;
   router: ReturnType<typeof useRouter>;
@@ -351,7 +361,7 @@ async function verifyRouteTokenOnce({
 
     if (!res.ok) {
       console.error('Error verifying token:', await readVerificationError(res));
-      redirectAfterVerificationFailure(router);
+      redirectAfterVerificationFailure(router, failurePath);
       return;
     }
 
@@ -360,7 +370,7 @@ async function verifyRouteTokenOnce({
 
     if (!userId) {
       console.error('Error verifying token: missing user id');
-      redirectAfterVerificationFailure(router);
+      redirectAfterVerificationFailure(router, failurePath);
       return;
     }
 
@@ -368,7 +378,7 @@ async function verifyRouteTokenOnce({
     // Client code must not receive or store Supabase session tokens here.
     if (!data.appSessionCreated) {
       console.error('Error verifying token: missing app-session cookie');
-      redirectAfterVerificationFailure(router);
+      redirectAfterVerificationFailure(router, failurePath);
       return;
     }
 

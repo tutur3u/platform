@@ -349,6 +349,50 @@ describe('verifyRouteToken', () => {
     expect(router.refresh).toHaveBeenCalled();
   });
 
+  it('uses a bounded custom failure path after verification fails', async () => {
+    const router = createMockRouter();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('Internal Server Error', {
+          status: 500,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      failurePath: '/auth-error',
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal&token=dummy'),
+      token: 'dummy-custom-failure-path',
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/auth-error');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('sanitizes a custom verification failure path', async () => {
+    const router = createMockRouter();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('Internal Server Error', {
+          status: 500,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      failurePath: '//evil.test/auth-error',
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal&token=dummy'),
+      token: 'dummy-unsafe-failure-path',
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
   it('trusts the HttpOnly app-session cookie set by the verifier route before redirecting', async () => {
     const router = createMockRouter();
     vi.stubGlobal(
