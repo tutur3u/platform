@@ -35,7 +35,7 @@
     "@tiptap/extension-placeholder": "3.28.0",
     "@tiptap/react": "3.28.0",
     "@tiptap/starter-kit": "3.28.0",
-    "@tuturuuu/icons": "workspace:*"
+    "lucide-react": "^1.26.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",

@@ -19,7 +19,7 @@ import {
   Redo2,
   Undo2,
   X,
-} from '@tuturuuu/icons';
+} from 'lucide-react';
 import type { ComponentType, Ref, SVGProps } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { extractPlainText } from './codec.js';

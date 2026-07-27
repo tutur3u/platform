@@ -47,7 +47,7 @@
       "name": "@tuturuuu/apps",
       "version": "0.10.0",
       "dependencies": {
-        "@tuturuuu/icons": "workspace:*",
+        "lucide-react": "^1.26.0",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
