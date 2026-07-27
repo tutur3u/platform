@@ -178,6 +178,23 @@ export async function signIn(formData: FormData) {
 
 ### OAuth Sign In
 
+The providers offered on the login page and in account linking come from
+`AUTH_OAUTH_PROVIDERS` in `apps/web/src/lib/auth/oauth-providers.ts` — one list
+drives the buttons, the `/api/v1/users/me/identities/link/[provider]` route, and
+the settings linked-accounts card. Adding a provider anywhere means adding it
+there.
+
+<Warning>
+  **The Supabase Azure provider must be pinned to a single tenant.** Microsoft
+  (`azure`) is offered with the `email` scope, and Supabase links an OAuth
+  identity into an existing account when the provider reports that address as
+  verified. On the shared multi-tenant `common` issuer that claim is only an
+  assertion by whichever directory the user signed in from, so anyone who
+  controls any Azure directory could claim a Tuturuuu address and take over the
+  matching account. Set the provider's URL override to your tenant, not
+  `common`.
+</Warning>
+
 ```typescript
 "use server";
 

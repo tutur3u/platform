@@ -517,22 +517,36 @@ describe('LoginForm returnUrl navigation', () => {
     queryClient.clear();
   });
 
-  it('does not expose generic Microsoft OAuth on the login form', async () => {
+  it('offers Microsoft OAuth on the login form', async () => {
     mocks.currentUserProfile = null;
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
-    const queryClient = renderLoginFormSearch('?provider=azure');
-
-    await screen.findByRole('button', {
-      name: /login\.continue_with_google/u,
-    });
+    const queryClient = renderLoginFormSearch('');
 
     expect(
-      screen.queryByRole('button', {
+      await screen.findByRole('button', {
         name: /login\.continue_with_microsoft/u,
       })
-    ).not.toBeInTheDocument();
-    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
+    ).toBeInTheDocument();
+    queryClient.clear();
+  });
+
+  // `?provider=azure` is how another app hands a Microsoft sign-in over to us,
+  // so the deep link has to start the flow rather than land on a bare form.
+  it('starts Microsoft OAuth from a provider deep link', async () => {
+    mocks.currentUserProfile = null;
+    mocks.getUser.mockResolvedValue({ data: { user: null } });
+
+    const queryClient = renderLoginFormSearch('?provider=azure');
+
+    await waitFor(() => {
+      expect(mocks.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({ scopes: 'email' }),
+          provider: 'azure',
+        })
+      );
+    });
     queryClient.clear();
   });
 

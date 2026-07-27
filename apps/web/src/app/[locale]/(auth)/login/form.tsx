@@ -1418,6 +1418,16 @@ export default function LoginForm({
 
       <SocialLoginButton
         disabled={loading}
+        onClick={() => void handleOAuthLogin('azure')}
+        icon={
+          <SocialImageLogo src="/media/logos/microsoft.svg" alt="Microsoft" />
+        }
+      >
+        {t('login.continue_with_microsoft')}
+      </SocialLoginButton>
+
+      <SocialLoginButton
+        disabled={loading}
         onClick={() => void handleOAuthLogin('apple')}
         icon={<SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />}
       >
