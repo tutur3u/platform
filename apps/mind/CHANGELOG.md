@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/mind-v0.10.0...mind-v0.11.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/mind-v0.9.0...mind-v0.10.0) (2026-07-25)
 
 

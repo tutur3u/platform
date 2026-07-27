@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.6.0...hive-realtime-v0.7.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.5.0...hive-realtime-v0.6.0) (2026-07-25)
 
 

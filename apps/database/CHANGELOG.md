@@ -1,5 +1,64 @@
 # Changelog
 
+## [1.21.0](https://github.com/tutur3u/platform/compare/database-v1.20.1...database-v1.21.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **edu:** add vocabulary journey ([#4946](https://github.com/tutur3u/platform/issues/4946)) ([06535d2](https://github.com/tutur3u/platform/commit/06535d2766e46206d311e971f6d37ef351fe667b))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** complete Square commerce integration ([fe63eca](https://github.com/tutur3u/platform/commit/fe63eca7d02d94795f93fbbb471069b80c492020))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** support cent-level Square prices ([146f90f](https://github.com/tutur3u/platform/commit/146f90fa513bbb5d6e75082fcd7ec9460125d935))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **mail:** add advanced mailbox APIs and shadow ingestion ([2543fc5](https://github.com/tutur3u/platform/commit/2543fc5e1fc8ff586692cff07e4eaa42f28d3315))
+* **mail:** add catch-all delivery and revamp client ([8d4cb12](https://github.com/tutur3u/platform/commit/8d4cb128275eb42ccd4e2745c7e02983d46f2c66))
+* **mail:** add Cloudflare-native mail foundation ([7c755b7](https://github.com/tutur3u/platform/commit/7c755b79274146f2c4987450f99678107242e2f7))
+* **mail:** add smart labels and assisted composing ([8ccd2fa](https://github.com/tutur3u/platform/commit/8ccd2fac0dcf4c67f6eff062dc52e3fc01a2c6ef))
+* **posts:** audit log + revert for group-post completion checks ([b38de09](https://github.com/tutur3u/platform/commit/b38de0992c0b17cdd7f7a6021530095d5a323df1))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **tasks:** revamp progress, goals, analytics & leaderboards with TrackBear parity ([d1bda0e](https://github.com/tutur3u/platform/commit/d1bda0e37a6ed45eb22aaa3bb20c4d62dc41a19f))
+
+
+### Bug Fixes
+
+* **cms:** address managed delivery review findings ([7888033](https://github.com/tutur3u/platform/commit/78880336632d69d11ee462df3a9d69d9732a2e1f))
+* **cms:** grant relation tables to service role ([62d1d11](https://github.com/tutur3u/platform/commit/62d1d112a3d6990b1c6ccfbc4ccc77ec75d2d423))
+* **cms:** grant relation tables to service role ([#4991](https://github.com/tutur3u/platform/issues/4991)) ([c34a711](https://github.com/tutur3u/platform/commit/c34a711d0cb7b7beb073a0f32fc732535ec4ade0))
+* **cms:** harden managed import recovery ([f266874](https://github.com/tutur3u/platform/commit/f2668747130606a4479d51df881fb1f2f06d9c9f))
+* **contacts:** authorize attendance and consolidate manager links ([a11d06d](https://github.com/tutur3u/platform/commit/a11d06db3fc26216f9e39f12fdf0ce7fc089fc70))
+* **contacts:** restore user group and report mutations ([0f3f12d](https://github.com/tutur3u/platform/commit/0f3f12d5291b3a2d3635fc3bde193cbe5f3e8052))
+* **database:** deduplicate workspace user archive audit entries ([27a0aff](https://github.com/tutur3u/platform/commit/27a0aff4f2590f2e42cd9e3e219e242244617f3b))
+* **database:** link managers when membership arrives ([04691ce](https://github.com/tutur3u/platform/commit/04691cefac1d4338b6676e04746ec3ce487ad5b9))
+* **database:** reference private.user_group_posts in post-check-logs FK ([15ec4bf](https://github.com/tutur3u/platform/commit/15ec4bf70b5aeb7714fbe0ca562c1a035001d6d1))
+* **database:** refresh vocabulary migration timestamp ([ced09e5](https://github.com/tutur3u/platform/commit/ced09e56f5cbdf3202d1897470cd6e1e1cd4d082))
+* **finance:** make pending invoice RPCs server-only ([8c73298](https://github.com/tutur3u/platform/commit/8c73298dbcc48ce696cc9857ce43eb2529891095))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **inventory:** gate cent prices on schema readiness ([276aa58](https://github.com/tutur3u/platform/commit/276aa58ad5f52f579005cae8deca6ab41c595a73))
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **inventory:** repair storefront removal rollout ([cb5828b](https://github.com/tutur3u/platform/commit/cb5828bc3cc16ba2cf1b823e8af0841c6f663e8f))
+* **platform:** address attendance and invoice feedback ([8d2a537](https://github.com/tutur3u/platform/commit/8d2a53782d01427839607c7b0d90eaa3ecc5a1d8))
+* **reports:** scale delivery maintenance and report counts ([4dd4f47](https://github.com/tutur3u/platform/commit/4dd4f47dfff4bafa1ef512311eec16a6fbadc964))
+* **tasks:** restore app-session history reads ([12bbc01](https://github.com/tutur3u/platform/commit/12bbc017f673a8e9c18a9b803dc180ccf2133684))
+* **users:** preserve attendance history ([fd16cee](https://github.com/tutur3u/platform/commit/fd16cee91a2d4049091933e78d75cf2e4ee8dfbf))
+* **workspaces:** keep the creator a member of the workspace they create ([8b33f42](https://github.com/tutur3u/platform/commit/8b33f42470149a51e864fc5bf22020f961121014))
+
+
+### Performance Improvements
+
+* **contacts:** accelerate virtual user listing ([8d0b86c](https://github.com/tutur3u/platform/commit/8d0b86c46f7045b2e7475d2e6211dc0cc2ebb6ab))
+
 ## [1.20.1](https://github.com/tutur3u/platform/compare/database-v1.20.0...database-v1.20.1) (2026-07-27)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/track-v0.15.0...track-v0.16.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/track-v0.14.0...track-v0.15.0) (2026-07-25)
 
 

@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/infra-v0.12.0...infra-v0.13.0) (2026-07-27)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **contacts:** reconcile managers and harden attendance ([9f0d302](https://github.com/tutur3u/platform/commit/9f0d30291f96bd22429622ea7a477d12a5678db9))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **infrastructure:** improve internal account management ([fa4e535](https://github.com/tutur3u/platform/commit/fa4e535d3193f275cfac4d808455caaab9d6b326))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **platform:** complete satellite app cutover ([b9ac2ef](https://github.com/tutur3u/platform/commit/b9ac2ef8be678a42c1f09f3bef1a05750dc2cba3))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** standardize fixed app headers ([7b86c42](https://github.com/tutur3u/platform/commit/7b86c4283b39ebc5de8bec971ce3bab5fdaef422))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **tasks:** add autonomous progress intelligence ([ba35df5](https://github.com/tutur3u/platform/commit/ba35df5485fb01e709bf651cc2083b5fa877560f))
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+* **tasks:** make task management autonomous ([431212d](https://github.com/tutur3u/platform/commit/431212d471425aba7fcffdd37d77039d64bec643))
+
+
+### Bug Fixes
+
+* **apps:** opt authed pages and GET routes into request-time rendering under cacheComponents ([9496ec3](https://github.com/tutur3u/platform/commit/9496ec37deaa3bfd6796a5fd0506f8d942d26c0e))
+* **chat:** harden personal Zalo integration ([f1d12c6](https://github.com/tutur3u/platform/commit/f1d12c60fe12ab3b01a1be3f0381573d44a32226))
+* **chat:** keep Zalo phone sync alive ([5cc7a0d](https://github.com/tutur3u/platform/commit/5cc7a0df42c8ad3b7a9e5785cf5d8e9a99c56b76))
+* **chat:** stop Zalo phone sync spam ([b45e778](https://github.com/tutur3u/platform/commit/b45e778693f175b7bafcd00d6b3ec46f079a946c))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **e2e:** follow satellite route ownership ([591190c](https://github.com/tutur3u/platform/commit/591190cd24aa15ba6cde1eb17a98409a461e0201))
+* **infrastructure:** authorize external app registry sessions ([a09e8f7](https://github.com/tutur3u/platform/commit/a09e8f7a3290bdd814c0dddbbd9b6771db5f6ef0))
+* **infrastructure:** freeze Vercel dependency installs ([96cd10c](https://github.com/tutur3u/platform/commit/96cd10cd0f59d32a4ed1570944d469cfb3418393))
+* **infrastructure:** guard whitelist request rendering ([a84acac](https://github.com/tutur3u/platform/commit/a84acacbb1de012293f76ab2cf60fd014e89478c))
+* **infrastructure:** own admin APIs and paginate models ([a73514c](https://github.com/tutur3u/platform/commit/a73514cbdac132a9bd05f69979cd48561a223ee0))
+* **infrastructure:** own AI credit admin APIs ([4606857](https://github.com/tutur3u/platform/commit/46068572bb741155973a7602e21026b8e8beb02b))
+* **infrastructure:** pin Vercel Bun installer ([2dcaef0](https://github.com/tutur3u/platform/commit/2dcaef0dd6d87a89ebef87b34368ba926d949b50))
+* **infrastructure:** restore production builds ([a9adc4a](https://github.com/tutur3u/platform/commit/a9adc4adc728114d7153511e77dbfddd58714700))
+* **infrastructure:** use satellite database runtime ([ee4044e](https://github.com/tutur3u/platform/commit/ee4044edada1b69615e2cb62765e81c51c315d2e))
+* **inventory:** clarify payment sync and settings ([cf05ed6](https://github.com/tutur3u/platform/commit/cf05ed63cfc47022a95177b661d1fa796d68d65e))
+* localize realtime analytics filters ([10c14fa](https://github.com/tutur3u/platform/commit/10c14faadc0e0fc6e82fabb2001038e3005e08b6))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **reports:** scale delivery maintenance and report counts ([4dd4f47](https://github.com/tutur3u/platform/commit/4dd4f47dfff4bafa1ef512311eec16a6fbadc964))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* resolve remaining quality suggestions ([826aec4](https://github.com/tutur3u/platform/commit/826aec4af9e8291eb02dc8430b4adab4b110018a))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+* **security:** enforce infrastructure workspace permissions ([00b469c](https://github.com/tutur3u/platform/commit/00b469c2345e9f13cf44ed27322e6536eaa90faa))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+
+
+### Performance Improvements
+
+* **ci:** enable repository-wide remote caching ([6250f91](https://github.com/tutur3u/platform/commit/6250f91d745ef987a4fc86c797aedf41542f421b))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/infra-v0.11.0...infra-v0.12.0) (2026-07-27)
 
 
