@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Link2, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { ToolbarAction } from './toolbar-action.js';
 import type { EditorMessages } from './types.js';
 import { normalizeRichTextUrl } from './url.js';
@@ -25,13 +25,46 @@ export function LinkToolbarControl({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const errorId = useId();
+  const formId = useId();
   const [error, setError] = useState('');
+  const [formPosition, setFormPosition] = useState({
+    left: 16,
+    top: 16,
+    width: 320,
+  });
   const [href, setHref] = useState('');
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  const positionForm = useCallback(() => {
+    const button = buttonRef.current;
+    if (!button) return;
+    const gutter = 16;
+    const width = Math.min(320, window.innerWidth - gutter * 2);
+    const bounds = button.getBoundingClientRect();
+    setFormPosition({
+      left: Math.min(
+        Math.max(gutter, bounds.left),
+        window.innerWidth - width - gutter
+      ),
+      top: bounds.bottom + 8,
+      width,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    positionForm();
+    window.addEventListener('resize', positionForm);
+    window.addEventListener('scroll', positionForm, true);
+    return () => {
+      window.removeEventListener('resize', positionForm);
+      window.removeEventListener('scroll', positionForm, true);
+    };
+  }, [open, positionForm]);
 
   const cancel = () => {
     setError('');
@@ -44,6 +77,8 @@ export function LinkToolbarControl({
       <ToolbarAction
         active={active}
         buttonRef={buttonRef}
+        controls={formId}
+        expanded={open}
         icon={Link2}
         label={messages.link}
         run={() => {
@@ -55,6 +90,10 @@ export function LinkToolbarControl({
       {open ? (
         <form
           className="tuturuuu-editor-link-form"
+          id={formId}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') cancel();
+          }}
           onSubmit={(event) => {
             event.preventDefault();
             const normalizedHref = normalizeRichTextUrl(href);
@@ -67,6 +106,7 @@ export function LinkToolbarControl({
             setError('');
             setOpen(false);
           }}
+          style={formPosition}
         >
           <label>
             <span className="tuturuuu-editor-visually-hidden">
@@ -82,9 +122,6 @@ export function LinkToolbarControl({
               onChange={(event) => {
                 setError('');
                 setHref(event.currentTarget.value);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') cancel();
               }}
               placeholder={messages.linkPlaceholder}
               ref={inputRef}

@@ -5,6 +5,8 @@ export type ToolbarIcon = ComponentType<SVGProps<SVGSVGElement>>;
 export function ToolbarAction({
   active,
   buttonRef,
+  controls,
+  expanded,
   icon: Icon,
   label,
   run,
@@ -12,6 +14,8 @@ export function ToolbarAction({
 }: {
   active?: boolean;
   buttonRef?: Ref<HTMLButtonElement>;
+  controls?: string;
+  expanded?: boolean;
   icon: ToolbarIcon;
   label: string;
   run?: () => void;
@@ -22,6 +26,8 @@ export function ToolbarAction({
       <button
         aria-label={label}
         aria-pressed={active}
+        aria-controls={controls}
+        aria-expanded={expanded}
         onClick={run}
         ref={buttonRef}
         type={type}
