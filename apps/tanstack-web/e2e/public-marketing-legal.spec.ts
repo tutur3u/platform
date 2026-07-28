@@ -10,8 +10,8 @@ import {
  * apps/tanstack-web/migration/route-manifest.json with a matching route file
  * under apps/tanstack-web/src/routes/$locale/*. Each route renders via
  * LegalPageLayout: the <h1> concatenates `title` + `highlightedWord`, the
- * summary section renders `summaryTitle`, and the effective date formats
- * `2026-02-06` as "February 6, 2026". Assertions mirror the legacy
+ * summary section renders `summaryTitle`, and each route exposes its document's
+ * formatted effective date. Assertions mirror the legacy
  * apps/web/e2e/public-marketing-routes.noauth.spec.ts suite.
  */
 const legalRoutes = [
@@ -19,21 +19,25 @@ const legalRoutes = [
     path: `/${DEFAULT_LOCALE}/acceptable-use`,
     heading: 'Acceptable Use',
     summaryHeading: 'Key Policy Points',
+    effectiveDate: 'February 6, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/community-guidelines`,
     heading: 'Community Guidelines',
     summaryHeading: 'Guidelines at a Glance',
+    effectiveDate: 'February 6, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/privacy`,
     heading: 'Privacy Policy',
     summaryHeading: 'Privacy at a glance',
+    effectiveDate: 'August 15, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/terms`,
     heading: 'Terms of Service',
     summaryHeading: 'Terms at a glance',
+    effectiveDate: 'August 15, 2026',
   },
 ];
 
@@ -54,7 +58,7 @@ test.describe('Public migrated legal routes', () => {
         page.getByRole('heading', { name: route.summaryHeading }).first()
       ).toBeVisible();
       await expect(
-        page.getByText('Effective August 15, 2026').first()
+        page.getByText(`Effective ${route.effectiveDate}`).first()
       ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });

@@ -68,21 +68,25 @@ const legalRoutes = [
     path: `/${DEFAULT_LOCALE}/acceptable-use`,
     heading: 'Acceptable Use',
     summaryHeading: 'Key Policy Points',
+    effectiveDate: 'February 6, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/community-guidelines`,
     heading: 'Community Guidelines',
     summaryHeading: 'Guidelines at a Glance',
+    effectiveDate: 'February 6, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/privacy`,
     heading: 'Privacy Policy',
     summaryHeading: 'Privacy at a glance',
+    effectiveDate: 'August 15, 2026',
   },
   {
     path: `/${DEFAULT_LOCALE}/terms`,
     heading: 'Terms of Service',
     summaryHeading: 'Terms at a glance',
+    effectiveDate: 'August 15, 2026',
   },
 ];
 
@@ -337,7 +341,7 @@ test.describe('Public migrated marketing routes', () => {
         page.getByRole('heading', { name: route.summaryHeading }).first()
       ).toBeVisible();
       await expect(
-        page.getByText('Effective August 15, 2026').first()
+        page.getByText(`Effective ${route.effectiveDate}`).first()
       ).toBeVisible();
       await expectNoPublicRouteRuntimeError(page);
     });
