@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeRichTextUrl } from './url.js';
+import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
 
 describe('normalizeRichTextUrl', () => {
   it.each([
@@ -35,4 +35,27 @@ describe('normalizeRichTextUrl', () => {
     expect(normalizeRichTextUrl('   ')).toBe('');
     expect(normalizeRichTextUrl(null)).toBe('');
   });
+
+  it('percent-encodes whitespace in safe absolute and relative URLs', () => {
+    expect(normalizeRichTextUrl('https://example.com/a b')).toBe(
+      'https://example.com/a%20b'
+    );
+    expect(normalizeRichTextUrl('/stories/a b')).toBe('/stories/a%20b');
+  });
+});
+
+describe('normalizeRichTextImageUrl', () => {
+  it.each(['https://example.com/a.png', '/a.png', '//cdn.example.com/a.png'])(
+    'allows image URL %s',
+    (url) => {
+      expect(normalizeRichTextImageUrl(url)).toBe(url);
+    }
+  );
+
+  it.each(['mailto:a@example.com', 'tel:+84123456789', 'javascript:alert(1)'])(
+    'rejects non-web image URL %s',
+    (url) => {
+      expect(normalizeRichTextImageUrl(url)).toBeNull();
+    }
+  );
 });

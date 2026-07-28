@@ -1,12 +1,235 @@
-.tuturuuu-editor-tool {
-  position: relative;
-  display: inline-flex;
+.tuturuuu-editor {
+  overflow: hidden;
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: var(--tuturuuu-editor-radius, 0.75rem);
+  background: var(--tuturuuu-editor-background, transparent);
+  color: var(--tuturuuu-editor-foreground, inherit);
 }
 
 .tuturuuu-editor-toolbar {
   position: relative;
   z-index: 1;
+  display: flex;
   overflow: visible;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  background: var(
+    --tuturuuu-editor-toolbar-background,
+    rgb(127 127 127 / 0.04)
+  );
+}
+
+.tuturuuu-editor-toolbar button,
+.tuturuuu-editor-toolbar label {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tuturuuu-editor-toolbar button:hover,
+.tuturuuu-editor-toolbar label:hover,
+.tuturuuu-editor-toolbar button[aria-pressed="true"],
+.tuturuuu-editor-toolbar label[aria-pressed="true"] {
+  border-color: var(--tuturuuu-editor-active-border, rgb(127 127 127 / 0.2));
+  background: var(--tuturuuu-editor-active-background, rgb(127 127 127 / 0.12));
+}
+
+.tuturuuu-editor .tiptap {
+  min-height: var(--tuturuuu-editor-min-height, 12rem);
+  padding: 1rem 1.125rem;
+  outline: none;
+  line-height: 1.7;
+}
+
+.tuturuuu-editor[data-read-only] .tiptap {
+  min-height: auto;
+  padding: 0;
+}
+
+.tuturuuu-editor .tiptap > :first-child {
+  margin-top: 0;
+}
+
+.tuturuuu-editor .tiptap > :last-child {
+  margin-bottom: 0;
+}
+
+.tuturuuu-editor .tiptap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem auto;
+  border-radius: 0.5rem;
+}
+
+.tuturuuu-editor .tiptap p.is-editor-empty:first-child::before {
+  float: left;
+  height: 0;
+  color: var(--tuturuuu-editor-muted, #6b7280);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.tuturuuu-editor-word-count {
+  display: block;
+  padding: 0.375rem 0.75rem;
+  border-top: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  color: var(--tuturuuu-editor-muted, #6b7280);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.tuturuuu-editor-mode-switch {
+  display: flex;
+  width: fit-content;
+  gap: 0.125rem;
+  padding: 0.25rem;
+  margin: 0.5rem 0.5rem 0;
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: 0.5rem;
+  background: var(
+    --tuturuuu-editor-toolbar-background,
+    rgb(127 127 127 / 0.04)
+  );
+}
+
+.tuturuuu-editor-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--tuturuuu-editor-muted, #6b7280);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.tuturuuu-editor-mode-switch button[aria-pressed="true"] {
+  background: var(--tuturuuu-editor-active-background, rgb(127 127 127 / 0.12));
+  color: inherit;
+}
+
+.tuturuuu-editor-mode-switch svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.tuturuuu-editor-source-panel {
+  padding: 0.75rem;
+}
+
+.tuturuuu-editor-source-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.625rem;
+}
+
+.tuturuuu-editor-source-heading label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.tuturuuu-editor-source-heading p {
+  max-width: 46rem;
+  margin: 0.125rem 0 0;
+  color: var(--tuturuuu-editor-muted, #6b7280);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.tuturuuu-editor-source-actions {
+  display: flex;
+  flex: none;
+  gap: 0.375rem;
+}
+
+.tuturuuu-editor-source-actions button,
+.tuturuuu-editor-style-clear {
+  min-height: 2rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.tuturuuu-editor-source-actions button[data-primary="true"] {
+  border-color: var(--tuturuuu-editor-primary, #0f172a);
+  background: var(--tuturuuu-editor-primary, #0f172a);
+  color: var(--tuturuuu-editor-primary-foreground, #fff);
+}
+
+.tuturuuu-editor-source-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.tuturuuu-editor-source-panel textarea {
+  width: 100%;
+  min-height: var(--tuturuuu-editor-source-min-height, 18rem);
+  resize: vertical;
+  padding: 1rem;
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: 0.5rem;
+  outline: none;
+  background: var(--tuturuuu-editor-code-background, #111827);
+  color: var(--tuturuuu-editor-code-foreground, #f9fafb);
+  font:
+    0.8125rem / 1.65 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  tab-size: 2;
+}
+
+.tuturuuu-editor-source-panel textarea:focus {
+  border-color: var(--tuturuuu-editor-focus, #64748b);
+  box-shadow: 0 0 0 3px
+    var(--tuturuuu-editor-focus-ring, rgb(100 116 139 / 0.2));
+}
+
+.tuturuuu-editor-source-feedback {
+  min-height: 1.25rem;
+}
+
+.tuturuuu-editor-source-feedback p {
+  margin: 0.375rem 0 0;
+  font-size: 0.75rem;
+}
+
+.tuturuuu-editor-source-feedback [data-error="true"] {
+  color: var(--tuturuuu-editor-error, #dc2626);
+}
+
+.tuturuuu-editor-source-feedback [data-notice="true"] {
+  color: var(--tuturuuu-editor-notice, #a16207);
+}
+
+.tuturuuu-editor-tool {
+  position: relative;
+  display: inline-flex;
 }
 
 .tuturuuu-editor-tool > button,
@@ -116,6 +339,11 @@
   opacity: 1;
 }
 
+.tuturuuu-editor-style-control:has(> button[aria-expanded="true"])
+  > .tuturuuu-editor-tooltip {
+  opacity: 0;
+}
+
 .tuturuuu-editor-toolbar-separator {
   align-self: stretch;
   width: 1px;
@@ -125,8 +353,102 @@
   opacity: 0.18;
 }
 
+.tuturuuu-editor-style-control > button {
+  position: relative;
+}
+
+.tuturuuu-editor-style-indicator {
+  position: absolute;
+  right: 0.3125rem;
+  bottom: 0.1875rem;
+  width: 0.875rem;
+  height: 0.1875rem;
+  border-radius: 999px;
+}
+
+.tuturuuu-editor-style-menu {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 0.375rem);
+  left: 0;
+  width: 11rem;
+  padding: 0.5rem;
+  border: 1px solid var(--tuturuuu-editor-popover-border, #d1d5db);
+  border-radius: 0.5rem;
+  background: var(--tuturuuu-editor-popover-background, #fff);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.16);
+  color: var(--tuturuuu-editor-popover-foreground, #111827);
+}
+
+.tuturuuu-editor-style-swatches {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+
+.tuturuuu-editor-style-swatches button {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--tuturuuu-editor-popover-background, #fff);
+  border-radius: 0.375rem;
+  outline: 1px solid var(--tuturuuu-editor-popover-border, #d1d5db);
+}
+
+.tuturuuu-editor-style-swatches button[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--tuturuuu-editor-focus, #64748b);
+}
+
+.tuturuuu-editor-style-swatches button:focus-visible {
+  outline: 2px solid var(--tuturuuu-editor-focus, #64748b);
+  outline-offset: 2px;
+}
+
+.tuturuuu-editor-style-clear {
+  width: 100%;
+}
+
+.tuturuuu-editor-skeleton {
+  min-height: var(--tuturuuu-editor-min-height, 12rem);
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: var(--tuturuuu-editor-radius, 0.75rem);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--tuturuuu-editor-skeleton, rgb(127 127 127 / 0.1)),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: tuturuuu-editor-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes tuturuuu-editor-pulse {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .tuturuuu-editor-source-heading {
+    flex-direction: column;
+  }
+
+  .tuturuuu-editor-source-actions {
+    width: 100%;
+  }
+
+  .tuturuuu-editor-source-actions button {
+    flex: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .tuturuuu-editor-tooltip {
+  .tuturuuu-editor-tooltip,
+  .tuturuuu-editor-skeleton {
+    animation: none;
     transition: none;
   }
 }
