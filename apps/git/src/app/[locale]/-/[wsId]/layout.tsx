@@ -16,30 +16,31 @@ import { SidebarProvider } from '@/context/sidebar-context';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
-export default function GitAdminLayout({
-  children,
-  params,
-}: {
+interface LayoutProps {
   children: ReactNode;
   params: Promise<{ wsId: string }>;
-}) {
+}
+
+// This authenticated shell intentionally resolves the session, root-workspace
+// access, and user-specific sidebar state before rendering.
+export const instant = false;
+
+export default function Layout(props: LayoutProps) {
   return (
-    <Suspense fallback={<AdminLayoutSkeleton />}>
-      <GitAdminLayoutContent params={params}>{children}</GitAdminLayoutContent>
+    <Suspense fallback={<WorkspaceLayoutSkeleton />}>
+      <WorkspaceLayoutContent {...props} />
     </Suspense>
   );
 }
 
-async function GitAdminLayoutContent({
-  children,
-  params,
-}: {
-  children: ReactNode;
-  params: Promise<{ wsId: string }>;
-}) {
+async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
   await connection();
-  const { wsId } = await params;
-  const user = await getSatelliteAppSessionUser('git');
+  const [{ wsId }, user, cookieStore] = await Promise.all([
+    params,
+    getSatelliteAppSessionUser('git'),
+    cookies(),
+  ]);
+
   if (!user?.id) redirect('/login');
 
   const workspace = await getWorkspace(wsId, { useAdmin: true, user });
@@ -53,7 +54,6 @@ async function GitAdminLayoutContent({
   }
 
   const workspaceSlug = toWorkspaceSlug(workspace.id);
-  const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
   const sidebarBehaviorUpdatedAt = getSidebarBehaviorUpdatedAt(cookieStore);
   const defaultCollapsed = getSidebarCollapsedState(
@@ -67,29 +67,35 @@ async function GitAdminLayoutContent({
       initialBehaviorUpdatedAt={sidebarBehaviorUpdatedAt}
     >
       <Structure
+        wsId={workspace.id}
+        workspace={workspace}
+        defaultCollapsed={defaultCollapsed}
+        links={
+          await getNavigationLinks({
+            permissions,
+            workspaceSlug,
+          })
+        }
         actions={
           <Suspense
-            fallback={<div className="h-10 w-20 rounded-lg bg-muted" />}
+            key={user.id}
+            fallback={
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+            }
           >
             <NavbarActions />
           </Suspense>
         }
-        defaultCollapsed={defaultCollapsed}
-        links={
-          await getNavigationLinks({
-            permissions: permissions ?? undefined,
-            workspaceSlug,
-          })
-        }
         userPopover={
           <Suspense
-            fallback={<div className="h-10 w-10 rounded-lg bg-muted" />}
+            key={user.id}
+            fallback={
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            }
           >
             <UserNav hideMetadata />
           </Suspense>
         }
-        workspace={workspace}
-        wsId={workspace.id}
       >
         {children}
       </Structure>
@@ -97,15 +103,23 @@ async function GitAdminLayoutContent({
   );
 }
 
-function AdminLayoutSkeleton() {
+function WorkspaceLayoutSkeleton() {
   return (
     <div className="grid min-h-screen grid-cols-[4rem_1fr] md:grid-cols-[18rem_1fr]">
-      <div className="border-r p-3">
-        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      <div className="border-r bg-foreground/[0.02] p-3" aria-hidden="true">
+        <div className="h-10 animate-pulse rounded-lg bg-foreground/10" />
+        <div className="mt-6 space-y-3">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div
+              key={index}
+              className="h-9 animate-pulse rounded-lg bg-foreground/5"
+            />
+          ))}
+        </div>
       </div>
-      <div className="space-y-4 p-6">
-        <div className="h-12 animate-pulse rounded-lg bg-muted" />
-        <div className="h-80 animate-pulse rounded-lg bg-muted" />
+      <div className="space-y-4 p-4" aria-busy="true">
+        <div className="h-14 animate-pulse rounded-lg bg-foreground/5" />
+        <div className="h-80 animate-pulse rounded-lg bg-foreground/5" />
       </div>
     </div>
   );

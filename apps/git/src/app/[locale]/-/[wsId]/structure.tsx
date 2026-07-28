@@ -1,3 +1,5 @@
+'use client';
+
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';

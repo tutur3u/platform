@@ -2,7 +2,7 @@ import 'server-only';
 
 import { GITHUB_API_VERSION } from '@/constants/common';
 import { getInstallationToken } from './credentials';
-import { GitHubMirrorError } from './errors';
+import { classifyGitHubResponseError, GitHubMirrorError } from './errors';
 import { buildGitHubUrl } from './github-url';
 import type { GitRepository } from './types';
 
@@ -27,23 +27,21 @@ export async function githubRequest<T>({
   });
 
   if (!response.ok) {
+    const responseBody = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as { message?: string } | null;
+
     if (response.status === 404) {
       throw new GitHubMirrorError('Repository resource not found', 404);
     }
 
-    if (response.status === 403 || response.status === 429) {
-      throw new GitHubMirrorError(
-        'GitHub rate limit reached',
-        503,
-        'github_rate_limited'
-      );
-    }
-
-    throw new GitHubMirrorError(
-      `GitHub request failed with status ${response.status}`,
-      502,
-      'github_request_failed'
-    );
+    throw classifyGitHubResponseError({
+      message: responseBody?.message,
+      rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
+      retryAfter: response.headers.get('retry-after'),
+      status: response.status,
+    });
   }
 
   return (await response.json()) as T;

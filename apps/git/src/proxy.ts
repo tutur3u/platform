@@ -166,5 +166,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)'],
+  // Repository paths legitimately contain dots (for example SECURITY.md and
+  // turbo.json), so only framework assets and the app favicon bypass locale
+  // routing.
+  matcher: ['/((?!_next|favicon\\.svg).*)'],
 };

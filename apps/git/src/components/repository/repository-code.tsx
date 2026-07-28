@@ -10,6 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import type { GitHubContent } from '@/lib/github/types';
+import { RepositoryMarkdown } from './repository-markdown';
 
 function buildPath(
   owner: string,
@@ -54,7 +55,19 @@ export function RepositoryCode({
             </Button>
           )}
         </div>
-        {source ? (
+        {source && /\.md(?:own)?$/iu.test(content.path) ? (
+          <RepositoryMarkdown
+            className="p-6"
+            context={{
+              owner,
+              refName,
+              repository,
+              sourcePath: content.path,
+            }}
+          >
+            {source}
+          </RepositoryMarkdown>
+        ) : source ? (
           <pre className="max-h-[75vh] overflow-auto bg-foreground/[0.025] p-5 font-mono text-[13px] leading-6">
             <code>{source}</code>
           </pre>

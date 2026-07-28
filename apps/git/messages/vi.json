@@ -72,12 +72,19 @@
     "code": "Mã nguồn",
     "commits": "Commit",
     "contributors": "Người đóng góp",
+    "generic_error": "Không thể tải chế độ xem Git này",
+    "generic_error_description": "Không thể hiển thị chế độ xem. Hãy thử lại yêu cầu hoặc quay lại kho mã.",
+    "github_unavailable": "GitHub không hoàn tất yêu cầu này",
+    "github_unavailable_description": "GitHub trả về lỗi truy cập hoặc dịch vụ. Lỗi này không được xác định là giới hạn tần suất.",
     "issues": "Issue",
     "pull_requests": "Pull request",
+    "rate_limited": "Đã đạt giới hạn tần suất của GitHub",
+    "rate_limited_description": "GitHub đã xác nhận giới hạn API bị dùng hết hoặc yêu cầu bị điều tiết. Hãy thử lại sau khi giới hạn được đặt lại.",
     "releases": "Bản phát hành",
     "repositories": "Kho mã",
     "repository_not_found": "Không tìm thấy kho mã",
-    "repository_not_found_description": "Kho mã này chưa được đăng ký, không công khai hoặc đang tạm thời không khả dụng."
+    "repository_not_found_description": "Kho mã này chưa được đăng ký, không công khai hoặc đang tạm thời không khả dụng.",
+    "retry": "Thử lại"
   },
   "sidebar_tabs": {
     "git": "Git",

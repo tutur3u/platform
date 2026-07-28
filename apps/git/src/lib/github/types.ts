@@ -115,6 +115,7 @@ export type GitHubContributor = GitHubActor & {
 
 export type RepositoryOverview = {
   languages: Record<string, number>;
-  readme: string | null;
+  readme: { content: string; path: string } | null;
   repository: GitHubRepository;
+  rootContent: GitHubContent[];
 };

@@ -1,5 +1,7 @@
+import { Card } from '@tuturuuu/ui/card';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { RepositoryCode } from '@/components/repository/repository-code';
 import {
   type CollectionItem,
@@ -26,6 +28,7 @@ import {
   getRepositoryContributors,
   getRepositoryIssue,
   getRepositoryIssues,
+  getRepositoryMetadata,
   getRepositoryOverview,
   getRepositoryPull,
   getRepositoryPulls,
@@ -61,74 +64,103 @@ export default async function RepositoryPage({
   params,
   searchParams,
 }: PageProps) {
-  const { owner, repo, view = [] } = await params;
+  const { locale, owner, repo, view = [] } = await params;
   const query = await searchParams;
   const activeView = resolveActiveView(view);
 
   try {
-    const overview = await getRepositoryOverview(owner, repo);
+    if (activeView === 'overview') {
+      const overview = await getRepositoryOverview(owner, repo);
+      return (
+        <RepositoryShell
+          activeView={activeView}
+          repository={overview.repository}
+        >
+          <RepositoryOverviewView
+            data={overview}
+            owner={owner}
+            repositoryName={repo}
+          />
+        </RepositoryShell>
+      );
+    }
+
+    const repositoryPromise = getRepositoryMetadata(owner, repo);
+    const viewPromise = renderView({
+      activeView,
+      owner,
+      query,
+      repo,
+      repositoryPromise,
+      view,
+    });
+    const [repository, renderedView] = await Promise.all([
+      repositoryPromise,
+      viewPromise,
+    ]);
+
     return (
-      <RepositoryShell activeView={activeView} repository={overview.repository}>
-        {
-          await renderView({
-            activeView,
-            overview,
-            owner,
-            query,
-            repo,
-            view,
-          })
-        }
+      <RepositoryShell activeView={activeView} repository={repository}>
+        {renderedView}
       </RepositoryShell>
     );
   } catch (error) {
     if (error instanceof GitHubMirrorError && error.status === 404) {
       notFound();
     }
+
+    if (
+      error instanceof GitHubMirrorError &&
+      (error.code === 'github_rate_limited' ||
+        error.code === 'github_access_denied' ||
+        error.code === 'github_request_failed')
+    ) {
+      const t = await getTranslations({ locale, namespace: 'git' });
+      const rateLimited = error.code === 'github_rate_limited';
+      return (
+        <RepositoryFailure
+          description={
+            rateLimited
+              ? t('rate_limited_description')
+              : t('github_unavailable_description')
+          }
+          title={rateLimited ? t('rate_limited') : t('github_unavailable')}
+        />
+      );
+    }
+
     throw error;
   }
 }
 
 async function renderView({
   activeView,
-  overview,
   owner,
   query,
   repo,
+  repositoryPromise,
   view,
 }: {
   activeView: string;
-  overview: Awaited<ReturnType<typeof getRepositoryOverview>>;
   owner: string;
   query: { page?: string; q?: string; ref?: string };
   repo: string;
+  repositoryPromise: ReturnType<typeof getRepositoryMetadata>;
   view: string[];
 }) {
   const page = Math.max(1, Number.parseInt(query.page ?? '1', 10) || 1);
 
-  if (activeView === 'overview') {
-    return (
-      <RepositoryOverviewView
-        data={overview}
-        owner={owner}
-        repositoryName={repo}
-      />
-    );
-  }
-
   if (activeView === 'tree' || activeView === 'blob') {
     const path = view.slice(1).join('/');
-    const content = await getRepositoryContent(
-      owner,
-      repo,
-      path,
-      query.ref ?? overview.repository.default_branch
-    );
+    const [content, repository] = await Promise.all([
+      getRepositoryContent(owner, repo, path, query.ref),
+      repositoryPromise,
+    ]);
     return (
       <RepositoryCode
         content={content}
         owner={owner}
-        refName={query.ref ?? overview.repository.default_branch}
+        refName={query.ref ?? repository.default_branch}
         repository={repo}
       />
     );
@@ -263,6 +295,23 @@ async function renderView({
   }
 
   notFound();
+}
+
+function RepositoryFailure({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <main className="grid min-h-screen place-items-center p-6">
+      <Card className="max-w-lg space-y-3 p-6 text-center">
+        <h1 className="font-semibold text-2xl">{title}</h1>
+        <p className="text-muted-foreground text-sm leading-6">{description}</p>
+      </Card>
+    </main>
+  );
 }
 
 function collection(

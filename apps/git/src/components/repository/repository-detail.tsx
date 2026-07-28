@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
+import { RepositoryMarkdown } from './repository-markdown';
 
 export function IssueDetail({
   data,
@@ -365,9 +365,9 @@ function MarkdownCard({
         </Avatar>
         <span className="font-semibold text-sm">{login}</span>
       </div>
-      <article className="prose prose-neutral dark:prose-invert max-w-none p-5">
-        <ReactMarkdown>{body || '_No description provided._'}</ReactMarkdown>
-      </article>
+      <RepositoryMarkdown className="p-5">
+        {body || '_No description provided._'}
+      </RepositoryMarkdown>
     </Card>
   );
 }

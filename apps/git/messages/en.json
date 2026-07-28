@@ -72,12 +72,19 @@
     "code": "Code",
     "commits": "Commits",
     "contributors": "Contributors",
+    "generic_error": "Unable to load this Git view",
+    "generic_error_description": "The view could not be rendered. Retry the request, or return to the repository.",
+    "github_unavailable": "GitHub did not complete this request",
+    "github_unavailable_description": "GitHub returned an access or service error. This is not being reported as a rate limit.",
     "issues": "Issues",
     "pull_requests": "Pull requests",
+    "rate_limited": "GitHub rate limit reached",
+    "rate_limited_description": "GitHub explicitly reported that its API limit was exhausted or throttled. Try again after the limit resets.",
     "releases": "Releases",
     "repositories": "Repositories",
     "repository_not_found": "Repository not found",
-    "repository_not_found_description": "This repository is not registered, is private, or is currently unavailable."
+    "repository_not_found_description": "This repository is not registered, is private, or is currently unavailable.",
+    "retry": "Retry"
   },
   "sidebar_tabs": {
     "git": "Git",

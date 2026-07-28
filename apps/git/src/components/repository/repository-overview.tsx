@@ -2,16 +2,16 @@ import { CircleDot, ExternalLink, GitFork, Scale, Star } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
 import type { RepositoryOverview } from '@/lib/github/types';
 import { RepositoryCode } from './repository-code';
+import { RepositoryMarkdown } from './repository-markdown';
 
 function formatBytes(value: number) {
   if (value < 1024) return `${value} KB`;
   return `${(value / 1024).toFixed(1)} MB`;
 }
 
-export async function RepositoryOverviewView({
+export function RepositoryOverviewView({
   data,
   owner,
   repositoryName,
@@ -20,15 +20,6 @@ export async function RepositoryOverviewView({
   owner: string;
   repositoryName: string;
 }) {
-  const rootContent = await import('@/lib/github/queries').then(
-    ({ getRepositoryContent }) =>
-      getRepositoryContent(
-        owner,
-        repositoryName,
-        '',
-        data.repository.default_branch
-      )
-  );
   const languageTotal = Object.values(data.languages).reduce(
     (total, value) => total + value,
     0
@@ -38,7 +29,7 @@ export async function RepositoryOverviewView({
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="min-w-0 space-y-6">
         <RepositoryCode
-          content={rootContent}
+          content={data.rootContent}
           owner={owner}
           refName={data.repository.default_branch}
           repository={repositoryName}
@@ -48,9 +39,17 @@ export async function RepositoryOverviewView({
             <div className="border-b px-5 py-3 font-mono font-semibold text-muted-foreground text-xs uppercase tracking-[0.16em]">
               README
             </div>
-            <article className="prose prose-neutral dark:prose-invert max-w-none overflow-hidden prose-pre:overflow-x-auto p-6">
-              <ReactMarkdown>{data.readme}</ReactMarkdown>
-            </article>
+            <RepositoryMarkdown
+              className="p-6"
+              context={{
+                owner,
+                refName: data.repository.default_branch,
+                repository: repositoryName,
+                sourcePath: data.readme.path,
+              }}
+            >
+              {data.readme.content}
+            </RepositoryMarkdown>
           </Card>
         )}
       </div>

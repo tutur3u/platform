@@ -38,27 +38,43 @@ export async function getRepositoryOverview(
   'use cache';
   metadataCache(owner, name, 'overview');
   const repository = await requireRegisteredRepository(owner, name);
-  const [metadata, languages, readme] = await Promise.all([
+  const [metadata, languages, readme, rootContent] = await Promise.all([
     githubRequest<GitHubRepository>({ path: '', repository }),
     githubRequest<Record<string, number>>({
       path: '/languages',
       repository,
     }),
-    githubRequest<{ content?: string }>({
+    githubRequest<{ content?: string; path: string }>({
       path: '/readme',
       repository,
     }).catch(() => null),
+    githubRequest<GitHubContent[]>({
+      path: '/contents',
+      repository,
+    }),
   ]);
 
   return {
     languages,
     readme: readme?.content
-      ? Buffer.from(readme.content.replaceAll('\n', ''), 'base64').toString(
-          'utf8'
-        )
+      ? {
+          content: Buffer.from(
+            readme.content.replaceAll('\n', ''),
+            'base64'
+          ).toString('utf8'),
+          path: readme.path,
+        }
       : null,
     repository: metadata,
+    rootContent,
   };
+}
+
+export async function getRepositoryMetadata(owner: string, name: string) {
+  'use cache';
+  metadataCache(owner, name, 'metadata');
+  const repository = await requireRegisteredRepository(owner, name);
+  return githubRequest<GitHubRepository>({ path: '', repository });
 }
 
 export async function getRepositoryContent(
