@@ -1,0 +1,9 @@
+.repository-markdown pre span[style*="--sdm-c"],
+.repository-source pre span[style*="--sdm-c"] {
+  color: var(--sdm-c);
+}
+
+.dark .repository-markdown pre span[style*="--sdm-c"],
+.dark .repository-source pre span[style*="--sdm-c"] {
+  color: var(--shiki-dark, var(--sdm-c));
+}
