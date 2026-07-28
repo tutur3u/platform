@@ -1,36 +1,52 @@
+'use client';
+
+import { useDebouncedValue } from '@tanstack/react-pacer/debouncer';
 import {
-  CheckCircle2,
-  CircleDot,
-  Clock,
-  GitCommitHorizontal,
-  GitPullRequest,
-  Play,
-  Tag,
-  User,
-  XCircle,
+  type ColumnDef,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import {
+  ArrowDownAZ,
+  CalendarArrowDown,
+  CalendarArrowUp,
+  ListFilter,
+  Search,
 } from '@tuturuuu/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
-import Link from 'next/link';
-import type {
-  GitHubCommit,
-  GitHubContributor,
-  GitHubIssue,
-  GitHubRelease,
-  GitHubWorkflowRun,
-  GitHubPullRequest as PullRequest,
-} from '@/lib/github/types';
+import { useTranslations } from 'next-intl';
+import { useMemo, useRef, useState } from 'react';
+import { CollectionRowView } from './repository-collection-row';
+import {
+  type CollectionItem,
+  type CollectionRow,
+  toCollectionRow,
+} from './repository-collection-types';
 
-export type CollectionItem =
-  | { kind: 'commit'; value: GitHubCommit }
-  | { kind: 'issue'; value: GitHubIssue }
-  | { kind: 'pull'; value: PullRequest }
-  | { kind: 'release'; value: GitHubRelease }
-  | { kind: 'run'; value: GitHubWorkflowRun }
-  | { kind: 'contributor'; value: GitHubContributor }
-  | { kind: 'ref'; value: { name: string; commit: { sha: string } } };
+export type { CollectionItem } from './repository-collection-types';
+
+const columns: ColumnDef<CollectionRow>[] = [
+  { accessorKey: 'title', id: 'title' },
+  {
+    accessorKey: 'state',
+    filterFn: (row, columnId, value) => row.getValue(columnId) === value,
+    id: 'state',
+  },
+  { accessorKey: 'timestamp', id: 'timestamp' },
+];
+
+const SORT_OPTIONS = {
+  name: [{ desc: false, id: 'title' }],
+  oldest: [{ desc: false, id: 'timestamp' }],
+  recent: [{ desc: true, id: 'timestamp' }],
+} satisfies Record<string, SortingState>;
+
+type SortOption = keyof typeof SORT_OPTIONS;
 
 export function RepositoryCollection({
   emptyMessage,
@@ -47,39 +63,135 @@ export function RepositoryCollection({
   searchQuery?: string;
   title: string;
 }) {
+  const t = useTranslations('git');
+  const [search, setSearch] = useState(searchQuery ?? '');
+  const [status, setStatus] = useState('all');
+  const [sort, setSort] = useState<SortOption>('recent');
+  const [debouncedSearch] = useDebouncedValue(search, { wait: 120 });
+  const data = useMemo(() => items.map(toCollectionRow), [items]);
+  const statuses = useMemo(
+    () => [...new Set(data.map((row) => row.state).filter(Boolean))].sort(),
+    [data]
+  );
+  const sorting = SORT_OPTIONS[sort];
+  const table = useReactTable({
+    columns,
+    data,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    globalFilterFn: (row, _columnId, value) =>
+      row.original.search.includes(String(value).trim().toLowerCase()),
+    state: {
+      columnFilters: status === 'all' ? [] : [{ id: 'state', value: status }],
+      globalFilter: debouncedSearch,
+      sorting,
+    },
+  });
+  const rows = table.getRowModel().rows;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    estimateSize: () => 72,
+    getScrollElement: () => scrollRef.current,
+    getItemKey: (index) => rows[index]?.original.key ?? index,
+    initialRect: { height: 720, width: 1200 },
+    overscan: 8,
+  });
+  const totalSize = virtualizer.getTotalSize();
+
   return (
-    <section className="space-y-4">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-        <div>
-          <p className="font-mono text-muted-foreground text-xs uppercase tracking-[0.2em]">
+    <section className="space-y-3">
+      <header className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+        <div className="min-w-0">
+          <p className="truncate font-mono text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
             {owner}/{repository}
           </p>
-          <h1 className="mt-1 font-semibold text-2xl tracking-tight">
-            {title}
-          </h1>
+          <div className="mt-0.5 flex items-baseline gap-2">
+            <h1 className="font-semibold text-xl tracking-tight">{title}</h1>
+            <span className="font-mono text-muted-foreground text-xs">
+              {t('result_count', { count: rows.length })}
+            </span>
+          </div>
         </div>
-        <form className="w-full sm:max-w-xs">
-          <Input
-            aria-label={`Search ${title.toLowerCase()}`}
-            defaultValue={searchQuery}
-            name="q"
-            placeholder={`Filter ${title.toLowerCase()}…`}
-            type="search"
-          />
-        </form>
-      </div>
-      <Card className="divide-y overflow-hidden">
-        {items.length ? (
-          items.map((item, index) => (
-            <CollectionRow
-              key={`${item.kind}-${getItemKey(item)}-${index}`}
-              item={item}
-              owner={owner}
-              repository={repository}
+
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 xl:max-w-3xl xl:justify-end">
+          <label className="relative min-w-48 flex-1 xl:max-w-sm">
+            <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              aria-label={t('filter_collection', { collection: title })}
+              className="h-8 pl-8 text-xs"
+              name="q"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('filter_placeholder')}
+              type="search"
+              value={search}
             />
-          ))
+          </label>
+
+          {statuses.length > 1 && (
+            <CompactSelect
+              ariaLabel={t('filter_state')}
+              icon={<ListFilter className="h-3.5 w-3.5" />}
+              onChange={setStatus}
+              value={status}
+            >
+              <option value="all">{t('all_states')}</option>
+              {statuses.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </CompactSelect>
+          )}
+
+          <CompactSelect
+            ariaLabel={t('sort')}
+            icon={<SortIcon sort={sort} />}
+            onChange={(value) => setSort(value as SortOption)}
+            value={sort}
+          >
+            <option value="recent">{t('sort_recent')}</option>
+            <option value="oldest">{t('sort_oldest')}</option>
+            <option value="name">{t('sort_name')}</option>
+          </CompactSelect>
+        </div>
+      </header>
+
+      <Card className="overflow-hidden py-0">
+        {rows.length ? (
+          <div
+            className="overflow-auto overscroll-contain"
+            ref={scrollRef}
+            style={{ height: Math.min(Math.max(totalSize, 62), 720) }}
+          >
+            <div className="relative w-full" style={{ height: totalSize }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const row = rows[virtualRow.index];
+                if (!row) return null;
+
+                return (
+                  <div
+                    className="absolute top-0 left-0 w-full border-b last:border-b-0"
+                    data-index={virtualRow.index}
+                    key={row.original.key}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <CollectionRowView
+                      item={row.original.item}
+                      owner={owner}
+                      repository={repository}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         ) : (
-          <div className="p-12 text-center text-muted-foreground text-sm">
+          <div className="p-10 text-center text-muted-foreground text-sm">
             {emptyMessage}
           </div>
         )}
@@ -88,192 +200,42 @@ export function RepositoryCollection({
   );
 }
 
-function CollectionRow({
-  item,
-  owner,
-  repository,
-}: {
-  item: CollectionItem;
-  owner: string;
-  repository: string;
-}) {
-  if (item.kind === 'commit') {
-    const commit = item.value;
-    return (
-      <RowLink href={`/${owner}/${repository}/commit/${commit.sha}`}>
-        <GitCommitHorizontal className="mt-1 h-4 w-4 text-muted-foreground" />
-        <div className="min-w-0">
-          <p className="truncate font-medium">
-            {firstLine(commit.commit.message)}
-          </p>
-          <Meta>
-            {commit.commit.author?.name ?? commit.author?.login ?? 'Unknown'} ·{' '}
-            {formatDate(commit.commit.author?.date)}
-          </Meta>
-        </div>
-        <code className="text-muted-foreground text-xs">
-          {commit.sha.slice(0, 7)}
-        </code>
-      </RowLink>
-    );
-  }
-
-  if (item.kind === 'issue' || item.kind === 'pull') {
-    const issue = item.value;
-    const isPull = item.kind === 'pull';
-    return (
-      <RowLink
-        href={`/${owner}/${repository}/${isPull ? 'pull' : 'issues'}/${issue.number}`}
-      >
-        {isPull ? (
-          <GitPullRequest className="mt-1 h-4 w-4 text-muted-foreground" />
-        ) : (
-          <CircleDot className="mt-1 h-4 w-4 text-muted-foreground" />
-        )}
-        <div className="min-w-0">
-          <p className="font-medium">{issue.title}</p>
-          <Meta>
-            #{issue.number} · {issue.user?.login ?? 'Unknown'} ·{' '}
-            {formatDate(issue.updated_at)}
-          </Meta>
-          <div className="mt-2 flex flex-wrap gap-1">
-            {issue.labels.slice(0, 5).map((label) => (
-              <Badge key={label.name} variant="outline">
-                {label.name}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        <Badge variant={issue.state === 'open' ? 'secondary' : 'outline'}>
-          {issue.state}
-        </Badge>
-      </RowLink>
-    );
-  }
-
-  if (item.kind === 'release') {
-    const release = item.value;
-    return (
-      <RowLink href={release.html_url}>
-        <Tag className="mt-1 h-4 w-4 text-muted-foreground" />
-        <div className="min-w-0">
-          <p className="font-medium">{release.name || release.tag_name}</p>
-          <Meta>
-            {release.tag_name} · {formatDate(release.published_at)}
-          </Meta>
-        </div>
-        {release.prerelease && <Badge variant="outline">Pre-release</Badge>}
-      </RowLink>
-    );
-  }
-
-  if (item.kind === 'run') {
-    const run = item.value;
-    const Icon =
-      run.conclusion === 'success'
-        ? CheckCircle2
-        : run.conclusion === 'failure'
-          ? XCircle
-          : run.status === 'in_progress'
-            ? Play
-            : Clock;
-    return (
-      <RowLink href={`/${owner}/${repository}/actions/${run.id}`}>
-        <Icon className="mt-1 h-4 w-4 text-muted-foreground" />
-        <div className="min-w-0">
-          <p className="font-medium">{run.name}</p>
-          <Meta>
-            #{run.run_number} · {run.event} ·{' '}
-            {run.head_branch ?? run.head_sha.slice(0, 7)} ·{' '}
-            {formatDate(run.updated_at)}
-          </Meta>
-        </div>
-        <Badge variant="outline">{run.conclusion ?? run.status}</Badge>
-      </RowLink>
-    );
-  }
-
-  if (item.kind === 'contributor') {
-    const contributor = item.value;
-    return (
-      <RowLink href={contributor.html_url}>
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={contributor.avatar_url} alt="" />
-          <AvatarFallback>
-            <User className="h-4 w-4" />
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0">
-          <p className="font-medium">{contributor.login}</p>
-          <Meta>{contributor.contributions} contributions</Meta>
-        </div>
-        <span />
-      </RowLink>
-    );
-  }
-
-  const ref = item.value;
-  return (
-    <RowLink
-      href={`/${owner}/${repository}/tree?ref=${encodeURIComponent(ref.name)}`}
-    >
-      <Tag className="mt-1 h-4 w-4 text-muted-foreground" />
-      <div className="min-w-0">
-        <p className="font-medium font-mono">{ref.name}</p>
-        <Meta>{ref.commit.sha.slice(0, 12)}</Meta>
-      </div>
-      <span />
-    </RowLink>
-  );
-}
-
-function RowLink({
+function CompactSelect({
+  ariaLabel,
   children,
-  href,
+  icon,
+  onChange,
+  value,
 }: {
+  ariaLabel: string;
   children: React.ReactNode;
-  href: string;
+  icon: React.ReactNode;
+  onChange: (value: string) => void;
+  value: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="grid grid-cols-[28px_minmax(0,1fr)_auto] gap-3 p-4 transition-colors hover:bg-muted/40"
-    >
-      {children}
-    </Link>
+    <label className="relative flex h-8 items-center rounded-md border bg-background/60 pl-2 text-xs">
+      <span className="pointer-events-none text-muted-foreground">{icon}</span>
+      <select
+        aria-label={ariaLabel}
+        className="h-full appearance-none bg-transparent pr-7 pl-1.5 outline-none"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {children}
+      </select>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-2 text-[9px] text-muted-foreground"
+      >
+        ▾
+      </span>
+    </label>
   );
 }
 
-function Meta({ children }: { children: React.ReactNode }) {
-  return <p className="mt-1 text-muted-foreground text-xs">{children}</p>;
-}
-
-function firstLine(value: string) {
-  return value.split('\n')[0] || value;
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return 'Unknown time';
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-}
-
-function getItemKey(item: CollectionItem) {
-  switch (item.kind) {
-    case 'commit':
-      return item.value.sha;
-    case 'issue':
-    case 'pull':
-      return item.value.number;
-    case 'release':
-      return item.value.tag_name;
-    case 'run':
-      return item.value.id;
-    case 'contributor':
-      return item.value.login;
-    case 'ref':
-      return item.value.name;
-  }
+function SortIcon({ sort }: { sort: SortOption }) {
+  if (sort === 'name') return <ArrowDownAZ className="h-3.5 w-3.5" />;
+  if (sort === 'oldest') return <CalendarArrowUp className="h-3.5 w-3.5" />;
+  return <CalendarArrowDown className="h-3.5 w-3.5" />;
 }

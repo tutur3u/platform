@@ -15,7 +15,6 @@ import {
   PullDetail,
 } from '@/components/repository/repository-detail';
 import { RepositoryOverviewView } from '@/components/repository/repository-overview';
-import { RepositoryShell } from '@/components/repository/repository-shell';
 import { GitHubMirrorError } from '@/lib/github/errors';
 import {
   getRepositoryActionRun,
@@ -72,38 +71,21 @@ export default async function RepositoryPage({
     if (activeView === 'overview') {
       const overview = await getRepositoryOverview(owner, repo);
       return (
-        <RepositoryShell
-          activeView={activeView}
-          repository={overview.repository}
-        >
-          <RepositoryOverviewView
-            data={overview}
-            owner={owner}
-            repositoryName={repo}
-          />
-        </RepositoryShell>
+        <RepositoryOverviewView
+          data={overview}
+          owner={owner}
+          repositoryName={repo}
+        />
       );
     }
 
-    const repositoryPromise = getRepositoryMetadata(owner, repo);
-    const viewPromise = renderView({
+    return await renderView({
       activeView,
       owner,
       query,
       repo,
-      repositoryPromise,
       view,
     });
-    const [repository, renderedView] = await Promise.all([
-      repositoryPromise,
-      viewPromise,
-    ]);
-
-    return (
-      <RepositoryShell activeView={activeView} repository={repository}>
-        {renderedView}
-      </RepositoryShell>
-    );
   } catch (error) {
     if (error instanceof GitHubMirrorError && error.status === 404) {
       notFound();
@@ -138,14 +120,12 @@ async function renderView({
   owner,
   query,
   repo,
-  repositoryPromise,
   view,
 }: {
   activeView: string;
   owner: string;
   query: { page?: string; q?: string; ref?: string };
   repo: string;
-  repositoryPromise: ReturnType<typeof getRepositoryMetadata>;
   view: string[];
 }) {
   const page = Math.max(1, Number.parseInt(query.page ?? '1', 10) || 1);
@@ -154,13 +134,13 @@ async function renderView({
     const path = view.slice(1).join('/');
     const [content, repository] = await Promise.all([
       getRepositoryContent(owner, repo, path, query.ref),
-      repositoryPromise,
+      query.ref ? null : getRepositoryMetadata(owner, repo),
     ]);
     return (
       <RepositoryCode
         content={content}
         owner={owner}
-        refName={query.ref ?? repository.default_branch}
+        refName={query.ref ?? repository?.default_branch ?? 'HEAD'}
         repository={repo}
       />
     );
@@ -321,17 +301,10 @@ function collection(
   repository: string,
   query?: string
 ) {
-  const normalizedQuery = query?.trim().toLowerCase();
-  const filteredItems = normalizedQuery
-    ? items.filter((item) =>
-        JSON.stringify(item.value).toLowerCase().includes(normalizedQuery)
-      )
-    : items;
-
   return (
     <RepositoryCollection
       emptyMessage={`No ${title.toLowerCase()} found.`}
-      items={filteredItems}
+      items={items}
       owner={owner}
       repository={repository}
       searchQuery={query}

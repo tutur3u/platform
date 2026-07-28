@@ -13,6 +13,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import { RepositoryMarkdown } from './repository-markdown';
+import { RepositorySource } from './repository-source';
 
 export function IssueDetail({
   data,
@@ -78,9 +79,11 @@ export function PullDetail({
                 </Badge>
               </div>
               {file.patch && (
-                <pre className="max-h-96 overflow-auto rounded-md bg-foreground/[0.035] p-3 text-xs leading-5">
-                  {file.patch}
-                </pre>
+                <RepositorySource
+                  className="rounded-md border bg-muted/15"
+                  filename={`${file.filename}.diff`}
+                  source={file.patch}
+                />
               )}
             </div>
           ))}
@@ -143,9 +146,11 @@ export function CommitDetail({
               </Badge>
             </div>
             {file.patch && (
-              <pre className="max-h-96 overflow-auto rounded-md bg-foreground/[0.035] p-3 text-xs leading-5">
-                {file.patch}
-              </pre>
+              <RepositorySource
+                className="rounded-md border bg-muted/15"
+                filename={`${file.filename}.diff`}
+                source={file.patch}
+              />
             )}
           </div>
         ))}
@@ -263,9 +268,11 @@ export function ComparisonDetail({
               </Badge>
             </div>
             {file.patch && (
-              <pre className="max-h-96 overflow-auto rounded-md bg-foreground/[0.035] p-3 text-xs leading-5">
-                {file.patch}
-              </pre>
+              <RepositorySource
+                className="rounded-md border bg-muted/15"
+                filename={`${file.filename}.diff`}
+                source={file.patch}
+              />
             )}
           </div>
         ))}

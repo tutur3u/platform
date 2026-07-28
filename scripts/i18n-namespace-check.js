@@ -60,6 +60,7 @@ const APPS = [
   { name: 'apps/cms', dir: 'apps/cms' },
   { name: 'apps/contacts', dir: 'apps/contacts' },
   { name: 'apps/forms', dir: 'apps/forms' },
+  { name: 'apps/git', dir: 'apps/git' },
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
   { name: 'apps/hive', dir: 'apps/hive' },
@@ -80,6 +81,19 @@ const APPS = [
 // All other shared namespaces are implicitly ignored for the app.
 const APP_NAMESPACE_ALLOWLIST = new Map([
   ['apps/inventory', new Set(['ws-members', 'ws-roles'])],
+  [
+    'apps/git',
+    new Set([
+      'account_switcher',
+      'command_launcher',
+      'common',
+      'nav-upgrade-dialog',
+      'notifications',
+      'settings',
+      'settings-account',
+      'version-badge',
+    ]),
+  ],
   ['apps/storefront', new Set(['common'])],
   ['apps/shortener', new Set(['common'])],
 ]);
@@ -94,7 +108,6 @@ const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
   'apps/infrastructure',
-  'apps/git',
   'apps/learn',
   'apps/mail',
   'apps/pay',
@@ -152,7 +165,11 @@ const BARE_ROOT_KEY_APP_SCOPES = new Map([
 //
 // Use `keyExceptions` to opt a full-scope app out of namespaces belonging to
 // product surfaces it does not render.
-const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set(['apps/contacts', 'apps/forms']);
+const BARE_ROOT_KEY_FULL_SCOPE_APPS = new Set([
+  'apps/contacts',
+  'apps/forms',
+  'apps/git',
+]);
 
 // Namespaces that must stay in parity across the apps that render the shared
 // component using them.

@@ -11,6 +11,7 @@ import { Card } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import type { GitHubContent } from '@/lib/github/types';
 import { RepositoryMarkdown } from './repository-markdown';
+import { RepositorySource } from './repository-source';
 
 function buildPath(
   owner: string,
@@ -68,9 +69,11 @@ export function RepositoryCode({
             {source}
           </RepositoryMarkdown>
         ) : source ? (
-          <pre className="max-h-[75vh] overflow-auto bg-foreground/[0.025] p-5 font-mono text-[13px] leading-6">
-            <code>{source}</code>
-          </pre>
+          <RepositorySource
+            className="bg-muted/15"
+            filename={content.path}
+            source={source}
+          />
         ) : (
           <div className="p-10 text-center text-muted-foreground text-sm">
             This file is binary or too large to render.

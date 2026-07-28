@@ -26,8 +26,8 @@ export function RepositoryOverviewView({
   );
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="min-w-0 space-y-6">
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="min-w-0 space-y-4">
         <RepositoryCode
           content={data.rootContent}
           owner={owner}
@@ -36,11 +36,11 @@ export function RepositoryOverviewView({
         />
         {data.readme && (
           <Card className="overflow-hidden">
-            <div className="border-b px-5 py-3 font-mono font-semibold text-muted-foreground text-xs uppercase tracking-[0.16em]">
+            <div className="border-b bg-muted/20 px-4 py-2.5 font-mono font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.16em]">
               README
             </div>
             <RepositoryMarkdown
-              className="p-6"
+              className="p-4 sm:p-6"
               context={{
                 owner,
                 refName: data.repository.default_branch,
@@ -53,9 +53,9 @@ export function RepositoryOverviewView({
           </Card>
         )}
       </div>
-      <aside className="space-y-6">
-        <section className="space-y-3">
-          <h1 className="font-semibold text-xl tracking-tight">
+      <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <section className="space-y-2.5">
+          <h1 className="font-semibold text-lg tracking-tight">
             {data.repository.name}
           </h1>
           <p className="text-muted-foreground text-sm leading-6">
@@ -64,15 +64,19 @@ export function RepositoryOverviewView({
           {data.repository.homepage && (
             <Link
               href={data.repository.homepage}
-              className="flex items-center gap-2 font-medium text-primary text-sm"
+              className="flex items-center gap-1.5 truncate font-medium text-sm underline underline-offset-4"
             >
               <ExternalLink className="h-4 w-4" />
               {data.repository.homepage.replace(/^https?:\/\//u, '')}
             </Link>
           )}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1">
             {data.repository.topics.map((topic) => (
-              <Badge key={topic} variant="secondary">
+              <Badge
+                className="h-5 px-1.5 text-[10px]"
+                key={topic}
+                variant="secondary"
+              >
                 {topic}
               </Badge>
             ))}
@@ -100,9 +104,9 @@ export function RepositoryOverviewView({
             value={formatBytes(data.repository.size)}
           />
         </section>
-        <section className="space-y-3 border-t pt-5">
+        <section className="space-y-2.5 border-t pt-4">
           <h2 className="font-semibold text-sm">Languages</h2>
-          <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
             {Object.entries(data.languages).map(([language, bytes], index) => (
               <span
                 key={language}
@@ -130,7 +134,7 @@ export function RepositoryOverviewView({
           </div>
         </section>
         {data.repository.license && (
-          <section className="flex items-center gap-3 border-t pt-5 text-sm">
+          <section className="flex items-center gap-2 border-t pt-4 text-sm">
             <Scale className="h-4 w-4 text-muted-foreground" />
             {data.repository.license.name}
           </section>
@@ -150,10 +154,12 @@ function Metric({
   value: number | string;
 }) {
   return (
-    <div className="rounded-lg border p-3">
-      <Icon className="mb-3 h-4 w-4 text-muted-foreground" />
-      <div className="font-semibold text-lg">{value}</div>
-      <div className="text-muted-foreground text-xs">{label}</div>
+    <div className="flex items-center gap-2.5 rounded-lg border bg-card/50 p-2.5">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <div className="min-w-0">
+        <div className="font-semibold text-sm">{value}</div>
+        <div className="text-[10px] text-muted-foreground">{label}</div>
+      </div>
     </div>
   );
 }

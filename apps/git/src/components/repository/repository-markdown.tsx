@@ -1,11 +1,15 @@
+'use client';
+
+import { code } from '@streamdown/code';
 import { cn } from '@tuturuuu/utils/format';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { Streamdown } from 'streamdown';
 import {
   type RepositoryMarkdownContext,
   resolveRepositoryMarkdownImage,
   resolveRepositoryMarkdownLink,
 } from '../../lib/github/markdown';
+
+const plugins = { code };
 
 type Props = {
   children?: string;
@@ -21,12 +25,18 @@ export function RepositoryMarkdown({
   return (
     <article
       className={cn(
-        'prose prose-neutral dark:prose-invert min-w-0 max-w-none overflow-hidden',
-        'prose-img:h-auto prose-img:max-w-full prose-pre:overflow-x-auto prose-a:break-words',
+        'repository-markdown min-w-0 max-w-none overflow-hidden text-[15px] leading-7',
+        '[&_a]:break-words [&_a]:font-medium [&_a]:underline [&_a]:underline-offset-4',
+        '[&_blockquote]:border-border [&_blockquote]:border-l-2 [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground',
+        '[&_h1]:mt-0 [&_h1]:border-b [&_h1]:pb-3 [&_h1]:font-semibold [&_h1]:text-3xl',
+        '[&_h2]:mt-8 [&_h2]:border-b [&_h2]:pb-2 [&_h2]:font-semibold [&_h2]:text-2xl',
+        '[&_h3]:mt-6 [&_h3]:font-semibold [&_h3]:text-xl [&_img]:h-auto [&_img]:max-w-full',
+        '[&_.shiki]:bg-transparent! [&_[data-streamdown=code-block]]:border [&_[data-streamdown=code-block]]:bg-muted/25! [&_pre]:overflow-x-auto',
+        '[&_table]:text-sm',
         className
       )}
     >
-      <ReactMarkdown
+      <Streamdown
         components={{
           a: ({ href = '', node: _node, ...props }) => (
             <a {...props} href={resolveRepositoryMarkdownLink(href, context)} />
@@ -50,17 +60,15 @@ export function RepositoryMarkdown({
               />
             );
           },
-          table: ({ children, node: _node, ...props }) => (
-            <div className="my-4 max-w-full overflow-x-auto">
-              <table {...props}>{children}</table>
-            </div>
-          ),
         }}
-        remarkPlugins={[remarkGfm]}
+        controls={{ code: true, table: true }}
+        linkSafety={{ enabled: false }}
+        mode="static"
+        plugins={plugins}
         skipHtml
       >
         {children}
-      </ReactMarkdown>
+      </Streamdown>
     </article>
   );
 }
