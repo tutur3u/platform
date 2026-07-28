@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/internal-api-v0.24.0...internal-api-v0.25.0) (2026-07-28)
+
+
+### Features
+
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/internal-api-v0.23.0...internal-api-v0.24.0) (2026-07-27)
 
 

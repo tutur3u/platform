@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.3.0...ai-studio-v0.4.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+
+
+### Bug Fixes
+
+* **ai:** repair studio settings administration ([ec4c5e9](https://github.com/tutur3u/platform/commit/ec4c5e9f18099bedf7b0e1e876bf215e4dc29fd0))
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.2.0...ai-studio-v0.3.0) (2026-07-27)
 
 
