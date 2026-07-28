@@ -90,6 +90,16 @@ function findBase64AudioData(value: unknown): string | null {
     if (typeof data === 'string') return data;
   }
 
+  const data = record.data;
+  const mediaType = record.mimeType ?? record.mime_type ?? record.type;
+  if (
+    typeof data === 'string' &&
+    typeof mediaType === 'string' &&
+    mediaType.toLowerCase().includes('audio')
+  ) {
+    return data;
+  }
+
   for (const child of Object.values(record)) {
     const found = findBase64AudioData(child);
     if (found) return found;

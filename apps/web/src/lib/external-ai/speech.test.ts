@@ -68,7 +68,17 @@ describe('executeExternalSpeech', () => {
     const pcm = Buffer.from([1, 2, 3, 4, 5, 6]);
     const fetchImpl = vi.fn().mockResolvedValue(
       Response.json({
-        output: [{ audio: { data: pcm.toString('base64') } }],
+        steps: [
+          {
+            content: [
+              {
+                data: pcm.toString('base64'),
+                type: 'audio',
+              },
+            ],
+            type: 'model_output',
+          },
+        ],
       })
     );
 
