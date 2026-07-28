@@ -132,14 +132,16 @@ async function completeTeamOnboarding(
   await page.goto(`${WEB_E2E_ORIGIN}/en/onboarding`, {
     waitUntil: 'domcontentloaded',
   });
-  await page.waitForLoadState('networkidle', { timeout: 30_000 });
   const onboarding = page.locator('#main-content');
+  const getStarted = onboarding.getByRole('button', {
+    name: 'Get Started',
+    exact: true,
+  });
+  await expect(getStarted).toBeVisible({ timeout: 60_000 });
   const smallTeam = onboarding
     .getByRole('button')
     .filter({ hasText: /Small Team/ });
-  await onboarding
-    .getByRole('button', { name: 'Get Started', exact: true })
-    .click();
+  await getStarted.click();
   await expect(smallTeam).toBeVisible();
   await smallTeam.click();
   await onboarding
