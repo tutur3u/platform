@@ -1563,6 +1563,47 @@ test('TanStack production Vercel workflow skips when project secret is absent', 
   );
 });
 
+test('Git Vercel workflows skip when the project secret is absent', () => {
+  for (const [
+    workflowName,
+    jobName,
+    guardedStepPattern,
+    minimumGuardedSteps,
+  ] of [
+    [
+      'vercel-production-git.yaml',
+      'Deploy-Production',
+      /if: steps\.vercel_config\.outputs\.configured == 'true'/g,
+      5,
+    ],
+    [
+      'vercel-preview-git.yaml',
+      'Deploy-Preview',
+      /if: steps\.check_commits\.outputs\.skip_build != 'true' && steps\.vercel_config\.outputs\.configured == 'true'/g,
+      4,
+    ],
+  ]) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const deployJob = readWorkflowJobBlock(workflowName, jobName);
+
+    assert.match(deployJob, /- name: Check Vercel project configuration/);
+    assert.match(deployJob, /\n {8}id: vercel_config\n/);
+    assert.match(
+      deployJob,
+      /VERCEL_PROJECT_ID: \$\{\{ secrets\.VERCEL_GIT_PROJECT_ID \}\}/
+    );
+    assert.match(deployJob, /configured=false/);
+    assert.match(deployJob, /Git Vercel deployment skipped/);
+    assert.ok(
+      [...workflow.matchAll(guardedStepPattern)].length >= minimumGuardedSteps,
+      `${workflowName} must skip deployment steps when VERCEL_GIT_PROJECT_ID is missing`
+    );
+  }
+});
+
 test('legacy version bump generator workflows are retired', () => {
   for (const workflowName of [
     'check-and-bump-versions.yaml',

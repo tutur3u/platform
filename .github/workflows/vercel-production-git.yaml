@@ -40,19 +40,34 @@ jobs:
       - name: Install Vercel CLI
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@latest
 
+      - name: Check Vercel project configuration
+        id: vercel_config
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_GIT_PROJECT_ID }}
+        run: |
+          if [ -z "${VERCEL_PROJECT_ID:-}" ]; then
+            echo "::notice title=Git Vercel deployment skipped::VERCEL_GIT_PROJECT_ID is not configured."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Pull Vercel Environment Information
+        if: steps.vercel_config.outputs.configured == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_GIT_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Generate shared build metadata
+        if: steps.vercel_config.outputs.configured == 'true'
         env:
           PLATFORM_BUILD_ENVIRONMENT: production
           PLATFORM_BUILD_REF_NAME: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
+        if: steps.vercel_config.outputs.configured == 'true'
         env:
           NODE_OPTIONS: --max-old-space-size=8192
           TURBO_CONCURRENCY: "2"
@@ -65,12 +80,14 @@ jobs:
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
       - name: Deploy Project Artifacts to Vercel
+        if: steps.vercel_config.outputs.configured == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_GIT_PROJECT_ID }}
         run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel deployment marker
+        if: steps.vercel_config.outputs.configured == 'true'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
