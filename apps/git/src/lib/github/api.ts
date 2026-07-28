@@ -3,28 +3,8 @@ import 'server-only';
 import { GITHUB_API_VERSION } from '@/constants/common';
 import { getInstallationToken } from './credentials';
 import { GitHubMirrorError } from './errors';
+import { buildGitHubUrl } from './github-url';
 import type { GitRepository } from './types';
-
-function buildGitHubUrl(
-  repository: GitRepository,
-  path: string,
-  query?: Record<string, string | number | undefined>
-) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const url = new URL(
-    `https://api.github.com/repos/${encodeURIComponent(
-      repository.owner
-    )}/${encodeURIComponent(repository.name)}${normalizedPath}`
-  );
-
-  for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined) {
-      url.searchParams.set(key, String(value));
-    }
-  }
-
-  return url;
-}
 
 export async function githubRequest<T>({
   accept = 'application/vnd.github+json',

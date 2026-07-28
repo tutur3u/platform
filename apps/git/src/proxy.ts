@@ -10,20 +10,53 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { getTuturuuuSharedCookieOptions } from '@tuturuuu/utils/shared-cookie';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { routing, supportedLocales } from '@/i18n/routing';
+import { LOCALE_COOKIE_NAME, WEB_APP_URL } from '@/constants/common';
+import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+const LOCALE_COOKIE_OPTIONS = {
+  maxAge: 365 * 24 * 60 * 60,
+  path: '/',
+  sameSite: 'lax',
+} as const;
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
-  if (segments[0] && supportedLocales.includes(segments[0] as never)) {
+  if (segments[0] && supportedLocales.includes(segments[0] as Locale)) {
     segments.shift();
   }
   return `/${segments.join('/')}`;
+}
+
+function setLocaleCookie(
+  response: NextResponse,
+  request: NextRequest,
+  locale: Locale
+) {
+  response.cookies.set(
+    LOCALE_COOKIE_NAME,
+    locale,
+    getTuturuuuSharedCookieOptions(LOCALE_COOKIE_OPTIONS, request)
+  );
+}
+
+function getCanonicalLocaleRedirect(request: NextRequest) {
+  const [firstSegment] = request.nextUrl.pathname.split('/').filter(Boolean);
+  if (!firstSegment || !supportedLocales.includes(firstSegment as Locale)) {
+    return null;
+  }
+
+  const url = new URL(request.url);
+  url.pathname = stripLocale(request.nextUrl.pathname);
+
+  const response = NextResponse.redirect(url);
+  setLocaleCookie(response, request, firstSegment as Locale);
+  return response;
 }
 
 function isProtectedPage(pathname: string) {
@@ -59,9 +92,30 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       return clearSupabaseAuthCookies(request, guardResponse);
     }
 
-    return appSessionRefresh?.ok
-      ? appSessionRefresh.response
-      : clearSupabaseAuthCookies(request, NextResponse.next());
+    if (isLocalAuthApi) {
+      return clearSupabaseAuthCookies(request, NextResponse.next());
+    }
+
+    const apiUrl = new URL(
+      `${request.nextUrl.pathname}${request.nextUrl.search}`,
+      WEB_APP_URL
+    );
+    const response = NextResponse.rewrite(apiUrl, {
+      request: {
+        headers: appSessionRefresh?.ok
+          ? (appSessionRefresh.requestHeaders ?? request.headers)
+          : request.headers,
+      },
+    });
+    if (appSessionRefresh?.ok) {
+      propagateAuthCookies(appSessionRefresh.response, response);
+    }
+    return clearSupabaseAuthCookies(request, response);
+  }
+
+  const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
+  if (canonicalLocaleRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
