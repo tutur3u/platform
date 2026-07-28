@@ -13,6 +13,7 @@ import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
+import 'streamdown/styles.css';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
