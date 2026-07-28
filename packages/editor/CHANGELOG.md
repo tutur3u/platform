@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/editor-v0.4.0...editor-v0.5.0) (2026-07-28)
+
+
+### Features
+
+* **editor:** add heading hierarchy controls ([714db4c](https://github.com/tutur3u/platform/commit/714db4c1a8067dbee99414379c4e417b4173e38b))
+* **editor:** add safe HTML source mode ([78c5057](https://github.com/tutur3u/platform/commit/78c5057a451c9610cb64290d5172f2869fdedb6c))
+* **editor:** add safe HTML source mode ([#5075](https://github.com/tutur3u/platform/issues/5075)) ([ccf130f](https://github.com/tutur3u/platform/commit/ccf130f3da44b1ea8e2f154c7a06cdfa0a16ffc3))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/editor-v0.3.0...editor-v0.4.0) (2026-07-27)
 
 

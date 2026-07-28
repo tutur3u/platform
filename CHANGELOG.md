@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/platform-v0.29.0...platform-v0.30.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **editor:** add heading hierarchy controls ([714db4c](https://github.com/tutur3u/platform/commit/714db4c1a8067dbee99414379c4e417b4173e38b))
+* **editor:** add safe HTML source mode ([78c5057](https://github.com/tutur3u/platform/commit/78c5057a451c9610cb64290d5172f2869fdedb6c))
+* **editor:** add safe HTML source mode ([#5075](https://github.com/tutur3u/platform/issues/5075)) ([ccf130f](https://github.com/tutur3u/platform/commit/ccf130f3da44b1ea8e2f154c7a06cdfa0a16ffc3))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **git:** refine repository browsing ([106fcc6](https://github.com/tutur3u/platform/commit/106fcc6cc9664345f9cf08f6a1a16eec547da6b6))
+
+
+### Bug Fixes
+
+* **ai:** repair studio settings administration ([ec4c5e9](https://github.com/tutur3u/platform/commit/ec4c5e9f18099bedf7b0e1e876bf215e4dc29fd0))
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **ci:** align legal effective date assertions ([ec89a8e](https://github.com/tutur3u/platform/commit/ec89a8e78f4a10f3244d0f78bb23cdec2b03da4d))
+* **ci:** assert legal dates per route ([5ab0d0e](https://github.com/tutur3u/platform/commit/5ab0d0ebdf5ddb0c7257eecee6e5aeb49571b13c))
+* **ci:** skip unconfigured git deployments ([dc00a53](https://github.com/tutur3u/platform/commit/dc00a53ab0b92c58e5d84e9c6a633d452ee29be4))
+* **ci:** unblock database and legal checks ([01496bf](https://github.com/tutur3u/platform/commit/01496bf89f6839517a5de0ea918f83c1c10eb9ee))
+* **database:** rerun creator membership repair ([81a6a07](https://github.com/tutur3u/platform/commit/81a6a07ebc629d94cf8b0d13be83e74689383609))
+* **database:** separate creator membership repair ([8316c8f](https://github.com/tutur3u/platform/commit/8316c8f6de4ae616fea3cf566fa3bc5eaa582205))
+* **e2e:** wait for onboarding readiness ([127fa63](https://github.com/tutur3u/platform/commit/127fa63d8d4d64f28fb2c17fa5ba65c22c52105e))
+* **git:** apply Streamdown token colors ([74bf301](https://github.com/tutur3u/platform/commit/74bf301d6915588304ea6ff2259d303f5b52c102))
+* **git:** load Streamdown theme styles ([afd1941](https://github.com/tutur3u/platform/commit/afd1941c0f81e3c2de275594da67a5d177e2cb0d))
+* **git:** repair production repository routing ([d615d34](https://github.com/tutur3u/platform/commit/d615d34a1085e4c92b8fdeac5d3695ab412f4eb9))
+* **git:** repair repository rendering and routes ([3f71a05](https://github.com/tutur3u/platform/commit/3f71a05d54a8f736afea1e7e1311d4f0abd24906))
+* **git:** restore production markdown build ([06be083](https://github.com/tutur3u/platform/commit/06be08381bc094587647ea44286a2eb776765294))
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+
+
+### Performance Improvements
+
+* **git:** optimize repository browsing ([22d4b9e](https://github.com/tutur3u/platform/commit/22d4b9eb27c19bfa722a24574bf884038157736a))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/platform-v0.28.0...platform-v0.29.0) (2026-07-27)
 
 

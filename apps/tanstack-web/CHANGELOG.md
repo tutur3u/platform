@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.16.0...tanstack-web-v0.17.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+
+
+### Bug Fixes
+
+* **ci:** align legal effective date assertions ([ec89a8e](https://github.com/tutur3u/platform/commit/ec89a8e78f4a10f3244d0f78bb23cdec2b03da4d))
+* **ci:** assert legal dates per route ([5ab0d0e](https://github.com/tutur3u/platform/commit/5ab0d0ebdf5ddb0c7257eecee6e5aeb49571b13c))
+* **ci:** unblock database and legal checks ([01496bf](https://github.com/tutur3u/platform/commit/01496bf89f6839517a5de0ea918f83c1c10eb9ee))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.15.0...tanstack-web-v0.16.0) (2026-07-27)
 
 

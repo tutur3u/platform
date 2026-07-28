@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.23.0](https://github.com/tutur3u/platform/compare/database-v1.22.0...database-v1.23.0) (2026-07-28)
+
+
+### Features
+
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+
+
+### Bug Fixes
+
+* **ci:** unblock database and legal checks ([01496bf](https://github.com/tutur3u/platform/commit/01496bf89f6839517a5de0ea918f83c1c10eb9ee))
+* **database:** rerun creator membership repair ([81a6a07](https://github.com/tutur3u/platform/commit/81a6a07ebc629d94cf8b0d13be83e74689383609))
+* **database:** separate creator membership repair ([8316c8f](https://github.com/tutur3u/platform/commit/8316c8f6de4ae616fea3cf566fa3bc5eaa582205))
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+
 ## [1.22.0](https://github.com/tutur3u/platform/compare/database-v1.21.0...database-v1.22.0) (2026-07-27)
 
 

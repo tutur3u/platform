@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/satellite-v0.12.0...satellite-v0.12.1) (2026-07-28)
+
+
+### Bug Fixes
+
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/satellite-v0.11.0...satellite-v0.12.0) (2026-07-27)
 
 

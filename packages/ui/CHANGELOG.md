@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.0](https://github.com/tutur3u/platform/compare/ui-v0.22.0...ui-v0.23.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/ui-v0.21.0...ui-v0.22.0) (2026-07-27)
 
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/tools-v0.11.0...tools-v0.12.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+
+
+### Bug Fixes
+
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/tools-v0.10.0...tools-v0.11.0) (2026-07-27)
 
 

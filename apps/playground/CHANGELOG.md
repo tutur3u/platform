@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/playground-v0.3.0...playground-v0.4.0) (2026-07-28)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/playground-v0.2.0...playground-v0.3.0) (2026-07-25)
 
 
