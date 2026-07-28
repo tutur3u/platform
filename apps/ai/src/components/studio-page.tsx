@@ -10,6 +10,8 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import type { AiStudioOverview } from '@/lib/studio-data';
+import { ApiKeysPanel } from './api-keys-panel';
+import { ObservabilityPanel } from './observability-panel';
 
 interface StudioPageLabels {
   activeKeys: string;
@@ -26,17 +28,21 @@ interface StudioPageLabels {
 }
 
 export function StudioPage({
+  canManageAiKeys,
   data,
   description,
   labels,
   section,
   title,
+  workspaceId,
 }: {
+  canManageAiKeys: boolean;
   data: AiStudioOverview | null;
   description: string;
   labels: StudioPageLabels;
   section: string;
   title: string;
+  workspaceId: string;
 }) {
   const now = Date.now();
   const activeKeys =
@@ -75,35 +81,28 @@ export function StudioPage({
   ];
 
   const sectionRows =
-    section === 'api-keys'
-      ? data?.keys.map((key) => ({
-          description: key.prefix,
-          id: key.id,
-          label: key.name,
-          meta: key.revoked_at ? 'revoked' : key.environment,
+    section === 'prompts'
+      ? data?.prompts.map((prompt) => ({
+          description: prompt.description,
+          id: prompt.id,
+          label: prompt.name,
+          meta: `v${prompt.latest_version}`,
         }))
-      : section === 'prompts'
-        ? data?.prompts.map((prompt) => ({
-            description: prompt.description,
-            id: prompt.id,
-            label: prompt.name,
-            meta: `v${prompt.latest_version}`,
+      : section === 'agents'
+        ? data?.agents.map((agent) => ({
+            description: agent.description,
+            id: agent.id,
+            label: agent.name,
+            meta: `v${agent.latest_version}`,
           }))
-        : section === 'agents'
-          ? data?.agents.map((agent) => ({
-              description: agent.description,
-              id: agent.id,
-              label: agent.name,
-              meta: `v${agent.latest_version}`,
+        : section === 'datasets' || section === 'evaluations'
+          ? data?.datasets.map((dataset) => ({
+              description: dataset.description,
+              id: dataset.id,
+              label: dataset.name,
+              meta: '',
             }))
-          : section === 'datasets' || section === 'evaluations'
-            ? data?.datasets.map((dataset) => ({
-                description: dataset.description,
-                id: dataset.id,
-                label: dataset.name,
-                meta: '',
-              }))
-            : undefined;
+          : undefined;
 
   return (
     <div className="mx-auto max-w-[110rem] space-y-6 p-4 lg:p-8">
@@ -171,18 +170,31 @@ export function StudioPage({
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>{labels.activeKeys}</CardTitle>
+                <CardTitle>
+                  {canManageAiKeys ? labels.activeKeys : labels.tokens}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="font-semibold text-4xl">{activeKeys}</div>
-                <p className="mt-2 text-muted-foreground text-sm">
-                  {data?.totals.inputTokens.toLocaleString()} +{' '}
-                  {data?.totals.outputTokens.toLocaleString()} {labels.tokens}
-                </p>
+                <div className="font-semibold text-4xl">
+                  {canManageAiKeys
+                    ? activeKeys
+                    : (
+                        (data?.totals.inputTokens ?? 0) +
+                        (data?.totals.outputTokens ?? 0)
+                      ).toLocaleString()}
+                </div>
+                {canManageAiKeys ? (
+                  <p className="mt-2 text-muted-foreground text-sm">
+                    {data?.totals.inputTokens.toLocaleString()} +{' '}
+                    {data?.totals.outputTokens.toLocaleString()} {labels.tokens}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           </div>
         </>
+      ) : section === 'api-keys' ? (
+        <ApiKeysPanel workspaceId={workspaceId} />
       ) : sectionRows ? (
         <Card>
           <CardContent className="space-y-2 p-4">
@@ -208,42 +220,11 @@ export function StudioPage({
             )}
           </CardContent>
         </Card>
-      ) : section === 'runs' || section === 'logs' || section === 'usage' ? (
-        <Card>
-          <CardContent className="overflow-x-auto p-0">
-            <table className="w-full min-w-[44rem] text-left text-sm">
-              <thead className="border-b text-muted-foreground">
-                <tr>
-                  <th className="p-4 font-medium">{labels.request}</th>
-                  <th className="p-4 font-medium">{labels.model}</th>
-                  <th className="p-4 font-medium">{labels.feature}</th>
-                  <th className="p-4 font-medium">{labels.status}</th>
-                  <th className="p-4 text-right font-medium">
-                    {labels.tokens}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.runs.map((run) => (
-                  <tr className="border-b last:border-0" key={run.id}>
-                    <td className="max-w-64 truncate p-4 font-mono text-xs">
-                      {run.request_id}
-                    </td>
-                    <td className="p-4">{run.model_id}</td>
-                    <td className="p-4">{run.feature}</td>
-                    <td className="p-4">
-                      <Badge variant="outline">{run.status}</Badge>
-                    </td>
-                    <td className="p-4 text-right">
-                      {run.input_tokens + run.output_tokens}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!data?.runs.length ? <EmptyState label={labels.empty} /> : null}
-          </CardContent>
-        </Card>
+      ) : section === 'runs' ||
+        section === 'logs' ||
+        section === 'usage' ||
+        section === 'credits' ? (
+        <ObservabilityPanel section={section} workspaceId={workspaceId} />
       ) : (
         <InstrumentCard
           title={title}

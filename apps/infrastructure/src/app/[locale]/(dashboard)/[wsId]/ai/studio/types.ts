@@ -1,16 +1,15 @@
-export type AiStudioPolicyState = 'inherit' | 'enabled' | 'disabled';
-
 export interface AiStudioGlobalSettings {
   captureDefaultEnabled: boolean;
   contentRetentionDays: number;
   defaultModels: string[];
-  globallyEnabled: boolean;
   metadataRetentionDays: number;
-  workspaceDefaultEnabled: boolean;
 }
 
 export interface AiStudioWorkspacePolicy {
   allowedModels: string[];
+  apiKeyCreationApproved: boolean;
+  apiKeyCreationDecidedAt: string | null;
+  apiKeyCreationDecidedBy: string | null;
   captureEnabled: boolean | null;
   contentRetentionDays: number | null;
   deniedModels: string[];
@@ -18,7 +17,6 @@ export interface AiStudioWorkspacePolicy {
   monthlyCreditBudget: number | null;
   noTrainingEnforced: boolean;
   requestsPerMinute: number | null;
-  state: AiStudioPolicyState;
   workspaceName: string;
   wsId: string;
 }

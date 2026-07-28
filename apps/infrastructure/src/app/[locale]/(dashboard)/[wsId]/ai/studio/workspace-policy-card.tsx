@@ -14,7 +14,7 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { ModelMultiSelect } from './model-multi-select';
-import type { AiStudioPolicyState, AiStudioWorkspacePolicy } from './types';
+import type { AiStudioWorkspacePolicy } from './types';
 
 function optionalNumber(value: string) {
   if (!value.trim()) return null;
@@ -56,21 +56,6 @@ export function WorkspacePolicyCard({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select
-            onValueChange={(state) =>
-              onChange({ state: state as AiStudioPolicyState })
-            }
-            value={policy.state}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inherit">{t('status.inherit')}</SelectItem>
-              <SelectItem value="enabled">{t('status.enabled')}</SelectItem>
-              <SelectItem value="disabled">{t('status.disabled')}</SelectItem>
-            </SelectContent>
-          </Select>
           <Button disabled={isPending} onClick={onSave} size="sm">
             <Save className="mr-2 h-4 w-4" />
             {t('save')}
@@ -79,6 +64,29 @@ export function WorkspacePolicyCard({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="flex items-start justify-between gap-3 rounded-lg border p-3 md:col-span-2 xl:col-span-4">
+          <div>
+            <Label>{t('workspaces.api_key_creation')}</Label>
+            <p className="mt-1 text-muted-foreground text-xs">
+              {t('workspaces.api_key_creation_description')}
+            </p>
+            {policy.apiKeyCreationDecidedAt ? (
+              <p className="mt-1 text-muted-foreground text-xs">
+                {t('workspaces.api_key_decided_at', {
+                  date: new Date(
+                    policy.apiKeyCreationDecidedAt
+                  ).toLocaleString(),
+                })}
+              </p>
+            ) : null}
+          </div>
+          <Switch
+            checked={policy.apiKeyCreationApproved}
+            onCheckedChange={(apiKeyCreationApproved) =>
+              onChange({ apiKeyCreationApproved })
+            }
+          />
+        </div>
         <div className="space-y-1.5 xl:col-span-2">
           <Label>{t('workspaces.allowed_models')}</Label>
           <ModelMultiSelect

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(34);
+select plan(39);
 
 select ok(
   not exists (
@@ -100,6 +100,29 @@ select is(
   ),
   false,
   'workspace inheritance is disabled by default'
+);
+
+select is(
+  (
+    select column_default
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'workspace_ai_studio_policies'
+      and column_name = 'api_key_creation_approved'
+  ),
+  'false',
+  'AI API key creation approval defaults closed'
+);
+
+select ok(
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'private'
+      and table_name = 'workspace_ai_studio_policies'
+      and column_name = 'api_key_creation_decided_by'
+  ),
+  'AI API key creation decisions record an actor'
 );
 
 select is(
@@ -320,6 +343,34 @@ select ok(
       'execute'
     ),
   'only the service role may start external-app AI runs'
+);
+
+select ok(
+  to_regprocedure(
+    'private.get_ai_studio_usage_breakdown(uuid,timestamp with time zone,timestamp with time zone)'
+  ) is not null,
+  'bounded AI Studio usage aggregation RPC exists'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'private.get_ai_studio_usage_breakdown(uuid,timestamp with time zone,timestamp with time zone)',
+    'execute'
+  )
+    and not has_function_privilege(
+      'authenticated',
+      'private.get_ai_studio_usage_breakdown(uuid,timestamp with time zone,timestamp with time zone)',
+      'execute'
+    ),
+  'only service role can aggregate AI Studio usage'
+);
+
+select ok(
+  pg_get_functiondef(
+    'private.ai_studio_model_allowed(uuid,uuid,text)'::regprocedure
+  ) !~ 'globally_enabled|workspace_default_enabled|v_policy\\.state',
+  'legacy enablement switches no longer gate AI Studio model execution'
 );
 
 select ok(

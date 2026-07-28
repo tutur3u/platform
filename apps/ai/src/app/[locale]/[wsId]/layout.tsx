@@ -80,7 +80,7 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
     cookieStore,
     sidebarBehavior
   );
-  const t = await getTranslations('ai-studio');
+  const canUseAiStudio = access.permissions.containsPermission('use_ai_studio');
 
   return (
     <SidebarProvider
@@ -99,7 +99,13 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
           </Suspense>
         }
         defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ personalOrWsId })}
+        links={
+          await getNavigationLinks({
+            canManageAiKeys:
+              access.permissions.containsPermission('manage_ai_keys'),
+            personalOrWsId,
+          })
+        }
         userPopover={
           <Suspense
             key={user.id}
@@ -113,25 +119,28 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
         workspace={workspace}
         wsId={workspace.id}
       >
-        {access.enabled ? (
-          children
-        ) : (
-          <div className="grid min-h-[calc(100dvh-5rem)] place-items-center p-4 sm:p-8">
-            <div className="w-full max-w-xl rounded-3xl border bg-card/80 p-6 text-center shadow-xl backdrop-blur sm:p-10">
-              <div className="mx-auto mb-5 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
-                <span className="font-semibold text-xl">AI</span>
-              </div>
-              <h1 className="text-balance font-semibold text-2xl tracking-tight sm:text-3xl">
-                {t('access-disabled')}
-              </h1>
-              <p className="mx-auto mt-3 max-w-md text-balance text-muted-foreground">
-                {t('access-disabled-description')}
-              </p>
-            </div>
-          </div>
-        )}
+        {canUseAiStudio ? children : <AiStudioPermissionRequired />}
       </Structure>
     </SidebarProvider>
+  );
+}
+
+async function AiStudioPermissionRequired() {
+  const t = await getTranslations('ai-studio');
+  return (
+    <div className="grid min-h-[calc(100dvh-5rem)] place-items-center p-4 sm:p-8">
+      <div className="w-full max-w-xl rounded-3xl border bg-card/80 p-6 text-center shadow-xl backdrop-blur sm:p-10">
+        <div className="mx-auto mb-5 grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+          <span className="font-semibold text-xl">AI</span>
+        </div>
+        <h1 className="text-balance font-semibold text-2xl tracking-tight sm:text-3xl">
+          {t('access-required')}
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-balance text-muted-foreground">
+          {t('access-required-description')}
+        </p>
+      </div>
+    </div>
   );
 }
 

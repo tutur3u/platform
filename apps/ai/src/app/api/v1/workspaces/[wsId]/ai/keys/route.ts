@@ -1,7 +1,11 @@
 import { generateAiApiKey } from '@tuturuuu/ai/api-key-hash';
 import { connection } from 'next/server';
 import { z } from 'zod';
-import { authorizeAiStudioWorkspaceRequest } from '@/lib/session-api';
+import {
+  aiKeyCreationApprovalRequiredResponse,
+  authorizeAiStudioWorkspaceRequest,
+  getAiKeyCreationApproval,
+} from '@/lib/session-api';
 
 const createKeySchema = z.object({
   allowedModels: z.array(z.string().min(1)).max(100).default([]),
@@ -22,6 +26,10 @@ export async function GET(
   const { wsId } = await params;
   const auth = await authorizeAiStudioWorkspaceRequest(wsId, 'manage_ai_keys');
   if (!auth.ok) return auth.response;
+  const approval = await getAiKeyCreationApproval(
+    auth.sbAdmin,
+    auth.workspace.id
+  );
 
   const { data, error } = await auth.sbAdmin
     .schema('private')
@@ -35,7 +43,7 @@ export async function GET(
 
   return error
     ? Response.json({ error: 'Keys unavailable' }, { status: 500 })
-    : Response.json({ keys: data ?? [] });
+    : Response.json({ approval, keys: data ?? [] });
 }
 
 export async function POST(
@@ -46,8 +54,19 @@ export async function POST(
   const { wsId } = await params;
   const auth = await authorizeAiStudioWorkspaceRequest(wsId, 'manage_ai_keys');
   if (!auth.ok) return auth.response;
+  const approval = await getAiKeyCreationApproval(
+    auth.sbAdmin,
+    auth.workspace.id
+  );
+  if (!approval.approved) return aiKeyCreationApprovalRequiredResponse();
 
-  const parsed = createKeySchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: 'Malformed JSON body' }, { status: 400 });
+  }
+  const parsed = createKeySchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
       { error: parsed.error.issues[0]?.message ?? 'Invalid key settings' },

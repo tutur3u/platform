@@ -1,7 +1,11 @@
 import { generateAiApiKey } from '@tuturuuu/ai/api-key-hash';
 import { connection } from 'next/server';
 import { z } from 'zod';
-import { authorizeAiStudioWorkspaceRequest } from '@/lib/session-api';
+import {
+  aiKeyCreationApprovalRequiredResponse,
+  authorizeAiStudioWorkspaceRequest,
+  getAiKeyCreationApproval,
+} from '@/lib/session-api';
 
 const updateKeySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('revoke') }),
@@ -17,7 +21,13 @@ export async function PATCH(
   const auth = await authorizeAiStudioWorkspaceRequest(wsId, 'manage_ai_keys');
   if (!auth.ok) return auth.response;
 
-  const parsed = updateKeySchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: 'Malformed JSON body' }, { status: 400 });
+  }
+  const parsed = updateKeySchema.safeParse(body);
   if (!parsed.success) {
     return Response.json({ error: 'Invalid key action' }, { status: 400 });
   }
@@ -43,6 +53,12 @@ export async function PATCH(
       : Response.json({ revoked: true });
   }
 
+  const approval = await getAiKeyCreationApproval(
+    auth.sbAdmin,
+    auth.workspace.id
+  );
+  if (!approval.approved) return aiKeyCreationApprovalRequiredResponse();
+
   const generated = await generateAiApiKey();
   const { data: replacement, error } = await auth.sbAdmin
     .schema('private')
@@ -65,7 +81,7 @@ export async function PATCH(
     return Response.json({ error: 'Rotation failed' }, { status: 500 });
   }
 
-  await auth.sbAdmin
+  const { error: revokeError } = await auth.sbAdmin
     .schema('private')
     .from('ai_studio_api_keys')
     .update({
@@ -73,6 +89,21 @@ export async function PATCH(
       rotated_to: replacement.id,
     })
     .eq('id', key.id);
+
+  if (revokeError) {
+    await auth.sbAdmin
+      .schema('private')
+      .from('ai_studio_api_keys')
+      .delete()
+      .eq('id', replacement.id)
+      .eq('ws_id', auth.workspace.id);
+    console.error('AI Studio key rotation could not revoke the original key', {
+      code: revokeError.code,
+      keyId: key.id,
+      workspaceId: auth.workspace.id,
+    });
+    return Response.json({ error: 'Rotation failed' }, { status: 500 });
+  }
 
   return Response.json({
     key: replacement,

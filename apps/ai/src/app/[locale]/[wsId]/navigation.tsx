@@ -18,8 +18,10 @@ import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export async function getNavigationLinks({
+  canManageAiKeys,
   personalOrWsId,
 }: {
+  canManageAiKeys: boolean;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
   const [t, common] = await Promise.all([
@@ -76,11 +78,15 @@ export async function getNavigationLinks({
       title: t('governance'),
       icon: <Lock className="h-4 w-4" />,
       children: [
-        {
-          title: t('api-keys'),
-          href: href('api-keys'),
-          icon: <Lock className="h-4 w-4" />,
-        },
+        ...(canManageAiKeys
+          ? [
+              {
+                title: t('api-keys'),
+                href: href('api-keys'),
+                icon: <Lock className="h-4 w-4" />,
+              },
+            ]
+          : []),
         {
           title: t('model-policy'),
           href: href('model-policy'),

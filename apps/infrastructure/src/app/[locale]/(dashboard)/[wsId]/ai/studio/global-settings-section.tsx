@@ -1,7 +1,6 @@
 'use client';
 
 import { Save, Settings } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -36,33 +35,9 @@ export function GlobalAiStudioSettingsSection({
             {t('global.description')}
           </p>
         </div>
-        <Badge variant={settings.globallyEnabled ? 'default' : 'secondary'}>
-          {settings.globallyEnabled
-            ? t('status.enabled')
-            : t('status.disabled')}
-        </Badge>
       </div>
 
       <div className="grid gap-5 p-4 md:grid-cols-2">
-        <ToggleSetting
-          checked={settings.globallyEnabled}
-          description={t('global.kill_switch_description')}
-          label={t('global.kill_switch')}
-          onCheckedChange={(globallyEnabled) =>
-            setSettings((current) => ({ ...current, globallyEnabled }))
-          }
-        />
-        <ToggleSetting
-          checked={settings.workspaceDefaultEnabled}
-          description={t('global.workspace_default_description')}
-          label={t('global.workspace_default')}
-          onCheckedChange={(workspaceDefaultEnabled) =>
-            setSettings((current) => ({
-              ...current,
-              workspaceDefaultEnabled,
-            }))
-          }
-        />
         <div className="space-y-2 md:col-span-2">
           <Label>{t('global.default_models')}</Label>
           <ModelMultiSelect

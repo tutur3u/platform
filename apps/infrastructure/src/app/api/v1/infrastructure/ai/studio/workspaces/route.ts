@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     .schema('private')
     .from('workspace_ai_studio_policies')
     .select(
-      'ws_id,state,allowed_models,denied_models,capture_enabled,metadata_retention_days,content_retention_days,requests_per_minute,monthly_credit_budget,no_training_enforced'
+      'ws_id,allowed_models,denied_models,capture_enabled,metadata_retention_days,content_retention_days,requests_per_minute,monthly_credit_budget,no_training_enforced,api_key_creation_approved,api_key_creation_decided_at,api_key_creation_decided_by'
     )
     .in('ws_id', workspaceIds);
 
@@ -84,6 +84,9 @@ export async function GET(request: NextRequest) {
       const policy = policiesByWorkspace.get(workspace.id);
       return {
         allowedModels: policy?.allowed_models ?? [],
+        apiKeyCreationApproved: policy?.api_key_creation_approved ?? false,
+        apiKeyCreationDecidedAt: policy?.api_key_creation_decided_at ?? null,
+        apiKeyCreationDecidedBy: policy?.api_key_creation_decided_by ?? null,
         captureEnabled: policy?.capture_enabled ?? null,
         contentRetentionDays: policy?.content_retention_days ?? null,
         deniedModels: policy?.denied_models ?? [],
@@ -93,7 +96,6 @@ export async function GET(request: NextRequest) {
           : null,
         noTrainingEnforced: policy?.no_training_enforced ?? true,
         requestsPerMinute: policy?.requests_per_minute ?? null,
-        state: policy?.state ?? 'inherit',
         workspaceName: workspace.name ?? '',
         wsId: workspace.id,
       };

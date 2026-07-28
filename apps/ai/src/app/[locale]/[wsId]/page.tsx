@@ -12,17 +12,20 @@ export default async function OverviewPage({
   const { wsId } = await params;
   const t = await getTranslations('ai-studio');
   const context = await getAiStudioWorkspaceContext(wsId);
-  const data =
-    context?.enabled && context.permissions.containsPermission('use_ai_studio')
-      ? await getAiStudioOverview({
-          sbAdmin: await createAdminClient({ noCookie: true }),
-          workspaceId: context.workspace.id,
-          workspaceName: context.workspace.name ?? t('studio'),
-        })
-      : null;
+  const data = context?.permissions.containsPermission('use_ai_studio')
+    ? await getAiStudioOverview({
+        includeKeys: context.permissions.containsPermission('manage_ai_keys'),
+        sbAdmin: await createAdminClient({ noCookie: true }),
+        workspaceId: context.workspace.id,
+        workspaceName: context.workspace.name ?? t('studio'),
+      })
+    : null;
 
   return (
     <StudioPage
+      canManageAiKeys={
+        context?.permissions.containsPermission('manage_ai_keys') ?? false
+      }
       data={data}
       labels={{
         activeKeys: t('active-keys'),
@@ -40,6 +43,7 @@ export default async function OverviewPage({
       section="overview"
       title={t('overview')}
       description={t('studio-description')}
+      workspaceId={context?.workspace.id ?? wsId}
     />
   );
 }

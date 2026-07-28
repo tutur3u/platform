@@ -29,7 +29,6 @@ const policySchema = z.object({
     .max(10_000)
     .nullable()
     .default(null),
-  state: z.enum(['inherit', 'enabled', 'disabled']),
 });
 
 export async function GET(
@@ -91,7 +90,6 @@ export async function PATCH(
       monthly_credit_budget: parsed.data.monthlyCreditBudget,
       no_training_enforced: parsed.data.noTrainingEnforced,
       requests_per_minute: parsed.data.requestsPerMinute,
-      state: parsed.data.state,
       updated_at: new Date().toISOString(),
       updated_by: auth.user.id,
       ws_id: auth.workspace.id,

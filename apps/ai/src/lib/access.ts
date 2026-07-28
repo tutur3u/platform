@@ -16,18 +16,12 @@ export async function getAiStudioWorkspaceAccess({
   workspace: JoinedWorkspace;
 }) {
   const supabase = await createAdminClient();
-  const [{ data: global }, { data: policy }, permissions] = await Promise.all([
-    supabase
-      .schema('private')
-      .from('ai_studio_global_settings')
-      .select('globally_enabled, workspace_default_enabled')
-      .eq('singleton', true)
-      .maybeSingle(),
+  const [{ data: policy }, permissions] = await Promise.all([
     supabase
       .schema('private')
       .from('workspace_ai_studio_policies')
       .select(
-        'state, allowed_models, denied_models, capture_enabled, content_retention_days, metadata_retention_days'
+        'allowed_models, denied_models, capture_enabled, content_retention_days, metadata_retention_days, api_key_creation_approved'
       )
       .eq('ws_id', workspace.id)
       .maybeSingle(),
@@ -36,15 +30,8 @@ export async function getAiStudioWorkspaceAccess({
 
   if (!permissions) return null;
 
-  const globallyEnabled = Boolean(global?.globally_enabled);
-  const state = policy?.state ?? 'inherit';
-  const enabled =
-    globallyEnabled &&
-    (state === 'enabled' ||
-      (state === 'inherit' && Boolean(global?.workspace_default_enabled)));
-
   return {
-    enabled,
+    apiKeyCreationApproved: policy?.api_key_creation_approved ?? false,
     permissions,
     policy,
   };

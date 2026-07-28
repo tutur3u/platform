@@ -50,6 +50,25 @@ export {
   type UpdateAiMemorySettingsPayload,
   updateWorkspaceAiMemorySettings,
 } from './ai-memory';
+export type {
+  AiStudioApiKey,
+  AiStudioCreditStatus,
+  AiStudioKeyApproval,
+  AiStudioKeysResponse,
+  AiStudioRun,
+  AiStudioRunsResponse,
+  AiStudioUsageResponse,
+  AiStudioUsageRow,
+  CreateAiStudioKeyInput,
+} from './ai-studio';
+export {
+  createAiStudioKey,
+  getAiStudioCredits,
+  getAiStudioKeys,
+  getAiStudioRuns,
+  getAiStudioUsage,
+  updateAiStudioKey,
+} from './ai-studio';
 export {
   createWorkspaceApiKey,
   deleteWorkspaceApiKey,

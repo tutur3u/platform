@@ -58,6 +58,9 @@ function createAuthorizedResult() {
     data: [
       {
         allowed_models: ['openai/gpt-5'],
+        api_key_creation_approved: true,
+        api_key_creation_decided_at: '2026-07-28T00:00:00.000Z',
+        api_key_creation_decided_by: '42529372-c669-4833-bb32-2cab1f4ffd83',
         capture_enabled: true,
         content_retention_days: 30,
         denied_models: [],
@@ -65,7 +68,6 @@ function createAuthorizedResult() {
         monthly_credit_budget: '12.5',
         no_training_enforced: true,
         requests_per_minute: 60,
-        state: 'enabled',
         ws_id: '42529372-c669-4833-bb32-2cab1f4ffd83',
       },
     ],
@@ -103,8 +105,8 @@ describe('Infrastructure AI Studio workspace policy search', () => {
     await expect(response.json()).resolves.toEqual([
       expect.objectContaining({
         allowedModels: ['openai/gpt-5'],
+        apiKeyCreationApproved: true,
         monthlyCreditBudget: 12.5,
-        state: 'enabled',
         workspaceName: 'Easy Center',
         wsId: '42529372-c669-4833-bb32-2cab1f4ffd83',
       }),

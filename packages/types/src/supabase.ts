@@ -12697,6 +12697,9 @@ export type Database = {
       workspace_ai_studio_policies: {
         Row: {
           allowed_models: string[];
+          api_key_creation_approved: boolean;
+          api_key_creation_decided_at: string | null;
+          api_key_creation_decided_by: string | null;
           capture_enabled: boolean | null;
           content_retention_days: number | null;
           created_at: string;
@@ -12713,6 +12716,9 @@ export type Database = {
         };
         Insert: {
           allowed_models?: string[];
+          api_key_creation_approved?: boolean;
+          api_key_creation_decided_at?: string | null;
+          api_key_creation_decided_by?: string | null;
           capture_enabled?: boolean | null;
           content_retention_days?: number | null;
           created_at?: string;
@@ -12729,6 +12735,9 @@ export type Database = {
         };
         Update: {
           allowed_models?: string[];
+          api_key_creation_approved?: boolean;
+          api_key_creation_decided_at?: string | null;
+          api_key_creation_decided_by?: string | null;
           capture_enabled?: boolean | null;
           content_retention_days?: number | null;
           created_at?: string;
@@ -12744,6 +12753,20 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_api_key_creation_decided_by_fkey';
+            columns: ['api_key_creation_decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_studio_policies_api_key_creation_decided_by_fkey';
+            columns: ['api_key_creation_decided_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
           {
             foreignKeyName: 'workspace_ai_studio_policies_created_by_fkey';
             columns: ['created_by'];
@@ -15216,6 +15239,28 @@ export type Database = {
           enabled: boolean;
           product_enabled: boolean;
           products: Json;
+        }[];
+      };
+      get_ai_studio_usage_breakdown: {
+        Args: { p_from: string; p_to: string; p_ws_id: string };
+        Returns: {
+          aborted_count: number;
+          average_latency_ms: number;
+          billed_credits: number;
+          bucket_date: string;
+          embedding_units: number;
+          failed_count: number;
+          feature: string;
+          image_units: number;
+          input_tokens: number;
+          model_id: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          reasoning_tokens: number;
+          request_count: number;
+          source_id: string;
+          source_type: string;
+          succeeded_count: number;
         }[];
       };
       get_balance_trend: {

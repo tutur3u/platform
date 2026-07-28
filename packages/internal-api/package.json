@@ -32,6 +32,11 @@
       "import": "./dist/ai.js",
       "require": "./dist/ai.js"
     },
+    "./ai-studio": {
+      "types": "./dist/ai-studio.d.ts",
+      "import": "./dist/ai-studio.js",
+      "require": "./dist/ai-studio.js"
+    },
     "./ai-memory": {
       "types": "./dist/ai-memory.d.ts",
       "import": "./dist/ai-memory.js",

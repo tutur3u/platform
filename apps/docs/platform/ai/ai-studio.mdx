@@ -8,22 +8,24 @@ AI Studio is the workspace-scoped development surface at
 workspace session, permissions, settings, and billing context as other Tuturuuu
 apps.
 
-## Rollout controls
+## Access and issuance controls
 
-AI Studio is disabled by default. Access requires all of the following:
+Workspace members with `use_ai_studio` can review Studio-metered runs, usage,
+provider cost, and workspace credit status. Observability and execution do not
+depend on a global or workspace Studio enablement switch.
 
-1. the root global Studio policy is enabled;
-2. the workspace policy resolves to enabled;
-3. the requested model is enabled globally and granted to the workspace;
-4. the caller or AI-only key has the required Studio permission and model
-   scope; and
-5. the request either has enough workspace AI credits and remains within its
-   request and budget limits, or is a verified registered external app using
-   the temporary zero-credit integration policy.
+Model execution still requires the requested model to be enabled and granted by
+the global catalog, workspace policy, plan, and credential scope. Ordinary
+callers must also have enough workspace credits and remain within request,
+budget, rate, payload, and abuse limits. Verified registered external apps keep
+their temporary zero-credit integration policy while remaining fully audited.
 
 Root administrators configure global defaults and workspace overrides in
 Infrastructure → AI Studio. Workspace administrators manage prompts, agents,
-evaluations, keys, retention, and model restrictions from AI Studio.
+evaluations, existing keys, retention, and model restrictions from AI Studio.
+Creating or rotating a `ttr_ai_` key additionally requires a standing workspace
+grant from a platform administrator. Removing that grant blocks new issuance
+and rotation but does not revoke existing keys.
 
 ## AI-only keys
 
@@ -35,6 +37,10 @@ Keys can be limited by environment, model, expiry, request rate, and credit
 budget. Rotate or revoke a key immediately when its value may have been
 exposed. Never write plaintext keys to logs, database columns, issue trackers,
 or committed configuration.
+
+The key page remains available to workspace key managers when issuance is not
+approved so they can inspect and revoke existing credentials. Rotation is
+treated as new key issuance and is therefore approval-gated.
 
 ## Metering lifecycle
 
@@ -95,5 +101,5 @@ bun --filter @tuturuuu/ai-studio type-check
 bun --filter @tuturuuu/ai-studio build
 ```
 
-Keep the global kill switch disabled outside dedicated test workspaces until
-security, billing, privacy, and legal publication reviews are complete.
+Keep model grants, budgets, rates, capture policy, and legal publication
+controls conservative while expanding API-key issuance workspace by workspace.

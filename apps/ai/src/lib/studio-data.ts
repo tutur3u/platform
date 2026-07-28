@@ -8,10 +8,12 @@ const RUN_FIELDS =
 export type AiStudioOverview = Awaited<ReturnType<typeof getAiStudioOverview>>;
 
 export async function getAiStudioOverview({
+  includeKeys = false,
   sbAdmin,
   workspaceId,
   workspaceName,
 }: {
+  includeKeys?: boolean;
   sbAdmin: TypedSupabaseClient;
   workspaceId: string;
   workspaceName: string;
@@ -28,13 +30,15 @@ export async function getAiStudioOverview({
         .select('*')
         .eq('ws_id', workspaceId)
         .maybeSingle(),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_api_keys')
-        .select(KEY_FIELDS)
-        .eq('ws_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .limit(25),
+      includeKeys
+        ? sbAdmin
+            .schema('private')
+            .from('ai_studio_api_keys')
+            .select(KEY_FIELDS)
+            .eq('ws_id', workspaceId)
+            .order('created_at', { ascending: false })
+            .limit(25)
+        : Promise.resolve({ data: [], error: null }),
       sbAdmin
         .schema('private')
         .from('ai_studio_runs')
@@ -65,14 +69,11 @@ export async function getAiStudioOverview({
         .eq('ws_id', workspaceId)
         .order('updated_at', { ascending: false })
         .limit(25),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_usage')
-        .select(
-          'billed_credits, provider_cost_usd, input_tokens, output_tokens, units, feature'
-        )
-        .eq('ws_id', workspaceId)
-        .gte('created_at', since.toISOString()),
+      sbAdmin.schema('private').rpc('get_ai_studio_usage_breakdown', {
+        p_from: since.toISOString(),
+        p_to: new Date().toISOString(),
+        p_ws_id: workspaceId,
+      }),
     ]);
 
   const errors = [policy, keys, runs, prompts, agents, datasets, usage]
@@ -89,11 +90,10 @@ export async function getAiStudioOverview({
   const totals = (usage.data ?? []).reduce(
     (acc, row) => ({
       billedCredits: acc.billedCredits + Number(row.billed_credits),
-      embeddingUnits:
-        acc.embeddingUnits + (row.feature === 'embedding' ? row.units : 0),
-      imageUnits: acc.imageUnits + (row.feature === 'image' ? row.units : 0),
-      inputTokens: acc.inputTokens + row.input_tokens,
-      outputTokens: acc.outputTokens + row.output_tokens,
+      embeddingUnits: acc.embeddingUnits + Number(row.embedding_units),
+      imageUnits: acc.imageUnits + Number(row.image_units),
+      inputTokens: acc.inputTokens + Number(row.input_tokens),
+      outputTokens: acc.outputTokens + Number(row.output_tokens),
       providerCostUsd: acc.providerCostUsd + Number(row.provider_cost_usd),
     }),
     {

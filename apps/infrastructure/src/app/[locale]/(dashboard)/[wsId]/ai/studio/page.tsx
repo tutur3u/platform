@@ -43,7 +43,7 @@ export default async function InfrastructureAiStudioPage({ params }: Props) {
       .schema('private')
       .from('ai_studio_global_settings')
       .select(
-        'globally_enabled,workspace_default_enabled,default_models,capture_default_enabled,metadata_retention_days,content_retention_days'
+        'default_models,capture_default_enabled,metadata_retention_days,content_retention_days'
       )
       .eq('singleton', true)
       .single(),
@@ -59,9 +59,7 @@ export default async function InfrastructureAiStudioPage({ params }: Props) {
     captureDefaultEnabled: globalRow?.capture_default_enabled ?? false,
     contentRetentionDays: globalRow?.content_retention_days ?? 30,
     defaultModels: globalRow?.default_models ?? [],
-    globallyEnabled: globalRow?.globally_enabled ?? false,
     metadataRetentionDays: globalRow?.metadata_retention_days ?? 365,
-    workspaceDefaultEnabled: globalRow?.workspace_default_enabled ?? false,
   };
 
   return (

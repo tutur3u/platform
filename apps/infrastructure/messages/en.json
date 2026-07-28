@@ -1131,18 +1131,11 @@
       "content_retention": "Content retention (days)",
       "default_models": "Default enabled models",
       "description": "These controls apply before workspace, plan, and API key restrictions.",
-      "kill_switch": "Enable AI Studio globally",
-      "kill_switch_description": "The global kill switch must be on before any workspace can access Studio.",
       "metadata_retention": "Metadata retention (days)",
       "models_hint": "Workspace and API key policies can only narrow this selected catalog.",
       "models_placeholder": "Select the models available by default",
-      "title": "Global access policy",
-      "workspace_default": "Enable for inheriting workspaces",
-      "workspace_default_description": "New and inheriting workspaces remain disabled unless this default is enabled."
+      "title": "Global access policy"
     },
-    "save": "Save policy",
-    "save_error": "Could not save the AI Studio policy",
-    "saved": "AI Studio policy saved",
     "models": {
       "empty": "No models match your search",
       "load_more": "Load more models",
@@ -1151,6 +1144,9 @@
       "search": "Search models by name, provider, or ID",
       "selected_count": "{count, plural, one {# model selected} other {# models selected}}"
     },
+    "save": "Save policy",
+    "save_error": "Could not save the AI Studio policy",
+    "saved": "AI Studio policy saved",
     "status": {
       "disabled": "Disabled",
       "enabled": "Enabled",
@@ -1159,6 +1155,9 @@
     "title": "AI Studio Policy",
     "workspaces": {
       "allowed_models": "Allowed models",
+      "api_key_creation": "Approve AI API key creation",
+      "api_key_creation_description": "Allows workspace key managers to create and rotate ttr_ai_ credentials. Existing keys remain active when this is disabled.",
+      "api_key_decided_at": "Last approval decision: {date}",
       "capture": "Content capture",
       "content_retention": "Content retention (days)",
       "credit_budget": "Monthly credit budget",

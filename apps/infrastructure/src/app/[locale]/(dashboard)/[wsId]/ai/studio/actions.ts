@@ -13,8 +13,6 @@ const modelIdsSchema = z
   .transform((values) => [...new Set(values)]);
 
 const globalSettingsSchema = z.object({
-  globallyEnabled: z.boolean(),
-  workspaceDefaultEnabled: z.boolean(),
   defaultModels: modelIdsSchema,
   captureDefaultEnabled: z.boolean(),
   metadataRetentionDays: z.number().int().min(30).max(2555),
@@ -23,7 +21,7 @@ const globalSettingsSchema = z.object({
 
 const workspacePolicySchema = z.object({
   wsId: z.string().uuid(),
-  state: z.enum(['inherit', 'enabled', 'disabled']),
+  apiKeyCreationApproved: z.boolean(),
   allowedModels: modelIdsSchema,
   deniedModels: modelIdsSchema,
   captureEnabled: z.boolean().nullable(),
@@ -69,11 +67,9 @@ export async function updateGlobalAiStudioSettingsAction(
       capture_default_enabled: values.captureDefaultEnabled,
       content_retention_days: values.contentRetentionDays,
       default_models: values.defaultModels,
-      globally_enabled: values.globallyEnabled,
       metadata_retention_days: values.metadataRetentionDays,
       updated_at: new Date().toISOString(),
       updated_by: user.id,
-      workspace_default_enabled: values.workspaceDefaultEnabled,
     })
     .eq('singleton', true);
 
@@ -93,13 +89,29 @@ export async function updateWorkspaceAiStudioPolicyAction(
   input: z.input<typeof workspacePolicySchema>
 ) {
   const values = workspacePolicySchema.parse(input);
-  const { sbAdmin } = await requireAiStudioPlatformAdmin();
+  const { sbAdmin, user } = await requireAiStudioPlatformAdmin();
+  const { data: current } = await sbAdmin
+    .schema('private')
+    .from('workspace_ai_studio_policies')
+    .select('api_key_creation_approved')
+    .eq('ws_id', values.wsId)
+    .maybeSingle();
+  const approvalChanged =
+    (current?.api_key_creation_approved ?? false) !==
+    values.apiKeyCreationApproved;
   const { error } = await sbAdmin
     .schema('private')
     .from('workspace_ai_studio_policies')
     .upsert(
       {
         allowed_models: values.allowedModels,
+        api_key_creation_approved: values.apiKeyCreationApproved,
+        ...(approvalChanged
+          ? {
+              api_key_creation_decided_at: new Date().toISOString(),
+              api_key_creation_decided_by: user.id,
+            }
+          : {}),
         capture_enabled: values.captureEnabled,
         content_retention_days: values.contentRetentionDays,
         denied_models: values.deniedModels,
@@ -107,7 +119,6 @@ export async function updateWorkspaceAiStudioPolicyAction(
         monthly_credit_budget: values.monthlyCreditBudget,
         no_training_enforced: values.noTrainingEnforced,
         requests_per_minute: values.requestsPerMinute,
-        state: values.state,
         updated_at: new Date().toISOString(),
         ws_id: values.wsId,
       },
