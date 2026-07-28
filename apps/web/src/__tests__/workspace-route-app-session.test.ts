@@ -46,6 +46,7 @@ describe('workspace API route app-session bridge', () => {
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
         targetApp: [
+          'ai',
           'calendar',
           'chat',
           'cms',
@@ -113,6 +114,7 @@ describe('workspace API route app-session bridge', () => {
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
         targetApp: [
+          'ai',
           'calendar',
           'chat',
           'cms',
@@ -143,6 +145,7 @@ describe('workspace API route app-session bridge', () => {
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
         targetApp: [
+          'ai',
           'calendar',
           'chat',
           'cms',

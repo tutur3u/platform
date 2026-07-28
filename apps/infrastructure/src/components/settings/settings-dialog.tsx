@@ -3,11 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Keyboard, Paintbrush, PanelLeft, User } from '@tuturuuu/icons';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
+import { useSidebar } from '@tuturuuu/satellite/sidebar-context';
 import {
   createWorkspaceSettingsNavGroup,
   SatelliteProfileSettingsPanel,
   SatelliteWorkspaceSettingsPanel,
-  SettingsWorkspaceBreadcrumb,
 } from '@tuturuuu/satellite/workspace-settings';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
@@ -18,18 +18,17 @@ import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useSidebar } from '@/context/sidebar-context';
 
 interface SettingsDialogProps {
-  wsId?: string;
-  user: WorkspaceUser | null;
   defaultTab?: string;
+  user: WorkspaceUser | null;
+  wsId?: string;
 }
 
 export function SettingsDialog({
-  wsId,
-  user,
   defaultTab = 'profile',
+  user,
+  wsId,
 }: SettingsDialogProps) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -50,11 +49,11 @@ export function SettingsDialog({
       label: t('settings.user.title'),
       items: [
         {
-          name: 'profile',
-          label: t('settings.user.profile'),
-          icon: User,
           description: t('settings.user.profile_description'),
+          icon: User,
           keywords: ['Profile', 'Account'],
+          label: t('settings.user.profile'),
+          name: 'profile',
         },
       ],
     },
@@ -62,25 +61,25 @@ export function SettingsDialog({
       label: t('settings.preferences.title'),
       items: [
         {
-          name: 'appearance',
-          label: t('settings.preferences.appearance'),
-          icon: Paintbrush,
           description: t('settings-account.appearance-description'),
+          icon: Paintbrush,
           keywords: ['Appearance', 'Theme'],
+          label: t('settings.preferences.appearance'),
+          name: 'appearance',
         },
         {
-          name: 'sidebar',
-          label: t('settings.preferences.sidebar'),
-          icon: PanelLeft,
           description: t('settings.preferences.sidebar_description'),
+          icon: PanelLeft,
           keywords: ['Sidebar', 'Navigation', 'Menu'],
+          label: t('settings.preferences.sidebar'),
+          name: 'sidebar',
         },
         {
-          name: 'keyboard_shortcuts',
-          label: t('settings.preferences.keyboard_shortcuts'),
-          icon: Keyboard,
           description: t('settings.preferences.keyboard_shortcuts_description'),
+          icon: Keyboard,
           keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
+          label: t('settings.preferences.keyboard_shortcuts'),
+          name: 'keyboard_shortcuts',
         },
       ],
     },
@@ -88,15 +87,6 @@ export function SettingsDialog({
 
   return (
     <SettingsDialogShell
-      activeGroupBreadcrumb={
-        wsId && activeTab.startsWith('workspace_') ? (
-          <SettingsWorkspaceBreadcrumb
-            activeTab={activeTab}
-            appId="ai"
-            wsId={wsId}
-          />
-        ) : undefined
-      }
       activeTab={activeTab}
       expandAllAccordions={expandAllAccordions}
       keyboardNavigation
@@ -110,29 +100,29 @@ export function SettingsDialog({
         wsId={wsId}
       />
 
-      {activeTab === 'profile' && user && (
+      {activeTab === 'profile' && user ? (
         <SatelliteProfileSettingsPanel user={user} />
-      )}
+      ) : null}
 
-      {activeTab === 'appearance' && (
+      {activeTab === 'appearance' ? (
         <div className="h-full">
           <AppearanceSettings
             canManageVersionBadge={isExactTuturuuuDotComEmail(user?.email)}
           />
         </div>
-      )}
+      ) : null}
 
-      {activeTab === 'sidebar' && (
+      {activeTab === 'sidebar' ? (
         <div className="h-full">
           <SharedSidebarSettings useSidebar={useSidebar} />
         </div>
-      )}
+      ) : null}
 
-      {activeTab === 'keyboard_shortcuts' && (
+      {activeTab === 'keyboard_shortcuts' ? (
         <div className="h-full">
           <KeyboardShortcutsSettings />
         </div>
-      )}
+      ) : null}
     </SettingsDialogShell>
   );
 }

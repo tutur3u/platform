@@ -65,6 +65,7 @@ describe('current user profile route', () => {
       allowAppSessionAuth: [
         {
           targetApp: [
+            'ai',
             'calendar',
             'chat',
             'cms',
@@ -99,6 +100,7 @@ describe('current user profile route', () => {
       allowAppSessionAuth: [
         {
           targetApp: [
+            'ai',
             'calendar',
             'chat',
             'cms',

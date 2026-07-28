@@ -1,13 +1,29 @@
-import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
+import {
+  createTuturuuuNextConfig,
+  resolveTuturuuuWebAppUrl,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
+const WEB_APP_URL = resolveTuturuuuWebAppUrl();
 const cronMonitoringTraceIncludes = {
   '/api/v1/infrastructure/monitoring/cron': ['./cron.config.json'],
   '/api/v1/infrastructure/monitoring/cron/**': ['./cron.config.json'],
 };
 
 const nextConfig = createTuturuuuNextConfig({
+  async rewrites() {
+    return {
+      afterFiles: [],
+      beforeFiles: [],
+      fallback: [
+        {
+          destination: `${WEB_APP_URL}/api/:path*`,
+          source: '/api/:path*',
+        },
+      ],
+    };
+  },
   outputFileTracingIncludes: cronMonitoringTraceIncludes,
   partialPrefetching: false,
   transpilePackages: [

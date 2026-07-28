@@ -1134,7 +1134,8 @@
       "kill_switch": "Enable AI Studio globally",
       "kill_switch_description": "The global kill switch must be on before any workspace can access Studio.",
       "metadata_retention": "Metadata retention (days)",
-      "models_hint": "Comma-separated gateway model IDs. Workspace and key policies can only narrow this catalog.",
+      "models_hint": "Workspace and API key policies can only narrow this selected catalog.",
+      "models_placeholder": "Select the models available by default",
       "title": "Global access policy",
       "workspace_default": "Enable for inheriting workspaces",
       "workspace_default_description": "New and inheriting workspaces remain disabled unless this default is enabled."
@@ -1142,6 +1143,14 @@
     "save": "Save policy",
     "save_error": "Could not save the AI Studio policy",
     "saved": "AI Studio policy saved",
+    "models": {
+      "empty": "No models match your search",
+      "load_more": "Load more models",
+      "loading": "Loading models…",
+      "remove": "Remove {modelId}",
+      "search": "Search models by name, provider, or ID",
+      "selected_count": "{count, plural, one {# model selected} other {# models selected}}"
+    },
     "status": {
       "disabled": "Disabled",
       "enabled": "Enabled",
@@ -1158,10 +1167,13 @@
       "empty": "No matching workspaces",
       "inherit": "Inherit",
       "inherit_models": "Inherit global models",
+      "load_error": "Workspace policies could not be loaded.",
+      "loading": "Loading workspace policies…",
       "metadata_retention": "Metadata retention (days)",
       "no_training": "Enforce no-training controls",
       "none": "No models denied",
       "rate_limit": "Requests per minute",
+      "retry": "Try again",
       "search": "Search workspaces",
       "title": "Workspace policies",
       "unnamed": "Unnamed workspace"

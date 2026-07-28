@@ -912,6 +912,7 @@ describe('withSessionAuth', () => {
       )
     ).toEqual({
       targetApp: [
+        'ai',
         'calendar',
         'chat',
         'cms',
@@ -920,6 +921,7 @@ describe('withSessionAuth', () => {
         'finance',
         'forms',
         'hive',
+        'infra',
         'inventory',
         'learn',
         'mail',
@@ -947,6 +949,7 @@ describe('withSessionAuth', () => {
   });
 
   it.each([
+    'ai',
     'chat',
     'forms',
     'infra',
@@ -991,6 +994,35 @@ describe('withSessionAuth', () => {
       expect(mockGetUser).not.toHaveBeenCalled();
       expect(mockCreateClient).not.toHaveBeenCalled();
       expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    }
+  );
+
+  it.each(['ai', 'infra'] as const)(
+    'should accept %s app-session auth for shared user settings APIs',
+    async (targetApp) => {
+      const { token } = createAppSessionToken({
+        email: `${targetApp}@example.com`,
+        targetApp,
+        userId: `${targetApp}-user-1`,
+      });
+      const request = new Request(
+        'http://localhost:3000/api/v1/users/me/configs/EXPAND_SETTINGS_ACCORDIONS',
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+          method: 'GET',
+        }
+      ) as unknown as NextRequest;
+
+      const result = await resolveSessionAuthContext(request, {
+        allowAppSessionAuth: true,
+      });
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.user.id).toBe(`${targetApp}-user-1`);
+      }
     }
   );
 

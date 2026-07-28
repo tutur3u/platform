@@ -1,6 +1,7 @@
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 
 const CURRENT_USER_APP_SESSION_TARGETS = [
+  'ai',
   'calendar',
   'chat',
   'cms',

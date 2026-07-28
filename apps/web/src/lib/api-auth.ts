@@ -193,6 +193,7 @@ type AppSessionAuthOptions =
 
 const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
 const ALL_SATELLITE_APP_SESSION_TARGETS = [
+  'ai',
   'calendar',
   'chat',
   'cms',
@@ -201,6 +202,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'finance',
   'forms',
   'hive',
+  'infra',
   'inventory',
   'learn',
   'mail',

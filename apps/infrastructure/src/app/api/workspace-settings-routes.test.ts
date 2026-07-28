@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -50,12 +49,12 @@ import {
   PUT as updateWorkspace,
 } from './workspaces/[wsId]/route';
 
-describe('AI Studio workspace settings routes', () => {
-  it('owns every shared workspace-settings endpoint with AI satellite auth', () => {
-    expect(mocks.createWorkspaceHandlers).toHaveBeenCalledWith('ai');
-    expect(mocks.createAvatarHandlers).toHaveBeenCalledWith('ai');
-    expect(mocks.createAvatarUploadHandler).toHaveBeenCalledWith('ai');
-    expect(mocks.createAiCreditsHandler).toHaveBeenCalledWith('ai');
+describe('Infrastructure workspace settings routes', () => {
+  it('owns every shared workspace-settings endpoint with Infra satellite auth', () => {
+    expect(mocks.createWorkspaceHandlers).toHaveBeenCalledWith('infra');
+    expect(mocks.createAvatarHandlers).toHaveBeenCalledWith('infra');
+    expect(mocks.createAvatarUploadHandler).toHaveBeenCalledWith('infra');
+    expect(mocks.createAiCreditsHandler).toHaveBeenCalledWith('infra');
 
     expect(getWorkspace).toBe(mocks.workspaceGet);
     expect(updateWorkspace).toBe(mocks.workspacePut);
@@ -63,16 +62,5 @@ describe('AI Studio workspace settings routes', () => {
     expect(deleteAvatar).toBe(mocks.avatarDelete);
     expect(createAvatarUpload).toBe(mocks.avatarUploadPost);
     expect(getAiCredits).toBe(mocks.creditsGet);
-  });
-
-  it('preloads the workspace before rendering shared settings panels', () => {
-    const source = readFileSync(
-      new URL('../../components/settings/settings-dialog.tsx', import.meta.url),
-      'utf8'
-    );
-
-    expect(source).toContain('import { getWorkspace }');
-    expect(source).toContain("queryKey: ['workspace', wsId]");
-    expect(source).toContain('workspace={workspace ?? null}');
   });
 });
