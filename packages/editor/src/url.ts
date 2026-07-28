@@ -19,11 +19,32 @@ export function normalizeRichTextUrl(value: unknown): string | null {
   const href = String(value ?? '').trim();
   if (!href) return '';
   if (hasControlCharacters(href)) return null;
-  if (RELATIVE_URL.test(href)) return href;
+  const normalizedHref = href.replace(/\s/gu, (character) =>
+    encodeURIComponent(character)
+  );
+  if (RELATIVE_URL.test(normalizedHref)) return normalizedHref;
 
   try {
-    const url = new URL(href);
-    return SAFE_URL_SCHEMES.has(url.protocol.toLowerCase()) ? href : null;
+    const url = new URL(normalizedHref);
+    return SAFE_URL_SCHEMES.has(url.protocol.toLowerCase())
+      ? normalizedHref
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Images may use web or relative URLs, never mail or phone schemes. */
+export function normalizeRichTextImageUrl(value: unknown): string | null {
+  const src = normalizeRichTextUrl(value);
+  if (!src) return src;
+  if (RELATIVE_URL.test(src)) return src;
+
+  try {
+    const url = new URL(src);
+    return ['http:', 'https:'].includes(url.protocol.toLowerCase())
+      ? src
+      : null;
   } catch {
     return null;
   }
