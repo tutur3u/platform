@@ -17,22 +17,43 @@ export type CollectionItem =
   | { kind: 'ref'; value: { name: string; commit: { sha: string } } };
 
 export type CollectionRow = {
-  item: CollectionItem;
+  avatarUrl?: string;
+  href: string;
   key: string;
+  kind: CollectionItem['kind'];
+  labels?: string[];
+  meta: string;
   search: string;
   state: string;
   timestamp: number;
   title: string;
+  trailing?: string;
 };
 
-export function toCollectionRow(item: CollectionItem): CollectionRow {
+const DATE_FORMATTER = new Intl.DateTimeFormat('en', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
+export function toCollectionRow(
+  item: CollectionItem,
+  owner: string,
+  repository: string
+): CollectionRow {
+  const row = getCollectionRow(item, owner, repository);
+  const searchableValues = [
+    row.title,
+    row.meta,
+    row.state,
+    row.trailing,
+    ...(row.labels ?? []),
+  ];
+
   return {
-    item,
+    ...row,
     key: `${item.kind}-${getItemKey(item)}`,
-    search: JSON.stringify(item.value).toLowerCase(),
-    state: getItemState(item),
+    search: searchableValues.filter(Boolean).join(' ').toLowerCase(),
     timestamp: getItemTimestamp(item),
-    title: getItemTitle(item),
   };
 }
 
@@ -42,10 +63,81 @@ export function firstLine(value: string) {
 
 export function formatDate(value?: string | null) {
   if (!value) return 'Unknown time';
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  return DATE_FORMATTER.format(new Date(value));
+}
+
+function getCollectionRow(
+  item: CollectionItem,
+  owner: string,
+  repository: string
+): Omit<CollectionRow, 'key' | 'search' | 'timestamp'> {
+  if (item.kind === 'commit') {
+    const commit = item.value;
+    const actor =
+      commit.commit.author?.name ?? commit.author?.login ?? 'Unknown';
+    return {
+      href: `/${owner}/${repository}/commit/${commit.sha}`,
+      kind: item.kind,
+      meta: `${actor} · ${formatDate(commit.commit.author?.date)}`,
+      state: '',
+      title: firstLine(commit.commit.message),
+      trailing: commit.sha.slice(0, 7),
+    };
+  }
+
+  if (item.kind === 'issue' || item.kind === 'pull') {
+    const issue = item.value;
+    return {
+      href: `/${owner}/${repository}/${item.kind === 'pull' ? 'pull' : 'issues'}/${issue.number}`,
+      kind: item.kind,
+      labels: issue.labels.slice(0, 4).map((label) => label.name),
+      meta: `#${issue.number} · ${issue.user?.login ?? 'Unknown'} · ${formatDate(issue.updated_at)}`,
+      state: issue.state,
+      title: issue.title,
+    };
+  }
+
+  if (item.kind === 'release') {
+    const release = item.value;
+    return {
+      href: release.html_url,
+      kind: item.kind,
+      meta: `${release.tag_name} · ${formatDate(release.published_at)}`,
+      state: release.prerelease ? 'pre-release' : 'release',
+      title: release.name || release.tag_name,
+    };
+  }
+
+  if (item.kind === 'run') {
+    const run = item.value;
+    return {
+      href: `/${owner}/${repository}/actions/${run.id}`,
+      kind: item.kind,
+      meta: `#${run.run_number} · ${run.event} · ${run.head_branch ?? run.head_sha.slice(0, 7)} · ${formatDate(run.updated_at)}`,
+      state: run.conclusion ?? run.status,
+      title: run.name,
+    };
+  }
+
+  if (item.kind === 'contributor') {
+    const contributor = item.value;
+    return {
+      avatarUrl: contributor.avatar_url,
+      href: contributor.html_url,
+      kind: item.kind,
+      meta: `${contributor.contributions} contributions`,
+      state: '',
+      title: contributor.login,
+    };
+  }
+
+  return {
+    href: `/${owner}/${repository}/tree?ref=${encodeURIComponent(item.value.name)}`,
+    kind: item.kind,
+    meta: item.value.commit.sha.slice(0, 12),
+    state: '',
+    title: item.value.name,
+  };
 }
 
 function getItemKey(item: CollectionItem) {
@@ -63,38 +155,6 @@ function getItemKey(item: CollectionItem) {
       return item.value.login;
     case 'ref':
       return item.value.name;
-  }
-}
-
-function getItemTitle(item: CollectionItem) {
-  switch (item.kind) {
-    case 'commit':
-      return firstLine(item.value.commit.message);
-    case 'issue':
-    case 'pull':
-      return item.value.title;
-    case 'release':
-      return item.value.name || item.value.tag_name;
-    case 'run':
-      return item.value.name;
-    case 'contributor':
-      return item.value.login;
-    case 'ref':
-      return item.value.name;
-  }
-}
-
-function getItemState(item: CollectionItem) {
-  switch (item.kind) {
-    case 'issue':
-    case 'pull':
-      return item.value.state;
-    case 'run':
-      return item.value.conclusion ?? item.value.status;
-    case 'release':
-      return item.value.prerelease ? 'pre-release' : 'release';
-    default:
-      return '';
   }
 }
 

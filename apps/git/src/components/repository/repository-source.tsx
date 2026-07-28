@@ -1,43 +1,9 @@
-'use client';
-
-import { code } from '@streamdown/code';
 import { cn } from '@tuturuuu/utils/format';
-import { Streamdown } from 'streamdown';
+import { RepositorySyntaxSource } from './repository-syntax-source';
+import { RepositoryVirtualSource } from './repository-virtual-source';
 
-const plugins = { code };
-
-const LANGUAGE_BY_EXTENSION: Record<string, string> = {
-  bash: 'bash',
-  c: 'c',
-  cc: 'cpp',
-  cpp: 'cpp',
-  css: 'css',
-  diff: 'diff',
-  go: 'go',
-  html: 'html',
-  java: 'java',
-  js: 'javascript',
-  json: 'json',
-  jsonc: 'jsonc',
-  jsx: 'jsx',
-  kt: 'kotlin',
-  md: 'markdown',
-  mjs: 'javascript',
-  php: 'php',
-  py: 'python',
-  rb: 'ruby',
-  rs: 'rust',
-  sh: 'bash',
-  sql: 'sql',
-  swift: 'swift',
-  toml: 'toml',
-  ts: 'typescript',
-  tsx: 'tsx',
-  txt: 'text',
-  yaml: 'yaml',
-  yml: 'yaml',
-  zsh: 'zsh',
-};
+const MAX_HIGHLIGHT_BYTES = 150_000;
+const MAX_HIGHLIGHT_LINES = 2_000;
 
 export function RepositorySource({
   className,
@@ -48,49 +14,40 @@ export function RepositorySource({
   filename: string;
   source: string;
 }) {
-  const language = resolveLanguage(filename);
-  const fence = createFence(source);
+  const lineCount = countLines(source);
+  const byteLength = Buffer.byteLength(source);
+  const sharedClassName = cn(
+    'repository-source min-w-0 overflow-hidden',
+    className
+  );
+
+  if (byteLength > MAX_HIGHLIGHT_BYTES || lineCount > MAX_HIGHLIGHT_LINES) {
+    return (
+      <RepositoryVirtualSource className={sharedClassName} source={source} />
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        'repository-source min-w-0 overflow-hidden',
-        '[&_[data-streamdown=code-block]]:my-0 [&_[data-streamdown=code-block]]:rounded-none',
-        '[&_.shiki]:bg-transparent! [&_pre]:max-h-[75vh] [&_pre]:bg-transparent! [&_pre]:text-[13px] [&_pre]:leading-6',
-        className
-      )}
-    >
-      <Streamdown
-        controls={{ code: true, table: false }}
-        linkSafety={{ enabled: false }}
-        mode="static"
-        plugins={plugins}
-        skipHtml
-      >
-        {`${fence}${language}\n${source}\n${fence}`}
-      </Streamdown>
-    </div>
+    <RepositorySyntaxSource
+      className={sharedClassName}
+      filename={filename}
+      source={source}
+    />
   );
 }
 
-function resolveLanguage(filename: string) {
-  const basename = filename.split('/').at(-1)?.toLowerCase() ?? '';
-
-  if (basename === 'dockerfile') return 'dockerfile';
-  if (basename === 'makefile') return 'makefile';
-  if (basename.endsWith('.d.ts')) return 'typescript';
-  if (basename.endsWith('.config.js')) return 'javascript';
-  if (basename.endsWith('.config.ts')) return 'typescript';
-
-  const extension = basename.split('.').at(-1) ?? '';
-  return LANGUAGE_BY_EXTENSION[extension] ?? 'text';
+export function countLines(source: string) {
+  if (!source) return 0;
+  let count = 1;
+  for (let index = 0; index < source.length; index += 1) {
+    if (source.charCodeAt(index) === 10) count += 1;
+  }
+  return count;
 }
 
-function createFence(source: string) {
-  const longestRun = [...source.matchAll(/`+/gu)].reduce(
-    (length, match) => Math.max(length, match[0].length),
-    0
+export function shouldVirtualizeSource(source: string) {
+  return (
+    Buffer.byteLength(source) > MAX_HIGHLIGHT_BYTES ||
+    countLines(source) > MAX_HIGHLIGHT_LINES
   );
-
-  return '`'.repeat(Math.max(3, longestRun + 1));
 }

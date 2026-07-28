@@ -22,13 +22,11 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
 import { CollectionRowView } from './repository-collection-row';
-import {
-  type CollectionItem,
-  type CollectionRow,
-  toCollectionRow,
-} from './repository-collection-types';
+import type { CollectionRow } from './repository-collection-types';
 
 export type { CollectionItem } from './repository-collection-types';
+
+const ROW_HEIGHT = 64;
 
 const columns: ColumnDef<CollectionRow>[] = [
   { accessorKey: 'title', id: 'title' },
@@ -50,14 +48,14 @@ type SortOption = keyof typeof SORT_OPTIONS;
 
 export function RepositoryCollection({
   emptyMessage,
-  items,
+  rows: data,
   owner,
   repository,
   searchQuery,
   title,
 }: {
   emptyMessage: string;
-  items: CollectionItem[];
+  rows: CollectionRow[];
   owner: string;
   repository: string;
   searchQuery?: string;
@@ -68,7 +66,6 @@ export function RepositoryCollection({
   const [status, setStatus] = useState('all');
   const [sort, setSort] = useState<SortOption>('recent');
   const [debouncedSearch] = useDebouncedValue(search, { wait: 120 });
-  const data = useMemo(() => items.map(toCollectionRow), [items]);
   const statuses = useMemo(
     () => [...new Set(data.map((row) => row.state).filter(Boolean))].sort(),
     [data]
@@ -92,11 +89,11 @@ export function RepositoryCollection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
     count: rows.length,
-    estimateSize: () => 72,
+    estimateSize: () => ROW_HEIGHT,
     getScrollElement: () => scrollRef.current,
     getItemKey: (index) => rows[index]?.original.key ?? index,
-    initialRect: { height: 720, width: 1200 },
-    overscan: 8,
+    initialRect: { height: 640, width: 1200 },
+    overscan: 5,
   });
   const totalSize = virtualizer.getTotalSize();
 
@@ -163,7 +160,10 @@ export function RepositoryCollection({
           <div
             className="overflow-auto overscroll-contain"
             ref={scrollRef}
-            style={{ height: Math.min(Math.max(totalSize, 62), 720) }}
+            style={{
+              contain: 'strict',
+              height: Math.min(Math.max(totalSize, ROW_HEIGHT), 640),
+            }}
           >
             <div className="relative w-full" style={{ height: totalSize }}>
               {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -173,18 +173,12 @@ export function RepositoryCollection({
                 return (
                   <div
                     className="absolute top-0 left-0 w-full border-b last:border-b-0"
-                    data-index={virtualRow.index}
                     key={row.original.key}
-                    ref={virtualizer.measureElement}
                     style={{
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    <CollectionRowView
-                      item={row.original.item}
-                      owner={owner}
-                      repository={repository}
-                    />
+                    <CollectionRowView row={row.original} />
                   </div>
                 );
               })}

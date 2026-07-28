@@ -7,6 +7,7 @@ import {
   type CollectionItem,
   RepositoryCollection,
 } from '@/components/repository/repository-collection';
+import { toCollectionRow } from '@/components/repository/repository-collection-types';
 import {
   ActionRunDetail,
   CommitDetail,
@@ -304,9 +305,9 @@ function collection(
   return (
     <RepositoryCollection
       emptyMessage={`No ${title.toLowerCase()} found.`}
-      items={items}
       owner={owner}
       repository={repository}
+      rows={items.map((item) => toCollectionRow(item, owner, repository))}
       searchQuery={query}
       title={title}
     />
