@@ -114,6 +114,18 @@ export const LAUNCHABLE_APPS = [
     workspacePathResolver: workspaceRootPath,
   },
   {
+    aliases: ['Source', 'Repositories', 'GitHub', 'Code'],
+    appRoot: 'apps/git',
+    category: 'productivity',
+    defaultPath: '/tutur3u/platform',
+    localhostOrigin: 'http://localhost:7830',
+    packageName: '@tuturuuu/git',
+    portlessApp: 'git',
+    productionUrl: 'https://git.tuturuuu.com',
+    slug: 'git',
+    title: 'Git',
+  },
+  {
     aliases: ['App Launcher', 'Gateway', 'Apps Gateway'],
     appRoot: 'apps/apps',
     category: 'miscellaneous',

@@ -55,6 +55,7 @@
       "drive": "Store, organize, and share workspace files.",
       "finance": "Manage wallets, transactions, invoices, and budgets.",
       "forms": "Build, share, and analyze workspace forms and their responses.",
+      "git": "Browse approved GitHub repositories with fast, native source, issue, pull request, and Actions views.",
       "hive": "Explore collaborative simulations and spatial experiences.",
       "inventory": "Manage products, stock, purchasing, and sales.",
       "learn": "Follow courses, assignments, and learning progress.",
@@ -83,6 +84,7 @@
       "drive": "Drive",
       "finance": "Finance",
       "forms": "Forms",
+      "git": "Git",
       "hive": "Hive",
       "infrastructure": "Infrastructure",
       "inventory": "Inventory",
@@ -299,6 +301,8 @@
     "invite_membership_label": "Access"
   },
   "ws-roles": {
+    "manage_git_repositories": "Manage Git repositories",
+    "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git.",
     "manage_user_report_automation": "Manage Report Automation",
     "manage_user_report_automation_description": "Configure periodic report schedules, generation modes, and workspace or group defaults.",
     "send_user_group_report_emails": "Send Periodic Report Emails",

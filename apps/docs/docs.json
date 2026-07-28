@@ -230,6 +230,7 @@
                   "platform/applications/chat",
                   "platform/applications/cms",
                   "platform/applications/drive",
+                  "platform/applications/git",
                   "platform/applications/finance",
                   "platform/applications/inventory",
                   "platform/applications/reports",

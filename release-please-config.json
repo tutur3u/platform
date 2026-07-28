@@ -151,6 +151,10 @@
       "component": "forms",
       "package-name": "@tuturuuu/forms"
     },
+    "apps/git": {
+      "component": "git",
+      "package-name": "@tuturuuu/git"
+    },
     "apps/track": {
       "component": "track",
       "package-name": "@tuturuuu/track"

@@ -117,6 +117,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://forms.tuturuuu.com',
   },
   {
+    name: 'git',
+    url: 'https://git.tuturuuu.com',
+  },
+  {
     name: 'hive',
     url: 'https://hive.tuturuuu.com',
   },
@@ -232,6 +236,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('forms'),
   },
   {
+    name: 'git',
+    url: getTuturuuuPortlessAppOrigin('git'),
+  },
+  {
     name: 'hive',
     url: getTuturuuuPortlessAppOrigin('hive'),
   },
@@ -341,6 +349,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'forms',
     url: 'http://localhost:7828',
+  },
+  {
+    name: 'git',
+    url: 'http://localhost:7830',
   },
   {
     name: 'hive',

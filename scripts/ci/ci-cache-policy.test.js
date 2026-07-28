@@ -26,6 +26,7 @@ const activeVercelProjects = {
   drive: '@tuturuuu/drive',
   finance: '@tuturuuu/finance',
   forms: '@tuturuuu/forms',
+  git: '@tuturuuu/git',
   infrastructure: '@tuturuuu/infrastructure',
   inventory: '@tuturuuu/inventory',
   learn: '@tuturuuu/learn',
@@ -98,9 +99,9 @@ function findBroadEnvCredentials(source) {
   return violations;
 }
 
-test('all 26 active Vercel projects cache their full Turbo build', () => {
-  assert.equal(Object.keys(activeVercelProjects).length, 26);
-  assert.equal(vercelWorkflows.length, 52);
+test('all 27 active Vercel projects cache their full Turbo build', () => {
+  assert.equal(Object.keys(activeVercelProjects).length, 27);
+  assert.equal(vercelWorkflows.length, 54);
 
   for (const [project, workspace] of Object.entries(activeVercelProjects)) {
     const appDirectory = project === 'platform' ? 'web' : project;

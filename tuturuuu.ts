@@ -61,6 +61,7 @@ export const ci = {
   'vercel-production-pay.yaml': true,
   'vercel-production-contacts.yaml': true,
   'vercel-production-forms.yaml': true,
+  'vercel-production-git.yaml': true,
   'vercel-production-track.yaml': true,
   'vercel-production.yaml': true,
   'mobile-build-ios.yaml': true,
@@ -280,6 +281,13 @@ export const vercelWorkflowTargets = [
     packageName: '@tuturuuu/forms',
     previewWorkflow: 'vercel-preview-forms.yaml',
     productionWorkflow: 'vercel-production-forms.yaml',
+  },
+  {
+    app: 'git',
+    appPath: 'apps/git',
+    packageName: '@tuturuuu/git',
+    previewWorkflow: 'vercel-preview-git.yaml',
+    productionWorkflow: 'vercel-production-git.yaml',
   },
 ] satisfies VercelWorkflowTarget[];
 

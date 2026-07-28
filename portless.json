@@ -88,6 +88,10 @@
       "name": "forms.tuturuuu",
       "script": "dev:app"
     },
+    "apps/git": {
+      "name": "git.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/playground": {
       "name": "playground.tuturuuu",
       "script": "dev:app"

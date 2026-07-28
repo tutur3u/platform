@@ -17,6 +17,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   external: `https://external.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   finance: `https://finance.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   forms: `https://forms.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  git: `https://git.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   hive: `https://hive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   'hive-realtime': `https://realtime.hive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   infra: `https://infra.${TUTURUUU_PORTLESS_ROOT_HOST}`,

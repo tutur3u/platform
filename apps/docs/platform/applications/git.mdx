@@ -1,0 +1,66 @@
+---
+title: Git
+description: Fast, read-only GitHub repository browsing through the Tuturuuu Git satellite.
+---
+
+Git is the public repository browser at `https://git.tuturuuu.com`. It renders
+repository metadata, source trees, files, commits, issues, pull requests,
+Actions, releases, refs, and contributors with a server-first Next.js 16.3
+satellite. The initial registry always includes `tutur3u/platform`.
+
+## URL model
+
+Public repositories use short, GitHub-compatible paths:
+
+- `/{owner}/{repository}` for the overview
+- `/{owner}/{repository}/tree/{ref}/{path}` and `/blob/{ref}/{path}`
+- `/{owner}/{repository}/commits`, `/commit/{sha}`, `/issues`, `/pulls`,
+  `/actions`, `/releases`, `/contributors`, `/branches`, and `/tags`
+
+The reserved `/-/internal` area uses the shared Tuturuuu satellite shell and
+app-session authentication. There is no dashboard catch-all route, so `/api/*`
+fallback rewrites remain safe.
+
+## Repository registry
+
+Only explicitly registered public repositories are displayed. Adding,
+disabling, or refreshing a repository requires the root-workspace
+`manage_git_repositories` permission. The server verifies that a repository is
+public and belongs to the configured GitHub App installation before saving it.
+Private repositories are rejected by both application checks and the database
+constraint.
+
+Registry and credential rows live in the Supabase `private` schema and are
+accessible only through the service-role client.
+
+## GitHub App
+
+Use a dedicated organization-owned GitHub App named `Tuturuuu Git`. Do not
+extend the existing deployment app.
+
+Configure:
+
+- Homepage URL: `https://git.tuturuuu.com`
+- Webhooks, user authorization, and device flow: disabled
+- Repository permissions: read-only Actions, Checks, Commit statuses,
+  Contents, Issues, Metadata, and Pull requests
+- Organization permissions: none
+- Installation: the `tutur3u` organization, all repositories
+
+Generate a private key only when an administrator can immediately store it
+through `/-/internal/github-app`. The private key is envelope-encrypted with
+`ENCRYPTION_MASTER_KEY`; plaintext is never returned after submission. Runtime
+installation tokens are restricted to one approved repository ID.
+
+## Deployment
+
+The Vercel workflows expect `VERCEL_GIT_PROJECT_ID`, `VERCEL_ORG_ID`, and
+`VERCEL_TOKEN`. Project creation and Git linkage are a one-time Vercel console
+step. Configure the production domain as `git.tuturuuu.com`, set
+`ENCRYPTION_MASTER_KEY` in protected environments, then use the admin page to
+save the GitHub App ID, installation ID, and private key.
+
+The public GitHub API remains a bootstrap fallback for registered public
+repositories until the app credentials are configured. Mutable repository data
+uses short cache lifetimes; immutable commit-addressed content uses long-lived
+cache entries.

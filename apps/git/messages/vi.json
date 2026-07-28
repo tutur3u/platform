@@ -1,0 +1,92 @@
+{
+  "command_launcher": {
+    "app_descriptions": {
+      "ai": "Xây dựng, kiểm thử và quan sát câu lệnh, tác nhân cùng quy trình mô hình AI.",
+      "apps": "Duyệt và mở mọi ứng dụng có trong không gian làm việc của bạn.",
+      "calendar": "Lên lịch, quản lý sự kiện và chia sẻ thời gian rảnh.",
+      "chat": "Nhắn tin với đồng đội và tập trung các cuộc trò chuyện trong không gian làm việc.",
+      "cms": "Tạo và xuất bản nội dung có cấu trúc cho trang web và sản phẩm.",
+      "contacts": "Sắp xếp khách hàng, thành viên và lịch sử tương tác.",
+      "docs": "Đọc hướng dẫn sản phẩm, tài liệu tham khảo và hướng dẫn thiết lập.",
+      "drive": "Lưu trữ, sắp xếp và chia sẻ tệp trong không gian làm việc.",
+      "finance": "Quản lý ví, giao dịch, hóa đơn và ngân sách.",
+      "forms": "Tạo, chia sẻ và phân tích biểu mẫu cùng phản hồi của workspace.",
+      "git": "Duyệt các kho mã GitHub đã được phê duyệt với giao diện mã nguồn, vấn đề, pull request và Actions nhanh, nguyên bản.",
+      "hive": "Khám phá các mô phỏng cộng tác và trải nghiệm không gian.",
+      "inventory": "Quản lý sản phẩm, tồn kho, nhập hàng và bán hàng.",
+      "learn": "Theo dõi khóa học, bài tập và tiến độ học tập.",
+      "mail": "Đọc và gửi email của không gian làm việc trong một hộp thư.",
+      "meet": "Lên lịch họp và tìm thời gian phù hợp cho mọi người.",
+      "mind": "Tạo sơ đồ tư duy và kết nối ý tưởng với AI.",
+      "nova": "Tạo và giải các thử thách AI dựa trên câu lệnh.",
+      "pay": "Quản lý thanh toán, gói đăng ký và hoạt động chi trả.",
+      "platform": "Quản lý không gian làm việc, cài đặt và toàn bộ nền tảng Tuturuuu.",
+      "rewise": "Luyện tập, ôn tập và ghi nhớ kiến thức với AI.",
+      "shortener": "Tạo liên kết ngắn gọn và quản lý chuyển hướng.",
+      "storefront": "Bán sản phẩm qua cửa hàng trực tuyến dành cho khách hàng.",
+      "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
+      "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
+      "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
+    },
+    "app_names": {
+      "ai": "AI Studio",
+      "apps": "Ứng dụng",
+      "calendar": "Lịch",
+      "chat": "Trò chuyện",
+      "cms": "CMS",
+      "contacts": "Danh bạ",
+      "docs": "Tài liệu",
+      "drive": "Tệp",
+      "finance": "Tài chính",
+      "forms": "Biểu mẫu",
+      "git": "Git",
+      "hive": "Hive",
+      "inventory": "Kho hàng",
+      "learn": "Học tập",
+      "mail": "Thư",
+      "meet": "Họp",
+      "mind": "Mind",
+      "nova": "Nova",
+      "pay": "Thanh toán",
+      "platform": "Nền tảng",
+      "rewise": "Rewise",
+      "shortener": "Rút gọn liên kết",
+      "storefront": "Cửa hàng",
+      "tasks": "Công việc",
+      "teach": "Giảng dạy",
+      "tools": "Công cụ",
+      "track": "Theo dõi"
+    }
+  },
+  "common": {
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "settings": "Cài đặt"
+  },
+  "git": {
+    "actions": "Actions",
+    "admin": "Quản trị Git",
+    "admin_description": "Quản lý GitHub App, kho mã được phê duyệt và trạng thái bộ nhớ đệm.",
+    "branches": "Nhánh",
+    "code": "Mã nguồn",
+    "commits": "Commit",
+    "contributors": "Người đóng góp",
+    "issues": "Issue",
+    "pull_requests": "Pull request",
+    "releases": "Bản phát hành",
+    "repositories": "Kho mã",
+    "repository_not_found": "Không tìm thấy kho mã",
+    "repository_not_found_description": "Kho mã này chưa được đăng ký, không công khai hoặc đang tạm thời không khả dụng."
+  },
+  "sidebar_tabs": {
+    "git": "Git",
+    "home": "Trang chủ",
+    "settings": "Cài đặt",
+    "workspace_members": "Thành viên"
+  },
+  "ws-roles": {
+    "manage_git_repositories": "Quản lý kho mã Git",
+    "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git."
+  }
+}

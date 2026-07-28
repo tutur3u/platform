@@ -12,6 +12,7 @@ const REGISTERED_APPS = [
   'drive',
   'finance',
   'forms',
+  'git',
   'hive',
   'inventory',
   'storefront',
@@ -32,6 +33,7 @@ const REGISTERED_APP_TARGETS = {
   drive: 'drive',
   finance: 'finance',
   forms: 'forms',
+  git: 'git',
   hive: 'hive',
   inventory: 'inventory',
   storefront: 'storefront',
@@ -165,7 +167,7 @@ const failures = [];
 // Rolled out per-app. apps/contacts is audited and clean; apps/calendar,
 // apps/tasks, apps/track, apps/teach, apps/hive, and apps/inventory each still
 // have actorless call sites and must be audited before they are added here.
-const ACTORLESS_CHECK_APPS = new Set(['contacts', 'forms']);
+const ACTORLESS_CHECK_APPS = new Set(['contacts', 'forms', 'git']);
 const ACTORLESS_WORKSPACE_CALL = /\bgetWorkspace\(\s*[\w.]+\s*\)/gu;
 const ACTORLESS_PERMISSIONS_CALL = /\bgetPermissions\(\s*\{([\s\S]*?)\}\s*\)/gu;
 
@@ -367,6 +369,7 @@ const registeredProxyPaths = [
   'apps/drive/src/proxy.ts',
   'apps/finance/src/proxy.ts',
   'apps/forms/src/proxy.ts',
+  'apps/git/src/proxy.ts',
   'apps/hive/src/proxy.ts',
   'apps/inventory/src/proxy.ts',
   'apps/storefront/src/proxy.ts',
@@ -397,6 +400,7 @@ const registeredAppConstantPaths = [
   ['apps/drive/src/constants/common.ts', REGISTERED_APP_TARGETS.drive],
   ['apps/finance/src/constants/common.ts', REGISTERED_APP_TARGETS.finance],
   ['apps/forms/src/constants/common.ts', REGISTERED_APP_TARGETS.forms],
+  ['apps/git/src/constants/common.ts', REGISTERED_APP_TARGETS.git],
   ['apps/hive/src/constants/common.ts', REGISTERED_APP_TARGETS.hive],
   ['apps/inventory/src/constants/common.ts', REGISTERED_APP_TARGETS.inventory],
   [

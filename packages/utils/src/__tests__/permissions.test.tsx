@@ -32,6 +32,7 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).not.toContain('view_infrastructure');
     expect(permissionIds).not.toContain('manage_infrastructure_stress_tests');
     expect(permissionIds).not.toContain('manage_internal_accounts');
+    expect(permissionIds).not.toContain('manage_git_repositories');
     expect(permissionIds).not.toContain('manage_workspace_secrets');
   });
 
@@ -42,6 +43,7 @@ describe('workspace permission catalog', () => {
     }).map((permission) => permission.id);
 
     expect(rootPermissionIds).toContain('manage_internal_accounts');
+    expect(rootPermissionIds).toContain('manage_git_repositories');
   });
 
   it('keeps internal account permission translations in shared role editors', () => {
@@ -75,6 +77,7 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).toContain('view_infrastructure');
     expect(permissionIds).toContain('manage_infrastructure_stress_tests');
     expect(permissionIds).toContain('manage_internal_accounts');
+    expect(permissionIds).toContain('manage_git_repositories');
     expect(permissionIds).toContain('manage_external_migrations');
     expect(permissionIds).toContain('manage_workspace_secrets');
     expect(new Set(permissionIds).size).toBe(permissionIds.length);

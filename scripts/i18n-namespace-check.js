@@ -94,6 +94,7 @@ const UNCHECKED_APPS = new Set([
   'apps/apps',
   'apps/chat',
   'apps/infrastructure',
+  'apps/git',
   'apps/learn',
   'apps/mail',
   'apps/pay',

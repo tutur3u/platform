@@ -19,6 +19,7 @@ import {
   FileKey2,
   FileText,
   FlaskConical,
+  GitBranch,
   HandCoins,
   HardDrive,
   House,
@@ -127,6 +128,16 @@ export const permissionGroups = ({
                   title: t('ws-roles.manage_internal_accounts'),
                   description: t(
                     'ws-roles.manage_internal_accounts_description'
+                  ),
+                  disableOnProduction: false,
+                  disabled: false,
+                },
+                {
+                  id: 'manage_git_repositories' as PermissionId,
+                  icon: <GitBranch />,
+                  title: t('ws-roles.manage_git_repositories'),
+                  description: t(
+                    'ws-roles.manage_git_repositories_description'
                   ),
                   disableOnProduction: false,
                   disabled: false,

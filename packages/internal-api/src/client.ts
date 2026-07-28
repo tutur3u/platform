@@ -44,6 +44,7 @@ const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'pay.tuturuuu.com',
   'contacts.tuturuuu.com',
   'forms.tuturuuu.com',
+  'git.tuturuuu.com',
   'hive.tuturuuu.com',
   'mind.tuturuuu.com',
 ]);
@@ -71,6 +72,7 @@ const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
   '7826',
   '7827',
   '7828',
+  '7830',
 ]);
 
 export class InternalApiError extends Error {

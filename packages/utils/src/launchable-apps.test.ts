@@ -32,6 +32,7 @@ describe('launchable apps', () => {
     });
     expect(getLaunchableAppByTitle('Tuturuuu')?.slug).toBe('platform');
     expect(getLaunchableAppByTitle('questionnaires')?.slug).toBe('forms');
+    expect(getLaunchableAppByTitle('repositories')?.slug).toBe('git');
     expect(getLaunchableAppByTitle('apps gateway')?.slug).toBe('apps');
   });
 
@@ -45,6 +46,11 @@ describe('launchable apps', () => {
     expect(getLaunchableApp('external')).toBeNull();
     expect(getLaunchableApp('playground')).toBeNull();
     expect(getLaunchableApp('platform')?.category).toBe('productivity');
+    expect(getLaunchableApp('git')).toMatchObject({
+      defaultPath: '/tutur3u/platform',
+      localhostOrigin: 'http://localhost:7830',
+      productionUrl: 'https://git.tuturuuu.com',
+    });
     expect(getLaunchableApp('apps')?.category).toBe('miscellaneous');
     expect(getLaunchableApp('cms')?.category).toBe('operations');
     expect(getLaunchableApp('rewise')?.category).toBe('ai');

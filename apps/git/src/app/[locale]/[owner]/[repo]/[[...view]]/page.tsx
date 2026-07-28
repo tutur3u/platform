@@ -1,0 +1,297 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { RepositoryCode } from '@/components/repository/repository-code';
+import {
+  type CollectionItem,
+  RepositoryCollection,
+} from '@/components/repository/repository-collection';
+import {
+  ActionRunDetail,
+  CommitDetail,
+  ComparisonDetail,
+  IssueDetail,
+  PullDetail,
+} from '@/components/repository/repository-detail';
+import { RepositoryOverviewView } from '@/components/repository/repository-overview';
+import { RepositoryShell } from '@/components/repository/repository-shell';
+import { GitHubMirrorError } from '@/lib/github/errors';
+import {
+  getRepositoryActionRun,
+  getRepositoryActions,
+  getRepositoryBranches,
+  getRepositoryCommit,
+  getRepositoryCommits,
+  getRepositoryComparison,
+  getRepositoryContent,
+  getRepositoryContributors,
+  getRepositoryIssue,
+  getRepositoryIssues,
+  getRepositoryOverview,
+  getRepositoryPull,
+  getRepositoryPulls,
+  getRepositoryReleases,
+  getRepositoryTags,
+} from '@/lib/github/queries';
+
+type PageProps = {
+  params: Promise<{
+    locale: string;
+    owner: string;
+    repo: string;
+    view?: string[];
+  }>;
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    ref?: string;
+  }>;
+};
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { owner, repo } = await params;
+  return {
+    description: `Browse ${owner}/${repo} on Tuturuuu Git`,
+    title: `${owner}/${repo} · Tuturuuu Git`,
+  };
+}
+
+export default async function RepositoryPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const { owner, repo, view = [] } = await params;
+  const query = await searchParams;
+  const activeView = resolveActiveView(view);
+
+  try {
+    const overview = await getRepositoryOverview(owner, repo);
+    return (
+      <RepositoryShell activeView={activeView} repository={overview.repository}>
+        {
+          await renderView({
+            activeView,
+            overview,
+            owner,
+            query,
+            repo,
+            view,
+          })
+        }
+      </RepositoryShell>
+    );
+  } catch (error) {
+    if (error instanceof GitHubMirrorError && error.status === 404) {
+      notFound();
+    }
+    throw error;
+  }
+}
+
+async function renderView({
+  activeView,
+  overview,
+  owner,
+  query,
+  repo,
+  view,
+}: {
+  activeView: string;
+  overview: Awaited<ReturnType<typeof getRepositoryOverview>>;
+  owner: string;
+  query: { page?: string; q?: string; ref?: string };
+  repo: string;
+  view: string[];
+}) {
+  const page = Math.max(1, Number.parseInt(query.page ?? '1', 10) || 1);
+
+  if (activeView === 'overview') {
+    return (
+      <RepositoryOverviewView
+        data={overview}
+        owner={owner}
+        repositoryName={repo}
+      />
+    );
+  }
+
+  if (activeView === 'tree' || activeView === 'blob') {
+    const path = view.slice(1).join('/');
+    const content = await getRepositoryContent(
+      owner,
+      repo,
+      path,
+      query.ref ?? overview.repository.default_branch
+    );
+    return (
+      <RepositoryCode
+        content={content}
+        owner={owner}
+        refName={query.ref ?? overview.repository.default_branch}
+        repository={repo}
+      />
+    );
+  }
+
+  if (activeView === 'commits') {
+    const commits = await getRepositoryCommits(owner, repo, page);
+    return collection(
+      'Commits',
+      commits.map((value) => ({ kind: 'commit', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'issues' && view[1]) {
+    const number = Number.parseInt(view[1], 10);
+    if (!Number.isFinite(number)) notFound();
+    return <IssueDetail data={await getRepositoryIssue(owner, repo, number)} />;
+  }
+
+  if (activeView === 'issues') {
+    const issues = await getRepositoryIssues(owner, repo, page);
+    return collection(
+      'Issues',
+      issues.map((value) => ({ kind: 'issue', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'pull' && view[1]) {
+    const number = Number.parseInt(view[1], 10);
+    if (!Number.isFinite(number)) notFound();
+    return <PullDetail data={await getRepositoryPull(owner, repo, number)} />;
+  }
+
+  if (activeView === 'pulls') {
+    const pulls = await getRepositoryPulls(owner, repo, page);
+    return collection(
+      'Pull requests',
+      pulls.map((value) => ({ kind: 'pull', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'actions' && view[1]) {
+    const runId = Number.parseInt(view[1], 10);
+    if (!Number.isFinite(runId)) notFound();
+    return (
+      <ActionRunDetail
+        data={await getRepositoryActionRun(owner, repo, runId)}
+      />
+    );
+  }
+
+  if (activeView === 'actions') {
+    const runs = await getRepositoryActions(owner, repo, page);
+    return collection(
+      'Workflow runs',
+      runs.map((value) => ({ kind: 'run', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'releases') {
+    const releases = await getRepositoryReleases(owner, repo, page);
+    return collection(
+      'Releases',
+      releases.map((value) => ({ kind: 'release', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'contributors') {
+    const contributors = await getRepositoryContributors(owner, repo, page);
+    return collection(
+      'Contributors',
+      contributors.map((value) => ({ kind: 'contributor', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'branches') {
+    const branches = await getRepositoryBranches(owner, repo);
+    return collection(
+      'Branches',
+      branches.map((value) => ({ kind: 'ref', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'tags') {
+    const tags = await getRepositoryTags(owner, repo);
+    return collection(
+      'Tags',
+      tags.map((value) => ({ kind: 'ref', value })),
+      owner,
+      repo,
+      query.q
+    );
+  }
+
+  if (activeView === 'commit' && view[1]) {
+    return (
+      <CommitDetail commit={await getRepositoryCommit(owner, repo, view[1])} />
+    );
+  }
+
+  if (activeView === 'compare' && view[1]) {
+    const [base, head] = view[1].split('...');
+    if (!base || !head) notFound();
+    return (
+      <ComparisonDetail
+        base={base}
+        data={await getRepositoryComparison(owner, repo, base, head)}
+        head={head}
+      />
+    );
+  }
+
+  notFound();
+}
+
+function collection(
+  title: string,
+  items: CollectionItem[],
+  owner: string,
+  repository: string,
+  query?: string
+) {
+  const normalizedQuery = query?.trim().toLowerCase();
+  const filteredItems = normalizedQuery
+    ? items.filter((item) =>
+        JSON.stringify(item.value).toLowerCase().includes(normalizedQuery)
+      )
+    : items;
+
+  return (
+    <RepositoryCollection
+      emptyMessage={`No ${title.toLowerCase()} found.`}
+      items={filteredItems}
+      owner={owner}
+      repository={repository}
+      searchQuery={query}
+      title={title}
+    />
+  );
+}
+
+function resolveActiveView(view: string[]) {
+  if (!view.length) return 'overview';
+  return view[0] ?? 'overview';
+}

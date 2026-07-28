@@ -298,6 +298,7 @@ describe('Portless app origin registry', () => {
       'https://external.tuturuuu.localhost',
       'https://finance.tuturuuu.localhost',
       'https://forms.tuturuuu.localhost',
+      'https://git.tuturuuu.localhost',
       'https://hive.tuturuuu.localhost',
       'https://realtime.hive.tuturuuu.localhost',
       'https://infra.tuturuuu.localhost',

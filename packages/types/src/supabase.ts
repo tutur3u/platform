@@ -4029,6 +4029,146 @@ export type Database = {
           },
         ];
       };
+      git_app_configurations: {
+        Row: {
+          app_id: string;
+          created_at: string;
+          created_by: string | null;
+          data_key_ciphertext: string;
+          enabled: boolean;
+          id: string;
+          installation_id: string;
+          last_validated_at: string | null;
+          last_validation_error: string | null;
+          permissions: Json;
+          private_key_encrypted: string;
+          private_key_fingerprint: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          app_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext: string;
+          enabled?: boolean;
+          id: string;
+          installation_id: string;
+          last_validated_at?: string | null;
+          last_validation_error?: string | null;
+          permissions?: Json;
+          private_key_encrypted: string;
+          private_key_fingerprint: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          app_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          data_key_ciphertext?: string;
+          enabled?: boolean;
+          id?: string;
+          installation_id?: string;
+          last_validated_at?: string | null;
+          last_validation_error?: string | null;
+          permissions?: Json;
+          private_key_encrypted?: string;
+          private_key_fingerprint?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
+      git_audit_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          repository_id: string | null;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          repository_id?: string | null;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          repository_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'git_audit_events_repository_id_fkey';
+            columns: ['repository_id'];
+            isOneToOne: false;
+            referencedRelation: 'git_repositories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      git_repositories: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          created_by: string | null;
+          default_branch: string;
+          description: string | null;
+          enabled: boolean;
+          github_repository_id: number;
+          homepage_url: string | null;
+          id: string;
+          last_synced_at: string | null;
+          name: string;
+          owner_login: string;
+          updated_at: string;
+          updated_by: string | null;
+          visibility: string;
+        };
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          default_branch?: string;
+          description?: string | null;
+          enabled?: boolean;
+          github_repository_id: number;
+          homepage_url?: string | null;
+          id?: string;
+          last_synced_at?: string | null;
+          name: string;
+          owner_login: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          visibility?: string;
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          default_branch?: string;
+          description?: string | null;
+          enabled?: boolean;
+          github_repository_id?: number;
+          homepage_url?: string | null;
+          id?: string;
+          last_synced_at?: string | null;
+          name?: string;
+          owner_login?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          visibility?: string;
+        };
+        Relationships: [];
+      };
       github_bot_audit_events: {
         Row: {
           actor_type: string;
@@ -44573,7 +44713,8 @@ export type Database = {
         | 'manage_ai_agents'
         | 'manage_ai_evaluations'
         | 'view_ai_usage'
-        | 'view_ai_logs';
+        | 'view_ai_logs'
+        | 'manage_git_repositories';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -47339,6 +47480,7 @@ export const Constants = {
         'manage_ai_evaluations',
         'view_ai_usage',
         'view_ai_logs',
+        'manage_git_repositories',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

@@ -1,0 +1,92 @@
+{
+  "command_launcher": {
+    "app_descriptions": {
+      "ai": "Build, test, and observe AI prompts, agents, and model workflows.",
+      "apps": "Browse and launch every app available in your workspace.",
+      "calendar": "Plan schedules, events, and shared availability.",
+      "chat": "Message teammates and keep workspace conversations together.",
+      "cms": "Create and publish structured content for sites and products.",
+      "contacts": "Organize customers, members, and relationship history.",
+      "docs": "Read product guides, references, and setup instructions.",
+      "drive": "Store, organize, and share workspace files.",
+      "finance": "Manage wallets, transactions, invoices, and budgets.",
+      "forms": "Build, share, and analyze workspace forms and their responses.",
+      "git": "Browse approved GitHub repositories with fast, native source, issue, pull request, and Actions views.",
+      "hive": "Explore collaborative simulations and spatial experiences.",
+      "inventory": "Manage products, stock, purchasing, and sales.",
+      "learn": "Follow courses, assignments, and learning progress.",
+      "mail": "Read and send workspace email from one inbox.",
+      "meet": "Schedule meetings and find a time that works for everyone.",
+      "mind": "Build mind maps and connect ideas with AI.",
+      "nova": "Create and solve prompt-driven AI challenges.",
+      "pay": "Manage billing, subscriptions, and payment activity.",
+      "platform": "Manage your workspace, settings, and the full Tuturuuu platform.",
+      "rewise": "Practice, review, and retain knowledge with AI.",
+      "shortener": "Create compact links and manage redirects.",
+      "storefront": "Sell products through a customer-facing online store.",
+      "tasks": "Plan projects, assign work, and track progress.",
+      "teach": "Plan courses, manage classes, and support learners.",
+      "tools": "Open focused utilities for QR codes and quick tasks.",
+      "track": "Record time and understand where work goes."
+    },
+    "app_names": {
+      "ai": "AI Studio",
+      "apps": "Apps",
+      "calendar": "Calendar",
+      "chat": "Chat",
+      "cms": "CMS",
+      "contacts": "Contacts",
+      "docs": "Docs",
+      "drive": "Drive",
+      "finance": "Finance",
+      "forms": "Forms",
+      "git": "Git",
+      "hive": "Hive",
+      "inventory": "Inventory",
+      "learn": "Learn",
+      "mail": "Mail",
+      "meet": "Meet",
+      "mind": "Mind",
+      "nova": "Nova",
+      "pay": "Pay",
+      "platform": "Platform",
+      "rewise": "Rewise",
+      "shortener": "Shortener",
+      "storefront": "Storefront",
+      "tasks": "Tasks",
+      "teach": "Teach",
+      "tools": "Tools",
+      "track": "Track"
+    }
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "settings": "Settings"
+  },
+  "git": {
+    "actions": "Actions",
+    "admin": "Git administration",
+    "admin_description": "Manage the GitHub App, approved repositories, and cache state.",
+    "branches": "Branches",
+    "code": "Code",
+    "commits": "Commits",
+    "contributors": "Contributors",
+    "issues": "Issues",
+    "pull_requests": "Pull requests",
+    "releases": "Releases",
+    "repositories": "Repositories",
+    "repository_not_found": "Repository not found",
+    "repository_not_found_description": "This repository is not registered, is private, or is currently unavailable."
+  },
+  "sidebar_tabs": {
+    "git": "Git",
+    "home": "Home",
+    "settings": "Settings",
+    "workspace_members": "Members"
+  },
+  "ws-roles": {
+    "manage_git_repositories": "Manage Git repositories",
+    "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git."
+  }
+}
