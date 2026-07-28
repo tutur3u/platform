@@ -10,10 +10,14 @@ import { EXTERNAL_TTS_SCOPE } from './public-credential';
 
 const SAMPLE_RATE = 24_000;
 const TTS_TIMEOUT_MS = 30_000;
+const AI_GATEWAY_SPEECH_URL = 'https://ai-gateway.vercel.sh/v4/ai/speech-model';
+const AI_GATEWAY_FALLBACK_MODEL = 'openai/tts-1-hd';
 export const DEFAULT_GOOGLE_TTS_MODEL = 'gemini-3.1-flash-tts-preview';
 
 export const speechRequestSchema = z.object({
   input: z.string().trim().min(1).max(10_000),
+  instructions: z.string().trim().max(2_000).optional(),
+  language: z.string().trim().min(2).max(16).default('vi'),
   model: z.string().trim().min(1).optional(),
   response_format: z.enum(['pcm', 'wav']).default('wav'),
   voice: z
@@ -112,7 +116,9 @@ export async function executeSpeechRequest(
 
     const apiKey =
       process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
+    const gatewayToken =
+      process.env.AI_GATEWAY_API_KEY ?? process.env.VERCEL_OIDC_TOKEN;
+    if (!apiKey && !gatewayToken) {
       throw new AiStudioError('Speech generation is not configured.', {
         code: 'server_error',
         status: 503,
@@ -129,6 +135,8 @@ export async function executeSpeechRequest(
         outputTokens: Math.max(25, input.input.length * 2),
       },
       metadata: {
+        language: input.language,
+        provider_route: apiKey ? 'google' : 'tuturuuu-gateway',
         response_format: input.response_format,
         voice: input.voice,
       },
@@ -144,25 +152,50 @@ export async function executeSpeechRequest(
     let providerResponse: Response;
 
     try {
-      providerResponse = await fetch(
-        'https://generativelanguage.googleapis.com/v1beta/interactions',
-        {
-          body: JSON.stringify({
-            generation_config: {
-              speech_config: [{ voice: input.voice }],
+      providerResponse = apiKey
+        ? await fetch(
+            'https://generativelanguage.googleapis.com/v1beta/interactions',
+            {
+              body: JSON.stringify({
+                generation_config: {
+                  speech_config: [{ voice: input.voice }],
+                },
+                input: [
+                  input.instructions ??
+                    'Đọc tiếng Việt tự nhiên, rõ ràng và trôi chảy. Chỉ đọc nội dung, không thêm lời dẫn.',
+                  '',
+                  input.input,
+                ].join('\n'),
+                model: normalizedModel,
+                response_format: { type: 'audio' },
+              }),
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey,
+              },
+              method: 'POST',
+              signal: controller.signal,
+            }
+          )
+        : await fetch(AI_GATEWAY_SPEECH_URL, {
+            body: JSON.stringify({
+              instructions:
+                input.instructions ??
+                'Read naturally and fluently, with calm pacing and pauses that follow Vietnamese punctuation. Do not add an introduction.',
+              language: input.language,
+              outputFormat: input.response_format,
+              text: input.input,
+              voice: gatewayVoice(input.voice),
+            }),
+            headers: {
+              Authorization: `Bearer ${gatewayToken}`,
+              'Content-Type': 'application/json',
+              'ai-model-id':
+                process.env.AI_GATEWAY_TTS_MODEL ?? AI_GATEWAY_FALLBACK_MODEL,
             },
-            input: input.input,
-            model: normalizedModel,
-            response_format: { type: 'audio' },
-          }),
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': apiKey,
-          },
-          method: 'POST',
-          signal: controller.signal,
-        }
-      );
+            method: 'POST',
+            signal: controller.signal,
+          });
     } finally {
       clearTimeout(timeout);
       request.signal.removeEventListener('abort', abort);
@@ -177,7 +210,9 @@ export async function executeSpeechRequest(
     }
 
     const payload = await providerResponse.json();
-    const encodedAudio = findBase64AudioData(payload);
+    const encodedAudio = apiKey
+      ? findBase64AudioData(payload)
+      : gatewayAudioData(payload);
     if (!encodedAudio) {
       throw new AiStudioError('The speech response did not contain audio.', {
         code: 'server_error',
@@ -199,7 +234,8 @@ export async function executeSpeechRequest(
       },
     });
 
-    const audio = input.response_format === 'pcm' ? pcm : pcmToWav(pcm);
+    const audio =
+      apiKey && input.response_format === 'wav' ? pcmToWav(pcm) : pcm;
     return new Response(audio, {
       headers: {
         'cache-control': 'no-store',
@@ -229,4 +265,21 @@ export async function executeSpeechRequest(
       context?.requestId
     );
   }
+}
+
+function gatewayAudioData(payload: unknown) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return null;
+  }
+  const audio = (payload as Record<string, unknown>).audio;
+  return typeof audio === 'string' ? audio : null;
+}
+
+function gatewayVoice(googleVoice: string) {
+  const voices = ['alloy', 'coral', 'nova', 'sage', 'shimmer'] as const;
+  let hash = 0;
+  for (const character of googleVoice) {
+    hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
+  }
+  return voices[hash % voices.length] ?? 'nova';
 }
