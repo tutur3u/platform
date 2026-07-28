@@ -103,16 +103,59 @@ describe('executeExternalSpeech', () => {
   });
 
   it('settles a failed run when Google rejects the request', async () => {
-    const response = await executeExternalSpeech(
-      request(),
-      vi.fn().mockResolvedValue(new Response('rejected', { status: 400 }))
+    const fetchImpl = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            code: 400,
+            message: 'Invalid speech request.',
+            status: 'INVALID_ARGUMENT',
+          },
+        },
+        { status: 400 }
+      )
     );
+    const response = await executeExternalSpeech(request(), fetchImpl);
 
     expect(response.status).toBe(502);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(mocks.settleRun).toHaveBeenCalledWith(
       expect.objectContaining({
         runId: 'speech-run-1',
         status: 'failed',
+      })
+    );
+  });
+
+  it('retries one transient provider failure', async () => {
+    const pcm = Buffer.from([1, 2, 3, 4]);
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json(
+          {
+            error: {
+              code: 503,
+              status: 'UNAVAILABLE',
+            },
+          },
+          { status: 503 }
+        )
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          output_audio: { data: pcm.toString('base64') },
+        })
+      );
+
+    const response = await executeExternalSpeech(request(), fetchImpl);
+
+    expect(response.status).toBe(200);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(mocks.settleRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runId: 'speech-run-1',
+        status: 'succeeded',
       })
     );
   });

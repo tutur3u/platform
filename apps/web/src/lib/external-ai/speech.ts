@@ -12,6 +12,7 @@ const SAMPLE_RATE = 24_000;
 const GOOGLE_TTS_URL =
   'https://generativelanguage.googleapis.com/v1beta/interactions';
 const DEFAULT_GOOGLE_TTS_MODEL = 'gemini-3.1-flash-tts-preview';
+const TRANSIENT_PROVIDER_STATUSES = new Set([429, 500, 502, 503, 504]);
 
 const requestSchema = z.object({
   input: z.string().trim().min(1).max(10_000),
@@ -97,6 +98,74 @@ function findBase64AudioData(value: unknown): string | null {
   return null;
 }
 
+async function providerErrorDetails(response: Response) {
+  const fallback = {
+    code: undefined as number | string | undefined,
+    message: undefined as string | undefined,
+    status: undefined as string | undefined,
+  };
+
+  try {
+    const payload = (await response.json()) as {
+      error?: {
+        code?: number | string;
+        message?: string;
+        status?: string;
+      };
+    };
+    const error = payload.error;
+
+    return {
+      code: error?.code,
+      message: error?.message?.slice(0, 300),
+      status: error?.status,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+async function requestGoogleSpeech({
+  apiKey,
+  body,
+  fetchImpl,
+  signal,
+}: {
+  apiKey: string;
+  body: string;
+  fetchImpl: typeof fetch;
+  signal: AbortSignal;
+}) {
+  let providerResponse: Response | undefined;
+
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    providerResponse = await fetchImpl(GOOGLE_TTS_URL, {
+      body,
+      headers: {
+        'Api-Revision': '2026-05-20',
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      method: 'POST',
+      signal,
+    });
+
+    if (
+      providerResponse.ok ||
+      !TRANSIENT_PROVIDER_STATUSES.has(providerResponse.status) ||
+      attempt === 2
+    ) {
+      return providerResponse;
+    }
+  }
+
+  if (!providerResponse) {
+    throw new Error('Google TTS request did not produce a response.');
+  }
+
+  return providerResponse;
+}
+
 export async function executeExternalSpeech(
   request: Request,
   fetchImpl: typeof fetch = fetch
@@ -148,7 +217,8 @@ export async function executeExternalSpeech(
     });
     runId = reservation.runId;
 
-    const providerResponse = await fetchImpl(GOOGLE_TTS_URL, {
+    const providerResponse = await requestGoogleSpeech({
+      apiKey,
       body: JSON.stringify({
         generation_config: {
           speech_config: [{ voice: input.voice }],
@@ -162,16 +232,18 @@ export async function executeExternalSpeech(
         model,
         response_format: { type: 'audio' },
       }),
-      headers: {
-        'Api-Revision': '2026-05-20',
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      method: 'POST',
+      fetchImpl,
       signal: request.signal,
     });
 
     if (!providerResponse.ok) {
+      const providerError = await providerErrorDetails(providerResponse);
+      console.error('Google TTS provider rejected the request', {
+        providerCode: providerError.code,
+        providerMessage: providerError.message,
+        providerStatus: providerError.status,
+        status: providerResponse.status,
+      });
       throw new AiStudioError('The speech provider rejected the request.', {
         code: 'server_error',
         status: 502,
