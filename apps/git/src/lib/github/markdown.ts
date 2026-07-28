@@ -1,11 +1,30 @@
-import { defaultUrlTransform } from 'react-markdown';
-
 type RepositoryMarkdownContext = {
   owner: string;
   refName: string;
   repository: string;
   sourcePath: string;
 };
+
+const SAFE_PROTOCOL = /^(https?|ircs?|mailto|xmpp)$/iu;
+
+function sanitizeMarkdownUrl(url: string) {
+  const colon = url.indexOf(':');
+  const questionMark = url.indexOf('?');
+  const numberSign = url.indexOf('#');
+  const slash = url.indexOf('/');
+
+  if (
+    colon === -1 ||
+    (slash !== -1 && colon > slash) ||
+    (questionMark !== -1 && colon > questionMark) ||
+    (numberSign !== -1 && colon > numberSign) ||
+    SAFE_PROTOCOL.test(url.slice(0, colon))
+  ) {
+    return url;
+  }
+
+  return '';
+}
 
 function encodePath(path: string) {
   return path
@@ -47,7 +66,7 @@ export function resolveRepositoryMarkdownLink(
   url: string,
   context?: RepositoryMarkdownContext
 ) {
-  const safeUrl = defaultUrlTransform(url);
+  const safeUrl = sanitizeMarkdownUrl(url);
   if (!safeUrl) return '';
   if (!context || !isRepositoryRelativeUrl(safeUrl)) return safeUrl;
 
@@ -67,7 +86,7 @@ export function resolveRepositoryMarkdownImage(
   url: string,
   context?: RepositoryMarkdownContext
 ) {
-  const safeUrl = defaultUrlTransform(url);
+  const safeUrl = sanitizeMarkdownUrl(url);
   if (!safeUrl) return '';
   if (!context || !isRepositoryRelativeUrl(safeUrl)) return safeUrl;
 
