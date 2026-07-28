@@ -19,18 +19,33 @@ DROP FUNCTION IF EXISTS public.claim_workspace_creator_when_missing();
 DROP TRIGGER IF EXISTS workspace_members_enforce_type_update
 ON public.workspace_members;
 
--- Repair existing creator memberships and normalize stale GUEST rows.
+-- Normalize existing creator rows without routing them through INSERT first.
+-- PostgreSQL runs BEFORE INSERT triggers before ON CONFLICT resolution, so an
+-- upsert here would trip the personal-workspace single-member guard even when
+-- the creator row already exists and only needs its type repaired.
+UPDATE public.workspace_members member
+SET type = 'MEMBER'::public.workspace_member_type
+FROM public.workspaces workspace
+WHERE workspace.id = member.ws_id
+  AND workspace.creator_id = member.user_id
+  AND member.type IS DISTINCT FROM
+    'MEMBER'::public.workspace_member_type;
+
+-- Backfill only genuinely missing creator memberships. Keeping this separate
+-- means the INSERT-only membership guards run solely for new rows.
 INSERT INTO public.workspace_members (ws_id, user_id, type)
 SELECT
-  w.id,
-  w.creator_id,
+  workspace.id,
+  workspace.creator_id,
   'MEMBER'::public.workspace_member_type
-FROM public.workspaces w
-WHERE w.creator_id IS NOT NULL
-ON CONFLICT (ws_id, user_id) DO UPDATE
-SET type = 'MEMBER'::public.workspace_member_type
-WHERE workspace_members.type IS DISTINCT FROM
-  'MEMBER'::public.workspace_member_type;
+FROM public.workspaces workspace
+WHERE workspace.creator_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1
+    FROM public.workspace_members member
+    WHERE member.ws_id = workspace.id
+      AND member.user_id = workspace.creator_id
+  );
 
 -- An explicit ownership transfer must make the new creator a full member,
 -- whether their membership was missing or previously marked as GUEST.
