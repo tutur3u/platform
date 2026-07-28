@@ -163,6 +163,7 @@ export async function executeExternalSpeech(
         response_format: { type: 'audio' },
       }),
       headers: {
+        'Api-Revision': '2026-05-20',
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,
       },

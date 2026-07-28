@@ -84,6 +84,7 @@ describe('executeExternalSpeech', () => {
     expect(wav.subarray(0, 4).toString()).toBe('RIFF');
     expect(wav.subarray(44)).toEqual(pcm);
     expect(providerBody.model).toBe('gemini-3.1-flash-tts-preview');
+    expect(providerHeaders.get('Api-Revision')).toBe('2026-05-20');
     expect(providerHeaders.get('x-goog-api-key')).toBe('central-google-key');
     expect(mocks.beginRun).toHaveBeenCalledWith(
       expect.objectContaining({
