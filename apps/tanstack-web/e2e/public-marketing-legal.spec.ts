@@ -28,12 +28,12 @@ const legalRoutes = [
   {
     path: `/${DEFAULT_LOCALE}/privacy`,
     heading: 'Privacy Policy',
-    summaryHeading: 'Key Privacy Principles',
+    summaryHeading: 'Privacy at a glance',
   },
   {
     path: `/${DEFAULT_LOCALE}/terms`,
     heading: 'Terms of Service',
-    summaryHeading: 'Key Points Summary',
+    summaryHeading: 'Terms at a glance',
   },
 ];
 

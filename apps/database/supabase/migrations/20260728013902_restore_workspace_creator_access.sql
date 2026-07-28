@@ -12,6 +12,13 @@ ON public.workspace_members;
 
 DROP FUNCTION IF EXISTS public.claim_workspace_creator_when_missing();
 
+-- The existing type-update trigger correctly rejects unauthenticated updates,
+-- which also includes migration-role backfills because they have no JWT
+-- claims. Suspend it while repairing stale GUEST creator rows, then recreate
+-- it after installing the stronger creator-aware implementation below.
+DROP TRIGGER IF EXISTS workspace_members_enforce_type_update
+ON public.workspace_members;
+
 -- Repair existing creator memberships and normalize stale GUEST rows.
 INSERT INTO public.workspace_members (ws_id, user_id, type)
 SELECT
@@ -111,6 +118,11 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+CREATE TRIGGER workspace_members_enforce_type_update
+BEFORE UPDATE ON public.workspace_members
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_workspace_member_type_update();
 
 COMMENT ON FUNCTION public.enforce_workspace_member_type_update() IS
   'Prevents the current workspace creator from being demoted and restricts other workspace_members.type changes to managers or service-role maintenance.';
