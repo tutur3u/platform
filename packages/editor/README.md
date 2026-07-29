@@ -10,10 +10,10 @@ The unchanged legacy preset exposes separate Heading 1, Heading 2, and Heading
 3 controls. The opt-in `full` editorial preset uses the visitor-facing H2–H4
 hierarchy instead, so a field cannot accidentally create a second page title.
 
-## Safe Visual/HTML source mode
+## Safe Editor/HTML source and Preview modes
 
-Consumers can opt into a safe HTML editing projection while continuing to store
-structured JSON:
+Consumers can opt into safe HTML and read-only preview modes while continuing
+to store structured JSON:
 
 ```tsx
 import { RichTextEditor } from '@tuturuuu/editor/react';
@@ -21,6 +21,7 @@ import { RichTextEditor } from '@tuturuuu/editor/react';
 <RichTextEditor
   content={content}
   enableHTMLSource
+  enablePreview
   featurePreset="full"
   locale="en"
   onChange={setContent}
@@ -38,7 +39,8 @@ import { RichTextEditor } from '@tuturuuu/editor/react';
 headings and block content, keeping narrative fields focused on inline
 formatting and paragraphs. When `featurePreset` is omitted it defaults to
 `full` if `enableHTMLSource` is set, and to the legacy H1–H3 preset otherwise.
-Source mode
+Preview renders the current structured document without formatting controls or
+mutating the value. Source mode
 rejects executable markup, unsafe URLs, custom classes, and arbitrary CSS; it
 normalizes harmless unsupported markup before applying it to the canonical JSON.
 `onSourceModeDirtyChange` lets a host include unapplied source in its

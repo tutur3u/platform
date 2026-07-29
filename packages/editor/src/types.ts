@@ -36,6 +36,7 @@ export type EditorMessages = {
   clearHighlight: string;
   clearTextTone: string;
   discardHTML: string;
+  editor?: string;
   heading: string;
   heading1?: string;
   heading2?: string;
@@ -53,8 +54,10 @@ export type EditorMessages = {
   italic: string;
   link: string;
   linkPlaceholder: string;
+  mode?: string;
   orderedList: string;
   placeholder: string;
+  preview?: string;
   redo: string;
   sourceUnsafe: string;
   strikethrough: string;
@@ -62,6 +65,7 @@ export type EditorMessages = {
   toolbar: string;
   undo: string;
   underline: string;
+  /** @deprecated Use `editor` for the authoring mode label. */
   visual: string;
   words: (count: number) => string;
 };

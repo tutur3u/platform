@@ -8,16 +8,20 @@ describe('editor messages', () => {
       heading2: 'Heading 2',
       heading3: 'Heading 3',
       heading4: 'Heading 4',
+      editor: 'Editor',
       html: 'HTML',
-      visual: 'Visual',
+      preview: 'Preview',
+      visual: 'Editor',
     });
     expect(editorMessages.vi).toMatchObject({
       heading1: 'Tiêu đề cấp 1',
       heading2: 'Tiêu đề cấp 2',
       heading3: 'Tiêu đề cấp 3',
       heading4: 'Tiêu đề cấp 4',
+      editor: 'Soạn thảo',
       html: 'HTML',
-      visual: 'Trực quan',
+      preview: 'Xem trước',
+      visual: 'Soạn thảo',
     });
   });
 

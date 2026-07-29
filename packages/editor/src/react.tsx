@@ -33,6 +33,7 @@ type InternalPreset = RichTextFeaturePreset | 'legacy';
 export function RichTextEditor({
   content,
   enableHTMLSource = false,
+  enablePreview = false,
   featurePreset,
   locale = 'en',
   messages: messageOverrides,
@@ -46,6 +47,7 @@ export function RichTextEditor({
 }: {
   content: JSONContent | null;
   enableHTMLSource?: boolean;
+  enablePreview?: boolean;
   featurePreset?: RichTextFeaturePreset;
   locale?: EditorLocale;
   messages?: Partial<Omit<EditorMessages, 'words'>>;
@@ -64,7 +66,7 @@ export function RichTextEditor({
   const preset: InternalPreset =
     featurePreset ?? (enableHTMLSource ? 'full' : 'legacy');
   const enhanced = preset !== 'legacy';
-  const [mode, setMode] = useState<EditorMode>('visual');
+  const [mode, setMode] = useState<EditorMode>('editor');
   const [source, setSource] = useState('');
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [sourceNotice, setSourceNotice] = useState<string | null>(null);
@@ -145,23 +147,28 @@ export function RichTextEditor({
   const sourceDirty = source !== sourceBaseline.current;
 
   useEffect(() => {
-    const editable = !readOnly;
-    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
-  }, [editor, readOnly]);
+    const editable = !readOnly && mode === 'editor';
+    if (editor && editor.isEditable !== editable)
+      editor.setEditable(editable, false);
+  }, [editor, mode, readOnly]);
 
   useEffect(() => {
     onSourceModeDirtyChangeRef.current?.(sourceDirty);
   }, [sourceDirty]);
 
   useEffect(() => {
-    if (!editor || mode !== 'html' || (enableHTMLSource && !readOnly)) return;
+    const modeUnavailable =
+      readOnly ||
+      (mode === 'html' && !enableHTMLSource) ||
+      (mode === 'preview' && !enablePreview);
+    if (!editor || mode === 'editor' || !modeUnavailable) return;
     const html = editor.getHTML();
     sourceBaseline.current = html;
     setSource(html);
     setSourceError(null);
     setSourceNotice(null);
-    setMode('visual');
-  }, [editor, enableHTMLSource, mode, readOnly]);
+    setMode('editor');
+  }, [editor, enableHTMLSource, enablePreview, mode, readOnly]);
 
   useEffect(() => {
     if (!editor || sourceDirty) return;
@@ -208,13 +215,23 @@ export function RichTextEditor({
     setMode('html');
   };
 
-  const enterVisualMode = () => {
+  const enterEditorMode = () => {
     if (sourceDirty) {
       setSourceError(messages.htmlChangesPending);
       return;
     }
     setSourceError(null);
-    setMode('visual');
+    setMode('editor');
+  };
+
+  const enterPreviewMode = () => {
+    if (sourceDirty) {
+      setSourceError(messages.htmlChangesPending);
+      return;
+    }
+    setSourceError(null);
+    setSourceNotice(null);
+    setMode('preview');
   };
 
   const discardSource = () => {
@@ -223,7 +240,7 @@ export function RichTextEditor({
     setSource(html);
     setSourceError(null);
     setSourceNotice(null);
-    setMode('visual');
+    setMode('editor');
   };
 
   const applySource = () => {
@@ -270,18 +287,21 @@ export function RichTextEditor({
       data-mode={mode}
       data-read-only={readOnly || undefined}
     >
-      {!readOnly && enableHTMLSource ? (
+      {!readOnly && (enableHTMLSource || enablePreview) ? (
         <EditorModeSwitch
+          enableHTMLSource={enableHTMLSource}
+          enablePreview={enablePreview}
           messages={messages}
           mode={mode}
+          onEditor={enterEditorMode}
           onHTML={enterHTMLMode}
-          onVisual={enterVisualMode}
+          onPreview={enterPreviewMode}
         />
       ) : null}
 
-      {mode === 'visual' || readOnly || !enableHTMLSource ? (
+      {mode !== 'html' || readOnly || !enableHTMLSource ? (
         <>
-          {!readOnly ? (
+          {!readOnly && mode === 'editor' ? (
             <EditorToolbar
               editor={editor}
               messages={messages}

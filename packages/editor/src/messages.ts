@@ -14,6 +14,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     clearHighlight: 'Clear highlight',
     clearTextTone: 'Use default text color',
     discardHTML: 'Discard changes',
+    editor: 'Editor',
     heading: 'Heading',
     heading1: 'Heading 1',
     heading2: 'Heading 2',
@@ -22,7 +23,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     highlight: 'Highlight',
     html: 'HTML',
     htmlChangesPending:
-      'Apply or discard your HTML changes before returning to Visual mode.',
+      'Apply or discard your HTML changes before switching modes.',
     htmlNormalized:
       "Unsupported but harmless markup was normalized to the editor's supported formatting.",
     htmlSource: 'HTML source',
@@ -34,8 +35,10 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     italic: 'Italic',
     link: 'Link',
     linkPlaceholder: 'Paste a URL',
+    mode: 'Editing mode',
     orderedList: 'Numbered list',
     placeholder: 'Write something…',
+    preview: 'Preview',
     redo: 'Redo',
     sourceUnsafe:
       'This HTML contains unsafe or unsupported code. Remove scripts, event handlers, unsafe URLs, classes, or custom layout styles.',
@@ -44,7 +47,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     toolbar: 'Formatting',
     undo: 'Undo',
     underline: 'Underline',
-    visual: 'Visual',
+    visual: 'Editor',
     words: (count) => `${count} ${count === 1 ? 'word' : 'words'}`,
   },
   vi: {
@@ -60,6 +63,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     clearHighlight: 'Xóa màu đánh dấu',
     clearTextTone: 'Dùng màu chữ mặc định',
     discardHTML: 'Hủy thay đổi',
+    editor: 'Soạn thảo',
     heading: 'Tiêu đề',
     heading1: 'Tiêu đề cấp 1',
     heading2: 'Tiêu đề cấp 2',
@@ -68,7 +72,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     highlight: 'Đánh dấu',
     html: 'HTML',
     htmlChangesPending:
-      'Hãy áp dụng hoặc hủy thay đổi HTML trước khi quay lại chế độ Trực quan.',
+      'Hãy áp dụng hoặc hủy thay đổi HTML trước khi chuyển chế độ.',
     htmlNormalized:
       'Mã không được hỗ trợ nhưng an toàn đã được chuẩn hóa theo định dạng mà trình soạn thảo hỗ trợ.',
     htmlSource: 'Mã nguồn HTML',
@@ -81,8 +85,10 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     italic: 'In nghiêng',
     link: 'Liên kết',
     linkPlaceholder: 'Dán URL',
+    mode: 'Chế độ soạn thảo',
     orderedList: 'Danh sách đánh số',
     placeholder: 'Bắt đầu viết…',
+    preview: 'Xem trước',
     redo: 'Làm lại',
     sourceUnsafe:
       'HTML này chứa mã không an toàn hoặc không được hỗ trợ. Hãy xóa tập lệnh, trình xử lý sự kiện, URL không an toàn, lớp CSS hoặc kiểu bố cục tùy chỉnh.',
@@ -91,7 +97,7 @@ export const editorMessages: Record<EditorLocale, EditorMessages> = {
     toolbar: 'Định dạng',
     undo: 'Hoàn tác',
     underline: 'Gạch chân',
-    visual: 'Trực quan',
+    visual: 'Soạn thảo',
     words: (count) => `${count} từ`,
   },
 };

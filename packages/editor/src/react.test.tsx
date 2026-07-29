@@ -12,7 +12,7 @@ import { RichTextEditor } from './react.js';
 
 afterEach(cleanup);
 
-describe('RichTextEditor HTML mode', () => {
+describe('RichTextEditor source and preview modes', () => {
   it('preserves unapplied source and discards it explicitly', async () => {
     const onChange = vi.fn();
     const onSourceModeDirtyChange = vi.fn();
@@ -28,6 +28,7 @@ describe('RichTextEditor HTML mode', () => {
           type: 'doc',
         }}
         enableHTMLSource
+        enablePreview
         featurePreset="full"
         onChange={onChange}
         onSourceModeDirtyChange={onSourceModeDirtyChange}
@@ -40,7 +41,7 @@ describe('RichTextEditor HTML mode', () => {
     await waitFor(() =>
       expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(true)
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Visual' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
 
     expect((source as HTMLTextAreaElement).value).toBe('<p>Changed</p>');
     expect(screen.getByRole('alert').textContent).toContain(
@@ -51,6 +52,59 @@ describe('RichTextEditor HTML mode', () => {
     await waitFor(() =>
       expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(false)
     );
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('previews the live document without changing it', async () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RichTextEditor
+        content={{
+          content: [
+            {
+              content: [{ text: 'Preview this article', type: 'text' }],
+              type: 'paragraph',
+            },
+            {
+              attrs: {
+                alt: 'Article detail',
+                src: 'https://example.com/article-detail.png',
+              },
+              type: 'image',
+            },
+          ],
+          type: 'doc',
+        }}
+        enableHTMLSource
+        enablePreview
+        featurePreset="full"
+        onChange={onChange}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Preview' }));
+
+    await waitFor(() => {
+      expect(container.querySelector('.tiptap')?.textContent).toBe(
+        'Preview this article'
+      );
+      expect(
+        container.querySelector('.tiptap')?.getAttribute('contenteditable')
+      ).toBe('false');
+    });
+    expect(screen.queryByRole('button', { name: 'Bold' })).toBeNull();
+    expect(
+      screen.getByRole('img', { name: 'Article detail' }).getAttribute('src')
+    ).toBe('https://example.com/article-detail.png');
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editor' }));
+    await waitFor(() =>
+      expect(
+        container.querySelector('.tiptap')?.getAttribute('contenteditable')
+      ).toBe('true')
+    );
+    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -100,6 +154,7 @@ describe('RichTextEditor HTML mode', () => {
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'HTML' })).toBeNull()
     );
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
   });
 
   it('updates visual editing when read-only changes', async () => {

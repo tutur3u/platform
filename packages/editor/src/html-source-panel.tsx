@@ -1,33 +1,52 @@
 'use client';
 
-import { Code2 } from 'lucide-react';
+import { Code2, Eye, PencilLine } from 'lucide-react';
 import type { EditorMessages } from './types.js';
 
-export type EditorMode = 'html' | 'visual';
+export type EditorMode = 'editor' | 'html' | 'preview';
 
 export function EditorModeSwitch({
+  enableHTMLSource,
+  enablePreview,
   messages,
   mode,
+  onEditor,
   onHTML,
-  onVisual,
+  onPreview,
 }: {
+  enableHTMLSource: boolean;
+  enablePreview: boolean;
   messages: EditorMessages;
   mode: EditorMode;
+  onEditor: () => void;
   onHTML: () => void;
-  onVisual: () => void;
+  onPreview: () => void;
 }) {
   return (
     <fieldset
-      aria-label={messages.htmlSource}
+      aria-label={messages.mode ?? messages.htmlSource}
       className="tuturuuu-editor-mode-switch"
     >
-      <button aria-pressed={mode === 'visual'} onClick={onVisual} type="button">
-        {messages.visual}
+      <button aria-pressed={mode === 'editor'} onClick={onEditor} type="button">
+        <PencilLine aria-hidden="true" />
+        {messages.editor ?? messages.visual}
       </button>
-      <button aria-pressed={mode === 'html'} onClick={onHTML} type="button">
-        <Code2 aria-hidden="true" />
-        {messages.html}
-      </button>
+      {enableHTMLSource ? (
+        <button aria-pressed={mode === 'html'} onClick={onHTML} type="button">
+          <Code2 aria-hidden="true" />
+          {messages.html}
+        </button>
+      ) : null}
+      {enablePreview ? (
+        <button
+          aria-pressed={mode === 'preview'}
+          onClick={onPreview}
+          type="button"
+        >
+          <Eye aria-hidden="true" />
+          {messages.preview}
+        </button>
+      ) : null}
     </fieldset>
   );
 }

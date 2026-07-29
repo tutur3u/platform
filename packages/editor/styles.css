@@ -119,12 +119,30 @@
 
 .tuturuuu-editor-mode-switch button[aria-pressed="true"] {
   background: var(--tuturuuu-editor-active-background, rgb(127 127 127 / 0.12));
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
   color: inherit;
+}
+
+.tuturuuu-editor-mode-switch button:hover {
+  color: inherit;
+}
+
+.tuturuuu-editor-mode-switch button:focus-visible {
+  outline: 2px solid var(--tuturuuu-editor-focus, #64748b);
+  outline-offset: 1px;
 }
 
 .tuturuuu-editor-mode-switch svg {
   width: 0.875rem;
   height: 0.875rem;
+}
+
+.tuturuuu-editor[data-mode="preview"] .tiptap {
+  cursor: default;
+  background: var(
+    --tuturuuu-editor-preview-background,
+    rgb(127 127 127 / 0.025)
+  );
 }
 
 .tuturuuu-editor-source-panel {
