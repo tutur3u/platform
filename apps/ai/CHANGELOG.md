@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.4.0...ai-studio-v0.5.0) (2026-07-29)
+
+
+### Features
+
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **ai:** support keyless external TTS ([8ebfeae](https://github.com/tutur3u/platform/commit/8ebfeaede3fe3dfa212cc9057d26d3027d7453bb))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.3.0...ai-studio-v0.4.0) (2026-07-28)
 
 

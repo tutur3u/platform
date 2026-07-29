@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/infra-v0.15.0...infra-v0.16.0) (2026-07-29)
+
+
+### Features
+
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/infra-v0.14.0...infra-v0.15.0) (2026-07-28)
 
 

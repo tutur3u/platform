@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.6.0...inventory-core-v0.7.0) (2026-07-29)
+
+
+### Features
+
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/inventory-core-v0.5.0...inventory-core-v0.6.0) (2026-07-25)
 
 
