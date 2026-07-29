@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/platform-v0.30.0...platform-v0.31.0) (2026-07-29)
+
+
+### Features
+
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **ai:** support keyless external TTS ([8ebfeae](https://github.com/tutur3u/platform/commit/8ebfeaede3fe3dfa212cc9057d26d3027d7453bb))
+* **editor:** add preview mode ([49611c4](https://github.com/tutur3u/platform/commit/49611c4495a3230cff6bf64468d512df3ba6f62c))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+* **web:** add external app AI execution ([67c863a](https://github.com/tutur3u/platform/commit/67c863af44141ddf7ca94d674b8335c5de302855))
+
+
+### Bug Fixes
+
+* **web:** decode Gemini interaction audio ([9a8c148](https://github.com/tutur3u/platform/commit/9a8c1485873d585c3508630defa4805979dfcad0))
+* **web:** harden external Gemini TTS ([815b175](https://github.com/tutur3u/platform/commit/815b175a58bfd83665e3c35ee47927f988f9a929))
+* **web:** select Gemini TTS API revision ([2edb5e2](https://github.com/tutur3u/platform/commit/2edb5e2cecde06ccd9a8e9cd395d165d4702fafe))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/platform-v0.29.0...platform-v0.30.0) (2026-07-28)
 
 

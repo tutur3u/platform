@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.24.0](https://github.com/tutur3u/platform/compare/database-v1.23.0...database-v1.24.0) (2026-07-29)
+
+
+### Features
+
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+
 ## [1.23.0](https://github.com/tutur3u/platform/compare/database-v1.22.0...database-v1.23.0) (2026-07-28)
 
 

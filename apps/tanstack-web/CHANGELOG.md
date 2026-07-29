@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.17.0...tanstack-web-v0.18.0) (2026-07-29)
+
+
+### Features
+
+* **web:** add external app AI execution ([67c863a](https://github.com/tutur3u/platform/commit/67c863af44141ddf7ca94d674b8335c5de302855))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.16.0...tanstack-web-v0.17.0) (2026-07-28)
 
 

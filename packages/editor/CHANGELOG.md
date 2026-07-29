@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/tutur3u/platform/compare/editor-v0.5.0...editor-v0.6.0) (2026-07-29)
+
+
+### Features
+
+* **editor:** add preview mode ([49611c4](https://github.com/tutur3u/platform/commit/49611c4495a3230cff6bf64468d512df3ba6f62c))
+
 ## [0.5.0](https://github.com/tutur3u/platform/compare/editor-v0.4.0...editor-v0.5.0) (2026-07-28)
 
 
