@@ -1,7 +1,7 @@
 'use client';
 
+import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { fetchWorkspaces } from './actions';
 
 export function WorkspaceSelect({
   wsId,
@@ -23,7 +23,7 @@ export function WorkspaceSelect({
       standalone={standalone}
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
-      fetchWorkspaces={fetchWorkspaces}
+      fetchWorkspaces={listWorkspaces}
     />
   );
 }
