@@ -1,19 +1,11 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database } from '@tuturuuu/types/db';
-
-type BreakdownRow =
-  Database['private']['Functions']['get_ai_studio_consumption_breakdown']['Returns'][number];
-type GeneratedConsumptionEvent =
-  Database['private']['Functions']['list_ai_studio_consumption_events']['Returns'][number];
-type ConsumptionEvent = Omit<
-  GeneratedConsumptionEvent,
-  'completed_at' | 'error_class' | 'first_token_latency_ms' | 'latency_ms'
-> & {
-  completed_at: string | null;
-  error_class: string | null;
-  first_token_latency_ms: number | null;
-  latency_ms: number | null;
-};
+import {
+  type BreakdownRow,
+  type ConsumptionEvent,
+  getLedgerConsumptionBreakdown,
+  listLedgerConsumptionEvents,
+  mergeConsumptionBreakdowns,
+} from './consumption-fallback';
 
 const LEGACY_RUN_FIELDS =
   'id, request_id, api_key_id, feature, model_id, status, billed_credits, provider_cost_usd, input_tokens, output_tokens, reasoning_tokens, embedding_units, image_units, latency_ms, first_token_latency_ms, error_class, metadata, created_at, completed_at';
@@ -50,16 +42,29 @@ export async function getAiStudioConsumptionBreakdown({
       p_ws_id: workspaceId,
     });
 
+  if (legacy.error) return { data: null, error: legacy.error };
+
+  const ledger = await getLedgerConsumptionBreakdown({
+    from,
+    sbAdmin,
+    to,
+    userId,
+    workspaceId,
+  });
+  if (ledger.error) return ledger;
+
+  const legacyRows =
+    legacy.data?.map(
+      (row): BreakdownRow => ({
+        ...row,
+        latency_sample_count: row.request_count,
+        search_units: 0,
+      })
+    ) ?? [];
+
   return {
-    data:
-      legacy.data?.map(
-        (row): BreakdownRow => ({
-          ...row,
-          latency_sample_count: row.request_count,
-          search_units: 0,
-        })
-      ) ?? null,
-    error: legacy.error,
+    data: mergeConsumptionBreakdowns(legacyRows, ledger.data ?? []),
+    error: null,
   };
 }
 
@@ -124,32 +129,56 @@ export async function listAiStudioConsumptionEvents({
   }
 
   const legacy = await query;
+  if (legacy.error) return { data: null, error: legacy.error };
+
+  const ledger = await listLedgerConsumptionEvents({
+    cursor,
+    feature,
+    from,
+    maxRows: limit,
+    model,
+    sbAdmin,
+    status,
+    to,
+    userId,
+    workspaceId,
+  });
+  if (ledger.error) return ledger;
+
+  const legacyEvents =
+    legacy.data?.map(
+      (run): ConsumptionEvent => ({
+        billed_credits: run.billed_credits,
+        completed_at: run.completed_at,
+        created_at: run.created_at,
+        embedding_units: run.embedding_units,
+        error_class: run.error_class,
+        event_id: run.id,
+        feature: run.feature,
+        first_token_latency_ms: run.first_token_latency_ms,
+        image_units: run.image_units,
+        input_tokens: run.input_tokens,
+        latency_ms: run.latency_ms,
+        model_id: run.model_id,
+        output_tokens: run.output_tokens,
+        provider_cost_usd: run.provider_cost_usd,
+        reasoning_tokens: run.reasoning_tokens,
+        request_id: run.request_id,
+        search_units: 0,
+        source_type: resolveLegacySourceType(run.api_key_id, run.metadata),
+        status: run.status,
+      })
+    ) ?? [];
+
   return {
-    data:
-      legacy.data?.map(
-        (run): ConsumptionEvent => ({
-          billed_credits: run.billed_credits,
-          completed_at: run.completed_at,
-          created_at: run.created_at,
-          embedding_units: run.embedding_units,
-          error_class: run.error_class,
-          event_id: run.id,
-          feature: run.feature,
-          first_token_latency_ms: run.first_token_latency_ms,
-          image_units: run.image_units,
-          input_tokens: run.input_tokens,
-          latency_ms: run.latency_ms,
-          model_id: run.model_id,
-          output_tokens: run.output_tokens,
-          provider_cost_usd: run.provider_cost_usd,
-          reasoning_tokens: run.reasoning_tokens,
-          request_id: run.request_id,
-          search_units: 0,
-          source_type: resolveLegacySourceType(run.api_key_id, run.metadata),
-          status: run.status,
-        })
-      ) ?? null,
-    error: legacy.error,
+    data: [...legacyEvents, ...(ledger.data ?? [])]
+      .sort(
+        (a, b) =>
+          b.created_at.localeCompare(a.created_at) ||
+          b.event_id.localeCompare(a.event_id)
+      )
+      .slice(0, limit),
+    error: null,
   };
 }
 

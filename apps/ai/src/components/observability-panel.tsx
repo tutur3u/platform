@@ -157,6 +157,7 @@ export function ObservabilityPanel({
         />
       ) : (
         <ObservabilityBreakdowns
+          balanceConsumed={creditsQuery.data?.totalUsed ?? 0}
           isLoading={usageQuery.isPending}
           rows={usageQuery.data?.rows ?? []}
         />

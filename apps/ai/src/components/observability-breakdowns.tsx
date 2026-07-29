@@ -7,9 +7,11 @@ import { useTranslations } from 'next-intl';
 import { aggregateUsageRows } from './observability-helpers';
 
 export function ObservabilityBreakdowns({
+  balanceConsumed,
   isLoading,
   rows,
 }: {
+  balanceConsumed: number;
   isLoading: boolean;
   rows: AiStudioUsageRow[];
 }) {
@@ -68,7 +70,11 @@ export function ObservabilityBreakdowns({
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       {tables.map((table) => (
-        <BreakdownTable key={table.title} {...table} />
+        <BreakdownTable
+          hasBalanceUsage={balanceConsumed > 0}
+          key={table.title}
+          {...table}
+        />
       ))}
     </div>
   );
@@ -76,10 +82,12 @@ export function ObservabilityBreakdowns({
 
 function BreakdownTable({
   className,
+  hasBalanceUsage,
   rows,
   title,
 }: {
   className?: string;
+  hasBalanceUsage: boolean;
   rows: ReturnType<typeof aggregateUsageRows>;
   title: string;
 }) {
@@ -127,19 +135,25 @@ function BreakdownTable({
             ))}
           </tbody>
         </table>
-        {rows.length === 0 ? <EmptyState /> : null}
+        {rows.length === 0 ? (
+          <EmptyState hasBalanceUsage={hasBalanceUsage} />
+        ) : null}
       </CardContent>
     </Card>
   );
 }
 
-function EmptyState() {
+function EmptyState({ hasBalanceUsage }: { hasBalanceUsage: boolean }) {
   const t = useTranslations('ai-studio.observability');
   return (
     <div className="p-10 text-center">
       <p className="font-medium">{t('empty_title')}</p>
       <p className="mt-1 text-muted-foreground text-sm">
-        {t('empty_description')}
+        {t(
+          hasBalanceUsage
+            ? 'empty_with_balance_description'
+            : 'empty_description'
+        )}
       </p>
     </div>
   );

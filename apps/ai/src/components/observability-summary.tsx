@@ -131,6 +131,7 @@ function CreditBalanceCard({
           </p>
         </div>
         <CreditDatum
+          detail={t('balance_period_total')}
           label={t('credits_consumed')}
           loading={isLoading}
           value={credits?.totalUsed}
