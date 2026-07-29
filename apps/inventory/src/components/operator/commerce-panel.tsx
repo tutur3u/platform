@@ -33,6 +33,7 @@ import { SalesPeriodsPanel } from './sales-periods-panel';
 import { useWorkspaceCurrency } from './workspace-currency';
 
 export function CommercePanel({
+  canExportSales = false,
   checkouts,
   isLoading,
   query,
@@ -58,6 +59,7 @@ export function CommercePanel({
   tab,
   wsId,
 }: {
+  canExportSales?: boolean;
   checkouts: InventoryCheckoutSession[];
   isLoading?: boolean;
   query: string;
@@ -102,6 +104,7 @@ export function CommercePanel({
     <div className="grid gap-3">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-1">
         <SalesPeriodsPanel
+          canExport={canExportSales}
           fetchNextProductsPage={fetchNextProductsPage}
           hasNextProductsPage={hasNextProductsPage}
           isFetchingNextProductsPage={isFetchingNextProductsPage}

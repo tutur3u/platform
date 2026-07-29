@@ -36,12 +36,14 @@ import {
 import { SelectValueField } from './operator-form-fields';
 import { LifecyclePanel } from './operator-lifecycle';
 import { UNASSIGNED_SALES_PERIOD_FILTER } from './operator-types';
+import { SalesExportDropdown } from './sales-export-dropdown';
 import { SalesPeriodProductRules } from './sales-period-product-rules';
 
 const ALL_PERIODS = '__all__';
 export const NO_PERIOD = '__none__';
 
 export function SalesPeriodsPanel({
+  canExport = false,
   fetchNextProductsPage,
   hasNextProductsPage,
   isFetchingNextProductsPage,
@@ -51,6 +53,7 @@ export function SalesPeriodsPanel({
   selectedPeriodId,
   wsId,
 }: {
+  canExport?: boolean;
   fetchNextProductsPage: () => unknown;
   hasNextProductsPage: boolean;
   isFetchingNextProductsPage: boolean;
@@ -112,6 +115,11 @@ export function SalesPeriodsPanel({
           placeholder={t('all')}
           searchPlaceholder={t('title')}
           value={selectedPeriodId || ALL_PERIODS}
+        />
+        <SalesExportDropdown
+          canExport={canExport}
+          period={selected}
+          wsId={wsId}
         />
         {selected ? (
           <SalesPeriodDialog

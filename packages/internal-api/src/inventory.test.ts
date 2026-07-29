@@ -31,6 +31,7 @@ import {
   deleteInventorySupplier,
   deleteInventoryUnit,
   deleteInventoryWarehouse,
+  exportInventorySales,
   getInventoryAnalytics,
   getInventoryCostingAnalytics,
   getInventoryOverview,
@@ -725,6 +726,56 @@ describe('inventory internal API helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws_1/inventory/sales/sale%201',
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('downloads typed Inventory sales exports and preserves server filenames', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response('sale export', {
+        headers: {
+          'Content-Disposition':
+            'attachment; filename="inventory-sales-offkai-2026.csv"',
+          'Content-Type': 'text/csv; charset=utf-8',
+        },
+      })
+    );
+    const download = await exportInventorySales(
+      'workspace 1',
+      {
+        format: 'csv',
+        period_id: 'period 1',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(download.filename).toBe('inventory-sales-offkai-2026.csv');
+    expect(download.contentType).toContain('text/csv');
+    expect(await download.blob.text()).toBe('sale export');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/workspace%201/inventory/sales/export?format=csv&period_id=period+1',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('surfaces Inventory sales export API errors', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ message: 'Forbidden' }, { status: 403 })
+      );
+
+    await expect(
+      exportInventorySales(
+        'ws_1',
+        { format: 'xlsx', period_id: 'period_1' },
+        {
+          baseUrl: 'https://internal.example.com',
+          fetch: fetchMock as unknown as typeof fetch,
+        }
+      )
+    ).rejects.toMatchObject({ message: 'Forbidden', status: 403 });
   });
 
   it('updates Inventory-specific sales defaults without changing global Finance defaults', async () => {

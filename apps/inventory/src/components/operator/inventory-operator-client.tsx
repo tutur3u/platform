@@ -52,6 +52,7 @@ import { WorkspaceCurrencyProvider } from './workspace-currency';
 export type { InventoryOperatorView } from './operator-types';
 
 type InventoryOperatorClientProps = {
+  canExportSales?: boolean;
   view: InventoryOperatorView;
   wsId: string;
 };
@@ -68,6 +69,7 @@ const commerceTabs = ['checkouts', 'cart', 'revenue-share'] as const;
 const catalogTabs = ['products', 'categories'] as const;
 
 export function InventoryOperatorClient({
+  canExportSales = false,
   view,
   wsId,
 }: InventoryOperatorClientProps) {
@@ -517,6 +519,7 @@ export function InventoryOperatorClient({
           ) : null}
           {!isError && (view === 'commerce' || view === 'sales') ? (
             <CommercePanel
+              canExportSales={canExportSales}
               checkouts={checkoutSearch.results}
               isLoading={commerceLoading}
               query={data.filters.q}

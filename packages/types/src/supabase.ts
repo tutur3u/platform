@@ -16176,6 +16176,45 @@ export type Database = {
           total_count: number;
         }[];
       };
+      list_inventory_sales_export_rows: {
+        Args: { p_period_id: string; p_ws_id: string };
+        Returns: {
+          category_name: string;
+          checkout_provider: string;
+          completed_at: string;
+          created_at: string;
+          creator_name: string;
+          currency: string;
+          customer_email: string;
+          customer_name: string;
+          finance_invoice_id: string;
+          line_id: string;
+          line_total: number;
+          monetary_unit: string;
+          note: string;
+          notice: string;
+          owner_id: string;
+          owner_name: string;
+          period_id: string;
+          period_name: string;
+          polar_order_id: string;
+          product_id: string;
+          product_name: string;
+          public_token: string;
+          quantity: number;
+          sale_amount: number;
+          sale_id: string;
+          sale_source: string;
+          square_order_id: string;
+          transaction_id: string;
+          unit_id: string;
+          unit_name: string;
+          unit_price: number;
+          wallet_name: string;
+          warehouse_id: string;
+          warehouse_name: string;
+        }[];
+      };
       list_inventory_sales_for_period: {
         Args: {
           p_limit?: number;

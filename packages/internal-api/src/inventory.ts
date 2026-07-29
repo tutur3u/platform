@@ -11,6 +11,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  InternalApiError,
   type InternalApiQuery,
 } from './client';
 import {
@@ -1437,6 +1438,19 @@ export type InventorySalesListQuery = InventoryOffsetListQuery & {
   unassigned?: boolean;
 };
 
+export type InventorySalesExportFormat = 'csv' | 'xlsx';
+
+export type InventorySalesExportQuery = {
+  format: InventorySalesExportFormat;
+  period_id: string;
+};
+
+export type InventorySalesExportDownload = {
+  blob: Blob;
+  contentType: string;
+  filename: string;
+};
+
 export type InventoryOrderHistoryQuery = InventoryOffsetListQuery & {
   storeSlug?: string;
 };
@@ -2674,6 +2688,68 @@ export function listInventorySales(
       query: asQuery(query),
     }
   );
+}
+
+function inventorySalesExportFilename(
+  contentDisposition: string | null,
+  query: InventorySalesExportQuery
+) {
+  const encoded = contentDisposition?.match(/filename\*=UTF-8''([^;]+)/iu)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      // Fall through to the plain filename or stable local fallback.
+    }
+  }
+
+  const plain = contentDisposition?.match(/filename="?([^";]+)"?/iu)?.[1];
+  return (
+    plain ||
+    `inventory-sales-${encodePathSegment(query.period_id)}.${query.format}`
+  );
+}
+
+export async function exportInventorySales(
+  wsId: string,
+  query: InventorySalesExportQuery,
+  options?: InternalApiClientOptions
+): Promise<InventorySalesExportDownload> {
+  const response = await getInternalApiClient(options).fetch(
+    workspaceInventoryPath(wsId, '/sales/export'),
+    {
+      cache: 'no-store',
+      query: asQuery(query),
+    }
+  );
+
+  if (!response.ok) {
+    const fallbackMessage = `Inventory sales export failed: ${response.status}`;
+    let message = fallbackMessage;
+    let code: string | undefined;
+    try {
+      const payload = (await response.json()) as {
+        code?: string;
+        error?: string;
+        message?: string;
+      };
+      code = payload.code;
+      message = payload.message || payload.error || fallbackMessage;
+    } catch {
+      // Preserve the stable fallback for non-JSON errors.
+    }
+    throw new InternalApiError(message, response.status, code);
+  }
+
+  return {
+    blob: await response.blob(),
+    contentType:
+      response.headers.get('content-type') || 'application/octet-stream',
+    filename: inventorySalesExportFilename(
+      response.headers.get('content-disposition'),
+      query
+    ),
+  };
 }
 
 export function getInventoryCommerceSummary(
