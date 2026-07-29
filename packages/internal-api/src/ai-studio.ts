@@ -58,13 +58,15 @@ export interface AiStudioUsageRow {
   feature: string;
   imageUnits: number;
   inputTokens: number;
+  latencySampleCount: number;
   modelId: string;
   outputTokens: number;
   providerCostUsd: number;
   reasoningTokens: number;
   requestCount: number;
+  searchUnits: number;
   sourceId: string;
-  sourceType: 'api_key' | 'external_app' | 'session';
+  sourceType: 'api_key' | 'external_app' | 'session' | 'workspace_credit';
   succeededCount: number;
 }
 
@@ -95,7 +97,8 @@ export interface AiStudioRun {
   providerCostUsd: number;
   reasoningTokens: number;
   requestId: string;
-  sourceType: 'api_key' | 'external_app' | 'session';
+  searchUnits: number;
+  sourceType: 'api_key' | 'external_app' | 'session' | 'workspace_credit';
   status: 'aborted' | 'failed' | 'reserved' | 'running' | 'succeeded';
 }
 
@@ -105,8 +108,32 @@ export interface AiStudioRunsResponse {
 }
 
 export interface AiStudioCreditStatus {
+  allowedFeatures: string[];
+  allowedModels: string[];
+  balanceScope: 'user' | 'workspace';
+  bonusCredits: number;
+  dailyLimit: number | null;
+  dailyUsed: number;
+  defaultImageModel: string;
+  defaultLanguageModel: string;
+  included: {
+    bonusCredits: number;
+    remaining: number;
+    totalAllocated: number;
+    totalUsed: number;
+  };
+  maxOutputTokens: number | null;
+  payg: {
+    nextExpiry: string | null;
+    remaining: number;
+    totalGranted: number;
+    totalUsed: number;
+  };
   percentUsed: number;
+  periodEnd: string;
+  periodStart: string;
   remaining: number;
+  seatCount: number | null;
   tier: string;
   totalAllocated: number;
   totalUsed: number;

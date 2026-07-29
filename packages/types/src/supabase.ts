@@ -14953,6 +14953,36 @@ export type Database = {
         }[];
       };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
+      collect_ai_studio_consumption_events: {
+        Args: {
+          p_from: string;
+          p_to: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          billed_credits: number;
+          completed_at: string;
+          created_at: string;
+          embedding_units: number;
+          error_class: string;
+          event_id: string;
+          feature: string;
+          first_token_latency_ms: number;
+          image_units: number;
+          input_tokens: number;
+          latency_ms: number;
+          model_id: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          reasoning_tokens: number;
+          request_id: string;
+          search_units: number;
+          source_id: string;
+          source_type: string;
+          status: string;
+        }[];
+      };
       complete_devbox_run: {
         Args: {
           p_exit_code: number;
@@ -15239,6 +15269,35 @@ export type Database = {
           enabled: boolean;
           product_enabled: boolean;
           products: Json;
+        }[];
+      };
+      get_ai_studio_consumption_breakdown: {
+        Args: {
+          p_from: string;
+          p_to: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          aborted_count: number;
+          average_latency_ms: number;
+          billed_credits: number;
+          bucket_date: string;
+          embedding_units: number;
+          failed_count: number;
+          feature: string;
+          image_units: number;
+          input_tokens: number;
+          latency_sample_count: number;
+          model_id: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          reasoning_tokens: number;
+          request_count: number;
+          search_units: number;
+          source_id: string;
+          source_type: string;
+          succeeded_count: number;
         }[];
       };
       get_ai_studio_usage_breakdown: {
@@ -16103,6 +16162,41 @@ export type Database = {
       is_nova_user_id_in_team: {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
+      };
+      list_ai_studio_consumption_events: {
+        Args: {
+          p_cursor_created_at?: string;
+          p_cursor_id?: string;
+          p_feature?: string;
+          p_from: string;
+          p_limit?: number;
+          p_model?: string;
+          p_status?: string;
+          p_to: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          billed_credits: number;
+          completed_at: string;
+          created_at: string;
+          embedding_units: number;
+          error_class: string;
+          event_id: string;
+          feature: string;
+          first_token_latency_ms: number;
+          image_units: number;
+          input_tokens: number;
+          latency_ms: number;
+          model_id: string;
+          output_tokens: number;
+          provider_cost_usd: number;
+          reasoning_tokens: number;
+          request_id: string;
+          search_units: number;
+          source_type: string;
+          status: string;
+        }[];
       };
       list_enabled_managed_cron_domains: {
         Args: never;

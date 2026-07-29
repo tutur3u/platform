@@ -10,9 +10,10 @@ apps.
 
 ## Access and issuance controls
 
-Workspace members with `use_ai_studio` can review Studio-metered runs, usage,
-provider cost, and workspace credit status. Observability and execution do not
-depend on a global or workspace Studio enablement switch.
+Workspace members with `use_ai_studio` can review settled credit deductions,
+Studio-metered runs, provider cost, and the applicable personal or workspace
+credit status. Observability and execution do not depend on a global or
+workspace Studio enablement switch.
 
 Model execution still requires the requested model to be enabled and granted by
 the global catalog, workspace policy, plan, and credential scope. Ordinary
@@ -57,6 +58,10 @@ guarded lifecycle:
 Provider failures and aborted streams still settle billable usage. Runs record
 model, key, prompt or agent version, latency, first-token latency, token or
 media units, provider cost, billed credits, status, and a stable request ID.
+The dashboards combine these Studio runs with unmatched deductions from the
+shared AI credit ledger, so AI features outside Studio remain visible without
+double-counting deductions already linked to a run. Logs expose only sanitized
+metering fields, never raw prompts, outputs, tool payloads, or provider errors.
 
 Registered external apps are the only temporary billing exception. Their
 short-lived token must include `workspace:session` plus `ai:use` or `tts:use`,

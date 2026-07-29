@@ -1,10 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { connection } from 'next/server';
+import { listAiStudioConsumptionEvents } from '@/lib/consumption-data';
 import { parseAiStudioDateRange } from '@/lib/observability';
 import { authorizeAiStudioWorkspaceRequest } from '@/lib/session-api';
 
-const RUN_FIELDS =
-  'id, request_id, api_key_id, feature, model_id, status, billed_credits, provider_cost_usd, input_tokens, output_tokens, reasoning_tokens, embedding_units, image_units, latency_ms, first_token_latency_ms, error_class, metadata, created_at, completed_at';
 const STATUSES = new Set([
   'reserved',
   'running',
@@ -43,27 +42,18 @@ export async function GET(
     return Response.json({ error: 'Invalid run status' }, { status: 400 });
   }
 
-  let query = auth.sbAdmin
-    .schema('private')
-    .from('ai_studio_runs')
-    .select(RUN_FIELDS)
-    .eq('ws_id', auth.workspace.id)
-    .gte('created_at', range.from.toISOString())
-    .lt('created_at', range.to.toISOString())
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(limit + 1);
-
-  if (status) query = query.eq('status', status);
-  if (feature) query = query.eq('feature', feature);
-  if (model) query = query.eq('model_id', model);
-  if (cursor) {
-    query = query.or(
-      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
-    );
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await listAiStudioConsumptionEvents({
+    cursor,
+    feature,
+    from: range.from.toISOString(),
+    limit: limit + 1,
+    model,
+    sbAdmin: auth.sbAdmin,
+    status: status ?? undefined,
+    to: range.to.toISOString(),
+    userId: auth.user.id,
+    workspaceId: auth.workspace.id,
+  });
   if (error) {
     console.error('AI Studio runs query failed', {
       code: error.code,
@@ -78,7 +68,8 @@ export async function GET(
 
   return Response.json(
     {
-      nextCursor: hasMore && last ? `${last.created_at}~${last.id}` : null,
+      nextCursor:
+        hasMore && last ? `${last.created_at}~${last.event_id}` : null,
       runs: page.map((run) => ({
         billedCredits: Number(run.billed_credits),
         completedAt: run.completed_at,
@@ -87,36 +78,22 @@ export async function GET(
         errorClass: run.error_class,
         feature: run.feature,
         firstTokenLatencyMs: run.first_token_latency_ms,
-        id: run.id,
+        id: run.event_id,
         imageUnits: run.image_units,
         inputTokens: run.input_tokens,
-        latencyMs: run.latency_ms,
+        latencyMs: run.latency_ms ?? null,
         modelId: run.model_id,
         outputTokens: run.output_tokens,
         providerCostUsd: Number(run.provider_cost_usd),
         reasoningTokens: run.reasoning_tokens,
         requestId: run.request_id,
-        sourceType: resolveSourceType(run.api_key_id, run.metadata),
+        searchUnits: run.search_units,
+        sourceType: run.source_type,
         status: run.status,
       })),
     },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
-}
-
-function resolveSourceType(apiKeyId: string | null, metadata: unknown) {
-  if (apiKeyId) return 'api_key' as const;
-  if (
-    metadata &&
-    !Array.isArray(metadata) &&
-    typeof metadata === 'object' &&
-    ('external_app_id' in metadata ||
-      ('billing_mode' in metadata &&
-        metadata.billing_mode === 'external_app_unmetered'))
-  ) {
-    return 'external_app' as const;
-  }
-  return 'session' as const;
 }
 
 function parseCursor(value: string | null) {

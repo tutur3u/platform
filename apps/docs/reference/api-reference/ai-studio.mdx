@@ -67,10 +67,18 @@ cost when permitted, run and trace IDs, token or media units, and timing
 information. These fields extend the compatible response without changing the
 standard OpenAI fields.
 
-Workspace Studio dashboards aggregate settled `ai_studio_runs` and
-`ai_studio_usage` data. They show billed credits and settled provider cost
-separately; registered external-app runs therefore report provider cost while
-showing zero billed workspace credits.
+Workspace Studio dashboards combine settled `ai_studio_runs` with unmatched
+deductions from `ai_credit_transactions`. This includes ordinary workspace
+deductions and the signed-in member's personal deductions when a free workspace
+uses a personal credit balance, without double-counting ledger rows linked to a
+Studio run. Billed credits and settled provider cost are shown separately;
+registered external-app runs therefore report provider cost while showing zero
+billed workspace credits.
+
+The usage and run-log responses include identifiers, model, feature, credential
+source, status, token or media units, settled credits and cost, and timing
+metadata. They never include raw prompts, model outputs, tool payloads, ledger
+metadata, or unsanitized provider errors.
 
 The legacy `/api/ai/generate` endpoint remains available as a compatibility
 adapter. New integrations should use the `/v1` Studio endpoints.

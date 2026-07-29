@@ -54,6 +54,7 @@ export default async function SectionPage({
     ? await getAiStudioOverview({
         includeKeys: context.permissions.containsPermission('manage_ai_keys'),
         sbAdmin: await createAdminClient({ noCookie: true }),
+        userId: context.user.id,
         workspaceId: context.workspace.id,
         workspaceName: context.workspace.name ?? t('studio'),
       })

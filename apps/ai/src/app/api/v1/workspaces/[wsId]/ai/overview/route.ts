@@ -15,6 +15,7 @@ export async function GET(
     const overview = await getAiStudioOverview({
       includeKeys: auth.permissions.containsPermission('manage_ai_keys'),
       sbAdmin: auth.sbAdmin,
+      userId: auth.user.id,
       workspaceId: auth.workspace.id,
       workspaceName: auth.workspace.name ?? auth.workspace.id,
     });

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { connection } from 'next/server';
+import { getAiStudioConsumptionBreakdown } from '@/lib/consumption-data';
 import { numberValue, parseAiStudioDateRange } from '@/lib/observability';
 import { authorizeAiStudioWorkspaceRequest } from '@/lib/session-api';
 
@@ -20,13 +21,13 @@ export async function GET(
     );
   }
 
-  const { data, error } = await auth.sbAdmin
-    .schema('private')
-    .rpc('get_ai_studio_usage_breakdown', {
-      p_from: range.from.toISOString(),
-      p_to: range.to.toISOString(),
-      p_ws_id: auth.workspace.id,
-    });
+  const { data, error } = await getAiStudioConsumptionBreakdown({
+    from: range.from.toISOString(),
+    sbAdmin: auth.sbAdmin,
+    to: range.to.toISOString(),
+    userId: auth.user.id,
+    workspaceId: auth.workspace.id,
+  });
 
   if (error) {
     console.error('AI Studio usage aggregation failed', {
@@ -46,11 +47,13 @@ export async function GET(
     feature: row.feature,
     imageUnits: numberValue(row.image_units),
     inputTokens: numberValue(row.input_tokens),
+    latencySampleCount: numberValue(row.latency_sample_count),
     modelId: row.model_id,
     outputTokens: numberValue(row.output_tokens),
     providerCostUsd: numberValue(row.provider_cost_usd),
     reasoningTokens: numberValue(row.reasoning_tokens),
     requestCount: numberValue(row.request_count),
+    searchUnits: numberValue(row.search_units),
     sourceId: row.source_id,
     sourceType: row.source_type,
     succeededCount: numberValue(row.succeeded_count),
@@ -64,13 +67,15 @@ export async function GET(
       failedCount: total.failedCount + row.failedCount,
       imageUnits: total.imageUnits + row.imageUnits,
       inputTokens: total.inputTokens + row.inputTokens,
+      latencySampleCount: total.latencySampleCount + row.latencySampleCount,
       outputTokens: total.outputTokens + row.outputTokens,
       providerCostUsd: total.providerCostUsd + row.providerCostUsd,
       reasoningTokens: total.reasoningTokens + row.reasoningTokens,
       requestCount: total.requestCount + row.requestCount,
+      searchUnits: total.searchUnits + row.searchUnits,
       succeededCount: total.succeededCount + row.succeededCount,
       weightedLatencyMs:
-        total.weightedLatencyMs + row.averageLatencyMs * row.requestCount,
+        total.weightedLatencyMs + row.averageLatencyMs * row.latencySampleCount,
     }),
     {
       abortedCount: 0,
@@ -79,10 +84,12 @@ export async function GET(
       failedCount: 0,
       imageUnits: 0,
       inputTokens: 0,
+      latencySampleCount: 0,
       outputTokens: 0,
       providerCostUsd: 0,
       reasoningTokens: 0,
       requestCount: 0,
+      searchUnits: 0,
       succeededCount: 0,
       weightedLatencyMs: 0,
     }
@@ -96,8 +103,8 @@ export async function GET(
       totals: {
         ...totals,
         averageLatencyMs:
-          totals.requestCount > 0
-            ? totals.weightedLatencyMs / totals.requestCount
+          totals.latencySampleCount > 0
+            ? totals.weightedLatencyMs / totals.latencySampleCount
             : 0,
         weightedLatencyMs: undefined,
       },

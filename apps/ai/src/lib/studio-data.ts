@@ -1,20 +1,24 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  getAiStudioConsumptionBreakdown,
+  listAiStudioConsumptionEvents,
+} from './consumption-data';
 
 const KEY_FIELDS =
   'id, name, prefix, environment, allowed_models, expires_at, revoked_at, last_used_at, requests_per_minute, credit_budget, credits_used, created_at';
-const RUN_FIELDS =
-  'id, request_id, feature, model_id, status, billed_credits, provider_cost_usd, input_tokens, output_tokens, latency_ms, first_token_latency_ms, created_at';
 
 export type AiStudioOverview = Awaited<ReturnType<typeof getAiStudioOverview>>;
 
 export async function getAiStudioOverview({
   includeKeys = false,
   sbAdmin,
+  userId,
   workspaceId,
   workspaceName,
 }: {
   includeKeys?: boolean;
   sbAdmin: TypedSupabaseClient;
+  userId: string;
   workspaceId: string;
   workspaceName: string;
 }) {
@@ -22,6 +26,10 @@ export async function getAiStudioOverview({
   since.setUTCDate(1);
   since.setUTCHours(0, 0, 0, 0);
 
+  const range = {
+    from: since.toISOString(),
+    to: new Date().toISOString(),
+  };
   const [policy, keys, runs, prompts, agents, datasets, usage] =
     await Promise.all([
       sbAdmin
@@ -39,13 +47,15 @@ export async function getAiStudioOverview({
             .order('created_at', { ascending: false })
             .limit(25)
         : Promise.resolve({ data: [], error: null }),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_runs')
-        .select(RUN_FIELDS)
-        .eq('ws_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .limit(50),
+      listAiStudioConsumptionEvents({
+        cursor: null,
+        from: range.from,
+        limit: 50,
+        sbAdmin,
+        to: range.to,
+        userId,
+        workspaceId,
+      }),
       sbAdmin
         .schema('private')
         .from('ai_studio_prompts')
@@ -69,10 +79,11 @@ export async function getAiStudioOverview({
         .eq('ws_id', workspaceId)
         .order('updated_at', { ascending: false })
         .limit(25),
-      sbAdmin.schema('private').rpc('get_ai_studio_usage_breakdown', {
-        p_from: since.toISOString(),
-        p_to: new Date().toISOString(),
-        p_ws_id: workspaceId,
+      getAiStudioConsumptionBreakdown({
+        ...range,
+        sbAdmin,
+        userId,
+        workspaceId,
       }),
     ]);
 
@@ -95,6 +106,7 @@ export async function getAiStudioOverview({
       inputTokens: acc.inputTokens + Number(row.input_tokens),
       outputTokens: acc.outputTokens + Number(row.output_tokens),
       providerCostUsd: acc.providerCostUsd + Number(row.provider_cost_usd),
+      searchUnits: acc.searchUnits + Number(row.search_units),
     }),
     {
       billedCredits: 0,
@@ -103,6 +115,7 @@ export async function getAiStudioOverview({
       inputTokens: 0,
       outputTokens: 0,
       providerCostUsd: 0,
+      searchUnits: 0,
     }
   );
 
@@ -112,7 +125,13 @@ export async function getAiStudioOverview({
     keys: keys.data ?? [],
     policy: policy.data,
     prompts: prompts.data ?? [],
-    runs: runs.data ?? [],
+    runs: (runs.data ?? []).map((run) => ({
+      feature: run.feature,
+      id: run.event_id,
+      model_id: run.model_id,
+      request_id: run.request_id,
+      status: run.status,
+    })),
     totals,
     workspace: { id: workspaceId, name: workspaceName },
   };
