@@ -31,6 +31,23 @@ export interface AiStudioApiKey {
 export interface AiStudioKeysResponse {
   approval: AiStudioKeyApproval;
   keys: AiStudioApiKey[];
+  nextCursor: string | null;
+}
+
+export type AiStudioCatalogResource = 'agents' | 'datasets' | 'prompts';
+
+export interface AiStudioCatalogItem {
+  description: string | null;
+  id: string;
+  name: string;
+  slug: string | null;
+  updatedAt: string;
+  version: number | null;
+}
+
+export interface AiStudioCatalogResponse {
+  items: AiStudioCatalogItem[];
+  nextCursor: string | null;
 }
 
 export interface CreateAiStudioKeyInput {
@@ -145,11 +162,24 @@ function workspaceAiPath(workspaceId: string, suffix: string) {
 
 export function getAiStudioKeys(
   workspaceId: string,
+  query?: { cursor?: string; limit?: number },
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<AiStudioKeysResponse>(
     workspaceAiPath(workspaceId, 'keys'),
-    { cache: 'no-store' }
+    { cache: 'no-store', query }
+  );
+}
+
+export function getAiStudioCatalog(
+  workspaceId: string,
+  resource: AiStudioCatalogResource,
+  query?: { cursor?: string; limit?: number },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<AiStudioCatalogResponse>(
+    workspaceAiPath(workspaceId, `catalog/${resource}`),
+    { cache: 'no-store', query }
   );
 }
 

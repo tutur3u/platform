@@ -15,8 +15,8 @@ export default withNextIntl(
         afterFiles: [],
         fallback: [
           {
-            source: '/api/v1/:path*',
-            destination: `${webAppUrl}/api/v1/:path*`,
+            source: '/api/:path*',
+            destination: `${webAppUrl}/api/:path*`,
           },
         ],
       };

@@ -1,10 +1,22 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Plus, RefreshCw, Trash2 } from '@tuturuuu/icons';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
+import {
+  AlertCircle,
+  Copy,
+  KeyRound,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from '@tuturuuu/icons';
 import {
   type AiStudioApiKey,
   type AiStudioKeySecretResponse,
+  type AiStudioKeysResponse,
   createAiStudioKey,
   getAiStudioKeys,
   updateAiStudioKey,
@@ -46,8 +58,12 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
   const [allowedModels, setAllowedModels] = useState('');
   const [secret, setSecret] = useState<AiStudioKeySecretResponse | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<AiStudioApiKey | null>(null);
-  const keysQuery = useQuery({
-    queryFn: () => getAiStudioKeys(workspaceId),
+  const keysQuery = useInfiniteQuery({
+    getNextPageParam: (lastPage: AiStudioKeysResponse) =>
+      lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      getAiStudioKeys(workspaceId, { cursor: pageParam, limit: 50 }),
     queryKey: ['ai-studio-keys', workspaceId],
   });
   const refresh = () =>
@@ -94,8 +110,8 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
     },
   });
 
-  const approval = keysQuery.data?.approval;
-  const keys = keysQuery.data?.keys ?? [];
+  const approval = keysQuery.data?.pages[0]?.approval;
+  const keys = keysQuery.data?.pages.flatMap((page) => page.keys) ?? [];
 
   return (
     <div className="space-y-4">
@@ -104,13 +120,19 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
           <div>
             <CardTitle>{t('create_title')}</CardTitle>
             <p className="mt-1 text-muted-foreground text-sm">
-              {approval?.approved
-                ? t('approved_description')
-                : t('approval_required')}
+              {keysQuery.isPending
+                ? t('loading')
+                : approval?.approved
+                  ? t('approved_description')
+                  : t('approval_required')}
             </p>
           </div>
           <Badge variant={approval?.approved ? 'default' : 'secondary'}>
-            {approval?.approved ? t('approved') : t('not_approved')}
+            {keysQuery.isPending
+              ? t('loading')
+              : approval?.approved
+                ? t('approved')
+                : t('not_approved')}
           </Badge>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -203,21 +225,58 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
           </Button>
         </CardHeader>
         <CardContent className="space-y-2">
-          {keys.map((key) => (
-            <KeyRow
-              approvalGranted={approval?.approved ?? false}
-              isPending={updateMutation.isPending}
-              key={key.id}
-              keyRecord={key}
-              onRevoke={() => setRevokeTarget(key)}
-              onRotate={() =>
-                updateMutation.mutate({ action: 'rotate', keyId: key.id })
-              }
-            />
-          ))}
-          {!keysQuery.isPending && keys.length === 0 ? (
+          {keysQuery.isPending ? (
+            <div aria-label={t('loading')} className="space-y-2" role="status">
+              {Array.from({ length: 3 }, (_, index) => (
+                <div
+                  className="h-[4.625rem] animate-pulse rounded-xl bg-foreground/5"
+                  key={index}
+                />
+              ))}
+            </div>
+          ) : keysQuery.isError ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-8 text-center">
+              <AlertCircle className="size-5 text-dynamic-red" />
+              <p className="text-muted-foreground text-sm">{t('list_error')}</p>
+              <Button
+                onClick={() => void keysQuery.refetch()}
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className="mr-2 size-4" />
+                {t('refresh')}
+              </Button>
+            </div>
+          ) : (
+            keys.map((key) => (
+              <KeyRow
+                approvalGranted={approval?.approved ?? false}
+                isPending={updateMutation.isPending}
+                key={key.id}
+                keyRecord={key}
+                onRevoke={() => setRevokeTarget(key)}
+                onRotate={() =>
+                  updateMutation.mutate({ action: 'rotate', keyId: key.id })
+                }
+              />
+            ))
+          )}
+          {!keysQuery.isPending && !keysQuery.isError && keys.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
               {t('empty')}
+            </div>
+          ) : null}
+          {keysQuery.hasNextPage ? (
+            <div className="flex justify-center border-t pt-3">
+              <Button
+                disabled={keysQuery.isFetchingNextPage}
+                onClick={() => void keysQuery.fetchNextPage()}
+                variant="outline"
+              >
+                {keysQuery.isFetchingNextPage
+                  ? t('loading_more')
+                  : t('load_more')}
+              </Button>
             </div>
           ) : null}
         </CardContent>

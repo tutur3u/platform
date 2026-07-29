@@ -30,64 +30,40 @@ export async function getAiStudioOverview({
     from: since.toISOString(),
     to: new Date().toISOString(),
   };
-  const [policy, keys, runs, prompts, agents, datasets, usage] =
-    await Promise.all([
-      sbAdmin
-        .schema('private')
-        .from('workspace_ai_studio_policies')
-        .select('*')
-        .eq('ws_id', workspaceId)
-        .maybeSingle(),
-      includeKeys
-        ? sbAdmin
-            .schema('private')
-            .from('ai_studio_api_keys')
-            .select(KEY_FIELDS)
-            .eq('ws_id', workspaceId)
-            .order('created_at', { ascending: false })
-            .limit(25)
-        : Promise.resolve({ data: [], error: null }),
-      listAiStudioConsumptionEvents({
-        cursor: null,
-        from: range.from,
-        limit: 50,
-        sbAdmin,
-        to: range.to,
-        userId,
-        workspaceId,
-      }),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_prompts')
-        .select('id, name, slug, description, latest_version, updated_at')
-        .eq('ws_id', workspaceId)
-        .is('archived_at', null)
-        .order('updated_at', { ascending: false })
-        .limit(25),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_agents')
-        .select('id, name, slug, description, latest_version, updated_at')
-        .eq('ws_id', workspaceId)
-        .is('archived_at', null)
-        .order('updated_at', { ascending: false })
-        .limit(25),
-      sbAdmin
-        .schema('private')
-        .from('ai_studio_datasets')
-        .select('id, name, description, updated_at')
-        .eq('ws_id', workspaceId)
-        .order('updated_at', { ascending: false })
-        .limit(25),
-      getAiStudioConsumptionBreakdown({
-        ...range,
-        sbAdmin,
-        userId,
-        workspaceId,
-      }),
-    ]);
+  const [policy, keys, runs, usage] = await Promise.all([
+    sbAdmin
+      .schema('private')
+      .from('workspace_ai_studio_policies')
+      .select('*')
+      .eq('ws_id', workspaceId)
+      .maybeSingle(),
+    includeKeys
+      ? sbAdmin
+          .schema('private')
+          .from('ai_studio_api_keys')
+          .select(KEY_FIELDS)
+          .eq('ws_id', workspaceId)
+          .order('created_at', { ascending: false })
+          .limit(25)
+      : Promise.resolve({ data: [], error: null }),
+    listAiStudioConsumptionEvents({
+      cursor: null,
+      from: range.from,
+      limit: 50,
+      sbAdmin,
+      to: range.to,
+      userId,
+      workspaceId,
+    }),
+    getAiStudioConsumptionBreakdown({
+      ...range,
+      sbAdmin,
+      userId,
+      workspaceId,
+    }),
+  ]);
 
-  const errors = [policy, keys, runs, prompts, agents, datasets, usage]
+  const errors = [policy, keys, runs, usage]
     .map((result) => result.error)
     .filter(Boolean);
   if (errors.length) {
@@ -120,11 +96,8 @@ export async function getAiStudioOverview({
   );
 
   return {
-    agents: agents.data ?? [],
-    datasets: datasets.data ?? [],
     keys: keys.data ?? [],
     policy: policy.data,
-    prompts: prompts.data ?? [],
     runs: (runs.data ?? []).map((run) => ({
       feature: run.feature,
       id: run.event_id,

@@ -17,9 +17,11 @@ const createKeySchema = z.object({
   name: z.string().trim().min(1).max(120),
   requestsPerMinute: z.number().int().min(1).max(10_000).optional(),
 });
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   await connection();
@@ -30,8 +32,15 @@ export async function GET(
     auth.sbAdmin,
     auth.workspace.id
   );
+  const url = new URL(request.url);
+  const limit = parseLimit(url.searchParams.get('limit'));
+  const rawCursor = url.searchParams.get('cursor');
+  const cursor = parseCursor(rawCursor);
+  if (rawCursor && !cursor) {
+    return Response.json({ error: 'Invalid API key cursor' }, { status: 400 });
+  }
 
-  const { data, error } = await auth.sbAdmin
+  let query = auth.sbAdmin
     .schema('private')
     .from('ai_studio_api_keys')
     .select(
@@ -39,11 +48,30 @@ export async function GET(
     )
     .eq('ws_id', auth.workspace.id)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .order('id', { ascending: false });
+  if (cursor) {
+    query = query.or(
+      `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
+    );
+  }
+  const { data, error } = await query.limit(limit + 1);
 
-  return error
-    ? Response.json({ error: 'Keys unavailable' }, { status: 500 })
-    : Response.json({ approval, keys: data ?? [] });
+  if (error) {
+    return Response.json({ error: 'Keys unavailable' }, { status: 500 });
+  }
+  const keys = (data ?? []).slice(0, limit);
+  const last = keys.at(-1);
+  return Response.json(
+    {
+      approval,
+      keys,
+      nextCursor:
+        (data?.length ?? 0) > limit && last
+          ? `${last.created_at}~${last.id}`
+          : null,
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } }
+  );
 }
 
 export async function POST(
@@ -111,4 +139,21 @@ export async function POST(
     },
     { status: 201 }
   );
+}
+
+function parseCursor(value: string | null) {
+  if (!value) return null;
+  const separator = value.lastIndexOf('~');
+  if (separator < 1) return null;
+  const createdAt = value.slice(0, separator);
+  const id = value.slice(separator + 1);
+  if (Number.isNaN(new Date(createdAt).getTime()) || !UUID_PATTERN.test(id)) {
+    return null;
+  }
+  return { createdAt, id };
+}
+
+function parseLimit(value: string | null) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? Math.min(parsed, 100) : 50;
 }

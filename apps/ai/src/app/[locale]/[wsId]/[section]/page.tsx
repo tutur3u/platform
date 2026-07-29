@@ -1,9 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { StudioPage } from '@/components/studio-page';
 import { getAiStudioWorkspaceContext } from '@/lib/access';
-import { getAiStudioOverview } from '@/lib/studio-data';
 
 const sections = new Set([
   'playground',
@@ -50,22 +48,12 @@ export default async function SectionPage({
   ) {
     notFound();
   }
-  const data = context?.permissions.containsPermission('use_ai_studio')
-    ? await getAiStudioOverview({
-        includeKeys: context.permissions.containsPermission('manage_ai_keys'),
-        sbAdmin: await createAdminClient({ noCookie: true }),
-        userId: context.user.id,
-        workspaceId: context.workspace.id,
-        workspaceName: context.workspace.name ?? t('studio'),
-      })
-    : null;
-
   return (
     <StudioPage
       canManageAiKeys={
         context?.permissions.containsPermission('manage_ai_keys') ?? false
       }
-      data={data}
+      data={null}
       labels={{
         activeKeys: t('active-keys'),
         activeModels: t('active-models'),

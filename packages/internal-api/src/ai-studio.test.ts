@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getAiStudioRuns, getAiStudioUsage } from './ai-studio';
+import {
+  getAiStudioCatalog,
+  getAiStudioKeys,
+  getAiStudioRuns,
+  getAiStudioUsage,
+} from './ai-studio';
 
 describe('AI Studio observability client', () => {
   it('encodes workspace IDs and bounded usage ranges', async () => {
@@ -53,5 +58,49 @@ describe('AI Studio observability client', () => {
     expect(url).toContain('status=succeeded');
     expect(url).not.toContain('prompt');
     expect(url).not.toContain('output');
+  });
+
+  it('encodes catalog and API-key pagination cursors', async () => {
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        Response.json({
+          approval: {
+            approved: true,
+            decidedAt: null,
+            decidedBy: null,
+          },
+          items: [],
+          keys: [],
+          nextCursor: null,
+        })
+      )
+    );
+    const options = {
+      baseUrl: 'https://ai.example.com',
+      fetch: fetchMock,
+    };
+
+    await getAiStudioCatalog(
+      'workspace-1',
+      'prompts',
+      { cursor: 'updated~prompt-id', limit: 40 },
+      options
+    );
+    await getAiStudioKeys(
+      'workspace-1',
+      { cursor: 'created~key-id', limit: 25 },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://ai.example.com/api/v1/workspaces/workspace-1/ai/catalog/prompts?cursor=updated%7Eprompt-id&limit=40',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://ai.example.com/api/v1/workspaces/workspace-1/ai/keys?cursor=created%7Ekey-id&limit=25',
+      expect.objectContaining({ cache: 'no-store' })
+    );
   });
 });

@@ -11,6 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import type { AiStudioOverview } from '@/lib/studio-data';
 import { ApiKeysPanel } from './api-keys-panel';
+import { CatalogPanel } from './catalog-panel';
 import { ObservabilityPanel } from './observability-panel';
 
 interface StudioPageLabels {
@@ -80,29 +81,12 @@ export function StudioPage({
     },
   ];
 
-  const sectionRows =
-    section === 'prompts'
-      ? data?.prompts.map((prompt) => ({
-          description: prompt.description,
-          id: prompt.id,
-          label: prompt.name,
-          meta: `v${prompt.latest_version}`,
-        }))
-      : section === 'agents'
-        ? data?.agents.map((agent) => ({
-            description: agent.description,
-            id: agent.id,
-            label: agent.name,
-            meta: `v${agent.latest_version}`,
-          }))
-        : section === 'datasets' || section === 'evaluations'
-          ? data?.datasets.map((dataset) => ({
-              description: dataset.description,
-              id: dataset.id,
-              label: dataset.name,
-              meta: '',
-            }))
-          : undefined;
+  const catalogResource =
+    section === 'prompts' || section === 'agents' || section === 'datasets'
+      ? section
+      : section === 'evaluations'
+        ? 'datasets'
+        : null;
 
   return (
     <div className="mx-auto max-w-[110rem] space-y-6 p-4 lg:p-8">
@@ -195,31 +179,8 @@ export function StudioPage({
         </>
       ) : section === 'api-keys' ? (
         <ApiKeysPanel workspaceId={workspaceId} />
-      ) : sectionRows ? (
-        <Card>
-          <CardContent className="space-y-2 p-4">
-            {sectionRows.length ? (
-              sectionRows.map((row) => (
-                <div
-                  className="flex min-w-0 items-center gap-3 rounded-xl border p-3"
-                  key={row.id}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{row.label}</div>
-                    <div className="truncate text-muted-foreground text-sm">
-                      {row.description || row.id}
-                    </div>
-                  </div>
-                  {row.meta ? (
-                    <Badge variant="outline">{row.meta}</Badge>
-                  ) : null}
-                </div>
-              ))
-            ) : (
-              <EmptyState label={labels.empty} />
-            )}
-          </CardContent>
-        </Card>
+      ) : catalogResource ? (
+        <CatalogPanel resource={catalogResource} workspaceId={workspaceId} />
       ) : section === 'runs' ||
         section === 'logs' ||
         section === 'usage' ||
