@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => {
   const verifyWorkspaceSingle = vi.fn();
   const confidentialSingle = vi.fn();
   const linkedTransactionMaybeSingle = vi.fn();
+  const inventorySourceMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
   const tagValidationEq = vi.fn();
   const tagValidationIn = vi.fn(() => ({
@@ -41,6 +42,18 @@ const mocks = vi.hoisted(() => {
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 maybeSingle: walletMaybeSingle,
+              })),
+            })),
+          })),
+        };
+      }
+
+      if (table === 'inventory_finance_entries') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: inventorySourceMaybeSingle,
               })),
             })),
           })),
@@ -122,6 +135,7 @@ const mocks = vi.hoisted(() => {
     getPermissions,
     getUser,
     linkedTransactionMaybeSingle,
+    inventorySourceMaybeSingle,
     sessionSupabase,
     tagDeleteEq,
     tagInsert,
@@ -213,6 +227,10 @@ describe('transaction detail route', () => {
         id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
         wallet_id: 'wallet-1',
       },
+      error: null,
+    });
+    mocks.inventorySourceMaybeSingle.mockResolvedValue({
+      data: null,
       error: null,
     });
     mocks.walletMaybeSingle.mockResolvedValue({
@@ -529,6 +547,40 @@ describe('transaction detail route', () => {
     expect(response.status).toBe(200);
     expect(mocks.adminSupabase.schema).toHaveBeenCalledWith('private');
     expect(mocks.walletMaybeSingle).toHaveBeenCalled();
+  });
+
+  it('locks provider-controlled amount and occurrence date fields', async () => {
+    const { PUT } = await import('./route.js');
+    mocks.inventorySourceMaybeSingle.mockResolvedValue({
+      data: {
+        checkout_session_id: 'checkout-1',
+        entry_kind: 'sale',
+        id: 'entry-1',
+        provider: 'polar',
+        provider_reference_id: 'order-1',
+      },
+      error: null,
+    });
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        body: JSON.stringify({ amount: 125 }),
+        method: 'PUT',
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: normalizedWsId,
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      message:
+        'Provider-linked transaction amounts and occurrence dates are immutable',
+    });
+    expect(mocks.updateEq).not.toHaveBeenCalled();
   });
 
   it('returns 404 when transaction wallet is outside the requested workspace', async () => {

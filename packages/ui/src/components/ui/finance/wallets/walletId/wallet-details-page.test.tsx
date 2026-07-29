@@ -117,6 +117,10 @@ vi.mock('./interest', () => ({
   WalletInterestSection: () => null,
 }));
 
+vi.mock('./inventory-wallet-contribution', () => ({
+  InventoryWalletContribution: () => null,
+}));
+
 vi.mock('./wallet-details-actions', () => ({
   WalletDetailsActions: (
     ...args: Parameters<typeof mocks.walletDetailsActions>

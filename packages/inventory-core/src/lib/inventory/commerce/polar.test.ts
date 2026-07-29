@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => {
     createAdminClient: vi.fn(),
     firstEq,
     from,
+    recordInventoryFinanceAdjustment: vi.fn(),
     recordInventorySaleFinanceTransaction: vi.fn(),
     revalidatePublicStorefront: vi.fn(),
     rpc,
@@ -33,6 +34,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('./finance', () => ({
+  recordInventoryFinanceAdjustment: (...args: unknown[]) =>
+    mocks.recordInventoryFinanceAdjustment(...args),
   recordInventorySaleFinanceTransaction: (...args: unknown[]) =>
     mocks.recordInventorySaleFinanceTransaction(...args),
 }));
@@ -108,6 +111,38 @@ describe('inventory Polar order sync', () => {
       checkoutId: 'checkout-1',
     });
     expect(mocks.revalidatePublicStorefront).toHaveBeenCalledWith('shop');
+  });
+
+  it('uses Polar cumulative refunded_amount as one idempotent adjustment', async () => {
+    await expect(
+      syncInventoryPolarOrder(
+        {
+          id: 'order-refunded',
+          metadata: {
+            checkoutId: 'checkout-1',
+            kind: 'inventory_checkout',
+            wsId: 'ws-1',
+          },
+          refundedAmount: 2750,
+          status: 'paid',
+        } as never,
+        'ws-1',
+        { eventType: 'order.refunded' }
+      )
+    ).resolves.toBe(true);
+
+    expect(mocks.recordInventoryFinanceAdjustment).toHaveBeenCalledWith({
+      amountMinor: 2750,
+      checkoutId: 'checkout-1',
+      kind: 'refund',
+      metadata: {
+        cumulativeRefundedAmount: 2750,
+        eventType: 'order.refunded',
+      },
+      provider: 'polar',
+      providerReferenceId: 'order-refunded',
+      sourceKey: 'refund:polar-order:order-refunded',
+    });
   });
 });
 

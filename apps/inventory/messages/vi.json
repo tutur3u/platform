@@ -1259,6 +1259,13 @@
           "namedPeriodRequired": "Chọn một giai đoạn bán hàng đã đặt tên để xuất dữ liệu.",
           "success": "Đã tải xuống dữ liệu bán hàng."
         },
+        "financeStatus": {
+          "disputed": "Đang khiếu nại",
+          "label": "Trạng thái Tài chính",
+          "linked": "Đã liên kết Tài chính",
+          "pending": "Cần ví Tài chính",
+          "refunded": "Đã hoàn tiền"
+        },
         "items": "{count, plural, one {# mặt hàng} other {# mặt hàng}}",
         "lineItems": "Sản phẩm trong hóa đơn",
         "lineItemsError": "Không thể tải sản phẩm đã bán.",

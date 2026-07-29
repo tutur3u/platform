@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { InventoryTransactionSource } from '@tuturuuu/types/primitives';
+import { loadInventoryTransactionSources } from './inventory-source-enrichment';
 
 export type TransactionListEnrichment = {
+  source: InventoryTransactionSource | undefined;
   wallet_currency: string | null;
   wallet_icon: string | null;
   wallet_image_src: string | null;
@@ -32,6 +35,7 @@ type LoadTransactionListEnrichmentInput = {
   normalizedWsId: string;
   route: string;
   supabase: TypedSupabaseClient;
+  sbAdmin?: TypedSupabaseClient;
   transactionIds: string[];
   userId: string;
 };
@@ -140,6 +144,7 @@ function normalizeTransfer(
 export async function loadTransactionListEnrichment({
   normalizedWsId,
   route,
+  sbAdmin,
   supabase,
   transactionIds,
   userId,
@@ -152,14 +157,20 @@ export async function loadTransactionListEnrichment({
     return new Map<string, TransactionListEnrichment>();
   }
 
-  const { data, error } = await supabase.rpc(
-    'get_transaction_list_enrichment',
-    {
+  const [{ data, error }, sourceByTransactionId] = await Promise.all([
+    supabase.rpc('get_transaction_list_enrichment', {
       p_ws_id: normalizedWsId,
       p_transaction_ids: uniqueTransactionIds,
       p_user_id: userId,
-    }
-  );
+    }),
+    sbAdmin
+      ? loadInventoryTransactionSources({
+          normalizedWsId,
+          sbAdmin,
+          transactionIds: uniqueTransactionIds,
+        })
+      : Promise.resolve(new Map()),
+  ]);
 
   if (error) {
     if (isRecoverableEnrichmentError(error)) {
@@ -173,7 +184,19 @@ export async function loadTransactionListEnrichment({
         }
       );
 
-      return new Map<string, TransactionListEnrichment>();
+      return new Map(
+        [...sourceByTransactionId].map(([transactionId, source]) => [
+          transactionId,
+          {
+            source,
+            tags: [],
+            transfer: undefined,
+            wallet_currency: null,
+            wallet_icon: null,
+            wallet_image_src: null,
+          },
+        ])
+      );
     }
 
     throw error;
@@ -189,9 +212,23 @@ export async function loadTransactionListEnrichment({
       wallet_currency: row.wallet_currency,
       wallet_icon: row.wallet_icon,
       wallet_image_src: row.wallet_image_src,
+      source: sourceByTransactionId.get(row.transaction_id),
       tags: normalizeTags(row.tags),
       transfer: normalizeTransfer(row.transfer),
     });
+  }
+
+  for (const [transactionId, source] of sourceByTransactionId) {
+    if (!enrichmentByTransactionId.has(transactionId)) {
+      enrichmentByTransactionId.set(transactionId, {
+        source,
+        tags: [],
+        transfer: undefined,
+        wallet_currency: null,
+        wallet_icon: null,
+        wallet_image_src: null,
+      });
+    }
   }
 
   return enrichmentByTransactionId;

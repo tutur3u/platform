@@ -16,5 +16,13 @@ export default async function WorkspaceAnalyticsPage({ params }: Props) {
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();
 
-  return <AnalyticsPage wsId={context.wsId} currency={context.currency} />;
+  return (
+    <AnalyticsPage
+      wsId={context.wsId}
+      currency={context.currency}
+      canManageFinance={context.permissions.containsPermission(
+        'manage_finance'
+      )}
+    />
+  );
 }

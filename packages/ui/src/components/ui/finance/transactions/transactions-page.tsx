@@ -4,6 +4,7 @@ import {
   FinancePermissionWarningDialog,
 } from '@tuturuuu/ui/finance/shared/finance-permission-warning-dialog';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
+import { InventoryReconciliationPanel } from '@tuturuuu/ui/finance/transactions/inventory-reconciliation-panel';
 import { TransactionsCreateSummary } from '@tuturuuu/ui/finance/transactions/transactions-create-summary';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -55,6 +56,7 @@ export default async function TransactionsPage({
   const workspaceCurrency = resolveSupportedCurrency(resolvedCurrency);
 
   const canViewTransactions = containsPermission('view_transactions');
+  const canManageFinance = containsPermission('manage_finance');
   const canExportFinanceData = containsPermission('export_finance_data');
   const canCreateTransactions = containsPermission('create_transactions');
   const canUpdateTransactions = containsPermission('update_transactions');
@@ -99,6 +101,12 @@ export default async function TransactionsPage({
 
   return (
     <>
+      {canManageFinance && (
+        <InventoryReconciliationPanel
+          defaultCurrency={workspaceCurrency}
+          wsId={wsId}
+        />
+      )}
       <TransactionsCreateSummary
         pluralTitle={t('ws-transactions.plural')}
         singularTitle={t('ws-transactions.singular')}

@@ -1259,6 +1259,13 @@
           "namedPeriodRequired": "Select a named sales period to export.",
           "success": "Sales export downloaded."
         },
+        "financeStatus": {
+          "disputed": "Disputed",
+          "label": "Finance status",
+          "linked": "Linked to Finance",
+          "pending": "Needs Finance wallet",
+          "refunded": "Refunded"
+        },
         "items": "{count, plural, one {# item} other {# items}}",
         "lineItems": "Line items",
         "lineItemsError": "Sold items could not be loaded.",

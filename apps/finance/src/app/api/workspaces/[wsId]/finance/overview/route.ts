@@ -9,6 +9,11 @@ import {
   MAX_FINANCE_EXTENDED_DATE_RANGE_DAYS,
   validateFinanceDateRange,
 } from '../date-range';
+import {
+  buildReconciliationSummary,
+  type SummaryRow,
+} from '../inventory-reconciliation/lib';
+import { privateFinanceDataClient } from '../inventory-reconciliation/private-client';
 
 const querySchema = z.object({
   view: z.enum(['date', 'month', 'year']).optional().default('date'),
@@ -134,10 +139,27 @@ export async function GET(request: Request, { params }: Params) {
     if (error) throw error;
 
     const metrics = data?.[0] ?? {};
+    let inventoryReconciliation = buildReconciliationSummary([]);
+    if (!permissions.withoutPermission('manage_finance')) {
+      const { data: summaryRows, error: summaryError } =
+        await privateFinanceDataClient(sbAdmin).rpc<SummaryRow>(
+          'get_inventory_finance_reconciliation_summary',
+          {
+            p_end_date: parsed.data.endDate || null,
+            p_start_date: parsed.data.startDate || null,
+            p_wallet_id: null,
+            p_ws_id: normalizedWsId,
+          }
+        );
+      if (summaryError) throw summaryError;
+      inventoryReconciliation = buildReconciliationSummary(summaryRows ?? []);
+    }
 
     return NextResponse.json({
       categoryCount: toNumber(metrics.category_count),
       invoiceCount: toNumber(metrics.invoice_count),
+      inventoryPending: inventoryReconciliation.pending,
+      inventoryReconciliation,
       latestTransactionAt: metrics.latest_transaction_at ?? null,
       netTotal: toNumber(metrics.net_total),
       recentExpenseCount: toNumber(metrics.recent_expense_count),

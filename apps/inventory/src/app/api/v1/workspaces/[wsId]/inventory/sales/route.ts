@@ -16,6 +16,7 @@ import {
   setInventorySalePeriod,
 } from '@tuturuuu/inventory-core/sales-periods';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { resolveSupportedCurrency } from '@tuturuuu/utils/currencies';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
@@ -62,6 +63,9 @@ type InventorySaleListItem = {
   creator_name?: string | null;
   currency?: string | null;
   customer_name: string | null;
+  finance_reconciliation_href?: string | null;
+  finance_status?: 'linked' | 'pending' | 'refunded' | 'disputed' | null;
+  finance_transaction_id?: string | null;
   id: string;
   items_count: number;
   note?: string | null;
@@ -78,6 +82,79 @@ type InventorySaleListItem = {
   total_quantity: number;
   wallet_name?: string | null;
 };
+
+type FinanceEntryRow = {
+  amount_minor: number;
+  checkout_session_id: string;
+  entry_kind: string;
+  id: string;
+  reconciliation_status: string;
+  wallet_transaction_id: string | null;
+};
+
+async function enrichCheckoutFinanceStatus({
+  sales,
+  sbAdmin,
+  wsId,
+}: {
+  sales: InventorySaleListItem[];
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const checkoutIds = sales
+    .filter((sale) => sale.source === 'checkout_session')
+    .map((sale) => sale.id);
+  if (checkoutIds.length === 0) return sales;
+  if (typeof sbAdmin.schema !== 'function') return sales;
+  const { data, error } = (await sbAdmin
+    .schema('private' as never)
+    .from('inventory_finance_entries' as never)
+    .select(
+      'id, checkout_session_id, entry_kind, amount_minor, reconciliation_status, wallet_transaction_id'
+    )
+    .eq('ws_id' as never, wsId)
+    .in('checkout_session_id' as never, checkoutIds)) as unknown as {
+    data: FinanceEntryRow[] | null;
+    error: { message?: string } | null;
+  };
+  if (error) throw error;
+  const byCheckout = Map.groupBy(
+    data ?? [],
+    (entry) => entry.checkout_session_id
+  );
+  const financeOrigin =
+    process.env.NODE_ENV === 'production'
+      ? 'https://finance.tuturuuu.com'
+      : 'https://finance.tuturuuu.localhost';
+  return sales.map((sale) => {
+    if (sale.source !== 'checkout_session') return sale;
+    const entries = byCheckout.get(sale.id) ?? [];
+    const saleEntry = entries.find((entry) => entry.entry_kind === 'sale');
+    const holdTotal = entries
+      .filter((entry) => entry.entry_kind === 'chargeback_hold')
+      .reduce((sum, entry) => sum + entry.amount_minor, 0);
+    const releaseTotal = entries
+      .filter((entry) => entry.entry_kind === 'chargeback_release')
+      .reduce((sum, entry) => sum + entry.amount_minor, 0);
+    const hasRefund = entries.some((entry) => entry.entry_kind === 'refund');
+    const financeStatus =
+      holdTotal + releaseTotal < 0
+        ? 'disputed'
+        : hasRefund
+          ? 'refunded'
+          : saleEntry?.reconciliation_status === 'linked'
+            ? 'linked'
+            : 'pending';
+    return {
+      ...sale,
+      finance_reconciliation_href: saleEntry?.wallet_transaction_id
+        ? `${financeOrigin}/${wsId}/transactions/${saleEntry.wallet_transaction_id}`
+        : `${financeOrigin}/${wsId}/transactions?reconciliation=${saleEntry?.id ?? sale.id}`,
+      finance_status: financeStatus,
+      finance_transaction_id: saleEntry?.wallet_transaction_id ?? null,
+    } satisfies InventorySaleListItem;
+  });
+}
 
 function normalizeFinanceSale(
   sale: Omit<InventorySaleListItem, 'source'> & {
@@ -153,13 +230,18 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
     const workspaceCurrency = resolveSupportedCurrency(configuredCurrency);
+    const normalizedSales = sales.data.map((sale) =>
+      sale.source === 'finance_invoice'
+        ? normalizeFinanceSale(sale, workspaceCurrency)
+        : sale
+    );
     return NextResponse.json({
       count: sales.count,
-      data: sales.data.map((sale) =>
-        sale.source === 'finance_invoice'
-          ? normalizeFinanceSale(sale, workspaceCurrency)
-          : sale
-      ),
+      data: await enrichCheckoutFinanceStatus({
+        sales: normalizedSales,
+        sbAdmin,
+        wsId,
+      }),
       realtime_enabled: realtimeEnabled,
       workspace_currency: workspaceCurrency,
     });

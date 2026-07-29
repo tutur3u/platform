@@ -168,6 +168,7 @@ export function TransactionEditDialog({
   timezone,
 }: TransactionEditDialogProps) {
   const t = useTranslations();
+  const sourceT = useTranslations('inventory-finance-reconciliation');
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -197,6 +198,7 @@ export function TransactionEditDialog({
   // Disable all fields if user lacks permission to view/update confidential transaction
   const isDisabled =
     hasAnyConfidentialField && !canUpdateConfidentialTransactions;
+  const isProviderLinked = Boolean(transaction.source);
 
   // Check if user can delete this specific transaction
   const canDeleteThisTransaction =
@@ -345,15 +347,19 @@ export function TransactionEditDialog({
 
       const payload = {
         description,
-        amount: finalAmount,
         origin_wallet_id: walletId,
         category_id: categoryId,
-        taken_at: takenAt?.toISOString(),
         report_opt_in: reportOptIn,
         tag_ids: selectedTagIds,
         is_amount_confidential: isAmountConfidential,
         is_description_confidential: isDescriptionConfidential,
         is_category_confidential: isCategoryConfidential,
+        ...(isProviderLinked
+          ? {}
+          : {
+              amount: finalAmount,
+              taken_at: takenAt?.toISOString(),
+            }),
       };
 
       if (transaction?.id) {
@@ -388,6 +394,7 @@ export function TransactionEditDialog({
     canSave,
     canUpdateTransactions,
     isExpense,
+    isProviderLinked,
     amount,
     transaction,
     wsId,
@@ -519,6 +526,12 @@ export function TransactionEditDialog({
                         {t('workspace-finance-transactions.confidential')}
                       </Badge>
                     )}
+                    {transaction.source && (
+                      <Badge variant="outline">
+                        {sourceT(`provider_${transaction.source.provider}`)} ·{' '}
+                        {sourceT(`kind_${transaction.source.kind}`)}
+                      </Badge>
+                    )}
                   </div>
                   <DialogDescription className="text-xs">
                     {canUpdateTransactions
@@ -634,7 +647,9 @@ export function TransactionEditDialog({
                     value={amount}
                     onChange={setAmount}
                     placeholder="0"
-                    disabled={isDisabled || !canUpdateTransactions}
+                    disabled={
+                      isDisabled || !canUpdateTransactions || isProviderLinked
+                    }
                     locale={locale}
                     currencySuffix={selectedWalletCurrency}
                     className={cn(
@@ -667,6 +682,11 @@ export function TransactionEditDialog({
                           }).format(isExpense ? -amount : amount)}
                     </span>
                   </div>
+                  {isProviderLinked && (
+                    <p className="text-muted-foreground text-xs">
+                      {sourceT('provider_fields_locked')}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -760,7 +780,9 @@ export function TransactionEditDialog({
                   includeTimeLabel={t('transaction-data-table.include_time')}
                   allowClear={false}
                   showFooterControls={true}
-                  disabled={isDisabled || !canUpdateTransactions}
+                  disabled={
+                    isDisabled || !canUpdateTransactions || isProviderLinked
+                  }
                   preferences={{
                     timezone: timezone || 'auto',
                     timeFormat: locale === 'vi' ? '24h' : '12h',

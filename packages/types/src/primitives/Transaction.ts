@@ -4,6 +4,22 @@ export interface TransactionTag {
   color: string;
 }
 
+export interface InventoryTransactionSource {
+  checkoutId: string | null;
+  entryId: string;
+  inventoryHref: string;
+  kind:
+    | 'sale'
+    | 'refund'
+    | 'chargeback_hold'
+    | 'chargeback_release'
+    | 'manual_provider_adjustment';
+  provider: 'polar' | 'square_pos' | 'square_terminal';
+  providerReferenceId: string;
+  reconciliationHref: string;
+  type: 'inventory';
+}
+
 export interface Transaction {
   id?: string;
   href?: string;
@@ -31,6 +47,7 @@ export interface Transaction {
     avatar_url?: string;
   };
   tags?: TransactionTag[];
+  source?: InventoryTransactionSource;
   transfer?: {
     linked_transaction_id: string;
     linked_wallet_id: string;

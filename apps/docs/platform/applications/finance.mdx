@@ -82,3 +82,41 @@ then wire both host wrappers in the same change. Add or extend the protected
 route in `apps/web`, expose a helper in `packages/internal-api` when shared UI
 needs it, and consume it from both hosts through TanStack Query or shared server
 components.
+
+## Inventory sales reconciliation
+
+Finance owns the Inventory reconciliation inbox and its protected API under
+`/api/workspaces/:wsId/finance/inventory-reconciliation`. Access to pending
+entries, provider mappings, provider history synchronization, manual
+adjustments, and bulk link/unlink actions requires `manage_finance`.
+
+Every provider-confirmed Polar, Square POS, or Square Terminal event is first
+stored as an immutable `private.inventory_finance_entries` source row. The
+source row affects balances only after an atomic database RPC links it to a
+currency-compatible wallet transaction. Missing wallets stay pending and are
+never included in income, wallet, or net-total calculations.
+
+Provider-and-currency mappings take precedence over the Inventory revenue
+wallet fallback and the Finance default wallet. A wallet must use the entry
+currency. Category resolution uses the unanimous product category first, then
+the provider mapping, the Inventory default, and finally uncategorized.
+
+Deleting or explicitly unlinking a provider transaction removes only the
+ledger row and returns the immutable source entry to pending. Provider,
+reference, signed amount, and occurrence date remain provider-controlled;
+wallet, category, tags, description, and confidentiality remain editable.
+
+For rollout and recovery:
+
+1. Deploy the database migration before Inventory, Finance, or shared-package
+   consumers.
+2. Verify historical completed provider sales appear in the pending inbox.
+   The migration never auto-posts unmatched historical sales.
+3. Configure provider and currency mappings, inspect pending counts by
+   currency, and only then use bulk linking.
+4. Run the bounded provider-history sync explicitly to discover historical
+   refunds and Square disputes.
+5. If a ledger row was deleted accidentally, relink the still-present source
+   entry. Do not recreate provider events manually.
+6. Use audited manual adjustments only when the provider has no supported
+   event, such as a Polar chargeback.

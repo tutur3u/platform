@@ -107,7 +107,8 @@ describe('inventory Polar webhook route', () => {
     );
     expect(mocks.syncInventoryPolarOrder).toHaveBeenCalledWith(
       order,
-      'verified-ws'
+      'verified-ws',
+      { eventType: 'order.paid' }
     );
   });
 

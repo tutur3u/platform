@@ -37,6 +37,10 @@ import {
   type InternalApiQuery,
   withFinanceApiBaseUrl,
 } from './client';
+import type {
+  InventoryFinanceCurrencyAmount,
+  InventoryFinanceReconciliationSummary,
+} from './finance-reconciliation';
 
 export async function listWallets(
   workspaceId: string,
@@ -770,6 +774,8 @@ export type FinanceOverviewMetricsQuery = FinanceChartRangeQuery & {
 export interface FinanceOverviewMetrics {
   categoryCount: number;
   invoiceCount: number;
+  inventoryPending: InventoryFinanceCurrencyAmount[];
+  inventoryReconciliation: InventoryFinanceReconciliationSummary;
   latestTransactionAt: string | null;
   netTotal: number;
   recentExpenseCount: number;

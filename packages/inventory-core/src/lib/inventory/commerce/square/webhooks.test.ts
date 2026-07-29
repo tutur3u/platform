@@ -13,7 +13,9 @@ const mocks = vi.hoisted(() => ({
   markConnectionRevoked: vi.fn(),
   markConnectionsRevokedByMerchantId: vi.fn(),
   syncInventorySquareDeviceCodePaired: vi.fn(),
+  syncInventorySquareDispute: vi.fn(),
   syncInventorySquarePayment: vi.fn(),
+  syncInventorySquareRefund: vi.fn(),
   syncInventorySquareTerminalCheckout: vi.fn(),
 }));
 
@@ -42,6 +44,15 @@ vi.mock('./terminal', () => ({
   syncInventorySquareTerminalCheckout: (
     ...args: Parameters<typeof mocks.syncInventorySquareTerminalCheckout>
   ) => mocks.syncInventorySquareTerminalCheckout(...args),
+}));
+
+vi.mock('./reconciliation', () => ({
+  syncInventorySquareDispute: (
+    ...args: Parameters<typeof mocks.syncInventorySquareDispute>
+  ) => mocks.syncInventorySquareDispute(...args),
+  syncInventorySquareRefund: (
+    ...args: Parameters<typeof mocks.syncInventorySquareRefund>
+  ) => mocks.syncInventorySquareRefund(...args),
 }));
 
 vi.mock('../../../infrastructure/log-drain', () => ({
@@ -81,7 +92,9 @@ describe('Square webhook verification', () => {
     mocks.markConnectionRevoked.mockResolvedValue(undefined);
     mocks.markConnectionsRevokedByMerchantId.mockResolvedValue(undefined);
     mocks.syncInventorySquareDeviceCodePaired.mockResolvedValue(true);
+    mocks.syncInventorySquareDispute.mockResolvedValue(true);
     mocks.syncInventorySquarePayment.mockResolvedValue(true);
+    mocks.syncInventorySquareRefund.mockResolvedValue(true);
     mocks.syncInventorySquareTerminalCheckout.mockResolvedValue(true);
   });
 
@@ -218,6 +231,94 @@ describe('Square webhook verification', () => {
       {
         environment: 'sandbox',
         eventId: 'event-terminal-1',
+        wsId: 'ws-1',
+      }
+    );
+  });
+
+  it('dispatches completed refund events to Finance reconciliation', async () => {
+    const rawBody = JSON.stringify({
+      data: {
+        object: {
+          refund: {
+            amount_money: { amount: 1250, currency: 'USD' },
+            id: 'refund-1',
+            payment_id: 'payment-1',
+            status: 'COMPLETED',
+          },
+        },
+      },
+      event_id: 'event-refund-1',
+      type: 'refund.updated',
+    });
+    const requestUrl =
+      'https://web.example.com/api/v1/inventory/square/webhook/ws-1';
+
+    await processInventorySquareWebhook({
+      rawBody,
+      requestUrl,
+      signature: sign({
+        notificationUrl: requestUrl,
+        rawBody,
+        signatureKey: 'sq-webhook-secret',
+      }),
+      wsId: 'ws-1',
+    });
+
+    expect(mocks.syncInventorySquareRefund).toHaveBeenCalledWith(
+      {
+        amount_money: { amount: 1250, currency: 'USD' },
+        id: 'refund-1',
+        payment_id: 'payment-1',
+        status: 'COMPLETED',
+      },
+      {
+        environment: 'sandbox',
+        eventId: 'event-refund-1',
+        wsId: 'ws-1',
+      }
+    );
+  });
+
+  it('dispatches dispute state transitions to chargeback reconciliation', async () => {
+    const rawBody = JSON.stringify({
+      data: {
+        object: {
+          dispute: {
+            amount_money: { amount: 5000, currency: 'USD' },
+            disputed_payment_id: 'payment-1',
+            id: 'dispute-1',
+            state: 'WON',
+          },
+        },
+      },
+      event_id: 'event-dispute-1',
+      type: 'dispute.state.updated',
+    });
+    const requestUrl =
+      'https://web.example.com/api/v1/inventory/square/webhook/ws-1';
+
+    await processInventorySquareWebhook({
+      rawBody,
+      requestUrl,
+      signature: sign({
+        notificationUrl: requestUrl,
+        rawBody,
+        signatureKey: 'sq-webhook-secret',
+      }),
+      wsId: 'ws-1',
+    });
+
+    expect(mocks.syncInventorySquareDispute).toHaveBeenCalledWith(
+      {
+        amount_money: { amount: 5000, currency: 'USD' },
+        disputed_payment_id: 'payment-1',
+        id: 'dispute-1',
+        state: 'WON',
+      },
+      {
+        environment: 'sandbox',
+        eventId: 'event-dispute-1',
         wsId: 'ws-1',
       }
     );

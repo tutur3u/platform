@@ -31,6 +31,7 @@ import { WalletCheckpointPanel } from '../checkpoints/wallet-checkpoint-panel';
 import { WalletIconDisplay } from '../wallet-icon-display';
 import { CreditWalletSummary } from './credit-wallet-summary';
 import { WalletInterestSection } from './interest';
+import { InventoryWalletContribution } from './inventory-wallet-contribution';
 import {
   type WalletDetailsAction,
   WalletDetailsActions,
@@ -79,6 +80,7 @@ export default async function WalletDetailsPage({
   if (!resolvedWorkspace || !resolvedPermissions) notFound();
   const { withoutPermission, containsPermission } = resolvedPermissions;
   const canManageRoles = !withoutPermission('manage_workspace_roles');
+  const canManageFinance = containsPermission('manage_finance');
 
   // Transaction permissions
   const canUpdateTransactions = containsPermission('update_transactions');
@@ -288,6 +290,13 @@ export default async function WalletDetailsPage({
         </Card>
       </div>
       <Separator className="my-4" />
+      {canManageFinance && (
+        <InventoryWalletContribution
+          currency={currency}
+          walletId={walletId}
+          wsId={wsId}
+        />
+      )}
       {canManageRoles && !resolvedWorkspace.personal && (
         <>
           <WalletRoleAccessDialog wsId={wsId} walletId={walletId} />

@@ -168,6 +168,44 @@ describe('inventory sales route', () => {
     );
   });
 
+  it('enriches provider sales with their Finance reconciliation status', async () => {
+    const inEntries = vi.fn().mockResolvedValue({
+      data: [
+        {
+          amount_minor: 3000,
+          checkout_session_id: '11111111-1111-4111-8111-111111111113',
+          entry_kind: 'sale',
+          id: '22222222-2222-4222-8222-222222222222',
+          reconciliation_status: 'linked',
+          wallet_transaction_id: '33333333-3333-4333-8333-333333333333',
+        },
+      ],
+      error: null,
+    });
+    const adminClient = {
+      schema: vi.fn(() => ({
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({ in: inEntries })),
+          })),
+        })),
+      })),
+    };
+    mocks.createAdminClient.mockResolvedValue(adminClient);
+
+    const response = await listSales();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.data[1]).toMatchObject({
+      finance_status: 'linked',
+      finance_transaction_id: '33333333-3333-4333-8333-333333333333',
+    });
+    expect(payload.data[1].finance_reconciliation_href).toContain(
+      '/ws-real/transactions/33333333-3333-4333-8333-333333333333'
+    );
+  });
+
   it('validates a period before requesting its sales', async () => {
     const periodId = '11111111-1111-4111-8111-111111111111';
     const response = await listSales(`?period_id=${periodId}`);

@@ -6,9 +6,11 @@ import {
   SQUARE_OAUTH_SCOPES,
   type SquareApiDevice,
   type SquareApiDeviceCode,
+  type SquareApiDispute,
   type SquareApiLocation,
   type SquareApiOrder,
   type SquareApiPayment,
+  type SquareApiRefund,
   type SquareApiTerminalCheckout,
   type SquareCatalogIdMapping,
   type SquareCatalogObject,
@@ -258,6 +260,66 @@ export async function retrieveSquarePaymentApi({
     path: `/v2/payments/${encodeURIComponent(paymentId)}`,
   });
   return payload.payment ?? null;
+}
+
+function appendSquareListQuery(
+  path: string,
+  values: Record<string, string | number | null | undefined>
+) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== null && value !== undefined && value !== '') {
+      query.set(key, String(value));
+    }
+  }
+  const serialized = query.toString();
+  return serialized ? `${path}?${serialized}` : path;
+}
+
+export async function listSquareRefundsApi({
+  accessToken,
+  beginTime,
+  cursor,
+  environment,
+  limit = 50,
+}: {
+  accessToken: string;
+  beginTime?: string | null;
+  cursor?: string | null;
+  environment: SquareEnvironment;
+  limit?: number;
+}) {
+  return squareFetch<{ cursor?: string; refunds?: SquareApiRefund[] }>({
+    accessToken,
+    environment,
+    path: appendSquareListQuery('/v2/refunds', {
+      begin_time: beginTime,
+      cursor,
+      limit: Math.min(Math.max(limit, 1), 100),
+      sort_order: 'ASC',
+    }),
+  });
+}
+
+export async function listSquareDisputesApi({
+  accessToken,
+  cursor,
+  environment,
+  limit = 50,
+}: {
+  accessToken: string;
+  cursor?: string | null;
+  environment: SquareEnvironment;
+  limit?: number;
+}) {
+  return squareFetch<{ cursor?: string; disputes?: SquareApiDispute[] }>({
+    accessToken,
+    environment,
+    path: appendSquareListQuery('/v2/disputes', {
+      cursor,
+      limit: Math.min(Math.max(limit, 1), 100),
+    }),
+  });
 }
 
 export async function searchSquareCatalogApi({

@@ -1,23 +1,31 @@
 {
   "$comment": "Namespaces from shared packages that specific apps intentionally do not use. Remove entries as apps add the missing translations.",
-  "apps/web": ["certificates"],
+  "apps/web": ["certificates", "inventory-finance-reconciliation"],
   "apps/tasks": [
     "certificates",
     "finance-command-center",
+    "inventory-finance-reconciliation",
     "wallet-checkpoints"
   ],
   "apps/calendar": [
     "certificates",
     "finance-command-center",
+    "inventory-finance-reconciliation",
     "wallet-checkpoints",
     "ws-board-templates"
   ],
-  "apps/cms": ["certificates", "finance-command-center", "wallet-checkpoints"],
-  "apps/contacts": ["certificates"],
-  "apps/forms": ["certificates"],
+  "apps/cms": [
+    "certificates",
+    "finance-command-center",
+    "inventory-finance-reconciliation",
+    "wallet-checkpoints"
+  ],
+  "apps/contacts": ["certificates", "inventory-finance-reconciliation"],
+  "apps/forms": ["certificates", "inventory-finance-reconciliation"],
   "apps/drive": [
     "certificates",
     "finance-command-center",
+    "inventory-finance-reconciliation",
     "wallet-checkpoints"
   ],
   "apps/finance": ["certificates", "ws-board-templates"],
@@ -26,6 +34,7 @@
     "finance-command-center",
     "finance-analytics",
     "finance-transactions",
+    "inventory-finance-reconciliation",
     "invoice-analytics",
     "settings",
     "task_project_detail",
@@ -44,6 +53,7 @@
   "apps/track": [
     "certificates",
     "finance-command-center",
+    "inventory-finance-reconciliation",
     "wallet-checkpoints",
     "ws-board-templates"
   ],
@@ -53,6 +63,7 @@
     "finance-command-center",
     "finance-analytics",
     "finance-transactions",
+    "inventory-finance-reconciliation",
     "invoice-analytics",
     "settings",
     "task_project_detail",
@@ -74,6 +85,7 @@
   "apps/rewise": [
     "certificates",
     "finance-command-center",
+    "inventory-finance-reconciliation",
     "wallet-checkpoints",
     "ws-board-templates"
   ],

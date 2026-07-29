@@ -43,6 +43,7 @@ const baseConnection: SquareConnectionRow = {
     'PAYMENTS_READ',
     'PAYMENTS_WRITE',
     'DEVICE_CREDENTIAL_MANAGEMENT',
+    'DISPUTES_READ',
   ],
   status: 'ready',
   token_expires_at: '2026-06-29T00:00:00.000Z',

@@ -1231,6 +1231,9 @@ export type InventorySaleSummary = {
   creator_name?: string | null;
   currency?: string | null;
   customer_name: string | null;
+  finance_reconciliation_href?: string | null;
+  finance_status?: 'linked' | 'pending' | 'refunded' | 'disputed' | null;
+  finance_transaction_id?: string | null;
   id: string;
   items_count: number;
   note?: string | null;

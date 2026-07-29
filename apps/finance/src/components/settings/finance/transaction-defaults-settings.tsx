@@ -39,6 +39,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useTransactionCategories } from '@/hooks/use-transaction-categories';
 import { useWallets } from '@/hooks/use-wallets';
+import { InventoryProviderMappingsSettings } from './inventory-provider-mappings-settings';
 
 interface Props {
   workspaceId: string;
@@ -542,6 +543,7 @@ export default function TransactionDefaultsSettings({
           </div>
         </section>
       </div>
+      <InventoryProviderMappingsSettings workspaceId={workspaceId} />
     </div>
   );
 }

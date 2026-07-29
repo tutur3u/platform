@@ -61,7 +61,8 @@ export async function GET(req: Request, { params }: Params) {
       return access.response;
     }
 
-    const { normalizedWsId, permissions, supabase, user } = access.context;
+    const { normalizedWsId, permissions, sbAdmin, supabase, user } =
+      access.context;
     if (permissions.withoutPermission('view_transactions')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
@@ -128,6 +129,7 @@ export async function GET(req: Request, { params }: Params) {
     const enrichmentByTransaction = await loadTransactionListEnrichment({
       normalizedWsId,
       route: 'transactions/periods',
+      sbAdmin,
       supabase,
       transactionIds: allTransactionIds,
       userId: user.id,
@@ -228,6 +230,8 @@ export async function GET(req: Request, { params }: Params) {
                 }
               : undefined,
             tags: enrichmentByTransaction.get(tx.id)?.tags || [],
+            source: enrichmentByTransaction.get(tx.id)?.source,
+            transfer: enrichmentByTransaction.get(tx.id)?.transfer,
           };
         }
       );

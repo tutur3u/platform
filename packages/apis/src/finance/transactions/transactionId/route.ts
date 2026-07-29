@@ -12,6 +12,7 @@ import {
   enrichTransactionsWithTags,
   validateTransactionTagIdsForWorkspace,
 } from '../tag-enrichment';
+import { loadInventoryTransactionSource } from './inventory-source';
 
 // Helper function to verify transaction belongs to workspace
 async function verifyTransactionWorkspace(
@@ -55,6 +56,7 @@ async function verifyTransactionWorkspace(
 
   return data;
 }
+
 interface Params {
   params: Promise<{
     transactionId: string;
@@ -177,7 +179,15 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(enrichedTransactions?.[0] ?? transactionRow);
+  const source = await loadInventoryTransactionSource(
+    sbAdmin,
+    transactionId,
+    normalizedWsId
+  );
+  return NextResponse.json({
+    ...(enrichedTransactions?.[0] ?? transactionRow),
+    source: source ?? undefined,
+  });
 }
 
 export async function PUT(
@@ -256,6 +266,21 @@ export async function PUT(
     );
   }
 
+  const source = await loadInventoryTransactionSource(
+    sbAdmin,
+    transactionId,
+    normalizedWsId
+  );
+  if (source && (data.amount !== undefined || data.taken_at !== undefined)) {
+    return NextResponse.json(
+      {
+        message:
+          'Provider-linked transaction amounts and occurrence dates are immutable',
+      },
+      { status: 400 }
+    );
+  }
+
   const newData = {
     ...data,
     wallet_id: data.origin_wallet_id,
@@ -316,13 +341,22 @@ export async function PUT(
     const { data: walletCheck } = await sbAdmin
       .schema('private')
       .from('workspace_wallets')
-      .select('id')
+      .select('id, currency')
       .eq('id', newData.wallet_id)
       .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
     if (!walletCheck) {
       return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+    }
+    if (
+      source &&
+      walletCheck.currency.toUpperCase() !== source.currency.toUpperCase()
+    ) {
+      return NextResponse.json(
+        { message: 'Provider-linked transactions cannot change currency' },
+        { status: 400 }
+      );
     }
   }
 

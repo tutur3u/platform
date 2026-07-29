@@ -335,3 +335,28 @@ must approve the store's refund plan.
 Use the customer-facing
 [Production launch gate](/platform/applications/inventory-square-pos/production-launch)
 for the exact owner, operator, receipt, stock, and go/no-go checklist.
+
+## Refund and dispute reconciliation
+
+Square connections created before Inventory–Finance reconciliation may not
+include `DISPUTES_READ`. Existing payment capture remains usable without that
+scope. Ask the Square owner to reconnect OAuth during a planned maintenance
+window before enabling dispute history synchronization.
+
+Subscribe the configured Square webhook endpoint to:
+
+- `refund.created`
+- `refund.updated`
+- `dispute.created`
+- `dispute.state.updated`
+
+Refunds are recorded only when Square reports them completed. Dispute creation
+creates a negative chargeback hold; `WON` creates a positive release, while
+`LOST` and `ACCEPTED` leave the hold final. Webhook retries update the same
+provider source key and must never create duplicate ledger rows.
+
+After deployment, use the Finance reconciliation provider-sync action in
+bounded pages. It reads Square refund and dispute history but does not create,
+accept, challenge, or otherwise mutate a Square dispute. Validate these flows
+in Square Sandbox; do not create or capture Production payments merely to test
+reconciliation.

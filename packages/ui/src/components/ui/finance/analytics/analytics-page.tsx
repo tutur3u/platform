@@ -18,13 +18,16 @@ import {
 import { AnalyticsDateControls } from './analytics-date-controls';
 import { BalanceTrendChart } from './balance-trend-chart';
 import { IncomeExpenseChart } from './income-expense-chart';
+import { InventoryProviderSummary } from './inventory-provider-summary';
 
 interface AnalyticsPageProps {
+  canManageFinance?: boolean;
   wsId: string;
   currency?: string;
 }
 
 export default function AnalyticsPage({
+  canManageFinance = false,
   wsId,
   currency = 'USD',
 }: AnalyticsPageProps) {
@@ -102,6 +105,13 @@ export default function AnalyticsPage({
 
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
+        <InventoryProviderSummary
+          canManageFinance={canManageFinance}
+          currency={currency}
+          endDate={filters.apiDateRange.endDate}
+          startDate={filters.apiDateRange.startDate}
+          wsId={wsId}
+        />
         {/* Income vs Expense Chart */}
         {showDailyChart ? (
           <IncomeExpenseChart

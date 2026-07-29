@@ -8,12 +8,18 @@ import {
 } from './connection-store';
 import { syncInventorySquareDeviceCodePaired } from './devices';
 import {
+  syncInventorySquareDispute,
+  syncInventorySquareRefund,
+} from './reconciliation';
+import {
   syncInventorySquarePayment,
   syncInventorySquareTerminalCheckout,
 } from './terminal';
 import type {
   SquareApiDeviceCode,
+  SquareApiDispute,
   SquareApiPayment,
+  SquareApiRefund,
   SquareApiTerminalCheckout,
   SquareEnvironment,
 } from './types';
@@ -112,6 +118,28 @@ export async function handleInventorySquareWebhookEvent(
     return syncInventorySquarePayment(payment as SquareApiPayment, {
       eventId: event.event_id,
       environment: context.environment,
+      wsId: context.wsId,
+    });
+  }
+
+  if (type === 'refund.created' || type === 'refund.updated') {
+    if (!context.environment || !context.wsId) return false;
+    const refund = getObject(event, 'refund');
+    if (!refund) return false;
+    return syncInventorySquareRefund(refund as SquareApiRefund, {
+      environment: context.environment,
+      eventId: event.event_id,
+      wsId: context.wsId,
+    });
+  }
+
+  if (type === 'dispute.created' || type === 'dispute.state.updated') {
+    if (!context.environment || !context.wsId) return false;
+    const dispute = getObject(event, 'dispute');
+    if (!dispute) return false;
+    return syncInventorySquareDispute(dispute as SquareApiDispute, {
+      environment: context.environment,
+      eventId: event.event_id,
       wsId: context.wsId,
     });
   }

@@ -97,6 +97,11 @@
       "import": "./dist/finance.js",
       "require": "./dist/finance.js"
     },
+    "./finance-reconciliation": {
+      "types": "./dist/finance-reconciliation.d.ts",
+      "import": "./dist/finance-reconciliation.js",
+      "require": "./dist/finance-reconciliation.js"
+    },
     "./hive": {
       "types": "./dist/hive.d.ts",
       "import": "./dist/hive.js",

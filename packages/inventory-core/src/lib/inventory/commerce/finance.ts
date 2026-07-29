@@ -1,65 +1,288 @@
+import 'server-only';
+
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { minorToMajor } from '@tuturuuu/utils/money';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
+import {
+  decideSaleBooking,
+  type InventoryFinanceEntryKind,
+  type InventoryFinanceProvider,
+  normalizeInventoryFinanceAmount,
+  resolveCategoryPreference,
+  resolveCheckoutProvider,
+  resolveCompatibleWalletId,
+  resolveSharedFinanceCategoryId,
+  type SaleBookingSession,
+} from './finance-resolution';
 
-type SaleBookingSession = {
-  finance_transaction_id: string | null;
-  status: string;
-  total_amount: number;
+export {
+  decideSaleBooking,
+  type InventoryFinanceEntryKind,
+  type InventoryFinanceProvider,
+  normalizeInventoryFinanceAmount,
+  resolveCategoryPreference,
+  resolveCheckoutProvider,
+  resolveCompatibleWalletId,
+  resolveSharedFinanceCategoryId,
+  type SaleBookingDecision,
+} from './finance-resolution';
+
+type CheckoutFinanceSource = SaleBookingSession & {
+  completed_at: string | null;
+  created_at: string | null;
+  currency: string;
+  customer_email: string;
+  customer_name: string;
+  id: string;
+  square_order_id: string | null;
+  updated_at: string | null;
+  ws_id: string;
 };
-
-export type SaleBookingDecision =
-  | { book: false; reason: string }
-  | { book: true };
-
-/**
- * Pure guard: a completed sale books exactly one finance transaction, only when
- * it has a positive total and has not already been booked. Keeping this pure
- * makes the (financially sensitive) idempotency rules unit-testable.
- */
-export function decideSaleBooking(
-  session: SaleBookingSession
-): SaleBookingDecision {
-  if (session.status !== 'completed') {
-    return { book: false, reason: 'not-completed' };
-  }
-  if (session.finance_transaction_id) {
-    return { book: false, reason: 'already-booked' };
-  }
-  if (!session.total_amount || session.total_amount <= 0) {
-    return { book: false, reason: 'zero-amount' };
-  }
-  return { book: true };
-}
-
-/**
- * A sale can span several products. We only attribute the transaction to a
- * finance category when every line resolves to the SAME category — otherwise we
- * leave it uncategorized rather than guess.
- */
-export function resolveSharedFinanceCategoryId(
-  categoryIds: Array<string | null | undefined>
-): string | null {
-  const present = categoryIds.filter((id): id is string => Boolean(id));
-  if (present.length === 0) return null;
-  const [first] = present;
-  return present.every((id) => id === first) ? (first ?? null) : null;
-}
 
 export type RecordSaleResult = {
   booked: boolean;
+  entryId?: string;
   reason?: string;
+  status?: 'error' | 'linked' | 'pending';
   transactionId?: string;
+};
+
+type FinanceDefaults = {
+  categoryId: string | null;
+  walletId: string | null;
+};
+
+type UpsertResultRow = {
+  entry_id: string;
+  reconciliation_status: 'error' | 'linked' | 'pending';
+  synchronization_error: string | null;
+  wallet_transaction_id: string | null;
 };
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
+function uniqueUuidValues(values: Array<string | null | undefined>) {
+  return [
+    ...new Set(
+      values.filter(
+        (value): value is string => !!value && UUID_PATTERN.test(value)
+      )
+    ),
+  ];
+}
+
+async function loadCheckoutSource(checkoutId: string) {
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .from('inventory_checkout_sessions')
+    .select(
+      'id, ws_id, total_amount, currency, status, completed_at, created_at, updated_at, checkout_provider, polar_order_id, square_order_id, square_payment_id, finance_transaction_id, customer_name, customer_email'
+    )
+    .eq('id', checkoutId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return { sbAdmin, session: data as CheckoutFinanceSource | null };
+}
+
+async function resolveFinanceDefaults({
+  checkoutId,
+  currency,
+  provider,
+  sbAdmin,
+  wsId,
+}: {
+  checkoutId: string;
+  currency: string;
+  provider: InventoryFinanceProvider;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}): Promise<FinanceDefaults> {
+  const privateDb = sbAdmin.schema('private');
+  const [
+    mappingResult,
+    inventoryWalletId,
+    financeWalletId,
+    inventoryCategoryId,
+    { data: lines },
+  ] = await Promise.all([
+    privateDb
+      .from('inventory_finance_provider_mappings' as never)
+      .select('wallet_id, category_id')
+      .eq('ws_id' as never, wsId)
+      .eq('provider' as never, provider)
+      .eq('currency' as never, currency.toUpperCase())
+      .maybeSingle(),
+    getWorkspaceConfig(wsId, 'inventory_default_revenue_wallet_id'),
+    getWorkspaceConfig(wsId, 'default_wallet_id'),
+    getWorkspaceConfig(wsId, 'inventory_default_finance_category_id'),
+    privateDb
+      .from('inventory_checkout_lines')
+      .select('product_id')
+      .eq('checkout_session_id', checkoutId),
+  ]);
+  const mapping = (mappingResult.data ?? null) as {
+    category_id: string | null;
+    wallet_id: string | null;
+  } | null;
+
+  const productIds = [
+    ...new Set(
+      (lines ?? []).map((line) => line.product_id).filter((id) => Boolean(id))
+    ),
+  ];
+  const { data: products } =
+    productIds.length > 0
+      ? await sbAdmin
+          .from('workspace_products')
+          .select('finance_category_id')
+          .eq('ws_id', wsId)
+          .in('id', productIds)
+      : { data: [] };
+  const productCategoryId = resolveSharedFinanceCategoryId(
+    (products ?? []).map((product) => product.finance_category_id)
+  );
+
+  const walletPreferenceIds = uniqueUuidValues([
+    mapping?.wallet_id,
+    inventoryWalletId,
+    financeWalletId,
+  ]);
+  const { data: wallets } =
+    walletPreferenceIds.length > 0
+      ? await privateDb
+          .from('workspace_wallets')
+          .select('id, currency')
+          .eq('ws_id', wsId)
+          .in('id', walletPreferenceIds)
+      : { data: [] };
+
+  const categoryPreferenceIds = uniqueUuidValues([
+    productCategoryId,
+    mapping?.category_id,
+    inventoryCategoryId,
+  ]);
+  const { data: categories } =
+    categoryPreferenceIds.length > 0
+      ? await sbAdmin
+          .from('transaction_categories')
+          .select('id')
+          .eq('ws_id', wsId)
+          .in('id', categoryPreferenceIds)
+      : { data: [] };
+
+  return {
+    walletId: resolveCompatibleWalletId({
+      candidates: wallets ?? [],
+      currency,
+      preferenceIds: [mapping?.wallet_id, inventoryWalletId, financeWalletId],
+    }),
+    categoryId: resolveCategoryPreference({
+      availableCategoryIds: (categories ?? []).map((category) => category.id),
+      inventoryDefaultCategoryId: inventoryCategoryId,
+      productCategoryId,
+      providerCategoryId: mapping?.category_id,
+    }),
+  };
+}
+
+function getSaleReference(
+  session: CheckoutFinanceSource,
+  provider: InventoryFinanceProvider
+) {
+  if (provider === 'polar') return session.polar_order_id ?? session.id;
+  return session.square_payment_id ?? session.square_order_id ?? session.id;
+}
+
+async function upsertSourceEntry({
+  actorId = null,
+  amountMinor,
+  categoryId,
+  checkout,
+  description,
+  kind,
+  linkIfPossible,
+  metadata,
+  occurredAt,
+  parentEntryId = null,
+  provider,
+  providerReferenceId,
+  providerStatus,
+  sourceKey,
+  walletId,
+}: {
+  actorId?: string | null;
+  amountMinor: number;
+  categoryId: string | null;
+  checkout: CheckoutFinanceSource;
+  description: string;
+  kind: InventoryFinanceEntryKind;
+  linkIfPossible: boolean;
+  metadata?: Record<string, unknown>;
+  occurredAt: string;
+  parentEntryId?: string | null;
+  provider: InventoryFinanceProvider;
+  providerReferenceId: string;
+  providerStatus: string;
+  sourceKey: string;
+  walletId: string | null;
+}): Promise<RecordSaleResult> {
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const { data, error } = (await sbAdmin.schema('private').rpc(
+    'upsert_inventory_finance_entry' as never,
+    {
+      p_actor_id: actorId,
+      p_amount_minor: amountMinor,
+      p_category_id: categoryId,
+      p_checkout_session_id: checkout.id,
+      p_currency: checkout.currency.toUpperCase(),
+      p_description: description,
+      p_entry_kind: kind,
+      p_link_if_possible: linkIfPossible,
+      p_occurred_at: occurredAt,
+      p_parent_entry_id: parentEntryId,
+      p_provider: provider,
+      p_provider_reference_id: providerReferenceId,
+      p_provider_status: providerStatus,
+      p_source_key: sourceKey,
+      p_source_metadata: {
+        checkoutId: checkout.id,
+        customerEmail: checkout.customer_email,
+        customerName: checkout.customer_name,
+        ...metadata,
+      },
+      p_synchronization_error: null,
+      p_wallet_id: walletId,
+      p_ws_id: checkout.ws_id,
+    } as never
+  )) as {
+    data: UpsertResultRow[] | null;
+    error: { message: string } | null;
+  };
+
+  if (error) {
+    return { booked: false, reason: error.message, status: 'error' };
+  }
+  const row = (data?.[0] ?? null) as UpsertResultRow | null;
+  if (!row) return { booked: false, reason: 'upsert-returned-no-entry' };
+  return {
+    booked: row.reconciliation_status === 'linked',
+    entryId: row.entry_id,
+    reason:
+      row.synchronization_error ??
+      (row.reconciliation_status === 'pending'
+        ? 'no-compatible-wallet'
+        : undefined),
+    status: row.reconciliation_status,
+    transactionId: row.wallet_transaction_id ?? undefined,
+  };
+}
+
 /**
- * Books revenue from a completed (real, Polar-paid) storefront sale into the
- * workspace finance ledger. Idempotent: the sale's `finance_transaction_id`
- * link guards against double-booking. Never throws — finance booking must not
- * break the payment webhook; it returns a result and logs softly instead.
+ * Record and, when a compatible default exists, atomically post a completed
+ * real-provider checkout. Missing defaults produce a durable pending entry.
  */
 export async function recordInventorySaleFinanceTransaction({
   checkoutId,
@@ -67,128 +290,144 @@ export async function recordInventorySaleFinanceTransaction({
   checkoutId: string;
 }): Promise<RecordSaleResult> {
   try {
-    const sbAdmin = await createAdminClient();
-    const privateDb = sbAdmin.schema('private');
-
-    // `finance_transaction_id` is cast through `never` so this file compiles
-    // against any generated-types snapshot (the column ships in this feature's
-    // migration; the typegen catches up out of band).
-    const { data: session } = (await privateDb
-      .from('inventory_checkout_sessions')
-      .select(
-        'id, ws_id, total_amount, currency, status, completed_at, polar_order_id, finance_transaction_id' as never
-      )
-      .eq('id', checkoutId)
-      .maybeSingle()) as {
-      data: {
-        completed_at: string | null;
-        currency: string | null;
-        finance_transaction_id: string | null;
-        id: string;
-        polar_order_id: string | null;
-        status: string;
-        total_amount: number;
-        ws_id: string;
-      } | null;
-    };
-
+    const { sbAdmin, session } = await loadCheckoutSource(checkoutId);
     if (!session) return { booked: false, reason: 'session-not-found' };
-
     const decision = decideSaleBooking(session);
     if (!decision.book) return { booked: false, reason: decision.reason };
 
-    const walletId = await getWorkspaceConfig(
-      session.ws_id,
-      'default_wallet_id'
-    );
-    if (!walletId) return { booked: false, reason: 'no-default-wallet' };
-    if (!UUID_PATTERN.test(walletId)) {
-      return { booked: false, reason: 'invalid-default-wallet' };
-    }
+    const provider = resolveCheckoutProvider(session);
+    if (!provider) return { booked: false, reason: 'unsupported-provider' };
+    const defaults = await resolveFinanceDefaults({
+      checkoutId,
+      currency: session.currency,
+      provider,
+      sbAdmin,
+      wsId: session.ws_id,
+    });
+    const reference = getSaleReference(session, provider);
 
-    const { data: wallet, error: walletError } = (await privateDb
-      .from('workspace_wallets')
-      .select('id')
-      .eq('id', walletId)
-      .eq('ws_id', session.ws_id)
-      .maybeSingle()) as {
-      data: { id: string } | null;
-      error: { message?: string } | null;
-    };
-
-    if (walletError) {
-      return {
-        booked: false,
-        reason: walletError.message ?? 'wallet-validation-failed',
-      };
-    }
-
-    if (!wallet) {
-      return { booked: false, reason: 'invalid-default-wallet' };
-    }
-
-    const { data: lines } = await privateDb
-      .from('inventory_checkout_lines')
-      .select('product_id')
-      .eq('checkout_session_id', checkoutId);
-
-    const productIds = [
-      ...new Set(
-        (lines ?? [])
-          .map((line) => line.product_id)
-          .filter((id): id is string => Boolean(id))
-      ),
-    ];
-
-    let categoryId: string | null = null;
-    if (productIds.length > 0) {
-      const { data: products } = await sbAdmin
-        .from('workspace_products')
-        .select('finance_category_id')
-        .in('id', productIds);
-      categoryId = resolveSharedFinanceCategoryId(
-        (products ?? []).map((product) => product.finance_category_id)
-      );
-    }
-
-    // Checkout amounts are stored in integer minor units, but the finance
-    // ledger (`wallet_transactions.amount`) is kept in major units. Convert at
-    // this boundary so revenue books at the right scale.
-    const ledgerAmount = minorToMajor(
-      session.total_amount,
-      session.currency ?? 'USD'
-    );
-
-    const { data: transaction, error } = await sbAdmin
-      .from('wallet_transactions')
-      .insert({
-        amount: ledgerAmount,
-        category_id: categoryId,
-        description: `Storefront sale ${session.polar_order_id ?? session.id}`,
-        report_opt_in: true,
-        taken_at: session.completed_at ?? new Date().toISOString(),
-        wallet_id: wallet.id,
-      })
-      .select('id')
-      .single();
-
-    if (error || !transaction) {
-      return { booked: false, reason: error?.message ?? 'insert-failed' };
-    }
-
-    // Link back, but only while still unbooked, so a concurrent webhook retry
-    // can't double-book.
-    await privateDb
-      .from('inventory_checkout_sessions')
-      .update({ finance_transaction_id: transaction.id } as never)
-      .eq('id', checkoutId)
-      .is('finance_transaction_id' as never, null);
-
-    return { booked: true, transactionId: transaction.id };
+    return upsertSourceEntry({
+      amountMinor: session.total_amount,
+      categoryId: defaults.categoryId,
+      checkout: session,
+      description: `${provider === 'polar' ? 'Polar' : 'Square'} sale ${reference}`,
+      kind: 'sale',
+      linkIfPossible: true,
+      occurredAt:
+        session.completed_at ??
+        session.updated_at ??
+        session.created_at ??
+        new Date().toISOString(),
+      provider,
+      providerReferenceId: reference,
+      providerStatus: 'completed',
+      sourceKey: `sale:${reference}`,
+      walletId: defaults.walletId,
+    });
   } catch (error) {
     return {
       booked: false,
       reason: error instanceof Error ? error.message : 'unexpected-error',
+      status: 'error',
+    };
+  }
+}
+
+export async function recordInventoryFinanceAdjustment({
+  actorId,
+  amountMinor,
+  checkoutId,
+  kind,
+  metadata,
+  occurredAt,
+  provider,
+  providerReferenceId,
+  providerStatus = 'completed',
+  readyForLedger = true,
+  sourceKey,
+}: {
+  actorId?: string | null;
+  amountMinor: number;
+  checkoutId: string;
+  kind: Exclude<InventoryFinanceEntryKind, 'sale'>;
+  metadata?: Record<string, unknown>;
+  occurredAt?: string;
+  provider: InventoryFinanceProvider;
+  providerReferenceId: string;
+  providerStatus?: string;
+  readyForLedger?: boolean;
+  sourceKey: string;
+}): Promise<RecordSaleResult> {
+  try {
+    const { sbAdmin, session } = await loadCheckoutSource(checkoutId);
+    if (!session) return { booked: false, reason: 'session-not-found' };
+    const checkoutProvider = resolveCheckoutProvider(session);
+    if (checkoutProvider !== provider) {
+      return { booked: false, reason: 'provider-checkout-mismatch' };
+    }
+
+    const { data: saleEntryData } = (await sbAdmin
+      .schema('private')
+      .from('inventory_finance_entries' as never)
+      .select('id, wallet_transaction_id, suggested_category_id')
+      .eq('ws_id' as never, session.ws_id)
+      .eq('checkout_session_id' as never, session.id)
+      .eq('entry_kind' as never, 'sale')
+      .maybeSingle()) as {
+      data: {
+        id: string;
+        suggested_category_id: string | null;
+        wallet_transaction_id: string | null;
+      } | null;
+    };
+    const saleEntry = saleEntryData;
+    const { data: saleTransaction } = saleEntry?.wallet_transaction_id
+      ? await sbAdmin
+          .from('wallet_transactions')
+          .select('wallet_id, category_id')
+          .eq('id', saleEntry.wallet_transaction_id)
+          .maybeSingle()
+      : { data: null };
+    const defaults = await resolveFinanceDefaults({
+      checkoutId,
+      currency: session.currency,
+      provider,
+      sbAdmin,
+      wsId: session.ws_id,
+    });
+    const signedAmount = normalizeInventoryFinanceAmount(kind, amountMinor);
+    if (!signedAmount) return { booked: false, reason: 'zero-amount' };
+    const parentIsPending = Boolean(
+      saleEntry && !saleEntry.wallet_transaction_id
+    );
+
+    return upsertSourceEntry({
+      actorId,
+      amountMinor: signedAmount,
+      categoryId:
+        saleTransaction?.category_id ??
+        saleEntry?.suggested_category_id ??
+        defaults.categoryId,
+      checkout: session,
+      description: `${provider === 'polar' ? 'Polar' : 'Square'} ${kind.replaceAll('_', ' ')} ${providerReferenceId}`,
+      kind,
+      linkIfPossible: readyForLedger && !parentIsPending,
+      metadata,
+      occurredAt: occurredAt ?? new Date().toISOString(),
+      parentEntryId: saleEntry?.id ?? null,
+      provider,
+      providerReferenceId,
+      providerStatus,
+      sourceKey,
+      walletId: parentIsPending
+        ? null
+        : (saleTransaction?.wallet_id ?? defaults.walletId),
+    });
+  } catch (error) {
+    return {
+      booked: false,
+      reason: error instanceof Error ? error.message : 'unexpected-error',
+      status: 'error',
     };
   }
 }

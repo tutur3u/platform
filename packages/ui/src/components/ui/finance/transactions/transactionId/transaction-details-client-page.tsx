@@ -45,6 +45,7 @@ export function TransactionDetailsClientPage({
   timezone,
 }: Props) {
   const t = useTranslations();
+  const sourceT = useTranslations('inventory-finance-reconciliation');
   const financeHref = useFinanceHref();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { isConfidential: areNumbersHidden } =
@@ -88,6 +89,12 @@ export function TransactionDetailsClientPage({
                 </Badge>
                 {transaction.category && (
                   <Badge variant="outline">{transaction.category}</Badge>
+                )}
+                {transaction.source && (
+                  <Badge variant="outline">
+                    {sourceT(`provider_${transaction.source.provider}`)} ·{' '}
+                    {sourceT(`kind_${transaction.source.kind}`)}
+                  </Badge>
                 )}
               </div>
               <p className="text-muted-foreground text-sm">
@@ -152,6 +159,21 @@ export function TransactionDetailsClientPage({
             </div>
 
             <div className="space-y-3 p-4">
+              {transaction.source && (
+                <>
+                  <DetailItem
+                    icon={<Tag className="h-5 w-5 text-primary" />}
+                    label={sourceT('provider_source')}
+                    value={
+                      <span className="font-mono text-xs">
+                        {transaction.source.providerReferenceId}
+                      </span>
+                    }
+                    href={transaction.source.inventoryHref}
+                  />
+                  <Separator />
+                </>
+              )}
               <DetailItem
                 icon={<Wallet className="h-5 w-5 text-primary" />}
                 label={t('transaction-data-table.wallet')}

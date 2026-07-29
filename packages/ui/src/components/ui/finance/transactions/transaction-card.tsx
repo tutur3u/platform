@@ -78,6 +78,7 @@ export function TransactionCard({
   isDaily = false,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
+  const sourceT = useTranslations('inventory-finance-reconciliation');
   const commonT = useTranslations('common');
   const financeHref = useFinanceHref();
   const [isHovered, setIsHovered] = useState(false);
@@ -438,6 +439,20 @@ export function TransactionCard({
                   <Lock className="h-2.5 w-2.5" />
                   {t('confidential')}
                 </Badge>
+              )}
+              {transaction.source && (
+                <Link
+                  href={transaction.source.inventoryHref}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Badge
+                    variant="outline"
+                    className="border-dynamic-blue/40 bg-dynamic-blue/10 text-dynamic-blue"
+                  >
+                    {sourceT(`provider_${transaction.source.provider}`)} ·{' '}
+                    {sourceT(`kind_${transaction.source.kind}`)}
+                  </Badge>
+                </Link>
               )}
             </div>
 

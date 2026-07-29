@@ -33,7 +33,9 @@ async function handleInventoryPolarEvent(
   if (type.startsWith('checkout')) {
     await syncInventoryPolarCheckout(event.data as Checkout, verifiedWsId);
   } else if (type.startsWith('order')) {
-    await syncInventoryPolarOrder(event.data as Order, verifiedWsId);
+    await syncInventoryPolarOrder(event.data as Order, verifiedWsId, {
+      eventType: type,
+    });
   } else if (type.startsWith('product')) {
     await applyPolarProductToInventory(event.data as Product, verifiedWsId);
   }

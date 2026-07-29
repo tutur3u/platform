@@ -5474,6 +5474,163 @@ export type Database = {
           },
         ];
       };
+      inventory_finance_entries: {
+        Row: {
+          amount: number;
+          amount_minor: number;
+          checkout_session_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          entry_kind: string;
+          id: string;
+          last_synchronized_at: string | null;
+          occurred_at: string;
+          parent_entry_id: string | null;
+          provider: string;
+          provider_reference_id: string | null;
+          provider_status: string;
+          reconciliation_status: string;
+          source_key: string;
+          source_metadata: Json;
+          suggested_category_id: string | null;
+          synchronization_attempts: number;
+          synchronization_error: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          wallet_transaction_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          amount: number;
+          amount_minor: number;
+          checkout_session_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          entry_kind: string;
+          id?: string;
+          last_synchronized_at?: string | null;
+          occurred_at: string;
+          parent_entry_id?: string | null;
+          provider: string;
+          provider_reference_id?: string | null;
+          provider_status?: string;
+          reconciliation_status?: string;
+          source_key: string;
+          source_metadata?: Json;
+          suggested_category_id?: string | null;
+          synchronization_attempts?: number;
+          synchronization_error?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          wallet_transaction_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          amount_minor?: number;
+          checkout_session_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          entry_kind?: string;
+          id?: string;
+          last_synchronized_at?: string | null;
+          occurred_at?: string;
+          parent_entry_id?: string | null;
+          provider?: string;
+          provider_reference_id?: string | null;
+          provider_status?: string;
+          reconciliation_status?: string;
+          source_key?: string;
+          source_metadata?: Json;
+          suggested_category_id?: string | null;
+          synchronization_attempts?: number;
+          synchronization_error?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          wallet_transaction_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_finance_entries_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_finance_entries_currency_fkey';
+            columns: ['currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'inventory_finance_entries_parent_entry_id_fkey';
+            columns: ['parent_entry_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_finance_entries';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_finance_provider_mappings: {
+        Row: {
+          category_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          provider: string;
+          updated_at: string;
+          updated_by: string | null;
+          wallet_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          id?: string;
+          provider: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          wallet_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          category_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          provider?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          wallet_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_finance_provider_mappings_currency_fkey';
+            columns: ['currency'];
+            isOneToOne: false;
+            referencedRelation: 'currencies';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'inventory_finance_provider_mappings_wallet_id_fkey';
+            columns: ['wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_listing_option_groups: {
         Row: {
           created_at: string | null;
@@ -14496,6 +14653,10 @@ export type Database = {
           status: string;
         }[];
       };
+      backfill_inventory_finance_sales: {
+        Args: { p_ws_id?: string };
+        Returns: number;
+      };
       begin_ai_studio_run: {
         Args: {
           p_api_key_id: string;
@@ -14541,6 +14702,23 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      bulk_link_inventory_finance_entries: {
+        Args: {
+          p_actor_id?: string;
+          p_category_id?: string;
+          p_entry_ids: string[];
+          p_wallet_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          linked_count: number;
+          moved_count: number;
+        }[];
+      };
+      bulk_unlink_inventory_finance_entries: {
+        Args: { p_actor_id?: string; p_entry_ids: string[]; p_ws_id: string };
+        Returns: number;
       };
       calculate_ai_studio_usage_cost: {
         Args: {
@@ -15564,6 +15742,23 @@ export type Database = {
         Args: { p_ws_id: string };
         Returns: Json;
       };
+      get_inventory_finance_reconciliation_summary: {
+        Args: {
+          p_end_date?: string;
+          p_start_date?: string;
+          p_wallet_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          amount_minor: number;
+          currency: string;
+          entry_count: number;
+          kind: string;
+          provider: string;
+          status: string;
+        }[];
+      };
       get_inventory_low_stock_products: {
         Args: { p_ws_id: string };
         Returns: {
@@ -16140,6 +16335,10 @@ export type Database = {
       };
       inventory_currency_minor_factor: {
         Args: { p_currency: string };
+        Returns: number;
+      };
+      inventory_finance_minor_to_major: {
+        Args: { p_amount: number; p_currency: string };
         Returns: number;
       };
       inventory_major_to_minor: {
@@ -16879,6 +17078,34 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      upsert_inventory_finance_entry: {
+        Args: {
+          p_actor_id?: string;
+          p_amount_minor: number;
+          p_category_id?: string;
+          p_checkout_session_id: string;
+          p_currency: string;
+          p_description?: string;
+          p_entry_kind: string;
+          p_link_if_possible?: boolean;
+          p_occurred_at: string;
+          p_parent_entry_id?: string;
+          p_provider: string;
+          p_provider_reference_id: string;
+          p_provider_status?: string;
+          p_source_key: string;
+          p_source_metadata?: Json;
+          p_synchronization_error?: string;
+          p_wallet_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          entry_id: string;
+          reconciliation_status: string;
+          synchronization_error: string;
+          wallet_transaction_id: string;
+        }[];
       };
       upsert_managed_cron_whitelisted_domain: {
         Args: {

@@ -98,6 +98,15 @@ The commerce storefront extension adds:
   sales into seasons, conventions, campaigns, or other operating windows. A
   sale has at most one period assignment, while archived periods keep their
   historical assignments and remain available for reporting.
+- durable Finance source entries for every completed real-provider checkout,
+  refund, Square chargeback hold/release, and audited provider-unavailable
+  adjustment. Simulated checkouts are excluded. Manual Inventory sales continue
+  using their existing Finance invoice path.
+
+The Inventory Sales list shows whether a provider checkout is linked, pending,
+refunded, or disputed and links to the corresponding Finance transaction or
+reconciliation entry. Unlinked entries are operationally visible but do not
+affect Finance ledger totals.
 
 New commerce tables belong in the `private` schema, not `public`. Public and
 satellite clients must go through Inventory-owned `apps/inventory` APIs plus

@@ -3,6 +3,7 @@ import {
   ArrowDownRight,
   ArrowRightLeft,
   ArrowUpRight,
+  CircleAlert,
   FileText,
   FolderTree,
   Wallet2,
@@ -55,6 +56,14 @@ export async function FinanceOverviewMetrics({
   );
 
   const transactionsHref = `/${wsId}${financePrefix}/transactions`;
+  const reconciliationHref = `${transactionsHref}?reconciliation=needs-wallet`;
+  const canManageFinance = permissions.containsPermission('manage_finance');
+  const currencyAmount = (
+    values: Array<{ amount: number; currency: string }>
+  ) => values.find((item) => item.currency === currency)?.amount ?? 0;
+  const pending = metrics.inventoryPending.find(
+    (item) => item.currency === currency
+  );
 
   return (
     <>
@@ -115,6 +124,46 @@ export async function FinanceOverviewMetrics({
         href={transactionsHref}
         icon={<Activity className="h-5 w-5" />}
       />
+      {canManageFinance && (
+        <>
+          <StatisticCard
+            title={t('inventory-finance-reconciliation.pending_metric')}
+            value={t('inventory-finance-reconciliation.pending_metric_value', {
+              amount: new Intl.NumberFormat(
+                currency === 'VND' ? 'vi-VN' : 'en-US',
+                { currency, style: 'currency' }
+              ).format(pending?.amount ?? 0),
+              count: pending?.count ?? 0,
+            })}
+            href={reconciliationHref}
+            icon={<CircleAlert className="h-5 w-5" />}
+          />
+          <StatisticCard
+            title={t('inventory-finance-reconciliation.gross_provider_sales')}
+            value={currencyAmount(metrics.inventoryReconciliation.grossSales)}
+            href={reconciliationHref}
+            icon={<ArrowUpRight className="h-5 w-5" />}
+            currency={currency}
+          />
+          <StatisticCard
+            title={t('inventory-finance-reconciliation.refunds_chargebacks')}
+            value={
+              currencyAmount(metrics.inventoryReconciliation.refunds) +
+              currencyAmount(metrics.inventoryReconciliation.chargebackHolds)
+            }
+            href={reconciliationHref}
+            icon={<ArrowDownRight className="h-5 w-5" />}
+            currency={currency}
+          />
+          <StatisticCard
+            title={t('inventory-finance-reconciliation.net_provider_sales')}
+            value={currencyAmount(metrics.inventoryReconciliation.netSales)}
+            href={reconciliationHref}
+            icon={<ArrowRightLeft className="h-5 w-5" />}
+            currency={currency}
+          />
+        </>
+      )}
     </>
   );
 }

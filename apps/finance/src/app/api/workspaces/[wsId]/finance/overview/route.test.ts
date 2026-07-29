@@ -85,6 +85,16 @@ describe('finance overview metrics route', () => {
     await expect(response.json()).resolves.toEqual({
       categoryCount: 4,
       invoiceCount: 7,
+      inventoryPending: [],
+      inventoryReconciliation: {
+        chargebackHolds: [],
+        chargebackReleases: [],
+        grossSales: [],
+        netSales: [],
+        pending: [],
+        providers: [],
+        refunds: [],
+      },
       latestTransactionAt: '2026-05-24T00:00:00.000Z',
       netTotal: 75,
       recentExpenseCount: 1,

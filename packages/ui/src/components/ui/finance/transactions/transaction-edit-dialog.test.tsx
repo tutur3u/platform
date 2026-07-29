@@ -122,4 +122,35 @@ describe('TransactionEditDialog', () => {
       })
     ).toBeDisabled();
   });
+
+  it('locks provider-controlled amount and occurrence controls', async () => {
+    renderDialog({
+      transaction: {
+        amount: 123,
+        category_id: 'category-1',
+        description: 'Polar sale',
+        id: 'transaction-1',
+        report_opt_in: true,
+        source: {
+          checkoutId: 'checkout-1',
+          entryId: 'entry-1',
+          inventoryHref: 'https://inventory.tuturuuu.com/ws-1/sales',
+          kind: 'sale',
+          provider: 'polar',
+          providerReferenceId: 'order-1',
+          reconciliationHref: '/ws-1/transactions?reconciliation=entry-1',
+          type: 'inventory',
+        },
+        taken_at: '2026-05-27T00:00:00.000Z',
+        wallet_id: 'wallet-1',
+      },
+    });
+
+    expect(await screen.findByText('provider_fields_locked')).toBeVisible();
+    expect(
+      screen.getByRole('switch', {
+        name: 'transaction-data-table.include_time',
+      })
+    ).toBeDisabled();
+  });
 });

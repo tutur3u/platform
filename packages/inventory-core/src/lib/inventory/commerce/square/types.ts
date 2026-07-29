@@ -15,6 +15,7 @@ export const SQUARE_TERMINAL_OAUTH_SCOPES = [
   'ORDERS_WRITE',
   'PAYMENTS_READ',
   'PAYMENTS_WRITE',
+  'DISPUTES_READ',
   'DEVICE_CREDENTIAL_MANAGEMENT',
 ] as const;
 
@@ -127,6 +128,29 @@ export type SquareApiPayment = {
   source_type?: string;
   status?: string;
   total_money?: SquareMoney;
+};
+
+export type SquareApiRefund = {
+  amount_money?: SquareMoney;
+  created_at?: string;
+  id?: string;
+  location_id?: string;
+  order_id?: string;
+  payment_id?: string;
+  status?: string;
+  updated_at?: string;
+};
+
+export type SquareApiDispute = {
+  amount_money?: SquareMoney;
+  created_at?: string;
+  disputed_payment_id?: string;
+  due_at?: string;
+  id?: string;
+  location_id?: string;
+  reason?: string;
+  state?: string;
+  updated_at?: string;
 };
 
 export type SquarePosLaunch = {

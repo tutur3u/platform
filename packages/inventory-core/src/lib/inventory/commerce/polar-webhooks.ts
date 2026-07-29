@@ -3,7 +3,10 @@ import 'server-only';
 import type { InventoryPolarEnvironment } from '@tuturuuu/internal-api/inventory';
 import type { Checkout, Order } from '@tuturuuu/payment/polar';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { recordInventorySaleFinanceTransaction } from './finance';
+import {
+  recordInventoryFinanceAdjustment,
+  recordInventorySaleFinanceTransaction,
+} from './finance';
 import { updateCheckoutPolarState } from './polar-checkout';
 import type { SupabaseErrorLike } from './polar-core';
 import { assertInventoryPolarWorkspace } from './polar-errors';
@@ -100,7 +103,8 @@ function mapOrderPolarStatus(status: string) {
 
 export async function syncInventoryPolarOrder(
   order: Order,
-  expectedWsId?: string
+  expectedWsId?: string,
+  options: { eventType?: string } = {}
 ) {
   const metadata = getInventoryMetadata(order.metadata, expectedWsId);
   if (!metadata) return false;
@@ -130,6 +134,24 @@ export async function syncInventoryPolarOrder(
     await recordInventorySaleFinanceTransaction({
       checkoutId: metadata.checkoutId,
     });
+
+    if (
+      options.eventType === 'order.refunded' &&
+      Number(order.refundedAmount) > 0
+    ) {
+      await recordInventoryFinanceAdjustment({
+        amountMinor: Number(order.refundedAmount),
+        checkoutId: metadata.checkoutId,
+        kind: 'refund',
+        metadata: {
+          cumulativeRefundedAmount: Number(order.refundedAmount),
+          eventType: options.eventType,
+        },
+        provider: 'polar',
+        providerReferenceId: order.id,
+        sourceKey: `refund:polar-order:${order.id}`,
+      });
+    }
 
     if (metadata.storefrontSlug) {
       revalidatePublicStorefront(metadata.storefrontSlug);

@@ -24,6 +24,10 @@ export {
   SquarePosCallbackError,
 } from './pos';
 export {
+  syncInventorySquareDispute,
+  syncInventorySquareRefund,
+} from './reconciliation';
+export {
   assertInventorySquarePosReady,
   assertInventorySquareReady,
   getInventorySquareSettings,

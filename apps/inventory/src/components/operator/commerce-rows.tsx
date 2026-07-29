@@ -43,6 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -525,6 +526,19 @@ export function SaleRows({
                               label={amount}
                               title={t('commerce.amountDetails')}
                             />
+                            {isCheckoutSale &&
+                            row.finance_status &&
+                            row.finance_reconciliation_href ? (
+                              <Link href={row.finance_reconciliation_href}>
+                                <SaleMetaBadge
+                                  icon={<ShieldCheck className="h-3 w-3" />}
+                                  label={t(
+                                    `commerce.financeStatus.${row.finance_status}`
+                                  )}
+                                  title={t('commerce.financeStatus.label')}
+                                />
+                              </Link>
+                            ) : null}
                             {isCheckoutSale ? null : (
                               <SaleMetaBadge
                                 icon={<Wallet className="h-3 w-3" />}
