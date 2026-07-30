@@ -19,6 +19,14 @@ describe('AI Studio observability helpers', () => {
     });
   });
 
+  it('advances the live range end when the view is refreshed', () => {
+    const refreshedAt = new Date('2026-07-29T08:35:00.000Z');
+
+    expect(resolveObservabilityRange('month', '', '', refreshedAt)?.to).toEqual(
+      refreshedAt.toISOString()
+    );
+  });
+
   it('rejects invalid or overlong custom ranges', () => {
     expect(resolveObservabilityRange('custom', '', '')).toBeNull();
     expect(

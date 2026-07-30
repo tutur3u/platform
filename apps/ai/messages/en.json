@@ -159,7 +159,7 @@
     "playground_console": {
       "api_key": "API key",
       "approval_required": "Quick creation needs standing platform approval. You can still paste an existing active key.",
-      "credential_description": "The secret stays in this browser session and is sent directly to the production AI gateway.",
+      "credential_description": "The secret stays in this browser session and is sent directly to the production AI API.",
       "credential_title": "Production credential",
       "copy_key": "Copy API key",
       "default_instructions": "You are a precise assistant. Use the available tools when they improve accuracy.",

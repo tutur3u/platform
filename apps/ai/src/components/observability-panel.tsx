@@ -44,9 +44,10 @@ export function ObservabilityPanel({
   const [status, setStatus] = useState('all');
   const [model, setModel] = useState('');
   const [feature, setFeature] = useState('');
+  const [rangeAnchor, setRangeAnchor] = useState(() => new Date());
   const range = useMemo(
-    () => resolveObservabilityRange(preset, customFrom, customTo),
-    [customFrom, customTo, preset]
+    () => resolveObservabilityRange(preset, customFrom, customTo, rangeAnchor),
+    [customFrom, customTo, preset, rangeAnchor]
   );
   const usageQuery = useQuery({
     enabled: Boolean(range),
@@ -82,9 +83,13 @@ export function ObservabilityPanel({
     (section === 'credits' && creditsQuery.isError) ||
     (isRunSection && runsQuery.isError);
   const refresh = () => {
-    void usageQuery.refetch();
+    if (preset === 'custom') {
+      void usageQuery.refetch();
+      if (isRunSection) void runsQuery.refetch();
+    } else {
+      setRangeAnchor(new Date());
+    }
     if (section === 'credits') void creditsQuery.refetch();
-    if (isRunSection) void runsQuery.refetch();
   };
 
   return (
@@ -125,7 +130,10 @@ export function ObservabilityPanel({
             setCustomTo={setCustomTo}
             setFeature={setFeature}
             setModel={setModel}
-            setPreset={setPreset}
+            setPreset={(value) => {
+              setRangeAnchor(new Date());
+              setPreset(value);
+            }}
             setStatus={setStatus}
             status={status}
           />

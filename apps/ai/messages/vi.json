@@ -159,7 +159,7 @@
     "playground_console": {
       "api_key": "Khóa API",
       "approval_required": "Tạo nhanh cần phê duyệt thường trực từ quản trị viên nền tảng. Bạn vẫn có thể dán khóa hiện có đang hoạt động.",
-      "credential_description": "Khóa bí mật chỉ nằm trong phiên trình duyệt này và được gửi trực tiếp đến cổng AI sản xuất.",
+      "credential_description": "Khóa bí mật chỉ nằm trong phiên trình duyệt này và được gửi trực tiếp đến API AI trong môi trường sản xuất.",
       "credential_title": "Thông tin xác thực sản xuất",
       "copy_key": "Sao chép khóa API",
       "default_instructions": "Bạn là trợ lý chính xác. Hãy dùng công cụ có sẵn khi chúng giúp tăng độ chính xác.",
