@@ -67,6 +67,24 @@ cost when permitted, run and trace IDs, token or media units, and timing
 information. These fields extend the compatible response without changing the
 standard OpenAI fields.
 
+Text endpoints accept an optional bounded tool-loop extension:
+
+```json
+{
+  "tuturuuu": {
+    "max_steps": 4,
+    "tools": ["calculator", "current_time"]
+  }
+}
+```
+
+`max_steps` must be between 1 and 8. The listed tools are deterministic,
+server-owned demonstration tools; arbitrary HTTP requests and code execution
+are not accepted. Non-streaming responses include
+`tuturuuu.steps` with only the ordered step number, type, name, status, and
+latency. Streaming responses emit the same sanitized trace in the final
+`response.completed` event before `[DONE]`.
+
 Workspace Studio dashboards combine settled `ai_studio_runs` with unmatched
 deductions from `ai_credit_transactions`. This includes ordinary workspace
 deductions and the signed-in member's personal deductions when a free workspace

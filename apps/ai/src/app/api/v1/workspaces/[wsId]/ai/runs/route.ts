@@ -65,6 +65,10 @@ export async function GET(
   const page = (data ?? []).slice(0, limit);
   const hasMore = (data?.length ?? 0) > limit;
   const last = page.at(-1);
+  const stepCounts = await loadStepCounts(
+    auth.sbAdmin,
+    page.map((run) => run.event_id)
+  );
 
   return Response.json(
     {
@@ -90,10 +94,40 @@ export async function GET(
         searchUnits: run.search_units,
         sourceType: run.source_type,
         status: run.status,
+        stepCount: stepCounts.get(run.event_id)?.steps ?? 0,
+        toolCallCount: stepCounts.get(run.event_id)?.tools ?? 0,
       })),
     },
     { headers: { 'Cache-Control': 'private, no-store' } }
   );
+}
+
+async function loadStepCounts(
+  sbAdmin: Parameters<typeof listAiStudioConsumptionEvents>[0]['sbAdmin'],
+  runIds: string[]
+) {
+  const counts = new Map<string, { steps: number; tools: number }>();
+  if (runIds.length === 0) return counts;
+  try {
+    const { data, error } = await sbAdmin
+      .schema('private')
+      .from('ai_studio_run_steps')
+      .select('run_id, kind')
+      .in('run_id', runIds);
+    if (error) {
+      console.warn('AI Studio step counts unavailable', { code: error.code });
+      return counts;
+    }
+    for (const step of data ?? []) {
+      const current = counts.get(step.run_id) ?? { steps: 0, tools: 0 };
+      current.steps += 1;
+      if (step.kind === 'tool') current.tools += 1;
+      counts.set(step.run_id, current);
+    }
+  } catch {
+    // Keep the run list available during rollout or in older test clients.
+  }
+  return counts;
 }
 
 function parseCursor(value: string | null) {

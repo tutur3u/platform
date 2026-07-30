@@ -4,6 +4,16 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
+export {
+  type AiStudioPlaygroundEndpoint,
+  type AiStudioPlaygroundResult,
+  type AiStudioPlaygroundStep,
+  type AiStudioPlaygroundTool,
+  type AiStudioPublicModel,
+  getAiStudioPublicModels,
+  runAiStudioPlayground,
+} from './ai-studio-playground';
+
 export type AiStudioKeyEnvironment = 'development' | 'staging' | 'production';
 
 export interface AiStudioKeyApproval {
@@ -117,11 +127,34 @@ export interface AiStudioRun {
   searchUnits: number;
   sourceType: 'api_key' | 'external_app' | 'session' | 'workspace_credit';
   status: 'aborted' | 'failed' | 'reserved' | 'running' | 'succeeded';
+  stepCount: number;
+  toolCallCount: number;
 }
 
 export interface AiStudioRunsResponse {
   nextCursor: string | null;
   runs: AiStudioRun[];
+}
+
+export interface AiStudioRunStep {
+  billedCredits: number;
+  completedAt: string | null;
+  errorClass: string | null;
+  inputTokens: number;
+  kind: 'grader' | 'model' | 'system' | 'tool';
+  latencyMs: number | null;
+  modelId: string | null;
+  name: string;
+  outputTokens: number;
+  providerCostUsd: number;
+  sequence: number;
+  startedAt: string;
+  status: 'aborted' | 'failed' | 'running' | 'succeeded';
+}
+
+export interface AiStudioRunDetailResponse {
+  runId: string;
+  steps: AiStudioRunStep[];
 }
 
 export interface AiStudioCreditStatus {
@@ -242,6 +275,17 @@ export function getAiStudioRuns(
   return getInternalApiClient(options).json<AiStudioRunsResponse>(
     workspaceAiPath(workspaceId, 'runs'),
     { cache: 'no-store', query }
+  );
+}
+
+export function getAiStudioRunDetail(
+  workspaceId: string,
+  runId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<AiStudioRunDetailResponse>(
+    `${workspaceAiPath(workspaceId, 'runs')}/${encodePathSegment(runId)}`,
+    { cache: 'no-store' }
   );
 }
 

@@ -3,6 +3,7 @@ import {
   beginAiStudioRun,
   beginExternalAiStudioRun,
   calculateAiStudioUsageCost,
+  recordAiStudioRunStep,
   settleAiStudioRun,
   settleExternalAiStudioRun,
 } from '@tuturuuu/ai/studio/metering';
@@ -162,6 +163,41 @@ export async function settleMeteredExecution(
       actualCredits: cost.billedCredits,
     });
   }
+}
+
+export async function recordMeteredExecutionStep(
+  context: MeteredExecutionContext,
+  input: {
+    errorClass?: string | null;
+    inputTokens?: number;
+    kind: 'model' | 'tool';
+    latencyMs?: number | null;
+    metadata?: Json;
+    name: string;
+    outputTokens?: number;
+    sequence: number;
+    startedAt?: string;
+    status: 'aborted' | 'failed' | 'running' | 'succeeded';
+  }
+): Promise<void> {
+  const cost =
+    input.kind === 'model'
+      ? await calculateAiStudioUsageCost({
+          inputTokens: input.inputTokens,
+          modelId: context.modelId,
+          outputTokens: input.outputTokens,
+          workspaceId: context.credential.workspaceId,
+        }).catch(() => ({ billedCredits: 0, providerCostUsd: 0 }))
+      : { billedCredits: 0, providerCostUsd: 0 };
+
+  await recordAiStudioRunStep({
+    ...input,
+    billedCredits:
+      context.credential.kind === 'external-app' ? 0 : cost.billedCredits,
+    modelId: input.kind === 'model' ? context.modelId : null,
+    providerCostUsd: cost.providerCostUsd,
+    runId: context.runId,
+  });
 }
 
 export async function captureAiStudioContent(

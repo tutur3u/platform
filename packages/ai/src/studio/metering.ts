@@ -16,6 +16,63 @@ export type AiStudioUsageCost = {
   providerCostUsd: number;
 };
 
+export type AiStudioRunStepKind = 'grader' | 'model' | 'system' | 'tool';
+
+export type RecordAiStudioRunStepInput = {
+  billedCredits?: number;
+  completedAt?: string | null;
+  errorClass?: string | null;
+  inputTokens?: number;
+  kind: AiStudioRunStepKind;
+  latencyMs?: number | null;
+  metadata?: Json;
+  modelId?: string | null;
+  name: string;
+  outputTokens?: number;
+  providerCostUsd?: number;
+  runId: string;
+  sequence: number;
+  startedAt?: string;
+  status: 'aborted' | 'failed' | 'running' | 'succeeded';
+};
+
+export async function recordAiStudioRunStep(
+  input: RecordAiStudioRunStepInput
+): Promise<void> {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { error } = await sbAdmin
+    .schema('private')
+    .from('ai_studio_run_steps')
+    .upsert(
+      {
+        billed_credits: input.billedCredits ?? 0,
+        completed_at: input.completedAt ?? new Date().toISOString(),
+        error_class: input.errorClass ?? null,
+        input_tokens: input.inputTokens ?? 0,
+        kind: input.kind,
+        latency_ms: input.latencyMs ?? null,
+        metadata: input.metadata ?? {},
+        model_id: input.modelId ?? null,
+        name: input.name,
+        output_tokens: input.outputTokens ?? 0,
+        provider_cost_usd: input.providerCostUsd ?? 0,
+        run_id: input.runId,
+        sequence: input.sequence,
+        started_at: input.startedAt ?? new Date().toISOString(),
+        status: input.status,
+      },
+      { onConflict: 'run_id,sequence' }
+    );
+
+  if (error) {
+    console.warn('Failed to record AI Studio run step', {
+      code: error.code,
+      runId: input.runId,
+      sequence: input.sequence,
+    });
+  }
+}
+
 export type CalculateAiStudioUsageCostInput = {
   imageCount?: number;
   inputTokens?: number;

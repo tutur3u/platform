@@ -36,6 +36,7 @@ export default async function OverviewPage({
         empty: t('empty'),
         feature: t('feature'),
         model: t('model'),
+        openPlayground: t('open-playground'),
         recentRuns: t('recent-runs'),
         request: t('request'),
         status: t('status'),

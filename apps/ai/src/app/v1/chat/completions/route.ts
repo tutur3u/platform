@@ -1,5 +1,7 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
-import { executeTextRequest, textRequestSchema } from '@/lib/text-execution';
+import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
+import { publicApiError } from '@/lib/public-api';
+import { executeTextRequest, parseTextRequest } from '@/lib/text-execution';
 
 type ChatMessage = {
   content?: unknown;
@@ -31,18 +33,37 @@ function normalizeMessages(input: unknown) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as Record<string, unknown>;
-  const messages = normalizeMessages(body.messages);
+  const requestId = getAiStudioRequestId(request);
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const messages = normalizeMessages(body.messages);
+    const extensions =
+      typeof body.tuturuuu === 'object' && body.tuturuuu
+        ? (body.tuturuuu as Record<string, unknown>)
+        : {};
 
-  return executeTextRequest(
-    request,
-    textRequestSchema.parse({
-      instructions: messages.system || undefined,
-      max_output_tokens: body.max_completion_tokens ?? body.max_tokens,
-      model: body.model,
-      prompt: messages.prompt,
-      stream: body.stream,
-    }),
-    { feature: 'chat_completions', responseShape: 'chat' }
-  );
+    return executeTextRequest(
+      request,
+      parseTextRequest({
+        instructions: messages.system || undefined,
+        max_output_tokens: body.max_completion_tokens ?? body.max_tokens,
+        max_steps: extensions.max_steps,
+        model: body.model,
+        prompt: messages.prompt,
+        stream: body.stream,
+        tools: extensions.tools,
+      }),
+      { feature: 'chat_completions', responseShape: 'chat' }
+    );
+  } catch (error) {
+    return publicApiError(
+      error instanceof SyntaxError
+        ? new AiStudioError('Request body must be valid JSON.', {
+            code: 'invalid_request_error',
+            status: 400,
+          })
+        : error,
+      requestId
+    );
+  }
 }

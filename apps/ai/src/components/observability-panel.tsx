@@ -154,6 +154,7 @@ export function ObservabilityPanel({
           onLoadMore={() => void runsQuery.fetchNextPage()}
           runs={runs}
           showLoadMore={Boolean(runsQuery.hasNextPage)}
+          workspaceId={workspaceId}
         />
       ) : (
         <ObservabilityBreakdowns

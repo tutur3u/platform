@@ -2,8 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   getAiStudioCatalog,
   getAiStudioKeys,
+  getAiStudioPublicModels,
+  getAiStudioRunDetail,
   getAiStudioRuns,
   getAiStudioUsage,
+  runAiStudioPlayground,
 } from './ai-studio';
 
 describe('AI Studio observability client', () => {
@@ -28,6 +31,93 @@ describe('AI Studio observability client', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://ai.example.com/api/v1/workspaces/workspace%20%2F%20one/ai/usage?from=2026-07-01T00%3A00%3A00.000Z&to=2026-07-29T00%3A00%3A00.000Z',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+  });
+
+  it('uses the production AI endpoint without placing the key in the URL', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            {
+              id: 'openai/gpt-5-mini',
+              owned_by: 'openai',
+              tuturuuu: {
+                context_window: 128000,
+                max_output_tokens: 8192,
+                name: 'GPT 5 Mini',
+                type: 'text',
+              },
+            },
+          ],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'request-1',
+          model: 'openai/gpt-5-mini',
+          output_text: '4766',
+          tuturuuu: {
+            steps: [
+              {
+                latencyMs: 12,
+                name: 'calculator',
+                sequence: 1,
+                status: 'succeeded',
+                type: 'tool',
+              },
+            ],
+          },
+          usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+        })
+      );
+
+    await getAiStudioPublicModels('ttr_ai_secret', { fetch: fetchMock });
+    const result = await runAiStudioPlayground(
+      'ttr_ai_secret',
+      {
+        endpoint: 'responses',
+        maxOutputTokens: 100,
+        maxSteps: 4,
+        model: 'openai/gpt-5-mini',
+        prompt: '128 * 37',
+        tools: ['calculator'],
+      },
+      { fetch: fetchMock }
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'https://ai.tuturuuu.com/v1/models'
+    );
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      'https://ai.tuturuuu.com/v1/responses'
+    );
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain('ttr_ai_secret');
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer ttr_ai_secret' },
+      })
+    );
+    expect(result.steps[0]?.name).toBe('calculator');
+  });
+
+  it('encodes the workspace and run IDs for lazy trace loading', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        runId: 'run / one',
+        steps: [],
+      })
+    );
+
+    await getAiStudioRunDetail('workspace / one', 'run / one', {
+      baseUrl: 'https://ai.example.com',
+      fetch: fetchMock,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://ai.example.com/api/v1/workspaces/workspace%20%2F%20one/ai/runs/run%20%2F%20one',
       expect.objectContaining({ cache: 'no-store' })
     );
   });

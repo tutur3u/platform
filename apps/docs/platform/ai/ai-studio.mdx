@@ -43,6 +43,24 @@ The key page remains available to workspace key managers when issuance is not
 approved so they can inspect and revoke existing credentials. Rotation is
 treated as new key issuance and is therefore approval-gated.
 
+Approved key managers can quick-create a development key from either the key
+page or Playground. The one-time secret can be handed to Playground through
+browser session storage; it is removed when read and is never sent through a
+dashboard URL or persisted by the Studio application.
+
+## Production Playground
+
+Playground calls `https://ai.tuturuuu.com/v1/models`, `/v1/responses`, and
+`/v1/chat/completions` with the supplied AI-only key. It therefore exercises
+the same authentication, model policy, credit reservation and settlement,
+budgets, rate limits, abuse controls, and logging as an external production
+client. It does not use a privileged dashboard proxy.
+
+The workbench supports bounded AI SDK tool loops with the safe calculator and
+current-time demonstration tools. Tool loops are limited to eight model steps.
+The response shows a sanitized execution trace; the observability run table can
+expand that trace after settlement.
+
 ## Metering lifecycle
 
 Ordinary Studio keys and non-external callers follow one transactionally
@@ -62,6 +80,10 @@ The dashboards combine these Studio runs with unmatched deductions from the
 shared AI credit ledger, so AI features outside Studio remain visible without
 double-counting deductions already linked to a run. Logs expose only sanitized
 metering fields, never raw prompts, outputs, tool payloads, or provider errors.
+AI SDK model and tool lifecycle callbacks additionally write ordered run steps.
+Each step stores its type, safe tool or model name, status, latency, token
+counts, and settled cost. Inputs, tool arguments, tool results, generated text,
+provider metadata, and unredacted errors are excluded from the step record.
 
 Registered external apps are the only temporary billing exception. Their
 short-lived token must include `workspace:session` plus `ai:use` or `tts:use`,

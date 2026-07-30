@@ -1,7 +1,8 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import type { Json } from '@tuturuuu/types';
-import { gateway, generateText, streamText } from 'ai';
 import { z } from 'zod';
+import { createObservedTextAgent } from './observed-text-agent';
+import { playgroundToolNames } from './playground-tools';
 import {
   approximateTokenCount,
   captureAiStudioContent,
@@ -13,12 +14,28 @@ import {
 export const textRequestSchema = z.object({
   instructions: z.string().max(100_000).optional(),
   max_output_tokens: z.number().int().min(1).max(32_768).default(2_048),
+  max_steps: z.number().int().min(1).max(8).default(4),
   model: z.string().min(1),
   prompt: z.string().min(1).max(1_000_000),
   stream: z.boolean().default(false),
+  tools: z.array(z.enum(playgroundToolNames)).max(2).default([]),
 });
 
 type TextRequest = z.infer<typeof textRequestSchema>;
+
+export function parseTextRequest(input: unknown): TextRequest {
+  const parsed = textRequestSchema.safeParse(input);
+  if (!parsed.success) {
+    throw new AiStudioError(
+      parsed.error.issues[0]?.message ?? 'Invalid request.',
+      {
+        code: 'invalid_request_error',
+        status: 400,
+      }
+    );
+  }
+  return parsed.data;
+}
 
 function commonHeaders(requestId: string) {
   return {
@@ -50,24 +67,30 @@ export async function executeTextRequest(
         outputTokens: input.max_output_tokens,
       },
       metadata: {
+        max_steps: input.max_steps,
         response_shape: responseShape,
         streaming: input.stream,
+        tools: input.tools,
       },
       modelId: input.model,
       request,
     });
 
-    const model = gateway(input.model);
-    const common = {
-      abortSignal: request.signal,
+    const observed = createObservedTextAgent({
+      context,
+      instructions: input.instructions,
       maxOutputTokens: input.max_output_tokens,
-      model,
-      prompt: input.prompt,
-      system: input.instructions,
-    };
+      maxSteps: input.max_steps,
+      modelId: input.model,
+      signal: request.signal,
+      toolNames: input.tools,
+    });
 
     if (!input.stream) {
-      const result = await generateText(common);
+      const result = await observed.agent.generate({
+        abortSignal: request.signal,
+        prompt: input.prompt,
+      });
       const usage = {
         inputTokens: result.usage.inputTokens ?? 0,
         outputTokens: result.usage.outputTokens ?? 0,
@@ -76,7 +99,14 @@ export async function executeTextRequest(
 
       await Promise.all([
         settleMeteredExecution(context, {
-          metadata: { finish_reason: String(result.finishReason) },
+          metadata: {
+            finish_reason: String(result.finishReason),
+            step_count: result.steps.length,
+            tool_call_count: result.toolCalls.length,
+            tool_names: [
+              ...new Set(result.toolCalls.map((call) => call.toolName)),
+            ],
+          },
           status: 'succeeded',
           usage,
         }),
@@ -109,6 +139,7 @@ export async function executeTextRequest(
                 prompt_tokens: usage.inputTokens,
                 total_tokens: usage.inputTokens + usage.outputTokens,
               },
+              tuturuuu: { steps: observed.summaries() },
             }
           : {
               created_at: created,
@@ -130,6 +161,7 @@ export async function executeTextRequest(
                 output_tokens: usage.outputTokens,
                 total_tokens: usage.inputTokens + usage.outputTokens,
               },
+              tuturuuu: { steps: observed.summaries() },
             };
 
       return Response.json(body, { headers: commonHeaders(context.requestId) });
@@ -138,14 +170,19 @@ export async function executeTextRequest(
     const firstTokenStartedAt = Date.now();
     let firstTokenLatencyMs: number | null = null;
     let outputText = '';
-    const result = streamText({
-      ...common,
-      onFinish: async ({ finishReason, text, usage }) => {
+    const result = await observed.agent.stream({
+      abortSignal: request.signal,
+      onEnd: async ({ finishReason, steps, text, toolCalls, usage }) => {
         outputText = text;
         await Promise.all([
           settleMeteredExecution(context!, {
             firstTokenLatencyMs,
-            metadata: { finish_reason: String(finishReason) },
+            metadata: {
+              finish_reason: String(finishReason),
+              step_count: steps.length,
+              tool_call_count: toolCalls.length,
+              tool_names: [...new Set(toolCalls.map((call) => call.toolName))],
+            },
             status: request.signal.aborted ? 'aborted' : 'succeeded',
             usage: {
               inputTokens: usage.inputTokens ?? 0,
@@ -162,6 +199,7 @@ export async function executeTextRequest(
           }),
         ]);
       },
+      prompt: input.prompt,
     });
 
     const encoder = new TextEncoder();
@@ -191,6 +229,15 @@ export async function executeTextRequest(
               encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`)
             );
           }
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                response_id: context!.requestId,
+                steps: observed.summaries(),
+                type: 'response.completed',
+              })}\n\n`
+            )
+          );
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
         } catch (error) {

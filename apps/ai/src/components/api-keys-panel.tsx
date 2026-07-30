@@ -5,18 +5,12 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  Copy,
-  KeyRound,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from '@tuturuuu/icons';
+import { AlertCircle, Plus, RefreshCw, Zap } from '@tuturuuu/icons';
 import {
   type AiStudioApiKey,
   type AiStudioKeySecretResponse,
   type AiStudioKeysResponse,
+  type CreateAiStudioKeyInput,
   createAiStudioKey,
   getAiStudioKeys,
   updateAiStudioKey,
@@ -33,7 +27,6 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
@@ -42,11 +35,15 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { stagePlaygroundSecret } from '@/lib/playground-secret-transfer';
+import { ApiKeyField, ApiKeyRow, ApiKeySecretDialog } from './api-key-items';
 
 export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
   const t = useTranslations('ai-studio.keys');
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [environment, setEnvironment] = useState<
@@ -71,22 +68,8 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
       queryKey: ['ai-studio-keys', workspaceId],
     });
   const createMutation = useMutation({
-    mutationFn: () =>
-      createAiStudioKey(workspaceId, {
-        allowedModels: allowedModels
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-        creditBudget: creditBudget ? Number(creditBudget) : undefined,
-        environment,
-        expiresAt: expiresAt
-          ? new Date(`${expiresAt}T23:59:59.999Z`).toISOString()
-          : undefined,
-        name,
-        requestsPerMinute: requestsPerMinute
-          ? Number(requestsPerMinute)
-          : undefined,
-      }),
+    mutationFn: (payload: CreateAiStudioKeyInput) =>
+      createAiStudioKey(workspaceId, payload),
     onError: () => toast.error(t('action_error')),
     onSuccess: async (result) => {
       setSecret(result);
@@ -136,15 +119,15 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
           </Badge>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Field label={t('name')}>
+          <ApiKeyField label={t('name')}>
             <Input
               disabled={!approval?.approved}
               maxLength={120}
               onChange={(event) => setName(event.target.value)}
               value={name}
             />
-          </Field>
-          <Field label={t('environment')}>
+          </ApiKeyField>
+          <ApiKeyField label={t('environment')}>
             <Select
               disabled={!approval?.approved}
               onValueChange={(value) =>
@@ -161,16 +144,16 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                 <SelectItem value="production">{t('production')}</SelectItem>
               </SelectContent>
             </Select>
-          </Field>
-          <Field label={t('expires_at')}>
+          </ApiKeyField>
+          <ApiKeyField label={t('expires_at')}>
             <Input
               disabled={!approval?.approved}
               onChange={(event) => setExpiresAt(event.target.value)}
               type="date"
               value={expiresAt}
             />
-          </Field>
-          <Field label={t('rate_limit')}>
+          </ApiKeyField>
+          <ApiKeyField label={t('rate_limit')}>
             <Input
               disabled={!approval?.approved}
               min={1}
@@ -178,8 +161,8 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               type="number"
               value={requestsPerMinute}
             />
-          </Field>
-          <Field label={t('credit_budget')}>
+          </ApiKeyField>
+          <ApiKeyField label={t('credit_budget')}>
             <Input
               disabled={!approval?.approved}
               min={0}
@@ -188,24 +171,53 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               type="number"
               value={creditBudget}
             />
-          </Field>
-          <Field label={t('allowed_models')}>
+          </ApiKeyField>
+          <ApiKeyField label={t('allowed_models')}>
             <Input
               disabled={!approval?.approved}
               onChange={(event) => setAllowedModels(event.target.value)}
               placeholder={t('allowed_models_placeholder')}
               value={allowedModels}
             />
-          </Field>
+          </ApiKeyField>
           <div className="md:col-span-2 xl:col-span-3">
             <Button
               disabled={
                 !approval?.approved || !name.trim() || createMutation.isPending
               }
-              onClick={() => createMutation.mutate()}
+              onClick={() =>
+                createMutation.mutate({
+                  allowedModels: allowedModels
+                    .split(',')
+                    .map((value) => value.trim())
+                    .filter(Boolean),
+                  creditBudget: creditBudget ? Number(creditBudget) : undefined,
+                  environment,
+                  expiresAt: expiresAt
+                    ? new Date(`${expiresAt}T23:59:59.999Z`).toISOString()
+                    : undefined,
+                  name,
+                  requestsPerMinute: requestsPerMinute
+                    ? Number(requestsPerMinute)
+                    : undefined,
+                })
+              }
             >
               <Plus className="mr-2 size-4" />
               {t('create')}
+            </Button>
+            <Button
+              disabled={!approval?.approved || createMutation.isPending}
+              onClick={() =>
+                createMutation.mutate({
+                  environment: 'development',
+                  name: `Playground ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
+                })
+              }
+              variant="outline"
+            >
+              <Zap className="mr-2 size-4" />
+              {t('quick_create')}
             </Button>
           </div>
         </CardContent>
@@ -249,7 +261,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
             </div>
           ) : (
             keys.map((key) => (
-              <KeyRow
+              <ApiKeyRow
                 approvalGranted={approval?.approved ?? false}
                 isPending={updateMutation.isPending}
                 key={key.id}
@@ -282,7 +294,16 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
         </CardContent>
       </Card>
 
-      <SecretDialog onClose={() => setSecret(null)} value={secret} />
+      <ApiKeySecretDialog
+        onClose={() => setSecret(null)}
+        onUseInPlayground={() => {
+          if (!secret?.secret) return;
+          stagePlaygroundSecret(workspaceId, secret.secret);
+          setSecret(null);
+          router.push(`/${workspaceId}/playground`);
+        }}
+        value={secret}
+      />
       <Dialog
         onOpenChange={(open) => !open && setRevokeTarget(null)}
         open={Boolean(revokeTarget)}
@@ -312,111 +333,5 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function Field({
-  children,
-  label,
-}: {
-  children: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      {children}
-    </div>
-  );
-}
-
-function KeyRow({
-  approvalGranted,
-  isPending,
-  keyRecord,
-  onRevoke,
-  onRotate,
-}: {
-  approvalGranted: boolean;
-  isPending: boolean;
-  keyRecord: AiStudioApiKey;
-  onRevoke: () => void;
-  onRotate: () => void;
-}) {
-  const t = useTranslations('ai-studio.keys');
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center">
-      <KeyRound className="size-4 text-muted-foreground" />
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">{keyRecord.name}</div>
-        <div className="font-mono text-muted-foreground text-xs">
-          {keyRecord.prefix} · {keyRecord.environment}
-        </div>
-      </div>
-      <Badge variant="outline">
-        {keyRecord.revoked_at ? t('revoked') : t('active')}
-      </Badge>
-      {!keyRecord.revoked_at ? (
-        <div className="flex gap-2">
-          <Button
-            disabled={!approvalGranted || isPending}
-            onClick={onRotate}
-            size="sm"
-            variant="outline"
-          >
-            <RefreshCw className="mr-2 size-3.5" />
-            {t('rotate')}
-          </Button>
-          <Button
-            disabled={isPending}
-            onClick={onRevoke}
-            size="sm"
-            variant="outline"
-          >
-            <Trash2 className="mr-2 size-3.5" />
-            {t('revoke')}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function SecretDialog({
-  onClose,
-  value,
-}: {
-  onClose: () => void;
-  value: AiStudioKeySecretResponse | null;
-}) {
-  const t = useTranslations('ai-studio.keys');
-  return (
-    <Dialog onOpenChange={(open) => !open && onClose()} open={Boolean(value)}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('secret_title')}</DialogTitle>
-          <DialogDescription>{t('secret_description')}</DialogDescription>
-        </DialogHeader>
-        <div className="flex gap-2">
-          <Input readOnly value={value?.secret ?? ''} />
-          <Button
-            onClick={async () => {
-              if (value?.secret) {
-                await navigator.clipboard.writeText(value.secret);
-                toast.success(t('copied'));
-              }
-            }}
-            size="icon"
-            variant="outline"
-          >
-            <Copy className="size-4" />
-            <span className="sr-only">{t('copy')}</span>
-          </Button>
-        </div>
-        <DialogFooter>
-          <Button onClick={onClose}>{t('done')}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

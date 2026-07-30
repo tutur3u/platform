@@ -9,10 +9,12 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import Link from 'next/link';
 import type { AiStudioOverview } from '@/lib/studio-data';
 import { ApiKeysPanel } from './api-keys-panel';
 import { CatalogPanel } from './catalog-panel';
 import { ObservabilityPanel } from './observability-panel';
+import { PlaygroundPanel } from './playground-panel';
 
 interface StudioPageLabels {
   activeKeys: string;
@@ -22,6 +24,7 @@ interface StudioPageLabels {
   empty: string;
   feature: string;
   model: string;
+  openPlayground: string;
   recentRuns: string;
   request: string;
   status: string;
@@ -102,10 +105,14 @@ export function StudioPage({
           <h1 className="font-semibold text-3xl tracking-tight">{title}</h1>
           <p className="mt-1 max-w-3xl text-muted-foreground">{description}</p>
         </div>
-        <Button>
-          Open playground
-          <ArrowUpRight className="ml-2 size-4" />
-        </Button>
+        {section !== 'playground' ? (
+          <Button asChild>
+            <Link href={`/${workspaceId}/playground`}>
+              {labels.openPlayground}
+              <ArrowUpRight className="ml-2 size-4" />
+            </Link>
+          </Button>
+        ) : null}
       </header>
 
       {section === 'overview' ? (
@@ -179,6 +186,11 @@ export function StudioPage({
         </>
       ) : section === 'api-keys' ? (
         <ApiKeysPanel workspaceId={workspaceId} />
+      ) : section === 'playground' ? (
+        <PlaygroundPanel
+          canManageAiKeys={canManageAiKeys}
+          workspaceId={workspaceId}
+        />
       ) : catalogResource ? (
         <CatalogPanel resource={catalogResource} workspaceId={workspaceId} />
       ) : section === 'runs' ||
