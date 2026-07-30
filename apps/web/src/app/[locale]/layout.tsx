@@ -1,4 +1,4 @@
-import { Providers } from '@/components/providers';
+import { AppThemeProvider, Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
@@ -131,11 +131,13 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
           <VercelRuntimeSignals />
-          <Providers>
+          <AppThemeProvider>
             <Suspense>
-              <NuqsAdapter>{children}</NuqsAdapter>
+              <NuqsAdapter>
+                <Providers>{children}</Providers>
+              </NuqsAdapter>
             </Suspense>
-          </Providers>
+          </AppThemeProvider>
           <TailwindIndicator />
           <ProductionDatabaseIndicator />
           <Toaster />

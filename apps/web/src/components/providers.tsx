@@ -1,13 +1,13 @@
 import '@/lib/dayjs-setup';
 import { NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
+import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import { ClientProviders } from './client-providers';
 import { QueryProvider } from './query-provider';
 
-export function Providers({ children }: { children: ReactNode }) {
+export function AppThemeProvider({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider
+    <NextThemesProvider
       attribute="class"
       themes={['system', 'light', 'dark']}
       enableSystem
@@ -21,11 +21,17 @@ export function Providers({ children }: { children: ReactNode }) {
       // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
       // for more details
     >
-      <QueryProvider>
-        <NextIntlClientProvider>
-          <ClientProviders>{children}</ClientProviders>
-        </NextIntlClientProvider>
-      </QueryProvider>
-    </ThemeProvider>
+      {children}
+    </NextThemesProvider>
+  );
+}
+
+export function Providers({ children }: { children: ReactNode }) {
+  return (
+    <QueryProvider>
+      <NextIntlClientProvider>
+        <ClientProviders>{children}</ClientProviders>
+      </NextIntlClientProvider>
+    </QueryProvider>
   );
 }
