@@ -1,3 +1,5 @@
+import type { InfrastructureAiStudioWorkspacePolicy } from '@tuturuuu/internal-api/infrastructure';
+
 export interface AiStudioGlobalSettings {
   captureDefaultEnabled: boolean;
   contentRetentionDays: number;
@@ -5,18 +7,4 @@ export interface AiStudioGlobalSettings {
   metadataRetentionDays: number;
 }
 
-export interface AiStudioWorkspacePolicy {
-  allowedModels: string[];
-  apiKeyCreationApproved: boolean;
-  apiKeyCreationDecidedAt: string | null;
-  apiKeyCreationDecidedBy: string | null;
-  captureEnabled: boolean | null;
-  contentRetentionDays: number | null;
-  deniedModels: string[];
-  metadataRetentionDays: number | null;
-  monthlyCreditBudget: number | null;
-  noTrainingEnforced: boolean;
-  requestsPerMinute: number | null;
-  workspaceName: string;
-  wsId: string;
-}
+export type AiStudioWorkspacePolicy = InfrastructureAiStudioWorkspacePolicy;

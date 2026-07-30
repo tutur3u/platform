@@ -2,9 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
-  byId: vi.fn(),
-  byName: vi.fn(),
-  policiesIn: vi.fn(),
+  rpc: vi.fn(),
 }));
 
 vi.mock('@/lib/infrastructure-admin-access', () => ({
@@ -19,42 +17,8 @@ vi.mock('next/server', async (importOriginal) => ({
 import { NextRequest } from 'next/server';
 import { GET } from './route';
 
-function createWorkspaceQuery() {
-  const result = {
-    data: [
-      {
-        id: '42529372-c669-4833-bb32-2cab1f4ffd83',
-        name: 'Easy Center',
-      },
-    ],
-    error: null,
-  };
-  const query = {
-    ...result,
-    eq: mocks.byId,
-    ilike: mocks.byName,
-    limit: vi.fn(),
-    order: vi.fn(),
-    select: vi.fn(),
-  };
-  query.select.mockReturnValue(query);
-  query.order.mockReturnValue(query);
-  query.limit.mockReturnValue(query);
-  mocks.byId.mockReturnValue(query);
-  mocks.byName.mockReturnValue(query);
-  return query;
-}
-
 function createAuthorizedResult() {
-  const workspaceQuery = createWorkspaceQuery();
-  const policyQuery = {
-    from: vi.fn(),
-    in: mocks.policiesIn,
-    select: vi.fn(),
-  };
-  policyQuery.from.mockReturnValue(policyQuery);
-  policyQuery.select.mockReturnValue(policyQuery);
-  mocks.policiesIn.mockResolvedValue({
+  mocks.rpc.mockResolvedValue({
     data: [
       {
         allowed_models: ['openai/gpt-5'],
@@ -69,6 +33,7 @@ function createAuthorizedResult() {
         no_training_enforced: true,
         requests_per_minute: 60,
         ws_id: '42529372-c669-4833-bb32-2cab1f4ffd83',
+        workspace_name: 'Easy Center',
       },
     ],
     error: null,
@@ -77,8 +42,7 @@ function createAuthorizedResult() {
   return {
     ok: true as const,
     sbAdmin: {
-      from: vi.fn().mockReturnValue(workspaceQuery),
-      schema: vi.fn().mockReturnValue(policyQuery),
+      schema: vi.fn().mockReturnValue({ rpc: mocks.rpc }),
     },
   };
 }
@@ -89,28 +53,90 @@ describe('Infrastructure AI Studio workspace policy search', () => {
     mocks.authorize.mockResolvedValue(createAuthorizedResult());
   });
 
-  it('searches workspace names server-side and merges their policies', async () => {
+  it('searches workspace names and partial IDs server-side', async () => {
     const response = await GET(
       new NextRequest(
-        'https://infrastructure.example/api/v1/infrastructure/ai/studio/workspaces?q=Easy%20Center'
+        'https://infrastructure.example/api/v1/infrastructure/ai/studio/workspaces?q=2cab1f4f&limit=1&cursor=0'
       )
     );
 
     expect(response.status).toBe(200);
     expect(mocks.authorize).toHaveBeenCalledWith('manage_workspace_roles');
-    expect(mocks.byName).toHaveBeenCalledWith('name', '%Easy Center%');
-    expect(mocks.policiesIn).toHaveBeenCalledWith('ws_id', [
-      '42529372-c669-4833-bb32-2cab1f4ffd83',
-    ]);
-    await expect(response.json()).resolves.toEqual([
-      expect.objectContaining({
-        allowedModels: ['openai/gpt-5'],
-        apiKeyCreationApproved: true,
-        monthlyCreditBudget: 12.5,
-        workspaceName: 'Easy Center',
-        wsId: '42529372-c669-4833-bb32-2cab1f4ffd83',
-      }),
-    ]);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'search_ai_studio_policy_workspaces',
+      {
+        p_limit: 2,
+        p_offset: 0,
+        p_query: '2cab1f4f',
+      }
+    );
+    await expect(response.json()).resolves.toEqual({
+      items: [
+        expect.objectContaining({
+          allowedModels: ['openai/gpt-5'],
+          apiKeyCreationApproved: true,
+          monthlyCreditBudget: 12.5,
+          workspaceName: 'Easy Center',
+          wsId: '42529372-c669-4833-bb32-2cab1f4ffd83',
+        }),
+      ],
+      nextCursor: null,
+    });
+  });
+
+  it('returns a stable next cursor and rejects malformed cursors', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          allowed_models: [],
+          api_key_creation_approved: false,
+          api_key_creation_decided_at: null,
+          api_key_creation_decided_by: null,
+          capture_enabled: null,
+          content_retention_days: null,
+          denied_models: [],
+          metadata_retention_days: null,
+          monthly_credit_budget: null,
+          no_training_enforced: true,
+          requests_per_minute: null,
+          ws_id: '42529372-c669-4833-bb32-2cab1f4ffd83',
+          workspace_name: 'First',
+        },
+        {
+          allowed_models: [],
+          api_key_creation_approved: false,
+          api_key_creation_decided_at: null,
+          api_key_creation_decided_by: null,
+          capture_enabled: null,
+          content_retention_days: null,
+          denied_models: [],
+          metadata_retention_days: null,
+          monthly_credit_budget: null,
+          no_training_enforced: true,
+          requests_per_minute: null,
+          ws_id: '52529372-c669-4833-bb32-2cab1f4ffd83',
+          workspace_name: 'Second',
+        },
+      ],
+      error: null,
+    });
+
+    const pageResponse = await GET(
+      new NextRequest(
+        'https://infrastructure.example/api/v1/infrastructure/ai/studio/workspaces?limit=1&cursor=10'
+      )
+    );
+    const invalidResponse = await GET(
+      new NextRequest(
+        'https://infrastructure.example/api/v1/infrastructure/ai/studio/workspaces?cursor=not-a-cursor'
+      )
+    );
+
+    expect(pageResponse.status).toBe(200);
+    await expect(pageResponse.json()).resolves.toMatchObject({
+      nextCursor: '11',
+    });
+    expect(invalidResponse.status).toBe(400);
   });
 
   it('requires Infrastructure role-management permission', async () => {

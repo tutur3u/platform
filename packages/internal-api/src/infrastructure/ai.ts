@@ -41,6 +41,27 @@ import type {
   UpdateAIWhitelistEmailPayload,
 } from './types';
 
+export interface InfrastructureAiStudioWorkspacePolicy {
+  allowedModels: string[];
+  apiKeyCreationApproved: boolean;
+  apiKeyCreationDecidedAt: string | null;
+  apiKeyCreationDecidedBy: string | null;
+  captureEnabled: boolean | null;
+  contentRetentionDays: number | null;
+  deniedModels: string[];
+  metadataRetentionDays: number | null;
+  monthlyCreditBudget: number | null;
+  noTrainingEnforced: boolean;
+  requestsPerMinute: number | null;
+  workspaceName: string;
+  wsId: string;
+}
+
+export interface InfrastructureAiStudioWorkspacePoliciesPage {
+  items: InfrastructureAiStudioWorkspacePolicy[];
+  nextCursor: string | null;
+}
+
 function mapGatewayModel(model: GatewayModelRow): AIModelUI {
   return {
     context: model.context_window ?? undefined,
@@ -58,6 +79,24 @@ export async function listAiGatewayModels(
   options?: InternalApiClientOptions
 ) {
   return listAiGatewayModelsLegacy(params, options);
+}
+
+export async function listInfrastructureAiStudioWorkspacePolicies(
+  params?: { cursor?: string; limit?: number; q?: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<InfrastructureAiStudioWorkspacePoliciesPage>(
+    '/api/v1/infrastructure/ai/studio/workspaces',
+    {
+      cache: 'no-store',
+      query: {
+        cursor: params?.cursor,
+        limit: params?.limit,
+        q: params?.q,
+      },
+    }
+  );
 }
 
 function aiGatewayModelQuery(

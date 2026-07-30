@@ -33,6 +33,7 @@ import {
   listAiGatewayModelRows,
   listAiGatewayModelRowsPage,
   listAiGatewayModelsPage,
+  listInfrastructureAiStudioWorkspacePolicies,
   listManagedCronWhitelistedDomains,
   pauseAiAgentChannel,
   pinBlueGreenDeployment,
@@ -518,6 +519,32 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+
+  it('lists cursor-paginated AI Studio workspace policies by name or ID', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        items: [],
+        nextCursor: '100',
+      })
+    );
+
+    await listInfrastructureAiStudioWorkspacePolicies(
+      {
+        cursor: '50',
+        limit: 50,
+        q: '42529372',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/studio/workspaces?cursor=50&limit=50&q=42529372',
+      expect.objectContaining({ cache: 'no-store' })
+    );
   });
 
   it('lists raw paginated model rows for the public model directory', async () => {

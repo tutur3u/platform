@@ -3,8 +3,6 @@ import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 100;
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseLimit(value: string | null) {
   const parsed = Number(value);
@@ -13,10 +11,14 @@ function parseLimit(value: string | null) {
 }
 
 function sanitizeSearch(value: string | null) {
-  return (value ?? '')
-    .trim()
-    .replaceAll(/[,%()]/g, '')
-    .slice(0, 120);
+  return (value ?? '').trim().slice(0, 120);
+}
+
+function parseCursor(value: string | null) {
+  if (!value) return 0;
+  if (!/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -29,22 +31,24 @@ export async function GET(request: NextRequest) {
 
   const search = sanitizeSearch(request.nextUrl.searchParams.get('q'));
   const limit = parseLimit(request.nextUrl.searchParams.get('limit'));
-  let workspacesQuery = auth.sbAdmin
-    .from('workspaces')
-    .select('id,name')
-    .order('name', { ascending: true })
-    .limit(limit);
-
-  if (search) {
-    workspacesQuery = UUID_PATTERN.test(search)
-      ? workspacesQuery.eq('id', search)
-      : workspacesQuery.ilike('name', `%${search}%`);
+  const offset = parseCursor(request.nextUrl.searchParams.get('cursor'));
+  if (offset === null) {
+    return NextResponse.json(
+      { message: 'Invalid workspace cursor' },
+      { status: 400 }
+    );
   }
 
-  const { data: workspaces, error: workspacesError } = await workspacesQuery;
-  if (workspacesError) {
+  const { data, error } = await auth.sbAdmin
+    .schema('private')
+    .rpc('search_ai_studio_policy_workspaces', {
+      p_limit: limit + 1,
+      p_offset: offset,
+      p_query: search || undefined,
+    });
+  if (error) {
     console.error('Failed to search AI Studio policy workspaces', {
-      code: workspacesError.code,
+      code: error.code,
     });
     return NextResponse.json(
       { message: 'Unable to load workspaces' },
@@ -52,53 +56,31 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const workspaceIds = (workspaces ?? []).map((workspace) => workspace.id);
-  if (workspaceIds.length === 0) {
-    return NextResponse.json([]);
-  }
-
-  const { data: policies, error: policiesError } = await auth.sbAdmin
-    .schema('private')
-    .from('workspace_ai_studio_policies')
-    .select(
-      'ws_id,allowed_models,denied_models,capture_enabled,metadata_retention_days,content_retention_days,requests_per_minute,monthly_credit_budget,no_training_enforced,api_key_creation_approved,api_key_creation_decided_at,api_key_creation_decided_by'
-    )
-    .in('ws_id', workspaceIds);
-
-  if (policiesError) {
-    console.error('Failed to load AI Studio workspace policies', {
-      code: policiesError.code,
-    });
-    return NextResponse.json(
-      { message: 'Unable to load workspace policies' },
-      { status: 500 }
-    );
-  }
-
-  const policiesByWorkspace = new Map(
-    (policies ?? []).map((policy) => [policy.ws_id, policy])
-  );
+  const page = (data ?? []).slice(0, limit);
+  const hasMore = (data?.length ?? 0) > limit;
 
   return NextResponse.json(
-    (workspaces ?? []).map((workspace) => {
-      const policy = policiesByWorkspace.get(workspace.id);
-      return {
-        allowedModels: policy?.allowed_models ?? [],
-        apiKeyCreationApproved: policy?.api_key_creation_approved ?? false,
-        apiKeyCreationDecidedAt: policy?.api_key_creation_decided_at ?? null,
-        apiKeyCreationDecidedBy: policy?.api_key_creation_decided_by ?? null,
-        captureEnabled: policy?.capture_enabled ?? null,
-        contentRetentionDays: policy?.content_retention_days ?? null,
-        deniedModels: policy?.denied_models ?? [],
-        metadataRetentionDays: policy?.metadata_retention_days ?? null,
-        monthlyCreditBudget: policy?.monthly_credit_budget
-          ? Number(policy.monthly_credit_budget)
-          : null,
-        noTrainingEnforced: policy?.no_training_enforced ?? true,
-        requestsPerMinute: policy?.requests_per_minute ?? null,
-        workspaceName: workspace.name ?? '',
-        wsId: workspace.id,
-      };
-    })
+    {
+      items: page.map((row) => ({
+        allowedModels: row.allowed_models,
+        apiKeyCreationApproved: row.api_key_creation_approved,
+        apiKeyCreationDecidedAt: row.api_key_creation_decided_at,
+        apiKeyCreationDecidedBy: row.api_key_creation_decided_by,
+        captureEnabled: row.capture_enabled,
+        contentRetentionDays: row.content_retention_days,
+        deniedModels: row.denied_models,
+        metadataRetentionDays: row.metadata_retention_days,
+        monthlyCreditBudget:
+          row.monthly_credit_budget === null
+            ? null
+            : Number(row.monthly_credit_budget),
+        noTrainingEnforced: row.no_training_enforced,
+        requestsPerMinute: row.requests_per_minute,
+        workspaceName: row.workspace_name ?? '',
+        wsId: row.ws_id,
+      })),
+      nextCursor: hasMore ? String(offset + limit) : null,
+    },
+    { headers: { 'Cache-Control': 'private, no-store' } }
   );
 }

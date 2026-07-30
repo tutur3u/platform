@@ -1124,16 +1124,20 @@
     "output": "Output"
   },
   "ai-studio-admin": {
-    "description": "Control the global AI Studio kill switch, inherited defaults, model access, retention, and workspace exceptions.",
+    "description": "Manage inherited AI Studio defaults, model access, retention, and workspace API-key approvals.",
     "global": {
       "capture_default": "Capture AI content by default",
       "capture_default_description": "Keep prompts, outputs, and tool payloads only when a workspace inherits this enabled setting.",
+      "capture_disabled": "Capture off",
+      "capture_enabled": "Capture on",
       "content_retention": "Content retention (days)",
       "default_models": "Default enabled models",
       "description": "These controls apply before workspace, plan, and API key restrictions.",
       "metadata_retention": "Metadata retention (days)",
       "models_hint": "Workspace and API key policies can only narrow this selected catalog.",
       "models_placeholder": "Select the models available by default",
+      "models_summary": "{count, plural, one {# default model} other {# default models}}",
+      "retention_summary": "{metadata}d metadata · {content}d content",
       "title": "Global access policy"
     },
     "models": {
@@ -1158,7 +1162,14 @@
       "api_key_creation": "Approve AI API key creation",
       "api_key_creation_description": "Allows workspace key managers to create and rotate ttr_ai_ credentials. Existing keys remain active when this is disabled.",
       "api_key_decided_at": "Last approval decision: {date}",
+      "approval_required": "Approval required",
+      "approved": "Approved",
       "capture": "Content capture",
+      "column_actions": "Expand policy",
+      "column_approval": "Key creation",
+      "column_models": "Model rules",
+      "column_overrides": "Overrides",
+      "column_workspace": "Workspace",
       "content_retention": "Content retention (days)",
       "credit_budget": "Monthly credit budget",
       "denied_models": "Denied models",
@@ -1167,15 +1178,23 @@
       "inherit": "Inherit",
       "inherit_models": "Inherit global models",
       "load_error": "Workspace policies could not be loaded.",
+      "load_more": "Load more workspaces",
+      "loaded_count": "{count, plural, one {# workspace loaded} other {# workspaces loaded}}",
       "loading": "Loading workspace policies…",
+      "loading_more": "Loading more workspaces…",
       "metadata_retention": "Metadata retention (days)",
+      "models_summary": "{count, plural, =0 {Inherit catalog} one {# model rule} other {# model rules}}",
       "no_training": "Enforce no-training controls",
       "none": "No models denied",
+      "overrides_summary": "{count, plural, =0 {Defaults} one {# custom value} other {# custom values}}",
       "rate_limit": "Requests per minute",
       "retry": "Try again",
-      "search": "Search workspaces",
+      "saving": "Saving…",
+      "search": "Search by workspace name or ID",
+      "search_hint": "Search runs on the server and matches workspace names, full IDs, and partial ID fragments.",
       "title": "Workspace policies",
-      "unnamed": "Unnamed workspace"
+      "unnamed": "Unnamed workspace",
+      "unsaved": "Unsaved"
     }
   },
   "ai-whitelist": {

@@ -1124,16 +1124,20 @@
     "output": "Đầu ra"
   },
   "ai-studio-admin": {
-    "description": "Kiểm soát công tắc AI Studio toàn cục, mặc định kế thừa, quyền truy cập mô hình, thời gian lưu trữ và ngoại lệ theo không gian làm việc.",
+    "description": "Quản lý mặc định kế thừa của AI Studio, quyền truy cập mô hình, thời gian lưu trữ và phê duyệt khóa API theo không gian làm việc.",
     "global": {
       "capture_default": "Mặc định lưu nội dung AI",
       "capture_default_description": "Chỉ lưu prompt, kết quả và dữ liệu công cụ khi không gian làm việc kế thừa cài đặt đang bật này.",
+      "capture_disabled": "Tắt lưu nội dung",
+      "capture_enabled": "Bật lưu nội dung",
       "content_retention": "Lưu nội dung (ngày)",
       "default_models": "Mô hình mặc định được bật",
       "description": "Các kiểm soát này được áp dụng trước giới hạn của không gian làm việc, gói dịch vụ và khóa API.",
       "metadata_retention": "Lưu siêu dữ liệu (ngày)",
       "models_hint": "Chính sách không gian làm việc và khóa API chỉ có thể thu hẹp danh mục đã chọn này.",
       "models_placeholder": "Chọn các mô hình được bật mặc định",
+      "models_summary": "{count} mô hình mặc định",
+      "retention_summary": "Siêu dữ liệu {metadata} ngày · nội dung {content} ngày",
       "title": "Chính sách truy cập toàn cục"
     },
     "models": {
@@ -1158,7 +1162,14 @@
       "api_key_creation": "Phê duyệt tạo khóa API AI",
       "api_key_creation_description": "Cho phép người quản lý khóa trong không gian làm việc tạo và xoay vòng thông tin xác thực ttr_ai_. Khóa hiện có vẫn hoạt động khi tắt mục này.",
       "api_key_decided_at": "Quyết định phê duyệt gần nhất: {date}",
+      "approval_required": "Cần phê duyệt",
+      "approved": "Đã phê duyệt",
       "capture": "Lưu nội dung",
+      "column_actions": "Mở rộng chính sách",
+      "column_approval": "Tạo khóa",
+      "column_models": "Quy tắc mô hình",
+      "column_overrides": "Ghi đè",
+      "column_workspace": "Không gian làm việc",
       "content_retention": "Lưu nội dung (ngày)",
       "credit_budget": "Ngân sách tín dụng hàng tháng",
       "denied_models": "Mô hình bị chặn",
@@ -1167,15 +1178,23 @@
       "inherit": "Kế thừa",
       "inherit_models": "Kế thừa mô hình toàn cục",
       "load_error": "Không thể tải chính sách không gian làm việc.",
+      "load_more": "Tải thêm không gian làm việc",
+      "loaded_count": "Đã tải {count} không gian làm việc",
       "loading": "Đang tải chính sách không gian làm việc…",
+      "loading_more": "Đang tải thêm không gian làm việc…",
       "metadata_retention": "Lưu siêu dữ liệu (ngày)",
+      "models_summary": "{count, plural, =0 {Kế thừa danh mục} other {# quy tắc mô hình}}",
       "no_training": "Thực thi kiểm soát không huấn luyện",
       "none": "Không chặn mô hình nào",
+      "overrides_summary": "{count, plural, =0 {Mặc định} other {# giá trị tùy chỉnh}}",
       "rate_limit": "Yêu cầu mỗi phút",
       "retry": "Thử lại",
-      "search": "Tìm không gian làm việc",
+      "saving": "Đang lưu…",
+      "search": "Tìm theo tên hoặc mã không gian làm việc",
+      "search_hint": "Tìm kiếm chạy trên máy chủ và khớp tên, mã đầy đủ hoặc một phần mã không gian làm việc.",
       "title": "Chính sách không gian làm việc",
-      "unnamed": "Không gian làm việc chưa đặt tên"
+      "unnamed": "Không gian làm việc chưa đặt tên",
+      "unsaved": "Chưa lưu"
     }
   },
   "ai-whitelist": {

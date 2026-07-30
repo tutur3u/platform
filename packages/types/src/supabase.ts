@@ -16915,6 +16915,24 @@ export type Database = {
       };
       restore_cascaded_user_group_attendance: { Args: never; Returns: number };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
+      search_ai_studio_policy_workspaces: {
+        Args: { p_limit?: number; p_offset?: number; p_query?: string };
+        Returns: {
+          allowed_models: string[];
+          api_key_creation_approved: boolean;
+          api_key_creation_decided_at: string;
+          api_key_creation_decided_by: string;
+          capture_enabled: boolean;
+          content_retention_days: number;
+          denied_models: string[];
+          metadata_retention_days: number;
+          monthly_credit_budget: number;
+          no_training_enforced: boolean;
+          requests_per_minute: number;
+          workspace_name: string;
+          ws_id: string;
+        }[];
+      };
       settle_ai_studio_run: {
         Args: {
           p_actual_credits: number;
