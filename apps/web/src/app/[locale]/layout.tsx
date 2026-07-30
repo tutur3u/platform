@@ -131,11 +131,11 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
           <VercelRuntimeSignals />
-          <Suspense>
-            <NuqsAdapter>
-              <Providers>{children}</Providers>
-            </NuqsAdapter>
-          </Suspense>
+          <Providers>
+            <Suspense>
+              <NuqsAdapter>{children}</NuqsAdapter>
+            </Suspense>
+          </Providers>
           <TailwindIndicator />
           <ProductionDatabaseIndicator />
           <Toaster />
