@@ -11,6 +11,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
+import { RelativeTimestamp } from './relative-timestamp';
 
 export function CatalogPanel({
   resource,
@@ -68,6 +69,10 @@ export function CatalogPanel({
                     <div className="truncate font-medium">{item.name}</div>
                     <div className="truncate text-muted-foreground text-sm">
                       {item.description || item.slug || item.id}
+                    </div>
+                    <div className="mt-1 text-muted-foreground text-xs">
+                      {t('updated')}{' '}
+                      <RelativeTimestamp value={item.updatedAt} />
                     </div>
                   </div>
                   {item.version !== null ? (

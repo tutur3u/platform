@@ -19,6 +19,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { RelativeTimestamp } from './relative-timestamp';
 
 export function ApiKeyField({
   children,
@@ -56,6 +57,21 @@ export function ApiKeyRow({
         <div className="truncate font-medium">{keyRecord.name}</div>
         <div className="font-mono text-muted-foreground text-xs">
           {keyRecord.prefix} · {keyRecord.environment}
+        </div>
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
+          <span>
+            {t('created')} <RelativeTimestamp value={keyRecord.created_at} />
+          </span>
+          <span>
+            {keyRecord.last_used_at ? (
+              <>
+                {t('last_used')}{' '}
+                <RelativeTimestamp value={keyRecord.last_used_at} />
+              </>
+            ) : (
+              t('never_used')
+            )}
+          </span>
         </div>
       </div>
       <Badge variant="outline">

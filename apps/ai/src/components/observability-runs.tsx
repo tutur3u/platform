@@ -12,6 +12,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { Fragment, useState } from 'react';
+import { RelativeTimestamp } from './relative-timestamp';
 
 export function ObservabilityRuns({
   isFetchingMore,
@@ -47,10 +48,11 @@ export function ObservabilityRuns({
   return (
     <Card>
       <CardContent className="overflow-x-auto p-0">
-        <table className="w-full min-w-[72rem] text-sm">
+        <table className="w-full min-w-[80rem] text-sm">
           <thead className="border-b bg-muted/30 text-muted-foreground">
             <tr>
               <th className="p-3 text-left font-medium">{t('request')}</th>
+              <th className="p-3 text-left font-medium">{t('time')}</th>
               <th className="p-3 text-left font-medium">{t('model')}</th>
               <th className="p-3 text-left font-medium">{t('feature')}</th>
               <th className="p-3 text-left font-medium">{t('source')}</th>
@@ -141,6 +143,9 @@ function RunRow({
             <span className="truncate">{run.requestId}</span>
           </div>
         </td>
+        <td className="p-3 text-muted-foreground">
+          <RelativeTimestamp value={run.completedAt ?? run.createdAt} />
+        </td>
         <td className="max-w-52 truncate p-3">{run.modelId}</td>
         <td className="max-w-44 truncate p-3">{run.feature}</td>
         <td className="p-3">{sourceLabel}</td>
@@ -178,7 +183,7 @@ function RunRow({
       </tr>
       {expandable && open ? (
         <tr className="border-b bg-muted/15">
-          <td className="p-4" colSpan={10}>
+          <td className="p-4" colSpan={11}>
             {detailQuery.isPending ? (
               <Skeleton className="h-20 w-full" />
             ) : detailQuery.isError ? (
@@ -202,7 +207,7 @@ function RunRow({
                 </div>
                 {detailQuery.data.steps.map((step) => (
                   <div
-                    className="grid items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs sm:grid-cols-[auto_auto_minmax(8rem,1fr)_auto_auto_auto]"
+                    className="grid items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs sm:grid-cols-[auto_auto_minmax(8rem,1fr)_auto_auto_auto_auto]"
                     key={step.sequence}
                   >
                     <Badge variant="secondary">#{step.sequence + 1}</Badge>
@@ -227,6 +232,10 @@ function RunRow({
                     <span className="text-muted-foreground tabular-nums">
                       {step.latencyMs === null ? '—' : `${step.latencyMs} ms`}
                     </span>
+                    <RelativeTimestamp
+                      className="text-muted-foreground"
+                      value={step.completedAt ?? step.startedAt}
+                    />
                   </div>
                 ))}
               </div>
