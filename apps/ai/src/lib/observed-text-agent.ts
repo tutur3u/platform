@@ -15,16 +15,6 @@ type StepSummary = {
   type: 'model' | 'tool';
 };
 
-export function resolveGatewayRoutingOptions(
-  modelId: string
-): { order: string[] } | undefined {
-  if (!modelId.startsWith('google/')) return undefined;
-
-  return {
-    order: ['google', 'vertex'],
-  };
-}
-
 export function createObservedTextAgent({
   context,
   instructions,
@@ -43,7 +33,6 @@ export function createObservedTextAgent({
   toolNames: PlaygroundToolName[];
 }) {
   let nextSequence = 0;
-  const gatewayRoutingOptions = resolveGatewayRoutingOptions(modelId);
   const modelSequences = new Map<
     number,
     { sequence: number; startedAt: number }
@@ -58,9 +47,6 @@ export function createObservedTextAgent({
     instructions,
     maxOutputTokens,
     model: gateway(modelId),
-    providerOptions: gatewayRoutingOptions
-      ? { gateway: gatewayRoutingOptions }
-      : undefined,
     onStepStart: ({ stepNumber }) => {
       modelSequences.set(stepNumber, {
         sequence: nextSequence++,
