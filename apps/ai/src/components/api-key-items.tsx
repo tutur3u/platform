@@ -51,8 +51,10 @@ export function ApiKeyRow({
 }) {
   const t = useTranslations('ai-studio.keys');
   return (
-    <div className="flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center">
-      <KeyRound className="size-4 text-muted-foreground" />
+    <div className="group flex flex-col gap-3 rounded-xl border bg-background p-3 transition-colors hover:border-primary/30 hover:bg-muted/15 sm:flex-row sm:items-center">
+      <div className="grid size-9 shrink-0 place-items-center rounded-lg border bg-muted/30">
+        <KeyRound className="size-4 text-primary" />
+      </div>
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{keyRecord.name}</div>
         <div className="font-mono text-muted-foreground text-xs">
@@ -78,7 +80,7 @@ export function ApiKeyRow({
         {keyRecord.revoked_at ? t('revoked') : t('active')}
       </Badge>
       {!keyRecord.revoked_at ? (
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             disabled={!approvalGranted || isPending}
             onClick={onRotate}

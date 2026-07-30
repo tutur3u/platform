@@ -199,6 +199,12 @@ export function PlaygroundPanel({
                 </Button>
               ) : null}
             </div>
+            {modelsMutation.isSuccess ? (
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
+                <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                <span>{t('key_verified', { count: models.length })}</span>
+              </div>
+            ) : null}
             {canManageAiKeys && !keysQuery.isPending && !approval?.approved ? (
               <p className="rounded-lg border border-dashed p-3 text-muted-foreground text-xs">
                 {t('approval_required')}

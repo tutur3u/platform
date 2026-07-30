@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import { PlaygroundStepInspector } from './playground-step-inspector';
 
 export function PlaygroundWorkbench({
   canRun,
@@ -86,24 +87,11 @@ export function PlaygroundWorkbench({
                 {result.outputText || t('empty_output')}
               </p>
               {result.steps.length ? (
-                <div className="space-y-2 border-t pt-4">
-                  <p className="font-medium text-sm">{t('execution_trace')}</p>
-                  {result.steps.map((step) => (
-                    <div
-                      className="flex items-center gap-3 rounded-lg border px-3 py-2 text-xs"
-                      key={`${step.sequence}-${step.name}`}
-                    >
-                      <Badge variant="secondary">#{step.sequence + 1}</Badge>
-                      <span className="font-medium">{step.name}</span>
-                      <span className="text-muted-foreground">
-                        {t(`step_${step.type}`)}
-                      </span>
-                      <span className="ml-auto text-muted-foreground tabular-nums">
-                        {step.latencyMs === null ? '—' : `${step.latencyMs} ms`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <PlaygroundStepInspector
+                  key={result.requestId}
+                  steps={result.steps}
+                  totalTokens={result.usage.totalTokens}
+                />
               ) : null}
             </div>
           ) : (

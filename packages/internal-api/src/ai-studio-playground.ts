@@ -11,10 +11,29 @@ export interface AiStudioPublicModel {
 }
 
 export interface AiStudioPlaygroundStep {
+  cachedInputTokens: number;
+  callId: string | null;
+  completedAt: string | null;
+  effectiveOutputTokensPerSecond: number | null;
+  finishReason: string | null;
+  inputJson: string | null;
+  inputTokens: number;
   latencyMs: number | null;
+  modelId: string | null;
   name: string;
+  outputJson: string | null;
+  outputTokens: number;
+  provider: string | null;
+  reasoningTokens: number;
+  responseId: string | null;
+  responseTimeMs: number | null;
   sequence: number;
+  startedAt: string | null;
   status: 'failed' | 'succeeded';
+  timeToFirstOutputMs: number | null;
+  toolCallCount: number;
+  toolCallId: string | null;
+  toolResultCount: number;
   type: 'model' | 'tool';
 }
 

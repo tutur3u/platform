@@ -36,11 +36,16 @@ export default async function OverviewPage({
         empty: t('empty'),
         feature: t('feature'),
         model: t('model'),
+        moduleReady: t('module-ready'),
+        moduleReadyDescription: t('module-ready-description'),
+        noActivity: t('no-activity'),
         openPlayground: t('open-playground'),
+        privatePreview: t('private-preview'),
         recentRuns: t('recent-runs'),
         request: t('request'),
         status: t('status'),
         tokens: t('tokens'),
+        viewAll: t('view-all'),
       }}
       section="overview"
       title={t('overview')}

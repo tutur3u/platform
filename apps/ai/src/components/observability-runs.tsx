@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, Cpu, Terminal } from '@tuturuuu/icons';
+import { ChevronDownIcon, MousePointerClick } from '@tuturuuu/icons';
 import {
   type AiStudioRun,
   getAiStudioRunDetail,
@@ -11,22 +11,31 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
+import { formatTraceDuration } from '@/lib/playground-trace';
+import { InfiniteLoadTrigger } from './infinite-load-trigger';
+import { ObservabilityRunDetail } from './observability-run-detail';
 import { RelativeTimestamp } from './relative-timestamp';
 
 export function ObservabilityRuns({
   isFetchingMore,
   isLoading,
   onLoadMore,
+  onSelectedRunChange,
   runs,
-  showLoadMore,
+  selectedRunId,
+  hasNextPage,
+  hasLoadError,
   workspaceId,
 }: {
   isFetchingMore: boolean;
   isLoading: boolean;
   onLoadMore: () => void;
+  onSelectedRunChange: (runId: string | null) => void;
   runs: AiStudioRun[];
-  showLoadMore: boolean;
+  selectedRunId: string | null;
+  hasNextPage: boolean;
+  hasLoadError: boolean;
   workspaceId: string;
 }) {
   const t = useTranslations('ai-studio.observability');
@@ -46,52 +55,75 @@ export function ObservabilityRuns({
     t(`status_${status}` as Parameters<typeof t>[0]);
 
   return (
-    <Card>
-      <CardContent className="overflow-x-auto p-0">
-        <table className="w-full min-w-[80rem] text-sm">
-          <thead className="border-b bg-muted/30 text-muted-foreground">
-            <tr>
-              <th className="p-3 text-left font-medium">{t('request')}</th>
-              <th className="p-3 text-left font-medium">{t('time')}</th>
-              <th className="p-3 text-left font-medium">{t('model')}</th>
-              <th className="p-3 text-left font-medium">{t('feature')}</th>
-              <th className="p-3 text-left font-medium">{t('source')}</th>
-              <th className="p-3 text-left font-medium">{t('status')}</th>
-              <th className="p-3 text-right font-medium">{t('tokens')}</th>
-              <th className="p-3 text-right font-medium">{t('media_units')}</th>
-              <th className="p-3 text-right font-medium">
-                {t('billed_credits')}
-              </th>
-              <th className="p-3 text-right font-medium">
-                {t('provider_cost_short')}
-              </th>
-              <th className="p-3 text-right font-medium">{t('latency')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {runs.map((run) => (
-              <RunRow
-                key={run.id}
-                run={run}
-                sourceLabel={sourceLabel(run.sourceType)}
-                statusLabel={statusLabel(run.status)}
-                workspaceId={workspaceId}
-              />
-            ))}
-          </tbody>
-        </table>
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b bg-muted/10 p-4">
+          <div>
+            <p className="font-medium">{t('activity_explorer')}</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              {t('activity_explorer_description')}
+            </p>
+          </div>
+          <Badge variant="outline">
+            <MousePointerClick className="mr-1.5 size-3.5" />
+            {t('select_activity')}
+          </Badge>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[80rem] text-sm">
+            <thead className="border-b bg-muted/30 text-muted-foreground">
+              <tr>
+                <th className="p-3 text-left font-medium">{t('request')}</th>
+                <th className="p-3 text-left font-medium">{t('time')}</th>
+                <th className="p-3 text-left font-medium">{t('model')}</th>
+                <th className="p-3 text-left font-medium">{t('feature')}</th>
+                <th className="p-3 text-left font-medium">{t('source')}</th>
+                <th className="p-3 text-left font-medium">{t('status')}</th>
+                <th className="p-3 text-right font-medium">{t('tokens')}</th>
+                <th className="p-3 text-right font-medium">
+                  {t('media_units')}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {t('billed_credits')}
+                </th>
+                <th className="p-3 text-right font-medium">
+                  {t('provider_cost_short')}
+                </th>
+                <th className="p-3 text-right font-medium">{t('latency')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((run) => (
+                <RunRow
+                  key={run.id}
+                  onOpenChange={(open) =>
+                    onSelectedRunChange(open ? run.id : null)
+                  }
+                  open={selectedRunId === run.id}
+                  run={run}
+                  sourceLabel={sourceLabel(run.sourceType)}
+                  statusLabel={statusLabel(run.status)}
+                  workspaceId={workspaceId}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
         {isLoading ? <RunsSkeleton /> : null}
         {!isLoading && runs.length === 0 ? <EmptyState /> : null}
-        {showLoadMore ? (
-          <div className="flex justify-center border-t p-4">
-            <Button
-              disabled={isFetchingMore}
-              onClick={onLoadMore}
-              variant="outline"
-            >
-              {isFetchingMore ? t('loading') : t('load_more')}
-            </Button>
-          </div>
+        {!isLoading && runs.length > 0 ? (
+          <InfiniteLoadTrigger
+            endLabel={t('end_of_list')}
+            errorLabel={t('error_description')}
+            hasError={hasLoadError}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingMore}
+            loadedLabel={t('loaded_count', { count: runs.length })}
+            loadingLabel={t('loading')}
+            loadMoreLabel={t('load_more')}
+            onLoadMore={onLoadMore}
+            retryLabel={t('retry')}
+          />
         ) : null}
       </CardContent>
     </Card>
@@ -99,51 +131,58 @@ export function ObservabilityRuns({
 }
 
 function RunRow({
+  onOpenChange,
+  open,
   run,
   sourceLabel,
   statusLabel,
   workspaceId,
 }: {
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
   run: AiStudioRun;
   sourceLabel: string;
   statusLabel: string;
   workspaceId: string;
 }) {
   const t = useTranslations('ai-studio.observability');
-  const [open, setOpen] = useState(false);
   const detailQuery = useQuery({
     enabled: open && run.sourceType !== 'workspace_credit',
     queryFn: () => getAiStudioRunDetail(workspaceId, run.id),
     queryKey: ['ai-studio-run-detail', workspaceId, run.id],
+    staleTime: 60_000,
   });
-  const expandable =
-    run.sourceType !== 'workspace_credit' &&
-    (run.stepCount > 0 || run.toolCallCount > 0);
+  const hasPersistedTrace = run.sourceType !== 'workspace_credit';
+  const toggleOpen = () => onOpenChange(!open);
 
   return (
     <Fragment>
-      <tr className="border-b">
+      <tr
+        className="cursor-pointer border-b transition-colors hover:bg-muted/30 data-[state=open]:bg-muted/30"
+        data-state={open ? 'open' : 'closed'}
+        onClick={toggleOpen}
+      >
         <td className="max-w-52 p-3 font-mono text-xs">
-          <div className="flex items-center gap-2">
-            {expandable ? (
-              <Button
-                aria-expanded={open}
-                aria-label={open ? t('collapse_run') : t('expand_run')}
-                onClick={() => setOpen((value) => !value)}
-                size="icon"
-                variant="ghost"
-              >
-                <ChevronDownIcon
-                  className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`}
-                />
-              </Button>
-            ) : (
-              <span className="size-9" />
-            )}
+          <Button
+            aria-expanded={open}
+            aria-label={open ? t('collapse_run') : t('expand_run')}
+            className="h-auto max-w-full justify-start px-1 py-1 font-mono text-xs"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleOpen();
+            }}
+            variant="ghost"
+          >
+            <ChevronDownIcon
+              className={`mr-2 size-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+            />
             <span className="truncate">{run.requestId}</span>
-          </div>
+          </Button>
         </td>
-        <td className="p-3 text-muted-foreground">
+        <td
+          className="p-3 text-muted-foreground"
+          onClick={(event) => event.stopPropagation()}
+        >
           <RelativeTimestamp value={run.completedAt ?? run.createdAt} />
         </td>
         <td className="max-w-52 truncate p-3">{run.modelId}</td>
@@ -178,68 +217,21 @@ function RunRow({
           })}
         </td>
         <td className="p-3 text-right tabular-nums">
-          {run.latencyMs === null ? '—' : `${run.latencyMs} ms`}
+          {formatTraceDuration(run.latencyMs)}
         </td>
       </tr>
-      {expandable && open ? (
+      {open ? (
         <tr className="border-b bg-muted/15">
-          <td className="p-4" colSpan={11}>
-            {detailQuery.isPending ? (
-              <Skeleton className="h-20 w-full" />
-            ) : detailQuery.isError ? (
-              <p className="text-dynamic-red text-sm">{t('trace_error')}</p>
-            ) : (
-              <div className="ml-10 grid gap-2">
-                <div className="mb-1 flex items-center gap-2">
-                  <p className="font-medium text-sm">{t('execution_trace')}</p>
-                  <Badge variant="secondary">
-                    {t('step_count', {
-                      count: detailQuery.data.steps.length,
-                    })}
-                  </Badge>
-                  {run.toolCallCount ? (
-                    <Badge variant="outline">
-                      {t('tool_call_count', {
-                        count: run.toolCallCount,
-                      })}
-                    </Badge>
-                  ) : null}
-                </div>
-                {detailQuery.data.steps.map((step) => (
-                  <div
-                    className="grid items-center gap-2 rounded-lg border bg-background px-3 py-2 text-xs sm:grid-cols-[auto_auto_minmax(8rem,1fr)_auto_auto_auto_auto]"
-                    key={step.sequence}
-                  >
-                    <Badge variant="secondary">#{step.sequence + 1}</Badge>
-                    {step.kind === 'tool' ? (
-                      <Terminal className="size-4 text-primary" />
-                    ) : (
-                      <Cpu className="size-4 text-primary" />
-                    )}
-                    <div>
-                      <p className="font-medium">{step.name}</p>
-                      <p className="text-muted-foreground">
-                        {step.modelId ?? t(`step_${step.kind}`)}
-                      </p>
-                    </div>
-                    <Badge variant="outline">
-                      {t(`status_${step.status}`)}
-                    </Badge>
-                    <span className="text-muted-foreground tabular-nums">
-                      {(step.inputTokens + step.outputTokens).toLocaleString()}{' '}
-                      {t('tokens')}
-                    </span>
-                    <span className="text-muted-foreground tabular-nums">
-                      {step.latencyMs === null ? '—' : `${step.latencyMs} ms`}
-                    </span>
-                    <RelativeTimestamp
-                      className="text-muted-foreground"
-                      value={step.completedAt ?? step.startedAt}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+          <td className="p-0" colSpan={11}>
+            <ObservabilityRunDetail
+              isError={hasPersistedTrace && detailQuery.isError}
+              isLoading={hasPersistedTrace && detailQuery.isPending}
+              onRetry={() => void detailQuery.refetch()}
+              run={run}
+              sourceLabel={sourceLabel}
+              statusLabel={statusLabel}
+              steps={detailQuery.data?.steps ?? []}
+            />
           </td>
         </tr>
       ) : null}

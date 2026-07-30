@@ -1,13 +1,14 @@
 'use client';
 
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { AlertCircle, RefreshCw } from '@tuturuuu/icons';
+import { AlertCircle, Filter, RefreshCw, X } from '@tuturuuu/icons';
 import {
   type AiStudioRunsResponse,
   getAiStudioCredits,
   getAiStudioRuns,
   getAiStudioUsage,
 } from '@tuturuuu/internal-api/ai-studio';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Input } from '@tuturuuu/ui/input';
@@ -19,7 +20,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { parseAsString, useQueryState } from 'nuqs';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { ObservabilityBreakdowns } from './observability-breakdowns';
 import {
   type ObservabilityPreset,
@@ -44,6 +46,12 @@ export function ObservabilityPanel({
   const [status, setStatus] = useState('all');
   const [model, setModel] = useState('');
   const [feature, setFeature] = useState('');
+  const [selectedRunId, setSelectedRunId] = useQueryState(
+    'run',
+    parseAsString.withOptions({ history: 'replace' })
+  );
+  const deferredModel = useDeferredValue(model);
+  const deferredFeature = useDeferredValue(feature);
   const [rangeAnchor, setRangeAnchor] = useState(() => new Date());
   const range = useMemo(
     () => resolveObservabilityRange(preset, customFrom, customTo, rangeAnchor),
@@ -67,21 +75,37 @@ export function ObservabilityPanel({
     queryFn: ({ pageParam }) =>
       getAiStudioRuns(workspaceId, {
         cursor: pageParam,
-        feature: feature || undefined,
+        feature: deferredFeature || undefined,
         from: range!.from,
         limit: 50,
-        model: model || undefined,
+        model: deferredModel || undefined,
         status: status === 'all' ? undefined : status,
         to: range!.to,
       }),
-    queryKey: ['ai-studio-runs', workspaceId, range, status, model, feature],
+    queryKey: [
+      'ai-studio-runs',
+      workspaceId,
+      range,
+      status,
+      deferredModel,
+      deferredFeature,
+    ],
   });
   const runs = runsQuery.data?.pages.flatMap((page) => page.runs) ?? [];
   const isRunSection = section === 'runs' || section === 'logs';
   const hasError =
     usageQuery.isError ||
     (section === 'credits' && creditsQuery.isError) ||
-    (isRunSection && runsQuery.isError);
+    (isRunSection && runsQuery.isError && runs.length === 0);
+  const activeFilterCount = [
+    model.trim(),
+    feature.trim(),
+    status === 'all' ? '' : status,
+  ].filter(Boolean).length;
+  const isRefreshing =
+    usageQuery.isFetching ||
+    runsQuery.isFetching ||
+    (section === 'credits' && creditsQuery.isFetching);
   const refresh = () => {
     if (preset === 'custom') {
       void usageQuery.refetch();
@@ -104,27 +128,29 @@ export function ObservabilityPanel({
               </p>
             </div>
             <Button
-              disabled={usageQuery.isFetching || runsQuery.isFetching}
+              disabled={isRefreshing}
               onClick={refresh}
               size="sm"
               variant="outline"
             >
               <RefreshCw
-                className={`mr-2 size-4 ${
-                  usageQuery.isFetching || runsQuery.isFetching
-                    ? 'animate-spin'
-                    : ''
-                }`}
+                className={`mr-2 size-4 ${isRefreshing ? 'animate-spin' : ''}`}
               />
               {t('refresh')}
             </Button>
           </div>
           <Filters
+            activeFilterCount={activeFilterCount}
             customFrom={customFrom}
             customTo={customTo}
             feature={feature}
             isRunSection={isRunSection}
             model={model}
+            onClearFilters={() => {
+              setFeature('');
+              setModel('');
+              setStatus('all');
+            }}
             preset={preset}
             setCustomFrom={setCustomFrom}
             setCustomTo={setCustomTo}
@@ -157,11 +183,14 @@ export function ObservabilityPanel({
       />
       {isRunSection ? (
         <ObservabilityRuns
+          hasNextPage={Boolean(runsQuery.hasNextPage)}
+          hasLoadError={runsQuery.isFetchNextPageError}
           isFetchingMore={runsQuery.isFetchingNextPage}
           isLoading={runsQuery.isPending}
           onLoadMore={() => void runsQuery.fetchNextPage()}
+          onSelectedRunChange={(runId) => void setSelectedRunId(runId)}
           runs={runs}
-          showLoadMore={Boolean(runsQuery.hasNextPage)}
+          selectedRunId={selectedRunId}
           workspaceId={workspaceId}
         />
       ) : (
@@ -198,41 +227,68 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 function Filters(props: FilterProps) {
   const t = useTranslations('ai-studio.observability');
   return (
-    <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center">
-      <Select
-        onValueChange={(value) => props.setPreset(value as ObservabilityPreset)}
-        value={props.preset}
-      >
-        <SelectTrigger className="w-full md:w-52">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="month">{t('current_month')}</SelectItem>
-          {[7, 30, 90].map((days) => (
-            <SelectItem key={days} value={String(days)}>
-              {t('last_days', { days })}
-            </SelectItem>
-          ))}
-          <SelectItem value="custom">{t('custom')}</SelectItem>
-        </SelectContent>
-      </Select>
-      {props.preset === 'custom' ? (
-        <>
-          <Input
-            aria-label={t('from_date')}
-            onChange={(event) => props.setCustomFrom(event.target.value)}
-            type="date"
-            value={props.customFrom}
-          />
-          <Input
-            aria-label={t('to_date')}
-            onChange={(event) => props.setCustomTo(event.target.value)}
-            type="date"
-            value={props.customTo}
-          />
-        </>
-      ) : null}
-      {props.isRunSection ? <RunFilters {...props} /> : null}
+    <div className="space-y-3 border-t pt-4">
+      <div className="flex items-center gap-2">
+        <Filter className="size-4 text-primary" />
+        <p className="font-medium text-sm">{t('filters')}</p>
+        {props.activeFilterCount > 0 ? (
+          <Badge variant="secondary">
+            {t('active_filters', { count: props.activeFilterCount })}
+          </Badge>
+        ) : null}
+        {props.activeFilterCount > 0 ? (
+          <Button
+            className="ml-auto"
+            onClick={props.onClearFilters}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <X className="mr-2 size-4" />
+            {t('clear_filters')}
+          </Button>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <Select
+          onValueChange={(value) =>
+            props.setPreset(value as ObservabilityPreset)
+          }
+          value={props.preset}
+        >
+          <SelectTrigger className="w-full md:w-52">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="month">{t('current_month')}</SelectItem>
+            {[7, 30, 90].map((days) => (
+              <SelectItem key={days} value={String(days)}>
+                {t('last_days', { days })}
+              </SelectItem>
+            ))}
+            <SelectItem value="custom">{t('custom')}</SelectItem>
+          </SelectContent>
+        </Select>
+        {props.preset === 'custom' ? (
+          <>
+            <Input
+              aria-label={t('from_date')}
+              className="w-full md:w-44"
+              onChange={(event) => props.setCustomFrom(event.target.value)}
+              type="date"
+              value={props.customFrom}
+            />
+            <Input
+              aria-label={t('to_date')}
+              className="w-full md:w-44"
+              onChange={(event) => props.setCustomTo(event.target.value)}
+              type="date"
+              value={props.customTo}
+            />
+          </>
+        ) : null}
+        {props.isRunSection ? <RunFilters {...props} /> : null}
+      </div>
     </div>
   );
 }
@@ -270,11 +326,13 @@ function RunFilters(props: FilterProps) {
 }
 
 interface FilterProps {
+  activeFilterCount: number;
   customFrom: string;
   customTo: string;
   feature: string;
   isRunSection: boolean;
   model: string;
+  onClearFilters: () => void;
   preset: ObservabilityPreset;
   setCustomFrom: (value: string) => void;
   setCustomTo: (value: string) => void;
