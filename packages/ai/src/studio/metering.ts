@@ -264,6 +264,11 @@ export async function settleAiStudioRun(
     });
 
   if (error || !data?.[0]?.success) {
+    console.error('AI Studio settlement RPC failed', {
+      code: error?.code ?? null,
+      errorCode: data?.[0]?.error_code ?? null,
+      runId: input.runId,
+    });
     throw new AiStudioError('AI usage could not be settled.', {
       code: 'server_error',
       status: 500,
@@ -295,6 +300,11 @@ export async function settleExternalAiStudioRun(
     });
 
   if (error || !data?.[0]?.success) {
+    console.error('External-app AI Studio settlement RPC failed', {
+      code: error?.code ?? null,
+      errorCode: data?.[0]?.error_code ?? null,
+      runId: input.runId,
+    });
     throw new AiStudioError('External-app AI usage could not be settled.', {
       code: 'server_error',
       status: 500,

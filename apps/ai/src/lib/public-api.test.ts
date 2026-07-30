@@ -21,7 +21,11 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   settleExternalAiStudioRun: mocks.settleExternalAiStudioRun,
 }));
 
-import { prepareMeteredExecution, settleMeteredExecution } from './public-api';
+import {
+  describeAiStudioRuntimeError,
+  prepareMeteredExecution,
+  settleMeteredExecution,
+} from './public-api';
 
 describe('AI Studio billing policy', () => {
   beforeEach(() => {
@@ -105,5 +109,29 @@ describe('AI Studio billing policy', () => {
       })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+});
+
+describe('AI Studio runtime diagnostics', () => {
+  it('records structural details without provider response content', () => {
+    const cause = Object.assign(new Error('private provider response'), {
+      code: 'ECONNRESET',
+    });
+    const error = Object.assign(new Error('private prompt echo'), {
+      cause,
+      code: 'gateway_error',
+      statusCode: 502,
+    });
+
+    expect(describeAiStudioRuntimeError(error)).toEqual({
+      causeCode: 'ECONNRESET',
+      causeName: 'Error',
+      code: 'gateway_error',
+      name: 'Error',
+      statusCode: 502,
+    });
+    expect(JSON.stringify(describeAiStudioRuntimeError(error))).not.toContain(
+      'private'
+    );
   });
 });

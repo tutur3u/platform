@@ -37,6 +37,14 @@ export type MeteredExecutionContext = {
   startedAt: number;
 };
 
+type ErrorDetails = {
+  causeCode: string | null;
+  causeName: string | null;
+  code: string | null;
+  name: string;
+  statusCode: number | null;
+};
+
 type PrepareMeteredExecutionInput = {
   feature: string;
   maxUsage: MeteredUsage;
@@ -48,6 +56,35 @@ type PrepareMeteredExecutionInput = {
 
 function positiveReservation(value: number): number {
   return Math.max(0.0001, value);
+}
+
+function stringProperty(value: unknown, property: string): string | null {
+  if (!value || typeof value !== 'object') return null;
+  const propertyValue = Reflect.get(value, property);
+  return typeof propertyValue === 'string' ? propertyValue : null;
+}
+
+function numberProperty(value: unknown, property: string): number | null {
+  if (!value || typeof value !== 'object') return null;
+  const propertyValue = Reflect.get(value, property);
+  return typeof propertyValue === 'number' ? propertyValue : null;
+}
+
+export function describeAiStudioRuntimeError(error: unknown): ErrorDetails {
+  const cause =
+    error && typeof error === 'object' ? Reflect.get(error, 'cause') : null;
+  return {
+    causeCode: stringProperty(cause, 'code'),
+    causeName:
+      cause instanceof Error ? cause.name : stringProperty(cause, 'name'),
+    code: stringProperty(error, 'code'),
+    name:
+      error instanceof Error
+        ? error.name
+        : (stringProperty(error, 'name') ?? typeof error),
+    statusCode:
+      numberProperty(error, 'statusCode') ?? numberProperty(error, 'status'),
+  };
 }
 
 export function approximateTokenCount(value: unknown): number {
@@ -294,7 +331,7 @@ export async function listAllowedModels(credential: PublicAiCredential) {
 
 export function publicApiError(error: unknown, requestId?: string): Response {
   console.error('AI Studio public API request failed', {
-    code: error instanceof AiStudioError ? error.code : 'server_error',
+    ...describeAiStudioRuntimeError(error),
     requestId,
   });
   return toOpenAiError(error, requestId);

@@ -6,6 +6,7 @@ import { playgroundToolNames } from './playground-tools';
 import {
   approximateTokenCount,
   captureAiStudioContent,
+  describeAiStudioRuntimeError,
   prepareMeteredExecution,
   publicApiError,
   settleMeteredExecution,
@@ -267,7 +268,13 @@ export async function executeTextRequest(
         error,
         status: request.signal.aborted ? 'aborted' : 'failed',
         usage: {},
-      }).catch(() => undefined);
+      }).catch((settlementError) => {
+        console.error('Failed to settle failed AI Studio execution', {
+          ...describeAiStudioRuntimeError(settlementError),
+          requestId: context?.requestId,
+          runId: context?.runId,
+        });
+      });
     }
     return publicApiError(
       error instanceof z.ZodError
