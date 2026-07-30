@@ -56,6 +56,12 @@ the same authentication, model policy, credit reservation and settlement,
 budgets, rate limits, abuse controls, and logging as an external production
 client. It does not use a privileged dashboard proxy.
 
+Text generation uses the AI SDK Google provider and the
+`GOOGLE_GENERATIVE_AI_API_KEY` configured on the AI Studio deployment. Public
+API, policy, and observability records keep the canonical `google/...` model
+ID; only the provider adapter receives the bare Gemini model name. Vercel AI
+Gateway credentials and routing are not used for this execution path.
+
 The workbench supports bounded AI SDK tool loops with the safe calculator and
 current-time demonstration tools. Tool loops are limited to eight model steps.
 The response shows a sanitized execution trace; the observability run table can

@@ -1,5 +1,7 @@
+import { google } from '@ai-sdk/google';
+import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
 import type { Json } from '@tuturuuu/types';
-import { gateway, isStepCount, ToolLoopAgent } from 'ai';
+import { isStepCount, ToolLoopAgent } from 'ai';
 import {
   type PlaygroundToolName,
   resolvePlaygroundTools,
@@ -46,7 +48,7 @@ export function createObservedTextAgent({
   const agent = new ToolLoopAgent({
     instructions,
     maxOutputTokens,
-    model: gateway(modelId),
+    model: google(toBareModelName(modelId)),
     onStepStart: ({ stepNumber }) => {
       modelSequences.set(stepNumber, {
         sequence: nextSequence++,
