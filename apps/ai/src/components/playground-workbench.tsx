@@ -2,13 +2,13 @@
 
 import { Loader2, Rocket, Sparkles, Terminal } from '@tuturuuu/icons';
 import type { AiStudioPlaygroundResult } from '@tuturuuu/internal-api/ai-studio';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { PlaygroundStepInspector } from './playground-step-inspector';
+import { SectionCard } from './studio/section-card';
 
 export function PlaygroundWorkbench({
   canRun,
@@ -32,27 +32,23 @@ export function PlaygroundWorkbench({
   const t = useTranslations('ai-studio.playground_console');
 
   return (
-    <Card className="min-h-[42rem] overflow-hidden">
-      <CardHeader className="border-b bg-muted/20">
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="size-4 text-primary" />
-          {t('workbench_title')}
-        </CardTitle>
-        <p className="text-muted-foreground text-sm">
-          {t('workbench_description')}
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4 p-4 lg:p-6">
+    <SectionCard
+      className="flex min-h-[42rem] flex-col"
+      description={t('workbench_description')}
+      icon={Sparkles}
+      title={t('workbench_title')}
+    >
+      <div className="space-y-4">
         <Field label={t('instructions')}>
           <Textarea
-            className="min-h-24 resize-y"
+            className="min-h-20 resize-y font-mono text-xs leading-relaxed"
             onChange={(event) => onInstructionsChange(event.target.value)}
             value={instructions}
           />
         </Field>
         <Field label={t('prompt')}>
           <Textarea
-            className="min-h-40 resize-y"
+            className="min-h-36 resize-y leading-relaxed"
             onChange={(event) => onPromptChange(event.target.value)}
             value={prompt}
           />
@@ -62,6 +58,7 @@ export function PlaygroundWorkbench({
           disabled={!canRun || isPending}
           onClick={onRun}
           size="lg"
+          type="button"
         >
           {isPending ? (
             <Loader2 className="mr-2 size-4 animate-spin" />
@@ -70,18 +67,21 @@ export function PlaygroundWorkbench({
           )}
           {isPending ? t('running') : t('run')}
         </Button>
-        <div
-          aria-live="polite"
-          className="min-h-44 rounded-xl border bg-foreground/[0.015] p-4"
-        >
+
+        <div aria-live="polite" className="rounded-lg border bg-muted/20">
           {result ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2 text-xs">
-                <Badge variant="outline">{result.model}</Badge>
-                <Badge variant="outline">
-                  {t('token_count', { count: result.usage.totalTokens })}
-                </Badge>
-                <Badge variant="outline">{result.requestId}</Badge>
+            <div className="space-y-4 p-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b pb-3 text-muted-foreground text-xs">
+                <ResultMeta label={t('model')} value={result.model} />
+                <ResultMeta
+                  label={t('tokens')}
+                  value={result.usage.totalTokens.toLocaleString()}
+                />
+                <ResultMeta
+                  label={t('response_id')}
+                  mono
+                  value={result.requestId}
+                />
               </div>
               <p className="whitespace-pre-wrap text-sm leading-6">
                 {result.outputText || t('empty_output')}
@@ -95,7 +95,7 @@ export function PlaygroundWorkbench({
               ) : null}
             </div>
           ) : (
-            <div className="grid min-h-36 place-items-center text-center text-muted-foreground text-sm">
+            <div className="grid min-h-40 place-items-center p-6 text-center text-muted-foreground text-sm">
               <div>
                 <Terminal className="mx-auto mb-2 size-5" />
                 {t('output_placeholder')}
@@ -103,18 +103,33 @@ export function PlaygroundWorkbench({
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </SectionCard>
   );
 }
 
-function Field({
-  children,
+function ResultMeta({
   label,
+  mono,
+  value,
 }: {
-  children: React.ReactNode;
   label: string;
+  mono?: boolean;
+  value: string;
 }) {
+  return (
+    <span className="inline-flex min-w-0 items-baseline gap-1.5">
+      <span className="uppercase tracking-[0.06em]">{label}</span>
+      <span
+        className={`truncate text-foreground ${mono ? 'font-mono' : 'font-medium'}`}
+      >
+        {value}
+      </span>
+    </span>
+  );
+}
+
+function Field({ children, label }: { children: ReactNode; label: string }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>

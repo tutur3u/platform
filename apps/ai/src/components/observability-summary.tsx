@@ -1,14 +1,23 @@
 'use client';
 
-import { Activity, Clock3, Coins, Cpu, DollarSign } from '@tuturuuu/icons';
+import {
+  Activity,
+  CheckCircle2,
+  Clock3,
+  Coins,
+  Cpu,
+  DollarSign,
+  Wallet,
+} from '@tuturuuu/icons';
 import type {
   AiStudioCreditStatus,
   AiStudioUsageResponse,
 } from '@tuturuuu/internal-api/ai-studio';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
+import { SectionCard } from './studio/section-card';
+import { StatCard, StatCardGrid } from './studio/stat-card';
 
 export function ObservabilitySummary({
   credits,
@@ -18,76 +27,70 @@ export function ObservabilitySummary({
 }: {
   credits?: AiStudioCreditStatus;
   isLoading: boolean;
-  section: 'credits' | 'logs' | 'runs' | 'usage';
+  section: 'credits' | 'runs' | 'usage';
   totals?: AiStudioUsageResponse['totals'];
 }) {
   const t = useTranslations('ai-studio.observability');
-  const metrics = [
-    { icon: Activity, label: t('requests'), value: totals?.requestCount },
-    { icon: Coins, label: t('billed_credits'), value: totals?.billedCredits },
-    {
-      icon: DollarSign,
-      label: t('provider_cost'),
-      value: totals && formatUsd(totals.providerCostUsd),
-    },
-    {
-      icon: Cpu,
-      label: t('billable_units'),
-      value:
-        totals &&
-        totals.inputTokens +
-          totals.outputTokens +
-          totals.reasoningTokens +
-          totals.embeddingUnits +
-          totals.imageUnits +
-          totals.searchUnits,
-    },
-    {
-      icon: Clock3,
-      label: t('average_latency'),
-      value:
-        totals &&
-        (totals.latencySampleCount > 0
-          ? `${Math.round(totals.averageLatencyMs)} ms`
-          : '—'),
-    },
-    {
-      icon: Activity,
-      label: t('successful_requests'),
-      value: totals?.succeededCount,
-    },
-  ];
+  const billableUnits = totals
+    ? totals.inputTokens +
+      totals.outputTokens +
+      totals.reasoningTokens +
+      totals.embeddingUnits +
+      totals.imageUnits +
+      totals.searchUnits
+    : undefined;
 
   return (
     <div className="space-y-4">
       {section === 'credits' ? (
         <CreditBalanceCard credits={credits} isLoading={isLoading} />
       ) : null}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {metrics.map(({ icon: Icon, label, value }) => (
-          <Card className="overflow-hidden" key={label}>
-            <CardHeader className="flex-row items-center justify-between pb-2">
-              <CardTitle className="font-medium text-muted-foreground text-sm">
-                {label}
-              </CardTitle>
-              <div className="rounded-lg border bg-muted/50 p-2">
-                <Icon className="size-4 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="font-semibold text-2xl tabular-nums">
-              {isLoading ? (
-                <Skeleton className="h-8 w-28" />
-              ) : typeof value === 'number' ? (
-                value.toLocaleString(undefined, {
-                  maximumFractionDigits: 4,
-                })
-              ) : (
-                (value ?? '—')
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <StatCardGrid>
+        <StatCard
+          icon={Activity}
+          isLoading={isLoading}
+          label={t('requests')}
+          tone="blue"
+          value={formatNumber(totals?.requestCount)}
+        />
+        <StatCard
+          icon={CheckCircle2}
+          isLoading={isLoading}
+          label={t('successful_requests')}
+          tone="green"
+          value={formatNumber(totals?.succeededCount)}
+        />
+        <StatCard
+          icon={Coins}
+          isLoading={isLoading}
+          label={t('billed_credits')}
+          tone="purple"
+          value={formatNumber(totals?.billedCredits)}
+        />
+        <StatCard
+          icon={DollarSign}
+          isLoading={isLoading}
+          label={t('provider_cost')}
+          tone="orange"
+          value={totals ? formatUsd(totals.providerCostUsd) : '—'}
+        />
+        <StatCard
+          icon={Cpu}
+          isLoading={isLoading}
+          label={t('billable_units')}
+          value={formatNumber(billableUnits)}
+        />
+        <StatCard
+          icon={Clock3}
+          isLoading={isLoading}
+          label={t('average_latency')}
+          value={
+            totals && totals.latencySampleCount > 0
+              ? `${Math.round(totals.averageLatencyMs).toLocaleString()} ms`
+              : '—'
+          }
+        />
+      </StatCardGrid>
     </div>
   );
 }
@@ -101,26 +104,22 @@ function CreditBalanceCard({
 }) {
   const t = useTranslations('ai-studio.observability');
   const totalPool = credits ? credits.totalAllocated + credits.bonusCredits : 0;
+  const percentUsed = Math.min(100, Math.max(0, credits?.percentUsed ?? 0));
+
   return (
-    <Card className="overflow-hidden">
-      <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.4fr)_repeat(2,minmax(10rem,0.5fr))] lg:items-end">
-        <div>
-          <div className="text-muted-foreground text-sm">
-            {t('available_balance')}
-          </div>
+    <SectionCard icon={Wallet} title={t('available_balance')}>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_repeat(2,minmax(9rem,0.5fr))]">
+        <div className="min-w-0">
           {isLoading ? (
-            <Skeleton className="mt-3 h-11 w-56" />
+            <Skeleton className="h-11 w-52" />
           ) : (
-            <div className="mt-1 font-semibold text-4xl tabular-nums tracking-tight">
+            <div className="font-semibold text-4xl tabular-nums tracking-tight">
               {(credits?.remaining ?? 0).toLocaleString(undefined, {
                 maximumFractionDigits: 3,
               })}
             </div>
           )}
-          <Progress
-            className="mt-5 h-2"
-            value={Math.min(100, Math.max(0, credits?.percentUsed ?? 0))}
-          />
+          <Progress className="mt-4 h-1.5" value={percentUsed} />
           <p className="mt-2 text-muted-foreground text-xs">
             {t('balance_scope', {
               scope:
@@ -137,13 +136,13 @@ function CreditBalanceCard({
           value={credits?.totalUsed}
         />
         <CreditDatum
+          detail={credits?.tier}
           label={t('total_credit_pool')}
           loading={isLoading}
           value={totalPool}
-          detail={credits?.tier}
         />
       </div>
-    </Card>
+    </SectionCard>
   );
 }
 
@@ -159,12 +158,14 @@ function CreditDatum({
   value?: number;
 }) {
   return (
-    <div className="border-t pt-4 lg:border-t-0 lg:border-l lg:pl-6">
-      <div className="text-muted-foreground text-sm">{label}</div>
+    <div className="border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+      <div className="font-medium text-muted-foreground text-xs uppercase tracking-[0.06em]">
+        {label}
+      </div>
       {loading ? (
-        <Skeleton className="mt-2 h-8 w-28" />
+        <Skeleton className="mt-2 h-8 w-24" />
       ) : (
-        <div className="mt-1 font-semibold text-2xl tabular-nums">
+        <div className="mt-2 font-semibold text-2xl tabular-nums">
           {(value ?? 0).toLocaleString(undefined, {
             maximumFractionDigits: 3,
           })}
@@ -175,6 +176,12 @@ function CreditDatum({
       ) : null}
     </div>
   );
+}
+
+function formatNumber(value?: number) {
+  return value === undefined
+    ? '—'
+    : value.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
 function formatUsd(value: number) {

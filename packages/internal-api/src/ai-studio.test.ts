@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   getAiStudioCatalog,
   getAiStudioKeys,
+  getAiStudioPolicy,
   getAiStudioPublicModels,
   getAiStudioRunDetail,
   getAiStudioRuns,
   getAiStudioUsage,
   runAiStudioPlayground,
+  updateAiStudioPolicy,
 } from './ai-studio';
 
 describe('AI Studio observability client', () => {
@@ -192,5 +194,55 @@ describe('AI Studio observability client', () => {
       'https://ai.example.com/api/v1/workspaces/workspace-1/ai/keys?cursor=created%7Ekey-id&limit=25',
       expect.objectContaining({ cache: 'no-store' })
     );
+  });
+
+  it('reads and writes the workspace AI policy on one endpoint', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(Response.json({ global: null, policy: null }))
+      );
+    const options = {
+      baseUrl: 'https://ai.example.com',
+      fetch: fetchMock,
+    };
+
+    await getAiStudioPolicy('workspace-1', options);
+    await updateAiStudioPolicy(
+      'workspace-1',
+      {
+        allowedModels: ['google/gemini-2.5-flash'],
+        captureEnabled: null,
+        contentRetentionDays: 14,
+        deniedModels: [],
+        metadataRetentionDays: null,
+        monthlyCreditBudget: null,
+        noTrainingEnforced: true,
+        requestsPerMinute: 120,
+      },
+      options
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://ai.example.com/api/v1/workspaces/workspace-1/ai/policy',
+      expect.objectContaining({ cache: 'no-store' })
+    );
+
+    const [url, init] = fetchMock.mock.calls[1];
+    expect(url).toBe(
+      'https://ai.example.com/api/v1/workspaces/workspace-1/ai/policy'
+    );
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body)).toEqual({
+      allowedModels: ['google/gemini-2.5-flash'],
+      captureEnabled: null,
+      contentRetentionDays: 14,
+      deniedModels: [],
+      metadataRetentionDays: null,
+      monthlyCreditBudget: null,
+      noTrainingEnforced: true,
+      requestsPerMinute: 120,
+    });
   });
 });

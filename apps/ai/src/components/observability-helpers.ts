@@ -35,6 +35,33 @@ export function aggregateUsageRows(
     .sort((a, b) => b.credits - a.credits || b.cost - a.cost);
 }
 
+/**
+ * Collapses the model/feature/source breakdown into one point per day for the
+ * usage charts. Days with no traffic are absent rather than zero-filled, which
+ * keeps sparse workspaces readable.
+ */
+export function buildUsageSeries(rows: AiStudioUsageRow[]) {
+  const byDate = new Map<
+    string,
+    { cost: number; credits: number; date: string; requests: number }
+  >();
+
+  for (const row of rows) {
+    const entry = byDate.get(row.bucketDate) ?? {
+      cost: 0,
+      credits: 0,
+      date: row.bucketDate,
+      requests: 0,
+    };
+    entry.cost += row.providerCostUsd;
+    entry.credits += row.billedCredits;
+    entry.requests += row.requestCount;
+    byDate.set(row.bucketDate, entry);
+  }
+
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function resolveObservabilityRange(
   preset: ObservabilityPreset,
   customFrom: string,

@@ -28,14 +28,12 @@ describe('AI Studio developer documentation', () => {
   });
 
   it('registers the workspace-owned module in routing and navigation', () => {
-    expect(source('../../app/[locale]/[wsId]/[section]/page.tsx')).toContain(
-      "'developer-docs'"
-    );
+    const page = source('../../app/[locale]/[wsId]/developer-docs/page.tsx');
+
+    expect(page).toContain('<DeveloperDocsPanel');
+    expect(page).toContain("t('developer-docs-description')");
     expect(source('../../app/[locale]/[wsId]/navigation.tsx')).toContain(
       "href('developer-docs')"
-    );
-    expect(source('../studio-page.tsx')).toContain(
-      "section === 'developer-docs'"
     );
   });
 });

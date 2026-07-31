@@ -30,7 +30,7 @@ export function Structure({
       actions={actions}
       appId="ai"
       brandHref={WEB_APP_URL}
-      childContainerClassName="mx-auto w-full max-w-[1600px] md:px-4 md:py-3"
+      childContainerClassName="mx-auto w-full max-w-[1500px] px-3 py-4 md:px-6 md:py-6"
       defaultCollapsed={defaultCollapsed}
       links={links}
       upgradeExternal

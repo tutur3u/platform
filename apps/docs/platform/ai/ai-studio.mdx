@@ -1,12 +1,38 @@
 ---
 title: AI Studio
-description: Operate Tuturuuu AI Studio policies, credentials, traces, evaluations, and workspace credit metering.
+description: Operate Tuturuuu AI Studio policies, credentials, traces, and workspace credit metering.
 ---
 
 AI Studio is the workspace-scoped development surface at
 `https://ai.tuturuuu.com`. It is a registered satellite app and uses the same
 workspace session, permissions, settings, and billing context as other Tuturuuu
 apps.
+
+## Workspace sections
+
+Each section is its own route under `/<wsId>`; there is no catch-all section
+route.
+
+| Group | Section | Route | Requires |
+| --- | --- | --- | --- |
+| — | Overview | `/` | `use_ai_studio` |
+| Build | Playground | `/playground` | `use_ai_studio` |
+| Build | Prompts, Agents, Datasets | `/prompts`, `/agents`, `/datasets` | `use_ai_studio` |
+| Governance | API keys | `/api-keys` | `manage_ai_keys` |
+| Governance | Model policy | `/model-policy` | read with `use_ai_studio`, edit with `manage_ai_policy` |
+| Observe | Runs | `/runs` | `use_ai_studio` |
+| Observe | Usage | `/usage` | `use_ai_studio` |
+| Observe | Credits | `/credits` | `use_ai_studio` |
+| — | Developer docs | `/developer-docs` | `use_ai_studio` |
+
+`/logs` used to render the same activity explorer as `/runs` and now
+permanently redirects there. Every observability filter — range, custom
+from/to, model, feature, status, and the expanded run — is stored in the URL,
+so a filtered view can be shared or bookmarked.
+
+Evaluations and experiments are not shipped. They are absent from navigation
+and routing until they have a backing implementation, rather than rendering a
+placeholder.
 
 ## Access and issuance controls
 
@@ -22,11 +48,33 @@ budget, rate, payload, and abuse limits. Verified registered external apps keep
 their temporary zero-credit integration policy while remaining fully audited.
 
 Root administrators configure global defaults and workspace overrides in
-Infrastructure → AI Studio. Workspace administrators manage prompts, agents,
-evaluations, existing keys, retention, and model restrictions from AI Studio.
-Creating or rotating a `ttr_ai_` key additionally requires a standing workspace
-grant from a platform administrator. Removing that grant blocks new issuance
-and rotation but does not revoke existing keys.
+Infrastructure → AI Studio. Workspace administrators manage existing keys,
+retention, and model restrictions from AI Studio. Creating or rotating a
+`ttr_ai_` key additionally requires a standing workspace grant from a platform
+administrator. Removing that grant blocks new issuance and rotation but does
+not revoke existing keys.
+
+## Model policy
+
+`/<wsId>/model-policy` is the self-serve editor for the workspace row in
+`private.workspace_ai_studio_policies`. Members with `use_ai_studio` see the
+current policy read-only; `manage_ai_policy` is required to save.
+
+- **Allowed models** — empty means "no workspace allow list"; every model the
+  platform catalog and the workspace plan permit stays callable. A non-empty
+  list restricts execution to exactly those model ids.
+- **Denied models** — evaluated before the allow list, so a denied model is
+  blocked even when it is also allowed.
+- **Requests per minute** and **monthly credit budget** — per-credential
+  ceilings; leave empty for unlimited.
+- **Capture**, **content retention**, and **metadata retention** — leave on
+  *Inherit* to follow `private.ai_studio_global_settings`. The editor shows the
+  current platform default beside each field.
+- **No training** — keep enabled unless a signed agreement says otherwise.
+
+The form enforces the same bounds as the `PATCH` schema (content retention
+1–365 days, metadata retention 30–2555 days, rate 1–10000/min, budget above
+zero), so an out-of-range value is rejected before the request is sent.
 
 ## AI-only keys
 

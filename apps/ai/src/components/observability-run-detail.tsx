@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { formatTraceDuration } from '@/lib/playground-trace';
 import { RelativeTimestamp } from './relative-timestamp';
+import { normalizeRunStatus, StatusPill } from './studio/status-pill';
 
 export function ObservabilityRunDetail({
   isError,
@@ -43,8 +44,11 @@ export function ObservabilityRunDetail({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-semibold">{t('request_details')}</p>
-            <Badge variant="outline">{statusLabel}</Badge>
+            <p className="font-semibold text-sm">{t('request_details')}</p>
+            <StatusPill
+              label={statusLabel}
+              status={normalizeRunStatus(run.status)}
+            />
             <Badge variant="secondary">{sourceLabel}</Badge>
           </div>
           <p className="mt-1 text-muted-foreground text-xs">
@@ -85,10 +89,12 @@ export function ObservabilityRunDetail({
       <RunAccounting run={run} />
 
       {run.errorClass ? (
-        <div className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-          <AlertCircle className="size-4 text-destructive" />
+        <div className="flex items-center gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 px-3 py-2 text-sm">
+          <AlertCircle className="size-4 text-dynamic-red" />
           <span className="text-muted-foreground">{t('error_class')}</span>
-          <code className="font-medium">{run.errorClass}</code>
+          <code className="font-medium font-mono text-xs">
+            {run.errorClass}
+          </code>
         </div>
       ) : null}
 
@@ -110,8 +116,8 @@ export function ObservabilityRunDetail({
             <Skeleton className="h-14 w-full" />
           </div>
         ) : isError ? (
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-            <p className="text-destructive text-sm">{t('trace_error')}</p>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3">
+            <p className="text-dynamic-red text-sm">{t('trace_error')}</p>
             <Button onClick={onRetry} size="sm" variant="outline">
               {t('retry')}
             </Button>
@@ -269,7 +275,9 @@ function Datum({
 }) {
   return (
     <div className="min-w-0 rounded-lg border bg-background px-3 py-2">
-      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="truncate font-medium text-muted-foreground text-xs uppercase tracking-[0.06em]">
+        {label}
+      </p>
       <div
         className={cn(
           'mt-1 break-all font-medium text-sm tabular-nums',

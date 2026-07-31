@@ -189,6 +189,44 @@ export interface AiStudioCreditStatus {
   totalUsed: number;
 }
 
+export interface AiStudioGlobalSettings {
+  capture_default_enabled: boolean;
+  content_retention_days: number;
+  default_models: string[];
+  globally_enabled: boolean;
+  metadata_retention_days: number;
+  workspace_default_enabled: boolean;
+}
+
+export interface AiStudioPolicy {
+  allowed_models: string[];
+  api_key_creation_approved: boolean;
+  capture_enabled: boolean | null;
+  content_retention_days: number | null;
+  denied_models: string[];
+  metadata_retention_days: number | null;
+  monthly_credit_budget: number | null;
+  no_training_enforced: boolean;
+  requests_per_minute: number | null;
+  updated_at: string;
+}
+
+export interface AiStudioPolicyResponse {
+  global: AiStudioGlobalSettings | null;
+  policy: AiStudioPolicy | null;
+}
+
+export interface UpdateAiStudioPolicyInput {
+  allowedModels: string[];
+  captureEnabled: boolean | null;
+  contentRetentionDays: number | null;
+  deniedModels: string[];
+  metadataRetentionDays: number | null;
+  monthlyCreditBudget: number | null;
+  noTrainingEnforced: boolean;
+  requestsPerMinute: number | null;
+}
+
 function workspaceAiPath(workspaceId: string, suffix: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/ai/${suffix}`;
 }
@@ -296,5 +334,31 @@ export function getAiStudioCredits(
   return getInternalApiClient(options).json<AiStudioCreditStatus>(
     workspaceAiPath(workspaceId, 'credits'),
     { cache: 'no-store' }
+  );
+}
+
+export function getAiStudioPolicy(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<AiStudioPolicyResponse>(
+    workspaceAiPath(workspaceId, 'policy'),
+    { cache: 'no-store' }
+  );
+}
+
+export function updateAiStudioPolicy(
+  workspaceId: string,
+  payload: UpdateAiStudioPolicyInput,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ policy: AiStudioPolicy }>(
+    workspaceAiPath(workspaceId, 'policy'),
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
   );
 }

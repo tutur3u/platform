@@ -55,19 +55,24 @@ export type {
   AiStudioCreditStatus,
   AiStudioKeyApproval,
   AiStudioKeysResponse,
+  AiStudioPolicy,
+  AiStudioPolicyResponse,
   AiStudioRun,
   AiStudioRunsResponse,
   AiStudioUsageResponse,
   AiStudioUsageRow,
   CreateAiStudioKeyInput,
+  UpdateAiStudioPolicyInput,
 } from './ai-studio';
 export {
   createAiStudioKey,
   getAiStudioCredits,
   getAiStudioKeys,
+  getAiStudioPolicy,
   getAiStudioRuns,
   getAiStudioUsage,
   updateAiStudioKey,
+  updateAiStudioPolicy,
 } from './ai-studio';
 export {
   createWorkspaceApiKey,

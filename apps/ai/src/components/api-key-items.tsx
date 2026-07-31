@@ -5,7 +5,6 @@ import type {
   AiStudioApiKey,
   AiStudioKeySecretResponse,
 } from '@tuturuuu/internal-api/ai-studio';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -51,12 +50,12 @@ export function ApiKeyRow({
 }) {
   const t = useTranslations('ai-studio.keys');
   return (
-    <div className="group flex flex-col gap-3 rounded-xl border bg-background p-3 transition-colors hover:border-primary/30 hover:bg-muted/15 sm:flex-row sm:items-center">
-      <div className="grid size-9 shrink-0 place-items-center rounded-lg border bg-muted/30">
-        <KeyRound className="size-4 text-primary" />
+    <div className="flex flex-col gap-3 rounded-lg border bg-background p-3 transition-colors hover:border-primary/30 hover:bg-muted/30 sm:flex-row sm:items-center">
+      <div className="grid size-9 shrink-0 place-items-center rounded-md bg-foreground/5 text-primary">
+        <KeyRound className="size-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">{keyRecord.name}</div>
+        <div className="truncate font-medium text-sm">{keyRecord.name}</div>
         <div className="font-mono text-muted-foreground text-xs">
           {keyRecord.prefix} · {keyRecord.environment}
         </div>
@@ -76,9 +75,20 @@ export function ApiKeyRow({
           </span>
         </div>
       </div>
-      <Badge variant="outline">
+      <span
+        className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-xs ring-1 ring-inset ${
+          keyRecord.revoked_at
+            ? 'bg-dynamic-red/10 text-dynamic-red ring-dynamic-red/25'
+            : 'bg-dynamic-green/10 text-dynamic-green ring-dynamic-green/25'
+        }`}
+      >
+        <span
+          className={`size-1.5 rounded-full ${
+            keyRecord.revoked_at ? 'bg-dynamic-red' : 'bg-dynamic-green'
+          }`}
+        />
         {keyRecord.revoked_at ? t('revoked') : t('active')}
-      </Badge>
+      </span>
       {!keyRecord.revoked_at ? (
         <div className="flex flex-wrap gap-2">
           <Button

@@ -1,14 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ChevronDownIcon, MousePointerClick } from '@tuturuuu/icons';
+import { Activity, ChevronDownIcon } from '@tuturuuu/icons';
 import {
   type AiStudioRun,
   getAiStudioRunDetail,
 } from '@tuturuuu/internal-api/ai-studio';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
@@ -16,6 +14,10 @@ import { formatTraceDuration } from '@/lib/playground-trace';
 import { InfiniteLoadTrigger } from './infinite-load-trigger';
 import { ObservabilityRunDetail } from './observability-run-detail';
 import { RelativeTimestamp } from './relative-timestamp';
+import { SectionCard } from './studio/section-card';
+import { StudioEmptyState } from './studio/states';
+import { normalizeRunStatus, StatusPill } from './studio/status-pill';
+import { tableClasses } from './studio/table';
 
 export function ObservabilityRuns({
   isFetchingMore,
@@ -54,79 +56,72 @@ export function ObservabilityRuns({
   const statusLabel = (status: AiStudioRun['status']) =>
     t(`status_${status}` as Parameters<typeof t>[0]);
 
+  const numericHeaders = [
+    t('tokens'),
+    t('media_units'),
+    t('billed_credits'),
+    t('provider_cost_short'),
+    t('latency'),
+  ];
+
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b bg-muted/10 p-4">
-          <div>
-            <p className="font-medium">{t('activity_explorer')}</p>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {t('activity_explorer_description')}
-            </p>
-          </div>
-          <Badge variant="outline">
-            <MousePointerClick className="mr-1.5 size-3.5" />
-            {t('select_activity')}
-          </Badge>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[80rem] text-sm">
-            <thead className="border-b bg-muted/30 text-muted-foreground">
-              <tr>
-                <th className="p-3 text-left font-medium">{t('request')}</th>
-                <th className="p-3 text-left font-medium">{t('time')}</th>
-                <th className="p-3 text-left font-medium">{t('model')}</th>
-                <th className="p-3 text-left font-medium">{t('feature')}</th>
-                <th className="p-3 text-left font-medium">{t('source')}</th>
-                <th className="p-3 text-left font-medium">{t('status')}</th>
-                <th className="p-3 text-right font-medium">{t('tokens')}</th>
-                <th className="p-3 text-right font-medium">
-                  {t('media_units')}
+    <SectionCard
+      description={t('activity_explorer_description')}
+      flush
+      icon={Activity}
+      title={t('activity_explorer')}
+    >
+      <div className={`${tableClasses.scroller} max-h-[70vh]`}>
+        <table className={`${tableClasses.table} min-w-[76rem]`}>
+          <thead className={tableClasses.head}>
+            <tr>
+              <th className={tableClasses.headCell}>{t('request')}</th>
+              <th className={tableClasses.headCell}>{t('time')}</th>
+              <th className={tableClasses.headCell}>{t('model')}</th>
+              <th className={tableClasses.headCell}>{t('feature')}</th>
+              <th className={tableClasses.headCell}>{t('source')}</th>
+              <th className={tableClasses.headCell}>{t('status')}</th>
+              {numericHeaders.map((label) => (
+                <th className={tableClasses.headCellNumeric} key={label}>
+                  {label}
                 </th>
-                <th className="p-3 text-right font-medium">
-                  {t('billed_credits')}
-                </th>
-                <th className="p-3 text-right font-medium">
-                  {t('provider_cost_short')}
-                </th>
-                <th className="p-3 text-right font-medium">{t('latency')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {runs.map((run) => (
-                <RunRow
-                  key={run.id}
-                  onOpenChange={(open) =>
-                    onSelectedRunChange(open ? run.id : null)
-                  }
-                  open={selectedRunId === run.id}
-                  run={run}
-                  sourceLabel={sourceLabel(run.sourceType)}
-                  statusLabel={statusLabel(run.status)}
-                  workspaceId={workspaceId}
-                />
               ))}
-            </tbody>
-          </table>
-        </div>
-        {isLoading ? <RunsSkeleton /> : null}
-        {!isLoading && runs.length === 0 ? <EmptyState /> : null}
-        {!isLoading && runs.length > 0 ? (
-          <InfiniteLoadTrigger
-            endLabel={t('end_of_list')}
-            errorLabel={t('error_description')}
-            hasError={hasLoadError}
-            hasNextPage={hasNextPage}
-            isFetchingNextPage={isFetchingMore}
-            loadedLabel={t('loaded_count', { count: runs.length })}
-            loadingLabel={t('loading')}
-            loadMoreLabel={t('load_more')}
-            onLoadMore={onLoadMore}
-            retryLabel={t('retry')}
-          />
-        ) : null}
-      </CardContent>
-    </Card>
+            </tr>
+          </thead>
+          <tbody>
+            {runs.map((run) => (
+              <RunRow
+                key={run.id}
+                onOpenChange={(open) =>
+                  onSelectedRunChange(open ? run.id : null)
+                }
+                open={selectedRunId === run.id}
+                run={run}
+                sourceLabel={sourceLabel(run.sourceType)}
+                statusLabel={statusLabel(run.status)}
+                workspaceId={workspaceId}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {isLoading ? <RunsSkeleton /> : null}
+      {!isLoading && runs.length === 0 ? <EmptyState /> : null}
+      {!isLoading && runs.length > 0 ? (
+        <InfiniteLoadTrigger
+          endLabel={t('end_of_list')}
+          errorLabel={t('error_description')}
+          hasError={hasLoadError}
+          hasNextPage={hasNextPage}
+          isFetchingNextPage={isFetchingMore}
+          loadedLabel={t('loaded_count', { count: runs.length })}
+          loadingLabel={t('loading')}
+          loadMoreLabel={t('load_more')}
+          onLoadMore={onLoadMore}
+          retryLabel={t('retry')}
+        />
+      ) : null}
+    </SectionCard>
   );
 }
 
@@ -158,15 +153,15 @@ function RunRow({
   return (
     <Fragment>
       <tr
-        className="cursor-pointer border-b transition-colors hover:bg-muted/30 data-[state=open]:bg-muted/30"
+        className={`cursor-pointer ${tableClasses.bodyRow}`}
         data-state={open ? 'open' : 'closed'}
         onClick={toggleOpen}
       >
-        <td className="max-w-52 p-3 font-mono text-xs">
+        <td className={`${tableClasses.cell} max-w-56`}>
           <Button
             aria-expanded={open}
             aria-label={open ? t('collapse_run') : t('expand_run')}
-            className="h-auto max-w-full justify-start px-1 py-1 font-mono text-xs"
+            className="h-auto max-w-full justify-start gap-1.5 px-1 py-0.5 font-mono text-xs"
             onClick={(event) => {
               event.stopPropagation();
               toggleOpen();
@@ -174,54 +169,67 @@ function RunRow({
             variant="ghost"
           >
             <ChevronDownIcon
-              className={`mr-2 size-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+              className={`size-3.5 shrink-0 text-muted-foreground transition-transform ${
+                open ? 'rotate-180' : ''
+              }`}
             />
             <span className="truncate">{run.requestId}</span>
           </Button>
         </td>
         <td
-          className="p-3 text-muted-foreground"
+          className={`${tableClasses.cell} text-muted-foreground text-xs`}
           onClick={(event) => event.stopPropagation()}
         >
           <RelativeTimestamp value={run.completedAt ?? run.createdAt} />
         </td>
-        <td className="max-w-52 truncate p-3">{run.modelId}</td>
-        <td className="max-w-44 truncate p-3">{run.feature}</td>
-        <td className="p-3">{sourceLabel}</td>
-        <td className="p-3">
-          <Badge variant="outline">{statusLabel}</Badge>
+        <td className={`${tableClasses.cell} max-w-52 truncate`}>
+          {run.modelId}
         </td>
-        <td className="p-3 text-right tabular-nums">
+        <td
+          className={`${tableClasses.cell} max-w-44 truncate text-muted-foreground`}
+        >
+          {run.feature}
+        </td>
+        <td className={`${tableClasses.cell} text-muted-foreground text-xs`}>
+          {sourceLabel}
+        </td>
+        <td className={tableClasses.cell}>
+          <StatusPill
+            label={statusLabel}
+            status={normalizeRunStatus(run.status)}
+          />
+        </td>
+        <td className={tableClasses.numericCell}>
           {(
             run.inputTokens +
             run.outputTokens +
             run.reasoningTokens
           ).toLocaleString()}
         </td>
-        <td className="p-3 text-right tabular-nums">
+        <td className={tableClasses.numericCell}>
           {(
             run.embeddingUnits +
             run.imageUnits +
             run.searchUnits
           ).toLocaleString()}
         </td>
-        <td className="p-3 text-right tabular-nums">
+        <td className={tableClasses.numericCell}>
           {run.billedCredits.toLocaleString(undefined, {
             maximumFractionDigits: 4,
           })}
         </td>
-        <td className="p-3 text-right tabular-nums">
+        <td className={`${tableClasses.numericCell} text-muted-foreground`}>
           $
           {run.providerCostUsd.toLocaleString(undefined, {
             maximumFractionDigits: 6,
           })}
         </td>
-        <td className="p-3 text-right tabular-nums">
+        <td className={tableClasses.numericCell}>
           {formatTraceDuration(run.latencyMs)}
         </td>
       </tr>
       {open ? (
-        <tr className="border-b bg-muted/15">
+        <tr className="border-b bg-muted/25">
           <td className="p-0" colSpan={11}>
             <ObservabilityRunDetail
               isError={hasPersistedTrace && detailQuery.isError}
@@ -241,8 +249,8 @@ function RunRow({
 
 function RunsSkeleton() {
   return (
-    <div className="space-y-3 p-4">
-      {Array.from({ length: 5 }).map((_, index) => (
+    <div className="space-y-2 p-4">
+      {Array.from({ length: 6 }).map((_, index) => (
         <Skeleton className="h-9 w-full" key={index} />
       ))}
     </div>
@@ -252,11 +260,12 @@ function RunsSkeleton() {
 function EmptyState() {
   const t = useTranslations('ai-studio.observability');
   return (
-    <div className="p-10 text-center">
-      <p className="font-medium">{t('empty_title')}</p>
-      <p className="mt-1 text-muted-foreground text-sm">
-        {t('empty_filtered_description')}
-      </p>
+    <div className="p-4">
+      <StudioEmptyState
+        description={t('empty_filtered_description')}
+        icon={Activity}
+        title={t('empty_title')}
+      />
     </div>
   );
 }

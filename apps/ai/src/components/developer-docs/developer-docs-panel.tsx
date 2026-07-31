@@ -21,9 +21,9 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { SectionCard } from '../studio/section-card';
 import { CodeSnippet } from './code-snippet';
 import {
   ActionCard,
@@ -69,14 +69,11 @@ export function DeveloperDocsPanel({
   return (
     <div className="grid gap-5 xl:grid-cols-[15rem_minmax(0,1fr)]">
       <nav
-        className="xl:sticky xl:top-4 xl:h-fit"
+        className="xl:sticky xl:top-6 xl:h-fit"
         aria-label={t('on_this_page')}
       >
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm">{t('on_this_page')}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-1">
+        <SectionCard title={t('on_this_page')}>
+          <div className="grid gap-0.5">
             {[
               ['quickstart', t('quickstart')],
               ['endpoints', t('endpoints')],
@@ -85,15 +82,15 @@ export function DeveloperDocsPanel({
               ['errors', t('errors')],
             ].map(([href, label]) => (
               <a
-                className="rounded-lg px-3 py-2 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+                className="rounded-md px-2.5 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
                 href={`#${href}`}
                 key={href}
               >
                 {label}
               </a>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </SectionCard>
       </nav>
 
       <div className="min-w-0 space-y-5">
@@ -120,34 +117,30 @@ export function DeveloperDocsPanel({
               title={t('step_request')}
             />
           </div>
-          <Card className="overflow-hidden border-primary/20">
-            <CardHeader className="gap-3 border-b bg-primary/[0.04]">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <CardTitle>{t('credential_title')}</CardTitle>
-                  <p className="mt-1 text-muted-foreground text-sm">
-                    {t('credential_description')}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {canManageAiKeys ? (
-                    <Button asChild size="sm">
-                      <Link href={`/${workspaceId}/api-keys`}>
-                        <KeyRound className="mr-2 size-4" />
-                        {t('manage_keys')}
-                      </Link>
-                    </Button>
-                  ) : null}
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/${workspaceId}/playground`}>
-                      <Terminal className="mr-2 size-4" />
-                      {t('test_playground')}
+          <SectionCard
+            actions={
+              <>
+                {canManageAiKeys ? (
+                  <Button asChild size="sm">
+                    <Link href={`/${workspaceId}/api-keys`}>
+                      <KeyRound className="mr-2 size-3.5" />
+                      {t('manage_keys')}
                     </Link>
                   </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-5">
+                ) : null}
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/${workspaceId}/playground`}>
+                    <Terminal className="mr-2 size-3.5" />
+                    {t('test_playground')}
+                  </Link>
+                </Button>
+              </>
+            }
+            description={t('credential_description')}
+            icon={KeyRound}
+            title={t('credential_title')}
+          >
+            <div className="space-y-4">
               <CodeSnippet
                 {...snippetLabels}
                 language=".env"
@@ -157,8 +150,8 @@ export function DeveloperDocsPanel({
                 <Lock className="mt-0.5 size-4 shrink-0 text-primary" />
                 {t('server_only')}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
           <div className="grid gap-4 2xl:grid-cols-2">
             <ExampleCard title={t('list_models')}>
               <CodeSnippet
@@ -190,36 +183,33 @@ export function DeveloperDocsPanel({
             icon={Server}
             title={t('endpoints')}
           />
-          <Card>
-            <CardHeader className="border-b">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <CardTitle className="text-base">
-                  {t('production_base_url')}
-                </CardTitle>
-                <Badge className="font-mono" variant="outline">
-                  {AI_STUDIO_BASE_URL}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {endpoints.map(([method, path, key]) => (
-                  <div
-                    className="grid gap-2 p-4 sm:grid-cols-[4rem_minmax(13rem,0.8fr)_minmax(0,1.2fr)] sm:items-center"
-                    key={path}
-                  >
-                    <Badge className="w-fit" variant="secondary">
-                      {method}
-                    </Badge>
-                    <code className="break-all font-mono text-xs">{path}</code>
-                    <span className="text-muted-foreground text-sm">
-                      {t(`endpoint_${key}`)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <SectionCard
+            actions={
+              <Badge className="font-mono font-normal" variant="outline">
+                {AI_STUDIO_BASE_URL}
+              </Badge>
+            }
+            flush
+            icon={Server}
+            title={t('production_base_url')}
+          >
+            <div className="divide-y">
+              {endpoints.map(([method, path, key]) => (
+                <div
+                  className="grid gap-2 px-4 py-3 sm:grid-cols-[4rem_minmax(13rem,0.8fr)_minmax(0,1.2fr)] sm:items-center"
+                  key={path}
+                >
+                  <Badge className="w-fit" variant="secondary">
+                    {method}
+                  </Badge>
+                  <code className="break-all font-mono text-xs">{path}</code>
+                  <span className="text-muted-foreground text-sm">
+                    {t(`endpoint_${key}`)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
           <ExampleCard title={t('chat_example')}>
             <CodeSnippet
               {...snippetLabels}
@@ -323,34 +313,32 @@ export function DeveloperDocsPanel({
             icon={BookOpen}
             title={t('errors')}
           />
-          <Card>
-            <CardContent className="space-y-3 pt-6">
-              {[
-                ['400', 'invalid_request_error'],
-                ['401', 'invalid_api_key'],
-                ['402', 'insufficient_credits'],
-                ['404', 'model_not_found'],
-                ['429', 'rate_limit_exceeded'],
-                ['500', 'server_error'],
-              ].map(([status, code]) => (
-                <div
-                  className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[3rem_12rem_1fr]"
-                  key={code}
-                >
-                  <Badge className="w-fit" variant="outline">
-                    {status}
-                  </Badge>
-                  <code className="font-mono text-xs">{code}</code>
-                  <span className="text-muted-foreground text-sm">
-                    {t(`error_${code}`)}
-                  </span>
-                </div>
-              ))}
-              <p className="text-muted-foreground text-sm">
-                {t('error_request_id')}
-              </p>
-            </CardContent>
-          </Card>
+          <SectionCard bodyClassName="divide-y" flush>
+            {[
+              ['400', 'invalid_request_error'],
+              ['401', 'invalid_api_key'],
+              ['402', 'insufficient_credits'],
+              ['404', 'model_not_found'],
+              ['429', 'rate_limit_exceeded'],
+              ['500', 'server_error'],
+            ].map(([status, code]) => (
+              <div
+                className="grid gap-2 px-4 py-3 sm:grid-cols-[3rem_12rem_1fr] sm:items-center"
+                key={code}
+              >
+                <Badge className="w-fit" variant="outline">
+                  {status}
+                </Badge>
+                <code className="font-mono text-xs">{code}</code>
+                <span className="text-muted-foreground text-sm">
+                  {t(`error_${code}`)}
+                </span>
+              </div>
+            ))}
+            <p className="px-4 py-3 text-muted-foreground text-sm">
+              {t('error_request_id')}
+            </p>
+          </SectionCard>
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/20 p-4">
             <div>
               <div className="font-medium">{t('full_reference')}</div>

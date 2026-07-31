@@ -2,16 +2,6 @@
 
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import {
-  CheckCircle2,
-  Copy,
-  Eye,
-  EyeOff,
-  KeyRound,
-  Server,
-  Terminal,
-  Zap,
-} from '@tuturuuu/icons';
-import {
   type AiStudioKeysResponse,
   type AiStudioPlaygroundEndpoint,
   type AiStudioPlaygroundTool,
@@ -20,26 +10,16 @@ import {
   getAiStudioPublicModels,
   runAiStudioPlayground,
 } from '@tuturuuu/internal-api/ai-studio';
-import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { takePlaygroundSecret } from '@/lib/playground-secret-transfer';
+import { PlaygroundCredential } from './playground-credential';
+import {
+  PLAYGROUND_TOOLS,
+  PlaygroundRequestForm,
+} from './playground-request-form';
 import { PlaygroundWorkbench } from './playground-workbench';
-
-const tools: AiStudioPlaygroundTool[] = ['calculator', 'current_time'];
 
 export function PlaygroundPanel({
   canManageAiKeys,
@@ -50,7 +30,6 @@ export function PlaygroundPanel({
 }) {
   const t = useTranslations('ai-studio.playground_console');
   const [secret, setSecret] = useState(() => takePlaygroundSecret(workspaceId));
-  const [showSecret, setShowSecret] = useState(false);
   const [endpoint, setEndpoint] =
     useState<AiStudioPlaygroundEndpoint>('responses');
   const [model, setModel] = useState('');
@@ -58,10 +37,8 @@ export function PlaygroundPanel({
   const [prompt, setPrompt] = useState(t('default_prompt'));
   const [maxOutputTokens, setMaxOutputTokens] = useState(1024);
   const [maxSteps, setMaxSteps] = useState(4);
-  const [enabledTools, setEnabledTools] = useState<AiStudioPlaygroundTool[]>([
-    'calculator',
-    'current_time',
-  ]);
+  const [enabledTools, setEnabledTools] =
+    useState<AiStudioPlaygroundTool[]>(PLAYGROUND_TOOLS);
 
   const keysQuery = useInfiniteQuery({
     enabled: canManageAiKeys,
@@ -106,216 +83,52 @@ export function PlaygroundPanel({
       }),
     onError: (error) => toast.error(error.message),
   });
-  const approval = keysQuery.data?.pages[0]?.approval;
-  const models = modelsMutation.data ?? [];
-  const canRun = Boolean(secret && model && prompt.trim());
 
-  const verify = () => {
-    if (secret) modelsMutation.mutate(secret);
-  };
+  const models = modelsMutation.data ?? [];
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(22rem,0.72fr)_minmax(0,1.28fr)]">
+    <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.68fr)_minmax(0,1.32fr)]">
       <div className="space-y-4">
-        <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.07] via-background to-background">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2">
-                <KeyRound className="size-4 text-primary" />
-                {t('credential_title')}
-              </CardTitle>
-              <Badge variant="outline">
-                <Server className="mr-1 size-3" />
-                {t('production')}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              {t('credential_description')}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                aria-label={t('api_key')}
-                autoComplete="off"
-                onChange={(event) => {
-                  setSecret(event.target.value);
-                  modelsMutation.reset();
-                }}
-                placeholder="ttr_ai_…"
-                type={showSecret ? 'text' : 'password'}
-                value={secret}
-              />
-              <Button
-                aria-label={showSecret ? t('hide_key') : t('show_key')}
-                onClick={() => setShowSecret((value) => !value)}
-                size="icon"
-                variant="outline"
-              >
-                {showSecret ? (
-                  <EyeOff className="size-4" />
-                ) : (
-                  <Eye className="size-4" />
-                )}
-              </Button>
-              <Button
-                aria-label={t('copy_key')}
-                disabled={!secret}
-                onClick={async () => {
-                  await navigator.clipboard.writeText(secret);
-                  toast.success(t('key_copied'));
-                }}
-                size="icon"
-                variant="outline"
-              >
-                <Copy className="size-4" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                disabled={!secret || modelsMutation.isPending}
-                onClick={verify}
-                size="sm"
-                variant="outline"
-              >
-                <CheckCircle2 className="mr-2 size-4" />
-                {t('verify_key')}
-              </Button>
-              {canManageAiKeys && approval?.approved ? (
-                <Button
-                  disabled={createMutation.isPending}
-                  onClick={() => createMutation.mutate()}
-                  size="sm"
-                >
-                  <Zap className="mr-2 size-4" />
-                  {t('quick_create')}
-                </Button>
-              ) : null}
-              {canManageAiKeys ? (
-                <Button asChild size="sm" variant="ghost">
-                  <Link href={`/${workspaceId}/api-keys`}>
-                    {t('manage_keys')}
-                  </Link>
-                </Button>
-              ) : null}
-            </div>
-            {modelsMutation.isSuccess ? (
-              <div className="flex items-center gap-2 rounded-lg border bg-muted/20 px-3 py-2 text-sm">
-                <CheckCircle2 className="size-4 shrink-0 text-primary" />
-                <span>{t('key_verified', { count: models.length })}</span>
-              </div>
-            ) : null}
-            {canManageAiKeys && !keysQuery.isPending && !approval?.approved ? (
-              <p className="rounded-lg border border-dashed p-3 text-muted-foreground text-xs">
-                {t('approval_required')}
-              </p>
-            ) : null}
-            <p className="font-mono text-muted-foreground text-xs">
-              https://ai.tuturuuu.com/v1/
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Terminal className="size-4 text-primary" />
-              {t('request_title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Field label={t('endpoint')}>
-              <Select
-                onValueChange={(value) =>
-                  setEndpoint(value as AiStudioPlaygroundEndpoint)
-                }
-                value={endpoint}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="responses">POST /v1/responses</SelectItem>
-                  <SelectItem value="chat">
-                    POST /v1/chat/completions
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label={t('model')}>
-              {models.length ? (
-                <Select onValueChange={setModel} value={model}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('select_model')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.name} · {item.ownedBy}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  onChange={(event) => setModel(event.target.value)}
-                  placeholder={t('model_placeholder')}
-                  value={model}
-                />
-              )}
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t('max_tokens')}>
-                <Input
-                  max={32768}
-                  min={1}
-                  onChange={(event) =>
-                    setMaxOutputTokens(Number(event.target.value))
-                  }
-                  type="number"
-                  value={maxOutputTokens}
-                />
-              </Field>
-              <Field label={t('max_steps')}>
-                <Input
-                  max={8}
-                  min={1}
-                  onChange={(event) => setMaxSteps(Number(event.target.value))}
-                  type="number"
-                  value={maxSteps}
-                />
-              </Field>
-            </div>
-            <Field label={t('tools')}>
-              <div className="flex flex-wrap gap-2">
-                {tools.map((name) => {
-                  const active = enabledTools.includes(name);
-                  return (
-                    <Button
-                      aria-pressed={active}
-                      key={name}
-                      onClick={() =>
-                        setEnabledTools((current) =>
-                          active
-                            ? current.filter((item) => item !== name)
-                            : [...current, name]
-                        )
-                      }
-                      size="sm"
-                      variant={active ? 'secondary' : 'outline'}
-                    >
-                      {t(`tool_${name}`)}
-                    </Button>
-                  );
-                })}
-              </div>
-            </Field>
-          </CardContent>
-        </Card>
+        <PlaygroundCredential
+          approvalGranted={keysQuery.data?.pages[0]?.approval.approved ?? false}
+          canManageAiKeys={canManageAiKeys}
+          isApprovalLoading={keysQuery.isPending}
+          models={models}
+          onCreateKey={() => createMutation.mutate()}
+          onSecretChange={(value) => {
+            setSecret(value);
+            modelsMutation.reset();
+          }}
+          onVerify={() => {
+            if (secret) modelsMutation.mutate(secret);
+          }}
+          secret={secret}
+          verifyState={modelsMutation}
+          workspaceId={workspaceId}
+        />
+        <PlaygroundRequestForm
+          enabledTools={enabledTools}
+          endpoint={endpoint}
+          maxOutputTokens={maxOutputTokens}
+          maxSteps={maxSteps}
+          model={model}
+          models={models}
+          onEndpointChange={setEndpoint}
+          onMaxOutputTokensChange={setMaxOutputTokens}
+          onMaxStepsChange={setMaxSteps}
+          onModelChange={setModel}
+          onToggleTool={(tool) =>
+            setEnabledTools((current) =>
+              current.includes(tool)
+                ? current.filter((item) => item !== tool)
+                : [...current, tool]
+            )
+          }
+        />
       </div>
 
       <PlaygroundWorkbench
-        canRun={canRun}
+        canRun={Boolean(secret && model && prompt.trim())}
         instructions={instructions}
         isPending={runMutation.isPending}
         onInstructionsChange={setInstructions}
@@ -324,21 +137,6 @@ export function PlaygroundPanel({
         prompt={prompt}
         result={runMutation.data}
       />
-    </div>
-  );
-}
-
-function Field({
-  children,
-  label,
-}: {
-  children: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      {children}
     </div>
   );
 }

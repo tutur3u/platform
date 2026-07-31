@@ -1,10 +1,12 @@
 'use client';
 
 import type { AiStudioUsageRow } from '@tuturuuu/internal-api/ai-studio';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { aggregateUsageRows } from './observability-helpers';
+import { SectionCard } from './studio/section-card';
+import { StudioEmptyState } from './studio/states';
+import { tableClasses } from './studio/table';
 
 export function ObservabilityBreakdowns({
   balanceConsumed,
@@ -41,34 +43,27 @@ export function ObservabilityBreakdowns({
       rows: aggregateUsageRows(rows, sourceLabel),
       title: t('by_source'),
     },
-    {
-      className: 'xl:col-span-2',
-      rows: aggregateUsageRows(rows, (row) => row.bucketDate),
-      title: t('daily_usage'),
-    },
   ];
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 xl:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent className="space-y-3">
+      <div className="grid gap-4 xl:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <SectionCard key={index}>
+            <Skeleton className="h-5 w-32" />
+            <div className="mt-4 space-y-2">
               {Array.from({ length: 4 }).map((__, rowIndex) => (
-                <Skeleton className="h-8 w-full" key={rowIndex} />
+                <Skeleton className="h-7 w-full" key={rowIndex} />
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </SectionCard>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid gap-4 xl:grid-cols-3">
       {tables.map((table) => (
         <BreakdownTable
           hasBalanceUsage={balanceConsumed > 0}
@@ -81,80 +76,87 @@ export function ObservabilityBreakdowns({
 }
 
 function BreakdownTable({
-  className,
   hasBalanceUsage,
   rows,
   title,
 }: {
-  className?: string;
   hasBalanceUsage: boolean;
   rows: ReturnType<typeof aggregateUsageRows>;
   title: string;
 }) {
   const t = useTranslations('ai-studio.observability');
-  return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-x-auto p-0">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/30 text-muted-foreground">
-            <tr>
-              <th className="p-3 text-left font-medium">{t('dimension')}</th>
-              <th className="p-3 text-right font-medium">{t('requests')}</th>
-              <th className="p-3 text-right font-medium">
-                {t('billed_credits')}
-              </th>
-              <th className="p-3 text-right font-medium">
-                {t('provider_cost_short')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr className="border-b last:border-0" key={row.label}>
-                <td className="max-w-64 truncate p-3 font-medium">
-                  {row.label}
-                </td>
-                <td className="p-3 text-right tabular-nums">
-                  {row.requests.toLocaleString()}
-                </td>
-                <td className="p-3 text-right tabular-nums">
-                  {row.credits.toLocaleString(undefined, {
-                    maximumFractionDigits: 4,
-                  })}
-                </td>
-                <td className="p-3 text-right tabular-nums">
-                  $
-                  {row.cost.toLocaleString(undefined, {
-                    maximumFractionDigits: 6,
-                  })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {rows.length === 0 ? (
-          <EmptyState hasBalanceUsage={hasBalanceUsage} />
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
+  const maxCredits = Math.max(...rows.map((row) => row.credits), 0);
 
-function EmptyState({ hasBalanceUsage }: { hasBalanceUsage: boolean }) {
-  const t = useTranslations('ai-studio.observability');
   return (
-    <div className="p-10 text-center">
-      <p className="font-medium">{t('empty_title')}</p>
-      <p className="mt-1 text-muted-foreground text-sm">
-        {t(
-          hasBalanceUsage
-            ? 'empty_with_balance_description'
-            : 'empty_description'
-        )}
-      </p>
-    </div>
+    <SectionCard flush title={title}>
+      {rows.length ? (
+        <div className={`${tableClasses.scroller} max-h-96`}>
+          <table className={tableClasses.table}>
+            <thead className={tableClasses.head}>
+              <tr>
+                <th className={tableClasses.headCell}>{t('dimension')}</th>
+                <th className={tableClasses.headCellNumeric}>
+                  {t('requests')}
+                </th>
+                <th className={tableClasses.headCellNumeric}>
+                  {t('billed_credits')}
+                </th>
+                <th className={tableClasses.headCellNumeric}>
+                  {t('provider_cost_short')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr className={tableClasses.bodyRow} key={row.label}>
+                  <td className={`${tableClasses.cell} max-w-56`}>
+                    <div className="truncate font-medium text-xs">
+                      {row.label}
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded-full bg-foreground/10">
+                      <div
+                        className="h-full rounded-full bg-dynamic-purple/70"
+                        style={{
+                          width: maxCredits
+                            ? `${(row.credits / maxCredits) * 100}%`
+                            : '0%',
+                        }}
+                      />
+                    </div>
+                  </td>
+                  <td className={`${tableClasses.numericCell} text-xs`}>
+                    {row.requests.toLocaleString()}
+                  </td>
+                  <td className={`${tableClasses.numericCell} text-xs`}>
+                    {row.credits.toLocaleString(undefined, {
+                      maximumFractionDigits: 4,
+                    })}
+                  </td>
+                  <td
+                    className={`${tableClasses.numericCell} text-muted-foreground text-xs`}
+                  >
+                    $
+                    {row.cost.toLocaleString(undefined, {
+                      maximumFractionDigits: 6,
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="p-4">
+          <StudioEmptyState
+            description={t(
+              hasBalanceUsage
+                ? 'empty_with_balance_description'
+                : 'empty_description'
+            )}
+            title={t('empty_title')}
+          />
+        </div>
+      )}
+    </SectionCard>
   );
 }

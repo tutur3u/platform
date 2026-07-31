@@ -62,7 +62,7 @@ export function InfiniteLoadTrigger({
   return (
     <div
       aria-live="polite"
-      className="flex min-h-20 flex-col items-center justify-center gap-2 border-t bg-muted/10 px-4 py-4 text-center"
+      className="flex min-h-16 flex-col items-center justify-center gap-2 border-t bg-muted/10 px-4 py-3 text-center"
       ref={triggerRef}
     >
       <p className="text-muted-foreground text-xs">{loadedLabel}</p>

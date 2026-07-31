@@ -6,13 +6,10 @@ import {
   ClipboardList,
   Coins,
   Cpu,
-  History,
   LayoutDashboard,
   Lock,
   MessageSquare,
-  ShieldCheck,
   Sparkles,
-  Workflow,
 } from '@tuturuuu/icons';
 import { createWorkspaceMembersNavLink } from '@tuturuuu/satellite/workspace-settings';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
@@ -63,16 +60,6 @@ export async function getNavigationLinks({
           href: href('datasets'),
           icon: <ClipboardList className="h-4 w-4" />,
         },
-        {
-          title: t('evaluations'),
-          href: href('evaluations'),
-          icon: <ShieldCheck className="h-4 w-4" />,
-        },
-        {
-          title: t('experiments'),
-          href: href('experiments'),
-          icon: <Workflow className="h-4 w-4" />,
-        },
       ],
     },
     {
@@ -103,11 +90,6 @@ export async function getNavigationLinks({
           title: t('runs'),
           href: href('runs'),
           icon: <Activity className="h-4 w-4" />,
-        },
-        {
-          title: t('logs'),
-          href: href('logs'),
-          icon: <History className="h-4 w-4" />,
         },
         {
           title: t('usage'),

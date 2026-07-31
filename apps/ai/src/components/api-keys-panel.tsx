@@ -6,8 +6,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import {
-  AlertCircle,
   ChevronDownIcon,
+  KeyRound,
   Plus,
   RefreshCw,
   Zap,
@@ -23,7 +23,6 @@ import {
 } from '@tuturuuu/internal-api/ai-studio';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
   Collapsible,
   CollapsibleContent,
@@ -52,6 +51,12 @@ import { useState } from 'react';
 import { stagePlaygroundSecret } from '@/lib/playground-secret-transfer';
 import { ApiKeyField, ApiKeyRow, ApiKeySecretDialog } from './api-key-items';
 import { InfiniteLoadTrigger } from './infinite-load-trigger';
+import { SectionCard } from './studio/section-card';
+import {
+  StudioEmptyState,
+  StudioErrorState,
+  StudioSkeletonRows,
+} from './studio/states';
 
 export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
   const t = useTranslations('ai-studio.keys');
@@ -108,48 +113,50 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
   });
 
   const approval = keysQuery.data?.pages[0]?.approval;
+  const approved = approval?.approved ?? false;
   const keys = keysQuery.data?.pages.flatMap((page) => page.keys) ?? [];
 
   return (
     <div className="space-y-4">
       <Collapsible onOpenChange={setCreateOpen} open={createOpen}>
-        <Card className="overflow-hidden">
-          <CardHeader className="flex-row items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <CardTitle>{t('create_title')}</CardTitle>
-                <Badge variant={approval?.approved ? 'default' : 'secondary'}>
-                  {keysQuery.isPending
-                    ? t('loading')
-                    : approval?.approved
-                      ? t('approved')
-                      : t('not_approved')}
-                </Badge>
-              </div>
-              <p className="mt-1 max-w-3xl text-muted-foreground text-sm">
+        <SectionCard
+          actions={
+            <>
+              <Badge variant={approved ? 'default' : 'secondary'}>
                 {keysQuery.isPending
                   ? t('loading')
-                  : approval?.approved
-                    ? t('approved_description')
-                    : t('approval_required')}
-              </p>
-            </div>
-            <CollapsibleTrigger asChild>
-              <Button size="sm" type="button" variant="outline">
-                {t('configure')}
-                <ChevronDownIcon
-                  className={`ml-2 size-4 transition-transform ${
-                    createOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </Button>
-            </CollapsibleTrigger>
-          </CardHeader>
+                  : approved
+                    ? t('approved')
+                    : t('not_approved')}
+              </Badge>
+              <CollapsibleTrigger asChild>
+                <Button size="sm" type="button" variant="outline">
+                  {t('configure')}
+                  <ChevronDownIcon
+                    className={`ml-2 size-3.5 transition-transform ${
+                      createOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+            </>
+          }
+          description={
+            keysQuery.isPending
+              ? t('loading')
+              : approved
+                ? t('approved_description')
+                : t('approval_required')
+          }
+          flush
+          icon={KeyRound}
+          title={t('create_title')}
+        >
           <CollapsibleContent>
-            <CardContent className="grid gap-4 border-t bg-muted/10 pt-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 bg-muted/10 p-4 md:grid-cols-2 xl:grid-cols-3">
               <ApiKeyField label={t('name')}>
                 <Input
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   maxLength={120}
                   onChange={(event) => setName(event.target.value)}
                   value={name}
@@ -157,7 +164,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               </ApiKeyField>
               <ApiKeyField label={t('environment')}>
                 <Select
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   onValueChange={(value) =>
                     setEnvironment(value as typeof environment)
                   }
@@ -179,7 +186,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               </ApiKeyField>
               <ApiKeyField label={t('expires_at')}>
                 <Input
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   onChange={(event) => setExpiresAt(event.target.value)}
                   type="date"
                   value={expiresAt}
@@ -187,7 +194,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               </ApiKeyField>
               <ApiKeyField label={t('rate_limit')}>
                 <Input
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   min={1}
                   onChange={(event) => setRequestsPerMinute(event.target.value)}
                   type="number"
@@ -196,7 +203,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               </ApiKeyField>
               <ApiKeyField label={t('credit_budget')}>
                 <Input
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   min={0}
                   onChange={(event) => setCreditBudget(event.target.value)}
                   step="0.0001"
@@ -206,7 +213,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               </ApiKeyField>
               <ApiKeyField label={t('allowed_models')}>
                 <Input
-                  disabled={!approval?.approved}
+                  disabled={!approved}
                   onChange={(event) => setAllowedModels(event.target.value)}
                   placeholder={t('allowed_models_placeholder')}
                   value={allowedModels}
@@ -215,9 +222,7 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
               <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-3">
                 <Button
                   disabled={
-                    !approval?.approved ||
-                    !name.trim() ||
-                    createMutation.isPending
+                    !approved || !name.trim() || createMutation.isPending
                   }
                   onClick={() =>
                     createMutation.mutate({
@@ -238,76 +243,85 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                         : undefined,
                     })
                   }
+                  type="button"
                 >
                   <Plus className="mr-2 size-4" />
                   {t('create')}
                 </Button>
                 <Button
-                  disabled={!approval?.approved || createMutation.isPending}
+                  disabled={!approved || createMutation.isPending}
                   onClick={() =>
                     createMutation.mutate({
                       environment: 'development',
                       name: `Playground ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`,
                     })
                   }
+                  type="button"
                   variant="outline"
                 >
                   <Zap className="mr-2 size-4" />
                   {t('quick_create')}
                 </Button>
               </div>
-            </CardContent>
+            </div>
           </CollapsibleContent>
-        </Card>
+        </SectionCard>
       </Collapsible>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex-row items-center justify-between border-b bg-muted/15">
-          <div>
-            <CardTitle>{t('existing_title')}</CardTitle>
-            <p className="mt-0.5 text-muted-foreground text-xs">
-              {t('loaded_count', { count: keys.length })}
-            </p>
-          </div>
+      <SectionCard
+        actions={
           <Button
+            className="size-8"
             disabled={keysQuery.isFetching}
             onClick={() => keysQuery.refetch()}
             size="icon"
+            type="button"
             variant="outline"
           >
             <RefreshCw
-              className={`size-4 ${keysQuery.isFetching ? 'animate-spin' : ''}`}
+              className={`size-3.5 ${keysQuery.isFetching ? 'animate-spin' : ''}`}
             />
             <span className="sr-only">{t('refresh')}</span>
           </Button>
-        </CardHeader>
-        <CardContent className="space-y-2 p-4">
+        }
+        description={t('loaded_count', { count: keys.length })}
+        flush
+        footer={
+          keys.length ? (
+            <InfiniteLoadTrigger
+              endLabel={t('end_of_list')}
+              errorLabel={t('list_error')}
+              hasError={keysQuery.isFetchNextPageError}
+              hasNextPage={Boolean(keysQuery.hasNextPage)}
+              isFetchingNextPage={keysQuery.isFetchingNextPage}
+              loadedLabel={t('loaded_count', { count: keys.length })}
+              loadingLabel={t('loading_more')}
+              loadMoreLabel={t('load_more')}
+              onLoadMore={() => void keysQuery.fetchNextPage()}
+              retryLabel={t('refresh')}
+            />
+          ) : null
+        }
+        title={t('existing_title')}
+      >
+        <div className="space-y-2 p-4">
           {keysQuery.isPending ? (
-            <div aria-label={t('loading')} className="space-y-2" role="status">
-              {Array.from({ length: 3 }, (_, index) => (
-                <div
-                  className="h-[4.625rem] animate-pulse rounded-xl bg-foreground/5"
-                  key={index}
-                />
-              ))}
-            </div>
+            <StudioSkeletonRows
+              count={3}
+              label={t('loading')}
+              rowClassName="h-[4.625rem]"
+            />
           ) : keysQuery.isError && keys.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed p-8 text-center">
-              <AlertCircle className="size-5 text-dynamic-red" />
-              <p className="text-muted-foreground text-sm">{t('list_error')}</p>
-              <Button
-                onClick={() => void keysQuery.refetch()}
-                size="sm"
-                variant="outline"
-              >
-                <RefreshCw className="mr-2 size-4" />
-                {t('refresh')}
-              </Button>
-            </div>
-          ) : (
+            <StudioErrorState
+              description={t('list_error')}
+              onRetry={() => void keysQuery.refetch()}
+              retryLabel={t('refresh')}
+              title={t('list_error')}
+            />
+          ) : keys.length ? (
             keys.map((key) => (
               <ApiKeyRow
-                approvalGranted={approval?.approved ?? false}
+                approvalGranted={approved}
                 isPending={updateMutation.isPending}
                 key={key.id}
                 keyRecord={key}
@@ -317,28 +331,11 @@ export function ApiKeysPanel({ workspaceId }: { workspaceId: string }) {
                 }
               />
             ))
+          ) : (
+            <StudioEmptyState icon={KeyRound} title={t('empty')} />
           )}
-          {!keysQuery.isPending && !keysQuery.isError && keys.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-              {t('empty')}
-            </div>
-          ) : null}
-        </CardContent>
-        {!keysQuery.isPending && keys.length > 0 ? (
-          <InfiniteLoadTrigger
-            endLabel={t('end_of_list')}
-            errorLabel={t('list_error')}
-            hasError={keysQuery.isFetchNextPageError}
-            hasNextPage={Boolean(keysQuery.hasNextPage)}
-            isFetchingNextPage={keysQuery.isFetchingNextPage}
-            loadedLabel={t('loaded_count', { count: keys.length })}
-            loadingLabel={t('loading_more')}
-            loadMoreLabel={t('load_more')}
-            onLoadMore={() => void keysQuery.fetchNextPage()}
-            retryLabel={t('refresh')}
-          />
-        ) : null}
-      </Card>
+        </div>
+      </SectionCard>
 
       <ApiKeySecretDialog
         onClose={() => setSecret(null)}

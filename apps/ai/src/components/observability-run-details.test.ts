@@ -39,13 +39,23 @@ describe('historical AI observability interactions', () => {
   });
 
   it('deep-links overview activity and keeps the selected run in the URL', () => {
+    const filters = source('./observability-filters.ts');
     const panel = source('./observability-panel.tsx');
-    const overview = source('./studio-page.tsx');
+    const overview = source('./overview/overview-activity.tsx');
 
-    expect(panel).toContain("useQueryState(\n    'run'");
-    expect(panel).toContain('selectedRunId={selectedRunId}');
+    expect(filters).toContain("useQueryState(\n    'run'");
+    expect(panel).toContain('selectedRunId={controls.selectedRunId}');
     expect(panel).toContain('onSelectedRunChange');
     expect(overview).toContain('runs?run=');
     expect(overview).toContain('encodeURIComponent(run.id)');
+  });
+
+  it('keeps every observability filter shareable through the URL', () => {
+    const filters = source('./observability-filters.ts');
+
+    expect(filters).toContain('useQueryStates(filterParsers');
+    for (const key of ['feature', 'from', 'model', 'range', 'status', 'to']) {
+      expect(filters, key).toContain(`${key}: parseAs`);
+    }
   });
 });
