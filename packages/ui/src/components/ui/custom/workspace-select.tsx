@@ -71,6 +71,7 @@ import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import {
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
 import { useOpenWorkspaceSelectWhenRevealed } from './workspace-select-reveal';
 
@@ -81,13 +82,6 @@ const FormSchema = z.object({
 const JoinWorkspaceByHandleFormSchema = z.object({
   handle: workspaceHandleSchema,
 });
-
-function resolveWorkspaceAvatarUrl(
-  avatarUrl: string | null | undefined,
-  fallbackLogoUrl: string
-) {
-  return avatarUrl === TUTURUUU_LOGO_URL ? fallbackLogoUrl : avatarUrl;
-}
 
 function WorkspaceIcon({
   name,
@@ -100,10 +94,7 @@ function WorkspaceIcon({
   className?: string;
   fallbackLogoUrl?: string;
 }) {
-  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(
-    avatarUrl,
-    fallbackLogoUrl
-  );
+  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(avatarUrl);
   const shouldSkipFallbackOptimization = /^https?:\/\//u.test(fallbackLogoUrl);
 
   return (
@@ -333,11 +324,9 @@ export function WorkspaceSelect({
           id: rootWorkspace.id,
           label: rootWorkspace.name || t('common.root'),
           value: ROOT_WORKSPACE_ID,
-          avatarUrl:
-            resolveWorkspaceAvatarUrl(
-              rootWorkspace.avatar_url,
-              fallbackLogoUrl
-            ) || fallbackLogoUrl,
+          avatarUrl: resolveWorkspaceAvatarUrl(rootWorkspace.avatar_url, {
+            rootWorkspaceLogoUrl: TUTURUUU_LOGO_URL,
+          }),
           tier: rootWorkspace.tier as
             | 'FREE'
             | 'PLUS'
@@ -355,10 +344,7 @@ export function WorkspaceSelect({
           id: personalWorkspace.id,
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
-          avatarUrl: resolveWorkspaceAvatarUrl(
-            personalWorkspace.avatar_url,
-            fallbackLogoUrl
-          ),
+          avatarUrl: resolveWorkspaceAvatarUrl(personalWorkspace.avatar_url),
           tier: personalWorkspace.tier as
             | 'FREE'
             | 'PLUS'
@@ -380,10 +366,7 @@ export function WorkspaceSelect({
           }),
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
-          avatarUrl: resolveWorkspaceAvatarUrl(
-            workspace.avatar_url,
-            fallbackLogoUrl
-          ),
+          avatarUrl: resolveWorkspaceAvatarUrl(workspace.avatar_url),
           tier: workspace.tier || null,
         })
       ),
@@ -398,10 +381,7 @@ export function WorkspaceSelect({
           personal: workspace?.personal,
         }),
         accessType: 'guest' as const,
-        avatarUrl: resolveWorkspaceAvatarUrl(
-          workspace.avatar_url,
-          fallbackLogoUrl
-        ),
+        avatarUrl: resolveWorkspaceAvatarUrl(workspace.avatar_url),
         guestBoardCount: workspace.guest_board_count ?? 0,
         guestLandingPath: workspace.guest_landing_path ?? '/tasks/boards',
         guestProducts: workspace.guest_products ?? ['tasks'],
@@ -579,13 +559,12 @@ export function WorkspaceSelect({
                 fallbackLogoUrl={fallbackLogoUrl}
                 name={workspace?.name}
                 avatarUrl={
-                  resolveWorkspaceAvatarUrl(
-                    workspace?.avatar_url,
-                    fallbackLogoUrl
-                  ) ||
-                  (workspace?.id === ROOT_WORKSPACE_ID
-                    ? fallbackLogoUrl
-                    : undefined)
+                  resolveWorkspaceAvatarUrl(workspace?.avatar_url, {
+                    rootWorkspaceLogoUrl:
+                      workspace?.id === ROOT_WORKSPACE_ID
+                        ? TUTURUUU_LOGO_URL
+                        : undefined,
+                  }) ?? undefined
                 }
               />
               <div

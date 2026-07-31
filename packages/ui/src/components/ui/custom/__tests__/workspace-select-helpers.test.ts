@@ -5,7 +5,31 @@ import { describe, expect, it } from 'vitest';
 import {
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
+  resolveWorkspaceAvatarUrl,
 } from '../workspace-select-helpers';
+
+describe('resolveWorkspaceAvatarUrl', () => {
+  it('preserves a valid hosted avatar when an app provides a local fallback', () => {
+    expect(
+      resolveWorkspaceAvatarUrl(
+        'https://tuturuuu.com/media/logos/transparent.png',
+        {
+          rootWorkspaceLogoUrl: '/media/logos/transparent.png',
+        }
+      )
+    ).toBe('https://tuturuuu.com/media/logos/transparent.png');
+  });
+
+  it('uses the canonical root logo only when the root workspace has no avatar', () => {
+    expect(
+      resolveWorkspaceAvatarUrl(null, {
+        rootWorkspaceLogoUrl:
+          'https://tuturuuu.com/media/logos/transparent.png',
+      })
+    ).toBe('https://tuturuuu.com/media/logos/transparent.png');
+    expect(resolveWorkspaceAvatarUrl(null)).toBeNull();
+  });
+});
 
 describe('mergeWorkspaceSelectWorkspaces', () => {
   it('uses the current workspace fallback when the workspace list is unavailable', () => {

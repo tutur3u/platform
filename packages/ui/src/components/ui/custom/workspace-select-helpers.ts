@@ -1,5 +1,16 @@
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 
+export function resolveWorkspaceAvatarUrl(
+  avatarUrl: string | null | undefined,
+  {
+    rootWorkspaceLogoUrl,
+  }: {
+    rootWorkspaceLogoUrl?: string;
+  } = {}
+) {
+  return avatarUrl || rootWorkspaceLogoUrl || null;
+}
+
 export function mergeWorkspaceSelectWorkspaces(
   workspaces: InternalApiWorkspaceSummary[] | undefined,
   currentWorkspaceFallback: InternalApiWorkspaceSummary | null | undefined
