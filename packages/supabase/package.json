@@ -104,19 +104,19 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.12.3",
-    "@supabase/supabase-js": "^2.110.8",
+    "@supabase/ssr": "^0.12.4",
+    "@supabase/supabase-js": "^2.111.0",
     "@tuturuuu/types": "workspace:*",
-    "next": "16.3.0-preview.9",
+    "next": "^16.3.0-preview.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
-    "next": "16.3.0-preview.9",
+    "next": "^16.3.0-preview.10",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "7.0.2",

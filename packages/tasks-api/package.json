@@ -24,12 +24,12 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^16.3.0-preview.9",
+    "next": "^16.3.0-preview.10",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   }

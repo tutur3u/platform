@@ -30,16 +30,16 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
-    "@tiptap/extension-color": "3.28.0",
-    "@tiptap/extension-highlight": "3.28.0",
-    "@tiptap/extension-image": "3.28.0",
-    "@tiptap/extension-link": "3.28.0",
-    "@tiptap/extension-placeholder": "3.28.0",
-    "@tiptap/extension-text-align": "3.28.0",
-    "@tiptap/extension-text-style": "3.28.0",
-    "@tiptap/react": "3.28.0",
-    "@tiptap/starter-kit": "3.28.0",
-    "lucide-react": "^1.26.0"
+    "@tiptap/extension-color": "3.29.2",
+    "@tiptap/extension-highlight": "3.29.2",
+    "@tiptap/extension-image": "3.29.2",
+    "@tiptap/extension-link": "3.29.2",
+    "@tiptap/extension-placeholder": "3.29.2",
+    "@tiptap/extension-text-align": "3.29.2",
+    "@tiptap/extension-text-style": "3.29.2",
+    "@tiptap/react": "3.29.2",
+    "@tiptap/starter-kit": "3.29.2",
+    "lucide-react": "^1.28.0"
   },
   "peerDependencies": {
     "react": "^19.2.0",
@@ -49,7 +49,7 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/react": "^19.2.0",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   }

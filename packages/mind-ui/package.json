@@ -32,9 +32,9 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@xyflow/react": "^12.11.2",
-    "ai": "^7.0.36",
+    "ai": "^7.0.44",
     "katex": "^0.18.1",
-    "next": "^16.3.0-preview.9",
+    "next": "^16.3.0-preview.10",
     "next-intl": "^4.13.4",
     "next-themes": "^0.4.6",
     "react": "^19.2.8",
@@ -45,11 +45,11 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
-    "jsdom": "^29.1.1",
+    "jsdom": "^30.0.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"
   }
