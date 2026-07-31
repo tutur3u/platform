@@ -13,6 +13,7 @@ import Link from 'next/link';
 import type { AiStudioOverview } from '@/lib/studio-data';
 import { ApiKeysPanel } from './api-keys-panel';
 import { CatalogPanel } from './catalog-panel';
+import { DeveloperDocsPanel } from './developer-docs/developer-docs-panel';
 import { ObservabilityPanel } from './observability-panel';
 import { PlaygroundPanel } from './playground-panel';
 
@@ -222,6 +223,11 @@ export function StudioPage({
         <CatalogPanel
           resource={catalogResource}
           title={title}
+          workspaceId={workspaceId}
+        />
+      ) : section === 'developer-docs' ? (
+        <DeveloperDocsPanel
+          canManageAiKeys={canManageAiKeys}
           workspaceId={workspaceId}
         />
       ) : section === 'runs' ||

@@ -16,6 +16,7 @@ const sections = new Set([
   'logs',
   'usage',
   'credits',
+  'developer-docs',
 ]);
 
 export default async function SectionPage({
@@ -32,6 +33,7 @@ export default async function SectionPage({
     'api-keys': t('api-keys'),
     credits: t('credits'),
     datasets: t('datasets'),
+    'developer-docs': t('developer-docs'),
     evaluations: t('evaluations'),
     experiments: t('experiments'),
     logs: t('logs'),
@@ -75,7 +77,11 @@ export default async function SectionPage({
       }}
       section={section}
       title={titles[section] ?? t('studio')}
-      description={t('studio-description')}
+      description={
+        section === 'developer-docs'
+          ? t('developer-docs-description')
+          : t('studio-description')
+      }
       workspaceId={context?.workspace.id ?? wsId}
     />
   );

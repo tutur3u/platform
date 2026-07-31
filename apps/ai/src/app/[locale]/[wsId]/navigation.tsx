@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  BookOpen,
   Bot,
   ClipboardList,
   Coins,
@@ -119,6 +120,11 @@ export async function getNavigationLinks({
           icon: <Coins className="h-4 w-4" />,
         },
       ],
+    },
+    {
+      title: t('developer-docs'),
+      href: href('developer-docs'),
+      icon: <BookOpen className="h-4 w-4" />,
     },
     null,
     createWorkspaceMembersNavLink(common),
