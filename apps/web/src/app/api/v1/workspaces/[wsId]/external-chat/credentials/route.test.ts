@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = {
+  markExternalChatCredentialVerified: vi.fn(),
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serializeExternalChatBinding: vi.fn(),
@@ -41,6 +42,8 @@ vi.mock('@/lib/external-chat/delivery', () => ({
 }));
 
 vi.mock('@/lib/external-chat/store', () => ({
+  markExternalChatCredentialVerified: (...args: unknown[]) =>
+    mocks.markExternalChatCredentialVerified(...args),
   readExternalChatBinding: (...args: unknown[]) =>
     mocks.readExternalChatBinding(...args),
   serializeExternalChatBinding: (...args: unknown[]) =>
@@ -71,7 +74,11 @@ describe('external chat credential verification', () => {
       context: { normalizedWsId: 'workspace-1' },
       ok: true,
     });
-    mocks.readExternalChatBinding.mockResolvedValue({ binding: {} });
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: { control_secret_encrypted: 'encrypted-control' },
+    });
+    mocks.markExternalChatCredentialVerified.mockResolvedValue(true);
     mocks.serializeExternalChatBinding.mockReturnValue({
       readiness: { errors: [], ready: true },
     });
@@ -86,9 +93,9 @@ describe('external chat credential verification', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.verifyExternalChatControl).toHaveBeenCalledWith('workspace-1');
-    expect(mocks.upsertExternalChatCredentials).toHaveBeenCalledWith(
+    expect(mocks.markExternalChatCredentialVerified).toHaveBeenCalledWith(
       'workspace-1',
-      { verified_at: expect.any(String) }
+      'encrypted-control'
     );
   });
 
@@ -106,7 +113,7 @@ describe('external chat credential verification', () => {
 
     expect(response.status).toBe(502);
     expect(await response.text()).not.toContain('secret-value');
-    expect(mocks.upsertExternalChatCredentials).not.toHaveBeenCalled();
+    expect(mocks.markExternalChatCredentialVerified).not.toHaveBeenCalled();
   });
 
   it('does not commit a paired ingest rotation when the bridge rejects it', async () => {

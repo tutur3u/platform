@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { TTR_URL } from '@/constants/common';
 import { ChatContextRail } from './chat-context-rail';
+import { ChatScopeTabs } from './chat-scope-tabs';
 
 const AGENT_DETAILS_AUTO_COLLAPSE_WIDTH = 1400;
 
@@ -210,6 +211,9 @@ function ChatResponsiveSidebar({
         wsId={wsId}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="border-b p-2">
+          <ChatScopeTabs />
+        </div>
         <ChatSidebarPanel
           archiveFilter={archiveFilter}
           closeOnMobile={closeOnMobile}

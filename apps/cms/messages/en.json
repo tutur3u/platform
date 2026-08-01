@@ -3428,7 +3428,7 @@
     "navigation": "Chat",
     "not_configured": "Not configured",
     "not_ready": "Setup needs attention",
-    "not_ready_description": "{count} readiness checks are incomplete.",
+    "not_ready_description": "{count, plural, one {# readiness check is incomplete.} other {# readiness checks are incomplete.}}",
     "open_inbox": "Open live inbox",
     "ready": "Ready for canary synchronization",
     "ready_description": "Both directions can be tested without changing live authority.",

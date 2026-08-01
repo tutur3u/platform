@@ -117,6 +117,22 @@ export async function promoteExternalChatCredential(
   });
 }
 
+export async function markExternalChatCredentialVerified(
+  wsId: string,
+  controlSecretEncrypted: string
+) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_mark_verified',
+    {
+      p_control_secret_encrypted: controlSecretEncrypted,
+      p_ws_id: wsId,
+    }
+  );
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
 async function callExternalChatCredentialRpc(
   name: string,
   args: Record<string, unknown>
@@ -135,10 +151,12 @@ async function callExternalChatCredentialRpc(
 export async function importExternalChatEvent({
   connectorKey,
   event,
+  mappedUserId,
   wsId,
 }: {
   connectorKey: string;
   event: ExternalChatEvent;
+  mappedUserId: string | null;
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
@@ -162,6 +180,7 @@ export async function importExternalChatEvent({
       p_connector_key: connectorKey,
       p_content: event.content,
       p_direction: event.direction,
+      ...(mappedUserId ? { p_mapped_user_id: mappedUserId } : {}),
       p_message_metadata: messageMetadata as Json,
       p_occurred_at: event.timestamp,
       p_remote_agent_id: event.agentId,
@@ -208,7 +227,13 @@ export function serializeExternalChatBinding(
     errors.push('credential_reconciliation_pending');
 
   return {
-    enabled: state.binding.is_enabled,
+    enabled:
+      state.binding.is_enabled &&
+      Boolean(
+        chat &&
+          typeof chat === 'object' &&
+          (chat as Record<string, unknown>).enabled === true
+      ),
     settings: chat ?? null,
     secrets: {
       control: {

@@ -816,6 +816,7 @@ export type WorkspaceExternalProjectBinding = {
   workspace_id: string;
   canonical_project: CanonicalExternalProject | null;
   adapter: ExternalProjectAdapterKind | null;
+  settings?: Json | null;
 };
 export type ExternalProjectWorkspaceBindingSummary =
   InternalApiWorkspaceSummary & {

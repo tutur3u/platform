@@ -14,6 +14,7 @@ import {
   verifyExternalChatControl,
 } from '@/lib/external-chat/delivery';
 import {
+  markExternalChatCredentialVerified,
   promoteExternalChatCredential,
   readExternalChatBinding,
   serializeExternalChatBinding,
@@ -136,6 +137,13 @@ export const POST = withSessionAuth<Params>(
         verified_at: null,
       });
     } else {
+      const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      if (!verifiedCiphertext) {
+        return NextResponse.json(
+          { error: 'Control credential is not configured' },
+          { status: 400 }
+        );
+      }
       try {
         await verifyExternalChatControl(wsId);
       } catch {
@@ -149,9 +157,14 @@ export const POST = withSessionAuth<Params>(
           { status: 502 }
         );
       }
-      await upsertExternalChatCredentials(wsId, {
-        verified_at: new Date().toISOString(),
-      });
+      if (
+        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+      ) {
+        return NextResponse.json(
+          { error: 'Credential changed during verification' },
+          { status: 409 }
+        );
+      }
     }
 
     return NextResponse.json({

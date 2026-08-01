@@ -51,6 +51,19 @@ export type CmsSiteDeliveryView = {
   template: CmsSiteTemplateMetadataV1;
 };
 
+function resolveCmsSiteAssetUrl(assetUrl: string | null, baseUrl: URL | null) {
+  if (!assetUrl || !baseUrl) return assetUrl;
+  try {
+    const directoryBase = new URL(baseUrl);
+    if (!directoryBase.pathname.endsWith('/')) {
+      directoryBase.pathname = `${directoryBase.pathname}/`;
+    }
+    return new URL(assetUrl, directoryBase).toString();
+  } catch {
+    return assetUrl;
+  }
+}
+
 export function normalizeCmsSiteDelivery(
   payload: ExternalProjectDeliveryPayload,
   publicBaseUrl?: string
@@ -69,10 +82,7 @@ export function normalizeCmsSiteDelivery(
           ...entry,
           assets: entry.assets.map((asset) => ({
             ...asset,
-            assetUrl:
-              asset.assetUrl && baseUrl
-                ? new URL(asset.assetUrl, baseUrl).toString()
-                : asset.assetUrl,
+            assetUrl: resolveCmsSiteAssetUrl(asset.assetUrl, baseUrl),
           })),
         })),
       },

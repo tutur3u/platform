@@ -30,14 +30,15 @@ export async function getNavigationLinks({
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
   const isInternalWorkspace = workspaceId === ROOT_WORKSPACE_ID;
-  const cmsGamesEnabled = isInternalWorkspace
-    ? false
-    : await getCmsGamesEnabled(workspaceId);
-  const access = isInternalWorkspace
-    ? null
-    : await getCmsWorkspaceAccess(workspaceId);
+  const [cmsGamesEnabled, access] = isInternalWorkspace
+    ? [false, null]
+    : await Promise.all([
+        getCmsGamesEnabled(workspaceId),
+        getCmsWorkspaceAccess(workspaceId),
+      ]);
   const connectedChatEnabled = Boolean(
-    access?.binding?.canonical_project?.allowed_features.includes('chat')
+    access?.canAccessWorkspace &&
+      access.binding?.canonical_project?.allowed_features.includes('chat')
   );
 
   if (isInternalWorkspace) {

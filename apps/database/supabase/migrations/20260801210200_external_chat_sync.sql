@@ -254,10 +254,34 @@ begin
 end;
 $$;
 
+create or replace function private.external_chat_mark_verified(
+  p_ws_id uuid,
+  p_control_secret_encrypted text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  v_updated integer;
+begin
+  update private.external_chat_binding_credentials
+  set verified_at = now()
+  where ws_id = p_ws_id
+    and pending_action is null
+    and control_secret_encrypted = p_control_secret_encrypted;
+  get diagnostics v_updated = row_count;
+  return v_updated = 1;
+end;
+$$;
+
 revoke all on function private.external_chat_stage_credential(uuid, text, text, text, text) from public, anon, authenticated;
 revoke all on function private.external_chat_promote_credential(uuid, text, text) from public, anon, authenticated;
+revoke all on function private.external_chat_mark_verified(uuid, text) from public, anon, authenticated;
 grant execute on function private.external_chat_stage_credential(uuid, text, text, text, text) to service_role;
 grant execute on function private.external_chat_promote_credential(uuid, text, text) to service_role;
+grant execute on function private.external_chat_mark_verified(uuid, text) to service_role;
 
 create trigger external_chat_binding_credentials_updated_at
   before update on private.external_chat_binding_credentials
@@ -269,6 +293,20 @@ create trigger external_chat_sync_checkpoints_updated_at
   before update on private.external_chat_sync_checkpoints
   for each row execute function private.chat_set_updated_at();
 
+create or replace function private.chat_set_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if new.updated_at is not distinct from old.updated_at then
+    new.updated_at = now();
+  end if;
+  return new;
+end;
+$$;
+
 create or replace function private.external_chat_import_event(
   p_ws_id uuid,
   p_connector_key text,
@@ -279,7 +317,8 @@ create or replace function private.external_chat_import_event(
   p_content text,
   p_occurred_at timestamptz,
   p_thread_metadata jsonb default '{}'::jsonb,
-  p_message_metadata jsonb default '{}'::jsonb
+  p_message_metadata jsonb default '{}'::jsonb,
+  p_mapped_user_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -299,11 +338,12 @@ begin
     raise exception 'external_chat_invalid_identity';
   end if;
 
-  if p_direction not in ('visitor', 'staff', 'system') then
+  if p_direction is null or p_direction not in ('visitor', 'staff', 'system') then
     raise exception 'external_chat_invalid_direction';
   end if;
 
-  if octet_length(coalesce(p_content, '')) > 40000 then
+  if char_length(coalesce(p_content, '')) > 10000
+    or octet_length(coalesce(p_content, '')) > 40000 then
     raise exception 'external_chat_content_too_large';
   end if;
 
@@ -321,6 +361,10 @@ begin
     raise exception 'external_chat_binding_unavailable';
   end if;
 
+  perform pg_advisory_xact_lock(hashtextextended(
+    concat_ws(':', p_ws_id, p_connector_key, p_remote_message_id),
+    0
+  ));
   perform pg_advisory_xact_lock(hashtextextended(
     concat_ws(':', p_ws_id, p_connector_key, coalesce(p_remote_agent_id, ''), p_remote_visitor_id),
     0
@@ -347,7 +391,7 @@ begin
     and t.remote_visitor_id = p_remote_visitor_id;
 
   if v_thread.id is null then
-    v_title := nullif(p_thread_metadata->>'displayName', '');
+    v_title := left(nullif(p_thread_metadata->>'displayName', ''), 255);
     insert into private.chat_conversations (
       ws_id, type, title, metadata, created_at, updated_at
     ) values (
@@ -370,6 +414,21 @@ begin
     update private.external_chat_threads
     set metadata = metadata || coalesce(p_thread_metadata, '{}'::jsonb)
     where id = v_thread.id;
+  end if;
+
+  if p_mapped_user_id is not null and exists (
+    select 1 from public.workspace_members wm
+    where wm.ws_id = p_ws_id and wm.user_id = p_mapped_user_id
+  ) then
+    insert into private.chat_conversation_members (
+      conversation_id, user_id, role, metadata
+    ) values (
+      v_thread.conversation_id, p_mapped_user_id, 'member',
+      jsonb_build_object('externalRouting', true)
+    )
+    on conflict (conversation_id, user_id) do update
+    set archived_at = null,
+        metadata = private.chat_conversation_members.metadata || excluded.metadata;
   end if;
 
   insert into private.chat_messages (
@@ -398,7 +457,8 @@ begin
 
   update private.chat_conversations
   set updated_at = greatest(updated_at, coalesce(p_occurred_at, now()))
-  where id = v_thread.conversation_id;
+  where id = v_thread.conversation_id
+    and coalesce(p_occurred_at, now()) > updated_at;
 
   return jsonb_build_object(
     'conversationId', v_thread.conversation_id,
@@ -410,10 +470,10 @@ end;
 $$;
 
 revoke all on function private.external_chat_import_event(
-  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb
+  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb, uuid
 ) from public, anon, authenticated;
 grant execute on function private.external_chat_import_event(
-  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb
+  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb, uuid
 ) to service_role;
 
 create or replace function private.external_chat_reserve_reply(

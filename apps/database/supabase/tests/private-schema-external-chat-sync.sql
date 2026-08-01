@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(26);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
@@ -7,6 +7,7 @@ select has_table('private', 'external_chat_events', 'external event mappings are
 select has_table('private', 'external_chat_outbound_deliveries', 'outbound delivery reservations are private');
 select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints are private');
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
+select has_function('private', 'external_chat_mark_verified', 'verification fencing RPC exists');
 select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
 select has_function('private', 'external_chat_finalize_reply', 'atomic outbound finalization RPC exists');
 select has_function('private', 'external_chat_update_settings', 'atomic binding settings RPC exists');
@@ -45,12 +46,12 @@ select has_index(
 
 select function_privs_are(
   'private', 'external_chat_import_event',
-  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb'],
+  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb','uuid'],
   'service_role', array['EXECUTE'], 'service role can execute imports'
 );
 select function_privs_are(
   'private', 'external_chat_import_event',
-  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb'],
+  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb','uuid'],
   'authenticated', array[]::text[], 'authenticated clients cannot execute imports'
 );
 

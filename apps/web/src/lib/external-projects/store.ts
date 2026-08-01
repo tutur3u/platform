@@ -115,6 +115,13 @@ function asJsonObject(
   return {};
 }
 
+function readV1Template(value: unknown) {
+  const template = asJsonObject(value as Json | null | undefined);
+  return template.version === 1 && typeof template.kind === 'string'
+    ? (template as ExternalProjectDeliveryPayload['template'])
+    : undefined;
+}
+
 function hasPrivateDeliveryFlag(
   value: Json | Record<string, unknown> | null | undefined
 ) {
@@ -3041,9 +3048,11 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     loadingData,
     profileData,
     template:
-      profileData.template && typeof profileData.template === 'object'
-        ? (profileData.template as ExternalProjectDeliveryPayload['template'])
-        : undefined,
+      binding.adapter === 'cms_site'
+        ? readV1Template(
+            asJsonObject(asJsonObject(binding.settings).cmsSite).template
+          )
+        : readV1Template(profileData.template),
     revision: deliveryRevision.revision,
     workspaceId,
   };

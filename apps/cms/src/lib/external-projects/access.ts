@@ -15,6 +15,7 @@ import {
   normalizeWorkspaceId,
   type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
+import { cache } from 'react';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
@@ -127,18 +128,20 @@ export async function resolveWorkspaceExternalProjectBinding(
   // migration is applied). Keeps CMS access consistent with delivery.
   let enabled = false;
   let canonicalId: string | null = null;
+  let settings: WorkspaceExternalProjectBinding['settings'] = null;
   let resolvedFromBindingTable = false;
 
   try {
     const { data: binding, error: bindingError } = await admin
       .from('workspace_external_project_bindings')
-      .select('canonical_project_id, is_enabled')
+      .select('canonical_project_id, is_enabled, settings')
       .eq('ws_id', workspaceId)
       .maybeSingle();
 
     if (!bindingError && binding) {
       enabled = binding.is_enabled === true;
       canonicalId = binding.canonical_project_id ?? null;
+      settings = binding.settings;
       resolvedFromBindingTable = true;
     }
   } catch {
@@ -190,6 +193,7 @@ export async function resolveWorkspaceExternalProjectBinding(
       enabled && canonicalProject?.is_active ? canonicalProject : null,
     enabled:
       enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
+    settings,
     workspace_id: workspaceId,
   };
 }
@@ -234,7 +238,7 @@ async function resolveCmsWorkspaceId(
   return normalizeWorkspaceId(rawWsId, supabase);
 }
 
-export async function getCmsWorkspaceAccess(rawWsId: string) {
+async function resolveCmsWorkspaceAccess(rawWsId: string) {
   const user = await getSatelliteAppSessionUser('cms');
   const supabase = (await createAdminClient({
     noCookie: true,
@@ -256,6 +260,7 @@ export async function getCmsWorkspaceAccess(rawWsId: string) {
           canonical_id: null,
           canonical_project: null,
           enabled: false,
+          settings: null,
           workspace_id: normalizedWorkspaceId,
         } satisfies WorkspaceExternalProjectBinding)
       : resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId),
@@ -281,3 +286,5 @@ export async function getCmsWorkspaceAccess(rawWsId: string) {
     workspacePermissions,
   };
 }
+
+export const getCmsWorkspaceAccess = cache(resolveCmsWorkspaceAccess);

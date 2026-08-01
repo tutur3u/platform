@@ -29,7 +29,8 @@ export function verifyExternalChatSecret(secret: string, expectedHash: string) {
 }
 
 export async function encryptControlSecret(wsId: string, secret: string) {
-  const key = await getOrCreateWorkspaceKey(wsId);
+  const key =
+    (await getOrCreateWorkspaceKey(wsId)) ?? (await getWorkspaceKey(wsId));
   if (!key) throw new Error('Workspace encryption is required');
   return encryptField(secret, key);
 }

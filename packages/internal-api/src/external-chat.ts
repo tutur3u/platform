@@ -19,9 +19,22 @@ export interface ExternalChatBindingState {
       rotatedAt: string | null;
     };
   };
-  settings: Record<string, unknown> | null;
+  settings: ExternalChatSettings | null;
   verifiedAt: string | null;
 }
+
+export type ExternalChatSettings = {
+  agentMappings: Record<string, string>;
+  authorityMode:
+    | 'legacy_primary'
+    | 'mirror_verified'
+    | 'tuturuuu_primary'
+    | 'fallback_queue'
+    | 'paused';
+  bridgeBaseUrl: string;
+  enabled: boolean;
+  inboxDefaults: Record<string, unknown>;
+};
 
 export type ExternalChatCredentialAction =
   | { action: 'rotate_ingest' }
@@ -60,7 +73,7 @@ export function mutateExternalChatCredential(
 
 export function updateExternalChatSettings(
   wsId: string,
-  payload: Record<string, unknown>,
+  payload: ExternalChatSettings,
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<ExternalChatBindingState>(

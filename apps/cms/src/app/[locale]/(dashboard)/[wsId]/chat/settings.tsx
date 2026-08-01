@@ -62,7 +62,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       }
       return updateExternalChatSettings(wsId, {
         agentMappings: parsedMappings,
-        authorityMode: 'legacy_primary',
+        authorityMode: isAuthorityMode(existing.authorityMode)
+          ? existing.authorityMode
+          : 'legacy_primary',
         bridgeBaseUrl: baseUrl,
         enabled,
         inboxDefaults: (existing.inboxDefaults ?? {}) as Record<
@@ -90,7 +92,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       mutateExternalChatCredential(wsId, payload),
     onError: () => toast.error(t('secret_error')),
     onSuccess: async (result) => {
-      setIssuedSecret(result.secret ?? null);
+      setIssuedSecret((current) => result.secret ?? current);
       setControlSecret('');
       await refresh();
     },
@@ -102,23 +104,27 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
         <h1 className="font-semibold text-2xl">{t('title')}</h1>
         <p className="mt-1 text-muted-foreground text-sm">{t('description')}</p>
       </header>
-      <Alert variant={query.data?.readiness.ready ? 'default' : 'destructive'}>
-        {query.data?.readiness.ready ? (
-          <CheckCircle2 className="size-4" />
-        ) : (
-          <RefreshCw className="size-4" />
-        )}
-        <AlertTitle>
-          {query.data?.readiness.ready ? t('ready') : t('not_ready')}
-        </AlertTitle>
-        <AlertDescription>
-          {query.data?.readiness.ready
-            ? t('ready_description')
-            : t('not_ready_description', {
-                count: query.data?.readiness.errors.length ?? 1,
-              })}
-        </AlertDescription>
-      </Alert>
+      {query.isLoading ? null : (
+        <Alert
+          variant={query.data?.readiness.ready ? 'default' : 'destructive'}
+        >
+          {query.data?.readiness.ready ? (
+            <CheckCircle2 className="size-4" />
+          ) : (
+            <RefreshCw className="size-4" />
+          )}
+          <AlertTitle>
+            {query.data?.readiness.ready ? t('ready') : t('not_ready')}
+          </AlertTitle>
+          <AlertDescription>
+            {query.data?.readiness.ready
+              ? t('ready_description')
+              : t('not_ready_description', {
+                  count: query.data?.readiness.errors.length ?? 1,
+                })}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <section className="grid gap-5 border-b pb-6 md:grid-cols-2">
         <div className="space-y-4">
@@ -271,6 +277,26 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
         </div>
       </section>
     </div>
+  );
+}
+
+function isAuthorityMode(
+  value: unknown
+): value is
+  | 'legacy_primary'
+  | 'mirror_verified'
+  | 'tuturuuu_primary'
+  | 'fallback_queue'
+  | 'paused' {
+  return (
+    typeof value === 'string' &&
+    [
+      'legacy_primary',
+      'mirror_verified',
+      'tuturuuu_primary',
+      'fallback_queue',
+      'paused',
+    ].includes(value)
   );
 }
 

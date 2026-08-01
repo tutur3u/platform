@@ -13,7 +13,7 @@
     "loading": "Loading binding readiness...",
     "message": "Message",
     "message_placeholder": "Type a migration test message",
-    "missing": "{count} prerequisite checks still need attention.",
+    "missing": "{count, plural, one {# prerequisite check still needs attention.} other {# prerequisite checks still need attention.}}",
     "navigation": "Chat migration lab",
     "outage": "Simulated outage",
     "ok": "OK",

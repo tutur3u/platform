@@ -798,9 +798,12 @@ export function buildExternalProjectSyncSnapshot({
     generatedAt,
     schema: dbBackedSchema,
     template: (() => {
-      const template = asRecord(
-        asRecord(binding.canonical_project?.delivery_profile).template
-      );
+      const template =
+        binding.adapter === 'cms_site'
+          ? asRecord(asRecord(asRecord(binding.settings).cmsSite).template)
+          : asRecord(
+              asRecord(binding.canonical_project?.delivery_profile).template
+            );
       return template.version === 1 && typeof template.kind === 'string'
         ? (template as ExternalProjectSyncManifest['template'])
         : undefined;

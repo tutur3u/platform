@@ -15,15 +15,15 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-type LabMessage = { body: string; id: number; role: 'visitor' | 'staff' };
+type LabMessage = { body: string; id: string; role: 'visitor' | 'staff' };
 
 export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
   const t = useTranslations('external-chat-lab');
   const [draft, setDraft] = useState('');
   const [online, setOnline] = useState(true);
   const [messages, setMessages] = useState<LabMessage[]>([
-    { body: t('sample_visitor'), id: 1, role: 'visitor' },
-    { body: t('sample_staff'), id: 2, role: 'staff' },
+    { body: t('sample_visitor'), id: 'sample-visitor', role: 'visitor' },
+    { body: t('sample_staff'), id: 'sample-staff', role: 'staff' },
   ]);
   const state = useQuery({
     queryFn: () => getExternalChatBindingState(wsId),
@@ -36,7 +36,7 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
     if (!body) return;
     setMessages((current) => [
       ...current,
-      { body, id: Date.now(), role: 'visitor' },
+      { body, id: crypto.randomUUID(), role: 'visitor' },
     ]);
     setDraft('');
   }

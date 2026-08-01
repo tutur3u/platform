@@ -81,11 +81,15 @@ export function hasRootExternalProjectsAdminPermission(
 async function readWorkspaceExternalProjectBindingState(
   admin: AdminDb,
   workspaceId: string
-): Promise<{ canonicalId: string | null; enabled: boolean }> {
+): Promise<{
+  canonicalId: string | null;
+  enabled: boolean;
+  settings: Json | null;
+}> {
   try {
     const { data: binding, error: bindingError } = await admin
       .from('workspace_external_project_bindings')
-      .select('canonical_project_id, is_enabled')
+      .select('canonical_project_id, is_enabled, settings')
       .eq('ws_id', workspaceId)
       .maybeSingle();
 
@@ -93,6 +97,7 @@ async function readWorkspaceExternalProjectBindingState(
       return {
         canonicalId: binding.canonical_project_id ?? null,
         enabled: binding.is_enabled === true,
+        settings: binding.settings,
       };
     }
   } catch {
@@ -123,6 +128,7 @@ async function readWorkspaceExternalProjectBindingState(
           secret.name === EXTERNAL_PROJECT_ENABLED_SECRET &&
           secret.value === 'true'
       ) ?? false,
+    settings: null,
   };
 }
 
@@ -132,7 +138,7 @@ export async function resolveWorkspaceExternalProjectBinding(
 ): Promise<WorkspaceExternalProjectBinding> {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
 
-  const { canonicalId, enabled } =
+  const { canonicalId, enabled, settings } =
     await readWorkspaceExternalProjectBindingState(admin, workspaceId);
 
   let canonicalProject: CanonicalExternalProject | null = null;
@@ -154,6 +160,7 @@ export async function resolveWorkspaceExternalProjectBinding(
       enabled && canonicalProject?.is_active ? canonicalProject : null,
     enabled:
       enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
+    settings,
     workspace_id: workspaceId,
   };
 }
