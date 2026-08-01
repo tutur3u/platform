@@ -6,7 +6,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Button } from '../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
-import { getConversationTitle, isChatConversationPinned } from './utils';
+import {
+  getChatMessageSenderLabel,
+  getConversationTitle,
+  isChatConversationPinned,
+} from './utils';
 
 export function ConversationRow({
   conversation,
@@ -88,7 +92,11 @@ export function SearchResultList({
           type="button"
         >
           <span className="block truncate font-medium text-sm">
-            {message.sender?.displayName ?? t('unknown_sender')}
+            {getChatMessageSenderLabel(message, {
+              assistant: t('assistant_name'),
+              external: t('external_sender'),
+              unknown: t('unknown_sender'),
+            })}
           </span>
           <span className="mt-1 line-clamp-2 text-muted-foreground text-xs">
             {message.content}

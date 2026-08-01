@@ -277,6 +277,7 @@ export async function getCmsWorkspaceAccess(rawWsId: string) {
     isRootAdmin,
     normalizedWorkspaceId,
     rootPermissions,
+    userId: user?.id ?? null,
     workspacePermissions,
   };
 }

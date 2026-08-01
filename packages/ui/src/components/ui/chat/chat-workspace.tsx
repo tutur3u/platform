@@ -459,14 +459,16 @@ export function ChatWorkspace({
       {showSidebar ? (
         <ChatSidebar
           actions={
-            <Button
-              aria-label={t('new_conversation')}
-              onClick={() => setCreateOpen(true)}
-              size="icon"
-              type="button"
-            >
-              <Plus className="size-4" />
-            </Button>
+            conversationScope === 'external' ? null : (
+              <Button
+                aria-label={t('new_conversation')}
+                onClick={() => setCreateOpen(true)}
+                size="icon"
+                type="button"
+              >
+                <Plus className="size-4" />
+              </Button>
+            )
           }
           archiveFilter={archiveFilter}
           conversations={conversations}

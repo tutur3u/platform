@@ -4,6 +4,7 @@ import { externalProjectAdapterFixtures } from './fixtures';
 describe('external project adapter fixtures', () => {
   it('covers all supported adapters with source references', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
+      'cms_site',
       'exocorpse',
       'junly',
       'kendra',
@@ -17,13 +18,27 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
+        /(CMS site|junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
   });
 
   it('matches the expected collection layout for each adapter', () => {
+    expect(
+      externalProjectAdapterFixtures.cms_site.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual([
+      'site-settings',
+      'navigation',
+      'pages',
+      'posts',
+      'taxonomies',
+      'landing-sections',
+      'redirects',
+    ]);
+
     expect(
       externalProjectAdapterFixtures.junly.collections.map(
         (collection) => collection.slug

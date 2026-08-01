@@ -15,6 +15,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
   ExternalProjectAdapterKind,
+  ExternalProjectSyncManifest,
   ExternalProjectSyncSchema,
   Json,
   WorkspaceExternalProjectBinding,
@@ -164,10 +165,12 @@ function getExternalProjectSchemaCollectionSlugs(
 }
 
 function buildExternalProjectDeliveryProfile(
-  schema?: ExternalProjectSyncSchema
+  schema?: ExternalProjectSyncSchema,
+  template?: ExternalProjectSyncManifest['template']
 ) {
   return {
     schema: schema ?? { collections: [] },
+    ...(template ? { template } : {}),
   } as Json;
 }
 
@@ -177,12 +180,14 @@ async function ensureCanonicalExternalProject({
   actorId,
   canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter),
   schema,
+  template,
 }: {
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   actorId: string | null;
   canonicalProjectId?: string;
   schema?: ExternalProjectSyncSchema;
+  template?: ExternalProjectSyncManifest['template'];
 }) {
   const { data: existingProject, error: existingProjectError } = await admin
     .from('canonical_external_projects')
@@ -225,15 +230,19 @@ async function ensureCanonicalExternalProject({
     .insert({
       adapter,
       allowed_collections: allowedCollections,
-      allowed_features: ['sync', 'assets', 'delivery'],
+      allowed_features:
+        adapter === 'cms_site'
+          ? ['sync', 'assets', 'delivery', 'chat']
+          : ['sync', 'assets', 'delivery'],
       created_by: actorId,
-      delivery_profile: buildExternalProjectDeliveryProfile(schema),
+      delivery_profile: buildExternalProjectDeliveryProfile(schema, template),
       display_name: EXTERNAL_PROJECT_DISPLAY_NAMES[adapter],
       id: canonicalProjectId,
       is_active: true,
       metadata: {
         autoSetup: true,
         adapter,
+        ...(template ? { template } : {}),
       },
       updated_by: actorId,
     })
@@ -348,6 +357,7 @@ export async function ensureWorkspaceExternalProjectStudio({
   adapter,
   admin,
   schema,
+  template,
   workspaceId,
 }: {
   /** Null when a linked app provisions its own schema, with no user acting. */
@@ -355,6 +365,7 @@ export async function ensureWorkspaceExternalProjectStudio({
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   schema?: ExternalProjectSyncSchema;
+  template?: ExternalProjectSyncManifest['template'];
   workspaceId: string;
 }) {
   const canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter);
@@ -376,6 +387,7 @@ export async function ensureWorkspaceExternalProjectStudio({
         admin,
         canonicalProjectId: currentBinding.canonical_id,
         schema,
+        template,
       });
 
     await importExternalProjectFieldDefinitions({
@@ -404,6 +416,7 @@ export async function ensureWorkspaceExternalProjectStudio({
       adapter,
       admin,
       schema,
+      template,
     });
 
   await bindWorkspaceExternalProject({

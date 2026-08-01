@@ -48,7 +48,9 @@ export function ChatContextRail({
   const railScrollRef = useRef<HTMLDivElement | null>(null);
   const requestedScope = searchParams.get('scope');
   const activeScope: ChatConversationScope =
-    requestedScope === 'personal' || requestedScope === 'workspaces'
+    requestedScope === 'external' ||
+    requestedScope === 'personal' ||
+    requestedScope === 'workspaces'
       ? requestedScope
       : defaultConversationScope;
   const workspacesQuery = useInfiniteQuery<
@@ -190,7 +192,9 @@ export function ChatContextRail({
                   {workspace ? (
                     <WorkspaceRailButton
                       active={
-                        activeScope === 'workspaces' && workspace.id === wsId
+                        (activeScope === 'external' ||
+                          activeScope === 'workspaces') &&
+                        workspace.id === wsId
                       }
                       onClick={() => navigate(workspace, 'workspaces')}
                       workspace={workspace}

@@ -1,19 +1,22 @@
 'use client';
 
-import { Bot, Hash, MessageCircle } from '@tuturuuu/icons';
+import { Bot, Globe2, Hash, MessageCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
-type Scope = 'personal' | 'workspaces';
+type Scope = 'external' | 'personal' | 'workspaces';
 
 const scopes: {
   icon: ReactNode;
   id: Scope;
-  subtitleKey: 'scope_personal_subtitle' | 'scope_workspaces_subtitle';
-  titleKey: 'scope_personal' | 'scope_workspaces';
+  subtitleKey:
+    | 'scope_external_subtitle'
+    | 'scope_personal_subtitle'
+    | 'scope_workspaces_subtitle';
+  titleKey: 'scope_external' | 'scope_personal' | 'scope_workspaces';
 }[] = [
   {
     icon: <MessageCircle className="size-4" />,
@@ -32,6 +35,12 @@ const scopes: {
     subtitleKey: 'scope_workspaces_subtitle',
     titleKey: 'scope_workspaces',
   },
+  {
+    icon: <Globe2 className="size-4" />,
+    id: 'external',
+    subtitleKey: 'scope_external_subtitle',
+    titleKey: 'scope_external',
+  },
 ];
 
 export function ChatScopeTabs() {
@@ -39,8 +48,11 @@ export function ChatScopeTabs() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeScope =
-    searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
+  const requestedScope = searchParams.get('scope');
+  const activeScope: Scope =
+    requestedScope === 'external' || requestedScope === 'workspaces'
+      ? requestedScope
+      : 'personal';
 
   function setScope(scope: Scope) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -87,5 +99,8 @@ export function ChatScopeTabs() {
 
 export function useChatScope() {
   const searchParams = useSearchParams();
-  return searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
+  const requestedScope = searchParams.get('scope');
+  return requestedScope === 'external' || requestedScope === 'workspaces'
+    ? requestedScope
+    : 'personal';
 }

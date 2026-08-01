@@ -7,6 +7,7 @@ export const EXTERNAL_PROJECT_CANONICAL_ID_SECRET =
 export const EXTERNAL_PROJECT_PREVIEW_QUERY_PARAM = 'preview';
 
 export const EXTERNAL_PROJECT_ADAPTER_OPTIONS = [
+  'cms_site',
   'junly',
   'yoola',
   'theguyser',
@@ -59,6 +60,15 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
 ] as const;
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
+  cms_site: [
+    'site-settings',
+    'navigation',
+    'pages',
+    'posts',
+    'taxonomies',
+    'landing-sections',
+    'redirects',
+  ],
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
   richfield: [
@@ -113,6 +123,7 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
 } satisfies Record<ExternalProjectAdapterKind, string[]>;
 
 export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
+  cms_site: 'CMS Site',
   exocorpse: 'Exocorpse',
   junly: 'Junly',
   kendra: 'Kendra',

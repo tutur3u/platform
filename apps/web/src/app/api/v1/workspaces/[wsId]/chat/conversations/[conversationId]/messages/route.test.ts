@@ -10,9 +10,11 @@ const mocks = {
   callPrivateChatRpc: vi.fn(),
   createAdminClient: vi.fn(),
   createAiChatPost: vi.fn(),
+  deliverExternalChatReplyIfBound: vi.fn(),
   aiRouteBodies: [] as unknown[],
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
+  recordExternalChatReply: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
   serverWarn: vi.fn(),
@@ -76,6 +78,15 @@ vi.mock('@/lib/chat/realtime', () => ({
   publishChatRealtimeEvent: (
     ...args: Parameters<typeof mocks.publishChatRealtimeEvent>
   ) => mocks.publishChatRealtimeEvent(...args),
+}));
+
+vi.mock('@/lib/external-chat/delivery', () => ({
+  deliverExternalChatReplyIfBound: (
+    ...args: Parameters<typeof mocks.deliverExternalChatReplyIfBound>
+  ) => mocks.deliverExternalChatReplyIfBound(...args),
+  recordExternalChatReply: (
+    ...args: Parameters<typeof mocks.recordExternalChatReply>
+  ) => mocks.recordExternalChatReply(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -218,6 +229,7 @@ function mockRouteContext() {
 describe('native AI chat message route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.deliverExternalChatReplyIfBound.mockResolvedValue(null);
     mocks.aiRouteBodies.length = 0;
     mocks.auth.supabase = createSupabaseMock();
     mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
@@ -308,5 +320,28 @@ describe('native AI chat message route', () => {
       message: userMessage,
       messages: [userMessage],
     });
+  });
+
+  it('does not persist when an externally bound reply fails delivery', async () => {
+    mocks.deliverExternalChatReplyIfBound.mockRejectedValue(
+      new Error('bridge unavailable')
+    );
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'external_delivery_failed',
+    });
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.anything()
+    );
   });
 });

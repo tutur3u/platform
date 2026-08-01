@@ -1,4 +1,35 @@
 {
+  "external-chat-lab": {
+    "authority": "Hệ thống đang giữ quyền",
+    "binding": "Lien ket ung dung ngoai",
+    "checks": "Kiem tra chuyen doi",
+    "connected": "Da ket noi",
+    "control_secret": "Thong tin dieu khien",
+    "description": "Thu nghiem widget khach, hop thu dong bo, hang doi va dieu kien san sang ma khong thay doi dinh tuyen dang chay.",
+    "ingest_secret": "Thong tin tiep nhan",
+    "legacy_primary": "He thong cu la chinh",
+    "legacy_routes": "Giu nguyen trang quan tri va cac duong dan cu",
+    "loading": "Dang tai trang thai san sang...",
+    "message": "Tin nhan",
+    "message_placeholder": "Nhap tin nhan thu nghiem",
+    "missing": "Con {count} dieu kien can xu ly.",
+    "navigation": "Phong thu chuyen doi chat",
+    "outage": "Mô phỏng gián đoạn",
+    "ok": "Đạt",
+    "pending": "Đang chờ",
+    "prerequisites": "Chua du dieu kien",
+    "queueing": "Dang xep hang cuc bo",
+    "ready": "Dong bo san sang cho canary",
+    "ready_description": "Lien ket va hai thong tin xac thuc da san sang. Quyen he thong dang chay chua thay doi.",
+    "refresh": "Tai lai trang thai",
+    "sample_staff": "Phan hoi cua nhan vien xuat hien trong ca hai hop thu.",
+    "sample_visitor": "Toi muon thu luong chat moi.",
+    "send": "Gui tin nhan",
+    "title": "Phong thu chuyen doi chat ngoai",
+    "visitor_surface": "Mo phong cuc bo cho den khi ghep noi canary",
+    "widget_preview": "Widget thu nghiem",
+    "widget_title": "Tro chuyen ho tro"
+  },
   "about": {
     "community": {
       "contributions": {
@@ -4017,6 +4048,7 @@
     "showing_all_chats": "Đang hiển thị cuộc trò chuyện hoạt động và đã lưu trữ",
     "showing_archived_chats": "Đang hiển thị cuộc trò chuyện đã lưu trữ",
     "source_external": "Nguồn bên ngoài",
+    "external_sender": "Khách truy cập website",
     "source_zalo_personal": "Zalo cá nhân",
     "step_details": "Chi tiết",
     "step_details_description": "Thêm tên và ngữ cảnh tùy chọn mà mọi người sẽ thấy.",

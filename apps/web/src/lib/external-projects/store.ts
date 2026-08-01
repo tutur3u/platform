@@ -3040,6 +3040,10 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     generatedAt: deliveryRevision.generatedAt,
     loadingData,
     profileData,
+    template:
+      profileData.template && typeof profileData.template === 'object'
+        ? (profileData.template as ExternalProjectDeliveryPayload['template'])
+        : undefined,
     revision: deliveryRevision.revision,
     workspaceId,
   };

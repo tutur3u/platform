@@ -1097,6 +1097,7 @@ export type ExternalProjectDeliveryPayload = {
   revision: string;
   collections: ExternalProjectDeliveryCollection[];
   profileData: Record<string, unknown>;
+  template?: CmsSiteTemplateMetadataV1;
   loadingData: ExternalProjectLoadingData | null;
 };
 
@@ -1267,12 +1268,31 @@ export type ExternalProjectSyncContent = {
   entries: ExternalProjectSyncEntry[];
 };
 
+export type CmsSiteTemplateMetadataV1 = {
+  kind:
+    | 'standard-site'
+    | 'wordpress-replacement'
+    | 'portfolio'
+    | 'publication'
+    | (string & {});
+  version: 1;
+  editor?: Record<string, Json>;
+  publicDelivery?: Record<string, Json>;
+};
+
+export type CmsSiteContractV1 = {
+  adapter: 'cms_site';
+  template: CmsSiteTemplateMetadataV1;
+  version: 1;
+};
+
 export type ExternalProjectSyncManifest = {
   adapter: ExternalProjectAdapterKind;
   canonicalProjectId?: string | null;
   content: ExternalProjectSyncContent;
   localization?: ExternalProjectLocalizationConfig;
   schema: ExternalProjectSyncSchema;
+  template?: CmsSiteTemplateMetadataV1;
   version: 1;
 };
 

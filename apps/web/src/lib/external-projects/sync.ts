@@ -224,6 +224,17 @@ export function normalizeExternalProjectSyncManifest(
         }
       : undefined,
     schema: normalizeSyncSchema(value.schema),
+    template: value.template
+      ? {
+          ...value.template,
+          editor: asRecord(value.template.editor) as Record<string, Json>,
+          publicDelivery: asRecord(value.template.publicDelivery) as Record<
+            string,
+            Json
+          >,
+          version: 1,
+        }
+      : undefined,
     version: 1,
   };
 }
@@ -786,6 +797,14 @@ export function buildExternalProjectSyncSnapshot({
     },
     generatedAt,
     schema: dbBackedSchema,
+    template: (() => {
+      const template = asRecord(
+        asRecord(binding.canonical_project?.delivery_profile).template
+      );
+      return template.version === 1 && typeof template.kind === 'string'
+        ? (template as ExternalProjectSyncManifest['template'])
+        : undefined;
+    })(),
     version: 1,
     workspaceId,
   };

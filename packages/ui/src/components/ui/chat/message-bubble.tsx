@@ -28,7 +28,11 @@ import { AiMessageParts } from './ai-message-parts';
 import { getAiMessagePartsFromMetadata } from './ai-message-render-utils';
 import { MessageAttachmentButton } from './message-attachment-button';
 import { MessageLinkPreviews, MessageText } from './message-links';
-import { formatChatTime, getChatInitials } from './utils';
+import {
+  formatChatTime,
+  getChatInitials,
+  getChatMessageSenderLabel,
+} from './utils';
 
 const REACTION_OPTIONS = [
   '\u{1F44D}',
@@ -56,9 +60,11 @@ export function MessageBubble({
 }) {
   const t = useTranslations('chat');
   const isOwnMessage = message.senderId === currentUserId;
-  const senderName =
-    message.sender?.displayName ??
-    (message.kind === 'assistant' ? t('assistant_name') : t('unknown_sender'));
+  const senderName = getChatMessageSenderLabel(message, {
+    assistant: t('assistant_name'),
+    external: t('external_sender'),
+    unknown: t('unknown_sender'),
+  });
 
   return (
     <ContextMenu>

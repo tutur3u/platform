@@ -1855,6 +1855,7 @@
     "empty_directory": "Không tìm thấy người dùng",
     "empty_messages_description": "Tin nhắn và tệp đính kèm sẽ xuất hiện tại đây.",
     "empty_messages_title": "Chưa có tin nhắn",
+    "external_sender": "Khách truy cập website",
     "files": "Tệp",
     "filter_conversations": "Lọc cuộc trò chuyện",
     "friend_email_placeholder": "ban@example.com",

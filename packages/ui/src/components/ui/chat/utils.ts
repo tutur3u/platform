@@ -5,7 +5,7 @@ import type {
   ChatUserProfile,
 } from '@tuturuuu/internal-api';
 
-export type ChatConversationScope = 'personal' | 'workspaces';
+export type ChatConversationScope = 'external' | 'personal' | 'workspaces';
 export type ChatConversationArchiveFilter = 'active' | 'all' | 'archived';
 
 export const DEFAULT_CHAT_SCOPE: ChatConversationScope = 'personal';
@@ -19,12 +19,17 @@ export const CHAT_CONVERSATION_TYPE_FILTERS = [
 export function normalizeChatConversationScope(
   scope?: string | null
 ): ChatConversationScope {
-  return scope === 'workspaces' ? 'workspaces' : 'personal';
+  if (scope === 'external' || scope === 'workspaces') return scope;
+  return 'personal';
 }
 
 export function getChatConversationScope(
   conversation: Pick<ChatConversation, 'metadata' | 'type'>
 ): ChatConversationScope {
+  if (conversation.metadata?.externalChat === true) {
+    return 'external';
+  }
+
   if (conversation.metadata?.scope === 'personal') {
     return 'personal';
   }
@@ -63,6 +68,8 @@ export function isChatConversation(value: unknown): value is ChatConversation {
 export function getChatConversationTypesForScope(
   scope: ChatConversationScope
 ): ChatConversationType[] {
+  if (scope === 'external') return ['channel'];
+
   return scope === 'personal'
     ? ['direct', 'group', 'channel', 'ai']
     : ['channel', 'ai'];
@@ -113,6 +120,34 @@ export function getChatInitials(profile?: ChatUserProfile | string | null) {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+}
+
+export function getChatMessageSenderLabel(
+  message: Pick<ChatMessage, 'kind' | 'metadata' | 'sender'>,
+  fallback: { assistant: string; external: string; unknown: string }
+) {
+  if (message.sender?.displayName) return message.sender.displayName;
+  if (message.kind === 'assistant') return fallback.assistant;
+
+  const externalSender = message.metadata?.externalSender;
+  if (isRecord(externalSender)) {
+    const displayName = readNonEmptyString(
+      externalSender.displayName ?? externalSender.name
+    );
+    if (displayName) return displayName;
+  }
+
+  return message.metadata?.externalChat === true
+    ? fallback.external
+    : fallback.unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 export function getConversationTitle(

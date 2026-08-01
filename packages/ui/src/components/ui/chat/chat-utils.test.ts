@@ -6,6 +6,7 @@ import {
   formatFileSize,
   getChatConversationTypesForScope,
   getChatInitials,
+  getChatMessageSenderLabel,
   getChatSelectionStorageKey,
   getConversationTitle,
   getLastMessagePreview,
@@ -187,7 +188,13 @@ describe('chat utils', () => {
       type: 'channel',
     });
     const ai = conversation({ id: 'ai-1', type: 'ai' });
+    const external = conversation({
+      id: 'external-1',
+      metadata: { externalChat: true },
+      type: 'channel',
+    });
 
+    expect(normalizeChatConversationScope('external')).toBe('external');
     expect(normalizeChatConversationScope('workspaces')).toBe('workspaces');
     expect(normalizeChatConversationScope('unknown')).toBe('personal');
     expect(getChatConversationTypesForScope('personal')).toEqual([
@@ -200,6 +207,7 @@ describe('chat utils', () => {
       'channel',
       'ai',
     ]);
+    expect(getChatConversationTypesForScope('external')).toEqual(['channel']);
     expect(
       filterChatConversationsByScope(
         [direct, group, channel, ai],
@@ -250,6 +258,42 @@ describe('chat utils', () => {
         'workspaces'
       ).map((item) => item.id)
     ).toEqual(['channel-1', 'ai-1', 'agent-thread-1']);
+    expect(
+      filterChatConversationsByScope(
+        [direct, channel, external],
+        'external'
+      ).map((item) => item.id)
+    ).toEqual(['external-1']);
+  });
+
+  it('uses dynamic external sender metadata when no native sender exists', () => {
+    const fallback = {
+      assistant: 'Assistant',
+      external: 'Website visitor',
+      unknown: 'Unknown sender',
+    };
+
+    expect(
+      getChatMessageSenderLabel(
+        {
+          ...baseMessage,
+          metadata: {
+            externalChat: true,
+            externalSender: { displayName: 'Visitor 42' },
+          },
+        },
+        fallback
+      )
+    ).toBe('Visitor 42');
+    expect(
+      getChatMessageSenderLabel(
+        { ...baseMessage, metadata: { externalChat: true } },
+        fallback
+      )
+    ).toBe('Website visitor');
+    expect(getChatMessageSenderLabel(baseMessage, fallback)).toBe(
+      'Unknown sender'
+    );
   });
 
   it('resolves workspace chat selection from requested, stored, then first conversation', () => {

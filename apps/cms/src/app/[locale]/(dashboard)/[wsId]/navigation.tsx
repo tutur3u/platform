@@ -4,6 +4,7 @@ import {
   Gamepad2,
   ImageIcon,
   LayoutDashboard,
+  MessageSquare,
   Package,
   PenSquare,
   ShieldUser,
@@ -16,6 +17,7 @@ import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { getCmsGamesEnabled } from '@/lib/cms-games';
+import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
@@ -31,6 +33,12 @@ export async function getNavigationLinks({
   const cmsGamesEnabled = isInternalWorkspace
     ? false
     : await getCmsGamesEnabled(workspaceId);
+  const access = isInternalWorkspace
+    ? null
+    : await getCmsWorkspaceAccess(workspaceId);
+  const connectedChatEnabled = Boolean(
+    access?.binding?.canonical_project?.allowed_features.includes('chat')
+  );
 
   if (isInternalWorkspace) {
     return [
@@ -98,6 +106,14 @@ export async function getNavigationLinks({
           href: `/${personalOrWsId}/games`,
           icon: <Gamepad2 className="h-4 w-4" />,
           aliases: [`/${personalOrWsId}/games`],
+        }
+      : null,
+    connectedChatEnabled
+      ? {
+          title: t('connected-chat.navigation'),
+          href: `/${personalOrWsId}/chat`,
+          icon: <MessageSquare className="h-4 w-4" />,
+          aliases: [`/${personalOrWsId}/chat`, `/${personalOrWsId}/chat/inbox`],
         }
       : null,
     {

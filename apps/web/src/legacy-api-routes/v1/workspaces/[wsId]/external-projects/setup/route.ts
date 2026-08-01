@@ -1,4 +1,7 @@
-import type { ExternalProjectSyncSchema } from '@tuturuuu/types';
+import type {
+  ExternalProjectSyncManifest,
+  ExternalProjectSyncSchema,
+} from '@tuturuuu/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -23,6 +26,7 @@ const setupRequestSchema = z
     adapter: syncManifestSchema.shape.adapter.optional(),
     manifest: syncManifestSchema.optional(),
     schema: syncManifestSchema.shape.schema.optional(),
+    template: syncManifestSchema.shape.template.optional(),
   })
   .refine((value) => value.adapter || value.manifest, {
     message: 'adapter or manifest is required',
@@ -62,6 +66,9 @@ async function setupExternalProjectStudio(
       adapter,
       admin: access.admin,
       schema,
+      template: (payload.template ?? manifest?.template) as
+        | ExternalProjectSyncManifest['template']
+        | undefined,
       workspaceId: access.normalizedWorkspaceId,
     });
 

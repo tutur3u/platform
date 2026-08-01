@@ -301,15 +301,17 @@ function ChatHeaderActions({
           wsId={wsId}
         />
       ) : null}
-      <Button
-        aria-label={t('new_conversation')}
-        className="h-9 w-9 shrink-0"
-        onClick={onCreate}
-        size="icon"
-        type="button"
-      >
-        <Plus className="size-4" />
-      </Button>
+      {conversationScope === 'external' ? null : (
+        <Button
+          aria-label={t('new_conversation')}
+          className="h-9 w-9 shrink-0"
+          onClick={onCreate}
+          size="icon"
+          type="button"
+        >
+          <Plus className="size-4" />
+        </Button>
+      )}
     </div>
   );
 }

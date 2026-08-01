@@ -8,6 +8,11 @@ updatedAt: '2026-06-21'
 
 Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 
+New CMS-backed sites should use the global `cms_site` v1 contract. Add
+site-specific structure through template and collection metadata instead of a
+new adapter unless the integration has genuinely different authentication or
+runtime behavior.
+
 - `apps/cms` owns the CMS authoring UI, workspace picker, overview/content/preview/members routes, and the root `/{wsId}/projects` linking console (reached as `/internal/projects` for the root workspace).
 - `apps/web` remains the only backend/API owner for CMS and external-project traffic.
 - `apps/cms` rewrites `/api/*` to `apps/web`, so proxy behavior and bot protection stay centralized.

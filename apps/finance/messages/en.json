@@ -1845,6 +1845,7 @@
     "empty_directory": "No people found",
     "empty_messages_description": "Messages and attachments will appear here.",
     "empty_messages_title": "No messages yet",
+    "external_sender": "Website visitor",
     "files": "Files",
     "filter_conversations": "Filter conversations",
     "friend_email_placeholder": "friend@example.com",

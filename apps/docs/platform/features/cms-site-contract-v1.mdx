@@ -1,0 +1,64 @@
+---
+title: 'CMS Site Contract v1'
+description: 'The default reusable content and delivery contract for CMS-backed sites.'
+updatedAt: '2026-08-01'
+---
+
+## Purpose
+
+Use `cms_site` for new CMS-backed websites. It is the global version 1 site
+contract, not a project-specific implementation. Existing dedicated adapters
+remain supported, but new site differences should normally be represented by
+template metadata and collection schema/profile metadata.
+
+Backend routes and database objects retain their existing `external-project*`
+names for compatibility. Normal CMS UI should use editor-facing site and
+content language.
+
+## Standard Collections
+
+The v1 contract starts with `site-settings`, `navigation`, `pages`, `posts`,
+`taxonomies`, `landing-sections`, and `redirects`. Apps may add fields and
+collections through the manifest schema without creating another adapter.
+
+The optional `template` object is versioned independently:
+
+```json
+{
+  "kind": "wordpress-replacement",
+  "version": 1,
+  "editor": {},
+  "publicDelivery": {}
+}
+```
+
+Template metadata is persisted in the canonical project's delivery profile and
+metadata. It is returned in sync snapshots and public delivery, but it does not
+create content diff operations or destructive changes.
+
+## Public Consumption
+
+The Tuturuuu SDK exports `buildCmsSiteManifest` and
+`normalizeCmsSiteDelivery`. The builder creates the standard schema. The
+delivery normalizer indexes collections by slug and resolves relative asset
+URLs against the public platform origin supplied by the consumer.
+
+Public sites should consume read-only delivery and keep a static fallback for
+availability during migration. Do not place site control secrets in public
+runtime configuration.
+
+## Migration Safety
+
+Keep the existing site, administration routes, and realtime endpoints
+authoritative while mirroring is introduced. Validate imports, reverse replies,
+idempotency, retry after platform outage, and health checks on preview or local
+canaries first.
+
+Production authority or routing must not switch until the operator explicitly
+approves cutover after deployed verification. A healthy bridge is a prerequisite,
+not cutover approval. Rollback must restore direct legacy routing without a
+database migration.
+
+Visitor context such as route history or network information belongs in
+access-controlled dynamic JSON metadata. Do not add fixed columns that reveal
+or imply a particular category of confidential data.

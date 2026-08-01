@@ -42,6 +42,19 @@ export function getChatConversationSections({
   scope?: ChatConversationScope;
   sourceLabels?: ChatConversationSourceLabels;
 }): ChatConversationSection[] {
+  if (scope === 'external') {
+    return [
+      createChatConversationSection({
+        conversations: conversations.filter(
+          (conversation) => conversation.type === 'channel'
+        ),
+        label: labels.channel,
+        sectionType: 'channel',
+        sourceLabels,
+      }),
+    ];
+  }
+
   if (scope === 'workspaces') {
     return [
       createChatConversationSection({
@@ -175,6 +188,13 @@ function getChatConversationSourceGroup(
   labels: ChatConversationSourceLabels
 ): Omit<ChatConversationSourceGroup, 'conversations'> | null {
   const metadata = conversation.metadata ?? {};
+
+  if (metadata.externalChat === true) {
+    return {
+      id: 'external:connected-sites',
+      label: labels.external,
+    };
+  }
 
   if (metadata.source !== 'ai-agent-external-thread') return null;
 

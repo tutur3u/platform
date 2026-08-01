@@ -11,6 +11,56 @@ servers:
   - url: http://localhost:7820
     description: Local backend runtime
 paths:
+  /api/v1/workspaces/{wsId}/chat/conversations/{conversationId}/messages:
+    get:
+      summary: List chat conversation messages
+      description: Migrated read path for native conversations, AI chats, and external AI-agent threads. POST remains on the live Next.js route and falls through from Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 60
+        - name: before
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Conversation messages in legacy-compatible order and shape.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [messages]
+                properties:
+                  messages:
+                    type: array
+                    items: {}
+        "401":
+          description: The caller is not authenticated.
+        "403":
+          description: The caller cannot view workspace chat.
+        "404":
+          description: The requested AI chat or external thread was not found.
+        "500":
+          description: Messages could not be loaded.
   /api/auth/me:
     get:
       summary: Legacy-compatible current Supabase user

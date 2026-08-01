@@ -118,4 +118,49 @@ describe('external project setup route', () => {
       createdCanonicalProject: true,
     });
   });
+
+  it('accepts the global CMS site contract and forwards template metadata', async () => {
+    accessMocks.requireWorkspaceExternalProjectSetupAccess.mockResolvedValue({
+      admin: { from: vi.fn() },
+      normalizedWorkspaceId: 'ws_123',
+      ok: true,
+      user: { id: 'user_123' },
+    });
+    accessMocks.ensureWorkspaceExternalProjectStudio.mockResolvedValue({
+      binding: {
+        adapter: 'cms_site',
+        canonical_id: 'cms_site-main',
+        canonical_project: null,
+        enabled: true,
+        workspace_id: 'ws_123',
+      },
+      createdBinding: true,
+      createdCanonicalProject: true,
+    });
+
+    const template = { kind: 'wordpress-replacement', version: 1 } as const;
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws_123/external-projects/setup',
+        {
+          body: JSON.stringify({
+            adapter: 'cms_site',
+            template,
+          }),
+          method: 'POST',
+        }
+      ) as never,
+      { params: Promise.resolve({ wsId: 'ws_123' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(
+      accessMocks.ensureWorkspaceExternalProjectStudio
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adapter: 'cms_site',
+        template,
+      })
+    );
+  });
 });

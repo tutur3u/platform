@@ -662,6 +662,28 @@ export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
   ExternalProjectAdapterFixture
 > = {
+  cms_site: {
+    adapter: 'cms_site',
+    collections: (
+      [
+        ['site-settings', 'Site settings', 'settings'],
+        ['navigation', 'Navigation', 'navigation'],
+        ['pages', 'Pages', 'page'],
+        ['posts', 'Posts', 'post'],
+        ['taxonomies', 'Taxonomies', 'taxonomy'],
+        ['landing-sections', 'Landing sections', 'section'],
+        ['redirects', 'Redirects', 'redirect'],
+      ] as const
+    ).map(([slug, title, collectionType]) => ({
+      collectionType,
+      entries: [],
+      slug,
+      sourceId: `cms-site:${slug}`,
+      title,
+    })),
+    profileData: {},
+    sourceReference: 'CMS site contract v1',
+  },
   junly: {
     adapter: 'junly',
     sourceReference: '../junly/components/launcher/content-data.ts',

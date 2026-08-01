@@ -1,5 +1,34 @@
 {
   "routes": {
+    "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-authenticated external chat ingest remains on the live Next.js backend while its private RPC and secret-verification contract are prepared for Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/external-chat/config:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/config/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Workspace external chat readiness and non-secret settings remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/external-chat/credentials:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/credentials/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-scoped secret rotation and masked credential state remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "The existing Rust GET handler remains behaviorally unchanged after the Next.js source route moved out of the legacy wrapper tree."
+        },
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies to the configured bridge before native persistence."
+        }
+      }
+    },
     "api:/api/workspaces/:wsId:apps/web/src/legacy-api-routes/workspaces/[wsId]/route.ts": {
       "methods": {
         "PUT": {
