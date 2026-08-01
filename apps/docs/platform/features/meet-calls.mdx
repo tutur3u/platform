@@ -99,8 +99,12 @@ Crockford omits, folding them onto the digits the sender meant.
 
 A code is a convenience for sharing **inside a workspace**, not a bypass:
 `/join/<code>` still resolves workspace membership and redirects non-members
-away. Anonymous guest links are not implemented — the join token requires a
-user id, so that needs an auth decision first.
+away.
+
+**Every participant must be signed in.** There are no anonymous guest links and
+none are planned, so a code always resolves against a real Tuturuuu user and a
+workspace membership. The lobby (`admission: 'lobby'`) stays in the protocol for
+future use, but today every workspace member joins with `admission: 'open'`.
 
 ## Recording
 
@@ -111,6 +115,25 @@ broadcasts `recording.state` so every participant sees the indicator.
 
 Because it reuses those endpoints, a call recording is indistinguishable from
 one started on the meeting page and feeds the same transcription pipeline.
+
+## Why the Next app stays on Vercel
+
+Only the **realtime server** runs on Cloudflare Workers. `apps/meet` itself
+stays on Vercel, deliberately.
+
+Media never traverses the Next app: the browser talks to the Cloudflare SFU
+directly, and signaling goes to the room server. Moving the Next app to Workers
+would therefore not shorten the media path by a single hop.
+
+It is also not currently possible. `@opennextjs/cloudflare` requires Next
+`>=16.2.11`, and the monorepo is on the `16.3.0-preview` line, which npm semver
+ranges exclude. Pinning `apps/meet` alone to 16.2.12 was tried and rejected:
+16.2's `cacheComponents` is stricter than the preview, and both Meet Together
+routes fail to prerender with `Uncached data was accessed outside of
+<Suspense>`. Fixing that means changing `@tuturuuu/ui/legacy/meet/*`, which
+other apps share.
+
+Revisit when the monorepo moves to a stable Next 16 line.
 
 ## Deploying the Worker
 
