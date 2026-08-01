@@ -255,7 +255,10 @@ describe('native AI chat message route', () => {
     mocks.cancelExternalChatReply.mockResolvedValue(undefined);
     mocks.reserveExternalChatReply.mockResolvedValue(null);
     mocks.deliverExternalChatReplyIfBound.mockResolvedValue(null);
-    mocks.finalizeExternalChatReply.mockResolvedValue(userMessage);
+    mocks.finalizeExternalChatReply.mockResolvedValue({
+      message: userMessage,
+      replayed: false,
+    });
     mocks.markExternalChatReplyDelivered.mockResolvedValue(undefined);
     mocks.aiRouteBodies.length = 0;
     mocks.auth.supabase = createSupabaseMock();
@@ -480,6 +483,39 @@ describe('native AI chat message route', () => {
     expect(mocks.deliverExternalChatReplyIfBound).toHaveBeenCalledWith(
       expect.objectContaining({ configurationRevision: 3 })
     );
+  });
+
+  it('does not repeat realtime or notification side effects for a finalized replay', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
+    mocks.reserveExternalChatReply.mockResolvedValue({
+      configurationRevision: 3,
+      delivered: true,
+      deliveryId: 'delivery-1',
+      idempotencyKey: 'idempotency-1',
+      messageId: 'message-1',
+      threadId: 'thread-1',
+    });
+    mocks.finalizeExternalChatReply.mockResolvedValue({
+      message: userMessage,
+      replayed: true,
+    });
+    mocks.callPrivateChatRpc.mockResolvedValue({
+      ...conversation,
+      type: 'channel',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.deliverExternalChatReplyIfBound).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
   it('fails closed when an external reservation unexpectedly returns null', async () => {

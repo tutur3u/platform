@@ -64,33 +64,29 @@ export const POST = withSessionAuth<Params>(
     if (!current) {
       return NextResponse.json({ error: 'Binding not found' }, { status: 404 });
     }
-    try {
-      current = await reconcilePendingCredential(wsId, current);
-    } catch {
-      return NextResponse.json(
-        {
-          error: 'External chat bridge credential reconciliation failed',
-          state: serializeExternalChatBinding(current),
-        },
-        { status: 502 }
-      );
-    }
     if (
       parsed.data.action === 'clear_ingest' ||
       parsed.data.action === 'clear_control'
     ) {
-      if (
+      const paired = Boolean(
         current.credentials?.verified_at ||
-        current.credentials?.pairing_ticket_consumed_at
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              'Paired bridge credentials must be revoked remotely before they can be cleared',
-            state: serializeExternalChatBinding(current),
-          },
-          { status: 409 }
-        );
+          current.credentials?.pairing_ticket_consumed_at
+      );
+      if (paired) {
+        try {
+          await updateExternalChatBridgeCredential({
+            action: parsed.data.action,
+            wsId,
+          });
+        } catch {
+          return NextResponse.json(
+            {
+              error: 'External chat bridge credential revocation failed',
+              state: serializeExternalChatBinding(current),
+            },
+            { status: 502 }
+          );
+        }
       }
       await clearExternalChatCredential(
         wsId,
@@ -101,6 +97,17 @@ export const POST = withSessionAuth<Params>(
           await readExternalChatBinding(wsId)
         ),
       });
+    }
+    try {
+      current = await reconcilePendingCredential(wsId, current);
+    } catch {
+      return NextResponse.json(
+        {
+          error: 'External chat bridge credential reconciliation failed',
+          state: serializeExternalChatBinding(current),
+        },
+        { status: 502 }
+      );
     }
     let issuedSecret: string | undefined;
     if (parsed.data.action === 'rotate_ingest') {

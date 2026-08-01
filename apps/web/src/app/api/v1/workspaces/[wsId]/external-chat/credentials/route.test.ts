@@ -94,6 +94,7 @@ describe('external chat credential verification', () => {
     mocks.serializeExternalChatBinding.mockReturnValue({
       readiness: { errors: [], ready: true },
     });
+    mocks.updateExternalChatBridgeCredential.mockResolvedValue(undefined);
     mocks.verifyExternalChatControl.mockResolvedValue(undefined);
   });
 
@@ -228,7 +229,7 @@ describe('external chat credential verification', () => {
     expect(mocks.markExternalChatCredentialVerified).not.toHaveBeenCalled();
   });
 
-  it('reconciles pending rotation before clearing an unpaired credential', async () => {
+  it('discards a matching pending rotation when clearing an unpaired credential', async () => {
     const pendingState = {
       binding: {},
       credentials: {
@@ -238,7 +239,7 @@ describe('external chat credential verification', () => {
         pending_secret_encrypted: 'encrypted-pending',
       },
     };
-    const reconciledState = {
+    const clearedState = {
       binding: {},
       credentials: {
         configuration_revision: 4,
@@ -249,9 +250,7 @@ describe('external chat credential verification', () => {
     };
     mocks.readExternalChatBinding
       .mockResolvedValueOnce(pendingState)
-      .mockResolvedValueOnce(pendingState)
-      .mockResolvedValueOnce(reconciledState)
-      .mockResolvedValueOnce(reconciledState);
+      .mockResolvedValueOnce(clearedState);
 
     const { POST } = await import('./route');
     const response = await POST(request({ action: 'clear_ingest' }) as never, {
@@ -259,14 +258,14 @@ describe('external chat credential verification', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.promoteExternalChatCredential).toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(mocks.clearExternalChatCredential).toHaveBeenCalledWith(
       'workspace-1',
       'ingest'
     );
   });
 
-  it('refuses to imply remote revocation for paired credentials', async () => {
+  it('revokes paired credentials remotely before clearing local state', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
@@ -281,8 +280,38 @@ describe('external chat credential verification', () => {
       params: Promise.resolve({ wsId: 'workspace-1' }),
     });
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
+      action: 'clear_control',
+      wsId: 'workspace-1',
+    });
+    expect(mocks.clearExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'control'
+    );
+  });
+
+  it('keeps local credentials when remote revocation fails', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'encrypted-control',
+        verified_at: '2026-08-01T00:00:00.000Z',
+      },
+    });
+    mocks.updateExternalChatBridgeCredential.mockRejectedValue(
+      new Error('bridge unavailable')
+    );
+
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'clear_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(502);
     expect(mocks.clearExternalChatCredential).not.toHaveBeenCalled();
+    expect(await response.text()).not.toContain('bridge unavailable');
   });
 
   it('returns a masked conflict when promotion loses its compare-and-swap', async () => {

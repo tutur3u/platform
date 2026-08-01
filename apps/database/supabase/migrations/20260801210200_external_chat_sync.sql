@@ -390,19 +390,33 @@ begin
     raise exception 'external_chat_delivery_in_progress';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'credential'), 0));
-  if exists (
-    select 1 from private.external_chat_binding_credentials
-    where ws_id = p_ws_id and pending_action is not null
-  ) then
-    raise exception 'external_chat_credential_reconciliation_pending';
-  end if;
   update private.external_chat_binding_credentials
-  set ingest_secret_hash = case when p_kind = 'ingest' then null else ingest_secret_hash end,
-      ingest_secret_last_four = case when p_kind = 'ingest' then null else ingest_secret_last_four end,
-      ingest_secret_rotated_at = case when p_kind = 'ingest' then null else ingest_secret_rotated_at end,
+  set ingest_secret_hash = case when p_kind in ('control', 'ingest') then null else ingest_secret_hash end,
+      ingest_secret_last_four = case when p_kind in ('control', 'ingest') then null else ingest_secret_last_four end,
+      ingest_secret_rotated_at = case when p_kind in ('control', 'ingest') then null else ingest_secret_rotated_at end,
       control_secret_encrypted = case when p_kind = 'control' then null else control_secret_encrypted end,
       control_secret_last_four = case when p_kind = 'control' then null else control_secret_last_four end,
       control_secret_rotated_at = case when p_kind = 'control' then null else control_secret_rotated_at end,
+      pending_action = case
+        when p_kind = 'control' or pending_action = 'set_ingest' then null
+        else pending_action
+      end,
+      pending_secret_encrypted = case
+        when p_kind = 'control' or pending_action = 'set_ingest' then null
+        else pending_secret_encrypted
+      end,
+      pending_secret_hash = case
+        when p_kind = 'control' or pending_action = 'set_ingest' then null
+        else pending_secret_hash
+      end,
+      pending_secret_last_four = case
+        when p_kind = 'control' or pending_action = 'set_ingest' then null
+        else pending_secret_last_four
+      end,
+      pending_created_at = case
+        when p_kind = 'control' or pending_action = 'set_ingest' then null
+        else pending_created_at
+      end,
       configuration_revision = configuration_revision + 1,
       verified_at = null,
       verified_revision = null
@@ -564,7 +578,10 @@ begin
           own_member.pinned_at,
           coalesce(latest.latest_at, c.updated_at) as latest_at,
           c.created_at
-        from private.chat_conversations c
+        from private.external_chat_threads external_thread
+        join private.chat_conversations c
+          on c.id = external_thread.conversation_id
+          and external_thread.ws_id = p_ws_id
         left join private.chat_conversation_members own_member
           on own_member.conversation_id = c.id
           and own_member.user_id = p_actor_user_id
@@ -574,8 +591,7 @@ begin
           where m.conversation_id = c.id
             and m.deleted_at is null
         ) latest on true
-        where c.metadata @> '{"externalChat":true}'::jsonb
-          and private.chat_can_address_conversation_workspace(
+        where private.chat_can_address_conversation_workspace(
             p_ws_id,
             c.ws_id,
             c.type,
@@ -731,6 +747,11 @@ begin
     where id = v_thread.id;
   end if;
 
+  update private.chat_conversations
+  set archived_at = null,
+      updated_at = greatest(updated_at, coalesce(p_occurred_at, now()))
+  where id = v_thread.conversation_id;
+
   if p_mapped_user_id is not null and exists (
     select 1 from public.workspace_members wm
     where wm.ws_id = p_ws_id and wm.user_id = p_mapped_user_id
@@ -771,11 +792,6 @@ begin
     v_message_id, p_direction, coalesce(p_message_metadata, '{}'::jsonb),
     coalesce(p_occurred_at, now())
   );
-
-  update private.chat_conversations
-  set updated_at = greatest(updated_at, coalesce(p_occurred_at, now()))
-  where id = v_thread.conversation_id
-    and coalesce(p_occurred_at, now()) > updated_at;
 
   return jsonb_build_object(
     'conversation', private.chat_conversation_json(v_thread.conversation_id, p_mapped_user_id),
@@ -1029,7 +1045,10 @@ begin
     raise exception 'external_chat_idempotency_payload_mismatch';
   end if;
   if v_delivery.message_id is not null then
-    return (select private.chat_message_json(m) from private.chat_messages m where m.id = v_delivery.message_id);
+    return jsonb_build_object(
+      'message', (select private.chat_message_json(m) from private.chat_messages m where m.id = v_delivery.message_id),
+      'replayed', true
+    );
   end if;
   if v_delivery.delivered_at is null then raise exception 'external_chat_delivery_unconfirmed'; end if;
 
@@ -1054,10 +1073,13 @@ begin
     update private.external_chat_outbound_deliveries
     set message_id = v_existing_message.id, completed_at = now()
     where id = v_delivery.id;
-    return (
-      select private.chat_message_json(m)
-      from private.chat_messages m
-      where m.id = v_existing_message.id
+    return jsonb_build_object(
+      'message', (
+        select private.chat_message_json(m)
+        from private.chat_messages m
+        where m.id = v_existing_message.id
+      ),
+      'replayed', false
     );
   end if;
 
@@ -1074,7 +1096,7 @@ begin
   from private.external_chat_threads t where t.id = v_delivery.thread_id;
   update private.external_chat_outbound_deliveries
   set message_id = v_message_id, completed_at = now() where id = v_delivery.id;
-  return v_message;
+  return jsonb_build_object('message', v_message, 'replayed', false);
 end;
 $$;
 

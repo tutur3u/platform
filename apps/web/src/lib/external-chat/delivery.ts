@@ -198,24 +198,29 @@ export async function updateExternalChatBridgeCredential({
   signingCiphertext,
   wsId,
 }: {
-  action: 'rotate_control' | 'set_ingest';
-  secret: string;
+  action: 'clear_control' | 'clear_ingest' | 'rotate_control' | 'set_ingest';
+  secret?: string;
   signingCiphertext?: string;
   wsId: string;
 }) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
+  const isClear = action === 'clear_control' || action === 'clear_ingest';
   if (
-    !state?.binding.is_enabled ||
-    !isExternalChatEnabled(state.binding.settings) ||
     !ciphertext ||
-    !bridgeBaseUrl
+    !bridgeBaseUrl ||
+    (!isClear &&
+      (!state?.binding.is_enabled ||
+        !isExternalChatEnabled(state.binding.settings)))
   ) {
     throw new Error('External chat bridge is not paired');
   }
 
-  const body = JSON.stringify({ action, secret: nextSecret });
+  const body = JSON.stringify({
+    action,
+    ...(nextSecret ? { secret: nextSecret } : {}),
+  });
   const secret = await decryptControlSecret(
     wsId,
     signingCiphertext ?? ciphertext
@@ -402,7 +407,7 @@ export async function finalizeExternalChatReply({
     }
   );
   if (error) throw error;
-  return data as ChatMessage;
+  return data as { message: ChatMessage; replayed: boolean };
 }
 
 function createExternalChatReplyPayloadHash({

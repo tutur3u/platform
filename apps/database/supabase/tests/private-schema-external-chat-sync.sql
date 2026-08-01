@@ -1,5 +1,5 @@
 begin;
-select plan(69);
+select plan(75);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -279,6 +279,56 @@ select is(
   'duplicate import creates one native message'
 );
 
+create temporary table external_chat_forged_conversation (id uuid primary key);
+insert into external_chat_forged_conversation
+select (private.chat_create_conversation(
+  c.ws_id,
+  c.actor_id,
+  '{"type":"channel","title":"Forged external metadata","metadata":{"externalChat":true}}'::jsonb
+)->>'id')::uuid
+from external_chat_test_context c;
+select ok(
+  not exists (
+    select 1
+    from jsonb_array_elements(private.external_chat_list_conversations(
+      (select ws_id from external_chat_test_context),
+      (select actor_id from external_chat_test_context),
+      'active',
+      41,
+      0
+    )) item
+    where item->>'id' = (select id::text from external_chat_forged_conversation)
+  ),
+  'external inbox membership requires a bound external thread'
+);
+
+update private.chat_conversations
+set archived_at = now()
+where id = (
+  select (result->>'conversationId')::uuid
+  from external_chat_test_results
+  where attempt = 1
+);
+insert into external_chat_test_results
+select 3, private.external_chat_import_event(
+  ws_id, 'test-connector', 'agent-1', 'visitor-1', 'message-2',
+  'visitor', 'reopened', now(), 2, '{"displayName":"Test visitor"}',
+  '{}'::jsonb
+)
+from external_chat_test_context;
+select is(
+  (
+    select archived_at from private.chat_conversations
+    where id = (
+      select (result->>'conversationId')::uuid
+      from external_chat_test_results
+      where attempt = 1
+    )
+  ),
+  null,
+  'new inbound activity reopens an archived external conversation'
+);
+
 select ok(
   private.external_chat_mark_verified(
     (select ws_id from external_chat_test_context), 'ciphertext', 2
@@ -405,9 +455,12 @@ select private.external_chat_import_event(
 )
 from external_chat_test_context c
 cross join external_chat_delivery_results d;
-create temporary table external_chat_finalize_results (result jsonb not null);
+create temporary table external_chat_finalize_results (
+  attempt integer primary key,
+  result jsonb not null
+);
 insert into external_chat_finalize_results
-select private.external_chat_finalize_reply(
+select 1, private.external_chat_finalize_reply(
   c.ws_id,
   (d.result->>'deliveryId')::uuid,
   c.actor_id,
@@ -418,9 +471,30 @@ select private.external_chat_finalize_reply(
 from external_chat_test_context c
 cross join external_chat_delivery_results d;
 select is(
-  (select result->>'id' from external_chat_finalize_results),
+  (select result #>> '{message,id}' from external_chat_finalize_results where attempt = 1),
   (select result->>'messageId' from external_chat_echo_results),
   'finalization reconciles the bridge echo instead of creating another message'
+);
+select is(
+  (select result->>'replayed' from external_chat_finalize_results where attempt = 1),
+  'false',
+  'first finalization identifies newly completed persistence'
+);
+insert into external_chat_finalize_results
+select 2, private.external_chat_finalize_reply(
+  c.ws_id,
+  (d.result->>'deliveryId')::uuid,
+  c.actor_id,
+  'reply',
+  repeat('e', 64),
+  null
+)
+from external_chat_test_context c
+cross join external_chat_delivery_results d;
+select is(
+  (select result->>'replayed' from external_chat_finalize_results where attempt = 2),
+  'true',
+  'a repeated finalization is marked so notification side effects can be suppressed'
 );
 select is(
   (
@@ -429,6 +503,30 @@ select is(
   ),
   (select result->>'messageId' from external_chat_echo_results),
   'the delivery is completed with the echoed native message'
+);
+
+select lives_ok(
+  format(
+    $$select private.external_chat_stage_credential(%L, 'set_ingest', 'pending-ingest', %L, 'last')$$,
+    (select ws_id from external_chat_test_context),
+    repeat('f', 64)
+  ),
+  'an ingest rotation can be pending before full credential revocation'
+);
+select private.external_chat_clear_credential(
+  (select ws_id from external_chat_test_context),
+  'control'
+);
+select is(
+  (
+    select control_secret_encrypted is null
+      and ingest_secret_hash is null
+      and pending_action is null
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  true,
+  'clearing control credentials atomically revokes the full pairing and pending ingest rotation'
 );
 
 select ok(

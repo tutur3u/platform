@@ -172,6 +172,16 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
+    if (parsed.data.kind !== 'user') {
+      return NextResponse.json(
+        {
+          code: 'external_message_kind_unsupported',
+          message: 'Chat replies only accept user messages.',
+        },
+        { status: 400 }
+      );
+    }
+
     if (isAiChatConversationId(params.conversationId)) {
       return sendAiChatMessage({
         attachments: parsed.data.attachments ?? [],
@@ -208,16 +218,6 @@ export const POST = withSessionAuth<RouteParams>(
       return NextResponse.json(
         { message: 'Failed to resolve chat delivery route' },
         { status: 500 }
-      );
-    }
-
-    if (externalBound && parsed.data.kind !== 'user') {
-      return NextResponse.json(
-        {
-          code: 'external_message_kind_unsupported',
-          message: 'Connected-site conversations only accept user replies.',
-        },
-        { status: 400 }
       );
     }
 
@@ -314,7 +314,7 @@ export const POST = withSessionAuth<RouteParams>(
     }
 
     try {
-      const message = externalReservation
+      const persistence = externalReservation
         ? await finalizeExternalChatReply({
             content: parsed.data.content,
             deliveryId: externalReservation.deliveryId,
@@ -322,15 +322,22 @@ export const POST = withSessionAuth<RouteParams>(
             senderId: auth.user.id,
             wsId: context.context.normalizedWsId,
           })
-        : await callPrivateChatRpc<ChatMessage>('chat_send_message', {
-            p_actor_user_id: auth.user.id,
-            p_attachments: parsed.data.attachments ?? [],
-            p_content: parsed.data.content,
-            p_conversation_id: params.conversationId,
-            p_kind: parsed.data.kind,
-            p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
-            p_ws_id: context.context.normalizedWsId,
-          });
+        : {
+            message: await callPrivateChatRpc<ChatMessage>(
+              'chat_send_message',
+              {
+                p_actor_user_id: auth.user.id,
+                p_attachments: parsed.data.attachments ?? [],
+                p_content: parsed.data.content,
+                p_conversation_id: params.conversationId,
+                p_kind: parsed.data.kind,
+                p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
+                p_ws_id: context.context.normalizedWsId,
+              }
+            ),
+            replayed: false,
+          };
+      const { message, replayed } = persistence;
       if (!message) {
         return NextResponse.json(
           { message: 'Chat conversation not found' },
@@ -368,7 +375,7 @@ export const POST = withSessionAuth<RouteParams>(
 
       const audience = getChatRealtimeAudience(conversation);
 
-      if (parsed.data.kind === 'user') {
+      if (!replayed) {
         await publishChatRealtimeEvent({
           actorUserId: auth.user.id,
           audience,
@@ -443,20 +450,9 @@ export const POST = withSessionAuth<RouteParams>(
         }
       }
 
-      if (parsed.data.kind !== 'user') {
-        await publishChatRealtimeEvent({
-          actorUserId: auth.user.id,
-          audience,
-          conversationId: message.conversationId,
-          message,
-          type: 'message.created',
-          wsId: context.context.normalizedWsId,
-        });
-      }
-
       return NextResponse.json(
         { message, messages: [message] },
-        { status: 201 }
+        { status: replayed ? 200 : 201 }
       );
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to send chat message');
