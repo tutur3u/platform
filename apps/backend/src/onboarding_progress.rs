@@ -102,9 +102,12 @@ async fn onboarding_progress_patch_response(
     if updates.get("guidance_mode").and_then(Value::as_str) == Some("employee_test")
         && !supabase_auth::is_exact_tuturuuu_dot_com_email(user.email.as_deref())
     {
-        return no_store_response(json_response(403, json!({
-            "message": "Employee test mode is restricted",
-        })));
+        return no_store_response(json_response(
+            403,
+            json!({
+                "message": "Employee test mode is restricted",
+            }),
+        ));
     }
     let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
         return unauthorized_response();
