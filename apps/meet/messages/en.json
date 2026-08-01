@@ -3773,6 +3773,7 @@
       "remove_participant": "Remove from call",
       "send": "Send",
       "share_screen": "Share screen",
+      "signaling_unreachable": "Can't reach the meeting server. It may not be running, or NEXT_PUBLIC_MEET_REALTIME_URL may be unset.",
       "start_recording": "Start recording",
       "stop_recording": "Stop recording",
       "stop_sharing": "Stop sharing",

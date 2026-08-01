@@ -77,6 +77,12 @@ export function CallShell({
   if (!joined || state.admission === 'waiting') {
     return (
       <Lobby
+        connectionError={
+          room.connectionStatus === 'closed' ||
+          room.connectionStatus === 'error'
+            ? t('signaling_unreachable')
+            : null
+        }
         defaultDisplayName={defaultDisplayName}
         isJoining={state.admission === 'connecting'}
         meetingName={meetingName}

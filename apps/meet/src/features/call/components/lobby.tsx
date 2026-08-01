@@ -1,6 +1,13 @@
 'use client';
 
-import { Loader2, Mic, MicOff, Video, VideoOff } from '@tuturuuu/icons';
+import {
+  Loader2,
+  Mic,
+  MicOff,
+  TriangleAlert,
+  Video,
+  VideoOff,
+} from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -14,6 +21,7 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function Lobby({
   defaultDisplayName,
+  connectionError,
   isJoining,
   meetingName,
   onJoin,
@@ -22,6 +30,8 @@ export function Lobby({
   defaultDisplayName: string;
   isJoining: boolean;
   meetingName: string;
+  /** Set when signaling could not be reached, so the CTA can explain itself. */
+  connectionError?: string | null;
   onJoin: (options: {
     audioEnabled: boolean;
     displayName: string;
@@ -149,6 +159,13 @@ export function Lobby({
           <p className="mt-2 text-muted-foreground text-sm">
             {waiting ? t('lobby_waiting_hint') : t('lobby_hint')}
           </p>
+
+          {connectionError ? (
+            <p className="mt-4 flex items-start gap-2 rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3 text-dynamic-red text-sm">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+              <span>{connectionError}</span>
+            </p>
+          ) : null}
 
           <div className="mt-5 space-y-2">
             <Label htmlFor="display-name">{t('your_name')}</Label>

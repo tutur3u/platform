@@ -3773,6 +3773,7 @@
       "remove_participant": "Xóa khỏi cuộc gọi",
       "send": "Gửi",
       "share_screen": "Chia sẻ màn hình",
+      "signaling_unreachable": "Không kết nối được máy chủ cuộc họp. Có thể máy chủ chưa chạy, hoặc NEXT_PUBLIC_MEET_REALTIME_URL chưa được đặt.",
       "start_recording": "Bắt đầu ghi",
       "stop_recording": "Dừng ghi",
       "stop_sharing": "Dừng chia sẻ",
