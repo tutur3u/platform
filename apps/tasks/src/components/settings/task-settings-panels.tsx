@@ -157,9 +157,7 @@ export function TaskBoardSettingsPanel({
         layoutTitle={t('ws-task-boards.layout_settings.title')}
         listCount={lists.length}
         ticketPrefix={board.ticket_prefix}
-      />
-
-      <Tabs className="space-y-5" defaultValue="setup">
+      >
         <TabsContent className="space-y-5" value="setup">
           <BoardDetailsSettings
             board={board}
@@ -206,7 +204,7 @@ export function TaskBoardSettingsPanel({
             />
           </div>
         </TabsContent>
-      </Tabs>
+      </BoardSettingsNavigation>
     </div>
   );
 }

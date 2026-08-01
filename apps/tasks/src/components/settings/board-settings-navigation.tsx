@@ -1,12 +1,14 @@
 import { LayoutGrid, Settings2 } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import { TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { ReactNode } from 'react';
 
 interface BoardSettingsNavigationProps {
   boardDescription: string;
   boardDetailsLabel: string;
   boardLayoutLabel: string;
   boardName: string | null;
+  children: ReactNode;
   layoutTitle: string;
   listCount: number;
   ticketPrefix: string | null;
@@ -17,12 +19,13 @@ export function BoardSettingsNavigation({
   boardDetailsLabel,
   boardLayoutLabel,
   boardName,
+  children,
   layoutTitle,
   listCount,
   ticketPrefix,
 }: BoardSettingsNavigationProps) {
   return (
-    <>
+    <Tabs className="space-y-5" defaultValue="setup">
       <div className="flex flex-col gap-3 rounded-2xl border bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="truncate font-semibold">{boardName}</p>
@@ -52,6 +55,7 @@ export function BoardSettingsNavigation({
           </Badge>
         </TabsTrigger>
       </TabsList>
-    </>
+      {children}
+    </Tabs>
   );
 }
