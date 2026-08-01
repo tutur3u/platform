@@ -64,14 +64,14 @@ describe('room codes', () => {
     expect(() => encodeRoomCode('not-a-uuid')).toThrow();
   });
 
-  it('builds a join URL without doubling the slash', () => {
+  it('builds a room URL without doubling the slash', () => {
     const code = encodeRoomCode(MEETING);
 
     expect(buildJoinUrl('https://meet.tuturuuu.com', MEETING)).toBe(
-      `https://meet.tuturuuu.com/join/${code}`
+      `https://meet.tuturuuu.com/r/${code}`
     );
     expect(buildJoinUrl('https://meet.tuturuuu.com/', MEETING)).toBe(
-      `https://meet.tuturuuu.com/join/${code}`
+      `https://meet.tuturuuu.com/r/${code}`
     );
   });
 

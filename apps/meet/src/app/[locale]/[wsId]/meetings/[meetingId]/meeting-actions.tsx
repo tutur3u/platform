@@ -110,7 +110,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   };
 
   const handleShareMeeting = () => {
-    const shareUrl = `${window.location.origin}/workspace/${wsId}/meetings/${meetingId}`;
+    const shareUrl = `${window.location.origin}/${wsId}/meetings/${meetingId}`;
     setShareLink(shareUrl);
     setShareDialogOpen(true);
   };

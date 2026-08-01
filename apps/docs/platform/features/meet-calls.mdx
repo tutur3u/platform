@@ -20,7 +20,7 @@ cost and CPU stay flat as a room grows.
 | Room server (Cloudflare Worker + Durable Object) | `apps/meet-realtime/src/worker.ts` |
 | Cloudflare SFU HTTPS client | `packages/realtime/src/meet/sfu.ts` |
 | Call client and UI | `apps/meet/src/features/call/` |
-| Call route (full-bleed, no sidebar) | `apps/meet/src/app/[locale]/call/[wsId]/[meetingId]` |
+| Call route (full-bleed, no sidebar) | `apps/meet/src/app/[locale]/r/[code]` |
 
 `room.ts` is a pure reducer: it returns the next room snapshot plus the messages
 to fan out and any Cloudflare work to perform. Both transports run the same
@@ -136,8 +136,7 @@ mints a new token for the retry, and stays closed when the close was intentional
 
 ## Meeting codes
 
-Every meeting has a shareable code and a `/join/<code>` link, surfaced by the
-**Copy invite** button in the call header.
+Every meeting has a shareable code and a `/r/<code>` link, surfaced by the **Copy invite** button in the call header.
 
 The code is a reversible Crockford base32 encoding of the meeting id rather
 than a stored random string, so there is no schema change, no collision risk
@@ -146,7 +145,7 @@ Decoding tolerates case, spaces, dashes, and the `I`/`L`/`O`/`U` characters
 Crockford omits, folding them onto the digits the sender meant.
 
 A code is a convenience for sharing **inside a workspace**, not a bypass:
-`/join/<code>` still resolves workspace membership and redirects non-members
+`/r/<code>` still resolves workspace membership and redirects non-members
 away.
 
 **Every participant must be signed in.** There are no anonymous guest links and
@@ -192,3 +191,22 @@ bun wrangler deploy -c apps/meet-realtime/wrangler.jsonc
 One Durable Object per room gives each room a single authority. The Bun server
 keeps rooms in an in-process map, which is only correct for a single replica —
 prefer the Worker when running more than one instance.
+
+## URL shapes
+
+Meet matches the other satellites: workspace routes sit directly under the
+workspace segment, with no `/workspace` prefix.
+
+| surface | URL |
+| --- | --- |
+| Workspace plans, meetings | `/<wsId>/plans`, `/<wsId>/meetings` |
+| A call | `/r/<code>` |
+| A public Meet Together plan | `/plans/<planId>` |
+
+`plans` and `r` are static segments, which is what frees the bare `/<wsId>`
+position — public plan pages previously occupied it, so `/<wsId>` and
+`/<planId>` could not coexist.
+
+Every retired shape is permanently redirected in `proxy.ts`:
+`/workspace/*` → `/*`, `/call/<wsId>/<meetingId>` and `/join/<code>` → `/r/<code>`,
+and a bare 32-hex segment → `/plans/<planId>`, so shared plan links keep working.

@@ -30,7 +30,7 @@ export function Structure({
   return (
     <SidebarStructure
       actions={actions}
-      appHref={`/workspace/${wsId}`}
+      appHref={`/${wsId}`}
       appId="meet"
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}

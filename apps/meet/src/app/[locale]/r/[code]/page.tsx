@@ -5,40 +5,47 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { CallShell } from '@/features/call/components/call-shell';
 import { getMeetCallSession } from '@/features/call/lib/call-session';
-import { getMeetWorkspaceContext } from '../../../workspace/[wsId]/workspace-context';
+import { decodeRoomCode } from '@/features/call/lib/room-code';
+import { getMeetWorkspaceContext } from '../../[wsId]/workspace-context';
 
 export const metadata: Metadata = {
   title: 'Call',
   description: 'Join a Tuturuuu Meet call.',
 };
 
-interface CallPageProps {
-  params: Promise<{ meetingId: string; wsId: string }>;
+interface RoomPageProps {
+  params: Promise<{ code: string }>;
 }
 
 /**
- * Deliberately outside the `workspace/` segment so the call renders full-bleed
- * with no sidebar or chrome, the way a conferencing surface should.
+ * The single entry point for a call, addressed by room code.
+ *
+ * Deliberately outside the `[wsId]` segment so the call renders full-bleed with
+ * no sidebar, and so a shared link never has to carry a workspace id: the code
+ * encodes the meeting, and the workspace is resolved from it.
  */
-export default async function CallPage({ params }: CallPageProps) {
+export default async function RoomPage({ params }: RoomPageProps) {
   await connection();
 
-  const { meetingId, wsId: rawWsId } = await params;
-  const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(rawWsId);
-  const t = await getTranslations('meet.call');
+  const { code } = await params;
+  const meetingId = decodeRoomCode(code);
+  if (!meetingId) notFound();
 
   const supabase = await createAdminClient({ noCookie: true });
   const { data: meeting } = await supabase
     .from('workspace_meetings')
     .select('id, name, creator_id, ws_id')
     .eq('id', meetingId)
-    .eq('ws_id', wsId)
     .maybeSingle();
 
   if (!meeting) notFound();
 
-  // The session user is a union: the minimal app-session branch only carries
-  // an id and an email, so the richer profile fields are read optionally.
+  const t = await getTranslations('meet.call');
+  // Enforces membership and redirects non-members away.
+  const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(
+    meeting.ws_id
+  );
+
   const profile = user as {
     display_name?: string | null;
     email?: string | null;
@@ -58,7 +65,7 @@ export default async function CallPage({ params }: CallPageProps) {
   return (
     <CallShell
       defaultDisplayName={session.displayName}
-      leaveHref={`/workspace/${workspaceSlug}/meetings/${meeting.id}`}
+      leaveHref={`/${workspaceSlug}/meetings/${meeting.id}`}
       meetingId={meeting.id}
       meetingName={meeting.name ?? t('untitled_meeting')}
       realtimeUrl={session.realtimeUrl}

@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
@@ -64,7 +65,7 @@ export default async function MeetingDetailPage({
     <div className="container mx-auto max-w-4xl p-6">
       {/* Header */}
       <div className="mb-8">
-        <Link href={`/workspace/${workspaceSlug}/meetings`}>
+        <Link href={`/${workspaceSlug}/meetings`}>
           <Button variant="ghost" className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Meetings
@@ -144,7 +145,7 @@ export default async function MeetingDetailPage({
       {/* Actions */}
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Button asChild size="lg">
-          <Link href={`/call/${workspaceSlug}/${meetingId}`}>
+          <Link href={`/r/${encodeRoomCode(meetingId)}`}>
             <Video className="mr-2 h-4 w-4" />
             {t('join_call')}
           </Link>

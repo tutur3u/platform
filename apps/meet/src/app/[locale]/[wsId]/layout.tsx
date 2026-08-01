@@ -37,7 +37,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       <SatelliteWorkspaceInvitationCard
         afterDeclineHref="/"
         invitation={invitation}
-        workspaceHref={`/workspace/${invitation.workspace.id}`}
+        workspaceHref={`/${invitation.workspace.id}`}
       />
     );
   }

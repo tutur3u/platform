@@ -208,7 +208,7 @@ export function MeetingsContent({
   }, [editDialogOpen, editingMeeting]);
 
   const handleJoinMeeting = (meetingId: string) => {
-    router.push(`/workspace/${wsId}/meetings/${meetingId}`);
+    router.push(`/${wsId}/meetings/${meetingId}`);
   };
 
   if (error) {

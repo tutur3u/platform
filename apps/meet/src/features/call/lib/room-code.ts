@@ -113,5 +113,5 @@ export function decodeRoomCode(code: string): string | null {
 }
 
 export function buildJoinUrl(origin: string, meetingId: string) {
-  return `${origin.replace(/\/+$/u, '')}/join/${encodeRoomCode(meetingId)}`;
+  return `${origin.replace(/\/+$/u, '')}/r/${encodeRoomCode(meetingId)}`;
 }

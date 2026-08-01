@@ -10,7 +10,7 @@ export async function getNavigationLinks({
   workspaceSlug: string;
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
-  const baseHref = `/workspace/${workspaceSlug}`;
+  const baseHref = `/${workspaceSlug}`;
 
   return [
     {

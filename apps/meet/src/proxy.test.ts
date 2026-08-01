@@ -161,7 +161,7 @@ describe('Meet proxy auth handoff', () => {
     expect(options?.isPublicPath?.('/0123456789abcdef0123456789abcdef')).toBe(
       true
     );
-    expect(options?.isPublicPath?.('/workspace/personal/plans')).toBe(false);
+    expect(options?.isPublicPath?.('/personal/plans')).toBe(false);
   });
 
   it('consumes verify-token requests before centralized auth redirects', async () => {
@@ -196,7 +196,7 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/workspace/team-workspace/plans'
+      'https://meet.tuturuuu.localhost/team-workspace/plans'
     );
     expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
       headers: request.headers,
@@ -215,7 +215,7 @@ describe('Meet proxy auth handoff', () => {
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/workspace/team-workspace/plans'
+      'https://meet.tuturuuu.localhost/team-workspace/plans'
     );
     expect(mocks.getCurrentUserDefaultWorkspace).toHaveBeenCalledWith({
       headers: request.headers,
@@ -225,20 +225,18 @@ describe('Meet proxy auth handoff', () => {
   it('redirects authenticated login requests back to the normalized next path', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue({ sub: 'user-id' });
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(true);
-    mocks.normalizeAuthRedirectPath.mockReturnValue(
-      '/workspace/personal/plans'
-    );
+    mocks.normalizeAuthRedirectPath.mockReturnValue('/personal/plans');
 
     const request = new NextRequest(
-      'https://meet.tuturuuu.localhost/login?nextUrl=%2Fworkspace%2Fpersonal%2Fplans'
+      'https://meet.tuturuuu.localhost/login?nextUrl=%2Fpersonal%2Fplans'
     );
     const response = await proxy(request);
 
     expect(response.headers.get('Location')).toBe(
-      'https://meet.tuturuuu.localhost/workspace/personal/plans'
+      'https://meet.tuturuuu.localhost/personal/plans'
     );
     expect(mocks.normalizeAuthRedirectPath).toHaveBeenCalledWith(
-      '/workspace/personal/plans',
+      '/personal/plans',
       'https://meet.tuturuuu.localhost',
       '/'
     );

@@ -7,5 +7,5 @@ export default async function MeetWorkspacePage({
 }) {
   const { wsId } = await params;
 
-  redirect(`/workspace/${wsId}/plans`);
+  redirect(`/${wsId}/plans`);
 }

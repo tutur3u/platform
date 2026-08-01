@@ -77,7 +77,46 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
+/**
+ * Redirects the pre-2026-08 URL shapes.
+ *
+ * Meet moved workspace routes off the `/workspace` prefix to match every other
+ * satellite, rooms to `/r/<code>`, and public plans under `/plans` so the bare
+ * `/<wsId>` segment could be freed. Shared plan links and bookmarks predate all
+ * of that, so the old shapes are permanently redirected rather than dropped.
+ */
+function getLegacyPathRedirect(pathname: string): string | null {
+  const segments = getPathSegments(pathname);
+  const locale = isLocaleSegment(segments[0]) ? segments[0] : null;
+  const rest = locale ? segments.slice(1) : segments;
+  const prefix = locale ? `/${locale}` : '';
+
+  if (rest[0] === 'workspace' && rest.length > 1) {
+    return `${prefix}/${rest.slice(1).join('/')}`;
+  }
+  // /call/<wsId>/<meetingId> and /join/<code> both became /r/<code>.
+  if (rest[0] === 'call' && rest.length === 3) {
+    return `${prefix}/r/${rest[2]}`;
+  }
+  if (rest[0] === 'join' && rest.length === 2) {
+    return `${prefix}/r/${rest[1]}`;
+  }
+  // A bare 32-hex segment is a legacy Meet Together plan id.
+  if (rest.length === 1 && rest[0] && LEGACY_PLAN_ID_PATTERN.test(rest[0])) {
+    return `${prefix}/plans/${rest[0]}`;
+  }
+  return null;
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  const legacyPath = getLegacyPathRedirect(req.nextUrl.pathname);
+  if (legacyPath) {
+    return NextResponse.redirect(
+      new URL(`${legacyPath}${req.nextUrl.search}`, req.nextUrl),
+      308
+    );
+  }
+
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -166,7 +205,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           ? 'internal'
           : (defaultWorkspace?.id ?? 'personal');
       const wsRedirect = NextResponse.redirect(
-        new URL(`/workspace/${target}/plans`, req.nextUrl)
+        new URL(`/${target}/plans`, req.nextUrl)
       );
       propagateAuthCookies(authRes, wsRedirect);
       return wsRedirect;
