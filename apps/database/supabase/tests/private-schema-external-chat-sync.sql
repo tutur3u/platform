@@ -1,5 +1,5 @@
 begin;
-select plan(26);
+select plan(27);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
@@ -8,6 +8,7 @@ select has_table('private', 'external_chat_outbound_deliveries', 'outbound deliv
 select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints are private');
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
 select has_function('private', 'external_chat_mark_verified', 'verification fencing RPC exists');
+select has_function('private', 'external_chat_clear_credential', 'credential recovery RPC exists');
 select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
 select has_function('private', 'external_chat_finalize_reply', 'atomic outbound finalization RPC exists');
 select has_function('private', 'external_chat_update_settings', 'atomic binding settings RPC exists');

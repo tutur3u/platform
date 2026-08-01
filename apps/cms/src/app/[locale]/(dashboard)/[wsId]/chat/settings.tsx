@@ -22,6 +22,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import { TTR_URL } from '@/constants/common';
 
 export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('connected-chat');
@@ -41,7 +42,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const [issuedSecret, setIssuedSecret] = useState<string | null>(null);
   const widgetSnippet = useMemo(
     () =>
-      `<script src="https://tuturuuu.com/api/v1/integrations/external-chat/widget.js" data-workspace="${wsId}" async></script>`,
+      `<script src="${TTR_URL}/api/v1/integrations/external-chat/widget.js" data-workspace="${wsId}" async></script>`,
     [wsId]
   );
   const enabled = enabledOverride ?? existing.enabled !== false;

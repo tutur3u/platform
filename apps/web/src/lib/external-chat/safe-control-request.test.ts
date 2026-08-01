@@ -29,6 +29,8 @@ describe('external chat control destination policy', () => {
     'fe80::1',
     '2001:db8::1',
     '::ffff:10.0.0.1',
+    '::ffff:7f00:1',
+    'ff02::1',
   ])('blocks non-public address %s', (address) => {
     expect(isBlockedExternalChatAddress(address)).toBe(true);
   });

@@ -24,6 +24,7 @@ export async function POST(request: Request) {
   if (
     !state?.binding.is_enabled ||
     !isChatEnabled(state.binding.settings) ||
+    !state.credentials?.verified_at ||
     !expectedHash ||
     !verifyExternalChatSecret(secret, expectedHash)
   ) {

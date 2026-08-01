@@ -196,7 +196,12 @@ export function ChatContextRail({
                           activeScope === 'workspaces') &&
                         workspace.id === wsId
                       }
-                      onClick={() => navigate(workspace, activeScope)}
+                      onClick={() =>
+                        navigate(
+                          workspace,
+                          activeScope === 'external' ? 'external' : 'workspaces'
+                        )
+                      }
                       workspace={workspace}
                     />
                   ) : (

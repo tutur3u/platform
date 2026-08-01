@@ -133,6 +133,18 @@ export async function markExternalChatCredentialVerified(
   return data === true;
 }
 
+export async function clearExternalChatCredential(
+  wsId: string,
+  kind: 'control' | 'ingest'
+) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_clear_credential',
+    { p_kind: kind, p_ws_id: wsId }
+  );
+  if (error) throw new Error(error.message);
+}
+
 async function callExternalChatCredentialRpc(
   name: string,
   args: Record<string, unknown>

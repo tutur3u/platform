@@ -60,10 +60,20 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
         </Button>
       </header>
 
-      <Alert variant={state.data?.readiness.ready ? 'default' : 'destructive'}>
+      <Alert
+        variant={
+          state.isLoading || state.data?.readiness.ready
+            ? 'default'
+            : 'destructive'
+        }
+      >
         <MessageSquare className="size-4" />
         <AlertTitle>
-          {state.data?.readiness.ready ? t('ready') : t('prerequisites')}
+          {state.isLoading
+            ? t('loading')
+            : state.data?.readiness.ready
+              ? t('ready')
+              : t('prerequisites')}
         </AlertTitle>
         <AlertDescription>
           {state.isLoading
@@ -169,7 +179,10 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
             <Status
               label={t('authority')}
               pending={t('pending')}
-              value={false}
+              value={
+                state.data?.settings?.authorityMode !== 'legacy_primary' &&
+                Boolean(state.data?.settings?.authorityMode)
+              }
               pendingLabel={t('legacy_primary')}
               ready={t('ok')}
             />

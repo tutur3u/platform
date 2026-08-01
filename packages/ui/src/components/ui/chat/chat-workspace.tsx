@@ -92,13 +92,6 @@ export function ChatWorkspace({
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
-  const conversationsQuery = useInfiniteChatConversations({
-    archived: archiveFilter,
-    wsId,
-  });
-  const allConversations = flattenChatConversationPages(
-    conversationsQuery.data
-  );
   const requestedScope = searchParams.get('scope');
   const conversationScope =
     enforcedConversationScope ??
@@ -107,6 +100,14 @@ export function ChatWorkspace({
           requestedScope ?? defaultConversationScope
         )
       : null);
+  const conversationsQuery = useInfiniteChatConversations({
+    archived: archiveFilter,
+    unpaginated: conversationScope === 'external',
+    wsId,
+  });
+  const allConversations = flattenChatConversationPages(
+    conversationsQuery.data
+  );
   const conversations = conversationScope
     ? filterChatConversations({
         archiveFilter,
@@ -313,6 +314,7 @@ export function ChatWorkspace({
     try {
       const result = await sendMessage.mutateAsync({
         attachments: payload.attachments,
+        clientRequestId: crypto.randomUUID(),
         content: payload.content,
       });
 

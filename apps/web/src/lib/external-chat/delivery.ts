@@ -55,6 +55,24 @@ export type ReservedExternalChatDelivery = {
   threadId: string;
 };
 
+export async function isExternalChatConversation({
+  conversationId,
+  wsId,
+}: {
+  conversationId: string;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin)
+    .from('external_chat_threads')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('conversation_id', conversationId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
 function getBridgeBaseUrl(settings: unknown) {
   if (!settings || typeof settings !== 'object') return null;
   const chat = (settings as Record<string, unknown>).chat;
@@ -228,22 +246,20 @@ export async function deliverExternalChatReplyIfBound({
 }
 
 export async function reserveExternalChatReply({
-  content,
+  clientRequestId,
   conversationId,
   replyToMessageId,
   senderId,
   wsId,
 }: {
-  content: string;
+  clientRequestId: string;
   conversationId: string;
   replyToMessageId: string | null;
   senderId: string;
   wsId: string;
 }) {
   const fingerprint = createHash('sha256')
-    .update(
-      JSON.stringify({ content, conversationId, replyToMessageId, senderId })
-    )
+    .update(JSON.stringify({ clientRequestId, conversationId, senderId }))
     .digest('hex');
   const admin = await createAdminClient({ noCookie: true });
   const { data, error } = await externalChatMutationDb(admin).rpc(
@@ -251,6 +267,7 @@ export async function reserveExternalChatReply({
     {
       p_actor_user_id: senderId,
       p_conversation_id: conversationId,
+      p_reply_to_message_id: replyToMessageId,
       p_request_fingerprint: fingerprint,
       p_ws_id: wsId,
     }

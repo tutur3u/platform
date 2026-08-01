@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
 import {
   isAiAgentExternalConversationId,
   listAiAgentExternalMessages,
@@ -24,6 +25,7 @@ import {
 import {
   deliverExternalChatReplyIfBound,
   finalizeExternalChatReply,
+  isExternalChatConversation,
   markExternalChatReplyDelivered,
   reserveExternalChatReply,
 } from '@/lib/external-chat/delivery';
@@ -59,6 +61,7 @@ const attachmentSchema = z.object({
 
 const createMessageSchema = z.object({
   attachments: z.array(attachmentSchema).max(20).optional(),
+  clientRequestId: z.string().uuid().optional(),
   content: z.string().max(10000).default(''),
   kind: z.enum(['user', 'assistant', 'system']).default('user'),
   replyToMessageId: z.string().uuid().nullable().optional(),
@@ -135,7 +138,7 @@ export const GET = withSessionAuth<RouteParams>(
   { allowAppSessionAuth: true, rateLimitKind: 'read' }
 );
 
-export const HEAD = GET;
+export const HEAD = createLegacyHeadHandler(GET);
 
 export const POST = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
@@ -189,14 +192,11 @@ export const POST = withSessionAuth<RouteParams>(
     let externalReservation = null;
     if (parsed.data.kind === 'user') {
       try {
-        externalReservation = await reserveExternalChatReply({
-          content: parsed.data.content,
+        const externalBound = await isExternalChatConversation({
           conversationId: params.conversationId,
-          replyToMessageId: parsed.data.replyToMessageId ?? null,
-          senderId: auth.user.id,
           wsId: context.context.normalizedWsId,
         });
-        if (externalReservation && (parsed.data.attachments?.length ?? 0) > 0) {
+        if (externalBound && (parsed.data.attachments?.length ?? 0) > 0) {
           return NextResponse.json(
             {
               code: 'external_attachments_unsupported',
@@ -205,12 +205,25 @@ export const POST = withSessionAuth<RouteParams>(
             { status: 400 }
           );
         }
-        if (externalReservation && !parsed.data.content.trim()) {
+        if (externalBound && !parsed.data.content.trim()) {
           return NextResponse.json(
             { message: 'Message content is required' },
             { status: 400 }
           );
         }
+        if (externalBound && !parsed.data.clientRequestId) {
+          return NextResponse.json(
+            { message: 'Client request ID is required' },
+            { status: 400 }
+          );
+        }
+        externalReservation = await reserveExternalChatReply({
+          clientRequestId: parsed.data.clientRequestId ?? '',
+          conversationId: params.conversationId,
+          replyToMessageId: parsed.data.replyToMessageId ?? null,
+          senderId: auth.user.id,
+          wsId: context.context.normalizedWsId,
+        });
         if (externalReservation && !externalReservation.delivered) {
           await deliverExternalChatReplyIfBound({
             content: parsed.data.content,
@@ -279,8 +292,8 @@ export const POST = withSessionAuth<RouteParams>(
       );
       if (!conversation) {
         return NextResponse.json(
-          { message: 'Chat conversation not found' },
-          { status: 404 }
+          { message, messages: [message] },
+          { status: 201 }
         );
       }
 

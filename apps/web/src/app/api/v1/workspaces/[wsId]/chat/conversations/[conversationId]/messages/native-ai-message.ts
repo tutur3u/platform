@@ -178,6 +178,7 @@ export async function sendNativeAiConversationMessages({
         ? (settings.credit_ws_id ?? undefined)
         : (settings.credit_ws_id ?? context.normalizedWsId),
     messages: aiMessages,
+    miraMode: false,
     model: normalizeNativeAiModel(settings.model_id),
     observabilityContext: buildNativeAiObservabilityContext(
       privateMessages ?? []

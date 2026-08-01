@@ -377,6 +377,7 @@ export async function callAiChatRoute({
   creditSource,
   creditWsId,
   messages,
+  miraMode,
   model,
   observabilityContext,
   request,
@@ -389,6 +390,7 @@ export async function callAiChatRoute({
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   messages: UiMessageForAi[];
+  miraMode: boolean;
   model: string;
   observabilityContext?: Record<string, unknown>[];
   request: NextRequest;
@@ -405,7 +407,7 @@ export async function callAiChatRoute({
     body: JSON.stringify({
       creditSource,
       id: chatId,
-      isMiraMode: true,
+      isMiraMode: miraMode,
       messages,
       model,
       observabilityContext,

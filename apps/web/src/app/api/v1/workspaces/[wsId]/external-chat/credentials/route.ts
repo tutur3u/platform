@@ -14,12 +14,12 @@ import {
   verifyExternalChatControl,
 } from '@/lib/external-chat/delivery';
 import {
+  clearExternalChatCredential,
   markExternalChatCredentialVerified,
   promoteExternalChatCredential,
   readExternalChatBinding,
   serializeExternalChatBinding,
   stageExternalChatCredential,
-  upsertExternalChatCredentials,
 } from '@/lib/external-chat/store';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
@@ -56,6 +56,20 @@ export const POST = withSessionAuth<Params>(
     let current = await readExternalChatBinding(wsId);
     if (!current) {
       return NextResponse.json({ error: 'Binding not found' }, { status: 404 });
+    }
+    if (
+      parsed.data.action === 'clear_ingest' ||
+      parsed.data.action === 'clear_control'
+    ) {
+      await clearExternalChatCredential(
+        wsId,
+        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
+      );
+      return NextResponse.json({
+        state: serializeExternalChatBinding(
+          await readExternalChatBinding(wsId)
+        ),
+      });
     }
     try {
       current = await reconcilePendingCredential(wsId, current);
@@ -122,20 +136,6 @@ export const POST = withSessionAuth<Params>(
         }
       }
       await promotePendingCredential(wsId, 'rotate_control');
-    } else if (parsed.data.action === 'clear_ingest') {
-      await upsertExternalChatCredentials(wsId, {
-        ingest_secret_hash: null,
-        ingest_secret_last_four: null,
-        ingest_secret_rotated_at: null,
-        verified_at: null,
-      });
-    } else if (parsed.data.action === 'clear_control') {
-      await upsertExternalChatCredentials(wsId, {
-        control_secret_encrypted: null,
-        control_secret_last_four: null,
-        control_secret_rotated_at: null,
-        verified_at: null,
-      });
     } else {
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
       if (!verifiedCiphertext) {
@@ -172,7 +172,7 @@ export const POST = withSessionAuth<Params>(
       state: serializeExternalChatBinding(await readExternalChatBinding(wsId)),
     });
   },
-  { allowAppSessionAuth: true, rateLimitKind: 'mutate' }
+  { allowAppSessionAuth: { targetApp: 'cms' }, rateLimitKind: 'mutate' }
 );
 
 type BindingState = NonNullable<

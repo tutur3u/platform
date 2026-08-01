@@ -4,9 +4,33 @@ import { Agent, fetch as undiciFetch } from 'undici';
 
 const BLOCKED_HOSTNAMES = new Set(['localhost', 'localhost.localdomain']);
 
+function mappedIpv4Address(address: string) {
+  if (!address.startsWith('::ffff:')) return null;
+  const suffix = address.slice(7);
+  if (isIP(suffix) === 4) return suffix;
+
+  const groups = suffix.split(':');
+  if (groups.length !== 2) return null;
+  const high = Number.parseInt(groups[0] ?? '', 16);
+  const low = Number.parseInt(groups[1] ?? '', 16);
+  if (
+    !Number.isInteger(high) ||
+    !Number.isInteger(low) ||
+    high < 0 ||
+    high > 0xffff ||
+    low < 0 ||
+    low > 0xffff
+  ) {
+    return null;
+  }
+
+  return [high >> 8, high & 0xff, low >> 8, low & 0xff].join('.');
+}
+
 export function isBlockedExternalChatAddress(address: string) {
   const normalized = address.toLowerCase().split('%')[0] ?? address;
   if (normalized === '::' || normalized === '::1') return true;
+  if (normalized.startsWith('ff')) return true;
   if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
   if (/^fe[89ab]/u.test(normalized)) return true;
   if (
@@ -18,8 +42,8 @@ export function isBlockedExternalChatAddress(address: string) {
   ) {
     return true;
   }
-  if (normalized.startsWith('::ffff:'))
-    return isBlockedExternalChatAddress(normalized.slice(7));
+  const mappedIpv4 = mappedIpv4Address(normalized);
+  if (mappedIpv4) return isBlockedExternalChatAddress(mappedIpv4);
   if (isIP(normalized) !== 4) return false;
   const [a = 0, b = 0] = normalized.split('.').map(Number);
   return (

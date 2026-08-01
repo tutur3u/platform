@@ -24,8 +24,14 @@ export const externalChatSettingsSchema = z.object({
     .max(2048)
     .refine((value) => {
       const url = new URL(value);
-      return url.protocol === 'https:' && !url.username && !url.password;
-    }, 'Bridge URL must use HTTPS without embedded credentials'),
+      return (
+        url.protocol === 'https:' &&
+        !url.username &&
+        !url.password &&
+        !url.search &&
+        !url.hash
+      );
+    }, 'Bridge URL must be an HTTPS origin without credentials, query, or fragment'),
   agentMappings: z.record(z.string(), z.string().uuid()).default({}),
   inboxDefaults: dynamicMetadataSchema,
   authorityMode: z

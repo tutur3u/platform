@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = {
+  clearExternalChatCredential: vi.fn(),
   markExternalChatCredentialVerified: vi.fn(),
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
@@ -42,6 +43,8 @@ vi.mock('@/lib/external-chat/delivery', () => ({
 }));
 
 vi.mock('@/lib/external-chat/store', () => ({
+  clearExternalChatCredential: (...args: unknown[]) =>
+    mocks.clearExternalChatCredential(...args),
   markExternalChatCredentialVerified: (...args: unknown[]) =>
     mocks.markExternalChatCredentialVerified(...args),
   readExternalChatBinding: (...args: unknown[]) =>
@@ -139,6 +142,7 @@ describe('external chat credential verification', () => {
       'workspace-1',
       expect.objectContaining({ action: 'set_ingest' })
     );
+    expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(await response.text()).not.toContain('ecs_test_secret');
   });
 });

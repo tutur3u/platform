@@ -26,7 +26,7 @@ export const GET = withSessionAuth<Params>(
       )
     );
   },
-  { allowAppSessionAuth: true, rateLimitKind: 'read' }
+  { allowAppSessionAuth: { targetApp: 'cms' }, rateLimitKind: 'read' }
 );
 
 export const PATCH = withSessionAuth<Params>(
@@ -71,5 +71,5 @@ export const PATCH = withSessionAuth<Params>(
       )
     );
   },
-  { allowAppSessionAuth: true, rateLimitKind: 'mutate' }
+  { allowAppSessionAuth: { targetApp: 'cms' }, rateLimitKind: 'mutate' }
 );

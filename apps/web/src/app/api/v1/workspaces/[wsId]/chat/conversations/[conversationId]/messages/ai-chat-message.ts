@@ -114,6 +114,7 @@ export async function sendAiChatMessage({
     creditSource: 'workspace',
     creditWsId: context.normalizedWsId,
     messages: aiMessages,
+    miraMode: true,
     model: normalizeAiChatModel(chat.model),
     observabilityContext: buildNativeAiObservabilityContext(previousMessages),
     request,

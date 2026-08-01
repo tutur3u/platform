@@ -276,12 +276,45 @@ begin
 end;
 $$;
 
+create or replace function private.external_chat_clear_credential(
+  p_ws_id uuid,
+  p_kind text
+)
+returns void
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if p_kind not in ('control', 'ingest') then
+    raise exception 'external_chat_invalid_credential_kind';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'credential'), 0));
+  update private.external_chat_binding_credentials
+  set ingest_secret_hash = case when p_kind = 'ingest' then null else ingest_secret_hash end,
+      ingest_secret_last_four = case when p_kind = 'ingest' then null else ingest_secret_last_four end,
+      ingest_secret_rotated_at = case when p_kind = 'ingest' then null else ingest_secret_rotated_at end,
+      control_secret_encrypted = case when p_kind = 'control' then null else control_secret_encrypted end,
+      control_secret_last_four = case when p_kind = 'control' then null else control_secret_last_four end,
+      control_secret_rotated_at = case when p_kind = 'control' then null else control_secret_rotated_at end,
+      pending_action = null,
+      pending_secret_encrypted = null,
+      pending_secret_hash = null,
+      pending_secret_last_four = null,
+      pending_created_at = null,
+      verified_at = null
+  where ws_id = p_ws_id;
+end;
+$$;
+
 revoke all on function private.external_chat_stage_credential(uuid, text, text, text, text) from public, anon, authenticated;
 revoke all on function private.external_chat_promote_credential(uuid, text, text) from public, anon, authenticated;
 revoke all on function private.external_chat_mark_verified(uuid, text) from public, anon, authenticated;
+revoke all on function private.external_chat_clear_credential(uuid, text) from public, anon, authenticated;
 grant execute on function private.external_chat_stage_credential(uuid, text, text, text, text) to service_role;
 grant execute on function private.external_chat_promote_credential(uuid, text, text) to service_role;
 grant execute on function private.external_chat_mark_verified(uuid, text) to service_role;
+grant execute on function private.external_chat_clear_credential(uuid, text) to service_role;
 
 create trigger external_chat_binding_credentials_updated_at
   before update on private.external_chat_binding_credentials
@@ -440,7 +473,9 @@ begin
     coalesce(p_content, ''),
     coalesce(p_message_metadata, '{}'::jsonb) || jsonb_build_object(
       'externalChat', true,
-      'externalSender', jsonb_build_object('direction', p_direction),
+      'externalSender',
+        coalesce(p_message_metadata->'externalSender', '{}'::jsonb)
+          || jsonb_build_object('direction', p_direction),
       'remoteMessageId', p_remote_message_id
     ),
     coalesce(p_occurred_at, now())
@@ -480,7 +515,8 @@ create or replace function private.external_chat_reserve_reply(
   p_ws_id uuid,
   p_conversation_id uuid,
   p_actor_user_id uuid,
-  p_request_fingerprint text
+  p_request_fingerprint text,
+  p_reply_to_message_id uuid default null
 )
 returns jsonb
 language plpgsql
@@ -495,6 +531,14 @@ begin
   if not private.chat_actor_can_access_conversation(p_conversation_id, p_actor_user_id) then
     raise exception 'chat_conversation_forbidden' using errcode = '42501';
   end if;
+  if p_reply_to_message_id is not null and not exists (
+    select 1 from private.chat_messages
+    where id = p_reply_to_message_id
+      and conversation_id = p_conversation_id
+      and deleted_at is null
+  ) then
+    raise exception 'chat_reply_target_not_found';
+  end if;
 
   select * into v_thread from private.external_chat_threads
   where ws_id = p_ws_id and conversation_id = p_conversation_id;
@@ -504,9 +548,7 @@ begin
   select * into v_delivery from private.external_chat_outbound_deliveries
   where ws_id = p_ws_id and request_fingerprint = p_request_fingerprint;
 
-  if v_delivery.id is not null and (
-    v_delivery.message_id is null or v_delivery.completed_at > now() - interval '5 minutes'
-  ) then
+  if v_delivery.id is not null then
     return jsonb_build_object(
       'deliveryId', v_delivery.id,
       'delivered', v_delivery.delivered_at is not null,
@@ -516,8 +558,6 @@ begin
     );
   end if;
 
-  delete from private.external_chat_outbound_deliveries
-  where ws_id = p_ws_id and request_fingerprint = p_request_fingerprint;
   insert into private.external_chat_outbound_deliveries (
     ws_id, thread_id, request_fingerprint
   ) values (p_ws_id, v_thread.id, p_request_fingerprint)
@@ -575,7 +615,7 @@ begin
 end;
 $$;
 
-revoke all on function private.external_chat_reserve_reply(uuid, uuid, uuid, text) from public, anon, authenticated;
+revoke all on function private.external_chat_reserve_reply(uuid, uuid, uuid, text, uuid) from public, anon, authenticated;
 revoke all on function private.external_chat_finalize_reply(uuid, uuid, uuid, text, uuid) from public, anon, authenticated;
-grant execute on function private.external_chat_reserve_reply(uuid, uuid, uuid, text) to service_role;
+grant execute on function private.external_chat_reserve_reply(uuid, uuid, uuid, text, uuid) to service_role;
 grant execute on function private.external_chat_finalize_reply(uuid, uuid, uuid, text, uuid) to service_role;

@@ -12,6 +12,11 @@ export default async function ConnectedChatPage({
   const { wsId } = await params;
   const access = await getCmsWorkspaceAccess(wsId);
   if (!access.canAccessWorkspace) redirect('/no-access');
+  if (
+    !access.workspacePermissions?.containsPermission('manage_external_projects')
+  ) {
+    redirect('/no-access');
+  }
   if (!access.binding?.canonical_project?.allowed_features.includes('chat'))
     redirect(`/${wsId}`);
   return <ConnectedChatSettings wsId={access.normalizedWorkspaceId} />;

@@ -36,6 +36,7 @@ describe('external project adapter fixtures', () => {
       'posts',
       'taxonomies',
       'landing-sections',
+      'media-assets',
       'redirects',
     ]);
 

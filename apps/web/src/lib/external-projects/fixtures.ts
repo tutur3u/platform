@@ -672,6 +672,7 @@ export const externalProjectAdapterFixtures: Record<
         ['posts', 'Posts', 'post'],
         ['taxonomies', 'Taxonomies', 'taxonomy'],
         ['landing-sections', 'Landing sections', 'section'],
+        ['media-assets', 'Media', 'media'],
         ['redirects', 'Redirects', 'redirect'],
       ] as const
     ).map(([slug, title, collectionType]) => ({

@@ -12,6 +12,7 @@ const mocks = {
   createAiChatPost: vi.fn(),
   deliverExternalChatReplyIfBound: vi.fn(),
   finalizeExternalChatReply: vi.fn(),
+  isExternalChatConversation: vi.fn(),
   markExternalChatReplyDelivered: vi.fn(),
   aiRouteBodies: [] as unknown[],
   notifyChatMessageRecipients: vi.fn(),
@@ -90,6 +91,8 @@ vi.mock('@/lib/external-chat/delivery', () => ({
   finalizeExternalChatReply: (
     ...args: Parameters<typeof mocks.finalizeExternalChatReply>
   ) => mocks.finalizeExternalChatReply(...args),
+  isExternalChatConversation: (...args: unknown[]) =>
+    mocks.isExternalChatConversation(...args),
   markExternalChatReplyDelivered: (
     ...args: Parameters<typeof mocks.markExternalChatReplyDelivered>
   ) => mocks.markExternalChatReplyDelivered(...args),
@@ -169,7 +172,10 @@ function createRequest() {
   return new Request(
     'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/conversation-1/messages',
     {
-      body: JSON.stringify({ content: 'hello' }),
+      body: JSON.stringify({
+        clientRequestId: '11111111-1111-4111-8111-111111111111',
+        content: 'hello',
+      }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     }
@@ -238,6 +244,7 @@ function mockRouteContext() {
 describe('native AI chat message route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.isExternalChatConversation.mockResolvedValue(false);
     mocks.reserveExternalChatReply.mockResolvedValue(null);
     mocks.deliverExternalChatReplyIfBound.mockResolvedValue(null);
     mocks.finalizeExternalChatReply.mockResolvedValue(userMessage);
@@ -335,6 +342,7 @@ describe('native AI chat message route', () => {
   });
 
   it('does not persist when an externally bound reply fails delivery', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
     mocks.reserveExternalChatReply.mockResolvedValue({
       delivered: false,
       deliveryId: 'delivery-1',
@@ -365,6 +373,7 @@ describe('native AI chat message route', () => {
   });
 
   it('delivers first and atomically finalizes an externally bound reply', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
     const reservation = {
       delivered: false,
       deliveryId: 'delivery-1',
@@ -407,6 +416,7 @@ describe('native AI chat message route', () => {
   });
 
   it('rejects attachments before connected-site delivery', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
     mocks.reserveExternalChatReply.mockResolvedValue({
       delivered: false,
       deliveryId: 'delivery-1',

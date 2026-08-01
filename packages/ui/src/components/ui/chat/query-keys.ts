@@ -13,13 +13,19 @@ export const chatQueryKeys = {
     ] as const,
   conversations: (wsId: string, archived = 'active') =>
     [...chatQueryKeys.all(wsId), 'conversations', archived] as const,
-  conversationsInfinite: (wsId: string, archived = 'active', limit = 40) =>
+  conversationsInfinite: (
+    wsId: string,
+    archived = 'active',
+    limit = 40,
+    mode: 'all' | 'paged' = 'paged'
+  ) =>
     [
       ...chatQueryKeys.all(wsId),
       'conversations',
       archived,
       'infinite',
       limit,
+      mode,
     ] as const,
   directory: (wsId: string, query: string) =>
     [...chatQueryKeys.all(wsId), 'directory', query] as const,
