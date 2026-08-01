@@ -6902,6 +6902,13 @@
       "board_layout": "Bố cục bảng",
       "board_layout_description": "Quản lý cột trong bảng và sắp xếp chúng theo trạng thái.",
       "board_no_board_description": "Mở một bảng nhiệm vụ để quản lý cài đặt riêng của bảng.",
+      "board_picker_description": "Chọn bất kỳ bảng nào để quản lý chi tiết, hành vi và bố cục danh sách.",
+      "board_picker_empty": "Không tìm thấy bảng đang hoạt động",
+      "board_picker_loading": "Đang tải bảng...",
+      "board_picker_open": "Xem cài đặt",
+      "board_picker_placeholder": "Chọn một bảng",
+      "board_picker_search": "Tìm kiếm bảng...",
+      "board_picker_title": "Cài đặt bảng",
       "default_list": "Danh sách mặc định",
       "dialog_presentation": "Mở công việc bằng",
       "dialog_presentation_compact": "Xem nhanh",
@@ -7009,6 +7016,7 @@
       "templates": "Mẫu",
       "templates_description": "Quản lý các mẫu bảng công việc có thể tái sử dụng",
       "title": "Nhiệm vụ",
+      "untitled_board": "Bảng chưa đặt tên",
       "untitled_list": "Danh sách chưa đặt tên"
     },
     "time_tracker": {

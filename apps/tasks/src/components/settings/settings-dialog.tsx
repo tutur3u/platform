@@ -42,6 +42,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
+import { TaskBoardSettingsPicker } from './task-board-settings-picker';
 import { TaskIntelligenceSettingsPanel } from './task-intelligence-settings-panel';
 import {
   TaskBoardSettingsPanel,
@@ -62,6 +63,7 @@ interface SettingsDialogProps {
   wsId?: string;
   user: WorkspaceUser | null;
   defaultTab?: string;
+  onBoardSettingsOpen?: (boardId: string) => void;
   workspace?: Workspace | null;
 }
 
@@ -78,6 +80,7 @@ export function SettingsDialog({
   wsId,
   user,
   defaultTab = 'tasks_general',
+  onBoardSettingsOpen,
   workspace: workspaceProp,
 }: SettingsDialogProps) {
   const t = useTranslations();
@@ -306,14 +309,31 @@ export function SettingsDialog({
       )}
 
       {activeTab === 'tasks_general' && (
-        <div className="h-full">
+        <div className="h-full space-y-6">
+          {wsId && onBoardSettingsOpen ? (
+            <TaskBoardSettingsPicker
+              boardId={boardId}
+              onOpenBoard={onBoardSettingsOpen}
+              wsId={wsId}
+            />
+          ) : null}
           <TaskSettings workspace={workspace} />
         </div>
       )}
 
-      {activeTab === 'task_board' && (
-        <TaskBoardSettingsPanel boardId={boardId} wsId={wsId} />
-      )}
+      {activeTab === 'task_board' &&
+        (boardId ? (
+          <TaskBoardSettingsPanel boardId={boardId} wsId={wsId} />
+        ) : wsId && onBoardSettingsOpen ? (
+          <TaskBoardSettingsPicker
+            boardId={boardId}
+            onOpenBoard={onBoardSettingsOpen}
+            variant="empty"
+            wsId={wsId}
+          />
+        ) : (
+          <TaskBoardSettingsPanel boardId={boardId} wsId={wsId} />
+        ))}
 
       {activeTab === 'task_intelligence' && wsId && (
         <TaskIntelligenceSettingsPanel wsId={wsId} />

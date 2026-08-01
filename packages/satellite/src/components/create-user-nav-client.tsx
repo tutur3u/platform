@@ -8,6 +8,7 @@ import SharedUserNavClient from './user-nav-client';
 interface CreateUserNavClientConfig {
   appName: string;
   ttrUrl: string;
+  externalSettingsHost?: boolean;
   SettingsDialog?: ComponentType<{
     wsId?: string;
     user: WorkspaceUser | null;
@@ -23,6 +24,7 @@ export interface UserNavClientProps {
 export function createUserNavClient({
   appName,
   ttrUrl,
+  externalSettingsHost,
   SettingsDialog,
 }: CreateUserNavClientConfig) {
   return function CustomUserNavClient({
@@ -40,6 +42,7 @@ export function createUserNavClient({
         hideMetadata={hideMetadata}
         appName={appName}
         ttrUrl={ttrUrl}
+        externalSettingsHost={externalSettingsHost}
         settingsDialog={
           user && SettingsDialog ? (
             <SettingsDialog wsId={wsId} user={user} />

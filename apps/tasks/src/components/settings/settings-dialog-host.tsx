@@ -98,6 +98,14 @@ export function SettingsDialogHost({
     });
   };
 
+  const handleBoardSettingsOpen = (boardId: string) => {
+    void setSettingsQuery({
+      settingsBoardId: boardId,
+      settingsDialog: 'open',
+      settingsTab: 'task_board',
+    });
+  };
+
   if (!user) return null;
 
   const settingsOpen = settingsQuery.settingsDialog === 'open';
@@ -108,6 +116,7 @@ export function SettingsDialogHost({
         <SettingsDialog
           boardId={settingsQuery.settingsBoardId ?? undefined}
           defaultTab={settingsQuery.settingsTab ?? undefined}
+          onBoardSettingsOpen={handleBoardSettingsOpen}
           user={user}
           workspace={workspace}
           wsId={wsId}

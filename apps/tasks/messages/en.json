@@ -6902,6 +6902,13 @@
       "board_layout": "Board layout",
       "board_layout_description": "Manage board columns and organize them by status.",
       "board_no_board_description": "Open a task board to manage board-specific settings.",
+      "board_picker_description": "Choose any board to manage its details, behavior, and list layout.",
+      "board_picker_empty": "No active boards found",
+      "board_picker_loading": "Loading boards...",
+      "board_picker_open": "View settings",
+      "board_picker_placeholder": "Choose a board",
+      "board_picker_search": "Search boards...",
+      "board_picker_title": "Board settings",
       "default_list": "Default list",
       "dialog_presentation": "Open tasks in",
       "dialog_presentation_compact": "Quick view",
@@ -7009,6 +7016,7 @@
       "templates": "Templates",
       "templates_description": "Manage reusable task board templates",
       "title": "Tasks",
+      "untitled_board": "Untitled board",
       "untitled_list": "Untitled list"
     },
     "time_tracker": {

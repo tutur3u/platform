@@ -52,6 +52,7 @@ import { AppGuideOverlay } from './app-guide-overlay';
 import { GuidanceSettingsDialog } from './guidance-settings-dialog';
 import { LanguageWrapper } from './language-wrapper';
 import { claimSettingsDialogIntent } from './settings-dialog-intent';
+import { shouldOwnSettingsDialog } from './settings-dialog-ownership';
 import { SystemLanguageWrapper } from './system-language-wrapper';
 import { ThemeDropdownItems } from './theme-dropdown-items';
 import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
@@ -67,6 +68,8 @@ interface UserNavClientProps {
   ttrUrl?: string;
   /** Optional settings dialog component. Receives wsId and user as props. */
   settingsDialog?: ReactNode;
+  /** Let an app-level host own settings URL state, shortcuts, and rendering. */
+  externalSettingsHost?: boolean;
 }
 
 export default function UserNavClient({
@@ -76,6 +79,7 @@ export default function UserNavClient({
   appName = 'App',
   ttrUrl,
   settingsDialog,
+  externalSettingsHost = false,
 }: UserNavClientProps) {
   const t = useTranslations();
 
@@ -95,6 +99,7 @@ export default function UserNavClient({
   );
   const settingsOpen = settingsQuery.settingsDialog === 'open';
   const effectiveSettingsDialog = settingsDialog ?? <GuidanceSettingsDialog />;
+  const ownsSettingsDialog = shouldOwnSettingsDialog(externalSettingsHost);
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
   // once here so every satellite app (calendar/tasks/finance/…) gets it.
@@ -105,11 +110,13 @@ export default function UserNavClient({
     });
   }, [setSettingsQuery]);
   useSettingsDialogShortcut({
-    enabled: Boolean(user),
+    enabled: Boolean(user) && ownsSettingsDialog,
     onOpen: openSettings,
   });
 
   useEffect(() => {
+    if (!ownsSettingsDialog) return;
+
     const handleSettingsIntent = (event: Event) => {
       if (!claimSettingsDialogIntent(event)) return;
 
@@ -130,7 +137,7 @@ export default function UserNavClient({
         'tuturuuu:settings-dialog-open-intent',
         handleSettingsIntent
       );
-  }, [setSettingsQuery]);
+  }, [ownsSettingsDialog, setSettingsQuery]);
 
   useEffect(() => {
     const closeSettings = () =>
@@ -196,7 +203,7 @@ export default function UserNavClient({
       />
       <AppGuideOverlay />
 
-      {user && (
+      {user && ownsSettingsDialog && (
         <Dialog
           open={settingsOpen}
           onOpenChange={(open) => {
