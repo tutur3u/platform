@@ -121,12 +121,12 @@ async function copyAttachmentInputsToAiResources({
       );
       await uploadWorkspaceStorageFileDirect(
         targetWsId,
-        `chats/ai/resources/${resourceChatId}/${index}-${attachment.filename}`,
+        `chats/ai/resources/${resourceChatId}/${randomUUID()}-${index}-${attachment.filename}`,
         downloaded.buffer,
         {
           contentType:
             attachment.contentType ?? downloaded.contentType ?? undefined,
-          upsert: true,
+          upsert: false,
         }
       );
     } catch (error) {
@@ -134,6 +134,9 @@ async function copyAttachmentInputsToAiResources({
         attachmentPath: attachment.path,
         resourceChatId,
         error,
+      });
+      throw new Error('Failed to prepare a Chat attachment for AI context', {
+        cause: error,
       });
     }
   }

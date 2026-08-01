@@ -291,6 +291,7 @@ async function getNativeAiSettings(conversationId: string) {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
+    throw new Error('Failed to load native Chat AI settings');
   }
 
   return mapNativeChatAiSettingsRow(data);

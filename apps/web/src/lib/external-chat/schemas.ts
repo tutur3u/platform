@@ -11,7 +11,13 @@ export const externalChatEventSchema = z.object({
   content: z.string().max(10000).default(''),
   contentType: z.union([z.literal(1), z.literal(2)]).default(1),
   status: z.string().max(80).default('sent'),
-  timestamp: z.string().datetime(),
+  timestamp: z
+    .string()
+    .datetime()
+    .refine(
+      (value) => new Date(value).getTime() <= Date.now() + 5 * 60_000,
+      'Event timestamp is too far in the future'
+    ),
   context: dynamicMetadataSchema,
   attachment: dynamicMetadataSchema.optional(),
 });
@@ -28,6 +34,7 @@ export const externalChatSettingsSchema = z.object({
         url.protocol === 'https:' &&
         !url.username &&
         !url.password &&
+        url.pathname === '/' &&
         !url.search &&
         !url.hash
       );
@@ -47,3 +54,13 @@ export const externalChatSettingsSchema = z.object({
 
 export type ExternalChatEvent = z.infer<typeof externalChatEventSchema>;
 export type ExternalChatSettings = z.infer<typeof externalChatSettingsSchema>;
+
+export function isExternalChatEnabled(settings: unknown) {
+  if (!settings || typeof settings !== 'object') return false;
+  const chat = (settings as Record<string, unknown>).chat;
+  return Boolean(
+    chat &&
+      typeof chat === 'object' &&
+      (chat as Record<string, unknown>).enabled === true
+  );
+}

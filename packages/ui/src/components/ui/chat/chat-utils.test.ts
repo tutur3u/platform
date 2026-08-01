@@ -13,6 +13,7 @@ import {
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
   resolveChatConversationSelection,
+  resolvePendingChatSendRequest,
 } from './utils';
 
 const baseMessage: ChatMessage = {
@@ -54,6 +55,40 @@ function conversation(overrides: Partial<ChatConversation>): ChatConversation {
 }
 
 describe('chat utils', () => {
+  it('reuses a request id for the same failed send payload', () => {
+    const payload = { attachments: [], content: 'Retry me' };
+    const createRequestId = vi.fn(() => 'request-1');
+    const first = resolvePendingChatSendRequest(null, payload, createRequestId);
+    const retry = resolvePendingChatSendRequest(
+      first,
+      payload,
+      createRequestId
+    );
+
+    expect(retry).toBe(first);
+    expect(createRequestId).toHaveBeenCalledOnce();
+  });
+
+  it('creates a new request id when the send payload changes', () => {
+    const createRequestId = vi
+      .fn<() => string>()
+      .mockReturnValueOnce('request-1')
+      .mockReturnValueOnce('request-2');
+    const first = resolvePendingChatSendRequest(
+      null,
+      { attachments: [], content: 'First' },
+      createRequestId
+    );
+    const changed = resolvePendingChatSendRequest(
+      first,
+      { attachments: [], content: 'Second' },
+      createRequestId
+    );
+
+    expect(changed.requestId).toBe('request-2');
+    expect(createRequestId).toHaveBeenCalledTimes(2);
+  });
+
   it('derives compact initials for users and labels', () => {
     expect(getChatInitials('Ada Lovelace')).toBe('AL');
     expect(

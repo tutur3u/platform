@@ -529,6 +529,7 @@ export {
 export {
   type ExternalChatBindingState,
   type ExternalChatCredentialAction,
+  type ExternalChatSettings,
   getExternalChatBindingState,
   mutateExternalChatCredential,
   updateExternalChatSettings,

@@ -281,7 +281,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             </code>
             <Button
               aria-label={t('copy')}
-              onClick={() => navigator.clipboard.writeText(widgetSnippet)}
+              onClick={() => navigator.clipboard?.writeText(widgetSnippet)}
               size="icon"
               variant="ghost"
             >

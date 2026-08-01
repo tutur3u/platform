@@ -23,10 +23,12 @@ import {
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
 import {
+  cancelExternalChatReply,
   deliverExternalChatReplyIfBound,
   finalizeExternalChatReply,
   isExternalChatConversation,
   markExternalChatReplyDelivered,
+  type ReservedExternalChatDelivery,
   reserveExternalChatReply,
 } from '@/lib/external-chat/delivery';
 import { sendAiChatMessage } from './ai-chat-message';
@@ -76,7 +78,10 @@ export const GET = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     const url = new URL(request.url);
-    const limit = Number(url.searchParams.get('limit') ?? 60);
+    const parsedLimit = Number(url.searchParams.get('limit') ?? 60);
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(Math.trunc(parsedLimit), 1), 100)
+      : 60;
     const before = url.searchParams.get('before');
 
     try {
@@ -84,7 +89,7 @@ export const GET = withSessionAuth<RouteParams>(
         const messages = await listAiChatMessages({
           before: before || null,
           conversationId: params.conversationId,
-          limit: Number.isFinite(limit) ? limit : 60,
+          limit,
           supabase: auth.supabase,
           user: auth.user,
           wsId: context.context.normalizedWsId,
@@ -105,7 +110,7 @@ export const GET = withSessionAuth<RouteParams>(
           actorUserId: auth.user.id,
           before: before || null,
           conversationId: params.conversationId,
-          limit: Number.isFinite(limit) ? limit : 60,
+          limit,
           wsId: context.context.normalizedWsId,
         });
 
@@ -125,7 +130,7 @@ export const GET = withSessionAuth<RouteParams>(
           p_actor_user_id: auth.user.id,
           p_before: before || null,
           p_conversation_id: params.conversationId,
-          p_limit: Number.isFinite(limit) ? limit : 60,
+          p_limit: limit,
           p_ws_id: context.context.normalizedWsId,
         }
       );
@@ -189,14 +194,37 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
-    let externalReservation = null;
-    if (parsed.data.kind === 'user') {
+    let externalBound: boolean;
+    try {
+      externalBound = await isExternalChatConversation({
+        conversationId: params.conversationId,
+        wsId: context.context.normalizedWsId,
+      });
+    } catch (error) {
+      console.error('Failed to resolve external chat binding', {
+        conversationId: params.conversationId,
+        error,
+      });
+      return NextResponse.json(
+        { message: 'Failed to resolve chat delivery route' },
+        { status: 500 }
+      );
+    }
+
+    if (externalBound && parsed.data.kind !== 'user') {
+      return NextResponse.json(
+        {
+          code: 'external_message_kind_unsupported',
+          message: 'Connected-site conversations only accept user replies.',
+        },
+        { status: 400 }
+      );
+    }
+
+    let externalReservation: ReservedExternalChatDelivery | null = null;
+    if (externalBound) {
       try {
-        const externalBound = await isExternalChatConversation({
-          conversationId: params.conversationId,
-          wsId: context.context.normalizedWsId,
-        });
-        if (externalBound && (parsed.data.attachments?.length ?? 0) > 0) {
+        if ((parsed.data.attachments?.length ?? 0) > 0) {
           return NextResponse.json(
             {
               code: 'external_attachments_unsupported',
@@ -205,13 +233,13 @@ export const POST = withSessionAuth<RouteParams>(
             { status: 400 }
           );
         }
-        if (externalBound && !parsed.data.content.trim()) {
+        if (!parsed.data.content.trim()) {
           return NextResponse.json(
             { message: 'Message content is required' },
             { status: 400 }
           );
         }
-        if (externalBound && !parsed.data.clientRequestId) {
+        if (!parsed.data.clientRequestId) {
           return NextResponse.json(
             { message: 'Client request ID is required' },
             { status: 400 }
@@ -219,13 +247,18 @@ export const POST = withSessionAuth<RouteParams>(
         }
         externalReservation = await reserveExternalChatReply({
           clientRequestId: parsed.data.clientRequestId ?? '',
+          content: parsed.data.content,
           conversationId: params.conversationId,
           replyToMessageId: parsed.data.replyToMessageId ?? null,
           senderId: auth.user.id,
           wsId: context.context.normalizedWsId,
         });
+        if (!externalReservation) {
+          throw new Error('External chat reservation was not created');
+        }
         if (externalReservation && !externalReservation.delivered) {
           await deliverExternalChatReplyIfBound({
+            configurationRevision: externalReservation.configurationRevision,
             content: parsed.data.content,
             conversationId: params.conversationId,
             deliveryId: externalReservation.deliveryId,
@@ -239,6 +272,17 @@ export const POST = withSessionAuth<RouteParams>(
           });
         }
       } catch (error) {
+        if (externalReservation && !externalReservation.delivered) {
+          await cancelExternalChatReply({
+            deliveryId: externalReservation.deliveryId,
+            wsId: context.context.normalizedWsId,
+          }).catch((cancelError) => {
+            console.error('Failed to release external delivery lease', {
+              cancelError,
+              deliveryId: externalReservation?.deliveryId,
+            });
+          });
+        }
         console.warn(
           'External chat delivery failed before native persistence',
           {
@@ -282,14 +326,27 @@ export const POST = withSessionAuth<RouteParams>(
         );
       }
 
-      const conversation = await callPrivateChatRpc<ChatConversation>(
-        'chat_get_conversation',
-        {
-          p_actor_user_id: auth.user.id,
-          p_conversation_id: params.conversationId,
-          p_ws_id: context.context.normalizedWsId,
-        }
-      );
+      let conversation: ChatConversation | null;
+      try {
+        conversation = await callPrivateChatRpc<ChatConversation>(
+          'chat_get_conversation',
+          {
+            p_actor_user_id: auth.user.id,
+            p_conversation_id: params.conversationId,
+            p_ws_id: context.context.normalizedWsId,
+          }
+        );
+      } catch (error) {
+        console.error('Failed to load conversation after message persistence', {
+          conversationId: params.conversationId,
+          error,
+          messageId: message.id,
+        });
+        return NextResponse.json(
+          { message, messages: [message] },
+          { status: 201 }
+        );
+      }
       if (!conversation) {
         return NextResponse.json(
           { message, messages: [message] },

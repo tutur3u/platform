@@ -2,12 +2,16 @@
 
 import { Bot, Globe2, Hash, MessageCircle } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  type ChatConversationScope,
+  normalizeChatConversationScope,
+} from '@tuturuuu/ui/chat/utils';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 
-type Scope = 'external' | 'personal' | 'workspaces';
+type Scope = ChatConversationScope;
 
 const scopes: {
   icon: ReactNode;
@@ -43,18 +47,23 @@ const scopes: {
   },
 ];
 
-export function ChatScopeTabs() {
+export function ChatScopeTabs({
+  defaultScope = 'personal',
+  onScopeChange,
+}: {
+  defaultScope?: ChatConversationScope;
+  onScopeChange?: (scope: ChatConversationScope) => void;
+}) {
   const t = useTranslations('chat');
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedScope = searchParams.get('scope');
-  const activeScope: Scope =
-    requestedScope === 'external' || requestedScope === 'workspaces'
-      ? requestedScope
-      : 'personal';
+  const activeScope = normalizeChatConversationScope(
+    searchParams.get('scope') ?? defaultScope
+  );
 
   function setScope(scope: Scope) {
+    onScopeChange?.(scope);
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set('scope', scope);
     nextParams.delete('conversationId');
@@ -98,10 +107,9 @@ export function ChatScopeTabs() {
   );
 }
 
-export function useChatScope() {
+export function useChatScope(defaultScope: ChatConversationScope = 'personal') {
   const searchParams = useSearchParams();
-  const requestedScope = searchParams.get('scope');
-  return requestedScope === 'external' || requestedScope === 'workspaces'
-    ? requestedScope
-    : 'personal';
+  return normalizeChatConversationScope(
+    searchParams.get('scope') ?? defaultScope
+  );
 }

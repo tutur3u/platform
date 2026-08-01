@@ -1,5 +1,5 @@
 begin;
-select plan(35);
+select plan(60);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
@@ -11,11 +11,13 @@ select has_function('private', 'external_chat_mark_verified', 'verification fenc
 select has_function('private', 'external_chat_clear_credential', 'credential recovery RPC exists');
 select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
 select has_function('private', 'external_chat_finalize_reply', 'atomic outbound finalization RPC exists');
+select has_function('private', 'external_chat_list_conversations', 'bounded external inbox RPC exists');
 select has_function('private', 'external_chat_update_settings', 'atomic binding settings RPC exists');
 select has_function('private', 'external_chat_stage_credential', 'serialized credential staging RPC exists');
 select has_function('private', 'external_chat_promote_credential', 'conditional credential promotion RPC exists');
 select has_function('private', 'external_chat_issue_pairing_ticket', 'pairing ticket issuance RPC exists');
 select has_function('private', 'external_chat_consume_pairing_ticket', 'pairing ticket consumption RPC exists');
+select has_function('private', 'external_project_set_cms_site_template', 'atomic CMS template RPC exists');
 
 select isnt_empty(
   $$select 1 from information_schema.table_privileges
@@ -27,7 +29,7 @@ select isnt_empty(
 select is_empty(
   $$select 1 from information_schema.table_privileges
     where table_schema = 'private'
-      and table_name in ('external_chat_binding_credentials', 'external_chat_threads', 'external_chat_events', 'external_chat_outbound_deliveries')
+      and table_name in ('external_chat_binding_credentials', 'external_chat_threads', 'external_chat_events', 'external_chat_outbound_deliveries', 'external_chat_sync_checkpoints')
       and grantee in ('anon', 'authenticated')$$,
   'external chat private tables have no direct client grants'
 );
@@ -35,6 +37,11 @@ select is_empty(
 select col_type_is('private', 'external_chat_threads', 'metadata', 'jsonb', 'thread context is dynamic JSON');
 select col_type_is('private', 'external_chat_events', 'metadata', 'jsonb', 'event context is dynamic JSON');
 select col_type_is('private', 'external_chat_sync_checkpoints', 'details', 'jsonb', 'checkpoint diagnostics are dynamic JSON');
+select col_type_is('private', 'external_chat_binding_credentials', 'configuration_revision', 'bigint', 'credential configuration has a monotonic revision');
+select col_type_is('private', 'external_chat_binding_credentials', 'verified_revision', 'bigint', 'verification records its configuration revision');
+select col_type_is('private', 'external_chat_outbound_deliveries', 'payload_hash', 'text', 'outbound idempotency binds an opaque payload digest');
+select col_type_is('private', 'external_chat_outbound_deliveries', 'configuration_revision', 'bigint', 'outbound delivery captures its credential revision');
+select col_type_is('private', 'external_chat_outbound_deliveries', 'cancelled_at', 'timestamp with time zone', 'failed delivery leases can be released');
 
 select has_index(
   'private', 'external_chat_threads',
@@ -57,11 +64,25 @@ select function_privs_are(
   array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb','uuid'],
   'authenticated', array[]::text[], 'authenticated clients cannot execute imports'
 );
+select function_privs_are(
+  'private', 'external_project_set_cms_site_template',
+  array['uuid','jsonb','uuid'],
+  'service_role', array['EXECUTE'], 'service role can atomically update CMS templates'
+);
+select function_privs_are(
+  'private', 'external_chat_list_conversations',
+  array['uuid','uuid','text','integer','integer'],
+  'authenticated', array[]::text[], 'authenticated clients cannot list external inboxes directly'
+);
 
-create temporary table external_chat_test_context (ws_id uuid primary key);
+create temporary table external_chat_test_context (
+  ws_id uuid primary key,
+  actor_id uuid not null
+);
 insert into external_chat_test_context
-select w.id
+select w.id, wm.user_id
 from public.workspaces w
+join public.workspace_members wm on wm.ws_id = w.id
 where not exists (
   select 1 from public.workspace_external_project_bindings b where b.ws_id = w.id
 )
@@ -69,6 +90,22 @@ limit 1;
 insert into public.workspace_external_project_bindings (ws_id, is_enabled, settings)
 select ws_id, true, '{"chat":{"enabled":true}}'::jsonb
 from external_chat_test_context;
+
+select lives_ok(
+  format(
+    $$select private.external_project_set_cms_site_template(%L, '{"kind":"standard-site","version":1}'::jsonb, null)$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'CMS template can be written without replacing sibling settings'
+);
+select is(
+  (
+    select settings #>> '{chat,enabled}' from public.workspace_external_project_bindings
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  'true',
+  'atomic CMS template writes preserve chat settings'
+);
 
 select lives_ok(
   format(
@@ -118,6 +155,38 @@ select is(
   'ticket issuance records only bounded metadata and a fixed-length digest'
 );
 
+update private.external_chat_binding_credentials
+set control_secret_encrypted = 'ciphertext',
+    ingest_secret_hash = repeat('c', 64)
+where ws_id = (select ws_id from external_chat_test_context);
+select ok(
+  private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 1
+  ),
+  'verification succeeds for the captured active configuration revision'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_update_settings(%L, '{"enabled":true,"bridgeBaseUrl":"https://bridge.example.com","agentMappings":{},"inboxDefaults":{},"authorityMode":"legacy_primary"}'::jsonb, null)$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'bridge settings can advance the configuration revision'
+);
+select is(
+  (
+    select configuration_revision from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  2::bigint,
+  'bridge URL changes advance the credential configuration revision'
+);
+select ok(
+  not private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 1
+  ),
+  'a stale verification cannot mark a newer configuration ready'
+);
+
 create temporary table external_chat_test_results (
   attempt integer primary key,
   result jsonb not null
@@ -148,6 +217,35 @@ select is(
   'duplicate import is acknowledged idempotently'
 );
 select is(
+  (select result->>'conversationCreated' from external_chat_test_results where attempt = 1),
+  'true',
+  'first import identifies the newly created conversation for realtime fanout'
+);
+select ok(
+  (select result ? 'conversation' and result ? 'message'
+    from external_chat_test_results where attempt = 1),
+  'first import returns native realtime payloads'
+);
+insert into private.ai_agent_external_threads (
+  ws_id, agent_id, channel_id, adapter, external_thread_id, title
+)
+select ws_id, 'test-agent', 'test-channel', 'discord', 'test-thread', 'AI thread'
+from external_chat_test_context;
+select ok(
+  not exists (
+    select 1
+    from jsonb_array_elements(private.external_chat_list_conversations(
+      (select ws_id from external_chat_test_context),
+      (select actor_id from external_chat_test_context),
+      'active',
+      41,
+      0
+    )) item
+    where item #>> '{metadata,source}' = 'ai-agent-external-thread'
+  ),
+  'connected-site inbox excludes unrelated AI-agent external threads'
+);
+select is(
   (select count(*) from private.external_chat_events e
     join external_chat_test_context c on c.ws_id = e.ws_id),
   1::bigint,
@@ -159,6 +257,81 @@ select is(
     join external_chat_test_context c on c.ws_id = t.ws_id),
   1::bigint,
   'duplicate import creates one native message'
+);
+
+select ok(
+  private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 2
+  ),
+  'the current credential revision can be verified for delivery'
+);
+create temporary table external_chat_delivery_results (result jsonb not null);
+insert into external_chat_delivery_results
+select private.external_chat_reserve_reply(
+  c.ws_id,
+  (r.result->>'conversationId')::uuid,
+  c.actor_id,
+  repeat('d', 64),
+  repeat('e', 64),
+  null
+)
+from external_chat_test_context c
+cross join external_chat_test_results r
+where r.attempt = 1;
+select is(
+  (select (result->>'configurationRevision')::bigint from external_chat_delivery_results),
+  2::bigint,
+  'reply reservations capture the verified configuration revision'
+);
+select throws_ok(
+  format(
+    $$select private.external_chat_update_settings(%L, '{"enabled":true,"bridgeBaseUrl":"https://next.example.com","agentMappings":{},"inboxDefaults":{},"authorityMode":"legacy_primary"}'::jsonb, null)$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'external_chat_delivery_in_progress',
+  'settings cannot change while a reply delivery lease is active'
+);
+select throws_ok(
+  format(
+    $$select private.external_chat_stage_credential(%L, 'set_ingest', 'pending', %L, 'last')$$,
+    (select ws_id from external_chat_test_context),
+    repeat('f', 64)
+  ),
+  'external_chat_delivery_in_progress',
+  'credentials cannot rotate while a reply delivery lease is active'
+);
+update private.external_chat_outbound_deliveries
+set cancelled_at = now()
+where ws_id = (select ws_id from external_chat_test_context);
+select lives_ok(
+  format(
+    $$select private.external_chat_update_settings(%L, '{"enabled":true,"bridgeBaseUrl":"https://next.example.com","agentMappings":{},"inboxDefaults":{},"authorityMode":"legacy_primary"}'::jsonb, null)$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'settings can change after a failed delivery lease is released'
+);
+select ok(
+  private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 3
+  ),
+  'the advanced configuration can be verified after lease release'
+);
+update private.external_chat_outbound_deliveries
+set cancelled_at = now()
+where ws_id = (select ws_id from external_chat_test_context);
+update external_chat_delivery_results
+set result = private.external_chat_reserve_reply(
+  (select ws_id from external_chat_test_context),
+  (select (result->>'conversationId')::uuid from external_chat_test_results where attempt = 1),
+  (select actor_id from external_chat_test_context),
+  repeat('d', 64),
+  repeat('e', 64),
+  null
+);
+select is(
+  (select (result->>'configurationRevision')::bigint from external_chat_delivery_results),
+  3::bigint,
+  'retrying a cancelled reservation refreshes its configuration fence'
 );
 
 select ok(

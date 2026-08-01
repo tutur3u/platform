@@ -19,7 +19,7 @@ export interface ExternalChatBindingState {
       rotatedAt: string | null;
     };
   };
-  settings: ExternalChatSettings | null;
+  settings: Partial<ExternalChatSettings> | null;
   verifiedAt: string | null;
 }
 

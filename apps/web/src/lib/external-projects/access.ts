@@ -41,6 +41,7 @@ import {
   authorizeExternalAppRequest,
   readExternalAppCredentials,
 } from './app-credentials';
+import { setWorkspaceCmsSiteTemplate } from './binding-settings';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -307,6 +308,19 @@ async function bindWorkspaceExternalProject({
     );
   }
 
+  const { error: bindingError } = await admin
+    .from('workspace_external_project_bindings')
+    .upsert(
+      {
+        canonical_project_id: canonicalProjectId,
+        is_enabled: true,
+        updated_by: actorId,
+        ws_id: workspaceId,
+      },
+      { onConflict: 'ws_id' }
+    );
+  if (bindingError) throw new Error(bindingError.message);
+
   const { error: deleteError } = await admin
     .from('workspace_secrets')
     .delete()
@@ -392,23 +406,12 @@ async function storeWorkspaceExternalProjectTemplate({
   workspaceId: string;
 }) {
   if (!template) return;
-  const { data, error: readError } = await admin
-    .from('workspace_external_project_bindings')
-    .select('settings')
-    .eq('ws_id', workspaceId)
-    .single();
-  if (readError) throw new Error(readError.message);
-  const { error } = await admin
-    .from('workspace_external_project_bindings')
-    .update({
-      settings: {
-        ...((data.settings as Record<string, Json>) ?? {}),
-        cmsSite: { template } as Json,
-      },
-      updated_by: actorId,
-    })
-    .eq('ws_id', workspaceId);
-  if (error) throw new Error(error.message);
+  await setWorkspaceCmsSiteTemplate({
+    actorId,
+    admin,
+    template,
+    workspaceId,
+  });
 }
 
 export async function ensureWorkspaceExternalProjectStudio({

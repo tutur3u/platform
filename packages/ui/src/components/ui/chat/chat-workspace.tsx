@@ -10,7 +10,7 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { toast } from '../sonner';
@@ -52,7 +52,9 @@ import {
   getConversationTitle,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
+  type PendingChatSendRequest,
   resolveChatConversationSelection,
+  resolvePendingChatSendRequest,
 } from './utils';
 
 interface ChatWorkspaceProps {
@@ -92,6 +94,7 @@ export function ChatWorkspace({
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
+  const pendingSendRequest = useRef<PendingChatSendRequest | null>(null);
   const requestedScope = searchParams.get('scope');
   const conversationScope =
     enforcedConversationScope ??
@@ -102,7 +105,7 @@ export function ChatWorkspace({
       : null);
   const conversationsQuery = useInfiniteChatConversations({
     archived: archiveFilter,
-    unpaginated: conversationScope === 'external',
+    scope: conversationScope === 'external' ? 'external' : undefined,
     wsId,
   });
   const allConversations = flattenChatConversationPages(
@@ -311,12 +314,21 @@ export function ChatWorkspace({
     attachments: ChatAttachmentDraft[];
     content: string;
   }) {
+    pendingSendRequest.current = resolvePendingChatSendRequest(
+      pendingSendRequest.current,
+      payload,
+      () => crypto.randomUUID()
+    );
+    const requestId = pendingSendRequest.current.requestId;
     try {
       const result = await sendMessage.mutateAsync({
         attachments: payload.attachments,
-        clientRequestId: crypto.randomUUID(),
+        clientRequestId: requestId,
         content: payload.content,
       });
+      if (pendingSendRequest.current?.requestId === requestId) {
+        pendingSendRequest.current = null;
+      }
 
       if (result.assistantError) {
         toast.error(t('assistant_response_failed'));

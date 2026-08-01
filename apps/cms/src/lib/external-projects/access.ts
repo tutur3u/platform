@@ -23,6 +23,16 @@ import {
 
 type AdminDb = TypedSupabaseClient;
 
+export function sanitizeCmsBindingSettings(
+  settings: WorkspaceExternalProjectBinding['settings']
+) {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return settings;
+  }
+  const { chat: _chat, ...safeSettings } = settings;
+  return safeSettings;
+}
+
 function hasAnyPermission(
   permissions: PermissionsResult | null,
   values: readonly PermissionId[]
@@ -117,6 +127,12 @@ export function hasCmsCommerceInsightsPermission(
   );
 }
 
+export function hasCmsConnectedChatReadPermission(
+  permissions: PermissionsResult | null
+) {
+  return hasAnyPermission(permissions, ['view_chat']);
+}
+
 export async function resolveWorkspaceExternalProjectBinding(
   workspaceId: string,
   db?: AdminDb
@@ -193,7 +209,7 @@ export async function resolveWorkspaceExternalProjectBinding(
       enabled && canonicalProject?.is_active ? canonicalProject : null,
     enabled:
       enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
-    settings,
+    settings: sanitizeCmsBindingSettings(settings),
     workspace_id: workspaceId,
   };
 }
@@ -267,16 +283,23 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
   ]);
 
   const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
+  const hasConnectedChat =
+    !isInternalWorkspace &&
+    binding.enabled &&
+    Boolean(binding.canonical_project?.allowed_features.includes('chat'));
   const canAccessWorkspace =
     !isInternalWorkspace &&
     binding.enabled &&
     Boolean(binding.canonical_project) &&
     (hasWorkspaceExternalProjectPermission(workspacePermissions) ||
       isRootAdmin);
+  const canAccessConnectedChat =
+    hasConnectedChat && hasCmsConnectedChatReadPermission(workspacePermissions);
 
   return {
     binding,
     canAccessAdmin: isRootAdmin && isInternalWorkspace,
+    canAccessConnectedChat,
     canAccessWorkspace,
     isInternalWorkspace,
     isRootAdmin,

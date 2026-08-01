@@ -3282,6 +3282,7 @@ export type Database = {
       };
       external_chat_binding_credentials: {
         Row: {
+          configuration_revision: number;
           control_secret_encrypted: string | null;
           control_secret_last_four: string | null;
           control_secret_rotated_at: string | null;
@@ -3300,9 +3301,11 @@ export type Database = {
           pending_secret_last_four: string | null;
           updated_at: string;
           verified_at: string | null;
+          verified_revision: number | null;
           ws_id: string;
         };
         Insert: {
+          configuration_revision?: number;
           control_secret_encrypted?: string | null;
           control_secret_last_four?: string | null;
           control_secret_rotated_at?: string | null;
@@ -3321,9 +3324,11 @@ export type Database = {
           pending_secret_last_four?: string | null;
           updated_at?: string;
           verified_at?: string | null;
+          verified_revision?: number | null;
           ws_id: string;
         };
         Update: {
+          configuration_revision?: number;
           control_secret_encrypted?: string | null;
           control_secret_last_four?: string | null;
           control_secret_rotated_at?: string | null;
@@ -3342,6 +3347,7 @@ export type Database = {
           pending_secret_last_four?: string | null;
           updated_at?: string;
           verified_at?: string | null;
+          verified_revision?: number | null;
           ws_id?: string;
         };
         Relationships: [];
@@ -3399,34 +3405,43 @@ export type Database = {
       };
       external_chat_outbound_deliveries: {
         Row: {
+          cancelled_at: string | null;
           completed_at: string | null;
+          configuration_revision: number;
           created_at: string;
           delivered_at: string | null;
           id: string;
           idempotency_key: string;
           message_id: string | null;
+          payload_hash: string;
           request_fingerprint: string;
           thread_id: string;
           ws_id: string;
         };
         Insert: {
+          cancelled_at?: string | null;
           completed_at?: string | null;
+          configuration_revision: number;
           created_at?: string;
           delivered_at?: string | null;
           id?: string;
           idempotency_key?: string;
           message_id?: string | null;
+          payload_hash: string;
           request_fingerprint: string;
           thread_id: string;
           ws_id: string;
         };
         Update: {
+          cancelled_at?: string | null;
           completed_at?: string | null;
+          configuration_revision?: number;
           created_at?: string;
           delivered_at?: string | null;
           id?: string;
           idempotency_key?: string;
           message_id?: string | null;
+          payload_hash?: string;
           request_fingerprint?: string;
           thread_id?: string;
           ws_id?: string;
@@ -15713,6 +15728,7 @@ export type Database = {
           p_actor_user_id: string;
           p_content: string;
           p_delivery_id: string;
+          p_payload_hash: string;
           p_reply_to_message_id?: string;
           p_ws_id: string;
         };
@@ -15738,8 +15754,22 @@ export type Database = {
         Args: { p_expires_at: string; p_ticket_hash: string; p_ws_id: string };
         Returns: undefined;
       };
+      external_chat_list_conversations: {
+        Args: {
+          p_actor_user_id: string;
+          p_archived?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       external_chat_mark_verified: {
-        Args: { p_control_secret_encrypted: string; p_ws_id: string };
+        Args: {
+          p_configuration_revision: number;
+          p_control_secret_encrypted: string;
+          p_ws_id: string;
+        };
         Returns: boolean;
       };
       external_chat_promote_credential: {
@@ -15750,6 +15780,7 @@ export type Database = {
         Args: {
           p_actor_user_id: string;
           p_conversation_id: string;
+          p_payload_hash: string;
           p_reply_to_message_id?: string;
           p_request_fingerprint: string;
           p_ws_id: string;
@@ -15769,6 +15800,10 @@ export type Database = {
       external_chat_update_settings: {
         Args: { p_actor_user_id: string; p_chat: Json; p_ws_id: string };
         Returns: undefined;
+      };
+      external_project_set_cms_site_template: {
+        Args: { p_actor_user_id: string; p_template: Json; p_ws_id: string };
+        Returns: Json;
       };
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };

@@ -17,7 +17,7 @@ export const chatQueryKeys = {
     wsId: string,
     archived = 'active',
     limit = 40,
-    mode: 'all' | 'paged' = 'paged'
+    scope: 'all' | 'external' = 'all'
   ) =>
     [
       ...chatQueryKeys.all(wsId),
@@ -25,7 +25,7 @@ export const chatQueryKeys = {
       archived,
       'infinite',
       limit,
-      mode,
+      scope,
     ] as const,
   directory: (wsId: string, query: string) =>
     [...chatQueryKeys.all(wsId), 'directory', query] as const,

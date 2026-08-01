@@ -118,6 +118,6 @@ export async function safeExternalChatFetch(
   try {
     return await undiciFetch(url, { ...init, dispatcher, redirect: 'error' });
   } finally {
-    await dispatcher.close();
+    await dispatcher.destroy();
   }
 }

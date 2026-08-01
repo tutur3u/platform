@@ -25,6 +25,11 @@
       "targetOwner": "rust-backend",
       "note": "Binding-scoped secret rotation and masked credential state remain on the live Next.js backend pending Rust parity."
     },
+    "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live Next.js conversation list now supports a server-enforced external scope while the Rust collection handler remains pending."
+    },
     "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts": {
       "methods": {
         "GET": {

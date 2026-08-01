@@ -42,8 +42,8 @@ export function getChatConversationSections({
   scope?: ChatConversationScope;
   sourceLabels?: ChatConversationSourceLabels;
 }): ChatConversationSection[] {
-  if (scope === 'external') {
-    return [
+  if (scope === 'external' || scope === 'workspaces') {
+    const sections = [
       createChatConversationSection({
         conversations: conversations.filter(
           (conversation) => conversation.type === 'channel'
@@ -53,27 +53,21 @@ export function getChatConversationSections({
         sourceLabels,
       }),
     ];
-  }
 
-  if (scope === 'workspaces') {
-    return [
-      createChatConversationSection({
-        conversations: conversations.filter(
-          (conversation) => conversation.type === 'channel'
-        ),
-        label: labels.channel,
-        sectionType: 'channel',
-        sourceLabels,
-      }),
-      createChatConversationSection({
-        conversations: conversations.filter(
-          (conversation) => conversation.type === 'ai'
-        ),
-        label: labels.ai,
-        sectionType: 'ai',
-        sourceLabels,
-      }),
-    ];
+    if (scope === 'workspaces') {
+      sections.push(
+        createChatConversationSection({
+          conversations: conversations.filter(
+            (conversation) => conversation.type === 'ai'
+          ),
+          label: labels.ai,
+          sectionType: 'ai',
+          sourceLabels,
+        })
+      );
+    }
+
+    return sections;
   }
 
   if (scope === 'personal') {

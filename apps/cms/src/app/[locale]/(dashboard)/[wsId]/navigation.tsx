@@ -36,13 +36,14 @@ export async function getNavigationLinks({
         getCmsGamesEnabled(workspaceId),
         getCmsWorkspaceAccess(workspaceId),
       ]);
-  const connectedChatEnabled = Boolean(
+  const connectedChatCanManage = Boolean(
     access?.canAccessWorkspace &&
       access.workspacePermissions?.containsPermission(
         'manage_external_projects'
       ) &&
       access.binding?.canonical_project?.allowed_features.includes('chat')
   );
+  const connectedChatCanView = Boolean(access?.canAccessConnectedChat);
 
   if (isInternalWorkspace) {
     return [
@@ -112,10 +113,12 @@ export async function getNavigationLinks({
           aliases: [`/${personalOrWsId}/games`],
         }
       : null,
-    connectedChatEnabled
+    connectedChatCanManage || connectedChatCanView
       ? {
           title: t('connected-chat.navigation'),
-          href: `/${personalOrWsId}/chat`,
+          href: connectedChatCanManage
+            ? `/${personalOrWsId}/chat`
+            : `/${personalOrWsId}/chat/inbox`,
           icon: <MessageSquare className="h-4 w-4" />,
           aliases: [`/${personalOrWsId}/chat`, `/${personalOrWsId}/chat/inbox`],
         }

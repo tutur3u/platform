@@ -425,7 +425,8 @@ export async function listAiChatMessages({
     .eq('creator_id', user.id)
     .maybeSingle();
 
-  if (chatError || !chat) return null;
+  if (chatError) throw new Error(chatError.message);
+  if (!chat) return null;
 
   const messagesQuery = supabase
     .from('ai_chat_messages')
@@ -440,7 +441,7 @@ export async function listAiChatMessages({
 
   const { data: messages, error } = await messagesQuery;
 
-  if (error) return [];
+  if (error) throw new Error(error.message);
 
   const sender = getAiChatUserProfile(user);
   const messageRows = [...((messages ?? []) as AiChatMessageRow[])].reverse();

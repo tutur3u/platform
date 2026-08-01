@@ -1,4 +1,7 @@
-import type { ExternalProjectAdapterKind } from '@tuturuuu/types';
+import {
+  CMS_SITE_V1_COLLECTIONS,
+  type ExternalProjectAdapterKind,
+} from '@tuturuuu/types';
 
 export const EXTERNAL_PROJECT_ENABLED_SECRET = 'EXTERNAL_PROJECT_ENABLED';
 export const EXTERNAL_PROJECT_CANONICAL_ID_SECRET =
@@ -60,16 +63,7 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
 ] as const;
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
-  cms_site: [
-    'site-settings',
-    'navigation',
-    'pages',
-    'posts',
-    'taxonomies',
-    'landing-sections',
-    'redirects',
-    'media-assets',
-  ],
+  cms_site: CMS_SITE_V1_COLLECTIONS.map(([slug]) => slug),
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
   richfield: [

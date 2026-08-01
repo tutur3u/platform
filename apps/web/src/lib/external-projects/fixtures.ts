@@ -1,6 +1,7 @@
-import type {
-  ExternalProjectAdapterKind,
-  ExternalProjectSyncSchema,
+import {
+  CMS_SITE_V1_COLLECTIONS,
+  type ExternalProjectAdapterKind,
+  type ExternalProjectSyncSchema,
 } from '@tuturuuu/types';
 
 type FixtureAsset = {
@@ -664,24 +665,15 @@ export const externalProjectAdapterFixtures: Record<
 > = {
   cms_site: {
     adapter: 'cms_site',
-    collections: (
-      [
-        ['site-settings', 'Site settings', 'settings'],
-        ['navigation', 'Navigation', 'navigation'],
-        ['pages', 'Pages', 'page'],
-        ['posts', 'Posts', 'post'],
-        ['taxonomies', 'Taxonomies', 'taxonomy'],
-        ['landing-sections', 'Landing sections', 'section'],
-        ['media-assets', 'Media', 'media'],
-        ['redirects', 'Redirects', 'redirect'],
-      ] as const
-    ).map(([slug, title, collectionType]) => ({
-      collectionType,
-      entries: [],
-      slug,
-      sourceId: `cms-site:${slug}`,
-      title,
-    })),
+    collections: CMS_SITE_V1_COLLECTIONS.map(
+      ([slug, title, collectionType]) => ({
+        collectionType,
+        entries: [],
+        slug,
+        sourceId: `cms-site:${slug}`,
+        title,
+      })
+    ),
     profileData: {},
     sourceReference: 'CMS site contract v1',
   },

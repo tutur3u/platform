@@ -1308,7 +1308,8 @@ export type ExternalProjectSyncEntity =
   | 'block'
   | 'collection'
   | 'entry'
-  | 'schema';
+  | 'schema'
+  | 'template';
 
 export type ExternalProjectSyncAction =
   | 'archive'

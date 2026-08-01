@@ -64,20 +64,6 @@ export const POST = withSessionAuth<Params>(
     if (!current) {
       return NextResponse.json({ error: 'Binding not found' }, { status: 404 });
     }
-    if (
-      parsed.data.action === 'clear_ingest' ||
-      parsed.data.action === 'clear_control'
-    ) {
-      await clearExternalChatCredential(
-        wsId,
-        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
-      );
-      return NextResponse.json({
-        state: serializeExternalChatBinding(
-          await readExternalChatBinding(wsId)
-        ),
-      });
-    }
     try {
       current = await reconcilePendingCredential(wsId, current);
     } catch {
@@ -88,6 +74,33 @@ export const POST = withSessionAuth<Params>(
         },
         { status: 502 }
       );
+    }
+    if (
+      parsed.data.action === 'clear_ingest' ||
+      parsed.data.action === 'clear_control'
+    ) {
+      if (
+        current.credentials?.verified_at ||
+        current.credentials?.pairing_ticket_consumed_at
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Paired bridge credentials must be revoked remotely before they can be cleared',
+            state: serializeExternalChatBinding(current),
+          },
+          { status: 409 }
+        );
+      }
+      await clearExternalChatCredential(
+        wsId,
+        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
+      );
+      return NextResponse.json({
+        state: serializeExternalChatBinding(
+          await readExternalChatBinding(wsId)
+        ),
+      });
     }
     let issuedSecret: string | undefined;
     if (parsed.data.action === 'rotate_ingest') {
@@ -110,7 +123,9 @@ export const POST = withSessionAuth<Params>(
           return NextResponse.json(
             {
               error: 'External chat bridge rejected credential rotation',
-              state: serializeExternalChatBinding(current),
+              state: serializeExternalChatBinding(
+                await readExternalChatBinding(wsId)
+              ),
             },
             { status: 502 }
           );
@@ -136,7 +151,9 @@ export const POST = withSessionAuth<Params>(
           return NextResponse.json(
             {
               error: 'External chat bridge rejected credential rotation',
-              state: serializeExternalChatBinding(current),
+              state: serializeExternalChatBinding(
+                await readExternalChatBinding(wsId)
+              ),
             },
             { status: 502 }
           );
@@ -155,10 +172,17 @@ export const POST = withSessionAuth<Params>(
         );
       }
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      const verifiedRevision = current.credentials?.configuration_revision;
       if (!verifiedCiphertext) {
         return NextResponse.json(
           { error: 'Control credential is not configured' },
           { status: 400 }
+        );
+      }
+      if (typeof verifiedRevision !== 'number') {
+        return NextResponse.json(
+          { error: 'Credential revision is unavailable' },
+          { status: 409 }
         );
       }
       const pairingTicket = createIngestSecret();
@@ -186,7 +210,11 @@ export const POST = withSessionAuth<Params>(
         );
       }
       if (
-        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+        !(await markExternalChatCredentialVerified(
+          wsId,
+          verifiedCiphertext,
+          verifiedRevision
+        ))
       ) {
         return NextResponse.json(
           { error: 'Credential changed during pairing' },
@@ -195,10 +223,17 @@ export const POST = withSessionAuth<Params>(
       }
     } else {
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      const verifiedRevision = current.credentials?.configuration_revision;
       if (!verifiedCiphertext) {
         return NextResponse.json(
           { error: 'Control credential is not configured' },
           { status: 400 }
+        );
+      }
+      if (typeof verifiedRevision !== 'number') {
+        return NextResponse.json(
+          { error: 'Credential revision is unavailable' },
+          { status: 409 }
         );
       }
       try {
@@ -215,7 +250,11 @@ export const POST = withSessionAuth<Params>(
         );
       }
       if (
-        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+        !(await markExternalChatCredentialVerified(
+          wsId,
+          verifiedCiphertext,
+          verifiedRevision
+        ))
       ) {
         return NextResponse.json(
           { error: 'Credential changed during verification' },
