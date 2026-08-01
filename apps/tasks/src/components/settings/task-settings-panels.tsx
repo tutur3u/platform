@@ -169,12 +169,12 @@ export function TaskBoardSettingsPanel({
           }}
           translations={{
             cannotReorderAcrossStatuses: t(
-              'ws-task-boards.board_layout.cannot_reorder_across_statuses'
+              'ws-task-boards.layout_settings.cannot_reorder_across_statuses'
             ),
             failedToReorderLists: t(
-              'ws-task-boards.board_layout.failed_to_reorder'
+              'ws-task-boards.layout_settings.failed_to_reorder'
             ),
-            listsReordered: t('ws-task-boards.board_layout.lists_reordered'),
+            listsReordered: t('ws-task-boards.layout_settings.lists_reordered'),
           }}
           wsId={wsId}
         />
