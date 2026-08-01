@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 
 const mocks = {
   clearExternalChatCredential: vi.fn(),
+  configureExternalChatBridge: vi.fn(),
   markExternalChatCredentialVerified: vi.fn(),
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
@@ -33,9 +34,12 @@ vi.mock('@/lib/external-chat/crypto', () => ({
   encryptControlSecret: vi.fn(async () => 'encrypted-pending'),
   hashExternalChatSecret: vi.fn(() => 'h'.repeat(64)),
   secretLastFour: vi.fn(() => 'cret'),
+  verifyExternalChatSecret: vi.fn(() => true),
 }));
 
 vi.mock('@/lib/external-chat/delivery', () => ({
+  configureExternalChatBridge: (...args: unknown[]) =>
+    mocks.configureExternalChatBridge(...args),
   updateExternalChatBridgeCredential: (...args: unknown[]) =>
     mocks.updateExternalChatBridgeCredential(...args),
   verifyExternalChatControl: (...args: unknown[]) =>
@@ -73,6 +77,7 @@ function request(payload: Record<string, unknown> = { action: 'verify' }) {
 describe('external chat credential verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.configureExternalChatBridge.mockResolvedValue(undefined);
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
       ok: true,
@@ -85,6 +90,7 @@ describe('external chat credential verification', () => {
     mocks.serializeExternalChatBinding.mockReturnValue({
       readiness: { errors: [], ready: true },
     });
+    mocks.verifyExternalChatControl.mockResolvedValue(undefined);
   });
 
   it('records verification only after the signed bridge probe succeeds', async () => {
@@ -144,5 +150,67 @@ describe('external chat credential verification', () => {
     );
     expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(await response.text()).not.toContain('ecs_test_secret');
+  });
+
+  it('pairs with transient bootstrap material and verifies before marking ready', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        control_secret_encrypted: 'encrypted-control',
+        ingest_secret_hash: 'ingest-hash',
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'pair',
+        bootstrapSecret: 'bootstrap-secret-value-123456',
+        ingestSecret: 'ingest-secret-value-123456789',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.configureExternalChatBridge).toHaveBeenCalledWith({
+      bootstrapSecret: 'bootstrap-secret-value-123456',
+      ingestSecret: 'ingest-secret-value-123456789',
+      wsId: 'workspace-1',
+    });
+    expect(mocks.verifyExternalChatControl).toHaveBeenCalledWith('workspace-1');
+    expect(mocks.markExternalChatCredentialVerified).toHaveBeenCalledWith(
+      'workspace-1',
+      'encrypted-control'
+    );
+    const responseText = await response.text();
+    expect(responseText).not.toContain('bootstrap-secret-value-123456');
+    expect(responseText).not.toContain('ingest-secret-value-123456789');
+  });
+
+  it('does not leak pairing material when bootstrap configuration fails', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        control_secret_encrypted: 'encrypted-control',
+        ingest_secret_hash: 'ingest-hash',
+      },
+    });
+    mocks.configureExternalChatBridge.mockRejectedValue(
+      new Error('bootstrap-secret-value-123456')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'pair',
+        bootstrapSecret: 'bootstrap-secret-value-123456',
+        ingestSecret: 'ingest-secret-value-123456789',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(502);
+    const responseText = await response.text();
+    expect(responseText).not.toContain('bootstrap-secret-value-123456');
+    expect(responseText).not.toContain('ingest-secret-value-123456789');
+    expect(mocks.markExternalChatCredentialVerified).not.toHaveBeenCalled();
   });
 });

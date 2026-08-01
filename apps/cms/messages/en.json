@@ -3413,6 +3413,8 @@
   "connected-chat": {
     "agent_mappings": "Agent mappings",
     "agent_mappings_invalid": "Agent mappings must be valid JSON.",
+    "bootstrap_description": "Used once to pair the deployed bridge. This value is never stored.",
+    "bootstrap_secret": "Bootstrap credential",
     "bridge_url": "Legacy bridge URL",
     "control_secret": "Control credential",
     "copy": "Copy widget snippet",
@@ -3430,6 +3432,7 @@
     "not_ready": "Setup needs attention",
     "not_ready_description": "{count, plural, one {# readiness check is incomplete.} other {# readiness checks are incomplete.}}",
     "open_inbox": "Open live inbox",
+    "pair": "Pair deployed bridge",
     "ready": "Ready for canary synchronization",
     "ready_description": "Both directions can be tested without changing live authority.",
     "rotate_ingest": "Rotate ingest credential",

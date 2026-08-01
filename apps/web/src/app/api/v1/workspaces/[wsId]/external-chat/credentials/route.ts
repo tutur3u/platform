@@ -8,8 +8,10 @@ import {
   encryptControlSecret,
   hashExternalChatSecret,
   secretLastFour,
+  verifyExternalChatSecret,
 } from '@/lib/external-chat/crypto';
 import {
+  configureExternalChatBridge,
   updateExternalChatBridgeCredential,
   verifyExternalChatControl,
 } from '@/lib/external-chat/delivery';
@@ -32,6 +34,11 @@ const mutationSchema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('clear_ingest') }),
   z.object({ action: z.literal('clear_control') }),
+  z.object({
+    action: z.literal('pair'),
+    bootstrapSecret: z.string().min(24).max(512),
+    ingestSecret: z.string().min(24).max(512),
+  }),
   z.object({ action: z.literal('verify') }),
 ]);
 
@@ -136,6 +143,50 @@ export const POST = withSessionAuth<Params>(
         }
       }
       await promotePendingCredential(wsId, 'rotate_control');
+    } else if (parsed.data.action === 'pair') {
+      const expectedHash = current.credentials?.ingest_secret_hash;
+      if (
+        !expectedHash ||
+        !verifyExternalChatSecret(parsed.data.ingestSecret, expectedHash)
+      ) {
+        return NextResponse.json(
+          { error: 'Ingest credential does not match' },
+          { status: 400 }
+        );
+      }
+      const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      if (!verifiedCiphertext) {
+        return NextResponse.json(
+          { error: 'Control credential is not configured' },
+          { status: 400 }
+        );
+      }
+      try {
+        await configureExternalChatBridge({
+          bootstrapSecret: parsed.data.bootstrapSecret,
+          ingestSecret: parsed.data.ingestSecret,
+          wsId,
+        });
+        await verifyExternalChatControl(wsId);
+      } catch {
+        return NextResponse.json(
+          {
+            error: 'External chat bridge pairing failed',
+            state: serializeExternalChatBinding(
+              await readExternalChatBinding(wsId)
+            ),
+          },
+          { status: 502 }
+        );
+      }
+      if (
+        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+      ) {
+        return NextResponse.json(
+          { error: 'Credential changed during pairing' },
+          { status: 409 }
+        );
+      }
     } else {
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
       if (!verifiedCiphertext) {

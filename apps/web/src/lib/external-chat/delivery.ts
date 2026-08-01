@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import type { ChatMessage } from '@/lib/chat/private-rpc';
 import { decryptControlSecret, signControlRequest } from './crypto';
 import { safeExternalChatFetch } from './safe-control-request';
@@ -91,6 +92,18 @@ function isChatEnabled(settings: unknown) {
   );
 }
 
+function getPublicPlatformUrl() {
+  return resolveTuturuuuWebAppUrl({
+    env: {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      NEXT_PUBLIC_WEB_APP_URL: process.env.NEXT_PUBLIC_WEB_APP_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+    },
+  });
+}
+
 async function postSignedControlRequest({
   body,
   bridgeBaseUrl,
@@ -140,6 +153,51 @@ export async function verifyExternalChatControl(wsId: string) {
     throw new Error(
       `External chat bridge verification failed (${response.status})`
     );
+  }
+}
+
+export async function configureExternalChatBridge({
+  bootstrapSecret,
+  ingestSecret,
+  wsId,
+}: {
+  bootstrapSecret: string;
+  ingestSecret: string;
+  wsId: string;
+}) {
+  const state = await readExternalChatBinding(wsId);
+  const controlCiphertext = state?.credentials?.control_secret_encrypted;
+  const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
+  if (
+    !state?.binding.is_enabled ||
+    !isChatEnabled(state.binding.settings) ||
+    !controlCiphertext ||
+    !state.credentials?.ingest_secret_hash ||
+    !bridgeBaseUrl
+  ) {
+    throw new Error('External chat bridge is not ready for pairing');
+  }
+
+  const body = JSON.stringify({
+    bindingId: wsId,
+    controlSecret: await decryptControlSecret(wsId, controlCiphertext),
+    ingestSecret,
+    platformUrl: getPublicPlatformUrl(),
+  });
+  const response = await safeExternalChatFetch(
+    `${bridgeBaseUrl}/control/v1/configure`,
+    {
+      body,
+      headers: {
+        authorization: `Bearer ${bootstrapSecret}`,
+        'content-type': 'application/json',
+      },
+      method: 'POST',
+      signal: AbortSignal.timeout(10_000),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`External chat bridge pairing failed (${response.status})`);
   }
 }
 
