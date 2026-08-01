@@ -127,7 +127,7 @@ export function CallShell({
                 stream={
                   focused.userId === state.selfUserId
                     ? room.localStream
-                    : Object.values(room.remoteStreams)[0]
+                    : room.remoteStreams[focused.userId]
                 }
               />
               <div className="flex shrink-0 gap-2 overflow-x-auto pb-1">
@@ -143,7 +143,7 @@ export function CallShell({
                       stream={
                         entry.userId === state.selfUserId
                           ? room.localStream
-                          : undefined
+                          : room.remoteStreams[entry.userId]
                       }
                     />
                   ))}
@@ -165,7 +165,7 @@ export function CallShell({
                   stream={
                     entry.userId === state.selfUserId
                       ? room.localStream
-                      : Object.values(room.remoteStreams)[0]
+                      : room.remoteStreams[entry.userId]
                   }
                 />
               ))}

@@ -112,3 +112,24 @@ export function videoConstraints(limits: {
     width: { ideal: limits.maxWidth, max: limits.maxWidth },
   };
 }
+
+/**
+ * Recovers the owner from a track name.
+ *
+ * Remote tracks arrive on the peer connection with an opaque id, so the only
+ * way to attribute a stream to a participant is the name we chose when
+ * publishing: `<userId>-<kind>`. Returns null for anything not in that shape.
+ */
+export function userIdFromTrackName(
+  trackName: string | undefined
+): string | null {
+  if (!trackName) return null;
+  const separator = trackName.lastIndexOf('-');
+  if (separator <= 0) return null;
+
+  const userId = trackName.slice(0, separator);
+  const kind = trackName.slice(separator + 1);
+  if (!['audio', 'video', 'screen'].includes(kind)) return null;
+
+  return userId || null;
+}

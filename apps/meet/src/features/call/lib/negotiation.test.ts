@@ -6,6 +6,7 @@ import {
   planLocalTracks,
   planRemoteSubscriptions,
   staleSubscriptions,
+  userIdFromTrackName,
   videoConstraints,
 } from './negotiation';
 
@@ -131,5 +132,26 @@ describe('video constraints', () => {
       height: { ideal: 720, max: 720 },
       width: { ideal: 1280, max: 1280 },
     });
+  });
+});
+
+describe('track ownership', () => {
+  it('recovers the publisher from a track name', () => {
+    expect(userIdFromTrackName('user-self-audio')).toBe('user-self');
+    expect(userIdFromTrackName('user-self-video')).toBe('user-self');
+    expect(userIdFromTrackName('user-self-screen')).toBe('user-self');
+  });
+
+  it('handles ids that themselves contain dashes', () => {
+    const uuid = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
+    expect(userIdFromTrackName(localTrackName(uuid, 'video'))).toBe(uuid);
+  });
+
+  it('rejects names that are not ours', () => {
+    expect(userIdFromTrackName(undefined)).toBeNull();
+    expect(userIdFromTrackName('')).toBeNull();
+    expect(userIdFromTrackName('novalidkind')).toBeNull();
+    expect(userIdFromTrackName('user-bogus')).toBeNull();
+    expect(userIdFromTrackName('-audio')).toBeNull();
   });
 });

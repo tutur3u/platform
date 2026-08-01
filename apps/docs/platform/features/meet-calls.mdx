@@ -18,7 +18,7 @@ cost and CPU stay flat as a room grows.
 | Protocol, permissions, pure room reducer | `packages/realtime/src/meet/` |
 | Room server (Bun + Docker, port 7816) | `apps/meet-realtime/src/server.ts` |
 | Room server (Cloudflare Worker + Durable Object) | `apps/meet-realtime/src/worker.ts` |
-| Cloudflare SFU HTTPS client | `apps/meet-realtime/src/cloudflare-sfu.ts` |
+| Cloudflare SFU HTTPS client | `packages/realtime/src/meet/sfu.ts` |
 | Call client and UI | `apps/meet/src/features/call/` |
 | Call route (full-bleed, no sidebar) | `apps/meet/src/app/[locale]/call/[wsId]/[meetingId]` |
 
@@ -85,6 +85,22 @@ confusing errors if reintroduced:
 
 Creating a session with no local offer must also send **no request body** at
 all; `{}` and `{autoDiscover: true}` are both rejected.
+
+## Attributing remote tracks
+
+An inbound track arrives with an opaque id, so nothing on the
+`RTCPeerConnection` says who published it. Attribution comes from the track
+name, which is deliberately `<userId>-<kind>`: the subscribe response returns a
+`mid` per track, the client maps `mid → userId`, and the `track` event is
+matched against that map.
+
+This is load-bearing. Keying inbound streams by the browser's track id instead
+means the UI cannot tell participants apart, and every tile ends up rendering
+whichever stream arrived first.
+
+One `MediaStream` is accumulated per participant, since their audio and video
+arrive as separate tracks but belong to one tile. The map and the streams are
+both cleared on reconnect, because mids are only meaningful within a session.
 
 ## Reconnection
 

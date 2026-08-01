@@ -8,7 +8,10 @@ import {
   reduceCallState,
   remoteTrackKey,
 } from '../../meet/src/features/call/lib/call-state';
-import { planRemoteSubscriptions } from '../../meet/src/features/call/lib/negotiation';
+import {
+  planRemoteSubscriptions,
+  userIdFromTrackName,
+} from '../../meet/src/features/call/lib/negotiation';
 import { MeetSignaling } from '../../meet/src/features/call/lib/signaling';
 
 const lines: string[] = [];
@@ -80,7 +83,9 @@ async function main() {
   const config = await fetch(`/token?peer=${peer}`).then((r) => r.json());
   let state: CallState = INITIAL_CALL_STATE;
   const subscribed = new Set<string>();
+  const owners = new Map<string, string>();
   let inboundTracks = 0;
+  let attributedTracks = 0;
 
   const signaling = new MeetSignaling({
     onMessage: (message) => {
@@ -149,7 +154,14 @@ async function main() {
   const subscribePc = new RTCPeerConnection(PEER_CONFIG);
   subscribePc.addEventListener('track', (event) => {
     inboundTracks += 1;
-    log(`inbound ${event.track.kind} track received`, 'pass');
+    const owner = event.transceiver.mid
+      ? owners.get(event.transceiver.mid)
+      : undefined;
+    if (owner && owner !== config.selfUserId) attributedTracks += 1;
+    log(
+      `inbound ${event.track.kind} track received${owner ? ` from ${owner.slice(0, 8)}…` : ' (UNATTRIBUTED)'}`,
+      owner ? 'pass' : 'fail'
+    );
     if (videoEl && event.streams[0]) videoEl.srcObject = event.streams[0];
   });
 
@@ -176,11 +188,17 @@ async function main() {
     if (pending.length) {
       const answer = await signaling.request<{
         sessionDescription?: RTCSessionDescriptionInit;
+        tracks?: Array<{ mid?: string; trackName?: string }>;
       }>({
         sessionId: subscribeSession.sessionId,
         tracks: pending,
         type: 'sfu.tracks.subscribe',
       });
+
+      for (const track of answer?.tracks ?? []) {
+        const owner = userIdFromTrackName(track.trackName);
+        if (track.mid && owner) owners.set(track.mid, owner);
+      }
 
       if (answer?.sessionDescription) {
         await subscribePc.setRemoteDescription(answer.sessionDescription);
@@ -224,7 +242,13 @@ async function main() {
   });
 
   log(`bytesReceived=${bytesReceived} framesDecoded=${framesDecoded}`);
-  const flowing = bytesReceived > 0 && framesDecoded > 0;
+  log(
+    `attributed ${attributedTracks}/${inboundTracks} inbound tracks to a peer`
+  );
+  const flowing =
+    bytesReceived > 0 &&
+    framesDecoded > 0 &&
+    attributedTracks === inboundTracks;
   log(
     flowing
       ? 'media is flowing through Cloudflare Realtime'

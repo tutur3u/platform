@@ -3,7 +3,7 @@
 import { Hand, MicOff, MonitorUp, Pin } from '@tuturuuu/icons';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 
 function initials(displayName: string) {
   return displayName
@@ -13,7 +13,7 @@ function initials(displayName: string) {
     .join('');
 }
 
-export function ParticipantTile({
+function ParticipantTileImpl({
   className,
   handRaised,
   isSelf,
@@ -102,3 +102,26 @@ export function ParticipantTile({
     </div>
   );
 }
+
+/**
+ * Presence is republished on a heartbeat, so without memoisation every tile in
+ * the room re-renders on a timer. Comparing the fields the tile actually paints
+ * keeps a 12-person grid from thrashing.
+ */
+export const ParticipantTile = memo(
+  ParticipantTileImpl,
+  (previous, next) =>
+    previous.participant.userId === next.participant.userId &&
+    previous.participant.displayName === next.participant.displayName &&
+    previous.participant.media.audioEnabled ===
+      next.participant.media.audioEnabled &&
+    previous.participant.media.videoEnabled ===
+      next.participant.media.videoEnabled &&
+    previous.participant.media.screenEnabled ===
+      next.participant.media.screenEnabled &&
+    previous.handRaised === next.handRaised &&
+    previous.isSelf === next.isSelf &&
+    previous.isSpeaking === next.isSpeaking &&
+    previous.stream === next.stream &&
+    previous.className === next.className
+);

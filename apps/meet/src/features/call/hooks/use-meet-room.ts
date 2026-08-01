@@ -18,6 +18,7 @@ import {
   type LocalTrackPlan,
   planLocalTracks,
   planRemoteSubscriptions,
+  userIdFromTrackName,
 } from '../lib/negotiation';
 import { MeetSignaling, type MeetSignalingStatus } from '../lib/signaling';
 
@@ -25,6 +26,7 @@ type SfuSessionResponse = { sessionId?: string };
 type SfuTracksResponse = {
   requiresImmediateRenegotiation?: boolean;
   sessionDescription?: CloudflareSfuSessionDescription;
+  tracks?: Array<{ mid?: string; trackName?: string }>;
 };
 
 export interface UseMeetRoomOptions {
@@ -91,6 +93,8 @@ export function useMeetRoom({
   const publishedRef = useRef<LocalTrackPlan[]>([]);
   const subscribedRef = useRef<Set<string>>(new Set());
   const screenStreamRef = useRef<MediaStream | null>(null);
+  /** mid -> owning participant, the only way to attribute an inbound track. */
+  const trackOwnersRef = useRef<Map<string, string>>(new Map());
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -139,6 +143,8 @@ export function useMeetRoom({
         // subscription ledger so every remote track is pulled again onto the
         // fresh session.
         subscribedRef.current = new Set();
+        trackOwnersRef.current = new Map();
+        setRemoteStreams({});
         subscribeSessionRef.current = null;
         subscribePcRef.current?.close();
         subscribePcRef.current = null;
@@ -209,12 +215,24 @@ export function useMeetRoom({
     subscribePcRef.current = pc;
 
     pc.addEventListener('track', (event) => {
-      const [stream] = event.streams;
-      const trackId = event.track.id;
-      setRemoteStreams((current) => ({
-        ...current,
-        [trackId]: stream ?? new MediaStream([event.track]),
-      }));
+      const mid = event.transceiver.mid;
+      const userId = mid ? trackOwnersRef.current.get(mid) : undefined;
+      if (!userId) return;
+
+      // One stream per participant, accumulated: their audio and video arrive
+      // as separate tracks but belong to a single tile.
+      setRemoteStreams((current) => {
+        const existing = current[userId];
+        if (existing) {
+          if (
+            !existing.getTracks().some((track) => track.id === event.track.id)
+          ) {
+            existing.addTrack(event.track);
+          }
+          return current;
+        }
+        return { ...current, [userId]: new MediaStream([event.track]) };
+      });
     });
 
     const result = await signalingRef.current?.request<SfuSessionResponse>({
@@ -339,6 +357,11 @@ export function useMeetRoom({
           type: 'sfu.tracks.subscribe',
         });
         if (cancelled) return;
+
+        for (const track of answer?.tracks ?? []) {
+          const owner = userIdFromTrackName(track.trackName);
+          if (track.mid && owner) trackOwnersRef.current.set(track.mid, owner);
+        }
 
         if (answer?.sessionDescription) {
           await pc.setRemoteDescription(answer.sessionDescription);
