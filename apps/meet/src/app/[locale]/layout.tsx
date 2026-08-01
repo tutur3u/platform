@@ -11,6 +11,7 @@ import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Providers } from './providers';
 
@@ -69,7 +70,9 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers appName={siteConfig.name}>{children}</Providers>
+        <NuqsAdapter>
+          <Providers appName={siteConfig.name}>{children}</Providers>
+        </NuqsAdapter>
         <TailwindIndicator />
         <ProductionIndicator />
         <StaffToolbar />
