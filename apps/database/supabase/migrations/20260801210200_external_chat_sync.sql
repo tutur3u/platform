@@ -799,6 +799,7 @@ declare
   v_conversation_created boolean := false;
   v_message_id uuid;
   v_existing_message_id uuid;
+  v_existing_thread_id uuid;
   v_title text;
 begin
   if p_connector_key is null or btrim(p_connector_key) = ''
@@ -847,16 +848,26 @@ begin
     0
   ));
 
-  select e.message_id into v_existing_message_id
+  select e.message_id, e.thread_id
+  into v_existing_message_id, v_existing_thread_id
   from private.external_chat_events e
   where e.ws_id = p_ws_id
     and e.connector_key = p_connector_key
     and e.remote_message_id = p_remote_message_id;
 
   if v_existing_message_id is not null then
+    select * into v_thread
+    from private.external_chat_threads t
+    where t.id = v_existing_thread_id;
+
     return jsonb_build_object(
+      'conversation', private.chat_conversation_json(v_thread.conversation_id, p_mapped_user_id),
+      'conversationCreated', false,
+      'conversationId', v_thread.conversation_id,
       'duplicate', true,
-      'messageId', v_existing_message_id
+      'message', (select private.chat_message_json(m) from private.chat_messages m where m.id = v_existing_message_id),
+      'messageId', v_existing_message_id,
+      'threadId', v_existing_thread_id
     );
   end if;
 

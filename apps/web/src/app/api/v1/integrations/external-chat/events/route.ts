@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 import { verifyExternalChatSecret } from '@/lib/external-chat/crypto';
 import {
@@ -61,9 +62,9 @@ export async function POST(request: Request) {
     wsId,
   });
 
-  if (!result.duplicate && result.conversation && result.message) {
+  if (result.conversation && result.message) {
     const audience = { scope: 'workspace' } as const;
-    if (result.conversationCreated) {
+    if (result.conversationCreated || result.duplicate) {
       await publishChatRealtimeEvent({
         actorUserId: null,
         audience,
@@ -81,6 +82,14 @@ export async function POST(request: Request) {
       type: 'message.created',
       wsId,
     });
+    if (!result.duplicate && parsed.data.direction === 'visitor') {
+      await notifyChatMessageRecipients({
+        actorUserId: null,
+        conversation: result.conversation,
+        message: result.message,
+        wsId,
+      });
+    }
   }
 
   const admin = await createAdminClient({ noCookie: true });

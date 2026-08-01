@@ -78,6 +78,35 @@ async function listNativeChatConversations({
   }
 }
 
+async function listNativeConversationPrefix({
+  actorUserId,
+  archived,
+  length,
+  wsId,
+}: {
+  actorUserId: string;
+  archived: 'active' | 'all' | 'archived';
+  length: number;
+  wsId: string;
+}) {
+  const conversations: ChatConversation[] = [];
+
+  while (conversations.length < length) {
+    const pageLimit = Math.min(length - conversations.length, 100);
+    const page = await listNativeChatConversations({
+      actorUserId,
+      archived,
+      limit: pageLimit,
+      offset: conversations.length,
+      wsId,
+    });
+    conversations.push(...page);
+    if (page.length < pageLimit) break;
+  }
+
+  return conversations;
+}
+
 async function canIncludeAiAgentAdminMetadata({
   actorUser,
   wsId,
@@ -190,6 +219,7 @@ export const GET = withSessionAuth<RouteParams>(
         actorUser: auth.user,
         wsId: context.context.normalizedWsId,
       });
+      const sourcePrefixLength = pagination.offset + pagination.limit + 1;
 
       const [
         conversations,
@@ -197,11 +227,10 @@ export const GET = withSessionAuth<RouteParams>(
         aiAgentExternalConversations,
         aiChatConversations,
       ] = await Promise.all([
-        listNativeChatConversations({
+        listNativeConversationPrefix({
           actorUserId: auth.user.id,
           archived,
-          limit: null,
-          offset: 0,
+          length: sourcePrefixLength,
           wsId: context.context.normalizedWsId,
         }),
         archived === 'active'
@@ -230,9 +259,11 @@ export const GET = withSessionAuth<RouteParams>(
         ...aiAgentExternalConversations,
         ...aiChatConversations,
       ].sort(compareConversationsByRecency);
+      const pageEnd = pagination.offset + pagination.limit;
+      const hasNextPage = allConversations.length > pageEnd;
       return NextResponse.json({
-        conversations: allConversations,
-        nextOffset: null,
+        conversations: allConversations.slice(pagination.offset, pageEnd),
+        nextOffset: hasNextPage ? pageEnd : null,
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat conversations');

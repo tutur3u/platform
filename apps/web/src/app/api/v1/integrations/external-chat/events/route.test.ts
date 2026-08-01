@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   importExternalChatEvent: vi.fn(),
+  notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   readExternalChatBinding: vi.fn(),
   upsert: vi.fn(),
@@ -33,6 +34,11 @@ vi.mock('@/lib/external-chat/store', () => ({
 vi.mock('@/lib/chat/realtime', () => ({
   publishChatRealtimeEvent: (...args: unknown[]) =>
     mocks.publishChatRealtimeEvent(...args),
+}));
+
+vi.mock('@/lib/chat/notifications', () => ({
+  notifyChatMessageRecipients: (...args: unknown[]) =>
+    mocks.notifyChatMessageRecipients(...args),
 }));
 
 const wsId = 'd14c91ba-75b1-4f5d-ad0f-f837840e1e8f';
@@ -99,6 +105,11 @@ describe('external chat ingest route', () => {
       threadId: 'thread-1',
     });
     mocks.upsert.mockResolvedValue({ error: null });
+    mocks.notifyChatMessageRecipients.mockResolvedValue({
+      createdCount: 1,
+      failedCount: 0,
+      recipientCount: 1,
+    });
     mocks.verifyExternalChatSecret.mockImplementation(
       (secret: string, hash: string) =>
         (secret === 'old-secret' && hash === 'active-hash') ||
@@ -141,6 +152,15 @@ describe('external chat ingest route', () => {
         wsId,
       })
     );
+    expect(mocks.notifyChatMessageRecipients).toHaveBeenCalledWith({
+      actorUserId: null,
+      conversation: { id: 'conversation-1' },
+      message: {
+        conversationId: 'conversation-1',
+        id: 'native-message-1',
+      },
+      wsId,
+    });
     expect(mocks.publishChatRealtimeEvent).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
@@ -158,16 +178,25 @@ describe('external chat ingest route', () => {
     });
   });
 
-  it('does not republish duplicate inbound events', async () => {
+  it('republishes duplicate inbound events without notifying twice', async () => {
     mocks.importExternalChatEvent.mockResolvedValueOnce({
+      conversation: { id: 'conversation-1' },
+      conversationCreated: false,
+      conversationId: 'conversation-1',
       duplicate: true,
+      message: {
+        conversationId: 'conversation-1',
+        id: 'native-message-1',
+      },
       messageId: 'native-message-1',
+      threadId: 'thread-1',
     });
     const { POST } = await import('./route');
     const response = await POST(eventRequest('old-secret'));
 
     expect(response.status).toBe(200);
-    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(2);
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
   it('rejects an event timestamp beyond the allowed clock skew', async () => {
