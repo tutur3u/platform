@@ -379,11 +379,15 @@ describe('BoardHeader', () => {
     );
   });
 
-  it('does not broadcast a second settings dialog open request', () => {
+  it('uses one claimed settings intent instead of racing the URL fallback', () => {
     const handleSettingsIntent = vi.fn();
+    const claimSettingsIntent = (event: Event) => {
+      event.preventDefault();
+      handleSettingsIntent();
+    };
     window.addEventListener(
       'tuturuuu:settings-dialog-open-intent',
-      handleSettingsIntent
+      claimSettingsIntent
     );
 
     renderBoardHeader();
@@ -394,11 +398,12 @@ describe('BoardHeader', () => {
     fireEvent.pointerDown(settingsButton);
     fireEvent.click(settingsButton);
 
-    expect(handleSettingsIntent).not.toHaveBeenCalled();
+    expect(handleSettingsIntent).toHaveBeenCalledTimes(1);
+    expect(navigationMocks.replace).not.toHaveBeenCalled();
 
     window.removeEventListener(
       'tuturuuu:settings-dialog-open-intent',
-      handleSettingsIntent
+      claimSettingsIntent
     );
   });
 

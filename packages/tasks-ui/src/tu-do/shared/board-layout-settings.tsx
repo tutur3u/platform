@@ -10,7 +10,6 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -66,11 +65,12 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from './board-broadcast-context';
+import { reorderTaskListsWithinStatus } from './board-layout-ordering';
 import { CreateListDialog } from './create-list-dialog';
 import { EditListDialog } from './edit-list-dialog';
 import { isTaskListNameExistsError } from './task-board-errors';
@@ -80,7 +80,7 @@ interface BoardLayoutSettingsContentProps {
   boardId: string;
   wsId?: string;
   lists: WorkspaceTaskList[];
-  onUpdate: () => void;
+  onUpdate: () => Promise<void> | void;
   disableScrollArea?: boolean;
   scrollAreaClassName?: string;
   translations?: {
@@ -107,7 +107,7 @@ interface BoardLayoutSettingsContentProps {
     failedToUpdateColor?: string;
     listDeletedSuccessfully?: string;
     failedToDeleteList?: string;
-    cannotMoveToClosedStatus?: string;
+    cannotReorderAcrossStatuses?: string;
     listsReordered?: string;
     failedToReorderLists?: string;
     movedToStatus?: string;
@@ -512,9 +512,9 @@ export function BoardLayoutSettingsContent({
         translations?.listDeletedSuccessfully ?? 'List deleted successfully',
       failedToDeleteList:
         translations?.failedToDeleteList ?? 'Failed to delete list',
-      cannotMoveToClosedStatus:
-        translations?.cannotMoveToClosedStatus ??
-        'Cannot move lists to or from closed status',
+      cannotReorderAcrossStatuses:
+        translations?.cannotReorderAcrossStatuses ??
+        'Task lists can only be reordered within the same status group',
       listsReordered: translations?.listsReordered ?? 'Lists reordered',
       failedToReorderLists:
         translations?.failedToReorderLists ?? 'Failed to reorder lists',
@@ -566,13 +566,18 @@ export function BoardLayoutSettingsContent({
   const [creatingList, setCreatingList] = useState(false);
   const [createListStatus, setCreateListStatus] =
     useState<TaskBoardStatus>('active');
+  const [visibleLists, setVisibleLists] = useState(lists);
+
+  useEffect(() => {
+    setVisibleLists(lists);
+  }, [lists]);
 
   // Broadcast for realtime sync with other clients
   const contextBroadcast = useBoardBroadcast();
   const broadcast = contextBroadcast ?? getActiveBroadcast();
 
   // Group lists by status
-  const groupedLists = lists.reduce(
+  const groupedLists = visibleLists.reduce(
     (acc, list) => {
       if (!list.status) return acc;
       if (!acc[list.status]) {
@@ -748,7 +753,7 @@ export function BoardLayoutSettingsContent({
       if (!over || active.id === over.id) return;
 
       // Find the dragged list
-      const draggedList = lists.find((l) => l.id === active.id);
+      const draggedList = visibleLists.find((l) => l.id === active.id);
       if (!draggedList) return;
 
       // Find which status the target belongs to
@@ -764,126 +769,64 @@ export function BoardLayoutSettingsContent({
 
       if (!targetStatus) return;
 
-      // Prevent moving to/from closed status
-      if (draggedList.status === 'closed' || targetStatus === 'closed') {
-        toast.error(t.cannotMoveToClosedStatus);
+      if (draggedList.status !== targetStatus) {
+        toast.error(t.cannotReorderAcrossStatuses);
         return;
       }
 
-      // Store snapshot for rollback
-      const previousLists = queryClient.getQueryData<WorkspaceTaskList[]>([
-        'task_lists',
-        boardId,
-      ]);
+      const previousLists = visibleLists;
+      const reordered = reorderTaskListsWithinStatus(
+        visibleLists,
+        String(active.id),
+        String(over.id)
+      );
+      if (!reordered) return;
 
-      // Check if moving within same status or across statuses
-      if (draggedList.status === targetStatus) {
-        // Same status - reorder
-        const statusLists = groupedLists[targetStatus] || [];
-        const oldIndex = statusLists.findIndex((l) => l.id === active.id);
-        const newIndex = statusLists.findIndex((l) => l.id === over.id);
-
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        const newOrder = arrayMove(statusLists, oldIndex, newIndex);
-
-        // Optimistically update
-        queryClient.setQueryData(
-          ['task_lists', boardId],
-          (oldData: WorkspaceTaskList[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((list) => {
-              const newPos = newOrder.findIndex((l) => l.id === list.id);
-              return newPos !== -1 ? { ...list, position: newPos } : list;
-            });
-          }
-        );
-
-        // Persist changes
-        try {
-          if (!wsId) throw new Error('Workspace ID is required');
-          await Promise.all(
-            newOrder.map((list, index) =>
-              updateWorkspaceTaskList(wsId, boardId, list.id, {
-                position: index,
-              })
-            )
+      setVisibleLists(reordered.lists);
+      queryClient.setQueryData(
+        ['task_lists', boardId],
+        (oldData: WorkspaceTaskList[] | undefined) => {
+          if (!oldData) return oldData;
+          const nextPositions = new Map(
+            reordered.updates.map((update) => [update.id, update.position])
           );
-          toast.success(t.listsReordered);
-        } catch (error) {
-          console.error('Failed to reorder lists:', error);
-          toast.error(t.failedToReorderLists);
-          if (previousLists) {
-            queryClient.setQueryData(['task_lists', boardId], previousLists);
-          } else {
-            queryClient.invalidateQueries({
-              queryKey: ['task_lists', boardId],
-            });
-          }
-        }
-      } else {
-        // Cross-status move
-        const targetStatusLists = (groupedLists[targetStatus] || []).sort(
-          (a, b) => (a?.position || 0) - (b?.position || 0)
-        );
-
-        // Find insertion position
-        const insertIndex = targetStatusLists.findIndex(
-          (l) => l.id === over.id
-        );
-
-        let newPosition: number;
-        if (insertIndex === 0) {
-          // Insert at beginning
-          newPosition = (targetStatusLists[0]?.position || 0) - 1;
-        } else if (insertIndex > 0) {
-          // Insert between
-          const prevPos = targetStatusLists[insertIndex - 1]?.position || 0;
-          const nextPos = targetStatusLists[insertIndex]?.position || 0;
-          newPosition = (prevPos + nextPos) / 2;
-        } else {
-          // Append to end
-          newPosition =
-            Math.max(0, ...targetStatusLists.map((l) => l.position || 0)) + 1;
-        }
-
-        // Optimistically update
-        queryClient.setQueryData(
-          ['task_lists', boardId],
-          (oldData: WorkspaceTaskList[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((list) =>
-              list.id === draggedList.id
-                ? { ...list, status: targetStatus, position: newPosition }
-                : list
-            );
-          }
-        );
-
-        // Persist to database
-        try {
-          if (!wsId) throw new Error('Workspace ID is required');
-          await updateWorkspaceTaskList(wsId, boardId, draggedList.id, {
-            status: targetStatus,
-            position: newPosition,
+          return oldData.map((list) => {
+            const position = nextPositions.get(list.id);
+            return position === undefined ? list : { ...list, position };
           });
-          toast.success(
-            t.movedToStatus.replace('{status}', statusLabels[targetStatus])
-          );
-        } catch (error) {
-          console.error('Failed to move list:', error);
-          toast.error(t.failedToUpdateList);
-          if (previousLists) {
-            queryClient.setQueryData(['task_lists', boardId], previousLists);
-          } else {
-            queryClient.invalidateQueries({
-              queryKey: ['task_lists', boardId],
-            });
-          }
         }
+      );
+
+      try {
+        if (!wsId) throw new Error('Workspace ID is required');
+        await Promise.all(
+          reordered.updates.map(({ id, position }) =>
+            updateWorkspaceTaskList(wsId, boardId, id, { position })
+          )
+        );
+
+        for (const update of reordered.updates) {
+          broadcast?.('list:upsert', { list: update });
+        }
+        await onUpdate();
+        toast.success(t.listsReordered);
+      } catch (error) {
+        console.error('Failed to reorder lists:', error);
+        toast.error(t.failedToReorderLists);
+        setVisibleLists(previousLists);
+        queryClient.setQueryData(['task_lists', boardId], previousLists);
       }
     },
-    [boardId, groupedLists, lists, queryClient, statusLabels, t, wsId]
+    [
+      boardId,
+      broadcast,
+      groupedLists,
+      onUpdate,
+      queryClient,
+      t,
+      visibleLists,
+      wsId,
+    ]
   );
 
   const handleColorChange = (listId: string, color: SupportedColor) => {

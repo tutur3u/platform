@@ -164,7 +164,18 @@ export function TaskBoardSettingsPanel({
           boardId={board.id}
           disableScrollArea
           lists={lists}
-          onUpdate={() => void refetch()}
+          onUpdate={async () => {
+            await refetch();
+          }}
+          translations={{
+            cannotReorderAcrossStatuses: t(
+              'ws-task-boards.board_layout.cannot_reorder_across_statuses'
+            ),
+            failedToReorderLists: t(
+              'ws-task-boards.board_layout.failed_to_reorder'
+            ),
+            listsReordered: t('ws-task-boards.board_layout.lists_reordered'),
+          }}
           wsId={wsId}
         />
       </div>

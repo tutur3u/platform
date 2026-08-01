@@ -105,6 +105,8 @@ const toolbarButtonClass =
 const toolbarComboboxClass =
   'w-auto [&_button]:h-7 [&_button]:w-7 [&_button]:min-w-7 [&_button]:text-muted-foreground [&_button]:transition-colors hover:[&_button]:text-foreground [&_button_svg]:text-current sm:[&_button]:h-8 sm:[&_button]:w-8 sm:[&_button]:min-w-8';
 const BOARD_SETTINGS_PRELOAD_EVENT = 'tuturuuu:board-settings-intent';
+const SETTINGS_DIALOG_OPEN_INTENT_EVENT =
+  'tuturuuu:settings-dialog-open-intent';
 
 function getBrowserInternalApiOptions() {
   return typeof window !== 'undefined'
@@ -231,6 +233,18 @@ export function BoardHeader({
 
   function openBoardSettings() {
     prefetchBoardSettings();
+
+    const openIntent = new CustomEvent(SETTINGS_DIALOG_OPEN_INTENT_EVENT, {
+      cancelable: true,
+      detail: {
+        settingsBoardId: board.id,
+        settingsTab: 'task_board',
+      },
+    });
+    window.dispatchEvent(openIntent);
+
+    if (openIntent.defaultPrevented) return;
+
     const params = new URLSearchParams(searchParams.toString());
     params.set('settingsDialog', 'open');
     params.set('settingsTab', 'task_board');
