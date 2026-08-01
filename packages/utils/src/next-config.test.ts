@@ -4,6 +4,7 @@ import {
   createTuturuuuNextConfig,
   isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
+  isTuturuuuTurbopackRustReactCompilerEnabled,
   resolveTuturuuuInfrastructureAppUrl,
   resolveTuturuuuWebAppUrl,
   TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
@@ -264,6 +265,20 @@ describe('isTuturuuuNextCacheComponentsEnabled', () => {
         TUTURUUU_NEXT_CACHE_COMPONENTS: '1',
       })
     ).toBe(true);
+  });
+});
+
+describe('isTuturuuuTurbopackRustReactCompilerEnabled', () => {
+  it('keeps the native compiler enabled for normal builds', () => {
+    expect(isTuturuuuTurbopackRustReactCompilerEnabled({})).toBe(true);
+  });
+
+  it('disables the Turbopack-only compiler for webpack fallback builds', () => {
+    expect(
+      isTuturuuuTurbopackRustReactCompilerEnabled({
+        NEXT_WEBPACK_BUILD: '1',
+      })
+    ).toBe(false);
   });
 });
 

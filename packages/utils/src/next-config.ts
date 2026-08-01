@@ -83,6 +83,12 @@ export function isTuturuuuNextCacheComponentsEnabled(
   return true;
 }
 
+export function isTuturuuuTurbopackRustReactCompilerEnabled(
+  env: Environment = process.env
+) {
+  return env.NEXT_WEBPACK_BUILD !== '1';
+}
+
 export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
   const experimentalConfig = config.experimental ?? {};
   const imageConfig = config.images ?? {};
@@ -116,7 +122,8 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
       turbopackFileSystemCacheForBuild:
         experimentalConfig.turbopackFileSystemCacheForBuild ?? true,
       turbopackRustReactCompiler:
-        experimentalConfig.turbopackRustReactCompiler ?? true,
+        experimentalConfig.turbopackRustReactCompiler ??
+        isTuturuuuTurbopackRustReactCompilerEnabled(),
       optimizePackageImports: mergeStringArrays(
         TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
         experimentalConfig.optimizePackageImports
