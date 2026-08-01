@@ -86,6 +86,36 @@ confusing errors if reintroduced:
 Creating a session with no local offer must also send **no request body** at
 all; `{}` and `{autoDiscover: true}` are both rejected.
 
+## Reconnection
+
+Signaling drops are expected: servers restart, networks blip, laptops sleep. The
+client reconnects with exponential backoff and full jitter, so a room server
+restart does not produce a synchronised retry stampede from every participant.
+
+Two details make it actually work:
+
+- **Each attempt fetches a fresh join token** from `POST /api/call-token`. Join
+  tokens are short-lived and calls are not, so reusing the original token would
+  let a client reconnect for ten minutes and then fail forever on
+  "Reconnecting…". Membership is re-checked on every refresh.
+- **A reconnect rebuilds room state.** The client re-announces itself with
+  `presence.join` and clears its subscription ledger and peer connections, so
+  every remote track is pulled again. Without that it would rejoin a room it
+  could not see.
+
+A clean close (`1000`) and a host removal (`4403`) are decisions, not blips, and
+are never retried.
+
+Media survives a signaling drop: the peer connections to the SFU are
+independent, so audio and video keep flowing while signaling is down.
+
+```bash
+bun apps/meet-realtime/src/reconnect-check.ts
+```
+
+That check stops the room server mid-session and asserts the client recovers,
+mints a new token for the retry, and stays closed when the close was intentional.
+
 ## Meeting codes
 
 Every meeting has a shareable code and a `/join/<code>` link, surfaced by the

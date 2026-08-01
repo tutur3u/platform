@@ -6,7 +6,7 @@ import type {
   MeetMediaState,
   MeetRealtimeTrackKind,
 } from '@tuturuuu/realtime/meet';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   type CallState,
   INITIAL_CALL_STATE,
@@ -28,8 +28,10 @@ type SfuTracksResponse = {
 };
 
 export interface UseMeetRoomOptions {
+  meetingId: string;
   realtimeUrl: string;
   token: string;
+  wsId: string;
 }
 
 export interface MeetRoomController {
@@ -63,8 +65,10 @@ const PEER_CONFIG: RTCConfiguration = {
  * room affordable.
  */
 export function useMeetRoom({
+  meetingId,
   realtimeUrl,
   token,
+  wsId,
 }: UseMeetRoomOptions): MeetRoomController {
   const [state, setState] = useState<CallState>(INITIAL_CALL_STATE);
   const [connectionStatus, setConnectionStatus] =
@@ -90,17 +94,60 @@ export function useMeetRoom({
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const url = useMemo(
-    () => `${realtimeUrl}?token=${encodeURIComponent(token)}`,
-    [realtimeUrl, token]
-  );
+  const mediaRef = useRef(media);
+  mediaRef.current = media;
 
   useEffect(() => {
+    let usedInitialToken = false;
+
+    /**
+     * The token minted on the server is good for the first connect. Every
+     * later attempt fetches a fresh one, because join tokens expire long
+     * before a meeting does.
+     */
+    const resolveUrl = async () => {
+      if (!usedInitialToken) {
+        usedInitialToken = true;
+        return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
+      }
+
+      const response = await fetch('/api/call-token', {
+        body: JSON.stringify({ meetingId, wsId }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('token_refresh_failed');
+
+      const refreshed = (await response.json()) as {
+        realtimeUrl: string;
+        token: string;
+      };
+      return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
+    };
+
     const signaling = new MeetSignaling({
       onMessage: (message) =>
         setState((current) => reduceCallState(current, message)),
+      onReconnected: () => {
+        // The room forgot us while we were gone: re-announce, and clear the
+        // subscription ledger so every remote track is pulled again onto the
+        // fresh session.
+        subscribedRef.current = new Set();
+        subscribeSessionRef.current = null;
+        subscribePcRef.current?.close();
+        subscribePcRef.current = null;
+        publishSessionRef.current = null;
+        publishPcRef.current?.close();
+        publishPcRef.current = null;
+        publishedRef.current = [];
+
+        signalingRef.current?.send({
+          media: mediaRef.current,
+          type: 'presence.join',
+        });
+      },
       onStatusChange: setConnectionStatus,
-      url,
+      resolveUrl,
     });
     signalingRef.current = signaling;
     signaling.connect();
@@ -117,7 +164,7 @@ export function useMeetRoom({
       publishedRef.current = [];
       subscribedRef.current = new Set();
     };
-  }, [url]);
+  }, [meetingId, realtimeUrl, token, wsId]);
 
   /** Announces our media state so other clients can render mute badges. */
   const publishPresence = useCallback((next: MeetMediaState) => {

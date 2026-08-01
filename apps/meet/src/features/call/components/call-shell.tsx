@@ -46,7 +46,7 @@ export function CallShell({
 }) {
   const t = useTranslations('meet.call');
   const router = useRouter();
-  const room = useMeetRoom({ realtimeUrl, token });
+  const room = useMeetRoom({ meetingId, realtimeUrl, token, wsId });
   const { state } = room;
 
   const [joined, setJoined] = useState(false);

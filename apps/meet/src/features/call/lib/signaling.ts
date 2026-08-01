@@ -2,6 +2,7 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from '@tuturuuu/realtime/meet';
+import { computeBackoffMs, shouldReconnect } from './reconnect';
 
 type PendingRequest = {
   reject: (error: Error) => void;
@@ -10,8 +11,14 @@ type PendingRequest = {
 
 export interface MeetSignalingOptions {
   onMessage: (message: MeetRealtimeServerMessage) => void;
+  /** Fired after a dropped socket is re-established, never on first connect. */
+  onReconnected?: () => void;
   onStatusChange?: (status: MeetSignalingStatus) => void;
-  url: string;
+  /**
+   * Resolved per attempt rather than passed once, so a reconnect can fetch a
+   * fresh join token. Tokens are short-lived and calls are not.
+   */
+  resolveUrl: () => Promise<string> | string;
 }
 
 export type MeetSignalingStatus = 'connecting' | 'open' | 'closed' | 'error';
@@ -40,6 +47,9 @@ export class MeetSignaling {
   private nextRequestId = 0;
   private socket: WebSocket | null = null;
   private closedByUs = false;
+  private attempt = 0;
+  private hasConnected = false;
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(options: MeetSignalingOptions) {
     this.options = options;
@@ -49,22 +59,52 @@ export class MeetSignaling {
     this.closedByUs = false;
     this.options.onStatusChange?.('connecting');
 
-    const socket = new WebSocket(this.options.url);
-    this.socket = socket;
+    void (async () => {
+      let url: string;
+      try {
+        url = await this.options.resolveUrl();
+      } catch {
+        // A failed token refresh is itself a retryable condition.
+        this.scheduleReconnect();
+        return;
+      }
+      if (this.closedByUs) return;
 
-    socket.addEventListener('open', () =>
-      this.options.onStatusChange?.('open')
-    );
-    socket.addEventListener('error', () =>
-      this.options.onStatusChange?.('error')
-    );
-    socket.addEventListener('close', () => {
-      this.failAllPending(new Error('signaling_closed'));
-      if (!this.closedByUs) this.options.onStatusChange?.('closed');
-    });
-    socket.addEventListener('message', (event) => {
-      this.handleMessage(String(event.data));
-    });
+      const socket = new WebSocket(url);
+      this.socket = socket;
+
+      socket.addEventListener('open', () => {
+        const reconnected = this.hasConnected;
+        this.attempt = 0;
+        this.hasConnected = true;
+        this.options.onStatusChange?.('open');
+        if (reconnected) this.options.onReconnected?.();
+      });
+      socket.addEventListener('error', () =>
+        this.options.onStatusChange?.('error')
+      );
+      socket.addEventListener('close', (event) => {
+        this.failAllPending(new Error('signaling_closed'));
+        if (this.closedByUs) return;
+        this.options.onStatusChange?.('closed');
+        this.scheduleReconnect((event as CloseEvent).code);
+      });
+      socket.addEventListener('message', (event) => {
+        this.handleMessage(String(event.data));
+      });
+    })();
+  }
+
+  private scheduleReconnect(closeCode?: number) {
+    if (this.closedByUs) return;
+    if (!shouldReconnect(this.attempt, closeCode)) return;
+
+    const delay = computeBackoffMs(this.attempt);
+    this.attempt += 1;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = null;
+      if (!this.closedByUs) this.connect();
+    }, delay);
   }
 
   private handleMessage(raw: string) {
@@ -137,8 +177,12 @@ export class MeetSignaling {
 
   close() {
     this.closedByUs = true;
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
     this.failAllPending(new Error('signaling_closed'));
-    this.socket?.close();
+    this.socket?.close(1000, 'client_left');
     this.socket = null;
   }
 }

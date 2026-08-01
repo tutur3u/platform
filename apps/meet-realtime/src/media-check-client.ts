@@ -88,7 +88,8 @@ async function main() {
       if (message.type === 'error') log(`room error: ${message.error}`);
     },
     onStatusChange: (status) => log(`signaling ${status}`),
-    url: `${config.roomUrl}?token=${encodeURIComponent(config.token)}`,
+    resolveUrl: () =>
+      `${config.roomUrl}?token=${encodeURIComponent(config.token)}`,
   });
   signaling.connect();
 
