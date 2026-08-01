@@ -1,13 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  AiStudioPlaygroundError,
   getAiStudioCatalog,
   getAiStudioKeys,
   getAiStudioPolicy,
   getAiStudioPublicModels,
   getAiStudioRunDetail,
   getAiStudioRuns,
+  getAiStudioSavedKeyModels,
   getAiStudioUsage,
   runAiStudioPlayground,
+  runAiStudioSavedKeyPlayground,
   updateAiStudioPolicy,
 } from './ai-studio';
 
@@ -103,6 +106,90 @@ describe('AI Studio observability client', () => {
       })
     );
     expect(result.steps[0]?.name).toBe('calculator');
+  });
+
+  it('uses saved keys through the authenticated workspace route without returning a secret', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: [
+            {
+              contextWindow: 128000,
+              id: 'openai/gpt-5-mini',
+              maxOutputTokens: 8192,
+              name: 'GPT 5 Mini',
+              ownedBy: 'openai',
+              type: 'language',
+            },
+          ],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'request-1',
+          model: 'openai/gpt-5-mini',
+          output_text: 'ready',
+          usage: { total_tokens: 3 },
+        })
+      );
+
+    await getAiStudioSavedKeyModels('workspace / one', 'key / one', {
+      fetch: fetchMock,
+    });
+    await runAiStudioSavedKeyPlayground(
+      'workspace / one',
+      'key / one',
+      {
+        endpoint: 'responses',
+        maxOutputTokens: 100,
+        maxSteps: 4,
+        model: 'openai/gpt-5-mini',
+        prompt: 'Hello',
+        tools: [],
+      },
+      { fetch: fetchMock }
+    );
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      '/api/v1/workspaces/workspace%20%2F%20one/ai/playground?keyId=key%20%2F%20one'
+    );
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      '/api/v1/workspaces/workspace%20%2F%20one/ai/playground'
+    );
+    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(body.keyId).toBe('key / one');
+    expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('ttr_ai_');
+  });
+
+  it('preserves actionable error metadata from production', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            code: 'invalid_request_error',
+            message: 'Choose a text model.',
+          },
+        },
+        {
+          headers: { 'x-request-id': 'request-diagnostic' },
+          status: 400,
+        }
+      )
+    );
+
+    const error = await getAiStudioPublicModels('ttr_ai_secret', {
+      fetch: fetchMock,
+    }).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(AiStudioPlaygroundError);
+    expect(error).toEqual(
+      expect.objectContaining({
+        code: 'invalid_request_error',
+        requestId: 'request-diagnostic',
+        status: 400,
+      })
+    );
   });
 
   it('encodes the workspace and run IDs for lazy trace loading', async () => {

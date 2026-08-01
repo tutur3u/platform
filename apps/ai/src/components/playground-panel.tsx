@@ -1,18 +1,25 @@
 'use client';
 
-import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  type AiStudioKeysResponse,
+  type AiStudioApiKey,
   type AiStudioPlaygroundEndpoint,
+  AiStudioPlaygroundError,
   type AiStudioPlaygroundTool,
   createAiStudioKey,
   getAiStudioKeys,
   getAiStudioPublicModels,
+  getAiStudioSavedKeyModels,
   runAiStudioPlayground,
+  runAiStudioSavedKeyPlayground,
 } from '@tuturuuu/internal-api/ai-studio';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  defaultPlaygroundModel,
+  textPlaygroundModels,
+} from '@/lib/playground-models';
 import { takePlaygroundSecret } from '@/lib/playground-secret-transfer';
 import { PlaygroundCredential } from './playground-credential';
 import {
@@ -30,6 +37,9 @@ export function PlaygroundPanel({
 }) {
   const t = useTranslations('ai-studio.playground_console');
   const [secret, setSecret] = useState(() => takePlaygroundSecret(workspaceId));
+  const [credentialValue, setCredentialValue] = useState(() =>
+    secret ? 'manual' : 'saved:auto'
+  );
   const [endpoint, setEndpoint] =
     useState<AiStudioPlaygroundEndpoint>('responses');
   const [model, setModel] = useState('');
@@ -40,14 +50,23 @@ export function PlaygroundPanel({
   const [enabledTools, setEnabledTools] =
     useState<AiStudioPlaygroundTool[]>(PLAYGROUND_TOOLS);
 
-  const keysQuery = useInfiniteQuery({
+  const keysQuery = useQuery({
     enabled: canManageAiKeys,
-    getNextPageParam: (lastPage: AiStudioKeysResponse) =>
-      lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
-    queryFn: ({ pageParam }) =>
-      getAiStudioKeys(workspaceId, { cursor: pageParam, limit: 1 }),
-    queryKey: ['ai-studio-keys', workspaceId, 'playground-approval'],
+    queryFn: () => getAiStudioKeys(workspaceId, { limit: 100 }),
+    queryKey: ['ai-studio-keys', workspaceId, 'playground'],
+  });
+  const keys = keysQuery.data?.keys ?? [];
+  const activeKeys = keys.filter(isActiveKey);
+  const selectedSavedKeyId = credentialValue.startsWith('saved:')
+    ? credentialValue === 'saved:auto'
+      ? activeKeys[0]?.id
+      : credentialValue.slice('saved:'.length)
+    : undefined;
+  const savedModelsQuery = useQuery({
+    enabled: Boolean(selectedSavedKeyId),
+    queryFn: () =>
+      getAiStudioSavedKeyModels(workspaceId, selectedSavedKeyId ?? ''),
+    queryKey: ['ai-studio-playground-models', workspaceId, selectedSavedKeyId],
   });
   const modelsMutation = useMutation({
     mutationFn: (value: string) => getAiStudioPublicModels(value),
@@ -66,35 +85,60 @@ export function PlaygroundPanel({
     onError: (error) => toast.error(error.message),
     onSuccess: (result) => {
       setSecret(result.secret);
+      setCredentialValue('manual');
       modelsMutation.mutate(result.secret);
       toast.success(t('key_created'));
     },
   });
   const runMutation = useMutation({
-    mutationFn: () =>
-      runAiStudioPlayground(secret, {
+    mutationFn: () => {
+      const input = {
         endpoint,
         instructions: instructions.trim() || undefined,
         maxOutputTokens,
         maxSteps,
-        model,
+        model: selectedModel,
         prompt,
         tools: enabledTools,
-      }),
+      };
+      return selectedSavedKeyId
+        ? runAiStudioSavedKeyPlayground(workspaceId, selectedSavedKeyId, input)
+        : runAiStudioPlayground(secret, input);
+    },
     onError: (error) => toast.error(error.message),
   });
 
-  const models = modelsMutation.data ?? [];
+  const models = textPlaygroundModels(
+    selectedSavedKeyId
+      ? (savedModelsQuery.data ?? [])
+      : (modelsMutation.data ?? [])
+  );
+  const selectedModel = models.some((item) => item.id === model)
+    ? model
+    : defaultPlaygroundModel(models);
+  const credentialError =
+    keysQuery.error ??
+    (selectedSavedKeyId ? savedModelsQuery.error : modelsMutation.error);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(20rem,0.68fr)_minmax(0,1.32fr)]">
       <div className="space-y-4">
         <PlaygroundCredential
-          approvalGranted={keysQuery.data?.pages[0]?.approval.approved ?? false}
+          approvalGranted={keysQuery.data?.approval.approved ?? false}
           canManageAiKeys={canManageAiKeys}
-          isApprovalLoading={keysQuery.isPending}
+          credentialError={credentialError}
+          credentialValue={credentialValue}
+          isCredentialLoading={
+            keysQuery.isPending || savedModelsQuery.isFetching
+          }
+          keys={keys}
           models={models}
           onCreateKey={() => createMutation.mutate()}
+          onCredentialChange={(value) => {
+            setCredentialValue(value);
+            setModel('');
+            modelsMutation.reset();
+          }}
           onSecretChange={(value) => {
             setSecret(value);
             modelsMutation.reset();
@@ -111,7 +155,7 @@ export function PlaygroundPanel({
           endpoint={endpoint}
           maxOutputTokens={maxOutputTokens}
           maxSteps={maxSteps}
-          model={model}
+          model={selectedModel}
           models={models}
           onEndpointChange={setEndpoint}
           onMaxOutputTokensChange={setMaxOutputTokens}
@@ -128,7 +172,14 @@ export function PlaygroundPanel({
       </div>
 
       <PlaygroundWorkbench
-        canRun={Boolean(secret && model && prompt.trim())}
+        canRun={Boolean(
+          (selectedSavedKeyId || secret) && selectedModel && prompt.trim()
+        )}
+        error={
+          runMutation.error instanceof AiStudioPlaygroundError
+            ? runMutation.error
+            : (runMutation.error ?? undefined)
+        }
         instructions={instructions}
         isPending={runMutation.isPending}
         onInstructionsChange={setInstructions}
@@ -138,5 +189,12 @@ export function PlaygroundPanel({
         result={runMutation.data}
       />
     </div>
+  );
+}
+
+function isActiveKey(key: AiStudioApiKey) {
+  return (
+    !key.revoked_at &&
+    (!key.expires_at || new Date(key.expires_at).getTime() > Date.now())
   );
 }

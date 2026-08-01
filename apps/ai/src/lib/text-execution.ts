@@ -1,4 +1,5 @@
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
+import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
 import type { Json } from '@tuturuuu/types';
 import { z } from 'zod';
 import { createObservedTextAgent } from './observed-text-agent';
@@ -11,6 +12,7 @@ import {
   publicApiError,
   settleMeteredExecution,
 } from './public-api';
+import type { PublicAiCredential } from './public-credential';
 
 export const textRequestSchema = z.object({
   instructions: z.string().max(100_000).optional(),
@@ -49,9 +51,11 @@ export async function executeTextRequest(
   request: Request,
   input: TextRequest,
   {
+    credential,
     feature,
     responseShape,
   }: {
+    credential?: PublicAiCredential;
     feature: string;
     responseShape: 'chat' | 'responses';
   }
@@ -60,6 +64,7 @@ export async function executeTextRequest(
 
   try {
     context = await prepareMeteredExecution({
+      credential,
       feature,
       maxUsage: {
         inputTokens:
@@ -75,6 +80,7 @@ export async function executeTextRequest(
       },
       modelId: input.model,
       request,
+      requiredModelType: 'language',
     });
 
     const observed = createObservedTextAgent({
@@ -276,14 +282,25 @@ export async function executeTextRequest(
         });
       });
     }
-    return publicApiError(
+    const normalizedError =
       error instanceof z.ZodError
         ? new AiStudioError(error.issues[0]?.message ?? 'Invalid request.', {
             code: 'invalid_request_error',
             status: 400,
           })
-        : error,
-      context?.requestId
+        : error instanceof AiStudioError
+          ? error
+          : new AiStudioError(
+              'The model provider could not complete this text request. Check that the selected model supports text generation and review the request ID for server diagnostics.',
+              {
+                code: 'server_error',
+                status: 502,
+                type: 'server_error',
+              }
+            );
+    return publicApiError(
+      normalizedError,
+      context?.requestId ?? getAiStudioRequestId(request)
     );
   }
 }

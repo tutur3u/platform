@@ -50,21 +50,70 @@ export interface AiStudioPlaygroundResult {
   };
 }
 
+export class AiStudioPlaygroundError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+    public readonly requestId?: string
+  ) {
+    super(message);
+    this.name = 'AiStudioPlaygroundError';
+  }
+}
+
 function publicApiUrl(path: string, baseUrl = 'https://ai.tuturuuu.com') {
   return `${baseUrl.replace(/\/+$/u, '')}${path}`;
 }
 
 async function parsePublicAiResponse<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as
-    | (T & { error?: { code?: string; message?: string } })
+    | (T & {
+        code?: string;
+        error?: string | { code?: string; message?: string };
+        message?: string;
+      })
     | null;
   if (!response.ok) {
-    throw new Error(
-      body?.error?.message ?? `AI endpoint returned ${response.status}.`
+    const structuredError =
+      body?.error && typeof body.error === 'object' ? body.error : undefined;
+    throw new AiStudioPlaygroundError(
+      structuredError?.message ??
+        (typeof body?.error === 'string' ? body.error : undefined) ??
+        body?.message ??
+        `AI endpoint returned ${response.status}.`,
+      response.status,
+      structuredError?.code ?? body?.code,
+      response.headers.get('x-request-id') ?? undefined
     );
   }
   if (!body) throw new Error('AI endpoint returned an empty response.');
   return body;
+}
+
+function savedPlaygroundUrl(
+  workspaceId: string,
+  baseUrl?: string,
+  keyId?: string
+) {
+  const path = `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/ai/playground`;
+  const url = publicApiUrl(path, baseUrl ?? '');
+  return keyId ? `${url}?keyId=${encodeURIComponent(keyId)}` : url;
+}
+
+export async function getAiStudioSavedKeyModels(
+  workspaceId: string,
+  keyId: string,
+  options?: { baseUrl?: string; fetch?: typeof fetch }
+): Promise<AiStudioPublicModel[]> {
+  const response = await (options?.fetch ?? fetch)(
+    savedPlaygroundUrl(workspaceId, options?.baseUrl, keyId),
+    { cache: 'no-store' }
+  );
+  const body = await parsePublicAiResponse<{ data: AiStudioPublicModel[] }>(
+    response
+  );
+  return body.data;
 }
 
 export async function getAiStudioPublicModels(
@@ -149,6 +198,31 @@ export async function runAiStudioPlayground(
       method: 'POST',
     }
   );
+  return parsePlaygroundResult(response, input.endpoint);
+}
+
+export async function runAiStudioSavedKeyPlayground(
+  workspaceId: string,
+  keyId: string,
+  input: Parameters<typeof runAiStudioPlayground>[1],
+  options?: { baseUrl?: string; fetch?: typeof fetch }
+): Promise<AiStudioPlaygroundResult> {
+  const response = await (options?.fetch ?? fetch)(
+    savedPlaygroundUrl(workspaceId, options?.baseUrl),
+    {
+      body: JSON.stringify({ ...input, keyId }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+  return parsePlaygroundResult(response, input.endpoint);
+}
+
+async function parsePlaygroundResult(
+  response: Response,
+  endpoint: AiStudioPlaygroundEndpoint
+) {
   const body = await parsePublicAiResponse<{
     choices?: Array<{ message?: { content?: string } }>;
     id: string;
@@ -168,7 +242,7 @@ export async function runAiStudioPlayground(
   const outputTokens =
     body.usage?.output_tokens ?? body.usage?.completion_tokens ?? 0;
   return {
-    endpoint: input.endpoint,
+    endpoint,
     model: body.model,
     outputText: body.output_text ?? body.choices?.[0]?.message?.content ?? '',
     requestId: body.id,

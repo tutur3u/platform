@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   beginAiStudioRun: vi.fn(),
   beginExternalAiStudioRun: vi.fn(),
   calculateAiStudioUsageCost: vi.fn(),
+  createAdminClient: vi.fn(),
   settleAiStudioRun: vi.fn(),
   settleExternalAiStudioRun: vi.fn(),
 }));
@@ -19,6 +20,9 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   calculateAiStudioUsageCost: mocks.calculateAiStudioUsageCost,
   settleAiStudioRun: mocks.settleAiStudioRun,
   settleExternalAiStudioRun: mocks.settleExternalAiStudioRun,
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
 import {
@@ -37,6 +41,18 @@ describe('AI Studio billing policy', () => {
     mocks.beginAiStudioRun.mockResolvedValue({ runId: 'metered-run' });
     mocks.beginExternalAiStudioRun.mockResolvedValue({
       runId: 'external-run',
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      schema: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { type: 'language' },
+            error: null,
+          }),
+          select: vi.fn().mockReturnThis(),
+        }),
+      }),
     });
   });
 
@@ -109,6 +125,40 @@ describe('AI Studio billing policy', () => {
       })
     );
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+
+  it('rejects non-text models before reserving credits', async () => {
+    mocks.createAdminClient.mockResolvedValue({
+      schema: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnThis(),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { type: 'audio' },
+            error: null,
+          }),
+          select: vi.fn().mockReturnThis(),
+        }),
+      }),
+    });
+
+    await expect(
+      prepareMeteredExecution({
+        credential: {
+          actorId: 'actor',
+          apiKey: { id: 'key' },
+          kind: 'api-key',
+          workspaceId: 'workspace',
+        } as never,
+        feature: 'responses',
+        maxUsage: { inputTokens: 10, outputTokens: 20 },
+        modelId: 'google/gemini-3.1-flash-tts-preview',
+        request: new Request('https://ai.tuturuuu.com/v1/responses'),
+        requiredModelType: 'language',
+      })
+    ).rejects.toThrow(
+      'The selected audio model cannot generate text. Choose a language model and try again.'
+    );
+    expect(mocks.beginAiStudioRun).not.toHaveBeenCalled();
   });
 });
 

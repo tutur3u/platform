@@ -12,12 +12,18 @@ import { Label } from '@tuturuuu/ui/label';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import {
+  categorizePlaygroundModels,
+  defaultPlaygroundModel,
+} from '@/lib/playground-models';
 import { SectionCard } from './studio/section-card';
 
 export const PLAYGROUND_TOOLS: AiStudioPlaygroundTool[] = [
@@ -51,6 +57,9 @@ export function PlaygroundRequestForm({
   onToggleTool: (tool: AiStudioPlaygroundTool) => void;
 }) {
   const t = useTranslations('ai-studio.playground_console');
+  const categories = categorizePlaygroundModels(models);
+  const recommendedModel = defaultPlaygroundModel(models);
+  const selectedModel = models.find((item) => item.id === model);
 
   return (
     <SectionCard icon={SlidersHorizontal} title={t('request_title')}>
@@ -78,10 +87,20 @@ export function PlaygroundRequestForm({
                 <SelectValue placeholder={t('select_model')} />
               </SelectTrigger>
               <SelectContent>
-                {models.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name} · {item.ownedBy}
-                  </SelectItem>
+                {categories.map((category) => (
+                  <SelectGroup key={category.provider}>
+                    <SelectLabel className="capitalize">
+                      {category.provider}
+                    </SelectLabel>
+                    {category.models.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                        {item.id === recommendedModel
+                          ? ` · ${t('recommended')}`
+                          : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
@@ -92,6 +111,17 @@ export function PlaygroundRequestForm({
               value={model}
             />
           )}
+          {selectedModel ? (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground text-xs">
+              <span>{t('text_generation')}</span>
+              <span>
+                {t('context_window', {
+                  count: selectedModel.contextWindow.toLocaleString(),
+                })}
+              </span>
+              <span className="font-mono">{selectedModel.id}</span>
+            </div>
+          ) : null}
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t('max_tokens')}>

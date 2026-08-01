@@ -51,6 +51,8 @@ type PrepareMeteredExecutionInput = {
   metadata?: Json;
   modelId: string;
   request: Request;
+  credential?: PublicAiCredential;
+  requiredModelType?: string;
   requiredExternalScope?: string;
 };
 
@@ -94,17 +96,21 @@ export function approximateTokenCount(value: unknown): number {
 }
 
 export async function prepareMeteredExecution({
+  credential: providedCredential,
   feature,
   maxUsage,
   metadata,
   modelId,
   request,
+  requiredModelType,
   requiredExternalScope = EXTERNAL_AI_SCOPE,
 }: PrepareMeteredExecutionInput): Promise<MeteredExecutionContext> {
-  const credential = await authenticatePublicAiRequest(
-    request,
-    requiredExternalScope
-  );
+  const credential =
+    providedCredential ??
+    (await authenticatePublicAiRequest(request, requiredExternalScope));
+  if (requiredModelType) {
+    await assertAiStudioModelType(modelId, requiredModelType);
+  }
   const requestId = getAiStudioRequestId(request);
   const estimatedCost = await calculateAiStudioUsageCost({
     imageCount: maxUsage.imageUnits,
@@ -149,6 +155,36 @@ export async function prepareMeteredExecution({
     runId: reservation.runId,
     startedAt: Date.now(),
   };
+}
+
+async function assertAiStudioModelType(modelId: string, requiredType: string) {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: model, error } = await sbAdmin
+    .schema('private')
+    .from('ai_gateway_models')
+    .select('type')
+    .eq('id', modelId)
+    .eq('is_enabled', true)
+    .maybeSingle();
+
+  if (error) {
+    throw new AiStudioError('The selected model could not be validated.', {
+      code: 'server_error',
+      status: 500,
+      type: 'server_error',
+    });
+  }
+
+  if (model && model.type !== requiredType) {
+    const message =
+      requiredType === 'language'
+        ? `The selected ${model.type} model cannot generate text. Choose a language model and try again.`
+        : `The selected ${model.type} model cannot run a ${requiredType} request. Choose a ${requiredType} model and try again.`;
+    throw new AiStudioError(message, {
+      code: 'invalid_request_error',
+      status: 400,
+    });
+  }
 }
 
 export async function settleMeteredExecution(

@@ -6,12 +6,15 @@ import {
 
 export {
   type AiStudioPlaygroundEndpoint,
+  AiStudioPlaygroundError,
   type AiStudioPlaygroundResult,
   type AiStudioPlaygroundStep,
   type AiStudioPlaygroundTool,
   type AiStudioPublicModel,
   getAiStudioPublicModels,
+  getAiStudioSavedKeyModels,
   runAiStudioPlayground,
+  runAiStudioSavedKeyPlayground,
 } from './ai-studio-playground';
 
 export type AiStudioKeyEnvironment = 'development' | 'staging' | 'production';
