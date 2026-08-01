@@ -35,7 +35,6 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const existing = (query.data?.settings ?? {}) as Record<string, unknown>;
   const [enabledOverride, setEnabled] = useState<boolean | null>(null);
   const [baseUrlOverride, setBaseUrl] = useState<string | null>(null);
-  const [bootstrapSecret, setBootstrapSecret] = useState('');
   const [controlSecret, setControlSecret] = useState('');
   const [agentMappingsOverride, setAgentMappings] = useState<string | null>(
     null
@@ -97,7 +96,6 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       setIssuedSecret((current) => result.secret ?? current);
       setControlSecret('');
       if (action.action === 'pair') {
-        setBootstrapSecret('');
         setIssuedSecret(null);
       }
       await refresh();
@@ -236,20 +234,12 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             </Button>
           </div>
           <div className="space-y-2 border-t pt-4">
-            <Label htmlFor="bootstrap-secret">{t('bootstrap_secret')}</Label>
-            <Input
-              id="bootstrap-secret"
-              onChange={(event) => setBootstrapSecret(event.target.value)}
-              type="password"
-              value={bootstrapSecret}
-            />
             <p className="text-muted-foreground text-xs">
-              {t('bootstrap_description')}
+              {t('pair_description')}
             </p>
             <Button
               disabled={
                 credentialMutation.isPending ||
-                bootstrapSecret.length < 24 ||
                 !issuedSecret ||
                 !query.data?.secrets.control.configured
               }
@@ -257,7 +247,6 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
                 if (!issuedSecret) return;
                 credentialMutation.mutate({
                   action: 'pair',
-                  bootstrapSecret,
                   ingestSecret: issuedSecret,
                 });
               }}

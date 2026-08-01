@@ -3289,6 +3289,10 @@ export type Database = {
           ingest_secret_hash: string | null;
           ingest_secret_last_four: string | null;
           ingest_secret_rotated_at: string | null;
+          pairing_ticket_consumed_at: string | null;
+          pairing_ticket_expires_at: string | null;
+          pairing_ticket_hash: string | null;
+          pairing_ticket_issued_at: string | null;
           pending_action: string | null;
           pending_created_at: string | null;
           pending_secret_encrypted: string | null;
@@ -3306,6 +3310,10 @@ export type Database = {
           ingest_secret_hash?: string | null;
           ingest_secret_last_four?: string | null;
           ingest_secret_rotated_at?: string | null;
+          pairing_ticket_consumed_at?: string | null;
+          pairing_ticket_expires_at?: string | null;
+          pairing_ticket_hash?: string | null;
+          pairing_ticket_issued_at?: string | null;
           pending_action?: string | null;
           pending_created_at?: string | null;
           pending_secret_encrypted?: string | null;
@@ -3323,6 +3331,10 @@ export type Database = {
           ingest_secret_hash?: string | null;
           ingest_secret_last_four?: string | null;
           ingest_secret_rotated_at?: string | null;
+          pairing_ticket_consumed_at?: string | null;
+          pairing_ticket_expires_at?: string | null;
+          pairing_ticket_hash?: string | null;
+          pairing_ticket_issued_at?: string | null;
           pending_action?: string | null;
           pending_created_at?: string | null;
           pending_secret_encrypted?: string | null;
@@ -15692,6 +15704,10 @@ export type Database = {
         Args: { p_kind: string; p_ws_id: string };
         Returns: undefined;
       };
+      external_chat_consume_pairing_ticket: {
+        Args: { p_ticket_hash: string; p_ws_id: string };
+        Returns: boolean;
+      };
       external_chat_finalize_reply: {
         Args: {
           p_actor_user_id: string;
@@ -15717,6 +15733,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      external_chat_issue_pairing_ticket: {
+        Args: { p_expires_at: string; p_ticket_hash: string; p_ws_id: string };
+        Returns: undefined;
       };
       external_chat_mark_verified: {
         Args: { p_control_secret_encrypted: string; p_ws_id: string };

@@ -19,6 +19,10 @@ create table private.external_chat_binding_credentials (
   pending_secret_hash text,
   pending_secret_last_four text,
   pending_created_at timestamptz,
+  pairing_ticket_hash text,
+  pairing_ticket_issued_at timestamptz,
+  pairing_ticket_expires_at timestamptz,
+  pairing_ticket_consumed_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint external_chat_ingest_hash_length check (
@@ -29,6 +33,9 @@ create table private.external_chat_binding_credentials (
   ),
   constraint external_chat_control_last_four_length check (
     control_secret_last_four is null or char_length(control_secret_last_four) = 4
+  ),
+  constraint external_chat_pairing_ticket_hash_length check (
+    pairing_ticket_hash is null or char_length(pairing_ticket_hash) = 64
   ),
   constraint external_chat_pending_action_check check (
     pending_action is null or pending_action in ('set_ingest', 'rotate_control')
@@ -315,6 +322,69 @@ grant execute on function private.external_chat_stage_credential(uuid, text, tex
 grant execute on function private.external_chat_promote_credential(uuid, text, text) to service_role;
 grant execute on function private.external_chat_mark_verified(uuid, text) to service_role;
 grant execute on function private.external_chat_clear_credential(uuid, text) to service_role;
+
+create or replace function private.external_chat_issue_pairing_ticket(
+  p_ws_id uuid,
+  p_ticket_hash text,
+  p_expires_at timestamptz
+)
+returns void
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if char_length(coalesce(p_ticket_hash, '')) <> 64
+    or p_expires_at <= now()
+    or p_expires_at > now() + interval '10 minutes' then
+    raise exception 'external_chat_invalid_pairing_ticket';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'pairing'), 0));
+  insert into private.external_chat_binding_credentials (ws_id)
+  values (p_ws_id) on conflict (ws_id) do nothing;
+  update private.external_chat_binding_credentials
+  set pairing_ticket_hash = p_ticket_hash,
+      pairing_ticket_issued_at = now(),
+      pairing_ticket_expires_at = p_expires_at,
+      pairing_ticket_consumed_at = null
+  where ws_id = p_ws_id;
+end;
+$$;
+
+create or replace function private.external_chat_consume_pairing_ticket(
+  p_ws_id uuid,
+  p_ticket_hash text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  v_updated integer;
+begin
+  if char_length(coalesce(p_ticket_hash, '')) <> 64 then
+    return false;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'pairing'), 0));
+  update private.external_chat_binding_credentials
+  set pairing_ticket_hash = null,
+      pairing_ticket_consumed_at = now()
+  where ws_id = p_ws_id
+    and pairing_ticket_hash = p_ticket_hash
+    and pairing_ticket_consumed_at is null
+    and pairing_ticket_expires_at > now();
+  get diagnostics v_updated = row_count;
+  return v_updated = 1;
+end;
+$$;
+
+revoke all on function private.external_chat_issue_pairing_ticket(uuid, text, timestamptz) from public, anon, authenticated;
+revoke all on function private.external_chat_consume_pairing_ticket(uuid, text) from public, anon, authenticated;
+grant execute on function private.external_chat_issue_pairing_ticket(uuid, text, timestamptz) to service_role;
+grant execute on function private.external_chat_consume_pairing_ticket(uuid, text) to service_role;
 
 create trigger external_chat_binding_credentials_updated_at
   before update on private.external_chat_binding_credentials

@@ -1,5 +1,5 @@
 begin;
-select plan(27);
+select plan(35);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
@@ -14,6 +14,8 @@ select has_function('private', 'external_chat_finalize_reply', 'atomic outbound 
 select has_function('private', 'external_chat_update_settings', 'atomic binding settings RPC exists');
 select has_function('private', 'external_chat_stage_credential', 'serialized credential staging RPC exists');
 select has_function('private', 'external_chat_promote_credential', 'conditional credential promotion RPC exists');
+select has_function('private', 'external_chat_issue_pairing_ticket', 'pairing ticket issuance RPC exists');
+select has_function('private', 'external_chat_consume_pairing_ticket', 'pairing ticket consumption RPC exists');
 
 select isnt_empty(
   $$select 1 from information_schema.table_privileges
@@ -67,6 +69,54 @@ limit 1;
 insert into public.workspace_external_project_bindings (ws_id, is_enabled, settings)
 select ws_id, true, '{"chat":{"enabled":true}}'::jsonb
 from external_chat_test_context;
+
+select lives_ok(
+  format(
+    $$select private.external_chat_issue_pairing_ticket(%L, %L, now() + interval '5 minutes')$$,
+    (select ws_id from external_chat_test_context),
+    repeat('a', 64)
+  ),
+  'a short-lived pairing ticket can be issued'
+);
+select ok(
+  private.external_chat_consume_pairing_ticket(
+    (select ws_id from external_chat_test_context), repeat('a', 64)
+  ),
+  'a matching pairing ticket is consumed once'
+);
+select ok(
+  not private.external_chat_consume_pairing_ticket(
+    (select ws_id from external_chat_test_context), repeat('a', 64)
+  ),
+  'a consumed pairing ticket cannot be replayed'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_issue_pairing_ticket(%L, %L, now() + interval '5 minutes')$$,
+    (select ws_id from external_chat_test_context),
+    repeat('b', 64)
+  ),
+  'a replacement pairing ticket can be issued'
+);
+update private.external_chat_binding_credentials
+set pairing_ticket_expires_at = now() - interval '1 second'
+where ws_id = (select ws_id from external_chat_test_context);
+select ok(
+  not private.external_chat_consume_pairing_ticket(
+    (select ws_id from external_chat_test_context), repeat('b', 64)
+  ),
+  'an expired pairing ticket is rejected'
+);
+select is(
+  (
+    select pairing_ticket_issued_at is not null
+      and char_length(pairing_ticket_hash) = 64
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  true,
+  'ticket issuance records only bounded metadata and a fixed-length digest'
+);
 
 create temporary table external_chat_test_results (
   attempt integer primary key,

@@ -157,12 +157,12 @@ export async function verifyExternalChatControl(wsId: string) {
 }
 
 export async function configureExternalChatBridge({
-  bootstrapSecret,
   ingestSecret,
+  pairingTicket,
   wsId,
 }: {
-  bootstrapSecret: string;
   ingestSecret: string;
+  pairingTicket: string;
   wsId: string;
 }) {
   const state = await readExternalChatBinding(wsId);
@@ -182,16 +182,14 @@ export async function configureExternalChatBridge({
     bindingId: wsId,
     controlSecret: await decryptControlSecret(wsId, controlCiphertext),
     ingestSecret,
+    pairingTicket,
     platformUrl: getPublicPlatformUrl(),
   });
   const response = await safeExternalChatFetch(
     `${bridgeBaseUrl}/control/v1/configure`,
     {
       body,
-      headers: {
-        authorization: `Bearer ${bootstrapSecret}`,
-        'content-type': 'application/json',
-      },
+      headers: { 'content-type': 'application/json' },
       method: 'POST',
       signal: AbortSignal.timeout(10_000),
     }

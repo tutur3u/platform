@@ -17,6 +17,7 @@ import {
 } from '@/lib/external-chat/delivery';
 import {
   clearExternalChatCredential,
+  issueExternalChatPairingTicket,
   markExternalChatCredentialVerified,
   promoteExternalChatCredential,
   readExternalChatBinding,
@@ -36,7 +37,6 @@ const mutationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('clear_control') }),
   z.object({
     action: z.literal('pair'),
-    bootstrapSecret: z.string().min(24).max(512),
     ingestSecret: z.string().min(24).max(512),
   }),
   z.object({ action: z.literal('verify') }),
@@ -161,10 +161,16 @@ export const POST = withSessionAuth<Params>(
           { status: 400 }
         );
       }
+      const pairingTicket = createIngestSecret();
+      await issueExternalChatPairingTicket(
+        wsId,
+        hashExternalChatSecret(pairingTicket),
+        new Date(Date.now() + 5 * 60_000).toISOString()
+      );
       try {
         await configureExternalChatBridge({
-          bootstrapSecret: parsed.data.bootstrapSecret,
           ingestSecret: parsed.data.ingestSecret,
+          pairingTicket,
           wsId,
         });
         await verifyExternalChatControl(wsId);

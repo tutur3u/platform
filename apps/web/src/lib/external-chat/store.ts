@@ -145,6 +145,31 @@ export async function clearExternalChatCredential(
   if (error) throw new Error(error.message);
 }
 
+export async function issueExternalChatPairingTicket(
+  wsId: string,
+  ticketHash: string,
+  expiresAt: string
+) {
+  await callExternalChatCredentialRpc('external_chat_issue_pairing_ticket', {
+    p_expires_at: expiresAt,
+    p_ticket_hash: ticketHash,
+    p_ws_id: wsId,
+  });
+}
+
+export async function consumeExternalChatPairingTicket(
+  wsId: string,
+  ticketHash: string
+) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_consume_pairing_ticket',
+    { p_ticket_hash: ticketHash, p_ws_id: wsId }
+  );
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
 async function callExternalChatCredentialRpc(
   name: string,
   args: Record<string, unknown>

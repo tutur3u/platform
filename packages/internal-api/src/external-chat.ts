@@ -41,7 +41,7 @@ export type ExternalChatCredentialAction =
   | { action: 'set_control'; secret: string }
   | { action: 'clear_ingest' }
   | { action: 'clear_control' }
-  | { action: 'pair'; bootstrapSecret: string; ingestSecret: string }
+  | { action: 'pair'; ingestSecret: string }
   | { action: 'verify' };
 
 const path = (wsId: string, suffix: string) =>

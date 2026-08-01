@@ -3413,8 +3413,6 @@
   "connected-chat": {
     "agent_mappings": "Ánh xạ nhân viên",
     "agent_mappings_invalid": "Ánh xạ nhân viên phải là JSON hợp lệ.",
-    "bootstrap_description": "Chỉ dùng một lần để ghép nối cầu nối đã triển khai. Giá trị này không được lưu.",
-    "bootstrap_secret": "Thông tin khởi tạo",
     "bridge_url": "Địa chỉ cầu nối hệ thống cũ",
     "control_secret": "Thông tin điều khiển",
     "copy": "Sao chép đoạn mã widget",
@@ -3433,6 +3431,7 @@
     "not_ready_description": "Còn {count} kiểm tra sẵn sàng chưa hoàn tất.",
     "open_inbox": "Mở hộp thư trực tiếp",
     "pair": "Ghép nối cầu nối đã triển khai",
+    "pair_description": "Ghép nối an toàn bằng vé ngắn hạn, dùng một lần được cấp tự động.",
     "ready": "Sẵn sàng đồng bộ canary",
     "ready_description": "Có thể thử cả hai chiều mà không thay đổi hệ thống chính.",
     "rotate_ingest": "Xoay thông tin tiếp nhận",

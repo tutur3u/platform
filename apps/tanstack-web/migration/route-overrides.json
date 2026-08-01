@@ -5,6 +5,11 @@
       "targetOwner": "rust-backend",
       "note": "Binding-authenticated external chat ingest remains on the live Next.js backend while its private RPC and secret-verification contract are prepared for Rust parity."
     },
+    "api:/api/v1/integrations/external-chat/pairing/verify:apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Single-use external bridge pairing-ticket validation remains on the live Next.js backend pending Rust parity."
+    },
     "api:/api/v1/integrations/external-chat/widget.js:apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

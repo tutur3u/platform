@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 const mocks = {
   clearExternalChatCredential: vi.fn(),
   configureExternalChatBridge: vi.fn(),
+  issueExternalChatPairingTicket: vi.fn(),
   markExternalChatCredentialVerified: vi.fn(),
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
@@ -49,6 +50,8 @@ vi.mock('@/lib/external-chat/delivery', () => ({
 vi.mock('@/lib/external-chat/store', () => ({
   clearExternalChatCredential: (...args: unknown[]) =>
     mocks.clearExternalChatCredential(...args),
+  issueExternalChatPairingTicket: (...args: unknown[]) =>
+    mocks.issueExternalChatPairingTicket(...args),
   markExternalChatCredentialVerified: (...args: unknown[]) =>
     mocks.markExternalChatCredentialVerified(...args),
   readExternalChatBinding: (...args: unknown[]) =>
@@ -152,7 +155,7 @@ describe('external chat credential verification', () => {
     expect(await response.text()).not.toContain('ecs_test_secret');
   });
 
-  it('pairs with transient bootstrap material and verifies before marking ready', async () => {
+  it('pairs with a transient single-use ticket and verifies before marking ready', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
@@ -164,16 +167,20 @@ describe('external chat credential verification', () => {
     const response = await POST(
       request({
         action: 'pair',
-        bootstrapSecret: 'bootstrap-secret-value-123456',
         ingestSecret: 'ingest-secret-value-123456789',
       }) as never,
       { params: Promise.resolve({ wsId: 'workspace-1' }) }
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.issueExternalChatPairingTicket).toHaveBeenCalledWith(
+      'workspace-1',
+      'h'.repeat(64),
+      expect.any(String)
+    );
     expect(mocks.configureExternalChatBridge).toHaveBeenCalledWith({
-      bootstrapSecret: 'bootstrap-secret-value-123456',
       ingestSecret: 'ingest-secret-value-123456789',
+      pairingTicket: 'ecs_test_secret',
       wsId: 'workspace-1',
     });
     expect(mocks.verifyExternalChatControl).toHaveBeenCalledWith('workspace-1');
@@ -182,11 +189,11 @@ describe('external chat credential verification', () => {
       'encrypted-control'
     );
     const responseText = await response.text();
-    expect(responseText).not.toContain('bootstrap-secret-value-123456');
+    expect(responseText).not.toContain('ecs_test_secret');
     expect(responseText).not.toContain('ingest-secret-value-123456789');
   });
 
-  it('does not leak pairing material when bootstrap configuration fails', async () => {
+  it('does not leak pairing material when ticket configuration fails', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
@@ -195,13 +202,12 @@ describe('external chat credential verification', () => {
       },
     });
     mocks.configureExternalChatBridge.mockRejectedValue(
-      new Error('bootstrap-secret-value-123456')
+      new Error('ecs_test_secret')
     );
     const { POST } = await import('./route');
     const response = await POST(
       request({
         action: 'pair',
-        bootstrapSecret: 'bootstrap-secret-value-123456',
         ingestSecret: 'ingest-secret-value-123456789',
       }) as never,
       { params: Promise.resolve({ wsId: 'workspace-1' }) }
@@ -209,7 +215,7 @@ describe('external chat credential verification', () => {
 
     expect(response.status).toBe(502);
     const responseText = await response.text();
-    expect(responseText).not.toContain('bootstrap-secret-value-123456');
+    expect(responseText).not.toContain('ecs_test_secret');
     expect(responseText).not.toContain('ingest-secret-value-123456789');
     expect(mocks.markExternalChatCredentialVerified).not.toHaveBeenCalled();
   });
