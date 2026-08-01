@@ -111,6 +111,7 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
+  deleteWorkspaceStorageFolderByPath: vi.fn(),
   downloadWorkspaceStorageObjectForProvider: vi.fn(),
   resolveWorkspaceStorageProvider: vi.fn(),
   uploadWorkspaceStorageFileDirect: vi.fn(),
@@ -190,9 +191,15 @@ function createAdminClientMock() {
   };
 
   return {
-    from: vi.fn(() => ({
-      upsert: vi.fn(async () => ({ error: null })),
-    })),
+    from: vi.fn(() => {
+      const deleteQuery = {
+        eq: vi.fn(async () => ({ error: null })),
+      };
+      return {
+        delete: vi.fn(() => deleteQuery),
+        upsert: vi.fn(async () => ({ error: null })),
+      };
+    }),
     schema: vi.fn(() => ({
       from: vi.fn(() => settingsQuery),
     })),
@@ -200,17 +207,10 @@ function createAdminClientMock() {
 }
 
 function createSupabaseMock() {
-  let queryIndex = 0;
-
   return {
     from: vi.fn(() => {
-      const currentQueryIndex = queryIndex++;
       const query = {
-        eq: vi.fn(() =>
-          currentQueryIndex === 0
-            ? Promise.resolve({ data: [], error: null })
-            : query
-        ),
+        eq: vi.fn(() => query),
         limit: vi.fn(async () => ({ data: [assistantAiRow], error: null })),
         order: vi.fn(() => query),
         select: vi.fn(() => query),
@@ -287,6 +287,7 @@ describe('native AI chat message route', () => {
     );
     expect(mocks.aiRouteBodies).toContainEqual(
       expect.objectContaining({
+        id: 'message-1',
         model: 'google/gemini-3.1-flash-lite',
       })
     );

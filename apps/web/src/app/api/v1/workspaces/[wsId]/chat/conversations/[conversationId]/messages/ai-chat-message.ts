@@ -13,6 +13,7 @@ import {
   type ChatMessageAttachmentInput,
   callAiChatRoute,
   consumeAiResponseTextDeltas,
+  copyAiChatAttachmentInputsToResources,
   getAiChatAttachmentPlaceholderContent,
   maybeAutoRenameAiChat,
   normalizeAiChatModel,
@@ -100,6 +101,12 @@ export async function sendAiChatMessage({
     firstMessageContent: messageContent,
     previousMessages,
     supabase: auth.supabase,
+  });
+
+  await copyAiChatAttachmentInputsToResources({
+    attachments,
+    chatId: chat.id,
+    wsId: context.normalizedWsId,
   });
 
   const aiMessages = toAiChatUiMessages(previousMessages);

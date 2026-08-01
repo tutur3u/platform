@@ -219,6 +219,27 @@ async function ensureCanonicalExternalProject({
       );
     }
 
+    if (
+      adapter === 'cms_site' &&
+      !existingProject.allowed_features.includes('chat')
+    ) {
+      const { data: upgradedProject, error: upgradeError } = await admin
+        .from('canonical_external_projects')
+        .update({
+          allowed_features: [...existingProject.allowed_features, 'chat'],
+          updated_by: actorId,
+        })
+        .eq('id', canonicalProjectId)
+        .select('*')
+        .single();
+      if (upgradeError) throw new Error(upgradeError.message);
+      return {
+        canonicalProject: upgradedProject,
+        created: false,
+        id: canonicalProjectId,
+      };
+    }
+
     return {
       canonicalProject: existingProject,
       created: false,
