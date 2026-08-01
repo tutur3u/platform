@@ -731,6 +731,34 @@ describe('native AI chat message route', () => {
     expect(mocks.reserveExternalChatReply).not.toHaveBeenCalled();
   });
 
+  it('preserves non-user message kinds for ordinary native conversations', async () => {
+    const systemMessage = { ...userMessage, kind: 'system' };
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_message') return systemMessage;
+      if (name === 'chat_get_conversation') return conversation;
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+    const request = new Request(createRequest().url, {
+      body: JSON.stringify({ content: 'system note', kind: 'system' }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(request as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.objectContaining({ p_kind: 'system' })
+    );
+  });
+
   it('fails closed without reporting a remote rejection when binding lookup fails', async () => {
     mocks.isExternalChatConversation.mockRejectedValue(
       new Error('database unavailable')

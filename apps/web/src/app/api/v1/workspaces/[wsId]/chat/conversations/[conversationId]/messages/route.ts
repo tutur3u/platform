@@ -172,16 +172,6 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
-    if (parsed.data.kind !== 'user') {
-      return NextResponse.json(
-        {
-          code: 'external_message_kind_unsupported',
-          message: 'Chat replies only accept user messages.',
-        },
-        { status: 400 }
-      );
-    }
-
     if (isAiChatConversationId(params.conversationId)) {
       return sendAiChatMessage({
         attachments: parsed.data.attachments ?? [],
@@ -224,6 +214,15 @@ export const POST = withSessionAuth<RouteParams>(
 
     let externalReservation: ReservedExternalChatDelivery | null = null;
     if (externalBound) {
+      if (parsed.data.kind !== 'user') {
+        return NextResponse.json(
+          {
+            code: 'external_message_kind_unsupported',
+            message: 'Chat replies only accept user messages.',
+          },
+          { status: 400 }
+        );
+      }
       if ((parsed.data.attachments?.length ?? 0) > 0) {
         return NextResponse.json(
           {

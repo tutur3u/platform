@@ -22,6 +22,7 @@ export default async function ConnectedChatInboxPage({
   if (!access.binding?.canonical_project?.allowed_features.includes('chat')) {
     redirect(`/${wsId}`);
   }
+  const readOnly = access.workspacePermissions.withoutPermission('create_chat');
 
   return (
     <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
@@ -29,6 +30,7 @@ export default async function ConnectedChatInboxPage({
         currentUserId={access.userId}
         defaultConversationScope="external"
         enforcedConversationScope="external"
+        readOnly={readOnly}
         variant="standalone"
         wsId={access.normalizedWorkspaceId}
       />

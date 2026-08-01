@@ -63,6 +63,7 @@ interface ChatWorkspaceProps {
   enforcedConversationScope?: ChatConversationScope;
   currentUserId: string;
   enableRootIntegrations?: boolean;
+  readOnly?: boolean;
   showSidebar?: boolean;
   variant?: 'standalone' | 'web';
   wsId: string;
@@ -74,6 +75,7 @@ export function ChatWorkspace({
   enforcedConversationScope,
   currentUserId,
   enableRootIntegrations,
+  readOnly = false,
   showSidebar = true,
   variant = 'web',
   wsId,
@@ -166,14 +168,16 @@ export function ChatWorkspace({
   const activeNativeConversationId = isPostgresUuid(activeConversationId)
     ? activeConversationId
     : null;
-  const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
+  const conversationReadOnly = isReadOnlyChatConversation(selectedConversation);
+  const selectedReadOnly = readOnly || conversationReadOnly;
   const selectedAiConversation = selectedConversation?.type === 'ai';
   const selectedAgentReadOnly =
     (selectedConversation?.metadata.source === 'ai-agent' ||
       selectedConversation?.metadata.source === 'ai-agent-external-thread') &&
-    selectedReadOnly;
+    conversationReadOnly;
   const selectedVirtualReadOnly =
-    selectedConversation?.metadata.source === 'ai-agent' && selectedReadOnly;
+    selectedConversation?.metadata.source === 'ai-agent' &&
+    conversationReadOnly;
   const selectedMembership =
     selectedConversation?.members.some(
       (member) => member.userId === currentUserId
@@ -575,7 +579,9 @@ export function ChatWorkspace({
                 <span className="text-muted-foreground">
                   {t('read_only_conversation')}
                 </span>
-                <Badge variant="secondary">{t('agent_channel')}</Badge>
+                {selectedAgentReadOnly ? (
+                  <Badge variant="secondary">{t('agent_channel')}</Badge>
+                ) : null}
               </div>
             ) : (
               <MessageComposer
