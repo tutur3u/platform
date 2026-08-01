@@ -13,6 +13,7 @@ import {
   Loader2,
   Pin,
   PinOff,
+  RefreshCw,
   RotateCcw,
 } from '@tuturuuu/icons';
 import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
@@ -239,6 +240,7 @@ export function BoardColumn({
   const [externalSortBy, setExternalSortBy] = useState<ExternalTaskSortBy>(
     DEFAULT_EXTERNAL_TASK_SORT_BY
   );
+  const [isRefreshingList, setIsRefreshingList] = useState(false);
   const isColumnCollapsed = isKanbanColumnCollapsed(column);
   const hasActiveFilters =
     !!filters &&
@@ -374,6 +376,18 @@ export function BoardColumn({
     if (!listState || listState.isLoading || !listState.hasMore) return;
     loadColumnPage(listState.page + 1);
   }, [listState, loadColumnPage]);
+
+  const handleRefreshList = useCallback(async () => {
+    if (isRefreshingList) return;
+    setIsRefreshingList(true);
+    try {
+      await loadColumnPage(0);
+    } catch (error) {
+      console.error('Failed to refresh task list:', error);
+    } finally {
+      setIsRefreshingList(false);
+    }
+  }, [isRefreshingList, loadColumnPage]);
 
   // Helper to translate standard list names
   const translateListName = (name: string | null | undefined): string => {
@@ -670,6 +684,25 @@ export function BoardColumn({
           </Badge>
         </div>
         <div className="flex items-center gap-1">
+          <Button
+            aria-label={t('refresh')}
+            className={cn(
+              'h-7 w-7 p-0 hover:bg-muted/40',
+              isExternalStaging
+                ? 'text-dynamic-cyan'
+                : getListTextColorClass(column.color as SupportedColor)
+            )}
+            disabled={isRefreshingList}
+            onClick={() => void handleRefreshList()}
+            size="xs"
+            title={t('refresh')}
+            type="button"
+            variant="ghost"
+          >
+            <RefreshCw
+              className={cn('size-3.5', isRefreshingList && 'animate-spin')}
+            />
+          </Button>
           {isExternalStaging ? (
             <>
               <DropdownMenu>

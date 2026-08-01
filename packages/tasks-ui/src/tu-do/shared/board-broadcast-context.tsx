@@ -12,7 +12,7 @@ export interface BoardRefreshOptions {
   invalidateTasks?: boolean;
 }
 
-export type BoardRefreshFn = (options?: BoardRefreshOptions) => void;
+export type BoardRefreshFn = (options?: BoardRefreshOptions) => Promise<void>;
 
 const BoardBroadcastContext = createContext<BoardBroadcastFn | null>(null);
 

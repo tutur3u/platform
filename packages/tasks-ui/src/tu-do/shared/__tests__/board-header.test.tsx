@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { SidebarContext } from '@tuturuuu/ui/custom/sidebar-context';
 import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { setActiveBoardRefresh } from '../board-broadcast-context';
 import { BoardHeader } from '../board-header';
 
 const navigationMocks = vi.hoisted(() => ({
@@ -242,6 +243,21 @@ describe('BoardHeader', () => {
     internalApiMocks.getWorkspaceTaskBoard.mockReset();
     internalApiMocks.getWorkspaceTaskBoard.mockResolvedValue({
       board: mockBoard,
+    });
+    setActiveBoardRefresh(null);
+  });
+
+  it('refreshes the active board from the header', async () => {
+    const refresh = vi.fn().mockResolvedValue(undefined);
+    const onUpdate = vi.fn();
+    setActiveBoardRefresh(refresh);
+    renderBoardHeader({ onUpdate });
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.refresh' }));
+
+    await waitFor(() => {
+      expect(refresh).toHaveBeenCalledWith({ includeLists: true });
+      expect(onUpdate).toHaveBeenCalledTimes(1);
     });
   });
 

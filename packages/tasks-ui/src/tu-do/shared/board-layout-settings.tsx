@@ -9,32 +9,14 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  Circle,
-  CircleCheck,
-  CircleDashed,
-  CircleX,
-  ClipboardCheck,
-  FileText,
-  GripVertical,
-  MoreVertical,
-  Pencil,
-  Plus,
-  Trash2,
-} from '@tuturuuu/icons';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
+import { Accordion } from '@tuturuuu/ui/accordion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +27,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -55,13 +36,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
@@ -70,11 +44,13 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from './board-broadcast-context';
-import { reorderTaskListsWithinStatus } from './board-layout-ordering';
+import type { BoardLayoutListItemCopy } from './board-layout-list-item';
+import { reorderTaskLists } from './board-layout-ordering';
+import { BOARD_LIST_STATUSES } from './board-layout-settings-config';
+import { BoardLayoutStatusGroup } from './board-layout-status-group';
 import { CreateListDialog } from './create-list-dialog';
 import { EditListDialog } from './edit-list-dialog';
 import { isTaskListNameExistsError } from './task-board-errors';
-import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 
 interface BoardLayoutSettingsContentProps {
   boardId: string;
@@ -139,328 +115,6 @@ interface BoardLayoutSettingsContentProps {
 interface BoardLayoutSettingsProps extends BoardLayoutSettingsContentProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
-
-const statusConfig = {
-  not_started: {
-    icon: CircleDashed,
-    label: 'Backlog',
-    color: 'text-dynamic-gray',
-    bgColor: 'bg-dynamic-gray/10',
-    borderColor: 'border-dynamic-gray/30',
-  },
-  active: {
-    icon: Circle,
-    label: 'Active',
-    color: 'text-dynamic-blue',
-    bgColor: 'bg-dynamic-blue/10',
-    borderColor: 'border-dynamic-blue/30',
-  },
-  review: {
-    icon: ClipboardCheck,
-    label: 'Review',
-    color: 'text-dynamic-orange',
-    bgColor: 'bg-dynamic-orange/10',
-    borderColor: 'border-dynamic-orange/30',
-  },
-  done: {
-    icon: CircleCheck,
-    label: 'Done',
-    color: 'text-dynamic-green',
-    bgColor: 'bg-dynamic-green/10',
-    borderColor: 'border-dynamic-green/30',
-  },
-  closed: {
-    icon: CircleX,
-    label: 'Closed',
-    color: 'text-dynamic-purple',
-    bgColor: 'bg-dynamic-purple/10',
-    borderColor: 'border-dynamic-purple/30',
-  },
-  documents: {
-    icon: FileText,
-    label: 'Documents',
-    color: 'text-dynamic-cyan',
-    bgColor: 'bg-dynamic-cyan/10',
-    borderColor: 'border-dynamic-cyan/30',
-  },
-};
-
-const colorClasses: Record<SupportedColor, string> = {
-  GRAY: 'border-dynamic-gray/30 bg-dynamic-gray/10',
-  RED: 'border-dynamic-red/30 bg-dynamic-red/10',
-  BLUE: 'border-dynamic-blue/30 bg-dynamic-blue/10',
-  GREEN: 'border-dynamic-green/30 bg-dynamic-green/10',
-  YELLOW: 'border-dynamic-yellow/30 bg-dynamic-yellow/10',
-  ORANGE: 'border-dynamic-orange/30 bg-dynamic-orange/10',
-  PURPLE: 'border-dynamic-purple/30 bg-dynamic-purple/10',
-  PINK: 'border-dynamic-pink/30 bg-dynamic-pink/10',
-  INDIGO: 'border-dynamic-indigo/30 bg-dynamic-indigo/10',
-  CYAN: 'border-dynamic-cyan/30 bg-dynamic-cyan/10',
-};
-
-interface SortableListItemProps {
-  list: WorkspaceTaskList;
-  taskCount: number;
-  onEdit: (list: WorkspaceTaskList) => void;
-  onDelete: (list: WorkspaceTaskList) => void;
-  onColorChange: (listId: string, color: SupportedColor) => void;
-  isDragging?: boolean;
-  translations?: {
-    task?: string;
-    tasks?: string;
-    changeColor?: string;
-    editList?: string;
-    deleteList?: string;
-    backlog?: string;
-    active?: string;
-    review?: string;
-    doneStatus?: string;
-    closed?: string;
-    documents?: string;
-    gray?: string;
-    red?: string;
-    blue?: string;
-    green?: string;
-    yellow?: string;
-    orange?: string;
-    purple?: string;
-    pink?: string;
-    indigo?: string;
-    cyan?: string;
-  };
-}
-
-function SortableListItem({
-  list,
-  taskCount,
-  onEdit,
-  onDelete,
-  onColorChange,
-  isDragging,
-  translations,
-}: SortableListItemProps) {
-  const t = {
-    task: translations?.task ?? 'task',
-    tasks: translations?.tasks ?? 'tasks',
-    changeColor: translations?.changeColor ?? 'Change Color',
-    editList: translations?.editList ?? 'Edit List',
-    deleteList: translations?.deleteList ?? 'Delete List',
-    backlog: translations?.backlog ?? 'Backlog',
-    active: translations?.active ?? 'Active',
-    review: translations?.review ?? 'Review',
-    doneStatus: translations?.doneStatus ?? 'Done',
-    closed: translations?.closed ?? 'Closed',
-    documents: translations?.documents ?? 'Documents',
-    gray: translations?.gray ?? 'Gray',
-    red: translations?.red ?? 'Red',
-    blue: translations?.blue ?? 'Blue',
-    green: translations?.green ?? 'Green',
-    yellow: translations?.yellow ?? 'Yellow',
-    orange: translations?.orange ?? 'Orange',
-    purple: translations?.purple ?? 'Purple',
-    pink: translations?.pink ?? 'Pink',
-    indigo: translations?.indigo ?? 'Indigo',
-    cyan: translations?.cyan ?? 'Cyan',
-  };
-
-  const statusLabels: Record<TaskBoardStatus, string> = {
-    not_started: t.backlog,
-    active: t.active,
-    review: t.review,
-    done: t.doneStatus,
-    closed: t.closed,
-    documents: t.documents,
-  };
-
-  const rawListName = list.name ?? '';
-
-  const listDisplayName = translateTaskListNameForDisplay(rawListName, {
-    toDo: statusLabels.not_started,
-    inProgress: statusLabels.active,
-    review: statusLabels.review,
-    done: statusLabels.done,
-    closed: statusLabels.closed,
-    documents: statusLabels.documents,
-  });
-
-  const colorOptions = useMemo(
-    () => [
-      {
-        value: 'GRAY' as SupportedColor,
-        label: t.gray,
-        class: 'bg-dynamic-gray/30',
-      },
-      {
-        value: 'RED' as SupportedColor,
-        label: t.red,
-        class: 'bg-dynamic-red/30',
-      },
-      {
-        value: 'BLUE' as SupportedColor,
-        label: t.blue,
-        class: 'bg-dynamic-blue/30',
-      },
-      {
-        value: 'GREEN' as SupportedColor,
-        label: t.green,
-        class: 'bg-dynamic-green/30',
-      },
-      {
-        value: 'YELLOW' as SupportedColor,
-        label: t.yellow,
-        class: 'bg-dynamic-yellow/30',
-      },
-      {
-        value: 'ORANGE' as SupportedColor,
-        label: t.orange,
-        class: 'bg-dynamic-orange/30',
-      },
-      {
-        value: 'PURPLE' as SupportedColor,
-        label: t.purple,
-        class: 'bg-dynamic-purple/30',
-      },
-      {
-        value: 'PINK' as SupportedColor,
-        label: t.pink,
-        class: 'bg-dynamic-pink/30',
-      },
-      {
-        value: 'INDIGO' as SupportedColor,
-        label: t.indigo,
-        class: 'bg-dynamic-indigo/30',
-      },
-      {
-        value: 'CYAN' as SupportedColor,
-        label: t.cyan,
-        class: 'bg-dynamic-cyan/30',
-      },
-    ],
-    [
-      t.gray,
-      t.red,
-      t.blue,
-      t.green,
-      t.yellow,
-      t.orange,
-      t.purple,
-      t.pink,
-      t.indigo,
-      t.cyan,
-    ]
-  );
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: list.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const StatusIcon = list.status && statusConfig[list.status].icon;
-  const listColor = (list.color as SupportedColor) || 'GRAY';
-  const colorClass = colorClasses[listColor] || colorClasses.GRAY;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        'group flex items-center gap-3 rounded-lg border-l-4 bg-background p-3 transition-all',
-        (isDragging || isSortableDragging) && 'opacity-50',
-        'hover:border-primary/50 hover:shadow-sm',
-        colorClass
-      )}
-    >
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        className="cursor-grab text-muted-foreground transition-colors hover:text-foreground active:cursor-grabbing"
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-
-      <div className="flex min-w-0 flex-1 items-center gap-3">
-        {list.status && StatusIcon && (
-          <div
-            className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
-              statusConfig[list.status].bgColor
-            )}
-          >
-            <StatusIcon
-              className={cn('h-4 w-4', statusConfig[list.status].color)}
-            />
-          </div>
-        )}
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate font-medium text-sm">
-              {listDisplayName}
-            </span>
-            <Badge variant="secondary" className="shrink-0 text-[10px]">
-              {taskCount} {taskCount === 1 ? t.task : t.tasks}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <div className="px-2 py-1 font-medium text-muted-foreground text-xs">
-            {t.changeColor}
-          </div>
-          <div className="grid grid-cols-5 gap-1 p-2">
-            {colorOptions.map((color) => (
-              <button
-                type="button"
-                key={color.value}
-                onClick={() => onColorChange(list.id, color.value)}
-                className={cn(
-                  'h-6 w-6 rounded border-2 transition-all',
-                  color.class,
-                  listColor === color.value && 'scale-110 ring-2 ring-primary'
-                )}
-                title={color.label}
-              />
-            ))}
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => onEdit(list)} className="gap-2">
-            <Pencil className="h-4 w-4" />
-            {t.editList}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => onDelete(list)}
-            className="gap-2 text-dynamic-red/80 focus:text-dynamic-red"
-          >
-            <Trash2 className="h-4 w-4" />
-            {t.deleteList}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  );
 }
 
 export function BoardLayoutSettingsContent({
@@ -756,29 +410,18 @@ export function BoardLayoutSettingsContent({
       const draggedList = visibleLists.find((l) => l.id === active.id);
       if (!draggedList) return;
 
-      // Find which status the target belongs to
-      let targetStatus: TaskBoardStatus | null = null;
-
-      for (const [s, statusLists] of Object.entries(groupedLists)) {
-        const found = statusLists.find((l) => l.id === over.id);
-        if (found) {
-          targetStatus = s as TaskBoardStatus;
-          break;
-        }
-      }
+      const overId = String(over.id);
+      const targetStatus = overId.startsWith('status:')
+        ? (overId.slice('status:'.length) as TaskBoardStatus)
+        : (visibleLists.find((list) => list.id === overId)?.status ?? null);
 
       if (!targetStatus) return;
 
-      if (draggedList.status !== targetStatus) {
-        toast.error(t.cannotReorderAcrossStatuses);
-        return;
-      }
-
       const previousLists = visibleLists;
-      const reordered = reorderTaskListsWithinStatus(
+      const reordered = reorderTaskLists(
         visibleLists,
         String(active.id),
-        String(over.id)
+        overId
       );
       if (!reordered) return;
 
@@ -787,12 +430,12 @@ export function BoardLayoutSettingsContent({
         ['task_lists', boardId],
         (oldData: WorkspaceTaskList[] | undefined) => {
           if (!oldData) return oldData;
-          const nextPositions = new Map(
-            reordered.updates.map((update) => [update.id, update.position])
+          const updatesById = new Map(
+            reordered.updates.map((update) => [update.id, update])
           );
           return oldData.map((list) => {
-            const position = nextPositions.get(list.id);
-            return position === undefined ? list : { ...list, position };
+            const update = updatesById.get(list.id);
+            return update === undefined ? list : { ...list, ...update };
           });
         }
       );
@@ -800,8 +443,8 @@ export function BoardLayoutSettingsContent({
       try {
         if (!wsId) throw new Error('Workspace ID is required');
         await Promise.all(
-          reordered.updates.map(({ id, position }) =>
-            updateWorkspaceTaskList(wsId, boardId, id, { position })
+          reordered.updates.map(({ id, position, status }) =>
+            updateWorkspaceTaskList(wsId, boardId, id, { position, status })
           )
         );
 
@@ -809,7 +452,11 @@ export function BoardLayoutSettingsContent({
           broadcast?.('list:upsert', { list: update });
         }
         await onUpdate();
-        toast.success(t.listsReordered);
+        toast.success(
+          draggedList.status === targetStatus
+            ? t.listsReordered
+            : t.movedToStatus.replace('{status}', statusLabels[targetStatus])
+        );
       } catch (error) {
         console.error('Failed to reorder lists:', error);
         toast.error(t.failedToReorderLists);
@@ -820,9 +467,9 @@ export function BoardLayoutSettingsContent({
     [
       boardId,
       broadcast,
-      groupedLists,
       onUpdate,
       queryClient,
+      statusLabels,
       t,
       visibleLists,
       wsId,
@@ -832,11 +479,6 @@ export function BoardLayoutSettingsContent({
   const handleColorChange = (listId: string, color: SupportedColor) => {
     updateColorMutation.mutate({ listId, color });
   };
-
-  const statuses = useMemo<TaskBoardStatus[]>(
-    () => ['documents', 'not_started', 'active', 'review', 'done', 'closed'],
-    []
-  );
 
   const openCreateListDialog = useCallback((status: TaskBoardStatus) => {
     setCreateListStatus(status);
@@ -849,106 +491,54 @@ export function BoardLayoutSettingsContent({
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
     >
-      <div className="space-y-6">
-        {statuses.map((status) => {
-          const StatusIcon = statusConfig[status].icon;
-          const statusLists = (groupedLists[status] || []).sort(
+      <Accordion
+        className="space-y-3"
+        defaultValue={BOARD_LIST_STATUSES}
+        type="multiple"
+      >
+        {BOARD_LIST_STATUSES.map((status) => {
+          const statusLists = [...(groupedLists[status] || [])].sort(
             (a, b) => (a?.position || 0) - (b?.position || 0)
           );
+          const itemCopy: BoardLayoutListItemCopy = {
+            active: t.active,
+            backlog: t.backlog,
+            blue: t.blue,
+            changeColor: t.changeColor,
+            closed: t.closed,
+            cyan: t.cyan,
+            deleteList: t.deleteList,
+            documents: t.documents,
+            doneStatus: t.doneStatus,
+            editList: t.editList,
+            gray: t.gray,
+            green: t.green,
+            indigo: t.indigo,
+            orange: t.orange,
+            pink: t.pink,
+            purple: t.purple,
+            red: t.red,
+            review: t.review,
+            yellow: t.yellow,
+          };
 
           return (
-            <div key={status} className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'flex h-6 w-6 items-center justify-center rounded',
-                      statusConfig[status].bgColor
-                    )}
-                  >
-                    <StatusIcon
-                      className={cn('h-3.5 w-3.5', statusConfig[status].color)}
-                    />
-                  </div>
-                  <h3 className="font-semibold text-sm">
-                    {statusLabels[status]}
-                  </h3>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {statusLists.length}
-                  </Badge>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => openCreateListDialog(status)}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t.addNewList}
-                </Button>
-              </div>
-
-              {statusLists.length === 0 ? (
-                <div className="rounded-lg border-2 border-dashed p-4 text-center">
-                  <p className="text-muted-foreground text-sm">
-                    {t.noListsInStatus}
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 gap-1.5"
-                    onClick={() => openCreateListDialog(status)}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    {t.addNewList}
-                  </Button>
-                </div>
-              ) : (
-                <SortableContext
-                  items={statusLists.map((l) => l.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {statusLists.map((list) => (
-                      <SortableListItem
-                        key={list.id}
-                        list={list}
-                        taskCount={0}
-                        onEdit={setEditingList}
-                        onDelete={setDeletingList}
-                        onColorChange={handleColorChange}
-                        translations={{
-                          task: t.task,
-                          tasks: t.tasks,
-                          changeColor: t.changeColor,
-                          editList: t.editList,
-                          deleteList: t.deleteList,
-                          backlog: t.backlog,
-                          active: t.active,
-                          review: t.review,
-                          doneStatus: t.doneStatus,
-                          closed: t.closed,
-                          documents: t.documents,
-                          gray: t.gray,
-                          red: t.red,
-                          blue: t.blue,
-                          green: t.green,
-                          yellow: t.yellow,
-                          orange: t.orange,
-                          purple: t.purple,
-                          pink: t.pink,
-                          indigo: t.indigo,
-                          cyan: t.cyan,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              )}
-            </div>
+            <BoardLayoutStatusGroup
+              addNewList={t.addNewList}
+              copy={itemCopy}
+              key={status}
+              label={statusLabels[status]}
+              lists={statusLists}
+              noListsInStatus={t.noListsInStatus}
+              onAdd={openCreateListDialog}
+              onColorChange={handleColorChange}
+              onDelete={setDeletingList}
+              onEdit={setEditingList}
+              status={status}
+            />
           );
         })}
-      </div>
+      </Accordion>
     </DndContext>
   );
 

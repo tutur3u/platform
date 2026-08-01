@@ -18,6 +18,7 @@ import {
   PanelLeftClose,
   Pencil,
   Play,
+  RefreshCw,
   Search,
   Share2,
   Trash2,
@@ -41,6 +42,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import { getActiveBoardRefresh } from './board-broadcast-context';
 import { saveBoardConfig } from './board-config-storage';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
@@ -136,12 +138,14 @@ export function BoardHeader({
   readOnly = false,
   titlePrefix,
   onBoardSettingsIntent,
+  onUpdate,
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
   const [plannerOpen, setPlannerOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(
     filters.searchQuery || ''
   );
@@ -311,6 +315,17 @@ export function BoardHeader({
 
     // Small delay to show feedback if needed, but mostly instant
     setTimeout(() => setIsLoading(false), 300);
+  }
+
+  async function refreshBoard() {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await getActiveBoardRefresh()?.({ includeLists: true });
+      onUpdate?.();
+    } finally {
+      setIsRefreshing(false);
+    }
   }
 
   // Derived state for button UI
@@ -737,6 +752,27 @@ export function BoardHeader({
                 aria-label={t('ws-task-plans.planner')}
               >
                 <CalendarDays className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              </Button>
+            </ToolbarTooltip>
+          )}
+
+          {interactiveControlsVisible && (
+            <ToolbarTooltip label={t('common.refresh')}>
+              <Button
+                aria-label={t('common.refresh')}
+                className={toolbarButtonClass}
+                disabled={isRefreshing}
+                onClick={() => void refreshBoard()}
+                size="xs"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw
+                  className={cn(
+                    'h-3 w-3 sm:h-3.5 sm:w-3.5',
+                    isRefreshing && 'animate-spin'
+                  )}
+                />
               </Button>
             </ToolbarTooltip>
           )}

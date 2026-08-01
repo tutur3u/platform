@@ -261,4 +261,33 @@ describe('BoardColumn external lane retry behavior', () => {
 
     expect(onTaskListCollapsedChange).toHaveBeenCalledWith('list-1', true);
   });
+
+  it('refreshes only the selected task list', async () => {
+    mocks.pagination = {
+      [regularColumn.id]: {
+        ...loadedExternalState,
+        hasMore: false,
+      },
+    };
+    mocks.loadListPage.mockResolvedValue({
+      hasMore: false,
+      tasks: regularTasks,
+      totalCount: regularTasks.length,
+    });
+
+    render(
+      <BoardColumn
+        boardId="board-1"
+        column={regularColumn}
+        tasks={regularTasks}
+        wsId="workspace-1"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
+
+    await waitFor(() => {
+      expect(mocks.loadListPage).toHaveBeenCalledWith('list-1', 0);
+    });
+  });
 });

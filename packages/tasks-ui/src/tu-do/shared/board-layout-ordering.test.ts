@@ -1,6 +1,6 @@
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import { describe, expect, it } from 'vitest';
-import { reorderTaskListsWithinStatus } from './board-layout-ordering';
+import { reorderTaskLists } from './board-layout-ordering';
 
 function taskList(
   id: string,
@@ -21,7 +21,7 @@ function taskList(
   };
 }
 
-describe('reorderTaskListsWithinStatus', () => {
+describe('reorderTaskLists', () => {
   it('normalizes and persists the complete reordered status group', () => {
     const lists = [
       taskList('backlog-3', 'not_started', 30),
@@ -30,11 +30,7 @@ describe('reorderTaskListsWithinStatus', () => {
       taskList('backlog-2', 'not_started', 20),
     ];
 
-    const result = reorderTaskListsWithinStatus(
-      lists,
-      'backlog-1',
-      'backlog-3'
-    );
+    const result = reorderTaskLists(lists, 'backlog-1', 'backlog-3');
 
     expect(result?.updates).toEqual([
       { id: 'backlog-2', position: 0 },
@@ -52,14 +48,47 @@ describe('reorderTaskListsWithinStatus', () => {
     );
   });
 
-  it('rejects cross-status drops instead of producing invalid ordering writes', () => {
+  it('moves a list across statuses and normalizes both groups', () => {
     const lists = [
       taskList('backlog-1', 'not_started', 0),
-      taskList('active-1', 'active', 0),
+      taskList('backlog-2', 'not_started', 8),
+      taskList('active-1', 'active', 4),
+      taskList('active-2', 'active', 9),
     ];
 
+    const result = reorderTaskLists(lists, 'backlog-1', 'active-2');
+
+    expect(result?.updates).toEqual([
+      { id: 'backlog-2', position: 0 },
+      { id: 'active-1', position: 0 },
+      { id: 'backlog-1', position: 1, status: 'active' },
+      { id: 'active-2', position: 2 },
+    ]);
     expect(
-      reorderTaskListsWithinStatus(lists, 'backlog-1', 'active-1')
-    ).toBeNull();
+      result?.lists
+        .filter((list) => list.status === 'active')
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((list) => list.id)
+    ).toEqual(['active-1', 'backlog-1', 'active-2']);
+  });
+
+  it('moves a list into an empty status group', () => {
+    const lists = [
+      taskList('backlog-1', 'not_started', 0),
+      taskList('backlog-2', 'not_started', 1),
+    ];
+
+    const result = reorderTaskLists(lists, 'backlog-1', 'status:review');
+
+    expect(result?.updates).toEqual([
+      { id: 'backlog-2', position: 0 },
+      { id: 'backlog-1', position: 0, status: 'review' },
+    ]);
+    expect(result?.lists.find((list) => list.id === 'backlog-1')).toMatchObject(
+      {
+        position: 0,
+        status: 'review',
+      }
+    );
   });
 });

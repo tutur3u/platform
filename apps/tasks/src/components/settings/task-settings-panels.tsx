@@ -34,6 +34,7 @@ import TaskTemplateDetailPageClient from '@tuturuuu/tasks-ui/tu-do/templates/tem
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
 import type { Workspace } from '@tuturuuu/types';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import IconPicker from '@tuturuuu/ui/custom/icon-picker';
@@ -53,6 +54,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { BoardSettingsNavigation } from './board-settings-navigation';
 import { listPublicBoardTemplates } from './template-marketplace-actions';
 
 function getBrowserInternalApiOptions() {
@@ -146,39 +148,65 @@ export function TaskBoardSettingsPanel({
   );
 
   return (
-    <div className="space-y-6">
-      <BoardDetailsSettings
-        board={board}
-        onRefresh={() => void refetch()}
-        wsId={wsId}
+    <div className="space-y-5">
+      <BoardSettingsNavigation
+        boardDescription={t('settings.tasks.board_description')}
+        boardDetailsLabel={t('settings.tasks.board_details')}
+        boardLayoutLabel={t('settings.tasks.board_layout')}
+        boardName={board.name}
+        layoutTitle={t('ws-task-boards.layout_settings.title')}
+        listCount={lists.length}
+        ticketPrefix={board.ticket_prefix}
       />
-      <TaskBoardBehaviorSettings />
-      <div className="space-y-4 rounded-lg border bg-background p-4">
-        <div className="space-y-1">
-          <h3 className="font-medium">{t('settings.tasks.board_layout')}</h3>
-          <p className="text-muted-foreground text-sm">
-            {t('settings.tasks.board_layout_description')}
-          </p>
-        </div>
-        <BoardLayoutSettingsContent
-          boardId={board.id}
-          disableScrollArea
-          lists={lists}
-          onUpdate={async () => {
-            await refetch();
-          }}
-          translations={{
-            cannotReorderAcrossStatuses: t(
-              'ws-task-boards.layout_settings.cannot_reorder_across_statuses'
-            ),
-            failedToReorderLists: t(
-              'ws-task-boards.layout_settings.failed_to_reorder'
-            ),
-            listsReordered: t('ws-task-boards.layout_settings.lists_reordered'),
-          }}
-          wsId={wsId}
-        />
-      </div>
+
+      <Tabs className="space-y-5" defaultValue="setup">
+        <TabsContent className="space-y-5" value="setup">
+          <BoardDetailsSettings
+            board={board}
+            onRefresh={() => void refetch()}
+            wsId={wsId}
+          />
+          <TaskBoardBehaviorSettings />
+        </TabsContent>
+
+        <TabsContent value="layout">
+          <div className="space-y-5 rounded-2xl border bg-background p-4 sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <h3 className="font-semibold">
+                  {t('settings.tasks.board_layout')}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {t('settings.tasks.board_layout_description')}
+                </p>
+              </div>
+              <Badge className="w-fit" variant="secondary">
+                {lists.length}
+              </Badge>
+            </div>
+            <BoardLayoutSettingsContent
+              boardId={board.id}
+              disableScrollArea
+              lists={lists}
+              onUpdate={async () => {
+                await refetch();
+              }}
+              translations={{
+                failedToReorderLists: t(
+                  'ws-task-boards.layout_settings.failed_to_reorder'
+                ),
+                listsReordered: t(
+                  'ws-task-boards.layout_settings.lists_reordered'
+                ),
+                movedToStatus: t(
+                  'ws-task-boards.layout_settings.moved_to_status'
+                ),
+              }}
+              wsId={wsId}
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -199,7 +227,7 @@ function TaskBoardBehaviorSettings() {
   } = useUserBooleanConfig(TASK_HIDE_EMPTY_LISTS_CONFIG_ID, false);
 
   return (
-    <div className="space-y-4 rounded-lg border bg-background p-4">
+    <div className="space-y-4 rounded-2xl border bg-background p-4 sm:p-5">
       <div className="space-y-1">
         <h3 className="font-medium">{t('board_behavior')}</h3>
         <p className="text-muted-foreground text-sm">
@@ -323,7 +351,7 @@ function BoardDetailsSettings({
   });
 
   return (
-    <div className="space-y-5 rounded-lg border bg-background p-4">
+    <div className="space-y-5 rounded-2xl border bg-background p-4 sm:p-5">
       <div className="space-y-1">
         <h3 className="font-medium">{t('settings.tasks.board_details')}</h3>
         <p className="text-muted-foreground text-sm">
@@ -332,11 +360,8 @@ function BoardDetailsSettings({
       </div>
 
       <div className="grid gap-4">
-        <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-end">
-          <div className="w-fit space-y-2">
-            <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              {t('ws-task-boards.icon_label')}
-            </Label>
+        <div className="rounded-xl border bg-muted/20 p-4">
+          <div className="flex items-center gap-4">
             <IconPicker
               ariaLabel={t('ws-task-boards.icon_picker.title')}
               clearLabel={t('ws-task-boards.icon_picker.clear')}
@@ -346,19 +371,25 @@ function BoardDetailsSettings({
                 'ws-task-boards.icon_picker.search_placeholder'
               )}
               title={t('ws-task-boards.icon_picker.title')}
+              triggerClassName="size-12 shrink-0 rounded-xl bg-background shadow-sm [&_svg]:size-5"
               value={boardIcon}
             />
-          </div>
 
-          <div className="min-w-0 space-y-2">
-            <Label htmlFor="board-name">{t('ws-task-boards.name')}</Label>
-            <Input
-              autoComplete="off"
-              id="board-name"
-              onChange={(event) => setBoardName(event.target.value)}
-              placeholder={t('ws-task-boards.unnamed_board')}
-              value={boardName}
-            />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div>
+                <Label htmlFor="board-name">{t('ws-task-boards.name')}</Label>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  {t('ws-task-boards.icon_picker.description')}
+                </p>
+              </div>
+              <Input
+                autoComplete="off"
+                id="board-name"
+                onChange={(event) => setBoardName(event.target.value)}
+                placeholder={t('ws-task-boards.unnamed_board')}
+                value={boardName}
+              />
+            </div>
           </div>
         </div>
 
@@ -394,7 +425,7 @@ function BoardDetailsSettings({
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end border-t pt-4">
           <Button
             disabled={updateBoardMutation.isPending || !isDirty}
             onClick={() => updateBoardMutation.mutate()}

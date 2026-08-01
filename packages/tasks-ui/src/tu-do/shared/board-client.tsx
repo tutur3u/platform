@@ -149,31 +149,42 @@ export function BoardClient({
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
 
   const refreshActiveBoard = useCallback(
-    (options?: BoardRefreshOptions) => {
+    async (options?: BoardRefreshOptions) => {
       const invalidateTasks = options?.invalidateTasks ?? true;
+      const refreshes: Promise<unknown>[] = [];
 
       if (invalidateTasks) {
-        void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        void queryClient.invalidateQueries({
-          queryKey: ['tasks-full', boardId],
-        });
+        refreshes.push(
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] })
+        );
       }
 
-      void progressiveLoader.revalidateLoadedLists().catch(() => {
-        // Best effort: direct cache broadcasts still keep the visible board moving.
-      });
+      refreshes.push(
+        progressiveLoader.revalidateLoadedLists().catch(() => {
+          // Best effort: direct cache broadcasts still keep the visible board moving.
+        })
+      );
 
-      if (!options?.includeLists) return;
-
-      void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-      void queryClient.invalidateQueries({
-        queryKey: ['task-board', workspace.id, boardId],
-      });
-      if (boardWorkspaceId !== workspace.id) {
-        void queryClient.invalidateQueries({
-          queryKey: ['task-board', boardWorkspaceId, boardId],
-        });
+      if (options?.includeLists) {
+        refreshes.push(
+          queryClient.invalidateQueries({
+            queryKey: ['task_lists', boardId],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-board', workspace.id, boardId],
+          })
+        );
+        if (boardWorkspaceId !== workspace.id) {
+          refreshes.push(
+            queryClient.invalidateQueries({
+              queryKey: ['task-board', boardWorkspaceId, boardId],
+            })
+          );
+        }
       }
+
+      await Promise.all(refreshes);
     },
     [
       boardId,
