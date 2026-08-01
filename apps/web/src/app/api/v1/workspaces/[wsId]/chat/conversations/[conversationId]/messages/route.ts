@@ -385,12 +385,14 @@ export const POST = withSessionAuth<RouteParams>(
           wsId: context.context.normalizedWsId,
         });
 
-        await notifyChatMessageRecipients({
-          actorUserId: auth.user.id,
-          conversation,
-          message,
-          wsId: context.context.normalizedWsId,
-        });
+        if (message.kind === 'user') {
+          await notifyChatMessageRecipients({
+            actorUserId: auth.user.id,
+            conversation,
+            message,
+            wsId: context.context.normalizedWsId,
+          });
+        }
 
         if (conversation?.type === 'ai') {
           if (wantsChatMessageStream(request)) {

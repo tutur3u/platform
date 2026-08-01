@@ -757,6 +757,7 @@ describe('native AI chat message route', () => {
       'chat_send_message',
       expect.objectContaining({ p_kind: 'system' })
     );
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
   it('fails closed without reporting a remote rejection when binding lookup fails', async () => {
