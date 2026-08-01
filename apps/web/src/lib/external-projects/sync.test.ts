@@ -14,8 +14,8 @@ import {
 describe('external project sync diff', () => {
   it('includes CMS template changes in the sync plan', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
-      adapter: 'cms_site',
-      canonicalProjectId: 'cms-site-main',
+      adapter: 'custom',
+      canonicalProjectId: 'connected-site-main',
       content: { entries: [] },
       generatedAt: '2026-08-01T00:00:00.000Z',
       schema: { collections: [] },
@@ -25,7 +25,7 @@ describe('external project sync diff', () => {
     };
 
     const diff = buildExternalProjectSyncDiff(snapshot, {
-      adapter: 'cms_site',
+      adapter: 'custom',
       content: { entries: [] },
       schema: { collections: [] },
       template: {
@@ -47,8 +47,8 @@ describe('external project sync diff', () => {
 
   it('normalizes stored and incoming CMS templates symmetrically', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
-      adapter: 'cms_site',
-      canonicalProjectId: 'cms-site-main',
+      adapter: 'custom',
+      canonicalProjectId: 'connected-site-main',
       content: { entries: [] },
       generatedAt: '2026-08-01T00:00:00.000Z',
       schema: { collections: [] },
@@ -58,7 +58,7 @@ describe('external project sync diff', () => {
     };
 
     const diff = buildExternalProjectSyncDiff(snapshot, {
-      adapter: 'cms_site',
+      adapter: 'custom',
       content: { entries: [] },
       schema: { collections: [] },
       template: { kind: 'standard-site', version: 1 },
@@ -70,7 +70,7 @@ describe('external project sync diff', () => {
     );
   });
 
-  it('drops CMS template metadata from non-CMS manifests', () => {
+  it('preserves CMS template metadata independently of adapter identity', () => {
     const manifest = normalizeExternalProjectSyncManifest({
       adapter: 'yoola',
       content: { entries: [] },
@@ -79,7 +79,12 @@ describe('external project sync diff', () => {
       version: 1,
     });
 
-    expect(manifest.template).toBeUndefined();
+    expect(manifest.template).toEqual({
+      editor: {},
+      kind: 'standard-site',
+      publicDelivery: {},
+      version: 1,
+    });
   });
 
   it('treats stored schema ordering and expanded field defaults as equivalent', () => {

@@ -23,6 +23,7 @@ import {
   consumeAiResponseTextDeltas,
   copyChatAttachmentsToAiResources,
   maybeAutoRenameNativeAiConversation,
+  NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   normalizeNativeAiModel,
   publishChatRealtimeMessages,
   readRecord,
@@ -30,9 +31,6 @@ import {
   splitAiAssistantContent,
   toNativeAiUiMessages,
 } from './ai-message-shared';
-
-const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
-  'Assistant response failed. Your message was saved.';
 
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
@@ -184,6 +182,7 @@ export async function sendNativeAiConversationMessages({
       observabilityContext: buildNativeAiObservabilityContext(
         privateMessages ?? []
       ),
+      persistenceRequestId: userMessage.id,
       request,
       supabase: auth.supabase,
       thinkingMode: settings.thinking_mode,
@@ -205,6 +204,7 @@ export async function sendNativeAiConversationMessages({
 
     const assistantResponse = await getLatestAiAssistantMessage({
       chatId: shadowChatId,
+      requestId: userMessage.id,
       supabase: auth.supabase,
     });
 
@@ -216,32 +216,26 @@ export async function sendNativeAiConversationMessages({
     }
 
     const assistantParts = splitAiAssistantContent(assistantResponse.content);
-    const assistantMessages: ChatMessage[] = [];
-
-    for (let index = 0; index < assistantParts.length; index++) {
-      const content = assistantParts[index]!;
-      const metadata = buildNativeAssistantMessageMetadata({
-        aiMessage: assistantResponse,
-        content,
-        splitIndex: index,
-        splitTotal: assistantParts.length,
-      });
-      const message = await callPrivateChatRpc<ChatMessage>(
-        'chat_persist_ai_message',
-        {
-          p_actor_user_id: auth.user.id,
-          p_content: content,
-          p_conversation_id: conversation.id,
-          p_metadata: metadata,
-          p_ws_id: context.normalizedWsId,
-        }
-      );
-
-      if (!message) {
-        throw new Error('Chat conversation not found');
+    const assistantMessages = await callPrivateChatRpc<ChatMessage[]>(
+      'chat_persist_ai_message_batch',
+      {
+        p_actor_user_id: auth.user.id,
+        p_conversation_id: conversation.id,
+        p_messages: assistantParts.map((content, index) => ({
+          content,
+          metadata: buildNativeAssistantMessageMetadata({
+            aiMessage: assistantResponse,
+            content,
+            splitIndex: index,
+            splitTotal: assistantParts.length,
+          }),
+        })),
+        p_ws_id: context.normalizedWsId,
       }
+    );
 
-      assistantMessages.push(message);
+    if (!assistantMessages?.length) {
+      throw new Error('Chat conversation not found');
     }
 
     return assistantMessages;
@@ -315,6 +309,7 @@ async function ensureNativeAiShadowChat({
       creator_id: auth.user.id,
       is_public: false,
       model,
+      summary: `native-chat-shadow:${conversation.id}`,
       title: conversation.title ?? 'Mira',
     },
     { onConflict: 'id' }
@@ -330,9 +325,11 @@ async function ensureNativeAiShadowChat({
 
 async function getLatestAiAssistantMessage({
   chatId,
+  requestId,
   supabase,
 }: {
   chatId: string;
+  requestId: string;
   supabase: SessionAuthContext['supabase'];
 }) {
   const { data, error } = await supabase
@@ -348,7 +345,11 @@ async function getLatestAiAssistantMessage({
     return null;
   }
 
-  return ((data as AiAssistantMessageRow[] | null) ?? [])[0] ?? null;
+  return (
+    ((data as AiAssistantMessageRow[] | null) ?? []).find(
+      (message) => readRecord(message.metadata)?.requestId === requestId
+    ) ?? null
+  );
 }
 
 async function cleanupNativeAiShadowChat({

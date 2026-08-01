@@ -6492,6 +6492,7 @@
     "pending": "Pending",
     "prerequisites": "Prerequisites incomplete",
     "queueing": "Queueing locally",
+    "queued": "Queued",
     "ready": "Mirror is ready for canary traffic",
     "ready_description": "Both credentials and binding settings are configured. Live authority remains unchanged.",
     "refresh": "Refresh readiness",

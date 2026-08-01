@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveChatRouteContext } from '@/lib/chat/private-rpc';
-import { assertSafeExternalChatUrl } from '@/lib/external-chat/safe-control-request';
+import {
+  assertSafeExternalChatUrl,
+  ExternalChatUrlPolicyError,
+} from '@/lib/external-chat/safe-control-request';
 import { externalChatSettingsSchema } from '@/lib/external-chat/schemas';
 import {
   readExternalChatBinding,
@@ -53,8 +56,17 @@ export const PATCH = withSessionAuth<Params>(
       return NextResponse.json({ error: 'Binding not found' }, { status: 404 });
     }
     try {
-      await assertSafeExternalChatUrl(parsed.data.bridgeBaseUrl);
-    } catch {
+      if (parsed.data.enabled) {
+        await assertSafeExternalChatUrl(parsed.data.bridgeBaseUrl);
+      }
+    } catch (error) {
+      if (!(error instanceof ExternalChatUrlPolicyError)) {
+        console.error('Failed to validate external chat bridge URL', { error });
+        return NextResponse.json(
+          { error: 'Bridge URL validation is temporarily unavailable' },
+          { status: 503 }
+        );
+      }
       return NextResponse.json(
         { error: 'Bridge URL is not allowed' },
         { status: 400 }

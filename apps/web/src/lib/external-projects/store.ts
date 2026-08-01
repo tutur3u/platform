@@ -3037,11 +3037,9 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     collectionsPayload
   );
   const template =
-    binding.adapter === 'cms_site'
-      ? readV1Template(
-          asJsonObject(asJsonObject(binding.settings).cmsSite).template
-        )
-      : readV1Template(profileData.template);
+    readV1Template(
+      asJsonObject(asJsonObject(binding.settings).cmsSite).template
+    ) ?? readV1Template(profileData.template);
   const deliveryRevision = getExternalProjectDeliveryRevision(
     deliveryCollections,
     deliveryEntries,

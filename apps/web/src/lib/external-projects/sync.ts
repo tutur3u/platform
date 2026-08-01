@@ -225,10 +225,9 @@ export function normalizeExternalProjectSyncManifest(
         }
       : undefined,
     schema: normalizeSyncSchema(value.schema),
-    template:
-      value.adapter === 'cms_site' && value.template
-        ? normalizeCmsSiteTemplate(value.template)
-        : undefined,
+    template: value.template
+      ? normalizeCmsSiteTemplate(value.template)
+      : undefined,
     version: 1,
   };
 }
@@ -357,10 +356,9 @@ export function buildExternalProjectSyncDiff(
   const manifest = normalizeExternalProjectSyncManifest(manifestInput);
   const operations: ExternalProjectSyncOperation[] = [];
   const snapshotSchema = normalizeSyncSchema(snapshot.schema);
-  const snapshotTemplate =
-    snapshot.adapter === 'cms_site' && snapshot.template
-      ? normalizeCmsSiteTemplate(snapshot.template)
-      : null;
+  const snapshotTemplate = snapshot.template
+    ? normalizeCmsSiteTemplate(snapshot.template)
+    : null;
 
   if (valuesDiffer(snapshotSchema, manifest.schema)) {
     const removedFieldKeys = getRemovedSchemaFieldKeys(
@@ -382,11 +380,7 @@ export function buildExternalProjectSyncDiff(
     });
   }
 
-  if (
-    manifest.adapter === 'cms_site' &&
-    manifest.template &&
-    valuesDiffer(snapshotTemplate, manifest.template)
-  ) {
+  if (manifest.template && valuesDiffer(snapshotTemplate, manifest.template)) {
     operations.push({
       action: snapshotTemplate ? 'update' : 'create',
       after: manifest.template as unknown as Record<string, unknown>,
@@ -823,14 +817,19 @@ export function buildExternalProjectSyncSnapshot({
     generatedAt,
     schema: dbBackedSchema,
     template: (() => {
+      const workspaceTemplate = asRecord(
+        asRecord(asRecord(binding.settings).cmsSite).template
+      );
       const template =
-        binding.adapter === 'cms_site'
-          ? asRecord(asRecord(asRecord(binding.settings).cmsSite).template)
+        Object.keys(workspaceTemplate).length > 0
+          ? workspaceTemplate
           : asRecord(
               asRecord(binding.canonical_project?.delivery_profile).template
             );
       return template.version === 1 && typeof template.kind === 'string'
-        ? (template as ExternalProjectSyncManifest['template'])
+        ? normalizeCmsSiteTemplate(
+            template as NonNullable<ExternalProjectSyncManifest['template']>
+          )
         : undefined;
     })(),
     version: 1,
@@ -1303,16 +1302,6 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     );
   }
 
-  if (binding.adapter === 'cms_site' && manifest.template) {
-    const settings = await setWorkspaceCmsSiteTemplate({
-      actorId,
-      admin,
-      template: manifest.template,
-      workspaceId,
-    });
-    snapshotBinding = { ...binding, settings };
-  }
-
   const collectionBySlug = await upsertCollections({
     actorId,
     collections: manifest.schema.collections,
@@ -1458,6 +1447,16 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     if (error) {
       throw new Error(error.message);
     }
+  }
+
+  if (manifest.template) {
+    const settings = await setWorkspaceCmsSiteTemplate({
+      actorId,
+      admin,
+      template: manifest.template,
+      workspaceId,
+    });
+    snapshotBinding = { ...binding, settings };
   }
 
   return {

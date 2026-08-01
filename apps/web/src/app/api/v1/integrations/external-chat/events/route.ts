@@ -5,7 +5,7 @@ import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 import { verifyExternalChatSecret } from '@/lib/external-chat/crypto';
 import {
   externalChatEventSchema,
-  isExternalChatEnabled,
+  isExternalChatLiveAuthority,
 } from '@/lib/external-chat/schemas';
 import {
   importExternalChatEvent,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   );
   if (
     !state?.binding.is_enabled ||
-    !isExternalChatEnabled(state.binding.settings) ||
+    !isExternalChatLiveAuthority(state.binding.settings) ||
     !state.credentials?.verified_at ||
     !expectedHash ||
     !secretMatches
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     connectorKey: state.binding.canonical_project_id ?? wsId,
     event: parsed.data,
     mappedUserId: getMappedUserId(state.binding.settings, parsed.data.agentId),
+    configurationRevision: state.credentials.configuration_revision,
     wsId,
   });
 

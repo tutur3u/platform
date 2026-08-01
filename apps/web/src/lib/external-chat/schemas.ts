@@ -64,3 +64,12 @@ export function isExternalChatEnabled(settings: unknown) {
       (chat as Record<string, unknown>).enabled === true
   );
 }
+
+export function isExternalChatLiveAuthority(settings: unknown) {
+  if (!isExternalChatEnabled(settings)) return false;
+  const chat = (settings as Record<string, unknown>).chat as Record<
+    string,
+    unknown
+  >;
+  return !['fallback_queue', 'paused'].includes(String(chat.authorityMode));
+}

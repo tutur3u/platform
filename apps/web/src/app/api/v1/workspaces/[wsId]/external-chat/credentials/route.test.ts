@@ -76,7 +76,7 @@ function request(payload: Record<string, unknown> = { action: 'verify' }) {
 
 describe('external chat credential verification', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.configureExternalChatBridge.mockResolvedValue(undefined);
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
@@ -90,6 +90,7 @@ describe('external chat credential verification', () => {
       },
     });
     mocks.markExternalChatCredentialVerified.mockResolvedValue(true);
+    mocks.promoteExternalChatCredential.mockResolvedValue(undefined);
     mocks.serializeExternalChatBinding.mockReturnValue({
       readiness: { errors: [], ready: true },
     });
@@ -145,7 +146,7 @@ describe('external chat credential verification', () => {
       params: Promise.resolve({ wsId: 'workspace-1' }),
     });
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(202);
     expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
       action: 'set_ingest',
       secret: 'ecs_test_secret',
@@ -156,7 +157,7 @@ describe('external chat credential verification', () => {
       expect.objectContaining({ action: 'set_ingest' })
     );
     expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
-    expect(await response.text()).not.toContain('ecs_test_secret');
+    expect(await response.json()).toMatchObject({ secret: 'ecs_test_secret' });
   });
 
   it('pairs with a transient single-use ticket and verifies before marking ready', async () => {
@@ -282,5 +283,21 @@ describe('external chat credential verification', () => {
 
     expect(response.status).toBe(409);
     expect(mocks.clearExternalChatCredential).not.toHaveBeenCalled();
+  });
+
+  it('returns a masked conflict when promotion loses its compare-and-swap', async () => {
+    mocks.promoteExternalChatCredential.mockRejectedValue(
+      new Error('external_chat_pending_credential_changed')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'rotate_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      error: 'External chat credential changed during rotation',
+      secret: 'ecs_test_secret',
+    });
   });
 });

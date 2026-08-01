@@ -6492,6 +6492,7 @@
     "pending": "Đang chờ",
     "prerequisites": "Chưa đủ điều kiện",
     "queueing": "Đang xếp hàng cục bộ",
+    "queued": "Đang chờ",
     "ready": "Đồng bộ sẵn sàng cho canary",
     "ready_description": "Liên kết và hai thông tin xác thực đã sẵn sàng. Quyền hệ thống đang chạy chưa thay đổi.",
     "refresh": "Tải lại trạng thái",

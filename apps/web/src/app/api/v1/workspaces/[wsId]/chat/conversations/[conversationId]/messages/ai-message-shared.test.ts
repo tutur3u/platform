@@ -18,7 +18,10 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
     mocks.upload(...args),
 }));
 
-import { copyAiChatAttachmentInputsToResources } from './ai-message-shared';
+import {
+  consumeAiResponseTextDeltas,
+  copyAiChatAttachmentInputsToResources,
+} from './ai-message-shared';
 
 describe('AI chat attachment resources', () => {
   beforeEach(() => {
@@ -65,5 +68,51 @@ describe('AI chat attachment resources', () => {
         wsId: 'workspace-1',
       })
     ).rejects.toThrow('Failed to prepare a Chat attachment');
+  });
+
+  it('rejects attachment batches above the AI context byte budget', async () => {
+    await expect(
+      copyAiChatAttachmentInputsToResources({
+        attachments: [
+          {
+            filename: 'large.bin',
+            path: 'uploads/large.bin',
+            sizeBytes: 100 * 1024 * 1024 + 1,
+          },
+        ],
+        chatId: 'chat-1',
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('AI context size limit');
+    expect(mocks.download).not.toHaveBeenCalled();
+  });
+
+  it('rejects when downloaded bytes exceed the AI context byte budget', async () => {
+    mocks.download.mockResolvedValue({
+      buffer: { byteLength: 100 * 1024 * 1024 + 1 },
+      contentType: 'application/octet-stream',
+    });
+
+    await expect(
+      copyAiChatAttachmentInputsToResources({
+        attachments: [{ filename: 'large.bin', path: 'uploads/large.bin' }],
+        chatId: 'chat-1',
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('Failed to prepare a Chat attachment');
+    expect(mocks.upload).not.toHaveBeenCalled();
+  });
+});
+
+describe('AI response SSE parsing', () => {
+  it('parses CRLF-delimited events', async () => {
+    const response = new Response(
+      'data: {"type":"text-delta","delta":"hello"}\r\n\r\n' +
+        'data: {"type":"text-delta","delta":" world"}\r\n\r\n'
+    );
+
+    await expect(consumeAiResponseTextDeltas(response)).resolves.toBe(
+      'hello world'
+    );
   });
 });

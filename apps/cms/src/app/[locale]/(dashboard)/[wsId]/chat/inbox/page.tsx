@@ -15,7 +15,8 @@ export default async function ConnectedChatInboxPage({
   if (!access.canAccessConnectedChat || !access.userId) redirect('/no-access');
   if (
     !access.workspacePermissions ||
-    access.workspacePermissions.withoutPermission('view_chat')
+    access.workspacePermissions.withoutPermission('view_chat') ||
+    access.workspacePermissions.withoutPermission('create_chat')
   ) {
     redirect('/no-access');
   }

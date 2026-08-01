@@ -6,10 +6,10 @@ updatedAt: '2026-08-01'
 
 ## Purpose
 
-Use `cms_site` for new CMS-backed websites. It is the global version 1 site
-contract, not a project-specific implementation. Existing dedicated adapters
-remain supported, but new site differences should normally be represented by
-template metadata and collection schema/profile metadata.
+Use the CMS site contract for new CMS-backed websites. It is the global version
+1 schema, not an external-project adapter or project-specific implementation.
+External apps retain their own adapter identity and carry this contract through
+workspace-scoped template metadata and collection schema/profile metadata.
 
 Backend routes and database objects retain their existing `external-project*`
 names for compatibility. Normal CMS UI should use editor-facing site and
@@ -32,9 +32,9 @@ The optional `template` object is versioned independently:
 }
 ```
 
-Template metadata is persisted in the canonical project's delivery profile and
-metadata. It is returned in sync snapshots and public delivery, but it does not
-create content diff operations or destructive changes.
+Template metadata is persisted on the workspace binding. It is returned in sync
+snapshots and public delivery, but it does not create content diff operations or
+destructive changes.
 
 ## Public Consumption
 

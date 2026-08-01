@@ -6,8 +6,8 @@ describe('CMS site v1 helpers', () => {
     const manifest = buildCmsSiteManifest();
 
     expect(manifest).toMatchObject({
-      adapter: 'cms_site',
-      canonicalProjectId: 'cms_site-main',
+      adapter: 'custom',
+      canonicalProjectId: 'connected-site-main',
       template: { kind: 'standard-site', version: 1 },
       version: 1,
     });
@@ -26,8 +26,8 @@ describe('CMS site v1 helpers', () => {
   it('indexes delivery by collection and resolves relative asset URLs', () => {
     const result = normalizeCmsSiteDelivery(
       {
-        adapter: 'cms_site',
-        canonicalProjectId: 'cms_site-main',
+        adapter: 'custom',
+        canonicalProjectId: 'connected-site-main',
         collections: [
           {
             collection_type: 'page',

@@ -140,6 +140,45 @@ create index external_chat_threads_conversation_idx
 create index external_chat_events_thread_created_idx
   on private.external_chat_events (thread_id, created_at desc);
 
+create or replace function private.external_chat_fence_binding_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if old.is_enabled is distinct from new.is_enabled
+    or old.settings->'chat' is distinct from new.settings->'chat' then
+    perform pg_advisory_xact_lock(hashtextextended(new.ws_id::text, 0));
+    if exists (
+      select 1 from private.external_chat_outbound_deliveries
+      where ws_id = new.ws_id
+        and delivered_at is null
+        and cancelled_at is null
+        and completed_at is null
+        and created_at > now() - interval '2 minutes'
+    ) then
+      raise exception 'external_chat_delivery_in_progress';
+    end if;
+  end if;
+
+  if old.settings #>> '{chat,bridgeBaseUrl}'
+    is distinct from new.settings #>> '{chat,bridgeBaseUrl}' then
+    update private.external_chat_binding_credentials
+    set configuration_revision = configuration_revision + 1,
+        verified_at = null,
+        verified_revision = null
+    where ws_id = new.ws_id;
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger workspace_external_project_bindings_external_chat_fence
+  before update on public.workspace_external_project_bindings
+  for each row execute function private.external_chat_fence_binding_update();
+
 alter table private.external_chat_binding_credentials enable row level security;
 alter table private.external_chat_threads enable row level security;
 alter table private.external_chat_events enable row level security;
@@ -167,9 +206,6 @@ language plpgsql
 security definer
 set search_path = private, public, pg_temp
 as $$
-declare
-  v_previous_url text;
-  v_url_changed boolean;
 begin
   if jsonb_typeof(p_chat) <> 'object' then
     raise exception 'external_chat_invalid_settings';
@@ -185,19 +221,9 @@ begin
   ) then
     raise exception 'external_chat_delivery_in_progress';
   end if;
-  select settings #>> '{chat,bridgeBaseUrl}' into v_previous_url
-  from public.workspace_external_project_bindings
+  perform 1 from public.workspace_external_project_bindings
   where ws_id = p_ws_id for update;
   if not found then raise exception 'external_chat_binding_not_found'; end if;
-
-  v_url_changed := v_previous_url is distinct from p_chat->>'bridgeBaseUrl';
-  if v_url_changed then
-    update private.external_chat_binding_credentials
-    set configuration_revision = configuration_revision + 1,
-        verified_at = null,
-        verified_revision = null
-    where ws_id = p_ws_id;
-  end if;
   update public.workspace_external_project_bindings
   set settings = jsonb_set(settings, '{chat}', p_chat, true),
       updated_by = p_actor_user_id
@@ -222,8 +248,9 @@ set search_path = private, public, pg_temp
 as $$
 declare
   v_pending_action text;
+  v_pairing_in_progress boolean;
 begin
-  if p_action not in ('set_ingest', 'rotate_control') then
+  if p_action is null or p_action not in ('set_ingest', 'rotate_control') then
     raise exception 'external_chat_invalid_credential_action';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(p_ws_id::text, 0));
@@ -240,11 +267,16 @@ begin
   perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'credential'), 0));
   insert into private.external_chat_binding_credentials (ws_id)
   values (p_ws_id) on conflict (ws_id) do nothing;
-  select pending_action into v_pending_action
+  select pending_action,
+    pairing_ticket_hash is not null and pairing_ticket_expires_at > now()
+  into v_pending_action, v_pairing_in_progress
   from private.external_chat_binding_credentials
   where ws_id = p_ws_id for update;
   if v_pending_action is not null then
     raise exception 'external_chat_credential_reconciliation_pending';
+  end if;
+  if v_pairing_in_progress then
+    raise exception 'external_chat_pairing_in_progress';
   end if;
   update private.external_chat_binding_credentials
   set pending_action = p_action,
@@ -343,7 +375,7 @@ security definer
 set search_path = private, public, pg_temp
 as $$
 begin
-  if p_kind not in ('control', 'ingest') then
+  if p_kind is null or p_kind not in ('control', 'ingest') then
     raise exception 'external_chat_invalid_credential_kind';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(p_ws_id::text, 0));
@@ -358,6 +390,12 @@ begin
     raise exception 'external_chat_delivery_in_progress';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'credential'), 0));
+  if exists (
+    select 1 from private.external_chat_binding_credentials
+    where ws_id = p_ws_id and pending_action is not null
+  ) then
+    raise exception 'external_chat_credential_reconciliation_pending';
+  end if;
   update private.external_chat_binding_credentials
   set ingest_secret_hash = case when p_kind = 'ingest' then null else ingest_secret_hash end,
       ingest_secret_last_four = case when p_kind = 'ingest' then null else ingest_secret_last_four end,
@@ -365,11 +403,6 @@ begin
       control_secret_encrypted = case when p_kind = 'control' then null else control_secret_encrypted end,
       control_secret_last_four = case when p_kind = 'control' then null else control_secret_last_four end,
       control_secret_rotated_at = case when p_kind = 'control' then null else control_secret_rotated_at end,
-      pending_action = null,
-      pending_secret_encrypted = null,
-      pending_secret_hash = null,
-      pending_secret_last_four = null,
-      pending_created_at = null,
       configuration_revision = configuration_revision + 1,
       verified_at = null,
       verified_revision = null
@@ -404,8 +437,15 @@ begin
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'pairing'), 0));
+  perform pg_advisory_xact_lock(hashtextextended(concat_ws(':', p_ws_id, 'credential'), 0));
   insert into private.external_chat_binding_credentials (ws_id)
   values (p_ws_id) on conflict (ws_id) do nothing;
+  if exists (
+    select 1 from private.external_chat_binding_credentials
+    where ws_id = p_ws_id and pending_action is not null
+  ) then
+    raise exception 'external_chat_credential_reconciliation_pending';
+  end if;
   update private.external_chat_binding_credentials
   set pairing_ticket_hash = p_ticket_hash,
       pairing_ticket_issued_at = now(),
@@ -581,6 +621,7 @@ create or replace function private.external_chat_import_event(
   p_direction text,
   p_content text,
   p_occurred_at timestamptz,
+  p_configuration_revision bigint,
   p_thread_metadata jsonb default '{}'::jsonb,
   p_message_metadata jsonb default '{}'::jsonb,
   p_mapped_user_id uuid default null
@@ -619,10 +660,17 @@ begin
   end if;
 
   if not exists (
-    select 1 from public.workspace_external_project_bindings b
+    select 1
+    from public.workspace_external_project_bindings b
+    join private.external_chat_binding_credentials c on c.ws_id = b.ws_id
     where b.ws_id = p_ws_id
       and b.is_enabled = true
       and b.settings #>> '{chat,enabled}' = 'true'
+      and coalesce(b.settings #>> '{chat,authorityMode}', 'legacy_primary')
+        not in ('fallback_queue', 'paused')
+      and c.verified_at is not null
+      and c.verified_revision = c.configuration_revision
+      and c.configuration_revision = p_configuration_revision
   ) then
     raise exception 'external_chat_binding_unavailable';
   end if;
@@ -742,11 +790,117 @@ end;
 $$;
 
 revoke all on function private.external_chat_import_event(
-  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb, uuid
+  uuid, text, text, text, text, text, text, timestamptz, bigint, jsonb, jsonb, uuid
 ) from public, anon, authenticated;
 grant execute on function private.external_chat_import_event(
-  uuid, text, text, text, text, text, text, timestamptz, jsonb, jsonb, uuid
+  uuid, text, text, text, text, text, text, timestamptz, bigint, jsonb, jsonb, uuid
 ) to service_role;
+
+create or replace function private.chat_persist_ai_message_batch(
+  p_ws_id uuid,
+  p_conversation_id uuid,
+  p_actor_user_id uuid,
+  p_messages jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  v_conversation private.chat_conversations%rowtype;
+  v_item jsonb;
+  v_message_id uuid;
+  v_messages jsonb := '[]'::jsonb;
+begin
+  perform private.chat_assert_workspace_permission(
+    p_ws_id,
+    p_actor_user_id,
+    'view_chat'
+  );
+
+  select * into v_conversation
+  from private.chat_conversations
+  where id = p_conversation_id
+    and archived_at is null
+    and type = 'ai'
+    and private.chat_can_address_conversation_workspace(
+      p_ws_id,
+      ws_id,
+      type,
+      p_actor_user_id
+    )
+  for update;
+
+  if v_conversation.id is null then return null; end if;
+  if not private.chat_actor_can_access_conversation(
+    p_conversation_id,
+    p_actor_user_id
+  ) then
+    raise exception 'chat_conversation_forbidden' using errcode = '42501';
+  end if;
+  if jsonb_typeof(p_messages) <> 'array'
+    or jsonb_array_length(p_messages) = 0
+    or jsonb_array_length(p_messages) > 20 then
+    raise exception 'chat_invalid_ai_message_batch' using errcode = '22023';
+  end if;
+
+  for v_item in select value from jsonb_array_elements(p_messages) loop
+    if jsonb_typeof(v_item) <> 'object'
+      or length(btrim(coalesce(v_item->>'content', ''))) = 0
+      or length(v_item->>'content') > 10000
+      or jsonb_typeof(coalesce(v_item->'metadata', '{}'::jsonb)) <> 'object' then
+      raise exception 'chat_invalid_ai_message_batch' using errcode = '22023';
+    end if;
+  end loop;
+
+  for v_item in select value from jsonb_array_elements(p_messages) loop
+    insert into private.chat_messages (
+      conversation_id, sender_id, kind, content, metadata
+    ) values (
+      p_conversation_id,
+      null,
+      'assistant',
+      v_item->>'content',
+      coalesce(v_item->'metadata', '{}'::jsonb)
+    ) returning id into v_message_id;
+
+    v_messages := v_messages || jsonb_build_array(
+      (select private.chat_message_json(m)
+       from private.chat_messages m where m.id = v_message_id)
+    );
+  end loop;
+
+  update private.chat_conversations
+  set updated_at = now()
+  where id = p_conversation_id;
+
+  update private.chat_conversation_members
+  set last_read_at = now(), last_seen_message_id = v_message_id
+  where conversation_id = p_conversation_id and user_id = p_actor_user_id;
+
+  insert into private.chat_audit_events (
+    ws_id, conversation_id, actor_id, event_type, metadata
+  ) values (
+    v_conversation.ws_id,
+    p_conversation_id,
+    p_actor_user_id,
+    'message.sent',
+    jsonb_build_object(
+      'messageIds', (select jsonb_agg(value->>'id') from jsonb_array_elements(v_messages)),
+      'kind', 'assistant',
+      'assistantSource', 'native-ai'
+    )
+  );
+
+  return v_messages;
+end;
+$$;
+
+revoke all on function private.chat_persist_ai_message_batch(uuid, uuid, uuid, jsonb)
+  from public, anon, authenticated;
+grant execute on function private.chat_persist_ai_message_batch(uuid, uuid, uuid, jsonb)
+  to service_role;
 
 create or replace function private.external_chat_reserve_reply(
   p_ws_id uuid,
@@ -793,7 +947,16 @@ begin
   where ws_id = p_ws_id for update;
   if v_credentials.control_secret_encrypted is null
     or v_credentials.verified_at is null
-    or v_credentials.verified_revision is distinct from v_credentials.configuration_revision then
+    or v_credentials.verified_revision is distinct from v_credentials.configuration_revision
+    or v_credentials.pending_action is not null
+    or not exists (
+      select 1 from public.workspace_external_project_bindings b
+      where b.ws_id = p_ws_id
+        and b.is_enabled = true
+        and b.settings #>> '{chat,enabled}' = 'true'
+        and coalesce(b.settings #>> '{chat,authorityMode}', 'legacy_primary')
+          not in ('fallback_queue', 'paused')
+    ) then
     raise exception 'external_chat_bridge_not_ready';
   end if;
   select * into v_delivery from private.external_chat_outbound_deliveries
@@ -855,6 +1018,7 @@ set search_path = private, public, pg_temp
 as $$
 declare
   v_delivery private.external_chat_outbound_deliveries%rowtype;
+  v_existing_message private.chat_messages%rowtype;
   v_message jsonb;
   v_message_id uuid;
 begin
@@ -868,6 +1032,34 @@ begin
     return (select private.chat_message_json(m) from private.chat_messages m where m.id = v_delivery.message_id);
   end if;
   if v_delivery.delivered_at is null then raise exception 'external_chat_delivery_unconfirmed'; end if;
+
+  select m.* into v_existing_message
+  from private.external_chat_events e
+  join private.external_chat_threads t on t.id = e.thread_id
+  join private.chat_messages m on m.id = e.message_id
+  where e.ws_id = p_ws_id
+    and e.thread_id = v_delivery.thread_id
+    and e.connector_key = t.connector_key
+    and e.remote_message_id = v_delivery.idempotency_key::text
+    and e.direction = 'staff';
+  if v_existing_message.id is not null then
+    if v_existing_message.content is distinct from p_content
+      or v_existing_message.reply_to_message_id is distinct from p_reply_to_message_id then
+      raise exception 'external_chat_idempotency_payload_mismatch';
+    end if;
+    update private.chat_messages
+    set sender_id = p_actor_user_id,
+        metadata = metadata || jsonb_build_object('deliveredBy', 'control', 'nativeOrigin', true)
+    where id = v_existing_message.id;
+    update private.external_chat_outbound_deliveries
+    set message_id = v_existing_message.id, completed_at = now()
+    where id = v_delivery.id;
+    return (
+      select private.chat_message_json(m)
+      from private.chat_messages m
+      where m.id = v_existing_message.id
+    );
+  end if;
 
   v_message := private.chat_send_message(
     p_ws_id, (select conversation_id from private.external_chat_threads where id = v_delivery.thread_id),

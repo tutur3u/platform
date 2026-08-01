@@ -31,7 +31,11 @@ export type ChatMessageAttachmentInput = {
   storageWsId?: string | null;
 };
 
+export const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
+  'Assistant response failed. Your message was saved.';
+
 const AI_MESSAGE_SPLIT_DECORATOR = '[[TUTURUUU_CHAT_SPLIT]]';
+const MAX_AI_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 const AI_MESSAGE_SPLIT_INSTRUCTION = `When a response would be easier to read as a natural chat, you may split it into multiple messages by putting ${AI_MESSAGE_SPLIT_DECORATOR} on its own line between message parts. Use it sparingly, keep each part self-contained, and never mention the decorator to the user.`;
 
 type UiMessageForAi = {
@@ -110,6 +114,15 @@ async function copyAttachmentInputsToAiResources({
   resourceChatId: string;
   targetWsId: string;
 }) {
+  const claimedBytes = attachments.reduce(
+    (total, attachment) => total + (attachment.sizeBytes ?? 0),
+    0
+  );
+  if (claimedBytes > MAX_AI_ATTACHMENT_BYTES) {
+    throw new Error('Chat attachments exceed the AI context size limit');
+  }
+
+  let downloadedBytes = 0;
   for (const [index, attachment] of attachments.entries()) {
     const sourceWsId = attachment.storageWsId ?? targetWsId;
     try {
@@ -119,6 +132,10 @@ async function copyAttachmentInputsToAiResources({
         provider,
         attachment.path
       );
+      downloadedBytes += downloaded.buffer.byteLength;
+      if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {
+        throw new Error('Chat attachments exceed the AI context size limit');
+      }
       await uploadWorkspaceStorageFileDirect(
         targetWsId,
         `chats/ai/resources/${resourceChatId}/${randomUUID()}-${index}-${attachment.filename}`,
@@ -287,7 +304,7 @@ export async function consumeAiResponseTextDeltas(
     const { done, value } = await reader.read();
     if (value) {
       buffer += decoder.decode(value, { stream: !done });
-      const events = buffer.split('\n\n');
+      const events = buffer.split(/\r?\n\r?\n/u);
       buffer = events.pop() ?? '';
 
       for (const event of events) {
@@ -310,7 +327,7 @@ function emitAiTextDeltaFromSseEvent(
   if (!event.trim()) return '';
 
   const data = event
-    .split('\n')
+    .split(/\r?\n/u)
     .filter((line) => line.startsWith('data:'))
     .map((line) => line.slice(5).trimStart())
     .join('\n')
@@ -449,6 +466,7 @@ export async function callAiChatRoute({
   miraMode,
   model,
   observabilityContext,
+  persistenceRequestId,
   request,
   supabase,
   thinkingMode,
@@ -462,6 +480,7 @@ export async function callAiChatRoute({
   miraMode: boolean;
   model: string;
   observabilityContext?: Record<string, unknown>[];
+  persistenceRequestId?: string;
   request: NextRequest;
   supabase: SessionAuthContext['supabase'];
   thinkingMode: 'fast' | 'thinking';
@@ -480,6 +499,7 @@ export async function callAiChatRoute({
       messages,
       model,
       observabilityContext,
+      persistenceRequestId,
       thinkingMode,
       workspaceContextId: wsId,
       wsId,
@@ -514,10 +534,7 @@ export function normalizeAiChatModel(model: string | null) {
   return resolveGatewayModelId(model.trim());
 }
 
-export function normalizeNativeAiModel(model: string | null) {
-  if (!model?.trim()) return GEMINI_31_FLASH_LITE_GATEWAY_MODEL;
-  return resolveGatewayModelId(model.trim());
-}
+export const normalizeNativeAiModel = normalizeAiChatModel;
 
 export function buildNativeAiObservabilityContext(messages: ChatMessage[]) {
   return messages.slice(-20).map((message) => {

@@ -71,6 +71,7 @@ describe('external chat ingest route', () => {
         settings: { chat: { enabled: true } },
       },
       credentials: {
+        configuration_revision: 7,
         ingest_secret_hash: 'active-hash',
         pending_action: 'set_ingest',
         pending_secret_hash: 'pending-hash',
@@ -103,7 +104,11 @@ describe('external chat ingest route', () => {
 
     expect(response.status).toBe(201);
     expect(mocks.importExternalChatEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ connectorKey: 'opaque-connector', wsId })
+      expect.objectContaining({
+        configurationRevision: 7,
+        connectorKey: 'opaque-connector',
+        wsId,
+      })
     );
   });
 

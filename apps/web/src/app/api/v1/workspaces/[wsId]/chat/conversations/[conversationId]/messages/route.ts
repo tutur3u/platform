@@ -32,14 +32,14 @@ import {
   reserveExternalChatReply,
 } from '@/lib/external-chat/delivery';
 import { sendAiChatMessage } from './ai-chat-message';
-import { publishChatRealtimeMessages } from './ai-message-shared';
+import {
+  NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
+  publishChatRealtimeMessages,
+} from './ai-message-shared';
 import {
   sendNativeAiConversationMessages,
   streamNativeAiConversationResponse,
 } from './native-ai-message';
-
-const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
-  'Assistant response failed. Your message was saved.';
 
 function wantsChatMessageStream(request: NextRequest) {
   return (
@@ -223,40 +223,54 @@ export const POST = withSessionAuth<RouteParams>(
 
     let externalReservation: ReservedExternalChatDelivery | null = null;
     if (externalBound) {
+      if ((parsed.data.attachments?.length ?? 0) > 0) {
+        return NextResponse.json(
+          {
+            code: 'external_attachments_unsupported',
+            message: 'Connected-site replies do not support attachments yet.',
+          },
+          { status: 400 }
+        );
+      }
+      if (!parsed.data.content.trim()) {
+        return NextResponse.json(
+          { message: 'Message content is required' },
+          { status: 400 }
+        );
+      }
+      if (!parsed.data.clientRequestId) {
+        return NextResponse.json(
+          { message: 'Client request ID is required' },
+          { status: 400 }
+        );
+      }
       try {
-        if ((parsed.data.attachments?.length ?? 0) > 0) {
-          return NextResponse.json(
-            {
-              code: 'external_attachments_unsupported',
-              message: 'Connected-site replies do not support attachments yet.',
-            },
-            { status: 400 }
-          );
-        }
-        if (!parsed.data.content.trim()) {
-          return NextResponse.json(
-            { message: 'Message content is required' },
-            { status: 400 }
-          );
-        }
-        if (!parsed.data.clientRequestId) {
-          return NextResponse.json(
-            { message: 'Client request ID is required' },
-            { status: 400 }
-          );
-        }
         externalReservation = await reserveExternalChatReply({
-          clientRequestId: parsed.data.clientRequestId ?? '',
+          clientRequestId: parsed.data.clientRequestId,
           content: parsed.data.content,
           conversationId: params.conversationId,
           replyToMessageId: parsed.data.replyToMessageId ?? null,
           senderId: auth.user.id,
           wsId: context.context.normalizedWsId,
         });
-        if (!externalReservation) {
-          throw new Error('External chat reservation was not created');
-        }
-        if (externalReservation && !externalReservation.delivered) {
+      } catch (error) {
+        return chatRpcErrorResponse(
+          error,
+          'Failed to reserve external chat reply'
+        );
+      }
+      if (!externalReservation) {
+        return NextResponse.json(
+          {
+            code: 'external_delivery_reservation_failed',
+            message: 'Failed to reserve connected-site reply.',
+          },
+          { status: 502 }
+        );
+      }
+      if (!externalReservation.delivered) {
+        const deliveryId = externalReservation.deliveryId;
+        try {
           await deliverExternalChatReplyIfBound({
             configurationRevision: externalReservation.configurationRevision,
             content: parsed.data.content,
@@ -270,34 +284,32 @@ export const POST = withSessionAuth<RouteParams>(
             deliveryId: externalReservation.deliveryId,
             wsId: context.context.normalizedWsId,
           });
-        }
-      } catch (error) {
-        if (externalReservation && !externalReservation.delivered) {
+        } catch (error) {
           await cancelExternalChatReply({
-            deliveryId: externalReservation.deliveryId,
+            deliveryId,
             wsId: context.context.normalizedWsId,
           }).catch((cancelError) => {
             console.error('Failed to release external delivery lease', {
               cancelError,
-              deliveryId: externalReservation?.deliveryId,
+              deliveryId,
             });
           });
+          console.warn(
+            'External chat delivery failed before native persistence',
+            {
+              conversationId: params.conversationId,
+              error,
+            }
+          );
+          return NextResponse.json(
+            {
+              code: 'external_delivery_failed',
+              message:
+                'The external inbox did not accept this reply. Nothing was saved.',
+            },
+            { status: 502 }
+          );
         }
-        console.warn(
-          'External chat delivery failed before native persistence',
-          {
-            conversationId: params.conversationId,
-            error,
-          }
-        );
-        return NextResponse.json(
-          {
-            code: 'external_delivery_failed',
-            message:
-              'The external inbox did not accept this reply. Nothing was saved.',
-          },
-          { status: 502 }
-        );
       }
     }
 

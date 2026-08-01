@@ -217,7 +217,7 @@ describe('workspace chat conversations route', () => {
     });
   });
 
-  it('sorts combined conversation sources before applying pagination', async () => {
+  it('sorts combined conversation sources without unsafe source-local pagination', async () => {
     mocks.callPrivateChatRpc.mockResolvedValue([
       {
         ...virtualAgentConversation(false),
@@ -245,8 +245,8 @@ describe('workspace chat conversations route', () => {
 
     expect(
       payload.conversations.map((item: { id: string }) => item.id)
-    ).toEqual(['agent-newest', 'ai-middle']);
-    expect(payload.nextOffset).toBe(2);
+    ).toEqual(['agent-newest', 'ai-middle', 'native-oldest']);
+    expect(payload.nextOffset).toBeNull();
   });
 
   it('returns only external conversations when the external scope is requested', async () => {

@@ -1282,7 +1282,6 @@ export type CmsSiteTemplateMetadataV1 = {
 };
 
 export type CmsSiteContractV1 = {
-  adapter: 'cms_site';
   template: CmsSiteTemplateMetadataV1;
   version: 1;
 };

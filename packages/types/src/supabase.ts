@@ -15246,6 +15246,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_persist_ai_message_batch: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_messages: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_prepare_attachment: {
         Args: {
           p_actor_user_id: string;
@@ -15736,6 +15745,7 @@ export type Database = {
       };
       external_chat_import_event: {
         Args: {
+          p_configuration_revision: number;
           p_connector_key: string;
           p_content: string;
           p_direction: string;
@@ -43673,7 +43683,7 @@ export type Database = {
         | 'shiraoki'
         | 'kendra'
         | 'richfield'
-        | 'cms_site';
+        | 'custom';
       external_project_entry_status:
         | 'draft'
         | 'scheduled'
@@ -46421,7 +46431,7 @@ export const Constants = {
         'shiraoki',
         'kendra',
         'richfield',
-        'cms_site',
+        'custom',
       ],
       external_project_entry_status: [
         'draft',

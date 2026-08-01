@@ -1,6 +1,7 @@
 import {
   CMS_SITE_V1_COLLECTIONS,
   type CmsSiteTemplateMetadataV1,
+  type ExternalProjectAdapterKind,
   type ExternalProjectDeliveryCollection,
   type ExternalProjectDeliveryPayload,
   type ExternalProjectSyncEntry,
@@ -10,16 +11,18 @@ import {
 export { CMS_SITE_V1_COLLECTIONS } from '@tuturuuu/types';
 
 export function buildCmsSiteManifest({
-  canonicalProjectId = 'cms_site-main',
+  adapter = 'custom',
+  canonicalProjectId = 'connected-site-main',
   entries = [],
   template = { kind: 'standard-site', version: 1 },
 }: {
+  adapter?: ExternalProjectAdapterKind;
   canonicalProjectId?: string | null;
   entries?: ExternalProjectSyncEntry[];
   template?: CmsSiteTemplateMetadataV1;
 } = {}): ExternalProjectSyncManifest {
   return {
-    adapter: 'cms_site',
+    adapter,
     canonicalProjectId,
     content: { entries },
     schema: {
@@ -60,10 +63,6 @@ export function normalizeCmsSiteDelivery(
   payload: ExternalProjectDeliveryPayload,
   publicBaseUrl?: string
 ): CmsSiteDeliveryView {
-  if (payload.adapter !== 'cms_site') {
-    throw new Error('Delivery payload is not a CMS site');
-  }
-
   const baseUrl = publicBaseUrl ? new URL(publicBaseUrl) : null;
   const collections = Object.fromEntries(
     payload.collections.map((collection) => [

@@ -4,7 +4,7 @@ import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import type { ChatMessage } from '@/lib/chat/private-rpc';
 import { decryptControlSecret, signControlRequest } from './crypto';
 import { safeExternalChatFetch } from './safe-control-request';
-import { isExternalChatEnabled } from './schemas';
+import { isExternalChatEnabled, isExternalChatLiveAuthority } from './schemas';
 import { externalChatPrivateDb, readExternalChatBinding } from './store';
 
 type ExternalThreadRow = {
@@ -81,7 +81,7 @@ function getBridgeBaseUrl(settings: unknown) {
   const chat = (settings as Record<string, unknown>).chat;
   if (!chat || typeof chat !== 'object') return null;
   const value = (chat as Record<string, unknown>).bridgeBaseUrl;
-  return typeof value === 'string' ? value.replace(/\/$/, '') : null;
+  return typeof value === 'string' ? value.replace(/\/+$/u, '') : null;
 }
 
 function getPublicPlatformUrl() {
@@ -89,6 +89,7 @@ function getPublicPlatformUrl() {
     env: {
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
       NEXT_PUBLIC_WEB_APP_URL: process.env.NEXT_PUBLIC_WEB_APP_URL,
+      WEB_APP_URL: process.env.WEB_APP_URL,
       NODE_ENV: process.env.NODE_ENV,
       VERCEL: process.env.VERCEL,
       VERCEL_ENV: process.env.VERCEL_ENV,
@@ -265,10 +266,11 @@ export async function deliverExternalChatReplyIfBound({
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
-    !isExternalChatEnabled(state.binding.settings) ||
+    !isExternalChatLiveAuthority(state.binding.settings) ||
     !state.credentials?.verified_at ||
     state.credentials.verified_revision !==
       state.credentials.configuration_revision ||
+    state.credentials.pending_action ||
     state.credentials.configuration_revision !== configurationRevision ||
     !ciphertext ||
     !bridgeBaseUrl

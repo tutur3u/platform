@@ -663,8 +663,8 @@ export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
   ExternalProjectAdapterFixture
 > = {
-  cms_site: {
-    adapter: 'cms_site',
+  custom: {
+    adapter: 'custom',
     collections: CMS_SITE_V1_COLLECTIONS.map(
       ([slug, title, collectionType]) => ({
         collectionType,

@@ -45,7 +45,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       `<script src="${TTR_URL}/api/v1/integrations/external-chat/widget.js" data-workspace="${wsId}" async></script>`,
     [wsId]
   );
-  const enabled = enabledOverride ?? existing.enabled !== false;
+  const enabled = enabledOverride ?? existing.enabled === true;
   const baseUrl = baseUrlOverride ?? String(existing.bridgeBaseUrl ?? '');
   const agentMappings =
     agentMappingsOverride ??
@@ -108,7 +108,23 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
         <h1 className="font-semibold text-2xl">{t('title')}</h1>
         <p className="mt-1 text-muted-foreground text-sm">{t('description')}</p>
       </header>
-      {query.isLoading ? null : (
+      {query.isError ? (
+        <Alert variant="destructive">
+          <RefreshCw className="size-4" />
+          <AlertTitle>{t('load_error')}</AlertTitle>
+          <AlertDescription>
+            <Button
+              className="mt-2"
+              onClick={() => query.refetch()}
+              size="sm"
+              variant="outline"
+            >
+              <RefreshCw className="size-4" />
+              {t('retry')}
+            </Button>
+          </AlertDescription>
+        </Alert>
+      ) : query.isLoading ? null : (
         <Alert
           variant={query.data?.readiness.ready ? 'default' : 'destructive'}
         >
@@ -141,6 +157,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             </div>
             <Switch
               checked={enabled}
+              disabled={!query.isSuccess}
               id="chat-enabled"
               onCheckedChange={setEnabled}
             />
@@ -172,6 +189,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             disabled={
               settingsMutation.isPending ||
               credentialMutation.isPending ||
+              !query.isSuccess ||
               !baseUrl
             }
             onClick={() => settingsMutation.mutate()}
@@ -193,7 +211,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             lastFour={query.data?.secrets.ingest.lastFour}
           />
           <Button
-            disabled={credentialMutation.isPending}
+            disabled={credentialMutation.isPending || !query.isSuccess}
             onClick={() =>
               credentialMutation.mutate({ action: 'rotate_ingest' })
             }
@@ -201,6 +219,18 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
           >
             <KeyRound className="size-4" />
             {t('rotate_ingest')}
+          </Button>
+          <Button
+            disabled={
+              credentialMutation.isPending ||
+              !query.data?.secrets.ingest.configured
+            }
+            onClick={() =>
+              credentialMutation.mutate({ action: 'clear_ingest' })
+            }
+            variant="ghost"
+          >
+            {t('clear_ingest')}
           </Button>
           {issuedSecret ? (
             <div className="border p-3">
@@ -220,7 +250,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             />
             <Button
               disabled={
-                credentialMutation.isPending || controlSecret.length < 24
+                credentialMutation.isPending ||
+                !query.data?.secrets.ingest.configured ||
+                controlSecret.length < 24
               }
               onClick={() =>
                 credentialMutation.mutate({
@@ -231,6 +263,18 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
               variant="outline"
             >
               {t('save_control')}
+            </Button>
+            <Button
+              disabled={
+                credentialMutation.isPending ||
+                !query.data?.secrets.control.configured
+              }
+              onClick={() =>
+                credentialMutation.mutate({ action: 'clear_control' })
+              }
+              variant="ghost"
+            >
+              {t('clear_control')}
             </Button>
           </div>
           <div className="space-y-2 border-t pt-4">

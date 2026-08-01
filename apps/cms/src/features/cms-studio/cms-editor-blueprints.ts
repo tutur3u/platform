@@ -17,7 +17,7 @@ export type CmsEditorBlueprint = {
 const CMS_EDITOR_BLUEPRINTS: Partial<
   Record<ExternalProjectAdapterKind, CmsEditorBlueprint>
 > = {
-  cms_site: {
+  custom: {
     contentViews: [
       {
         collectionSlugs: ['site-settings'],

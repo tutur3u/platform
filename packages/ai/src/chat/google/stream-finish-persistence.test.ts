@@ -41,6 +41,7 @@ describe('stream finish persistence', () => {
       chatId: 'chat-1',
       effectiveSource: 'Mira',
       model: 'google/gemini-3-flash',
+      persistenceRequestId: '11111111-1111-4111-8111-111111111111',
       response: {
         finishReason: 'stop',
         steps: [
@@ -63,9 +64,15 @@ describe('stream finish persistence', () => {
     });
 
     const payload = insert.mock.calls[0]?.[0] as {
-      metadata: { ai: { parts: Record<string, unknown>[] } };
+      metadata: {
+        ai: { parts: Record<string, unknown>[] };
+        requestId: string;
+      };
     };
 
+    expect(payload.metadata.requestId).toBe(
+      '11111111-1111-4111-8111-111111111111'
+    );
     expect(payload.metadata.ai.parts).toContainEqual(
       expect.objectContaining({
         output: null,

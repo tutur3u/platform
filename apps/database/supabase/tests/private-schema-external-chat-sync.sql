@@ -1,5 +1,11 @@
 begin;
-select plan(60);
+select plan(69);
+
+select ok(
+  'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
+    and not ('cms_site' = any(enum_range(null::public.external_project_adapter_kind)::text[])),
+  'the CMS site contract remains adapter-neutral behind a generic binding adapter'
+);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
@@ -7,6 +13,7 @@ select has_table('private', 'external_chat_events', 'external event mappings are
 select has_table('private', 'external_chat_outbound_deliveries', 'outbound delivery reservations are private');
 select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints are private');
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
+select has_function('private', 'chat_persist_ai_message_batch', 'atomic native AI batch RPC exists');
 select has_function('private', 'external_chat_mark_verified', 'verification fencing RPC exists');
 select has_function('private', 'external_chat_clear_credential', 'credential recovery RPC exists');
 select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
@@ -56,12 +63,12 @@ select has_index(
 
 select function_privs_are(
   'private', 'external_chat_import_event',
-  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb','uuid'],
+  array['uuid','text','text','text','text','text','text','timestamp with time zone','bigint','jsonb','jsonb','uuid'],
   'service_role', array['EXECUTE'], 'service role can execute imports'
 );
 select function_privs_are(
   'private', 'external_chat_import_event',
-  array['uuid','text','text','text','text','text','text','timestamp with time zone','jsonb','jsonb','uuid'],
+  array['uuid','text','text','text','text','text','text','timestamp with time zone','bigint','jsonb','jsonb','uuid'],
   'authenticated', array[]::text[], 'authenticated clients cannot execute imports'
 );
 select function_privs_are(
@@ -73,6 +80,16 @@ select function_privs_are(
   'private', 'external_chat_list_conversations',
   array['uuid','uuid','text','integer','integer'],
   'authenticated', array[]::text[], 'authenticated clients cannot list external inboxes directly'
+);
+select throws_ok(
+  $$select private.external_chat_stage_credential('00000000-0000-0000-0000-000000000000', null, null, null, null)$$,
+  'external_chat_invalid_credential_action',
+  'null credential actions are rejected explicitly'
+);
+select throws_ok(
+  $$select private.external_chat_clear_credential('00000000-0000-0000-0000-000000000000', null)$$,
+  'external_chat_invalid_credential_kind',
+  'null credential kinds are rejected explicitly'
 );
 
 create temporary table external_chat_test_context (
@@ -186,6 +203,9 @@ select ok(
   ),
   'a stale verification cannot mark a newer configuration ready'
 );
+select private.external_chat_mark_verified(
+  (select ws_id from external_chat_test_context), 'ciphertext', 2
+);
 
 create temporary table external_chat_test_results (
   attempt integer primary key,
@@ -194,14 +214,14 @@ create temporary table external_chat_test_results (
 insert into external_chat_test_results
 select 1, private.external_chat_import_event(
   ws_id, 'test-connector', 'agent-1', 'visitor-1', 'message-1',
-  'visitor', 'hello', now(), '{"displayName":"Test visitor"}',
+  'visitor', 'hello', now(), 2, '{"displayName":"Test visitor"}',
   '{"context":{"network":"loopback","routes":["/test"]}}'
 )
 from external_chat_test_context;
 insert into external_chat_test_results
 select 2, private.external_chat_import_event(
   ws_id, 'test-connector', 'agent-1', 'visitor-1', 'message-1',
-  'visitor', 'hello', now(), '{"displayName":"Test visitor"}',
+  'visitor', 'hello', now(), 2, '{"displayName":"Test visitor"}',
   '{"context":{"network":"loopback","routes":["/test"]}}'
 )
 from external_chat_test_context;
@@ -265,6 +285,36 @@ select ok(
   ),
   'the current credential revision can be verified for delivery'
 );
+update public.workspace_external_project_bindings
+set settings = jsonb_set(
+  settings,
+  '{chat,bridgeBaseUrl}',
+  '"https://direct.example.com"'::jsonb
+)
+where ws_id = (select ws_id from external_chat_test_context);
+select is(
+  (
+    select configuration_revision from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  3::bigint,
+  'direct binding URL changes advance the configuration fence'
+);
+select is(
+  (
+    select verified_at is null and verified_revision is null
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  true,
+  'direct binding URL changes invalidate prior verification'
+);
+select ok(
+  private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 3
+  ),
+  'the directly changed bridge can be verified at its new revision'
+);
 create temporary table external_chat_delivery_results (result jsonb not null);
 insert into external_chat_delivery_results
 select private.external_chat_reserve_reply(
@@ -280,7 +330,7 @@ cross join external_chat_test_results r
 where r.attempt = 1;
 select is(
   (select (result->>'configurationRevision')::bigint from external_chat_delivery_results),
-  2::bigint,
+  3::bigint,
   'reply reservations capture the verified configuration revision'
 );
 select throws_ok(
@@ -301,7 +351,7 @@ select throws_ok(
   'credentials cannot rotate while a reply delivery lease is active'
 );
 update private.external_chat_outbound_deliveries
-set cancelled_at = now()
+set cancelled_at = current_timestamp
 where ws_id = (select ws_id from external_chat_test_context);
 select lives_ok(
   format(
@@ -312,12 +362,12 @@ select lives_ok(
 );
 select ok(
   private.external_chat_mark_verified(
-    (select ws_id from external_chat_test_context), 'ciphertext', 3
+    (select ws_id from external_chat_test_context), 'ciphertext', 4
   ),
   'the advanced configuration can be verified after lease release'
 );
 update private.external_chat_outbound_deliveries
-set cancelled_at = now()
+set cancelled_at = current_timestamp
 where ws_id = (select ws_id from external_chat_test_context);
 update external_chat_delivery_results
 set result = private.external_chat_reserve_reply(
@@ -330,8 +380,55 @@ set result = private.external_chat_reserve_reply(
 );
 select is(
   (select (result->>'configurationRevision')::bigint from external_chat_delivery_results),
-  3::bigint,
+  4::bigint,
   'retrying a cancelled reservation refreshes its configuration fence'
+);
+
+update private.external_chat_outbound_deliveries
+set delivered_at = current_timestamp, cancelled_at = null
+where id = (select (result->>'deliveryId')::uuid from external_chat_delivery_results);
+create temporary table external_chat_echo_results (result jsonb not null);
+insert into external_chat_echo_results
+select private.external_chat_import_event(
+  c.ws_id,
+  'test-connector',
+  'agent-1',
+  'visitor-1',
+  d.result->>'idempotencyKey',
+  'staff',
+  'reply',
+  now(),
+  4,
+  '{"displayName":"Test visitor"}'::jsonb,
+  '{}'::jsonb,
+  c.actor_id
+)
+from external_chat_test_context c
+cross join external_chat_delivery_results d;
+create temporary table external_chat_finalize_results (result jsonb not null);
+insert into external_chat_finalize_results
+select private.external_chat_finalize_reply(
+  c.ws_id,
+  (d.result->>'deliveryId')::uuid,
+  c.actor_id,
+  'reply',
+  repeat('e', 64),
+  null
+)
+from external_chat_test_context c
+cross join external_chat_delivery_results d;
+select is(
+  (select result->>'id' from external_chat_finalize_results),
+  (select result->>'messageId' from external_chat_echo_results),
+  'finalization reconciles the bridge echo instead of creating another message'
+);
+select is(
+  (
+    select message_id::text from private.external_chat_outbound_deliveries
+    where id = (select (result->>'deliveryId')::uuid from external_chat_delivery_results)
+  ),
+  (select result->>'messageId' from external_chat_echo_results),
+  'the delivery is completed with the echoed native message'
 );
 
 select ok(

@@ -59,9 +59,7 @@ export function MessageBubble({
   wsId: string;
 }) {
   const t = useTranslations('chat');
-  const externalDirection = readExternalDirection(message.metadata);
-  const isOwnMessage =
-    message.senderId === currentUserId || externalDirection === 'staff';
+  const isOwnMessage = message.senderId === currentUserId;
   const senderName = getChatMessageSenderLabel(message, {
     assistant: t('assistant_name'),
     external: t('external_sender'),
@@ -322,14 +320,6 @@ function MessageContent({
       )}
     </div>
   );
-}
-
-function readExternalDirection(metadata: Record<string, unknown>) {
-  const sender = metadata.externalSender;
-  if (!sender || typeof sender !== 'object' || Array.isArray(sender))
-    return null;
-  const direction = (sender as Record<string, unknown>).direction;
-  return direction === 'staff' || direction === 'visitor' ? direction : null;
 }
 
 function readExternalAttachment(metadata: Record<string, unknown>) {

@@ -200,9 +200,7 @@ export const GET = withSessionAuth<RouteParams>(
         listNativeChatConversations({
           actorUserId: auth.user.id,
           archived,
-          limit: pagination.isPaginated
-            ? pagination.offset + pagination.limit + 1
-            : null,
+          limit: null,
           offset: 0,
           wsId: context.context.normalizedWsId,
         }),
@@ -232,21 +230,9 @@ export const GET = withSessionAuth<RouteParams>(
         ...aiAgentExternalConversations,
         ...aiChatConversations,
       ].sort(compareConversationsByRecency);
-      const pageConversations = pagination.isPaginated
-        ? allConversations.slice(
-            pagination.offset,
-            pagination.offset + pagination.limit
-          )
-        : allConversations;
-      const nextOffset =
-        pagination.isPaginated &&
-        allConversations.length > pagination.offset + pagination.limit
-          ? pagination.offset + pagination.limit
-          : null;
-
       return NextResponse.json({
-        conversations: pageConversations,
-        nextOffset,
+        conversations: allConversations,
+        nextOffset: null,
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat conversations');

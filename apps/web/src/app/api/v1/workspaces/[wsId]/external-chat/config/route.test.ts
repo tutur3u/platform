@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   assertSafeExternalChatUrl: vi.fn(),
+  ExternalChatUrlPolicyError: class ExternalChatUrlPolicyError extends Error {},
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serializeExternalChatBinding: vi.fn(),
@@ -25,6 +26,7 @@ vi.mock('@/lib/chat/private-rpc', () => ({
 vi.mock('@/lib/external-chat/safe-control-request', () => ({
   assertSafeExternalChatUrl: (...args: unknown[]) =>
     mocks.assertSafeExternalChatUrl(...args),
+  ExternalChatUrlPolicyError: mocks.ExternalChatUrlPolicyError,
 }));
 
 vi.mock('@/lib/external-chat/store', () => ({
@@ -96,7 +98,9 @@ describe('external chat config route', () => {
   });
 
   it('rejects a destination blocked by the network safety policy', async () => {
-    mocks.assertSafeExternalChatUrl.mockRejectedValue(new Error('blocked'));
+    mocks.assertSafeExternalChatUrl.mockRejectedValue(
+      new mocks.ExternalChatUrlPolicyError('blocked')
+    );
     const { PATCH } = await import('./route');
     const response = await PATCH(patchRequest(validSettings) as never, params);
 
@@ -104,6 +108,34 @@ describe('external chat config route', () => {
     await expect(response.json()).resolves.toEqual({
       error: 'Bridge URL is not allowed',
     });
+  });
+
+  it('returns 503 when destination validation is temporarily unavailable', async () => {
+    mocks.assertSafeExternalChatUrl.mockRejectedValue(
+      new Error('resolver unavailable')
+    );
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(validSettings) as never, params);
+
+    expect(response.status).toBe(503);
+    expect(mocks.writeExternalChatSettings).not.toHaveBeenCalled();
+  });
+
+  it('allows disabling without depending on bridge DNS availability', async () => {
+    const { PATCH } = await import('./route');
+    const disabledSettings = { ...validSettings, enabled: false };
+    const response = await PATCH(
+      patchRequest(disabledSettings) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertSafeExternalChatUrl).not.toHaveBeenCalled();
+    expect(mocks.writeExternalChatSettings).toHaveBeenCalledWith(
+      'workspace-1',
+      disabledSettings,
+      'user-1'
+    );
   });
 
   it('returns 404 without writing when the binding is absent', async () => {

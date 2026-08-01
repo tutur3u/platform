@@ -64,8 +64,11 @@ vi.mock('@/lib/chat/ai-settings', () => ({
 vi.mock('@/lib/chat/private-rpc', () => ({
   callPrivateChatRpc: (...args: Parameters<typeof mocks.callPrivateChatRpc>) =>
     mocks.callPrivateChatRpc(...args),
-  chatRpcErrorResponse: () =>
-    Response.json({ message: 'Failed to send chat message' }, { status: 500 }),
+  chatRpcErrorResponse: (error: { code?: string }, fallback: string) =>
+    Response.json(
+      { message: fallback },
+      { status: error.code === '22023' ? 400 : 500 }
+    ),
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
@@ -168,7 +171,7 @@ const assistantAiRow = {
   completion_tokens: 5,
   content: 'hi there',
   id: 'ai-message-1',
-  metadata: {},
+  metadata: { requestId: 'message-1' },
   model: 'gemini-3-flash',
   prompt_tokens: 7,
 };
@@ -266,12 +269,12 @@ describe('native AI chat message route', () => {
     mockRouteContext();
   });
 
-  it('persists native assistant replies with chat_persist_ai_message', async () => {
+  it('persists native assistant replies with an atomic batch RPC', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_message') return userMessage;
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message') return assistantMessage;
+      if (name === 'chat_persist_ai_message_batch') return [assistantMessage];
       throw new Error(`Unexpected RPC ${name}`);
     });
 
@@ -301,14 +304,16 @@ describe('native AI chat message route', () => {
       messages: [userMessage, assistantMessage],
     });
     expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
-      'chat_persist_ai_message',
+      'chat_persist_ai_message_batch',
       expect.objectContaining({
         p_actor_user_id: 'user-1',
-        p_content: 'hi there',
         p_conversation_id: 'conversation-1',
-        p_metadata: expect.objectContaining({
-          source: 'native-ai-chat',
-        }),
+        p_messages: [
+          expect.objectContaining({
+            content: 'hi there',
+            metadata: expect.objectContaining({ source: 'native-ai-chat' }),
+          }),
+        ],
         p_ws_id: 'workspace-1',
       })
     );
@@ -408,6 +413,23 @@ describe('native AI chat message route', () => {
       deliveryId: 'delivery-1',
       wsId: 'workspace-1',
     });
+  });
+
+  it('preserves local reservation validation errors instead of returning 502', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
+    mocks.reserveExternalChatReply.mockRejectedValue({ code: '22023' });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.deliverExternalChatReplyIfBound).not.toHaveBeenCalled();
+    expect(mocks.cancelExternalChatReply).not.toHaveBeenCalled();
   });
 
   it('delivers first and atomically finalizes an externally bound reply', async () => {

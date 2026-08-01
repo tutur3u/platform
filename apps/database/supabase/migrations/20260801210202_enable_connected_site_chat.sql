@@ -1,4 +1,4 @@
 UPDATE public.canonical_external_projects
 SET allowed_features = array_append(allowed_features, 'chat')
-WHERE adapter = 'cms_site'
+WHERE adapter = 'custom'
   AND NOT ('chat' = ANY(allowed_features));

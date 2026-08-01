@@ -4,7 +4,8 @@ const WIDGET_SOURCE = `(() => {
   const script = document.currentScript;
   if (!script || script.dataset.connectedChatMounted === 'true') return;
   script.dataset.connectedChatMounted = 'true';
-  const bindingId = script.dataset.workspace || '';
+  const bindingId = script.dataset.workspace;
+  if (!bindingId) return;
   const mount = () => {
     if (!document.body) return;
     const host = document.createElement('div');

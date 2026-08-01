@@ -1,5 +1,5 @@
 ALTER TYPE "public"."external_project_adapter_kind"
-ADD VALUE IF NOT EXISTS 'cms_site';
+ADD VALUE IF NOT EXISTS 'custom';
 
 create or replace function private.external_project_set_cms_site_template(
   p_ws_id uuid,

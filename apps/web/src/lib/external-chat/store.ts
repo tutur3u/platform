@@ -181,11 +181,13 @@ async function callExternalChatCredentialRpc(
 }
 
 export async function importExternalChatEvent({
+  configurationRevision,
   connectorKey,
   event,
   mappedUserId,
   wsId,
 }: {
+  configurationRevision: number;
   connectorKey: string;
   event: ExternalChatEvent;
   mappedUserId: string | null;
@@ -206,10 +208,15 @@ export async function importExternalChatEvent({
     },
     status: event.status,
   };
+  const threadMetadata = {
+    ...event.visitorProfile,
+    ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
+  };
   const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_import_event',
     {
       p_connector_key: connectorKey,
+      p_configuration_revision: configurationRevision,
       p_content: event.content,
       p_direction: event.direction,
       ...(mappedUserId ? { p_mapped_user_id: mappedUserId } : {}),
@@ -218,7 +225,7 @@ export async function importExternalChatEvent({
       p_remote_agent_id: event.agentId,
       p_remote_message_id: event.messageId,
       p_remote_visitor_id: event.visitorId,
-      p_thread_metadata: event.visitorProfile as Json,
+      p_thread_metadata: threadMetadata as Json,
       p_ws_id: wsId,
     }
   );
