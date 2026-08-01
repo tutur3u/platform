@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { decryptControlSecret, signControlRequest } from './crypto';
-import { readExternalChatBinding } from './store';
+import { externalChatPrivateDb, readExternalChatBinding } from './store';
 
 type ExternalThreadRow = {
   connector_key: string;
@@ -113,7 +113,7 @@ export async function deliverExternalChatReplyIfBound({
   wsId: string;
 }): Promise<ExternalChatDelivery | null> {
   const admin = await createAdminClient({ noCookie: true });
-  const privateDb = admin.schema('private') as any;
+  const privateDb = externalChatPrivateDb(admin);
   const { data: thread, error: threadError } = await privateDb
     .from('external_chat_threads')
     .select('id, connector_key, remote_agent_id, remote_visitor_id')
@@ -163,7 +163,7 @@ export async function recordExternalChatReply({
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await (admin.schema('private') as any)
+  const { error } = await externalChatPrivateDb(admin)
     .from('external_chat_events')
     .insert({
       connector_key: delivery.thread.connector_key,

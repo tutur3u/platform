@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { Json } from '@tuturuuu/types';
+import type { SupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database, Json } from '@tuturuuu/types';
 import type { ExternalChatEvent, ExternalChatSettings } from './schemas';
 
 type CredentialRow = {
@@ -18,8 +19,10 @@ type BindingRow = {
   settings: Json;
 };
 
-function privateDb(admin: unknown) {
-  return (admin as any).schema('private') as any;
+type AdminClient = SupabaseClient<Database>;
+
+export function externalChatPrivateDb(admin: unknown) {
+  return (admin as AdminClient).schema('private');
 }
 
 export async function readExternalChatBinding(wsId: string) {
@@ -32,13 +35,14 @@ export async function readExternalChatBinding(wsId: string) {
   if (error) throw new Error(error.message);
   if (!binding) return null;
 
-  const { data: credentials, error: credentialError } = await privateDb(admin)
-    .from('external_chat_binding_credentials')
-    .select(
-      'control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at'
-    )
-    .eq('ws_id', wsId)
-    .maybeSingle();
+  const { data: credentials, error: credentialError } =
+    await externalChatPrivateDb(admin)
+      .from('external_chat_binding_credentials')
+      .select(
+        'control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at'
+      )
+      .eq('ws_id', wsId)
+      .maybeSingle();
   if (credentialError) throw new Error(credentialError.message);
 
   return {
@@ -76,7 +80,7 @@ export async function upsertExternalChatCredentials(
   values: Record<string, string | null>
 ) {
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await privateDb(admin)
+  const { error } = await externalChatPrivateDb(admin)
     .from('external_chat_binding_credentials')
     .upsert({ ws_id: wsId, ...values }, { onConflict: 'ws_id' });
   if (error) throw new Error(error.message);
@@ -106,18 +110,18 @@ export async function importExternalChatEvent({
     },
     status: event.status,
   };
-  const { data, error } = await privateDb(admin).rpc(
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_import_event',
     {
       p_connector_key: connectorKey,
       p_content: event.content,
       p_direction: event.direction,
-      p_message_metadata: messageMetadata,
+      p_message_metadata: messageMetadata as Json,
       p_occurred_at: event.timestamp,
       p_remote_agent_id: event.agentId,
       p_remote_message_id: event.messageId,
       p_remote_visitor_id: event.visitorId,
-      p_thread_metadata: event.visitorProfile,
+      p_thread_metadata: event.visitorProfile as Json,
       p_ws_id: wsId,
     }
   );
