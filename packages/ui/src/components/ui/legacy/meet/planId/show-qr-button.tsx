@@ -13,12 +13,10 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
-import CopyLinkButton, { generateTumeetMeUrl } from './copy-link-button';
+import CopyLinkButton from './copy-link-button';
 
 export default function ShowQRButton({ url }: { url: string }) {
   const t = useTranslations();
-  const tumeetMeUrl = generateTumeetMeUrl(url);
-
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -37,7 +35,7 @@ export default function ShowQRButton({ url }: { url: string }) {
 
         <div className="flex items-center justify-center">
           <QRCodeCanvas
-            value={tumeetMeUrl}
+            value={url}
             size={256}
             marginSize={2}
             className="rounded-lg"
@@ -45,7 +43,7 @@ export default function ShowQRButton({ url }: { url: string }) {
         </div>
 
         <DialogFooter>
-          <CopyLinkButton url={tumeetMeUrl} className="md:w-full" />
+          <CopyLinkButton url={url} className="md:w-full" />
         </DialogFooter>
       </DialogContent>
     </Dialog>

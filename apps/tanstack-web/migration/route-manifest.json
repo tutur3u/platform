@@ -6,36 +6,36 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 488,
+        "legacyNext": 492,
         "migrated": 61,
-        "percentComplete": 12.86,
-        "remaining": 488,
+        "percentComplete": 12.77,
+        "remaining": 492,
         "terminal": 72,
-        "total": 560,
+        "total": 564,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 48,
+        "legacyNext": 49,
         "migrated": 99,
-        "percentComplete": 67.79,
-        "remaining": 48,
+        "percentComplete": 67.33,
+        "remaining": 49,
         "terminal": 101,
-        "total": 149,
+        "total": 150,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 10,
+        "legacyNext": 11,
         "migrated": 47,
-        "percentComplete": 82.46,
-        "remaining": 10,
+        "percentComplete": 81.03,
+        "remaining": 11,
         "terminal": 47,
-        "total": 57,
+        "total": 58,
         "unknownStatus": 0
       },
       {
@@ -116,24 +116,24 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 496,
+        "legacyNext": 500,
         "migrated": 66,
-        "percentComplete": 13.44,
-        "remaining": 496,
+        "percentComplete": 13.34,
+        "remaining": 500,
         "terminal": 77,
-        "total": 573,
+        "total": 577,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 60,
+        "legacyNext": 62,
         "migrated": 148,
-        "percentComplete": 71.43,
-        "remaining": 60,
+        "percentComplete": 70.75,
+        "remaining": 62,
         "terminal": 150,
-        "total": 210,
+        "total": 212,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 556,
+      "legacyNext": 562,
       "migrated": 214,
-      "percentComplete": 28.99,
-      "remaining": 556,
+      "percentComplete": 28.77,
+      "remaining": 562,
       "terminal": 227,
-      "total": 783,
+      "total": 789,
       "unknownStatus": 0
     }
   },
@@ -1671,6 +1671,42 @@
       "methods": ["POST"],
       "routePath": "/api/v1/live/tools/execute",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/live/tools/execute/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/meet/plans:apps/web/src/app/api/v1/meet/plans/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/meet/plans",
+      "sourceFile": "apps/web/src/app/api/v1/meet/plans/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/meet/plans/:planId:apps/web/src/app/api/v1/meet/plans/[planId]/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PATCH", "DELETE"],
+      "routePath": "/api/v1/meet/plans/:planId",
+      "sourceFile": "apps/web/src/app/api/v1/meet/plans/[planId]/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/meet/plans/:planId/availability:apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts",
+      "kind": "api",
+      "methods": ["PUT"],
+      "routePath": "/api/v1/meet/plans/:planId/availability",
+      "sourceFile": "apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/meet/plans/:planId/finalization:apps/web/src/app/api/v1/meet/plans/[planId]/finalization/route.ts",
+      "kind": "api",
+      "methods": ["PUT", "DELETE"],
+      "routePath": "/api/v1/meet/plans/:planId/finalization",
+      "sourceFile": "apps/web/src/app/api/v1/meet/plans/[planId]/finalization/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -5815,6 +5851,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale/meet/plans/:planId:apps/web/src/app/[locale]/(marketing)/meet/plans/[planId]/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/meet/plans/:planId",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/meet/plans/[planId]/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale/partners:apps/web/src/app/[locale]/(marketing)/partners/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -6958,6 +7003,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/meet/plans/:planId:apps/web/src/app/[locale]/(marketing)/meet/plans/[planId]/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/meet/plans/:planId",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/meet/plans/[planId]/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/models:apps/web/src/app/[locale]/(marketing)/models/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7472,20 +7526,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 560,
+    "apiRoutes": 564,
     "cronRoutes": 8,
-    "layouts": 57,
-    "pages": 149,
-    "routeHandlers": 573,
+    "layouts": 58,
+    "pages": 150,
+    "routeHandlers": 577,
     "methodCounts": {
-      "GET": 286,
+      "GET": 287,
       "HEAD": 2,
-      "POST": 285,
-      "PUT": 51,
-      "PATCH": 59,
-      "DELETE": 97,
+      "POST": 286,
+      "PUT": 53,
+      "PATCH": 60,
+      "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 783
+    "total": 789
   }
 }

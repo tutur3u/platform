@@ -52,7 +52,7 @@ export async function createPoll(planId: string, input: CreatePollInput) {
     return { error: 'Failed to create poll' };
   }
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { poll } };
 }
 
@@ -114,7 +114,7 @@ export async function deletePoll(planId: string, pollId: string) {
       return { error: 'Error deleting poll' };
     }
 
-    revalidatePath(`/meet-together/plans/${planId}`);
+    revalidatePath(`/meet/plans/${planId}`);
     return { data: { deletedPollId: pollId } };
   } catch {
     return { error: 'Internal server error' };
@@ -229,7 +229,7 @@ export async function addPollOption(planId: string, input: AddPollOptionInput) {
     },
   }));
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return {
     data: {
       option: {
@@ -313,7 +313,7 @@ export async function deletePollOption(
     return { error: 'Failed to delete option' };
   }
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { optionId } };
 }
 
@@ -428,7 +428,7 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
     return { error: 'Invalid vote request' };
   }
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { success: true } };
 }
 
@@ -509,7 +509,7 @@ export async function toggleWherePoll(planId: string, whereToMeet: boolean) {
       }
     }
 
-    revalidatePath(`/meet-together/plans/${planId}`);
+    revalidatePath(`/meet/plans/${planId}`);
     return {
       data: {
         id: planId,

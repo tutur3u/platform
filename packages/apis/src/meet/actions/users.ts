@@ -70,7 +70,7 @@ export async function removeUserFromPlan(planId: string, userId: string) {
       return { error: 'Error removing user from plan' };
     }
 
-    revalidatePath(`/meet-together/plans/${planId}`);
+    revalidatePath(`/meet/plans/${planId}`);
     return {
       data: { success: true, message: 'User removed from plan successfully' },
     };

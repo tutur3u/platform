@@ -94,7 +94,7 @@ describe('createCloudflareStreamLiveInputBody', () => {
     expect(
       createCloudflareStreamLiveInputBody({
         actorId: 'user-1',
-        allowedOrigins: ['https://tumeet.me'],
+        allowedOrigins: ['https://meet.tuturuuu.com'],
         meetingId: 'meeting-1',
         meetingName: 'Weekly review',
         wsId: 'workspace-1',
@@ -108,7 +108,7 @@ describe('createCloudflareStreamLiveInputBody', () => {
         wsId: 'workspace-1',
       },
       recording: {
-        allowedOrigins: ['https://tumeet.me'],
+        allowedOrigins: ['https://meet.tuturuuu.com'],
         hideLiveViewerCount: true,
         mode: 'off',
         requireSignedURLs: false,

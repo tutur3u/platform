@@ -1,7 +1,8 @@
 'use client';
 
-import { updatePlan } from '@tuturuuu/apis/meet/actions';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/icons';
+import { type MeetPlanSnapshot, updateMeetPlan } from '@tuturuuu/internal-api';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,14 +17,41 @@ interface AgendaDetailsProps {
 }
 
 export default function AgendaDetails({ plan }: AgendaDetailsProps) {
-  const t = useTranslations('meet-together');
+  const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user } = useTimeBlocking();
   const [editContent, setEditContent] = useState<JSONContent | null>(
     plan.agenda_content || null
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const mutation = useMutation({
+    mutationFn: (agendaContent: JSONContent | null) =>
+      updateMeetPlan(plan.id!, { agenda_content: agendaContent }),
+    onMutate: async (agendaContent) => {
+      if (!plan.id) return {};
+      const queryKey = ['meet-plan', plan.id] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MeetPlanSnapshot>(queryKey);
+      if (previous)
+        queryClient.setQueryData<MeetPlanSnapshot>(queryKey, {
+          ...previous,
+          plan: {
+            ...previous.plan,
+            agenda_content: agendaContent ?? undefined,
+          },
+        });
+      return { previous };
+    },
+    onError: (_error, _agenda, context) => {
+      if (plan.id && context?.previous)
+        queryClient.setQueryData(['meet-plan', plan.id], context.previous);
+    },
+    onSuccess: (snapshot) => {
+      if (plan.id) queryClient.setQueryData(['meet-plan', plan.id], snapshot);
+    },
+  });
 
   const handleEdit = useCallback(() => {
     setIsEditing(true);
@@ -40,23 +68,15 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
 
     setIsLoading(true);
     try {
-      const result = await updatePlan(plan.id, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        agenda_content: editContent as any,
-      });
-
-      if (result.data) {
-        setIsEditing(false);
-        router.refresh();
-      } else {
-        console.error('Failed to save agenda:', result.error);
-      }
+      await mutation.mutateAsync(editContent);
+      setIsEditing(false);
+      router.refresh();
     } catch (error) {
       console.error('Error saving agenda:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [plan.id, editContent, router]);
+  }, [editContent, mutation, plan.id, router]);
 
   const handleContentChange = useCallback((content: JSONContent | null) => {
     setEditContent(content || null);
@@ -69,9 +89,9 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
     <div className="w-full space-y-8">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
         <div className="space-y-4">
-          <p className="font-semibold text-4xl">{t('agenda')}</p>
+          <p className="font-semibold text-4xl">{t('meet-together.agenda')}</p>
           <p className="text-md text-muted-foreground">
-            {t('agenda_description')}
+            {t('meet-together.agenda_description')}
           </p>
         </div>
         {isEditing ? (
@@ -82,22 +102,24 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
               size="lg"
               disabled={isLoading}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSave} size="lg" disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save'}
+              {isLoading
+                ? t('meet-together-plan-details.saving')
+                : t('common.save')}
             </Button>
           </div>
         ) : canEdit ? (
           plan.agenda_content ? (
             <Button onClick={handleEdit} variant="outline" size="lg">
               <Pencil size={16} />
-              Edit
+              {t('common.edit')}
             </Button>
           ) : (
             <Button onClick={handleEdit} variant="default" size="lg">
               <Plus size={16} />
-              Add Agenda
+              {t('meet-together-plan-details.add_agenda')}
             </Button>
           )
         ) : null}
@@ -117,10 +139,11 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
               <ClipboardList size={48} className="text-muted-foreground" />
             </div>
             <div className="space-y-2">
-              <h3 className="font-medium text-lg">No Agenda Content Yet</h3>
+              <h3 className="font-medium text-lg">
+                {t('meet-together-plan-details.no_agenda_title')}
+              </h3>
               <p className="max-w-md text-muted-foreground text-sm">
-                Start organizing your meeting by creating a structured outline
-                to keep everyone on track to make your meeting more productive.
+                {t('meet-together-plan-details.no_agenda_description')}
               </p>
             </div>
           </div>

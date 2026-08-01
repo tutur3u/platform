@@ -16,6 +16,21 @@ export interface MeetTogetherPlan {
   ws_id?: string;
   is_public?: boolean;
   agenda_content?: JSONContent;
+  timezone?: string | null;
+  duration_minutes?: number;
+  finalized_at?: string | null;
+  finalized_by?: string | null;
+}
+
+export interface MeetFinalizedTimeframe {
+  id: string;
+  plan_id: string;
+  start_at: string;
+  end_at: string;
+  position: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PlanUser {

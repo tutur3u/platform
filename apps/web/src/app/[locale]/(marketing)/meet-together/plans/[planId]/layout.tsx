@@ -32,7 +32,7 @@ export const generateMetadata = async ({
       title,
       description,
       imageAlt: `${title} - Tuturuuu`,
-      pathname: `/meet-together/plans/${planId}`,
+      pathname: `/meet/plans/${planId}`,
     },
     locale
   );

@@ -1,10 +1,11 @@
 'use client';
 
-import { Calendar, Save, Users } from '@tuturuuu/icons';
+import { Calendar, Redo2, Save, Undo2, Users } from '@tuturuuu/icons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import AllAvailabilities from './all-availabilities';
 import AvailabilityPlanner from './availability-planner';
@@ -22,7 +23,9 @@ export default function UnifiedAvailability({
   showBestTimes = false,
   onBestTimesStatusByDateAction,
 }: UnifiedAvailabilityProps) {
-  const { isDirty, handleSave, isSaving } = useTimeBlocking();
+  const t = useTranslations('meet-together-plan-details');
+  const { isDirty, handleSave, isSaving, canUndo, canRedo, undo, redo } =
+    useTimeBlocking();
   const [isEditing, setIsEditing] = useState(false);
   const { user, setDisplayMode } = useTimeBlocking();
 
@@ -56,25 +59,45 @@ export default function UnifiedAvailability({
           {isEditing ? (
             <>
               <Users size={16} />
-              View Everyone
+              {t('view_everyone')}
             </>
           ) : (
             <>
               <Calendar size={16} />
-              Add Availability
+              {t('add_availability')}
             </>
           )}
         </Button>
         {isEditing && (
-          <Button
-            variant="default"
-            size="lg"
-            onClick={handleSave}
-            disabled={!isDirty || isSaving}
-          >
-            <Save size={16} />
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={undo}
+              disabled={!canUndo}
+              aria-label={t('undo')}
+            >
+              <Undo2 size={16} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={redo}
+              disabled={!canRedo}
+              aria-label={t('redo')}
+            >
+              <Redo2 size={16} />
+            </Button>
+            <Button
+              variant="default"
+              size="lg"
+              onClick={handleSave}
+              disabled={!isDirty || isSaving}
+            >
+              <Save size={16} />
+              {isSaving ? t('saving') : t('save_changes')}
+            </Button>
+          </div>
         )}
       </div>
 

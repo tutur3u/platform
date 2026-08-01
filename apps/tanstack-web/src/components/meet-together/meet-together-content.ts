@@ -51,8 +51,8 @@ const meetTogetherContent: Record<Locale, MeetTogetherContent> = {
   en: {
     meta: {
       description:
-        'See how Tuturuuu Meet Together streamlines collaborative meetings.',
-      title: 'Meet Together Overview',
+        'See how Tuturuuu Meet streamlines collaborative scheduling.',
+      title: 'Tuturuuu Meet Overview',
     },
     hero: {
       badge: 'Meeting Coordination',
@@ -102,7 +102,7 @@ const meetTogetherContent: Record<Locale, MeetTogetherContent> = {
       untitledPlan: 'Untitled plan',
       whereDescription:
         'Enable location suggestions and voting so participants can agree on where to meet.',
-      whereTitle: 'Where TuMeet?',
+      whereTitle: 'Where to meet?',
     },
     plans: {
       createAccount: 'Create Account',
@@ -116,8 +116,8 @@ const meetTogetherContent: Record<Locale, MeetTogetherContent> = {
   vi: {
     meta: {
       description:
-        'Xem cách Tuturuuu Meet Together đơn giản hóa việc phối hợp cuộc họp.',
-      title: 'Tổng quan Meet Together',
+        'Xem cách Tuturuuu Meet đơn giản hóa việc phối hợp lịch họp.',
+      title: 'Tổng quan Tuturuuu Meet',
     },
     hero: {
       badge: 'Điều phối cuộc họp',
@@ -168,7 +168,7 @@ const meetTogetherContent: Record<Locale, MeetTogetherContent> = {
       untitledPlan: 'Kế hoạch chưa đặt tên',
       whereDescription:
         'Bật gợi ý địa điểm và bình chọn để mọi người thống nhất nơi gặp.',
-      whereTitle: 'Where TuMeet?',
+      whereTitle: 'Gặp nhau ở đâu?',
     },
     plans: {
       createAccount: 'Tạo tài khoản',

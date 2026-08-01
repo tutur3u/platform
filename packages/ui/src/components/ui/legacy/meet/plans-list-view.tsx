@@ -20,7 +20,7 @@ export function PlansListView({
   locale,
   t,
   user,
-  path = '/meet-together/plans',
+  path = '/meet/plans',
 }: {
   plans: MeetTogetherPlanWithParticipants[];
   locale: string;

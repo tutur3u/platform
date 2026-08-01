@@ -112,7 +112,7 @@ export async function createTimeblocks(
       return { error: 'Error creating timeblocks' };
     }
 
-    revalidatePath(`/meet-together/plans/${planId}`);
+    revalidatePath(`/meet/plans/${planId}`);
     return {
       data: {
         ids: insertedTimeblocks?.map((tb) => tb.id) || [],
@@ -156,7 +156,7 @@ export async function createTimeblocks(
       return { error: 'Error creating timeblocks' };
     }
 
-    revalidatePath(`/meet-together/plans/${planId}`);
+    revalidatePath(`/meet/plans/${planId}`);
     return {
       data: {
         ids: insertedTimeblocks?.map((tb) => tb.id) || [],
@@ -244,6 +244,6 @@ export async function deleteTimeblock(
     }
   }
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { success: true } };
 }

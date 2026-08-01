@@ -3280,6 +3280,239 @@ export type Database = {
         };
         Relationships: [];
       };
+      external_chat_binding_credentials: {
+        Row: {
+          control_secret_encrypted: string | null;
+          control_secret_last_four: string | null;
+          control_secret_rotated_at: string | null;
+          created_at: string;
+          ingest_secret_hash: string | null;
+          ingest_secret_last_four: string | null;
+          ingest_secret_rotated_at: string | null;
+          pending_action: string | null;
+          pending_created_at: string | null;
+          pending_secret_encrypted: string | null;
+          pending_secret_hash: string | null;
+          pending_secret_last_four: string | null;
+          updated_at: string;
+          verified_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          control_secret_encrypted?: string | null;
+          control_secret_last_four?: string | null;
+          control_secret_rotated_at?: string | null;
+          created_at?: string;
+          ingest_secret_hash?: string | null;
+          ingest_secret_last_four?: string | null;
+          ingest_secret_rotated_at?: string | null;
+          pending_action?: string | null;
+          pending_created_at?: string | null;
+          pending_secret_encrypted?: string | null;
+          pending_secret_hash?: string | null;
+          pending_secret_last_four?: string | null;
+          updated_at?: string;
+          verified_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          control_secret_encrypted?: string | null;
+          control_secret_last_four?: string | null;
+          control_secret_rotated_at?: string | null;
+          created_at?: string;
+          ingest_secret_hash?: string | null;
+          ingest_secret_last_four?: string | null;
+          ingest_secret_rotated_at?: string | null;
+          pending_action?: string | null;
+          pending_created_at?: string | null;
+          pending_secret_encrypted?: string | null;
+          pending_secret_hash?: string | null;
+          pending_secret_last_four?: string | null;
+          updated_at?: string;
+          verified_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      external_chat_events: {
+        Row: {
+          connector_key: string;
+          created_at: string;
+          direction: string;
+          id: string;
+          message_id: string;
+          metadata: Json;
+          remote_message_id: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          connector_key: string;
+          created_at?: string;
+          direction: string;
+          id?: string;
+          message_id: string;
+          metadata?: Json;
+          remote_message_id: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Update: {
+          connector_key?: string;
+          created_at?: string;
+          direction?: string;
+          id?: string;
+          message_id?: string;
+          metadata?: Json;
+          remote_message_id?: string;
+          thread_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_chat_events_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: true;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_chat_events_thread_scope_fk';
+            columns: ['thread_id', 'ws_id', 'connector_key'];
+            isOneToOne: false;
+            referencedRelation: 'external_chat_threads';
+            referencedColumns: ['id', 'ws_id', 'connector_key'];
+          },
+        ];
+      };
+      external_chat_outbound_deliveries: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          delivered_at: string | null;
+          id: string;
+          idempotency_key: string;
+          message_id: string | null;
+          request_fingerprint: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          delivered_at?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          message_id?: string | null;
+          request_fingerprint: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          delivered_at?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          message_id?: string | null;
+          request_fingerprint?: string;
+          thread_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_chat_outbound_deliveries_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_chat_outbound_thread_scope_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'external_chat_threads';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      external_chat_sync_checkpoints: {
+        Row: {
+          bridge_checked_at: string | null;
+          details: Json;
+          ingest_checked_at: string | null;
+          pending_count: number;
+          reconciled_at: string | null;
+          state: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          bridge_checked_at?: string | null;
+          details?: Json;
+          ingest_checked_at?: string | null;
+          pending_count?: number;
+          reconciled_at?: string | null;
+          state?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          bridge_checked_at?: string | null;
+          details?: Json;
+          ingest_checked_at?: string | null;
+          pending_count?: number;
+          reconciled_at?: string | null;
+          state?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      external_chat_threads: {
+        Row: {
+          connector_key: string;
+          conversation_id: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          remote_agent_id: string;
+          remote_visitor_id: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          connector_key: string;
+          conversation_id: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          remote_agent_id?: string;
+          remote_visitor_id: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          connector_key?: string;
+          conversation_id?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          remote_agent_id?: string;
+          remote_visitor_id?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_chat_threads_conversation_scope_fk';
+            columns: ['conversation_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
       external_user_monthly_report_logs: {
         Row: {
           approved_at: string | null;
@@ -15455,6 +15688,68 @@ export type Database = {
         };
         Returns: boolean;
       };
+      external_chat_clear_credential: {
+        Args: { p_kind: string; p_ws_id: string };
+        Returns: undefined;
+      };
+      external_chat_finalize_reply: {
+        Args: {
+          p_actor_user_id: string;
+          p_content: string;
+          p_delivery_id: string;
+          p_reply_to_message_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_chat_import_event: {
+        Args: {
+          p_connector_key: string;
+          p_content: string;
+          p_direction: string;
+          p_mapped_user_id?: string;
+          p_message_metadata?: Json;
+          p_occurred_at: string;
+          p_remote_agent_id: string;
+          p_remote_message_id: string;
+          p_remote_visitor_id: string;
+          p_thread_metadata?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_chat_mark_verified: {
+        Args: { p_control_secret_encrypted: string; p_ws_id: string };
+        Returns: boolean;
+      };
+      external_chat_promote_credential: {
+        Args: { p_action: string; p_secret_encrypted: string; p_ws_id: string };
+        Returns: undefined;
+      };
+      external_chat_reserve_reply: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_reply_to_message_id?: string;
+          p_request_fingerprint: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_chat_stage_credential: {
+        Args: {
+          p_action: string;
+          p_last_four: string;
+          p_secret_encrypted: string;
+          p_secret_hash: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
+      external_chat_update_settings: {
+        Args: { p_actor_user_id: string; p_chat: Json; p_ws_id: string };
+        Returns: undefined;
+      };
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
@@ -16953,6 +17248,25 @@ export type Database = {
           removed_promotion_id: string;
           status: string;
         }[];
+      };
+      replace_meet_availability: {
+        Args: {
+          p_is_guest: boolean;
+          p_plan_id: string;
+          p_timeblocks: Json;
+          p_user_id: string;
+        };
+        Returns: Json[];
+      };
+      replace_meet_finalized_timeframes: {
+        Args: { p_actor_id: string; p_plan_id: string; p_timeframes: Json };
+        Returns: Database['public']['Tables']['meet_together_finalized_timeframes']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'meet_together_finalized_timeframes';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       resolve_user_groups_table_timezone: {
         Args: { p_ws_id: string };
@@ -21981,6 +22295,61 @@ export type Database = {
           },
         ];
       };
+      meet_together_finalized_timeframes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          end_at: string;
+          id: string;
+          plan_id: string;
+          position: number;
+          start_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          end_at: string;
+          id?: string;
+          plan_id: string;
+          position?: number;
+          start_at: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          end_at?: string;
+          id?: string;
+          plan_id?: string;
+          position?: number;
+          start_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_together_finalized_timeframes_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_finalized_timeframes_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_finalized_timeframes_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_plans';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       meet_together_guest_timeblocks: {
         Row: {
           created_at: string;
@@ -22071,12 +22440,16 @@ export type Database = {
           creator_id: string | null;
           dates: string[];
           description: string | null;
+          duration_minutes: number;
           end_time: string;
+          finalized_at: string | null;
+          finalized_by: string | null;
           id: string;
           is_confirmed: boolean;
           is_public: boolean;
           name: string | null;
           start_time: string;
+          timezone: string | null;
           where_to_meet: boolean;
           ws_id: string | null;
         };
@@ -22086,12 +22459,16 @@ export type Database = {
           creator_id?: string | null;
           dates: string[];
           description?: string | null;
+          duration_minutes?: number;
           end_time: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
           id?: string;
           is_confirmed?: boolean;
           is_public?: boolean;
           name?: string | null;
           start_time: string;
+          timezone?: string | null;
           where_to_meet?: boolean;
           ws_id?: string | null;
         };
@@ -22101,12 +22478,16 @@ export type Database = {
           creator_id?: string | null;
           dates?: string[];
           description?: string | null;
+          duration_minutes?: number;
           end_time?: string;
+          finalized_at?: string | null;
+          finalized_by?: string | null;
           id?: string;
           is_confirmed?: boolean;
           is_public?: boolean;
           name?: string | null;
           start_time?: string;
+          timezone?: string | null;
           where_to_meet?: boolean;
           ws_id?: string | null;
         };
@@ -22121,6 +22502,20 @@ export type Database = {
           {
             foreignKeyName: 'meet_together_plans_creator_id_fkey';
             columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_finalized_by_fkey';
+            columns: ['finalized_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_finalized_by_fkey';
+            columns: ['finalized_by'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
@@ -22919,14 +23314,21 @@ export type Database = {
       onboarding_progress: {
         Row: {
           completed_at: string | null;
+          completed_missions: string[];
           completed_steps: string[];
           created_at: string;
           current_step: string;
+          dismissed_at: string | null;
           flow_type: string | null;
+          goals: string[];
+          guidance_mode: string;
           invited_emails: string[] | null;
+          journey_revision: number;
           language_preference: string | null;
           notifications_enabled: boolean | null;
+          persona: string | null;
           profile_completed: boolean;
+          replay_app: string | null;
           team_workspace_id: string | null;
           theme_preference: string | null;
           tour_completed: boolean;
@@ -22939,14 +23341,21 @@ export type Database = {
         };
         Insert: {
           completed_at?: string | null;
+          completed_missions?: string[];
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
+          dismissed_at?: string | null;
           flow_type?: string | null;
+          goals?: string[];
+          guidance_mode?: string;
           invited_emails?: string[] | null;
+          journey_revision?: number;
           language_preference?: string | null;
           notifications_enabled?: boolean | null;
+          persona?: string | null;
           profile_completed?: boolean;
+          replay_app?: string | null;
           team_workspace_id?: string | null;
           theme_preference?: string | null;
           tour_completed?: boolean;
@@ -22959,14 +23368,21 @@ export type Database = {
         };
         Update: {
           completed_at?: string | null;
+          completed_missions?: string[];
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
+          dismissed_at?: string | null;
           flow_type?: string | null;
+          goals?: string[];
+          guidance_mode?: string;
           invited_emails?: string[] | null;
+          journey_revision?: number;
           language_preference?: string | null;
           notifications_enabled?: boolean | null;
+          persona?: string | null;
           profile_completed?: boolean;
+          replay_app?: string | null;
           team_workspace_id?: string | null;
           theme_preference?: string | null;
           tour_completed?: boolean;
@@ -43201,7 +43617,8 @@ export type Database = {
         | 'yashie'
         | 'shiraoki'
         | 'kendra'
-        | 'richfield';
+        | 'richfield'
+        | 'cms_site';
       external_project_entry_status:
         | 'draft'
         | 'scheduled'
@@ -45949,6 +46366,7 @@ export const Constants = {
         'shiraoki',
         'kendra',
         'richfield',
+        'cms_site',
       ],
       external_project_entry_status: [
         'draft',

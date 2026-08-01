@@ -194,8 +194,14 @@ export interface CreatePlanInput {
   dates?: string[];
   start_time?: string;
   end_time?: string;
+  timezone?: string;
+  duration_minutes?: number;
+  ws_id?: string;
+  is_public?: boolean;
   where_to_meet?: boolean;
   description?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  agenda_content?: any;
 }
 
 export async function createPlan(data: CreatePlanInput) {
@@ -225,8 +231,13 @@ export async function createPlan(data: CreatePlanInput) {
       dates: data.dates || [],
       start_time: data.start_time || '00:00:00',
       end_time: data.end_time || '23:59:59',
+      timezone: data.timezone,
+      duration_minutes: data.duration_minutes ?? 60,
+      ws_id: data.ws_id,
+      is_public: data.is_public ?? true,
       where_to_meet: data.where_to_meet ?? false,
       description: data.description,
+      agenda_content: data.agenda_content,
       creator_id: user?.id,
       is_confirmed: false,
     })
@@ -252,7 +263,7 @@ export async function createPlan(data: CreatePlanInput) {
     }
   }
 
-  revalidatePath('/meet-together');
+  revalidatePath('/meet');
   return { data: { id: plan.id } };
 }
 
@@ -275,6 +286,8 @@ export interface UpdatePlanInput {
   dates?: string[];
   start_time?: string;
   end_time?: string;
+  timezone?: string;
+  duration_minutes?: number;
   where_to_meet?: boolean;
   description?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -454,8 +467,8 @@ export async function updatePlan(planId: string, data: UpdatePlanInput) {
     return { error: 'Error updating meet together plan' };
   }
 
-  revalidatePath('/meet-together');
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath('/meet');
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { success: true } };
 }
 
@@ -496,7 +509,7 @@ export async function deletePlan(planId: string) {
     return { error: 'Error deleting meet together plan' };
   }
 
-  revalidatePath('/meet-together');
+  revalidatePath('/meet');
   return { data: { success: true } };
 }
 
@@ -532,6 +545,6 @@ export async function togglePlanLock(planId: string, isConfirm: boolean) {
     return { error: 'Update failed' };
   }
 
-  revalidatePath(`/meet-together/plans/${planId}`);
+  revalidatePath(`/meet/plans/${planId}`);
   return { data: { success: true } };
 }

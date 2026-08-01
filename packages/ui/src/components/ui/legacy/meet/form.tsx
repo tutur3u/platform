@@ -3,6 +3,7 @@
 import type { User } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -14,9 +15,11 @@ import TimezoneSelector from './timezone-selector';
 export default function Form({
   wsId,
   user,
+  planBasePath,
 }: {
   wsId?: string;
   user: Partial<User> | null;
+  planBasePath: string;
 }) {
   const t = useTranslations('meet-together');
 
@@ -24,6 +27,7 @@ export default function Form({
   const [startTime, setStartTime] = useState<number | undefined>(9);
   const [endTime, setEndTime] = useState<number | undefined>(17);
   const [timezone, setTimezone] = useState<Timezone | undefined>(undefined);
+  const [durationMinutes, setDurationMinutes] = useState(60);
 
   useEffect(() => {
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -41,6 +45,7 @@ export default function Form({
     startTime,
     endTime,
     timezone,
+    durationMinutes,
     wsId,
   };
 
@@ -85,8 +90,27 @@ export default function Form({
           <p className="w-full font-semibold">{t('time-zone')}</p>
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
+        <div className="grid w-full gap-2">
+          <p className="w-full font-semibold">{t('duration')}</p>
+          <Tabs
+            value={String(durationMinutes)}
+            onValueChange={(value) => setDurationMinutes(Number(value))}
+          >
+            <TabsList className="grid h-auto w-full grid-cols-4">
+              {[30, 45, 60, 90].map((minutes) => (
+                <TabsTrigger key={minutes} value={String(minutes)}>
+                  {minutes}m
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
         <div className="flex w-full justify-center lg:justify-start">
-          <CreatePlanDialog plan={plan} user={user} />
+          <CreatePlanDialog
+            plan={plan}
+            user={user}
+            planBasePath={planBasePath}
+          />
         </div>
       </div>
     </div>

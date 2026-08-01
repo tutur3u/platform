@@ -1,10 +1,11 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  createTimeblocks,
-  deleteTimeblock,
-  getTimeblocks,
-} from '@tuturuuu/apis/meet/actions';
+  getMeetPlanSnapshot,
+  type MeetPlanSnapshot,
+  replaceMeetAvailability,
+} from '@tuturuuu/internal-api';
 import type {
   GuestUser,
   MeetTogetherPlan,
@@ -35,57 +36,10 @@ dayjs.extend(minMax);
 interface EditingParams {
   enabled: boolean;
   mode?: 'add' | 'remove';
-  initialTouch?: { x: number; y: number };
   startDate?: Date;
   endDate?: Date;
   tentativeMode?: boolean;
 }
-
-// Utility function to compare timeblock arrays
-const areTimeBlockArraysEqual = (arr1: Timeblock[], arr2: Timeblock[]) => {
-  if (arr1.length !== arr2.length) return false;
-
-  return arr1.every((tb1) =>
-    arr2.some(
-      (tb2) =>
-        tb1.date === tb2.date &&
-        tb1.start_time === tb2.start_time &&
-        tb1.end_time === tb2.end_time
-    )
-  );
-};
-
-// Utility function to find timeblocks that exist in arr1 but not in arr2
-const findTimeBlocksToRemove = (
-  serverTimeblocks: Timeblock[],
-  localTimeblocks: Timeblock[]
-) => {
-  return serverTimeblocks.filter(
-    (serverTimeblock: Timeblock) =>
-      !localTimeblocks.some(
-        (localTimeblock: Timeblock) =>
-          localTimeblock.date === serverTimeblock.date &&
-          localTimeblock.start_time === serverTimeblock.start_time &&
-          localTimeblock.end_time === serverTimeblock.end_time
-      )
-  );
-};
-
-// Utility function to find timeblocks that exist in arr2 but not in arr1
-const findTimeBlocksToAdd = (
-  localTimeblocks: Timeblock[],
-  serverTimeblocks: Timeblock[]
-) => {
-  return localTimeblocks.filter(
-    (localTimeblock: Timeblock) =>
-      !serverTimeblocks?.some(
-        (serverTimeblock: Timeblock) =>
-          serverTimeblock.date === localTimeblock.date &&
-          serverTimeblock.start_time === localTimeblock.start_time &&
-          serverTimeblock.end_time === localTimeblock.end_time
-      )
-  );
-};
 
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
@@ -102,7 +56,11 @@ const TimeBlockContext = createContext({
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
   isDirty: false,
   isSaving: false,
+  canUndo: false,
+  canRedo: false,
   handleSave: () => {},
+  undo: () => {},
+  redo: () => {},
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPreviewUsers: (_: Timeblock[]) =>
@@ -122,10 +80,11 @@ const TimeBlockContext = createContext({
   setPreviewDate: (_: Date | null) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
-  edit: (
-    _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-    __?: TouchEvent | MouseEvent
-  ) => {},
+  edit: (_: {
+    mode: 'add' | 'remove';
+    date: Date;
+    tentativeMode?: boolean;
+  }) => {},
   endEditing: () => {},
   setDisplayMode: (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -158,6 +117,7 @@ const TimeBlockingProvider = ({
   children: ReactNode;
 }) => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
 
@@ -173,6 +133,8 @@ const TimeBlockingProvider = ({
   }, [users]);
 
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
+  const [undoStack, setUndoStack] = useState<Timeblock[][]>([]);
+  const [redoStack, setRedoStack] = useState<Timeblock[][]>([]);
 
   const setPreviewDateCallback = useCallback((date: Date | null) => {
     setPreviewDate(date);
@@ -390,66 +352,25 @@ const TimeBlockingProvider = ({
   );
 
   const edit = useCallback(
-    (
-      {
-        mode,
-        date,
-        tentativeMode,
-      }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-      event?: TouchEvent | MouseEvent
-    ) => {
-      const touch =
-        event && 'touches' in event ? event.touches?.[0] : undefined;
-
+    ({
+      mode,
+      date,
+      tentativeMode,
+    }: {
+      mode: 'add' | 'remove';
+      date: Date;
+      tentativeMode?: boolean;
+    }) => {
       setEditing((prevData) => {
         const nextMode = prevData?.mode ?? mode;
         const nextTentativeMode = prevData?.tentativeMode ?? tentativeMode;
-        const nextTouch =
-          prevData?.initialTouch ??
-          (touch
-            ? {
-                x: touch.clientX,
-                y: touch.clientY,
-              }
-            : undefined);
-
         const nextStart = prevData?.startDate ?? date;
-
-        const touchXDiff =
-          (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
-
-        const touchYDiff =
-          (touch?.clientY || 0) - (prevData?.initialTouch?.y || 0);
-
-        const nextEnd =
-          prevData?.initialTouch !== undefined && nextTouch
-            ? nextStart
-              ? // Only apply complex calculation if there's significant movement
-                // For taps with minimal movement, use the same date as start
-                // Increased thresholds to prevent accidental multi-selection on mobile
-                Math.abs(touchXDiff) > 30 || Math.abs(touchYDiff) > 30
-                ? dayjs(nextStart)
-                    .add(Math.floor((touchYDiff / 15) * 1.25) * 15, 'minute')
-                    .add(
-                      // Only add days if horizontal movement is significant (more than 80px)
-                      // and vertical movement is minimal (less than 40px) to avoid accidental cross-day selection
-                      // Also ensure we're actually dragging (not just a tap)
-                      Math.abs(touchXDiff) > 80 && Math.abs(touchYDiff) < 40
-                        ? Math.floor(touchXDiff / 100)
-                        : 0,
-                      'day'
-                    )
-                    .toDate()
-                : nextStart // For single taps, end = start
-              : nextStart
-            : date;
 
         return {
           enabled: true,
           mode: nextMode,
           startDate: nextStart,
-          endDate: nextEnd,
-          initialTouch: nextTouch,
+          endDate: date,
           tentativeMode: nextTentativeMode,
         };
       });
@@ -482,6 +403,8 @@ const TimeBlockingProvider = ({
       endEditingInProgressRef.current = true;
 
       try {
+        setUndoStack((stack) => [...stack.slice(-19), selectedTimeBlocks.data]);
+        setRedoStack([]);
         setSelectedTimeBlocks((prevTimeblocks) => {
           const dates = [
             editing.startDate,
@@ -536,7 +459,23 @@ const TimeBlockingProvider = ({
         endEditingInProgressRef.current = false;
       }
     }, 100); // Increased delay to better prevent rapid calls
-  }, [plan.id, editing]);
+  }, [plan.id, editing, selectedTimeBlocks.data]);
+
+  const undo = useCallback(() => {
+    const previous = undoStack.at(-1);
+    if (!previous || !plan.id) return;
+    setRedoStack((stack) => [...stack.slice(-19), selectedTimeBlocks.data]);
+    setUndoStack((stack) => stack.slice(0, -1));
+    setSelectedTimeBlocks({ planId: plan.id, data: previous });
+  }, [plan.id, selectedTimeBlocks.data, undoStack]);
+
+  const redo = useCallback(() => {
+    const next = redoStack.at(-1);
+    if (!next || !plan.id) return;
+    setUndoStack((stack) => [...stack.slice(-19), selectedTimeBlocks.data]);
+    setRedoStack((stack) => stack.slice(0, -1));
+    setSelectedTimeBlocks({ planId: plan.id, data: next });
+  }, [plan.id, redoStack, selectedTimeBlocks.data]);
 
   // Cleanup timeout on component unmount to prevent memory leaks
   useEffect(() => {
@@ -567,16 +506,14 @@ const TimeBlockingProvider = ({
 
   const fetchCurrentTimeBlocks = useCallback(
     async (planId: string) => {
-      const result = await getTimeblocks(planId);
-      if (result.error || !result.data) return [];
-      return result.data
-        .flat()
-        .filter(
-          (tb: Timeblock) =>
-            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-        );
+      const snapshot = await getMeetPlanSnapshot(planId);
+      queryClient.setQueryData(['meet-plan', planId], snapshot);
+      return snapshot.timeblocks.filter(
+        (tb: Timeblock) =>
+          tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+      );
     },
-    [user?.id, user?.is_guest]
+    [queryClient, user?.id, user?.is_guest]
   );
 
   const resetLocalTimeblocks = useCallback(async () => {
@@ -589,112 +526,79 @@ const TimeBlockingProvider = ({
     setIsDirty(false);
   }, [fetchCurrentTimeBlocks, plan.id, user?.id]);
 
+  const availabilityMutation = useMutation({
+    mutationFn: async (nextTimeblocks: Timeblock[]) => {
+      if (!plan.id || !user?.id) throw new Error('A plan identity is required');
+      return replaceMeetAvailability(plan.id, {
+        guestId: user.is_guest ? user.id : undefined,
+        passwordHash: user.is_guest ? user.password_hash : undefined,
+        timeblocks: nextTimeblocks.map((timeblock) => ({
+          date: timeblock.date,
+          start_time: timeblock.start_time,
+          end_time: timeblock.end_time,
+          tentative: timeblock.tentative,
+        })),
+      });
+    },
+    onMutate: async (nextTimeblocks) => {
+      if (!plan.id || !user?.id) return {};
+      const queryKey = ['meet-plan', plan.id] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MeetPlanSnapshot>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<MeetPlanSnapshot>(queryKey, {
+          ...previous,
+          timeblocks: [
+            ...previous.timeblocks.filter(
+              (timeblock) =>
+                timeblock.user_id !== user.id ||
+                timeblock.is_guest !== Boolean(user.is_guest)
+            ),
+            ...nextTimeblocks.map((timeblock) => ({
+              ...timeblock,
+              plan_id: plan.id,
+              user_id: user.id,
+              is_guest: Boolean(user.is_guest),
+            })),
+          ],
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _next, context) => {
+      if (plan.id && context?.previous) {
+        queryClient.setQueryData(['meet-plan', plan.id], context.previous);
+      }
+    },
+    onSuccess: (snapshot) => {
+      if (plan.id) queryClient.setQueryData(['meet-plan', plan.id], snapshot);
+    },
+  });
+
   const syncTimeBlocks = useCallback(async () => {
     if (!plan.id || !user?.id) return;
-
-    // Capture values after check to ensure they're not undefined
-    const planId = plan.id;
-    const userId = user.id;
-    const passwordHash = user.password_hash;
-
-    const addTimeBlocksBatch = async (timeblocksToAdd: Timeblock[]) => {
-      if (planId !== selectedTimeBlocks.planId || timeblocksToAdd.length === 0)
-        return;
-      await createTimeblocks(planId, {
-        user_id: userId,
-        password_hash: passwordHash,
-        timeblocks: timeblocksToAdd,
-      });
-    };
-
-    const removeTimeBlock = async (timeblock: Timeblock) => {
-      if (planId !== selectedTimeBlocks.planId || !timeblock.id) return;
-      await deleteTimeblock(planId, timeblock.id, {
-        user_id: userId,
-        password_hash: passwordHash,
-      });
-    };
-
-    const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-    const localTimeblocks = selectedTimeBlocks.data;
-    if (!serverTimeblocks || !localTimeblocks) return;
-    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) {
-      // No changes needed, clear dirty state
-      clearDirtyStateWithTimeblocks([]);
-      return;
-    }
-    if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-      await addTimeBlocksBatch(localTimeblocks);
-      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      setSelectedTimeBlocks({
-        planId: plan.id,
-        data: syncedServerTimeblocks,
-      });
-      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
-      return;
-    }
-    if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
-      await Promise.all(
-        serverTimeblocks.map((timeblock: Timeblock) =>
-          removeTimeBlock(timeblock)
-        )
-      );
-      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      setSelectedTimeBlocks({
-        planId: plan.id,
-        data: syncedServerTimeblocks,
-      });
-      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
-      return;
-    }
-    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) {
-      // No changes needed, clear dirty state
-      clearDirtyStateWithTimeblocks(serverTimeblocks);
-      return;
-    }
-    const timeblocksToRemove = findTimeBlocksToRemove(
-      serverTimeblocks,
-      localTimeblocks
+    const snapshot = await availabilityMutation.mutateAsync(
+      selectedTimeBlocks.data
     );
-    const timeblocksToAdd = findTimeBlocksToAdd(
-      localTimeblocks,
-      serverTimeblocks
+    const synced = snapshot.timeblocks.filter(
+      (timeblock) =>
+        timeblock.user_id === user.id &&
+        timeblock.is_guest === Boolean(user.is_guest)
     );
-    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) {
-      // No changes needed, clear dirty state
-      clearDirtyStateWithTimeblocks(serverTimeblocks);
-      return;
-    }
-    if (timeblocksToRemove.length > 0)
-      await Promise.all(
-        timeblocksToRemove.map((timeblock) =>
-          timeblock.id ? removeTimeBlock(timeblock) : null
-        )
-      );
-    if (timeblocksToAdd.length > 0) await addTimeBlocksBatch(timeblocksToAdd);
-    const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-    setSelectedTimeBlocks({
-      planId: plan.id,
-      data: syncedServerTimeblocks,
-    });
-
-    // Clear dirty state with the synced timeblocks
-    clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
+    setSelectedTimeBlocks({ planId: plan.id, data: synced });
+    clearDirtyStateWithTimeblocks(synced);
   }, [
-    fetchCurrentTimeBlocks,
-    plan.id,
-    user,
-    selectedTimeBlocks,
+    availabilityMutation,
     clearDirtyStateWithTimeblocks,
+    plan.id,
+    selectedTimeBlocks.data,
+    user,
   ]);
-
-  // --- Remove the auto-sync useEffect ---
-  // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   const [isSaving, setIsSaving] = useState(false);
 
   // Handle manual save
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setIsSaving(true);
     try {
       await syncTimeBlocks();
@@ -704,7 +608,15 @@ const TimeBlockingProvider = ({
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [router, syncTimeBlocks]);
+
+  useEffect(() => {
+    if (editing.enabled || !isDirty || !user?.id || plan.is_confirmed) return;
+    const timeout = window.setTimeout(() => {
+      void handleSave();
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [editing.enabled, handleSave, isDirty, plan.is_confirmed, user?.id]);
 
   return (
     <TimeBlockContext.Provider
@@ -719,7 +631,11 @@ const TimeBlockingProvider = ({
         displayMode,
         isDirty,
         isSaving,
+        canUndo: undoStack.length > 0,
+        canRedo: redoStack.length > 0,
         handleSave,
+        undo,
+        redo,
         getPreviewUsers,
         getOpacityForDate,
 

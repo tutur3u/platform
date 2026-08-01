@@ -32,7 +32,7 @@ function DatePlanner({
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
   const t = useTranslations('meet-together-plan-details');
-  const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
+  const { user, setPreviewDate } = useTimeBlocking();
   const [tentativeMode, setTentativeMode] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const isMobile = useIsMobile();
@@ -125,35 +125,10 @@ function DatePlanner({
         </div>
       )}
 
-      <div
-        onMouseUp={
-          editable
-            ? (e) => {
-                e.preventDefault();
-                endEditing();
-              }
-            : undefined
-        }
-        onMouseLeave={
-          editable
-            ? (e) => {
-                e.preventDefault();
-                endEditing();
-              }
-            : undefined
-        }
-        onTouchEnd={
-          editable
-            ? () => {
-                if (!editing.enabled) return;
-                endEditing();
-              }
-            : undefined
-        }
-        className="mt-4 flex items-start justify-center gap-2"
-      >
+      <div className="mt-4 flex items-start justify-center gap-2">
         {dates && (
           <div
+            data-meet-grid-scroller
             className="flex flex-col items-start justify-start gap-4 overflow-x-auto"
             onMouseLeave={
               editable

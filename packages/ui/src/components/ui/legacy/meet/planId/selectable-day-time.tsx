@@ -2,6 +2,7 @@ import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { timetzToTime } from '@tuturuuu/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 export default function SelectableDayTime({
   date,
@@ -18,6 +19,36 @@ export default function SelectableDayTime({
 }) {
   const { editing, selectedTimeBlocks, edit, setPreviewDate, endEditing } =
     useTimeBlocking();
+
+  const editCellAtPointer = (event: ReactPointerEvent<HTMLElement>) => {
+    const edge = 72;
+    const scrollStep = 18;
+    if (event.clientY < edge) window.scrollBy({ top: -scrollStep });
+    else if (event.clientY > window.innerHeight - edge)
+      window.scrollBy({ top: scrollStep });
+
+    const horizontalScroller = event.currentTarget.closest<HTMLElement>(
+      '[data-meet-grid-scroller]'
+    );
+    if (horizontalScroller) {
+      const bounds = horizontalScroller.getBoundingClientRect();
+      if (event.clientX < bounds.left + edge)
+        horizontalScroller.scrollBy({ left: -scrollStep });
+      else if (event.clientX > bounds.right - edge)
+        horizontalScroller.scrollBy({ left: scrollStep });
+    }
+
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>('[data-meet-slot]');
+    const isoDate = target?.dataset.meetSlot;
+    if (!isoDate) return;
+    edit({
+      mode: (target.dataset.meetMode as 'add' | 'remove') || 'add',
+      date: new Date(isoDate),
+      tentativeMode: target.dataset.meetTentative === 'true',
+    });
+  };
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
@@ -153,67 +184,68 @@ export default function SelectableDayTime({
           } as const;
 
           return (
-            // biome-ignore lint/a11y/useKeyWithMouseEvents: mouse drag selection is intentional UX for time blocking
-            <div
+            <button
+              type="button"
               key={`${date}-${i}`}
-              onMouseDown={
-                disabled
-                  ? undefined
-                  : isSelectable
-                    ? (e) => {
-                        e.preventDefault();
-                        edit(editData);
-                      }
-                    : undefined
+              data-meet-slot={currentDate.toISOString()}
+              data-meet-mode={editData.mode}
+              data-meet-tentative={String(editData.tentativeMode ?? false)}
+              disabled={!isSelectable}
+              aria-label={
+                isSelectable
+                  ? `${date} ${dayjs(currentDate).format('HH:mm')}`
+                  : undefined
               }
-              onMouseOver={
-                disabled
-                  ? undefined
-                  : isSelectable
-                    ? (e) => {
-                        e.preventDefault();
-                        if (!editing.enabled) return;
-                        edit(editData);
-                      }
-                    : (e) => {
-                        e.preventDefault();
-                        setPreviewDate(editData.date);
-                      }
-              }
-              onTouchStart={
-                disabled
-                  ? undefined
-                  : isSelectable
-                    ? (e) => {
-                        if (editing.enabled) return;
-                        e.preventDefault();
-                        edit(editData, e.nativeEvent);
-                      }
-                    : (e) => {
-                        e.preventDefault();
-                        setPreviewDate(editData.date);
-                      }
-              }
-              onTouchMove={
-                disabled
-                  ? undefined
-                  : isSelectable
-                    ? (e) => {
-                        if (!editing.enabled) return;
-                        e.preventDefault();
-                        edit(editData, e.nativeEvent);
-                      }
-                    : undefined
-              }
-              onTouchEnd={
-                disabled
-                  ? undefined
-                  : (e) => {
-                      e.preventDefault();
-                      if (editing.enabled) {
-                        endEditing();
-                      }
+              aria-pressed={isSelectable ? isSelected : undefined}
+              onPointerDown={
+                isSelectable
+                  ? (event) => {
+                      event.preventDefault();
+                      event.currentTarget.setPointerCapture(event.pointerId);
+                      edit(editData);
                     }
+                  : undefined
+              }
+              onPointerMove={
+                isSelectable
+                  ? (event) => {
+                      if (!editing.enabled) return;
+                      event.preventDefault();
+                      editCellAtPointer(event);
+                    }
+                  : undefined
+              }
+              onPointerUp={
+                isSelectable
+                  ? (event) => {
+                      event.preventDefault();
+                      if (
+                        event.currentTarget.hasPointerCapture(event.pointerId)
+                      )
+                        event.currentTarget.releasePointerCapture(
+                          event.pointerId
+                        );
+                      endEditing();
+                    }
+                  : undefined
+              }
+              onPointerCancel={isSelectable ? endEditing : undefined}
+              onPointerEnter={
+                isSelectable
+                  ? () => {
+                      if (editing.enabled) edit(editData);
+                    }
+                  : () => setPreviewDate(editData.date)
+              }
+              onKeyDown={
+                isSelectable
+                  ? (event) => {
+                      if (event.key !== ' ' && event.key !== 'Enter') return;
+                      event.preventDefault();
+                      edit(editData);
+                      queueMicrotask(endEditing);
+                    }
+                  : undefined
               }
               className={`${
                 i + hourSplits < array.length
@@ -229,7 +261,7 @@ export default function SelectableDayTime({
                       ? 'bg-dynamic-red/50'
                       : 'bg-dynamic-red/20'
                   : ''
-              } relative h-3 w-full ${cn(
+              } relative h-3 w-full touch-none focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-primary ${cn(
                 hideBorder
                   ? ''
                   : (i + 1) % hourSplits === 0

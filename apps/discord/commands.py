@@ -449,8 +449,8 @@ class CommandHandler:
             )
             return
 
-        # Construct share URL (tumeet.me/{id})
-        share_url = f"https://tumeet.me/{plan_id}"
+        # Construct the canonical Tuturuuu Meet share URL.
+        share_url = f"https://tuturuuu.com/meet/plans/{plan_id}"
         user_name = user_info.get("display_name") or user_info.get("handle") or "User"
         message = (
             f"✅ **Tuturuuu Meet plan created by {user_name}!**\n\n"

@@ -1,20 +1,18 @@
-import MeetTogetherPlanDetailsPage from '@tuturuuu/ui/legacy/meet/planId/page';
-import type { Metadata } from 'next';
-import { BASE_URL } from '@/constants/common';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Meet Together Plan',
-  description:
-    'Compare features across Meet Together plans and choose the right fit.',
-};
-
-interface PlanPageProps {
-  params: Promise<{
-    planId: string;
-  }>;
-}
-
-export default async function PlanPage({ params }: PlanPageProps) {
-  const baseUrl = BASE_URL;
-  return <MeetTogetherPlanDetailsPage params={params} baseUrl={baseUrl} />;
+export default async function LegacyMeetPlanPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ planId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { planId } = await params;
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(await searchParams)) {
+    for (const item of Array.isArray(value) ? value : value ? [value] : []) {
+      query.append(key, item);
+    }
+  }
+  permanentRedirect(`/meet/plans/${planId}${query.size ? `?${query}` : ''}`);
 }

@@ -5,13 +5,13 @@ import type {
   PollOption,
   UserVoteWithUserInfo,
 } from '@tuturuuu/types/primitives/Poll';
-import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
+import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import PlanDetailsClient from './plan-details-client';
+import { MeetPlanLiveRoot } from './meet-plan-live-root';
 
 interface Props {
   params: Promise<{
@@ -28,7 +28,7 @@ export default async function MeetTogetherPlanDetailsPage({
 }: Props) {
   const { planId } = await params;
 
-  const platformUser = await getCurrentUser();
+  const platformUser = (await getCurrentUser()) as PlatformUser | null;
   const plan = await getPlan(planId, { actorUserId });
 
   if (!plan) return notFound();
@@ -39,30 +39,70 @@ export default async function MeetTogetherPlanDetailsPage({
   const users: PlanUser[] = await getUsers(canonicalPlanId);
   const polls = await getPollsForPlan(canonicalPlanId);
   const timeblocks = await getTimeBlocks(canonicalPlanId);
+  const finalizedTimeframes = await getFinalizedTimeframes(canonicalPlanId);
+
+  const resolvedPlatformUser =
+    platformUser ??
+    (actorUserId
+      ? ({ id: actorUserId, is_guest: false } as PlatformUser)
+      : null);
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
       <Suspense fallback={null}>
         {plan.id && (
-          <TimeBlockingProvider
-            key={`${platformUser?.id || 'guest'}-${plan.id}`}
-            platformUser={platformUser}
-            plan={plan}
-            users={users}
-            timeblocks={timeblocks}
-          >
-            <PlanDetailsClient
-              plan={plan}
-              polls={polls}
-              users={users}
-              timeblocks={timeblocks}
-              baseUrl={baseUrl}
-            />
-          </TimeBlockingProvider>
+          <MeetPlanLiveRoot
+            platformUser={resolvedPlatformUser}
+            baseUrl={baseUrl}
+            initialSnapshot={{
+              plan,
+              polls,
+              users,
+              timeblocks,
+              finalizedTimeframes,
+              viewer: {
+                id: resolvedPlatformUser?.id ?? null,
+                isCreator: resolvedPlatformUser?.id === plan.creator_id,
+              },
+              revision:
+                finalizedTimeframes.at(-1)?.updated_at ??
+                plan.finalized_at ??
+                plan.created_at ??
+                plan.id,
+            }}
+          />
         )}
       </Suspense>
     </div>
   );
+}
+
+async function getFinalizedTimeframes(planId: string) {
+  const admin = await createAdminClient();
+  const query = (
+    admin as unknown as {
+      from(table: string): {
+        select(columns: string): {
+          eq(
+            column: string,
+            value: string
+          ): {
+            order(column: string): PromiseLike<{
+              data: unknown[] | null;
+              error: unknown;
+            }>;
+          };
+        };
+      };
+    }
+  )
+    .from('meet_together_finalized_timeframes')
+    .select('*')
+    .eq('plan_id', planId)
+    .order('position');
+  const { data, error } = await query;
+  if (error) return [];
+  return data as import('@tuturuuu/types/primitives/MeetTogetherPlan').MeetFinalizedTimeframe[];
 }
 
 async function getUsers(planId: string) {

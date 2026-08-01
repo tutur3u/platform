@@ -1519,7 +1519,7 @@ function renderBlueGreenProxyConfig(
     'server {',
     '  listen 7803;',
     '  listen 7816;',
-    '  server_name tumeet.me meet.tuturuuu.com;',
+    '  server_name meet.tuturuuu.com;',
     '  set $platform_project_id "meet";',
     '  set $platform_selected_branch "production";',
     '  set $platform_upstream_service "meet-realtime";',

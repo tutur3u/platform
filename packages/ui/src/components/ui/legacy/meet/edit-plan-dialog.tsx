@@ -1,7 +1,12 @@
 'use client';
 
-import { deletePlan, updatePlan } from '@tuturuuu/apis/meet/actions';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil } from '@tuturuuu/icons';
+import {
+  deleteMeetPlan,
+  type MeetPlanSnapshot,
+  updateMeetPlan,
+} from '@tuturuuu/internal-api';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
@@ -37,10 +42,11 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
 import timezones from '@tuturuuu/utils/timezones';
 import dayjs from 'dayjs';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
@@ -63,6 +69,8 @@ const FormSchema = z
       .array(z.string())
       .min(1, { message: 'At least one date is required' }),
     is_public: z.boolean().optional(),
+    timezone: z.string().optional(),
+    duration_minutes: z.number().int().min(15).max(480),
   })
   .refine(
     (data) => {
@@ -113,10 +121,39 @@ export default function EditPlanDialog({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   const [isOpened, setIsOpened] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const updateMutation = useMutation({
+    mutationFn: (data: z.infer<typeof FormSchema>) =>
+      updateMeetPlan(plan.id!, data),
+    onMutate: async (data) => {
+      if (!plan.id) return {};
+      const queryKey = ['meet-plan', plan.id] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<MeetPlanSnapshot>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<MeetPlanSnapshot>(queryKey, {
+          ...previous,
+          plan: { ...previous.plan, ...data },
+        });
+      }
+      return { previous };
+    },
+    onError: (_error, _data, context) => {
+      if (plan.id && context?.previous)
+        queryClient.setQueryData(['meet-plan', plan.id], context.previous);
+    },
+    onSuccess: (snapshot) => {
+      if (plan.id) queryClient.setQueryData(['meet-plan', plan.id], snapshot);
+    },
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteMeetPlan(plan.id!),
+  });
 
   // Parse plan data once for form initialization
   const parsedStartTime = plan.start_time
@@ -126,14 +163,16 @@ export default function EditPlanDialog({
   const parsedDates = plan.dates
     ? plan.dates.map((dateStr: string) => new Date(dateStr))
     : [];
-  const parsedTimezone = plan.start_time
-    ? (() => {
-        const offset = parseTimezoneFromTimetz(plan.start_time);
-        return offset !== undefined
-          ? timezones.find((tz) => tz.offset === offset)
-          : undefined;
-      })()
-    : undefined;
+  const parsedTimezone = plan.timezone
+    ? timezones.find((tz) => tz.utc.includes(plan.timezone!))
+    : plan.start_time
+      ? (() => {
+          const offset = parseTimezoneFromTimetz(plan.start_time);
+          return offset !== undefined
+            ? timezones.find((tz) => tz.offset === offset)
+            : undefined;
+        })()
+      : undefined;
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -146,6 +185,8 @@ export default function EditPlanDialog({
         .sort((a: Date, b: Date) => a.getTime() - b.getTime())
         .map((date: Date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
+      timezone: plan.timezone ?? parsedTimezone?.utc[0],
+      duration_minutes: plan.duration_minutes ?? 60,
     },
   });
 
@@ -157,6 +198,8 @@ export default function EditPlanDialog({
   const watchedStartTime = form.watch('start_time');
   const watchedEndTime = form.watch('end_time');
   const watchedDates = form.watch('dates');
+  const watchedTimezone = form.watch('timezone');
+  const watchedDuration = form.watch('duration_minutes');
 
   // Convert form values back to component-friendly formats
   const currentStartTime = watchedStartTime
@@ -170,12 +213,13 @@ export default function EditPlanDialog({
       ? watchedDates.map((dateStr: string) => new Date(dateStr))
       : parsedDates;
   const currentTimezone = watchedStartTime
-    ? (() => {
+    ? (timezones.find((tz) => tz.utc.includes(watchedTimezone ?? '')) ??
+      (() => {
         const offset = parseTimezoneFromTimetz(watchedStartTime);
         return offset !== undefined
           ? timezones.find((tz) => tz.offset === offset)
           : parsedTimezone;
-      })()
+      })())
     : parsedTimezone;
 
   const originalDatesString = JSON.stringify(
@@ -188,7 +232,9 @@ export default function EditPlanDialog({
     plan.name !== watchedName ||
     originalDatesString !== newDatesString ||
     plan.start_time !== watchedStartTime ||
-    plan.end_time !== watchedEndTime;
+    plan.end_time !== watchedEndTime ||
+    plan.timezone !== watchedTimezone ||
+    (plan.duration_minutes ?? 60) !== watchedDuration;
 
   const handleSubmit = async () => {
     if (!plan.id) {
@@ -234,20 +280,20 @@ export default function EditPlanDialog({
       return;
     }
 
-    const result = await updatePlan(plan.id, data);
-
-    if (result.data) {
+    try {
+      await updateMutation.mutateAsync(data);
       onSuccess?.();
       router.refresh();
       setUpdating(false);
       setIsOpened(false);
-    } else {
+    } catch (error) {
       setUpdating(false);
       toast({
         title: t('meet-together-plan-details.something_went_wrong'),
         description:
-          result.error ||
-          t('meet-together-plan-details.cant_update_plan_right_now'),
+          error instanceof Error
+            ? error.message
+            : t('meet-together-plan-details.cant_update_plan_right_now'),
       });
     }
   };
@@ -263,16 +309,16 @@ export default function EditPlanDialog({
 
     setDeleting(true);
     try {
-      const result = await deletePlan(plan.id);
-
-      if (result.data) {
-        router.push('/meet-together');
-      } else {
+      try {
+        await deleteMutation.mutateAsync();
+        router.push(pathname.includes('/meet/plans/') ? '/meet' : '/');
+      } catch (error) {
         toast({
           title: t('meet-together-plan-details.something_went_wrong'),
           description:
-            result.error ||
-            t('meet-together-plan-details.cant_delete_plan_right_now'),
+            error instanceof Error
+              ? error.message
+              : t('meet-together-plan-details.cant_delete_plan_right_now'),
         });
       }
     } finally {
@@ -424,6 +470,7 @@ export default function EditPlanDialog({
                   <TimezoneSelector
                     value={currentTimezone}
                     onValueChange={(newTimezone) => {
+                      form.setValue('timezone', newTimezone?.utc[0]);
                       // Update both start and end times with new timezone
                       form.setValue(
                         'start_time',
@@ -439,6 +486,23 @@ export default function EditPlanDialog({
                       );
                     }}
                   />
+                </div>
+                <div className="grid w-full gap-2">
+                  <FormLabel>{t('meet-together.duration')}</FormLabel>
+                  <Tabs
+                    value={String(watchedDuration)}
+                    onValueChange={(value) =>
+                      form.setValue('duration_minutes', Number(value))
+                    }
+                  >
+                    <TabsList className="grid h-auto w-full grid-cols-4">
+                      {[30, 45, 60, 90].map((minutes) => (
+                        <TabsTrigger key={minutes} value={String(minutes)}>
+                          {minutes}m
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
                 </div>
               </div>
 

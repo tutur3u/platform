@@ -101,7 +101,7 @@ function getLegacyPathRedirect(pathname: string): string | null {
   if (rest[0] === 'join' && rest.length === 2) {
     return `${prefix}/r/${rest[1]}`;
   }
-  // A bare 32-hex segment is a legacy Meet Together plan id.
+  // A bare 32-hex segment is a legacy Tuturuuu Meet plan id.
   if (rest.length === 1 && rest[0] && LEGACY_PLAN_ID_PATTERN.test(rest[0])) {
     return `${prefix}/plans/${rest[0]}`;
   }

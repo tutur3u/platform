@@ -2200,6 +2200,26 @@
       "note": "Moved out of apps/web and apps/tanstack-web into apps/infrastructure during the infrastructure app extraction; the old web/TanStack route is intentionally removed without redirect.",
       "status": "accepted-removal",
       "targetOwner": "infrastructure-app"
+    },
+    "api:/api/v1/meet/plans/:planId:apps/web/src/app/api/v1/meet/plans/[planId]/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Tuturuuu Meet plan detail, update, and delete API. GET returns plan data, participants, polls, availability, finalized alternatives, viewer context, and a reconciliation revision; creator mutations preserve legacy timeblock adjustment behavior. The Rust port is pending."
+    },
+    "api:/api/v1/meet/plans:apps/web/src/app/api/v1/meet/plans/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class authenticated Tuturuuu Meet plan creation endpoint with timezone and duration validation. The Rust port is pending."
+    },
+    "api:/api/v1/meet/plans/:planId/availability:apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Atomic authenticated-user or validated-guest availability replacement for Tuturuuu Meet. The Rust port is pending."
+    },
+    "api:/api/v1/meet/plans/:planId/finalization:apps/web/src/app/api/v1/meet/plans/[planId]/finalization/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Creator-only atomic finalize and reopen operations for persisted Tuturuuu Meet alternatives. The Rust port is pending."
     }
   }
 }

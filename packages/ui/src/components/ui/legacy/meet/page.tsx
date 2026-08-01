@@ -154,6 +154,7 @@ export async function MeetTogetherPage({
             <CardContent className="p-6 md:p-8">
               <Form
                 wsId={wsId}
+                planBasePath={path || '/meet/plans'}
                 user={
                   user
                     ? {

@@ -842,7 +842,7 @@ were rebuilt and which ones were served from the cached build inputs.
 `apps/meet-realtime` is the internal control-plane service for Meet calls,
 webinars, and low-latency broadcast coordination. It is a Bun WebSocket service
 started by production Compose as `meet-realtime` on container port `7816`.
-`web-proxy` exposes `/realtime` for `tumeet.me` and `meet.tuturuuu.com` and
+`web-proxy` exposes `/realtime` for `meet.tuturuuu.com` and
 forwards WebSocket upgrades to that service.
 
 Production meeting logic stays on Tuturuuu infrastructure:

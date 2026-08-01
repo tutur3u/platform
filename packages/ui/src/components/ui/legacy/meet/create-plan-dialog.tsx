@@ -1,11 +1,12 @@
 'use client';
 
-import { createPlan } from '@tuturuuu/apis/meet/actions';
+import { useMutation } from '@tanstack/react-query';
 import {
   ClipboardList,
   MapPin as MapPinIcon,
   Sparkles as SparklesIcon,
 } from '@tuturuuu/icons';
+import { createMeetPlan } from '@tuturuuu/internal-api';
 import type { User } from '@tuturuuu/types';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
@@ -52,6 +53,7 @@ interface Props {
     startTime: number | undefined;
     endTime: number | undefined;
     timezone: Timezone | undefined;
+    durationMinutes: number;
     wsId?: string;
   };
 }
@@ -63,6 +65,8 @@ const FormSchema = z.object({
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
+  timezone: z.string().optional(),
+  duration_minutes: z.number().int().min(15).max(480),
   ws_id: z.string().optional(),
   agenda_enabled: z.boolean().optional(), // <-- Added field for agenda toggle
   agenda_content: z.custom<JSONContent>().optional(),
@@ -90,12 +94,19 @@ const convertToTimetz = (
   return `${timeStr}${offsetStr}`;
 };
 
-export default function CreatePlanDialog({ plan }: Props) {
+export default function CreatePlanDialog({
+  plan,
+  planBasePath = '/meet/plans',
+}: Props & { planBasePath?: string }) {
   const t = useTranslations('meet-together');
   const router = useRouter();
 
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
+  const createMutation = useMutation({
+    mutationFn: (payload: Parameters<typeof createMeetPlan>[0]) =>
+      createMeetPlan(payload),
+  });
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -107,6 +118,8 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
+      timezone: plan.timezone?.utc[0],
+      duration_minutes: plan.durationMinutes,
       ws_id: plan.wsId,
       agenda_enabled: false, // <-- Default value for agenda toggle
       agenda_content: undefined,
@@ -153,17 +166,21 @@ export default function CreatePlanDialog({ plan }: Props) {
 
     const { agenda_enabled: _, ...rest } = data;
 
-    const result = await createPlan(rest);
-
-    if (result.data) {
-      const normalizedId = result.data.id.replace(/-/g, '');
-      router.push(`/meet-together/plans/${normalizedId}`);
+    try {
+      const result = await createMutation.mutateAsync(
+        rest as Parameters<typeof createMeetPlan>[0]
+      );
+      const normalizedId = result.id.replace(/-/g, '');
+      router.push(`${planBasePath}/${normalizedId}`);
       router.refresh();
-    } else {
+    } catch (error) {
       setCreating(false);
       toast({
         title: t('something_went_wrong'),
-        description: result.error || t('cant_create_plan_right_now'),
+        description:
+          error instanceof Error
+            ? error.message
+            : t('cant_create_plan_right_now'),
       });
     }
   };
@@ -283,7 +300,7 @@ export default function CreatePlanDialog({ plan }: Props) {
                               className="mb-0 cursor-pointer font-medium text-foreground"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              Where TuMeet?
+                              Where to meet?
                             </FormLabel>
                           </div>
                           <p className="text-muted-foreground text-xs leading-relaxed">

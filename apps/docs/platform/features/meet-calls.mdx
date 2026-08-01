@@ -175,7 +175,7 @@ would therefore not shorten the media path by a single hop.
 It is also not currently possible. `@opennextjs/cloudflare` requires Next
 `>=16.2.11`, and the monorepo is on the `16.3.0-preview` line, which npm semver
 ranges exclude. Pinning `apps/meet` alone to 16.2.12 was tried and rejected:
-16.2's `cacheComponents` is stricter than the preview, and both Meet Together
+16.2's `cacheComponents` is stricter than the preview, and both Tuturuuu Meet
 routes fail to prerender with `Uncached data was accessed outside of
 <Suspense>`. Fixing that means changing `@tuturuuu/ui/legacy/meet/*`, which
 other apps share.
@@ -201,7 +201,7 @@ workspace segment, with no `/workspace` prefix.
 | --- | --- |
 | Workspace plans, meetings | `/<wsId>/plans`, `/<wsId>/meetings` |
 | A call | `/r/<code>` |
-| A public Meet Together plan | `/plans/<planId>` |
+| A public Tuturuuu Meet plan | `/plans/<planId>` |
 
 `plans` and `r` are static segments, which is what frees the bare `/<wsId>`
 position — public plan pages previously occupied it, so `/<wsId>` and

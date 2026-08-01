@@ -23,7 +23,7 @@ export default async function TumeetPage({
 
   return (
     <Suspense>
-      <MeetTogetherPage searchParams={searchParams} path="" />
+      <MeetTogetherPage searchParams={searchParams} path="/plans" />
     </Suspense>
   );
 }

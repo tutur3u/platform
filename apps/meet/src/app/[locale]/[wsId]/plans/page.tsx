@@ -36,7 +36,7 @@ export default async function TumeetPage({
         <MeetTogetherPage
           scope={workspace?.personal ? 'personal-consolidated' : 'workspace'}
           wsId={wsId}
-          path=""
+          path="/plans"
           searchParams={searchParams}
         />
       </Suspense>
