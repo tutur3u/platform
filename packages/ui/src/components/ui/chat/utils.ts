@@ -48,10 +48,13 @@ export function resolvePendingChatSendRequest(
 }
 
 export function normalizeChatConversationScope(
-  scope?: string | null
+  scope?: string | null,
+  fallback: ChatConversationScope = 'personal'
 ): ChatConversationScope {
-  if (scope === 'external' || scope === 'workspaces') return scope;
-  return 'personal';
+  if (scope === 'external' || scope === 'personal' || scope === 'workspaces') {
+    return scope;
+  }
+  return fallback;
 }
 
 export function getChatConversationScope(

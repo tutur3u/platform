@@ -61,7 +61,7 @@ describe('external chat binding serialization', () => {
     });
 
     expect(result?.readiness).toEqual({
-      errors: ['bridge_verification_stale'],
+      errors: ['settings_invalid', 'bridge_verification_stale'],
       ready: false,
     });
   });

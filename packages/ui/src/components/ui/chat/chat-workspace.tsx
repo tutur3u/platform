@@ -579,6 +579,7 @@ export function ChatWorkspace({
               </div>
             ) : (
               <MessageComposer
+                allowAttachments={conversationScope !== 'external'}
                 disabled={!activeConversationId}
                 isSending={sendMessage.isPending}
                 isUploading={uploadAttachment.isPending}

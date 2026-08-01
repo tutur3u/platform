@@ -186,6 +186,7 @@ export const POST = withSessionAuth<RouteParams>(
       return sendAiChatMessage({
         attachments: parsed.data.attachments ?? [],
         auth,
+        clientRequestId: parsed.data.clientRequestId,
         content: parsed.data.content,
         context: context.context,
         conversationId: params.conversationId,

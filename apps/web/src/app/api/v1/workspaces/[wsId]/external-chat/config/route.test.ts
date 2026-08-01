@@ -165,4 +165,28 @@ describe('external chat config route', () => {
       refreshed
     );
   });
+
+  it('returns a masked conflict while an outbound delivery is active', async () => {
+    mocks.writeExternalChatSettings.mockRejectedValue(
+      new Error('external_chat_delivery_in_progress')
+    );
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(validSettings) as never, params);
+
+    expect(response.status).toBe(409);
+    expect(await response.text()).not.toContain(
+      'external_chat_delivery_in_progress'
+    );
+  });
+
+  it('masks unexpected settings persistence failures', async () => {
+    mocks.writeExternalChatSettings.mockRejectedValue(
+      new Error('secret-value')
+    );
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(validSettings) as never, params);
+
+    expect(response.status).toBe(500);
+    expect(await response.text()).not.toContain('secret-value');
+  });
 });

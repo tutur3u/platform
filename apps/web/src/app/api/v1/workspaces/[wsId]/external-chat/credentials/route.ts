@@ -27,6 +27,7 @@ import {
 import { safeParseBody } from '@/lib/safe-parse-body';
 
 type Params = { wsId: string };
+const CREDENTIAL_CLEAR_MARKER = 'external-chat-clear';
 const mutationSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('rotate_ingest') }),
   z.object({
@@ -72,7 +73,26 @@ export const POST = withSessionAuth<Params>(
         current.credentials?.verified_at ||
           current.credentials?.pairing_ticket_consumed_at
       );
-      if (paired) {
+      if (!paired) {
+        try {
+          await clearExternalChatCredential(
+            wsId,
+            parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
+          );
+        } catch (error) {
+          return credentialMutationErrorResponse(error, current);
+        }
+      } else {
+        try {
+          await stageCredential(wsId, {
+            action: parsed.data.action,
+            encrypted: CREDENTIAL_CLEAR_MARKER,
+            hash: null,
+            lastFour: '',
+          });
+        } catch (error) {
+          return credentialMutationErrorResponse(error, current);
+        }
         try {
           await updateExternalChatBridgeCredential({
             action: parsed.data.action,
@@ -82,16 +102,26 @@ export const POST = withSessionAuth<Params>(
           return NextResponse.json(
             {
               error: 'External chat bridge credential revocation failed',
-              state: serializeExternalChatBinding(current),
+              state: serializeExternalChatBinding(
+                await readExternalChatBinding(wsId)
+              ),
             },
             { status: 502 }
           );
         }
+        try {
+          await promoteExternalChatCredential(
+            wsId,
+            parsed.data.action,
+            CREDENTIAL_CLEAR_MARKER
+          );
+        } catch (error) {
+          return credentialMutationErrorResponse(
+            error,
+            (await readExternalChatBinding(wsId)) ?? current
+          );
+        }
       }
-      await clearExternalChatCredential(
-        wsId,
-        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
-      );
       return NextResponse.json({
         state: serializeExternalChatBinding(
           await readExternalChatBinding(wsId)
@@ -113,12 +143,16 @@ export const POST = withSessionAuth<Params>(
     if (parsed.data.action === 'rotate_ingest') {
       issuedSecret = createIngestSecret();
       const encrypted = await encryptControlSecret(wsId, issuedSecret);
-      await stageCredential(wsId, {
-        action: 'set_ingest',
-        encrypted,
-        hash: hashExternalChatSecret(issuedSecret),
-        lastFour: secretLastFour(issuedSecret),
-      });
+      try {
+        await stageCredential(wsId, {
+          action: 'set_ingest',
+          encrypted,
+          hash: hashExternalChatSecret(issuedSecret),
+          lastFour: secretLastFour(issuedSecret),
+        });
+      } catch (error) {
+        return credentialMutationErrorResponse(error, current, issuedSecret);
+      }
       if (current?.credentials?.control_secret_encrypted) {
         try {
           await updateExternalChatBridgeCredential({
@@ -155,12 +189,16 @@ export const POST = withSessionAuth<Params>(
       }
     } else if (parsed.data.action === 'set_control') {
       const encrypted = await encryptControlSecret(wsId, parsed.data.secret);
-      await stageCredential(wsId, {
-        action: 'rotate_control',
-        encrypted,
-        hash: null,
-        lastFour: secretLastFour(parsed.data.secret),
-      });
+      try {
+        await stageCredential(wsId, {
+          action: 'rotate_control',
+          encrypted,
+          hash: null,
+          lastFour: secretLastFour(parsed.data.secret),
+        });
+      } catch (error) {
+        return credentialMutationErrorResponse(error, current);
+      }
       if (current?.credentials?.control_secret_encrypted) {
         try {
           await updateExternalChatBridgeCredential({
@@ -219,11 +257,15 @@ export const POST = withSessionAuth<Params>(
         );
       }
       const pairingTicket = createIngestSecret();
-      await issueExternalChatPairingTicket(
-        wsId,
-        hashExternalChatSecret(pairingTicket),
-        new Date(Date.now() + 5 * 60_000).toISOString()
-      );
+      try {
+        await issueExternalChatPairingTicket(
+          wsId,
+          hashExternalChatSecret(pairingTicket),
+          new Date(Date.now() + 5 * 60_000).toISOString()
+        );
+      } catch (error) {
+        return credentialMutationErrorResponse(error, current);
+      }
       try {
         await configureExternalChatBridge({
           ingestSecret: parsed.data.ingestSecret,
@@ -308,10 +350,33 @@ type BindingState = NonNullable<
   Awaited<ReturnType<typeof readExternalChatBinding>>
 >;
 
+function credentialMutationErrorResponse(
+  error: unknown,
+  state: BindingState,
+  secret?: string
+) {
+  const message = error instanceof Error ? error.message : '';
+  const conflict = [
+    'external_chat_pairing_in_progress',
+    'external_chat_delivery_in_progress',
+    'external_chat_credential_reconciliation_pending',
+  ].some((code) => message.includes(code));
+  return NextResponse.json(
+    {
+      error: conflict
+        ? 'External chat credential change is currently blocked'
+        : 'External chat credential change failed',
+      ...(secret ? { secret } : {}),
+      state: serializeExternalChatBinding(state),
+    },
+    { status: conflict ? 409 : 500 }
+  );
+}
+
 async function stageCredential(
   wsId: string,
   pending: {
-    action: 'rotate_control' | 'set_ingest';
+    action: 'clear_control' | 'clear_ingest' | 'rotate_control' | 'set_ingest';
     encrypted: string;
     hash: string | null;
     lastFour: string;
@@ -324,6 +389,24 @@ async function reconcilePendingCredential(wsId: string, state: BindingState) {
   const credentials = state.credentials;
   if (!credentials?.pending_action || !credentials.pending_secret_encrypted) {
     return state;
+  }
+  if (
+    credentials.pending_action === 'clear_control' ||
+    credentials.pending_action === 'clear_ingest'
+  ) {
+    await updateExternalChatBridgeCredential({
+      action: credentials.pending_action,
+      wsId,
+    });
+    await promoteExternalChatCredential(
+      wsId,
+      credentials.pending_action,
+      credentials.pending_secret_encrypted
+    );
+    const refreshed = await readExternalChatBinding(wsId);
+    if (!refreshed)
+      throw new Error('Binding disappeared during reconciliation');
+    return refreshed;
   }
   const pendingSecret = await decryptControlSecret(
     wsId,

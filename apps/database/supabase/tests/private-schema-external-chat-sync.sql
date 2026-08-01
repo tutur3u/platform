@@ -1,5 +1,5 @@
 begin;
-select plan(75);
+select plan(85);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -59,6 +59,11 @@ select has_index(
   'private', 'external_chat_events',
   'external_chat_events_remote_message_key',
   'remote messages are idempotent'
+);
+select has_index(
+  'public', 'ai_chat_messages',
+  'ai_chat_messages_persistence_request_key',
+  'AI bridge persistence requests are database-idempotent'
 );
 
 select function_privs_are(
@@ -203,9 +208,13 @@ select ok(
   ),
   'a stale verification cannot mark a newer configuration ready'
 );
-select private.external_chat_mark_verified(
-  (select ws_id from external_chat_test_context), 'ciphertext', 2
-);
+do $$
+begin
+  perform private.external_chat_mark_verified(
+    (select ws_id from external_chat_test_context), 'ciphertext', 2
+  );
+end;
+$$;
 
 create temporary table external_chat_test_results (
   attempt integer primary key,
@@ -309,6 +318,28 @@ where id = (
   from external_chat_test_results
   where attempt = 1
 );
+select is(
+  jsonb_array_length(private.external_chat_list_conversations(
+    (select ws_id from external_chat_test_context),
+    (select actor_id from external_chat_test_context),
+    'archived',
+    41,
+    0
+  )),
+  1,
+  'archived external channels remain visible in the archived inbox'
+);
+select is(
+  private.external_chat_list_conversations(
+    (select ws_id from external_chat_test_context),
+    (select actor_id from external_chat_test_context),
+    'archived',
+    41,
+    0
+  ) #>> '{0,id}',
+  (select result->>'conversationId' from external_chat_test_results where attempt = 1),
+  'archived inbox entries retain their native conversation identity'
+);
 insert into external_chat_test_results
 select 3, private.external_chat_import_event(
   ws_id, 'test-connector', 'agent-1', 'visitor-1', 'message-2',
@@ -373,7 +404,7 @@ select private.external_chat_reserve_reply(
   c.actor_id,
   repeat('d', 64),
   repeat('e', 64),
-  null
+  (select result->>'messageId' from external_chat_test_results where attempt = 1)::uuid
 )
 from external_chat_test_context c
 cross join external_chat_test_results r
@@ -426,7 +457,7 @@ set result = private.external_chat_reserve_reply(
   (select actor_id from external_chat_test_context),
   repeat('d', 64),
   repeat('e', 64),
-  null
+  (select result->>'messageId' from external_chat_test_results where attempt = 1)::uuid
 );
 select is(
   (select (result->>'configurationRevision')::bigint from external_chat_delivery_results),
@@ -466,7 +497,7 @@ select 1, private.external_chat_finalize_reply(
   c.actor_id,
   'reply',
   repeat('e', 64),
-  null
+  (select result->>'messageId' from external_chat_test_results where attempt = 1)::uuid
 )
 from external_chat_test_context c
 cross join external_chat_delivery_results d;
@@ -477,8 +508,8 @@ select is(
 );
 select is(
   (select result->>'replayed' from external_chat_finalize_results where attempt = 1),
-  'false',
-  'first finalization identifies newly completed persistence'
+  'true',
+  'an echo completed before finalization is reported as replayed'
 );
 insert into external_chat_finalize_results
 select 2, private.external_chat_finalize_reply(
@@ -487,7 +518,7 @@ select 2, private.external_chat_finalize_reply(
   c.actor_id,
   'reply',
   repeat('e', 64),
-  null
+  (select result->>'messageId' from external_chat_test_results where attempt = 1)::uuid
 )
 from external_chat_test_context c
 cross join external_chat_delivery_results d;
@@ -504,7 +535,55 @@ select is(
   (select result->>'messageId' from external_chat_echo_results),
   'the delivery is completed with the echoed native message'
 );
+select is(
+  (
+    select sender_id::text from private.chat_messages
+    where id = (select (result->>'messageId')::uuid from external_chat_echo_results)
+  ),
+  (select actor_id::text from external_chat_test_context),
+  'staff echoes are reconciled to the native actor before realtime fanout'
+);
+select is(
+  (
+    select reply_to_message_id::text from private.chat_messages
+    where id = (select (result->>'messageId')::uuid from external_chat_echo_results)
+  ),
+  (select result->>'messageId' from external_chat_test_results where attempt = 1),
+  'staff echoes retain the reserved native reply target'
+);
 
+update private.external_chat_binding_credentials
+set pending_action = null,
+    pending_secret_encrypted = null,
+    pending_secret_hash = null,
+    pending_secret_last_four = null,
+    pending_created_at = null
+where ws_id = (select ws_id from external_chat_test_context);
+update private.external_chat_binding_credentials
+set pairing_ticket_hash = repeat('9', 64),
+    pairing_ticket_issued_at = now(),
+    pairing_ticket_expires_at = now() + interval '5 minutes',
+    pairing_ticket_consumed_at = null
+where ws_id = (select ws_id from external_chat_test_context);
+select ok(
+  (
+    select pairing_ticket_expires_at > now()
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  'a new pairing attempt can begin before credential revocation'
+);
+select throws_ok(
+  format(
+    $$select private.external_chat_clear_credential(%L, 'control')$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'external_chat_pairing_in_progress',
+  'credential revocation cannot race an active pairing attempt'
+);
+update private.external_chat_binding_credentials
+set pairing_ticket_expires_at = now() - interval '1 second'
+where ws_id = (select ws_id from external_chat_test_context);
 select lives_ok(
   format(
     $$select private.external_chat_stage_credential(%L, 'set_ingest', 'pending-ingest', %L, 'last')$$,
@@ -513,10 +592,14 @@ select lives_ok(
   ),
   'an ingest rotation can be pending before full credential revocation'
 );
-select private.external_chat_clear_credential(
-  (select ws_id from external_chat_test_context),
-  'control'
-);
+do $$
+begin
+  perform private.external_chat_clear_credential(
+    (select ws_id from external_chat_test_context),
+    'control'
+  );
+end;
+$$;
 select is(
   (
     select control_secret_encrypted is null
@@ -527,6 +610,57 @@ select is(
   ),
   true,
   'clearing control credentials atomically revokes the full pairing and pending ingest rotation'
+);
+
+update private.external_chat_binding_credentials
+set control_secret_encrypted = 'revocation-ciphertext',
+    control_secret_last_four = 'last',
+    ingest_secret_hash = repeat('a', 64),
+    ingest_secret_last_four = 'last',
+    pairing_ticket_hash = repeat('b', 64),
+    pairing_ticket_issued_at = now(),
+    pairing_ticket_expires_at = now() - interval '1 second',
+    pairing_ticket_consumed_at = now()
+where ws_id = (select ws_id from external_chat_test_context);
+select lives_ok(
+  format(
+    $$select private.external_chat_stage_credential(%L, 'clear_control', 'external-chat-clear', null, '')$$,
+    (select ws_id from external_chat_test_context)
+  ),
+  'paired credential revocation can be durably staged before remote mutation'
+);
+select is(
+  (
+    select control_secret_encrypted = 'revocation-ciphertext'
+      and ingest_secret_hash = repeat('a', 64)
+      and pending_action = 'clear_control'
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  true,
+  'staging revocation preserves active signing material until remote acknowledgement'
+);
+do $$
+begin
+  perform private.external_chat_promote_credential(
+    (select ws_id from external_chat_test_context),
+    'clear_control',
+    'external-chat-clear'
+  );
+end;
+$$;
+select is(
+  (
+    select control_secret_encrypted is null
+      and ingest_secret_hash is null
+      and pending_action is null
+      and pairing_ticket_hash is null
+      and pairing_ticket_consumed_at is null
+    from private.external_chat_binding_credentials
+    where ws_id = (select ws_id from external_chat_test_context)
+  ),
+  true,
+  'promoting control revocation clears both credentials and pairing metadata atomically'
 );
 
 select ok(

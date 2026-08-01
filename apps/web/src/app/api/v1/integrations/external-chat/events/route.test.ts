@@ -68,7 +68,15 @@ describe('external chat ingest route', () => {
       binding: {
         canonical_project_id: 'opaque-connector',
         is_enabled: true,
-        settings: { chat: { enabled: true } },
+        settings: {
+          chat: {
+            agentMappings: {},
+            authorityMode: 'legacy_primary',
+            bridgeBaseUrl: 'https://bridge.example.com',
+            enabled: true,
+            inboxDefaults: {},
+          },
+        },
       },
       credentials: {
         configuration_revision: 7,

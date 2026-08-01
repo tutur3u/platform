@@ -36,7 +36,11 @@ function mappedIpv4Address(address: string) {
 }
 
 export function isBlockedExternalChatAddress(address: string) {
-  const normalized = address.toLowerCase().split('%')[0] ?? address;
+  const normalized =
+    address
+      .toLowerCase()
+      .replace(/^\[|\]$/gu, '')
+      .split('%')[0] ?? address;
   if (normalized === '::' || normalized === '::1') return true;
   if (normalized.startsWith('ff')) return true;
   if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
@@ -75,20 +79,21 @@ export function isBlockedExternalChatAddress(address: string) {
 
 export async function assertSafeExternalChatUrl(value: string) {
   const url = new URL(value);
+  const hostname = url.hostname.replace(/^\[|\]$/gu, '');
   if (
     url.protocol !== 'https:' ||
     url.username ||
     url.password ||
     url.port === '0' ||
-    BLOCKED_HOSTNAMES.has(url.hostname.toLowerCase()) ||
-    isIP(url.hostname)
+    BLOCKED_HOSTNAMES.has(hostname.toLowerCase()) ||
+    isIP(hostname)
   ) {
     throw new ExternalChatUrlPolicyError(
       'External chat URL must be a public HTTPS hostname'
     );
   }
 
-  const addresses = await lookup(url.hostname, { all: true, verbatim: true });
+  const addresses = await lookup(hostname, { all: true, verbatim: true });
   if (
     addresses.length === 0 ||
     addresses.some(({ address }) => isBlockedExternalChatAddress(address))
@@ -107,7 +112,7 @@ export async function safeExternalChatFetch(
   const url = await assertSafeExternalChatUrl(urlValue);
   const dispatcher = new Agent({
     connect: {
-      lookup: async (hostname, _options, callback) => {
+      lookup: async (hostname, options, callback) => {
         try {
           const addresses = await lookup(hostname, {
             all: true,
@@ -120,6 +125,10 @@ export async function safeExternalChatFetch(
             )
           ) {
             callback(new Error('Unsafe external chat destination'), '', 0);
+            return;
+          }
+          if (options.all) {
+            callback(null, addresses);
             return;
           }
           const selected = addresses[0]!;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertSafeExternalChatUrl,
+  ExternalChatUrlPolicyError,
   isBlockedExternalChatAddress,
 } from './safe-control-request';
 
@@ -12,7 +13,9 @@ describe('external chat control destination policy', () => {
     'https://127.0.0.1',
     'https://[::1]',
   ])('rejects unsafe URL %s', async (url) => {
-    await expect(assertSafeExternalChatUrl(url)).rejects.toThrow();
+    await expect(assertSafeExternalChatUrl(url)).rejects.toBeInstanceOf(
+      ExternalChatUrlPolicyError
+    );
   });
 
   it.each([

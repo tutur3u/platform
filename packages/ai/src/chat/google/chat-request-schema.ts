@@ -56,7 +56,7 @@ export const ChatRequestBodySchema = z.object({
   creditSource: z.enum(['personal', 'workspace']).optional(),
   creditWsId: z.string().trim().min(1).max(MAX_ID_LENGTH).optional(),
   observabilityContext: z.array(z.record(z.string(), z.unknown())).optional(),
-  persistenceRequestId: z.string().uuid().optional(),
+  persistenceRequestId: z.string().trim().uuid().optional(),
   taskBoardContext: TaskBoardContextSchema.optional(),
 });
 

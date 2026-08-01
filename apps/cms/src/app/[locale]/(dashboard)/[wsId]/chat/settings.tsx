@@ -285,6 +285,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
               disabled={
                 credentialMutation.isPending ||
                 !issuedSecret ||
+                !query.data?.secrets.ingest.configured ||
                 !query.data?.secrets.control.configured
               }
               onClick={() => {

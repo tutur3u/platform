@@ -263,7 +263,8 @@ function ChatHeaderActions({
   const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const conversationScope = normalizeChatConversationScope(
-    searchParams.get('scope') ?? defaultConversationScope
+    searchParams.get('scope'),
+    defaultConversationScope
   );
 
   return (

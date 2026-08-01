@@ -2,7 +2,11 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
-import type { ExternalChatEvent, ExternalChatSettings } from './schemas';
+import {
+  type ExternalChatEvent,
+  type ExternalChatSettings,
+  externalChatSettingsSchema,
+} from './schemas';
 
 type CredentialRow = {
   configuration_revision: number;
@@ -14,7 +18,7 @@ type CredentialRow = {
   ingest_secret_rotated_at: string | null;
   verified_at: string | null;
   verified_revision: number | null;
-  pending_action: 'rotate_control' | 'set_ingest' | null;
+  pending_action: ExternalChatCredentialAction | null;
   pending_secret_encrypted: string | null;
   pending_secret_hash: string | null;
   pending_secret_last_four: string | null;
@@ -29,6 +33,11 @@ type BindingRow = {
 };
 
 type AdminClient = SupabaseClient<Database>;
+export type ExternalChatCredentialAction =
+  | 'clear_control'
+  | 'clear_ingest'
+  | 'rotate_control'
+  | 'set_ingest';
 
 export function externalChatPrivateDb(admin: unknown) {
   return (admin as AdminClient).schema('private');
@@ -83,7 +92,7 @@ export async function writeExternalChatSettings(
 export async function stageExternalChatCredential(
   wsId: string,
   pending: {
-    action: 'rotate_control' | 'set_ingest';
+    action: ExternalChatCredentialAction;
     encrypted: string;
     hash: string | null;
     lastFour: string;
@@ -100,7 +109,7 @@ export async function stageExternalChatCredential(
 
 export async function promoteExternalChatCredential(
   wsId: string,
-  action: 'rotate_control' | 'set_ingest',
+  action: ExternalChatCredentialAction,
   encrypted: string
 ) {
   await callExternalChatCredentialRpc('external_chat_promote_credential', {
@@ -250,10 +259,12 @@ export function serializeExternalChatBinding(
 ) {
   if (!state) return null;
   const chat = (state.binding.settings as Record<string, unknown>)?.chat;
+  const parsedChat = externalChatSettingsSchema.safeParse(chat);
   const credentials = state.credentials;
   const errors: string[] = [];
   if (!state.binding.is_enabled) errors.push('binding_disabled');
   if (!chat || typeof chat !== 'object') errors.push('settings_missing');
+  else if (!parsedChat.success) errors.push('settings_invalid');
   if (
     chat &&
     typeof chat === 'object' &&
@@ -276,12 +287,7 @@ export function serializeExternalChatBinding(
 
   return {
     enabled:
-      state.binding.is_enabled &&
-      Boolean(
-        chat &&
-          typeof chat === 'object' &&
-          (chat as Record<string, unknown>).enabled === true
-      ),
+      state.binding.is_enabled && parsedChat.success && parsedChat.data.enabled,
     settings: chat ?? null,
     secrets: {
       control: {

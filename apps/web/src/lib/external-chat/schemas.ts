@@ -29,15 +29,19 @@ export const externalChatSettingsSchema = z.object({
     .url()
     .max(2048)
     .refine((value) => {
-      const url = new URL(value);
-      return (
-        url.protocol === 'https:' &&
-        !url.username &&
-        !url.password &&
-        url.pathname === '/' &&
-        !url.search &&
-        !url.hash
-      );
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === 'https:' &&
+          !url.username &&
+          !url.password &&
+          url.pathname === '/' &&
+          !url.search &&
+          !url.hash
+        );
+      } catch {
+        return false;
+      }
     }, 'Bridge URL must be an HTTPS origin without credentials, query, or fragment'),
   agentMappings: z.record(z.string(), z.string().uuid()).default({}),
   inboxDefaults: dynamicMetadataSchema,
@@ -66,10 +70,13 @@ export function isExternalChatEnabled(settings: unknown) {
 }
 
 export function isExternalChatLiveAuthority(settings: unknown) {
-  if (!isExternalChatEnabled(settings)) return false;
-  const chat = (settings as Record<string, unknown>).chat as Record<
-    string,
-    unknown
-  >;
-  return !['fallback_queue', 'paused'].includes(String(chat.authorityMode));
+  if (!settings || typeof settings !== 'object') return false;
+  const parsed = externalChatSettingsSchema.safeParse(
+    (settings as Record<string, unknown>).chat
+  );
+  return (
+    parsed.success &&
+    parsed.data.enabled &&
+    !['fallback_queue', 'paused'].includes(parsed.data.authorityMode)
+  );
 }

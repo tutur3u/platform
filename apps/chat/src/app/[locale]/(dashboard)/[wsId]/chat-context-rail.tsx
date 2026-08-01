@@ -6,7 +6,10 @@ import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
-import type { ChatConversationScope } from '@tuturuuu/ui/chat/utils';
+import {
+  type ChatConversationScope,
+  normalizeChatConversationScope,
+} from '@tuturuuu/ui/chat/utils';
 import { TUTURUUU_LOCAL_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
@@ -47,12 +50,10 @@ export function ChatContextRail({
   const searchParams = useSearchParams();
   const railScrollRef = useRef<HTMLDivElement | null>(null);
   const requestedScope = searchParams.get('scope');
-  const activeScope: ChatConversationScope =
-    requestedScope === 'external' ||
-    requestedScope === 'personal' ||
-    requestedScope === 'workspaces'
-      ? requestedScope
-      : defaultConversationScope;
+  const activeScope = normalizeChatConversationScope(
+    requestedScope,
+    defaultConversationScope
+  );
   const workspacesQuery = useInfiniteQuery<
     ChatWorkspacesPage,
     Error,

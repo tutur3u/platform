@@ -12,7 +12,6 @@ import {
   buildNativeAiObservabilityContext,
   type ChatMessageAttachmentInput,
   callAiChatRoute,
-  cleanupNativeAiResources,
   consumeAiResponseTextDeltas,
   copyAiChatAttachmentInputsToResources,
   getAiChatAttachmentPlaceholderContent,
@@ -26,6 +25,7 @@ import {
 export async function sendAiChatMessage({
   attachments,
   auth,
+  clientRequestId,
   content,
   context,
   conversationId,
@@ -34,6 +34,7 @@ export async function sendAiChatMessage({
 }: {
   attachments: ChatMessageAttachmentInput[];
   auth: SessionAuthContext;
+  clientRequestId?: string;
   content: string;
   context: ChatRouteContext;
   conversationId: string;
@@ -44,7 +45,7 @@ export async function sendAiChatMessage({
   const trimmedContent = content.trim();
   const messageContent =
     trimmedContent || getAiChatAttachmentPlaceholderContent(attachments);
-  const requestId = randomUUID();
+  const requestId = clientRequestId ?? randomUUID();
 
   if (!chatId) {
     return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
@@ -95,10 +96,24 @@ export async function sendAiChatMessage({
         user: auth.user,
         wsId: context.normalizedWsId,
       })) ?? [];
-    await cleanupNativeAiResources({
-      chatId: chat.id,
-      wsId: context.normalizedWsId,
-    });
+    const existingRequestMessages = filterRequestMessages(
+      previousMessages,
+      requestId
+    );
+    if (
+      existingRequestMessages.some((message) => message.kind === 'assistant')
+    ) {
+      return replayAiChatMessageResponse(existingRequestMessages, stream);
+    }
+    if (existingRequestMessages.length > 0) {
+      return NextResponse.json(
+        {
+          code: 'ai_message_request_in_progress',
+          message: 'This AI message request is already in progress.',
+        },
+        { status: 409 }
+      );
+    }
     await copyAiChatAttachmentInputsToResources({
       attachments,
       chatId: chat.id,
@@ -232,9 +247,7 @@ async function listRequestMessages({
         user: auth.user,
         wsId,
       })) ?? [];
-    return latestMessages.filter(
-      (message) => readRecord(message.metadata)?.requestId === requestId
-    );
+    return filterRequestMessages(latestMessages, requestId);
   } catch (error) {
     console.error('Failed to load saved AI chat messages', {
       conversationId,
@@ -246,6 +259,27 @@ async function listRequestMessages({
       { status: 500 }
     );
   }
+}
+
+function filterRequestMessages(messages: ChatMessage[], requestId: string) {
+  return messages.filter((message) => {
+    const wrappedMetadata = readRecord(message.metadata);
+    return readRecord(wrappedMetadata?.metadata)?.requestId === requestId;
+  });
+}
+
+function replayAiChatMessageResponse(messages: ChatMessage[], stream: boolean) {
+  if (!stream) {
+    return NextResponse.json({ message: messages.at(-1), messages });
+  }
+
+  const body = `${JSON.stringify({ messages, type: 'messages' })}\n${JSON.stringify({ type: 'done' })}\n`;
+  return new NextResponse(body, {
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+    },
+  });
 }
 
 function streamAiChatMessageResponse({

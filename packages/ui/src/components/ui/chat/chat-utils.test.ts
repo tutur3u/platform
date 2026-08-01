@@ -232,6 +232,9 @@ describe('chat utils', () => {
     expect(normalizeChatConversationScope('external')).toBe('external');
     expect(normalizeChatConversationScope('workspaces')).toBe('workspaces');
     expect(normalizeChatConversationScope('unknown')).toBe('personal');
+    expect(normalizeChatConversationScope('unknown', 'external')).toBe(
+      'external'
+    );
     expect(getChatConversationTypesForScope('personal')).toEqual([
       'direct',
       'group',

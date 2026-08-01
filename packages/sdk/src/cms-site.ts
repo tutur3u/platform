@@ -63,7 +63,14 @@ export function normalizeCmsSiteDelivery(
   payload: ExternalProjectDeliveryPayload,
   publicBaseUrl?: string
 ): CmsSiteDeliveryView {
-  const baseUrl = publicBaseUrl ? new URL(publicBaseUrl) : null;
+  let baseUrl: URL | null = null;
+  if (publicBaseUrl) {
+    try {
+      baseUrl = new URL(publicBaseUrl);
+    } catch {
+      baseUrl = null;
+    }
+  }
   const collections = Object.fromEntries(
     payload.collections.map((collection) => [
       collection.slug,

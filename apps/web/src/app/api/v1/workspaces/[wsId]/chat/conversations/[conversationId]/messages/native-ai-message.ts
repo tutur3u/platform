@@ -126,6 +126,24 @@ export async function sendNativeAiConversationMessages({
   userMessage: ChatMessage;
 }) {
   const settings = await getNativeAiSettings(conversation.id);
+  const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
+    'chat_list_messages',
+    {
+      p_actor_user_id: auth.user.id,
+      p_before: null,
+      p_conversation_id: conversation.id,
+      p_limit: 100,
+      p_ws_id: context.normalizedWsId,
+    }
+  );
+  const replayedMessages = (privateMessages ?? []).filter((message) => {
+    const metadata = readRecord(message.metadata);
+    return (
+      message.kind === 'assistant' && metadata?.requestId === userMessage.id
+    );
+  });
+  if (replayedMessages.length > 0) return replayedMessages;
+
   const shadowChatId = userMessage.id;
   const shadowChatResult = await ensureNativeAiShadowChat({
     auth,
@@ -144,17 +162,6 @@ export async function sendNativeAiConversationMessages({
       targetWsId: context.normalizedWsId,
       userMessage,
     });
-
-    const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
-      'chat_list_messages',
-      {
-        p_actor_user_id: auth.user.id,
-        p_before: null,
-        p_conversation_id: conversation.id,
-        p_limit: 100,
-        p_ws_id: context.normalizedWsId,
-      }
-    );
 
     await maybeAutoRenameNativeAiConversation({
       auth,
@@ -208,14 +215,15 @@ export async function sendNativeAiConversationMessages({
       supabase: auth.supabase,
     });
 
-    if (!assistantResponse?.content?.trim()) {
+    const assistantContent = getPersistableAssistantContent(assistantResponse);
+    if (!assistantResponse || !assistantContent) {
       console.error('Native Chat AI response was not saved', {
         conversationId: conversation.id,
       });
       throw new Error('AI response was not saved');
     }
 
-    const assistantParts = splitAiAssistantContent(assistantResponse.content);
+    const assistantParts = splitAiAssistantContent(assistantContent);
     const assistantMessages = await callPrivateChatRpc<ChatMessage[]>(
       'chat_persist_ai_message_batch',
       {
@@ -245,6 +253,19 @@ export async function sendNativeAiConversationMessages({
       wsId: context.normalizedWsId,
     });
   }
+}
+
+function getPersistableAssistantContent(
+  response: AiAssistantMessageRow | null
+) {
+  const content = response?.content?.trim();
+  if (content) return content;
+  const metadata = readRecord(response?.metadata);
+  const ai = readRecord(metadata?.ai);
+  if (Array.isArray(ai?.parts) && ai.parts.length > 0) {
+    return 'Assistant completed the requested action.';
+  }
+  return null;
 }
 
 async function getNativeAiSettings(conversationId: string) {
@@ -401,6 +422,10 @@ function buildNativeAssistantMessageMetadata({
         ];
 
   return {
+    requestId:
+      typeof rootMetadata.requestId === 'string'
+        ? rootMetadata.requestId
+        : null,
     source: 'native-ai-chat',
     ai: {
       ...aiMetadata,

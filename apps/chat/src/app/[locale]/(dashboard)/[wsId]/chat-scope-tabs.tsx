@@ -60,11 +60,8 @@ export function ChatScopeTabs({
   const searchParams = useSearchParams();
   const requestedScope = searchParams.get('scope');
   const activeScope = normalizeChatConversationScope(
-    requestedScope === 'personal' ||
-      requestedScope === 'workspaces' ||
-      requestedScope === 'external'
-      ? requestedScope
-      : defaultScope
+    requestedScope,
+    defaultScope
   );
 
   function setScope(scope: Scope) {
@@ -115,11 +112,5 @@ export function ChatScopeTabs({
 export function useChatScope(defaultScope: ChatConversationScope = 'personal') {
   const searchParams = useSearchParams();
   const requestedScope = searchParams.get('scope');
-  return normalizeChatConversationScope(
-    requestedScope === 'personal' ||
-      requestedScope === 'workspaces' ||
-      requestedScope === 'external'
-      ? requestedScope
-      : defaultScope
-  );
+  return normalizeChatConversationScope(requestedScope, defaultScope);
 }

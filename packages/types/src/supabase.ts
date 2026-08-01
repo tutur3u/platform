@@ -3405,6 +3405,7 @@ export type Database = {
       };
       external_chat_outbound_deliveries: {
         Row: {
+          actor_user_id: string | null;
           cancelled_at: string | null;
           completed_at: string | null;
           configuration_revision: number;
@@ -3414,11 +3415,13 @@ export type Database = {
           idempotency_key: string;
           message_id: string | null;
           payload_hash: string;
+          reply_to_message_id: string | null;
           request_fingerprint: string;
           thread_id: string;
           ws_id: string;
         };
         Insert: {
+          actor_user_id?: string | null;
           cancelled_at?: string | null;
           completed_at?: string | null;
           configuration_revision: number;
@@ -3428,11 +3431,13 @@ export type Database = {
           idempotency_key?: string;
           message_id?: string | null;
           payload_hash: string;
+          reply_to_message_id?: string | null;
           request_fingerprint: string;
           thread_id: string;
           ws_id: string;
         };
         Update: {
+          actor_user_id?: string | null;
           cancelled_at?: string | null;
           completed_at?: string | null;
           configuration_revision?: number;
@@ -3442,14 +3447,36 @@ export type Database = {
           idempotency_key?: string;
           message_id?: string | null;
           payload_hash?: string;
+          reply_to_message_id?: string | null;
           request_fingerprint?: string;
           thread_id?: string;
           ws_id?: string;
         };
         Relationships: [
           {
+            foreignKeyName: 'external_chat_outbound_deliveries_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'external_chat_outbound_deliveries_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
             foreignKeyName: 'external_chat_outbound_deliveries_message_id_fkey';
             columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_chat_outbound_deliveries_reply_to_message_id_fkey';
+            columns: ['reply_to_message_id'];
             isOneToOne: false;
             referencedRelation: 'chat_messages';
             referencedColumns: ['id'];
@@ -15731,6 +15758,10 @@ export type Database = {
       external_chat_consume_pairing_ticket: {
         Args: { p_ticket_hash: string; p_ws_id: string };
         Returns: boolean;
+      };
+      external_chat_conversation_json: {
+        Args: { p_actor_user_id: string; p_conversation_id: string };
+        Returns: Json;
       };
       external_chat_finalize_reply: {
         Args: {

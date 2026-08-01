@@ -39,7 +39,7 @@ describe('external chat pairing ticket verification', () => {
       '11111111-1111-4111-8111-111111111111',
       'h'.repeat(64)
     );
-    expect(await response.text()).not.toContain(ticket);
+    expect(await response.text()).toBe('{"valid":true}');
   });
 
   it('returns the same masked rejection for consumed or expired tickets', async () => {

@@ -265,7 +265,37 @@ describe('external chat credential verification', () => {
     );
   });
 
-  it('revokes paired credentials remotely before clearing local state', async () => {
+  it('returns a masked conflict when an active pairing blocks credential clearing', async () => {
+    mocks.clearExternalChatCredential.mockRejectedValue(
+      new Error('external_chat_pairing_in_progress')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'clear_control' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(await response.text()).not.toContain(
+      'external_chat_pairing_in_progress'
+    );
+  });
+
+  it('returns a masked conflict when credential rotation overlaps pairing', async () => {
+    mocks.stageExternalChatCredential.mockRejectedValue(
+      new Error('external_chat_pairing_in_progress')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'rotate_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(409);
+    const responseText = await response.text();
+    expect(responseText).not.toContain('external_chat_pairing_in_progress');
+    expect(responseText).toContain('ecs_test_secret');
+  });
+
+  it('stages paired revocation before applying it remotely and locally', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
@@ -281,14 +311,25 @@ describe('external chat credential verification', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(mocks.stageExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      {
+        action: 'clear_control',
+        encrypted: 'external-chat-clear',
+        hash: null,
+        lastFour: '',
+      }
+    );
     expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
       action: 'clear_control',
       wsId: 'workspace-1',
     });
-    expect(mocks.clearExternalChatCredential).toHaveBeenCalledWith(
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
       'workspace-1',
-      'control'
+      'clear_control',
+      'external-chat-clear'
     );
+    expect(mocks.clearExternalChatCredential).not.toHaveBeenCalled();
   });
 
   it('keeps local credentials when remote revocation fails', async () => {
@@ -311,6 +352,8 @@ describe('external chat credential verification', () => {
 
     expect(response.status).toBe(502);
     expect(mocks.clearExternalChatCredential).not.toHaveBeenCalled();
+    expect(mocks.stageExternalChatCredential).toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(await response.text()).not.toContain('bridge unavailable');
   });
 

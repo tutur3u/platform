@@ -72,11 +72,28 @@ export const PATCH = withSessionAuth<Params>(
         { status: 400 }
       );
     }
-    await writeExternalChatSettings(
-      context.context.normalizedWsId,
-      parsed.data,
-      auth.user.id
-    );
+    try {
+      await writeExternalChatSettings(
+        context.context.normalizedWsId,
+        parsed.data,
+        auth.user.id
+      );
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('external_chat_delivery_in_progress')
+      ) {
+        return NextResponse.json(
+          { error: 'External chat settings are temporarily locked' },
+          { status: 409 }
+        );
+      }
+      console.error('Failed to update external chat settings', { error });
+      return NextResponse.json(
+        { error: 'Failed to update external chat settings' },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
       serializeExternalChatBinding(
         await readExternalChatBinding(context.context.normalizedWsId)
