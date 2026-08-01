@@ -14424,6 +14424,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meeting saved.'**
   String get meetUpdated;
+
+  /// No description provided for @connectedOnboardingEcosystemTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goals, connected'**
+  String get connectedOnboardingEcosystemTitle;
+
+  /// No description provided for @connectedOnboardingEcosystemSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.'**
+  String get connectedOnboardingEcosystemSubtitle;
+
+  /// No description provided for @connectedOnboardingRoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make Tuturuuu yours'**
+  String get connectedOnboardingRoleTitle;
+
+  /// No description provided for @connectedOnboardingRoleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the perspective that best matches how you work. This only changes recommendations.'**
+  String get connectedOnboardingRoleSubtitle;
+
+  /// No description provided for @connectedOnboardingRoleProfessional.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get connectedOnboardingRoleProfessional;
+
+  /// No description provided for @connectedOnboardingRoleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get connectedOnboardingRoleStudent;
+
+  /// No description provided for @connectedOnboardingRoleFounder.
+  ///
+  /// In en, this message translates to:
+  /// **'Founder'**
+  String get connectedOnboardingRoleFounder;
+
+  /// No description provided for @connectedOnboardingRoleExecutive.
+  ///
+  /// In en, this message translates to:
+  /// **'Executive'**
+  String get connectedOnboardingRoleExecutive;
+
+  /// No description provided for @connectedOnboardingRoleTeamLeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Team leader'**
+  String get connectedOnboardingRoleTeamLeader;
+
+  /// No description provided for @connectedOnboardingGoalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you want to move forward?'**
+  String get connectedOnboardingGoalTitle;
+
+  /// No description provided for @connectedOnboardingGoalSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one or more goal pathways. You can change them whenever you want.'**
+  String get connectedOnboardingGoalSubtitle;
+
+  /// No description provided for @connectedOnboardingGoalFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus and plan'**
+  String get connectedOnboardingGoalFocus;
+
+  /// No description provided for @connectedOnboardingGoalCollaborate.
+  ///
+  /// In en, this message translates to:
+  /// **'Collaborate'**
+  String get connectedOnboardingGoalCollaborate;
+
+  /// No description provided for @connectedOnboardingGoalOperate.
+  ///
+  /// In en, this message translates to:
+  /// **'Operate a business'**
+  String get connectedOnboardingGoalOperate;
+
+  /// No description provided for @connectedOnboardingGoalLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn and teach'**
+  String get connectedOnboardingGoalLearn;
+
+  /// No description provided for @connectedOnboardingGoalBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build and create'**
+  String get connectedOnboardingGoalBuild;
+
+  /// No description provided for @connectedOnboardingToolkitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A toolkit that adapts to you'**
+  String get connectedOnboardingToolkitTitle;
+
+  /// No description provided for @connectedOnboardingToolkitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.'**
+  String get connectedOnboardingToolkitSubtitle;
+
+  /// No description provided for @connectedOnboardingFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore Tuturuuu'**
+  String get connectedOnboardingFinish;
+
+  /// No description provided for @connectedOnboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get connectedOnboardingSkip;
+
+  /// No description provided for @connectedOnboardingSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay Tuturuuu guide'**
+  String get connectedOnboardingSettingsTitle;
+
+  /// No description provided for @connectedOnboardingSettingsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.'**
+  String get connectedOnboardingSettingsDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

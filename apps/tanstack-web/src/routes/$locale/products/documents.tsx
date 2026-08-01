@@ -113,9 +113,7 @@ export default function DocumentsProductPage() {
           spec stops being a link somebody has to go find.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <ProductLinkButton href="/onboarding">
-            Start writing
-          </ProductLinkButton>
+          <ProductLinkButton href="/signup">Start writing</ProductLinkButton>
           <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>

@@ -43,6 +43,7 @@ export default function PersonalWorkspacePrompt({
   selectPlaceholder: string;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(true);
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [submitting, setSubmitting] = useState(false);
   const t = useTranslations('personal-workspace');
@@ -117,12 +118,8 @@ export default function PersonalWorkspacePrompt({
   };
 
   return (
-    <Dialog open onOpenChange={() => {}}>
-      <DialogContent
-        showCloseButton={false}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent>
         <div className="flex h-full w-full flex-col items-center justify-center p-4 md:p-8">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl md:text-3xl">{title}</DialogTitle>

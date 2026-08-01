@@ -299,7 +299,7 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles POST /api/v1/devboxes/cache/prune with the same platform CLI app-session or browser/non-app-session Supabase auth boundary as the cache list route, requires root workspace MEMBER access, and returns the legacy { message: \"Devbox cache prune requested.\" } acknowledgement without private devbox table mutations."
     },
-    "api:/api/v1/user/onboarding-progress:apps/web/src/legacy-api-routes/v1/user/onboarding-progress/route.ts": {
+    "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, empty update rejection, null missing-row response, and unsupported-method behavior."

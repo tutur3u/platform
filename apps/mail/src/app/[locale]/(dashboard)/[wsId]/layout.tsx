@@ -16,7 +16,7 @@ import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
@@ -53,7 +53,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
   if (!workspace.joined) redirect('/');
 
   const wsId = workspace.id;

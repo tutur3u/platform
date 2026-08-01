@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronRight,
+  Compass,
   Search,
   X,
 } from '@tuturuuu/icons';
@@ -63,6 +64,7 @@ import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { OnboardingSettingsPanel } from './onboarding-settings-panel';
 import type { createSettingsSearchEngine } from './settings-dialog-search';
 import { loadSettingsSearchEngine } from './settings-dialog-search-loader';
 
@@ -158,17 +160,41 @@ export function SettingsDialogShell({
     })
   );
 
+  const extendedNavItems = useMemo<SettingsNavGroup[]>(
+    () => [
+      ...navItems,
+      {
+        label: t('onboarding_guide.title'),
+        items: [
+          {
+            name: 'onboarding_guide',
+            label: t('onboarding_guide.title'),
+            description: t('onboarding_guide.description'),
+            icon: Compass,
+            keywords: [
+              t('onboarding_guide.replay_app'),
+              t('onboarding_guide.restart_journey'),
+            ],
+          },
+        ],
+      },
+    ],
+    [navItems, t]
+  );
+
   const searchEngine = useMemo<SettingsSearchEngine | null>(
-    () => searchEngineFactory?.(navItems) ?? null,
-    [navItems, searchEngineFactory]
+    () => searchEngineFactory?.(extendedNavItems) ?? null,
+    [extendedNavItems, searchEngineFactory]
   );
 
   const allNavItems = useMemo(
-    () => searchEngine?.allItems ?? navItems.flatMap((group) => group.items),
-    [navItems, searchEngine]
+    () =>
+      searchEngine?.allItems ??
+      extendedNavItems.flatMap((group) => group.items),
+    [extendedNavItems, searchEngine]
   );
 
-  const activeGroup = navItems.find((group) =>
+  const activeGroup = extendedNavItems.find((group) =>
     group.items.some((item) => item.name === activeTab)
   );
 
@@ -209,8 +235,10 @@ export function SettingsDialogShell({
 
   const filteredNavItems = useMemo(
     () =>
-      searchQuery ? (searchEngine?.search(searchQuery) ?? navItems) : navItems,
-    [navItems, searchEngine, searchQuery]
+      searchQuery
+        ? (searchEngine?.search(searchQuery) ?? extendedNavItems)
+        : extendedNavItems,
+    [extendedNavItems, searchEngine, searchQuery]
   );
 
   const filteredEnabledItems = useMemo(
@@ -220,6 +248,11 @@ export function SettingsDialogShell({
         group.items.filter((item) => !item.disabled)
       ),
     [filteredNavItems, searchEngine, searchQuery]
+  );
+  const keyboardEnabledItems = useMemo(
+    () =>
+      filteredEnabledItems.filter((item) => item.name !== 'onboarding_guide'),
+    [filteredEnabledItems]
   );
 
   const updateSearchQuery = useCallback(
@@ -252,30 +285,30 @@ export function SettingsDialogShell({
 
   const changeActiveItem = useCallback(
     (targetIndex: number) => {
-      const targetItem = filteredEnabledItems[targetIndex];
+      const targetItem = keyboardEnabledItems[targetIndex];
       if (targetItem) selectActiveTab(targetItem.name);
     },
-    [filteredEnabledItems, selectActiveTab]
+    [keyboardEnabledItems, selectActiveTab]
   );
 
   const moveActiveItem = useCallback(
     (direction: 1 | -1) => {
-      if (filteredEnabledItems.length === 0) return;
+      if (keyboardEnabledItems.length === 0) return;
 
-      const currentIndex = filteredEnabledItems.findIndex(
+      const currentIndex = keyboardEnabledItems.findIndex(
         (item) => item.name === activeTab
       );
       const nextIndex =
         currentIndex === -1
           ? direction === 1
             ? 0
-            : filteredEnabledItems.length - 1
-          : (currentIndex + direction + filteredEnabledItems.length) %
-            filteredEnabledItems.length;
+            : keyboardEnabledItems.length - 1
+          : (currentIndex + direction + keyboardEnabledItems.length) %
+            keyboardEnabledItems.length;
 
       changeActiveItem(nextIndex);
     },
-    [activeTab, changeActiveItem, filteredEnabledItems]
+    [activeTab, changeActiveItem, keyboardEnabledItems]
   );
 
   const handleKeyboardNavigation = useCallback(
@@ -325,12 +358,12 @@ export function SettingsDialogShell({
 
       if (event.key === 'End') {
         event.preventDefault();
-        changeActiveItem(filteredEnabledItems.length - 1);
+        changeActiveItem(keyboardEnabledItems.length - 1);
       }
     },
     [
       changeActiveItem,
-      filteredEnabledItems.length,
+      keyboardEnabledItems.length,
       focusSearch,
       keyboardNavigation,
       moveActiveItem,
@@ -569,7 +602,11 @@ export function SettingsDialogShell({
                   <Separator />
                 </>
               )}
-              {children}
+              {activeTab === 'onboarding_guide' ? (
+                <OnboardingSettingsPanel />
+              ) : (
+                children
+              )}
             </div>
           </div>
         </main>

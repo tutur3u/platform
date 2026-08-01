@@ -3,7 +3,7 @@ import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { resolveTaskBoardEntrypoint } from '../task-board-entrypoint';
 
@@ -23,7 +23,7 @@ export default async function ProjectsPage({ params }: Props) {
 
   const workspace = await getWorkspace(id, { useAdmin: true, user });
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
   if (!workspace.joined) redirect('/');
 
   const requestHeaders = await headers();

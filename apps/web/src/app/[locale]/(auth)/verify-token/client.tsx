@@ -12,7 +12,7 @@ export function BasicTokenVerifier() {
   useEffect(() => {
     const handleUser = async () => {
       router.push(
-        normalizeClientRedirectPath(searchParams.get('nextUrl'), '/onboarding')
+        normalizeClientRedirectPath(searchParams.get('nextUrl'), '/personal')
       );
       return;
     };

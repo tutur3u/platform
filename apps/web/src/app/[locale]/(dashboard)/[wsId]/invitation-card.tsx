@@ -85,7 +85,7 @@ export default function InvitationCard({
       toast.success(declineInviteSuccessTitle, {
         description: declineInviteSuccessMessage,
       });
-      router.push('/onboarding');
+      router.push('/');
       router.refresh();
     },
     onError: () => {

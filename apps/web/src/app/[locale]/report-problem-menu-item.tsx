@@ -4,7 +4,7 @@ import { AlertTriangle } from '@tuturuuu/icons/lucide-static';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const ReportProblemDialog = dynamic<{
   open?: boolean;
@@ -21,6 +21,19 @@ const ReportProblemDialog = dynamic<{
 export default function ReportProblemMenuItem() {
   const t = useTranslations('common');
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const openFromGuidance = () => setOpen(true);
+    window.addEventListener(
+      'tuturuuu:report-problem-open-intent',
+      openFromGuidance
+    );
+    return () =>
+      window.removeEventListener(
+        'tuturuuu:report-problem-open-intent',
+        openFromGuidance
+      );
+  }, []);
 
   return (
     <>

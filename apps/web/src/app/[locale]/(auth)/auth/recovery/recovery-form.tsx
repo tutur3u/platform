@@ -67,7 +67,7 @@ export function AuthRecoveryForm({
     setMessage(t('success'));
     window.location.assign(
       result.redirectTo ||
-        (locale === 'en' ? '/onboarding' : `/${locale}/onboarding`)
+        (locale === 'en' ? '/personal' : `/${locale}/personal`)
     );
   };
 

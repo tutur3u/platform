@@ -8850,6 +8850,28 @@
       "title": "Chào mừng đến với Tuturuuu!"
     }
   },
+  "onboarding_guide": {
+    "close": "Đóng hướng dẫn",
+    "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",
+    "description": "Mở lại hướng dẫn tùy chọn bất cứ lúc nào để học lại một ứng dụng hoặc khám phá hệ sinh thái Tuturuuu.",
+    "done": "Hoàn tất",
+    "employee_test": "Thử nghiệm riêng cho nhân viên",
+    "employee_test_description": "Thử hành trình mà không thay đổi tiến độ thông thường của bạn.",
+    "feedback": "Gửi phản hồi về hướng dẫn",
+    "feedback_description": "Cho đội ngũ Tuturuuu biết điều gì rõ ràng, khó hiểu hoặc còn thiếu.",
+    "next": "Tiếp theo",
+    "replay_app": "Mở lại hướng dẫn ứng dụng này",
+    "replay_app_description": "Bắt đầu một nhiệm vụ ngắn, có thể bỏ qua cho ứng dụng bạn đang dùng.",
+    "restart_journey": "Bắt đầu lại toàn bộ hành trình",
+    "restart_journey_description": "Quay lại trang chủ Tuturuuu và chọn vai trò cùng lộ trình mục tiêu mới. Dữ liệu của bạn không bị thay đổi.",
+    "step_continue": "Tiếp tục một cách tự tin",
+    "step_continue_description": "Chuyển sang quy trình thực tế khi bạn sẵn sàng.",
+    "step_discover": "Khám phá điều cốt lõi",
+    "step_discover_description": "Xem ứng dụng này nằm ở đâu trong lộ trình mục tiêu và có thể giúp gì cho bạn.",
+    "step_try": "Thử một thao tác có hướng dẫn",
+    "step_try_description": "Thực hành ngay trong ngữ cảnh. Bạn có thể bỏ qua hoặc đóng hướng dẫn bất cứ lúc nào.",
+    "title": "Hướng dẫn và học lại"
+  },
   "organizational_structure": {
     "add_collaboration": "Thêm hợp tác",
     "add_group": "Thêm nhóm",

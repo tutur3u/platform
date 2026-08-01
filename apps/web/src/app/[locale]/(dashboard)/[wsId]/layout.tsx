@@ -1,3 +1,4 @@
+import { AppGuideOverlay } from '@tuturuuu/satellite/app-guide-overlay';
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
@@ -213,7 +214,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : false;
   }
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
 
   let isGuestWorkspace = false;
 
@@ -257,7 +258,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       );
 
       if (!canShowWorkspaceInviteForNonMember(inviteEligibility)) {
-        redirect('/onboarding');
+        notFound();
       }
 
       const { allowGuestSelfJoin } = inviteEligibility;
@@ -321,10 +322,6 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (showPersonalWorkspacePrompt && eligibleWorkspaces?.length === 0) {
-    return personalWorkspacePrompt;
-  }
-
   const visibleNavigationLinks = await createNavigationLinks({
     wsId,
     personalOrWsId: workspaceSlug,
@@ -370,6 +367,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         </Suspense>
       }
     >
+      <AppGuideOverlay />
       {children}
       <Suspense fallback={null}>
         <VersionBadgeGate appName={siteConfig.name} userEmail={user.email} />

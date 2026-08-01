@@ -37,11 +37,11 @@ describe('auth recovery URL builder', () => {
     expect(parsedCodeUrl.origin).toBe('https://tuturuuu.com');
     expect(parsedCodeUrl.pathname).toBe('/auth/recovery');
     expect(parsedCodeUrl.searchParams.get('email')).toBe('person@example.com');
-    expect(parsedCodeUrl.searchParams.get('next')).toBe('/onboarding');
+    expect(parsedCodeUrl.searchParams.get('next')).toBe('/personal');
     expect(parsedConfirmUrl.origin).toBe('https://tuturuuu.com');
     expect(parsedConfirmUrl.pathname).toBe('/auth/recovery/confirm');
     expect(parsedConfirmUrl.searchParams.get('token')).toBe('secret-token');
-    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/onboarding');
+    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/personal');
     expect(confirmUrl).not.toContain('0.0.0.0');
     expect(confirmUrl).not.toContain('/en/');
   });
@@ -58,9 +58,9 @@ describe('auth recovery URL builder', () => {
     const parsedConfirmUrl = new URL(confirmUrl);
 
     expect(parsedCodeUrl.pathname).toBe('/vi/auth/recovery');
-    expect(parsedCodeUrl.searchParams.get('next')).toBe('/vi/onboarding');
+    expect(parsedCodeUrl.searchParams.get('next')).toBe('/vi/personal');
     expect(parsedConfirmUrl.pathname).toBe('/vi/auth/recovery/confirm');
-    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/vi/onboarding');
+    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/vi/personal');
   });
 
   it('canonicalizes platform http origins and default-locale next values', () => {
@@ -76,6 +76,6 @@ describe('auth recovery URL builder', () => {
 
     expect(parsedConfirmUrl.origin).toBe('https://tuturuuu.com');
     expect(parsedConfirmUrl.pathname).toBe('/auth/recovery/confirm');
-    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/onboarding');
+    expect(parsedConfirmUrl.searchParams.get('next')).toBe('/personal');
   });
 });

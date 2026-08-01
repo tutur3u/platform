@@ -427,13 +427,20 @@ export type BackendOtpSettingsResponse = OtpSettingsResponse;
 export type BackendOnboardingProgress = {
   completed_at?: string | null;
   completed_steps?: string[];
+  completed_missions?: string[];
   current_step?: string;
+  dismissed_at?: string | null;
   flow_type?: string | null;
+  goals?: string[];
+  guidance_mode?: 'employee_test' | 'standard';
   id?: string;
   invited_emails?: string[];
   language_preference?: string | null;
   notifications_enabled?: boolean;
+  journey_revision?: number;
+  persona?: string | null;
   profile_completed?: boolean;
+  replay_app?: string | null;
   team_workspace_id?: string | null;
   theme_preference?: string | null;
   tour_completed?: boolean;
@@ -447,6 +454,17 @@ export type BackendOnboardingProgress = {
 
 export type BackendOnboardingProgressResponse =
   BackendOnboardingProgress | null;
+
+export type BackendOnboardingProgressUpdate = Pick<
+  BackendOnboardingProgress,
+  | 'completed_missions'
+  | 'dismissed_at'
+  | 'goals'
+  | 'guidance_mode'
+  | 'journey_revision'
+  | 'persona'
+  | 'replay_app'
+>;
 
 export type BackendCurrentUserDefaultWorkspaceResponse =
   CurrentUserDefaultWorkspaceResponse;
@@ -1062,6 +1080,27 @@ export function getBackendOnboardingProgress(
     '/api/v1/user/onboarding-progress',
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export function updateBackendOnboardingProgress(
+  payload: Partial<BackendOnboardingProgressUpdate>,
+  options: BackendApiClientOptions = {}
+) {
+  const clientOptions = resolveBackendApiClientOptions(options);
+
+  return createBackendApiClient(
+    clientOptions
+  ).json<BackendOnboardingProgressResponse>(
+    '/api/v1/user/onboarding-progress',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: withBackendSameOriginMutationHeaders(clientOptions, {
+        'Content-Type': 'application/json',
+      }),
+      method: 'PATCH',
     }
   );
 }

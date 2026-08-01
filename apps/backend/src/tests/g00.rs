@@ -147,7 +147,7 @@ async fn onboarding_progress_patch_filters_fields_and_upserts() {
             &config,
             BackendRequest {
                 body_text: Some(
-                    r#"{"current_step":"profile","tour_completed":true,"invited_emails":["team@example.com"],"ignored":"value"}"#,
+                    r#"{"current_step":"profile","tour_completed":true,"invited_emails":["team@example.com"],"persona":"founder","goals":["operate","build"],"completed_missions":["platform:complete"],"replay_app":"finance","journey_revision":2,"ignored":"value"}"#,
                 ),
                 ..request_with_bearer(
                     "PATCH",
@@ -177,12 +177,44 @@ async fn onboarding_progress_patch_filters_fields_and_upserts() {
     assert_eq!(
         serde_json::from_str::<Value>(calls[1].body.as_deref().unwrap()).unwrap(),
         json!({
+            "completed_missions": ["platform:complete"],
             "current_step": "profile",
+            "goals": ["operate", "build"],
             "invited_emails": ["team@example.com"],
+            "journey_revision": 2,
+            "persona": "founder",
+            "replay_app": "finance",
             "tour_completed": true,
             "user_id": "user-123",
         })
     );
+}
+
+#[tokio::test]
+async fn onboarding_progress_restricts_employee_test_mode() {
+    let config = backend_config_with_contact_data();
+    let outbound = RecordingOutboundClient::with_response(
+        200,
+        r#"{"id":"user-123","email":"ada@example.com"}"#,
+    );
+
+    let response = handle_backend_request(
+        &config,
+        BackendRequest {
+            body_text: Some(r#"{"guidance_mode":"employee_test"}"#),
+            ..request_with_bearer(
+                "PATCH",
+                ONBOARDING_PROGRESS_PATH,
+                "supabase-access-token".to_owned(),
+            )
+        },
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 403);
+    assert_eq!(response.body["message"], "Employee test mode is restricted");
+    assert_eq!(outbound.calls().len(), 1);
 }
 
 #[tokio::test]

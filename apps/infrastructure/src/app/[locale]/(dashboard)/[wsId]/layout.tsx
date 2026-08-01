@@ -71,7 +71,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
   if (!workspace.joined) redirect('/');
 
   const workspaceSlug = toWorkspaceSlug(workspace.id, {

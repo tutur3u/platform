@@ -75,7 +75,7 @@ export function MemberSettingsButton({
       queryClient.invalidateQueries({
         queryKey: workspaceMembersKeys.lists(),
       });
-      if (currentUser?.id === user.id) router.push('/onboarding');
+      if (currentUser?.id === user.id) router.push('/');
       setOpen(false);
     },
     onError: () => {

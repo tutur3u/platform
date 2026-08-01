@@ -48,6 +48,8 @@ import {
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
 import { SatelliteAccountSwitcherMenu } from './account-switcher-menu';
+import { AppGuideOverlay } from './app-guide-overlay';
+import { GuidanceSettingsDialog } from './guidance-settings-dialog';
 import { LanguageWrapper } from './language-wrapper';
 import { claimSettingsDialogIntent } from './settings-dialog-intent';
 import { SystemLanguageWrapper } from './system-language-wrapper';
@@ -92,6 +94,7 @@ export default function UserNavClient({
     }
   );
   const settingsOpen = settingsQuery.settingsDialog === 'open';
+  const effectiveSettingsDialog = settingsDialog ?? <GuidanceSettingsDialog />;
 
   // Cmd/Ctrl+, opens the app settings dialog — platform-wide convention, wired
   // once here so every satellite app (calendar/tasks/finance/…) gets it.
@@ -102,7 +105,7 @@ export default function UserNavClient({
     });
   }, [setSettingsQuery]);
   useSettingsDialogShortcut({
-    enabled: Boolean(user && settingsDialog),
+    enabled: Boolean(user),
     onOpen: openSettings,
   });
 
@@ -129,12 +132,37 @@ export default function UserNavClient({
       );
   }, [setSettingsQuery]);
 
-  const renderedSettingsDialog = isValidElement(settingsDialog)
-    ? cloneElement(settingsDialog, {
+  useEffect(() => {
+    const closeSettings = () =>
+      void setSettingsQuery({ settingsDialog: null, settingsTab: null });
+    const openFeedback = () => setReportOpen(true);
+
+    window.addEventListener(
+      'tuturuuu:settings-dialog-close-intent',
+      closeSettings
+    );
+    window.addEventListener(
+      'tuturuuu:report-problem-open-intent',
+      openFeedback
+    );
+    return () => {
+      window.removeEventListener(
+        'tuturuuu:settings-dialog-close-intent',
+        closeSettings
+      );
+      window.removeEventListener(
+        'tuturuuu:report-problem-open-intent',
+        openFeedback
+      );
+    };
+  }, [setSettingsQuery]);
+
+  const renderedSettingsDialog = isValidElement(effectiveSettingsDialog)
+    ? cloneElement(effectiveSettingsDialog, {
         defaultTab: settingsQuery.settingsTab ?? undefined,
         key: settingsQuery.settingsTab ?? 'default',
       } as Record<string, unknown>)
-    : settingsDialog;
+    : effectiveSettingsDialog;
 
   const centralUrl =
     ttrUrl ??
@@ -166,8 +194,9 @@ export default function UserNavClient({
         onOpenChange={setReportOpen}
         showTrigger={false}
       />
+      <AppGuideOverlay />
 
-      {user && settingsDialog && (
+      {user && (
         <Dialog
           open={settingsOpen}
           onOpenChange={(open) => {

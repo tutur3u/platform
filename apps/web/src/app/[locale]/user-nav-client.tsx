@@ -200,6 +200,26 @@ export default function UserNavClient({
     [setSettingsQuery]
   );
 
+  useEffect(() => {
+    const closeFromGuidance = () =>
+      void setSettingsQuery({
+        settingsDialog: null,
+        settingsTab: null,
+        settingsBoardId: null,
+        settingsLinkedProvider: null,
+      });
+
+    window.addEventListener(
+      'tuturuuu:settings-dialog-close-intent',
+      closeFromGuidance
+    );
+    return () =>
+      window.removeEventListener(
+        'tuturuuu:settings-dialog-close-intent',
+        closeFromGuidance
+      );
+  }, [setSettingsQuery]);
+
   const openCommandLauncher = useCallback(() => {
     void import('@tuturuuu/satellite/command-launcher').then((module) => {
       module.openGlobalCommandLauncher();

@@ -304,10 +304,10 @@
         "kind": "api",
         "methods": ["GET"],
         "routePath": "/api/auth/callback",
-        "sourceFile": "apps/web/src/legacy-api-routes/auth/callback/route.ts",
+        "sourceFile": "apps/web/src/app/api/auth/callback/route.ts",
         "status": "legacy-next",
         "targetOwner": "rust-backend",
-        "id": "api:/api/auth/callback:apps/web/src/legacy-api-routes/auth/callback/route.ts"
+        "id": "api:/api/auth/callback:apps/web/src/app/api/auth/callback/route.ts"
       },
       {
         "kind": "api",
@@ -523,11 +523,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/auth/callback:apps/web/src/legacy-api-routes/auth/callback/route.ts",
+      "id": "api:/api/auth/callback:apps/web/src/app/api/auth/callback/route.ts",
       "kind": "api",
       "methods": ["GET"],
       "routePath": "/api/auth/callback",
-      "sourceFile": "apps/web/src/legacy-api-routes/auth/callback/route.ts",
+      "sourceFile": "apps/web/src/app/api/auth/callback/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -2021,11 +2021,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/user/onboarding-progress:apps/web/src/legacy-api-routes/v1/user/onboarding-progress/route.ts",
+      "id": "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts",
       "kind": "api",
       "methods": ["GET", "PATCH"],
       "routePath": "/api/v1/user/onboarding-progress",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/user/onboarding-progress/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/user/onboarding-progress/route.ts",
       "status": "migrated",
       "targetOwner": "rust-backend"
     },

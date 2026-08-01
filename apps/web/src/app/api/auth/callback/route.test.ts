@@ -121,7 +121,7 @@ describe('auth callback route', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'https://tuturuuu.com/onboarding'
+      'https://tuturuuu.com/personal'
     );
   });
 
@@ -278,7 +278,7 @@ describe('auth callback route', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'https://tuturuuu.com/onboarding'
+      'https://tuturuuu.com/personal'
     );
     expect(response.headers.get('location')).not.toContain('0.0.0.0');
   });

@@ -109,9 +109,7 @@ export default function AIProductPage() {
           and acts; Aurora, Rewise, Nova and Crystal are what make her useful.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <ProductLinkButton href="/onboarding">
-            Start with Mira
-          </ProductLinkButton>
+          <ProductLinkButton href="/signup">Start with Mira</ProductLinkButton>
           <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>
         </div>
       </div>

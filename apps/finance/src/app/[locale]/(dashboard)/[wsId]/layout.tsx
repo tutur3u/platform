@@ -21,7 +21,7 @@ import {
   getWorkspaceConfig,
 } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
 import NavbarActions from '../../navbar-actions';
@@ -59,7 +59,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
   if (!workspace?.joined) redirect('/');
 
   const wsId = workspace.id;

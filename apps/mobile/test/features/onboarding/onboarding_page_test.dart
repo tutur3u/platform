@@ -20,7 +20,7 @@ void main() {
   group('OnboardingPage', () {
     testWidgets('renders first slide initially', (tester) async {
       await tester.pumpApp(const OnboardingPage());
-      expect(find.text('Meet Mira'), findsOneWidget);
+      expect(find.text('Your goals, connected'), findsOneWidget);
       expect(find.text('Next'), findsOneWidget);
     });
 
@@ -30,10 +30,10 @@ void main() {
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Everything in One App'), findsOneWidget);
+      expect(find.text('Make Tuturuuu yours'), findsOneWidget);
     });
 
-    testWidgets('shows Get Started on last slide', (tester) async {
+    testWidgets('shows the ecosystem action on the last slide', (tester) async {
       await tester.pumpApp(const OnboardingPage());
 
       // Slide 1 -> 2
@@ -44,8 +44,12 @@ void main() {
       await tester.tap(find.text('Next'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Intelligence That Grows'), findsOneWidget);
-      expect(find.text('Get Started'), findsOneWidget);
+      // Slide 3 -> 4
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('A toolkit that adapts to you'), findsOneWidget);
+      expect(find.text('Explore Tuturuuu'), findsOneWidget);
     });
 
     // Note: Testing actual navigation requires mocking GoRouter which helper

@@ -46,7 +46,7 @@ export function LandingHero({
           </p>
 
           <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
-            <ActionLink href="/onboarding">
+            <ActionLink href="/signup">
               {content.primaryCta}
               <ArrowRight className="h-4 w-4" />
             </ActionLink>

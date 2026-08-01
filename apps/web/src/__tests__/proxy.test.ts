@@ -126,23 +126,8 @@ describe('web proxy api handling', () => {
     user: { email?: string; id: string } = {
       email: 'member@example.com',
       id: 'user-1',
-    },
-    onboardingProgress: {
-      completed_at: string | null;
-      profile_completed?: boolean | null;
-    } | null = {
-      completed_at: new Date().toISOString(),
-      profile_completed: true,
     }
   ) {
-    const completedOnboardingBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: onboardingProgress,
-        error: null,
-      }),
-    };
     const emptyMaybeSingleBuilder = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -153,11 +138,7 @@ describe('web proxy api handling', () => {
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user } }),
       },
-      from: vi.fn((table: string) =>
-        table === 'onboarding_progress'
-          ? completedOnboardingBuilder
-          : emptyMaybeSingleBuilder
-      ),
+      from: vi.fn(() => emptyMaybeSingleBuilder),
     };
   }
 
@@ -1417,76 +1398,30 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
-  it('redirects pending-invitation users away from onboarding', async () => {
+  it('does not redirect an incomplete user to onboarding', async () => {
     mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient(
-        {
-          email: 'invitee@example.com',
-          id: 'user-1',
-        },
-        null
-      )
+      createAuthenticatedSupabaseClient({
+        email: 'new-user@example.com',
+        id: 'user-1',
+      })
     );
-    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
-    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
-    mocks.getUserDefaultWorkspace.mockResolvedValue({
-      id: 'ws-1',
-      personal: false,
-    });
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      createSessionRequest('http://localhost/onboarding')
+      createSessionRequest('http://localhost/settings')
     );
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe('http://localhost/ws-1');
-    expect(mocks.hasPendingWorkspaceInvitations).toHaveBeenCalledWith(
-      expect.anything(),
-      {
-        authEmail: 'invitee@example.com',
-        userId: 'user-1',
-      }
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.hasPendingWorkspaceInvitations).not.toHaveBeenCalled();
   });
 
-  it('redirects a new invitee without a default workspace to the invited workspace', async () => {
+  it('lets add-account persist multi-account sessions', async () => {
     mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient(
-        {
-          email: 'new-invitee@example.com',
-          id: 'user-new',
-        },
-        null
-      )
-    );
-    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
-    mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
-    mocks.getUserDefaultWorkspace.mockResolvedValue(null);
-    mocks.listPendingWorkspaceInvitations.mockResolvedValue([
-      { workspace: { id: 'ws-invited' } },
-    ]);
-
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      createSessionRequest('http://localhost/onboarding')
-    );
-
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'http://localhost/ws-invited'
-    );
-  });
-
-  it('lets add-account persist multi-account sessions before onboarding redirects', async () => {
-    mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient(
-        {
-          email: 'new-account@example.com',
-          id: 'user-2',
-        },
-        null
-      )
+      createAuthenticatedSupabaseClient({
+        email: 'new-account@example.com',
+        id: 'user-2',
+      })
     );
 
     const { proxy } = await import('../proxy');
@@ -1500,15 +1435,12 @@ describe('web proxy api handling', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 
-  it('skips forced onboarding for protected routes when an invite is pending', async () => {
+  it('keeps protected routes available when an invite is pending', async () => {
     mocks.createClient.mockResolvedValue(
-      createAuthenticatedSupabaseClient(
-        {
-          email: 'invitee@example.com',
-          id: 'user-1',
-        },
-        null
-      )
+      createAuthenticatedSupabaseClient({
+        email: 'invitee@example.com',
+        id: 'user-1',
+      })
     );
     mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
     mocks.hasPendingWorkspaceInvitations.mockResolvedValue(true);
@@ -1520,13 +1452,7 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
-    expect(mocks.hasPendingWorkspaceInvitations).toHaveBeenCalledWith(
-      expect.anything(),
-      {
-        authEmail: 'invitee@example.com',
-        userId: 'user-1',
-      }
-    );
+    expect(mocks.hasPendingWorkspaceInvitations).not.toHaveBeenCalled();
   });
 
   it('redirects the legacy dashboard alias to the default workspace home', async () => {

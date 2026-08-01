@@ -48,14 +48,15 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('[wsId] dashboard page compile graph', () => {
-  it('imports only the thin Mira client wrapper at the route entry', () => {
+  it('keeps Mira out of the home route and imports the adaptive home', () => {
     expect(pageSource).not.toMatch(staticImportPattern('next/dynamic'));
     expect(pageSource).not.toMatch(
       staticImportPattern('@/components/loading-statistic-card')
     );
-    expect(pageSource).toMatch(
+    expect(pageSource).not.toMatch(
       staticImportPattern('./components/mira-dashboard-client')
     );
+    expect(pageSource).toMatch(staticImportPattern('./connected-home'));
   });
 
   it('keeps auth and workspace helper modules behind async split points', () => {

@@ -1106,6 +1106,28 @@
     "workspace-invite-accepted": "Joined workspace",
     "workspace-invite-declined": "Invite declined"
   },
+  "onboarding_guide": {
+    "close": "Close guide",
+    "confirmation_note": "Sending, publishing, provider changes, billing, and paid AI actions always require an explicit confirmation.",
+    "description": "Replay optional guidance whenever you want to relearn an app or explore the Tuturuuu ecosystem.",
+    "done": "Done",
+    "employee_test": "Isolated employee test",
+    "employee_test_description": "Test the journey without changing your normal progress.",
+    "feedback": "Share guidance feedback",
+    "feedback_description": "Tell the Tuturuuu team what was clear, confusing, or missing.",
+    "next": "Next",
+    "replay_app": "Replay this app guide",
+    "replay_app_description": "Start a short, skippable mission for the app you are using.",
+    "restart_journey": "Restart full journey",
+    "restart_journey_description": "Return to your Tuturuuu home and choose a new role and goal pathway. Your data is not changed.",
+    "step_continue": "Continue with confidence",
+    "step_continue_description": "Move into the real workflow when you are ready.",
+    "step_discover": "Discover the essentials",
+    "step_discover_description": "See where this app fits in your goal pathway and what it can do for you.",
+    "step_try": "Try a guided action",
+    "step_try_description": "Practice in context. You can skip or close the guide at any time.",
+    "title": "Guidance and learning"
+  },
   "settings": {
     "approvals": {
       "description": "Configure approval workflows for posts and reports",

@@ -9,7 +9,7 @@ use crate::{
 
 pub(crate) const ONBOARDING_PROGRESS_PATH: &str = "/api/v1/user/onboarding-progress";
 const ONBOARDING_PROGRESS_TABLE: &str = "onboarding_progress";
-const ALLOWED_ONBOARDING_PROGRESS_FIELDS: [&str; 15] = [
+const ALLOWED_ONBOARDING_PROGRESS_FIELDS: [&str; 22] = [
     "completed_steps",
     "current_step",
     "workspace_name",
@@ -25,6 +25,13 @@ const ALLOWED_ONBOARDING_PROGRESS_FIELDS: [&str; 15] = [
     "language_preference",
     "notifications_enabled",
     "team_workspace_id",
+    "persona",
+    "goals",
+    "completed_missions",
+    "dismissed_at",
+    "replay_app",
+    "guidance_mode",
+    "journey_revision",
 ];
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const INVALID_BODY_MESSAGE: &str = "Invalid request body";
@@ -65,7 +72,10 @@ async fn onboarding_progress_get_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(user_id) = authenticated_user_id(contact_data, request, outbound).await else {
+    let Some(user) = authenticated_user(contact_data, request, outbound).await else {
+        return unauthorized_response();
+    };
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
         return unauthorized_response();
     };
 
@@ -82,12 +92,22 @@ async fn onboarding_progress_patch_response(
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(user_id) = authenticated_user_id(contact_data, request, outbound).await else {
+    let Some(user) = authenticated_user(contact_data, request, outbound).await else {
         return unauthorized_response();
     };
     let updates = match onboarding_progress_updates(request.body_text) {
         Ok(updates) => updates,
         Err(error) => return onboarding_progress_updates_error_response(error),
+    };
+    if updates.get("guidance_mode").and_then(Value::as_str) == Some("employee_test")
+        && !supabase_auth::is_exact_tuturuuu_dot_com_email(user.email.as_deref())
+    {
+        return no_store_response(json_response(403, json!({
+            "message": "Employee test mode is restricted",
+        })));
+    }
+    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
+        return unauthorized_response();
     };
 
     let progress = match upsert_onboarding_progress(contact_data, &user_id, updates, outbound).await
@@ -99,16 +119,13 @@ async fn onboarding_progress_patch_response(
     no_store_response(json_response(200, progress))
 }
 
-async fn authenticated_user_id(
+async fn authenticated_user(
     contact_data: &contact::ContactDataConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
-) -> Option<String> {
+) -> Option<supabase_auth::SupabaseAuthUser> {
     let access_token = supabase_auth::request_access_token(request)?;
-    let user =
-        supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await?;
-
-    user.id.filter(|id| !id.trim().is_empty())
+    supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
 }
 
 async fn fetch_onboarding_progress(

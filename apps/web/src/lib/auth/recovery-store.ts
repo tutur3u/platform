@@ -227,21 +227,27 @@ export function getAuthRecoveryLocalizedPath(
 }
 
 function canonicalizeAuthRecoveryRedirectPath(path: string) {
+  if (path === '/onboarding') {
+    return '/personal';
+  }
+
   if (path === `/${AUTH_RECOVERY_FALLBACK_LOCALE}`) {
     return '/';
   }
 
   const defaultLocalePrefix = `/${AUTH_RECOVERY_FALLBACK_LOCALE}/`;
-  return path.startsWith(defaultLocalePrefix)
+  const canonicalPath = path.startsWith(defaultLocalePrefix)
     ? path.slice(AUTH_RECOVERY_FALLBACK_LOCALE.length + 1)
     : path;
+
+  return canonicalPath === '/onboarding' ? '/personal' : canonicalPath;
 }
 
 export function sanitizeAuthRecoveryRedirectPath(
   value: string | null | undefined,
   locale = AUTH_RECOVERY_FALLBACK_LOCALE
 ) {
-  const fallbackPath = getAuthRecoveryLocalizedPath('/onboarding', locale);
+  const fallbackPath = getAuthRecoveryLocalizedPath('/personal', locale);
   if (!value) return fallbackPath;
 
   try {

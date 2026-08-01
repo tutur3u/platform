@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getLaunchableApp,
+  getLaunchableAppByHostname,
   getLaunchableAppByTitle,
   getLaunchableAppOrigin,
   LAUNCHABLE_APP_CATEGORIES,
@@ -34,6 +35,16 @@ describe('launchable apps', () => {
     expect(getLaunchableAppByTitle('questionnaires')?.slug).toBe('forms');
     expect(getLaunchableAppByTitle('repositories')?.slug).toBe('git');
     expect(getLaunchableAppByTitle('apps gateway')?.slug).toBe('apps');
+  });
+
+  it('resolves production and Portless hostnames', () => {
+    expect(getLaunchableAppByHostname('calendar.tuturuuu.com')?.slug).toBe(
+      'calendar'
+    );
+    expect(getLaunchableAppByHostname('finance.tuturuuu.localhost')?.slug).toBe(
+      'finance'
+    );
+    expect(getLaunchableAppByHostname('localhost:7808')?.slug).toBe('finance');
   });
 
   it('keeps retired apps out of the catalog and pins category overrides', () => {

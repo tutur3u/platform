@@ -7533,4 +7533,70 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get meetUpdated => 'Đã lưu cuộc họp.';
+
+  @override
+  String get connectedOnboardingEcosystemTitle => 'Kết nối mọi mục tiêu của bạn';
+
+  @override
+  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu kết nối lập kế hoạch, cộng tác, vận hành, học tập và sáng tạo trong một không gian thích ứng.';
+
+  @override
+  String get connectedOnboardingRoleTitle => 'Cá nhân hóa Tuturuuu';
+
+  @override
+  String get connectedOnboardingRoleSubtitle => 'Chọn góc nhìn phù hợp nhất với cách bạn làm việc. Lựa chọn này chỉ thay đổi đề xuất.';
+
+  @override
+  String get connectedOnboardingRoleProfessional => 'Chuyên gia';
+
+  @override
+  String get connectedOnboardingRoleStudent => 'Sinh viên';
+
+  @override
+  String get connectedOnboardingRoleFounder => 'Nhà sáng lập';
+
+  @override
+  String get connectedOnboardingRoleExecutive => 'Lãnh đạo doanh nghiệp';
+
+  @override
+  String get connectedOnboardingRoleTeamLeader => 'Trưởng nhóm';
+
+  @override
+  String get connectedOnboardingGoalTitle => 'Bạn muốn thúc đẩy điều gì?';
+
+  @override
+  String get connectedOnboardingGoalSubtitle => 'Chọn một hoặc nhiều lộ trình mục tiêu. Bạn có thể thay đổi bất cứ lúc nào.';
+
+  @override
+  String get connectedOnboardingGoalFocus => 'Tập trung và lập kế hoạch';
+
+  @override
+  String get connectedOnboardingGoalCollaborate => 'Cộng tác';
+
+  @override
+  String get connectedOnboardingGoalOperate => 'Vận hành doanh nghiệp';
+
+  @override
+  String get connectedOnboardingGoalLearn => 'Học và giảng dạy';
+
+  @override
+  String get connectedOnboardingGoalBuild => 'Xây dựng và sáng tạo';
+
+  @override
+  String get connectedOnboardingToolkitTitle => 'Bộ công cụ thích ứng với bạn';
+
+  @override
+  String get connectedOnboardingToolkitSubtitle => 'Công việc, Lịch, Tài chính, Học tập và Mira phối hợp cùng nhau. Mọi hướng dẫn đều ngắn, tùy chọn và có thể mở lại.';
+
+  @override
+  String get connectedOnboardingFinish => 'Khám phá Tuturuuu';
+
+  @override
+  String get connectedOnboardingSkip => 'Để sau';
+
+  @override
+  String get connectedOnboardingSettingsTitle => 'Mở lại hướng dẫn Tuturuuu';
+
+  @override
+  String get connectedOnboardingSettingsDescription => 'Xem lại vai trò, lộ trình mục tiêu và hệ sinh thái ứng dụng kết nối mà không thay đổi dữ liệu của bạn.';
 }

@@ -12,6 +12,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
 import 'package:mobile/features/profile/cubit/profile_state.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
@@ -582,6 +583,16 @@ class _SettingsOverviewSection extends StatelessWidget {
           title: l10n.settingsExperimentalAppsSectionTitle,
           subtitle: l10n.settingsExperimentalAppsSectionDescription,
           onTap: () => context.push(Routes.settingsExperiments),
+        ),
+        SettingsTile(
+          icon: Icons.explore_outlined,
+          title: l10n.connectedOnboardingSettingsTitle,
+          subtitle: l10n.connectedOnboardingSettingsDescription,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const OnboardingPage(replay: true),
+            ),
+          ),
         ),
         if (showInfrastructure)
           SettingsTile(

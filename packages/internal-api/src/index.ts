@@ -183,6 +183,7 @@ export {
   type BackendNovaCurrentTeamResponse,
   type BackendOnboardingProgress,
   type BackendOnboardingProgressResponse,
+  type BackendOnboardingProgressUpdate,
   type BackendOtpSettingsRequest,
   type BackendOtpSettingsResponse,
   type BackendRouteManifestProgress,
@@ -241,6 +242,7 @@ export {
   getBackendWorkspacePostPermissions,
   getConfiguredBackendApiBaseUrl,
   runBackendInfrastructurePostEmailQueue,
+  updateBackendOnboardingProgress,
   withBackendServiceBinding,
   withForwardedBackendApiAuth,
 } from './backend';
@@ -1285,6 +1287,12 @@ export {
   type WorkspaceNotificationPreferenceUpdate,
 } from './notifications';
 export { getCurrentUserNovaTeam } from './nova';
+export {
+  type ConnectedOnboardingProgress,
+  type ConnectedOnboardingUpdate,
+  getConnectedOnboardingProgress,
+  updateConnectedOnboardingProgress,
+} from './onboarding';
 export {
   changePaySubscriptionPlan,
   createPayCreditPackCheckout,

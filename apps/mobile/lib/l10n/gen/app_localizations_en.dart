@@ -7563,4 +7563,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetUpdated => 'Meeting saved.';
+
+  @override
+  String get connectedOnboardingEcosystemTitle => 'Your goals, connected';
+
+  @override
+  String get connectedOnboardingEcosystemSubtitle => 'Tuturuuu brings planning, collaboration, operations, learning, and creation into one adaptive workspace.';
+
+  @override
+  String get connectedOnboardingRoleTitle => 'Make Tuturuuu yours';
+
+  @override
+  String get connectedOnboardingRoleSubtitle => 'Choose the perspective that best matches how you work. This only changes recommendations.';
+
+  @override
+  String get connectedOnboardingRoleProfessional => 'Professional';
+
+  @override
+  String get connectedOnboardingRoleStudent => 'Student';
+
+  @override
+  String get connectedOnboardingRoleFounder => 'Founder';
+
+  @override
+  String get connectedOnboardingRoleExecutive => 'Executive';
+
+  @override
+  String get connectedOnboardingRoleTeamLeader => 'Team leader';
+
+  @override
+  String get connectedOnboardingGoalTitle => 'What do you want to move forward?';
+
+  @override
+  String get connectedOnboardingGoalSubtitle => 'Pick one or more goal pathways. You can change them whenever you want.';
+
+  @override
+  String get connectedOnboardingGoalFocus => 'Focus and plan';
+
+  @override
+  String get connectedOnboardingGoalCollaborate => 'Collaborate';
+
+  @override
+  String get connectedOnboardingGoalOperate => 'Operate a business';
+
+  @override
+  String get connectedOnboardingGoalLearn => 'Learn and teach';
+
+  @override
+  String get connectedOnboardingGoalBuild => 'Build and create';
+
+  @override
+  String get connectedOnboardingToolkitTitle => 'A toolkit that adapts to you';
+
+  @override
+  String get connectedOnboardingToolkitSubtitle => 'Tasks, Calendar, Finance, Learn, and Mira work together. Every guide is short, optional, and replayable.';
+
+  @override
+  String get connectedOnboardingFinish => 'Explore Tuturuuu';
+
+  @override
+  String get connectedOnboardingSkip => 'Skip for now';
+
+  @override
+  String get connectedOnboardingSettingsTitle => 'Replay Tuturuuu guide';
+
+  @override
+  String get connectedOnboardingSettingsDescription => 'Revisit roles, goal pathways, and the connected app ecosystem without changing your data.';
 }

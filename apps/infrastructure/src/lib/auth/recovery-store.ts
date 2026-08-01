@@ -241,7 +241,7 @@ export function sanitizeAuthRecoveryRedirectPath(
   value: string | null | undefined,
   locale = AUTH_RECOVERY_FALLBACK_LOCALE
 ) {
-  const fallbackPath = getAuthRecoveryLocalizedPath('/onboarding', locale);
+  const fallbackPath = getAuthRecoveryLocalizedPath('/personal', locale);
   if (!value) return fallbackPath;
 
   try {
@@ -249,9 +249,17 @@ export function sanitizeAuthRecoveryRedirectPath(
     if (parsed.origin !== 'https://tuturuuu.local') {
       return fallbackPath;
     }
-    return canonicalizeAuthRecoveryRedirectPath(
+    const canonicalPath = canonicalizeAuthRecoveryRedirectPath(
       `${parsed.pathname}${parsed.search}${parsed.hash}`
     );
+    if (
+      canonicalPath === '/onboarding' ||
+      canonicalPath.startsWith('/onboarding?') ||
+      /^\/[a-z]{2}\/onboarding(?:[/?#]|$)/.test(canonicalPath)
+    ) {
+      return fallbackPath;
+    }
+    return canonicalPath;
   } catch {
     return fallbackPath;
   }

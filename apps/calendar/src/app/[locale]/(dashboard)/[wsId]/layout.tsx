@@ -14,7 +14,7 @@ import { WorkspacePresenceProvider } from '@tuturuuu/tasks-ui/tu-do/providers/wo
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import { CalendarNavigationProvider } from '@/components/calendar-navigation-provider';
 import { SidebarProvider } from '@/context/sidebar-context';
@@ -53,7 +53,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  if (!workspace) redirect('/onboarding');
+  if (!workspace) notFound();
   if (!workspace?.joined) redirect('/');
 
   const wsId = workspace.id;

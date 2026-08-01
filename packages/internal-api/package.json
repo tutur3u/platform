@@ -172,6 +172,11 @@
       "import": "./dist/mind.js",
       "require": "./dist/mind.js"
     },
+    "./onboarding": {
+      "types": "./dist/onboarding.d.ts",
+      "import": "./dist/onboarding.js",
+      "require": "./dist/onboarding.js"
+    },
     "./promotions": {
       "types": "./dist/promotions.d.ts",
       "import": "./dist/promotions.js",

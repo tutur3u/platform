@@ -53,7 +53,7 @@ export default function Security({ workspace }: Props) {
 
     await deleteWorkspace(workspace.id, {
       onSuccess: () => {
-        router.push('/onboarding');
+        router.push('/');
         router.refresh();
       },
       onError: () => {

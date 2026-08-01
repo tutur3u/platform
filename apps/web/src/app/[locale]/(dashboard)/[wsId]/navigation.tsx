@@ -313,6 +313,15 @@ export async function WorkspaceNavigationLinks({
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
     },
+    {
+      id: 'assistant',
+      title: t('sidebar_tabs.mira'),
+      href: `/${personalOrWsId}/assistant`,
+      icon: createDashboardNavigationIcon('Sparkles', 'h-5 w-5'),
+      preferenceLocked: true,
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
+    },
     null,
     {
       id: 'tasks',

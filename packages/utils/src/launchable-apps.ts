@@ -416,6 +416,29 @@ export function getLaunchableAppByTitle(value?: string | null) {
   );
 }
 
+export function getLaunchableAppByHostname(hostname: string) {
+  const normalized = hostname.trim().toLowerCase();
+  if (!normalized) return null;
+  const normalizedHostname = normalized.split(':')[0];
+
+  return (
+    LAUNCHABLE_APPS.find((app) => {
+      if (normalizedHostname === new URL(app.productionUrl).hostname)
+        return true;
+      if (
+        normalizedHostname === `${app.portlessApp}.tuturuuu.localhost` ||
+        normalizedHostname === `${app.slug}.tuturuuu.localhost`
+      ) {
+        return true;
+      }
+
+      return 'localhostOrigin' in app && app.localhostOrigin
+        ? normalized === new URL(app.localhostOrigin).host
+        : false;
+    }) ?? null
+  );
+}
+
 function getAutoEnvironment(currentOrigin?: string): LaunchableAppEnvironment {
   if (currentOrigin?.includes('tuturuuu.localhost')) return 'portless';
   if (currentOrigin?.includes('localhost')) return 'localhost';

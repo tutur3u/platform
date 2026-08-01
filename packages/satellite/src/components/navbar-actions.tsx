@@ -30,10 +30,7 @@ export default async function NavbarActions({
             </>
           ) : (
             <>
-              <GetStartedButton
-                text={t('common.get-started')}
-                href="/onboarding"
-              />
+              <GetStartedButton text={t('common.get-started')} href="/signup" />
               <LanguageWrapper
                 cookieName={LOCALE_COOKIE_NAME}
                 defaultLocale={defaultLocale}
