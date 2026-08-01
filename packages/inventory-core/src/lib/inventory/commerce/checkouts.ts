@@ -102,7 +102,10 @@ const CHECKOUT_LINE_SELECT = `
   title,
   quantity,
   unit_price,
-  subtotal_amount
+  subtotal_amount,
+  catalog_basis_amount,
+  recognized_revenue_amount,
+  revenue_allocation_source
 `;
 
 function normalizePagination(page?: number, pageSize?: number) {
@@ -372,7 +375,7 @@ export async function markCheckoutProvider({
   wsId,
 }: {
   checkoutId: string;
-  provider: 'polar' | 'square_pos' | 'square_terminal';
+  provider: 'cash' | 'polar' | 'square_pos' | 'square_terminal';
   wsId: string;
 }) {
   const { inventory } = await createPrivateInventoryClient();

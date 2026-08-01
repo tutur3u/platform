@@ -4336,6 +4336,7 @@
   },
   "inventory-finance-reconciliation": {
     "all_providers": "All providers",
+    "allocation_breakdown": "Component revenue breakdown",
     "analytics_description": "Provider-confirmed sales and corrections. Unlinked entries are excluded from wallet and income totals.",
     "analytics_title": "Inventory sales reconciliation",
     "apply_defaults": "Apply mapped defaults",
@@ -4368,6 +4369,7 @@
     "nothing_pending": "Nothing pending",
     "pending_metric": "Inventory sales needing a wallet",
     "pending_metric_value": "{count} · {amount}",
+    "provider_cash": "Cash",
     "provider_fields_locked": "The provider controls the amount and occurrence date. Wallet, category, tags, notes, and confidentiality remain editable.",
     "provider_polar": "Polar",
     "provider_source": "Provider source",

@@ -378,12 +378,15 @@ export function createSimulatedCheckoutResponse({
   const lines = pricedLines.map(({ line, priced }, index) => {
     return {
       bundleId: line.bundleId ?? null,
+      catalogBasisAmount: priced.subtotal,
       checkoutSessionId: publicToken,
       id: `${publicToken}_${index}`,
       listingId: line.listingId ?? null,
       variantId: line.variantId ?? null,
       productId: priced.productId,
       quantity: line.quantity,
+      recognizedRevenueAmount: priced.subtotal,
+      revenueAllocationSource: 'direct' as const,
       subtotalAmount: priced.subtotal,
       title: priced.title,
       unitId: priced.unitId,

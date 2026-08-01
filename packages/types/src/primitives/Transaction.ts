@@ -14,7 +14,7 @@ export interface InventoryTransactionSource {
     | 'chargeback_hold'
     | 'chargeback_release'
     | 'manual_provider_adjustment';
-  provider: 'polar' | 'square_pos' | 'square_terminal';
+  provider: 'cash' | 'polar' | 'square_pos' | 'square_terminal';
   providerReferenceId: string;
   reconciliationHref: string;
   type: 'inventory';

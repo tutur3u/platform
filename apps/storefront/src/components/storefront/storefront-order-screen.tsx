@@ -168,7 +168,7 @@ export function StorefrontOrderScreen({
                       </span>
                       <span className="shrink-0 whitespace-nowrap font-medium tabular-nums">
                         {formatMoneyFromMinor(
-                          line.subtotalAmount,
+                          line.recognizedRevenueAmount,
                           order.currency
                         )}
                       </span>

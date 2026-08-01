@@ -463,6 +463,7 @@ describe('Inventory operator form workflows', () => {
     for (const locale of ['en', 'vi'] as const) {
       const tree = messages(locale);
       for (const mode of [
+        'cash',
         'polar',
         'square_pos',
         'square_terminal',

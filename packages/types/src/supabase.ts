@@ -5002,12 +5002,15 @@ export type Database = {
       inventory_checkout_lines: {
         Row: {
           bundle_id: string | null;
+          catalog_basis_amount: number;
           checkout_session_id: string;
           created_at: string | null;
           id: string;
           listing_id: string | null;
           product_id: string;
           quantity: number;
+          recognized_revenue_amount: number;
+          revenue_allocation_source: string;
           subtotal_amount: number;
           title: string;
           unit_id: string;
@@ -5017,12 +5020,15 @@ export type Database = {
         };
         Insert: {
           bundle_id?: string | null;
+          catalog_basis_amount?: number;
           checkout_session_id: string;
           created_at?: string | null;
           id?: string;
           listing_id?: string | null;
           product_id: string;
           quantity: number;
+          recognized_revenue_amount?: number;
+          revenue_allocation_source?: string;
           subtotal_amount?: number;
           title: string;
           unit_id: string;
@@ -5032,12 +5038,15 @@ export type Database = {
         };
         Update: {
           bundle_id?: string | null;
+          catalog_basis_amount?: number;
           checkout_session_id?: string;
           created_at?: string | null;
           id?: string;
           listing_id?: string | null;
           product_id?: string;
           quantity?: number;
+          recognized_revenue_amount?: number;
+          revenue_allocation_source?: string;
           subtotal_amount?: number;
           title?: string;
           unit_id?: string;
@@ -5092,6 +5101,9 @@ export type Database = {
       };
       inventory_checkout_sessions: {
         Row: {
+          cash_category_id: string | null;
+          cash_collected_by: string | null;
+          cash_wallet_id: string | null;
           checkout_provider: string | null;
           completed_at: string | null;
           conversion_fee_estimate_amount: number;
@@ -5139,6 +5151,9 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
+          cash_category_id?: string | null;
+          cash_collected_by?: string | null;
+          cash_wallet_id?: string | null;
           checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
@@ -5186,6 +5201,9 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          cash_category_id?: string | null;
+          cash_collected_by?: string | null;
+          cash_wallet_id?: string | null;
           checkout_provider?: string | null;
           completed_at?: string | null;
           conversion_fee_estimate_amount?: number;
@@ -5233,6 +5251,13 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'inventory_checkout_sessions_cash_wallet_id_fkey';
+            columns: ['cash_wallet_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_wallets';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'inventory_checkout_sessions_storefront_id_fkey';
             columns: ['storefront_id'];
@@ -14636,6 +14661,10 @@ export type Database = {
         Args: { p_api_key_id: string; p_model_id: string; p_ws_id: string };
         Returns: boolean;
       };
+      allocate_inventory_checkout_revenue: {
+        Args: { p_checkout_id: string; p_proportional_source?: string };
+        Returns: number;
+      };
       assert_finance_chart_date_range: {
         Args: { _end_date: string; _max_days: number; _start_date: string };
         Returns: undefined;
@@ -15173,6 +15202,21 @@ export type Database = {
           id: string;
           lease_id: string;
           status: string;
+        }[];
+      };
+      complete_inventory_checkout_session_cash_payment: {
+        Args: {
+          p_actor_id: string;
+          p_category_id: string;
+          p_checkout_id: string;
+          p_now?: string;
+          p_wallet_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          checkout_id: string;
+          finance_entry_id: string;
+          wallet_transaction_id: string;
         }[];
       };
       complete_inventory_checkout_session_payment: {
@@ -16472,6 +16516,7 @@ export type Database = {
       list_inventory_sales_export_rows: {
         Args: { p_period_id: string; p_ws_id: string };
         Returns: {
+          allocation_source: string;
           category_name: string;
           checkout_provider: string;
           completed_at: string;

@@ -26,6 +26,7 @@ import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { authorizeSquareCheckoutStaff } from '@/lib/square-checkout-access';
 import { resolveSquareCheckoutMethod } from '@/lib/square-checkout-method';
+import { getCheckoutBuyerPayload } from './checkout-buyer';
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -35,50 +36,6 @@ type InventoryCheckoutRpcData = {
   publicToken?: string;
   public_token?: string;
 };
-
-type CheckoutAuthContext = Extract<
-  Awaited<ReturnType<typeof resolveSessionAuthContext>>,
-  { ok: true }
->;
-
-function getUserMetadataValue(user: unknown, keys: string[]) {
-  if (!user || typeof user !== 'object') return null;
-  const metadata = (user as { user_metadata?: unknown }).user_metadata;
-  if (!metadata || typeof metadata !== 'object') return null;
-
-  for (const key of keys) {
-    const value = (metadata as Record<string, unknown>)[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-  }
-
-  return null;
-}
-
-function getCheckoutBuyerPayload(auth: CheckoutAuthContext) {
-  const userWithEmail = auth.user as typeof auth.user & {
-    email?: string | null;
-    phone?: string | null;
-  };
-  const email = userWithEmail.email?.trim();
-  const name =
-    getUserMetadataValue(auth.user, [
-      'full_name',
-      'name',
-      'display_name',
-      'preferred_name',
-    ]) ??
-    email ??
-    'Tuturuuu buyer';
-
-  return {
-    customerAuthUid: auth.user.id,
-    customerEmail: email ?? `${auth.user.id}@users.tuturuuu.local`,
-    customerName: name,
-    customerPhone:
-      userWithEmail.phone ??
-      getUserMetadataValue(auth.user, ['phone', 'phone_number']),
-  };
-}
 
 type RpcClient = {
   schema: (schema: 'private') => {
@@ -228,7 +185,8 @@ export async function POST(request: Request, { params }: Params) {
     if (!checkoutAuth.ok) return checkoutAuth.response;
 
     const buyerDefaults = getCheckoutBuyerPayload(checkoutAuth);
-    const { squareDeviceId, ...checkoutInputPayload } = payload;
+    const { cash, checkoutMethod, squareDeviceId, ...checkoutInputPayload } =
+      payload;
     // Buyer-entered details win over the session defaults (so a shopper can name
     // a different recipient/contact), but the auth uid stays authoritative.
     const checkoutPayload = {
@@ -242,6 +200,10 @@ export async function POST(request: Request, { params }: Params) {
     };
 
     const configuredCheckoutMode = storefrontPayload.storefront.checkoutMode;
+    const resolvedCheckoutMethod =
+      configuredCheckoutMode === 'cash'
+        ? 'cash'
+        : (checkoutMethod ?? 'configured');
 
     if (configuredCheckoutMode === 'disabled') {
       return NextResponse.json(
@@ -251,6 +213,12 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     if (configuredCheckoutMode === 'simulated') {
+      if (resolvedCheckoutMethod === 'cash') {
+        return NextResponse.json(
+          { message: 'Cash checkout is unavailable for simulated storefronts' },
+          { status: 409 }
+        );
+      }
       await recordCheckoutAnalyticsEventWithAdmin({
         customerAuthUid: checkoutPayload.customerAuthUid,
         eventType: 'checkout_created',
@@ -268,9 +236,18 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    let checkoutMode = configuredCheckoutMode;
+    if (resolvedCheckoutMethod === 'cash' && !cash) {
+      return NextResponse.json(
+        { message: 'Cash wallet and category are required' },
+        { status: 400 }
+      );
+    }
+
+    let checkoutMode =
+      resolvedCheckoutMethod === 'cash' ? 'cash' : configuredCheckoutMode;
 
     if (
+      checkoutMode === 'cash' ||
       configuredCheckoutMode === 'square_pos' ||
       configuredCheckoutMode === 'square_terminal'
     ) {
@@ -287,11 +264,17 @@ export async function POST(request: Request, { params }: Params) {
       );
       if (!('allowed' in rateLimit)) return rateLimit;
 
-      const method = await resolveSquareCheckoutMethod({
-        configuredCheckoutMode,
-        wsId: storefrontPayload.storefront.wsId,
-      });
-      checkoutMode = method.checkoutMode;
+      if (
+        checkoutMode !== 'cash' &&
+        (configuredCheckoutMode === 'square_pos' ||
+          configuredCheckoutMode === 'square_terminal')
+      ) {
+        const method = await resolveSquareCheckoutMethod({
+          configuredCheckoutMode,
+          wsId: storefrontPayload.storefront.wsId,
+        });
+        checkoutMode = method.checkoutMode;
+      }
     }
 
     let terminalDeviceId: string | undefined;
@@ -396,6 +379,94 @@ export async function POST(request: Request, { params }: Params) {
         { message: 'Checkout reservation failed' },
         { status: 500 }
       );
+    }
+
+    if (checkoutMode === 'cash') {
+      let cashCompleted = false;
+      try {
+        const cashSelection = cash;
+        if (!cashSelection) {
+          throw new Error('Cash wallet and category are required');
+        }
+        const { error: completionError } = await privateRpc.rpc(
+          'complete_inventory_checkout_session_cash_payment' as never,
+          {
+            p_actor_id: checkoutAuth.user.id,
+            p_category_id: cashSelection.categoryId,
+            p_checkout_id: checkout.id,
+            p_wallet_id: cashSelection.walletId,
+            p_ws_id: checkout.wsId,
+          }
+        );
+        if (completionError) throw completionError;
+        cashCompleted = true;
+
+        const completedCheckout =
+          (await getCheckoutByPublicToken(publicToken)) ?? checkout;
+        const nextUrl = `${getStorefrontUrl(request).replace(/\/$/u, '')}/${slug}/orders/${publicToken}`;
+        revalidatePublicStorefront(slug);
+        await recordCheckoutAnalyticsEvent(privateRpc, {
+          checkoutId: checkout.id,
+          customerAuthUid: checkoutPayload.customerAuthUid,
+          eventType: 'checkout_created',
+          metadata: { checkoutMode: 'cash' },
+          storefront: storefrontPayload.storefront,
+        });
+
+        return NextResponse.json(
+          {
+            checkout: completedCheckout,
+            checkoutMode: 'cash',
+            checkoutUrl: nextUrl,
+            nextUrl,
+          },
+          { status: 201 }
+        );
+      } catch (error) {
+        if (cashCompleted) {
+          console.error(
+            'Cash checkout completed but response enrichment failed',
+            error
+          );
+          const nextUrl = `${getStorefrontUrl(request).replace(/\/$/u, '')}/${slug}/orders/${publicToken}`;
+          revalidatePublicStorefront(slug);
+          return NextResponse.json(
+            {
+              checkout,
+              checkoutMode: 'cash',
+              checkoutUrl: nextUrl,
+              nextUrl,
+            },
+            { status: 201 }
+          );
+        }
+        if (!cashCompleted) {
+          const { error: releaseError } = await privateRpc.rpc(
+            'release_inventory_checkout_session',
+            {
+              p_checkout_id: checkout.id,
+              p_ws_id: checkout.wsId,
+            }
+          );
+          if (releaseError) {
+            console.error(
+              'Failed to release inventory checkout after cash error',
+              releaseError
+            );
+          }
+        }
+        revalidatePublicStorefront(slug);
+        console.error('Failed to complete cash inventory checkout', error);
+        return NextResponse.json(
+          {
+            message:
+              error instanceof Error && error.message
+                ? error.message
+                : 'Failed to complete cash checkout',
+          },
+          { status: 409 }
+        );
+      }
     }
 
     if (checkoutMode === 'square_terminal') {

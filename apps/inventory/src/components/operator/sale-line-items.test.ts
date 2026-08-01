@@ -57,10 +57,13 @@ describe('checkoutLineToSaleLine', () => {
       checkoutLineToSaleLine(
         {
           bundleId: null,
+          catalogBasisAmount: 2000,
           id: 'line-1',
           listingId: 'listing-1',
           productId: 'product-1',
           quantity: 1,
+          recognizedRevenueAmount: 2000,
+          revenueAllocationSource: 'direct',
           subtotalAmount: 2000,
           title: 'Märpo Elder A3 Poster',
           unitId: 'unit-1',

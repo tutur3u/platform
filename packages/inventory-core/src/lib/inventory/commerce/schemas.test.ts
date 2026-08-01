@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  checkoutCreatePayloadSchema,
   squareSettingsPayloadSchema,
   storefrontPayloadSchema,
 } from './schemas';
@@ -83,6 +84,47 @@ describe('storefrontPayloadSchema', () => {
         ...baseStorefrontPayload,
         checkoutMode: 'square_pos',
       }).success
+    ).toBe(true);
+  });
+
+  it('accepts cash as a first-class checkout mode', () => {
+    expect(
+      storefrontPayloadSchema.safeParse({
+        ...baseStorefrontPayload,
+        checkoutMode: 'cash',
+      }).success
+    ).toBe(true);
+  });
+});
+
+describe('checkoutCreatePayloadSchema', () => {
+  const line = {
+    listingId: '00000000-0000-4000-8000-000000000001',
+    quantity: 1,
+  };
+
+  it('requires owned Finance choices when cash is selected', () => {
+    expect(
+      checkoutCreatePayloadSchema.safeParse({
+        checkoutMethod: 'cash',
+        lines: [line],
+      }).success
+    ).toBe(false);
+    expect(
+      checkoutCreatePayloadSchema.safeParse({
+        cash: {
+          categoryId: '00000000-0000-4000-8000-000000000002',
+          walletId: '00000000-0000-4000-8000-000000000003',
+        },
+        checkoutMethod: 'cash',
+        lines: [line],
+      }).success
+    ).toBe(true);
+  });
+
+  it('keeps omitted checkout methods backward compatible', () => {
+    expect(
+      checkoutCreatePayloadSchema.safeParse({ lines: [line] }).success
     ).toBe(true);
   });
 });

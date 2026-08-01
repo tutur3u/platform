@@ -38,6 +38,7 @@ const ALL = 'all';
 const NONE = 'none';
 const providerValues: Array<InventoryFinanceProvider | typeof ALL> = [
   ALL,
+  'cash',
   'polar',
   'square_pos',
   'square_terminal',
@@ -228,7 +229,7 @@ export function InventoryReconciliationPanel({
           </div>
         </div>
         <Button
-          disabled={syncMutation.isPending}
+          disabled={syncMutation.isPending || provider === 'cash'}
           onClick={() => syncMutation.mutate()}
           size="sm"
           variant="outline"

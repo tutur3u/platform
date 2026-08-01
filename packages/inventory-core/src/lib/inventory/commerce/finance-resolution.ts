@@ -1,4 +1,5 @@
 export type InventoryFinanceProvider =
+  | 'cash'
   | 'polar'
   | 'square_pos'
   | 'square_terminal';
@@ -35,6 +36,7 @@ export function resolveCheckoutProvider(
   >
 ): InventoryFinanceProvider | null {
   if (
+    session.checkout_provider === 'cash' ||
     session.checkout_provider === 'polar' ||
     session.checkout_provider === 'square_pos' ||
     session.checkout_provider === 'square_terminal'

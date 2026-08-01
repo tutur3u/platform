@@ -87,7 +87,8 @@ export function checkoutLineToSaleLine(
   return {
     owner_id: null,
     owner_name: '',
-    price: minorToMajor(line.unitPrice, currencyCode),
+    price:
+      minorToMajor(line.recognizedRevenueAmount, currencyCode) / line.quantity,
     product_id: line.productId,
     product_name: line.title,
     quantity: line.quantity,

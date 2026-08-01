@@ -195,6 +195,7 @@ export type InventoryStorefrontSurfaceStyle = 'glass' | 'soft' | 'solid';
 export type InventoryStorefrontCornerStyle = 'compact' | 'rounded' | 'soft';
 
 export type InventoryStorefrontCheckoutMode =
+  | 'cash'
   | 'disabled'
   | 'polar'
   | 'square_pos'
@@ -496,6 +497,14 @@ export type InventoryCheckoutLine = {
   warehouseId: string;
   title: string;
   quantity: number;
+  catalogBasisAmount: number;
+  recognizedRevenueAmount: number;
+  revenueAllocationSource:
+    | 'current_stock_backfill'
+    | 'direct'
+    | 'equal_weight_fallback'
+    | 'legacy_charged'
+    | 'stock_snapshot';
   unitPrice: number;
   subtotalAmount: number;
 };
@@ -1598,6 +1607,11 @@ export type InventoryCheckoutBundleSelections =
   | InventoryCheckoutBundleSelection[];
 
 export type InventoryCheckoutCreatePayload = {
+  cash?: {
+    categoryId: string;
+    walletId: string;
+  };
+  checkoutMethod?: 'cash' | 'configured';
   customerName?: string;
   customerEmail?: string;
   customerPhone?: string | null;
@@ -1610,6 +1624,18 @@ export type InventoryCheckoutCreatePayload = {
     quantity: number;
     bundleSelections?: InventoryCheckoutBundleSelections;
   }>;
+};
+
+export type InventoryStaffCheckoutOptions = {
+  cash: {
+    categories: Array<{ id: string; name: string }>;
+    defaultCategoryId: string | null;
+    defaultWalletId: string | null;
+    wallets: Array<{ id: string; name: string }>;
+  } | null;
+  configuredCheckoutMode: InventoryStorefrontCheckoutMode;
+  paymentMethods: Array<'cash' | 'configured'>;
+  staffAuthorized: boolean;
 };
 
 export type InventorySquareCheckoutOptions = {
@@ -3607,6 +3633,16 @@ export function getInventorySquareCheckoutOptions(
 ) {
   return getInternalApiClient(options).json<InventorySquareCheckoutOptions>(
     publicStorefrontPath(slug, '/checkout-options'),
+    { cache: 'no-store' }
+  );
+}
+
+export function getInventoryStaffCheckoutOptions(
+  slug: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryStaffCheckoutOptions>(
+    publicStorefrontPath(slug, '/staff-checkout-options'),
     { cache: 'no-store' }
   );
 }

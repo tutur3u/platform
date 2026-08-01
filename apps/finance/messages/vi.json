@@ -4336,6 +4336,7 @@
   },
   "inventory-finance-reconciliation": {
     "all_providers": "Tất cả nhà cung cấp",
+    "allocation_breakdown": "Phân bổ doanh thu thành phần",
     "analytics_description": "Doanh số và điều chỉnh đã được nhà cung cấp xác nhận. Các mục chưa liên kết không được tính vào ví hoặc tổng thu nhập.",
     "analytics_title": "Đối soát doanh số Kho hàng",
     "apply_defaults": "Áp dụng mặc định đã ánh xạ",
@@ -4368,6 +4369,7 @@
     "nothing_pending": "Không có mục đang chờ",
     "pending_metric": "Doanh số Kho hàng cần ví",
     "pending_metric_value": "{count} · {amount}",
+    "provider_cash": "Tiền mặt",
     "provider_fields_locked": "Nhà cung cấp kiểm soát số tiền và ngày phát sinh. Ví, danh mục, thẻ, ghi chú và tính bảo mật vẫn có thể chỉnh sửa.",
     "provider_polar": "Polar",
     "provider_source": "Nguồn nhà cung cấp",

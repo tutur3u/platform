@@ -7,6 +7,12 @@ import type {
 import { z } from 'zod';
 
 export const providerSchema = z.enum([
+  'cash',
+  'polar',
+  'square_pos',
+  'square_terminal',
+]);
+export const externalProviderSchema = z.enum([
   'polar',
   'square_pos',
   'square_terminal',

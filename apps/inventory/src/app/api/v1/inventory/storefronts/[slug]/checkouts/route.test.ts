@@ -884,4 +884,81 @@ describe('inventory storefront checkout route', () => {
       }
     );
   });
+
+  it('completes a staff cash sale through the atomic RPC', async () => {
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          cash: {
+            categoryId: '00000000-0000-4000-8000-000000000002',
+            walletId: '00000000-0000-4000-8000-000000000003',
+          },
+          checkoutMethod: 'cash',
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.checkoutMode).toBe('cash');
+    expect(body.nextUrl).toBe(
+      'http://storefront.test/shop/orders/public-token'
+    );
+    expect(mocks.authorizeSquareCheckoutStaff).toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'complete_inventory_checkout_session_cash_payment',
+      {
+        p_actor_id: 'user-1',
+        p_category_id: '00000000-0000-4000-8000-000000000002',
+        p_checkout_id: 'checkout-1',
+        p_wallet_id: '00000000-0000-4000-8000-000000000003',
+        p_ws_id: 'ws-1',
+      }
+    );
+    expect(mocks.createInventoryPolarCheckout).not.toHaveBeenCalled();
+  });
+
+  it('denies cash checkout before inventory reservation without POS access', async () => {
+    mocks.authorizeSquareCheckoutStaff.mockResolvedValue({
+      ok: false,
+      response: Response.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      ),
+    });
+
+    const response = await POST(
+      new Request('http://storefront.test/api', {
+        body: JSON.stringify({
+          cash: {
+            categoryId: '00000000-0000-4000-8000-000000000002',
+            walletId: '00000000-0000-4000-8000-000000000003',
+          },
+          checkoutMethod: 'cash',
+          lines: [
+            {
+              listingId: '00000000-0000-4000-8000-000000000001',
+              quantity: 1,
+            },
+          ],
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ slug: 'shop' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      'create_inventory_checkout_session',
+      expect.anything()
+    );
+  });
 });

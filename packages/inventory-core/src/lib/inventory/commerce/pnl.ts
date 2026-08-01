@@ -5,6 +5,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 export type SaleLineForPnl = {
   product_id: string | null;
   quantity: number | null;
+  recognized_revenue_amount?: number | null;
   subtotal_amount: number | null;
 };
 
@@ -34,7 +35,8 @@ export function aggregateSalesByProduct(
       revenue: 0,
       unitsSold: 0,
     };
-    entry.revenue += line.subtotal_amount ?? 0;
+    entry.revenue +=
+      line.recognized_revenue_amount ?? line.subtotal_amount ?? 0;
     entry.unitsSold += line.quantity ?? 0;
     byProduct.set(line.product_id, entry);
   }
@@ -71,7 +73,7 @@ export async function getInventorySalesByProduct({
 
   const { data: lines } = await privateDb
     .from('inventory_checkout_lines')
-    .select('product_id, quantity, subtotal_amount')
+    .select('product_id, quantity, subtotal_amount, recognized_revenue_amount')
     .in('checkout_session_id', sessionIds);
 
   const aggregates = aggregateSalesByProduct(lines ?? []);

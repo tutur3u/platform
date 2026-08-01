@@ -3,7 +3,7 @@ import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-aut
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { currencySchema, providerSchema } from '../lib';
+import { currencySchema, externalProviderSchema } from '../lib';
 import { privateFinanceDataClient } from '../private-client';
 
 const payloadSchema = z.object({
@@ -12,7 +12,7 @@ const payloadSchema = z.object({
       z.object({
         categoryId: z.guid().nullable().optional(),
         currency: currencySchema,
-        provider: providerSchema,
+        provider: externalProviderSchema,
         walletId: z.guid().nullable().optional(),
       })
     )

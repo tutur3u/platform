@@ -25,6 +25,28 @@ describe('aggregateSalesByProduct', () => {
       ])
     ).toEqual([]);
   });
+
+  it('treats recognized bundle revenue as authoritative', () => {
+    expect(
+      aggregateSalesByProduct([
+        {
+          product_id: 'a',
+          quantity: 1,
+          recognized_revenue_amount: 75,
+          subtotal_amount: 100,
+        },
+        {
+          product_id: 'b',
+          quantity: 1,
+          recognized_revenue_amount: 225,
+          subtotal_amount: 0,
+        },
+      ])
+    ).toEqual([
+      { productId: 'b', revenue: 225, unitsSold: 1 },
+      { productId: 'a', revenue: 75, unitsSold: 1 },
+    ]);
+  });
 });
 
 /** Awaitable query-chain stub returning a fixed terminal result. */

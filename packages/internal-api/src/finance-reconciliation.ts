@@ -7,9 +7,14 @@ import {
 } from './client';
 
 export type InventoryFinanceProvider =
+  | 'cash'
   | 'polar'
   | 'square_pos'
   | 'square_terminal';
+export type InventoryFinanceExternalProvider = Exclude<
+  InventoryFinanceProvider,
+  'cash'
+>;
 
 export type InventoryFinanceEntryKind =
   | 'sale'
@@ -31,6 +36,20 @@ export interface InventoryFinanceSourceMetadata {
 }
 
 export interface InventoryFinanceEntry {
+  allocations: Array<{
+    allocationSource:
+      | 'current_stock_backfill'
+      | 'direct'
+      | 'equal_weight_fallback'
+      | 'legacy_charged'
+      | 'stock_snapshot';
+    catalogBasisAmount: number;
+    lineId: string;
+    productId: string;
+    quantity: number;
+    recognizedRevenueAmount: number;
+    title: string;
+  }>;
   amount: number;
   amountMinor: number;
   category: { id: string; name: string } | null;
@@ -99,7 +118,7 @@ export interface InventoryFinanceMapping {
   category: { id: string; name: string } | null;
   categoryId: string | null;
   currency: string;
-  provider: InventoryFinanceProvider;
+  provider: InventoryFinanceExternalProvider;
   wallet: { id: string; name: string } | null;
   walletId: string | null;
 }
@@ -108,7 +127,7 @@ export interface PutInventoryFinanceMappingsPayload {
   mappings: Array<{
     categoryId?: string | null;
     currency: string;
-    provider: InventoryFinanceProvider;
+    provider: InventoryFinanceExternalProvider;
     walletId?: string | null;
   }>;
 }

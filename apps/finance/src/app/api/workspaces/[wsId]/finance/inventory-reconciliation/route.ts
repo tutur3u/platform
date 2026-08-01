@@ -158,7 +158,11 @@ export async function GET(request: Request, { params }: Params) {
       .map((row) => row.wallet_transaction_id)
       .filter((id): id is string => Boolean(id));
 
-    const [{ data: checkouts }, { data: transactions }] = await Promise.all([
+    const [
+      { data: checkouts },
+      { data: checkoutLines },
+      { data: transactions },
+    ] = await Promise.all([
       checkoutIds.length
         ? privateClient
             .from<{
@@ -168,6 +172,23 @@ export async function GET(request: Request, { params }: Params) {
             }>('inventory_checkout_sessions')
             .select('id, customer_email, customer_name')
             .in('id', checkoutIds)
+        : Promise.resolve({ data: [] }),
+      checkoutIds.length
+        ? privateClient
+            .from<{
+              catalog_basis_amount: number;
+              checkout_session_id: string;
+              id: string;
+              product_id: string;
+              quantity: number;
+              recognized_revenue_amount: number;
+              revenue_allocation_source: InventoryFinanceEntry['allocations'][number]['allocationSource'];
+              title: string;
+            }>('inventory_checkout_lines')
+            .select(
+              'id, checkout_session_id, product_id, title, quantity, catalog_basis_amount, recognized_revenue_amount, revenue_allocation_source'
+            )
+            .in('checkout_session_id', checkoutIds)
         : Promise.resolve({ data: [] }),
       transactionIds.length
         ? sbAdmin
@@ -200,6 +221,24 @@ export async function GET(request: Request, { params }: Params) {
     const checkoutById = new Map(
       (checkouts ?? []).map((checkout) => [checkout.id, checkout])
     );
+    const allocationsByCheckoutId = new Map<
+      string,
+      InventoryFinanceEntry['allocations']
+    >();
+    for (const line of checkoutLines ?? []) {
+      const allocations =
+        allocationsByCheckoutId.get(line.checkout_session_id) ?? [];
+      allocations.push({
+        allocationSource: line.revenue_allocation_source,
+        catalogBasisAmount: Number(line.catalog_basis_amount),
+        lineId: line.id,
+        productId: line.product_id,
+        quantity: Number(line.quantity),
+        recognizedRevenueAmount: Number(line.recognized_revenue_amount),
+        title: line.title,
+      });
+      allocationsByCheckoutId.set(line.checkout_session_id, allocations);
+    }
     const transactionById = new Map(
       (transactions ?? []).map((transaction) => [transaction.id, transaction])
     );
@@ -227,6 +266,9 @@ export async function GET(request: Request, { params }: Params) {
         ? categoryById.get(transaction.category_id)
         : null;
       return {
+        allocations: row.checkout_session_id
+          ? (allocationsByCheckoutId.get(row.checkout_session_id) ?? [])
+          : [],
         amount: Number(row.amount),
         amountMinor: Number(row.amount_minor),
         category: category

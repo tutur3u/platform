@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link2, ShieldCheck } from '@tuturuuu/icons';
 import {
   getInventoryFinanceMappings,
-  type InventoryFinanceProvider,
+  type InventoryFinanceExternalProvider,
   putInventoryFinanceMappings,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -23,7 +23,7 @@ import { useTransactionCategories } from '@/hooks/use-transaction-categories';
 import { useWallets } from '@/hooks/use-wallets';
 
 const NONE = 'none';
-const providers: InventoryFinanceProvider[] = [
+const providers: InventoryFinanceExternalProvider[] = [
   'polar',
   'square_pos',
   'square_terminal',
@@ -42,7 +42,8 @@ export function InventoryProviderMappingsSettings({
     queryKey: ['inventory-finance-mappings', workspaceId],
     queryFn: () => getInventoryFinanceMappings(workspaceId),
   });
-  const [provider, setProvider] = useState<InventoryFinanceProvider>('polar');
+  const [provider, setProvider] =
+    useState<InventoryFinanceExternalProvider>('polar');
   const [currency, setCurrency] = useState('USD');
   const [walletId, setWalletId] = useState(NONE);
   const [categoryId, setCategoryId] = useState(NONE);
@@ -102,7 +103,7 @@ export function InventoryProviderMappingsSettings({
         <Select
           value={provider}
           onValueChange={(value) =>
-            setProvider(value as InventoryFinanceProvider)
+            setProvider(value as InventoryFinanceExternalProvider)
           }
         >
           <SelectTrigger>

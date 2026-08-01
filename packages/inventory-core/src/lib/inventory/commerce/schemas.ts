@@ -28,6 +28,7 @@ export const StorefrontCornerStyleSchema = z.enum([
 ]);
 
 export const StorefrontCheckoutModeSchema = z.enum([
+  'cash',
   'polar',
   'square_pos',
   'square_terminal',
@@ -300,24 +301,48 @@ const checkoutBundleSelectionsSchema = z.union([
   z.array(checkoutBundleSelectionSchema).min(1).max(64),
 ]);
 
-export const checkoutCreatePayloadSchema = z.object({
-  customerEmail: z.email().optional(),
-  customerName: z.string().trim().min(1).max(160).optional(),
-  customerPhone: z.string().trim().max(64).nullable().optional(),
-  lines: z
-    .array(
-      z.object({
-        bundleId: z.guid().optional(),
-        bundleSelections: checkoutBundleSelectionsSchema.optional(),
-        listingId: z.guid().optional(),
-        quantity: z.number().int().min(1).max(999),
-        variantId: z.guid().optional(),
+export const checkoutCreatePayloadSchema = z
+  .object({
+    cash: z
+      .object({
+        categoryId: z.guid(),
+        walletId: z.guid(),
       })
-    )
-    .min(1),
-  note: z.string().trim().max(2000).nullable().optional(),
-  squareDeviceId: z.string().trim().min(1).max(128).nullable().optional(),
-});
+      .optional(),
+    checkoutMethod: z.enum(['cash', 'configured']).optional(),
+    customerEmail: z.email().optional(),
+    customerName: z.string().trim().min(1).max(160).optional(),
+    customerPhone: z.string().trim().max(64).nullable().optional(),
+    lines: z
+      .array(
+        z.object({
+          bundleId: z.guid().optional(),
+          bundleSelections: checkoutBundleSelectionsSchema.optional(),
+          listingId: z.guid().optional(),
+          quantity: z.number().int().min(1).max(999),
+          variantId: z.guid().optional(),
+        })
+      )
+      .min(1),
+    note: z.string().trim().max(2000).nullable().optional(),
+    squareDeviceId: z.string().trim().min(1).max(128).nullable().optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.checkoutMethod === 'cash' && !value.cash) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Cash wallet and category are required',
+        path: ['cash'],
+      });
+    }
+    if (value.checkoutMethod !== 'cash' && value.cash) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Cash details require cash checkout',
+        path: ['cash'],
+      });
+    }
+  });
 
 export const polarSettingsPayloadSchema = z
   .object({

@@ -2,6 +2,7 @@ import type {
   InventoryBundle,
   InventoryBundleComponent,
   InventoryBundleStatus,
+  InventoryCheckoutLine,
   InventoryCheckoutSession,
   InventoryCheckoutStatus,
   InventoryListingStatus,
@@ -178,12 +179,17 @@ export type CheckoutRow = {
 
 export type CheckoutLineRow = {
   bundle_id: string | null;
+  catalog_basis_amount?: number | null;
   checkout_session_id: string;
   id: string;
   listing_id: string | null;
   variant_id: string | null;
   product_id: string;
   quantity: number;
+  recognized_revenue_amount?: number | null;
+  revenue_allocation_source?:
+    | InventoryCheckoutLine['revenueAllocationSource']
+    | null;
   subtotal_amount: number;
   title: string;
   unit_id: string;
@@ -369,11 +375,16 @@ export function mapCheckout(
     wsId: row.ws_id,
     lines: lines.map((line) => ({
       bundleId: line.bundle_id,
+      catalogBasisAmount: line.catalog_basis_amount ?? line.subtotal_amount,
       id: line.id,
       listingId: line.listing_id,
       variantId: line.variant_id ?? null,
       productId: line.product_id,
       quantity: line.quantity,
+      recognizedRevenueAmount:
+        line.recognized_revenue_amount ?? line.subtotal_amount,
+      revenueAllocationSource:
+        line.revenue_allocation_source ?? 'legacy_charged',
       subtotalAmount: line.subtotal_amount,
       title: line.title,
       unitId: line.unit_id,

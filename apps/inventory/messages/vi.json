@@ -1664,6 +1664,7 @@
         "categoryChoiceMode": "Chế độ chọn theo danh mục",
         "checkoutMode": "Chế độ thanh toán",
         "checkoutModes": {
+          "cash": "Tiền mặt",
           "disabled": "Đã tắt",
           "polar": "Polar",
           "simulated": "Mô phỏng",

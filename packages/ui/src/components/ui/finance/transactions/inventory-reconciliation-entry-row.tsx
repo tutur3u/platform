@@ -8,6 +8,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
+import { minorToMajor } from '@tuturuuu/utils/money';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -25,6 +26,7 @@ export function formatInventoryReconciliationAmount(
 export function inventoryProviderTranslationKey(
   provider: InventoryFinanceProvider
 ) {
+  if (provider === 'cash') return 'provider_cash' as const;
   if (provider === 'polar') return 'provider_polar' as const;
   if (provider === 'square_pos') return 'provider_square_pos' as const;
   return 'provider_square_terminal' as const;
@@ -62,6 +64,34 @@ export function InventoryReconciliationEntryRow({
             entry.customer?.email ||
             t('unknown_customer')}
         </p>
+        {entry.allocations.length > 0 ? (
+          <details className="mt-2 text-xs">
+            <summary className="cursor-pointer text-muted-foreground">
+              {t('allocation_breakdown')}
+            </summary>
+            <div className="mt-2 grid gap-1">
+              {entry.allocations.map((allocation) => (
+                <div
+                  className="flex items-center justify-between gap-3"
+                  key={allocation.lineId}
+                >
+                  <span className="min-w-0 truncate">
+                    {allocation.quantity}× {allocation.title}
+                  </span>
+                  <span className="shrink-0 font-medium tabular-nums">
+                    {formatInventoryReconciliationAmount(
+                      minorToMajor(
+                        allocation.recognizedRevenueAmount,
+                        entry.currency
+                      ),
+                      entry.currency
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : null}
       </div>
       <div className="min-w-0 text-sm">
         <p className="truncate font-mono text-xs">

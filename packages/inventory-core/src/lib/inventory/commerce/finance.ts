@@ -192,6 +192,7 @@ function getSaleReference(
   session: CheckoutFinanceSource,
   provider: InventoryFinanceProvider
 ) {
+  if (provider === 'cash') return session.id;
   if (provider === 'polar') return session.polar_order_id ?? session.id;
   return session.square_payment_id ?? session.square_order_id ?? session.id;
 }
@@ -310,7 +311,7 @@ export async function recordInventorySaleFinanceTransaction({
       amountMinor: session.total_amount,
       categoryId: defaults.categoryId,
       checkout: session,
-      description: `${provider === 'polar' ? 'Polar' : 'Square'} sale ${reference}`,
+      description: `${provider === 'polar' ? 'Polar' : provider === 'cash' ? 'Cash' : 'Square'} sale ${reference}`,
       kind: 'sale',
       linkIfPossible: true,
       occurredAt:

@@ -63,6 +63,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
     const provider =
+      checkout.checkout_provider === 'cash' ||
       checkout.checkout_provider === 'polar' ||
       checkout.checkout_provider === 'square_pos' ||
       checkout.checkout_provider === 'square_terminal'

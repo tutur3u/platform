@@ -136,6 +136,17 @@ beforeEach(() => {
 });
 
 describe('sale eligibility', () => {
+  it('accepts completed cash sales as real-provider revenue', () => {
+    expect(
+      decideSaleBooking({
+        checkout_provider: 'cash',
+        finance_transaction_id: 'cash-transaction',
+        status: 'completed',
+        total_amount: 100,
+      })
+    ).toEqual({ book: true });
+  });
+
   it('accepts completed real-provider sales even when a legacy link exists', () => {
     expect(
       decideSaleBooking({

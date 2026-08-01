@@ -1664,6 +1664,7 @@
         "categoryChoiceMode": "Category choice mode",
         "checkoutMode": "Checkout mode",
         "checkoutModes": {
+          "cash": "Cash",
           "disabled": "Disabled",
           "polar": "Polar",
           "simulated": "Simulated",

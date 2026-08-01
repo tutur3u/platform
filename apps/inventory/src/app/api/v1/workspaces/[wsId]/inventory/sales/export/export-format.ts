@@ -55,6 +55,7 @@ const LINE_COLUMNS = [
   ['Quantity', 'quantity'],
   ['Unit Price', 'unit_price'],
   ['Line Total', 'line_total'],
+  ['Revenue Allocation Source', 'allocation_source'],
 ] as const satisfies ReadonlyArray<
   readonly [string, keyof NormalizedInventorySalesExportRow]
 >;

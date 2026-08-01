@@ -776,6 +776,7 @@ export {
   type InventoryFinanceEntry,
   type InventoryFinanceEntryKind,
   type InventoryFinanceEntryStatus,
+  type InventoryFinanceExternalProvider,
   type InventoryFinanceListQuery,
   type InventoryFinanceListResponse,
   type InventoryFinanceManualAdjustmentPayload,

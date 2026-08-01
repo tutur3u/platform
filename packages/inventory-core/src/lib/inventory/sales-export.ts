@@ -3,6 +3,7 @@ import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export type InventorySalesExportRpcRow = {
+  allocation_source?: string | null;
   category_name: string | null;
   checkout_provider: string | null;
   completed_at: string | null;

@@ -67,4 +67,30 @@ describe('Inventory Finance reconciliation helpers', () => {
     expect(summary.netSales[0]?.amountMinor).toBe(7500);
     expect(summary.providers).toHaveLength(2);
   });
+
+  it('includes cash sales in provider summaries without external sync semantics', () => {
+    const summary = buildReconciliationSummary([
+      {
+        amount: 30,
+        amount_minor: 3000,
+        currency: 'USD',
+        entry_count: 1,
+        kind: 'sale',
+        provider: 'cash',
+        status: 'linked',
+      },
+    ]);
+
+    expect(summary.grossSales).toEqual([
+      { amount: 30, amountMinor: 3000, count: 1, currency: 'USD' },
+    ]);
+    expect(summary.providers).toEqual([
+      expect.objectContaining({
+        grossSales: [
+          { amount: 30, amountMinor: 3000, count: 1, currency: 'USD' },
+        ],
+        provider: 'cash',
+      }),
+    ]);
+  });
 });

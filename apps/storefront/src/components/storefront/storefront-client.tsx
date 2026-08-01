@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { CashCheckoutFields } from './cash-checkout-fields';
 import {
   openHostedPolarCheckout,
   openSquarePosCheckout,
@@ -38,6 +39,7 @@ import { StorefrontOrderScreen } from './storefront-order-screen';
 import { getStorefrontOrderState } from './storefront-order-state';
 import { StorefrontSkeleton } from './storefront-skeleton';
 import { StorefrontUnavailable } from './storefront-unavailable';
+import { useStorefrontCashCheckout } from './use-storefront-cash-checkout';
 import { useStorefrontSquareDevice } from './use-storefront-square-device';
 
 type StorefrontMode = 'cart' | 'checkout' | 'order' | 'product' | 'store';
@@ -98,6 +100,22 @@ export function StorefrontClient({
     storefront?.checkoutMode === 'square_pos';
   const isSquareCheckout =
     isConfiguredSquareTerminalCheckout || isConfiguredSquarePosCheckout;
+  const {
+    cashOnly: isCashOnlyCheckout,
+    categoryId: effectiveCashCategoryId,
+    checkoutMethod,
+    isCashCheckout,
+    optionsQuery: staffCheckoutOptionsQuery,
+    setCashCategoryId,
+    setCashWalletId,
+    setCheckoutMethod,
+    walletId: effectiveCashWalletId,
+  } = useStorefrontCashCheckout({
+    initialCashOnly: initialStorefront?.storefront.checkoutMode === 'cash',
+    isDemoStorefront,
+    storefront,
+    storeSlug,
+  });
   const checkoutOptionsQuery = useQuery({
     enabled: Boolean(storefront && isSquareCheckout && !isDemoStorefront),
     queryFn: () => getInventorySquareCheckoutOptions(storeSlug),
@@ -118,12 +136,17 @@ export function StorefrontClient({
   const isSquarePosCheckout = effectiveSquareCheckoutMode === 'square_pos';
   const usesSelectedSquareTerminal =
     checkoutOptionsQuery.data?.routing === 'selected_terminal';
-  const checkoutRoutingBlocked =
-    isSquareCheckout &&
-    (checkoutOptionsQuery.isPending ||
-      checkoutOptionsQuery.isError ||
-      !checkoutOptionsQuery.data?.staffAuthorized ||
-      (usesSelectedSquareTerminal && !resolvedSquareDeviceId));
+  const checkoutRoutingBlocked = isCashCheckout
+    ? staffCheckoutOptionsQuery.isPending ||
+      staffCheckoutOptionsQuery.isError ||
+      !staffCheckoutOptionsQuery.data?.staffAuthorized ||
+      !effectiveCashWalletId ||
+      !effectiveCashCategoryId
+    : isSquareCheckout &&
+      (checkoutOptionsQuery.isPending ||
+        checkoutOptionsQuery.isError ||
+        !checkoutOptionsQuery.data?.staffAuthorized ||
+        (usesSelectedSquareTerminal && !resolvedSquareDeviceId));
   const orderQuery = useQuery({
     enabled:
       mode === 'order' &&
@@ -194,6 +217,8 @@ export function StorefrontClient({
     quantity: number;
   };
   type CheckoutInput = {
+    cash?: { categoryId: string; walletId: string };
+    checkoutMethod?: 'cash' | 'configured';
     lines: CheckoutLineInput[];
     customerName?: string;
     customerEmail?: string;
@@ -233,6 +258,8 @@ export function StorefrontClient({
       if (isDemoStorefront) return createDemoCheckoutResponse(storeSlug);
 
       return createInventoryCheckoutSession(storeSlug, {
+        cash: input.cash,
+        checkoutMethod: input.checkoutMethod,
         customerEmail: input.customerEmail || undefined,
         customerName: input.customerName || undefined,
         customerPhone: input.customerPhone || null,
@@ -257,7 +284,11 @@ export function StorefrontClient({
         return;
       }
 
-      if (isSimulatedCheckout || checkoutMode === 'square_terminal') {
+      if (
+        isSimulatedCheckout ||
+        checkoutMode === 'cash' ||
+        checkoutMode === 'square_terminal'
+      ) {
         cart.clear();
         setIsCheckoutOpen(false);
         navigateToCheckoutResult(targetUrl);
@@ -449,7 +480,39 @@ export function StorefrontClient({
       checkoutHref={`/${storeSlug}/checkout`}
       checkoutBlocked={checkoutRoutingBlocked}
       checkoutFields={
-        isSquareCheckout ? (
+        isCashOnlyCheckout || staffCheckoutOptionsQuery.data ? (
+          <div className="grid gap-3">
+            <CashCheckoutFields
+              categoryId={effectiveCashCategoryId}
+              checkoutMethod={isCashOnlyCheckout ? 'cash' : checkoutMethod}
+              error={
+                staffCheckoutOptionsQuery.error instanceof Error
+                  ? staffCheckoutOptionsQuery.error.message
+                  : null
+              }
+              onCategoryChange={setCashCategoryId}
+              onCheckoutMethodChange={setCheckoutMethod}
+              onWalletChange={setCashWalletId}
+              options={staffCheckoutOptionsQuery.data}
+              walletId={effectiveCashWalletId}
+            />
+            {isSquareCheckout && !isCashCheckout ? (
+              <SquareCheckoutRouting
+                errorMessage={
+                  checkoutOptionsQuery.error instanceof Error
+                    ? checkoutOptionsQuery.error.message
+                    : null
+                }
+                isLoading={checkoutOptionsQuery.isPending}
+                isDeviceRemembered={squareDevice.isRemembered}
+                onDeviceChange={squareDevice.selectDevice}
+                onRetry={() => checkoutOptionsQuery.refetch()}
+                options={checkoutOptionsQuery.data}
+                selectedDeviceId={resolvedSquareDeviceId}
+              />
+            ) : null}
+          </div>
+        ) : isSquareCheckout ? (
           <SquareCheckoutRouting
             errorMessage={
               checkoutOptionsQuery.error instanceof Error
@@ -477,9 +540,13 @@ export function StorefrontClient({
       onBuyNow={(buyNowListingId, variantId) => {
         if (checkoutRoutingBlocked) {
           toast.error(
-            checkoutOptionsQuery.error instanceof Error
-              ? checkoutOptionsQuery.error.message
-              : t('squareStaffRequiredDescription')
+            isCashCheckout
+              ? staffCheckoutOptionsQuery.error instanceof Error
+                ? staffCheckoutOptionsQuery.error.message
+                : t('cashStaffRequiredDescription')
+              : checkoutOptionsQuery.error instanceof Error
+                ? checkoutOptionsQuery.error.message
+                : t('squareStaffRequiredDescription')
           );
           return;
         }
@@ -490,6 +557,13 @@ export function StorefrontClient({
           metadata: { instant: true, lines: 1 },
         });
         startCheckout({
+          cash: isCashCheckout
+            ? {
+                categoryId: effectiveCashCategoryId,
+                walletId: effectiveCashWalletId,
+              }
+            : undefined,
+          checkoutMethod: isCashCheckout ? 'cash' : 'configured',
           customerEmail: buyerDefaults?.email ?? undefined,
           customerName: buyerDefaults?.name ?? undefined,
           lines: [
@@ -511,6 +585,13 @@ export function StorefrontClient({
           metadata: { lines: checkoutListings.length },
         });
         startCheckout({
+          cash: isCashCheckout
+            ? {
+                categoryId: effectiveCashCategoryId,
+                walletId: effectiveCashWalletId,
+              }
+            : undefined,
+          checkoutMethod: isCashCheckout ? 'cash' : 'configured',
           customerEmail:
             String(formData.get('customerEmail') ?? '').trim() || undefined,
           customerName:
@@ -567,6 +648,13 @@ export function StorefrontClient({
           metadata: { instant: true, lines: checkoutListings.length },
         });
         startCheckout({
+          cash: isCashCheckout
+            ? {
+                categoryId: effectiveCashCategoryId,
+                walletId: effectiveCashWalletId,
+              }
+            : undefined,
+          checkoutMethod: isCashCheckout ? 'cash' : 'configured',
           customerEmail: buyerDefaults.email,
           customerName: buyerDefaults.name ?? undefined,
           lines: cartCheckoutLines(),

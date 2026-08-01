@@ -8,6 +8,7 @@ import {
 } from './export-format';
 
 const RAW_ROW = {
+  allocation_source: 'stock_snapshot',
   category_name: 'Merch',
   checkout_provider: 'square_pos',
   completed_at: '2026-07-29T01:00:00.000Z',
@@ -74,6 +75,8 @@ describe('inventory sales export formatting', () => {
     expect(csv).toContain(`"'=FORMULA"`);
     expect(csv).toContain(`"'@PRODUCT"`);
     expect(csv).toContain(`"A ""quoted"", note"`);
+    expect(csv).toContain('"Revenue Allocation Source"');
+    expect(csv).toContain('"stock_snapshot"');
     expect(csv).toContain('\r\n');
   });
 

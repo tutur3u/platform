@@ -217,11 +217,14 @@ export const demoCheckoutSession: InventoryCheckoutSession = {
   lines: [
     {
       bundleId: null,
+      catalogBasisAmount: 18,
       id: 'fixture-checkout-line-notebook',
       listingId: 'fixture-listing-notebook',
       variantId: null,
       productId: 'fixture-product-notebook',
       quantity: 1,
+      recognizedRevenueAmount: 18,
+      revenueAllocationSource: 'direct',
       subtotalAmount: 18,
       title: 'Launch Notebook',
       unitId: DEMO_UNIT_ID,
