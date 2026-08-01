@@ -94,7 +94,9 @@ restart does not produce a synchronised retry stampede from every participant.
 
 Two details make it actually work:
 
-- **Each attempt fetches a fresh join token** from `POST /api/call-token`. Join
+- **Each attempt fetches a fresh join token** from web's
+  `POST /api/v1/workspaces/<wsId>/meetings/<meetingId>/realtime-token`, which
+  the satellite proxies. Join
   tokens are short-lived and calls are not, so reusing the original token would
   let a client reconnect for ten minutes and then fail forever on
   "Reconnecting…". Membership is re-checked on every refresh.

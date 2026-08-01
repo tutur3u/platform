@@ -67,3 +67,10 @@ export {
   releaseParticipant,
   remoteMeetTracks,
 } from './room';
+export type {
+  AddTracksInput,
+  CloseTracksInput,
+  CloudflareSfuClientOptions,
+  RenegotiateInput,
+} from './sfu';
+export { CloudflareSfuClient } from './sfu';

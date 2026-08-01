@@ -1,6 +1,7 @@
 import {
   admitOrHold,
   applyMeetRoomCommand,
+  CloudflareSfuClient,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   type MeetSfuIntent,
@@ -10,7 +11,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
-import { CloudflareSfuClient } from './cloudflare-sfu';
+
 import {
   broadcast,
   disconnectUsers,

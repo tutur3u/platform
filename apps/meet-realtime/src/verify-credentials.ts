@@ -8,7 +8,7 @@
  * handshake succeeded. Nothing derived from the secret is written to stdout, so
  * the output is safe to paste into a PR or a chat.
  */
-import { CloudflareSfuClient } from './cloudflare-sfu';
+import { CloudflareSfuClient } from '../../../packages/realtime/src/meet';
 
 type SessionResponse = {
   sessionDescription?: { sdp?: string; type?: string };

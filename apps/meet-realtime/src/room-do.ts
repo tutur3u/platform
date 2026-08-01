@@ -1,6 +1,7 @@
 import {
   admitOrHold,
   applyMeetRoomCommand,
+  CloudflareSfuClient,
   canMeetRealtimeManageParticipants,
   createMeetRoomSnapshot,
   type MeetRealtimeServerMessage,
@@ -14,7 +15,6 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
-import { CloudflareSfuClient } from './cloudflare-sfu';
 
 /**
  * One Durable Object per meeting room.

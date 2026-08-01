@@ -111,11 +111,17 @@ export function useMeetRoom({
         return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
       }
 
-      const response = await fetch('/api/call-token', {
-        body: JSON.stringify({ meetingId, wsId }),
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-      });
+      // The satellite proxies `/api/*` to web, which already owns meeting
+      // token minting. Adding a local route here would both duplicate it and
+      // break the satellite convention that only auth handoff runs locally.
+      const response = await fetch(
+        `/api/v1/workspaces/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}/realtime-token`,
+        {
+          body: JSON.stringify({ mode: 'call' }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        }
+      );
       if (!response.ok) throw new Error('token_refresh_failed');
 
       const refreshed = (await response.json()) as {

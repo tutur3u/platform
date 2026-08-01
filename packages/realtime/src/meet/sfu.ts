@@ -1,11 +1,7 @@
-import type { z } from 'zod';
 import type {
-  cloudflareSfuSessionDescriptionSchema,
-  cloudflareSfuTrackSchema,
-} from '../../../packages/realtime/src/meet';
-
-type SessionDescription = z.infer<typeof cloudflareSfuSessionDescriptionSchema>;
-type SfuTrack = z.infer<typeof cloudflareSfuTrackSchema>;
+  CloudflareSfuSessionDescription as SessionDescription,
+  CloudflareSfuTrack as SfuTrack,
+} from './primitives';
 
 export type CloudflareSfuClientOptions = {
   apiBaseUrl?: string;
@@ -33,7 +29,7 @@ export type CloseTracksInput = {
 
 const DEFAULT_REALTIME_API_BASE_URL = 'https://rtc.live.cloudflare.com/v1';
 
-function trimTrailingSlash(value: string) {
+function trimTrailingSlash(value: string): string {
   return value.endsWith('/') ? trimTrailingSlash(value.slice(0, -1)) : value;
 }
 

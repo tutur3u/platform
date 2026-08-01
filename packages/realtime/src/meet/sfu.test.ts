@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CloudflareSfuClient } from './cloudflare-sfu';
+import { CloudflareSfuClient } from './sfu';
 
 function createFetchMock() {
-  return vi.fn(async () => Response.json({ ok: true }));
+  // Declaring the parameters is what types `mock.calls` as real tuples; a
+  // zero-arg mock makes every `calls[n][1]` access a type error.
+  return vi.fn(async (_url: string, _init?: RequestInit) =>
+    Response.json({ ok: true })
+  );
 }
 
 function getJsonBody(init: RequestInit | undefined) {
