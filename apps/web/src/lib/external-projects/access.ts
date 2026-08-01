@@ -352,6 +352,37 @@ async function importExternalProjectFieldDefinitions({
   );
 }
 
+async function storeWorkspaceExternalProjectTemplate({
+  actorId,
+  admin,
+  template,
+  workspaceId,
+}: {
+  actorId: string | null;
+  admin: AdminDb;
+  template?: ExternalProjectSyncManifest['template'];
+  workspaceId: string;
+}) {
+  if (!template) return;
+  const { data, error: readError } = await admin
+    .from('workspace_external_project_bindings')
+    .select('settings')
+    .eq('ws_id', workspaceId)
+    .single();
+  if (readError) throw new Error(readError.message);
+  const { error } = await admin
+    .from('workspace_external_project_bindings')
+    .update({
+      settings: {
+        ...((data.settings as Record<string, Json>) ?? {}),
+        cmsSite: { template } as Json,
+      },
+      updated_by: actorId,
+    })
+    .eq('ws_id', workspaceId);
+  if (error) throw new Error(error.message);
+}
+
 export async function ensureWorkspaceExternalProjectStudio({
   actorId,
   adapter,
@@ -387,7 +418,7 @@ export async function ensureWorkspaceExternalProjectStudio({
         admin,
         canonicalProjectId: currentBinding.canonical_id,
         schema,
-        template,
+        template: adapter === 'cms_site' ? undefined : template,
       });
 
     await importExternalProjectFieldDefinitions({
@@ -396,6 +427,14 @@ export async function ensureWorkspaceExternalProjectStudio({
       schema,
       workspaceId,
     });
+    if (adapter === 'cms_site') {
+      await storeWorkspaceExternalProjectTemplate({
+        actorId,
+        admin,
+        template,
+        workspaceId,
+      });
+    }
 
     return {
       binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
@@ -416,7 +455,7 @@ export async function ensureWorkspaceExternalProjectStudio({
       adapter,
       admin,
       schema,
-      template,
+      template: adapter === 'cms_site' ? undefined : template,
     });
 
   await bindWorkspaceExternalProject({
@@ -433,6 +472,14 @@ export async function ensureWorkspaceExternalProjectStudio({
     schema,
     workspaceId,
   });
+  if (adapter === 'cms_site') {
+    await storeWorkspaceExternalProjectTemplate({
+      actorId,
+      admin,
+      template,
+      workspaceId,
+    });
+  }
 
   return {
     binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),

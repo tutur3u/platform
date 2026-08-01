@@ -13,6 +13,12 @@ export default async function ConnectedChatInboxPage({
   const access = await getCmsWorkspaceAccess(wsId);
 
   if (!access.canAccessWorkspace || !access.userId) redirect('/no-access');
+  if (
+    !access.workspacePermissions ||
+    access.workspacePermissions.withoutPermission('view_chat')
+  ) {
+    redirect('/no-access');
+  }
   if (!access.binding?.canonical_project?.allowed_features.includes('chat')) {
     redirect(`/${wsId}`);
   }
@@ -22,6 +28,7 @@ export default async function ConnectedChatInboxPage({
       <ChatWorkspace
         currentUserId={access.userId}
         defaultConversationScope="external"
+        enforcedConversationScope="external"
         variant="standalone"
         wsId={access.normalizedWorkspaceId}
       />

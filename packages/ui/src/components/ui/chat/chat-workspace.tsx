@@ -58,6 +58,7 @@ import {
 interface ChatWorkspaceProps {
   className?: string;
   defaultConversationScope?: ChatConversationScope;
+  enforcedConversationScope?: ChatConversationScope;
   currentUserId: string;
   enableRootIntegrations?: boolean;
   showSidebar?: boolean;
@@ -68,6 +69,7 @@ interface ChatWorkspaceProps {
 export function ChatWorkspace({
   className,
   defaultConversationScope,
+  enforcedConversationScope,
   currentUserId,
   enableRootIntegrations,
   showSidebar = true,
@@ -99,11 +101,12 @@ export function ChatWorkspace({
   );
   const requestedScope = searchParams.get('scope');
   const conversationScope =
-    requestedScope || defaultConversationScope
+    enforcedConversationScope ??
+    (requestedScope || defaultConversationScope
       ? normalizeChatConversationScope(
           requestedScope ?? defaultConversationScope
         )
-      : null;
+      : null);
   const conversations = conversationScope
     ? filterChatConversations({
         archiveFilter,
@@ -571,7 +574,13 @@ export function ChatWorkspace({
             )}
           </>
         ) : (
-          <EmptyConversationState onCreate={() => setCreateOpen(true)} />
+          <EmptyConversationState
+            onCreate={
+              conversationScope === 'external'
+                ? undefined
+                : () => setCreateOpen(true)
+            }
+          />
         )}
       </div>
 

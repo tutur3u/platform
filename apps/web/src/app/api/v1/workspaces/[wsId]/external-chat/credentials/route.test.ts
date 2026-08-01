@@ -6,6 +6,8 @@ const mocks = {
   readExternalChatBinding: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serializeExternalChatBinding: vi.fn(),
+  stageExternalChatCredential: vi.fn(),
+  promoteExternalChatCredential: vi.fn(),
   upsertExternalChatCredentials: vi.fn(),
   updateExternalChatBridgeCredential: vi.fn(),
   verifyExternalChatControl: vi.fn(),
@@ -25,9 +27,10 @@ vi.mock('@/lib/chat/private-rpc', () => ({
 
 vi.mock('@/lib/external-chat/crypto', () => ({
   createIngestSecret: () => 'ecs_test_secret',
-  encryptControlSecret: vi.fn(),
-  hashExternalChatSecret: vi.fn(),
-  secretLastFour: vi.fn(),
+  decryptControlSecret: vi.fn(),
+  encryptControlSecret: vi.fn(async () => 'encrypted-pending'),
+  hashExternalChatSecret: vi.fn(() => 'h'.repeat(64)),
+  secretLastFour: vi.fn(() => 'cret'),
 }));
 
 vi.mock('@/lib/external-chat/delivery', () => ({
@@ -42,6 +45,10 @@ vi.mock('@/lib/external-chat/store', () => ({
     mocks.readExternalChatBinding(...args),
   serializeExternalChatBinding: (...args: unknown[]) =>
     mocks.serializeExternalChatBinding(...args),
+  stageExternalChatCredential: (...args: unknown[]) =>
+    mocks.stageExternalChatCredential(...args),
+  promoteExternalChatCredential: (...args: unknown[]) =>
+    mocks.promoteExternalChatCredential(...args),
   upsertExternalChatCredentials: (...args: unknown[]) =>
     mocks.upsertExternalChatCredentials(...args),
 }));
@@ -121,7 +128,10 @@ describe('external chat credential verification', () => {
       secret: 'ecs_test_secret',
       wsId: 'workspace-1',
     });
-    expect(mocks.upsertExternalChatCredentials).not.toHaveBeenCalled();
+    expect(mocks.stageExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      expect.objectContaining({ action: 'set_ingest' })
+    );
     expect(await response.text()).not.toContain('ecs_test_secret');
   });
 });

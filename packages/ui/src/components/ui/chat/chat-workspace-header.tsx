@@ -408,7 +408,11 @@ function getArchiveDescription({
   return t('archive_chat_warning');
 }
 
-export function EmptyConversationState({ onCreate }: { onCreate: () => void }) {
+export function EmptyConversationState({
+  onCreate,
+}: {
+  onCreate?: () => void;
+}) {
   const t = useTranslations('chat');
 
   return (
@@ -419,10 +423,12 @@ export function EmptyConversationState({ onCreate }: { onCreate: () => void }) {
         <p className="mt-1 text-muted-foreground text-sm">
           {t('empty_conversations_description')}
         </p>
-        <Button className="mt-4" onClick={onCreate} type="button">
-          <CheckCircle2 className="size-4" />
-          {t('new_conversation')}
-        </Button>
+        {onCreate ? (
+          <Button className="mt-4" onClick={onCreate} type="button">
+            <CheckCircle2 className="size-4" />
+            {t('new_conversation')}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

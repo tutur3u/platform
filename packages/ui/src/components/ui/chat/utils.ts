@@ -131,9 +131,9 @@ export function getChatMessageSenderLabel(
 
   const externalSender = message.metadata?.externalSender;
   if (isRecord(externalSender)) {
-    const displayName = readNonEmptyString(
-      externalSender.displayName ?? externalSender.name
-    );
+    const displayName =
+      readNonEmptyString(externalSender.displayName) ??
+      readNonEmptyString(externalSender.name);
     if (displayName) return displayName;
   }
 

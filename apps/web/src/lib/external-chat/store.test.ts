@@ -7,7 +7,9 @@ describe('external chat binding serialization', () => {
       binding: {
         canonical_project_id: 'opaque-connector',
         is_enabled: true,
-        settings: { chat: { bridgeBaseUrl: 'https://bridge.invalid' } },
+        settings: {
+          chat: { bridgeBaseUrl: 'https://bridge.invalid', enabled: true },
+        },
       },
       credentials: {
         control_secret_encrypted: 'encrypted-sensitive-value',
@@ -17,6 +19,11 @@ describe('external chat binding serialization', () => {
         ingest_secret_last_four: '1234',
         ingest_secret_rotated_at: '2026-08-01T00:00:00.000Z',
         verified_at: '2026-08-01T00:05:00.000Z',
+        pending_action: null,
+        pending_created_at: null,
+        pending_secret_encrypted: null,
+        pending_secret_hash: null,
+        pending_secret_last_four: null,
       },
     });
     const serialized = JSON.stringify(result);

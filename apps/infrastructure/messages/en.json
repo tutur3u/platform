@@ -1,5 +1,6 @@
 {
   "external-chat-lab": {
+    "load_error": "Readiness could not be loaded. Try again.",
     "authority": "Current authority",
     "binding": "External app binding",
     "checks": "Migration checks",

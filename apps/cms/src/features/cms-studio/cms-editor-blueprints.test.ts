@@ -20,6 +20,7 @@ describe('CMS editor Richfield adapter registration', () => {
       'taxonomies',
       'landing-sections',
       'redirects',
+      'media-assets',
     ]);
     expect(
       getCmsEditorBlueprintViews('cms_site').map((view) => view.id)

@@ -11,10 +11,12 @@ const mocks = {
   createAdminClient: vi.fn(),
   createAiChatPost: vi.fn(),
   deliverExternalChatReplyIfBound: vi.fn(),
+  finalizeExternalChatReply: vi.fn(),
+  markExternalChatReplyDelivered: vi.fn(),
   aiRouteBodies: [] as unknown[],
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
-  recordExternalChatReply: vi.fn(),
+  reserveExternalChatReply: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
   serverWarn: vi.fn(),
@@ -39,6 +41,7 @@ vi.mock('@/lib/api-auth', () => ({
 vi.mock('@/lib/chat/agent-discovery', () => ({
   getAiChatId: () => null,
   isAiChatConversationId: () => false,
+  isUserPersonalChatWorkspace: () => true,
   listAiChatMessages: vi.fn(),
 }));
 
@@ -84,9 +87,15 @@ vi.mock('@/lib/external-chat/delivery', () => ({
   deliverExternalChatReplyIfBound: (
     ...args: Parameters<typeof mocks.deliverExternalChatReplyIfBound>
   ) => mocks.deliverExternalChatReplyIfBound(...args),
-  recordExternalChatReply: (
-    ...args: Parameters<typeof mocks.recordExternalChatReply>
-  ) => mocks.recordExternalChatReply(...args),
+  finalizeExternalChatReply: (
+    ...args: Parameters<typeof mocks.finalizeExternalChatReply>
+  ) => mocks.finalizeExternalChatReply(...args),
+  markExternalChatReplyDelivered: (
+    ...args: Parameters<typeof mocks.markExternalChatReplyDelivered>
+  ) => mocks.markExternalChatReplyDelivered(...args),
+  reserveExternalChatReply: (
+    ...args: Parameters<typeof mocks.reserveExternalChatReply>
+  ) => mocks.reserveExternalChatReply(...args),
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
@@ -229,7 +238,10 @@ function mockRouteContext() {
 describe('native AI chat message route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.reserveExternalChatReply.mockResolvedValue(null);
     mocks.deliverExternalChatReplyIfBound.mockResolvedValue(null);
+    mocks.finalizeExternalChatReply.mockResolvedValue(userMessage);
+    mocks.markExternalChatReplyDelivered.mockResolvedValue(undefined);
     mocks.aiRouteBodies.length = 0;
     mocks.auth.supabase = createSupabaseMock();
     mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
@@ -323,6 +335,13 @@ describe('native AI chat message route', () => {
   });
 
   it('does not persist when an externally bound reply fails delivery', async () => {
+    mocks.reserveExternalChatReply.mockResolvedValue({
+      delivered: false,
+      deliveryId: 'delivery-1',
+      idempotencyKey: 'idempotency-1',
+      messageId: null,
+      threadId: 'thread-1',
+    });
     mocks.deliverExternalChatReplyIfBound.mockRejectedValue(
       new Error('bridge unavailable')
     );
@@ -343,5 +362,77 @@ describe('native AI chat message route', () => {
       'chat_send_message',
       expect.anything()
     );
+  });
+
+  it('delivers first and atomically finalizes an externally bound reply', async () => {
+    const reservation = {
+      delivered: false,
+      deliveryId: 'delivery-1',
+      idempotencyKey: 'idempotency-1',
+      messageId: null,
+      threadId: 'thread-1',
+    };
+    mocks.reserveExternalChatReply.mockResolvedValue(reservation);
+    mocks.deliverExternalChatReplyIfBound.mockResolvedValue({
+      deliveryId: reservation.deliveryId,
+      idempotencyKey: reservation.idempotencyKey,
+      thread: {},
+    });
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_get_conversation') {
+        return { ...conversation, type: 'channel' };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.deliverExternalChatReplyIfBound).toHaveBeenCalledBefore(
+      mocks.markExternalChatReplyDelivered
+    );
+    expect(mocks.markExternalChatReplyDelivered).toHaveBeenCalledBefore(
+      mocks.finalizeExternalChatReply
+    );
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.anything()
+    );
+  });
+
+  it('rejects attachments before connected-site delivery', async () => {
+    mocks.reserveExternalChatReply.mockResolvedValue({
+      delivered: false,
+      deliveryId: 'delivery-1',
+      idempotencyKey: 'idempotency-1',
+      messageId: null,
+      threadId: 'thread-1',
+    });
+    const request = new Request(createRequest().url, {
+      body: JSON.stringify({
+        attachments: [{ filename: 'scan.pdf', path: 'chat/scan.pdf' }],
+        content: '',
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(request as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.deliverExternalChatReplyIfBound).not.toHaveBeenCalled();
+    expect(mocks.finalizeExternalChatReply).not.toHaveBeenCalled();
   });
 });

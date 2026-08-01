@@ -71,6 +71,7 @@ export function ChatScopeTabs() {
 
         return (
           <Button
+            aria-pressed={active}
             aria-label={`${t(scope.titleKey)} (${t(scope.subtitleKey)})`}
             className={cn(
               'h-9 min-w-0 rounded-sm px-2 text-sm transition-[background-color,color,flex-basis,width]',

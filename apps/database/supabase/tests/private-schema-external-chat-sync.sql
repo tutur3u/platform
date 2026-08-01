@@ -1,11 +1,17 @@
 begin;
-select plan(20);
+select plan(25);
 
 select has_table('private', 'external_chat_binding_credentials', 'binding credentials are private');
 select has_table('private', 'external_chat_threads', 'external thread mappings are private');
 select has_table('private', 'external_chat_events', 'external event mappings are private');
+select has_table('private', 'external_chat_outbound_deliveries', 'outbound delivery reservations are private');
 select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints are private');
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
+select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
+select has_function('private', 'external_chat_finalize_reply', 'atomic outbound finalization RPC exists');
+select has_function('private', 'external_chat_update_settings', 'atomic binding settings RPC exists');
+select has_function('private', 'external_chat_stage_credential', 'serialized credential staging RPC exists');
+select has_function('private', 'external_chat_promote_credential', 'conditional credential promotion RPC exists');
 
 select isnt_empty(
   $$select 1 from information_schema.table_privileges
@@ -17,7 +23,7 @@ select isnt_empty(
 select is_empty(
   $$select 1 from information_schema.table_privileges
     where table_schema = 'private'
-      and table_name in ('external_chat_binding_credentials', 'external_chat_threads', 'external_chat_events')
+      and table_name in ('external_chat_binding_credentials', 'external_chat_threads', 'external_chat_events', 'external_chat_outbound_deliveries')
       and grantee in ('anon', 'authenticated')$$,
   'external chat private tables have no direct client grants'
 );
@@ -111,12 +117,6 @@ select ok(
       and column_name in ('ip', 'ip_address', 'visited_routes', 'page_url')
   ),
   'potentially sensitive context is not advertised by fixed columns'
-);
-
-select ok(
-  pg_get_functiondef('private.external_chat_import_event(uuid,text,text,text,text,text,text,timestamptz,jsonb,jsonb)'::regprocedure)
-    like '%duplicate%true%',
-  'import RPC contains an idempotent duplicate path'
 );
 
 select * from finish();

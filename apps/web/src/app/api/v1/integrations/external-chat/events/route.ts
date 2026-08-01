@@ -1,11 +1,13 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { verifyExternalChatSecret } from '@/lib/external-chat/crypto';
 import { externalChatEventSchema } from '@/lib/external-chat/schemas';
 import {
   importExternalChatEvent,
   readExternalChatBinding,
 } from '@/lib/external-chat/store';
+import { safeParseBody } from '@/lib/safe-parse-body';
 
 export async function POST(request: Request) {
   const wsId = request.headers.get('x-external-binding-id');
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
   const secret = authorization?.startsWith('Bearer ')
     ? authorization.slice(7)
     : null;
-  if (!wsId || !secret) {
+  if (!wsId || !z.string().uuid().safeParse(wsId).success || !secret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -21,13 +23,16 @@ export async function POST(request: Request) {
   const expectedHash = state?.credentials?.ingest_secret_hash;
   if (
     !state?.binding.is_enabled ||
+    !isChatEnabled(state.binding.settings) ||
     !expectedHash ||
     !verifyExternalChatSecret(secret, expectedHash)
   ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const parsed = externalChatEventSchema.safeParse(await request.json());
+  const body = await safeParseBody(request as never, 64 * 1024);
+  if (body instanceof NextResponse) return body;
+  const parsed = externalChatEventSchema.safeParse(body.data);
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid event', details: parsed.error.flatten() },
@@ -57,4 +62,14 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(result, { status: result.duplicate ? 200 : 201 });
+}
+
+function isChatEnabled(settings: unknown) {
+  if (!settings || typeof settings !== 'object') return false;
+  const chat = (settings as Record<string, unknown>).chat;
+  return Boolean(
+    chat &&
+      typeof chat === 'object' &&
+      (chat as Record<string, unknown>).enabled === true
+  );
 }

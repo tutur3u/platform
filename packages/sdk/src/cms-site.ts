@@ -14,6 +14,7 @@ export const CMS_SITE_V1_COLLECTIONS = [
   ['taxonomies', 'Taxonomies', 'taxonomy'],
   ['landing-sections', 'Landing sections', 'section'],
   ['redirects', 'Redirects', 'redirect'],
+  ['media-assets', 'Media', 'media'],
 ] as const;
 
 export function buildCmsSiteManifest({

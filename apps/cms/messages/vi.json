@@ -3412,6 +3412,7 @@
   "confidential_mode": "Chế độ bảo mật",
   "connected-chat": {
     "agent_mappings": "Ánh xạ nhân viên",
+    "agent_mappings_invalid": "Ánh xạ nhân viên phải là JSON hợp lệ.",
     "bridge_url": "Địa chỉ cầu nối hệ thống cũ",
     "control_secret": "Thông tin điều khiển",
     "copy": "Sao chép đoạn mã widget",

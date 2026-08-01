@@ -20,11 +20,12 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('connected-chat');
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const query = useQuery({
     queryFn: () => getExternalChatBindingState(wsId),
@@ -40,7 +41,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const [issuedSecret, setIssuedSecret] = useState<string | null>(null);
   const widgetSnippet = useMemo(
     () =>
-      `<script src="https://chat.tuturuuu.com/widget.js" data-workspace="${wsId}" async></script>`,
+      `<script src="https://tuturuuu.com/api/v1/integrations/external-chat/widget.js" data-workspace="${wsId}" async></script>`,
     [wsId]
   );
   const enabled = enabledOverride ?? existing.enabled !== false;
@@ -52,16 +53,34 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ['connected-chat', wsId] });
   const settingsMutation = useMutation({
-    mutationFn: async () =>
-      updateExternalChatSettings(wsId, {
-        agentMappings: JSON.parse(agentMappings),
+    mutationFn: async () => {
+      let parsedMappings: Record<string, string>;
+      try {
+        parsedMappings = JSON.parse(agentMappings) as Record<string, string>;
+      } catch {
+        throw new Error('invalid_agent_mappings');
+      }
+      return updateExternalChatSettings(wsId, {
+        agentMappings: parsedMappings,
         authorityMode: 'legacy_primary',
         bridgeBaseUrl: baseUrl,
         enabled,
-        inboxDefaults: {},
-      }),
-    onError: () => toast.error(t('save_error')),
+        inboxDefaults: (existing.inboxDefaults ?? {}) as Record<
+          string,
+          unknown
+        >,
+      });
+    },
+    onError: (error) =>
+      toast.error(
+        error.message === 'invalid_agent_mappings'
+          ? t('agent_mappings_invalid')
+          : t('save_error')
+      ),
     onSuccess: async () => {
+      setEnabled(null);
+      setBaseUrl(null);
+      setAgentMappings(null);
       await refresh();
       toast.success(t('saved'));
     },
@@ -140,7 +159,11 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             </div>
           </details>
           <Button
-            disabled={settingsMutation.isPending || !baseUrl}
+            disabled={
+              settingsMutation.isPending ||
+              credentialMutation.isPending ||
+              !baseUrl
+            }
             onClick={() => settingsMutation.mutate()}
           >
             {t('save')}
@@ -160,6 +183,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             lastFour={query.data?.secrets.ingest.lastFour}
           />
           <Button
+            disabled={credentialMutation.isPending}
             onClick={() =>
               credentialMutation.mutate({ action: 'rotate_ingest' })
             }
@@ -185,7 +209,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
               value={controlSecret}
             />
             <Button
-              disabled={controlSecret.length < 24}
+              disabled={
+                credentialMutation.isPending || controlSecret.length < 24
+              }
               onClick={() =>
                 credentialMutation.mutate({
                   action: 'set_control',
@@ -237,7 +263,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
             {t('inbox_description')}
           </p>
           <Button asChild className="mt-3" variant="outline">
-            <a href={`/${wsId}/chat/inbox?scope=external`}>
+            <a href={`/${locale}/${wsId}/chat/inbox?scope=external`}>
               <MessageSquare className="size-4" />
               {t('open_inbox')}
             </a>

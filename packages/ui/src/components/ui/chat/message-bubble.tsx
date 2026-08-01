@@ -59,7 +59,9 @@ export function MessageBubble({
   wsId: string;
 }) {
   const t = useTranslations('chat');
-  const isOwnMessage = message.senderId === currentUserId;
+  const externalDirection = readExternalDirection(message.metadata);
+  const isOwnMessage =
+    message.senderId === currentUserId || externalDirection === 'staff';
   const senderName = getChatMessageSenderLabel(message, {
     assistant: t('assistant_name'),
     external: t('external_sender'),
@@ -258,6 +260,7 @@ function MessageContent({
 }) {
   const t = useTranslations('chat');
   const aiParts = getAiMessagePartsFromMetadata(message.metadata);
+  const externalAttachment = readExternalAttachment(message.metadata);
 
   return (
     <div
@@ -305,10 +308,56 @@ function MessageContent({
               ))}
             </div>
           )}
+          {externalAttachment ? (
+            <a
+              className="mt-2 block break-all text-dynamic-blue underline"
+              href={externalAttachment.url}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {externalAttachment.label}
+            </a>
+          ) : null}
         </>
       )}
     </div>
   );
+}
+
+function readExternalDirection(metadata: Record<string, unknown>) {
+  const sender = metadata.externalSender;
+  if (!sender || typeof sender !== 'object' || Array.isArray(sender))
+    return null;
+  const direction = (sender as Record<string, unknown>).direction;
+  return direction === 'staff' || direction === 'visitor' ? direction : null;
+}
+
+function readExternalAttachment(metadata: Record<string, unknown>) {
+  const attachment = metadata.attachment;
+  if (
+    !attachment ||
+    typeof attachment !== 'object' ||
+    Array.isArray(attachment)
+  ) {
+    return null;
+  }
+  const values = attachment as Record<string, unknown>;
+  const rawUrl = values.url ?? values.link ?? values.href;
+  if (typeof rawUrl !== 'string') return null;
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    const rawLabel = values.filename ?? values.name ?? values.label;
+    return {
+      label:
+        typeof rawLabel === 'string' && rawLabel.trim()
+          ? rawLabel.trim()
+          : url.hostname,
+      url: url.toString(),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function ReactionBar({

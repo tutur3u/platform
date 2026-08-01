@@ -23,7 +23,9 @@ import {
 } from '@/lib/chat/realtime';
 import {
   deliverExternalChatReplyIfBound,
-  recordExternalChatReply,
+  finalizeExternalChatReply,
+  markExternalChatReplyDelivered,
+  reserveExternalChatReply,
 } from '@/lib/external-chat/delivery';
 import { sendAiChatMessage } from './ai-chat-message';
 import { publishChatRealtimeMessages } from './ai-message-shared';
@@ -133,6 +135,8 @@ export const GET = withSessionAuth<RouteParams>(
   { allowAppSessionAuth: true, rateLimitKind: 'read' }
 );
 
+export const HEAD = GET;
+
 export const POST = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
@@ -182,15 +186,45 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
-    let externalDelivery = null;
+    let externalReservation = null;
     if (parsed.data.kind === 'user') {
       try {
-        externalDelivery = await deliverExternalChatReplyIfBound({
+        externalReservation = await reserveExternalChatReply({
           content: parsed.data.content,
           conversationId: params.conversationId,
+          replyToMessageId: parsed.data.replyToMessageId ?? null,
           senderId: auth.user.id,
           wsId: context.context.normalizedWsId,
         });
+        if (externalReservation && (parsed.data.attachments?.length ?? 0) > 0) {
+          return NextResponse.json(
+            {
+              code: 'external_attachments_unsupported',
+              message: 'Connected-site replies do not support attachments yet.',
+            },
+            { status: 400 }
+          );
+        }
+        if (externalReservation && !parsed.data.content.trim()) {
+          return NextResponse.json(
+            { message: 'Message content is required' },
+            { status: 400 }
+          );
+        }
+        if (externalReservation && !externalReservation.delivered) {
+          await deliverExternalChatReplyIfBound({
+            content: parsed.data.content,
+            conversationId: params.conversationId,
+            deliveryId: externalReservation.deliveryId,
+            idempotencyKey: externalReservation.idempotencyKey,
+            senderId: auth.user.id,
+            wsId: context.context.normalizedWsId,
+          });
+          await markExternalChatReplyDelivered({
+            deliveryId: externalReservation.deliveryId,
+            wsId: context.context.normalizedWsId,
+          });
+        }
       } catch (error) {
         console.warn(
           'External chat delivery failed before native persistence',
@@ -211,38 +245,28 @@ export const POST = withSessionAuth<RouteParams>(
     }
 
     try {
-      const message = await callPrivateChatRpc<ChatMessage>(
-        'chat_send_message',
-        {
-          p_actor_user_id: auth.user.id,
-          p_attachments: parsed.data.attachments ?? [],
-          p_content: parsed.data.content,
-          p_conversation_id: params.conversationId,
-          p_kind: parsed.data.kind,
-          p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
-          p_ws_id: context.context.normalizedWsId,
-        }
-      );
+      const message = externalReservation
+        ? await finalizeExternalChatReply({
+            content: parsed.data.content,
+            deliveryId: externalReservation.deliveryId,
+            replyToMessageId: parsed.data.replyToMessageId ?? null,
+            senderId: auth.user.id,
+            wsId: context.context.normalizedWsId,
+          })
+        : await callPrivateChatRpc<ChatMessage>('chat_send_message', {
+            p_actor_user_id: auth.user.id,
+            p_attachments: parsed.data.attachments ?? [],
+            p_content: parsed.data.content,
+            p_conversation_id: params.conversationId,
+            p_kind: parsed.data.kind,
+            p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
+            p_ws_id: context.context.normalizedWsId,
+          });
       if (!message) {
         return NextResponse.json(
           { message: 'Chat conversation not found' },
           { status: 404 }
         );
-      }
-
-      if (externalDelivery) {
-        try {
-          await recordExternalChatReply({
-            delivery: externalDelivery,
-            messageId: message.id,
-            wsId: context.context.normalizedWsId,
-          });
-        } catch (error) {
-          console.error('Failed to record acknowledged external chat reply', {
-            error,
-            messageId: message.id,
-          });
-        }
       }
 
       const conversation = await callPrivateChatRpc<ChatConversation>(

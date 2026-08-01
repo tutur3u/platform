@@ -68,11 +68,13 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
         <AlertDescription>
           {state.isLoading
             ? t('loading')
-            : state.data?.readiness.ready
-              ? t('ready_description')
-              : t('missing', {
-                  count: state.data?.readiness.errors.length ?? 1,
-                })}
+            : state.isError
+              ? t('load_error')
+              : state.data?.readiness.ready
+                ? t('ready_description')
+                : t('missing', {
+                    count: state.data?.readiness.errors.length ?? 1,
+                  })}
         </AlertDescription>
       </Alert>
 
@@ -144,7 +146,7 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
               label={t('binding')}
               pending={t('pending')}
               ready={t('ok')}
-              value={Boolean(state.data)}
+              value={state.data?.enabled === true}
             />
             <Status
               label={t('ingest_secret')}

@@ -3412,6 +3412,7 @@
   "confidential_mode": "Confidential mode",
   "connected-chat": {
     "agent_mappings": "Agent mappings",
+    "agent_mappings_invalid": "Agent mappings must be valid JSON.",
     "bridge_url": "Legacy bridge URL",
     "control_secret": "Control credential",
     "copy": "Copy widget snippet",

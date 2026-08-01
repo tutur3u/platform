@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { getAiChatId, listAiChatMessages } from '@/lib/chat/agent-discovery';
+import {
+  getAiChatId,
+  isUserPersonalChatWorkspace,
+  listAiChatMessages,
+} from '@/lib/chat/agent-discovery';
 import type { ChatRouteContext } from '@/lib/chat/private-rpc';
 import { getChatRealtimeUserAudience } from '@/lib/chat/realtime';
 import {
@@ -39,6 +43,16 @@ export async function sendAiChatMessage({
     trimmedContent || getAiChatAttachmentPlaceholderContent(attachments);
 
   if (!chatId) {
+    return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
+  }
+
+  if (
+    !(await isUserPersonalChatWorkspace({
+      supabase: auth.supabase,
+      userId: auth.user.id,
+      wsId: context.normalizedWsId,
+    }))
+  ) {
     return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
   }
 

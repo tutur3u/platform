@@ -19,6 +19,7 @@ describe('CMS site v1 helpers', () => {
       'taxonomies',
       'landing-sections',
       'redirects',
+      'media-assets',
     ]);
   });
 

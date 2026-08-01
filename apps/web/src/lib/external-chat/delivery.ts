@@ -1,6 +1,8 @@
-import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { ChatMessage } from '@/lib/chat/private-rpc';
 import { decryptControlSecret, signControlRequest } from './crypto';
+import { safeExternalChatFetch } from './safe-control-request';
 import { externalChatPrivateDb, readExternalChatBinding } from './store';
 
 type ExternalThreadRow = {
@@ -10,9 +12,47 @@ type ExternalThreadRow = {
   remote_visitor_id: string;
 };
 
+type ExternalChatMutationDb = {
+  from: (table: string) => {
+    update: (values: Record<string, unknown>) => {
+      eq: (
+        column: string,
+        value: string
+      ) => {
+        eq: (
+          column: string,
+          value: string
+        ) => {
+          is: (
+            column: string,
+            value: null
+          ) => Promise<{ error: { message: string } | null }>;
+        };
+      };
+    };
+  };
+  rpc: (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: unknown }>;
+};
+
+function externalChatMutationDb(admin: unknown) {
+  return externalChatPrivateDb(admin) as unknown as ExternalChatMutationDb;
+}
+
 export type ExternalChatDelivery = {
+  deliveryId: string;
   idempotencyKey: string;
   thread: ExternalThreadRow;
+};
+
+export type ReservedExternalChatDelivery = {
+  delivered: boolean;
+  deliveryId: string;
+  idempotencyKey: string;
+  messageId: string | null;
+  threadId: string;
 };
 
 function getBridgeBaseUrl(settings: unknown) {
@@ -21,6 +61,16 @@ function getBridgeBaseUrl(settings: unknown) {
   if (!chat || typeof chat !== 'object') return null;
   const value = (chat as Record<string, unknown>).bridgeBaseUrl;
   return typeof value === 'string' ? value.replace(/\/$/, '') : null;
+}
+
+function isChatEnabled(settings: unknown) {
+  if (!settings || typeof settings !== 'object') return false;
+  const chat = (settings as Record<string, unknown>).chat;
+  return Boolean(
+    chat &&
+      typeof chat === 'object' &&
+      (chat as Record<string, unknown>).enabled === true
+  );
 }
 
 async function postSignedControlRequest({
@@ -35,7 +85,7 @@ async function postSignedControlRequest({
   secret: string;
 }) {
   const timestamp = new Date().toISOString();
-  return fetch(`${bridgeBaseUrl}${path}`, {
+  return safeExternalChatFetch(`${bridgeBaseUrl}${path}`, {
     body,
     headers: {
       'content-type': 'application/json',
@@ -51,7 +101,12 @@ export async function verifyExternalChatControl(wsId: string) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
-  if (!state?.binding.is_enabled || !ciphertext || !bridgeBaseUrl) {
+  if (
+    !state?.binding.is_enabled ||
+    !isChatEnabled(state.binding.settings) ||
+    !ciphertext ||
+    !bridgeBaseUrl
+  ) {
     throw new Error('External chat bridge is not ready for verification');
   }
 
@@ -73,21 +128,31 @@ export async function verifyExternalChatControl(wsId: string) {
 export async function updateExternalChatBridgeCredential({
   action,
   secret: nextSecret,
+  signingCiphertext,
   wsId,
 }: {
   action: 'rotate_control' | 'set_ingest';
   secret: string;
+  signingCiphertext?: string;
   wsId: string;
 }) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
-  if (!state?.binding.is_enabled || !ciphertext || !bridgeBaseUrl) {
+  if (
+    !state?.binding.is_enabled ||
+    !isChatEnabled(state.binding.settings) ||
+    !ciphertext ||
+    !bridgeBaseUrl
+  ) {
     throw new Error('External chat bridge is not paired');
   }
 
   const body = JSON.stringify({ action, secret: nextSecret });
-  const secret = await decryptControlSecret(wsId, ciphertext);
+  const secret = await decryptControlSecret(
+    wsId,
+    signingCiphertext ?? ciphertext
+  );
   const response = await postSignedControlRequest({
     body,
     bridgeBaseUrl,
@@ -104,11 +169,15 @@ export async function updateExternalChatBridgeCredential({
 export async function deliverExternalChatReplyIfBound({
   content,
   conversationId,
+  idempotencyKey,
+  deliveryId,
   senderId,
   wsId,
 }: {
   content: string;
   conversationId: string;
+  idempotencyKey: string;
+  deliveryId: string;
   senderId: string;
   wsId: string;
 }): Promise<ExternalChatDelivery | null> {
@@ -126,11 +195,16 @@ export async function deliverExternalChatReplyIfBound({
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
-  if (!state?.binding.is_enabled || !ciphertext || !bridgeBaseUrl) {
+  if (
+    !state?.binding.is_enabled ||
+    !isChatEnabled(state.binding.settings) ||
+    !state.credentials?.verified_at ||
+    !ciphertext ||
+    !bridgeBaseUrl
+  ) {
     throw new Error('External chat bridge is not ready');
   }
 
-  const idempotencyKey = randomUUID();
   const body = JSON.stringify({
     agentId: (thread as ExternalThreadRow).remote_agent_id,
     content,
@@ -150,29 +224,82 @@ export async function deliverExternalChatReplyIfBound({
       `External chat bridge rejected delivery (${response.status})`
     );
   }
-  return { idempotencyKey, thread: thread as ExternalThreadRow };
+  return { deliveryId, idempotencyKey, thread: thread as ExternalThreadRow };
 }
 
-export async function recordExternalChatReply({
-  delivery,
-  messageId,
+export async function reserveExternalChatReply({
+  content,
+  conversationId,
+  replyToMessageId,
+  senderId,
   wsId,
 }: {
-  delivery: ExternalChatDelivery;
-  messageId: string;
+  content: string;
+  conversationId: string;
+  replyToMessageId: string | null;
+  senderId: string;
+  wsId: string;
+}) {
+  const fingerprint = createHash('sha256')
+    .update(
+      JSON.stringify({ content, conversationId, replyToMessageId, senderId })
+    )
+    .digest('hex');
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatMutationDb(admin).rpc(
+    'external_chat_reserve_reply',
+    {
+      p_actor_user_id: senderId,
+      p_conversation_id: conversationId,
+      p_request_fingerprint: fingerprint,
+      p_ws_id: wsId,
+    }
+  );
+  if (error) throw error;
+  return data as ReservedExternalChatDelivery | null;
+}
+
+export async function markExternalChatReplyDelivered({
+  deliveryId,
+  wsId,
+}: {
+  deliveryId: string;
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await externalChatPrivateDb(admin)
-    .from('external_chat_events')
-    .insert({
-      connector_key: delivery.thread.connector_key,
-      direction: 'staff',
-      message_id: messageId,
-      metadata: { deliveredBy: 'control', nativeOrigin: true },
-      remote_message_id: delivery.idempotencyKey,
-      thread_id: delivery.thread.id,
-      ws_id: wsId,
-    });
+  const { error } = await externalChatMutationDb(admin)
+    .from('external_chat_outbound_deliveries')
+    .update({ delivered_at: new Date().toISOString() })
+    .eq('id', deliveryId)
+    .eq('ws_id', wsId)
+    .is('delivered_at', null);
   if (error) throw new Error(error.message);
+}
+
+export async function finalizeExternalChatReply({
+  content,
+  deliveryId,
+  replyToMessageId,
+  senderId,
+  wsId,
+}: {
+  content: string;
+  deliveryId: string;
+  replyToMessageId: string | null;
+  senderId: string;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatMutationDb(admin).rpc(
+    'external_chat_finalize_reply',
+    {
+      p_actor_user_id: senderId,
+      p_content: content,
+      p_delivery_id: deliveryId,
+      p_reply_to_message_id: replyToMessageId,
+      p_ws_id: wsId,
+    }
+  );
+  if (error) throw error;
+  return data as ChatMessage;
 }

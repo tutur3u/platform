@@ -11,6 +11,11 @@ type CredentialRow = {
   ingest_secret_last_four: string | null;
   ingest_secret_rotated_at: string | null;
   verified_at: string | null;
+  pending_action: 'rotate_control' | 'set_ingest' | null;
+  pending_secret_encrypted: string | null;
+  pending_secret_hash: string | null;
+  pending_secret_last_four: string | null;
+  pending_created_at: string | null;
 };
 
 type BindingRow = {
@@ -39,7 +44,7 @@ export async function readExternalChatBinding(wsId: string) {
     await externalChatPrivateDb(admin)
       .from('external_chat_binding_credentials')
       .select(
-        'control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at'
+        'control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at, pending_action, pending_secret_encrypted, pending_secret_hash, pending_secret_last_four, pending_created_at'
       )
       .eq('ws_id', wsId)
       .maybeSingle();
@@ -57,21 +62,17 @@ export async function writeExternalChatSettings(
   actorId: string
 ) {
   const admin = await createAdminClient({ noCookie: true });
-  const { data: current, error: readError } = await admin
-    .from('workspace_external_project_bindings')
-    .select('settings')
-    .eq('ws_id', wsId)
-    .single();
-  if (readError) throw new Error(readError.message);
-
-  const nextSettings = {
-    ...((current.settings as Record<string, unknown>) ?? {}),
-    chat: settings,
+  const db = externalChatPrivateDb(admin) as unknown as {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>
+    ) => Promise<{ error: { message: string } | null }>;
   };
-  const { error } = await admin
-    .from('workspace_external_project_bindings')
-    .update({ settings: nextSettings as Json, updated_by: actorId })
-    .eq('ws_id', wsId);
+  const { error } = await db.rpc('external_chat_update_settings', {
+    p_actor_user_id: actorId,
+    p_chat: settings as Json,
+    p_ws_id: wsId,
+  });
   if (error) throw new Error(error.message);
 }
 
@@ -86,6 +87,51 @@ export async function upsertExternalChatCredentials(
   if (error) throw new Error(error.message);
 }
 
+export async function stageExternalChatCredential(
+  wsId: string,
+  pending: {
+    action: 'rotate_control' | 'set_ingest';
+    encrypted: string;
+    hash: string | null;
+    lastFour: string;
+  }
+) {
+  await callExternalChatCredentialRpc('external_chat_stage_credential', {
+    p_action: pending.action,
+    p_last_four: pending.lastFour,
+    p_secret_encrypted: pending.encrypted,
+    p_secret_hash: pending.hash,
+    p_ws_id: wsId,
+  });
+}
+
+export async function promoteExternalChatCredential(
+  wsId: string,
+  action: 'rotate_control' | 'set_ingest',
+  encrypted: string
+) {
+  await callExternalChatCredentialRpc('external_chat_promote_credential', {
+    p_action: action,
+    p_secret_encrypted: encrypted,
+    p_ws_id: wsId,
+  });
+}
+
+async function callExternalChatCredentialRpc(
+  name: string,
+  args: Record<string, unknown>
+) {
+  const admin = await createAdminClient({ noCookie: true });
+  const db = externalChatPrivateDb(admin) as unknown as {
+    rpc: (
+      fn: string,
+      values: Record<string, unknown>
+    ) => Promise<{ error: { message: string } | null }>;
+  };
+  const { error } = await db.rpc(name, args);
+  if (error) throw new Error(error.message);
+}
+
 export async function importExternalChatEvent({
   connectorKey,
   event,
@@ -96,9 +142,9 @@ export async function importExternalChatEvent({
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const profileDisplayName = readDynamicString(
-    event.visitorProfile.displayName ?? event.visitorProfile.name
-  );
+  const profileDisplayName =
+    readDynamicString(event.visitorProfile.displayName) ??
+    readDynamicString(event.visitorProfile.name);
   const messageMetadata = {
     attachment: event.contentType === 2 ? (event.attachment ?? null) : null,
     contentType: event.contentType,
@@ -147,10 +193,19 @@ export function serializeExternalChatBinding(
   const errors: string[] = [];
   if (!state.binding.is_enabled) errors.push('binding_disabled');
   if (!chat || typeof chat !== 'object') errors.push('settings_missing');
+  if (
+    chat &&
+    typeof chat === 'object' &&
+    (chat as Record<string, unknown>).enabled !== true
+  ) {
+    errors.push('chat_disabled');
+  }
   if (!credentials?.ingest_secret_hash) errors.push('ingest_secret_missing');
   if (!credentials?.control_secret_encrypted)
     errors.push('control_secret_missing');
   if (!credentials?.verified_at) errors.push('bridge_unverified');
+  if (credentials?.pending_action)
+    errors.push('credential_reconciliation_pending');
 
   return {
     enabled: state.binding.is_enabled,

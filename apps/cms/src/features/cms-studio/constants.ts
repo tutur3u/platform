@@ -72,6 +72,7 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'taxonomies',
     'landing-sections',
     'redirects',
+    'media-assets',
   ],
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],

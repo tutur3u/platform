@@ -70,7 +70,7 @@ const CMS_EDITOR_BLUEPRINTS: Partial<
         navigationLabel: 'Redirects',
       },
       {
-        collectionSlugs: [],
+        collectionSlugs: ['media-assets'],
         collectionTypes: ['media'],
         description: 'Images, documents, and reusable media.',
         id: 'media',

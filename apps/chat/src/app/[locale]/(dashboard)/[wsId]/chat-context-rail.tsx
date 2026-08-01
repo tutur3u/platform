@@ -196,7 +196,7 @@ export function ChatContextRail({
                           activeScope === 'workspaces') &&
                         workspace.id === wsId
                       }
-                      onClick={() => navigate(workspace, 'workspaces')}
+                      onClick={() => navigate(workspace, activeScope)}
                       workspace={workspace}
                     />
                   ) : (

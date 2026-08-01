@@ -651,6 +651,18 @@ async function getUserPersonalWorkspaceId({
   return typeof data?.id === 'string' ? data.id : null;
 }
 
+export async function isUserPersonalChatWorkspace({
+  supabase,
+  userId,
+  wsId,
+}: {
+  supabase: SessionAuthContext['supabase'];
+  userId: string;
+  wsId: string;
+}) {
+  return (await getUserPersonalWorkspaceId({ supabase, userId })) === wsId;
+}
+
 async function filterNativeChatShadowRows(chatRows: AiChatRow[]) {
   if (chatRows.length === 0) return chatRows;
 
