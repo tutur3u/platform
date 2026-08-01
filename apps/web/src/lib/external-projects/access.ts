@@ -41,6 +41,7 @@ import {
   authorizeExternalAppRequest,
   readExternalAppCredentials,
 } from './app-credentials';
+import { setWorkspaceCmsSiteTemplate } from './binding-settings';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -220,7 +221,7 @@ async function ensureCanonicalExternalProject({
     }
 
     if (
-      adapter === 'cms_site' &&
+      adapter === 'custom' &&
       !existingProject.allowed_features.includes('chat')
     ) {
       const { data: upgradedProject, error: upgradeError } = await admin
@@ -259,7 +260,7 @@ async function ensureCanonicalExternalProject({
       adapter,
       allowed_collections: allowedCollections,
       allowed_features:
-        adapter === 'cms_site'
+        adapter === 'custom'
           ? ['sync', 'assets', 'delivery', 'chat']
           : ['sync', 'assets', 'delivery'],
       created_by: actorId,
@@ -306,6 +307,19 @@ async function bindWorkspaceExternalProject({
       'Root workspace cannot be used as a destination external project workspace'
     );
   }
+
+  const { error: bindingError } = await admin
+    .from('workspace_external_project_bindings')
+    .upsert(
+      {
+        canonical_project_id: canonicalProjectId,
+        is_enabled: true,
+        updated_by: actorId,
+        ws_id: workspaceId,
+      },
+      { onConflict: 'ws_id' }
+    );
+  if (bindingError) throw new Error(bindingError.message);
 
   const { error: deleteError } = await admin
     .from('workspace_secrets')
@@ -392,23 +406,12 @@ async function storeWorkspaceExternalProjectTemplate({
   workspaceId: string;
 }) {
   if (!template) return;
-  const { data, error: readError } = await admin
-    .from('workspace_external_project_bindings')
-    .select('settings')
-    .eq('ws_id', workspaceId)
-    .single();
-  if (readError) throw new Error(readError.message);
-  const { error } = await admin
-    .from('workspace_external_project_bindings')
-    .update({
-      settings: {
-        ...((data.settings as Record<string, Json>) ?? {}),
-        cmsSite: { template } as Json,
-      },
-      updated_by: actorId,
-    })
-    .eq('ws_id', workspaceId);
-  if (error) throw new Error(error.message);
+  await setWorkspaceCmsSiteTemplate({
+    actorId,
+    admin,
+    template,
+    workspaceId,
+  });
 }
 
 export async function ensureWorkspaceExternalProjectStudio({
@@ -446,7 +449,7 @@ export async function ensureWorkspaceExternalProjectStudio({
         admin,
         canonicalProjectId: currentBinding.canonical_id,
         schema,
-        template: adapter === 'cms_site' ? undefined : template,
+        template: undefined,
       });
 
     await importExternalProjectFieldDefinitions({
@@ -455,14 +458,12 @@ export async function ensureWorkspaceExternalProjectStudio({
       schema,
       workspaceId,
     });
-    if (adapter === 'cms_site') {
-      await storeWorkspaceExternalProjectTemplate({
-        actorId,
-        admin,
-        template,
-        workspaceId,
-      });
-    }
+    await storeWorkspaceExternalProjectTemplate({
+      actorId,
+      admin,
+      template,
+      workspaceId,
+    });
 
     return {
       binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
@@ -483,7 +484,7 @@ export async function ensureWorkspaceExternalProjectStudio({
       adapter,
       admin,
       schema,
-      template: adapter === 'cms_site' ? undefined : template,
+      template: undefined,
     });
 
   await bindWorkspaceExternalProject({
@@ -500,14 +501,12 @@ export async function ensureWorkspaceExternalProjectStudio({
     schema,
     workspaceId,
   });
-  if (adapter === 'cms_site') {
-    await storeWorkspaceExternalProjectTemplate({
-      actorId,
-      admin,
-      template,
-      workspaceId,
-    });
-  }
+  await storeWorkspaceExternalProjectTemplate({
+    actorId,
+    admin,
+    template,
+    workspaceId,
+  });
 
   return {
     binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),

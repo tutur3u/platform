@@ -128,8 +128,8 @@ describe('external project setup route', () => {
     });
     accessMocks.ensureWorkspaceExternalProjectStudio.mockResolvedValue({
       binding: {
-        adapter: 'cms_site',
-        canonical_id: 'cms_site-main',
+        adapter: 'custom',
+        canonical_id: 'connected-site-main',
         canonical_project: null,
         enabled: true,
         workspace_id: 'ws_123',
@@ -144,7 +144,7 @@ describe('external project setup route', () => {
         'http://localhost/api/v1/workspaces/ws_123/external-projects/setup',
         {
           body: JSON.stringify({
-            adapter: 'cms_site',
+            adapter: 'custom',
             template,
           }),
           method: 'POST',
@@ -158,7 +158,7 @@ describe('external project setup route', () => {
       accessMocks.ensureWorkspaceExternalProjectStudio
     ).toHaveBeenCalledWith(
       expect.objectContaining({
-        adapter: 'cms_site',
+        adapter: 'custom',
         template,
       })
     );

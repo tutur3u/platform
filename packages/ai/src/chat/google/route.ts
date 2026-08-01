@@ -141,6 +141,7 @@ export function createPOST(
         creditSource: requestedCreditSourceRaw,
         creditWsId: rawCreditWsId,
         observabilityContext,
+        persistenceRequestId,
         taskBoardContext,
       } = parsedBody.data;
       const thinkingMode = rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
@@ -404,6 +405,19 @@ export function createPOST(
         processedMessages,
         chatId,
         insertChatMessage: async (args) => {
+          if (persistenceRequestId) {
+            const { error } = await sbAdmin.from('ai_chat_messages').insert({
+              chat_id: chatId,
+              content: args.message,
+              creator_id: user.id,
+              metadata: {
+                requestId: persistenceRequestId,
+                source: args.source,
+              },
+              role: 'USER',
+            });
+            return { error };
+          }
           const { error } = await supabase.rpc(
             'insert_ai_chat_message' as never,
             args as never
@@ -516,6 +530,7 @@ export function createPOST(
           effectiveSource,
           wsId: billingWsId ?? normalizedWsId ?? undefined,
           observabilityContext,
+          persistenceRequestId,
         });
       };
 

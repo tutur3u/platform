@@ -12,6 +12,81 @@ import {
 } from './sync';
 
 describe('external project sync diff', () => {
+  it('includes CMS template changes in the sync plan', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'custom',
+      canonicalProjectId: 'connected-site-main',
+      content: { entries: [] },
+      generatedAt: '2026-08-01T00:00:00.000Z',
+      schema: { collections: [] },
+      template: { kind: 'standard-site', version: 1 },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+
+    const diff = buildExternalProjectSyncDiff(snapshot, {
+      adapter: 'custom',
+      content: { entries: [] },
+      schema: { collections: [] },
+      template: {
+        editor: { sections: ['hero'] },
+        kind: 'standard-site',
+        version: 1,
+      },
+      version: 1,
+    });
+
+    expect(diff.operations).toContainEqual(
+      expect.objectContaining({
+        action: 'update',
+        entity: 'template',
+        manifestKey: 'template',
+      })
+    );
+  });
+
+  it('normalizes stored and incoming CMS templates symmetrically', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'custom',
+      canonicalProjectId: 'connected-site-main',
+      content: { entries: [] },
+      generatedAt: '2026-08-01T00:00:00.000Z',
+      schema: { collections: [] },
+      template: { kind: 'standard-site', version: 1 },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+
+    const diff = buildExternalProjectSyncDiff(snapshot, {
+      adapter: 'custom',
+      content: { entries: [] },
+      schema: { collections: [] },
+      template: { kind: 'standard-site', version: 1 },
+      version: 1,
+    });
+
+    expect(diff.operations).not.toContainEqual(
+      expect.objectContaining({ entity: 'template' })
+    );
+  });
+
+  it('preserves CMS template metadata independently of adapter identity', () => {
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'yoola',
+      content: { entries: [] },
+      schema: { collections: [] },
+      template: { kind: 'standard-site', version: 1 },
+      version: 1,
+    });
+
+    expect(manifest.template).toEqual({
+      editor: {},
+      kind: 'standard-site',
+      publicDelivery: {},
+      version: 1,
+    });
+  });
+
   it('treats stored schema ordering and expanded field defaults as equivalent', () => {
     const snapshot: ExternalProjectSyncSnapshot = {
       adapter: 'exocorpse',

@@ -30,15 +30,20 @@ describe('external chat control destination policy', () => {
     '2001:db8::1',
     '::ffff:10.0.0.1',
     '::ffff:7f00:1',
+    '::7f00:1',
+    'fec0::1',
     'ff02::1',
   ])('blocks non-public address %s', (address) => {
     expect(isBlockedExternalChatAddress(address)).toBe(true);
   });
 
-  it.each(['8.8.8.8', '1.1.1.1', '2606:4700:4700::1111'])(
-    'allows globally routable address %s',
-    (address) => {
-      expect(isBlockedExternalChatAddress(address)).toBe(false);
-    }
-  );
+  it.each([
+    '8.8.8.8',
+    '1.1.1.1',
+    '192.0.0.9',
+    '192.0.0.10',
+    '2606:4700:4700::1111',
+  ])('allows globally routable address %s', (address) => {
+    expect(isBlockedExternalChatAddress(address)).toBe(false);
+  });
 });

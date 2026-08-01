@@ -12,10 +12,11 @@ export default async function ConnectedChatInboxPage({
   const { wsId } = await params;
   const access = await getCmsWorkspaceAccess(wsId);
 
-  if (!access.canAccessWorkspace || !access.userId) redirect('/no-access');
+  if (!access.canAccessConnectedChat || !access.userId) redirect('/no-access');
   if (
     !access.workspacePermissions ||
-    access.workspacePermissions.withoutPermission('view_chat')
+    access.workspacePermissions.withoutPermission('view_chat') ||
+    access.workspacePermissions.withoutPermission('create_chat')
   ) {
     redirect('/no-access');
   }

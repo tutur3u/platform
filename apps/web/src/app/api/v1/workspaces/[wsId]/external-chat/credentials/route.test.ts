@@ -12,7 +12,6 @@ const mocks = {
   serializeExternalChatBinding: vi.fn(),
   stageExternalChatCredential: vi.fn(),
   promoteExternalChatCredential: vi.fn(),
-  upsertExternalChatCredentials: vi.fn(),
   updateExternalChatBridgeCredential: vi.fn(),
   verifyExternalChatControl: vi.fn(),
 };
@@ -62,8 +61,6 @@ vi.mock('@/lib/external-chat/store', () => ({
     mocks.stageExternalChatCredential(...args),
   promoteExternalChatCredential: (...args: unknown[]) =>
     mocks.promoteExternalChatCredential(...args),
-  upsertExternalChatCredentials: (...args: unknown[]) =>
-    mocks.upsertExternalChatCredentials(...args),
 }));
 
 function request(payload: Record<string, unknown> = { action: 'verify' }) {
@@ -79,7 +76,7 @@ function request(payload: Record<string, unknown> = { action: 'verify' }) {
 
 describe('external chat credential verification', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.configureExternalChatBridge.mockResolvedValue(undefined);
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
@@ -87,9 +84,13 @@ describe('external chat credential verification', () => {
     });
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
-      credentials: { control_secret_encrypted: 'encrypted-control' },
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'encrypted-control',
+      },
     });
     mocks.markExternalChatCredentialVerified.mockResolvedValue(true);
+    mocks.promoteExternalChatCredential.mockResolvedValue(undefined);
     mocks.serializeExternalChatBinding.mockReturnValue({
       readiness: { errors: [], ready: true },
     });
@@ -107,7 +108,8 @@ describe('external chat credential verification', () => {
     expect(mocks.verifyExternalChatControl).toHaveBeenCalledWith('workspace-1');
     expect(mocks.markExternalChatCredentialVerified).toHaveBeenCalledWith(
       'workspace-1',
-      'encrypted-control'
+      'encrypted-control',
+      3
     );
   });
 
@@ -131,7 +133,10 @@ describe('external chat credential verification', () => {
   it('does not commit a paired ingest rotation when the bridge rejects it', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
-      credentials: { control_secret_encrypted: 'encrypted' },
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'encrypted',
+      },
     });
     mocks.updateExternalChatBridgeCredential.mockRejectedValue(
       new Error('bridge unavailable')
@@ -141,7 +146,7 @@ describe('external chat credential verification', () => {
       params: Promise.resolve({ wsId: 'workspace-1' }),
     });
 
-    expect(response.status).toBe(502);
+    expect(response.status).toBe(202);
     expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
       action: 'set_ingest',
       secret: 'ecs_test_secret',
@@ -152,13 +157,14 @@ describe('external chat credential verification', () => {
       expect.objectContaining({ action: 'set_ingest' })
     );
     expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
-    expect(await response.text()).not.toContain('ecs_test_secret');
+    expect(await response.json()).toMatchObject({ secret: 'ecs_test_secret' });
   });
 
   it('pairs with a transient single-use ticket and verifies before marking ready', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
+        configuration_revision: 4,
         control_secret_encrypted: 'encrypted-control',
         ingest_secret_hash: 'ingest-hash',
       },
@@ -186,7 +192,8 @@ describe('external chat credential verification', () => {
     expect(mocks.verifyExternalChatControl).toHaveBeenCalledWith('workspace-1');
     expect(mocks.markExternalChatCredentialVerified).toHaveBeenCalledWith(
       'workspace-1',
-      'encrypted-control'
+      'encrypted-control',
+      4
     );
     const responseText = await response.text();
     expect(responseText).not.toContain('ecs_test_secret');
@@ -197,6 +204,7 @@ describe('external chat credential verification', () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
       credentials: {
+        configuration_revision: 4,
         control_secret_encrypted: 'encrypted-control',
         ingest_secret_hash: 'ingest-hash',
       },
@@ -218,5 +226,78 @@ describe('external chat credential verification', () => {
     expect(responseText).not.toContain('ecs_test_secret');
     expect(responseText).not.toContain('ingest-secret-value-123456789');
     expect(mocks.markExternalChatCredentialVerified).not.toHaveBeenCalled();
+  });
+
+  it('reconciles pending rotation before clearing an unpaired credential', async () => {
+    const pendingState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: null,
+        pending_action: 'set_ingest',
+        pending_secret_encrypted: 'encrypted-pending',
+      },
+    };
+    const reconciledState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 4,
+        control_secret_encrypted: null,
+        pending_action: null,
+        pending_secret_encrypted: null,
+      },
+    };
+    mocks.readExternalChatBinding
+      .mockResolvedValueOnce(pendingState)
+      .mockResolvedValueOnce(pendingState)
+      .mockResolvedValueOnce(reconciledState)
+      .mockResolvedValueOnce(reconciledState);
+
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'clear_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalled();
+    expect(mocks.clearExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'ingest'
+    );
+  });
+
+  it('refuses to imply remote revocation for paired credentials', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'encrypted-control',
+        pairing_ticket_consumed_at: '2026-08-01T00:00:00.000Z',
+      },
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'clear_control' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(mocks.clearExternalChatCredential).not.toHaveBeenCalled();
+  });
+
+  it('returns a masked conflict when promotion loses its compare-and-swap', async () => {
+    mocks.promoteExternalChatCredential.mockRejectedValue(
+      new Error('external_chat_pending_credential_changed')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'rotate_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      error: 'External chat credential changed during rotation',
+      secret: 'ecs_test_secret',
+    });
   });
 });

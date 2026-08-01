@@ -40,6 +40,7 @@ export async function listWorkspaceChatConversations(
     archived?: 'active' | 'all' | 'archived';
     limit?: number;
     offset?: number;
+    scope?: 'external';
   },
   options?: InternalApiClientOptions
 ) {
@@ -57,6 +58,7 @@ export async function listWorkspaceChatConversationsPage(
     archived?: 'active' | 'all' | 'archived';
     limit?: number;
     offset?: number;
+    scope?: 'external';
   },
   options?: InternalApiClientOptions
 ): Promise<ChatConversationPage> {
@@ -70,6 +72,7 @@ export async function listWorkspaceChatConversationsPage(
       archived: params?.archived,
       limit: params?.limit,
       offset: params?.offset,
+      scope: params?.scope,
     },
   });
   const conversations = (payload.conversations ?? []).filter(

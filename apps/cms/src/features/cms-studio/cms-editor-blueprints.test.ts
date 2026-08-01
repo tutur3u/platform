@@ -11,8 +11,8 @@ import {
 
 describe('CMS editor Richfield adapter registration', () => {
   it('registers the global CMS site v1 contract', () => {
-    expect(EXTERNAL_PROJECT_DISPLAY_NAMES.cms_site).toBe('CMS Site');
-    expect(DEFAULT_EXTERNAL_PROJECT_COLLECTIONS.cms_site).toEqual([
+    expect(EXTERNAL_PROJECT_DISPLAY_NAMES.custom).toBe('Connected site');
+    expect(DEFAULT_EXTERNAL_PROJECT_COLLECTIONS.custom).toEqual([
       'site-settings',
       'navigation',
       'pages',
@@ -22,18 +22,18 @@ describe('CMS editor Richfield adapter registration', () => {
       'redirects',
       'media-assets',
     ]);
-    expect(
-      getCmsEditorBlueprintViews('cms_site').map((view) => view.id)
-    ).toEqual([
-      'site',
-      'landing',
-      'pages',
-      'posts',
-      'navigation',
-      'taxonomies',
-      'redirects',
-      'media',
-    ]);
+    expect(getCmsEditorBlueprintViews('custom').map((view) => view.id)).toEqual(
+      [
+        'site',
+        'landing',
+        'pages',
+        'posts',
+        'navigation',
+        'taxonomies',
+        'redirects',
+        'media',
+      ]
+    );
   });
 
   it('registers Richfield as a selectable external project adapter', () => {

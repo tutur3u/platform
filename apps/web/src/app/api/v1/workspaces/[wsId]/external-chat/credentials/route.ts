@@ -64,20 +64,6 @@ export const POST = withSessionAuth<Params>(
     if (!current) {
       return NextResponse.json({ error: 'Binding not found' }, { status: 404 });
     }
-    if (
-      parsed.data.action === 'clear_ingest' ||
-      parsed.data.action === 'clear_control'
-    ) {
-      await clearExternalChatCredential(
-        wsId,
-        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
-      );
-      return NextResponse.json({
-        state: serializeExternalChatBinding(
-          await readExternalChatBinding(wsId)
-        ),
-      });
-    }
     try {
       current = await reconcilePendingCredential(wsId, current);
     } catch {
@@ -88,6 +74,33 @@ export const POST = withSessionAuth<Params>(
         },
         { status: 502 }
       );
+    }
+    if (
+      parsed.data.action === 'clear_ingest' ||
+      parsed.data.action === 'clear_control'
+    ) {
+      if (
+        current.credentials?.verified_at ||
+        current.credentials?.pairing_ticket_consumed_at
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Paired bridge credentials must be revoked remotely before they can be cleared',
+            state: serializeExternalChatBinding(current),
+          },
+          { status: 409 }
+        );
+      }
+      await clearExternalChatCredential(
+        wsId,
+        parsed.data.action === 'clear_ingest' ? 'ingest' : 'control'
+      );
+      return NextResponse.json({
+        state: serializeExternalChatBinding(
+          await readExternalChatBinding(wsId)
+        ),
+      });
     }
     let issuedSecret: string | undefined;
     if (parsed.data.action === 'rotate_ingest') {
@@ -110,13 +123,29 @@ export const POST = withSessionAuth<Params>(
           return NextResponse.json(
             {
               error: 'External chat bridge rejected credential rotation',
-              state: serializeExternalChatBinding(current),
+              secret: issuedSecret,
+              state: serializeExternalChatBinding(
+                await readExternalChatBinding(wsId)
+              ),
             },
-            { status: 502 }
+            { status: 202 }
           );
         }
       }
-      await promotePendingCredential(wsId, 'set_ingest');
+      try {
+        await promoteExternalChatCredential(wsId, 'set_ingest', encrypted);
+      } catch {
+        return NextResponse.json(
+          {
+            error: 'External chat credential changed during rotation',
+            secret: issuedSecret,
+            state: serializeExternalChatBinding(
+              await readExternalChatBinding(wsId)
+            ),
+          },
+          { status: 409 }
+        );
+      }
     } else if (parsed.data.action === 'set_control') {
       const encrypted = await encryptControlSecret(wsId, parsed.data.secret);
       await stageCredential(wsId, {
@@ -136,13 +165,27 @@ export const POST = withSessionAuth<Params>(
           return NextResponse.json(
             {
               error: 'External chat bridge rejected credential rotation',
-              state: serializeExternalChatBinding(current),
+              state: serializeExternalChatBinding(
+                await readExternalChatBinding(wsId)
+              ),
             },
             { status: 502 }
           );
         }
       }
-      await promotePendingCredential(wsId, 'rotate_control');
+      try {
+        await promoteExternalChatCredential(wsId, 'rotate_control', encrypted);
+      } catch {
+        return NextResponse.json(
+          {
+            error: 'External chat credential changed during rotation',
+            state: serializeExternalChatBinding(
+              await readExternalChatBinding(wsId)
+            ),
+          },
+          { status: 409 }
+        );
+      }
     } else if (parsed.data.action === 'pair') {
       const expectedHash = current.credentials?.ingest_secret_hash;
       if (
@@ -155,10 +198,17 @@ export const POST = withSessionAuth<Params>(
         );
       }
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      const verifiedRevision = current.credentials?.configuration_revision;
       if (!verifiedCiphertext) {
         return NextResponse.json(
           { error: 'Control credential is not configured' },
           { status: 400 }
+        );
+      }
+      if (typeof verifiedRevision !== 'number') {
+        return NextResponse.json(
+          { error: 'Credential revision is unavailable' },
+          { status: 409 }
         );
       }
       const pairingTicket = createIngestSecret();
@@ -186,7 +236,11 @@ export const POST = withSessionAuth<Params>(
         );
       }
       if (
-        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+        !(await markExternalChatCredentialVerified(
+          wsId,
+          verifiedCiphertext,
+          verifiedRevision
+        ))
       ) {
         return NextResponse.json(
           { error: 'Credential changed during pairing' },
@@ -195,10 +249,17 @@ export const POST = withSessionAuth<Params>(
       }
     } else {
       const verifiedCiphertext = current.credentials?.control_secret_encrypted;
+      const verifiedRevision = current.credentials?.configuration_revision;
       if (!verifiedCiphertext) {
         return NextResponse.json(
           { error: 'Control credential is not configured' },
           { status: 400 }
+        );
+      }
+      if (typeof verifiedRevision !== 'number') {
+        return NextResponse.json(
+          { error: 'Credential revision is unavailable' },
+          { status: 409 }
         );
       }
       try {
@@ -215,7 +276,11 @@ export const POST = withSessionAuth<Params>(
         );
       }
       if (
-        !(await markExternalChatCredentialVerified(wsId, verifiedCiphertext))
+        !(await markExternalChatCredentialVerified(
+          wsId,
+          verifiedCiphertext,
+          verifiedRevision
+        ))
       ) {
         return NextResponse.json(
           { error: 'Credential changed during verification' },
@@ -248,25 +313,6 @@ async function stageCredential(
   await stageExternalChatCredential(wsId, pending);
 }
 
-async function promotePendingCredential(
-  wsId: string,
-  action: 'rotate_control' | 'set_ingest'
-) {
-  const state = await readExternalChatBinding(wsId);
-  const credentials = state?.credentials;
-  if (
-    credentials?.pending_action !== action ||
-    !credentials.pending_secret_encrypted
-  ) {
-    throw new Error('Pending credential is unavailable');
-  }
-  await promoteExternalChatCredential(
-    wsId,
-    action,
-    credentials.pending_secret_encrypted
-  );
-}
-
 async function reconcilePendingCredential(wsId: string, state: BindingState) {
   const credentials = state.credentials;
   if (!credentials?.pending_action || !credentials.pending_secret_encrypted) {
@@ -293,7 +339,11 @@ async function reconcilePendingCredential(wsId: string, state: BindingState) {
       });
     }
   }
-  await promotePendingCredential(wsId, credentials.pending_action);
+  await promoteExternalChatCredential(
+    wsId,
+    credentials.pending_action,
+    credentials.pending_secret_encrypted
+  );
   const refreshed = await readExternalChatBinding(wsId);
   if (!refreshed) throw new Error('Binding disappeared during reconciliation');
   return refreshed;

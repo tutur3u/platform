@@ -1,8 +1,12 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 import { verifyExternalChatSecret } from '@/lib/external-chat/crypto';
-import { externalChatEventSchema } from '@/lib/external-chat/schemas';
+import {
+  externalChatEventSchema,
+  isExternalChatLiveAuthority,
+} from '@/lib/external-chat/schemas';
 import {
   importExternalChatEvent,
   readExternalChatBinding,
@@ -21,12 +25,20 @@ export async function POST(request: Request) {
 
   const state = await readExternalChatBinding(wsId);
   const expectedHash = state?.credentials?.ingest_secret_hash;
+  const pendingHash =
+    state?.credentials?.pending_action === 'set_ingest'
+      ? state.credentials.pending_secret_hash
+      : null;
+  const secretMatches = Boolean(
+    (expectedHash && verifyExternalChatSecret(secret, expectedHash)) ||
+      (pendingHash && verifyExternalChatSecret(secret, pendingHash))
+  );
   if (
     !state?.binding.is_enabled ||
-    !isChatEnabled(state.binding.settings) ||
+    !isExternalChatLiveAuthority(state.binding.settings) ||
     !state.credentials?.verified_at ||
     !expectedHash ||
-    !verifyExternalChatSecret(secret, expectedHash)
+    !secretMatches
   ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -45,8 +57,31 @@ export async function POST(request: Request) {
     connectorKey: state.binding.canonical_project_id ?? wsId,
     event: parsed.data,
     mappedUserId: getMappedUserId(state.binding.settings, parsed.data.agentId),
+    configurationRevision: state.credentials.configuration_revision,
     wsId,
   });
+
+  if (!result.duplicate && result.conversation && result.message) {
+    const audience = { scope: 'workspace' } as const;
+    if (result.conversationCreated) {
+      await publishChatRealtimeEvent({
+        actorUserId: null,
+        audience,
+        conversation: result.conversation,
+        conversationId: result.conversation.id,
+        type: 'conversation.created',
+        wsId,
+      });
+    }
+    await publishChatRealtimeEvent({
+      actorUserId: null,
+      audience,
+      conversationId: result.message.conversationId,
+      message: result.message,
+      type: 'message.created',
+      wsId,
+    });
+  }
 
   const admin = await createAdminClient({ noCookie: true });
   const { error } = await (admin.schema('private') as any)
@@ -61,7 +96,15 @@ export async function POST(request: Request) {
     );
   if (error) console.warn('Failed to update external chat checkpoint', error);
 
-  return NextResponse.json(result, { status: result.duplicate ? 200 : 201 });
+  return NextResponse.json(
+    {
+      conversationId: result.conversationId,
+      duplicate: result.duplicate,
+      messageId: result.messageId,
+      threadId: result.threadId,
+    },
+    { status: result.duplicate ? 200 : 201 }
+  );
 }
 
 function getMappedUserId(settings: unknown, agentId: string) {
@@ -77,14 +120,4 @@ function getMappedUserId(settings: unknown, agentId: string) {
     z.string().uuid().safeParse(mapped).success
     ? mapped
     : null;
-}
-
-function isChatEnabled(settings: unknown) {
-  if (!settings || typeof settings !== 'object') return false;
-  const chat = (settings as Record<string, unknown>).chat;
-  return Boolean(
-    chat &&
-      typeof chat === 'object' &&
-      (chat as Record<string, unknown>).enabled === true
-  );
 }

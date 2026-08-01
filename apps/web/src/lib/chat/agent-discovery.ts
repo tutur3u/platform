@@ -425,7 +425,8 @@ export async function listAiChatMessages({
     .eq('creator_id', user.id)
     .maybeSingle();
 
-  if (chatError || !chat) return null;
+  if (chatError) throw new Error(chatError.message);
+  if (!chat) return null;
 
   const messagesQuery = supabase
     .from('ai_chat_messages')
@@ -440,7 +441,7 @@ export async function listAiChatMessages({
 
   const { data: messages, error } = await messagesQuery;
 
-  if (error) return [];
+  if (error) throw new Error(error.message);
 
   const sender = getAiChatUserProfile(user);
   const messageRows = [...((messages ?? []) as AiChatMessageRow[])].reverse();
@@ -664,7 +665,10 @@ export async function isUserPersonalChatWorkspace({
 }
 
 async function filterNativeChatShadowRows(chatRows: AiChatRow[]) {
-  if (chatRows.length === 0) return chatRows;
+  const visibleRows = chatRows.filter(
+    (chat) => !chat.summary?.startsWith('native-chat-shadow:')
+  );
+  if (visibleRows.length === 0) return visibleRows;
 
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = (await sbAdmin
@@ -673,16 +677,16 @@ async function filterNativeChatShadowRows(chatRows: AiChatRow[]) {
     .select('id')
     .in(
       'id',
-      chatRows.map((chat) => chat.id)
+      visibleRows.map((chat) => chat.id)
     )) as {
     data: { id: string }[] | null;
     error: { message?: string } | null;
   };
 
-  if (error || !data?.length) return chatRows;
+  if (error || !data?.length) return visibleRows;
 
   const nativeConversationIds = new Set(data.map((row) => row.id));
-  return chatRows.filter((chat) => !nativeConversationIds.has(chat.id));
+  return visibleRows.filter((chat) => !nativeConversationIds.has(chat.id));
 }
 
 function getAiChatMessageKind(role: string): ChatMessage['kind'] {

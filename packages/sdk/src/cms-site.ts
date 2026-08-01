@@ -1,33 +1,28 @@
-import type {
-  CmsSiteTemplateMetadataV1,
-  ExternalProjectDeliveryCollection,
-  ExternalProjectDeliveryPayload,
-  ExternalProjectSyncEntry,
-  ExternalProjectSyncManifest,
+import {
+  CMS_SITE_V1_COLLECTIONS,
+  type CmsSiteTemplateMetadataV1,
+  type ExternalProjectAdapterKind,
+  type ExternalProjectDeliveryCollection,
+  type ExternalProjectDeliveryPayload,
+  type ExternalProjectSyncEntry,
+  type ExternalProjectSyncManifest,
 } from '@tuturuuu/types';
 
-export const CMS_SITE_V1_COLLECTIONS = [
-  ['site-settings', 'Site settings', 'settings'],
-  ['navigation', 'Navigation', 'navigation'],
-  ['pages', 'Pages', 'page'],
-  ['posts', 'Posts', 'post'],
-  ['taxonomies', 'Taxonomies', 'taxonomy'],
-  ['landing-sections', 'Landing sections', 'section'],
-  ['redirects', 'Redirects', 'redirect'],
-  ['media-assets', 'Media', 'media'],
-] as const;
+export { CMS_SITE_V1_COLLECTIONS } from '@tuturuuu/types';
 
 export function buildCmsSiteManifest({
-  canonicalProjectId = 'cms_site-main',
+  adapter = 'custom',
+  canonicalProjectId = 'connected-site-main',
   entries = [],
   template = { kind: 'standard-site', version: 1 },
 }: {
+  adapter?: ExternalProjectAdapterKind;
   canonicalProjectId?: string | null;
   entries?: ExternalProjectSyncEntry[];
   template?: CmsSiteTemplateMetadataV1;
 } = {}): ExternalProjectSyncManifest {
   return {
-    adapter: 'cms_site',
+    adapter,
     canonicalProjectId,
     content: { entries },
     schema: {
@@ -68,10 +63,6 @@ export function normalizeCmsSiteDelivery(
   payload: ExternalProjectDeliveryPayload,
   publicBaseUrl?: string
 ): CmsSiteDeliveryView {
-  if (payload.adapter !== 'cms_site') {
-    throw new Error('Delivery payload is not a CMS site');
-  }
-
   const baseUrl = publicBaseUrl ? new URL(publicBaseUrl) : null;
   const collections = Object.fromEntries(
     payload.collections.map((collection) => [

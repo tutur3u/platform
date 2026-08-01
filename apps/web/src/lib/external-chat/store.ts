@@ -1,9 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
+import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
 import type { ExternalChatEvent, ExternalChatSettings } from './schemas';
 
 type CredentialRow = {
+  configuration_revision: number;
   control_secret_encrypted: string | null;
   control_secret_last_four: string | null;
   control_secret_rotated_at: string | null;
@@ -11,11 +13,13 @@ type CredentialRow = {
   ingest_secret_last_four: string | null;
   ingest_secret_rotated_at: string | null;
   verified_at: string | null;
+  verified_revision: number | null;
   pending_action: 'rotate_control' | 'set_ingest' | null;
   pending_secret_encrypted: string | null;
   pending_secret_hash: string | null;
   pending_secret_last_four: string | null;
   pending_created_at: string | null;
+  pairing_ticket_consumed_at?: string | null;
 };
 
 type BindingRow = {
@@ -44,7 +48,7 @@ export async function readExternalChatBinding(wsId: string) {
     await externalChatPrivateDb(admin)
       .from('external_chat_binding_credentials')
       .select(
-        'control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at, pending_action, pending_secret_encrypted, pending_secret_hash, pending_secret_last_four, pending_created_at'
+        'configuration_revision, control_secret_encrypted, control_secret_last_four, control_secret_rotated_at, ingest_secret_hash, ingest_secret_last_four, ingest_secret_rotated_at, verified_at, verified_revision, pending_action, pending_secret_encrypted, pending_secret_hash, pending_secret_last_four, pending_created_at, pairing_ticket_consumed_at'
       )
       .eq('ws_id', wsId)
       .maybeSingle();
@@ -73,17 +77,6 @@ export async function writeExternalChatSettings(
     p_chat: settings as Json,
     p_ws_id: wsId,
   });
-  if (error) throw new Error(error.message);
-}
-
-export async function upsertExternalChatCredentials(
-  wsId: string,
-  values: Record<string, string | null>
-) {
-  const admin = await createAdminClient({ noCookie: true });
-  const { error } = await externalChatPrivateDb(admin)
-    .from('external_chat_binding_credentials')
-    .upsert({ ws_id: wsId, ...values }, { onConflict: 'ws_id' });
   if (error) throw new Error(error.message);
 }
 
@@ -119,13 +112,15 @@ export async function promoteExternalChatCredential(
 
 export async function markExternalChatCredentialVerified(
   wsId: string,
-  controlSecretEncrypted: string
+  controlSecretEncrypted: string,
+  configurationRevision: number
 ) {
   const admin = await createAdminClient({ noCookie: true });
   const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_mark_verified',
     {
       p_control_secret_encrypted: controlSecretEncrypted,
+      p_configuration_revision: configurationRevision,
       p_ws_id: wsId,
     }
   );
@@ -186,11 +181,13 @@ async function callExternalChatCredentialRpc(
 }
 
 export async function importExternalChatEvent({
+  configurationRevision,
   connectorKey,
   event,
   mappedUserId,
   wsId,
 }: {
+  configurationRevision: number;
   connectorKey: string;
   event: ExternalChatEvent;
   mappedUserId: string | null;
@@ -211,10 +208,15 @@ export async function importExternalChatEvent({
     },
     status: event.status,
   };
+  const threadMetadata = {
+    ...event.visitorProfile,
+    ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
+  };
   const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_import_event',
     {
       p_connector_key: connectorKey,
+      p_configuration_revision: configurationRevision,
       p_content: event.content,
       p_direction: event.direction,
       ...(mappedUserId ? { p_mapped_user_id: mappedUserId } : {}),
@@ -223,14 +225,17 @@ export async function importExternalChatEvent({
       p_remote_agent_id: event.agentId,
       p_remote_message_id: event.messageId,
       p_remote_visitor_id: event.visitorId,
-      p_thread_metadata: event.visitorProfile as Json,
+      p_thread_metadata: threadMetadata as Json,
       p_ws_id: wsId,
     }
   );
   if (error) throw new Error(error.message);
-  return data as {
+  return data as unknown as {
+    conversation?: ChatConversation;
+    conversationCreated?: boolean;
     conversationId?: string;
     duplicate: boolean;
+    message?: ChatMessage;
     messageId: string;
     threadId?: string;
   };
@@ -260,6 +265,12 @@ export function serializeExternalChatBinding(
   if (!credentials?.control_secret_encrypted)
     errors.push('control_secret_missing');
   if (!credentials?.verified_at) errors.push('bridge_unverified');
+  if (
+    credentials?.verified_at &&
+    credentials.verified_revision !== credentials.configuration_revision
+  ) {
+    errors.push('bridge_verification_stale');
+  }
   if (credentials?.pending_action)
     errors.push('credential_reconciliation_pending');
 

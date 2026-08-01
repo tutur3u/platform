@@ -4,6 +4,7 @@ import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import type { ChatMessage } from '@/lib/chat/private-rpc';
 import { decryptControlSecret, signControlRequest } from './crypto';
 import { safeExternalChatFetch } from './safe-control-request';
+import { isExternalChatEnabled, isExternalChatLiveAuthority } from './schemas';
 import { externalChatPrivateDb, readExternalChatBinding } from './store';
 
 type ExternalThreadRow = {
@@ -49,6 +50,7 @@ export type ExternalChatDelivery = {
 };
 
 export type ReservedExternalChatDelivery = {
+  configurationRevision: number;
   delivered: boolean;
   deliveryId: string;
   idempotencyKey: string;
@@ -79,17 +81,7 @@ function getBridgeBaseUrl(settings: unknown) {
   const chat = (settings as Record<string, unknown>).chat;
   if (!chat || typeof chat !== 'object') return null;
   const value = (chat as Record<string, unknown>).bridgeBaseUrl;
-  return typeof value === 'string' ? value.replace(/\/$/, '') : null;
-}
-
-function isChatEnabled(settings: unknown) {
-  if (!settings || typeof settings !== 'object') return false;
-  const chat = (settings as Record<string, unknown>).chat;
-  return Boolean(
-    chat &&
-      typeof chat === 'object' &&
-      (chat as Record<string, unknown>).enabled === true
-  );
+  return typeof value === 'string' ? value.replace(/\/+$/u, '') : null;
 }
 
 function getPublicPlatformUrl() {
@@ -97,6 +89,7 @@ function getPublicPlatformUrl() {
     env: {
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
       NEXT_PUBLIC_WEB_APP_URL: process.env.NEXT_PUBLIC_WEB_APP_URL,
+      WEB_APP_URL: process.env.WEB_APP_URL,
       NODE_ENV: process.env.NODE_ENV,
       VERCEL: process.env.VERCEL,
       VERCEL_ENV: process.env.VERCEL_ENV,
@@ -134,7 +127,7 @@ export async function verifyExternalChatControl(wsId: string) {
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
-    !isChatEnabled(state.binding.settings) ||
+    !isExternalChatEnabled(state.binding.settings) ||
     !ciphertext ||
     !bridgeBaseUrl
   ) {
@@ -170,7 +163,7 @@ export async function configureExternalChatBridge({
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
-    !isChatEnabled(state.binding.settings) ||
+    !isExternalChatEnabled(state.binding.settings) ||
     !controlCiphertext ||
     !state.credentials?.ingest_secret_hash ||
     !bridgeBaseUrl
@@ -215,7 +208,7 @@ export async function updateExternalChatBridgeCredential({
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
-    !isChatEnabled(state.binding.settings) ||
+    !isExternalChatEnabled(state.binding.settings) ||
     !ciphertext ||
     !bridgeBaseUrl
   ) {
@@ -245,6 +238,7 @@ export async function deliverExternalChatReplyIfBound({
   conversationId,
   idempotencyKey,
   deliveryId,
+  configurationRevision,
   senderId,
   wsId,
 }: {
@@ -252,6 +246,7 @@ export async function deliverExternalChatReplyIfBound({
   conversationId: string;
   idempotencyKey: string;
   deliveryId: string;
+  configurationRevision: number;
   senderId: string;
   wsId: string;
 }): Promise<ExternalChatDelivery | null> {
@@ -271,8 +266,12 @@ export async function deliverExternalChatReplyIfBound({
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
-    !isChatEnabled(state.binding.settings) ||
+    !isExternalChatLiveAuthority(state.binding.settings) ||
     !state.credentials?.verified_at ||
+    state.credentials.verified_revision !==
+      state.credentials.configuration_revision ||
+    state.credentials.pending_action ||
+    state.credentials.configuration_revision !== configurationRevision ||
     !ciphertext ||
     !bridgeBaseUrl
   ) {
@@ -303,12 +302,14 @@ export async function deliverExternalChatReplyIfBound({
 
 export async function reserveExternalChatReply({
   clientRequestId,
+  content,
   conversationId,
   replyToMessageId,
   senderId,
   wsId,
 }: {
   clientRequestId: string;
+  content: string;
   conversationId: string;
   replyToMessageId: string | null;
   senderId: string;
@@ -317,12 +318,17 @@ export async function reserveExternalChatReply({
   const fingerprint = createHash('sha256')
     .update(JSON.stringify({ clientRequestId, conversationId, senderId }))
     .digest('hex');
+  const payloadHash = createExternalChatReplyPayloadHash({
+    content,
+    replyToMessageId,
+  });
   const admin = await createAdminClient({ noCookie: true });
   const { data, error } = await externalChatMutationDb(admin).rpc(
     'external_chat_reserve_reply',
     {
       p_actor_user_id: senderId,
       p_conversation_id: conversationId,
+      p_payload_hash: payloadHash,
       p_reply_to_message_id: replyToMessageId,
       p_request_fingerprint: fingerprint,
       p_ws_id: wsId,
@@ -349,6 +355,23 @@ export async function markExternalChatReplyDelivered({
   if (error) throw new Error(error.message);
 }
 
+export async function cancelExternalChatReply({
+  deliveryId,
+  wsId,
+}: {
+  deliveryId: string;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { error } = await externalChatMutationDb(admin)
+    .from('external_chat_outbound_deliveries')
+    .update({ cancelled_at: new Date().toISOString() })
+    .eq('id', deliveryId)
+    .eq('ws_id', wsId)
+    .is('delivered_at', null);
+  if (error) throw new Error(error.message);
+}
+
 export async function finalizeExternalChatReply({
   content,
   deliveryId,
@@ -363,16 +386,33 @@ export async function finalizeExternalChatReply({
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
+  const payloadHash = createExternalChatReplyPayloadHash({
+    content,
+    replyToMessageId,
+  });
   const { data, error } = await externalChatMutationDb(admin).rpc(
     'external_chat_finalize_reply',
     {
       p_actor_user_id: senderId,
       p_content: content,
       p_delivery_id: deliveryId,
+      p_payload_hash: payloadHash,
       p_reply_to_message_id: replyToMessageId,
       p_ws_id: wsId,
     }
   );
   if (error) throw error;
   return data as ChatMessage;
+}
+
+function createExternalChatReplyPayloadHash({
+  content,
+  replyToMessageId,
+}: {
+  content: string;
+  replyToMessageId: string | null;
+}) {
+  return createHash('sha256')
+    .update(JSON.stringify({ content, replyToMessageId }))
+    .digest('hex');
 }

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createDialogProps: null as Record<string, unknown> | null,
   fetchNextPage: vi.fn(),
   routerReplace: vi.fn(),
+  searchParams: 'scope=personal',
   useChatMessageSearch: vi.fn(),
   useInfiniteChatConversations: vi.fn(),
 }));
@@ -21,7 +22,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     replace: mocks.routerReplace,
   }),
-  useSearchParams: () => new URLSearchParams('scope=personal'),
+  useSearchParams: () => new URLSearchParams(mocks.searchParams),
 }));
 
 vi.mock('./chat-sidebar', () => ({
@@ -80,6 +81,7 @@ describe('ChatSidebarPanel', () => {
     vi.clearAllMocks();
     mocks.chatSidebarProps = null;
     mocks.createDialogProps = null;
+    mocks.searchParams = 'scope=personal';
     window.localStorage.clear();
     mocks.useChatMessageSearch.mockReturnValue({ data: [] });
     mocks.useInfiniteChatConversations.mockReturnValue({
@@ -104,6 +106,7 @@ describe('ChatSidebarPanel', () => {
 
     expect(mocks.useInfiniteChatConversations).toHaveBeenCalledWith({
       archived: 'active',
+      scope: undefined,
       wsId: 'personal',
     });
     expect(mocks.chatSidebarProps).toMatchObject({
@@ -118,6 +121,31 @@ describe('ChatSidebarPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'load more' }));
 
     expect(mocks.fetchNextPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('requests server-scoped pages for the external inbox', () => {
+    mocks.searchParams = 'scope=external';
+    mocks.useInfiniteChatConversations.mockReturnValue({
+      data: { pages: [{ conversations: [], nextOffset: null }] },
+      fetchNextPage: mocks.fetchNextPage,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+    });
+
+    render(
+      <ChatSidebarPanel
+        currentUserId="user-1"
+        isCollapsed={false}
+        wsId="personal"
+      />
+    );
+
+    expect(mocks.useInfiniteChatConversations).toHaveBeenCalledWith({
+      archived: 'active',
+      scope: 'external',
+      wsId: 'personal',
+    });
   });
 
   it('updates Next router state when auto-selecting the first conversation', async () => {

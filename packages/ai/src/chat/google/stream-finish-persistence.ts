@@ -106,6 +106,7 @@ type PersistAssistantResponseParams = {
   model: string;
   effectiveSource: 'Mira' | 'Rewise';
   observabilityContext?: unknown;
+  persistenceRequestId?: string;
   wsId?: string;
 };
 
@@ -470,6 +471,7 @@ function buildAssistantMessageMetadata({
   inputTokens,
   model,
   observabilityContext,
+  persistenceRequestId,
   outputTokens,
   parts,
   reasoningText,
@@ -485,6 +487,7 @@ function buildAssistantMessageMetadata({
   inputTokens: number;
   model: string;
   observabilityContext?: unknown;
+  persistenceRequestId?: string;
   outputTokens: number;
   parts: Record<string, unknown>[];
   reasoningText: string;
@@ -494,6 +497,7 @@ function buildAssistantMessageMetadata({
 }) {
   return {
     source: effectiveSource,
+    ...(persistenceRequestId ? { requestId: persistenceRequestId } : {}),
     ai: {
       finishReason: response.finishReason,
       model,
@@ -526,6 +530,7 @@ function compactAssistantMessageMetadata(
   const ai = metadata.ai;
   return {
     source: metadata.source,
+    ...(metadata.requestId ? { requestId: metadata.requestId } : {}),
     ai: {
       finishReason: ai.finishReason,
       metadataCompacted: true,
@@ -568,6 +573,7 @@ export async function persistAssistantResponse({
   model,
   effectiveSource,
   observabilityContext,
+  persistenceRequestId,
   wsId,
 }: PersistAssistantResponseParams): Promise<void> {
   const steps = response.steps ?? [];
@@ -608,6 +614,7 @@ export async function persistAssistantResponse({
     inputTokens,
     model,
     observabilityContext,
+    persistenceRequestId,
     outputTokens,
     parts,
     reasoningText,

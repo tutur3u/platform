@@ -4,7 +4,7 @@ import { externalProjectAdapterFixtures } from './fixtures';
 describe('external project adapter fixtures', () => {
   it('covers all supported adapters with source references', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
-      'cms_site',
+      'custom',
       'exocorpse',
       'junly',
       'kendra',
@@ -26,7 +26,7 @@ describe('external project adapter fixtures', () => {
 
   it('matches the expected collection layout for each adapter', () => {
     expect(
-      externalProjectAdapterFixtures.cms_site.collections.map(
+      externalProjectAdapterFixtures.custom.collections.map(
         (collection) => collection.slug
       )
     ).toEqual([
@@ -36,8 +36,8 @@ describe('external project adapter fixtures', () => {
       'posts',
       'taxonomies',
       'landing-sections',
-      'media-assets',
       'redirects',
+      'media-assets',
     ]);
 
     expect(

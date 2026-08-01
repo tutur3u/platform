@@ -5,6 +5,8 @@ import {
   hasCmsCommerceProductReadPermission,
   hasCmsCommerceStorefrontPublishPermission,
   hasCmsCommerceStorefrontReadPermission,
+  hasCmsConnectedChatReadPermission,
+  sanitizeCmsBindingSettings,
 } from './access';
 
 function permissionsWith(values: string[]) {
@@ -84,5 +86,34 @@ describe('CMS commerce workspace permissions', () => {
         permissionsWith(['view_inventory_catalog', 'view_inventory_stock'])
       )
     ).toBe(true);
+  });
+});
+
+describe('CMS binding serialization', () => {
+  it('removes connected-chat configuration from general studio payloads', () => {
+    expect(
+      sanitizeCmsBindingSettings({
+        chat: {
+          bridgeBaseUrl: 'https://bridge.example.com',
+          enabled: true,
+        },
+        cmsSite: { template: { kind: 'standard-site', version: 1 } },
+      })
+    ).toEqual({
+      cmsSite: { template: { kind: 'standard-site', version: 1 } },
+    });
+  });
+});
+
+describe('CMS connected chat permissions', () => {
+  it('allows chat viewers without granting general project editing access', () => {
+    expect(
+      hasCmsConnectedChatReadPermission(permissionsWith(['view_chat']))
+    ).toBe(true);
+    expect(
+      hasCmsConnectedChatReadPermission(
+        permissionsWith(['publish_external_projects'])
+      )
+    ).toBe(false);
   });
 });

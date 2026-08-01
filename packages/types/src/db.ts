@@ -1282,7 +1282,6 @@ export type CmsSiteTemplateMetadataV1 = {
 };
 
 export type CmsSiteContractV1 = {
-  adapter: 'cms_site';
   template: CmsSiteTemplateMetadataV1;
   version: 1;
 };
@@ -1308,7 +1307,8 @@ export type ExternalProjectSyncEntity =
   | 'block'
   | 'collection'
   | 'entry'
-  | 'schema';
+  | 'schema'
+  | 'template';
 
 export type ExternalProjectSyncAction =
   | 'archive'

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { deleteWorkspaceStorageObjectByPath } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -286,7 +287,8 @@ function getExternalProjectDeliveryRevision(
   blocks: ExternalProjectBlock[],
   assets: ExternalProjectAsset[],
   relations: Array<{ created_at: string }>,
-  definitions: ExternalProjectRelationDefinition[]
+  definitions: ExternalProjectRelationDefinition[],
+  template: unknown
 ) {
   const latest = [
     ...collections.map((item) => item.updated_at),
@@ -299,7 +301,10 @@ function getExternalProjectDeliveryRevision(
 
   return {
     generatedAt: latest ?? '1970-01-01T00:00:00.000Z',
-    revision: latest?.replace(/\D/g, '') || 'empty',
+    revision: `${latest?.replace(/\D/g, '') || 'empty'}-${createHash('sha256')
+      .update(JSON.stringify(template ?? null))
+      .digest('hex')
+      .slice(0, 12)}`,
   };
 }
 
@@ -3031,13 +3036,18 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     binding.adapter,
     collectionsPayload
   );
+  const template =
+    readV1Template(
+      asJsonObject(asJsonObject(binding.settings).cmsSite).template
+    ) ?? readV1Template(profileData.template);
   const deliveryRevision = getExternalProjectDeliveryRevision(
     deliveryCollections,
     deliveryEntries,
     blocks,
     assets,
     publicRelations,
-    relationData.definitions
+    relationData.definitions,
+    template
   );
 
   return {
@@ -3047,12 +3057,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     generatedAt: deliveryRevision.generatedAt,
     loadingData,
     profileData,
-    template:
-      binding.adapter === 'cms_site'
-        ? readV1Template(
-            asJsonObject(asJsonObject(binding.settings).cmsSite).template
-          )
-        : readV1Template(profileData.template),
+    template,
     revision: deliveryRevision.revision,
     workspaceId,
   };

@@ -15,15 +15,30 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-type LabMessage = { body: string; id: string; role: 'visitor' | 'staff' };
+type LabMessage = {
+  body: string;
+  id: string;
+  role: 'visitor' | 'staff';
+  status: 'delivered' | 'queued';
+};
 
 export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
   const t = useTranslations('external-chat-lab');
   const [draft, setDraft] = useState('');
   const [online, setOnline] = useState(true);
   const [messages, setMessages] = useState<LabMessage[]>([
-    { body: t('sample_visitor'), id: 'sample-visitor', role: 'visitor' },
-    { body: t('sample_staff'), id: 'sample-staff', role: 'staff' },
+    {
+      body: t('sample_visitor'),
+      id: 'sample-visitor',
+      role: 'visitor',
+      status: 'delivered',
+    },
+    {
+      body: t('sample_staff'),
+      id: 'sample-staff',
+      role: 'staff',
+      status: 'delivered',
+    },
   ]);
   const state = useQuery({
     queryFn: () => getExternalChatBindingState(wsId),
@@ -36,7 +51,12 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
     if (!body) return;
     setMessages((current) => [
       ...current,
-      { body, id: crypto.randomUUID(), role: 'visitor' },
+      {
+        body,
+        id: crypto.randomUUID(),
+        role: 'visitor',
+        status: online ? 'delivered' : 'queued',
+      },
     ]);
     setDraft('');
   }
@@ -50,7 +70,23 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
             {t('description')}
           </p>
         </div>
-        <Button onClick={() => setOnline((value) => !value)} variant="outline">
+        <Button
+          onClick={() => {
+            setOnline((value) => {
+              const next = !value;
+              if (next) {
+                setMessages((current) =>
+                  current.map((message) => ({
+                    ...message,
+                    status: 'delivered',
+                  }))
+                );
+              }
+              return next;
+            });
+          }}
+          variant="outline"
+        >
           {online ? (
             <CheckCircle2 className="size-4" />
           ) : (
@@ -71,9 +107,11 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
         <AlertTitle>
           {state.isLoading
             ? t('loading')
-            : state.data?.readiness.ready
-              ? t('ready')
-              : t('prerequisites')}
+            : state.isError
+              ? t('load_error')
+              : state.data?.readiness.ready
+                ? t('ready')
+                : t('prerequisites')}
         </AlertTitle>
         <AlertDescription>
           {state.isLoading
@@ -115,6 +153,11 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
                     key={message.id}
                   >
                     {message.body}
+                    {message.status === 'queued' ? (
+                      <span className="mt-1 block text-xs opacity-70">
+                        {t('queued')}
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -174,14 +217,14 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
               label={t('legacy_routes')}
               pending={t('pending')}
               ready={t('ok')}
-              value
+              value={false}
             />
             <Status
               label={t('authority')}
               pending={t('pending')}
               value={
-                state.data?.settings?.authorityMode !== 'legacy_primary' &&
-                Boolean(state.data?.settings?.authorityMode)
+                state.data?.settings?.authorityMode === 'mirror_verified' ||
+                state.data?.settings?.authorityMode === 'tuturuuu_primary'
               }
               pendingLabel={t('legacy_primary')}
               ready={t('ok')}

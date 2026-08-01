@@ -39,12 +39,12 @@ export function useChatConversations(
 export function useInfiniteChatConversations({
   archived = 'active',
   limit = 40,
-  unpaginated = false,
+  scope,
   wsId,
 }: {
   archived?: 'active' | 'all' | 'archived';
   limit?: number;
-  unpaginated?: boolean;
+  scope?: 'external';
   wsId: string;
 }) {
   return useInfiniteQuery<
@@ -59,13 +59,15 @@ export function useInfiniteChatConversations({
     queryFn: ({ pageParam }) =>
       listWorkspaceChatConversationsPage(wsId, {
         archived,
-        ...(unpaginated ? {} : { limit, offset: pageParam }),
+        limit,
+        offset: pageParam,
+        scope,
       }),
     queryKey: chatQueryKeys.conversationsInfinite(
       wsId,
       archived,
       limit,
-      unpaginated ? 'all' : 'paged'
+      scope ?? 'all'
     ),
     staleTime: 15_000,
   });

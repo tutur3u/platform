@@ -16,6 +16,37 @@ export const CHAT_CONVERSATION_TYPE_FILTERS = [
   'ai',
 ] as const satisfies ChatConversationType[];
 
+export type PendingChatSendRequest = {
+  fingerprint: string;
+  requestId: string;
+};
+
+export function resolvePendingChatSendRequest(
+  previous: PendingChatSendRequest | null,
+  payload: {
+    attachments: Array<{
+      filename: string;
+      path: string;
+      sizeBytes?: number | null;
+    }>;
+    content: string;
+  },
+  createRequestId: () => string
+): PendingChatSendRequest {
+  const fingerprint = JSON.stringify({
+    attachments: payload.attachments.map((attachment) => ({
+      filename: attachment.filename,
+      path: attachment.path,
+      sizeBytes: attachment.sizeBytes,
+    })),
+    content: payload.content,
+  });
+
+  return previous?.fingerprint === fingerprint
+    ? previous
+    : { fingerprint, requestId: createRequestId() };
+}
+
 export function normalizeChatConversationScope(
   scope?: string | null
 ): ChatConversationScope {
@@ -126,7 +157,8 @@ export function getChatMessageSenderLabel(
   message: Pick<ChatMessage, 'kind' | 'metadata' | 'sender'>,
   fallback: { assistant: string; external: string; unknown: string }
 ) {
-  if (message.sender?.displayName) return message.sender.displayName;
+  const nativeDisplayName = readNonEmptyString(message.sender?.displayName);
+  if (nativeDisplayName) return nativeDisplayName;
   if (message.kind === 'assistant') return fallback.assistant;
 
   const externalSender = message.metadata?.externalSender;
