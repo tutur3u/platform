@@ -15,7 +15,8 @@ export type CloudflareSfuClientOptions = {
 };
 
 export type AddTracksInput = {
-  sessionDescription: SessionDescription;
+  /** Absent when pulling remote tracks; Cloudflare then returns the offer. */
+  sessionDescription?: SessionDescription;
   sessionId: string;
   tracks: SfuTrack[];
 };
@@ -82,17 +83,29 @@ export class CloudflareSfuClient {
     );
 
     if (!response.ok) {
-      throw new Error(`cloudflare_sfu_request_failed:${response.status}`);
+      // Cloudflare returns `{errorCode, errorDescription}`; surfacing it is the
+      // difference between a diagnosable failure and a bare status code.
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `cloudflare_sfu_request_failed:${response.status}${
+          detail ? ` ${detail.slice(0, 300)}` : ''
+        }`
+      );
     }
 
     return response.json() as Promise<unknown>;
   }
 
+  /**
+   * Creating a session without a local offer must send no body at all. An empty
+   * object, or the `autoDiscover` flag this used to send, is rejected with
+   * `400 Body JSON validation error: sessionDescription`.
+   */
   createSession(sessionDescription?: SessionDescription) {
     return this.request('/sessions/new', {
-      body: JSON.stringify(
-        sessionDescription ? { sessionDescription } : { autoDiscover: true }
-      ),
+      ...(sessionDescription
+        ? { body: JSON.stringify({ sessionDescription }) }
+        : {}),
       method: 'POST',
     });
   }

@@ -1,0 +1,123 @@
+---
+title: Meet calls
+description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
+---
+
+Tuturuuu Meet calls are Google-Meet-style conferences carried by the
+**Cloudflare Realtime SFU**. This is a different product from Cloudflare Stream
+Live, which powers one-to-many broadcast and is documented separately.
+
+Every participant holds exactly **two peer connections** to the SFU — one
+publishing, one subscribing — regardless of room size. Calls are not mesh, so
+cost and CPU stay flat as a room grows.
+
+## Pieces
+
+| piece | where |
+| --- | --- |
+| Protocol, permissions, pure room reducer | `packages/realtime/src/meet/` |
+| Room server (Bun + Docker, port 7816) | `apps/meet-realtime/src/server.ts` |
+| Room server (Cloudflare Worker + Durable Object) | `apps/meet-realtime/src/worker.ts` |
+| Cloudflare SFU HTTPS client | `apps/meet-realtime/src/cloudflare-sfu.ts` |
+| Call client and UI | `apps/meet/src/features/call/` |
+| Call route (full-bleed, no sidebar) | `apps/meet/src/app/[locale]/call/[wsId]/[meetingId]` |
+
+`room.ts` is a pure reducer: it returns the next room snapshot plus the messages
+to fan out and any Cloudflare work to perform. Both transports run the same
+reducer, so the Bun server and the Durable Object cannot drift.
+
+The app secret never reaches a browser. The client receives only a short-lived
+HMAC join token; the room server performs every SFU call on its behalf.
+
+## Running a call locally
+
+Create an SFU app under **Cloudflare dashboard → Realtime → SFU** and put the
+values in `apps/meet-realtime/.dev.vars` (gitignored). See the
+`apps/meet-realtime` README for variable names.
+
+```bash
+bun apps/meet-realtime/src/verify-credentials.ts
+```
+
+Start the room server and the app, then open a meeting and press **Join call**:
+
+```bash
+bun apps/meet-realtime/src/index.ts
+```
+
+Point the app at it with `NEXT_PUBLIC_MEET_REALTIME_URL`, which defaults to
+`ws://127.0.0.1:7816/realtime`.
+
+## Verifying without a full environment
+
+Two checks run against real Cloudflare without needing Supabase, auth or seed
+data.
+
+**Signaling and host controls** — boots the room server, connects a host and a
+guest, and exercises the lobby, chat, hand raise, force mute and removal:
+
+```bash
+bun apps/meet-realtime/src/integration-check.ts
+```
+
+**Media** — bundles the real client modules, opens two browser peers and proves
+audio and video traverse the SFU. Tracks are synthesised from a canvas and an
+oscillator, so no camera or microphone permission is needed:
+
+```bash
+bun apps/meet-realtime/src/media-check.ts
+```
+
+Then open `http://127.0.0.1:7898/?peer=a` and `?peer=b`. Each tab reports
+`bytesReceived` and `framesDecoded`, and renders the other peer's video.
+
+## Two contract details worth remembering
+
+Both of these were found only by running against the live API, and both produce
+confusing errors if reintroduced:
+
+- **Read `transceiver.mid` only after `setLocalDescription()`.** It is `null`
+  before that, and publishing without it fails with
+  `406 tracks[0]: Missing mid in track`.
+- **Do not send a `sessionDescription` when pulling remote tracks.** Cloudflare
+  returns the offer, which the client answers via `sfu.renegotiate`. Sending an
+  empty SDP is rejected as a malformed event.
+
+Creating a session with no local offer must also send **no request body** at
+all; `{}` and `{autoDiscover: true}` are both rejected.
+
+## Meeting codes
+
+Every meeting has a shareable code and a `/join/<code>` link, surfaced by the
+**Copy invite** button in the call header.
+
+The code is a reversible Crockford base32 encoding of the meeting id rather
+than a stored random string, so there is no schema change, no collision risk
+and no lookup table — an invalid code is rejected before any query runs.
+Decoding tolerates case, spaces, dashes, and the `I`/`L`/`O`/`U` characters
+Crockford omits, folding them onto the digits the sender meant.
+
+A code is a convenience for sharing **inside a workspace**, not a bypass:
+`/join/<code>` still resolves workspace membership and redirects non-members
+away. Anonymous guest links are not implemented — the join token requires a
+user id, so that needs an auth decision first.
+
+## Recording
+
+A host can record from inside the call. The control creates a row in
+`recording_sessions` through the existing `/record` endpoint, captures local
+audio with `MediaRecorder`, uploads through the existing `/upload` endpoint, and
+broadcasts `recording.state` so every participant sees the indicator.
+
+Because it reuses those endpoints, a call recording is indistinguishable from
+one started on the meeting page and feeds the same transcription pipeline.
+
+## Deploying the Worker
+
+```bash
+bun wrangler deploy -c apps/meet-realtime/wrangler.jsonc
+```
+
+One Durable Object per room gives each room a single authority. The Bun server
+keeps rooms in an in-process map, which is only correct for a single replica —
+prefer the Worker when running more than one instance.

@@ -54,9 +54,9 @@ describe('CloudflareSfuClient', () => {
         method: 'POST',
       })
     );
-    expect(getJsonBody(fetchMock.mock.calls[0]?.[1])).toEqual({
-      autoDiscover: true,
-    });
+    // Verified against the live API: a body of `{}` or `{autoDiscover:true}`
+    // is rejected with 400 "Body JSON validation error: sessionDescription".
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBeUndefined();
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
@@ -83,5 +83,42 @@ describe('CloudflareSfuClient', () => {
       expect.objectContaining({ method: 'PUT' })
     );
     expect(getJsonBody(fetchMock.mock.calls[3]?.[1])).toEqual({ tracks });
+  });
+
+  it('sends an offer as sessionDescription when one is supplied', async () => {
+    const fetchMock = createFetchMock();
+    const client = new CloudflareSfuClient({
+      appId: 'app-1',
+      appSecret: 'secret-1',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    const sessionDescription = { sdp: 'v=0\r\n', type: 'offer' as const };
+
+    await client.createSession(sessionDescription);
+
+    expect(getJsonBody(fetchMock.mock.calls[0]?.[1])).toEqual({
+      sessionDescription,
+    });
+  });
+
+  it('carries the Cloudflare error description into the thrown error', async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json(
+        {
+          errorCode: 'decoding_error',
+          errorDescription: 'Body JSON validation error: sessionDescription',
+        },
+        { status: 400 }
+      )
+    );
+    const client = new CloudflareSfuClient({
+      appId: 'app-1',
+      appSecret: 'secret-1',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await expect(client.createSession()).rejects.toThrow(
+      /cloudflare_sfu_request_failed:400.*decoding_error/u
+    );
   });
 });

@@ -32,6 +32,7 @@
                 "pages": [
                   "platform/features/command-center-dashboard",
                   "platform/features/external-project-studio",
+                  "platform/features/meet-calls",
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
                   "platform/features/user-management",

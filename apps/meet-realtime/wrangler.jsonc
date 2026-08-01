@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-meet-realtime",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "dev": {
+    "port": 8786,
+    "local_protocol": "http"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MEET_ROOM",
+        "class_name": "MeetRoomDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["MeetRoomDurableObject"]
+    }
+  ],
+  "secrets": {
+    "required": [
+      "MEET_REALTIME_TOKEN_SECRET",
+      "CLOUDFLARE_REALTIME_APP_ID",
+      "CLOUDFLARE_REALTIME_APP_SECRET"
+    ]
+  }
+}

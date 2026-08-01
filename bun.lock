@@ -888,6 +888,7 @@
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -906,6 +907,7 @@
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "react-hook-form": "^7.83.0",
+        "server-only": "^0.0.1",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -918,6 +920,7 @@
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.25",
         "typescript": "7.0.2",
+        "vitest": "^4.1.10",
       },
     },
     "apps/mind": {

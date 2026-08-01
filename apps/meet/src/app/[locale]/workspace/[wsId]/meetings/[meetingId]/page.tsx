@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/icons';
+import { ArrowLeft, Calendar, Clock, Users, Video } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { RecordingSessionsOverview } from './recording-sessions-overview';
@@ -37,6 +38,7 @@ export default async function MeetingDetailPage({
 
   const { wsId: id, meetingId } = await params;
   const { workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
+  const t = await getTranslations('meet.call');
   const supabase = await createAdminClient({ noCookie: true });
 
   // Fetch meeting details
@@ -140,7 +142,13 @@ export default async function MeetingDetailPage({
       </div>
 
       {/* Actions */}
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
+        <Button asChild size="lg">
+          <Link href={`/call/${workspaceSlug}/${meetingId}`}>
+            <Video className="mr-2 h-4 w-4" />
+            {t('join_call')}
+          </Link>
+        </Button>
         <MeetingActions wsId={wsId} meetingId={meetingId} />
       </div>
     </div>

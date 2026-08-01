@@ -1,4 +1,6 @@
 import {
+  getMeetRealtimeScopesForRole,
+  type MeetRealtimeAdmission,
   type MeetRealtimeRole,
   type MeetRealtimeRoomMode,
   meetRealtimeTokenPayloadSchema,
@@ -35,33 +37,8 @@ export function getMeetRealtimeUrl() {
   );
 }
 
-function getScopesForRole(role: MeetRealtimeRole) {
-  if (role === 'host') {
-    return [
-      'presence',
-      'chat:write',
-      'stage:write',
-      'stream:control',
-      'sfu:join',
-      'sfu:publish',
-      'sfu:subscribe',
-    ];
-  }
-
-  if (role === 'speaker') {
-    return [
-      'presence',
-      'chat:write',
-      'sfu:join',
-      'sfu:publish',
-      'sfu:subscribe',
-    ];
-  }
-
-  return ['presence', 'chat:write', 'sfu:join', 'sfu:subscribe'];
-}
-
 export function signMeetJoinToken(input: {
+  admission?: MeetRealtimeAdmission;
   displayName?: string;
   meetingId: string;
   mode: MeetRealtimeRoomMode;
@@ -71,6 +48,8 @@ export function signMeetJoinToken(input: {
 }) {
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
   const payload = meetRealtimeTokenPayloadSchema.parse({
+    // Hosts never wait; everyone else defaults to the room's lobby policy.
+    admission: input.role === 'host' ? 'open' : (input.admission ?? 'open'),
     displayName: input.displayName,
     exp: Math.floor(expiresAt.getTime() / 1000),
     limits: {
@@ -87,7 +66,7 @@ export function signMeetJoinToken(input: {
     mode: input.mode,
     role: input.role,
     roomId: `${input.wsId}:${input.meetingId}`,
-    scopes: getScopesForRole(input.role),
+    scopes: getMeetRealtimeScopesForRole(input.role),
     userId: input.userId,
     wsId: input.wsId,
   });

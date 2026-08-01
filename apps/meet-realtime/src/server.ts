@@ -1,21 +1,26 @@
 import {
-  canMeetRealtimePublish,
-  canMeetRealtimeUpdateStage,
-  type MeetRealtimeClientMessage,
+  admitOrHold,
+  applyMeetRoomCommand,
   type MeetRealtimeTokenPayload,
+  type MeetRoomOutcome,
+  type MeetSfuIntent,
+  meetPresenceMessage,
   meetRealtimeClientMessageSchema,
+  pruneMeetPresence,
+  releaseParticipant,
+  remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 import { CloudflareSfuClient } from './cloudflare-sfu';
 import {
   broadcast,
-  createPresence,
+  disconnectUsers,
   getRoom,
+  hasOtherSocket,
   type MeetWebSocket,
-  presencePayload,
-  publishPresence,
-  type RoomTrack,
   rooms,
   send,
+  sendToManagers,
+  sendToUser,
 } from './room-state';
 import { verifyMeetRealtimeJoinToken } from './token';
 
@@ -29,142 +34,61 @@ export type MeetRealtimeServerOptions = {
   sfuClient?: SfuClient;
 };
 
-function assertScope(
-  ws: MeetWebSocket,
-  scope: string,
-  requestId?: string
-): boolean {
-  if (ws.data.token.role === 'host' || ws.data.token.scopes.includes(scope)) {
-    return true;
-  }
+const PRESENCE_SWEEP_MS = 10_000;
 
-  send(ws, { error: 'permission_denied', requestId, type: 'error' });
-  return false;
-}
+function runSfuIntent(intent: MeetSfuIntent, client: SfuClient) {
+  const { message } = intent;
 
-function trackKey(sessionId: string, track: RoomTrack) {
-  return `${sessionId}:${track.trackName || track.mid || crypto.randomUUID()}`;
-}
-
-async function handleSfuMessage(
-  ws: MeetWebSocket,
-  message: Extract<MeetRealtimeClientMessage, { type: `sfu.${string}` }>,
-  sfuClient: SfuClient
-) {
   if (message.type === 'sfu.session.create') {
-    if (!assertScope(ws, 'sfu:join', message.requestId)) {
-      return;
-    }
-
-    const result = await sfuClient.createSession(message.sessionDescription);
-    send(ws, {
-      action: message.type,
-      requestId: message.requestId,
-      result,
-      type: 'sfu.response',
-    });
-    return;
+    return client.createSession(message.sessionDescription);
   }
-
   if (
-    message.type === 'sfu.tracks.publish' &&
-    !message.tracks.every((track) =>
-      canMeetRealtimePublish(ws.data.token, track.kind ?? 'video')
-    )
+    message.type === 'sfu.tracks.publish' ||
+    message.type === 'sfu.tracks.subscribe'
   ) {
-    send(ws, {
-      error: 'publish_not_allowed',
-      requestId: message.requestId,
-      type: 'error',
-    });
-    return;
+    return client.addTracks(message);
   }
-
-  if (
-    message.type === 'sfu.tracks.subscribe' &&
-    !assertScope(ws, 'sfu:subscribe', message.requestId)
-  ) {
-    return;
-  }
-
-  if (
-    message.type === 'sfu.renegotiate' &&
-    !assertScope(ws, 'sfu:join', message.requestId)
-  ) {
-    return;
-  }
-
-  if (
-    message.type === 'sfu.tracks.close' &&
-    !assertScope(ws, 'sfu:publish', message.requestId)
-  ) {
-    return;
-  }
-
-  if (message.type === 'sfu.tracks.publish') {
-    const result = await sfuClient.addTracks(message);
-    const room = getRoom(ws.data.token.roomId);
-    const tracks = message.tracks.map((track) => ({
-      ...track,
-      sessionId: message.sessionId,
-      userId: ws.data.token.userId,
-    }));
-    for (const track of tracks) {
-      room.tracks.set(trackKey(message.sessionId, track), track);
-    }
-
-    broadcast(ws.data.token.roomId, {
-      requestId: message.requestId,
-      sessionId: message.sessionId,
-      tracks,
-      type: 'track.published',
-      userId: ws.data.token.userId,
-    });
-    send(ws, {
-      action: message.type,
-      requestId: message.requestId,
-      result,
-      type: 'sfu.response',
-    });
-    return;
-  }
-
-  if (message.type === 'sfu.tracks.subscribe') {
-    const result = await sfuClient.addTracks(message);
-    send(ws, {
-      action: message.type,
-      requestId: message.requestId,
-      result,
-      type: 'sfu.response',
-    });
-    return;
-  }
-
   if (message.type === 'sfu.renegotiate') {
-    const result = await sfuClient.renegotiate(message);
-    send(ws, {
-      action: message.type,
-      requestId: message.requestId,
-      result,
-      type: 'sfu.response',
-    });
-    return;
+    return client.renegotiate(message);
+  }
+  return client.closeTracks(message);
+}
+
+async function flush(
+  ws: MeetWebSocket,
+  outcome: MeetRoomOutcome,
+  getSfuClient: () => SfuClient
+) {
+  const { roomId } = ws.data.token;
+  const room = getRoom(roomId);
+  room.snapshot = outcome.state;
+
+  for (const message of outcome.reply) send(ws, message);
+  broadcast(roomId, outcome.broadcast);
+  sendToManagers(roomId, outcome.toManagers);
+  for (const entry of outcome.direct) {
+    sendToUser(roomId, entry.userId, [entry.message]);
   }
 
-  const result = await sfuClient.closeTracks(message);
-  broadcast(ws.data.token.roomId, {
-    requestId: message.requestId,
-    sessionId: message.sessionId,
-    tracks: message.tracks,
-    type: 'track.closed',
-    userId: ws.data.token.userId,
-  });
-  send(ws, {
-    action: message.type,
-    requestId: message.requestId,
-    result,
-    type: 'sfu.response',
-  });
+  if (outcome.sfu) {
+    try {
+      const result = await runSfuIntent(outcome.sfu, getSfuClient());
+      send(ws, {
+        action: outcome.sfu.message.type,
+        requestId: outcome.sfu.requestId,
+        result,
+        type: 'sfu.response',
+      });
+    } catch (error) {
+      send(ws, {
+        error: error instanceof Error ? error.message : 'sfu_request_failed',
+        requestId: outcome.sfu.requestId,
+        type: 'error',
+      });
+    }
+  }
+
+  disconnectUsers(roomId, outcome.disconnect);
 }
 
 async function handleMessage(
@@ -172,100 +96,30 @@ async function handleMessage(
   raw: string,
   getSfuClient: () => SfuClient
 ) {
-  let parsedJson: unknown;
+  let json: unknown;
   try {
-    parsedJson = JSON.parse(raw);
+    json = JSON.parse(raw);
   } catch {
     send(ws, { error: 'malformed_json', type: 'error' });
     return;
   }
 
-  const parsed = meetRealtimeClientMessageSchema.safeParse(parsedJson);
+  const parsed = meetRealtimeClientMessageSchema.safeParse(json);
   if (!parsed.success) {
     send(ws, { error: 'malformed_event', type: 'error' });
     return;
   }
 
-  const { token } = ws.data;
-  const room = getRoom(token.roomId);
-  const message = parsed.data;
-
-  if (message.type === 'presence.join') {
-    room.presence.set(
-      token.userId,
-      createPresence(
-        {
-          ...token,
-          displayName: message.displayName || token.displayName,
-        },
-        message.media
-      )
-    );
-    publishPresence(token.roomId);
-    return;
-  }
-
-  if (message.type === 'presence.update') {
-    const existing = room.presence.get(token.userId) ?? createPresence(token);
-    room.presence.set(token.userId, {
-      ...existing,
-      lastSeenAt: new Date().toISOString(),
-      media: message.media,
-    });
-    publishPresence(token.roomId);
-    return;
-  }
-
-  if (message.type === 'chat.message') {
-    if (!assertScope(ws, 'chat:write', message.requestId)) {
-      return;
-    }
-
-    broadcast(token.roomId, {
-      body: message.body,
-      createdAt: new Date().toISOString(),
-      id: crypto.randomUUID(),
-      requestId: message.requestId,
-      type: 'chat.message',
-      userId: token.userId,
-    });
-    return;
-  }
-
-  if (message.type === 'stage.update') {
-    if (!canMeetRealtimeUpdateStage(token)) {
-      send(ws, {
-        error: 'stage_update_not_allowed',
-        requestId: message.requestId,
-        type: 'error',
-      });
-      return;
-    }
-
-    room.stage = message.stage;
-    broadcast(token.roomId, {
-      requestId: message.requestId,
-      stage: room.stage,
-      type: 'stage',
-    });
-    return;
-  }
-
-  if (message.type === 'stream.state') {
-    if (!assertScope(ws, 'stream:control', message.requestId)) {
-      return;
-    }
-
-    room.streamState = message.state;
-    broadcast(token.roomId, {
-      requestId: message.requestId,
-      state: message.state,
-      type: 'stream.state',
-    });
-    return;
-  }
-
-  await handleSfuMessage(ws, message, getSfuClient());
+  const room = getRoom(ws.data.token.roomId);
+  await flush(
+    ws,
+    applyMeetRoomCommand(room.snapshot, {
+      message: parsed.data,
+      now: new Date().toISOString(),
+      token: ws.data.token,
+    }),
+    getSfuClient
+  );
 }
 
 export function createMeetRealtimeServer(
@@ -278,10 +132,11 @@ export function createMeetRealtimeServer(
   };
 
   setInterval(() => {
-    for (const roomId of rooms.keys()) {
-      publishPresence(roomId);
+    for (const [roomId, room] of rooms.entries()) {
+      room.snapshot = pruneMeetPresence(room.snapshot, Date.now());
+      broadcast(roomId, [meetPresenceMessage(room.snapshot, roomId)]);
     }
-  }, 10_000);
+  }, PRESENCE_SWEEP_MS);
 
   return Bun.serve<{ token: MeetRealtimeTokenPayload }>({
     fetch(request, server) {
@@ -302,9 +157,7 @@ export function createMeetRealtimeServer(
         return new Response('Unauthorized', { status: 401 });
       }
 
-      const upgraded = server.upgrade(request, {
-        data: { token },
-      });
+      const upgraded = server.upgrade(request, { data: { token } });
 
       return upgraded
         ? undefined
@@ -313,10 +166,15 @@ export function createMeetRealtimeServer(
     port: options.port ?? Number(process.env.PORT ?? 7816),
     websocket: {
       close(ws) {
-        const room = rooms.get(ws.data.token.roomId);
+        const { roomId, userId } = ws.data.token;
+        const room = rooms.get(roomId);
         room?.clients.delete(ws);
-        room?.presence.delete(ws.data.token.userId);
-        publishPresence(ws.data.token.roomId);
+        if (!room || hasOtherSocket(roomId, userId, ws)) return;
+
+        const outcome = releaseParticipant(room.snapshot, userId, roomId);
+        room.snapshot = outcome.state;
+        broadcast(roomId, outcome.broadcast);
+        sendToManagers(roomId, outcome.toManagers);
       },
       message(ws, message) {
         handleMessage(ws, String(message), getSfuClient).catch((error) => {
@@ -327,21 +185,32 @@ export function createMeetRealtimeServer(
         });
       },
       open(ws) {
-        const room = getRoom(ws.data.token.roomId);
+        const { token } = ws.data;
+        const room = getRoom(token.roomId);
         room.clients.add(ws);
-        room.presence.set(ws.data.token.userId, createPresence(ws.data.token));
-        send(ws, {
-          expiresAt: new Date(ws.data.token.exp * 1000).toISOString(),
-          limits: ws.data.token.limits,
-          mode: ws.data.token.mode,
-          role: ws.data.token.role,
-          roomId: ws.data.token.roomId,
-          stage: room.stage,
-          type: 'ready',
-          userId: ws.data.token.userId,
-        });
-        send(ws, presencePayload(ws.data.token.roomId));
-        publishPresence(ws.data.token.roomId);
+
+        const outcome = admitOrHold(
+          room.snapshot,
+          token,
+          new Date().toISOString()
+        );
+        room.snapshot = outcome.state;
+
+        for (const message of outcome.reply) send(ws, message);
+        broadcast(token.roomId, outcome.broadcast);
+        sendToManagers(token.roomId, outcome.toManagers);
+
+        if (room.snapshot.waiting[token.userId]) return;
+
+        send(ws, meetPresenceMessage(room.snapshot, token.roomId));
+        for (const track of remoteMeetTracks(room.snapshot, token.userId)) {
+          send(ws, {
+            sessionId: track.sessionId,
+            tracks: [track],
+            type: 'track.published',
+            userId: track.userId,
+          });
+        }
       },
     },
   });
