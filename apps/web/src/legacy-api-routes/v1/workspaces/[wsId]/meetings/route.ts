@@ -1,4 +1,7 @@
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
@@ -7,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
+    const { wsId: rawWsId } = await params;
     // Accepts the Meet satellite's app-session token as well as a Supabase
     // cookie. Satellites never send Supabase cookies, so cookie-only auth here
     // made every proxied meetings request 401.
@@ -18,6 +21,10 @@ export async function GET(
       return auth.response;
     }
     const { supabase, user } = auth;
+
+    // 'personal' and other aliases are not UUIDs, so the membership lookup
+    // errors out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -121,7 +128,7 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
-    const { wsId } = await params;
+    const { wsId: rawWsId } = await params;
     // Accepts the Meet satellite's app-session token as well as a Supabase
     // cookie. Satellites never send Supabase cookies, so cookie-only auth here
     // made every proxied meetings request 401.
@@ -132,6 +139,9 @@ export async function POST(
       return auth.response;
     }
     const { supabase, user } = auth;
+
+    // Also guards the insert below: 'personal' is not a valid ws_id value.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,

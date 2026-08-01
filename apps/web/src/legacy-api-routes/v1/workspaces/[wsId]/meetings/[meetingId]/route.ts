@@ -1,4 +1,7 @@
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
@@ -7,7 +10,7 @@ export async function PUT(
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {
-    const { wsId, meetingId } = await params;
+    const { wsId: rawWsId, meetingId } = await params;
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -17,6 +20,10 @@ export async function PUT(
       return auth.response;
     }
     const { supabase, user } = auth;
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -130,7 +137,7 @@ export async function DELETE(
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {
-    const { wsId, meetingId } = await params;
+    const { wsId: rawWsId, meetingId } = await params;
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -140,6 +147,10 @@ export async function DELETE(
       return auth.response;
     }
     const { supabase, user } = auth;
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,

@@ -3,7 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
@@ -13,10 +16,14 @@ export async function PUT(
   }: { params: Promise<{ wsId: string; meetingId: string; sessionId: string }> }
 ) {
   try {
-    const { wsId, meetingId, sessionId } = await params;
+    const { wsId: rawWsId, meetingId, sessionId } = await params;
     const { status } = await request.json();
 
     const supabase = await createClient();
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get authenticated user
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -98,10 +105,14 @@ export async function PATCH(
   }: { params: Promise<{ wsId: string; meetingId: string; sessionId: string }> }
 ) {
   try {
-    const { wsId, meetingId, sessionId } = await params;
+    const { wsId: rawWsId, meetingId, sessionId } = await params;
     const { transcript, status } = await request.json();
 
     const supabase = await createClient();
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get authenticated user
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
@@ -242,8 +253,12 @@ export async function DELETE(
   }: { params: Promise<{ wsId: string; meetingId: string; sessionId: string }> }
 ) {
   try {
-    const { wsId, meetingId, sessionId } = await params;
+    const { wsId: rawWsId, meetingId, sessionId } = await params;
     const supabase = await createClient();
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get authenticated user
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);

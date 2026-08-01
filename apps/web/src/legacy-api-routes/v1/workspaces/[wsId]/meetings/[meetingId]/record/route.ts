@@ -1,6 +1,9 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
@@ -8,8 +11,12 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string; meetingId: string }> }
 ) {
   try {
-    const { wsId, meetingId } = await params;
+    const { wsId: rawWsId, meetingId } = await params;
     const supabase = await createClient();
+
+    // Aliases like 'personal' are not UUIDs, so the membership lookup errors
+    // out and reports membership_lookup_failed instead of a real answer.
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Get authenticated user
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
