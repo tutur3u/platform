@@ -1,7 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
@@ -9,13 +8,16 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Accepts the Meet satellite's app-session token as well as a Supabase
+    // cookie. Satellites never send Supabase cookies, so cookie-only auth here
+    // made every proxied meetings request 401.
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: { targetApp: 'meet' },
+    });
+    if (!auth.ok) {
+      return auth.response;
     }
+    const { supabase, user } = auth;
 
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -120,13 +122,16 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Accepts the Meet satellite's app-session token as well as a Supabase
+    // cookie. Satellites never send Supabase cookies, so cookie-only auth here
+    // made every proxied meetings request 401.
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: { targetApp: 'meet' },
+    });
+    if (!auth.ok) {
+      return auth.response;
     }
+    const { supabase, user } = auth;
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,
