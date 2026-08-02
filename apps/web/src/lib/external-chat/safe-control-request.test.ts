@@ -76,4 +76,15 @@ describe('external chat control destination policy', () => {
   it('supports runtimes without dispatcher lifecycle methods', async () => {
     await expect(closeExternalChatDispatcher({})).resolves.toBeUndefined();
   });
+
+  it.each(['close', 'destroy'] as const)(
+    'does not let a rejected %s mask the request result',
+    async (method) => {
+      await expect(
+        closeExternalChatDispatcher({
+          [method]: vi.fn().mockRejectedValue(new Error('cleanup failed')),
+        })
+      ).resolves.toBeUndefined();
+    }
+  );
 });

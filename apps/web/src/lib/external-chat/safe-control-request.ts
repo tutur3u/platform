@@ -15,11 +15,15 @@ type DispatcherLifecycle = {
 export async function closeExternalChatDispatcher(
   dispatcher: DispatcherLifecycle
 ) {
-  if (typeof dispatcher.close === 'function') {
-    await dispatcher.close();
-    return;
+  try {
+    if (typeof dispatcher.close === 'function') {
+      await dispatcher.close();
+      return;
+    }
+    if (typeof dispatcher.destroy === 'function') await dispatcher.destroy();
+  } catch {
+    // Dispatcher cleanup must not replace the request result or primary error.
   }
-  if (typeof dispatcher.destroy === 'function') await dispatcher.destroy();
 }
 
 function mappedIpv4Address(address: string) {
