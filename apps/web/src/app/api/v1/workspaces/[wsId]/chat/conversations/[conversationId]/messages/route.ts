@@ -405,10 +405,13 @@ export const POST = withSessionAuth<RouteParams>(
             });
           }
 
-          let assistantMessages: ChatMessage[] = [];
+          let assistantPersistence: {
+            messages: ChatMessage[];
+            replayed: boolean;
+          };
 
           try {
-            assistantMessages = await sendNativeAiConversationMessages({
+            assistantPersistence = await sendNativeAiConversationMessages({
               auth,
               context: context.context,
               conversation,
@@ -435,17 +438,19 @@ export const POST = withSessionAuth<RouteParams>(
             );
           }
 
-          await publishChatRealtimeMessages({
-            actorUserId: auth.user.id,
-            audience,
-            messages: assistantMessages,
-            wsId: context.context.normalizedWsId,
-          });
+          if (!assistantPersistence.replayed) {
+            await publishChatRealtimeMessages({
+              actorUserId: auth.user.id,
+              audience,
+              messages: assistantPersistence.messages,
+              wsId: context.context.normalizedWsId,
+            });
+          }
 
           return NextResponse.json(
             {
-              message: assistantMessages.at(-1) ?? message,
-              messages: [message, ...assistantMessages],
+              message: assistantPersistence.messages.at(-1) ?? message,
+              messages: [message, ...assistantPersistence.messages],
             },
             { status: 201 }
           );

@@ -404,6 +404,7 @@ export async function listAiChatMessages({
   before,
   conversationId,
   limit = 80,
+  requestId,
   supabase,
   user,
   wsId,
@@ -411,6 +412,7 @@ export async function listAiChatMessages({
   before?: string | null;
   conversationId: string;
   limit?: number;
+  requestId?: string;
   supabase: SessionAuthContext['supabase'];
   user: SessionAuthContext['user'];
   wsId: string;
@@ -437,6 +439,9 @@ export async function listAiChatMessages({
 
   if (before) {
     messagesQuery.lt('created_at', before);
+  }
+  if (requestId) {
+    messagesQuery.contains('metadata', { metadata: { requestId } });
   }
 
   const { data: messages, error } = await messagesQuery;

@@ -89,17 +89,14 @@ export async function sendAiChatMessage({
 
   let previousMessages: ChatMessage[];
   try {
-    previousMessages =
+    const existingRequestMessages =
       (await listAiChatMessages({
         conversationId,
+        requestId,
         supabase: auth.supabase,
         user: auth.user,
         wsId: context.normalizedWsId,
       })) ?? [];
-    const existingRequestMessages = filterRequestMessages(
-      previousMessages,
-      requestId
-    );
     if (
       existingRequestMessages.some((message) => message.kind === 'assistant')
     ) {
@@ -114,6 +111,13 @@ export async function sendAiChatMessage({
         { status: 409 }
       );
     }
+    previousMessages =
+      (await listAiChatMessages({
+        conversationId,
+        supabase: auth.supabase,
+        user: auth.user,
+        wsId: context.normalizedWsId,
+      })) ?? [];
     await copyAiChatAttachmentInputsToResources({
       attachments,
       chatId: chat.id,
@@ -243,6 +247,7 @@ async function listRequestMessages({
     const latestMessages =
       (await listAiChatMessages({
         conversationId,
+        requestId,
         supabase: auth.supabase,
         user: auth.user,
         wsId,

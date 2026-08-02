@@ -292,7 +292,7 @@ export function ChatWorkspace({
   ]);
 
   useEffect(() => {
-    if (selectedReadOnly) return;
+    if (conversationReadOnly) return;
     if (!selectedMembership) return;
     if (!activeNativeConversationId || !latestPersistedMessageId) return;
     markConversationRead(latestPersistedMessageId);
@@ -301,7 +301,7 @@ export function ChatWorkspace({
     latestPersistedMessageId,
     markConversationRead,
     selectedMembership,
-    selectedReadOnly,
+    conversationReadOnly,
   ]);
 
   const selectedTitle = selectedConversation

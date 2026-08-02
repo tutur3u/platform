@@ -6480,7 +6480,6 @@
     "description": "Thử nghiệm widget khách, hộp thư đồng bộ, hàng đợi và điều kiện sẵn sàng mà không thay đổi định tuyến đang chạy.",
     "ingest_secret": "Thông tin tiếp nhận",
     "legacy_primary": "Hệ thống cũ là chính",
-    "legacy_routes": "Giữ nguyên trang quản trị và các đường dẫn cũ",
     "load_error": "Không thể tải trạng thái sẵn sàng. Hãy thử lại.",
     "loading": "Đang tải trạng thái sẵn sàng...",
     "message": "Tin nhắn",

@@ -6480,7 +6480,6 @@
     "description": "Exercise the visitor widget, mirrored inbox, queue behavior, and readiness gates without changing live routing.",
     "ingest_secret": "Ingest credential",
     "legacy_primary": "Legacy primary",
-    "legacy_routes": "Legacy admin and site routes retained",
     "load_error": "Readiness could not be loaded. Try again.",
     "loading": "Loading binding readiness...",
     "message": "Message",

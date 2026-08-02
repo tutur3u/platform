@@ -23,6 +23,8 @@ type RouteParams = {
   wsId: string;
 };
 
+const MAX_COMBINED_CONVERSATION_OFFSET = 1000;
+
 const createConversationSchema = z.object({
   aiEnabled: z.boolean().optional(),
   autoReply: z.boolean().optional(),
@@ -78,33 +80,41 @@ async function listNativeChatConversations({
   }
 }
 
-async function listNativeConversationPrefix({
+async function listNativeConversationsByRecency({
   actorUserId,
   archived,
-  length,
+  limit,
   wsId,
 }: {
   actorUserId: string;
   archived: 'active' | 'all' | 'archived';
-  length: number;
+  limit: number;
   wsId: string;
 }) {
-  const conversations: ChatConversation[] = [];
+  try {
+    return await callPrivateChatRpc<ChatConversation[]>(
+      'chat_list_conversations_by_recency',
+      {
+        p_actor_user_id: actorUserId,
+        p_archived: archived,
+        p_limit: limit,
+        p_ws_id: wsId,
+      }
+    );
+  } catch (error) {
+    if (!isMissingChatRpc(error, 'chat_list_conversations_by_recency')) {
+      throw error;
+    }
 
-  while (conversations.length < length) {
-    const pageLimit = Math.min(length - conversations.length, 100);
-    const page = await listNativeChatConversations({
+    const conversations = await listNativeChatConversations({
       actorUserId,
       archived,
-      limit: pageLimit,
-      offset: conversations.length,
+      limit: null,
+      offset: 0,
       wsId,
     });
-    conversations.push(...page);
-    if (page.length < pageLimit) break;
+    return conversations.sort(compareConversationsByRecency).slice(0, limit);
   }
-
-  return conversations;
 }
 
 async function canIncludeAiAgentAdminMetadata({
@@ -128,13 +138,23 @@ async function canIncludeAiAgentAdminMetadata({
 
 function isMissingArchivedChatListRpc(error: unknown) {
   const rpcError = error as { code?: string; message?: string };
+  if (rpcError.code === 'PGRST202' || rpcError.code === '42883') return true;
+
+  const message = rpcError.message ?? '';
+  return (
+    message.includes('chat_list_conversations') &&
+    (/p_archived/u.test(message) || /schema cache/u.test(message))
+  );
+}
+
+function isMissingChatRpc(error: unknown, functionName: string) {
+  const rpcError = error as { code?: string; message?: string };
   const message = rpcError.message ?? '';
 
   return (
     rpcError.code === 'PGRST202' ||
     rpcError.code === '42883' ||
-    (/chat_list_conversations/u.test(message) &&
-      (/p_archived/u.test(message) || /schema cache/u.test(message)))
+    (message.includes(functionName) && /schema cache/u.test(message))
   );
 }
 
@@ -219,6 +239,18 @@ export const GET = withSessionAuth<RouteParams>(
         actorUser: auth.user,
         wsId: context.context.normalizedWsId,
       });
+      if (
+        pagination.isPaginated &&
+        pagination.offset > MAX_COMBINED_CONVERSATION_OFFSET
+      ) {
+        return NextResponse.json(
+          {
+            code: 'chat_pagination_offset_too_large',
+            message: 'Conversation offset is too large.',
+          },
+          { status: 400 }
+        );
+      }
       const sourcePrefixLength = pagination.offset + pagination.limit + 1;
 
       const [
@@ -227,12 +259,20 @@ export const GET = withSessionAuth<RouteParams>(
         aiAgentExternalConversations,
         aiChatConversations,
       ] = await Promise.all([
-        listNativeConversationPrefix({
-          actorUserId: auth.user.id,
-          archived,
-          length: sourcePrefixLength,
-          wsId: context.context.normalizedWsId,
-        }),
+        pagination.isPaginated
+          ? listNativeConversationsByRecency({
+              actorUserId: auth.user.id,
+              archived,
+              limit: sourcePrefixLength,
+              wsId: context.context.normalizedWsId,
+            })
+          : listNativeChatConversations({
+              actorUserId: auth.user.id,
+              archived,
+              limit: null,
+              offset: 0,
+              wsId: context.context.normalizedWsId,
+            }),
         archived === 'active'
           ? listRootAiAgentDiscoveryConversations({
               includeAdminMetadata: includeAiAgentAdminMetadata,
@@ -259,6 +299,12 @@ export const GET = withSessionAuth<RouteParams>(
         ...aiAgentExternalConversations,
         ...aiChatConversations,
       ].sort(compareConversationsByRecency);
+      if (!pagination.isPaginated) {
+        return NextResponse.json({
+          conversations: allConversations,
+          nextOffset: null,
+        });
+      }
       const pageEnd = pagination.offset + pagination.limit;
       const hasNextPage = allConversations.length > pageEnd;
       return NextResponse.json({

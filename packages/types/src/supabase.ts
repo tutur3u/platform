@@ -15233,6 +15233,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_list_conversations_by_recency: {
+        Args: {
+          p_actor_user_id: string;
+          p_archived?: string;
+          p_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_list_friend_requests: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: Json;
@@ -15278,6 +15287,16 @@ export type Database = {
           p_actor_user_id: string;
           p_conversation_id: string;
           p_messages: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_persist_ai_message_batch_idempotent: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_messages: Json;
+          p_request_id: string;
           p_ws_id: string;
         };
         Returns: Json;

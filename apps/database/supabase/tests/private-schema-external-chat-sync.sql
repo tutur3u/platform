@@ -1,5 +1,5 @@
 begin;
-select plan(85);
+select plan(92);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -14,6 +14,8 @@ select has_table('private', 'external_chat_outbound_deliveries', 'outbound deliv
 select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints are private');
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
 select has_function('private', 'chat_persist_ai_message_batch', 'atomic native AI batch RPC exists');
+select has_function('private', 'chat_persist_ai_message_batch_idempotent', 'request-id atomic native AI batch RPC exists');
+select has_function('private', 'chat_list_conversations_by_recency', 'recency-ordered native inbox RPC exists');
 select has_function('private', 'external_chat_mark_verified', 'verification fencing RPC exists');
 select has_function('private', 'external_chat_clear_credential', 'credential recovery RPC exists');
 select has_function('private', 'external_chat_reserve_reply', 'idempotent outbound reservation RPC exists');
@@ -86,6 +88,16 @@ select function_privs_are(
   array['uuid','uuid','text','integer','integer'],
   'authenticated', array[]::text[], 'authenticated clients cannot list external inboxes directly'
 );
+select function_privs_are(
+  'private', 'chat_persist_ai_message_batch_idempotent',
+  array['uuid','uuid','uuid','uuid','jsonb'],
+  'authenticated', array[]::text[], 'authenticated clients cannot persist AI batches directly'
+);
+select function_privs_are(
+  'private', 'chat_list_conversations_by_recency',
+  array['uuid','uuid','text','integer'],
+  'authenticated', array[]::text[], 'authenticated clients cannot invoke recency listing directly'
+);
 select throws_ok(
   $$select private.external_chat_stage_credential('00000000-0000-0000-0000-000000000000', null, null, null, null)$$,
   'external_chat_invalid_credential_action',
@@ -112,6 +124,75 @@ limit 1;
 insert into public.workspace_external_project_bindings (ws_id, is_enabled, settings)
 select ws_id, true, '{"chat":{"enabled":true}}'::jsonb
 from external_chat_test_context;
+
+create temporary table external_chat_ai_context (
+  conversation_id uuid primary key,
+  request_id uuid not null
+);
+with inserted as (
+  insert into private.chat_conversations (
+    ws_id, type, title, ai_enabled, created_by
+  )
+  select ws_id, 'ai', 'Idempotency test', true, actor_id
+  from external_chat_test_context
+  returning id
+)
+insert into external_chat_ai_context (conversation_id, request_id)
+select id, '11111111-1111-4111-8111-111111111111'::uuid
+from inserted;
+insert into private.chat_conversation_members (
+  conversation_id, user_id, role
+)
+select conversation_id, actor_id, 'owner'
+from external_chat_ai_context
+cross join external_chat_test_context;
+
+create temporary table external_chat_ai_results (
+  attempt integer primary key,
+  result jsonb not null
+);
+insert into external_chat_ai_results
+select 1, private.chat_persist_ai_message_batch_idempotent(
+  c.ws_id,
+  a.conversation_id,
+  c.actor_id,
+  a.request_id,
+  '[{"content":"Atomic reply","metadata":{"source":"native-ai-chat"}}]'::jsonb
+)
+from external_chat_test_context c
+cross join external_chat_ai_context a;
+insert into external_chat_ai_results
+select 2, private.chat_persist_ai_message_batch_idempotent(
+  c.ws_id,
+  a.conversation_id,
+  c.actor_id,
+  a.request_id,
+  '[{"content":"Duplicate reply","metadata":{"source":"native-ai-chat"}}]'::jsonb
+)
+from external_chat_test_context c
+cross join external_chat_ai_context a;
+
+select is(
+  (select result->>'replayed' from external_chat_ai_results where attempt = 1),
+  'false',
+  'the first AI request persists its batch'
+);
+select is(
+  (select result->>'replayed' from external_chat_ai_results where attempt = 2),
+  'true',
+  'a repeated AI request is replayed under the conversation lock'
+);
+select is(
+  (
+    select count(*)::integer
+    from private.chat_messages m
+    cross join external_chat_ai_context a
+    where m.conversation_id = a.conversation_id
+      and m.metadata->>'requestId' = a.request_id::text
+  ),
+  1,
+  'a repeated AI request creates exactly one assistant message'
+);
 
 select lives_ok(
   format(

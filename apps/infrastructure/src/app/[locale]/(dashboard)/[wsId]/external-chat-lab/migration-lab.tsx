@@ -214,12 +214,6 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
               value={Boolean(state.data?.secrets.control.configured)}
             />
             <Status
-              label={t('legacy_routes')}
-              pending={t('pending')}
-              ready={t('ok')}
-              value={state.data?.readiness.ready === true}
-            />
-            <Status
               label={t('authority')}
               pending={t('pending')}
               value={

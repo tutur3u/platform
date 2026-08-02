@@ -41,6 +41,11 @@ type AiAssistantMessageRow = {
   prompt_tokens: number | null;
 };
 
+export type NativeAiMessagePersistence = {
+  messages: ChatMessage[];
+  replayed: boolean;
+};
+
 export function streamNativeAiConversationResponse({
   auth,
   context,
@@ -64,7 +69,7 @@ export function streamNativeAiConversationResponse({
 
       write({ message: userMessage, type: 'message' });
       try {
-        const assistantMessages = await sendNativeAiConversationMessages({
+        const persistence = await sendNativeAiConversationMessages({
           auth,
           context,
           conversation,
@@ -74,13 +79,15 @@ export function streamNativeAiConversationResponse({
           userMessage,
         });
 
-        await publishChatRealtimeMessages({
-          actorUserId: auth.user.id,
-          audience: getChatRealtimeAudience(conversation),
-          messages: assistantMessages,
-          wsId: context.normalizedWsId,
-        });
-        write({ messages: assistantMessages, type: 'messages' });
+        if (!persistence.replayed) {
+          await publishChatRealtimeMessages({
+            actorUserId: auth.user.id,
+            audience: getChatRealtimeAudience(conversation),
+            messages: persistence.messages,
+            wsId: context.normalizedWsId,
+          });
+        }
+        write({ messages: persistence.messages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
         console.error('Failed to stream native Chat AI response', {
@@ -124,7 +131,7 @@ export async function sendNativeAiConversationMessages({
   onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
   userMessage: ChatMessage;
-}) {
+}): Promise<NativeAiMessagePersistence> {
   const settings = await getNativeAiSettings(conversation.id);
   const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
     'chat_list_messages',
@@ -142,7 +149,9 @@ export async function sendNativeAiConversationMessages({
       message.kind === 'assistant' && metadata?.requestId === userMessage.id
     );
   });
-  if (replayedMessages.length > 0) return replayedMessages;
+  if (replayedMessages.length > 0) {
+    return { messages: replayedMessages, replayed: true };
+  }
 
   const shadowChatId = userMessage.id;
   const shadowChatResult = await ensureNativeAiShadowChat({
@@ -224,8 +233,8 @@ export async function sendNativeAiConversationMessages({
     }
 
     const assistantParts = splitAiAssistantContent(assistantContent);
-    const assistantMessages = await callPrivateChatRpc<ChatMessage[]>(
-      'chat_persist_ai_message_batch',
+    const persistence = await callPrivateChatRpc<NativeAiMessagePersistence>(
+      'chat_persist_ai_message_batch_idempotent',
       {
         p_actor_user_id: auth.user.id,
         p_conversation_id: conversation.id,
@@ -238,15 +247,16 @@ export async function sendNativeAiConversationMessages({
             splitTotal: assistantParts.length,
           }),
         })),
+        p_request_id: userMessage.id,
         p_ws_id: context.normalizedWsId,
       }
     );
 
-    if (!assistantMessages?.length) {
+    if (!persistence?.messages.length) {
       throw new Error('Chat conversation not found');
     }
 
-    return assistantMessages;
+    return persistence;
   } finally {
     await cleanupNativeAiShadowChat({
       shadowChatId,

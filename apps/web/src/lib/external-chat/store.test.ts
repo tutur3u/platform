@@ -8,7 +8,11 @@ describe('external chat binding serialization', () => {
         canonical_project_id: 'opaque-connector',
         is_enabled: true,
         settings: {
-          chat: { bridgeBaseUrl: 'https://bridge.invalid', enabled: true },
+          chat: {
+            bridgeBaseUrl: 'https://bridge.invalid',
+            enabled: true,
+            inboxDefaults: {},
+          },
         },
       },
       credentials: {

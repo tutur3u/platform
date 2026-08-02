@@ -369,6 +369,25 @@ describe('native AI chat message route', () => {
     });
 
     expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: {
+        content: assistantMessage.content,
+        id: assistantMessage.id,
+        kind: 'assistant',
+      },
+      messages: [
+        expect.objectContaining({
+          content: assistantMessage.content,
+          id: assistantMessage.id,
+          kind: 'assistant',
+        }),
+      ],
+    });
+    expect(mocks.listAiChatMessages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId: '11111111-1111-4111-8111-111111111111',
+      })
+    );
     expect(mocks.createAiChatPost).not.toHaveBeenCalled();
     expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
   });
@@ -378,7 +397,9 @@ describe('native AI chat message route', () => {
       if (name === 'chat_send_message') return userMessage;
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message_batch') return [assistantMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
       throw new Error(`Unexpected RPC ${name}`);
     });
 
@@ -408,7 +429,7 @@ describe('native AI chat message route', () => {
       messages: [userMessage, assistantMessage],
     });
     expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
-      'chat_persist_ai_message_batch',
+      'chat_persist_ai_message_batch_idempotent',
       expect.objectContaining({
         p_actor_user_id: 'user-1',
         p_conversation_id: 'conversation-1',
@@ -418,6 +439,7 @@ describe('native AI chat message route', () => {
             metadata: expect.objectContaining({ source: 'native-ai-chat' }),
           }),
         ],
+        p_request_id: 'message-1',
         p_ws_id: 'workspace-1',
       })
     );
@@ -454,8 +476,41 @@ describe('native AI chat message route', () => {
     expect(response.status).toBe(201);
     expect(mocks.createAiChatPost).not.toHaveBeenCalled();
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
-      'chat_persist_ai_message_batch',
+      'chat_persist_ai_message_batch_idempotent',
       expect.anything()
+    );
+  });
+
+  it('does not republish an assistant batch replayed by the atomic RPC', async () => {
+    const replayedAssistant = {
+      ...assistantMessage,
+      metadata: { requestId: 'message-1', source: 'native-ai-chat' },
+    };
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') return [userMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [replayedAssistant], replayed: true };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      message: replayedAssistant,
+    });
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(1);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ message: userMessage })
     );
   });
 
@@ -469,7 +524,9 @@ describe('native AI chat message route', () => {
       if (name === 'chat_send_message') return userMessage;
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message_batch') return [assistantMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
       throw new Error(`Unexpected RPC ${name}`);
     });
 
@@ -483,7 +540,7 @@ describe('native AI chat message route', () => {
 
     expect(response.status).toBe(201);
     expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
-      'chat_persist_ai_message_batch',
+      'chat_persist_ai_message_batch_idempotent',
       expect.objectContaining({
         p_messages: [
           expect.objectContaining({
@@ -504,7 +561,7 @@ describe('native AI chat message route', () => {
       if (name === 'chat_send_message') return userMessage;
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message_batch') {
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
         throw new Error('chat_manage_permission_required');
       }
       throw new Error(`Unexpected RPC ${name}`);
