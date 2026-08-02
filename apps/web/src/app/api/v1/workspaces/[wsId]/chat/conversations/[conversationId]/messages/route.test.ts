@@ -225,7 +225,7 @@ describe('native AI chat message route', () => {
       message: userMessage,
       wsId: 'workspace-1',
     });
-    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
+    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledTimes(2);
   });
 
   it('reuses an already persisted native assistant reply on retry', async () => {
@@ -257,6 +257,43 @@ describe('native AI chat message route', () => {
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
       'chat_persist_ai_message_batch_idempotent',
       expect.anything()
+    );
+  });
+
+  it('reuses a retained shadow response after native persistence failed', async () => {
+    const shadowQuery = {
+      eq: vi.fn(() => shadowQuery),
+      limit: vi.fn(async () => ({ data: [assistantAiRow], error: null })),
+      order: vi.fn(() => shadowQuery),
+      select: vi.fn(() => shadowQuery),
+    };
+    mocks.auth.supabase = { from: vi.fn(() => shadowQuery) };
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: true };
+      }
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') return [userMessage];
+      if (name === 'chat_persist_ai_message_batch_idempotent') {
+        return { messages: [assistantMessage], replayed: false };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
+    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_persist_ai_message_batch_idempotent',
+      expect.objectContaining({ p_request_id: 'message-1' })
     );
   });
 
@@ -407,7 +444,7 @@ describe('native AI chat message route', () => {
       message: userMessage,
       messages: [userMessage],
     });
-    expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
+    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
   });
 
   it('does not run native AI with fallback settings after a database failure', async () => {

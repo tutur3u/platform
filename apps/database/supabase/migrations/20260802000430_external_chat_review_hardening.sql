@@ -105,6 +105,8 @@ set search_path = private, public, pg_temp
 as $$
 declare
   v_conversation_id uuid;
+  v_existing_content text;
+  v_existing_reply_to_message_id uuid;
   v_message_id uuid;
   v_message jsonb;
 begin
@@ -132,7 +134,8 @@ begin
 
   if v_conversation_id is null then return null; end if;
 
-  select m.id into v_message_id
+  select m.id, m.content, m.reply_to_message_id
+  into v_message_id, v_existing_content, v_existing_reply_to_message_id
   from private.chat_messages m
   where m.conversation_id = p_conversation_id
     and m.sender_id = p_actor_user_id
@@ -142,6 +145,12 @@ begin
   limit 1;
 
   if v_message_id is not null then
+    if v_existing_content is distinct from p_content
+      or v_existing_reply_to_message_id is distinct from p_reply_to_message_id then
+      raise exception 'chat_idempotency_payload_mismatch'
+        using errcode = '22023';
+    end if;
+
     return jsonb_build_object(
       'message', (
         select private.chat_message_json(m)

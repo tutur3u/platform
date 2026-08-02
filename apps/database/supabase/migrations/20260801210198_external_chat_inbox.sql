@@ -124,6 +124,10 @@ declare
   v_limit integer := least(greatest(coalesce(p_limit, 41), 1), 101);
   v_offset integer := greatest(coalesce(p_offset, 0), 0);
 begin
+  if coalesce(p_offset, 0) > 1000 then
+    raise exception 'external_chat_offset_too_large' using errcode = '22023';
+  end if;
+
   perform private.chat_assert_workspace_permission(
     p_ws_id,
     p_actor_user_id,
@@ -138,7 +142,8 @@ begin
           page.pinned_at is null,
           page.pinned_at desc,
           page.latest_at desc,
-          page.created_at desc
+          page.created_at desc,
+          page.id asc
       ),
       '[]'::jsonb
     )
@@ -153,7 +158,8 @@ begin
             ) as conversation,
           own_member.pinned_at,
           coalesce(latest.latest_at, c.updated_at) as latest_at,
-          c.created_at
+          c.created_at,
+          c.id
         from private.external_chat_threads external_thread
         join private.chat_conversations c
           on c.id = external_thread.conversation_id
@@ -193,7 +199,8 @@ begin
         ranked.pinned_at is null,
         ranked.pinned_at desc,
         ranked.latest_at desc,
-        ranked.created_at desc
+        ranked.created_at desc,
+        ranked.id asc
       limit v_limit
       offset v_offset
     ) page

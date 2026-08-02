@@ -17,6 +17,7 @@ function mappedIpv4Address(address: string) {
         : null;
   if (!prefix) return null;
   const suffix = address.slice(prefix.length);
+  if (prefix === '64:ff9b::' && suffix === '') return '0.0.0.0';
   if (isIP(suffix) === 4) return suffix;
 
   const groups = suffix.split(':');

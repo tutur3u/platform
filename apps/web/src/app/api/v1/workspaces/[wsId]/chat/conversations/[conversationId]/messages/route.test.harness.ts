@@ -233,7 +233,10 @@ function createSupabaseMock() {
     from: vi.fn(() => {
       const query = {
         eq: vi.fn(() => query),
-        limit: vi.fn(async () => ({ data: [assistantAiRow], error: null })),
+        limit: vi.fn(async () => ({
+          data: mocks.aiRouteBodies.length > 0 ? [assistantAiRow] : [],
+          error: null,
+        })),
         order: vi.fn(() => query),
         select: vi.fn(() => query),
       };

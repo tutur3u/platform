@@ -33,6 +33,10 @@ begin
     raise exception 'external_chat_invalid_identity';
   end if;
 
+  if char_length(coalesce(p_remote_agent_id, '')) > 255 then
+    raise exception 'external_chat_invalid_identity';
+  end if;
+
   if p_direction is null or p_direction not in ('visitor', 'staff', 'system') then
     raise exception 'external_chat_invalid_direction';
   end if;
@@ -262,7 +266,7 @@ begin
   ) then
     raise exception 'chat_conversation_forbidden' using errcode = '42501';
   end if;
-  if jsonb_typeof(p_messages) <> 'array'
+  if coalesce(jsonb_typeof(p_messages), '') <> 'array'
     or jsonb_array_length(p_messages) = 0
     or jsonb_array_length(p_messages) > 20 then
     raise exception 'chat_invalid_ai_message_batch' using errcode = '22023';

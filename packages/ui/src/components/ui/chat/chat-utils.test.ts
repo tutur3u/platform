@@ -1,6 +1,7 @@
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  canPersistChatReadState,
   filterChatConversationsByScope,
   formatChatRelativeTime,
   formatFileSize,
@@ -211,6 +212,30 @@ describe('chat utils', () => {
         })
       )
     ).toBe(true);
+  });
+
+  it('allows external inbox viewers to persist read state on first open', () => {
+    expect(
+      canPersistChatReadState({
+        externalChat: true,
+        hasMembership: false,
+        readOnly: false,
+      })
+    ).toBe(true);
+    expect(
+      canPersistChatReadState({
+        externalChat: false,
+        hasMembership: false,
+        readOnly: false,
+      })
+    ).toBe(false);
+    expect(
+      canPersistChatReadState({
+        externalChat: true,
+        hasMembership: false,
+        readOnly: true,
+      })
+    ).toBe(false);
   });
 
   it('splits personal and workspace conversation scopes', () => {

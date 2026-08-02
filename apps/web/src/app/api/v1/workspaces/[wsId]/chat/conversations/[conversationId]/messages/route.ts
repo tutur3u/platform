@@ -407,7 +407,7 @@ export const POST = withSessionAuth<RouteParams>(
         });
       }
 
-      if (conversation?.type === 'ai') {
+      if (conversation?.type === 'ai' && message.kind === 'user') {
         if (wantsChatMessageStream(request)) {
           return streamNativeAiConversationResponse({
             auth,

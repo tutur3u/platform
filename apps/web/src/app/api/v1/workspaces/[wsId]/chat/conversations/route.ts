@@ -218,6 +218,19 @@ export const GET = withSessionAuth<RouteParams>(
       url.searchParams.get('scope') === 'external' ? 'external' : null;
     const pagination = readPagination(url);
 
+    if (
+      pagination.isPaginated &&
+      pagination.offset > MAX_COMBINED_CONVERSATION_OFFSET
+    ) {
+      return NextResponse.json(
+        {
+          code: 'chat_pagination_offset_too_large',
+          message: 'Conversation offset is too large.',
+        },
+        { status: 400 }
+      );
+    }
+
     try {
       if (scope === 'external') {
         const conversations = await listExternalChatConversations({
@@ -239,18 +252,6 @@ export const GET = withSessionAuth<RouteParams>(
         actorUser: auth.user,
         wsId: context.context.normalizedWsId,
       });
-      if (
-        pagination.isPaginated &&
-        pagination.offset > MAX_COMBINED_CONVERSATION_OFFSET
-      ) {
-        return NextResponse.json(
-          {
-            code: 'chat_pagination_offset_too_large',
-            message: 'Conversation offset is too large.',
-          },
-          { status: 400 }
-        );
-      }
       const sourcePrefixLength = pagination.offset + pagination.limit + 1;
 
       const [

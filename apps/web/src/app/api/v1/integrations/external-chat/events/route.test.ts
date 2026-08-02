@@ -172,6 +172,38 @@ describe('external chat ingest route', () => {
     );
   });
 
+  it('uses the inbox recipient when agent mappings are omitted', async () => {
+    mocks.readExternalChatBinding.mockResolvedValueOnce({
+      binding: {
+        canonical_project_id: 'opaque-connector',
+        is_enabled: true,
+        settings: {
+          chat: {
+            authorityMode: 'legacy_primary',
+            bridgeBaseUrl: 'https://bridge.example.com',
+            enabled: true,
+            inboxDefaults: { recipientUserId },
+          },
+        },
+      },
+      credentials: {
+        configuration_revision: 7,
+        ingest_secret_hash: 'active-hash',
+        pending_action: null,
+        pending_secret_hash: null,
+        verified_at: '2026-08-01T17:00:00.000Z',
+      },
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret'));
+
+    expect(response.status).toBe(201);
+    expect(mocks.importExternalChatEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ mappedUserId: recipientUserId })
+    );
+  });
+
   it('does not attribute unmapped staff messages to the inbox recipient', async () => {
     mocks.readExternalChatBinding.mockResolvedValueOnce({
       binding: {

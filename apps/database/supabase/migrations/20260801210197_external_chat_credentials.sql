@@ -303,6 +303,7 @@ set search_path = private, public, pg_temp
 as $$
 begin
   if char_length(coalesce(p_ticket_hash, '')) <> 64
+    or p_expires_at is null
     or p_expires_at <= now()
     or p_expires_at > now() + interval '10 minutes' then
     raise exception 'external_chat_invalid_pairing_ticket';

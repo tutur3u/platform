@@ -307,6 +307,18 @@ export function isReadOnlyChatConversation(
   );
 }
 
+export function canPersistChatReadState({
+  externalChat,
+  hasMembership,
+  readOnly,
+}: {
+  externalChat: boolean;
+  hasMembership: boolean;
+  readOnly: boolean;
+}) {
+  return !readOnly && (hasMembership || externalChat);
+}
+
 export function getChatSelectionStorageKey(
   wsId: string,
   scope: ChatConversationScope

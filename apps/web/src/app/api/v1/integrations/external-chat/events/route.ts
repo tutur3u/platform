@@ -129,10 +129,10 @@ function getRoutingUserId(
   const chat = (settings as Record<string, unknown>).chat;
   if (!chat || typeof chat !== 'object') return null;
   const mappings = (chat as Record<string, unknown>).agentMappings;
-  if (!mappings || typeof mappings !== 'object' || Array.isArray(mappings)) {
-    return null;
-  }
-  const mapped = (mappings as Record<string, unknown>)[agentId];
+  const mapped =
+    mappings && typeof mappings === 'object' && !Array.isArray(mappings)
+      ? (mappings as Record<string, unknown>)[agentId]
+      : null;
   if (
     typeof mapped === 'string' &&
     z.string().uuid().safeParse(mapped).success

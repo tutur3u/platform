@@ -353,6 +353,21 @@ describe('workspace chat conversations route', () => {
     expect(mocks.listRootAiAgentDiscoveryConversations).not.toHaveBeenCalled();
   });
 
+  it('rejects resource-intensive offsets on the external inbox', async () => {
+    mockRouteContext('workspace-1');
+
+    const response = await callGet(
+      'workspace-1',
+      '?scope=external&limit=40&offset=1001'
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'chat_pagination_offset_too_large',
+    });
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+
   it('bounds and paginates the external inbox at the database boundary', async () => {
     mockRouteContext('workspace-1');
     mocks.callPrivateChatRpc.mockResolvedValue(

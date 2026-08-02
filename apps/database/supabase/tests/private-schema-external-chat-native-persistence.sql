@@ -1,5 +1,5 @@
 begin;
-select plan(6);
+select plan(8);
 
 create temporary table external_chat_test_context (
   ws_id uuid primary key,
@@ -61,7 +61,7 @@ select 2, private.chat_send_user_message_idempotent(
   a.conversation_id,
   c.actor_id,
   '22222222-2222-4222-8222-222222222222'::uuid,
-  'Duplicate user message',
+  'Atomic user message',
   null,
   '[]'::jsonb
 )
@@ -89,6 +89,26 @@ select is(
   ),
   1,
   'a repeated native user-message request creates exactly one message'
+);
+select throws_ok(
+  format(
+    $$select private.chat_send_user_message_idempotent(%L, %L, %L, '22222222-2222-4222-8222-222222222222'::uuid, 'Changed user message', null, '[]'::jsonb)$$,
+    (select ws_id from external_chat_test_context),
+    (select conversation_id from external_chat_ai_context),
+    (select actor_id from external_chat_test_context)
+  ),
+  'chat_idempotency_payload_mismatch',
+  'a repeated native user-message request rejects changed content'
+);
+select throws_ok(
+  format(
+    $$select private.chat_persist_ai_message_batch(%L, %L, %L, null)$$,
+    (select ws_id from external_chat_test_context),
+    (select conversation_id from external_chat_ai_context),
+    (select actor_id from external_chat_test_context)
+  ),
+  'chat_invalid_ai_message_batch',
+  'the base native AI batch RPC rejects SQL null input'
 );
 
 create temporary table external_chat_ai_results (

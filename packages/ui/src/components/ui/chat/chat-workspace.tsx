@@ -45,6 +45,7 @@ import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
   type ChatConversationScope,
+  canPersistChatReadState,
   filterChatConversations,
   getChatConversationTypesForScope,
   getChatSelectionStorageKey,
@@ -182,6 +183,8 @@ export function ChatWorkspace({
     selectedConversation?.members.some(
       (member) => member.userId === currentUserId
     ) ?? false;
+  const selectedExternalConversation =
+    selectedConversation?.metadata.externalChat === true;
   const messagesQuery = useInfiniteChatMessages({
     conversationId: selectedVirtualReadOnly ? null : activeConversationId,
     wsId,
@@ -292,8 +295,14 @@ export function ChatWorkspace({
   ]);
 
   useEffect(() => {
-    if (conversationReadOnly) return;
-    if (!selectedMembership) return;
+    if (
+      !canPersistChatReadState({
+        externalChat: selectedExternalConversation,
+        hasMembership: selectedMembership,
+        readOnly: conversationReadOnly,
+      })
+    )
+      return;
     if (!activeNativeConversationId || !latestPersistedMessageId) return;
     markConversationRead(latestPersistedMessageId);
   }, [
@@ -301,6 +310,7 @@ export function ChatWorkspace({
     latestPersistedMessageId,
     markConversationRead,
     selectedMembership,
+    selectedExternalConversation,
     conversationReadOnly,
   ]);
 

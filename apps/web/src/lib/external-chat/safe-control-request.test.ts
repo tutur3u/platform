@@ -35,6 +35,7 @@ describe('external chat control destination policy', () => {
     '::ffff:7f00:1',
     '::7f00:1',
     '64:ff9b::a00:1',
+    '64:ff9b::',
     '64:ff9b:1::808:808',
     'fec0::1',
     'ff02::1',

@@ -163,63 +163,75 @@ export async function sendNativeAiConversationMessages({
     throw new Error('Failed to prepare AI chat');
   }
 
-  await copyChatAttachmentsToAiResources({
-    resourceChatId: shadowChatId,
-    targetWsId: context.normalizedWsId,
-    userMessage,
-  });
-
-  await maybeAutoRenameNativeAiConversation({
-    auth,
-    context,
-    conversation,
-    firstMessageContent: userMessage.content,
-    messages: privateMessages ?? [],
-  });
-
-  const aiMessages = toNativeAiUiMessages(
-    privateMessages ?? [],
-    settings.system_prompt
-  );
-
-  const aiResponse = await callAiChatRoute({
-    chatId: shadowChatId,
-    creditSource: settings.credit_source,
-    creditWsId:
-      settings.credit_source === 'personal'
-        ? (settings.credit_ws_id ?? undefined)
-        : (settings.credit_ws_id ?? context.normalizedWsId),
-    messages: aiMessages,
-    miraMode: false,
-    model: normalizeNativeAiModel(settings.model_id),
-    observabilityContext: buildNativeAiObservabilityContext(
-      privateMessages ?? []
-    ),
-    persistenceRequestId: userMessage.id,
-    request,
-    supabase: auth.supabase,
-    thinkingMode: settings.thinking_mode,
-    user: auth.user,
-    wsId: context.normalizedWsId,
-  });
-
-  if (!aiResponse.ok) {
-    const errorText = await aiResponse.text().catch(() => '');
-    console.error('Native Chat AI response failed', {
-      conversationId: conversation.id,
-      status: aiResponse.status,
-      errorText,
-    });
-    throw new Error(errorText || 'Failed to send AI chat message');
-  }
-
-  await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
-
-  const assistantResponse = await getLatestAiAssistantMessage({
+  let assistantResponse = await getLatestAiAssistantMessage({
     chatId: shadowChatId,
     requestId: userMessage.id,
     supabase: auth.supabase,
   });
+
+  if (!assistantResponse) {
+    await cleanupNativeAiResources({
+      chatId: shadowChatId,
+      wsId: context.normalizedWsId,
+    });
+    await copyChatAttachmentsToAiResources({
+      resourceChatId: shadowChatId,
+      targetWsId: context.normalizedWsId,
+      userMessage,
+    });
+
+    await maybeAutoRenameNativeAiConversation({
+      auth,
+      context,
+      conversation,
+      firstMessageContent: userMessage.content,
+      messages: privateMessages ?? [],
+    });
+
+    const aiMessages = toNativeAiUiMessages(
+      privateMessages ?? [],
+      settings.system_prompt
+    );
+
+    const aiResponse = await callAiChatRoute({
+      chatId: shadowChatId,
+      creditSource: settings.credit_source,
+      creditWsId:
+        settings.credit_source === 'personal'
+          ? (settings.credit_ws_id ?? undefined)
+          : (settings.credit_ws_id ?? context.normalizedWsId),
+      messages: aiMessages,
+      miraMode: false,
+      model: normalizeNativeAiModel(settings.model_id),
+      observabilityContext: buildNativeAiObservabilityContext(
+        privateMessages ?? []
+      ),
+      persistenceRequestId: userMessage.id,
+      request,
+      supabase: auth.supabase,
+      thinkingMode: settings.thinking_mode,
+      user: auth.user,
+      wsId: context.normalizedWsId,
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text().catch(() => '');
+      console.error('Native Chat AI response failed', {
+        conversationId: conversation.id,
+        status: aiResponse.status,
+        errorText,
+      });
+      throw new Error(errorText || 'Failed to send AI chat message');
+    }
+
+    await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+
+    assistantResponse = await getLatestAiAssistantMessage({
+      chatId: shadowChatId,
+      requestId: userMessage.id,
+      supabase: auth.supabase,
+    });
+  }
 
   const assistantContent = getPersistableAssistantContent(assistantResponse);
   if (!assistantResponse || !assistantContent) {

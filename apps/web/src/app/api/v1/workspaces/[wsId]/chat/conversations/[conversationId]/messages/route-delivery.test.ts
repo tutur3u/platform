@@ -146,6 +146,7 @@ describe('chat message delivery and pagination route', () => {
       expect.objectContaining({ message: userMessage })
     );
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
   });
 
   it('fails closed when an external reservation unexpectedly returns null', async () => {

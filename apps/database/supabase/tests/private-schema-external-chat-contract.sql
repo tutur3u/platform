@@ -1,5 +1,5 @@
 begin;
-select plan(47);
+select plan(50);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -128,6 +128,21 @@ select throws_ok(
   $$select private.chat_send_user_message_idempotent('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', null, 'message', null, '[]'::jsonb)$$,
   'chat_request_id_required',
   'atomic user-message persistence rejects a null request ID'
+);
+select throws_ok(
+  $$select private.external_chat_issue_pairing_ticket('00000000-0000-0000-0000-000000000000', repeat('a', 64), null)$$,
+  'external_chat_invalid_pairing_ticket',
+  'pairing tickets require an explicit expiry'
+);
+select throws_ok(
+  $$select private.external_chat_list_conversations('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'active', 40, 1001)$$,
+  'external_chat_offset_too_large',
+  'external inbox pagination rejects oversized offsets at the database boundary'
+);
+select throws_ok(
+  $$select private.external_chat_import_event('00000000-0000-0000-0000-000000000000', 'connector', repeat('a', 256), 'visitor', 'message', 'visitor', 'content', now(), 1, '{}'::jsonb, '{}'::jsonb, null)$$,
+  'external_chat_invalid_identity',
+  'external imports reject oversized remote agent identities'
 );
 
 
