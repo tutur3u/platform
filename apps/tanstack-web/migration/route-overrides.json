@@ -28,9 +28,9 @@
     "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts": {
       "methods": {
         "GET": {
-          "status": "migrated",
+          "status": "legacy-next",
           "targetOwner": "rust-backend",
-          "note": "The Rust handler mirrors native listing and routes scope=external through the bounded external inbox RPC."
+          "note": "The Rust handler ports native listing and the bounded scope=external collection, but normal requests remain on Next.js until AI discovery, external AI-agent threads, and AI chats reach source parity."
         },
         "POST": {
           "status": "legacy-next",

@@ -6,6 +6,7 @@ import {
   type ExternalChatEvent,
   type ExternalChatSettings,
   externalChatSettingsSchema,
+  isExternalChatLiveAuthority,
 } from './schemas';
 
 type CredentialRow = {
@@ -271,6 +272,13 @@ export function serializeExternalChatBinding(
     (chat as Record<string, unknown>).enabled !== true
   ) {
     errors.push('chat_disabled');
+  }
+  if (
+    parsedChat.success &&
+    parsedChat.data.enabled &&
+    !isExternalChatLiveAuthority(state.binding.settings)
+  ) {
+    errors.push('authority_not_live');
   }
   if (!credentials?.ingest_secret_hash) errors.push('ingest_secret_missing');
   if (!credentials?.control_secret_encrypted)

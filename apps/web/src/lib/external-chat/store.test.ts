@@ -69,4 +69,46 @@ describe('external chat binding serialization', () => {
       ready: false,
     });
   });
+
+  it.each(['fallback_queue', 'paused'] as const)(
+    'rejects readiness while authority mode is %s',
+    (authorityMode) => {
+      const result = serializeExternalChatBinding({
+        binding: {
+          canonical_project_id: 'opaque-connector',
+          is_enabled: true,
+          settings: {
+            chat: {
+              agentMappings: {},
+              authorityMode,
+              bridgeBaseUrl: 'https://bridge.invalid',
+              enabled: true,
+              inboxDefaults: {},
+            },
+          },
+        },
+        credentials: {
+          configuration_revision: 2,
+          control_secret_encrypted: 'encrypted-sensitive-value',
+          control_secret_last_four: '5678',
+          control_secret_rotated_at: '2026-08-01T00:00:00.000Z',
+          ingest_secret_hash: 'a'.repeat(64),
+          ingest_secret_last_four: '1234',
+          ingest_secret_rotated_at: '2026-08-01T00:00:00.000Z',
+          pending_action: null,
+          pending_created_at: null,
+          pending_secret_encrypted: null,
+          pending_secret_hash: null,
+          pending_secret_last_four: null,
+          verified_at: '2026-08-01T00:05:00.000Z',
+          verified_revision: 2,
+        },
+      });
+
+      expect(result?.readiness).toEqual({
+        errors: ['authority_not_live'],
+        ready: false,
+      });
+    }
+  );
 });
