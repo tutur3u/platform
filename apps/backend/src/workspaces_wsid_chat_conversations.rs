@@ -23,6 +23,9 @@
 use serde::Serialize;
 use serde_json::{Value, json};
 
+mod query;
+use query::{read_archived, read_external_scope, read_pagination};
+
 use crate::{
     APPLICATION_JSON, BackendConfig, BackendRequest, BackendResponse, contact,
     finance_auth::{FinanceAuthorizationError, authorize_finance_permission},
@@ -36,9 +39,6 @@ const CHAT_LIST_CONVERSATIONS_RPC: &str = "chat_list_conversations";
 const EXTERNAL_CHAT_LIST_CONVERSATIONS_RPC: &str = "external_chat_list_conversations";
 const PATH_PREFIX: &str = "/api/v1/workspaces/";
 const PATH_SUFFIX: &str = "/chat/conversations";
-const DEFAULT_LIMIT: i64 = 40;
-const MAX_LIMIT: i64 = 100;
-const MIN_LIMIT: i64 = 1;
 const UNAUTHORIZED_MESSAGE: &str = "Unauthorized";
 const INSUFFICIENT_PERMISSIONS_MESSAGE: &str = "Insufficient chat permissions";
 const FAILED_MESSAGE: &str = "Failed to load chat conversations";
@@ -71,85 +71,6 @@ fn conversations_ws_id(path: &str) -> Option<&str> {
     let rest = path.strip_prefix(PATH_PREFIX)?;
     let ws_id = rest.strip_suffix(PATH_SUFFIX)?;
     (!ws_id.is_empty() && !ws_id.contains('/')).then_some(ws_id)
-}
-
-// ---------------------------------------------------------------------------
-// Query-param helpers
-// ---------------------------------------------------------------------------
-
-struct Pagination {
-    is_paginated: bool,
-    limit: i64,
-    offset: i64,
-}
-
-fn parse_integer(raw: &str) -> Option<i64> {
-    let t = raw.trim();
-    if t.is_empty() {
-        return Some(0);
-    }
-    if let Ok(v) = t.parse::<i64>() {
-        return Some(v);
-    }
-    t.parse::<f64>()
-        .ok()
-        .filter(|v| v.is_finite())
-        .map(|v| v.trunc() as i64)
-}
-
-fn read_pagination(request_url: Option<&str>) -> Pagination {
-    let pairs: Vec<(String, String)> = request_url
-        .and_then(|u| url::Url::parse(u).ok())
-        .map(|url| {
-            url.query_pairs()
-                .map(|(k, v)| (k.into_owned(), v.into_owned()))
-                .collect()
-        })
-        .unwrap_or_default();
-
-    let limit_raw = pairs
-        .iter()
-        .find(|(k, _)| k == "limit")
-        .map(|(_, v)| v.as_str());
-    let offset_raw = pairs
-        .iter()
-        .find(|(k, _)| k == "offset")
-        .map(|(_, v)| v.as_str());
-    let is_paginated = limit_raw.is_some() || offset_raw.is_some();
-    let limit = limit_raw
-        .and_then(parse_integer)
-        .unwrap_or(DEFAULT_LIMIT)
-        .clamp(MIN_LIMIT, MAX_LIMIT);
-    let offset = offset_raw.and_then(parse_integer).unwrap_or(0).max(0);
-
-    Pagination {
-        is_paginated,
-        limit,
-        offset,
-    }
-}
-
-fn read_archived(request_url: Option<&str>) -> &'static str {
-    let raw = request_url
-        .and_then(|u| url::Url::parse(u).ok())
-        .and_then(|url| {
-            url.query_pairs()
-                .find_map(|(k, v)| (k == "archived").then(|| v.into_owned()))
-        });
-    match raw.as_deref() {
-        Some("archived") => "archived",
-        Some("all") => "all",
-        _ => "active",
-    }
-}
-
-fn read_external_scope(request_url: Option<&str>) -> bool {
-    request_url
-        .and_then(|u| url::Url::parse(u).ok())
-        .is_some_and(|url| {
-            url.query_pairs()
-                .any(|(k, v)| k == "scope" && v == "external")
-        })
 }
 
 // ---------------------------------------------------------------------------
@@ -498,54 +419,6 @@ mod tests {
     }
 
     #[test]
-    fn archived_parsing() {
-        assert_eq!(read_archived(None), "active");
-        assert_eq!(
-            read_archived(Some("https://x.test/p?archived=archived")),
-            "archived"
-        );
-        assert_eq!(read_archived(Some("https://x.test/p?archived=all")), "all");
-        assert_eq!(
-            read_archived(Some("https://x.test/p?archived=foo")),
-            "active"
-        );
-    }
-
-    #[test]
-    fn external_scope_parsing() {
-        assert!(read_external_scope(Some(
-            "https://x.test/p?scope=external&limit=40"
-        )));
-        assert!(!read_external_scope(Some("https://x.test/p?scope=native")));
-        assert!(!read_external_scope(None));
-    }
-
-    #[test]
-    fn pagination_defaults_and_clamping() {
-        let p = read_pagination(Some("https://x.test/p"));
-        assert!(!p.is_paginated);
-        assert_eq!(p.limit, DEFAULT_LIMIT);
-        assert_eq!(p.offset, 0);
-
-        assert_eq!(
-            read_pagination(Some("https://x.test/p?limit=999")).limit,
-            MAX_LIMIT
-        );
-        assert_eq!(
-            read_pagination(Some("https://x.test/p?limit=0")).limit,
-            MIN_LIMIT
-        );
-        assert_eq!(
-            read_pagination(Some("https://x.test/p?limit=10&offset=20")).offset,
-            20
-        );
-        assert_eq!(
-            read_pagination(Some("https://x.test/p?offset=-5")).offset,
-            0
-        );
-    }
-
-    #[test]
     fn missing_archived_rpc_detection() {
         assert!(is_missing_archived_rpc(Some("PGRST202"), None));
         assert!(is_missing_archived_rpc(Some("42883"), None));
@@ -561,12 +434,5 @@ mod tests {
             Some("42501"),
             Some("permission denied")
         ));
-    }
-
-    #[test]
-    fn parse_integer_variants() {
-        assert_eq!(parse_integer("40.7"), Some(40));
-        assert_eq!(parse_integer(""), Some(0));
-        assert_eq!(parse_integer("abc"), None);
     }
 }

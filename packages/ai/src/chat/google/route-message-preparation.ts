@@ -298,6 +298,54 @@ type PersistLatestUserMessageParams = {
   source: 'Mira' | 'Rewise';
 };
 
+type RequestScopedPersistenceError = {
+  code?: string;
+  message: string;
+};
+
+export async function persistRequestScopedUserMessage({
+  chatId,
+  content,
+  creatorId,
+  findExistingMessage,
+  insertMessage,
+  requestId,
+  source,
+}: {
+  chatId: string;
+  content: string;
+  creatorId: string;
+  findExistingMessage: () => PromiseLike<{
+    data: { content: string | null; creator_id: string | null } | null;
+    error: RequestScopedPersistenceError | null;
+  }>;
+  insertMessage: () => PromiseLike<{
+    error: RequestScopedPersistenceError | null;
+  }>;
+  requestId: string;
+  source: 'Mira' | 'Rewise';
+}): Promise<{ error: RequestScopedPersistenceError | null }> {
+  const inserted = await insertMessage();
+  if (!inserted.error) return inserted;
+  if (inserted.error.code !== '23505') return inserted;
+
+  const existing = await findExistingMessage();
+  if (existing.error) return { error: existing.error };
+  if (
+    existing.data?.content === content &&
+    existing.data.creator_id === creatorId
+  ) {
+    return { error: null };
+  }
+
+  return {
+    error: {
+      code: '23505',
+      message: `Persistence request ${requestId} already belongs to another ${source} message in chat ${chatId}`,
+    },
+  };
+}
+
 export async function persistLatestUserMessage({
   processedMessages,
   chatId,

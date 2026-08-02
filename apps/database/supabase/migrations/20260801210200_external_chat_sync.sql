@@ -938,10 +938,13 @@ begin
     conversation_id, sender_id, kind, content, reply_to_message_id, metadata, created_at
   ) values (
     v_thread.conversation_id,
-    coalesce(
-      v_delivery.actor_user_id,
-      case when p_direction = 'staff' then p_mapped_user_id end
-    ),
+    case
+      when v_delivery.id is not null then v_delivery.actor_user_id
+      when p_direction = 'staff' and exists (
+        select 1 from public.workspace_members wm
+        where wm.ws_id = p_ws_id and wm.user_id = p_mapped_user_id
+      ) then p_mapped_user_id
+    end,
     case when p_direction = 'system' then 'system' else 'user' end,
     coalesce(p_content, ''),
     v_delivery.reply_to_message_id,

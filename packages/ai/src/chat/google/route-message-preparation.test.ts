@@ -4,6 +4,7 @@ import {
   attachYoutubeVideoInputToLatestUserMessage,
   normalizeYoutubeVideoUrlForGemini,
   persistLatestUserMessage,
+  persistRequestScopedUserMessage,
 } from './route-message-preparation';
 
 describe('route message preparation YouTube video inputs', () => {
@@ -89,5 +90,45 @@ describe('route message preparation YouTube video inputs', () => {
       message: 'Summarize https://youtu.be/dQw4w9WgXcQ',
       source: 'Mira',
     });
+  });
+});
+
+describe('request-scoped user-message persistence', () => {
+  const params = {
+    chatId: 'chat_1',
+    content: 'Saved prompt',
+    creatorId: 'user_1',
+    requestId: '11111111-1111-4111-8111-111111111111',
+    source: 'Rewise' as const,
+  };
+
+  it('accepts an exact persisted message after a unique-key race', async () => {
+    const result = await persistRequestScopedUserMessage({
+      ...params,
+      findExistingMessage: vi.fn().mockResolvedValue({
+        data: { content: params.content, creator_id: params.creatorId },
+        error: null,
+      }),
+      insertMessage: vi.fn().mockResolvedValue({
+        error: { code: '23505', message: 'duplicate key' },
+      }),
+    });
+
+    expect(result).toEqual({ error: null });
+  });
+
+  it('rejects a request marker attached to different content', async () => {
+    const result = await persistRequestScopedUserMessage({
+      ...params,
+      findExistingMessage: vi.fn().mockResolvedValue({
+        data: { content: 'Different prompt', creator_id: params.creatorId },
+        error: null,
+      }),
+      insertMessage: vi.fn().mockResolvedValue({
+        error: { code: '23505', message: 'duplicate key' },
+      }),
+    });
+
+    expect(result.error?.code).toBe('23505');
   });
 });

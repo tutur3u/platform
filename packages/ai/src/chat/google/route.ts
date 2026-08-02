@@ -44,6 +44,7 @@ import {
 import { performCreditPreflight } from './route-credits';
 import {
   persistLatestUserMessage,
+  persistRequestScopedUserMessage,
   prepareProcessedMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
@@ -406,17 +407,41 @@ export function createPOST(
         chatId,
         insertChatMessage: async (args) => {
           if (persistenceRequestId) {
-            const { error } = await sbAdmin.from('ai_chat_messages').insert({
-              chat_id: chatId,
+            return persistRequestScopedUserMessage({
+              chatId,
               content: args.message,
-              creator_id: user.id,
-              metadata: {
-                requestId: persistenceRequestId,
-                source: args.source,
+              creatorId: user.id,
+              findExistingMessage: async () => {
+                const { data, error } = await sbAdmin
+                  .from('ai_chat_messages')
+                  .select('content,creator_id')
+                  .eq('chat_id', chatId)
+                  .eq('role', 'USER')
+                  .contains('metadata', {
+                    requestId: persistenceRequestId,
+                    source: args.source,
+                  })
+                  .maybeSingle();
+                return { data, error };
               },
-              role: 'USER',
+              insertMessage: async () => {
+                const { error } = await sbAdmin
+                  .from('ai_chat_messages')
+                  .insert({
+                    chat_id: chatId,
+                    content: args.message,
+                    creator_id: user.id,
+                    metadata: {
+                      requestId: persistenceRequestId,
+                      source: args.source,
+                    },
+                    role: 'USER',
+                  });
+                return { error };
+              },
+              requestId: persistenceRequestId,
+              source: args.source,
             });
-            return { error };
           }
           const { error } = await supabase.rpc(
             'insert_ai_chat_message' as never,
