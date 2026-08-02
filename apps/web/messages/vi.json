@@ -1367,12 +1367,6 @@
     },
     "title": "Phê duyệt"
   },
-  "assistant-hub": {
-    "description": "Làm việc với Mira bằng văn bản hoặc chuyển sang trò chuyện trực tiếp bằng giọng nói.",
-    "text": "Văn bản",
-    "title": "Trợ lý Mira",
-    "voice": "Giọng nói"
-  },
   "audit-log-insights": {
     "activity_description": "Xem các thay đổi hồ sơ người dùng tập trung vào giai đoạn nào trong khoảng thời gian đã chọn.",
     "activity_title": "Phân bố hoạt động",
@@ -5114,65 +5108,6 @@
     "yesterday": "Hôm qua"
   },
   "confidential_mode": "Chế độ bảo mật",
-  "connected-onboarding": {
-    "adaptive_subtitle": "Trang chủ giờ ưu tiên các công cụ và bước tiếp theo phù hợp với cách bạn làm việc. Bạn có thể thay đổi bất cứ lúc nào.",
-    "apps_eyebrow": "Bộ công cụ của bạn",
-    "ask_mira": "Hỏi Mira",
-    "choose_goals": "Bạn muốn thúc đẩy điều gì?",
-    "choose_role": "Góc nhìn nào phù hợp với bạn nhất?",
-    "dismiss_for_now": "Để sau",
-    "enter_test_mode": "Thử hướng dẫn",
-    "eyebrow": "Một không gian, nhiều kết quả kết nối",
-    "friend": "bạn",
-    "goal_eyebrow": "Lộ trình mục tiêu",
-    "goals": {
-      "build": {
-        "description": "Tạo nội dung, phần mềm và trải nghiệm hỗ trợ bởi AI.",
-        "short": "Sáng tạo",
-        "title": "Xây dựng và sáng tạo"
-      },
-      "collaborate": {
-        "description": "Kết nối hội thoại, cuộc họp, tệp và quyết định.",
-        "short": "Cùng nhau",
-        "title": "Cộng tác"
-      },
-      "focus": {
-        "description": "Biến ưu tiên thành thời gian, công việc và tiến độ đều đặn.",
-        "short": "Ưu tiên",
-        "title": "Tập trung và lập kế hoạch"
-      },
-      "learn": {
-        "description": "Học, dạy, ghi nhớ kiến thức và trực quan hóa ý tưởng.",
-        "short": "Phát triển",
-        "title": "Học và giảng dạy"
-      },
-      "operate": {
-        "description": "Vận hành khách hàng, tài chính, kho, biểu mẫu và quy trình.",
-        "short": "Vận hành",
-        "title": "Vận hành doanh nghiệp"
-      }
-    },
-    "guided_mission": "Mở cùng một hướng dẫn ngắn, có thể bỏ qua.",
-    "leave_test_mode": "Kết thúc thử nghiệm",
-    "personas": {
-      "creator": "Nhà sáng tạo",
-      "developer": "Nhà phát triển",
-      "educator": "Nhà giáo dục",
-      "executive": "Lãnh đạo doanh nghiệp",
-      "founder": "Nhà sáng lập",
-      "operations": "Vận hành",
-      "professional": "Chuyên gia",
-      "student": "Sinh viên",
-      "team_leader": "Trưởng nhóm"
-    },
-    "recommendation_note": "Dựa trên quy tắc, không bao giờ giới hạn",
-    "recommended_apps": "Đề xuất cho lộ trình của bạn",
-    "role_eyebrow": "Cá nhân hóa Tuturuuu",
-    "role_privacy": "Lựa chọn này chỉ thay đổi đề xuất. Nó không giới hạn những gì bạn có thể mở hoặc thực hiện.",
-    "subtitle": "Chọn điều bạn muốn đạt được và Tuturuuu sẽ kết nối các ứng dụng phù hợp thành một lộ trình thực tế. Mọi hướng dẫn đều tùy chọn và có thể mở lại.",
-    "welcome": "Chào {name}. Hôm nay mình sẽ thúc đẩy điều gì?",
-    "welcome_back": "Chào mừng trở lại, {name}. Bước tiếp theo đã sẵn sàng."
-  },
   "contact": {
     "banner": {
       "description": "Đội ngũ của chúng tôi cam kết cung cấp hỗ trợ xuất sắc và giúp bạn tận dụng tối đa Tuturuuu.",
@@ -5602,6 +5537,10 @@
       }
     },
     "keep_it_up": "Cố gắng lên!",
+    "metadata": {
+      "description": "Bảng điều khiển không gian làm việc cá nhân được hỗ trợ bởi AI.",
+      "title": "Bảng điều khiển"
+    },
     "mira_chat": {
       "approval_request": {
         "attachments_description": "Tải lên 1-5 hình ảnh",
@@ -5904,11 +5843,24 @@
     "view_changelog": "Xem Nhật Ký",
     "view_tasks": "Xem các tác vụ",
     "voice_assistant": {
+      "back_to_chat": "Quay lại trò chuyện",
       "badge": "Beta",
+      "connecting": "Đang kết nối...",
+      "connection_error_fallback": "Đã xảy ra lỗi. Vui lòng thử lại.",
       "description": "Quản lý công việc, tìm kiếm web và hoàn thành mọi việc bằng cuộc trò chuyện giọng nói tự nhiên.",
+      "greeting": "Hôm nay tôi có thể giúp gì cho bạn?",
+      "initializing": "Đang khởi tạo trợ lý giọng nói...",
+      "listening": "Đang lắng nghe...",
+      "ready": "Sẵn sàng",
+      "ready_to_connect": "Sẵn sàng kết nối",
+      "reconnecting": "Đang kết nối lại...",
+      "speaking": "Đang nói...",
       "start_conversation": "Bắt đầu trò chuyện",
+      "start_prompt": "Hãy bắt đầu nói hoặc nhập tin nhắn",
       "subtitle": "Trò chuyện với Mira, trợ lý AI của bạn",
-      "title": "Trợ lý giọng nói"
+      "title": "Trợ lý giọng nói",
+      "try_again": "Thử lại",
+      "unable_to_connect": "Không thể kết nối"
     },
     "year_schedule": {
       "birthday": {
@@ -14298,7 +14250,6 @@
     "metrics": "Chỉ số",
     "migrations": "Chuyển dữ liệu",
     "mind": "Mind",
-    "mira": "Mira",
     "models": "Các mô hình",
     "more_tools": "Nhiều công cụ hơn",
     "more-members": "người khác",

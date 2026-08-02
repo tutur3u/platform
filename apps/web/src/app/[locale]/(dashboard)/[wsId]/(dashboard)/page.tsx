@@ -1,9 +1,39 @@
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { ConnectedHome } from './connected-home';
+import type { Locale } from '@/i18n/routing';
+import MiraDashboardClient from './components/mira-dashboard-client';
+
+const DEFAULT_ASSISTANT_NAME = 'Mira';
+
+function DashboardInsightFallback() {
+  return (
+    <div className="group animate-pulse rounded-lg border">
+      <div className="p-1 text-center font-semibold text-lg text-transparent">
+        ...
+      </div>
+      <div className="m-2 mt-0 flex items-center justify-center rounded border border-foreground/5 bg-foreground/5 p-4 font-bold text-2xl text-transparent">
+        ...
+      </div>
+    </div>
+  );
+}
+
+async function DashboardInsightsSlot({
+  userId,
+  wsId,
+}: {
+  userId: string;
+  wsId: string;
+}) {
+  const { default: DashboardInsights } = await import(
+    './components/dashboard-insights'
+  );
+
+  return <DashboardInsights wsId={wsId} userId={userId} />;
+}
 
 async function UserGroupQuickActionsSlot({ wsId }: { wsId: string }) {
   const { default: UserGroupQuickActions } = await import(
@@ -65,13 +95,19 @@ async function resolveDashboardWorkspace(routeWsId: string) {
   return { currentUser, workspace };
 }
 
-export const metadata: Metadata = {
-  title: 'Home',
-  description: 'Your adaptive Tuturuuu workspace home.',
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'dashboard.metadata' });
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 interface Props {
   params: Promise<{
+    locale: Locale;
     wsId: string;
   }>;
 }
@@ -106,16 +142,15 @@ export default async function WorkspaceHomePage({ params }: Props) {
         </Suspense>
       )}
 
-      <ConnectedHome
-        canTest={isExactTuturuuuDotComEmail(currentUser.email)}
-        userName={
-          currentUser.display_name ||
-          currentUser.full_name ||
-          currentUser.email?.split('@')[0] ||
-          null
-        }
-        workspace={workspace}
-      />
+      <MiraDashboardClient
+        currentUser={currentUser}
+        initialAssistantName={DEFAULT_ASSISTANT_NAME}
+        wsId={wsId}
+      >
+        <Suspense fallback={<DashboardInsightFallback />}>
+          <DashboardInsightsSlot wsId={wsId} userId={currentUser.id} />
+        </Suspense>
+      </MiraDashboardClient>
     </>
   );
 }

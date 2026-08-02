@@ -128,7 +128,7 @@ export default function MiraDashboardClientImpl({
               userName={
                 currentUser.display_name ||
                 currentUser.full_name ||
-                currentUser.email ||
+                currentUser.email?.split('@')[0] ||
                 undefined
               }
               userAvatarUrl={currentUser.avatar_url}

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -29,6 +29,14 @@ const dashboardInsightsSource = readFileSync(
     encoding: 'utf8',
   }
 );
+const navigationSource = readFileSync(
+  join(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/navigation.tsx'),
+  { encoding: 'utf8' }
+);
+const assistantPagePath = join(
+  process.cwd(),
+  'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/page.tsx'
+);
 
 const forbiddenStaticImports = [
   '@tuturuuu/utils/user-helper',
@@ -48,15 +56,22 @@ function staticImportPattern(modulePath: string) {
 }
 
 describe('[wsId] dashboard page compile graph', () => {
-  it('keeps Mira out of the home route and imports the adaptive home', () => {
+  it('loads Mira as the canonical workspace home without the adaptive home', () => {
     expect(pageSource).not.toMatch(staticImportPattern('next/dynamic'));
     expect(pageSource).not.toMatch(
       staticImportPattern('@/components/loading-statistic-card')
     );
-    expect(pageSource).not.toMatch(
+    expect(pageSource).toMatch(
       staticImportPattern('./components/mira-dashboard-client')
     );
-    expect(pageSource).toMatch(staticImportPattern('./connected-home'));
+    expect(pageSource).not.toContain('ConnectedHome');
+    expect(pageSource).not.toContain('./connected-home');
+  });
+
+  it('removes the standalone assistant route and navigation entry', () => {
+    expect(existsSync(assistantPagePath)).toBe(false);
+    expect(navigationSource).not.toContain("id: 'assistant'");
+    expect(navigationSource).not.toContain('/assistant');
   });
 
   it('keeps auth and workspace helper modules behind async split points', () => {

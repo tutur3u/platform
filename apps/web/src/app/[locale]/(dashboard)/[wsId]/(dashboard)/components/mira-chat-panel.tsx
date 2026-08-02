@@ -22,6 +22,7 @@ import { getGreetingKey } from './mira-chat-constants';
 import { MiraChatConversation } from './mira-chat-conversation';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
+import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 import { useMiraBottomBarVisibility } from './use-mira-bottom-bar-visibility';
 import { useMiraChatActions } from './use-mira-chat-actions';
 import { useMiraChatAttachments } from './use-mira-chat-attachments';
@@ -42,7 +43,6 @@ export interface MiraChatPanelProps {
   insightsDock?: ReactNode;
   workspaceContextBadge?: ReactNode;
   taskBoardContext?: MiraTaskBoardContext;
-  onVoiceToggle?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
   onResetPanelState?: () => void;
@@ -58,7 +58,6 @@ export default function MiraChatPanel({
   insightsDock,
   workspaceContextBadge,
   taskBoardContext,
-  onVoiceToggle,
   isFullscreen,
   onToggleFullscreen,
   onResetPanelState,
@@ -375,66 +374,72 @@ export default function MiraChatPanel({
         workspaceContextBadge={workspaceContextBadge}
       />
 
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {hasMessages ? (
-          <MiraChatConversation
-            actionHandlers={actionHandlers}
-            assistantName={assistantName}
-            generativeUIStore={generativeUIStore}
-            hasFileOnlyPending={hasFileOnlyPending}
-            isBusy={isBusy}
-            messageAttachments={messageAttachments}
-            messages={messages}
-            onAutoSubmitMermaidFix={handleSubmit}
-            pendingDisplay={pendingDisplay}
-            pendingPrompt={pendingPrompt}
-            queuedText={queuedText}
-            scrollContainerRef={scrollContainerRef}
-            toolbarVisibilityAnchorRef={toolbarVisibilityAnchorRef}
-            userAvatarUrl={userAvatarUrl}
-            userName={userName}
-          />
-        ) : (
-          <MiraChatEmptyState
-            assistantName={assistantName}
-            greetingKey={greetingKey}
-            greetingT={greetingT}
-            onQuickAction={handleSubmit}
-            t={t}
-            userName={userName}
-          />
-        )}
+      <MiraVoiceModeSwitcher inputRef={inputRef} wsId={wsId}>
+        {(onVoiceToggle) => (
+          <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            {hasMessages ? (
+              <MiraChatConversation
+                actionHandlers={actionHandlers}
+                assistantName={assistantName}
+                generativeUIStore={generativeUIStore}
+                hasFileOnlyPending={hasFileOnlyPending}
+                isBusy={isBusy}
+                messageAttachments={messageAttachments}
+                messages={messages}
+                onAutoSubmitMermaidFix={handleSubmit}
+                pendingDisplay={pendingDisplay}
+                pendingPrompt={pendingPrompt}
+                queuedText={queuedText}
+                scrollContainerRef={scrollContainerRef}
+                toolbarVisibilityAnchorRef={toolbarVisibilityAnchorRef}
+                userAvatarUrl={userAvatarUrl}
+                userName={userName}
+              />
+            ) : (
+              <MiraChatEmptyState
+                assistantName={assistantName}
+                greetingKey={greetingKey}
+                greetingT={greetingT}
+                onQuickAction={handleSubmit}
+                t={t}
+                userName={userName}
+              />
+            )}
 
-        <MiraChatBottomBar
-          assistantName={assistantName}
-          attachedFiles={attachedFiles}
-          bottomBarVisible={bottomBarVisible}
-          canUploadFiles={supportsFileInput}
-          input={input}
-          inputRef={inputRef}
-          isBusy={isBusy}
-          onFileRemove={handleFileRemove}
-          onFilesSelected={supportsFileInput ? handleFilesSelected : undefined}
-          onSubmit={handleSubmit}
-          onVoiceToggle={onVoiceToggle}
-          setInput={setInput}
-          // Toolbar props
-          activeCreditSource={activeCreditSource}
-          creditWsId={creditWsId}
-          hotkeyLabels={hotkeyLabels}
-          isPersonalWorkspace={isPersonalDashboardWorkspace}
-          model={model}
-          modelPickerHotkeySignal={modelPickerHotkeySignal}
-          onCreditSourceChange={handleCreditSourceChange}
-          onModelChange={handleModelChange}
-          onThinkingModeChange={handleThinkingModeChange}
-          personalWsId={personalWorkspaceId ?? undefined}
-          thinkingMode={thinkingMode}
-          toolbarContentRef={toolbarContentRef}
-          workspaceCreditLocked={workspaceCreditLocked}
-          wsId={wsId}
-        />
-      </div>
+            <MiraChatBottomBar
+              assistantName={assistantName}
+              attachedFiles={attachedFiles}
+              bottomBarVisible={bottomBarVisible}
+              canUploadFiles={supportsFileInput}
+              input={input}
+              inputRef={inputRef}
+              isBusy={isBusy}
+              onFileRemove={handleFileRemove}
+              onFilesSelected={
+                supportsFileInput ? handleFilesSelected : undefined
+              }
+              onSubmit={handleSubmit}
+              onVoiceToggle={onVoiceToggle}
+              setInput={setInput}
+              // Toolbar props
+              activeCreditSource={activeCreditSource}
+              creditWsId={creditWsId}
+              hotkeyLabels={hotkeyLabels}
+              isPersonalWorkspace={isPersonalDashboardWorkspace}
+              model={model}
+              modelPickerHotkeySignal={modelPickerHotkeySignal}
+              onCreditSourceChange={handleCreditSourceChange}
+              onModelChange={handleModelChange}
+              onThinkingModeChange={handleThinkingModeChange}
+              personalWsId={personalWorkspaceId ?? undefined}
+              thinkingMode={thinkingMode}
+              toolbarContentRef={toolbarContentRef}
+              workspaceCreditLocked={workspaceCreditLocked}
+              wsId={wsId}
+            />
+          </div>
+        )}
+      </MiraVoiceModeSwitcher>
     </div>
   );
 }
