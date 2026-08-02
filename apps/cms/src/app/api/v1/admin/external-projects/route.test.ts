@@ -110,7 +110,7 @@ describe('CMS admin site template routes', () => {
         body: JSON.stringify({
           adapter: 'custom',
           allowed_collections: [],
-          allowed_features: ['sync', 'chat', 'chat'],
+          allowed_features: ['sync', 'sync'],
           delivery_profile: {},
           display_name: 'Connected site',
           id: 'connected-site',
