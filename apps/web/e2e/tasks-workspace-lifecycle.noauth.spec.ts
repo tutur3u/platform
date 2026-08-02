@@ -145,7 +145,7 @@ async function completeTeamOnboarding(
   await page
     .locator('[cmdk-item]')
     .filter({ hasText: /^Create$/u })
-    .click();
+    .click({ force: true });
 
   const createWorkspaceDialog = page.getByRole('dialog', {
     name: 'Create Workspace',
