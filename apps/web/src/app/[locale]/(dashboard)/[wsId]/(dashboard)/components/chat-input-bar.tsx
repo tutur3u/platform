@@ -272,6 +272,7 @@ export default function ChatInputBar({
                   className="h-9 w-9 shrink-0"
                   onClick={onVoiceToggle}
                   disabled={disabled}
+                  aria-label={t('voice_input')}
                 >
                   <Mic className="h-4.5 w-4.5" />
                 </Button>

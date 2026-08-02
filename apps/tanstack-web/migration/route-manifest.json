@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 49,
+        "legacyNext": 48,
         "migrated": 99,
-        "percentComplete": 67.33,
-        "remaining": 49,
+        "percentComplete": 67.79,
+        "remaining": 48,
         "terminal": 101,
-        "total": 150,
+        "total": 149,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 62,
+        "legacyNext": 61,
         "migrated": 148,
-        "percentComplete": 70.75,
-        "remaining": 62,
+        "percentComplete": 71.09,
+        "remaining": 61,
         "terminal": 150,
-        "total": 212,
+        "total": 211,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 563,
+      "legacyNext": 562,
       "migrated": 214,
-      "percentComplete": 28.73,
-      "remaining": 563,
+      "percentComplete": 28.77,
+      "remaining": 562,
       "terminal": 227,
-      "total": 790,
+      "total": 789,
       "unknownStatus": 0
     }
   },
@@ -6251,15 +6251,6 @@
       "targetOwner": "tanstack-start"
     },
     {
-      "id": "page:/:locale/:wsId/assistant:apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/page.tsx",
-      "kind": "page",
-      "methods": [],
-      "routePath": "/:locale/:wsId/assistant",
-      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/page.tsx",
-      "status": "legacy-next",
-      "targetOwner": "tanstack-start"
-    },
-    {
       "id": "page:/:locale/:wsId/billing:apps/web/src/app/[locale]/(dashboard)/[wsId]/(workspace-settings)/billing/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7542,7 +7533,7 @@
     "apiRoutes": 565,
     "cronRoutes": 8,
     "layouts": 58,
-    "pages": 150,
+    "pages": 149,
     "routeHandlers": 578,
     "methodCounts": {
       "GET": 287,
@@ -7553,6 +7544,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 790
+    "total": 789
   }
 }

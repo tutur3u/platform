@@ -29,6 +29,13 @@ const miraDashboardClientImplRuntimeSource =
     /^\s*import\s+type\b[\s\S]*?\sfrom\s+['"][^'"]+['"];?/gmu,
     ''
   );
+const miraVoiceModeSwitcherSource = readFileSync(
+  join(
+    process.cwd(),
+    'src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-voice-mode-switcher.tsx'
+  ),
+  { encoding: 'utf8' }
+);
 
 function staticImportPattern(modulePath: string) {
   const escapedModulePath = modulePath.replace(
@@ -97,6 +104,15 @@ describe('[wsId] Mira dashboard client compile graph', () => {
     );
     expect(miraDashboardClientImplSource).toContain(
       'useMiraChatPanelComponent'
+    );
+  });
+
+  it('keeps the rich voice client behind the composer-triggered split point', () => {
+    expect(miraVoiceModeSwitcherSource).not.toMatch(
+      staticImportPattern('../assistant/assistant-client')
+    );
+    expect(miraVoiceModeSwitcherSource).toContain(
+      "import('../assistant/assistant-client')"
     );
   });
 });

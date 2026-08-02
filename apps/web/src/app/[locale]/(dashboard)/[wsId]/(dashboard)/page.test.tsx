@@ -1,4 +1,4 @@
-import { isValidElement } from 'react';
+import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The page opts into request-time rendering via `connection()` (required under
@@ -12,7 +12,9 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspace: vi.fn(),
-  MiraDashboardClient: vi.fn(({ children }) => children),
+  MiraDashboardClient: vi.fn(({ children }) => (
+    <div data-testid="mira-dashboard">{children}</div>
+  )),
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
@@ -33,6 +35,18 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('./components/mira-dashboard-client', () => ({
   default: mocks.MiraDashboardClient,
+}));
+
+vi.mock('./components/dashboard-insights', () => ({
+  default: () => <div data-testid="dashboard-insights" />,
+}));
+
+vi.mock('./permission-setup-banner', () => ({
+  default: () => <div data-testid="permission-setup-banner" />,
+}));
+
+vi.mock('./user-groups/quick-actions', () => ({
+  default: () => <div data-testid="user-group-quick-actions" />,
 }));
 
 describe('WorkspaceHomePage dashboard access', () => {
@@ -83,5 +97,20 @@ describe('WorkspaceHomePage dashboard access', () => {
 
     expect(mocks.notFound).not.toHaveBeenCalled();
     expect(isValidElement(result)).toBe(true);
+
+    const rootChildren = (result as ReactElement<{ children: ReactNode[] }>)
+      .props.children;
+    const miraDashboard = rootChildren.at(-1) as ReactElement<{
+      children: ReactNode;
+      initialAssistantName: string;
+      wsId: string;
+    }>;
+
+    expect(isValidElement(rootChildren[0])).toBe(true);
+    expect(isValidElement(rootChildren[1])).toBe(true);
+    expect(miraDashboard.type).toBe(mocks.MiraDashboardClient);
+    expect(miraDashboard.props.initialAssistantName).toBe('Mira');
+    expect(miraDashboard.props.wsId).toBe('workspace-1');
+    expect(isValidElement(miraDashboard.props.children)).toBe(true);
   });
 });

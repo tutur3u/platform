@@ -1367,12 +1367,6 @@
     },
     "title": "Approvals"
   },
-  "assistant-hub": {
-    "description": "Work with Mira in text or switch to a live voice conversation.",
-    "text": "Text",
-    "title": "Mira Assistant",
-    "voice": "Voice"
-  },
   "audit-log-insights": {
     "activity_description": "Review how user-record changes clustered across the selected period.",
     "activity_title": "Activity distribution",
@@ -5113,65 +5107,6 @@
     "yesterday": "Yesterday"
   },
   "confidential_mode": "Confidential mode",
-  "connected-onboarding": {
-    "adaptive_subtitle": "Your home now prioritizes the tools and next steps that match how you work. You can change this at any time.",
-    "apps_eyebrow": "Your toolkit",
-    "ask_mira": "Ask Mira",
-    "choose_goals": "What would you like to move forward?",
-    "choose_role": "Which perspective fits you best?",
-    "dismiss_for_now": "Not now",
-    "enter_test_mode": "Test guidance",
-    "eyebrow": "One workspace, connected outcomes",
-    "friend": "there",
-    "goal_eyebrow": "Goal pathways",
-    "goals": {
-      "build": {
-        "description": "Create content, software, and AI-powered experiences.",
-        "short": "Create",
-        "title": "Build and create"
-      },
-      "collaborate": {
-        "description": "Bring conversations, meetings, files, and decisions together.",
-        "short": "Together",
-        "title": "Collaborate"
-      },
-      "focus": {
-        "description": "Turn priorities into time, tasks, and consistent progress.",
-        "short": "Priorities",
-        "title": "Focus and plan"
-      },
-      "learn": {
-        "description": "Study, teach, retain knowledge, and visualize ideas.",
-        "short": "Grow",
-        "title": "Learn and teach"
-      },
-      "operate": {
-        "description": "Run customers, money, inventory, forms, and workflows.",
-        "short": "Run",
-        "title": "Operate a business"
-      }
-    },
-    "guided_mission": "Open with a short, skippable guided mission.",
-    "leave_test_mode": "End test",
-    "personas": {
-      "creator": "Creator",
-      "developer": "Developer",
-      "educator": "Educator",
-      "executive": "Executive",
-      "founder": "Founder",
-      "operations": "Operations",
-      "professional": "Professional",
-      "student": "Student",
-      "team_leader": "Team leader"
-    },
-    "recommendation_note": "Rule-based, never a restriction",
-    "recommended_apps": "Recommended for your path",
-    "role_eyebrow": "Make Tuturuuu yours",
-    "role_privacy": "Your choice only changes recommendations. It never limits what you can open or do.",
-    "subtitle": "Choose what you want to accomplish and Tuturuuu will connect the right apps into a practical path. Every guide is optional and replayable.",
-    "welcome": "Welcome, {name}. What are we moving forward?",
-    "welcome_back": "Welcome back, {name}. Your next move is ready."
-  },
   "contact": {
     "banner": {
       "description": "Our team is committed to providing exceptional support and helping you get the most out of Tuturuuu.",
@@ -5903,11 +5838,16 @@
     "view_changelog": "View Changelog",
     "view_tasks": "View Tasks",
     "voice_assistant": {
+      "back_to_chat": "Back to chat",
       "badge": "Beta",
+      "connection_error_fallback": "Something went wrong. Please try again.",
       "description": "Manage tasks, search the web, and get things done with natural voice conversations.",
+      "initializing": "Initializing voice assistant...",
       "start_conversation": "Start Conversation",
       "subtitle": "Talk to Mira, your AI assistant",
-      "title": "Voice Assistant"
+      "title": "Voice Assistant",
+      "try_again": "Try again",
+      "unable_to_connect": "Unable to connect"
     },
     "year_schedule": {
       "birthday": {
@@ -14297,7 +14237,6 @@
     "metrics": "Metrics",
     "migrations": "Migrations",
     "mind": "Mind",
-    "mira": "Mira",
     "models": "Models",
     "more_tools": "More tools",
     "more-members": "more members",
