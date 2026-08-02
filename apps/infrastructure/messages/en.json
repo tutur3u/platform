@@ -6497,6 +6497,8 @@
     "refresh": "Refresh readiness",
     "sample_staff": "A staff reply appears in both inboxes.",
     "sample_visitor": "I would like to test the new chat flow.",
+    "select_workspace": "Select a destination workspace",
+    "select_workspace_description": "Readiness checks run against the selected canary workspace.",
     "send": "Send message",
     "title": "External chat migration lab",
     "visitor_surface": "Local simulation until the canary bridge is paired",

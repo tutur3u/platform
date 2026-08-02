@@ -29,7 +29,10 @@ export const GET = withSessionAuth<Params>(
       )
     );
   },
-  { allowAppSessionAuth: { targetApp: 'cms' }, rateLimitKind: 'read' }
+  {
+    allowAppSessionAuth: { targetApp: ['cms', 'infra'] },
+    rateLimitKind: 'read',
+  }
 );
 
 export const PATCH = withSessionAuth<Params>(

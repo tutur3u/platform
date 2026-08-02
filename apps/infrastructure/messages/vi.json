@@ -6497,6 +6497,8 @@
     "refresh": "Tải lại trạng thái",
     "sample_staff": "Phản hồi của nhân viên xuất hiện trong cả hai hộp thư.",
     "sample_visitor": "Tôi muốn thử luồng chat mới.",
+    "select_workspace": "Chọn workspace đích",
+    "select_workspace_description": "Kiểm tra sẵn sàng được thực hiện trên workspace canary đã chọn.",
     "send": "Gửi tin nhắn",
     "title": "Phòng thử chuyển đổi chat ngoài",
     "visitor_surface": "Mô phỏng cục bộ cho đến khi ghép nối canary",

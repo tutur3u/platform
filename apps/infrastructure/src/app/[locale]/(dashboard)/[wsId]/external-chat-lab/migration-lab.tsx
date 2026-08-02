@@ -14,6 +14,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { WorkspacePicker } from '../ai-agents/workspace-picker';
 
 type LabMessage = {
   body: string;
@@ -22,8 +23,9 @@ type LabMessage = {
   status: 'delivered' | 'queued';
 };
 
-export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
+export function ExternalChatMigrationLab({ wsId: _wsId }: { wsId: string }) {
   const t = useTranslations('external-chat-lab');
+  const [targetWsId, setTargetWsId] = useState('');
   const [draft, setDraft] = useState('');
   const [online, setOnline] = useState(true);
   const [messages, setMessages] = useState<LabMessage[]>([
@@ -41,8 +43,9 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
     },
   ]);
   const state = useQuery({
-    queryFn: () => getExternalChatBindingState(wsId),
-    queryKey: ['external-chat-binding-state', wsId],
+    enabled: Boolean(targetWsId),
+    queryFn: () => getExternalChatBindingState(targetWsId),
+    queryKey: ['external-chat-binding-state', targetWsId],
     retry: false,
   });
 
@@ -96,33 +99,45 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
         </Button>
       </header>
 
+      <div className="max-w-xl">
+        <WorkspacePicker
+          id="external-chat-target-workspace"
+          onValueChange={setTargetWsId}
+          value={targetWsId}
+        />
+      </div>
+
       <Alert
         variant={
-          state.isLoading || state.data?.readiness.ready
+          !targetWsId || state.isLoading || state.data?.readiness.ready
             ? 'default'
             : 'destructive'
         }
       >
         <MessageSquare className="size-4" />
         <AlertTitle>
-          {state.isLoading
-            ? t('loading')
-            : state.isError
-              ? t('load_error')
-              : state.data?.readiness.ready
-                ? t('ready')
-                : t('prerequisites')}
+          {!targetWsId
+            ? t('select_workspace')
+            : state.isLoading
+              ? t('loading')
+              : state.isError
+                ? t('load_error')
+                : state.data?.readiness.ready
+                  ? t('ready')
+                  : t('prerequisites')}
         </AlertTitle>
         <AlertDescription>
-          {state.isLoading
-            ? t('loading')
-            : state.isError
-              ? t('load_error')
-              : state.data?.readiness.ready
-                ? t('ready_description')
-                : t('missing', {
-                    count: state.data?.readiness.errors.length ?? 1,
-                  })}
+          {!targetWsId
+            ? t('select_workspace_description')
+            : state.isLoading
+              ? t('loading')
+              : state.isError
+                ? t('load_error')
+                : state.data?.readiness.ready
+                  ? t('ready_description')
+                  : t('missing', {
+                      count: state.data?.readiness.errors.length ?? 1,
+                    })}
         </AlertDescription>
       </Alert>
 
@@ -188,6 +203,7 @@ export function ExternalChatMigrationLab({ wsId }: { wsId: string }) {
             <Button
               aria-label={t('refresh')}
               onClick={() => state.refetch()}
+              disabled={!targetWsId}
               size="icon"
               variant="ghost"
             >
