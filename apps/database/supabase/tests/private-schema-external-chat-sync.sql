@@ -1,5 +1,5 @@
 begin;
-select plan(101);
+select plan(103);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -659,6 +659,40 @@ select private.external_chat_import_event(
 )
 from external_chat_test_context c
 cross join external_chat_delivery_results d;
+select throws_ok(
+  format(
+    $$select private.external_chat_finalize_reply(%L, %L, %L, 'changed reply', %L, %L)$$,
+    (select ws_id from external_chat_test_context),
+    (select (result->>'deliveryId')::uuid from external_chat_delivery_results),
+    (select actor_id from external_chat_test_context),
+    repeat('e', 64),
+    (select (result->>'messageId')::uuid from external_chat_test_results where attempt = 1)
+  ),
+  'external_chat_idempotency_payload_mismatch',
+  'an altered bridge echo cannot be accepted as the finalized reply'
+);
+update private.chat_messages
+set reply_to_message_id = null
+where id = (select (result->>'messageId')::uuid from external_chat_echo_results);
+select throws_ok(
+  format(
+    $$select private.external_chat_finalize_reply(%L, %L, %L, 'reply', %L, %L)$$,
+    (select ws_id from external_chat_test_context),
+    (select (result->>'deliveryId')::uuid from external_chat_delivery_results),
+    (select actor_id from external_chat_test_context),
+    repeat('e', 64),
+    (select (result->>'messageId')::uuid from external_chat_test_results where attempt = 1)
+  ),
+  'external_chat_idempotency_payload_mismatch',
+  'an echo with a changed reply target cannot be accepted as finalized'
+);
+update private.chat_messages
+set reply_to_message_id = (
+  select (result->>'messageId')::uuid
+  from external_chat_test_results
+  where attempt = 1
+)
+where id = (select (result->>'messageId')::uuid from external_chat_echo_results);
 create temporary table external_chat_finalize_results (
   attempt integer primary key,
   result jsonb not null

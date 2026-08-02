@@ -1441,8 +1441,17 @@ begin
     raise exception 'external_chat_idempotency_payload_mismatch';
   end if;
   if v_delivery.message_id is not null then
+    select * into v_existing_message
+    from private.chat_messages m
+    where m.id = v_delivery.message_id
+      and m.conversation_id = v_thread.conversation_id;
+    if v_existing_message.id is null
+      or v_existing_message.content is distinct from p_content
+      or v_existing_message.reply_to_message_id is distinct from p_reply_to_message_id then
+      raise exception 'external_chat_idempotency_payload_mismatch';
+    end if;
     return jsonb_build_object(
-      'message', (select private.chat_message_json(m) from private.chat_messages m where m.id = v_delivery.message_id),
+      'message', private.chat_message_json(v_existing_message),
       'replayed', true
     );
   end if;

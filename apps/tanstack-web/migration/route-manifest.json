@@ -3354,11 +3354,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/setup/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/setup",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/setup/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
