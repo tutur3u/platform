@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 498,
+        "legacyNext": 499,
         "migrated": 63,
-        "percentComplete": 12.94,
-        "remaining": 498,
+        "percentComplete": 12.91,
+        "remaining": 499,
         "terminal": 74,
-        "total": 572,
+        "total": 573,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 506,
+        "legacyNext": 507,
         "migrated": 68,
-        "percentComplete": 13.5,
-        "remaining": 506,
+        "percentComplete": 13.48,
+        "remaining": 507,
         "terminal": 79,
-        "total": 585,
+        "total": 586,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 568,
+      "legacyNext": 569,
       "migrated": 216,
-      "percentComplete": 28.73,
-      "remaining": 568,
+      "percentComplete": 28.7,
+      "remaining": 569,
       "terminal": 229,
-      "total": 797,
+      "total": 798,
       "unknownStatus": 0
     }
   },
@@ -4865,13 +4865,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts",
+      "id": "api:GET:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/user-profile-links",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/user-profile-links",
+      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts"
     },
     {
       "id": "api:/api/v1/workspaces/:wsId/user-profile-links/:linkId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/[linkId]/route.ts",
@@ -7608,11 +7621,11 @@
     }
   ],
   "summary": {
-    "apiRoutes": 572,
+    "apiRoutes": 573,
     "cronRoutes": 8,
     "layouts": 58,
     "pages": 150,
-    "routeHandlers": 585,
+    "routeHandlers": 586,
     "methodCounts": {
       "GET": 289,
       "HEAD": 3,
@@ -7622,6 +7635,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 797
+    "total": 798
   }
 }

@@ -3,27 +3,18 @@ import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
-  createClient: vi.fn(),
-  getPermissions: vi.fn(),
-  resolveAuthenticatedSessionUser: vi.fn(),
+  resolveWorkspaceRouteAccess: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: (
-    ...args: Parameters<typeof mocks.resolveAuthenticatedSessionUser>
-  ) => mocks.resolveAuthenticatedSessionUser(...args),
+vi.mock('@/lib/workspace-route-access', () => ({
+  resolveWorkspaceRouteAccess: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceRouteAccess>
+  ) => mocks.resolveWorkspaceRouteAccess(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
     mocks.createAdminClient(...args),
-  createClient: (...args: Parameters<typeof mocks.createClient>) =>
-    mocks.createClient(...args),
-}));
-
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-    mocks.getPermissions(...args),
 }));
 
 function createConfigQuery(configRows: { id: string; value: string }[]) {
@@ -87,13 +78,13 @@ describe('workspace user profile links route', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-18T12:00:00.000Z'));
     vi.clearAllMocks();
-    mocks.createClient.mockResolvedValue({});
-    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
-      user: { id: 'actor-user-id' },
-    });
-    mocks.getPermissions.mockResolvedValue({
-      containsPermission: (permission: string) =>
-        permission === 'manage_user_profile_links',
+    mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
+      ok: true,
+      permissions: {
+        containsPermission: (permission: string) =>
+          permission === 'manage_user_profile_links',
+      },
+      user: { id: 'satellite-actor-user-id' },
     });
   });
 
@@ -132,7 +123,7 @@ describe('workspace user profile links route', () => {
     expect(response.status).toBe(201);
     expect(captured.payload).toMatchObject({
       allowed_fields: ['email', 'phone'],
-      creator_id: 'actor-user-id',
+      creator_id: 'satellite-actor-user-id',
       expires_at: '2026-06-25T12:00:00.000Z',
       max_uses: null,
       mode: 'generic',
@@ -141,6 +132,10 @@ describe('workspace user profile links route', () => {
       target_user_id: null,
       ws_id: 'workspace-id',
     });
+    expect(mocks.resolveWorkspaceRouteAccess).toHaveBeenCalledWith(
+      expect.any(Request),
+      'workspace-id'
+    );
   });
 
   it('keeps explicit create values ahead of workspace defaults', async () => {

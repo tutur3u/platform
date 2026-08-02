@@ -1,11 +1,6 @@
 import { WORKSPACE_USER_PROFILE_LINK_DEFAULT_CONFIG_IDS } from '@tuturuuu/internal-api/workspace-configs';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -16,6 +11,7 @@ import {
   generateProfileLinkCode,
   PROFILE_LINK_FIELDS,
 } from '@/features/user-profile-links/server';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -79,10 +75,10 @@ const createSchema = z
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const access = await resolveWorkspaceRouteAccess(req, wsId);
+  if (!access.ok) return access.response;
+
+  const { permissions } = access;
   if (!permissions.containsPermission('manage_user_profile_links')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to manage profile links' },
@@ -174,10 +170,10 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const access = await resolveWorkspaceRouteAccess(req, wsId);
+  if (!access.ok) return access.response;
+
+  const { permissions } = access;
   if (!permissions.containsPermission('manage_user_profile_links')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to manage profile links' },
@@ -198,12 +194,6 @@ export async function POST(req: Request, { params }: Params) {
       },
       { status: 400 }
     );
-  }
-
-  const supabase = await createClient(req);
-  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
-  if (!actorUser?.id) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const sbAdmin = await createAdminClient();
@@ -260,7 +250,7 @@ export async function POST(req: Request, { params }: Params) {
     .insert({
       ws_id: wsId,
       code: generateProfileLinkCode(),
-      creator_id: actorUser.id,
+      creator_id: access.user.id,
       mode: parsed.data.mode,
       target_user_id: parsed.data.target_user_id ?? null,
       allowed_fields: parsed.data.allowed_fields ?? defaults.fields,
