@@ -74,6 +74,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return (
       (await guardApiProxyRequest(request, {
         prefixBase: 'proxy:ai:public',
+        skipContentValidation: true,
       })) ?? NextResponse.next()
     );
   }

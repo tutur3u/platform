@@ -159,6 +159,35 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.validateEmoji).not.toHaveBeenCalled();
   });
 
+  it('can skip form-content validation without skipping payload limits', async () => {
+    mocks.validateEmoji.mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Bad Request' }), { status: 400 })
+    );
+
+    const { guardApiProxyRequest } = await import('../api-proxy-guard.js');
+    const response = await guardApiProxyRequest(
+      makeRequest('/v1/embeddings', 'POST'),
+      {
+        prefixBase: 'proxy:test:ai',
+        skipContentValidation: true,
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.validateEmoji).not.toHaveBeenCalled();
+
+    const oversized = await guardApiProxyRequest(
+      makeRequest('/v1/embeddings', 'POST', {
+        'content-length': `${1024 * 1024 + 1}`,
+      }),
+      {
+        prefixBase: 'proxy:test:ai',
+        skipContentValidation: true,
+      }
+    );
+    expect(oversized?.status).toBe(413);
+  });
+
   it('returns an IP-block response when the client is blocked', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     mocks.extractIp.mockReturnValue('1.2.3.4');

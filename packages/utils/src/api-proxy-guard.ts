@@ -88,6 +88,7 @@ export type GuardOptions = {
   additionalRoutePolicies?: ProxyRoutePolicy[];
   prefixBase: string;
   routePolicies?: ProxyRoutePolicy[];
+  skipContentValidation?: boolean;
   trustedBypassRules?: TrustedProxyBypassRule[];
 };
 
@@ -1384,6 +1385,10 @@ export async function guardApiProxyRequest(
     )
       ? ['snapshot']
       : undefined;
+
+  if (options.skipContentValidation) {
+    return null;
+  }
 
   return (
     (await validateRequestEmojiLimit(req, {
