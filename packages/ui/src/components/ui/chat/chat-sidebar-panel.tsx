@@ -71,17 +71,18 @@ export function ChatSidebarPanel({
   const setCreateOpen = onCreateOpenChange ?? setInternalCreateOpen;
   const archiveFilter = controlledArchiveFilter ?? internalArchiveFilter;
   const selectedTypes = controlledSelectedTypes ?? internalSelectedTypes;
+  const conversationScope = normalizeChatConversationScope(
+    searchParams.get('scope') ?? defaultConversationScope
+  );
   const conversationsQuery = useInfiniteChatConversations({
     archived: archiveFilter,
+    scope: conversationScope === 'external' ? 'external' : undefined,
     wsId,
   });
   const searchQuery = useChatMessageSearch({
     query: searchValue,
     wsId,
   });
-  const conversationScope = normalizeChatConversationScope(
-    searchParams.get('scope') ?? defaultConversationScope
-  );
   const conversations = flattenChatConversationPages(conversationsQuery.data);
   const scopeConversations = filterChatConversationsByScope(
     conversations,

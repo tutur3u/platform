@@ -25,13 +25,15 @@ export function getChatPushRecipientUserIds({
   actorUserId,
   conversation,
 }: {
-  actorUserId: string;
+  actorUserId: string | null;
   conversation: Pick<ChatConversation, 'members'>;
 }) {
   const recipients = new Set<string>();
 
   for (const member of conversation.members) {
-    if (!member.userId || member.userId === actorUserId) continue;
+    if (!member.userId || (actorUserId && member.userId === actorUserId)) {
+      continue;
+    }
     if (member.mutedAt) continue;
     recipients.add(member.userId);
   }
@@ -45,7 +47,7 @@ export async function notifyChatMessageRecipients({
   message,
   wsId,
 }: {
-  actorUserId: string;
+  actorUserId: string | null;
   conversation: ChatConversation;
   message: ChatMessage;
   wsId: string;

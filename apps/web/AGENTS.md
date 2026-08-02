@@ -15,3 +15,13 @@ The authoritative repo-wide instructions live in [`../../AGENTS.md`](../../AGENT
 - **Translations**: Add every user-facing string to both `messages/en.json` and `messages/vi.json`, and keep shared-package translation keys aligned across app bundles.
 - **Navigation Parity**: When adding dashboard routes, update [`src/app/[locale]/(dashboard)/[wsId]/navigation.tsx`](src/app/[locale]/(dashboard)/[wsId]/navigation.tsx) alongside the route itself.
 - **Shared UI Contracts**: Use `@tuturuuu/icons` for icons and `@tuturuuu/ui/dialog` for dialog flows unless an existing local pattern already governs the surface.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

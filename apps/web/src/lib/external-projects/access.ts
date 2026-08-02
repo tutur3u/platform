@@ -15,6 +15,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
   ExternalProjectAdapterKind,
+  ExternalProjectSyncManifest,
   ExternalProjectSyncSchema,
   Json,
   WorkspaceExternalProjectBinding,
@@ -40,6 +41,7 @@ import {
   authorizeExternalAppRequest,
   readExternalAppCredentials,
 } from './app-credentials';
+import { setWorkspaceCmsSiteTemplate } from './binding-settings';
 import {
   DEFAULT_EXTERNAL_PROJECT_COLLECTIONS,
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
@@ -80,11 +82,15 @@ export function hasRootExternalProjectsAdminPermission(
 async function readWorkspaceExternalProjectBindingState(
   admin: AdminDb,
   workspaceId: string
-): Promise<{ canonicalId: string | null; enabled: boolean }> {
+): Promise<{
+  canonicalId: string | null;
+  enabled: boolean;
+  settings: Json | null;
+}> {
   try {
     const { data: binding, error: bindingError } = await admin
       .from('workspace_external_project_bindings')
-      .select('canonical_project_id, is_enabled')
+      .select('canonical_project_id, is_enabled, settings')
       .eq('ws_id', workspaceId)
       .maybeSingle();
 
@@ -92,6 +98,7 @@ async function readWorkspaceExternalProjectBindingState(
       return {
         canonicalId: binding.canonical_project_id ?? null,
         enabled: binding.is_enabled === true,
+        settings: binding.settings,
       };
     }
   } catch {
@@ -122,6 +129,7 @@ async function readWorkspaceExternalProjectBindingState(
           secret.name === EXTERNAL_PROJECT_ENABLED_SECRET &&
           secret.value === 'true'
       ) ?? false,
+    settings: null,
   };
 }
 
@@ -131,7 +139,7 @@ export async function resolveWorkspaceExternalProjectBinding(
 ): Promise<WorkspaceExternalProjectBinding> {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
 
-  const { canonicalId, enabled } =
+  const { canonicalId, enabled, settings } =
     await readWorkspaceExternalProjectBindingState(admin, workspaceId);
 
   let canonicalProject: CanonicalExternalProject | null = null;
@@ -153,6 +161,7 @@ export async function resolveWorkspaceExternalProjectBinding(
       enabled && canonicalProject?.is_active ? canonicalProject : null,
     enabled:
       enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
+    settings,
     workspace_id: workspaceId,
   };
 }
@@ -164,10 +173,12 @@ function getExternalProjectSchemaCollectionSlugs(
 }
 
 function buildExternalProjectDeliveryProfile(
-  schema?: ExternalProjectSyncSchema
+  schema?: ExternalProjectSyncSchema,
+  template?: ExternalProjectSyncManifest['template']
 ) {
   return {
     schema: schema ?? { collections: [] },
+    ...(template ? { template } : {}),
   } as Json;
 }
 
@@ -177,12 +188,14 @@ async function ensureCanonicalExternalProject({
   actorId,
   canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter),
   schema,
+  template,
 }: {
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   actorId: string | null;
   canonicalProjectId?: string;
   schema?: ExternalProjectSyncSchema;
+  template?: ExternalProjectSyncManifest['template'];
 }) {
   const { data: existingProject, error: existingProjectError } = await admin
     .from('canonical_external_projects')
@@ -207,6 +220,27 @@ async function ensureCanonicalExternalProject({
       );
     }
 
+    if (
+      adapter === 'custom' &&
+      !existingProject.allowed_features.includes('chat')
+    ) {
+      const { data: upgradedProject, error: upgradeError } = await admin
+        .from('canonical_external_projects')
+        .update({
+          allowed_features: [...existingProject.allowed_features, 'chat'],
+          updated_by: actorId,
+        })
+        .eq('id', canonicalProjectId)
+        .select('*')
+        .single();
+      if (upgradeError) throw new Error(upgradeError.message);
+      return {
+        canonicalProject: upgradedProject,
+        created: false,
+        id: canonicalProjectId,
+      };
+    }
+
     return {
       canonicalProject: existingProject,
       created: false,
@@ -225,15 +259,19 @@ async function ensureCanonicalExternalProject({
     .insert({
       adapter,
       allowed_collections: allowedCollections,
-      allowed_features: ['sync', 'assets', 'delivery'],
+      allowed_features:
+        adapter === 'custom'
+          ? ['sync', 'assets', 'delivery', 'chat']
+          : ['sync', 'assets', 'delivery'],
       created_by: actorId,
-      delivery_profile: buildExternalProjectDeliveryProfile(schema),
+      delivery_profile: buildExternalProjectDeliveryProfile(schema, template),
       display_name: EXTERNAL_PROJECT_DISPLAY_NAMES[adapter],
       id: canonicalProjectId,
       is_active: true,
       metadata: {
         autoSetup: true,
         adapter,
+        ...(template ? { template } : {}),
       },
       updated_by: actorId,
     })
@@ -269,6 +307,19 @@ async function bindWorkspaceExternalProject({
       'Root workspace cannot be used as a destination external project workspace'
     );
   }
+
+  const { error: bindingError } = await admin
+    .from('workspace_external_project_bindings')
+    .upsert(
+      {
+        canonical_project_id: canonicalProjectId,
+        is_enabled: true,
+        updated_by: actorId,
+        ws_id: workspaceId,
+      },
+      { onConflict: 'ws_id' }
+    );
+  if (bindingError) throw new Error(bindingError.message);
 
   const { error: deleteError } = await admin
     .from('workspace_secrets')
@@ -343,11 +394,32 @@ async function importExternalProjectFieldDefinitions({
   );
 }
 
+async function storeWorkspaceExternalProjectTemplate({
+  actorId,
+  admin,
+  template,
+  workspaceId,
+}: {
+  actorId: string | null;
+  admin: AdminDb;
+  template?: ExternalProjectSyncManifest['template'];
+  workspaceId: string;
+}) {
+  if (!template) return;
+  await setWorkspaceCmsSiteTemplate({
+    actorId,
+    admin,
+    template,
+    workspaceId,
+  });
+}
+
 export async function ensureWorkspaceExternalProjectStudio({
   actorId,
   adapter,
   admin,
   schema,
+  template,
   workspaceId,
 }: {
   /** Null when a linked app provisions its own schema, with no user acting. */
@@ -355,6 +427,7 @@ export async function ensureWorkspaceExternalProjectStudio({
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   schema?: ExternalProjectSyncSchema;
+  template?: ExternalProjectSyncManifest['template'];
   workspaceId: string;
 }) {
   const canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter);
@@ -376,12 +449,19 @@ export async function ensureWorkspaceExternalProjectStudio({
         admin,
         canonicalProjectId: currentBinding.canonical_id,
         schema,
+        template: undefined,
       });
 
     await importExternalProjectFieldDefinitions({
       actorId,
       admin,
       schema,
+      workspaceId,
+    });
+    await storeWorkspaceExternalProjectTemplate({
+      actorId,
+      admin,
+      template,
       workspaceId,
     });
 
@@ -404,6 +484,7 @@ export async function ensureWorkspaceExternalProjectStudio({
       adapter,
       admin,
       schema,
+      template: undefined,
     });
 
   await bindWorkspaceExternalProject({
@@ -418,6 +499,12 @@ export async function ensureWorkspaceExternalProjectStudio({
     actorId,
     admin,
     schema,
+    workspaceId,
+  });
+  await storeWorkspaceExternalProjectTemplate({
+    actorId,
+    admin,
+    template,
     workspaceId,
   });
 

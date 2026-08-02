@@ -15,12 +15,23 @@ import {
   normalizeWorkspaceId,
   type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
+import { cache } from 'react';
 import {
   EXTERNAL_PROJECT_CANONICAL_ID_SECRET,
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
 
 type AdminDb = TypedSupabaseClient;
+
+export function sanitizeCmsBindingSettings(
+  settings: WorkspaceExternalProjectBinding['settings']
+) {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    return settings;
+  }
+  const { chat: _chat, ...safeSettings } = settings;
+  return safeSettings;
+}
 
 function hasAnyPermission(
   permissions: PermissionsResult | null,
@@ -116,6 +127,12 @@ export function hasCmsCommerceInsightsPermission(
   );
 }
 
+export function hasCmsConnectedChatReadPermission(
+  permissions: PermissionsResult | null
+) {
+  return hasAnyPermission(permissions, ['view_chat']);
+}
+
 export async function resolveWorkspaceExternalProjectBinding(
   workspaceId: string,
   db?: AdminDb
@@ -127,18 +144,20 @@ export async function resolveWorkspaceExternalProjectBinding(
   // migration is applied). Keeps CMS access consistent with delivery.
   let enabled = false;
   let canonicalId: string | null = null;
+  let settings: WorkspaceExternalProjectBinding['settings'] = null;
   let resolvedFromBindingTable = false;
 
   try {
     const { data: binding, error: bindingError } = await admin
       .from('workspace_external_project_bindings')
-      .select('canonical_project_id, is_enabled')
+      .select('canonical_project_id, is_enabled, settings')
       .eq('ws_id', workspaceId)
       .maybeSingle();
 
     if (!bindingError && binding) {
       enabled = binding.is_enabled === true;
       canonicalId = binding.canonical_project_id ?? null;
+      settings = binding.settings;
       resolvedFromBindingTable = true;
     }
   } catch {
@@ -190,6 +209,7 @@ export async function resolveWorkspaceExternalProjectBinding(
       enabled && canonicalProject?.is_active ? canonicalProject : null,
     enabled:
       enabled && Boolean(canonicalId) && Boolean(canonicalProject?.is_active),
+    settings: sanitizeCmsBindingSettings(settings),
     workspace_id: workspaceId,
   };
 }
@@ -234,7 +254,7 @@ async function resolveCmsWorkspaceId(
   return normalizeWorkspaceId(rawWsId, supabase);
 }
 
-export async function getCmsWorkspaceAccess(rawWsId: string) {
+async function resolveCmsWorkspaceAccess(rawWsId: string) {
   const user = await getSatelliteAppSessionUser('cms');
   const supabase = (await createAdminClient({
     noCookie: true,
@@ -256,27 +276,38 @@ export async function getCmsWorkspaceAccess(rawWsId: string) {
           canonical_id: null,
           canonical_project: null,
           enabled: false,
+          settings: null,
           workspace_id: normalizedWorkspaceId,
         } satisfies WorkspaceExternalProjectBinding)
       : resolveWorkspaceExternalProjectBinding(normalizedWorkspaceId),
   ]);
 
   const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
+  const hasConnectedChat =
+    !isInternalWorkspace &&
+    binding.enabled &&
+    Boolean(binding.canonical_project?.allowed_features.includes('chat'));
   const canAccessWorkspace =
     !isInternalWorkspace &&
     binding.enabled &&
     Boolean(binding.canonical_project) &&
     (hasWorkspaceExternalProjectPermission(workspacePermissions) ||
       isRootAdmin);
+  const canAccessConnectedChat =
+    hasConnectedChat && hasCmsConnectedChatReadPermission(workspacePermissions);
 
   return {
     binding,
     canAccessAdmin: isRootAdmin && isInternalWorkspace,
+    canAccessConnectedChat,
     canAccessWorkspace,
     isInternalWorkspace,
     isRootAdmin,
     normalizedWorkspaceId,
     rootPermissions,
+    userId: user?.id ?? null,
     workspacePermissions,
   };
 }
+
+export const getCmsWorkspaceAccess = cache(resolveCmsWorkspaceAccess);

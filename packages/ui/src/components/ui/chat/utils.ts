@@ -5,7 +5,7 @@ import type {
   ChatUserProfile,
 } from '@tuturuuu/internal-api';
 
-export type ChatConversationScope = 'personal' | 'workspaces';
+export type ChatConversationScope = 'external' | 'personal' | 'workspaces';
 export type ChatConversationArchiveFilter = 'active' | 'all' | 'archived';
 
 export const DEFAULT_CHAT_SCOPE: ChatConversationScope = 'personal';
@@ -16,15 +16,54 @@ export const CHAT_CONVERSATION_TYPE_FILTERS = [
   'ai',
 ] as const satisfies ChatConversationType[];
 
+export type PendingChatSendRequest = {
+  fingerprint: string;
+  requestId: string;
+};
+
+export function resolvePendingChatSendRequest(
+  previous: PendingChatSendRequest | null,
+  payload: {
+    attachments: Array<{
+      filename: string;
+      path: string;
+      sizeBytes?: number | null;
+    }>;
+    content: string;
+  },
+  createRequestId: () => string
+): PendingChatSendRequest {
+  const fingerprint = JSON.stringify({
+    attachments: payload.attachments.map((attachment) => ({
+      filename: attachment.filename,
+      path: attachment.path,
+      sizeBytes: attachment.sizeBytes,
+    })),
+    content: payload.content,
+  });
+
+  return previous?.fingerprint === fingerprint
+    ? previous
+    : { fingerprint, requestId: createRequestId() };
+}
+
 export function normalizeChatConversationScope(
-  scope?: string | null
+  scope?: string | null,
+  fallback: ChatConversationScope = 'personal'
 ): ChatConversationScope {
-  return scope === 'workspaces' ? 'workspaces' : 'personal';
+  if (scope === 'external' || scope === 'personal' || scope === 'workspaces') {
+    return scope;
+  }
+  return fallback;
 }
 
 export function getChatConversationScope(
   conversation: Pick<ChatConversation, 'metadata' | 'type'>
 ): ChatConversationScope {
+  if (conversation.metadata?.externalChat === true) {
+    return 'external';
+  }
+
   if (conversation.metadata?.scope === 'personal') {
     return 'personal';
   }
@@ -63,6 +102,8 @@ export function isChatConversation(value: unknown): value is ChatConversation {
 export function getChatConversationTypesForScope(
   scope: ChatConversationScope
 ): ChatConversationType[] {
+  if (scope === 'external') return ['channel'];
+
   return scope === 'personal'
     ? ['direct', 'group', 'channel', 'ai']
     : ['channel', 'ai'];
@@ -113,6 +154,35 @@ export function getChatInitials(profile?: ChatUserProfile | string | null) {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+}
+
+export function getChatMessageSenderLabel(
+  message: Pick<ChatMessage, 'kind' | 'metadata' | 'sender'>,
+  fallback: { assistant: string; external: string; unknown: string }
+) {
+  const nativeDisplayName = readNonEmptyString(message.sender?.displayName);
+  if (nativeDisplayName) return nativeDisplayName;
+  if (message.kind === 'assistant') return fallback.assistant;
+
+  const externalSender = message.metadata?.externalSender;
+  if (isRecord(externalSender)) {
+    const displayName =
+      readNonEmptyString(externalSender.displayName) ??
+      readNonEmptyString(externalSender.name);
+    if (displayName) return displayName;
+  }
+
+  return message.metadata?.externalChat === true
+    ? fallback.external
+    : fallback.unknown;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readNonEmptyString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 export function getConversationTitle(
@@ -235,6 +305,18 @@ export function isReadOnlyChatConversation(
       conversation?.metadata?.source === 'legacy-ai-chat') &&
     conversation.metadata.readOnly === true
   );
+}
+
+export function canPersistChatReadState({
+  externalChat,
+  hasMembership,
+  readOnly,
+}: {
+  externalChat: boolean;
+  hasMembership: boolean;
+  readOnly: boolean;
+}) {
+  return !readOnly && (hasMembership || externalChat);
 }
 
 export function getChatSelectionStorageKey(

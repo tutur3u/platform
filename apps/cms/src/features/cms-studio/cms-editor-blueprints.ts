@@ -17,6 +17,69 @@ export type CmsEditorBlueprint = {
 const CMS_EDITOR_BLUEPRINTS: Partial<
   Record<ExternalProjectAdapterKind, CmsEditorBlueprint>
 > = {
+  custom: {
+    contentViews: [
+      {
+        collectionSlugs: ['site-settings'],
+        description:
+          'Global site identity, contact, and presentation settings.',
+        id: 'site',
+        label: 'Site',
+        navigationLabel: 'Site',
+      },
+      {
+        collectionSlugs: ['landing-sections'],
+        description: 'Homepage and campaign landing sections.',
+        id: 'landing',
+        label: 'Landing',
+        navigationLabel: 'Landing',
+      },
+      {
+        collectionSlugs: ['pages'],
+        description: 'Structured pages and reusable page content.',
+        id: 'pages',
+        label: 'Pages',
+        navigationLabel: 'Pages',
+      },
+      {
+        collectionSlugs: ['posts'],
+        description: 'Published and draft articles.',
+        id: 'posts',
+        label: 'Posts',
+        navigationLabel: 'Posts',
+      },
+      {
+        collectionSlugs: ['navigation'],
+        description: 'Primary, footer, and contextual navigation.',
+        id: 'navigation',
+        label: 'Navigation',
+        navigationLabel: 'Navigation',
+      },
+      {
+        collectionSlugs: ['taxonomies'],
+        description: 'Categories, tags, and other classification groups.',
+        id: 'taxonomies',
+        label: 'Taxonomies',
+        navigationLabel: 'Taxonomies',
+      },
+      {
+        collectionSlugs: ['redirects'],
+        description: 'Public route redirects used during site migrations.',
+        id: 'redirects',
+        label: 'Redirects',
+        navigationLabel: 'Redirects',
+      },
+      {
+        collectionSlugs: ['media-assets'],
+        collectionTypes: ['media'],
+        description: 'Images, documents, and reusable media.',
+        id: 'media',
+        label: 'Media',
+        navigationLabel: 'Media',
+      },
+    ],
+    landingSlugs: ['site-settings', 'landing-sections'],
+  },
   exocorpse: {
     contentViews: [
       {

@@ -54,7 +54,7 @@ export async function getOrCreateWorkspaceKey(
 
   try {
     const masterKey = getMasterKey();
-    const supabase = await createAdminClient();
+    const supabase = await createAdminClient({ noCookie: true });
 
     const { data: existingKey, error: selectError } = await supabase
       .from('workspace_encryption_keys')
@@ -106,7 +106,7 @@ export async function getWorkspaceKey(wsId: string): Promise<Buffer | null> {
 
   try {
     const masterKey = getMasterKey();
-    const supabase = await createAdminClient();
+    const supabase = await createAdminClient({ noCookie: true });
 
     const { data, error } = await supabase
       .from('workspace_encryption_keys')

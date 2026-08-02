@@ -1,4 +1,7 @@
-import type { ExternalProjectAdapterKind } from '@tuturuuu/types';
+import {
+  CMS_SITE_V1_COLLECTIONS,
+  type ExternalProjectAdapterKind,
+} from '@tuturuuu/types';
 
 export const EXTERNAL_PROJECT_ENABLED_SECRET = 'EXTERNAL_PROJECT_ENABLED';
 export const EXTERNAL_PROJECT_CANONICAL_ID_SECRET =
@@ -7,6 +10,7 @@ export const EXTERNAL_PROJECT_CANONICAL_ID_SECRET =
 export const EXTERNAL_PROJECT_PREVIEW_QUERY_PARAM = 'preview';
 
 export const EXTERNAL_PROJECT_ADAPTER_OPTIONS = [
+  'custom',
   'junly',
   'yoola',
   'theguyser',
@@ -59,6 +63,7 @@ export const EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS = [
 ] as const;
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
+  custom: CMS_SITE_V1_COLLECTIONS.map(([slug]) => slug),
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
   richfield: [
@@ -113,6 +118,7 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
 } satisfies Record<ExternalProjectAdapterKind, string[]>;
 
 export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
+  custom: 'Connected site',
   exocorpse: 'Exocorpse',
   junly: 'Junly',
   kendra: 'Kendra',

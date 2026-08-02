@@ -93,4 +93,28 @@ describe('WorkspacePicker', () => {
     });
     expect(screen.getByText(ROOT_WORKSPACE_ID)).toBeInTheDocument();
   });
+
+  it('reports controlled workspace selection', async () => {
+    const onValueChange = vi.fn();
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <WorkspacePicker
+          id="workspace-id"
+          onValueChange={onValueChange}
+          value=""
+        />
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+    await waitFor(() => {
+      expect(screen.getByText('Team workspace')).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText('Team workspace'));
+
+    expect(onValueChange).toHaveBeenCalledWith('workspace-1');
+  });
 });

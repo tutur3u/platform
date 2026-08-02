@@ -311,6 +311,11 @@ function getTopLevelNavigation({
           title: t('infrastructure-tabs.external_apps'),
         },
         {
+          href: href(wsId, '/external-chat-lab'),
+          icon: icon(MessageSquare),
+          title: t('external-chat-lab.navigation'),
+        },
+        {
           href: href(wsId, '/mobile-deployment'),
           icon: icon(Smartphone),
           title: t('infrastructure-tabs.mobile_deployment'),

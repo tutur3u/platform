@@ -129,34 +129,30 @@ async function completeTeamOnboarding(
   workspaceName: string,
   memberEmail: string
 ): Promise<string> {
-  await page.goto(`${WEB_E2E_ORIGIN}/en/onboarding`, {
+  await page.goto(`${WEB_E2E_ORIGIN}/personal`, {
     waitUntil: 'domcontentloaded',
   });
-  const onboarding = page.locator('#main-content');
-  const getStarted = onboarding.getByRole('button', {
-    name: 'Get Started',
-    exact: true,
+  const workspaceSelector = page.getByRole('button', {
+    name: 'Show workspace selector',
   });
-  await expect(getStarted).toBeVisible({ timeout: 60_000 });
-  const smallTeam = onboarding
-    .getByRole('button')
-    .filter({ hasText: /Small Team/ });
-  await getStarted.click();
-  await expect(smallTeam).toBeVisible();
-  await smallTeam.click();
-  await onboarding
-    .getByRole('button', { name: 'Continue', exact: true })
-    .click();
+  await expect(workspaceSelector).toBeVisible({ timeout: 60_000 });
+  await workspaceSelector.click();
+  const workspaceSelectTrigger = page.getByRole('button', {
+    name: 'Select a workspace',
+  });
+  await expect(workspaceSelectTrigger).toBeVisible({ timeout: 60_000 });
+  await workspaceSelectTrigger.click();
+  await page
+    .locator('[cmdk-item]')
+    .filter({ hasText: /^Create$/u })
+    .click({ force: true });
 
-  const displayName = onboarding.getByPlaceholder('Your name');
-  await expect(displayName).toBeVisible();
-  await displayName.fill('Tasks Lifecycle Owner');
-  await onboarding
-    .getByRole('button', { name: 'Continue', exact: true })
-    .click();
-
-  const workspaceNameInput = onboarding.getByPlaceholder('Acme Inc.');
-  await expect(workspaceNameInput).toBeVisible();
+  const createWorkspaceDialog = page.getByRole('dialog', {
+    name: 'Create Workspace',
+  });
+  const workspaceNameInput =
+    createWorkspaceDialog.getByPlaceholder('Acme Inc.');
+  await expect(workspaceNameInput).toBeVisible({ timeout: 60_000 });
   await workspaceNameInput.fill(workspaceName);
   const workspaceResponsePromise = page.waitForResponse((response) => {
     return (
@@ -164,7 +160,7 @@ async function completeTeamOnboarding(
       new URL(response.url()).pathname === '/api/v1/workspaces/team'
     );
   });
-  await onboarding
+  await createWorkspaceDialog
     .getByRole('button', { name: 'Continue', exact: true })
     .click();
   const workspaceResponse = await workspaceResponsePromise;
@@ -176,75 +172,24 @@ async function completeTeamOnboarding(
     'expected onboarding to create a workspace'
   ).toBeTruthy();
 
-  const inviteInput = onboarding.getByPlaceholder('colleague@company.com');
-  await expect(inviteInput).toBeVisible();
-  await inviteInput.fill(memberEmail);
-  await inviteInput.press('Enter');
-  await expect(
-    onboarding.getByText(memberEmail, { exact: true })
-  ).toBeVisible();
-  const inviteResponsePromise = page.waitForResponse((response) => {
-    return (
-      response.request().method() === 'POST' &&
-      new URL(response.url()).pathname ===
-        `/api/v1/workspaces/${workspace.id}/members/batch-invite`
-    );
-  });
-  await onboarding
-    .getByRole('button', { name: 'Send Invites', exact: true })
-    .click();
-  const inviteResponse = await inviteResponsePromise;
-  const inviteResponseText = await inviteResponse.text();
-  expect(inviteResponse.ok(), inviteResponseText).toBeTruthy();
-  const invitePayload = JSON.parse(inviteResponseText) as {
+  const inviteResponse = await page.request.post(
+    `${WEB_E2E_ORIGIN}/api/v1/workspaces/${workspace.id}/members/batch-invite`,
+    { data: { emails: [memberEmail] } }
+  );
+  const invitePayload = (await inviteResponse.json()) as {
     results?: { email: string; error?: string; success: boolean }[];
     successCount?: number;
   };
+  expect(inviteResponse.ok(), JSON.stringify(invitePayload)).toBeTruthy();
   expect(
     invitePayload.successCount,
     `expected ${memberEmail} to be invited: ${JSON.stringify(invitePayload.results)}`
   ).toBe(1);
 
-  await onboarding
-    .getByRole('button', { name: 'Go to Dashboard', exact: true })
-    .click();
   await expect(page).toHaveURL(new RegExp(`/${workspace.id}$`), {
     timeout: 60_000,
   });
   return workspace.id!;
-}
-
-async function completeInvitedMemberOnboarding(
-  page: Page,
-  workspaceId: string
-): Promise<void> {
-  const onboarding = page.locator('#main-content');
-  const getStarted = onboarding.getByRole('button', {
-    name: 'Get Started',
-    exact: true,
-  });
-  await expect(getStarted).toBeVisible({ timeout: 60_000 });
-  await getStarted.click();
-
-  // Accepting the invitation gives this new account an existing team
-  // workspace, so the product skips workspace creation and asks only for the
-  // member's profile before finishing onboarding.
-  const displayName = onboarding.getByPlaceholder('Your name');
-  await expect(displayName).toBeVisible({ timeout: 60_000 });
-  await displayName.fill('Tasks Lifecycle Member');
-  await onboarding
-    .getByRole('button', { name: 'Continue', exact: true })
-    .click();
-
-  const goToDashboard = onboarding.getByRole('button', {
-    name: 'Go to Dashboard',
-    exact: true,
-  });
-  await expect(goToDashboard).toBeVisible({ timeout: 60_000 });
-  await goToDashboard.click();
-  await expect(page).toHaveURL(new RegExp(`/${workspaceId}$`), {
-    timeout: 60_000,
-  });
 }
 
 async function configureTaskThroughDialog(
@@ -482,7 +427,7 @@ test.describe('Tasks workspace lifecycle', () => {
         await signUpWithEmailOtp(memberPage, memberEmail);
         const memberUserId = await findLocalUserId(memberEmail);
         userIds.push(memberUserId);
-        await memberPage.goto(`${WEB_E2E_ORIGIN}/onboarding`, {
+        await memberPage.goto(`${WEB_E2E_ORIGIN}/${workspaceId}`, {
           waitUntil: 'domcontentloaded',
         });
 
@@ -500,8 +445,6 @@ test.describe('Tasks workspace lifecycle', () => {
             return rows[0]?.user_id;
           })
           .toBe(userIds.at(-1));
-
-        await completeInvitedMemberOnboarding(memberPage, workspaceId!);
 
         const memberTasksOrigin = await launchTasksFromAppsPicker(memberPage);
         await completeCrossAppLoginWhenRequested(

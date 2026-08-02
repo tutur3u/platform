@@ -32,6 +32,12 @@ Map the CMS control plane before editing:
 Prefer improving the centralized CMS experience over adding new bespoke admin UI
 inside each sibling site.
 
+Default new CMS-backed websites to the `cms_site` v1 contract. Keep site-specific
+fields, groups, and delivery hints in template and collection schema/profile
+metadata. Add a dedicated adapter only when the remote system has a genuinely
+different protocol or authentication model. Existing branded adapters remain
+compatibility paths, not templates for new work.
+
 ## UX Rules
 
 - Make the default path task-based: landing-page edits, content library,

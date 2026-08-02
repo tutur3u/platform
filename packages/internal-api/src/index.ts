@@ -527,6 +527,14 @@ export {
   uploadExternalAppDriveFile,
 } from './external-app-drive';
 export {
+  type ExternalChatBindingState,
+  type ExternalChatCredentialAction,
+  type ExternalChatSettings,
+  getExternalChatBindingState,
+  mutateExternalChatCredential,
+  updateExternalChatSettings,
+} from './external-chat';
+export {
   addWorkspaceExternalProjectRoleMembers,
   createWorkspaceExternalProjectRole,
   deleteWorkspaceExternalProjectRole,

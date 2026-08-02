@@ -42,8 +42,8 @@ export function getChatConversationSections({
   scope?: ChatConversationScope;
   sourceLabels?: ChatConversationSourceLabels;
 }): ChatConversationSection[] {
-  if (scope === 'workspaces') {
-    return [
+  if (scope === 'external' || scope === 'workspaces') {
+    const sections = [
       createChatConversationSection({
         conversations: conversations.filter(
           (conversation) => conversation.type === 'channel'
@@ -52,15 +52,22 @@ export function getChatConversationSections({
         sectionType: 'channel',
         sourceLabels,
       }),
-      createChatConversationSection({
-        conversations: conversations.filter(
-          (conversation) => conversation.type === 'ai'
-        ),
-        label: labels.ai,
-        sectionType: 'ai',
-        sourceLabels,
-      }),
     ];
+
+    if (scope === 'workspaces') {
+      sections.push(
+        createChatConversationSection({
+          conversations: conversations.filter(
+            (conversation) => conversation.type === 'ai'
+          ),
+          label: labels.ai,
+          sectionType: 'ai',
+          sourceLabels,
+        })
+      );
+    }
+
+    return sections;
   }
 
   if (scope === 'personal') {
@@ -175,6 +182,13 @@ function getChatConversationSourceGroup(
   labels: ChatConversationSourceLabels
 ): Omit<ChatConversationSourceGroup, 'conversations'> | null {
   const metadata = conversation.metadata ?? {};
+
+  if (metadata.externalChat === true) {
+    return {
+      id: 'external:connected-sites',
+      label: labels.external,
+    };
+  }
 
   if (metadata.source !== 'ai-agent-external-thread') return null;
 

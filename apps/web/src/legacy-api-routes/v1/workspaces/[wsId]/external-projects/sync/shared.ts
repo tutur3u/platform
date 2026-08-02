@@ -72,6 +72,15 @@ const assetSchema = z
   })
   .passthrough();
 
+const cmsSiteTemplateSchema = z
+  .object({
+    editor: z.record(z.string(), z.unknown()).optional(),
+    kind: z.string().min(1).max(120),
+    publicDelivery: z.record(z.string(), z.unknown()).optional(),
+    version: z.literal(1),
+  })
+  .passthrough();
+
 export const syncManifestSchema = z
   .object({
     adapter: z.enum(EXTERNAL_PROJECT_ADAPTER_OPTIONS),
@@ -106,6 +115,7 @@ export const syncManifestSchema = z
         profileFields: z.array(syncFieldSchema).optional(),
       })
       .passthrough(),
+    template: cmsSiteTemplateSchema.optional(),
     version: z.literal(1),
   })
   .passthrough();

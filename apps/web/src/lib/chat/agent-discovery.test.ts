@@ -1,6 +1,7 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  listAiChatMessages,
   listRootAiAgentDiscoveryConversations,
   toVirtualAiAgentConversationId,
 } from './agent-discovery';
@@ -8,12 +9,20 @@ import {
 vi.mock('server-only', () => ({}));
 
 const mocks = {
+  listAiChatAttachmentsByMessage: vi.fn(),
   listAiAgents: vi.fn(),
 };
 
 vi.mock('@/lib/ai-agents/registry', () => ({
   listAiAgents: (...args: Parameters<typeof mocks.listAiAgents>) =>
     mocks.listAiAgents(...args),
+}));
+
+vi.mock('./ai-chat-files', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./ai-chat-files')>()),
+  listAiChatAttachmentsByMessage: (
+    ...args: Parameters<typeof mocks.listAiChatAttachmentsByMessage>
+  ) => mocks.listAiChatAttachmentsByMessage(...args),
 }));
 
 const agent = {
@@ -47,6 +56,7 @@ const agent = {
 describe('AI agent chat discovery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listAiChatAttachmentsByMessage.mockResolvedValue(new Map());
     mocks.listAiAgents.mockResolvedValue([agent]);
   });
 
@@ -114,5 +124,50 @@ describe('AI agent chat discovery', () => {
     expect(toVirtualAiAgentConversationId('agent-1', 'channel-1')).not.toBe(
       toVirtualAiAgentConversationId('agent-1', 'channel-2')
     );
+  });
+
+  it('filters persisted AI requests by their flat database metadata', async () => {
+    const contains = vi.fn();
+    const messagesQuery = {
+      contains,
+      eq: vi.fn(() => messagesQuery),
+      limit: vi.fn(() => messagesQuery),
+      order: vi.fn(() => messagesQuery),
+      select: vi.fn(() => messagesQuery),
+      // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve(resolve({ data: [], error: null })),
+    };
+    contains.mockReturnValue(messagesQuery);
+    const chatQuery = {
+      eq: vi.fn(() => chatQuery),
+      maybeSingle: vi.fn(async () => ({
+        data: { id: 'chat-1' },
+        error: null,
+      })),
+      select: vi.fn(() => chatQuery),
+    };
+    const supabase = {
+      from: vi.fn((table: string) =>
+        table === 'ai_chats' ? chatQuery : messagesQuery
+      ),
+    };
+
+    await listAiChatMessages({
+      conversationId: 'ai-chat-chat-1',
+      requestId: '11111111-1111-4111-8111-111111111111',
+      supabase: supabase as never,
+      user: {
+        avatar_url: null,
+        display_name: null,
+        email: 'user@example.com',
+        id: 'user-1',
+      } as never,
+      wsId: 'workspace-1',
+    });
+
+    expect(contains).toHaveBeenCalledWith('metadata', {
+      requestId: '11111111-1111-4111-8111-111111111111',
+    });
   });
 });

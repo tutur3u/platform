@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { TTR_URL } from '@/constants/common';
 import { ChatContextRail } from './chat-context-rail';
+import { ChatScopeTabs } from './chat-scope-tabs';
 
 const AGENT_DETAILS_AUTO_COLLAPSE_WIDTH = 1400;
 
@@ -210,6 +211,12 @@ function ChatResponsiveSidebar({
         wsId={wsId}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="border-b p-2">
+          <ChatScopeTabs
+            defaultScope={defaultConversationScope}
+            onScopeChange={() => onCreateOpenChange(false)}
+          />
+        </div>
         <ChatSidebarPanel
           archiveFilter={archiveFilter}
           closeOnMobile={closeOnMobile}
@@ -256,7 +263,8 @@ function ChatHeaderActions({
   const searchParams = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const conversationScope = normalizeChatConversationScope(
-    searchParams.get('scope') ?? defaultConversationScope
+    searchParams.get('scope'),
+    defaultConversationScope
   );
 
   return (
@@ -301,15 +309,17 @@ function ChatHeaderActions({
           wsId={wsId}
         />
       ) : null}
-      <Button
-        aria-label={t('new_conversation')}
-        className="h-9 w-9 shrink-0"
-        onClick={onCreate}
-        size="icon"
-        type="button"
-      >
-        <Plus className="size-4" />
-      </Button>
+      {conversationScope === 'external' ? null : (
+        <Button
+          aria-label={t('new_conversation')}
+          className="h-9 w-9 shrink-0"
+          onClick={onCreate}
+          size="icon"
+          type="button"
+        >
+          <Plus className="size-4" />
+        </Button>
+      )}
     </div>
   );
 }

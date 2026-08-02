@@ -10,6 +10,32 @@ import {
 } from './constants';
 
 describe('CMS editor Richfield adapter registration', () => {
+  it('registers the global CMS site v1 contract', () => {
+    expect(EXTERNAL_PROJECT_DISPLAY_NAMES.custom).toBe('Connected site');
+    expect(DEFAULT_EXTERNAL_PROJECT_COLLECTIONS.custom).toEqual([
+      'site-settings',
+      'navigation',
+      'pages',
+      'posts',
+      'taxonomies',
+      'landing-sections',
+      'redirects',
+      'media-assets',
+    ]);
+    expect(getCmsEditorBlueprintViews('custom').map((view) => view.id)).toEqual(
+      [
+        'site',
+        'landing',
+        'pages',
+        'posts',
+        'navigation',
+        'taxonomies',
+        'redirects',
+        'media',
+      ]
+    );
+  });
+
   it('registers Richfield as a selectable external project adapter', () => {
     expect(EXTERNAL_PROJECT_ADAPTER_OPTIONS).toContain('richfield');
     expect(EXTERNAL_PROJECT_DISPLAY_NAMES.richfield).toBe('Richfield');

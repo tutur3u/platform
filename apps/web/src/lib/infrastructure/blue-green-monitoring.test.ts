@@ -131,13 +131,13 @@ describe('readBlueGreenMonitoringSnapshot', () => {
               {
                 containerId: 'legacy-php',
                 health: 'none',
-                name: 'pktm-legacy-php',
+                name: 'connected-site-legacy-php',
                 status: 'Up 4 minutes',
               },
               {
                 containerId: 'legacy-db',
                 health: 'healthy',
-                name: 'pktm-legacy-db',
+                name: 'connected-site-legacy-db',
                 status: 'Up 5 minutes (healthy)',
               },
             ],

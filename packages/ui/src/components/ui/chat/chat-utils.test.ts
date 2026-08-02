@@ -1,17 +1,20 @@
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  canPersistChatReadState,
   filterChatConversationsByScope,
   formatChatRelativeTime,
   formatFileSize,
   getChatConversationTypesForScope,
   getChatInitials,
+  getChatMessageSenderLabel,
   getChatSelectionStorageKey,
   getConversationTitle,
   getLastMessagePreview,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
   resolveChatConversationSelection,
+  resolvePendingChatSendRequest,
 } from './utils';
 
 const baseMessage: ChatMessage = {
@@ -53,6 +56,40 @@ function conversation(overrides: Partial<ChatConversation>): ChatConversation {
 }
 
 describe('chat utils', () => {
+  it('reuses a request id for the same failed send payload', () => {
+    const payload = { attachments: [], content: 'Retry me' };
+    const createRequestId = vi.fn(() => 'request-1');
+    const first = resolvePendingChatSendRequest(null, payload, createRequestId);
+    const retry = resolvePendingChatSendRequest(
+      first,
+      payload,
+      createRequestId
+    );
+
+    expect(retry).toBe(first);
+    expect(createRequestId).toHaveBeenCalledOnce();
+  });
+
+  it('creates a new request id when the send payload changes', () => {
+    const createRequestId = vi
+      .fn<() => string>()
+      .mockReturnValueOnce('request-1')
+      .mockReturnValueOnce('request-2');
+    const first = resolvePendingChatSendRequest(
+      null,
+      { attachments: [], content: 'First' },
+      createRequestId
+    );
+    const changed = resolvePendingChatSendRequest(
+      first,
+      { attachments: [], content: 'Second' },
+      createRequestId
+    );
+
+    expect(changed.requestId).toBe('request-2');
+    expect(createRequestId).toHaveBeenCalledTimes(2);
+  });
+
   it('derives compact initials for users and labels', () => {
     expect(getChatInitials('Ada Lovelace')).toBe('AL');
     expect(
@@ -177,6 +214,30 @@ describe('chat utils', () => {
     ).toBe(true);
   });
 
+  it('allows external inbox viewers to persist read state on first open', () => {
+    expect(
+      canPersistChatReadState({
+        externalChat: true,
+        hasMembership: false,
+        readOnly: false,
+      })
+    ).toBe(true);
+    expect(
+      canPersistChatReadState({
+        externalChat: false,
+        hasMembership: false,
+        readOnly: false,
+      })
+    ).toBe(false);
+    expect(
+      canPersistChatReadState({
+        externalChat: true,
+        hasMembership: false,
+        readOnly: true,
+      })
+    ).toBe(false);
+  });
+
   it('splits personal and workspace conversation scopes', () => {
     const direct = conversation({ id: 'direct-1', type: 'direct' });
     const group = conversation({ id: 'group-1', type: 'group' });
@@ -187,9 +248,18 @@ describe('chat utils', () => {
       type: 'channel',
     });
     const ai = conversation({ id: 'ai-1', type: 'ai' });
+    const external = conversation({
+      id: 'external-1',
+      metadata: { externalChat: true },
+      type: 'channel',
+    });
 
+    expect(normalizeChatConversationScope('external')).toBe('external');
     expect(normalizeChatConversationScope('workspaces')).toBe('workspaces');
     expect(normalizeChatConversationScope('unknown')).toBe('personal');
+    expect(normalizeChatConversationScope('unknown', 'external')).toBe(
+      'external'
+    );
     expect(getChatConversationTypesForScope('personal')).toEqual([
       'direct',
       'group',
@@ -200,6 +270,7 @@ describe('chat utils', () => {
       'channel',
       'ai',
     ]);
+    expect(getChatConversationTypesForScope('external')).toEqual(['channel']);
     expect(
       filterChatConversationsByScope(
         [direct, group, channel, ai],
@@ -250,6 +321,42 @@ describe('chat utils', () => {
         'workspaces'
       ).map((item) => item.id)
     ).toEqual(['channel-1', 'ai-1', 'agent-thread-1']);
+    expect(
+      filterChatConversationsByScope(
+        [direct, channel, external],
+        'external'
+      ).map((item) => item.id)
+    ).toEqual(['external-1']);
+  });
+
+  it('uses dynamic external sender metadata when no native sender exists', () => {
+    const fallback = {
+      assistant: 'Assistant',
+      external: 'Website visitor',
+      unknown: 'Unknown sender',
+    };
+
+    expect(
+      getChatMessageSenderLabel(
+        {
+          ...baseMessage,
+          metadata: {
+            externalChat: true,
+            externalSender: { displayName: 'Visitor 42' },
+          },
+        },
+        fallback
+      )
+    ).toBe('Visitor 42');
+    expect(
+      getChatMessageSenderLabel(
+        { ...baseMessage, metadata: { externalChat: true } },
+        fallback
+      )
+    ).toBe('Website visitor');
+    expect(getChatMessageSenderLabel(baseMessage, fallback)).toBe(
+      'Unknown sender'
+    );
   });
 
   it('resolves workspace chat selection from requested, stored, then first conversation', () => {

@@ -106,6 +106,7 @@ type PersistAssistantResponseParams = {
   model: string;
   effectiveSource: 'Mira' | 'Rewise';
   observabilityContext?: unknown;
+  persistenceRequestId?: string;
   wsId?: string;
 };
 
@@ -470,6 +471,7 @@ function buildAssistantMessageMetadata({
   inputTokens,
   model,
   observabilityContext,
+  persistenceRequestId,
   outputTokens,
   parts,
   reasoningText,
@@ -485,6 +487,7 @@ function buildAssistantMessageMetadata({
   inputTokens: number;
   model: string;
   observabilityContext?: unknown;
+  persistenceRequestId?: string;
   outputTokens: number;
   parts: Record<string, unknown>[];
   reasoningText: string;
@@ -494,6 +497,7 @@ function buildAssistantMessageMetadata({
 }) {
   return {
     source: effectiveSource,
+    ...(persistenceRequestId ? { requestId: persistenceRequestId } : {}),
     ai: {
       finishReason: response.finishReason,
       model,
@@ -526,6 +530,7 @@ function compactAssistantMessageMetadata(
   const ai = metadata.ai;
   return {
     source: metadata.source,
+    ...(metadata.requestId ? { requestId: metadata.requestId } : {}),
     ai: {
       finishReason: ai.finishReason,
       metadataCompacted: true,
@@ -568,8 +573,9 @@ export async function persistAssistantResponse({
   model,
   effectiveSource,
   observabilityContext,
+  persistenceRequestId,
   wsId,
-}: PersistAssistantResponseParams): Promise<void> {
+}: PersistAssistantResponseParams): Promise<boolean> {
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
 
@@ -579,7 +585,7 @@ export async function persistAssistantResponse({
     allToolResults.length === 0
   ) {
     console.warn('onFinish: no text and no tool calls — skipping DB save');
-    return;
+    return false;
   }
 
   const reasoningText = collectReasoningText(response);
@@ -608,6 +614,7 @@ export async function persistAssistantResponse({
     inputTokens,
     model,
     observabilityContext,
+    persistenceRequestId,
     outputTokens,
     parts,
     reasoningText,
@@ -695,7 +702,7 @@ export async function persistAssistantResponse({
         ...(searchCount > 0 ? { searchCount } : {}),
         error,
       });
-      return;
+      return true;
     }
 
     if (!deductionResult.success) {
@@ -707,7 +714,7 @@ export async function persistAssistantResponse({
         ...(searchCount > 0 ? { searchCount } : {}),
         deductionResult,
       });
-      return;
+      return true;
     }
 
     console.info('AI credits deducted for assistant response.', {
@@ -719,4 +726,6 @@ export async function persistAssistantResponse({
       deductionResult,
     });
   }
+
+  return true;
 }
