@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import type { Json } from '@tuturuuu/types';
 import { embedMany, gateway } from 'ai';
@@ -18,6 +19,15 @@ export const embeddingRequestSchema = z.object({
   ]),
   model: z.string().min(1),
 });
+
+const GEMINI_EMBEDDING_2_GATEWAY_MODEL_ID = 'google/gemini-embedding-2';
+const GEMINI_EMBEDDING_2_GOOGLE_MODEL_ID = 'gemini-embedding-2';
+
+export function resolveEmbeddingModel(modelId: string) {
+  return modelId === GEMINI_EMBEDDING_2_GATEWAY_MODEL_ID
+    ? google.embedding(GEMINI_EMBEDDING_2_GOOGLE_MODEL_ID)
+    : gateway.embedding(modelId);
+}
 
 export async function executeEmbeddingRequest(
   request: Request,
@@ -47,7 +57,7 @@ export async function executeEmbeddingRequest(
 
     const result = await embedMany({
       abortSignal: request.signal,
-      model: gateway.embedding(input.model),
+      model: resolveEmbeddingModel(input.model),
       providerOptions: input.dimensions
         ? {
             google: {
