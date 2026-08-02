@@ -105,10 +105,14 @@ set search_path = private, public, pg_temp
 as $$
 declare
   v_conversation_id uuid;
+  v_conversation_type text;
+  v_existing_attachments jsonb;
   v_existing_content text;
   v_existing_reply_to_message_id uuid;
+  v_expected_storage_ws_id uuid;
   v_message_id uuid;
   v_message jsonb;
+  v_requested_attachments jsonb;
 begin
   if p_request_id is null then
     raise exception 'chat_request_id_required' using errcode = '22023';
@@ -120,7 +124,7 @@ begin
     'create_chat'
   );
 
-  select c.id into v_conversation_id
+  select c.id, c.type into v_conversation_id, v_conversation_type
   from private.chat_conversations c
   where c.id = p_conversation_id
     and c.archived_at is null
@@ -145,8 +149,46 @@ begin
   limit 1;
 
   if v_message_id is not null then
+    v_expected_storage_ws_id := private.chat_attachment_storage_workspace_id(
+      p_ws_id,
+      v_conversation_type,
+      p_actor_user_id
+    );
+    select coalesce(jsonb_agg(canonical order by canonical::text), '[]'::jsonb)
+    into v_existing_attachments
+    from (
+      select jsonb_build_object(
+        'contentType', a.content_type,
+        'filename', a.filename,
+        'fullPath', a.full_path,
+        'metadata', a.metadata,
+        'path', a.storage_path,
+        'sizeBytes', a.size_bytes,
+        'storageWsId', a.storage_ws_id
+      ) as canonical
+      from private.chat_message_attachments a
+      where a.message_id = v_message_id and a.deleted_at is null
+    ) existing;
+    select coalesce(jsonb_agg(canonical order by canonical::text), '[]'::jsonb)
+    into v_requested_attachments
+    from (
+      select jsonb_build_object(
+        'contentType', nullif(item->>'contentType', ''),
+        'filename', coalesce(nullif(item->>'filename', ''), 'attachment'),
+        'fullPath', item->>'fullPath',
+        'metadata', coalesce(item->'metadata', '{}'::jsonb),
+        'path', item->>'path',
+        'sizeBytes', nullif(item->>'sizeBytes', '')::bigint,
+        'storageWsId', coalesce(
+          nullif(item->>'storageWsId', '')::uuid,
+          v_expected_storage_ws_id
+        )
+      ) as canonical
+      from jsonb_array_elements(coalesce(p_attachments, '[]'::jsonb)) item
+    ) requested;
     if v_existing_content is distinct from p_content
-      or v_existing_reply_to_message_id is distinct from p_reply_to_message_id then
+      or v_existing_reply_to_message_id is distinct from p_reply_to_message_id
+      or v_existing_attachments is distinct from v_requested_attachments then
       raise exception 'chat_idempotency_payload_mismatch'
         using errcode = '22023';
     end if;

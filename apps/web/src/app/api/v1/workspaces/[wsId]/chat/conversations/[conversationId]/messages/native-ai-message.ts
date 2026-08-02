@@ -170,10 +170,6 @@ export async function sendNativeAiConversationMessages({
   });
 
   if (!assistantResponse) {
-    await cleanupNativeAiResources({
-      chatId: shadowChatId,
-      wsId: context.normalizedWsId,
-    });
     await copyChatAttachmentsToAiResources({
       resourceChatId: shadowChatId,
       targetWsId: context.normalizedWsId,

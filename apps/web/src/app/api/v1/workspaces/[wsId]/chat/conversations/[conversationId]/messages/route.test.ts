@@ -225,7 +225,7 @@ describe('native AI chat message route', () => {
       message: userMessage,
       wsId: 'workspace-1',
     });
-    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledTimes(2);
+    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
   });
 
   it('reuses an already persisted native assistant reply on retry', async () => {
@@ -444,7 +444,7 @@ describe('native AI chat message route', () => {
       message: userMessage,
       messages: [userMessage],
     });
-    expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
+    expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
   });
 
   it('does not run native AI with fallback settings after a database failure', async () => {

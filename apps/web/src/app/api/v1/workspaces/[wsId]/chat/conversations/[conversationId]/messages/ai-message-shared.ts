@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
 import {
   GEMINI_31_FLASH_LITE_GATEWAY_MODEL,
@@ -136,14 +136,25 @@ async function copyAttachmentInputsToAiResources({
       if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {
         throw new Error('Chat attachments exceed the AI context size limit');
       }
+      const resourceKey = createHash('sha256')
+        .update(
+          JSON.stringify([
+            index,
+            sourceWsId,
+            attachment.path,
+            attachment.filename,
+          ])
+        )
+        .digest('hex')
+        .slice(0, 32);
       await uploadWorkspaceStorageFileDirect(
         targetWsId,
-        `chats/ai/resources/${resourceChatId}/${randomUUID()}-${index}-${attachment.filename}`,
+        `chats/ai/resources/${resourceChatId}/${resourceKey}-${index}-${attachment.filename}`,
         downloaded.buffer,
         {
           contentType:
             attachment.contentType ?? downloaded.contentType ?? undefined,
-          upsert: false,
+          upsert: true,
         }
       );
     } catch (error) {

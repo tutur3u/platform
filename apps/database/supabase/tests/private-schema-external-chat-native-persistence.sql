@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(7);
 
 create temporary table external_chat_test_context (
   ws_id uuid primary key,
@@ -51,7 +51,10 @@ select 1, private.chat_send_user_message_idempotent(
   '22222222-2222-4222-8222-222222222222'::uuid,
   'Atomic user message',
   null,
-  '[]'::jsonb
+  jsonb_build_array(jsonb_build_object(
+    'filename', 'retry.txt',
+    'path', format('chats/%s/retry.txt', a.conversation_id)
+  ))
 )
 from external_chat_test_context c
 cross join external_chat_ai_context a;
@@ -63,7 +66,10 @@ select 2, private.chat_send_user_message_idempotent(
   '22222222-2222-4222-8222-222222222222'::uuid,
   'Atomic user message',
   null,
-  '[]'::jsonb
+  jsonb_build_array(jsonb_build_object(
+    'filename', 'retry.txt',
+    'path', format('chats/%s/retry.txt', a.conversation_id)
+  ))
 )
 from external_chat_test_context c
 cross join external_chat_ai_context a;
@@ -102,6 +108,16 @@ select throws_ok(
 );
 select throws_ok(
   format(
+    $$select private.chat_send_user_message_idempotent(%L, %L, %L, '22222222-2222-4222-8222-222222222222'::uuid, 'Atomic user message', null, '[{"path":"changed-attachment"}]'::jsonb)$$,
+    (select ws_id from external_chat_test_context),
+    (select conversation_id from external_chat_ai_context),
+    (select actor_id from external_chat_test_context)
+  ),
+  'chat_idempotency_payload_mismatch',
+  'a repeated native user-message request rejects changed attachments'
+);
+select throws_ok(
+  format(
     $$select private.chat_persist_ai_message_batch(%L, %L, %L, null)$$,
     (select ws_id from external_chat_test_context),
     (select conversation_id from external_chat_ai_context),
@@ -136,26 +152,17 @@ select 2, private.chat_persist_ai_message_batch_idempotent(
 from external_chat_test_context c
 cross join external_chat_ai_context a;
 
-select is(
-  (select result->>'replayed' from external_chat_ai_results where attempt = 1),
-  'false',
-  'the first AI request persists its batch'
-);
-select is(
-  (select result->>'replayed' from external_chat_ai_results where attempt = 2),
-  'true',
-  'a repeated AI request is replayed under the conversation lock'
-);
-select is(
-  (
-    select count(*)::integer
-    from private.chat_messages m
-    cross join external_chat_ai_context a
-    where m.conversation_id = a.conversation_id
-      and m.metadata->>'requestId' = a.request_id::text
-  ),
-  1,
-  'a repeated AI request creates exactly one assistant message'
+select ok(
+  (select result->>'replayed' = 'false' from external_chat_ai_results where attempt = 1)
+    and (select result->>'replayed' = 'true' from external_chat_ai_results where attempt = 2)
+    and (
+      select count(*) = 1
+      from private.chat_messages m
+      cross join external_chat_ai_context a
+      where m.conversation_id = a.conversation_id
+        and m.metadata->>'requestId' = a.request_id::text
+    ),
+  'AI retries replay the first batch and create exactly one assistant message'
 );
 
 select * from finish();

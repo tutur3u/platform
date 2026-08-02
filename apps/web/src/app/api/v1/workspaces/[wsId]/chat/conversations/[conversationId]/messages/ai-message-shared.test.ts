@@ -34,7 +34,7 @@ describe('AI chat attachment resources', () => {
     mocks.upload.mockResolvedValue(undefined);
   });
 
-  it('uses immutable keys when filenames and indexes repeat', async () => {
+  it('uses idempotent keys when retries mirror the same attachment', async () => {
     const input = {
       attachments: [{ filename: 'notes.txt', path: 'uploads/notes.txt' }],
       chatId: 'chat-1',
@@ -46,7 +46,7 @@ describe('AI chat attachment resources', () => {
 
     const firstPath = mocks.upload.mock.calls[0]?.[1];
     const secondPath = mocks.upload.mock.calls[1]?.[1];
-    expect(firstPath).not.toBe(secondPath);
+    expect(firstPath).toBe(secondPath);
     expect(firstPath).toMatch(
       /^chats\/ai\/resources\/chat-1\/.+-0-notes\.txt$/u
     );
@@ -54,7 +54,7 @@ describe('AI chat attachment resources', () => {
       'workspace-1',
       expect.any(String),
       expect.any(Uint8Array),
-      expect.objectContaining({ upsert: false })
+      expect.objectContaining({ upsert: true })
     );
   });
 
