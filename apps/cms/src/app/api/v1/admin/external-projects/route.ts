@@ -41,12 +41,16 @@ export async function POST(request: Request) {
 
   try {
     const payload = canonicalProjectSchema.parse(body.body);
+    const allowedFeatures =
+      payload.adapter === 'custom'
+        ? [...new Set([...payload.allowed_features, 'chat'])]
+        : payload.allowed_features;
     const project = await createCanonicalExternalProject(
       {
         actorId: access.user.id,
         adapter: payload.adapter,
         allowed_collections: payload.allowed_collections,
-        allowed_features: payload.allowed_features,
+        allowed_features: allowedFeatures,
         delivery_profile: payload.delivery_profile as Json,
         display_name: payload.display_name,
         id: payload.id,
