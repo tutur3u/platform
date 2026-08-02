@@ -938,7 +938,10 @@ begin
     conversation_id, sender_id, kind, content, reply_to_message_id, metadata, created_at
   ) values (
     v_thread.conversation_id,
-    v_delivery.actor_user_id,
+    coalesce(
+      v_delivery.actor_user_id,
+      case when p_direction = 'staff' then p_mapped_user_id end
+    ),
     case when p_direction = 'system' then 'system' else 'user' end,
     coalesce(p_content, ''),
     v_delivery.reply_to_message_id,

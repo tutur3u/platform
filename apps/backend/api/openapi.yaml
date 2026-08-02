@@ -11,6 +11,63 @@ servers:
   - url: http://localhost:7820
     description: Local backend runtime
 paths:
+  /api/v1/workspaces/{wsId}/chat/conversations:
+    get:
+      summary: List workspace chat conversations
+      description: Migrated read path for native workspace conversations. Passing scope=external uses the dedicated bounded connected-site inbox RPC; POST remains on the live Next.js route and falls through from Rust.
+      security:
+        - SupabaseBrowserSessionCookie: []
+        - SupabaseBearer: []
+      parameters:
+        - name: wsId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [external]
+        - name: archived
+          in: query
+          schema:
+            type: string
+            enum: [active, archived, all]
+            default: active
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 40
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Workspace conversations and the next numeric offset when another page exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [conversations, nextOffset]
+                properties:
+                  conversations:
+                    type: array
+                    items: {}
+                  nextOffset:
+                    type: [integer, "null"]
+        "401":
+          description: The caller is not authenticated.
+        "403":
+          description: The caller cannot view workspace chat.
+        "500":
+          description: Conversations could not be loaded.
   /api/v1/workspaces/{wsId}/chat/conversations/{conversationId}/messages:
     get:
       summary: List chat conversation messages

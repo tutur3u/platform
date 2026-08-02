@@ -1,5 +1,5 @@
 begin;
-select plan(100);
+select plan(101);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -440,6 +440,25 @@ select is(
     join external_chat_test_context c on c.ws_id = t.ws_id),
   1::bigint,
   'duplicate import creates one native message'
+);
+
+insert into external_chat_test_results
+select 4, private.external_chat_import_event(
+  ws_id, 'test-connector', 'agent-1', 'visitor-1', 'message-staff-1',
+  'staff', 'mapped reply', now(), 2, '{"displayName":"Test visitor"}',
+  '{}'::jsonb, actor_id
+)
+from external_chat_test_context;
+select is(
+  (
+    select m.sender_id
+    from private.chat_messages m
+    join private.external_chat_events e on e.message_id = m.id
+    join external_chat_test_context c on c.ws_id = e.ws_id
+    where e.remote_message_id = 'message-staff-1'
+  ),
+  (select actor_id from external_chat_test_context),
+  'inbound staff messages use the mapped workspace user as sender'
 );
 
 create temporary table external_chat_forged_conversation (id uuid primary key);

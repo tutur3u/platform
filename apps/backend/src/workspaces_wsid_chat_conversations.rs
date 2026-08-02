@@ -6,7 +6,8 @@
 //!
 //! ## Behavior gaps
 //!
-//! The legacy GET handler merges four conversation sources; only (1) is ported:
+//! The legacy GET handler merges four conversation sources. Native collection
+//! listing and the dedicated `scope=external` collection are ported:
 //!
 //! 1. Native conversations via `chat_list_conversations` RPC — **ported**.
 //! 2. `listRootAiAgentDiscoveryConversations` — not ported (root-workspace
@@ -32,6 +33,7 @@ use crate::{
 const VIEW_CHAT_PERMISSION: &str = "view_chat";
 const PRIVATE_SCHEMA: &str = "private";
 const CHAT_LIST_CONVERSATIONS_RPC: &str = "chat_list_conversations";
+const EXTERNAL_CHAT_LIST_CONVERSATIONS_RPC: &str = "external_chat_list_conversations";
 const PATH_PREFIX: &str = "/api/v1/workspaces/";
 const PATH_SUFFIX: &str = "/chat/conversations";
 const DEFAULT_LIMIT: i64 = 40;
@@ -141,6 +143,15 @@ fn read_archived(request_url: Option<&str>) -> &'static str {
     }
 }
 
+fn read_external_scope(request_url: Option<&str>) -> bool {
+    request_url
+        .and_then(|u| url::Url::parse(u).ok())
+        .is_some_and(|url| {
+            url.query_pairs()
+                .any(|(k, v)| k == "scope" && v == "external")
+        })
+}
+
 // ---------------------------------------------------------------------------
 // RPC helpers
 // ---------------------------------------------------------------------------
@@ -164,14 +175,13 @@ fn is_missing_archived_rpc(code: Option<&str>, message: Option<&str>) -> bool {
 async fn rpc_post(
     contact_data: &contact::ContactDataConfig,
     outbound: &impl OutboundHttpClient,
+    rpc_name: &str,
     body: &str,
 ) -> Result<Vec<Value>, RpcError> {
-    let rpc_url = contact_data
-        .rpc_url(CHAT_LIST_CONVERSATIONS_RPC)
-        .ok_or(RpcError {
-            code: None,
-            message: None,
-        })?;
+    let rpc_url = contact_data.rpc_url(rpc_name).ok_or(RpcError {
+        code: None,
+        message: None,
+    })?;
     let svc_key = contact_data.service_role_key().ok_or(RpcError {
         code: None,
         message: None,
@@ -234,7 +244,7 @@ async fn list_native_conversations(
         message: None,
     })?;
 
-    match rpc_post(contact_data, outbound, &body).await {
+    match rpc_post(contact_data, outbound, CHAT_LIST_CONVERSATIONS_RPC, &body).await {
         Ok(v) => Ok(v),
         Err(e) if is_missing_archived_rpc(e.code.as_deref(), e.message.as_deref()) => {
             // Legacy fallback: older schema without p_archived support.
@@ -249,10 +259,46 @@ async fn list_native_conversations(
                 code: None,
                 message: None,
             })?;
-            rpc_post(contact_data, outbound, &fallback_body).await
+            rpc_post(
+                contact_data,
+                outbound,
+                CHAT_LIST_CONVERSATIONS_RPC,
+                &fallback_body,
+            )
+            .await
         }
         Err(e) => Err(e),
     }
+}
+
+async fn list_external_conversations(
+    contact_data: &contact::ContactDataConfig,
+    outbound: &impl OutboundHttpClient,
+    ws_id: &str,
+    actor_user_id: &str,
+    archived: &str,
+    limit: i64,
+    offset: i64,
+) -> Result<Vec<Value>, RpcError> {
+    let body = serde_json::to_string(&ConversationsParams {
+        p_actor_user_id: actor_user_id,
+        p_archived: archived,
+        p_limit: Some(limit),
+        p_offset: offset,
+        p_ws_id: ws_id,
+    })
+    .map_err(|_| RpcError {
+        code: None,
+        message: None,
+    })?;
+
+    rpc_post(
+        contact_data,
+        outbound,
+        EXTERNAL_CHAT_LIST_CONVERSATIONS_RPC,
+        &body,
+    )
+    .await
 }
 
 // ---------------------------------------------------------------------------
@@ -350,6 +396,36 @@ async fn conversations_get_response(
     let archived = read_archived(request.url);
     let pagination = read_pagination(request.url);
 
+    if read_external_scope(request.url) {
+        let conversations = match list_external_conversations(
+            &config.contact_data,
+            outbound,
+            &authorization.ws_id,
+            &authorization.user_id,
+            archived,
+            pagination.limit + 1,
+            pagination.offset,
+        )
+        .await
+        {
+            Ok(v) => v,
+            Err(e) => return chat_rpc_error_response(e),
+        };
+        let has_more = conversations.len() > pagination.limit as usize;
+        let page_conversations = conversations
+            .into_iter()
+            .take(pagination.limit as usize)
+            .collect::<Vec<_>>();
+
+        return no_store_response(json_response(
+            200,
+            json!({
+                "conversations": page_conversations,
+                "nextOffset": has_more.then_some(pagination.offset + pagination.limit),
+            }),
+        ));
+    }
+
     // Mirror the legacy in-memory pagination: fetch from RPC offset 0 with an
     // inflated limit (caller_offset + caller_limit + 1) so we can detect
     // whether a next page exists, then slice the result in memory.
@@ -433,6 +509,15 @@ mod tests {
             read_archived(Some("https://x.test/p?archived=foo")),
             "active"
         );
+    }
+
+    #[test]
+    fn external_scope_parsing() {
+        assert!(read_external_scope(Some(
+            "https://x.test/p?scope=external&limit=40"
+        )));
+        assert!(!read_external_scope(Some("https://x.test/p?scope=native")));
+        assert!(!read_external_scope(None));
     }
 
     #[test]

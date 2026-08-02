@@ -392,6 +392,60 @@ describe('native AI chat message route', () => {
     expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
   });
 
+  it('resumes a personal AI request that persisted only the user message', async () => {
+    mocks.isAiChatConversationId.mockReturnValue(true);
+    mocks.getAiChatId.mockReturnValue('ai-chat-1');
+    const query = {
+      eq: vi.fn(() => query),
+      maybeSingle: vi.fn(async () => ({
+        data: { id: 'ai-chat-1', model: 'gemini-3-flash', title: 'Existing' },
+        error: null,
+      })),
+      select: vi.fn(() => query),
+    };
+    mocks.auth.supabase = { from: vi.fn(() => query) };
+    const persistedUserMessage = {
+      ...userMessage,
+      metadata: {
+        metadata: {
+          requestId: '11111111-1111-4111-8111-111111111111',
+        },
+        source: 'ai-chat',
+      },
+    };
+    let requestScopedReads = 0;
+    mocks.listAiChatMessages.mockImplementation(
+      async ({ requestId }: { requestId?: string }) => {
+        if (!requestId) return [persistedUserMessage];
+        requestScopedReads += 1;
+        return requestScopedReads === 1
+          ? [persistedUserMessage]
+          : [persistedUserMessage, assistantMessage];
+      }
+    );
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(201);
+    expect(mocks.createAiChatPost).toHaveBeenCalledTimes(1);
+    const modelRequest = mocks.aiRouteBodies.at(-1) as {
+      messages: { parts: { text?: string }[]; role: string }[];
+    };
+    expect(
+      modelRequest.messages.filter(
+        (message) =>
+          message.role === 'user' && message.parts[0]?.text === 'hello'
+      )
+    ).toHaveLength(1);
+    expect(mocks.deleteWorkspaceStorageFolderByPath).not.toHaveBeenCalled();
+  });
+
   it('persists native assistant replies with an atomic batch RPC', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {

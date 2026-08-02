@@ -88,6 +88,7 @@ export async function sendAiChatMessage({
   }
 
   let previousMessages: ChatMessage[];
+  let isResumingPersistedRequest = false;
   try {
     const existingRequestMessages =
       (await listAiChatMessages({
@@ -102,15 +103,9 @@ export async function sendAiChatMessage({
     ) {
       return replayAiChatMessageResponse(existingRequestMessages, stream);
     }
-    if (existingRequestMessages.length > 0) {
-      return NextResponse.json(
-        {
-          code: 'ai_message_request_in_progress',
-          message: 'This AI message request is already in progress.',
-        },
-        { status: 409 }
-      );
-    }
+    isResumingPersistedRequest = existingRequestMessages.some(
+      (message) => message.kind === 'user'
+    );
     previousMessages =
       (await listAiChatMessages({
         conversationId,
@@ -118,11 +113,13 @@ export async function sendAiChatMessage({
         user: auth.user,
         wsId: context.normalizedWsId,
       })) ?? [];
-    await copyAiChatAttachmentInputsToResources({
-      attachments,
-      chatId: chat.id,
-      wsId: context.normalizedWsId,
-    });
+    if (!isResumingPersistedRequest) {
+      await copyAiChatAttachmentInputsToResources({
+        attachments,
+        chatId: chat.id,
+        wsId: context.normalizedWsId,
+      });
+    }
   } catch (error) {
     console.error('Failed to prepare AI chat message', {
       chatId: chat.id,
@@ -135,11 +132,13 @@ export async function sendAiChatMessage({
   }
 
   const aiMessages = toAiChatUiMessages(previousMessages);
-  aiMessages.push({
-    id: requestId,
-    parts: [{ text: messageContent, type: 'text' }],
-    role: 'user',
-  });
+  if (!isResumingPersistedRequest) {
+    aiMessages.push({
+      id: requestId,
+      parts: [{ text: messageContent, type: 'text' }],
+      role: 'user',
+    });
+  }
 
   const aiResponse = await callAiChatRoute({
     chatId: chat.id,
