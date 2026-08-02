@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(9);
 
 create temporary table external_chat_test_context (
   ws_id uuid primary key,
@@ -152,17 +152,26 @@ select 2, private.chat_persist_ai_message_batch_idempotent(
 from external_chat_test_context c
 cross join external_chat_ai_context a;
 
-select ok(
-  (select result->>'replayed' = 'false' from external_chat_ai_results where attempt = 1)
-    and (select result->>'replayed' = 'true' from external_chat_ai_results where attempt = 2)
-    and (
-      select count(*) = 1
-      from private.chat_messages m
-      cross join external_chat_ai_context a
-      where m.conversation_id = a.conversation_id
-        and m.metadata->>'requestId' = a.request_id::text
-    ),
-  'AI retries replay the first batch and create exactly one assistant message'
+select is(
+  (select result->>'replayed' from external_chat_ai_results where attempt = 1),
+  'false',
+  'the first AI request persists its batch'
+);
+select is(
+  (select result->>'replayed' from external_chat_ai_results where attempt = 2),
+  'true',
+  'a repeated AI request is replayed under the conversation lock'
+);
+select is(
+  (
+    select count(*)::integer
+    from private.chat_messages m
+    cross join external_chat_ai_context a
+    where m.conversation_id = a.conversation_id
+      and m.metadata->>'requestId' = a.request_id::text
+  ),
+  1,
+  'a repeated AI request creates exactly one assistant message'
 );
 
 select * from finish();
