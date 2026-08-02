@@ -5537,6 +5537,10 @@
       }
     },
     "keep_it_up": "Cố gắng lên!",
+    "metadata": {
+      "description": "Bảng điều khiển không gian làm việc cá nhân được hỗ trợ bởi AI.",
+      "title": "Bảng điều khiển"
+    },
     "mira_chat": {
       "approval_request": {
         "attachments_description": "Tải lên 1-5 hình ảnh",
@@ -5841,10 +5845,18 @@
     "voice_assistant": {
       "back_to_chat": "Quay lại trò chuyện",
       "badge": "Beta",
+      "connecting": "Đang kết nối...",
       "connection_error_fallback": "Đã xảy ra lỗi. Vui lòng thử lại.",
       "description": "Quản lý công việc, tìm kiếm web và hoàn thành mọi việc bằng cuộc trò chuyện giọng nói tự nhiên.",
+      "greeting": "Hôm nay tôi có thể giúp gì cho bạn?",
       "initializing": "Đang khởi tạo trợ lý giọng nói...",
+      "listening": "Đang lắng nghe...",
+      "ready": "Sẵn sàng",
+      "ready_to_connect": "Sẵn sàng kết nối",
+      "reconnecting": "Đang kết nối lại...",
+      "speaking": "Đang nói...",
       "start_conversation": "Bắt đầu trò chuyện",
+      "start_prompt": "Hãy bắt đầu nói hoặc nhập tin nhắn",
       "subtitle": "Trò chuyện với Mira, trợ lý AI của bạn",
       "title": "Trợ lý giọng nói",
       "try_again": "Thử lại",

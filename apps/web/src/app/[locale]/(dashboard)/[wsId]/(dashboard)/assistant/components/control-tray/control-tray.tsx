@@ -43,6 +43,8 @@ export type ControlTrayProps = {
     stream: MediaStream | null,
     type: 'webcam' | 'screen' | null
   ) => void;
+  onInputVolumeChange?: (volume: number) => void;
+  videoStopRequest?: number;
   // New: Chat toggle props
   textChatOpen?: boolean;
   onToggleChat?: () => void;
@@ -175,18 +177,19 @@ const connectButtonVariants: Variants = {
 function ControlTray({
   videoRef,
   children,
+  onInputVolumeChange = () => {},
   onVideoStreamChange = () => {
     // Default no-op
   },
   supportsVideo,
   textChatOpen,
   onToggleChat,
+  videoStopRequest = 0,
 }: ControlTrayProps) {
   const videoStreams = [useWebcam(), useScreenCapture()];
   const [activeVideoStream, setActiveVideoStream] =
     useState<MediaStream | null>(null);
   const [webcam, screenCapture] = videoStreams;
-  const [, setInVolume] = useState(0);
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [muted, setMuted] = useState(false);
   const [connectHovered, setConnectHovered] = useState(false);
@@ -213,6 +216,11 @@ function ControlTray({
   );
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
   const connectButtonRef = useRef<HTMLButtonElement>(null);
+  const lastVideoStopRequestRef = useRef(videoStopRequest);
+  const videoStreamsRef = useRef(videoStreams);
+  const onVideoStreamChangeRef = useRef(onVideoStreamChange);
+  videoStreamsRef.current = videoStreams;
+  onVideoStreamChangeRef.current = onVideoStreamChange;
 
   const { client, connected, connect, disconnect, volume } =
     useLiveAPIContext();
@@ -248,7 +256,10 @@ function ControlTray({
     };
 
     if (connected && !muted && audioRecorder) {
-      audioRecorder.on('data', onData).on('volume', setInVolume).start();
+      audioRecorder
+        .on('data', onData)
+        .on('volume', onInputVolumeChange)
+        .start();
       audioRecorder.stream?.getAudioTracks().forEach((track) => {
         track.enabled = true;
       });
@@ -256,9 +267,22 @@ function ControlTray({
       audioRecorder.stop();
     }
     return () => {
-      audioRecorder.off('data', onData).off('volume', setInVolume);
+      audioRecorder.off('data', onData).off('volume', onInputVolumeChange);
+      audioRecorder.stop();
+      onInputVolumeChange(0);
     };
-  }, [connected, client, muted, audioRecorder]);
+  }, [connected, client, muted, audioRecorder, onInputVolumeChange]);
+
+  useEffect(() => {
+    if (lastVideoStopRequestRef.current === videoStopRequest) return;
+
+    lastVideoStopRequestRef.current = videoStopRequest;
+    videoStreamsRef.current.forEach((stream) => {
+      stream?.stop();
+    });
+    setActiveVideoStream(null);
+    onVideoStreamChangeRef.current(null, null);
+  }, [videoStopRequest]);
 
   useEffect(() => {
     if (!videoRef?.current || !activeVideoStream) return;

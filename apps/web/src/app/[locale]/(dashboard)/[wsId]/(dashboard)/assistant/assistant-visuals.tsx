@@ -1,6 +1,13 @@
 'use client';
 
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 import type { ConnectionStatus } from '@/hooks/use-live-api';
 
@@ -98,6 +105,7 @@ export function AuroraBlob({
   isSpeaking: boolean;
   volume: number;
 }) {
+  const shouldReduceMotion = useReducedMotion();
   // Scale response driven by actual audio volume
   const amplitude = useMotionValue(0);
   const amplitudeSpring = useSpring(amplitude, {
@@ -192,8 +200,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 20,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 20,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -225,8 +233,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 25,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 25,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -259,8 +267,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 22,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 22,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -293,8 +301,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 20,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 20,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -326,8 +334,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 18,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 18,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -359,8 +367,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 16,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 16,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -390,8 +398,8 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 14,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 14,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
@@ -420,16 +428,17 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          duration: 18,
-          repeat: Infinity,
+          duration: shouldReduceMotion ? 0 : 18,
+          repeat: shouldReduceMotion ? 0 : Infinity,
           ease: 'easeInOut',
         }}
       />
 
       {/* Floating particles */}
-      {particles.map((i) => (
-        <FloatingParticle key={i} index={i} connected={connected} />
-      ))}
+      {!shouldReduceMotion &&
+        particles.map((i) => (
+          <FloatingParticle key={i} index={i} connected={connected} />
+        ))}
 
       {/* Shine highlight */}
       <motion.div
@@ -451,8 +460,16 @@ export function AuroraBlob({
           ],
         }}
         transition={{
-          rotate: { duration: 60, repeat: Infinity, ease: 'linear' },
-          borderRadius: { duration: 35, repeat: Infinity, ease: 'easeInOut' },
+          rotate: {
+            duration: shouldReduceMotion ? 0 : 60,
+            repeat: shouldReduceMotion ? 0 : Infinity,
+            ease: 'linear',
+          },
+          borderRadius: {
+            duration: shouldReduceMotion ? 0 : 35,
+            repeat: shouldReduceMotion ? 0 : Infinity,
+            ease: 'easeInOut',
+          },
         }}
       />
     </motion.div>
@@ -471,18 +488,19 @@ export function StatusPill({
   isUserSpeaking: boolean;
   isSpeaking: boolean;
 }) {
+  const t = useTranslations('dashboard.voice_assistant');
   const status =
     connectionStatus === 'reconnecting'
-      ? 'Reconnecting...'
+      ? t('reconnecting')
       : connectionStatus === 'connecting'
-        ? 'Connecting...'
+        ? t('connecting')
         : !connected
-          ? 'Ready to connect'
+          ? t('ready_to_connect')
           : isUserSpeaking
-            ? 'Listening...'
+            ? t('listening')
             : isSpeaking
-              ? 'Speaking...'
-              : 'Ready';
+              ? t('speaking')
+              : t('ready');
 
   const isConnecting =
     connectionStatus === 'connecting' || connectionStatus === 'reconnecting';

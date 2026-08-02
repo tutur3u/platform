@@ -3,7 +3,7 @@
 import { ArrowLeft, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
 import { AssistantVoiceSession } from './assistant-voice-session';
@@ -59,6 +59,12 @@ export default function AssistantClient({
   const { token, scopeKey, isLoading, error, refreshToken } =
     useEphemeralToken(wsId);
 
+  useEffect(() => {
+    if (error) {
+      console.error('[Voice Assistant] Failed to initialize:', error);
+    }
+  }, [error]);
+
   let content: ReactNode;
 
   if (isLoading) {
@@ -66,7 +72,7 @@ export default function AssistantClient({
   } else if (error || !token || !scopeKey) {
     content = (
       <VoiceErrorState
-        description={error?.message || t('connection_error_fallback')}
+        description={t('connection_error_fallback')}
         onRetry={() => refreshToken()}
         retryLabel={t('try_again')}
         title={t('unable_to_connect')}
@@ -75,7 +81,7 @@ export default function AssistantClient({
   } else {
     content = (
       <LiveAPIProvider
-        key={`${scopeKey}:${token}`}
+        key={scopeKey}
         apiKey={token}
         wsId={wsId}
         scopeKey={scopeKey}

@@ -1,5 +1,6 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import type { ReactNode, RefObject } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -27,16 +28,21 @@ export function MiraVoiceModeSwitcher({
 
   const exitVoice = useCallback(() => {
     setVoiceActive(false);
-    window.requestAnimationFrame(() => {
+    const focusInput = () => {
       inputRef.current?.focus({ preventScroll: true });
-    });
+    };
+    window.requestAnimationFrame(focusInput);
+    window.setTimeout(focusInput, 180);
   }, [inputRef]);
+
+  const enterVoice = useCallback(() => setVoiceActive(true), []);
 
   useEffect(() => {
     if (!voiceActive) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      if (event.defaultPrevented) return;
       event.preventDefault();
       exitVoice();
     };
@@ -45,9 +51,15 @@ export function MiraVoiceModeSwitcher({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [exitVoice, voiceActive]);
 
-  if (voiceActive) {
-    return <AssistantVoiceClient onExit={exitVoice} wsId={wsId} />;
-  }
-
-  return children(() => setVoiceActive(true));
+  return (
+    <>
+      <div
+        aria-hidden={voiceActive || undefined}
+        className={cn('contents', voiceActive && 'hidden')}
+      >
+        {children(enterVoice)}
+      </div>
+      {voiceActive && <AssistantVoiceClient onExit={exitVoice} wsId={wsId} />}
+    </>
+  );
 }

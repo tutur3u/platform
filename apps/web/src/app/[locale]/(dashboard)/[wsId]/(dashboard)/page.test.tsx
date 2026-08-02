@@ -1,4 +1,9 @@
-import { isValidElement, type ReactElement, type ReactNode } from 'react';
+import {
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  Suspense,
+} from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The page opts into request-time rendering via `connection()` (required under
@@ -74,7 +79,7 @@ describe('WorkspaceHomePage dashboard access', () => {
 
     await expect(
       Page({
-        params: Promise.resolve({ wsId: 'workspace-1' }),
+        params: Promise.resolve({ locale: 'en', wsId: 'workspace-1' }),
       })
     ).rejects.toThrow('not-found');
 
@@ -92,7 +97,7 @@ describe('WorkspaceHomePage dashboard access', () => {
     const Page = (await import('./page')).default;
 
     const result = await Page({
-      params: Promise.resolve({ wsId: 'workspace-1' }),
+      params: Promise.resolve({ locale: 'en', wsId: 'workspace-1' }),
     });
 
     expect(mocks.notFound).not.toHaveBeenCalled();
@@ -102,6 +107,7 @@ describe('WorkspaceHomePage dashboard access', () => {
       .props.children;
     const miraDashboard = rootChildren.at(-1) as ReactElement<{
       children: ReactNode;
+      currentUser: { id: string };
       initialAssistantName: string;
       wsId: string;
     }>;
@@ -109,8 +115,20 @@ describe('WorkspaceHomePage dashboard access', () => {
     expect(isValidElement(rootChildren[0])).toBe(true);
     expect(isValidElement(rootChildren[1])).toBe(true);
     expect(miraDashboard.type).toBe(mocks.MiraDashboardClient);
+    expect(miraDashboard.props.currentUser.id).toBe('creator-1');
     expect(miraDashboard.props.initialAssistantName).toBe('Mira');
     expect(miraDashboard.props.wsId).toBe('workspace-1');
-    expect(isValidElement(miraDashboard.props.children)).toBe(true);
+    const insightsBoundary = miraDashboard.props.children as ReactElement<{
+      children: ReactElement<{ userId: string; wsId: string }>;
+    }>;
+    expect(insightsBoundary.type).toBe(Suspense);
+    expect(typeof insightsBoundary.props.children.type).toBe('function');
+    expect(
+      (insightsBoundary.props.children.type as { name: string }).name
+    ).toBe('DashboardInsightsSlot');
+    expect(insightsBoundary.props.children.props).toMatchObject({
+      userId: 'creator-1',
+      wsId: 'workspace-1',
+    });
   });
 });

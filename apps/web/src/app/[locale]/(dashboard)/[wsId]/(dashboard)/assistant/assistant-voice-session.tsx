@@ -1,10 +1,11 @@
 'use client';
 
+import { executeLiveTool } from '@tuturuuu/internal-api';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
 import { AURORA_COLORS, AuroraBlob, StatusPill } from './assistant-visuals';
-import { AudioRecorder } from './audio/audio-recorder';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
@@ -19,45 +20,6 @@ import type {
   VisualizationToolResponse,
 } from './types/visualizations';
 
-function useAudioRecorder() {
-  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
-  const [isRecorderReady, setIsRecorderReady] = useState(false);
-  const recorderRef = useRef<AudioRecorder | null>(null);
-  const lastSpeakingTimeRef = useRef<number>(Date.now());
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      recorderRef.current = new AudioRecorder();
-      setIsRecorderReady(true);
-      return () => {
-        recorderRef.current?.stop();
-        setIsRecorderReady(false);
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    const recorder = recorderRef.current;
-    if (!recorder) return;
-
-    const handleVolume = (volume: number) => {
-      const speaking = volume > 0.1;
-      setIsUserSpeaking(speaking);
-
-      if (speaking) {
-        lastSpeakingTimeRef.current = Date.now();
-      }
-    };
-
-    recorder.on('volume', handleVolume);
-    return () => {
-      recorder.off('volume', handleVolume);
-    };
-  }, []);
-
-  return { isUserSpeaking, isRecorderReady, recorder: recorderRef.current };
-}
-
 export function stopMediaStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => {
     track.stop();
@@ -65,15 +27,16 @@ export function stopMediaStream(stream: MediaStream | null) {
 }
 
 export function AssistantVoiceSession({ wsId }: { wsId: string }) {
+  const t = useTranslations('dashboard.voice_assistant');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [textChatOpen, setTextChatOpen] = useState(false);
-  const [currentTranscript, setCurrentTranscript] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [activeVideoStream, setActiveVideoStream] =
     useState<MediaStream | null>(null);
   const [videoType, setVideoType] = useState<'webcam' | 'screen' | null>(null);
+  const [inputVolume, setInputVolume] = useState(0);
+  const [videoStopRequest, setVideoStopRequest] = useState(0);
 
-  const transcriptRef = useRef('');
   const activeVideoStreamRef = useRef<MediaStream | null>(null);
 
   const {
@@ -87,7 +50,7 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
   } = useLiveAPIContext();
   const disconnectRef = useRef(disconnect);
   disconnectRef.current = disconnect;
-  const { isUserSpeaking } = useAudioRecorder();
+  const isUserSpeaking = inputVolume > 0.1;
 
   useEffect(() => {
     activeVideoStreamRef.current = activeVideoStream;
@@ -114,19 +77,11 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
   const executeToolCall = useCallback(
     async (functionName: string, args: Record<string, unknown>) => {
       try {
-        const response = await fetch('/api/v1/live/tools/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ wsId, functionName, args }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          return { error: error.error || 'Tool execution failed' };
-        }
-
-        const data = await response.json();
-        return data.result;
+        const { result } = await executeLiveTool(
+          { wsId, functionName, args },
+          { signal: AbortSignal.timeout(15_000) }
+        );
+        return result;
       } catch (error) {
         console.error('Tool execution error:', error);
         return { error: 'Failed to execute tool' };
@@ -138,14 +93,14 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
   // Handle tool calls from Gemini
   const handleToolCall = useCallback(
     async (toolCall: ToolCall) => {
-      console.log(
+      console.debug(
         '[Assistant] Tool call received:',
-        JSON.stringify(toolCall, null, 2)
+        toolCall.functionCalls.map((functionCall) => functionCall.name)
       );
 
       const functionResponses = await Promise.all(
         toolCall.functionCalls.map(async (fc) => {
-          console.log(`[Assistant] Executing tool: ${fc.name}`, fc.args);
+          console.debug(`[Assistant] Executing tool: ${fc.name}`);
 
           // Handle highlight_core_topic tool locally (no API call needed)
           if (fc.name === 'highlight_core_topic') {
@@ -197,10 +152,11 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
             fc.name,
             fc.args as Record<string, unknown>
           );
-          console.log(`[Assistant] Tool result:`, result);
-
           // Handle visualization actions from backend
-          const visResult = result as VisualizationToolResponse | undefined;
+          const visResult =
+            typeof result.action === 'string'
+              ? (result as unknown as VisualizationToolResponse)
+              : undefined;
           if (visResult?.action) {
             if (visResult.action === 'dismiss_visualization') {
               if (visResult.visualizationId === 'all') {
@@ -228,7 +184,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
       );
 
       // Send tool responses back to Gemini
-      console.log('[Assistant] Sending tool responses:', functionResponses);
       sendToolResponse({ functionResponses });
     },
     [
@@ -251,26 +206,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
       unsubscribe();
     };
   }, [onToolCall, handleToolCall]);
-
-  // Debug: Log all events from client
-  useEffect(() => {
-    if (!client) return;
-
-    const handleToolCallDebug = (toolCall: ToolCall) => {
-      console.log('[Assistant] TOOLCALL EVENT:', toolCall);
-    };
-    const handleContentDebug = (content: unknown) => {
-      console.log('[Assistant] CONTENT EVENT:', content);
-    };
-
-    client.on('toolcall', handleToolCallDebug);
-    client.on('content', handleContentDebug);
-
-    return () => {
-      client.off('toolcall', handleToolCallDebug);
-      client.off('content', handleContentDebug);
-    };
-  }, [client]);
 
   // Handle grounding metadata for Google Search visualization
   useEffect(() => {
@@ -337,7 +272,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
     const handleGenerationComplete = () => {
       console.log('[Assistant] Generation complete');
       // Clear transcript state cleanly when generation is complete
-      setCurrentTranscript('');
       setIsSpeaking(false);
     };
 
@@ -347,18 +281,12 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
     };
   }, [client]);
 
-  // Keep transcript ref in sync
-  useEffect(() => {
-    transcriptRef.current = currentTranscript;
-  }, [currentTranscript]);
-
   // Handle transcription from voice (native audio model) or text content (standard model)
   useEffect(() => {
     if (!client) return;
 
     const handleTranscription = (text: string) => {
       if (text) {
-        setCurrentTranscript((prev) => prev + text);
         setIsSpeaking(true);
       }
     };
@@ -371,7 +299,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
           .map((p) => ('text' in p ? p.text : ''))
           .join('');
         if (text) {
-          setCurrentTranscript((prev) => prev + text);
           setIsSpeaking(true);
         }
       }
@@ -383,7 +310,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
     };
 
     const handleTurnComplete = () => {
-      setCurrentTranscript('');
       setIsSpeaking(false);
     };
 
@@ -536,11 +462,9 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
                   backgroundSize: '200% 200%',
                 }}
               >
-                How can I help you today?
+                {t('greeting')}
               </motion.h1>
-              <p className="text-foreground/50 text-sm">
-                Just start speaking or type a message
-              </p>
+              <p className="text-foreground/50 text-sm">{t('start_prompt')}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -576,6 +500,8 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
               setActiveVideoStream(stream);
               setVideoType(type);
             }}
+            onInputVolumeChange={setInputVolume}
+            videoStopRequest={videoStopRequest}
           />
           <AnimatePresence>
             {textChatOpen && connected && (
@@ -596,9 +522,9 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
         stream={activeVideoStream}
         type={videoType}
         onClose={() => {
-          stopMediaStream(activeVideoStream);
           setActiveVideoStream(null);
           setVideoType(null);
+          setVideoStopRequest((request) => request + 1);
         }}
       />
 
@@ -607,5 +533,3 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
     </div>
   );
 }
-
-// Loading animation component

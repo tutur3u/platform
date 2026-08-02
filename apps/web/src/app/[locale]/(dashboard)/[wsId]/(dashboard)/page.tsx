@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import type { Locale } from '@/i18n/routing';
 import MiraDashboardClient from './components/mira-dashboard-client';
 
 const DEFAULT_ASSISTANT_NAME = 'Mira';
@@ -93,13 +95,19 @@ async function resolveDashboardWorkspace(routeWsId: string) {
   return { currentUser, workspace };
 }
 
-export const metadata: Metadata = {
-  title: 'Dashboard',
-  description: 'Your personal AI-powered workspace dashboard.',
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'dashboard.metadata' });
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 interface Props {
   params: Promise<{
+    locale: Locale;
     wsId: string;
   }>;
 }

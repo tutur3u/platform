@@ -39,9 +39,13 @@ function Harness() {
 describe('MiraVoiceModeSwitcher', () => {
   it('returns from the in-panel voice canvas without losing the text draft', async () => {
     render(<Harness />);
+    const originalInput = screen.getByRole('textbox', { name: 'Message' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
     expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+    expect(screen.getByRole('textbox', { hidden: true, name: 'Message' })).toBe(
+      originalInput
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
 
@@ -60,5 +64,22 @@ describe('MiraVoiceModeSwitcher', () => {
 
     const input = await screen.findByRole('textbox', { name: 'Message' });
     await waitFor(() => expect(input).toHaveFocus());
+  });
+
+  it('lets nested controls consume Escape without exiting voice mode', async () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+
+    const event = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'Escape',
+    });
+    event.preventDefault();
+    window.dispatchEvent(event);
+
+    expect(screen.getByTestId('voice-canvas')).toBeVisible();
   });
 });

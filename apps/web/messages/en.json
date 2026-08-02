@@ -5537,6 +5537,10 @@
       }
     },
     "keep_it_up": "Keep it up!",
+    "metadata": {
+      "description": "Your personal AI-powered workspace dashboard.",
+      "title": "Dashboard"
+    },
     "mira_chat": {
       "approval_request": {
         "attachments_description": "Upload 1-5 images",
@@ -5841,10 +5845,18 @@
     "voice_assistant": {
       "back_to_chat": "Back to chat",
       "badge": "Beta",
+      "connecting": "Connecting...",
       "connection_error_fallback": "Something went wrong. Please try again.",
       "description": "Manage tasks, search the web, and get things done with natural voice conversations.",
+      "greeting": "How can I help you today?",
       "initializing": "Initializing voice assistant...",
+      "listening": "Listening...",
+      "ready": "Ready",
+      "ready_to_connect": "Ready to connect",
+      "reconnecting": "Reconnecting...",
+      "speaking": "Speaking...",
       "start_conversation": "Start Conversation",
+      "start_prompt": "Just start speaking or type a message",
       "subtitle": "Talk to Mira, your AI assistant",
       "title": "Voice Assistant",
       "try_again": "Try again",

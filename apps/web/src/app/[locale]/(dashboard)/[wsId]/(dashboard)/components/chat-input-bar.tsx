@@ -250,6 +250,7 @@ export default function ChatInputBar({
                   )}
                   onClick={handleAttachClick}
                   disabled={disabled || files.length >= MAX_FILE_COUNT}
+                  aria-label={t('attach_files')}
                 >
                   <Paperclip className="h-4.5 w-4.5" />
                 </Button>
@@ -293,6 +294,7 @@ export default function ChatInputBar({
                     : 'bg-muted text-muted-foreground'
                 )}
                 disabled={!canSubmit || disabled}
+                aria-label={t('send_message')}
               >
                 <Send className="h-4.5 w-4.5" />
               </Button>
