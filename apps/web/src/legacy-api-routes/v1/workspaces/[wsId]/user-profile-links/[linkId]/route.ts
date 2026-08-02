@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PROFILE_LINK_FIELDS } from '@/features/user-profile-links/server';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{ wsId: string; linkId: string }>;
@@ -26,11 +26,10 @@ const patchSchema = z
   });
 
 async function requirePermission(req: Request, wsId: string) {
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-  if (!permissions.containsPermission('manage_user_profile_links')) {
+  const access = await resolveWorkspaceRouteAccess(req, wsId);
+  if (!access.ok) return access.response;
+
+  if (!access.permissions.containsPermission('manage_user_profile_links')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to manage profile links' },
       { status: 403 }

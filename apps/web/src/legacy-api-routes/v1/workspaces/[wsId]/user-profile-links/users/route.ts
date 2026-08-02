@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeAvatarImageSrc } from '@tuturuuu/utils/avatar-url';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -46,10 +46,10 @@ function sanitizeUser(
 export async function GET(req: NextRequest, { params }: Params) {
   const { wsId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const access = await resolveWorkspaceRouteAccess(req, wsId);
+  if (!access.ok) return access.response;
+
+  const { permissions } = access;
   if (!permissions.containsPermission('manage_user_profile_links')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to manage profile links' },

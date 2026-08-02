@@ -7,10 +7,9 @@
 //!
 //! ## Legacy GET behavior
 //!
-//! 1. `getPermissions({ wsId, request })` resolves the caller's effective
-//!    workspace permissions (with `internal`/`personal`/handle workspace-id
-//!    normalization). A `null` result ->
-//!    `404 { "error": "Not found" }`.
+//! 1. `resolveWorkspaceRouteAccess(request, wsId)` resolves web or registered
+//!    satellite app-session actors and their effective workspace permissions
+//!    (with `internal`/`personal`/handle workspace-id normalization).
 //! 2. Checks `manage_user_profile_links`; missing ->
 //!    `403 { "message": "Insufficient permissions to manage profile links" }`.
 //! 3. Checks `view_users_private_info` to decide whether private fields
@@ -47,7 +46,7 @@ use crate::{
     no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest},
     workspace_permission_check::{
-        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission_allowing_app_sessions,
     },
 };
 
@@ -100,8 +99,8 @@ async fn profile_links_get_response(
     // Both Unauthorized and NotFound map to 404, matching the legacy
     // `if (!permissions) return 404` guard — getPermissions returns null for
     // both an unauthenticated caller and a missing/inaccessible workspace.
-    let authorization = match authorize_workspace_permission(
-        contact_data,
+    let authorization = match authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         MANAGE_PROFILE_LINKS_PERMISSION,
@@ -136,8 +135,8 @@ async fn profile_links_get_response(
     // BackendRequest is Copy, so we can re-use it for the second RPC call.
     // Any non-Ok result means the caller lacks the permission (private fields
     // are hidden). Errors in the second check do not abort the request.
-    let can_view_private_info = authorize_workspace_permission(
-        contact_data,
+    let can_view_private_info = authorize_workspace_permission_allowing_app_sessions(
+        config,
         request,
         raw_ws_id,
         VIEW_PRIVATE_INFO_PERMISSION,

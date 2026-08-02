@@ -28,6 +28,7 @@ const satelliteRouteRoots = [
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
   'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
+  'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links',
   'apps/web/src/legacy-api-routes/v1/users/me/profile',
   'apps/web/src/legacy-api-routes/v1/users/me/avatar',
   'apps/web/src/legacy-api-routes/v1/users/me/email',
@@ -166,7 +167,8 @@ describe('satellite app-session route inventory', () => {
         const source = readFileSync(file, 'utf8');
         const usesLegacyAuth =
           source.includes('resolveAuthenticatedSessionUser') ||
-          source.includes('.auth.getUser(');
+          source.includes('.auth.getUser(') ||
+          source.includes('getPermissions({ wsId, request');
 
         return usesLegacyAuth
           ? [
