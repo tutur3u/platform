@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
 const dynamicMetadataSchema = z.record(z.string(), z.unknown()).default({});
+const inboxDefaultsSchema = z
+  .object({ recipientUserId: z.string().uuid().optional() })
+  .catchall(z.unknown())
+  .default({});
 
 export const externalChatEventSchema = z.object({
   agentId: z.string().max(255).default(''),
@@ -44,7 +48,7 @@ export const externalChatSettingsSchema = z.object({
       }
     }, 'Bridge URL must be an HTTPS origin without credentials, query, or fragment'),
   agentMappings: z.record(z.string(), z.string().uuid()).default({}),
-  inboxDefaults: dynamicMetadataSchema,
+  inboxDefaults: inboxDefaultsSchema,
   authorityMode: z
     .enum([
       'legacy_primary',

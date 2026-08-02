@@ -42,6 +42,7 @@ vi.mock('@/lib/chat/notifications', () => ({
 }));
 
 const wsId = 'd14c91ba-75b1-4f5d-ad0f-f837840e1e8f';
+const recipientUserId = '5f42ae0f-f447-4619-bab6-1d98496ab5ef';
 const validEvent = {
   agentId: 'agent-1',
   content: 'hello',
@@ -136,6 +137,74 @@ describe('external chat ingest route', () => {
     const response = await POST(eventRequest('old-secret'));
 
     expect(response.status).toBe(201);
+  });
+
+  it('routes an unmapped visitor to the configured inbox recipient', async () => {
+    mocks.readExternalChatBinding.mockResolvedValueOnce({
+      binding: {
+        canonical_project_id: 'opaque-connector',
+        is_enabled: true,
+        settings: {
+          chat: {
+            agentMappings: {},
+            authorityMode: 'legacy_primary',
+            bridgeBaseUrl: 'https://bridge.example.com',
+            enabled: true,
+            inboxDefaults: { recipientUserId },
+          },
+        },
+      },
+      credentials: {
+        configuration_revision: 7,
+        ingest_secret_hash: 'active-hash',
+        pending_action: null,
+        pending_secret_hash: null,
+        verified_at: '2026-08-01T17:00:00.000Z',
+      },
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret'));
+
+    expect(response.status).toBe(201);
+    expect(mocks.importExternalChatEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ mappedUserId: recipientUserId })
+    );
+  });
+
+  it('does not attribute unmapped staff messages to the inbox recipient', async () => {
+    mocks.readExternalChatBinding.mockResolvedValueOnce({
+      binding: {
+        canonical_project_id: 'opaque-connector',
+        is_enabled: true,
+        settings: {
+          chat: {
+            agentMappings: {},
+            authorityMode: 'legacy_primary',
+            bridgeBaseUrl: 'https://bridge.example.com',
+            enabled: true,
+            inboxDefaults: { recipientUserId },
+          },
+        },
+      },
+      credentials: {
+        configuration_revision: 7,
+        ingest_secret_hash: 'active-hash',
+        pending_action: null,
+        pending_secret_hash: null,
+        verified_at: '2026-08-01T17:00:00.000Z',
+      },
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      eventRequest('old-secret', { ...validEvent, direction: 'staff' })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.importExternalChatEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ mappedUserId: null })
+    );
   });
 
   it('publishes new inbound conversations and messages to the live inbox', async () => {

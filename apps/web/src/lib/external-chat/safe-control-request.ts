@@ -8,11 +8,13 @@ const MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024;
 export class ExternalChatUrlPolicyError extends Error {}
 
 function mappedIpv4Address(address: string) {
-  const prefix = address.startsWith('::ffff:')
-    ? '::ffff:'
-    : address.startsWith('::')
-      ? '::'
-      : null;
+  const prefix = address.startsWith('64:ff9b::')
+    ? '64:ff9b::'
+    : address.startsWith('::ffff:')
+      ? '::ffff:'
+      : address.startsWith('::')
+        ? '::'
+        : null;
   if (!prefix) return null;
   const suffix = address.slice(prefix.length);
   if (isIP(suffix) === 4) return suffix;
@@ -44,6 +46,7 @@ export function isBlockedExternalChatAddress(address: string) {
   if (normalized === '::' || normalized === '::1') return true;
   if (normalized.startsWith('ff')) return true;
   if (normalized.startsWith('fc') || normalized.startsWith('fd')) return true;
+  if (normalized.startsWith('64:ff9b:1:')) return true;
   if (/^fe[89ab]/u.test(normalized)) return true;
   if (/^fe[c-f]/u.test(normalized)) return true;
   if (

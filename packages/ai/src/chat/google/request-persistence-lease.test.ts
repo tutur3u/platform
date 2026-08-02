@@ -131,9 +131,13 @@ describe('AI persistence request lease', () => {
     ).rejects.toThrow('Invalid AI persistence lease state');
   });
 
-  it('persists and completes only once when stream callbacks race', async () => {
+  it('deduplicates overlapping stream callbacks while persistence is pending', async () => {
     rpc.mockResolvedValue({ data: true, error: null });
-    const persist = vi.fn().mockResolvedValue(true);
+    let resolvePersistence: ((value: boolean) => void) | undefined;
+    const persistence = new Promise<boolean>((resolve) => {
+      resolvePersistence = resolve;
+    });
+    const persist = vi.fn(() => persistence);
     const onSettled = vi.fn();
     const finish = createAiPersistenceFinisher({
       client,
@@ -146,7 +150,13 @@ describe('AI persistence request lease', () => {
       persist,
     });
 
-    await Promise.all([finish('finished'), finish('aborted')]);
+    const first = finish('finished');
+    const second = finish('aborted');
+
+    expect(persist).toHaveBeenCalledOnce();
+    expect(rpc).not.toHaveBeenCalled();
+    resolvePersistence?.(true);
+    await Promise.all([first, second]);
 
     expect(persist).toHaveBeenCalledOnce();
     expect(rpc).toHaveBeenCalledOnce();

@@ -33,7 +33,7 @@ export type ExternalChatSettings = {
     | 'paused';
   bridgeBaseUrl: string;
   enabled: boolean;
-  inboxDefaults: Record<string, unknown>;
+  inboxDefaults: Record<string, unknown> & { recipientUserId?: string };
 };
 
 export type ExternalChatCredentialAction =

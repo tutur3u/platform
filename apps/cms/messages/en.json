@@ -3426,6 +3426,8 @@
     "enabled_description": "This does not switch the live widget or retire the current inbox.",
     "inbox": "Live inbox",
     "inbox_description": "Open the same mirrored conversations in Tuturuuu Chat.",
+    "inbox_recipient": "Fallback inbox recipient ID",
+    "inbox_recipient_placeholder": "Workspace member UUID",
     "ingest_secret": "Ingest credential",
     "load_error": "Connected chat settings could not be loaded.",
     "navigation": "Chat",

@@ -57,7 +57,11 @@ export async function POST(request: Request) {
   const result = await importExternalChatEvent({
     connectorKey: state.binding.canonical_project_id ?? wsId,
     event: parsed.data,
-    mappedUserId: getMappedUserId(state.binding.settings, parsed.data.agentId),
+    mappedUserId: getRoutingUserId(
+      state.binding.settings,
+      parsed.data.agentId,
+      parsed.data.direction
+    ),
     configurationRevision: state.credentials.configuration_revision,
     wsId,
   });
@@ -116,7 +120,11 @@ export async function POST(request: Request) {
   );
 }
 
-function getMappedUserId(settings: unknown, agentId: string) {
+function getRoutingUserId(
+  settings: unknown,
+  agentId: string,
+  direction: 'staff' | 'system' | 'visitor'
+) {
   if (!settings || typeof settings !== 'object') return null;
   const chat = (settings as Record<string, unknown>).chat;
   if (!chat || typeof chat !== 'object') return null;
@@ -125,8 +133,26 @@ function getMappedUserId(settings: unknown, agentId: string) {
     return null;
   }
   const mapped = (mappings as Record<string, unknown>)[agentId];
-  return typeof mapped === 'string' &&
+  if (
+    typeof mapped === 'string' &&
     z.string().uuid().safeParse(mapped).success
-    ? mapped
+  ) {
+    return mapped;
+  }
+  if (direction !== 'visitor') return null;
+
+  const inboxDefaults = (chat as Record<string, unknown>).inboxDefaults;
+  if (
+    !inboxDefaults ||
+    typeof inboxDefaults !== 'object' ||
+    Array.isArray(inboxDefaults)
+  ) {
+    return null;
+  }
+  const recipientUserId = (inboxDefaults as Record<string, unknown>)
+    .recipientUserId;
+  return typeof recipientUserId === 'string' &&
+    z.string().uuid().safeParse(recipientUserId).success
+    ? recipientUserId
     : null;
 }

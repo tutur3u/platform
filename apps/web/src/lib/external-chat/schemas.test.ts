@@ -29,4 +29,31 @@ describe('external chat settings', () => {
     };
     expect(isExternalChatLiveAuthority(settings)).toBe(false);
   });
+
+  it('validates the fallback recipient while preserving dynamic inbox data', () => {
+    const parsed = externalChatSettingsSchema.safeParse({
+      agentMappings: {},
+      authorityMode: 'legacy_primary',
+      bridgeBaseUrl: 'https://bridge.example.com',
+      enabled: true,
+      inboxDefaults: {
+        queue: 'migration-canary',
+        recipientUserId: '5f42ae0f-f447-4619-bab6-1d98496ab5ef',
+      },
+    });
+
+    expect(parsed.success && parsed.data.inboxDefaults).toMatchObject({
+      queue: 'migration-canary',
+      recipientUserId: '5f42ae0f-f447-4619-bab6-1d98496ab5ef',
+    });
+    expect(
+      externalChatSettingsSchema.safeParse({
+        agentMappings: {},
+        authorityMode: 'legacy_primary',
+        bridgeBaseUrl: 'https://bridge.example.com',
+        enabled: true,
+        inboxDefaults: { recipientUserId: 'not-a-uuid' },
+      }).success
+    ).toBe(false);
+  });
 });

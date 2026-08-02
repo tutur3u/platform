@@ -231,6 +231,9 @@ export async function updateExternalChatBridgeCredential({
     path: '/control/v1/credentials',
     secret,
   });
+  if (isClear && (response.status === 401 || response.status === 403)) {
+    return;
+  }
   if (!response.ok) {
     throw new Error(
       `External chat bridge credential update failed (${response.status})`

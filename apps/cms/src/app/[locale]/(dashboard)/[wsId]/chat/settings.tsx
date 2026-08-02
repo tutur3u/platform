@@ -39,6 +39,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const [agentMappingsOverride, setAgentMappings] = useState<string | null>(
     null
   );
+  const [recipientUserIdOverride, setRecipientUserId] = useState<string | null>(
+    null
+  );
   const [issuedSecret, setIssuedSecret] = useState<string | null>(null);
   const widgetSnippet = useMemo(
     () =>
@@ -50,6 +53,15 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const agentMappings =
     agentMappingsOverride ??
     JSON.stringify(existing.agentMappings ?? {}, null, 2);
+  const existingInboxDefaults = (existing.inboxDefaults ?? {}) as Record<
+    string,
+    unknown
+  >;
+  const recipientUserId =
+    recipientUserIdOverride ??
+    (typeof existingInboxDefaults.recipientUserId === 'string'
+      ? existingInboxDefaults.recipientUserId
+      : '');
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ['connected-chat', wsId] });
@@ -68,10 +80,10 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
           : 'legacy_primary',
         bridgeBaseUrl: baseUrl,
         enabled,
-        inboxDefaults: (existing.inboxDefaults ?? {}) as Record<
-          string,
-          unknown
-        >,
+        inboxDefaults: buildInboxDefaults(
+          existingInboxDefaults,
+          recipientUserId
+        ),
       });
     },
     onError: (error) =>
@@ -84,6 +96,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       setEnabled(null);
       setBaseUrl(null);
       setAgentMappings(null);
+      setRecipientUserId(null);
       await refresh();
       toast.success(t('saved'));
     },
@@ -182,6 +195,13 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
                 onChange={(event) => setAgentMappings(event.target.value)}
                 rows={5}
                 value={agentMappings}
+              />
+              <Label htmlFor="inbox-recipient">{t('inbox_recipient')}</Label>
+              <Input
+                id="inbox-recipient"
+                onChange={(event) => setRecipientUserId(event.target.value)}
+                placeholder={t('inbox_recipient_placeholder')}
+                value={recipientUserId}
               />
             </div>
           </details>
@@ -349,6 +369,17 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
       </section>
     </div>
   );
+}
+
+function buildInboxDefaults(
+  existing: Record<string, unknown>,
+  recipientUserId: string
+) {
+  const next = { ...existing };
+  const normalized = recipientUserId.trim();
+  if (normalized) next.recipientUserId = normalized;
+  else delete next.recipientUserId;
+  return next;
 }
 
 function isAuthorityMode(

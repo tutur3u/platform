@@ -3426,6 +3426,8 @@
     "enabled_description": "Thao tác này không chuyển widget đang chạy hoặc loại bỏ hộp thư hiện tại.",
     "inbox": "Hộp thư trực tiếp",
     "inbox_description": "Mở cùng các hội thoại đã đồng bộ trong Tuturuuu Chat.",
+    "inbox_recipient": "ID người nhận hộp thư dự phòng",
+    "inbox_recipient_placeholder": "UUID thành viên workspace",
     "ingest_secret": "Thông tin tiếp nhận",
     "load_error": "Không thể tải cấu hình chat đã kết nối.",
     "navigation": "Chat",
