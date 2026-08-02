@@ -15,7 +15,12 @@ const nextConfig = createTuturuuuNextConfig({
   async rewrites() {
     return {
       afterFiles: [],
-      beforeFiles: [],
+      beforeFiles: [
+        {
+          destination: `${WEB_APP_URL}/api/v1/workspaces`,
+          source: '/api/v1/workspaces',
+        },
+      ],
       fallback: [
         {
           destination: `${WEB_APP_URL}/api/:path*`,
