@@ -1,6 +1,7 @@
-import type {
-  ExternalProjectAdapterKind,
-  ExternalProjectSyncSchema,
+import {
+  CMS_SITE_V1_COLLECTIONS,
+  type ExternalProjectAdapterKind,
+  type ExternalProjectSyncSchema,
 } from '@tuturuuu/types';
 
 type FixtureAsset = {
@@ -662,6 +663,20 @@ export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
   ExternalProjectAdapterFixture
 > = {
+  custom: {
+    adapter: 'custom',
+    collections: CMS_SITE_V1_COLLECTIONS.map(
+      ([slug, title, collectionType]) => ({
+        collectionType,
+        entries: [],
+        slug,
+        sourceId: `cms-site:${slug}`,
+        title,
+      })
+    ),
+    profileData: {},
+    sourceReference: 'CMS site contract v1',
+  },
   junly: {
     adapter: 'junly',
     sourceReference: '../junly/components/launcher/content-data.ts',

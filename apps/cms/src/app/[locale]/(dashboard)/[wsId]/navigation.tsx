@@ -4,6 +4,7 @@ import {
   Gamepad2,
   ImageIcon,
   LayoutDashboard,
+  MessageSquare,
   Package,
   PenSquare,
   ShieldUser,
@@ -16,6 +17,7 @@ import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { getCmsGamesEnabled } from '@/lib/cms-games';
+import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
@@ -28,9 +30,20 @@ export async function getNavigationLinks({
 }): Promise<(NavLink | null)[]> {
   const t = await getTranslations();
   const isInternalWorkspace = workspaceId === ROOT_WORKSPACE_ID;
-  const cmsGamesEnabled = isInternalWorkspace
-    ? false
-    : await getCmsGamesEnabled(workspaceId);
+  const [cmsGamesEnabled, access] = isInternalWorkspace
+    ? [false, null]
+    : await Promise.all([
+        getCmsGamesEnabled(workspaceId),
+        getCmsWorkspaceAccess(workspaceId),
+      ]);
+  const connectedChatCanManage = Boolean(
+    access?.canAccessWorkspace &&
+      access.workspacePermissions?.containsPermission(
+        'manage_external_projects'
+      ) &&
+      access.binding?.canonical_project?.allowed_features.includes('chat')
+  );
+  const connectedChatCanView = Boolean(access?.canAccessConnectedChat);
 
   if (isInternalWorkspace) {
     return [
@@ -98,6 +111,16 @@ export async function getNavigationLinks({
           href: `/${personalOrWsId}/games`,
           icon: <Gamepad2 className="h-4 w-4" />,
           aliases: [`/${personalOrWsId}/games`],
+        }
+      : null,
+    connectedChatCanManage || connectedChatCanView
+      ? {
+          title: t('connected-chat.navigation'),
+          href: connectedChatCanManage
+            ? `/${personalOrWsId}/chat`
+            : `/${personalOrWsId}/chat/inbox`,
+          icon: <MessageSquare className="h-4 w-4" />,
+          aliases: [`/${personalOrWsId}/chat`, `/${personalOrWsId}/chat/inbox`],
         }
       : null,
     {

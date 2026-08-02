@@ -1,12 +1,17 @@
 ---
 title: 'Tuturuuu CMS'
 description: 'Site editing, publishing, preview, team access, and internal site-template operations for Tuturuuu CMS.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-08-01'
 ---
 
 ## TL;DR
 
 Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
+
+New CMS-backed sites should use the [global CMS site v1 contract](/platform/features/cms-site-contract-v1). Add
+site-specific structure through template and collection metadata instead of a
+new adapter unless the integration has genuinely different authentication or
+runtime behavior.
 
 - `apps/cms` owns the CMS authoring UI, workspace picker, overview/content/preview/members routes, and the root `/{wsId}/projects` linking console (reached as `/internal/projects` for the root workspace).
 - `apps/web` remains the only backend/API owner for CMS and external-project traffic.

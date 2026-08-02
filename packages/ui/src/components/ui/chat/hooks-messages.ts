@@ -111,6 +111,7 @@ export function useSendChatMessage({
   return useMutation({
     mutationFn: (payload: {
       attachments?: ChatAttachmentDraft[];
+      clientRequestId?: string;
       content: string;
       kind?: 'assistant' | 'system' | 'user';
       replyToMessageId?: string | null;

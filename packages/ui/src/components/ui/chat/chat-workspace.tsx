@@ -10,7 +10,7 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { toast } from '../sonner';
@@ -45,6 +45,7 @@ import {
   CHAT_CONVERSATION_TYPE_FILTERS,
   type ChatConversationArchiveFilter,
   type ChatConversationScope,
+  canPersistChatReadState,
   filterChatConversations,
   getChatConversationTypesForScope,
   getChatSelectionStorageKey,
@@ -52,14 +53,18 @@ import {
   getConversationTitle,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
+  type PendingChatSendRequest,
   resolveChatConversationSelection,
+  resolvePendingChatSendRequest,
 } from './utils';
 
 interface ChatWorkspaceProps {
   className?: string;
   defaultConversationScope?: ChatConversationScope;
+  enforcedConversationScope?: ChatConversationScope;
   currentUserId: string;
   enableRootIntegrations?: boolean;
+  readOnly?: boolean;
   showSidebar?: boolean;
   variant?: 'standalone' | 'web';
   wsId: string;
@@ -68,8 +73,10 @@ interface ChatWorkspaceProps {
 export function ChatWorkspace({
   className,
   defaultConversationScope,
+  enforcedConversationScope,
   currentUserId,
   enableRootIntegrations,
+  readOnly = false,
   showSidebar = true,
   variant = 'web',
   wsId,
@@ -90,20 +97,23 @@ export function ChatWorkspace({
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
+  const pendingSendRequest = useRef<PendingChatSendRequest | null>(null);
+  const requestedScope = searchParams.get('scope');
+  const conversationScope =
+    enforcedConversationScope ??
+    (requestedScope || defaultConversationScope
+      ? normalizeChatConversationScope(
+          requestedScope ?? defaultConversationScope
+        )
+      : null);
   const conversationsQuery = useInfiniteChatConversations({
     archived: archiveFilter,
+    scope: conversationScope === 'external' ? 'external' : undefined,
     wsId,
   });
   const allConversations = flattenChatConversationPages(
     conversationsQuery.data
   );
-  const requestedScope = searchParams.get('scope');
-  const conversationScope =
-    requestedScope || defaultConversationScope
-      ? normalizeChatConversationScope(
-          requestedScope ?? defaultConversationScope
-        )
-      : null;
   const conversations = conversationScope
     ? filterChatConversations({
         archiveFilter,
@@ -159,18 +169,22 @@ export function ChatWorkspace({
   const activeNativeConversationId = isPostgresUuid(activeConversationId)
     ? activeConversationId
     : null;
-  const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
+  const conversationReadOnly = isReadOnlyChatConversation(selectedConversation);
+  const selectedReadOnly = readOnly || conversationReadOnly;
   const selectedAiConversation = selectedConversation?.type === 'ai';
   const selectedAgentReadOnly =
     (selectedConversation?.metadata.source === 'ai-agent' ||
       selectedConversation?.metadata.source === 'ai-agent-external-thread') &&
-    selectedReadOnly;
+    conversationReadOnly;
   const selectedVirtualReadOnly =
-    selectedConversation?.metadata.source === 'ai-agent' && selectedReadOnly;
+    selectedConversation?.metadata.source === 'ai-agent' &&
+    conversationReadOnly;
   const selectedMembership =
     selectedConversation?.members.some(
       (member) => member.userId === currentUserId
     ) ?? false;
+  const selectedExternalConversation =
+    selectedConversation?.metadata.externalChat === true;
   const messagesQuery = useInfiniteChatMessages({
     conversationId: selectedVirtualReadOnly ? null : activeConversationId,
     wsId,
@@ -281,8 +295,14 @@ export function ChatWorkspace({
   ]);
 
   useEffect(() => {
-    if (selectedReadOnly) return;
-    if (!selectedMembership) return;
+    if (
+      !canPersistChatReadState({
+        externalChat: selectedExternalConversation,
+        hasMembership: selectedMembership,
+        readOnly: conversationReadOnly,
+      })
+    )
+      return;
     if (!activeNativeConversationId || !latestPersistedMessageId) return;
     markConversationRead(latestPersistedMessageId);
   }, [
@@ -290,7 +310,8 @@ export function ChatWorkspace({
     latestPersistedMessageId,
     markConversationRead,
     selectedMembership,
-    selectedReadOnly,
+    selectedExternalConversation,
+    conversationReadOnly,
   ]);
 
   const selectedTitle = selectedConversation
@@ -307,11 +328,21 @@ export function ChatWorkspace({
     attachments: ChatAttachmentDraft[];
     content: string;
   }) {
+    pendingSendRequest.current = resolvePendingChatSendRequest(
+      pendingSendRequest.current,
+      payload,
+      () => crypto.randomUUID()
+    );
+    const requestId = pendingSendRequest.current.requestId;
     try {
       const result = await sendMessage.mutateAsync({
         attachments: payload.attachments,
+        clientRequestId: requestId,
         content: payload.content,
       });
+      if (pendingSendRequest.current?.requestId === requestId) {
+        pendingSendRequest.current = null;
+      }
 
       if (result.assistantError) {
         toast.error(t('assistant_response_failed'));
@@ -459,14 +490,16 @@ export function ChatWorkspace({
       {showSidebar ? (
         <ChatSidebar
           actions={
-            <Button
-              aria-label={t('new_conversation')}
-              onClick={() => setCreateOpen(true)}
-              size="icon"
-              type="button"
-            >
-              <Plus className="size-4" />
-            </Button>
+            conversationScope === 'external' ? null : (
+              <Button
+                aria-label={t('new_conversation')}
+                onClick={() => setCreateOpen(true)}
+                size="icon"
+                type="button"
+              >
+                <Plus className="size-4" />
+              </Button>
+            )
           }
           archiveFilter={archiveFilter}
           conversations={conversations}
@@ -556,10 +589,13 @@ export function ChatWorkspace({
                 <span className="text-muted-foreground">
                   {t('read_only_conversation')}
                 </span>
-                <Badge variant="secondary">{t('agent_channel')}</Badge>
+                {selectedAgentReadOnly ? (
+                  <Badge variant="secondary">{t('agent_channel')}</Badge>
+                ) : null}
               </div>
             ) : (
               <MessageComposer
+                allowAttachments={conversationScope !== 'external'}
                 disabled={!activeConversationId}
                 isSending={sendMessage.isPending}
                 isUploading={uploadAttachment.isPending}
@@ -569,7 +605,13 @@ export function ChatWorkspace({
             )}
           </>
         ) : (
-          <EmptyConversationState onCreate={() => setCreateOpen(true)} />
+          <EmptyConversationState
+            onCreate={
+              conversationScope === 'external'
+                ? undefined
+                : () => setCreateOpen(true)
+            }
+          />
         )}
       </div>
 

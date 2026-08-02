@@ -13,6 +13,7 @@ import { formatFileSize } from './utils';
 const MAX_COMPOSER_ATTACHMENTS = 20;
 
 interface MessageComposerProps {
+  allowAttachments?: boolean;
   disabled?: boolean;
   isSending?: boolean;
   isUploading?: boolean;
@@ -24,6 +25,7 @@ interface MessageComposerProps {
 }
 
 export function MessageComposer({
+  allowAttachments = true,
   disabled,
   isSending,
   isUploading,
@@ -61,7 +63,7 @@ export function MessageComposer({
   }
 
   async function handleFileCandidates(files: File[]) {
-    if (disabled || files.length === 0) return;
+    if (!allowAttachments || disabled || files.length === 0) return;
 
     const remainingSlots = Math.max(
       MAX_COMPOSER_ATTACHMENTS - attachments.length,
@@ -98,7 +100,7 @@ export function MessageComposer({
   }
 
   function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
-    if (disabled) return;
+    if (!allowAttachments || disabled) return;
 
     const clipboardData = event.clipboardData;
     const candidates: File[] = [];
@@ -157,27 +159,31 @@ export function MessageComposer({
       )}
 
       <div className="flex items-end gap-2">
-        <input
-          className="hidden"
-          multiple
-          onChange={(event) => handleFiles(event.target.files)}
-          ref={inputRef}
-          type="file"
-        />
-        <Button
-          aria-label={t('attach_files')}
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-          size="icon"
-          type="button"
-          variant="outline"
-        >
-          {uploadingCount > 0 ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Paperclip className="size-4" />
-          )}
-        </Button>
+        {allowAttachments ? (
+          <>
+            <input
+              className="hidden"
+              multiple
+              onChange={(event) => handleFiles(event.target.files)}
+              ref={inputRef}
+              type="file"
+            />
+            <Button
+              aria-label={t('attach_files')}
+              disabled={busy}
+              onClick={() => inputRef.current?.click()}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              {uploadingCount > 0 ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Paperclip className="size-4" />
+              )}
+            </Button>
+          </>
+        ) : null}
         <Textarea
           className={cn(
             'max-h-40 min-h-10 resize-none text-sm',

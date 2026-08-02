@@ -2,6 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { ChatRequestBodySchema } from './chat-request-schema';
 
 describe('ChatRequestBodySchema', () => {
+  it('accepts a UUID persistence request marker', () => {
+    const parsed = ChatRequestBodySchema.safeParse({
+      messages: [],
+      persistenceRequestId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(parsed.success).toBe(true);
+  });
+
+  it('rejects a malformed persistence request marker', () => {
+    const parsed = ChatRequestBodySchema.safeParse({
+      messages: [],
+      persistenceRequestId: 'operator-controlled-label',
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
   it('rejects prefixed client-only chat identifiers', () => {
     const parsed = ChatRequestBodySchema.safeParse({
       id: 'learn-workspace-1-0-00000000-0000-0000-0000-000000000000',

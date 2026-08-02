@@ -156,4 +156,27 @@ describe('chat notifications', () => {
       })
     );
   });
+
+  it('notifies every eligible member for a system or external sender', async () => {
+    const { notifyChatMessageRecipients } = await import('./notifications');
+
+    await expect(
+      notifyChatMessageRecipients({
+        actorUserId: null,
+        conversation,
+        message: { ...message, sender: null, senderId: null },
+        wsId: conversation.wsId,
+      })
+    ).resolves.toEqual({
+      createdCount: 3,
+      failedCount: 0,
+      recipientCount: 3,
+    });
+
+    expect(mocks.privateRpc).toHaveBeenCalledTimes(3);
+    expect(mocks.privateRpc).toHaveBeenCalledWith(
+      'create_chat_message_push_notification',
+      expect.objectContaining({ p_actor_user_id: null, p_user_id: 'user-1' })
+    );
+  });
 });

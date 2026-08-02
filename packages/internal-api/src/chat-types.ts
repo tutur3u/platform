@@ -227,6 +227,7 @@ export interface UpdateChatConversationPayload {
 
 export interface SendChatMessagePayload {
   attachments?: ChatAttachmentDraft[];
+  clientRequestId?: string;
   content: string;
   kind?: ChatMessageKind;
   replyToMessageId?: string | null;

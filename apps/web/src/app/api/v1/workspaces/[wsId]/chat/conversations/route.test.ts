@@ -98,11 +98,11 @@ function mockRouteContext(wsId = ROOT_WORKSPACE_ID) {
   });
 }
 
-async function callGet(wsId = ROOT_WORKSPACE_ID) {
+async function callGet(wsId = ROOT_WORKSPACE_ID, query = '') {
   const { GET } = await import('./route');
   return GET(
     new Request(
-      `http://localhost/api/v1/workspaces/${wsId}/chat/conversations`
+      `http://localhost/api/v1/workspaces/${wsId}/chat/conversations${query}`
     ) as never,
     {
       params: Promise.resolve({ wsId }),
@@ -215,5 +215,184 @@ describe('workspace chat conversations route', () => {
       includeAdminMetadata: false,
       wsId: 'workspace-1',
     });
+  });
+
+  it('sorts and bounds a combined prefix from every conversation source', async () => {
+    mocks.callPrivateChatRpc.mockResolvedValue([
+      {
+        ...virtualAgentConversation(false),
+        id: 'native-oldest',
+        updatedAt: '2026-06-01T00:00:00.000Z',
+      },
+    ]);
+    mocks.listRootAiAgentDiscoveryConversations.mockResolvedValue([
+      {
+        ...virtualAgentConversation(false),
+        id: 'agent-newest',
+        updatedAt: '2026-06-03T00:00:00.000Z',
+      },
+    ]);
+    mocks.listAiChatConversations.mockResolvedValue([
+      {
+        ...virtualAgentConversation(false),
+        id: 'ai-middle',
+        updatedAt: '2026-06-02T00:00:00.000Z',
+      },
+    ]);
+
+    const response = await callGet(ROOT_WORKSPACE_ID, '?limit=2&offset=0');
+    const payload = await response.json();
+
+    expect(
+      payload.conversations.map((item: { id: string }) => item.id)
+    ).toEqual(['agent-newest', 'ai-middle']);
+    expect(payload.nextOffset).toBe(2);
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_list_conversations_by_recency',
+      expect.objectContaining({ p_limit: 3 })
+    );
+  });
+
+  it('preserves the complete response for unparameterized clients', async () => {
+    mocks.callPrivateChatRpc.mockResolvedValue([
+      {
+        ...virtualAgentConversation(false),
+        id: 'native-1',
+      },
+      {
+        ...virtualAgentConversation(false),
+        id: 'native-2',
+      },
+    ]);
+
+    const response = await callGet();
+    const payload = await response.json();
+
+    expect(payload.conversations).toHaveLength(3);
+    expect(payload.nextOffset).toBeNull();
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_list_conversations',
+      expect.objectContaining({ p_limit: null, p_offset: 0 })
+    );
+  });
+
+  it('rejects resource-intensive offsets on the combined inbox', async () => {
+    const response = await callGet(ROOT_WORKSPACE_ID, '?limit=40&offset=1001');
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'chat_pagination_offset_too_large',
+    });
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+
+  it('keeps pagination available while the recency RPC reaches the schema cache', async () => {
+    mocks.listRootAiAgentDiscoveryConversations.mockResolvedValue([]);
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_list_conversations_by_recency') {
+        throw { code: 'PGRST202' };
+      }
+      if (name === 'chat_list_conversations') {
+        return [
+          {
+            ...virtualAgentConversation(false),
+            id: 'pinned-but-old',
+            updatedAt: '2026-06-01T00:00:00.000Z',
+          },
+          {
+            ...virtualAgentConversation(false),
+            id: 'newest',
+            updatedAt: '2026-06-03T00:00:00.000Z',
+          },
+        ];
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const response = await callGet(ROOT_WORKSPACE_ID, '?limit=2&offset=0');
+    const payload = await response.json();
+
+    expect(
+      payload.conversations.map((item: { id: string }) => item.id)
+    ).toEqual(['newest', 'pinned-but-old']);
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_list_conversations',
+      expect.objectContaining({ p_limit: null, p_offset: 0 })
+    );
+  });
+
+  it('returns only external conversations when the external scope is requested', async () => {
+    mockRouteContext('workspace-1');
+    mocks.callPrivateChatRpc.mockResolvedValue([
+      {
+        id: 'external-conversation',
+        metadata: { externalChat: true },
+        type: 'channel',
+      },
+    ]);
+
+    const response = await callGet(
+      'workspace-1',
+      '?scope=external&limit=40&offset=0'
+    );
+
+    await expect(response.json()).resolves.toEqual({
+      conversations: [
+        {
+          id: 'external-conversation',
+          metadata: { externalChat: true },
+          type: 'channel',
+        },
+      ],
+      nextOffset: null,
+    });
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'external_chat_list_conversations',
+      expect.objectContaining({ p_limit: 41, p_offset: 0 })
+    );
+    expect(mocks.listRootAiAgentDiscoveryConversations).not.toHaveBeenCalled();
+  });
+
+  it('rejects resource-intensive offsets on the external inbox', async () => {
+    mockRouteContext('workspace-1');
+
+    const response = await callGet(
+      'workspace-1',
+      '?scope=external&limit=40&offset=1001'
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'chat_pagination_offset_too_large',
+    });
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+
+  it('bounds and paginates the external inbox at the database boundary', async () => {
+    mockRouteContext('workspace-1');
+    mocks.callPrivateChatRpc.mockResolvedValue(
+      Array.from({ length: 3 }, (_, index) => ({
+        id: `external-${index + 1}`,
+        metadata: { externalChat: true },
+        type: 'channel',
+      }))
+    );
+
+    const response = await callGet(
+      'workspace-1',
+      '?scope=external&limit=2&offset=4'
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      conversations: [
+        expect.objectContaining({ id: 'external-1' }),
+        expect.objectContaining({ id: 'external-2' }),
+      ],
+      nextOffset: 6,
+    });
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'external_chat_list_conversations',
+      expect.objectContaining({ p_limit: 3, p_offset: 4 })
+    );
   });
 });

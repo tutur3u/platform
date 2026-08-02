@@ -1,5 +1,63 @@
 {
   "routes": {
+    "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-authenticated external chat ingest remains on the live Next.js backend while its private RPC and secret-verification contract are prepared for Rust parity."
+    },
+    "api:/api/v1/integrations/external-chat/pairing/verify:apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Single-use external bridge pairing-ticket validation remains on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/integrations/external-chat/widget.js:apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The generic migration-test widget bootstrap remains on the live Next.js backend pending the websocket session service and Rust delivery port."
+    },
+    "api:/api/v1/workspaces/:wsId/external-chat/config:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/config/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Workspace external chat readiness and non-secret settings remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/external-chat/credentials:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/credentials/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-scoped secret rotation and masked credential state remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js setup route for adapter-neutral CMS site manifests and templates; Rust parity remains pending."
+    },
+    "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "The Rust handler ports native listing and the bounded scope=external collection, but normal requests remain on Next.js until AI discovery, external AI-agent threads, and AI chats reach source parity."
+        },
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "Conversation creation remains on the live Next.js backend pending Rust parity."
+        }
+      }
+    },
+    "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts": {
+      "methods": {
+        "GET": {
+          "status": "migrated",
+          "targetOwner": "rust-backend",
+          "note": "The existing Rust GET handler remains behaviorally unchanged after the Next.js source route moved out of the legacy wrapper tree."
+        },
+        "POST": {
+          "status": "legacy-next",
+          "targetOwner": "rust-backend",
+          "note": "The Rust handler intentionally falls through for POST. The live Next.js mutation delivers externally bound staff replies to the configured bridge before native persistence."
+        }
+      }
+    },
     "api:/api/v1/workspaces/:wsId/user-profile-links:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/user-profile-links/route.ts": {
       "methods": {
         "POST": {

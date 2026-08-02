@@ -115,4 +115,37 @@ describe('chat sidebar conversation sections', () => {
       ],
     });
   });
+
+  it('groups connected-site conversations without exposing connector identity', () => {
+    const sections = getChatConversationSections({
+      conversations: [
+        conversation('channel', 'site-thread-1', { externalChat: true }),
+        conversation('channel', 'site-thread-2', { externalChat: true }),
+      ],
+      labels: {
+        ai: 'AI agents',
+        channel: 'Channels',
+        direct: 'Direct messages',
+        group: 'Groups',
+      },
+      scope: 'external',
+      sourceLabels: {
+        external: 'Connected sites',
+        zaloPersonal: 'Zalo Personal',
+      },
+    });
+
+    expect(sections).toMatchObject([
+      {
+        conversations: [],
+        sourceGroups: [
+          {
+            conversations: [{ id: 'site-thread-1' }, { id: 'site-thread-2' }],
+            id: 'external:connected-sites',
+            label: 'Connected sites',
+          },
+        ],
+      },
+    ]);
+  });
 });

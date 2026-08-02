@@ -23,6 +23,8 @@ export type {
   AnalyticsResponse,
   ApiErrorResponse,
   BatchShareResponse,
+  CmsSiteContractV1,
+  CmsSiteTemplateMetadataV1,
   CreateDocumentData,
   CreateFolderResponse,
   CreateSignedUploadUrlOptions,

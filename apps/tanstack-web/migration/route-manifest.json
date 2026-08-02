@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 493,
-        "migrated": 61,
+        "legacyNext": 500,
+        "migrated": 62,
         "percentComplete": 12.74,
-        "remaining": 493,
-        "terminal": 72,
-        "total": 565,
+        "remaining": 500,
+        "terminal": 73,
+        "total": 573,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 501,
-        "migrated": 66,
-        "percentComplete": 13.32,
-        "remaining": 501,
-        "terminal": 77,
-        "total": 578,
+        "legacyNext": 508,
+        "migrated": 67,
+        "percentComplete": 13.31,
+        "remaining": 508,
+        "terminal": 78,
+        "total": 586,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 562,
-      "migrated": 214,
-      "percentComplete": 28.77,
-      "remaining": 562,
-      "terminal": 227,
-      "total": 789,
+      "legacyNext": 569,
+      "migrated": 215,
+      "percentComplete": 28.61,
+      "remaining": 569,
+      "terminal": 228,
+      "total": 797,
       "unknownStatus": 0
     }
   },
@@ -1621,6 +1621,33 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/integrations/external-chat/events",
+      "sourceFile": "apps/web/src/app/api/v1/integrations/external-chat/events/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/integrations/external-chat/pairing/verify:apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/integrations/external-chat/pairing/verify",
+      "sourceFile": "apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/integrations/external-chat/widget.js:apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/v1/integrations/external-chat/widget.js",
+      "sourceFile": "apps/web/src/app/api/v1/integrations/external-chat/widget.js/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/link-shortener/:linkId/analytics:apps/web/src/legacy-api-routes/v1/link-shortener/[linkId]/analytics/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -2435,13 +2462,26 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/route.ts",
+      "id": "api:GET:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/chat/conversations",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/chat/conversations",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts"
     },
     {
       "id": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/route.ts",
@@ -2498,13 +2538,37 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "id": "api:GET:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
       "kind": "api",
-      "methods": ["GET", "POST"],
+      "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "status": "migrated",
+      "targetOwner": "rust-backend",
+      "method": "GET",
+      "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts"
+    },
+    {
+      "id": "api:HEAD:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "kind": "api",
+      "methods": ["HEAD"],
+      "routePath": "/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
       "status": "legacy-next",
-      "targetOwner": "rust-backend"
+      "targetOwner": "rust-backend",
+      "method": "HEAD",
+      "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts"
+    },
+    {
+      "id": "api:POST:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "method": "POST",
+      "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts"
     },
     {
       "id": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages/:messageId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
@@ -2948,6 +3012,24 @@
       "targetOwner": "rust-backend"
     },
     {
+      "id": "api:/api/v1/workspaces/:wsId/external-chat/config:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/config/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PATCH"],
+      "routePath": "/api/v1/workspaces/:wsId/external-chat/config",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/config/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-chat/credentials:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/credentials/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/workspaces/:wsId/external-chat/credentials",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/credentials/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
       "id": "api:/api/v1/workspaces/:wsId/external-projects:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/route.ts",
       "kind": "api",
       "methods": ["GET"],
@@ -3272,11 +3354,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/setup/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/setup",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/setup/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7530,20 +7612,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 565,
+    "apiRoutes": 573,
     "cronRoutes": 8,
     "layouts": 58,
     "pages": 149,
-    "routeHandlers": 578,
+    "routeHandlers": 586,
     "methodCounts": {
-      "GET": 287,
-      "HEAD": 2,
-      "POST": 286,
+      "GET": 289,
+      "HEAD": 3,
+      "POST": 289,
       "PUT": 53,
-      "PATCH": 60,
+      "PATCH": 61,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 789
+    "total": 797
   }
 }

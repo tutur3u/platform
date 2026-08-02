@@ -28,15 +28,22 @@ export function WorkspacePicker({
   id,
   includeInternalWorkspace = false,
   name = 'workspaceId',
+  onValueChange,
+  value,
 }: {
   defaultValue?: string | null;
   id: string;
   includeInternalWorkspace?: boolean;
   name?: string;
+  onValueChange?: (value: string) => void;
+  value?: string;
 }) {
   const t = useTranslations('ai-agents-settings');
   const [open, setOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(defaultValue ?? '');
+  const [internalSelectedId, setInternalSelectedId] = useState(
+    defaultValue ?? ''
+  );
+  const selectedId = value ?? internalSelectedId;
   const { data: workspaces, isLoading } = useQuery({
     queryFn: () => listWorkspaces(),
     queryKey: ['ai-agents', 'workspaces'],
@@ -92,7 +99,8 @@ export function WorkspacePicker({
                   <CommandItem
                     key={workspace.id}
                     onSelect={() => {
-                      setSelectedId(workspace.id);
+                      setInternalSelectedId(workspace.id);
+                      onValueChange?.(workspace.id);
                       setOpen(false);
                     }}
                     value={getAiAgentWorkspaceSearchValue(workspace)}

@@ -28,7 +28,11 @@ import { AiMessageParts } from './ai-message-parts';
 import { getAiMessagePartsFromMetadata } from './ai-message-render-utils';
 import { MessageAttachmentButton } from './message-attachment-button';
 import { MessageLinkPreviews, MessageText } from './message-links';
-import { formatChatTime, getChatInitials } from './utils';
+import {
+  formatChatTime,
+  getChatInitials,
+  getChatMessageSenderLabel,
+} from './utils';
 
 const REACTION_OPTIONS = [
   '\u{1F44D}',
@@ -56,9 +60,11 @@ export function MessageBubble({
 }) {
   const t = useTranslations('chat');
   const isOwnMessage = message.senderId === currentUserId;
-  const senderName =
-    message.sender?.displayName ??
-    (message.kind === 'assistant' ? t('assistant_name') : t('unknown_sender'));
+  const senderName = getChatMessageSenderLabel(message, {
+    assistant: t('assistant_name'),
+    external: t('external_sender'),
+    unknown: t('unknown_sender'),
+  });
 
   return (
     <ContextMenu>
@@ -252,6 +258,7 @@ function MessageContent({
 }) {
   const t = useTranslations('chat');
   const aiParts = getAiMessagePartsFromMetadata(message.metadata);
+  const externalAttachment = readExternalAttachment(message.metadata);
 
   return (
     <div
@@ -299,10 +306,48 @@ function MessageContent({
               ))}
             </div>
           )}
+          {externalAttachment ? (
+            <a
+              className="mt-2 block break-all text-dynamic-blue underline"
+              href={externalAttachment.url}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {externalAttachment.label}
+            </a>
+          ) : null}
         </>
       )}
     </div>
   );
+}
+
+function readExternalAttachment(metadata: Record<string, unknown>) {
+  const attachment = metadata.attachment;
+  if (
+    !attachment ||
+    typeof attachment !== 'object' ||
+    Array.isArray(attachment)
+  ) {
+    return null;
+  }
+  const values = attachment as Record<string, unknown>;
+  const rawUrl = values.url ?? values.link ?? values.href;
+  if (typeof rawUrl !== 'string') return null;
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+    const rawLabel = values.filename ?? values.name ?? values.label;
+    return {
+      label:
+        typeof rawLabel === 'string' && rawLabel.trim()
+          ? rawLabel.trim()
+          : url.hostname,
+      url: url.toString(),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function ReactionBar({

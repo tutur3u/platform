@@ -22,6 +22,7 @@ import type {
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import { setWorkspaceCmsSiteTemplate } from './binding-settings';
 import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,
@@ -224,7 +225,21 @@ export function normalizeExternalProjectSyncManifest(
         }
       : undefined,
     schema: normalizeSyncSchema(value.schema),
+    template: value.template
+      ? normalizeCmsSiteTemplate(value.template)
+      : undefined,
     version: 1,
+  };
+}
+
+function normalizeCmsSiteTemplate(
+  value: NonNullable<ExternalProjectSyncManifest['template']>
+) {
+  return {
+    ...value,
+    editor: asRecord(value.editor) as Record<string, Json>,
+    publicDelivery: asRecord(value.publicDelivery) as Record<string, Json>,
+    version: 1 as const,
   };
 }
 
@@ -341,6 +356,9 @@ export function buildExternalProjectSyncDiff(
   const manifest = normalizeExternalProjectSyncManifest(manifestInput);
   const operations: ExternalProjectSyncOperation[] = [];
   const snapshotSchema = normalizeSyncSchema(snapshot.schema);
+  const snapshotTemplate = snapshot.template
+    ? normalizeCmsSiteTemplate(snapshot.template)
+    : null;
 
   if (valuesDiffer(snapshotSchema, manifest.schema)) {
     const removedFieldKeys = getRemovedSchemaFieldKeys(
@@ -359,6 +377,18 @@ export function buildExternalProjectSyncDiff(
         removedFieldKeys.length > 0
           ? `Schema removes ${removedFieldKeys.length} field definition${removedFieldKeys.length === 1 ? '' : 's'}`
           : 'Schema differs from platform snapshot',
+    });
+  }
+
+  if (manifest.template && valuesDiffer(snapshotTemplate, manifest.template)) {
+    operations.push({
+      action: snapshotTemplate ? 'update' : 'create',
+      after: manifest.template as unknown as Record<string, unknown>,
+      before: (snapshotTemplate as unknown as Record<string, unknown>) ?? null,
+      destructive: false,
+      entity: 'template',
+      manifestKey: 'template',
+      reason: 'Template differs from platform snapshot',
     });
   }
 
@@ -786,6 +816,22 @@ export function buildExternalProjectSyncSnapshot({
     },
     generatedAt,
     schema: dbBackedSchema,
+    template: (() => {
+      const workspaceTemplate = asRecord(
+        asRecord(asRecord(binding.settings).cmsSite).template
+      );
+      const template =
+        Object.keys(workspaceTemplate).length > 0
+          ? workspaceTemplate
+          : asRecord(
+              asRecord(binding.canonical_project?.delivery_profile).template
+            );
+      return template.version === 1 && typeof template.kind === 'string'
+        ? normalizeCmsSiteTemplate(
+            template as NonNullable<ExternalProjectSyncManifest['template']>
+          )
+        : undefined;
+    })(),
     version: 1,
     workspaceId,
   };
@@ -1248,6 +1294,7 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     workspaceId,
   });
   const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+  let snapshotBinding = binding;
 
   if (diff.hasDestructiveOperations && !force) {
     throw new Error(
@@ -1402,12 +1449,22 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     }
   }
 
+  if (manifest.template) {
+    const settings = await setWorkspaceCmsSiteTemplate({
+      actorId,
+      admin,
+      template: manifest.template,
+      workspaceId,
+    });
+    snapshotBinding = { ...binding, settings };
+  }
+
   return {
     applied: true,
     diff,
     snapshot: await getWorkspaceExternalProjectSyncSnapshot(
       {
-        binding,
+        binding: snapshotBinding,
         workspaceId,
       },
       admin

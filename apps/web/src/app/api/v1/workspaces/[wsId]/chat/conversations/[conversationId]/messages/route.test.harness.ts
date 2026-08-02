@@ -1,18 +1,29 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
-const mocks = {
+export const mocks = {
   auth: {
     supabase: null as unknown,
     user: { id: 'user-1' },
   },
   callPrivateChatRpc: vi.fn(),
+  cancelExternalChatReply: vi.fn(),
   createAdminClient: vi.fn(),
   createAiChatPost: vi.fn(),
+  deleteWorkspaceStorageFolderByPath: vi.fn(),
+  deliverExternalChatReplyIfBound: vi.fn(),
+  finalizeExternalChatReply: vi.fn(),
+  getAiChatId: vi.fn(),
+  isAiChatConversationId: vi.fn(),
+  isUserPersonalChatWorkspace: vi.fn(),
+  isExternalChatConversation: vi.fn(),
+  listAiChatMessages: vi.fn(),
+  markExternalChatReplyDelivered: vi.fn(),
   aiRouteBodies: [] as unknown[],
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
+  reserveExternalChatReply: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
   serverWarn: vi.fn(),
@@ -35,9 +46,12 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 vi.mock('@/lib/chat/agent-discovery', () => ({
-  getAiChatId: () => null,
-  isAiChatConversationId: () => false,
-  listAiChatMessages: vi.fn(),
+  getAiChatId: (...args: unknown[]) => mocks.getAiChatId(...args),
+  isAiChatConversationId: (...args: unknown[]) =>
+    mocks.isAiChatConversationId(...args),
+  isUserPersonalChatWorkspace: (...args: unknown[]) =>
+    mocks.isUserPersonalChatWorkspace(...args),
+  listAiChatMessages: (...args: unknown[]) => mocks.listAiChatMessages(...args),
 }));
 
 vi.mock('@/lib/chat/ai-settings', () => ({
@@ -57,8 +71,11 @@ vi.mock('@/lib/chat/ai-settings', () => ({
 vi.mock('@/lib/chat/private-rpc', () => ({
   callPrivateChatRpc: (...args: Parameters<typeof mocks.callPrivateChatRpc>) =>
     mocks.callPrivateChatRpc(...args),
-  chatRpcErrorResponse: () =>
-    Response.json({ message: 'Failed to send chat message' }, { status: 500 }),
+  chatRpcErrorResponse: (error: { code?: string }, fallback: string) =>
+    Response.json(
+      { message: fallback },
+      { status: error.code === '22023' ? 400 : 500 }
+    ),
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
@@ -78,6 +95,26 @@ vi.mock('@/lib/chat/realtime', () => ({
   ) => mocks.publishChatRealtimeEvent(...args),
 }));
 
+vi.mock('@/lib/external-chat/delivery', () => ({
+  cancelExternalChatReply: (
+    ...args: Parameters<typeof mocks.cancelExternalChatReply>
+  ) => mocks.cancelExternalChatReply(...args),
+  deliverExternalChatReplyIfBound: (
+    ...args: Parameters<typeof mocks.deliverExternalChatReplyIfBound>
+  ) => mocks.deliverExternalChatReplyIfBound(...args),
+  finalizeExternalChatReply: (
+    ...args: Parameters<typeof mocks.finalizeExternalChatReply>
+  ) => mocks.finalizeExternalChatReply(...args),
+  isExternalChatConversation: (...args: unknown[]) =>
+    mocks.isExternalChatConversation(...args),
+  markExternalChatReplyDelivered: (
+    ...args: Parameters<typeof mocks.markExternalChatReplyDelivered>
+  ) => mocks.markExternalChatReplyDelivered(...args),
+  reserveExternalChatReply: (
+    ...args: Parameters<typeof mocks.reserveExternalChatReply>
+  ) => mocks.reserveExternalChatReply(...args),
+}));
+
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: {
     error: (...args: Parameters<typeof mocks.serverError>) =>
@@ -88,12 +125,14 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
+  deleteWorkspaceStorageFolderByPath: (...args: unknown[]) =>
+    mocks.deleteWorkspaceStorageFolderByPath(...args),
   downloadWorkspaceStorageObjectForProvider: vi.fn(),
   resolveWorkspaceStorageProvider: vi.fn(),
   uploadWorkspaceStorageFileDirect: vi.fn(),
 }));
 
-const userMessage = {
+export const userMessage = {
   attachments: [],
   content: 'hello',
   conversationId: 'conversation-1',
@@ -110,7 +149,7 @@ const userMessage = {
   updatedAt: null,
 };
 
-const assistantMessage = {
+export const assistantMessage = {
   ...userMessage,
   content: 'hi there',
   id: 'message-2',
@@ -118,7 +157,7 @@ const assistantMessage = {
   senderId: null,
 };
 
-const conversation = {
+export const conversation = {
   aiEnabled: true,
   archivedAt: null,
   createdAt: '2026-05-30T07:00:00.000Z',
@@ -136,37 +175,53 @@ const conversation = {
   wsId: 'workspace-1',
 };
 
-const assistantAiRow = {
+export const assistantAiRow: {
+  completion_tokens: number;
+  content: string;
+  id: string;
+  metadata: Record<string, unknown>;
+  model: string;
+  prompt_tokens: number;
+} = {
   completion_tokens: 5,
   content: 'hi there',
   id: 'ai-message-1',
-  metadata: {},
+  metadata: { requestId: 'message-1' },
   model: 'gemini-3-flash',
   prompt_tokens: 7,
 };
 
-function createRequest() {
+export function createRequest() {
   return new Request(
     'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/conversation-1/messages',
     {
-      body: JSON.stringify({ content: 'hello' }),
+      body: JSON.stringify({
+        clientRequestId: '11111111-1111-4111-8111-111111111111',
+        content: 'hello',
+      }),
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     }
   );
 }
 
-function createAdminClientMock() {
+export function createAdminClientMock(settingsError: unknown = null) {
   const settingsQuery = {
     eq: vi.fn(() => settingsQuery),
-    maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+    maybeSingle: vi.fn(async () => ({ data: null, error: settingsError })),
     select: vi.fn(() => settingsQuery),
   };
 
   return {
-    from: vi.fn(() => ({
-      upsert: vi.fn(async () => ({ error: null })),
-    })),
+    from: vi.fn(() => {
+      const deleteQuery = {
+        eq: vi.fn(async () => ({ error: null })),
+      };
+      return {
+        delete: vi.fn(() => deleteQuery),
+        upsert: vi.fn(async () => ({ error: null })),
+      };
+    }),
     schema: vi.fn(() => ({
       from: vi.fn(() => settingsQuery),
     })),
@@ -174,18 +229,14 @@ function createAdminClientMock() {
 }
 
 function createSupabaseMock() {
-  let queryIndex = 0;
-
   return {
     from: vi.fn(() => {
-      const currentQueryIndex = queryIndex++;
       const query = {
-        eq: vi.fn(() =>
-          currentQueryIndex === 0
-            ? Promise.resolve({ data: [], error: null })
-            : query
-        ),
-        limit: vi.fn(async () => ({ data: [assistantAiRow], error: null })),
+        eq: vi.fn(() => query),
+        limit: vi.fn(async () => ({
+          data: mocks.aiRouteBodies.length > 0 ? [assistantAiRow] : [],
+          error: null,
+        })),
         order: vi.fn(() => query),
         select: vi.fn(() => query),
       };
@@ -215,98 +266,31 @@ function mockRouteContext() {
   });
 }
 
-describe('native AI chat message route', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.aiRouteBodies.length = 0;
-    mocks.auth.supabase = createSupabaseMock();
-    mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
-    mocks.notifyChatMessageRecipients.mockResolvedValue({
-      createdCount: 0,
-      failedCount: 0,
-      recipientCount: 0,
-    });
-    mockNativeAiRoute();
-    mockRouteContext();
+export function resetMessageRouteMocks() {
+  vi.clearAllMocks();
+  mocks.isExternalChatConversation.mockResolvedValue(false);
+  mocks.getAiChatId.mockReturnValue(null);
+  mocks.isAiChatConversationId.mockReturnValue(false);
+  mocks.isUserPersonalChatWorkspace.mockResolvedValue(true);
+  mocks.listAiChatMessages.mockResolvedValue([]);
+  mocks.cancelExternalChatReply.mockResolvedValue(undefined);
+  mocks.reserveExternalChatReply.mockResolvedValue(null);
+  mocks.deliverExternalChatReplyIfBound.mockResolvedValue(null);
+  mocks.finalizeExternalChatReply.mockResolvedValue({
+    message: userMessage,
+    replayed: false,
   });
-
-  it('persists native assistant replies with chat_persist_ai_message', async () => {
-    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
-      if (name === 'chat_get_conversation') return conversation;
-      if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message') return assistantMessage;
-      throw new Error(`Unexpected RPC ${name}`);
-    });
-
-    const { POST } = await import('./route');
-    const response = await POST(createRequest() as never, {
-      params: Promise.resolve({
-        conversationId: 'conversation-1',
-        wsId: 'workspace-1',
-      }),
-    });
-
-    expect(response.status).toBe(201);
-    expect(mocks.resolveChatRouteContext).toHaveBeenCalledWith(
-      expect.objectContaining({
-        permission: 'create_chat',
-        wsId: 'workspace-1',
-      })
-    );
-    expect(mocks.aiRouteBodies).toContainEqual(
-      expect.objectContaining({
-        model: 'google/gemini-3.1-flash-lite',
-      })
-    );
-    await expect(response.json()).resolves.toMatchObject({
-      message: assistantMessage,
-      messages: [userMessage, assistantMessage],
-    });
-    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
-      'chat_persist_ai_message',
-      expect.objectContaining({
-        p_actor_user_id: 'user-1',
-        p_content: 'hi there',
-        p_conversation_id: 'conversation-1',
-        p_metadata: expect.objectContaining({
-          source: 'native-ai-chat',
-        }),
-        p_ws_id: 'workspace-1',
-      })
-    );
-    expect(mocks.notifyChatMessageRecipients).toHaveBeenCalledWith({
-      actorUserId: 'user-1',
-      conversation,
-      message: userMessage,
-      wsId: 'workspace-1',
-    });
+  mocks.markExternalChatReplyDelivered.mockResolvedValue(undefined);
+  mocks.aiRouteBodies.length = 0;
+  assistantAiRow.content = 'hi there';
+  assistantAiRow.metadata = { requestId: 'message-1' };
+  mocks.auth.supabase = createSupabaseMock();
+  mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
+  mocks.notifyChatMessageRecipients.mockResolvedValue({
+    createdCount: 0,
+    failedCount: 0,
+    recipientCount: 0,
   });
-
-  it('returns assistantError when assistant persistence fails after the user message saves', async () => {
-    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
-      if (name === 'chat_get_conversation') return conversation;
-      if (name === 'chat_list_messages') return [userMessage];
-      if (name === 'chat_persist_ai_message') {
-        throw new Error('chat_manage_permission_required');
-      }
-      throw new Error(`Unexpected RPC ${name}`);
-    });
-
-    const { POST } = await import('./route');
-    const response = await POST(createRequest() as never, {
-      params: Promise.resolve({
-        conversationId: 'conversation-1',
-        wsId: 'workspace-1',
-      }),
-    });
-
-    expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toEqual({
-      assistantError: 'Assistant response failed. Your message was saved.',
-      message: userMessage,
-      messages: [userMessage],
-    });
-  });
-});
+  mockNativeAiRoute();
+  mockRouteContext();
+}
