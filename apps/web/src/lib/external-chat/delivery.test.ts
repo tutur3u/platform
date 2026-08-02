@@ -53,7 +53,7 @@ describe('external chat credential delivery', () => {
   });
 
   it.each([401, 403])(
-    'completes staged revocation when the old credential returns %s',
+    'keeps staged revocation pending on an unproven auth rejection (%s)',
     async (status) => {
       mocks.safeExternalChatFetch.mockResolvedValue(
         new Response(null, { status })
@@ -64,9 +64,41 @@ describe('external chat credential delivery', () => {
           action: 'clear_control',
           wsId: 'workspace-1',
         })
-      ).resolves.toBeUndefined();
+      ).rejects.toThrow(`credential update failed (${status})`);
     }
   );
+
+  it('completes staged revocation with explicit already-cleared proof', async () => {
+    mocks.safeExternalChatFetch.mockResolvedValue(
+      Response.json(
+        { action: 'clear_control', error: 'credential_already_cleared' },
+        { status: 409 }
+      )
+    );
+
+    await expect(
+      updateExternalChatBridgeCredential({
+        action: 'clear_control',
+        wsId: 'workspace-1',
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it('rejects mismatched already-cleared proof', async () => {
+    mocks.safeExternalChatFetch.mockResolvedValue(
+      Response.json(
+        { action: 'clear_ingest', error: 'credential_already_cleared' },
+        { status: 409 }
+      )
+    );
+
+    await expect(
+      updateExternalChatBridgeCredential({
+        action: 'clear_control',
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('credential update failed (409)');
+  });
 
   it('does not accept authentication rejection for credential rotation', async () => {
     mocks.safeExternalChatFetch.mockResolvedValue(

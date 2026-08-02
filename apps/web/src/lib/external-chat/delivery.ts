@@ -231,7 +231,7 @@ export async function updateExternalChatBridgeCredential({
     path: '/control/v1/credentials',
     secret,
   });
-  if (isClear && (response.status === 401 || response.status === 403)) {
+  if (isClear && (await provesCredentialAlreadyCleared(response, action))) {
     return;
   }
   if (!response.ok) {
@@ -239,6 +239,20 @@ export async function updateExternalChatBridgeCredential({
       `External chat bridge credential update failed (${response.status})`
     );
   }
+}
+
+async function provesCredentialAlreadyCleared(
+  response: Response,
+  action: 'clear_control' | 'clear_ingest' | 'rotate_control' | 'set_ingest'
+) {
+  if (response.status !== 409) return false;
+  const payload = (await response.json().catch(() => null)) as Record<
+    string,
+    unknown
+  > | null;
+  return (
+    payload?.error === 'credential_already_cleared' && payload.action === action
+  );
 }
 
 export async function deliverExternalChatReplyIfBound({
