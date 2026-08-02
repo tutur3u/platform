@@ -148,6 +148,200 @@ create unique index ai_chat_messages_persistence_request_key
   where metadata->>'requestId' is not null
     and metadata->>'source' in ('Mira', 'Rewise');
 
+create table private.ai_chat_persistence_requests (
+  chat_id uuid not null references public.ai_chats(id) on delete cascade,
+  request_id uuid not null,
+  creator_id uuid not null references public.users(id) on delete cascade,
+  source text not null,
+  lease_token uuid not null,
+  lease_expires_at timestamptz not null,
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (chat_id, request_id),
+  constraint ai_chat_persistence_requests_source_check
+    check (source in ('Mira', 'Rewise'))
+);
+
+alter table private.ai_chat_persistence_requests enable row level security;
+revoke all on table private.ai_chat_persistence_requests
+  from public, anon, authenticated;
+grant all on table private.ai_chat_persistence_requests to service_role;
+
+create or replace function private.ai_chat_claim_persistence_request(
+  p_chat_id uuid,
+  p_creator_id uuid,
+  p_request_id uuid,
+  p_content text,
+  p_source text,
+  p_lease_token uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  v_request private.ai_chat_persistence_requests%rowtype;
+  v_user_message public.ai_chat_messages%rowtype;
+  v_retry_after integer;
+begin
+  if p_chat_id is null or p_creator_id is null or p_request_id is null
+    or p_lease_token is null or p_source not in ('Mira', 'Rewise') then
+    raise exception 'ai_chat_persistence_claim_invalid' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(
+    concat_ws(':', p_chat_id, p_request_id), 0
+  ));
+
+  if not exists (
+    select 1 from public.ai_chats c
+    where c.id = p_chat_id and c.creator_id = p_creator_id
+  ) then
+    raise exception 'ai_chat_persistence_chat_forbidden' using errcode = '42501';
+  end if;
+
+  select * into v_user_message
+  from public.ai_chat_messages m
+  where m.chat_id = p_chat_id
+    and m.creator_id = p_creator_id
+    and m.role = 'USER'
+    and m.metadata->>'requestId' = p_request_id::text
+    and m.metadata->>'source' = p_source
+  limit 1;
+
+  if v_user_message.id is null then
+    raise exception 'ai_chat_persistence_user_message_missing'
+      using errcode = '22023';
+  end if;
+  if v_user_message.content is distinct from p_content then
+    raise exception 'ai_chat_persistence_payload_mismatch'
+      using errcode = '22023';
+  end if;
+
+  if exists (
+    select 1 from public.ai_chat_messages m
+    where m.chat_id = p_chat_id
+      and m.role = 'ASSISTANT'
+      and m.metadata->>'requestId' = p_request_id::text
+      and m.metadata->>'source' = p_source
+  ) then
+    return jsonb_build_object('state', 'completed', 'retryAfterSeconds', 0);
+  end if;
+
+  select * into v_request
+  from private.ai_chat_persistence_requests r
+  where r.chat_id = p_chat_id and r.request_id = p_request_id
+  for update;
+
+  if v_request.chat_id is not null
+    and v_request.completed_at is null
+    and v_request.lease_expires_at > now()
+    and v_request.lease_token is distinct from p_lease_token then
+    v_retry_after := greatest(
+      1,
+      ceil(extract(epoch from (v_request.lease_expires_at - now())))::integer
+    );
+    return jsonb_build_object(
+      'state', 'active',
+      'retryAfterSeconds', v_retry_after
+    );
+  end if;
+
+  insert into private.ai_chat_persistence_requests (
+    chat_id, request_id, creator_id, source, lease_token, lease_expires_at
+  ) values (
+    p_chat_id, p_request_id, p_creator_id, p_source, p_lease_token,
+    now() + interval '150 seconds'
+  )
+  on conflict (chat_id, request_id) do update
+  set creator_id = excluded.creator_id,
+      source = excluded.source,
+      lease_token = excluded.lease_token,
+      lease_expires_at = excluded.lease_expires_at,
+      completed_at = null,
+      updated_at = now();
+
+  return jsonb_build_object('state', 'claimed', 'retryAfterSeconds', 0);
+end;
+$$;
+
+create or replace function private.ai_chat_complete_persistence_request(
+  p_chat_id uuid,
+  p_request_id uuid,
+  p_lease_token uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if not exists (
+    select 1
+    from private.ai_chat_persistence_requests r
+    join public.ai_chat_messages m
+      on m.chat_id = r.chat_id
+      and m.role = 'ASSISTANT'
+      and m.metadata->>'requestId' = r.request_id::text
+      and m.metadata->>'source' = r.source
+    where r.chat_id = p_chat_id
+      and r.request_id = p_request_id
+      and r.lease_token = p_lease_token
+  ) then
+    return false;
+  end if;
+
+  update private.ai_chat_persistence_requests
+  set completed_at = now(), lease_expires_at = now(), updated_at = now()
+  where chat_id = p_chat_id
+    and request_id = p_request_id
+    and lease_token = p_lease_token;
+  return found;
+end;
+$$;
+
+create or replace function private.ai_chat_release_persistence_request(
+  p_chat_id uuid,
+  p_request_id uuid,
+  p_lease_token uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  update private.ai_chat_persistence_requests
+  set lease_expires_at = now(), updated_at = now()
+  where chat_id = p_chat_id
+    and request_id = p_request_id
+    and lease_token = p_lease_token
+    and completed_at is null;
+  return found;
+end;
+$$;
+
+revoke all on function private.ai_chat_claim_persistence_request(
+  uuid, uuid, uuid, text, text, uuid
+) from public, anon, authenticated;
+grant execute on function private.ai_chat_claim_persistence_request(
+  uuid, uuid, uuid, text, text, uuid
+) to service_role;
+revoke all on function private.ai_chat_complete_persistence_request(
+  uuid, uuid, uuid
+) from public, anon, authenticated;
+grant execute on function private.ai_chat_complete_persistence_request(
+  uuid, uuid, uuid
+) to service_role;
+revoke all on function private.ai_chat_release_persistence_request(
+  uuid, uuid, uuid
+) from public, anon, authenticated;
+grant execute on function private.ai_chat_release_persistence_request(
+  uuid, uuid, uuid
+) to service_role;
+
 create or replace function private.external_chat_fence_binding_update()
 returns trigger
 language plpgsql

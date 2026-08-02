@@ -347,6 +347,16 @@ async fn conversations_get_response(
         ));
     }
 
+    if pagination.exceeds_native_offset_limit() {
+        return no_store_response(json_response(
+            400,
+            json!({
+                "code": "chat_pagination_offset_too_large",
+                "message": "Conversation offset is too large.",
+            }),
+        ));
+    }
+
     // Mirror the legacy in-memory pagination: fetch from RPC offset 0 with an
     // inflated limit (caller_offset + caller_limit + 1) so we can detect
     // whether a next page exists, then slice the result in memory.

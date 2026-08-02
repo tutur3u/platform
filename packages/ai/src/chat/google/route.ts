@@ -33,6 +33,11 @@ import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
 import { resolveChatReasoningSettings } from './reasoning-settings';
 import {
+  beginAiPersistenceRequest,
+  createAiPersistenceFinisher,
+  releaseAiPersistenceRequest,
+} from './request-persistence-lease';
+import {
   type AiRouteAuthResult,
   isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
@@ -43,6 +48,7 @@ import {
 } from './route-chat-resolution';
 import { performCreditPreflight } from './route-credits';
 import {
+  extractLatestUserMessageContent,
   persistLatestUserMessage,
   persistRequestScopedUserMessage,
   prepareProcessedMessages,
@@ -103,6 +109,7 @@ export function createPOST(
 
   // Higher-order function that returns the actual request handler
   return async function handler(req: NextRequest): Promise<Response> {
+    let releaseClaimedPersistenceLease: (() => Promise<void>) | null = null;
     try {
       const sbAdmin = await createAdminClient();
       let requestBody: unknown;
@@ -466,8 +473,6 @@ export function createPOST(
       }
       const { cappedMaxOutput } = creditPreflight;
 
-      // Mutable ref so the render_ui preprocessor can read current steps
-      // at Zod-validation time (before the execute handler runs).
       const stepsRef: { current: unknown[] } = { current: [] };
 
       const { miraSystemPrompt, miraTools } = await prepareMiraRuntime({
@@ -519,15 +524,12 @@ export function createPOST(
         promptMessages.messages
       );
 
-      // Provider-native Google Search tool for non-Mira mode.
       const googleSearchTool = createGoogleSearchToolSet();
 
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
       const prepareStep: PrepareStep = ({ steps }) => {
-        // Keep the mutable ref in sync so the render_ui preprocessor can
-        // read current steps during Zod validation.
         stepsRef.current = steps;
         return prepareMiraToolStep({
           steps,
@@ -540,24 +542,43 @@ export function createPOST(
         });
       };
 
-      let assistantResponsePersisted = false;
-      const persistChatAssistantResponse = async (
-        response: Parameters<typeof persistAssistantResponse>[0]['response']
-      ) => {
-        if (assistantResponsePersisted) return;
-        assistantResponsePersisted = true;
-        await persistAssistantResponse({
-          response,
-          sbAdmin,
+      const { lease: claimedLease, response: leaseResponse } =
+        await beginAiPersistenceRequest({
           chatId,
-          userId: user.id,
-          model: resolvedModelId,
-          effectiveSource,
-          wsId: billingWsId ?? normalizedWsId ?? undefined,
-          observabilityContext,
-          persistenceRequestId,
+          client: sbAdmin,
+          content: extractLatestUserMessageContent(processedMessages),
+          creatorId: user.id,
+          requestId: persistenceRequestId,
+          source: effectiveSource,
         });
-      };
+      if (leaseResponse) return leaseResponse;
+      if (claimedLease) {
+        releaseClaimedPersistenceLease = async () => {
+          await releaseAiPersistenceRequest(sbAdmin, claimedLease);
+        };
+      }
+
+      const persistChatAssistantResponse = createAiPersistenceFinisher<
+        Parameters<typeof persistAssistantResponse>[0]['response']
+      >({
+        client: sbAdmin,
+        lease: claimedLease,
+        onSettled: () => {
+          releaseClaimedPersistenceLease = null;
+        },
+        persist: (response) =>
+          persistAssistantResponse({
+            response,
+            sbAdmin,
+            chatId,
+            userId: user.id,
+            model: resolvedModelId,
+            effectiveSource,
+            wsId: billingWsId ?? normalizedWsId ?? undefined,
+            observabilityContext,
+            persistenceRequestId,
+          }),
+      });
 
       const result = streamText({
         abortSignal: req.signal,
@@ -652,6 +673,15 @@ export function createPOST(
         sendSources: true,
       });
     } catch (error) {
+      if (releaseClaimedPersistenceLease) {
+        try {
+          await releaseClaimedPersistenceLease();
+        } catch (releaseError) {
+          console.error('Failed to release AI persistence request lease.', {
+            error: releaseError,
+          });
+        }
+      }
       if (error instanceof Error) {
         console.log(error.message);
         return NextResponse.json(

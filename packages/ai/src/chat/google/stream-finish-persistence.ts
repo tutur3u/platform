@@ -575,7 +575,7 @@ export async function persistAssistantResponse({
   observabilityContext,
   persistenceRequestId,
   wsId,
-}: PersistAssistantResponseParams): Promise<void> {
+}: PersistAssistantResponseParams): Promise<boolean> {
   const steps = response.steps ?? [];
   const { allToolCalls, allToolResults } = collectToolData(steps);
 
@@ -585,7 +585,7 @@ export async function persistAssistantResponse({
     allToolResults.length === 0
   ) {
     console.warn('onFinish: no text and no tool calls — skipping DB save');
-    return;
+    return false;
   }
 
   const reasoningText = collectReasoningText(response);
@@ -702,7 +702,7 @@ export async function persistAssistantResponse({
         ...(searchCount > 0 ? { searchCount } : {}),
         error,
       });
-      return;
+      return true;
     }
 
     if (!deductionResult.success) {
@@ -714,7 +714,7 @@ export async function persistAssistantResponse({
         ...(searchCount > 0 ? { searchCount } : {}),
         deductionResult,
       });
-      return;
+      return true;
     }
 
     console.info('AI credits deducted for assistant response.', {
@@ -726,4 +726,6 @@ export async function persistAssistantResponse({
       deductionResult,
     });
   }
+
+  return true;
 }

@@ -184,6 +184,57 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_chat_persistence_requests: {
+        Row: {
+          chat_id: string;
+          completed_at: string | null;
+          created_at: string;
+          creator_id: string;
+          lease_expires_at: string;
+          lease_token: string;
+          request_id: string;
+          source: string;
+          updated_at: string;
+        };
+        Insert: {
+          chat_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          creator_id: string;
+          lease_expires_at: string;
+          lease_token: string;
+          request_id: string;
+          source: string;
+          updated_at?: string;
+        };
+        Update: {
+          chat_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          lease_expires_at?: string;
+          lease_token?: string;
+          request_id?: string;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_chat_persistence_requests_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_chat_persistence_requests_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       ai_credit_reservations: {
         Row: {
           amount: number;
@@ -14943,6 +14994,33 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      ai_chat_claim_persistence_request: {
+        Args: {
+          p_chat_id: string;
+          p_content: string;
+          p_creator_id: string;
+          p_lease_token: string;
+          p_request_id: string;
+          p_source: string;
+        };
+        Returns: Json;
+      };
+      ai_chat_complete_persistence_request: {
+        Args: {
+          p_chat_id: string;
+          p_lease_token: string;
+          p_request_id: string;
+        };
+        Returns: boolean;
+      };
+      ai_chat_release_persistence_request: {
+        Args: {
+          p_chat_id: string;
+          p_lease_token: string;
+          p_request_id: string;
+        };
+        Returns: boolean;
       };
       ai_studio_model_allowed: {
         Args: { p_api_key_id: string; p_model_id: string; p_ws_id: string };

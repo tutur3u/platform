@@ -1,4 +1,5 @@
 const DEFAULT_LIMIT: i64 = 40;
+pub(super) const MAX_COMBINED_CONVERSATION_OFFSET: i64 = 1000;
 const MAX_LIMIT: i64 = 100;
 const MIN_LIMIT: i64 = 1;
 
@@ -6,6 +7,12 @@ pub(super) struct Pagination {
     pub(super) is_paginated: bool,
     pub(super) limit: i64,
     pub(super) offset: i64,
+}
+
+impl Pagination {
+    pub(super) fn exceeds_native_offset_limit(&self) -> bool {
+        self.is_paginated && self.offset > MAX_COMBINED_CONVERSATION_OFFSET
+    }
 }
 
 fn parse_integer(raw: &str) -> Option<i64> {
@@ -134,6 +141,16 @@ mod tests {
             read_pagination(Some("https://x.test/p?offset=-5")).offset,
             0
         );
+        assert!(
+            !read_pagination(Some("https://x.test/p?offset=1000")).exceeds_native_offset_limit()
+        );
+        assert!(
+            read_pagination(Some("https://x.test/p?offset=1001")).exceeds_native_offset_limit()
+        );
+        assert!(
+            read_pagination(Some(&format!("https://x.test/p?offset={}", i64::MAX)))
+                .exceeds_native_offset_limit()
+        );
     }
 
     #[test]
@@ -141,5 +158,6 @@ mod tests {
         assert_eq!(parse_integer("40.7"), Some(40));
         assert_eq!(parse_integer(""), Some(0));
         assert_eq!(parse_integer("abc"), None);
+        assert_eq!(parse_integer(&i64::MAX.to_string()), Some(i64::MAX));
     }
 }

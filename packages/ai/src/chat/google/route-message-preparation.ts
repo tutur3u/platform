@@ -252,7 +252,7 @@ export async function prepareProcessedMessages(
   };
 }
 
-function extractLatestUserMessageContent(
+export function extractLatestUserMessageContent(
   processedMessages: ModelMessage[]
 ): string {
   const userMessages = processedMessages.filter(

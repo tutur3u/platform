@@ -37,7 +37,7 @@ describe('stream finish persistence', () => {
       from: vi.fn().mockReturnValue({ insert }),
     };
 
-    await persistAssistantResponse({
+    const persisted = await persistAssistantResponse({
       chatId: 'chat-1',
       effectiveSource: 'Mira',
       model: 'google/gemini-3-flash',
@@ -63,6 +63,8 @@ describe('stream finish persistence', () => {
       wsId: 'workspace-1',
     });
 
+    expect(persisted).toBe(true);
+
     const payload = insert.mock.calls[0]?.[0] as {
       metadata: {
         ai: { parts: Record<string, unknown>[] };
@@ -81,6 +83,22 @@ describe('stream finish persistence', () => {
         toolName: 'google_search',
       })
     );
+  });
+
+  it('reports empty streams as not persisted', async () => {
+    const sbAdmin = { from: vi.fn() };
+
+    await expect(
+      persistAssistantResponse({
+        chatId: 'chat-1',
+        effectiveSource: 'Rewise',
+        model: 'google/gemini-3-flash',
+        response: { finishReason: 'stop', steps: [], text: '' },
+        sbAdmin,
+        userId: 'user-1',
+      })
+    ).resolves.toBe(false);
+    expect(sbAdmin.from).not.toHaveBeenCalled();
   });
 
   it('persists aborted streams with completed steps for credit deduction', async () => {
