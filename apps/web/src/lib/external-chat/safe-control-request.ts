@@ -7,6 +7,21 @@ const MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024;
 
 export class ExternalChatUrlPolicyError extends Error {}
 
+type DispatcherLifecycle = {
+  close?: () => Promise<void> | void;
+  destroy?: () => Promise<void> | void;
+};
+
+export async function closeExternalChatDispatcher(
+  dispatcher: DispatcherLifecycle
+) {
+  if (typeof dispatcher.close === 'function') {
+    await dispatcher.close();
+    return;
+  }
+  if (typeof dispatcher.destroy === 'function') await dispatcher.destroy();
+}
+
 function mappedIpv4Address(address: string) {
   const prefix = address.startsWith('64:ff9b::')
     ? '64:ff9b::'
@@ -181,6 +196,6 @@ export async function safeExternalChatFetch(
       statusText: response.statusText,
     });
   } finally {
-    await dispatcher.destroy();
+    await closeExternalChatDispatcher(dispatcher);
   }
 }

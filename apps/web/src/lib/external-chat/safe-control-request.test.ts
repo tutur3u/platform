@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   assertSafeExternalChatUrl,
+  closeExternalChatDispatcher,
   ExternalChatUrlPolicyError,
   isBlockedExternalChatAddress,
 } from './safe-control-request';
@@ -52,5 +53,27 @@ describe('external chat control destination policy', () => {
     '64:ff9b::808:808',
   ])('allows globally routable address %s', (address) => {
     expect(isBlockedExternalChatAddress(address)).toBe(false);
+  });
+
+  it('closes dispatchers gracefully when supported', async () => {
+    const close = vi.fn();
+    const destroy = vi.fn();
+
+    await closeExternalChatDispatcher({ close, destroy });
+
+    expect(close).toHaveBeenCalledOnce();
+    expect(destroy).not.toHaveBeenCalled();
+  });
+
+  it('falls back to destroying dispatchers without graceful close', async () => {
+    const destroy = vi.fn();
+
+    await closeExternalChatDispatcher({ destroy });
+
+    expect(destroy).toHaveBeenCalledOnce();
+  });
+
+  it('supports runtimes without dispatcher lifecycle methods', async () => {
+    await expect(closeExternalChatDispatcher({})).resolves.toBeUndefined();
   });
 });
