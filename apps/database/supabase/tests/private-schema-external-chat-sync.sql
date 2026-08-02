@@ -1,5 +1,5 @@
 begin;
-select plan(92);
+select plan(100);
 
 select ok(
   'custom' = any(enum_range(null::public.external_project_adapter_kind)::text[])
@@ -15,6 +15,7 @@ select has_table('private', 'external_chat_sync_checkpoints', 'sync checkpoints 
 select has_function('private', 'external_chat_import_event', 'idempotent import RPC exists');
 select has_function('private', 'chat_persist_ai_message_batch', 'atomic native AI batch RPC exists');
 select has_function('private', 'chat_persist_ai_message_batch_idempotent', 'request-id atomic native AI batch RPC exists');
+select has_function('private', 'chat_send_user_message_idempotent', 'request-id atomic native user-message RPC exists');
 select has_function('private', 'chat_list_conversations_by_recency', 'recency-ordered native inbox RPC exists');
 select has_function('private', 'external_chat_mark_verified', 'verification fencing RPC exists');
 select has_function('private', 'external_chat_clear_credential', 'credential recovery RPC exists');
@@ -67,6 +68,11 @@ select has_index(
   'ai_chat_messages_persistence_request_key',
   'AI bridge persistence requests are database-idempotent'
 );
+select has_index(
+  'private', 'chat_messages',
+  'chat_messages_client_request_key',
+  'native user-message requests are database-idempotent'
+);
 
 select function_privs_are(
   'private', 'external_chat_import_event',
@@ -94,6 +100,11 @@ select function_privs_are(
   'authenticated', array[]::text[], 'authenticated clients cannot persist AI batches directly'
 );
 select function_privs_are(
+  'private', 'chat_send_user_message_idempotent',
+  array['uuid','uuid','uuid','uuid','text','uuid','jsonb'],
+  'authenticated', array[]::text[], 'authenticated clients cannot persist idempotent user messages directly'
+);
+select function_privs_are(
   'private', 'chat_list_conversations_by_recency',
   array['uuid','uuid','text','integer'],
   'authenticated', array[]::text[], 'authenticated clients cannot invoke recency listing directly'
@@ -107,6 +118,16 @@ select throws_ok(
   $$select private.external_chat_clear_credential('00000000-0000-0000-0000-000000000000', null)$$,
   'external_chat_invalid_credential_kind',
   'null credential kinds are rejected explicitly'
+);
+select throws_ok(
+  $$select private.chat_persist_ai_message_batch_idempotent('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', null, '[]'::jsonb)$$,
+  'chat_request_id_required',
+  'atomic AI persistence rejects a null request ID'
+);
+select throws_ok(
+  $$select private.chat_send_user_message_idempotent('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000000', null, 'message', null, '[]'::jsonb)$$,
+  'chat_request_id_required',
+  'atomic user-message persistence rejects a null request ID'
 );
 
 create temporary table external_chat_test_context (
@@ -146,6 +167,58 @@ insert into private.chat_conversation_members (
 select conversation_id, actor_id, 'owner'
 from external_chat_ai_context
 cross join external_chat_test_context;
+
+create temporary table external_chat_user_message_results (
+  attempt integer primary key,
+  result jsonb not null
+);
+insert into external_chat_user_message_results
+select 1, private.chat_send_user_message_idempotent(
+  c.ws_id,
+  a.conversation_id,
+  c.actor_id,
+  '22222222-2222-4222-8222-222222222222'::uuid,
+  'Atomic user message',
+  null,
+  '[]'::jsonb
+)
+from external_chat_test_context c
+cross join external_chat_ai_context a;
+insert into external_chat_user_message_results
+select 2, private.chat_send_user_message_idempotent(
+  c.ws_id,
+  a.conversation_id,
+  c.actor_id,
+  '22222222-2222-4222-8222-222222222222'::uuid,
+  'Duplicate user message',
+  null,
+  '[]'::jsonb
+)
+from external_chat_test_context c
+cross join external_chat_ai_context a;
+
+select is(
+  (select result->>'replayed' from external_chat_user_message_results where attempt = 1),
+  'false',
+  'the first native user-message request persists'
+);
+select is(
+  (select result->>'replayed' from external_chat_user_message_results where attempt = 2),
+  'true',
+  'a repeated native user-message request replays the saved message'
+);
+select is(
+  (
+    select count(*)::integer
+    from private.chat_messages m
+    cross join external_chat_ai_context a
+    where m.conversation_id = a.conversation_id
+      and m.metadata->>'clientRequestId' =
+        '22222222-2222-4222-8222-222222222222'
+  ),
+  1,
+  'a repeated native user-message request creates exactly one message'
+);
 
 create temporary table external_chat_ai_results (
   attempt integer primary key,

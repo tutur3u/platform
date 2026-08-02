@@ -15358,6 +15358,18 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_send_user_message_idempotent: {
+        Args: {
+          p_actor_user_id: string;
+          p_attachments?: Json;
+          p_content: string;
+          p_conversation_id: string;
+          p_reply_to_message_id?: string;
+          p_request_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_set_read_state: {
         Args: {
           p_actor_user_id: string;

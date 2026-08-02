@@ -394,7 +394,9 @@ describe('native AI chat message route', () => {
 
   it('persists native assistant replies with an atomic batch RPC', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
       if (name === 'chat_persist_ai_message_batch_idempotent') {
@@ -457,7 +459,9 @@ describe('native AI chat message route', () => {
       metadata: { requestId: 'message-1', source: 'native-ai-chat' },
     };
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') {
         return [userMessage, replayedAssistant];
@@ -481,13 +485,51 @@ describe('native AI chat message route', () => {
     );
   });
 
-  it('does not republish an assistant batch replayed by the atomic RPC', async () => {
+  it('reuses the native user message request ID and republishes its saved reply', async () => {
     const replayedAssistant = {
       ...assistantMessage,
       metadata: { requestId: 'message-1', source: 'native-ai-chat' },
     };
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: true };
+      }
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') {
+        return [userMessage, replayedAssistant];
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(createRequest() as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_send_user_message_idempotent',
+      expect.objectContaining({
+        p_request_id: '11111111-1111-4111-8111-111111111111',
+      })
+    );
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(2);
+  });
+
+  it('republishes an assistant batch replayed by the atomic RPC', async () => {
+    const replayedAssistant = {
+      ...assistantMessage,
+      metadata: { requestId: 'message-1', source: 'native-ai-chat' },
+    };
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
       if (name === 'chat_persist_ai_message_batch_idempotent') {
@@ -508,9 +550,14 @@ describe('native AI chat message route', () => {
     await expect(response.json()).resolves.toMatchObject({
       message: replayedAssistant,
     });
-    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(1);
-    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(2);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({ message: userMessage })
+    );
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ message: replayedAssistant })
     );
   });
 
@@ -521,7 +568,9 @@ describe('native AI chat message route', () => {
       requestId: 'message-1',
     };
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
       if (name === 'chat_persist_ai_message_batch_idempotent') {
@@ -558,7 +607,9 @@ describe('native AI chat message route', () => {
 
   it('returns assistantError when assistant persistence fails after the user message saves', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       if (name === 'chat_list_messages') return [userMessage];
       if (name === 'chat_persist_ai_message_batch_idempotent') {
@@ -588,7 +639,9 @@ describe('native AI chat message route', () => {
       createAdminClientMock({ message: 'database unavailable' })
     );
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') return conversation;
       throw new Error(`Unexpected RPC ${name}`);
     });
@@ -713,7 +766,7 @@ describe('native AI chat message route', () => {
     );
   });
 
-  it('does not repeat realtime or notification side effects for a finalized replay', async () => {
+  it('replays realtime without repeating notifications for a finalized reply', async () => {
     mocks.isExternalChatConversation.mockResolvedValue(true);
     mocks.reserveExternalChatReply.mockResolvedValue({
       configurationRevision: 3,
@@ -742,7 +795,9 @@ describe('native AI chat message route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.deliverExternalChatReplyIfBound).not.toHaveBeenCalled();
-    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ message: userMessage })
+    );
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
@@ -842,7 +897,9 @@ describe('native AI chat message route', () => {
 
   it('returns a persisted message when the post-save conversation lookup fails', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
-      if (name === 'chat_send_message') return userMessage;
+      if (name === 'chat_send_user_message_idempotent') {
+        return { message: userMessage, replayed: false };
+      }
       if (name === 'chat_get_conversation') {
         throw new Error('database unavailable');
       }

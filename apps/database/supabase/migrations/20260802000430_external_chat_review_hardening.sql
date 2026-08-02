@@ -79,6 +79,115 @@ grant execute on function private.chat_list_conversations_by_recency(
   uuid, uuid, text, integer
 ) to service_role;
 
+create unique index if not exists chat_messages_client_request_key
+  on private.chat_messages (
+    conversation_id,
+    sender_id,
+    (metadata->>'clientRequestId')
+  )
+  where deleted_at is null
+    and sender_id is not null
+    and metadata ? 'clientRequestId';
+
+create or replace function private.chat_send_user_message_idempotent(
+  p_ws_id uuid,
+  p_conversation_id uuid,
+  p_actor_user_id uuid,
+  p_request_id uuid,
+  p_content text,
+  p_reply_to_message_id uuid default null,
+  p_attachments jsonb default '[]'::jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  v_conversation_id uuid;
+  v_message_id uuid;
+  v_message jsonb;
+begin
+  if p_request_id is null then
+    raise exception 'chat_request_id_required' using errcode = '22023';
+  end if;
+
+  perform private.chat_assert_workspace_permission(
+    p_ws_id,
+    p_actor_user_id,
+    'create_chat'
+  );
+
+  select c.id into v_conversation_id
+  from private.chat_conversations c
+  where c.id = p_conversation_id
+    and c.archived_at is null
+    and private.chat_can_address_conversation_workspace(
+      p_ws_id,
+      c.ws_id,
+      c.type,
+      p_actor_user_id
+    )
+  for update;
+
+  if v_conversation_id is null then return null; end if;
+
+  select m.id into v_message_id
+  from private.chat_messages m
+  where m.conversation_id = p_conversation_id
+    and m.sender_id = p_actor_user_id
+    and m.deleted_at is null
+    and m.kind = 'user'
+    and m.metadata->>'clientRequestId' = p_request_id::text
+  limit 1;
+
+  if v_message_id is not null then
+    return jsonb_build_object(
+      'message', (
+        select private.chat_message_json(m)
+        from private.chat_messages m
+        where m.id = v_message_id
+      ),
+      'replayed', true
+    );
+  end if;
+
+  v_message := private.chat_send_message(
+    p_ws_id,
+    p_conversation_id,
+    p_actor_user_id,
+    p_content,
+    p_reply_to_message_id,
+    p_attachments,
+    'user'
+  );
+  if v_message is null then return null; end if;
+
+  v_message_id := (v_message->>'id')::uuid;
+  update private.chat_messages
+  set metadata = metadata || jsonb_build_object(
+    'clientRequestId', p_request_id::text
+  )
+  where id = v_message_id;
+
+  return jsonb_build_object(
+    'message', (
+      select private.chat_message_json(m)
+      from private.chat_messages m
+      where m.id = v_message_id
+    ),
+    'replayed', false
+  );
+end;
+$$;
+
+revoke all on function private.chat_send_user_message_idempotent(
+  uuid, uuid, uuid, uuid, text, uuid, jsonb
+) from public, anon, authenticated;
+grant execute on function private.chat_send_user_message_idempotent(
+  uuid, uuid, uuid, uuid, text, uuid, jsonb
+) to service_role;
+
 create or replace function private.chat_persist_ai_message_batch_idempotent(
   p_ws_id uuid,
   p_conversation_id uuid,
@@ -97,6 +206,10 @@ declare
   v_message_id uuid;
   v_messages jsonb := '[]'::jsonb;
 begin
+  if p_request_id is null then
+    raise exception 'chat_request_id_required' using errcode = '22023';
+  end if;
+
   perform private.chat_assert_workspace_permission(
     p_ws_id,
     p_actor_user_id,

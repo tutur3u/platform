@@ -79,14 +79,12 @@ export function streamNativeAiConversationResponse({
           userMessage,
         });
 
-        if (!persistence.replayed) {
-          await publishChatRealtimeMessages({
-            actorUserId: auth.user.id,
-            audience: getChatRealtimeAudience(conversation),
-            messages: persistence.messages,
-            wsId: context.normalizedWsId,
-          });
-        }
+        await publishChatRealtimeMessages({
+          actorUserId: auth.user.id,
+          audience: getChatRealtimeAudience(conversation),
+          messages: persistence.messages,
+          wsId: context.normalizedWsId,
+        });
         write({ messages: persistence.messages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {

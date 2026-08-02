@@ -37,6 +37,7 @@ import {
   publishChatRealtimeMessages,
 } from './ai-message-shared';
 import {
+  type NativeAiMessagePersistence,
   sendNativeAiConversationMessages,
   streamNativeAiConversationResponse,
 } from './native-ai-message';
@@ -322,21 +323,34 @@ export const POST = withSessionAuth<RouteParams>(
             senderId: auth.user.id,
             wsId: context.context.normalizedWsId,
           })
-        : {
-            message: await callPrivateChatRpc<ChatMessage>(
-              'chat_send_message',
-              {
-                p_actor_user_id: auth.user.id,
-                p_attachments: parsed.data.attachments ?? [],
-                p_content: parsed.data.content,
-                p_conversation_id: params.conversationId,
-                p_kind: parsed.data.kind,
-                p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
-                p_ws_id: context.context.normalizedWsId,
-              }
-            ),
-            replayed: false,
-          };
+        : parsed.data.kind === 'user' && parsed.data.clientRequestId
+          ? await callPrivateChatRpc<{
+              message: ChatMessage;
+              replayed: boolean;
+            }>('chat_send_user_message_idempotent', {
+              p_actor_user_id: auth.user.id,
+              p_attachments: parsed.data.attachments ?? [],
+              p_content: parsed.data.content,
+              p_conversation_id: params.conversationId,
+              p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
+              p_request_id: parsed.data.clientRequestId,
+              p_ws_id: context.context.normalizedWsId,
+            })
+          : {
+              message: await callPrivateChatRpc<ChatMessage>(
+                'chat_send_message',
+                {
+                  p_actor_user_id: auth.user.id,
+                  p_attachments: parsed.data.attachments ?? [],
+                  p_content: parsed.data.content,
+                  p_conversation_id: params.conversationId,
+                  p_kind: parsed.data.kind,
+                  p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
+                  p_ws_id: context.context.normalizedWsId,
+                }
+              ),
+              replayed: false,
+            };
       const { message, replayed } = persistence;
       if (!message) {
         return NextResponse.json(
@@ -375,86 +389,79 @@ export const POST = withSessionAuth<RouteParams>(
 
       const audience = getChatRealtimeAudience(conversation);
 
-      if (!replayed) {
-        await publishChatRealtimeEvent({
+      await publishChatRealtimeEvent({
+        actorUserId: auth.user.id,
+        audience,
+        conversationId: message.conversationId,
+        message,
+        type: 'message.created',
+        wsId: context.context.normalizedWsId,
+      });
+
+      if (!replayed && message.kind === 'user') {
+        await notifyChatMessageRecipients({
           actorUserId: auth.user.id,
-          audience,
-          conversationId: message.conversationId,
+          conversation,
           message,
-          type: 'message.created',
           wsId: context.context.normalizedWsId,
         });
+      }
 
-        if (message.kind === 'user') {
-          await notifyChatMessageRecipients({
-            actorUserId: auth.user.id,
+      if (conversation?.type === 'ai') {
+        if (wantsChatMessageStream(request)) {
+          return streamNativeAiConversationResponse({
+            auth,
+            context: context.context,
             conversation,
-            message,
-            wsId: context.context.normalizedWsId,
+            request,
+            userMessage: message,
           });
         }
 
-        if (conversation?.type === 'ai') {
-          if (wantsChatMessageStream(request)) {
-            return streamNativeAiConversationResponse({
-              auth,
-              context: context.context,
-              conversation,
-              request,
-              userMessage: message,
-            });
-          }
+        let assistantPersistence: NativeAiMessagePersistence;
 
-          let assistantPersistence: {
-            messages: ChatMessage[];
-            replayed: boolean;
-          };
-
-          try {
-            assistantPersistence = await sendNativeAiConversationMessages({
-              auth,
-              context: context.context,
-              conversation,
-              request,
-              userMessage: message,
-            });
-          } catch (error) {
-            console.error(
-              'Native Chat AI response failed after user message was saved',
-              {
-                conversationId: conversation.id,
-                error,
-                userMessageId: message.id,
-              }
-            );
-
-            return NextResponse.json(
-              {
-                assistantError: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
-                message,
-                messages: [message],
-              },
-              { status: 201 }
-            );
-          }
-
-          if (!assistantPersistence.replayed) {
-            await publishChatRealtimeMessages({
-              actorUserId: auth.user.id,
-              audience,
-              messages: assistantPersistence.messages,
-              wsId: context.context.normalizedWsId,
-            });
-          }
+        try {
+          assistantPersistence = await sendNativeAiConversationMessages({
+            auth,
+            context: context.context,
+            conversation,
+            request,
+            userMessage: message,
+          });
+        } catch (error) {
+          console.error(
+            'Native Chat AI response failed after user message was saved',
+            {
+              conversationId: conversation.id,
+              error,
+              userMessageId: message.id,
+            }
+          );
 
           return NextResponse.json(
             {
-              message: assistantPersistence.messages.at(-1) ?? message,
-              messages: [message, ...assistantPersistence.messages],
+              assistantError: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
+              message,
+              messages: [message],
             },
-            { status: 201 }
+            { status: replayed ? 200 : 201 }
           );
         }
+
+        await publishChatRealtimeMessages({
+          actorUserId: auth.user.id,
+          audience,
+          messages: assistantPersistence.messages,
+          wsId: context.context.normalizedWsId,
+        });
+
+        return NextResponse.json(
+          {
+            message: assistantPersistence.messages.at(-1) ?? message,
+            messages: [message, ...assistantPersistence.messages],
+          },
+          { status: replayed ? 200 : 201 }
+        );
       }
 
       return NextResponse.json(

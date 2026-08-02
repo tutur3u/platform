@@ -441,7 +441,7 @@ export async function listAiChatMessages({
     messagesQuery.lt('created_at', before);
   }
   if (requestId) {
-    messagesQuery.contains('metadata', { metadata: { requestId } });
+    messagesQuery.contains('metadata', { requestId });
   }
 
   const { data: messages, error } = await messagesQuery;
