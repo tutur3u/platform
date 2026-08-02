@@ -31,7 +31,7 @@ vi.mock('@/lib/external-projects/admin-store', () => ({
 }));
 
 vi.mock('@/lib/external-projects/constants', () => ({
-  EXTERNAL_PROJECT_ADAPTER_OPTIONS: ['junly', 'yoola'],
+  EXTERNAL_PROJECT_ADAPTER_OPTIONS: ['custom', 'junly', 'yoola'],
 }));
 
 import { PATCH } from './[canonicalId]/route';
@@ -90,6 +90,45 @@ describe('CMS admin site template routes', () => {
       expect.objectContaining({
         actorId: 'user-1',
         id: 'junly-main',
+      }),
+      { client: 'admin' }
+    );
+  });
+
+  it('always enables chat for custom site templates', async () => {
+    mocks.access.requireCmsRootExternalProjectsAdmin.mockResolvedValue({
+      admin: { client: 'admin' },
+      ok: true,
+      user: { id: 'user-1' },
+    });
+    mocks.store.createCanonicalExternalProject.mockResolvedValue({
+      id: 'connected-site',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/v1/admin/external-projects', {
+        body: JSON.stringify({
+          adapter: 'custom',
+          allowed_collections: [],
+          allowed_features: ['sync', 'sync'],
+          delivery_profile: {},
+          display_name: 'Connected site',
+          id: 'connected-site',
+          is_active: true,
+          metadata: {},
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.store.createCanonicalExternalProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adapter: 'custom',
+        allowed_features: ['sync', 'chat'],
       }),
       { client: 'admin' }
     );
