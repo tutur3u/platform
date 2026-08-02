@@ -81,7 +81,7 @@ export default function AssistantClient({
   } else {
     content = (
       <LiveAPIProvider
-        key={scopeKey}
+        key={`${scopeKey}:${token}`}
         apiKey={token}
         wsId={wsId}
         scopeKey={scopeKey}

@@ -3,7 +3,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import dynamic from 'next/dynamic';
 import type { ReactNode, RefObject } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const AssistantVoiceClient = dynamic(
   () => import('../assistant/assistant-client'),
@@ -25,17 +25,40 @@ export function MiraVoiceModeSwitcher({
   wsId: string;
 }) {
   const [voiceActive, setVoiceActive] = useState(false);
+  const voiceActiveRef = useRef(false);
+  const focusFrameRef = useRef<number | null>(null);
+  const focusTimeoutRef = useRef<number | null>(null);
+
+  const cancelPendingFocus = useCallback(() => {
+    if (focusFrameRef.current !== null) {
+      window.cancelAnimationFrame(focusFrameRef.current);
+      focusFrameRef.current = null;
+    }
+    if (focusTimeoutRef.current !== null) {
+      window.clearTimeout(focusTimeoutRef.current);
+      focusTimeoutRef.current = null;
+    }
+  }, []);
 
   const exitVoice = useCallback(() => {
+    cancelPendingFocus();
+    voiceActiveRef.current = false;
     setVoiceActive(false);
     const focusInput = () => {
+      if (voiceActiveRef.current) return;
       inputRef.current?.focus({ preventScroll: true });
     };
-    window.requestAnimationFrame(focusInput);
-    window.setTimeout(focusInput, 180);
-  }, [inputRef]);
+    focusFrameRef.current = window.requestAnimationFrame(focusInput);
+    focusTimeoutRef.current = window.setTimeout(focusInput, 180);
+  }, [cancelPendingFocus, inputRef]);
 
-  const enterVoice = useCallback(() => setVoiceActive(true), []);
+  const enterVoice = useCallback(() => {
+    cancelPendingFocus();
+    voiceActiveRef.current = true;
+    setVoiceActive(true);
+  }, [cancelPendingFocus]);
+
+  useEffect(() => cancelPendingFocus, [cancelPendingFocus]);
 
   useEffect(() => {
     if (!voiceActive) return;

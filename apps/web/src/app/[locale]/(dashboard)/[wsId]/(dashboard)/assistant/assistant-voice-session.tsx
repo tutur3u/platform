@@ -1,6 +1,6 @@
 'use client';
 
-import { executeLiveTool } from '@tuturuuu/internal-api';
+import { executeLiveTool, InternalApiError } from '@tuturuuu/internal-api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -84,7 +84,12 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
         return result;
       } catch (error) {
         console.error('Tool execution error:', error);
-        return { error: 'Failed to execute tool' };
+        return {
+          error:
+            error instanceof InternalApiError
+              ? error.message
+              : 'Failed to execute tool',
+        };
       }
     },
     [wsId]

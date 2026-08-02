@@ -82,4 +82,21 @@ describe('MiraVoiceModeSwitcher', () => {
 
     expect(screen.getByTestId('voice-canvas')).toBeVisible();
   });
+
+  it('cancels delayed composer focus when voice mode is re-entered', async () => {
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Back to chat' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+
+    await new Promise((resolve) => window.setTimeout(resolve, 220));
+
+    expect(screen.getByTestId('voice-canvas')).toBeVisible();
+    expect(
+      screen.getByRole('textbox', { hidden: true, name: 'Message' })
+    ).not.toHaveFocus();
+  });
 });
