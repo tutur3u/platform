@@ -39,14 +39,14 @@ export const externalChatSettingsSchema = z.object({
           url.protocol === 'https:' &&
           !url.username &&
           !url.password &&
-          url.pathname === '/' &&
+          ['/', '/wss'].includes(url.pathname) &&
           !url.search &&
           !url.hash
         );
       } catch {
         return false;
       }
-    }, 'Bridge URL must be an HTTPS origin without credentials, query, or fragment'),
+    }, 'Bridge URL must be an HTTPS origin or approved bridge path without credentials, query, or fragment'),
   agentMappings: z.record(z.string(), z.string().uuid()).default({}),
   inboxDefaults: inboxDefaultsSchema,
   authorityMode: z
