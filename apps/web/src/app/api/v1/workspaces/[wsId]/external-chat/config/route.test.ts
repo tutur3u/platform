@@ -97,6 +97,25 @@ describe('external chat config route', () => {
     expect(mocks.writeExternalChatSettings).not.toHaveBeenCalled();
   });
 
+  it('allows the established websocket bridge path without opening arbitrary paths', async () => {
+    const settings = {
+      ...validSettings,
+      bridgeBaseUrl: 'https://bridge.example.com/wss',
+    };
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(settings) as never, params);
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledWith(
+      settings.bridgeBaseUrl
+    );
+    expect(mocks.writeExternalChatSettings).toHaveBeenCalledWith(
+      'workspace-1',
+      settings,
+      'user-1'
+    );
+  });
+
   it('rejects a destination blocked by the network safety policy', async () => {
     mocks.assertSafeExternalChatUrl.mockRejectedValue(
       new mocks.ExternalChatUrlPolicyError('blocked')
