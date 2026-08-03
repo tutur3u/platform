@@ -20,12 +20,14 @@ export function MiraVoiceModeSwitcher({
   creditSource,
   creditWsId,
   children,
+  header,
   inputRef,
   wsId,
 }: {
   children: (onVoiceToggle: () => void) => ReactNode;
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
+  header: (modeControl: ReactNode) => ReactNode;
   inputRef: RefObject<HTMLTextAreaElement | null>;
   wsId: string;
 }) {
@@ -81,38 +83,40 @@ export function MiraVoiceModeSwitcher({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [exitVoice, voiceActive]);
 
+  const modeControl = (
+    <ToggleGroup
+      aria-label={t('mode_label')}
+      className="h-8 shrink-0 border bg-background/75 p-0.5 shadow-sm backdrop-blur-md"
+      onValueChange={(value) => {
+        if (value === 'chat') exitVoice();
+        if (value === 'live') enterVoice();
+      }}
+      type="single"
+      value={mode}
+      variant="outline"
+    >
+      <ToggleGroupItem
+        aria-label={t('chat_mode')}
+        className="h-7 gap-1.5 border-0 px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+        value="chat"
+      >
+        <MessageSquareText className="size-3.5" />
+        <span>{t('chat_mode')}</span>
+      </ToggleGroupItem>
+      <ToggleGroupItem
+        aria-label={t('live_mode')}
+        className="h-7 gap-1.5 border-0 px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+        value="live"
+      >
+        <AudioLines className="size-3.5" />
+        <span>{t('live_mode')}</span>
+      </ToggleGroupItem>
+    </ToggleGroup>
+  );
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center px-3 pt-3">
-        <ToggleGroup
-          aria-label={t('mode_label')}
-          className="border bg-background/75 p-1 shadow-sm backdrop-blur-md"
-          onValueChange={(value) => {
-            if (value === 'chat') exitVoice();
-            if (value === 'live') enterVoice();
-          }}
-          type="single"
-          value={mode}
-          variant="outline"
-        >
-          <ToggleGroupItem
-            aria-label={t('chat_mode')}
-            className="gap-2 border-0 px-3 data-[state=on]:bg-foreground data-[state=on]:text-background"
-            value="chat"
-          >
-            <MessageSquareText className="size-4" />
-            <span>{t('chat_mode')}</span>
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            aria-label={t('live_mode')}
-            className="gap-2 border-0 px-3 data-[state=on]:bg-foreground data-[state=on]:text-background"
-            value="live"
-          >
-            <AudioLines className="size-4" />
-            <span>{t('live_mode')}</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+      {header(modeControl)}
       <div
         aria-hidden={voiceActive || undefined}
         className={cn(

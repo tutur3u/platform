@@ -31,6 +31,7 @@ interface MiraChatHeaderProps {
   };
   insightsDock?: ReactNode;
   isFullscreen?: boolean;
+  modeControl?: ReactNode;
   onExportChat: () => void;
   onNewConversation: () => void;
   onToggleFullscreen?: () => void;
@@ -45,6 +46,7 @@ export function MiraChatHeader({
   hotkeyLabels,
   insightsDock,
   isFullscreen,
+  modeControl,
   onExportChat,
   onNewConversation,
   onToggleFullscreen,
@@ -58,8 +60,9 @@ export function MiraChatHeader({
   return (
     <div className="flex min-w-0 items-center justify-between gap-2 pb-2">
       {/* Left: workspace context badge */}
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 items-center gap-2">
         {workspaceContextBadge}
+        {modeControl}
       </div>
 
       {/* Right: actions */}

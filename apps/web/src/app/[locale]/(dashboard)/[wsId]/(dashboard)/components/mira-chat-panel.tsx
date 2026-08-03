@@ -360,23 +360,25 @@ export default function MiraChatPanel({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <MiraChatHeader
-        hasMessages={hasMessages}
-        hotkeyLabels={hotkeyLabels}
-        insightsDock={insightsDock}
-        isFullscreen={isFullscreen}
-        onExportChat={handleExportChat}
-        onNewConversation={handleNewConversation}
-        onToggleFullscreen={onToggleFullscreen}
-        onToggleViewOnly={() => setViewOnly((value) => !value)}
-        t={t}
-        viewOnly={viewOnly}
-        workspaceContextBadge={workspaceContextBadge}
-      />
-
       <MiraVoiceModeSwitcher
         creditSource={activeCreditSource}
         creditWsId={creditWsId}
+        header={(modeControl) => (
+          <MiraChatHeader
+            hasMessages={hasMessages}
+            hotkeyLabels={hotkeyLabels}
+            insightsDock={insightsDock}
+            isFullscreen={isFullscreen}
+            modeControl={modeControl}
+            onExportChat={handleExportChat}
+            onNewConversation={handleNewConversation}
+            onToggleFullscreen={onToggleFullscreen}
+            onToggleViewOnly={() => setViewOnly((value) => !value)}
+            t={t}
+            viewOnly={viewOnly}
+            workspaceContextBadge={workspaceContextBadge}
+          />
+        )}
         inputRef={inputRef}
         wsId={wsId}
       >

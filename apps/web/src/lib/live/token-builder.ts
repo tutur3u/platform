@@ -1,4 +1,5 @@
 import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
+import { GEMINI_LIVE_API_VERSION } from './api-version';
 
 type AuthTokenCreateParams = Parameters<GoogleGenAI['authTokens']['create']>[0];
 type AuthTokenConfig = NonNullable<AuthTokenCreateParams['config']>;
@@ -45,7 +46,7 @@ export function buildCreateAuthTokenConfig({
       thinkingLevel,
     }),
     lockAdditionalFields: [],
-    httpOptions: { apiVersion: 'v1alpha' },
+    httpOptions: { apiVersion: GEMINI_LIVE_API_VERSION },
   };
 }
 
@@ -109,7 +110,7 @@ export async function createConstrainedLiveToken({
 
   const client = new GoogleGenAI({
     apiKey,
-    httpOptions: { apiVersion: 'v1alpha' },
+    httpOptions: { apiVersion: GEMINI_LIVE_API_VERSION },
   });
 
   const token = await client.authTokens.create({

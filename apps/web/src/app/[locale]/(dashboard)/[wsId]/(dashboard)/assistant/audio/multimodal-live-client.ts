@@ -6,6 +6,7 @@ import {
   type UsageMetadata,
 } from '@google/genai';
 import { EventEmitter } from 'eventemitter3';
+import { GEMINI_LIVE_API_VERSION } from '@/lib/live/api-version';
 import type {
   LiveConfig,
   ServerContent,
@@ -122,10 +123,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
 
   constructor({ apiKey }: MultimodalLiveAPIClientConnection) {
     super();
-    // v1alpha is REQUIRED for ephemeral token support
+    // Token provisioning and the constrained websocket must use the same API.
     this.ai = new GoogleGenAI({
       apiKey,
-      httpOptions: { apiVersion: 'v1alpha' },
+      httpOptions: { apiVersion: GEMINI_LIVE_API_VERSION },
     });
     this.send = this.send.bind(this);
   }

@@ -24,6 +24,9 @@ function Harness() {
     <MiraVoiceModeSwitcher
       creditSource="personal"
       creditWsId="personal-workspace"
+      header={(modeControl) => (
+        <div data-testid="assistant-header">{modeControl}</div>
+      )}
       inputRef={inputRef}
       wsId="workspace-1"
     >
@@ -57,6 +60,10 @@ describe('MiraVoiceModeSwitcher', () => {
       'off'
     );
     expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Assistant mode')).toHaveClass('h-8');
+    expect(screen.getByTestId('assistant-header')).toContainElement(
+      screen.getByLabelText('Assistant mode')
+    );
   });
 
   it('returns from the in-panel voice canvas without losing the text draft', async () => {
