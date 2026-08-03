@@ -292,7 +292,7 @@ describe('tasks app task pages', () => {
     );
     mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
     const { resolveTaskBoardEntrypoint } = await import(
-      '@/app/[locale]/(dashboard)/[wsId]/task-board-entrypoint'
+      '@/lib/tasks/task-board-entrypoint'
     );
 
     const first = resolveTaskBoardEntrypoint('workspace-concurrent', {
@@ -311,6 +311,24 @@ describe('tasks app task pages', () => {
       'board-shared',
     ]);
     expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses an explicit proxy locale when creating a default board', async () => {
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
+    mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
+    const { resolveTaskBoardEntrypoint } = await import(
+      '@/lib/tasks/task-board-entrypoint'
+    );
+
+    await expect(
+      resolveTaskBoardEntrypoint(
+        'workspace-vietnamese',
+        { defaultHeaders: { authorization: 'Bearer satellite-session' } },
+        { locale: 'vi' }
+      )
+    ).resolves.toBe('board-created');
+
+    expect(mocks.getTranslations).toHaveBeenCalledWith({ locale: 'vi' });
   });
 
   it('uses the repairing task-board endpoint for new personal accounts', async () => {

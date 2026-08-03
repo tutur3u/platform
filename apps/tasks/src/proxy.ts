@@ -30,6 +30,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { resolveTaskBoardEntrypoint } from './lib/tasks/task-board-entrypoint';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -271,8 +272,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // Handle authenticated users accessing the root path or root with locale.
-  // Rewrite to the task entrypoint so its board resolution can issue the only
-  // visible redirect, directly to the user's canonical board URL.
+  // Resolve the board here so the first visible response points directly to
+  // the canonical board URL without rendering the task entrypoint first.
   const isRootPath = req.nextUrl.pathname === '/';
   const isLocaleRootPath =
     pathSegments.length === 1 &&
@@ -288,54 +289,68 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !isHashNavigation &&
     !isMultiAccountFlow
   ) {
-    // This branch returns before next-intl gets a chance to add its internal
-    // locale segment. Rewrites must therefore target the actual App Router
-    // pathname; otherwise `/personal/tasks` is interpreted as
-    // `[locale]/[wsId]` and renders the locale-level 404.
     const { locale } = getLocale(req);
+    const internalApiAuth = withForwardedInternalApiAuth(authRequestHeaders);
+    let target = 'personal';
 
-    if (hasSatelliteSession) {
-      try {
-        const internalApiAuth =
-          withForwardedInternalApiAuth(authRequestHeaders);
-        const config = await getUserConfig(
-          'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
-          internalApiAuth
-        );
+    try {
+      const config = await getUserConfig(
+        'TASKS_FORCE_DEFAULT_WORKSPACE_REDIRECT',
+        internalApiAuth
+      );
 
-        if (config?.value === 'true') {
-          const defaultWorkspace =
-            await getCurrentUserDefaultWorkspace(internalApiAuth);
+      if (config?.value === 'true') {
+        const defaultWorkspace =
+          await getCurrentUserDefaultWorkspace(internalApiAuth);
 
-          if (defaultWorkspace) {
-            const target = defaultWorkspace.personal
-              ? 'personal'
-              : defaultWorkspace.id === ROOT_WORKSPACE_ID
-                ? 'internal'
-                : defaultWorkspace.id;
-            const entrypointUrl = new URL(
-              `/${locale}/${target}/tasks`,
-              req.nextUrl
-            );
-            entrypointUrl.search = req.nextUrl.search;
-            const wsRewrite = NextResponse.rewrite(entrypointUrl);
-            propagateAuthCookies(authRes, wsRewrite);
-            return wsRewrite;
-          }
+        if (defaultWorkspace) {
+          target = defaultWorkspace.personal
+            ? 'personal'
+            : defaultWorkspace.id === ROOT_WORKSPACE_ID
+              ? 'internal'
+              : defaultWorkspace.id;
         }
-      } catch (error) {
-        console.warn(
-          'Could not resolve the preferred Tasks workspace; using personal:',
-          error
-        );
       }
+    } catch (error) {
+      console.warn(
+        'Could not resolve the preferred Tasks workspace; using personal:',
+        error
+      );
     }
 
-    // Reaching this point means the centralized auth proxy already approved
-    // the protected root request. Always resolve the personal task board even
-    // when the refreshed session is only present on the response or the
-    // preferred-workspace lookup is temporarily unavailable.
-    const entrypointUrl = new URL(`/${locale}/personal/tasks`, req.nextUrl);
+    try {
+      const boardId = await resolveTaskBoardEntrypoint(
+        target,
+        internalApiAuth,
+        { locale }
+      );
+
+      if (boardId) {
+        const localePrefix = isLocaleRootPath ? `/${locale}` : '';
+        const boardUrl = new URL(
+          `${localePrefix}/${target}/boards/${boardId}`,
+          req.nextUrl
+        );
+        boardUrl.search = req.nextUrl.search;
+
+        const boardRedirect = NextResponse.redirect(boardUrl, 307);
+        boardRedirect.headers.set(
+          'Cache-Control',
+          'private, no-store, max-age=0'
+        );
+        propagateAuthCookies(authRes, boardRedirect);
+        return boardRedirect;
+      }
+    } catch (error) {
+      console.warn(
+        'Could not resolve the Tasks board at the app root; using the task entrypoint:',
+        error
+      );
+    }
+
+    // This branch returns before next-intl adds its internal locale segment, so
+    // the retry rewrite must target the actual localized App Router pathname.
+    const entrypointUrl = new URL(`/${locale}/${target}/tasks`, req.nextUrl);
     entrypointUrl.search = req.nextUrl.search;
     const fallbackRewrite = NextResponse.rewrite(entrypointUrl);
     propagateAuthCookies(authRes, fallbackRewrite);

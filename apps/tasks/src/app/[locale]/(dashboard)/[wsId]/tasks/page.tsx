@@ -5,7 +5,7 @@ import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { resolveTaskBoardEntrypoint } from '../task-board-entrypoint';
+import { resolveTaskBoardEntrypoint } from '@/lib/tasks/task-board-entrypoint';
 
 interface Props {
   params: Promise<{

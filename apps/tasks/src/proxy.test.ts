@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
     hasWebAppSessionTokenFromRequest: vi.fn(),
     propagateAuthCookies: vi.fn(),
     refreshAppSessionForRequest: vi.fn(),
+    resolveTaskBoardEntrypoint: vi.fn(),
     withForwardedInternalApiAuth: vi.fn(),
   };
 });
@@ -79,6 +80,12 @@ vi.mock('@tuturuuu/internal-api', () => ({
   ) => mocks.withForwardedInternalApiAuth(...args),
 }));
 
+vi.mock('@/lib/tasks/task-board-entrypoint', () => ({
+  resolveTaskBoardEntrypoint: (
+    ...args: Parameters<typeof mocks.resolveTaskBoardEntrypoint>
+  ) => mocks.resolveTaskBoardEntrypoint(...args),
+}));
+
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
@@ -121,6 +128,7 @@ describe('Tasks proxy auth mode', () => {
     );
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.resolveTaskBoardEntrypoint.mockResolvedValue('board-default');
     mocks.withForwardedInternalApiAuth.mockReturnValue({
       defaultHeaders: { authorization: 'Bearer satellite-session' },
     });
@@ -209,7 +217,7 @@ describe('Tasks proxy auth mode', () => {
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
 
-  it('rewrites auth-approved root requests to the personal task entrypoint', async () => {
+  it('redirects auth-approved root requests to the personal default board', async () => {
     const authRequestHeaders = new Headers({
       cookie: 'sb-test-auth-token=shared',
     });
@@ -220,15 +228,28 @@ describe('Tasks proxy auth mode', () => {
 
     const response = await proxy(request);
 
-    expect(response.headers.get('location')).toBeNull();
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/en/personal/tasks'
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/personal/boards/board-default'
     );
-    expect(mocks.withForwardedInternalApiAuth).not.toHaveBeenCalled();
-    expect(mocks.getUserConfig).not.toHaveBeenCalled();
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(response.headers.get('cache-control')).toBe(
+      'private, no-store, max-age=0'
+    );
+    expect(mocks.resolveTaskBoardEntrypoint).toHaveBeenCalledWith(
+      'personal',
+      {
+        defaultHeaders: { authorization: 'Bearer satellite-session' },
+      },
+      { locale: 'en' }
+    );
+    expect(mocks.propagateAuthCookies).toHaveBeenCalledWith(
+      expect.any(NextResponse),
+      response
+    );
   });
 
-  it('falls back to the personal task entrypoint when preferred workspace lookup fails', async () => {
+  it('uses the personal board when preferred workspace lookup fails', async () => {
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     mocks.getUserConfig.mockRejectedValueOnce(
       new Error('Forwarded session unavailable')
@@ -237,13 +258,12 @@ describe('Tasks proxy auth mode', () => {
 
     const response = await proxy(request);
 
-    expect(response.headers.get('location')).toBeNull();
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/en/personal/tasks'
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/personal/boards/board-default'
     );
   });
 
-  it('rewrites root requests to the configured default workspace task entrypoint', async () => {
+  it('redirects root requests to the configured default workspace board', async () => {
     const authRequestHeaders = new Headers({
       cookie: 'sb-test-auth-token=shared',
     });
@@ -262,9 +282,94 @@ describe('Tasks proxy auth mode', () => {
 
     const response = await proxy(request);
 
-    expect(response.headers.get('location')).toBeNull();
-    expect(response.headers.get('x-middleware-rewrite')).toBe(
-      'https://tasks.tuturuuu.com/en/workspace-1/tasks?settingsDialog=open'
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/workspace-1/boards/board-default?settingsDialog=open'
+    );
+    expect(mocks.resolveTaskBoardEntrypoint).toHaveBeenCalledWith(
+      'workspace-1',
+      expect.any(Object),
+      { locale: 'en' }
     );
   });
+
+  it('normalizes the configured root workspace to the internal board URL', async () => {
+    mocks.getUserConfig.mockResolvedValueOnce({ value: 'true' });
+    mocks.getCurrentUserDefaultWorkspace.mockResolvedValueOnce({
+      id: '00000000-0000-0000-0000-000000000000',
+      personal: false,
+    });
+
+    const response = await proxy(
+      new NextRequest('https://tasks.tuturuuu.com/')
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/internal/boards/board-default'
+    );
+    expect(mocks.resolveTaskBoardEntrypoint).toHaveBeenCalledWith(
+      'internal',
+      expect.any(Object),
+      { locale: 'en' }
+    );
+  });
+
+  it('preserves an explicit locale and query parameters in the board redirect', async () => {
+    mocks.resolveTaskBoardEntrypoint.mockResolvedValueOnce('board-new');
+
+    const response = await proxy(
+      new NextRequest(
+        'https://tasks.tuturuuu.com/vi?settingsDialog=open&tab=tasks'
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tasks.tuturuuu.com/vi/personal/boards/board-new?settingsDialog=open&tab=tasks'
+    );
+    expect(mocks.resolveTaskBoardEntrypoint).toHaveBeenCalledWith(
+      'personal',
+      expect.any(Object),
+      { locale: 'vi' }
+    );
+  });
+
+  it('rewrites to the localized task entrypoint when board resolution fails', async () => {
+    mocks.resolveTaskBoardEntrypoint.mockResolvedValueOnce(null);
+
+    const response = await proxy(
+      new NextRequest('https://tasks.tuturuuu.com/vi?retry=1')
+    );
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://tasks.tuturuuu.com/vi/personal/tasks?retry=1'
+    );
+  });
+
+  it('rewrites to the task entrypoint when board resolution throws', async () => {
+    mocks.resolveTaskBoardEntrypoint.mockRejectedValueOnce(
+      new Error('Board API unavailable')
+    );
+
+    const response = await proxy(
+      new NextRequest('https://tasks.tuturuuu.com/?retry=1')
+    );
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'https://tasks.tuturuuu.com/en/personal/tasks?retry=1'
+    );
+  });
+
+  it.each(['no-redirect=1', 'hash-nav=1', 'multiAccount=1'])(
+    'keeps root redirect exclusions for %s',
+    async (query) => {
+      const response = await proxy(
+        new NextRequest(`https://tasks.tuturuuu.com/?${query}`)
+      );
+
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.resolveTaskBoardEntrypoint).not.toHaveBeenCalled();
+    }
+  );
 });

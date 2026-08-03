@@ -18,6 +18,14 @@ const DEFAULT_LIST_NAME_KEYS: Record<string, string> = {
 
 const inFlightEntrypointResolutions = new Map<string, Promise<string | null>>();
 
+interface ResolveTaskBoardEntrypointOptions {
+  locale?: string;
+}
+
+function getTaskTranslations(locale?: string) {
+  return locale ? getTranslations({ locale }) : getTranslations();
+}
+
 async function resolveExistingBoardId(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions
@@ -73,9 +81,10 @@ async function resolveBoardAfterCreateRace(
 async function renameDefaultLists(
   workspaceId: string,
   boardId: string,
-  internalApiOptions: InternalApiClientOptions
+  internalApiOptions: InternalApiClientOptions,
+  locale?: string
 ) {
-  const t = await getTranslations();
+  const t = await getTaskTranslations(locale);
   const { lists } = await listWorkspaceTaskLists(
     workspaceId,
     boardId,
@@ -101,7 +110,8 @@ async function renameDefaultLists(
 
 async function resolveTaskBoardEntrypointOnce(
   workspaceId: string,
-  internalApiOptions: InternalApiClientOptions
+  internalApiOptions: InternalApiClientOptions,
+  options: ResolveTaskBoardEntrypointOptions
 ) {
   const existingBoardId = await resolveExistingBoardId(
     workspaceId,
@@ -111,7 +121,7 @@ async function resolveTaskBoardEntrypointOnce(
   if (existingBoardId) return existingBoardId;
 
   try {
-    const t = await getTranslations();
+    const t = await getTaskTranslations(options.locale);
     const { board } = await createWorkspaceTaskBoard(
       workspaceId,
       {
@@ -124,7 +134,12 @@ async function resolveTaskBoardEntrypointOnce(
       return resolveBoardAfterCreateRace(workspaceId, internalApiOptions);
     }
 
-    await renameDefaultLists(workspaceId, board.id, internalApiOptions);
+    await renameDefaultLists(
+      workspaceId,
+      board.id,
+      internalApiOptions,
+      options.locale
+    );
 
     return board.id;
   } catch {
@@ -137,14 +152,16 @@ async function resolveTaskBoardEntrypointOnce(
 
 export async function resolveTaskBoardEntrypoint(
   workspaceId: string,
-  internalApiOptions: InternalApiClientOptions
+  internalApiOptions: InternalApiClientOptions,
+  options: ResolveTaskBoardEntrypointOptions = {}
 ) {
   const pending = inFlightEntrypointResolutions.get(workspaceId);
   if (pending) return pending;
 
   const resolution = resolveTaskBoardEntrypointOnce(
     workspaceId,
-    internalApiOptions
+    internalApiOptions,
+    options
   );
   inFlightEntrypointResolutions.set(workspaceId, resolution);
 
