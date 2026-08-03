@@ -80,10 +80,15 @@ pub(crate) async fn handle_workspaces_wsid_encryption_route(
 ) -> Option<crate::BackendResponse> {
     let raw_ws_id = encryption_ws_id(request.path)?;
 
-    Some(match request.method {
-        "GET" => encryption_get_response(config, request, raw_ws_id, outbound).await,
-        _ => return None,
-    })
+    if !handles_encryption_method(request.method) {
+        return None;
+    }
+
+    Some(encryption_get_response(config, request, raw_ws_id, outbound).await)
+}
+
+fn handles_encryption_method(method: &str) -> bool {
+    method == "GET"
 }
 
 async fn encryption_get_response(
@@ -413,5 +418,11 @@ mod tests {
         let path = "/api/v1/workspaces/my-workspace/encryption";
 
         assert_eq!(encryption_ws_id(path), Some("my-workspace"));
+    }
+
+    #[test]
+    fn post_falls_through_to_the_live_nextjs_handler() {
+        assert!(!handles_encryption_method("POST"));
+        assert!(handles_encryption_method("GET"));
     }
 }

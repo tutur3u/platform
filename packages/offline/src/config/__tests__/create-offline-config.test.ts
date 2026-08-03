@@ -36,9 +36,12 @@ describe('getOfflineTurbopackConfig', () => {
     const config = getOfflineTurbopackConfig({
       projectRoot: webProjectRoot,
     });
-    const includes = config.outputFileTracingIncludes?.['/serwist/[path]'];
+    const includes = config.outputFileTracingIncludes?.['/serwist/*'];
 
     expect(config.serverExternalPackages).toContain('esbuild-wasm');
+    expect(config.outputFileTracingIncludes).not.toHaveProperty(
+      '/serwist/[path]'
+    );
     expect(includes?.map((include) => path.basename(include)).sort()).toEqual([
       'esbuild.wasm',
       'wasm_exec.js',
@@ -50,12 +53,22 @@ describe('getOfflineTurbopackConfig', () => {
     }
   });
 
+  it('configures the monorepo tracing root', () => {
+    const monorepoRoot = path.resolve(webProjectRoot, '../..');
+    const config = getOfflineTurbopackConfig({
+      outputFileTracingRoot: monorepoRoot,
+      projectRoot: webProjectRoot,
+    });
+
+    expect(config.outputFileTracingRoot).toBe(monorepoRoot);
+  });
+
   it('merges custom tracing and external package options', () => {
     const config = getOfflineTurbopackConfig({
       additionalExternalPackages: ['custom-package'],
       outputFileTracingIncludes: {
         '/api/custom': ['./custom-runtime.js'],
-        '/serwist/[path]': ['./custom-worker.js'],
+        '/serwist/*': ['./custom-worker.js'],
       },
       projectRoot: webProjectRoot,
     });
@@ -64,7 +77,7 @@ describe('getOfflineTurbopackConfig', () => {
     expect(config.outputFileTracingIncludes?.['/api/custom']).toEqual([
       './custom-runtime.js',
     ]);
-    expect(config.outputFileTracingIncludes?.['/serwist/[path]']).toContain(
+    expect(config.outputFileTracingIncludes?.['/serwist/*']).toContain(
       './custom-worker.js'
     );
   });

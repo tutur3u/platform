@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { getOfflineTurbopackConfig } from '@tuturuuu/offline/config';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
@@ -10,7 +11,10 @@ import createNextIntlPlugin from 'next-intl/plugin';
 import { createSatelliteApiRewrites } from './src/lib/satellite-api-rewrites';
 
 const withNextIntl = createNextIntlPlugin();
-const offlineConfig = getOfflineTurbopackConfig({ projectRoot: __dirname });
+const offlineConfig = getOfflineTurbopackConfig({
+  outputFileTracingRoot: path.resolve(__dirname, '../..'),
+  projectRoot: __dirname,
+});
 const INFRASTRUCTURE_APP_URL = resolveTuturuuuInfrastructureAppUrl();
 const CALENDAR_APP_URL = resolveInternalAppUrl({
   appName: 'calendar',
@@ -77,6 +81,7 @@ const nextConfig = createTuturuuuNextConfig({
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   outputFileTracingIncludes: offlineConfig.outputFileTracingIncludes,
+  outputFileTracingRoot: offlineConfig.outputFileTracingRoot,
   reactCompiler: true,
   serverExternalPackages: [...(offlineConfig.serverExternalPackages ?? [])],
   experimental: {

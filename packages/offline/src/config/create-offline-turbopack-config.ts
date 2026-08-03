@@ -24,7 +24,7 @@ function getEsbuildWasmTracingIncludes(
     return relative.startsWith('.') ? relative : `./${relative}`;
   });
 
-  return { '/serwist/[path]': paths };
+  return { '/serwist/*': paths };
 }
 
 function mergeOutputFileTracingIncludes(
@@ -50,10 +50,14 @@ export function getOfflineTurbopackConfig(
   const {
     additionalExternalPackages = [],
     outputFileTracingIncludes,
+    outputFileTracingRoot,
     projectRoot = process.cwd(),
   } = config;
 
   return {
+    ...(outputFileTracingRoot
+      ? { outputFileTracingRoot: path.resolve(outputFileTracingRoot) }
+      : {}),
     serverExternalPackages: ['esbuild-wasm', ...additionalExternalPackages],
     outputFileTracingIncludes: mergeOutputFileTracingIncludes(
       getEsbuildWasmTracingIncludes(path.resolve(projectRoot)),

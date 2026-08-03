@@ -4,7 +4,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Clock, Loader2, ShieldCheck } from '@tuturuuu/icons';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { detectLocaleFirstDay } from '../../../../lib/calendar-settings-resolver';
 import { Button } from '../../button';
 import {
@@ -55,7 +55,9 @@ export function RequireWorkspaceTimezoneDialog({
   onCompleted,
 }: RequireWorkspaceTimezoneDialogProps) {
   const t = useTranslations('calendar');
+  const tCommon = useTranslations('common');
   const router = useRouter();
+  const autoEnableAttemptedWorkspace = useRef<string | null>(null);
 
   const browserTimezone = useMemo(() => detectBrowserTimezone(), []);
   const timezones = useMemo(() => getSupportedTimezones(), []);
@@ -216,11 +218,28 @@ export function RequireWorkspaceTimezoneDialog({
   // This happens automatically since E2EE is mandatory for calendar to work
   const isEnablingE2EE = enableE2EE.isPending;
   const isFetchingE2EE = e2eeQuery.isFetching;
+  const enableE2EEMutate = enableE2EE.mutate;
   useEffect(() => {
-    if (needsE2EESetup && !isEnablingE2EE && !isFetchingE2EE && !hasE2EE) {
-      enableE2EE.mutate();
+    if (
+      !needsE2EESetup ||
+      isEnablingE2EE ||
+      isFetchingE2EE ||
+      hasE2EE ||
+      autoEnableAttemptedWorkspace.current === wsId
+    ) {
+      return;
     }
-  }, [needsE2EESetup, isEnablingE2EE, isFetchingE2EE, hasE2EE, enableE2EE]);
+
+    autoEnableAttemptedWorkspace.current = wsId;
+    enableE2EEMutate();
+  }, [
+    needsE2EESetup,
+    isEnablingE2EE,
+    isFetchingE2EE,
+    hasE2EE,
+    wsId,
+    enableE2EEMutate,
+  ]);
 
   // Keep local selects in sync with server values once fetched.
   useEffect(() => {
@@ -374,6 +393,20 @@ export function RequireWorkspaceTimezoneDialog({
                     <span className="font-medium text-dynamic-green text-sm">
                       {t('e2ee.already_enabled')}
                     </span>
+                  </div>
+                ) : enableE2EE.isError ? (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-dynamic-red/50 bg-dynamic-red/10 p-3">
+                    <span className="font-medium text-dynamic-red text-sm">
+                      {t('e2ee.key_generation_failed')}
+                    </span>
+                    <Button
+                      onClick={() => enableE2EEMutate()}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      {tCommon('retry')}
+                    </Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 rounded-lg border border-dynamic-blue/50 bg-dynamic-blue/10 p-3">

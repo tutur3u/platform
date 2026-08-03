@@ -88,7 +88,7 @@ export async function GET(request: Request, { params }: Params) {
 
 /**
  * POST - Generate a new E2EE key for this workspace
- * Requires manage_e2ee permission
+ * Any authenticated workspace member may initialize a missing key.
  */
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
@@ -105,31 +105,22 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (!auth.ok) return auth.response;
 
-  // Check if user has manage_e2ee permission
-  const { authorized, user, reason } = await checkE2EEPermission(
-    auth.supabase,
+  const member = await verifyWorkspaceMembershipType({
+    supabase: auth.supabase,
+    userId: auth.user.id,
     wsId,
-    auth.user
-  );
+  });
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (member.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace membership' },
+      { status: 500 }
+    );
   }
 
-  if (!authorized) {
-    if (reason === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
+  if (!member.ok) {
     return NextResponse.json(
-      {
-        error:
-          reason === 'not_a_member'
-            ? 'You are not a member of this workspace'
-            : 'You do not have permission to manage E2EE settings',
-      },
+      { error: 'You are not a member of this workspace' },
       { status: 403 }
     );
   }
@@ -165,6 +156,24 @@ export async function POST(request: Request, { params }: Params) {
       } as never);
 
     if (insertError) {
+      // Another member may have initialized the key between our existence
+      // check and insert. Treat that unique-key race as idempotent success.
+      if (insertError.code === '23505') {
+        const { data: concurrentlyCreatedKey } = await adminClient
+          .from('workspace_encryption_keys')
+          .select('id')
+          .eq('ws_id', wsId)
+          .maybeSingle();
+
+        if (concurrentlyCreatedKey) {
+          return NextResponse.json({
+            success: true,
+            message: 'Encryption key already exists',
+            alreadyExists: true,
+          });
+        }
+      }
+
       console.error('Failed to create workspace encryption key:', insertError);
       return NextResponse.json(
         { error: 'Failed to create encryption key' },

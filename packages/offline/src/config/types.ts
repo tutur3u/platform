@@ -46,6 +46,12 @@ export interface TurbopackOfflineConfig {
   projectRoot?: string;
 
   /**
+   * Root directory that Next.js uses when tracing files outside the app.
+   * Monorepo apps should set this to the repository root.
+   */
+  outputFileTracingRoot?: string;
+
+  /**
    * Additional packages to mark as external for the server.
    * 'esbuild-wasm' is always included automatically.
    */
