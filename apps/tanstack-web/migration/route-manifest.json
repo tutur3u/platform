@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 48,
+        "legacyNext": 50,
         "migrated": 99,
-        "percentComplete": 67.79,
-        "remaining": 48,
+        "percentComplete": 66.89,
+        "remaining": 50,
         "terminal": 101,
-        "total": 149,
+        "total": 151,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 61,
+        "legacyNext": 63,
         "migrated": 148,
-        "percentComplete": 71.09,
-        "remaining": 61,
+        "percentComplete": 70.42,
+        "remaining": 63,
         "terminal": 150,
-        "total": 211,
+        "total": 213,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 569,
+      "legacyNext": 571,
       "migrated": 215,
-      "percentComplete": 28.61,
-      "remaining": 569,
+      "percentComplete": 28.54,
+      "remaining": 571,
       "terminal": 228,
-      "total": 797,
+      "total": 799,
       "unknownStatus": 0
     }
   },
@@ -6837,6 +6837,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/:wsId/workspace-setup:apps/web/src/app/[locale]/(dashboard)/[wsId]/workspace-setup/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/:wsId/workspace-setup",
+      "sourceFile": "apps/web/src/app/[locale]/(dashboard)/[wsId]/workspace-setup/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/about:apps/web/src/app/[locale]/(marketing)/about/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7386,6 +7395,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/signup:apps/web/src/app/[locale]/(auth)/signup/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/signup",
+      "sourceFile": "apps/web/src/app/[locale]/(auth)/signup/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/solutions/construction:apps/web/src/app/[locale]/(marketing)/solutions/construction/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7615,7 +7633,7 @@
     "apiRoutes": 573,
     "cronRoutes": 8,
     "layouts": 58,
-    "pages": 149,
+    "pages": 151,
     "routeHandlers": 586,
     "methodCounts": {
       "GET": 289,
@@ -7626,6 +7644,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 797
+    "total": 799
   }
 }

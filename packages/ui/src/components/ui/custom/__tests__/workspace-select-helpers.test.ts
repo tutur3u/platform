@@ -3,10 +3,58 @@ import { join } from 'node:path';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { describe, expect, it } from 'vitest';
 import {
+  buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
   resolveWorkspaceAvatarUrl,
 } from '../workspace-select-helpers';
+
+describe('buildWorkspaceSetupHandoffUrl', () => {
+  it('builds a localized Platform setup URL with an encoded satellite return', () => {
+    const handoffUrl = new URL(
+      buildWorkspaceSetupHandoffUrl({
+        locale: 'vi',
+        platformUrl: 'https://tuturuuu.com',
+        returnOrigin: 'https://tasks.tuturuuu.com',
+        returnPath: '/workspace-1/tasks?view=mine',
+        workspaceId: 'workspace-1',
+      })
+    );
+
+    expect(handoffUrl.pathname).toBe('/vi/workspace-1/workspace-setup');
+    expect(handoffUrl.searchParams.get('returnUrl')).toBe(
+      'https://tasks.tuturuuu.com/vi/workspace-1/tasks?view=mine'
+    );
+  });
+
+  it('does not duplicate an existing locale prefix', () => {
+    const handoffUrl = new URL(
+      buildWorkspaceSetupHandoffUrl({
+        locale: 'en',
+        platformUrl: 'http://platform.tuturuuu.localhost',
+        returnOrigin: 'http://meet.tuturuuu.localhost',
+        returnPath: '/en/workspace/workspace-1',
+        workspaceId: 'workspace-1',
+      })
+    );
+
+    expect(handoffUrl.searchParams.get('returnUrl')).toBe(
+      'http://meet.tuturuuu.localhost/en/workspace/workspace-1'
+    );
+  });
+
+  it('rejects a return path that changes the satellite origin', () => {
+    expect(() =>
+      buildWorkspaceSetupHandoffUrl({
+        locale: 'en',
+        platformUrl: 'https://tuturuuu.com',
+        returnOrigin: 'https://tasks.tuturuuu.com',
+        returnPath: 'https://evil.example/workspace-1',
+        workspaceId: 'workspace-1',
+      })
+    ).toThrow('Workspace return path must stay on the current app');
+  });
+});
 
 describe('resolveWorkspaceAvatarUrl', () => {
   it('preserves a valid hosted avatar when an app provides a local fallback', () => {

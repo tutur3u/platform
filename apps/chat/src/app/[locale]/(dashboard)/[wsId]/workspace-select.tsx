@@ -1,6 +1,7 @@
 'use client';
 
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import { TTR_URL } from '@/constants/common';
 import { fetchWorkspaces } from './actions';
 
 export function WorkspaceSelect({
@@ -21,6 +22,7 @@ export function WorkspaceSelect({
       fallbackLogoUrl="/media/logos/transparent.png"
       fetchWorkspaces={fetchWorkspaces}
       hideLeading={hideLeading}
+      platformWorkspaceSetupUrl={TTR_URL}
       wsId={wsId}
     />
   );

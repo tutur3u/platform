@@ -18545,6 +18545,12 @@
     "workspace": "Workspace",
     "workspace_roles": "Workspace Roles"
   },
+  "workspace-setup": {
+    "continue_on_platform": "Continue in Platform",
+    "retry": "Try again",
+    "return_failed_description": "Your workspace is ready, but the secure app handoff could not be completed. Try again or continue in Platform.",
+    "return_failed_title": "Could not return to your app"
+  },
   "workspace-tasks-tabs": {
     "command_bar": {
       "action": {

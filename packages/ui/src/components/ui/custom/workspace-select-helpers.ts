@@ -30,6 +30,45 @@ export function mergeWorkspaceSelectWorkspaces(
   return [...workspaceList, currentWorkspaceFallback];
 }
 
+export function buildWorkspaceSetupHandoffUrl({
+  locale,
+  platformUrl,
+  returnOrigin,
+  returnPath,
+  workspaceId,
+}: {
+  locale: string;
+  platformUrl: string;
+  returnOrigin: string;
+  returnPath: string;
+  workspaceId: string;
+}) {
+  const origin = new URL(returnOrigin).origin;
+  const returnUrl = new URL(returnPath, origin);
+
+  if (returnUrl.origin !== origin) {
+    throw new Error('Workspace return path must stay on the current app');
+  }
+
+  const localePrefix = `/${locale}`;
+  if (
+    returnUrl.pathname !== localePrefix &&
+    !returnUrl.pathname.startsWith(`${localePrefix}/`)
+  ) {
+    returnUrl.pathname = `${localePrefix}${
+      returnUrl.pathname.startsWith('/') ? '' : '/'
+    }${returnUrl.pathname}`;
+  }
+
+  const setupUrl = new URL(
+    `/${locale}/${encodeURIComponent(workspaceId)}/workspace-setup`,
+    platformUrl
+  );
+  setupUrl.searchParams.set('returnUrl', returnUrl.toString());
+
+  return setupUrl.toString();
+}
+
 export function normalizeWorkspaceSwitchPath(
   pathname: string,
   nextSlug: string

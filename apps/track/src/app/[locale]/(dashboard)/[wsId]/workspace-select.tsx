@@ -1,6 +1,7 @@
 'use client';
 
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import { TTR_URL } from '@/constants/common';
 import { fetchWorkspaces } from './actions';
 
 export function WorkspaceSelect({
@@ -24,6 +25,7 @@ export function WorkspaceSelect({
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fetchWorkspaces={fetchWorkspaces}
+      platformWorkspaceSetupUrl={TTR_URL}
     />
   );
 }

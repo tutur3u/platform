@@ -2,6 +2,7 @@
 
 import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import { TTR_URL } from '@/constants/common';
 
 export function WorkspaceSelect({
   wsId,
@@ -24,6 +25,7 @@ export function WorkspaceSelect({
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fetchWorkspaces={listWorkspaces}
+      platformWorkspaceSetupUrl={TTR_URL}
     />
   );
 }

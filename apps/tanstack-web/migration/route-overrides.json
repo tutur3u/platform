@@ -1060,6 +1060,11 @@
       "targetOwner": "tanstack-start",
       "note": "TanStack Start route /$locale/$wsId/workforce preserves the legacy 307 redirect to /:wsId/users/database. This marks only the page artifact migrated; parent dashboard layout/session ownership remains legacy-owned."
     },
+    "page:/:locale/:wsId/workspace-setup:apps/web/src/app/[locale]/(dashboard)/[wsId]/workspace-setup/page.tsx": {
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start",
+      "note": "Authenticated transient handoff route that lets the Platform workspace layout reconcile a new satellite workspace subscription, validates the registered satellite return URL, and sends the user back through the existing cross-app token verifier."
+    },
     "layout:/:locale/:wsId/ai-chat:apps/web/src/app/[locale]/(dashboard)/[wsId]/ai-chat/layout.tsx": {
       "status": "migrated",
       "targetOwner": "tanstack-start",

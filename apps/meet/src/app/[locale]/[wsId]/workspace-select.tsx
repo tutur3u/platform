@@ -1,6 +1,7 @@
 'use client';
 
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
+import { TTR_URL } from '@/constants/common';
 import { fetchWorkspaces } from './actions';
 
 function resolveWorkspacePath({
@@ -32,6 +33,7 @@ export function WorkspaceSelect({
       disableCreateNewWorkspace={disableCreateNewWorkspace}
       fetchWorkspaces={fetchWorkspaces}
       hideLeading={hideLeading}
+      platformWorkspaceSetupUrl={TTR_URL}
       standalone={standalone}
       resolveNextPathname={resolveWorkspacePath}
       wsId={wsId}

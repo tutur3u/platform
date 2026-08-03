@@ -18545,6 +18545,12 @@
     "workspace": "Không gian làm việc",
     "workspace_roles": "Vai trò không gian làm việc"
   },
+  "workspace-setup": {
+    "continue_on_platform": "Tiếp tục trong Platform",
+    "retry": "Thử lại",
+    "return_failed_description": "Không gian làm việc của bạn đã sẵn sàng, nhưng không thể hoàn tất việc chuyển tiếp an toàn về ứng dụng. Hãy thử lại hoặc tiếp tục trong Platform.",
+    "return_failed_title": "Không thể quay lại ứng dụng của bạn"
+  },
   "workspace-tasks-tabs": {
     "command_bar": {
       "action": {

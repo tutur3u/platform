@@ -29,7 +29,7 @@ import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -69,6 +69,7 @@ import { Input } from '../input';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { TUTURUUU_LOGO_URL } from './tuturuuu-logo';
 import {
+  buildWorkspaceSetupHandoffUrl,
   mergeWorkspaceSelectWorkspaces,
   normalizeWorkspaceSwitchPath,
   resolveWorkspaceAvatarUrl,
@@ -150,6 +151,7 @@ export function WorkspaceSelect({
   resolveNextPathname,
   triggerClassName,
   popoverModal = false,
+  platformWorkspaceSetupUrl,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -168,8 +170,11 @@ export function WorkspaceSelect({
   triggerClassName?: string;
   /** Keep the picker interactive and scrollable when rendered inside a modal. */
   popoverModal?: boolean;
+  /** Platform origin used to prepare a newly created satellite workspace. */
+  platformWorkspaceSetupUrl?: string;
 }) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
@@ -271,11 +276,26 @@ export function WorkspaceSelect({
 
     try {
       const { id } = await createTeamWorkspace(formData);
+      const workspaceLandingPath = getWorkspaceLandingPath(id);
       form.reset();
-      router.push(getWorkspaceLandingPath(id));
-      router.refresh();
       setShowNewWorkspaceDialog(false);
       setOpen(false);
+
+      if (platformWorkspaceSetupUrl) {
+        window.location.assign(
+          buildWorkspaceSetupHandoffUrl({
+            locale,
+            platformUrl: platformWorkspaceSetupUrl,
+            returnOrigin: window.location.origin,
+            returnPath: workspaceLandingPath,
+            workspaceId: id,
+          })
+        );
+        return;
+      }
+
+      router.push(workspaceLandingPath);
+      router.refresh();
     } catch (error) {
       console.error('Error creating workspace:', error);
       if (
