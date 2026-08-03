@@ -44,6 +44,21 @@ function isLocalPortlessRuntime() {
   );
 }
 
+export function getPlatformAppOrigin() {
+  return resolveInternalAppUrl({
+    appName: 'platform',
+    candidates: [
+      process.env.PLATFORM_APP_URL,
+      process.env.NEXT_PUBLIC_WEB_APP_URL,
+      process.env.WEB_APP_URL,
+    ],
+    fallback:
+      process.env.NODE_ENV === 'production'
+        ? 'https://tuturuuu.com'
+        : getLocalInternalAppUrl('platform', 'http://localhost:7803'),
+  });
+}
+
 export function pricingRedirectHref(options: { localized?: boolean } = {}) {
   if (options.localized) {
     return '/pricing';

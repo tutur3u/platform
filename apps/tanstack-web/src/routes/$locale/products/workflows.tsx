@@ -112,7 +112,7 @@ export default function WorkflowsProductPage() {
           chase them.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-          <ProductLinkButton href="/signup">
+          <ProductLinkButton href="/login">
             Set up your workspace
           </ProductLinkButton>
           <ProductLinkButton href="/contact">Talk to us</ProductLinkButton>

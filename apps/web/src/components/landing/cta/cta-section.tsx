@@ -58,7 +58,7 @@ export function CTASection() {
               <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Link
                   className="group relative inline-flex h-12 w-full items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(100deg,var(--purple),var(--blue))] px-8 font-medium text-white shadow-[0_8px_30px_-8px_color-mix(in_oklab,var(--purple)_70%,transparent)] transition-shadow duration-300 hover:shadow-[0_12px_40px_-8px_color-mix(in_oklab,var(--purple)_85%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
-                  href="/signup"
+                  href="/login"
                 >
                   <span
                     aria-hidden

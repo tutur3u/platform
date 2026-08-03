@@ -12,7 +12,7 @@ export default async function PublicNavbarActions() {
     <div className="relative flex w-full">
       <div className="flex w-full flex-col gap-2">
         <div className="flex w-full items-center gap-1">
-          <GetStartedButton text={t('common.get-started')} href="/signup" />
+          <GetStartedButton text={t('common.get-started')} href="/login" />
           <LanguageWrapper
             cookieName={LOCALE_COOKIE_NAME}
             defaultLocale={defaultLocale}

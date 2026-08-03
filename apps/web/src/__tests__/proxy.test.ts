@@ -1398,6 +1398,21 @@ describe('web proxy api handling', () => {
     expect(authOptions?.isPublicPath?.('/auth/recovery-token')).toBe(false);
   });
 
+  it('keeps the legacy signup entry public for its login redirect', async () => {
+    const { proxy } = await import('../proxy');
+    await proxy(new NextRequest('http://localhost/signup'));
+
+    const authOptions = mocks.createCentralizedAuthProxy.mock.calls[0]?.[0] as
+      | {
+          publicPaths?: string[];
+        }
+      | undefined;
+
+    expect(authOptions?.publicPaths).toEqual(
+      expect.arrayContaining(['/signup', '/en/signup'])
+    );
+  });
+
   it('does not redirect an incomplete user to onboarding', async () => {
     mocks.createClient.mockResolvedValue(
       createAuthenticatedSupabaseClient({

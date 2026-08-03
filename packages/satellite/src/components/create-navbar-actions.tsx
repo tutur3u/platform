@@ -42,7 +42,7 @@ export function createNavbarActions(
               <>
                 <GetStartedButton
                   text={t('common.get-started')}
-                  href="/signup"
+                  href="/login"
                 />
                 <LanguageWrapper
                   cookieName={LOCALE_COOKIE_NAME}

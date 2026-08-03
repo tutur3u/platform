@@ -107,7 +107,7 @@ export function PricingSection({
                 </div>
               ))}
             </div>
-            <ActionLink className="mt-6 w-full" href="/signup">
+            <ActionLink className="mt-6 w-full" href="/login">
               {tier.cta}
             </ActionLink>
           </SurfaceCard>
@@ -174,7 +174,7 @@ export function CtaSection({
           {content.description}
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <ActionLink href="/signup">
+          <ActionLink href="/login">
             {content.primary}
             <ArrowRight className="h-4 w-4" />
           </ActionLink>

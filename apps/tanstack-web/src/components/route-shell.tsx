@@ -24,7 +24,7 @@ export function LegacyNotFoundShell() {
       </p>
 
       <a
-        href="/signup"
+        href="/login"
         className="mt-4 block w-fit rounded bg-blue-500/10 px-8 py-2 font-semibold text-blue-500 transition duration-300 hover:bg-blue-500/20 dark:bg-blue-300/20 dark:text-blue-300 dark:hover:bg-blue-300/30"
       >
         {common['back-to-home']}
