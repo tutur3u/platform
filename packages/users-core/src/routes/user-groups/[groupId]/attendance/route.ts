@@ -30,6 +30,7 @@ type PrivateSessionRow = {
   id: string;
   starts_at: string;
   start_timezone: string;
+  status: string;
 };
 
 type AttendanceResponseRow = {
@@ -50,12 +51,14 @@ function privateSchema(sbAdmin: TypedSupabaseClient): UntypedSchemaClient {
 }
 
 async function validateSessionIds({
+  allowCancelled = false,
   date,
   groupId,
   sbAdmin,
   sessionIds,
   wsId,
 }: {
+  allowCancelled?: boolean;
   date: string;
   groupId: string;
   sbAdmin: TypedSupabaseClient;
@@ -65,13 +68,17 @@ async function validateSessionIds({
   const uniqueSessionIds = Array.from(new Set(sessionIds.filter(Boolean)));
   if (uniqueSessionIds.length === 0) return true;
 
-  const { data, error } = (await privateSchema(sbAdmin)
+  let sessionQuery = privateSchema(sbAdmin)
     .from('workspace_user_group_sessions')
-    .select('id, starts_at, start_timezone')
+    .select('id, starts_at, start_timezone, status')
     .eq('ws_id', wsId)
-    .eq('group_id', groupId)
-    .eq('status', 'scheduled')
-    .in('id', uniqueSessionIds)) as {
+    .eq('group_id', groupId);
+
+  if (!allowCancelled) {
+    sessionQuery = sessionQuery.eq('status', 'scheduled');
+  }
+
+  const { data, error } = (await sessionQuery.in('id', uniqueSessionIds)) as {
     data: PrivateSessionRow[] | null;
     error: unknown;
   };
@@ -145,6 +152,7 @@ export async function GET(req: Request, { params }: Params) {
   if (sessionId) {
     try {
       const validSession = await validateSessionIds({
+        allowCancelled: true,
         date,
         groupId,
         sbAdmin,

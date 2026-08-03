@@ -15,6 +15,7 @@ export interface GroupedSessionTimeblock {
 }
 
 interface CalendarDensityLabels {
+  cancelledBadge: string;
   filesAttachedCount: (count: number) => string;
   groupedTimeblockDescription: (values: {
     count: number;
@@ -98,6 +99,7 @@ function sessionCalendarEvent(
 ): CalendarEvent {
   const tags = session.tags.map((tag) => tag.name).join(', ');
   const metadata = [
+    session.status === 'cancelled' ? labels.cancelledBadge : null,
     session.seriesId ? labels.recurringBadge : null,
     session.files.length
       ? labels.filesAttachedCount(session.files.length)
@@ -114,8 +116,15 @@ function sessionCalendarEvent(
       .join('\n'),
     start_at: session.startsAt,
     end_at: session.endsAt,
-    color: session.seriesId ? 'PURPLE' : session.tags.length ? 'GREEN' : 'BLUE',
-    locked: false,
+    color:
+      session.status === 'cancelled'
+        ? 'GRAY'
+        : session.seriesId
+          ? 'PURPLE'
+          : session.tags.length
+            ? 'GREEN'
+            : 'BLUE',
+    locked: session.status === 'cancelled',
     ws_id: wsId,
   };
 }

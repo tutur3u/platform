@@ -2,7 +2,10 @@ import type { WorkspaceUserGroupSessionDescriptionJson } from '@tuturuuu/interna
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
-import { updateUserGroupSession } from '@tuturuuu/users-core/lib/user-groups/session-schedule';
+import {
+  cancelUserGroupSession,
+  updateUserGroupSession,
+} from '@tuturuuu/users-core/lib/user-groups/session-schedule';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -22,6 +25,17 @@ const UpdateSessionSchema = z
     endTimezone: z.string().trim().min(1).max(128).optional(),
     endsAt: z.string().datetime().optional(),
     files: z.array(SessionFileSchema).max(50).optional(),
+    recurrence: z
+      .object({
+        daysOfWeek: z
+          .array(z.number().int().min(0).max(6))
+          .min(1)
+          .max(7)
+          .transform((days) => Array.from(new Set(days)).sort()),
+        intervalWeeks: z.number().int().min(1).max(52).optional(),
+        untilDate: z.iso.date().nullable().optional(),
+      })
+      .optional(),
     scope: z.enum(['once', 'future']).optional(),
     startTimezone: z.string().trim().min(1).max(128).optional(),
     startsAt: z.string().datetime().optional(),
@@ -41,7 +55,25 @@ const UpdateSessionSchema = z
       message: 'Session end time must be after start time',
       path: ['endsAt'],
     }
-  );
+  )
+  .refine((value) => !value.recurrence || value.scope === 'future', {
+    message: 'Recurrence changes require future scope',
+    path: ['scope'],
+  });
+
+async function requireUpdatePermission(req: Request, wsId: string) {
+  const permissions = await getUserGroupRoutePermissions(wsId, req);
+  if (!permissions) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  if (permissions.withoutPermission('update_user_groups')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to update user group sessions' },
+      { status: 403 }
+    );
+  }
+  return null;
+}
 
 interface Params {
   params: Promise<{
@@ -54,16 +86,8 @@ export async function PUT(req: Request, { params }: Params) {
   const { sessionId, wsId } = await params;
   const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
-  const permissions = await getUserGroupRoutePermissions(wsId, req);
-  if (!permissions) {
-    return NextResponse.json({ message: 'Not found' }, { status: 404 });
-  }
-  if (permissions.withoutPermission('update_user_groups')) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions to update user group sessions' },
-      { status: 403 }
-    );
-  }
+  const permissionError = await requireUpdatePermission(req, wsId);
+  if (permissionError) return permissionError;
 
   let body: unknown;
   try {
@@ -104,6 +128,41 @@ export async function PUT(req: Request, { params }: Params) {
     console.error('Failed to update user group session', { error });
     return NextResponse.json(
       { message: 'Failed to update user group session' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request, { params }: Params) {
+  const { sessionId, wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
+  const permissionError = await requireUpdatePermission(req, wsId);
+  if (permissionError) return permissionError;
+
+  const scopeParam = new URL(req.url).searchParams.get('scope') ?? 'once';
+  if (scopeParam !== 'once' && scopeParam !== 'future') {
+    return NextResponse.json({ message: 'Invalid scope' }, { status: 400 });
+  }
+
+  try {
+    const supabase = await createAdminClient({ noCookie: true });
+    const data = await cancelUserGroupSession({
+      scope: scopeParam,
+      sessionId,
+      supabase,
+      wsId: normalizedWsId,
+    });
+    if (!data) {
+      return NextResponse.json(
+        { message: 'User group session not found' },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ data, message: 'success' });
+  } catch (error) {
+    console.error('Failed to cancel user group session', { error });
+    return NextResponse.json(
+      { message: 'Failed to cancel user group session' },
       { status: 500 }
     );
   }

@@ -36,6 +36,7 @@ export interface WorkspaceUserGroupSession {
   groupName: string | null;
   id: string;
   recurrenceInstanceDate: string | null;
+  recurrence?: WorkspaceUserGroupSessionRecurrence | null;
   seriesId: string | null;
   source: string | null;
   startTimezone: string;
@@ -43,6 +44,13 @@ export interface WorkspaceUserGroupSession {
   status: 'cancelled' | 'scheduled';
   tags: WorkspaceUserGroupSessionTag[];
   title: string | null;
+}
+
+export interface WorkspaceUserGroupSessionRecurrence {
+  daysOfWeek: number[];
+  intervalWeeks: number;
+  startDate: string;
+  untilDate: string | null;
 }
 
 export interface WorkspaceUserGroupMissingSessionOccurrence {
@@ -94,6 +102,8 @@ export interface WorkspaceUserGroupRosterMember {
   email?: string | null;
   full_name?: string | null;
   id: string;
+  isGuest?: boolean;
+  note?: string | null;
   phone?: string | null;
   role?: string | null;
 }
@@ -101,6 +111,7 @@ export interface WorkspaceUserGroupRosterMember {
 export interface ListWorkspaceUserGroupSessionsParams extends InternalApiQuery {
   from?: string;
   groupId?: string;
+  includeCancelled?: boolean;
   includeMissing?: boolean;
   to?: string;
 }
@@ -165,12 +176,17 @@ export interface UpdateWorkspaceUserGroupSessionPayload {
   endTimezone?: string;
   endsAt?: string;
   files?: WorkspaceUserGroupSessionFilePayload[];
+  recurrence?: WorkspaceUserGroupSessionRecurrencePayload;
   scope?: 'future' | 'once';
   startTimezone?: string;
   startsAt?: string;
   tagIds?: string[];
   tagNames?: string[];
   title?: string | null;
+}
+
+export interface CancelWorkspaceUserGroupSessionPayload {
+  scope?: 'future' | 'once';
 }
 
 export interface WorkspaceUserGroupSessionMutationResponse {
@@ -310,6 +326,36 @@ export function updateWorkspaceUserGroupSession(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       method: 'PUT',
+    }
+  );
+}
+
+export function cancelWorkspaceUserGroupSession(
+  workspaceId: string,
+  sessionId: string,
+  payload: CancelWorkspaceUserGroupSessionPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<WorkspaceUserGroupSessionMutationResponse>(
+    `${basePath(workspaceId)}/${encodePathSegment(sessionId)}?scope=${payload.scope ?? 'once'}`,
+    { cache: 'no-store', method: 'DELETE' }
+  );
+}
+
+export function restoreWorkspaceUserGroupSession(
+  workspaceId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<WorkspaceUserGroupSessionMutationResponse>(
+    `${basePath(workspaceId)}/${encodePathSegment(sessionId)}/restore`,
+    {
+      cache: 'no-store',
+      method: 'POST',
     }
   );
 }

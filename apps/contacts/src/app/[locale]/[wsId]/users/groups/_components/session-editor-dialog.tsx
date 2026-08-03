@@ -211,6 +211,10 @@ interface SessionEditorDialogProps {
   groups: WorkspaceUserGroupScheduleGroup[];
   isPending?: boolean;
   onOpenChange?: (open: boolean) => void;
+  onCancelSession?: (
+    session: WorkspaceUserGroupSession,
+    scope: 'future' | 'once'
+  ) => Promise<void> | void;
   onReconcile?: (session: WorkspaceUserGroupSession) => Promise<void> | void;
   onSubmit: (payload: SubmitPayload) => Promise<void> | void;
   open?: boolean;
@@ -229,6 +233,7 @@ export function SessionEditorDialog({
   isPending,
   onOpenChange,
   onReconcile,
+  onCancelSession,
   onSubmit,
   open: controlledOpen,
   reconcilePending,
@@ -294,7 +299,13 @@ export function SessionEditorDialog({
       );
       setFilesToUpload([]);
       setRepeat(false);
-      setDaysOfWeek([dayjs(session.startsAt).tz(session.startTimezone).day()]);
+      setDaysOfWeek(
+        session.recurrence?.daysOfWeek ?? [
+          dayjs(session.startsAt).tz(session.startTimezone).day(),
+        ]
+      );
+      setUntilDate(session.recurrence?.untilDate ?? '');
+      setIntervalWeeks(session.recurrence?.intervalWeeks ?? 1);
       setScope(session.seriesId ? 'future' : 'once');
       return;
     }
@@ -401,7 +412,18 @@ export function SessionEditorDialog({
     };
 
     if (isEditing) {
-      await onSubmit({ ...shared, scope });
+      await onSubmit({
+        ...shared,
+        recurrence:
+          session?.seriesId && scope === 'future'
+            ? {
+                daysOfWeek,
+                intervalWeeks,
+                untilDate: untilDate || null,
+              }
+            : undefined,
+        scope,
+      });
       setOpen(false);
     } else {
       await onSubmit({
@@ -642,6 +664,84 @@ export function SessionEditorDialog({
                 </div>
               )}
 
+              {isEditing && session?.seriesId && scope === 'future' && (
+                <div className="space-y-3 rounded-md border p-3 md:col-span-2">
+                  <div>
+                    <div className="font-medium text-sm">
+                      {t('recurrence_pattern')}
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {t('recurrence_pattern_help')}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {SESSION_EDITOR_DAYS.map((day) => (
+                      <label
+                        key={day.value}
+                        className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                      >
+                        <Checkbox
+                          checked={daysOfWeek.includes(day.value)}
+                          onCheckedChange={(checked) =>
+                            setDaysOfWeek((current) =>
+                              checked
+                                ? Array.from(
+                                    new Set([...current, day.value])
+                                  ).sort()
+                                : current.filter((value) => value !== day.value)
+                            )
+                          }
+                        />
+                        {commonT(day.labelKey)}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <FieldLabel icon={Repeat}>
+                        {t('interval_weeks')}
+                      </FieldLabel>
+                      <IconInput
+                        icon={Repeat}
+                        min={1}
+                        max={52}
+                        type="number"
+                        value={intervalWeeks}
+                        onChange={(event) =>
+                          setIntervalWeeks(Number(event.target.value) || 1)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <FieldLabel icon={CalendarDays}>
+                        {t('until_date')}
+                      </FieldLabel>
+                      <DateTimePicker
+                        allowClear
+                        date={
+                          untilDate
+                            ? pickerDateFromParts(untilDate, '00:00', timezone)
+                            : undefined
+                        }
+                        preferences={{
+                          timeFormat: '24h',
+                          timezone,
+                          weekStartsOn: 1,
+                        }}
+                        setDate={(value) =>
+                          setUntilDate(
+                            value
+                              ? dayjs(value).tz(timezone).format('YYYY-MM-DD')
+                              : ''
+                          )
+                        }
+                        showTimeSelect={false}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2 md:col-span-2">
                 <FieldLabel htmlFor="session-tags" icon={Tags}>
                   {t('tags')}
@@ -775,7 +875,28 @@ export function SessionEditorDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:justify-between">
+          {isEditing && session && onCancelSession ? (
+            <Button
+              disabled={isPending}
+              type="button"
+              variant="destructive"
+              onClick={async () => {
+                await onCancelSession(
+                  session,
+                  session.seriesId ? scope : 'once'
+                );
+                setOpen(false);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              {scope === 'future' && session.seriesId
+                ? t('cancel_session_future')
+                : t('cancel_session_once')}
+            </Button>
+          ) : (
+            <span />
+          )}
           <Button
             disabled={
               isPending || isUploading || !groupId || daysOfWeek.length === 0

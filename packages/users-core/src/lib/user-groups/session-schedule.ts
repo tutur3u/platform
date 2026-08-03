@@ -96,6 +96,7 @@ export async function listUserGroupSessionDatesByGroupIds({
 export async function listUserGroupSessions({
   from,
   groupId,
+  includeCancelled = false,
   includeMissing = false,
   supabase,
   to,
@@ -103,6 +104,7 @@ export async function listUserGroupSessions({
 }: {
   from?: string | null;
   groupId?: string | null;
+  includeCancelled?: boolean;
   includeMissing?: boolean;
   supabase: TypedSupabaseClient;
   to?: string | null;
@@ -113,8 +115,9 @@ export async function listUserGroupSessions({
     .from('workspace_user_group_sessions')
     .select('*')
     .eq('ws_id', wsId)
-    .eq('status', 'scheduled')
     .order('starts_at');
+
+  if (!includeCancelled) query = query.eq('status', 'scheduled');
 
   if (groupId) query = query.eq('group_id', groupId);
   if (from) query = query.gte('starts_at', from);
@@ -787,7 +790,6 @@ export async function listMissingUserGroupSessionOccurrences({
         'id, group_id, series_id, recurrence_instance_date, start_timezone, end_timezone, starts_at, ends_at, title'
       )
       .eq('ws_id', wsId)
-      .eq('status', 'scheduled')
       .in('series_id', seriesIds)
       .gte('recurrence_instance_date', fromDate)
       .lte('recurrence_instance_date', toDate),
@@ -895,6 +897,12 @@ export async function createUserGroupSession({
     const startTimezone = payload.startTimezone || DEFAULT_TIMEZONE;
     const endTimezone = payload.endTimezone || startTimezone;
     const startDate = toIsoDate(payload.startsAt, startTimezone);
+    if (
+      payload.recurrence.untilDate &&
+      compareIsoDate(payload.recurrence.untilDate, startDate) < 0
+    ) {
+      throw new Error('invalid_recurrence_until');
+    }
 
     const { data: seriesData, error: seriesError } = await privateDb
       .from('workspace_user_group_session_series')
@@ -1574,23 +1582,35 @@ export async function updateUserGroupSession({
       }
 
       const splitDate = toIsoDate(current.starts_at, current.start_timezone);
+      const recurrence = payload.recurrence ?? {
+        daysOfWeek: series.days_of_week,
+        intervalWeeks: series.interval_weeks,
+        untilDate: series.until_date,
+      };
+      const nextStartDate = toIsoDate(startsAt, startTimezone);
+      if (
+        recurrence.untilDate &&
+        compareIsoDate(recurrence.untilDate, nextStartDate) < 0
+      ) {
+        throw new Error('invalid_recurrence_until');
+      }
       const { error: updateOldError } = await privateDb
         .from('workspace_user_group_session_series')
         .update({ until_date: addDays(splitDate, -1) })
         .eq('id', series.id);
       if (updateOldError) throw updateOldError;
 
-      const { error: deleteFutureError } = await privateDb
+      const { data: futureRowsData, error: futureRowsError } = await privateDb
         .from('workspace_user_group_sessions')
-        .delete()
+        .select('*')
         .eq('series_id', series.id)
-        .gte('starts_at', current.starts_at);
-      if (deleteFutureError) throw deleteFutureError;
+        .gte('recurrence_instance_date', splitDate);
+      if (futureRowsError) throw futureRowsError;
 
       const { data: newSeriesData, error: newSeriesError } = await privateDb
         .from('workspace_user_group_session_series')
         .insert({
-          days_of_week: series.days_of_week,
+          days_of_week: recurrence.daysOfWeek,
           description: payload.description ?? current.description,
           description_json:
             payload.descriptionJson === undefined
@@ -1599,13 +1619,13 @@ export async function updateUserGroupSession({
           end_time: toTime(endsAt, endTimezone),
           end_timezone: endTimezone,
           group_id: current.group_id,
-          interval_weeks: series.interval_weeks,
+          interval_weeks: recurrence.intervalWeeks ?? 1,
           source: 'admin_future_split',
-          start_date: toIsoDate(startsAt, startTimezone),
+          start_date: nextStartDate,
           start_time: toTime(startsAt, startTimezone),
           start_timezone: startTimezone,
           title: payload.title ?? current.title,
-          until_date: series.until_date,
+          until_date: recurrence.untilDate ?? null,
           ws_id: wsId,
         })
         .select('*')
@@ -1613,6 +1633,51 @@ export async function updateUserGroupSession({
       if (newSeriesError) throw newSeriesError;
 
       const newSeries = newSeriesData as SeriesRow;
+      const affectedRows = (futureRowsData ?? []) as SessionRow[];
+      const retainedRows: SessionRow[] = [];
+      const cancelledRows: SessionRow[] = [];
+
+      for (const row of affectedRows) {
+        const instanceDate = row.recurrence_instance_date;
+        if (instanceDate && isExpectedSeriesDate(newSeries, instanceDate)) {
+          const occurrence = buildMissingOccurrence(
+            newSeries,
+            null,
+            instanceDate
+          );
+          const { data: retained, error: retainedError } = await privateDb
+            .from('workspace_user_group_sessions')
+            .update({
+              description: newSeries.description,
+              description_json: newSeries.description_json,
+              end_timezone: occurrence.endTimezone,
+              ends_at: occurrence.endsAt,
+              series_id: newSeries.id,
+              source: 'admin_future_split',
+              start_timezone: occurrence.startTimezone,
+              starts_at: occurrence.startsAt,
+              title: newSeries.title,
+            })
+            .eq('ws_id', wsId)
+            .eq('id', row.id)
+            .select('*')
+            .single();
+          if (retainedError) throw retainedError;
+          retainedRows.push(retained as SessionRow);
+          continue;
+        }
+
+        const { data: cancelled, error: cancelledError } = await privateDb
+          .from('workspace_user_group_sessions')
+          .update({ status: 'cancelled' })
+          .eq('ws_id', wsId)
+          .eq('id', row.id)
+          .select('*')
+          .single();
+        if (cancelledError) throw cancelledError;
+        cancelledRows.push(cancelled as SessionRow);
+      }
+
       await materializeSeries(privateDb, newSeries.id, newSeries.until_date);
 
       const { data: rowsData, error: rowsError } = await privateDb
@@ -1633,7 +1698,7 @@ export async function updateUserGroupSession({
         )
       );
 
-      return serializeSessions(supabase, wsId, rows);
+      return serializeSessions(supabase, wsId, [...rows, ...cancelledRows]);
     }
   }
 
@@ -1668,5 +1733,104 @@ export async function updateUserGroupSession({
   });
 
   const [serialized] = await serializeSessions(supabase, wsId, [row]);
+  return serialized ?? null;
+}
+
+export async function cancelUserGroupSession({
+  scope = 'once',
+  sessionId,
+  supabase,
+  wsId,
+}: {
+  scope?: 'future' | 'once';
+  sessionId: string;
+  supabase: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const privateDb = privateClient(supabase);
+  const current = await fetchSessionById(wsId, sessionId, supabase);
+  if (!current) return null;
+
+  if (scope === 'future' && current.series_id) {
+    const splitDate =
+      current.recurrence_instance_date ??
+      toIsoDate(current.starts_at, current.start_timezone);
+    const { error: seriesError } = await privateDb
+      .from('workspace_user_group_session_series')
+      .update({ until_date: addDays(splitDate, -1) })
+      .eq('ws_id', wsId)
+      .eq('id', current.series_id);
+    if (seriesError) throw seriesError;
+
+    const { data, error } = await privateDb
+      .from('workspace_user_group_sessions')
+      .update({ status: 'cancelled' })
+      .eq('ws_id', wsId)
+      .eq('series_id', current.series_id)
+      .gte('recurrence_instance_date', splitDate)
+      .select('*');
+    if (error) throw error;
+    return serializeSessions(supabase, wsId, (data ?? []) as SessionRow[]);
+  }
+
+  const { data, error } = await privateDb
+    .from('workspace_user_group_sessions')
+    .update({ status: 'cancelled' })
+    .eq('ws_id', wsId)
+    .eq('id', sessionId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  const [serialized] = await serializeSessions(supabase, wsId, [
+    data as SessionRow,
+  ]);
+  return serialized ?? null;
+}
+
+export async function restoreUserGroupSession({
+  sessionId,
+  supabase,
+  wsId,
+}: {
+  sessionId: string;
+  supabase: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const privateDb = privateClient(supabase);
+  const current = await fetchSessionById(wsId, sessionId, supabase);
+  if (!current) return null;
+
+  let keepSeries = false;
+  if (current.series_id && current.recurrence_instance_date) {
+    const { data, error } = await privateDb
+      .from('workspace_user_group_session_series')
+      .select('*')
+      .eq('ws_id', wsId)
+      .eq('id', current.series_id)
+      .maybeSingle();
+    if (error) throw error;
+    keepSeries =
+      !!data &&
+      isExpectedSeriesDate(data as SeriesRow, current.recurrence_instance_date);
+  }
+
+  const { data, error } = await privateDb
+    .from('workspace_user_group_sessions')
+    .update({
+      recurrence_instance_date: keepSeries
+        ? current.recurrence_instance_date
+        : null,
+      series_id: keepSeries ? current.series_id : null,
+      source: keepSeries ? current.source : 'restored_detached_session',
+      status: 'scheduled',
+    })
+    .eq('ws_id', wsId)
+    .eq('id', sessionId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  const [serialized] = await serializeSessions(supabase, wsId, [
+    data as SessionRow,
+  ]);
   return serialized ?? null;
 }

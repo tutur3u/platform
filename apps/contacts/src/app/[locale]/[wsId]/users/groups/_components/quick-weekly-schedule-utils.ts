@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import '@tuturuuu/users-core/lib/dayjs-setup';
 import { buildZonedIso, DEFAULT_SCHEDULE_TIMEZONE } from './session-time-utils';
 
-export const QUICK_WEEKLY_DEFAULT_DAYS = [2, 4, 6] as const;
+export const QUICK_WEEKLY_DEFAULT_DAYS: readonly number[] = [];
 export const QUICK_WEEKLY_PREVIEW_LIMIT = 6;
 
 export interface QuickWeeklyScheduleDraft {

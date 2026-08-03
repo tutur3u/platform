@@ -6,6 +6,7 @@ import {
 import { listUserGroupSessions } from '@tuturuuu/users-core/lib/user-groups/session-schedule';
 import type { InitialAttendanceProps } from '@tuturuuu/users-ui/components/group-attendance-client';
 import GroupAttendanceClient from '@tuturuuu/users-ui/components/group-attendance-client';
+import { buildAttendanceMap } from '@tuturuuu/users-ui/components/group-attendance-utils';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -85,6 +86,7 @@ export default async function UserGroupAttendancePage({
             initialSessions={sessions}
             initialMembers={members}
             initialDate={effectiveDate}
+            initialSessionId={requestedSessionId}
             initialAttendance={attendanceMap}
             canUpdateAttendance={canUpdateAttendance}
             startingDate={group.starting_date}
@@ -135,6 +137,7 @@ async function getInitialAttendanceData(
     listUserGroupSessions({
       from: rangeStart.toISOString(),
       groupId,
+      includeCancelled: true,
       supabase: sbAdmin,
       to: rangeEnd.toISOString(),
       wsId,
@@ -146,6 +149,7 @@ async function getInitialAttendanceData(
     user_id: string;
     status: string;
     notes: string | null;
+    session_id: string | null;
   }>;
 
   // Batch guest lookup instead of one is_user_guest RPC per member.
@@ -171,13 +175,10 @@ async function getInitialAttendanceData(
     InitialAttendanceProps['initialAttendance']
   >[string];
 
-  const attendance: Record<string, AttendanceEntry> = {};
-  for (const r of attendanceRows) {
-    attendance[r.user_id] = {
-      status: r.status as AttendanceEntry['status'],
-      note: r.notes ?? '',
-    };
-  }
+  const attendance: Record<string, AttendanceEntry> = buildAttendanceMap(
+    attendanceRows,
+    sessionId
+  );
 
   return {
     sessions: sessionData.data,

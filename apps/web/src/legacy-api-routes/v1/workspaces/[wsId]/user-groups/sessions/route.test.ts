@@ -73,6 +73,7 @@ describe('workspace user group sessions route', () => {
     expect(listUserGroupSessionsMock).toHaveBeenCalledWith({
       from: '2026-01-01T00:00:00.000Z',
       groupId: '00000000-0000-4000-8000-000000000101',
+      includeCancelled: false,
       includeMissing: true,
       supabase: { admin: true },
       to: '2026-02-01T00:00:00.000Z',

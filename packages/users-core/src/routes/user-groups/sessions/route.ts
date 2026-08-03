@@ -25,11 +25,7 @@ const RecurrenceSchema = z.object({
     .max(7)
     .transform((days) => Array.from(new Set(days)).sort()),
   intervalWeeks: z.number().int().min(1).max(52).optional(),
-  untilDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable()
-    .optional(),
+  untilDate: z.iso.date().nullable().optional(),
 });
 
 const CreateSessionSchema = z
@@ -50,7 +46,16 @@ const CreateSessionSchema = z
   .refine((value) => new Date(value.endsAt) > new Date(value.startsAt), {
     message: 'Session end time must be after start time',
     path: ['endsAt'],
-  });
+  })
+  .refine(
+    (value) =>
+      !value.recurrence?.untilDate ||
+      value.recurrence.untilDate >= value.startsAt.slice(0, 10),
+    {
+      message: 'Recurrence end date must not be before the start date',
+      path: ['recurrence', 'untilDate'],
+    }
+  );
 
 interface Params {
   params: Promise<{
@@ -77,6 +82,7 @@ export async function GET(req: Request, { params }: Params) {
   const groupId = url.searchParams.get('groupId');
   const from = url.searchParams.get('from');
   const includeMissing = url.searchParams.get('includeMissing') === 'true';
+  const includeCancelled = url.searchParams.get('includeCancelled') === 'true';
   const to = url.searchParams.get('to');
 
   try {
@@ -84,6 +90,7 @@ export async function GET(req: Request, { params }: Params) {
     const result = await listUserGroupSessions({
       from,
       groupId,
+      includeCancelled,
       includeMissing,
       supabase,
       to,

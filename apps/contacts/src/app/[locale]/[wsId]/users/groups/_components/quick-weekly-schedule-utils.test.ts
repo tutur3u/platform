@@ -9,7 +9,7 @@ import {
 import { DEFAULT_SCHEDULE_TIMEZONE } from './session-time-utils';
 
 describe('quick weekly schedule setup helpers', () => {
-  it('defaults to Tue/Thu/Sat 7:00-8:30 PM GMT+7 for 12 months', () => {
+  it('requires explicit weekdays and defaults the remaining schedule fields', () => {
     const draft = createQuickWeeklyScheduleDraft(
       dayjs.tz(
         '2026-06-19 09:00',
@@ -19,7 +19,7 @@ describe('quick weekly schedule setup helpers', () => {
     );
 
     expect(draft).toMatchObject({
-      daysOfWeek: [2, 4, 6],
+      daysOfWeek: [],
       endDate: '2026-06-19',
       endTime: '20:30',
       intervalWeeks: 1,
@@ -38,6 +38,7 @@ describe('quick weekly schedule setup helpers', () => {
         DEFAULT_SCHEDULE_TIMEZONE
       )
     );
+    draft.daysOfWeek = [2, 4, 6];
 
     const preview = buildQuickWeeklySchedulePreview(draft, 'en');
 
@@ -61,6 +62,7 @@ describe('quick weekly schedule setup helpers', () => {
         DEFAULT_SCHEDULE_TIMEZONE
       )
     );
+    draft.daysOfWeek = [2, 4, 6];
 
     expect(
       buildQuickWeeklySchedulePayload({

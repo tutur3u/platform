@@ -1802,7 +1802,9 @@ export {
   type WorkspaceUserGroupAttendanceStatus,
 } from './user-group-attendance';
 export {
+  type CancelWorkspaceUserGroupSessionPayload,
   type CreateWorkspaceUserGroupSessionPayload,
+  cancelWorkspaceUserGroupSession,
   createWorkspaceUserGroupSession,
   type ListWorkspaceUserGroupMembersParams,
   type ListWorkspaceUserGroupMembersResponse,
@@ -1821,6 +1823,7 @@ export {
   type RepairWorkspaceUserGroupSessionOccurrenceResponse,
   reconcileWorkspaceUserGroupSession,
   repairWorkspaceUserGroupSessionOccurrence,
+  restoreWorkspaceUserGroupSession,
   type UpdateWorkspaceUserGroupSessionPayload,
   updateWorkspaceUserGroupSession,
   type WorkspaceUserGroupMissingSessionOccurrence,
@@ -1836,6 +1839,7 @@ export {
   type WorkspaceUserGroupSessionMutationResponse,
   type WorkspaceUserGroupSessionReconciliationMode,
   type WorkspaceUserGroupSessionReconciliationPreview,
+  type WorkspaceUserGroupSessionRecurrence,
   type WorkspaceUserGroupSessionRecurrencePayload,
   type WorkspaceUserGroupSessionTag,
 } from './user-group-schedule';

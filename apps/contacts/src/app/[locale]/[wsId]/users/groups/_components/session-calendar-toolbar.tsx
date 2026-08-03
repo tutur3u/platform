@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Eye,
   Globe,
   Maximize2,
   Minimize2,
@@ -46,12 +47,14 @@ interface SessionCalendarToolbarProps {
   groups: WorkspaceUserGroupScheduleGroup[];
   onCreate: (payload: CreateWorkspaceUserGroupSessionPayload) => Promise<void>;
   onGroupFilterChange: (value: string) => void;
+  onShowCancelledChange: (value: boolean) => void;
   onRefresh: () => void;
   onTagFilterChange: (value: string) => void;
   onToggleFullscreen: () => void;
   onTimezoneChange: (value: string) => void;
   onWeekStartChange: (value: Date) => void;
   tagFilter: string;
+  showCancelled: boolean;
   tags: WorkspaceUserGroupScheduleTag[];
   timezone: string;
   fullscreen: boolean;
@@ -70,12 +73,14 @@ export function SessionCalendarToolbar({
   groups,
   onCreate,
   onGroupFilterChange,
+  onShowCancelledChange,
   onRefresh,
   onTagFilterChange,
   onToggleFullscreen,
   onTimezoneChange,
   onWeekStartChange,
   tagFilter,
+  showCancelled,
   tags,
   timezone,
   fullscreen,
@@ -186,6 +191,15 @@ export function SessionCalendarToolbar({
           ))}
         </SelectContent>
       </Select>
+      <Button
+        aria-pressed={showCancelled}
+        size="sm"
+        variant={showCancelled ? 'secondary' : 'outline'}
+        onClick={() => onShowCancelledChange(!showCancelled)}
+      >
+        <Eye className="h-4 w-4" />
+        {t('show_cancelled')}
+      </Button>
       <SessionTimezoneCombobox
         ariaLabel={t('timezone')}
         className="h-9 w-[260px]"

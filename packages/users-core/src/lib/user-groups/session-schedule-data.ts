@@ -12,6 +12,7 @@ import '../dayjs-setup';
 import type {
   FileRow,
   GroupRow,
+  SeriesRow,
   SessionRow,
   TagLinkRow,
   TagRow,
@@ -186,7 +187,8 @@ function serializeSession(
   row: SessionRow,
   group: GroupRow | undefined,
   tags: WorkspaceUserGroupSessionTag[],
-  files: WorkspaceUserGroupSessionFile[]
+  files: WorkspaceUserGroupSessionFile[],
+  series: SeriesRow | undefined
 ): WorkspaceUserGroupSession {
   return {
     description: row.description,
@@ -197,6 +199,14 @@ function serializeSession(
     groupId: row.group_id,
     groupName: group?.name ?? null,
     id: row.id,
+    recurrence: series
+      ? {
+          daysOfWeek: series.days_of_week,
+          intervalWeeks: series.interval_weeks,
+          startDate: series.start_date,
+          untilDate: series.until_date,
+        }
+      : null,
     recurrenceInstanceDate: row.recurrence_instance_date,
     seriesId: row.series_id,
     source: row.source,
@@ -218,18 +228,40 @@ export async function serializeSessions(
     supabase,
     Array.from(new Set(rows.map((row) => row.group_id)))
   );
-  const relations = await fetchSessionRelations(
-    privateDb,
-    wsId,
-    rows.map((row) => row.id)
+  const seriesIds = Array.from(
+    new Set(rows.flatMap((row) => (row.series_id ? [row.series_id] : [])))
   );
+  const seriesPromise: Promise<SeriesRow[]> = seriesIds.length
+    ? (async () => {
+        const { data, error } = (await privateDb
+          .from('workspace_user_group_session_series')
+          .select('*')
+          .eq('ws_id', wsId)
+          .in('id', seriesIds)) as {
+          data: SeriesRow[] | null;
+          error: unknown;
+        };
+        if (error) throw error;
+        return data ?? [];
+      })()
+    : Promise.resolve([]);
+  const [relations, seriesRows] = await Promise.all([
+    fetchSessionRelations(
+      privateDb,
+      wsId,
+      rows.map((row) => row.id)
+    ),
+    seriesPromise,
+  ]);
+  const seriesById = new Map(seriesRows.map((series) => [series.id, series]));
 
   return rows.map((row) =>
     serializeSession(
       row,
       groupMap.get(row.group_id),
       relations.tagsBySession.get(row.id) ?? [],
-      relations.filesBySession.get(row.id) ?? []
+      relations.filesBySession.get(row.id) ?? [],
+      row.series_id ? seriesById.get(row.series_id) : undefined
     )
   );
 }

@@ -80,7 +80,7 @@ describe('QuickWeeklyScheduleDialog', () => {
     vi.useRealTimers();
   });
 
-  it('previews then submits the default weekly schedule', async () => {
+  it('requires weekdays, previews, then submits the selected weekly schedule', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
 
     render(
@@ -98,6 +98,12 @@ describe('QuickWeeklyScheduleDialog', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Quick weekly setup' }));
+    expect(
+      screen.getByRole('button', { name: 'Preview schedule' })
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Tuesday' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Thursday' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Saturday' }));
     fireEvent.click(screen.getByRole('button', { name: 'Preview schedule' }));
 
     expect(await screen.findByText('UTC/GMT +07:00')).toBeInTheDocument();

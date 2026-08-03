@@ -13,6 +13,8 @@ import {
   Edit,
   MoveRight,
   Repeat,
+  RotateCcw,
+  Trash2,
 } from '@tuturuuu/icons';
 import type {
   CreateWorkspaceUserGroupSessionPayload,
@@ -22,11 +24,13 @@ import type {
   WorkspaceUserGroupSessionReconciliationPreview,
 } from '@tuturuuu/internal-api';
 import {
+  cancelWorkspaceUserGroupSession,
   createWorkspaceUserGroupSession,
   InternalApiError,
   listWorkspaceUserGroupSessions,
   previewWorkspaceUserGroupSessionReconciliation,
   reconcileWorkspaceUserGroupSession,
+  restoreWorkspaceUserGroupSession,
   updateWorkspaceUserGroupSession,
 } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
@@ -60,6 +64,7 @@ import {
   type GroupedTimeblockMoveResult,
   type GroupedTimeblockMoveTarget,
 } from './grouped-session-timeblock-dialog';
+import { QuickWeeklyScheduleDialog } from './quick-weekly-schedule-dialog';
 import { SessionCalendarToolbar } from './session-calendar-toolbar';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { SessionScopeDialog } from './session-scope-dialog';
@@ -71,6 +76,11 @@ import {
 
 type PendingUpdate = {
   payload: UpdateWorkspaceUserGroupSessionPayload;
+  session: WorkspaceUserGroupSession;
+};
+
+type PendingCancellation = {
+  scope: 'future' | 'once';
   session: WorkspaceUserGroupSession;
 };
 
@@ -360,6 +370,7 @@ export function UserGroupSessionCalendar({
   const [calendarView, setCalendarView] = useState<CalendarView>('week');
   const [groupFilter, setGroupFilter] = useState(groupId ?? 'all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [showCancelled, setShowCancelled] = useState(false);
   const [timezone, setTimezone] = useState(DEFAULT_SCHEDULE_TIMEZONE);
   const [fullscreen, setFullscreen] = useState(false);
   const [editingSession, setEditingSession] =
@@ -373,6 +384,8 @@ export function UserGroupSessionCalendar({
   const [pendingUpdate, setPendingUpdate] = useState<PendingUpdate | null>(
     null
   );
+  const [pendingCancellation, setPendingCancellation] =
+    useState<PendingCancellation | null>(null);
   const [reconcilePreview, setReconcilePreview] =
     useState<WorkspaceUserGroupSessionReconciliationPreview | null>(null);
   const [reconcileDialogOpen, setReconcileDialogOpen] = useState(false);
@@ -396,6 +409,7 @@ export function UserGroupSessionCalendar({
       listWorkspaceUserGroupSessions(wsId, {
         from: range.from,
         groupId: activeGroupId ?? undefined,
+        includeCancelled: true,
         to: range.to,
       }),
     placeholderData: keepPreviousData,
@@ -408,10 +422,11 @@ export function UserGroupSessionCalendar({
 
   const filteredSessions = useMemo(() => {
     return (scheduleData?.data ?? []).filter((session) => {
+      if (!showCancelled && session.status === 'cancelled') return false;
       if (tagFilter === 'all') return true;
       return session.tags.some((tag) => tag.id === tagFilter);
     });
-  }, [scheduleData?.data, tagFilter]);
+  }, [scheduleData?.data, showCancelled, tagFilter]);
 
   const sessionsById = useMemo(
     () =>
@@ -426,6 +441,7 @@ export function UserGroupSessionCalendar({
       buildUserGroupCalendarDensity({
         groupSessions: !activeGroupId,
         labels: {
+          cancelledBadge: t('cancelled_badge'),
           filesAttachedCount: (count) => t('files_attached_count', { count }),
           groupedTimeblockDescription: (values) =>
             t('grouped_timeblock_description', values),
@@ -532,6 +548,36 @@ export function UserGroupSessionCalendar({
       void queryClient.invalidateQueries({ queryKey });
       void queryClient.invalidateQueries({
         queryKey: ['workspace-user-group-schedule-group-summaries', wsId],
+      });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: ({ scope, session }: PendingCancellation) =>
+      cancelWorkspaceUserGroupSession(wsId, session.id, { scope }),
+    onError: () => toast.error(t('failed_to_cancel_session')),
+    onSuccess: () => {
+      toast.success(t('session_cancelled'));
+      setEditingSession(null);
+      setPendingCancellation(null);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['group-schedule', groupId],
+      });
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: (session: WorkspaceUserGroupSession) =>
+      restoreWorkspaceUserGroupSession(wsId, session.id),
+    onError: () => toast.error(t('failed_to_restore_session')),
+    onSuccess: () => toast.success(t('session_restored')),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ['group-schedule', groupId],
       });
     },
   });
@@ -781,31 +827,54 @@ export function UserGroupSessionCalendar({
 
         return (
           <ContextMenuContent className="w-52">
-            <ContextMenuItem
-              disabled={!canUpdateSchedule}
-              onSelect={() => {
-                if (canUpdateSchedule) setEditingSession(session);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-              {t('edit_session')}
-            </ContextMenuItem>
-            {!session.seriesId && (
+            {session.status === 'cancelled' ? (
+              <ContextMenuItem
+                disabled={!canUpdateSchedule || restoreMutation.isPending}
+                onSelect={() => restoreMutation.mutate(session)}
+              >
+                <RotateCcw className="h-4 w-4" />
+                {t('restore_session')}
+              </ContextMenuItem>
+            ) : (
               <>
-                <ContextMenuSeparator />
                 <ContextMenuItem
-                  disabled={
-                    !canUpdateSchedule ||
-                    previewReconcileMutation.isPending ||
-                    reconcileMutation.isPending
-                  }
+                  disabled={!canUpdateSchedule}
                   onSelect={() => {
-                    if (!canUpdateSchedule) return;
-                    requestReconcilePreview(session);
+                    if (canUpdateSchedule) setEditingSession(session);
                   }}
                 >
-                  <Repeat className="h-4 w-4" />
-                  {scheduleMessage('fix_recurring_link')}
+                  <Edit className="h-4 w-4" />
+                  {t('edit_session')}
+                </ContextMenuItem>
+                {!session.seriesId && (
+                  <>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                      disabled={
+                        !canUpdateSchedule ||
+                        previewReconcileMutation.isPending ||
+                        reconcileMutation.isPending
+                      }
+                      onSelect={() => {
+                        if (!canUpdateSchedule) return;
+                        requestReconcilePreview(session);
+                      }}
+                    >
+                      <Repeat className="h-4 w-4" />
+                      {scheduleMessage('fix_recurring_link')}
+                    </ContextMenuItem>
+                  </>
+                )}
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  className="text-destructive focus:text-destructive"
+                  disabled={!canUpdateSchedule}
+                  onSelect={() =>
+                    setPendingCancellation({ scope: 'once', session })
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t('cancel_session_once')}
                 </ContextMenuItem>
               </>
             )}
@@ -848,8 +917,11 @@ export function UserGroupSessionCalendar({
 
         return event ? { ...event, ...updates } : undefined;
       },
-      onDelete: () => {
-        toast.info(t('delete_session_not_available'));
+      onDelete: (eventId) => {
+        const session = sessionsById.get(eventId);
+        if (session?.status === 'scheduled') {
+          setPendingCancellation({ scope: 'once', session });
+        }
       },
     }),
     [
@@ -862,6 +934,7 @@ export function UserGroupSessionCalendar({
       previewReconcileMutation.isPending,
       reconcileMutation.isPending,
       requestReconcilePreview,
+      restoreMutation,
       scheduleMessage,
     ]
   );
@@ -894,6 +967,7 @@ export function UserGroupSessionCalendar({
           await createMutation.mutateAsync(payload);
         }}
         onGroupFilterChange={setGroupFilter}
+        onShowCancelledChange={setShowCancelled}
         onRefresh={() => {
           void sessionsQuery.refetch();
         }}
@@ -902,6 +976,7 @@ export function UserGroupSessionCalendar({
         onTimezoneChange={setTimezone}
         onWeekStartChange={setCalendarDate}
         tagFilter={tagFilter}
+        showCancelled={showCancelled}
         tags={tags}
         timezone={timezone}
         fullscreen={fullscreen}
@@ -924,6 +999,32 @@ export function UserGroupSessionCalendar({
             >
               {commonT('retry')}
             </Button>
+          </div>
+        ) : !sessionsQuery.isLoading && filteredSessions.length === 0 ? (
+          <div className="flex h-full min-h-96 flex-col items-center justify-center gap-4 rounded-xl border border-foreground/20 border-dashed bg-foreground/[0.02] p-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-dynamic-blue/10 text-dynamic-blue">
+              <CalendarDays className="h-6 w-6" />
+            </div>
+            <div className="max-w-md space-y-1">
+              <h3 className="font-semibold text-lg">
+                {t('schedule_empty_title')}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t('schedule_empty_description')}
+              </p>
+            </div>
+            {canUpdateSchedule && (
+              <QuickWeeklyScheduleDialog
+                canChooseGroup={canChooseGroup}
+                defaultGroupId={activeGroupId ?? undefined}
+                groups={groups}
+                isPending={createMutation.isPending}
+                onSubmit={async (payload) => {
+                  await createMutation.mutateAsync(payload);
+                }}
+                trigger={<Button size="sm">{t('quick_weekly_setup')}</Button>}
+              />
+            )}
           </div>
         ) : (
           <SmartCalendar
@@ -1021,6 +1122,9 @@ export function UserGroupSessionCalendar({
         }}
         onReconcile={(session) => {
           requestReconcilePreview(session);
+        }}
+        onCancelSession={(session, scope) => {
+          setPendingCancellation({ scope, session });
         }}
         onSubmit={async (payload) => {
           if (!editingSession) return;
@@ -1143,6 +1247,48 @@ export function UserGroupSessionCalendar({
                       ? 'confirm_fix_recurring_link_weekly'
                       : 'confirm_fix_recurring_link'
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!pendingCancellation}
+        onOpenChange={(open) => {
+          if (!open && !cancelMutation.isPending) setPendingCancellation(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('cancel_session_title')}</DialogTitle>
+            <DialogDescription>
+              {pendingCancellation?.scope === 'future'
+                ? t('cancel_session_future_description')
+                : t('cancel_session_once_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/30 p-3 text-sm">
+            {t('cancel_preserves_attendance')}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={cancelMutation.isPending}
+              onClick={() => setPendingCancellation(null)}
+            >
+              {commonT('cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!pendingCancellation || cancelMutation.isPending}
+              onClick={() => {
+                if (pendingCancellation) {
+                  cancelMutation.mutate(pendingCancellation);
+                }
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t('confirm_cancel_session')}
             </Button>
           </DialogFooter>
         </DialogContent>
