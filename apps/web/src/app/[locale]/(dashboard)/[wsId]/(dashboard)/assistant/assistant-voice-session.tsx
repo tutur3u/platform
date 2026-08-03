@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
-import { AURORA_COLORS, AuroraBlob, StatusPill } from './assistant-visuals';
+import { AuroraBlob, StatusPill } from './assistant-visuals';
 import type { GroundingMetadata } from './audio/multimodal-live-client';
 import { ChatBox } from './components/chat-box/chat-box';
 import ControlTray from './components/control-tray/control-tray';
@@ -26,7 +26,13 @@ export function stopMediaStream(stream: MediaStream | null) {
   });
 }
 
-export function AssistantVoiceSession({ wsId }: { wsId: string }) {
+export function AssistantVoiceSession({
+  onError,
+  wsId,
+}: {
+  onError: (error: Error) => void;
+  wsId: string;
+}) {
   const t = useTranslations('dashboard.voice_assistant');
   const videoRef = useRef<HTMLVideoElement>(null);
   const [textChatOpen, setTextChatOpen] = useState(false);
@@ -41,6 +47,7 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
 
   const {
     client,
+    connect,
     connected,
     connectionStatus,
     disconnect,
@@ -51,6 +58,21 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
   const disconnectRef = useRef(disconnect);
   disconnectRef.current = disconnect;
   const isUserSpeaking = inputVolume > 0.1;
+  useEffect(() => {
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) return;
+      void connect().catch((error) => {
+        if (cancelled) return;
+        onError(error instanceof Error ? error : new Error(String(error)));
+      });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [connect, onError]);
 
   useEffect(() => {
     activeVideoStreamRef.current = activeVideoStream;
@@ -334,110 +356,6 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
-      {/* Beautiful gradient mesh background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* Base gradient */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(180deg,
-              hsl(270 50% 5%) 0%,
-              hsl(260 40% 8%) 50%,
-              hsl(250 35% 6%) 100%)`,
-          }}
-        />
-
-        {/* Animated gradient orbs in background */}
-        <motion.div
-          className="absolute top-[15%] left-[10%] h-175 w-175 rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${AURORA_COLORS.purple}40 0%, ${AURORA_COLORS.violet}20 40%, transparent 70%)`,
-            filter: 'blur(100px)',
-          }}
-          animate={{
-            x: [0, 80, 0, -40, 0],
-            y: [0, -60, 0, 50, 0],
-            scale: [1, 1.15, 1, 0.9, 1],
-          }}
-          transition={{
-            duration: 30,
-            repeat: Infinity,
-            ease: 'linear',
-          }}
-        />
-        <motion.div
-          className="absolute top-[20%] right-[5%] h-150 w-150 rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${AURORA_COLORS.blue}35 0%, ${AURORA_COLORS.cyan}15 40%, transparent 70%)`,
-            filter: 'blur(100px)',
-          }}
-          animate={{
-            x: [0, -70, 0, 50, 0],
-            y: [0, 70, 0, -45, 0],
-            scale: [1, 0.85, 1, 1.12, 1],
-          }}
-          transition={{
-            duration: 28,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: 2,
-          }}
-        />
-        <motion.div
-          className="absolute bottom-[10%] left-[20%] h-125 w-125 rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${AURORA_COLORS.pink}30 0%, ${AURORA_COLORS.rose}15 40%, transparent 70%)`,
-            filter: 'blur(100px)',
-          }}
-          animate={{
-            x: [0, 60, 0, -70, 0],
-            y: [0, -50, 0, 60, 0],
-            scale: [1, 1.2, 1, 0.85, 1],
-          }}
-          transition={{
-            duration: 26,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: 4,
-          }}
-        />
-        <motion.div
-          className="absolute right-[15%] bottom-[30%] h-100 w-100 rounded-full"
-          style={{
-            background: `radial-gradient(circle, ${AURORA_COLORS.amber}25 0%, ${AURORA_COLORS.rose}10 40%, transparent 70%)`,
-            filter: 'blur(80px)',
-          }}
-          animate={{
-            x: [0, -50, 0, 40, 0],
-            y: [0, 40, 0, -50, 0],
-            scale: [1, 1.1, 1, 0.92, 1],
-          }}
-          transition={{
-            duration: 24,
-            repeat: Infinity,
-            ease: 'linear',
-            delay: 6,
-          }}
-        />
-
-        {/* Subtle noise texture overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.02]"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }}
-        />
-
-        {/* Vignette effect */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(ellipse at center, transparent 0%, transparent 50%, rgba(0,0,0,0.4) 100%)',
-          }}
-        />
-      </div>
-
       {/* Dynamic UI visualizations */}
       <VisualizationContainer wsId={wsId} />
 
@@ -497,6 +415,7 @@ export function AssistantVoiceSession({ wsId }: { wsId: string }) {
       <div className="absolute inset-x-0 bottom-0 z-20">
         <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 pb-6 md:p-6 md:pb-8">
           <ControlTray
+            onError={onError}
             videoRef={videoRef}
             supportsVideo={true}
             textChatOpen={textChatOpen}

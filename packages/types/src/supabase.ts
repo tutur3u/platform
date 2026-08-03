@@ -457,6 +457,161 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_live_model_prices: {
+        Row: {
+          created_at: string;
+          effective_at: string;
+          id: string;
+          input_audio_per_million: number;
+          input_image_video_per_million: number;
+          input_text_per_million: number;
+          model_id: string;
+          output_audio_per_million: number;
+          output_text_per_million: number;
+          provider: string;
+          search_per_query: number;
+          source_url: string;
+        };
+        Insert: {
+          created_at?: string;
+          effective_at: string;
+          id?: string;
+          input_audio_per_million: number;
+          input_image_video_per_million: number;
+          input_text_per_million: number;
+          model_id: string;
+          output_audio_per_million: number;
+          output_text_per_million: number;
+          provider?: string;
+          search_per_query: number;
+          source_url: string;
+        };
+        Update: {
+          created_at?: string;
+          effective_at?: string;
+          id?: string;
+          input_audio_per_million?: number;
+          input_image_video_per_million?: number;
+          input_text_per_million?: number;
+          model_id?: string;
+          output_audio_per_million?: number;
+          output_text_per_million?: number;
+          provider?: string;
+          search_per_query?: number;
+          source_url?: string;
+        };
+        Relationships: [];
+      };
+      ai_live_sessions: {
+        Row: {
+          access_ws_id: string;
+          billed_credits: number;
+          billing_ws_id: string;
+          closed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          input_audio_tokens: number;
+          input_image_tokens: number;
+          input_text_tokens: number;
+          input_video_tokens: number;
+          last_sequence: number;
+          model_id: string;
+          output_audio_tokens: number;
+          output_text_tokens: number;
+          pricing_id: string;
+          provider_cost_usd: number;
+          reservation_id: string;
+          reserved_credits: number;
+          search_queries: number;
+          status: string;
+          thinking_tokens: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          access_ws_id: string;
+          billed_credits?: number;
+          billing_ws_id: string;
+          closed_at?: string | null;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          input_audio_tokens?: number;
+          input_image_tokens?: number;
+          input_text_tokens?: number;
+          input_video_tokens?: number;
+          last_sequence?: number;
+          model_id: string;
+          output_audio_tokens?: number;
+          output_text_tokens?: number;
+          pricing_id: string;
+          provider_cost_usd?: number;
+          reservation_id: string;
+          reserved_credits: number;
+          search_queries?: number;
+          status?: string;
+          thinking_tokens?: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          access_ws_id?: string;
+          billed_credits?: number;
+          billing_ws_id?: string;
+          closed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          input_audio_tokens?: number;
+          input_image_tokens?: number;
+          input_text_tokens?: number;
+          input_video_tokens?: number;
+          last_sequence?: number;
+          model_id?: string;
+          output_audio_tokens?: number;
+          output_text_tokens?: number;
+          pricing_id?: string;
+          provider_cost_usd?: number;
+          reservation_id?: string;
+          reserved_credits?: number;
+          search_queries?: number;
+          status?: string;
+          thinking_tokens?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_live_sessions_pricing_id_fkey';
+            columns: ['pricing_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_live_model_prices';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_live_sessions_reservation_id_fkey';
+            columns: ['reservation_id'];
+            isOneToOne: true;
+            referencedRelation: 'ai_credit_reservations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ai_live_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'ai_live_sessions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       ai_memory_audit: {
         Row: {
           action: string;
@@ -15051,6 +15206,22 @@ export type Database = {
         Args: { p_ws_id?: string };
         Returns: number;
       };
+      begin_ai_live_session: {
+        Args: {
+          p_access_ws_id: string;
+          p_billing_ws_id: string;
+          p_expires_at: string;
+          p_model_id: string;
+          p_user_id: string;
+        };
+        Returns: {
+          error_code: string;
+          live_session_id: string;
+          reservation_id: string;
+          reserved_credits: number;
+          success: boolean;
+        }[];
+      };
       begin_ai_studio_run: {
         Args: {
           p_api_key_id: string;
@@ -15805,6 +15976,10 @@ export type Database = {
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
+      };
+      expire_ai_live_sessions: {
+        Args: { p_balance_id: string };
+        Returns: undefined;
       };
       expire_inventory_checkout_sessions: {
         Args: { p_limit?: number; p_now?: string; p_ws_id?: string };
@@ -17495,6 +17670,23 @@ export type Database = {
           requests_per_minute: number;
           workspace_name: string;
           ws_id: string;
+        }[];
+      };
+      settle_ai_live_session: {
+        Args: {
+          p_close?: boolean;
+          p_live_session_id: string;
+          p_sequence: number;
+          p_usage: Json;
+          p_user_id: string;
+        };
+        Returns: {
+          billed_credits: number;
+          closed: boolean;
+          error_code: string;
+          provider_cost_usd: number;
+          remaining_reserved_credits: number;
+          success: boolean;
         }[];
       };
       settle_ai_studio_run: {

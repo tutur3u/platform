@@ -54,7 +54,7 @@ export const FEATURE_TIERS: Record<FeatureId, WorkspaceProductTier> = {
 
   // PLUS tier features
   chat: 'PLUS',
-  voice_assistant: 'PLUS',
+  voice_assistant: 'FREE',
 
   // PRO tier features
   workforce: 'PRO',

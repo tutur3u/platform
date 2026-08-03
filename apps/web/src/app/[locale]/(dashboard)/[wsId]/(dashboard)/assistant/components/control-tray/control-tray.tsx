@@ -44,6 +44,7 @@ export type ControlTrayProps = {
     type: 'webcam' | 'screen' | null
   ) => void;
   onInputVolumeChange?: (volume: number) => void;
+  onError?: (error: Error) => void;
   videoStopRequest?: number;
   // New: Chat toggle props
   textChatOpen?: boolean;
@@ -178,6 +179,7 @@ function ControlTray({
   videoRef,
   children,
   onInputVolumeChange = () => {},
+  onError = () => {},
   onVideoStreamChange = () => {
     // Default no-op
   },
@@ -256,13 +258,20 @@ function ControlTray({
     };
 
     if (connected && !muted && audioRecorder) {
-      audioRecorder
+      const recorder = audioRecorder
         .on('data', onData)
-        .on('volume', onInputVolumeChange)
-        .start();
-      audioRecorder.stream?.getAudioTracks().forEach((track) => {
-        track.enabled = true;
-      });
+        .on('volume', onInputVolumeChange);
+      void recorder
+        .start()
+        .then(() => {
+          audioRecorder.stream?.getAudioTracks().forEach((track) => {
+            track.enabled = true;
+          });
+        })
+        .catch((error) => {
+          onError(error instanceof Error ? error : new Error(String(error)));
+          void disconnect();
+        });
     } else {
       audioRecorder.stop();
     }
@@ -271,7 +280,15 @@ function ControlTray({
       audioRecorder.stop();
       onInputVolumeChange(0);
     };
-  }, [connected, client, muted, audioRecorder, onInputVolumeChange]);
+  }, [
+    connected,
+    client,
+    muted,
+    audioRecorder,
+    onInputVolumeChange,
+    onError,
+    disconnect,
+  ]);
 
   useEffect(() => {
     if (lastVideoStopRequestRef.current === videoStopRequest) return;

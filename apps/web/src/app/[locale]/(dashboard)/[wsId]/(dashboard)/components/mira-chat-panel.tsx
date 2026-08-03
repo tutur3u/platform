@@ -374,7 +374,12 @@ export default function MiraChatPanel({
         workspaceContextBadge={workspaceContextBadge}
       />
 
-      <MiraVoiceModeSwitcher inputRef={inputRef} wsId={wsId}>
+      <MiraVoiceModeSwitcher
+        creditSource={activeCreditSource}
+        creditWsId={creditWsId}
+        inputRef={inputRef}
+        wsId={wsId}
+      >
         {(onVoiceToggle) => (
           <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             {hasMessages ? (

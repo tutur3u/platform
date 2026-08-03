@@ -55,6 +55,21 @@ streaming turn. Chat identifiers are UUID database identifiers, not local UI
 session keys; the streaming route verifies requested chat ownership before model
 invocation so persistence, observability, and AI-credit deduction stay coupled.
 
+## Web Chat and Live modes
+
+The web dashboard presents Chat and Live as one assistant surface. Chat is the
+default and remains mounted while Live is selected so draft text is preserved.
+Entering Live requests microphone access and connects automatically; switching
+back to Chat or pressing Escape closes media and returns focus to the composer.
+
+Web Live access is credit-gated on every product tier. `/api/v1/live/token`
+reserves the active Chat credit source and returns a single-use Gemini token
+that expires after five minutes. The browser reports cumulative provider usage
+to `/api/v1/live/usage`; private database functions reject regressing snapshots,
+price each modality against the effective Gemini rate, and release unused held
+credits when the session closes or expires. Keep provider prices versioned so
+historical transactions remain auditable when Google changes its rates.
+
 ### Verification
 
 For mobile-only live-mode changes, the required verification path is:

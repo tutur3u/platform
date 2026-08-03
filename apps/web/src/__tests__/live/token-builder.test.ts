@@ -25,11 +25,23 @@ describe('buildLiveConnectConfig', () => {
     expect(config?.uses).toBe(1);
     expect(config?.httpOptions).toEqual({ apiVersion: 'v1alpha' });
     expect(config?.lockAdditionalFields).toEqual([]);
+    expect(
+      new Date(config?.expireTime ?? 0).getTime() - Date.now()
+    ).toBeGreaterThan(4 * 60 * 1000);
+    expect(
+      new Date(config?.expireTime ?? 0).getTime() - Date.now()
+    ).toBeLessThanOrEqual(5 * 60 * 1000);
     expect(config?.liveConnectConstraints?.model).toBe(
       'gemini-3.1-flash-live-preview'
     );
     expect(config?.liveConnectConstraints?.config?.responseModalities).toEqual([
       Modality.AUDIO,
     ]);
+    expect(
+      config?.liveConnectConstraints?.config?.contextWindowCompression
+    ).toEqual({
+      triggerTokens: '25000',
+      slidingWindow: { targetTokens: '8000' },
+    });
   });
 });

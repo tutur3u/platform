@@ -1,5 +1,15 @@
 {
   "routes": {
+    "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Live session authorization and atomic AI credit reservation remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/live/usage:apps/web/src/app/api/v1/live/usage/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Idempotent Gemini Live usage settlement remains on the live Next.js backend pending Rust parity."
+    },
     "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

@@ -9,6 +9,7 @@ export const AI_FEATURES = [
   'email_draft',
   'image_generation',
   'embeddings',
+  'voice_live',
 ] as const;
 
 export type AiFeature = (typeof AI_FEATURES)[number];

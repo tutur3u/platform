@@ -17,6 +17,8 @@ type LiveTokenBuilderParams = {
   sessionHandle?: string;
 };
 
+export const LIVE_TOKEN_LIFETIME_MS = 5 * 60 * 1000;
+
 export function buildCreateAuthTokenConfig({
   model,
   systemInstruction,
@@ -26,7 +28,9 @@ export function buildCreateAuthTokenConfig({
   voiceName,
   thinkingLevel,
 }: LiveTokenBuilderParams): AuthTokenCreateParams['config'] {
-  const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  const expireTime = new Date(
+    Date.now() + LIVE_TOKEN_LIFETIME_MS
+  ).toISOString();
 
   return {
     uses: 1,
@@ -61,7 +65,10 @@ export function buildLiveConnectConfig({
       responseModalities,
       inputAudioTranscription: {},
       outputAudioTranscription: {},
-      contextWindowCompression: { slidingWindow: {} },
+      contextWindowCompression: {
+        triggerTokens: '25000',
+        slidingWindow: { targetTokens: '8000' },
+      },
       sessionResumption: sessionHandle == null ? {} : { handle: sessionHandle },
       thinkingConfig: {
         thinkingLevel,

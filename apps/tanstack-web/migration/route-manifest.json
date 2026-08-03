@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 500,
+        "legacyNext": 501,
         "migrated": 62,
-        "percentComplete": 12.74,
-        "remaining": 500,
+        "percentComplete": 12.72,
+        "remaining": 501,
         "terminal": 73,
-        "total": 573,
+        "total": 574,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 508,
+        "legacyNext": 509,
         "migrated": 67,
-        "percentComplete": 13.31,
-        "remaining": 508,
+        "percentComplete": 13.29,
+        "remaining": 509,
         "terminal": 78,
-        "total": 586,
+        "total": 587,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 571,
+      "legacyNext": 572,
       "migrated": 215,
-      "percentComplete": 28.54,
-      "remaining": 571,
+      "percentComplete": 28.5,
+      "remaining": 572,
       "terminal": 228,
-      "total": 799,
+      "total": 800,
       "unknownStatus": 0
     }
   },
@@ -1684,11 +1684,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/live/token:apps/web/src/legacy-api-routes/v1/live/token/route.ts",
+      "id": "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/v1/live/token",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/live/token/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/live/token/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -1698,6 +1698,15 @@
       "methods": ["POST"],
       "routePath": "/api/v1/live/tools/execute",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/live/tools/execute/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/live/usage:apps/web/src/app/api/v1/live/usage/route.ts",
+      "kind": "api",
+      "methods": ["POST"],
+      "routePath": "/api/v1/live/usage",
+      "sourceFile": "apps/web/src/app/api/v1/live/usage/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7630,20 +7639,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 573,
+    "apiRoutes": 574,
     "cronRoutes": 8,
     "layouts": 58,
     "pages": 151,
-    "routeHandlers": 586,
+    "routeHandlers": 587,
     "methodCounts": {
       "GET": 289,
       "HEAD": 3,
-      "POST": 289,
+      "POST": 290,
       "PUT": 53,
       "PATCH": 61,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 799
+    "total": 800
   }
 }

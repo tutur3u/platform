@@ -4,13 +4,16 @@ import { describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
 vi.mock('../assistant/assistant-client', () => ({
-  default: ({ onExit }: { onExit: () => void }) => (
-    <div data-testid="voice-canvas">
-      <button type="button" onClick={onExit}>
-        Back to chat
-      </button>
-    </div>
-  ),
+  default: () => <div data-testid="voice-canvas" />,
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) =>
+    ({
+      chat_mode: 'Chat',
+      live_mode: 'Live',
+      mode_label: 'Assistant mode',
+    })[key] ?? key,
 }));
 
 function Harness() {
@@ -18,7 +21,12 @@ function Harness() {
   const [draft, setDraft] = useState('Keep this draft');
 
   return (
-    <MiraVoiceModeSwitcher inputRef={inputRef} wsId="workspace-1">
+    <MiraVoiceModeSwitcher
+      creditSource="personal"
+      creditWsId="personal-workspace"
+      inputRef={inputRef}
+      wsId="workspace-1"
+    >
       {(onVoiceToggle) => (
         <div>
           <textarea
@@ -37,6 +45,20 @@ function Harness() {
 }
 
 describe('MiraVoiceModeSwitcher', () => {
+  it('defaults to Chat and exposes one consolidated Chat and Live control', () => {
+    render(<Harness />);
+
+    expect(screen.getByRole('radio', { name: 'Chat' })).toHaveAttribute(
+      'data-state',
+      'on'
+    );
+    expect(screen.getByRole('radio', { name: 'Live' })).toHaveAttribute(
+      'data-state',
+      'off'
+    );
+    expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
+  });
+
   it('returns from the in-panel voice canvas without losing the text draft', async () => {
     render(<Harness />);
     const originalInput = screen.getByRole('textbox', { name: 'Message' });
@@ -47,7 +69,7 @@ describe('MiraVoiceModeSwitcher', () => {
       originalInput
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back to chat' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Chat' }));
 
     const input = await screen.findByRole('textbox', { name: 'Message' });
     expect(input).toHaveValue('Keep this draft');
@@ -87,9 +109,7 @@ describe('MiraVoiceModeSwitcher', () => {
     render(<Harness />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'Back to chat' })
-    );
+    fireEvent.click(screen.getByRole('radio', { name: 'Chat' }));
     fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
 
     await new Promise((resolve) => window.setTimeout(resolve, 220));

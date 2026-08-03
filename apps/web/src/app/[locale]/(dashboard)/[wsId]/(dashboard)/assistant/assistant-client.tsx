@@ -1,16 +1,20 @@
 'use client';
 
-import { ArrowLeft, Sparkles } from '@tuturuuu/icons';
+import { Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect } from 'react';
-import { useEphemeralToken } from '@/hooks/use-ephemeral-token';
+import { type ReactNode, useEffect, useState } from 'react';
+import {
+  classifyLiveInitializationError,
+  type LiveInitializationErrorCode,
+  useEphemeralToken,
+} from '@/hooks/use-ephemeral-token';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
 import { AssistantVoiceSession } from './assistant-voice-session';
 
 function VoiceLoadingState({ label }: { label: string }) {
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center gap-4 overflow-hidden rounded-lg bg-background">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center gap-4 overflow-hidden rounded-lg">
       <div className="grid size-20 animate-pulse place-items-center rounded-full bg-dynamic-purple/15">
         <Sparkles className="size-8 text-dynamic-purple" />
       </div>
@@ -31,7 +35,7 @@ function VoiceErrorState({
   title: string;
 }) {
   return (
-    <div className="flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center gap-5 overflow-hidden rounded-lg bg-background p-6 text-center">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col items-center justify-center gap-5 overflow-hidden rounded-lg p-6 text-center">
       <div className="grid size-16 place-items-center rounded-full bg-destructive/10">
         <Sparkles className="size-7 text-destructive" />
       </div>
@@ -47,17 +51,28 @@ function VoiceErrorState({
 }
 
 export interface AssistantClientProps {
-  onExit: () => void;
+  creditSource: 'personal' | 'workspace';
+  creditWsId?: string;
   wsId: string;
 }
 
 export default function AssistantClient({
-  onExit,
+  creditSource,
+  creditWsId,
   wsId,
 }: AssistantClientProps) {
   const t = useTranslations('dashboard.voice_assistant');
-  const { token, scopeKey, isLoading, error, refreshToken } =
-    useEphemeralToken(wsId);
+  const [sessionError, setSessionError] = useState<Error | null>(null);
+  const {
+    token,
+    scopeKey,
+    isLoading,
+    error,
+    errorCode,
+    expiresAt,
+    liveSessionId,
+    refreshToken,
+  } = useEphemeralToken({ creditSource, creditWsId, wsId });
 
   useEffect(() => {
     if (error) {
@@ -67,13 +82,29 @@ export default function AssistantClient({
 
   let content: ReactNode;
 
+  const effectiveError = sessionError ?? error;
+  const effectiveErrorCode: LiveInitializationErrorCode = sessionError
+    ? classifyLiveInitializationError(sessionError)
+    : errorCode;
+  const errorDescription =
+    effectiveErrorCode === 'INSUFFICIENT_CREDITS'
+      ? t('insufficient_credits')
+      : effectiveErrorCode === 'MICROPHONE_DENIED'
+        ? t('microphone_denied')
+        : effectiveErrorCode === 'NOT_CONFIGURED'
+          ? t('not_configured')
+          : t('connection_error_fallback');
+
   if (isLoading) {
     content = <VoiceLoadingState label={t('initializing')} />;
-  } else if (error || !token || !scopeKey) {
+  } else if (effectiveError || !token || !scopeKey || !liveSessionId) {
     content = (
       <VoiceErrorState
-        description={t('connection_error_fallback')}
-        onRetry={() => refreshToken()}
+        description={errorDescription}
+        onRetry={() => {
+          setSessionError(null);
+          void refreshToken();
+        }}
         retryLabel={t('try_again')}
         title={t('unable_to_connect')}
       />
@@ -83,27 +114,21 @@ export default function AssistantClient({
       <LiveAPIProvider
         key={`${scopeKey}:${token}`}
         apiKey={token}
+        authorizationExpiresAt={expiresAt ?? undefined}
+        liveSessionId={liveSessionId}
+        onAuthorizationExpired={() => {
+          setSessionError(new Error('LIVE_AUTHORIZATION_EXPIRED'));
+        }}
         wsId={wsId}
         scopeKey={scopeKey}
       >
-        <AssistantVoiceSession wsId={wsId} />
+        <AssistantVoiceSession onError={setSessionError} wsId={wsId} />
       </LiveAPIProvider>
     );
   }
 
   return (
     <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-lg">
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="absolute top-3 left-3 z-50 gap-2 shadow-lg"
-        onClick={onExit}
-        aria-label={t('back_to_chat')}
-      >
-        <ArrowLeft className="size-4" />
-        <span className="hidden sm:inline">{t('back_to_chat')}</span>
-      </Button>
       {content}
     </div>
   );

@@ -1,5 +1,10 @@
 'use client';
 
+import type { UsageMetadata } from '@google/genai';
+import {
+  type GeminiLiveUsageSnapshot,
+  reportLiveUsage,
+} from '@tuturuuu/internal-api';
 import {
   createContext,
   type FC,
@@ -20,6 +25,10 @@ import type {
   ToolCall,
   ToolResponse,
 } from '@/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live';
+import {
+  EMPTY_GEMINI_LIVE_USAGE,
+  normalizeGeminiLiveUsage,
+} from '@/lib/live/usage';
 
 export type ConnectionStatus =
   | 'disconnected'
@@ -43,20 +52,38 @@ export type UseLiveAPIResults = {
 const LiveAPIContext = createContext<UseLiveAPIResults | undefined>(undefined);
 
 export type LiveAPIProviderProps = {
+  authorizationExpiresAt?: string;
   children: ReactNode;
   url?: string; // Deprecated - no longer needed with new SDK
   apiKey: string;
+  liveSessionId?: string;
   wsId: string;
   scopeKey: string;
+  onAuthorizationExpired?: () => void;
 };
 
 export const LiveAPIProvider: FC<LiveAPIProviderProps> = ({
   apiKey,
+  authorizationExpiresAt,
+  liveSessionId,
   wsId,
   scopeKey,
+  onAuthorizationExpired,
   children,
 }) => {
-  const liveAPI = useLiveAPI({ apiKey, wsId, scopeKey });
+  const liveAPI = useLiveAPI({ apiKey, liveSessionId, wsId, scopeKey });
+
+  useEffect(() => {
+    if (!authorizationExpiresAt) return;
+    const remainingMs = new Date(authorizationExpiresAt).getTime() - Date.now();
+    const timeoutId = window.setTimeout(
+      () => {
+        void liveAPI.disconnect().finally(() => onAuthorizationExpired?.());
+      },
+      Math.max(0, remainingMs)
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [authorizationExpiresAt, liveAPI.disconnect, onAuthorizationExpired]);
 
   return (
     <LiveAPIContext.Provider value={liveAPI}>
@@ -75,15 +102,27 @@ export const useLiveAPIContext = () => {
 
 export function useLiveAPI({
   apiKey,
+  liveSessionId,
   wsId,
   scopeKey,
 }: {
   apiKey: string;
+  liveSessionId?: string;
   wsId: string;
   scopeKey: string;
 }): UseLiveAPIResults {
   const client = useMemo(() => new MultimodalLiveClient({ apiKey }), [apiKey]);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
+  const latestUsageRef = useRef<GeminiLiveUsageSnapshot>(
+    EMPTY_GEMINI_LIVE_USAGE
+  );
+  const latestMetadataRef = useRef<UsageMetadata | null>(null);
+  const searchQueriesRef = useRef(0);
+  const usageSequenceRef = useRef(0);
+  const usageQueueRef = useRef(Promise.resolve());
+  const closingUsageRef = useRef(false);
+  const hasStartedRef = useRef(false);
+  const disconnectRef = useRef<() => Promise<void>>(async () => {});
 
   const [connected, setConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] =
@@ -131,6 +170,44 @@ export function useLiveAPI({
   // Track reconnection attempts
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 3;
+
+  const enqueueUsageReport = useCallback(
+    (close = false) => {
+      if (!liveSessionId) return Promise.resolve();
+      if (close && closingUsageRef.current) return usageQueueRef.current;
+      if (close) closingUsageRef.current = true;
+
+      const usage = latestMetadataRef.current
+        ? normalizeGeminiLiveUsage(
+            latestMetadataRef.current,
+            searchQueriesRef.current
+          )
+        : {
+            ...latestUsageRef.current,
+            searchQueries: searchQueriesRef.current,
+          };
+      latestUsageRef.current = usage;
+      const sequence = usageSequenceRef.current++;
+
+      usageQueueRef.current = usageQueueRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          const result = await reportLiveUsage(
+            { close, liveSessionId, sequence, usage },
+            { keepalive: close }
+          );
+          if (!close && result.remainingReservedCredits < 250) {
+            void disconnectRef.current();
+          }
+        })
+        .catch((error) => {
+          console.warn('[Live API] Failed to report usage:', error);
+        });
+
+      return usageQueueRef.current;
+    },
+    [liveSessionId]
+  );
 
   useEffect(() => {
     const stopAudioStreamer = () => audioStreamerRef.current?.stop();
@@ -195,6 +272,19 @@ export function useLiveAPI({
     // This ensures the last chunk of audio (which may be smaller than bufferSize) is played
     const onTurnComplete = () => audioStreamerRef.current?.complete();
 
+    const onUsage = (metadata: UsageMetadata) => {
+      latestMetadataRef.current = metadata;
+      latestUsageRef.current = normalizeGeminiLiveUsage(
+        metadata,
+        searchQueriesRef.current
+      );
+      void enqueueUsageReport();
+    };
+
+    const onGroundingMetadata = (metadata: { webSearchQueries?: string[] }) => {
+      searchQueriesRef.current += metadata.webSearchQueries?.length ?? 0;
+    };
+
     // Handle session resumption updates - store handle for reconnection
     // This is sent periodically and before session ends to allow resumption
     const onSessionResumptionUpdate = async (data: {
@@ -231,6 +321,8 @@ export function useLiveAPI({
       .on('close', onClose)
       .on('interrupted', stopAudioStreamer)
       .on('audio', onAudio)
+      .on('usage', onUsage)
+      .on('groundingmetadata', onGroundingMetadata)
       .on('turncomplete', onTurnComplete)
       .on('sessionresumptionupdate', onSessionResumptionUpdate);
 
@@ -239,10 +331,12 @@ export function useLiveAPI({
         .off('close', onClose)
         .off('interrupted', stopAudioStreamer)
         .off('audio', onAudio)
+        .off('usage', onUsage)
+        .off('groundingmetadata', onGroundingMetadata)
         .off('turncomplete', onTurnComplete)
         .off('sessionresumptionupdate', onSessionResumptionUpdate);
     };
-  }, [client, config]);
+  }, [client, config, enqueueUsageReport]);
 
   const connect = useCallback(async () => {
     if (!config) {
@@ -250,6 +344,7 @@ export function useLiveAPI({
     }
 
     // Reset intentional disconnect flag since we're connecting
+    hasStartedRef.current = true;
     isIntentionalDisconnectRef.current = false;
     setConnectionStatus('connecting');
 
@@ -319,6 +414,10 @@ export function useLiveAPI({
     isIntentionalDisconnectRef.current = true;
     // Proactively stop any ongoing assistant audio before disconnecting
     audioStreamerRef.current?.stop();
+    if (hasStartedRef.current) {
+      await enqueueUsageReport(true);
+      hasStartedRef.current = false;
+    }
     client.disconnect();
     setConnected(false);
     setConnectionStatus('disconnected');
@@ -339,7 +438,8 @@ export function useLiveAPI({
         console.warn('[Live API] Failed to delete session handle:', error);
       }
     }
-  }, [client]);
+  }, [client, enqueueUsageReport]);
+  disconnectRef.current = disconnect;
 
   const sendToolResponse = useCallback(
     (toolResponse: ToolResponse) => {

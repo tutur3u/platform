@@ -3,6 +3,7 @@ import {
   type LiveServerMessage,
   Modality,
   type Session,
+  type UsageMetadata,
 } from '@google/genai';
 import { EventEmitter } from 'eventemitter3';
 import type {
@@ -92,6 +93,7 @@ interface MultimodalLiveClientEventTypes {
   toolcall: (toolCall: ToolCall) => void;
   toolcallcancellation: (toolcallCancellation: ToolCallCancellation) => void;
   groundingmetadata: (metadata: GroundingMetadata) => void;
+  usage: (metadata: UsageMetadata) => void;
   // Session management events
   goaway: (data: { timeLeft?: string }) => void;
   generationcomplete: () => void;
@@ -279,6 +281,14 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
       '[Live API] Message received:',
       JSON.stringify(message, null, 2).slice(0, 500)
     );
+
+    if (message.usageMetadata) {
+      this.log(
+        'server.usageMetadata',
+        `total tokens: ${message.usageMetadata.totalTokenCount ?? 0}`
+      );
+      this.emit('usage', message.usageMetadata);
+    }
 
     // Handle goAway message (server requesting graceful disconnection)
     const goAwayMsg = message as unknown as { goAway?: { timeLeft?: string } };
