@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('workspace layout request boundary', () => {
   it('enters request-time rendering before reading authenticated state', () => {
     const source = readFileSync(
-      resolve(process.cwd(), 'src/app/[locale]/(dashboard)/[wsId]/layout.tsx'),
+      resolve(import.meta.dirname, 'layout.tsx'),
       'utf8'
     );
     const connectionCall = source.indexOf('await connection();');
