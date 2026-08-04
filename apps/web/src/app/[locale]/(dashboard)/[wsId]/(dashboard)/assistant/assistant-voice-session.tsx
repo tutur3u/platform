@@ -1,8 +1,7 @@
 'use client';
 
-import { AudioLines, ShieldCheck } from '@tuturuuu/icons';
 import { executeLiveTool, InternalApiError } from '@tuturuuu/internal-api';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/hooks/use-live-api';
@@ -29,9 +28,11 @@ export function stopMediaStream(stream: MediaStream | null) {
 
 export function AssistantVoiceSession({
   onError,
+  onRestartSession,
   wsId,
 }: {
   onError: (error: Error) => void;
+  onRestartSession: () => Promise<void>;
   wsId: string;
 }) {
   const t = useTranslations('dashboard.voice_assistant');
@@ -369,49 +370,10 @@ export function AssistantVoiceSession({
       <VisualizationContainer wsId={wsId} />
 
       {/* Main content area */}
-      <main className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-        {/* Greeting text */}
-        <AnimatePresence mode="wait">
-          {connected && !isUserSpeaking && !isSpeaking && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="absolute top-[10%] flex max-w-md flex-col items-center px-6 text-center md:top-[12%]"
-            >
-              <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/45 px-3 py-1 text-muted-foreground text-xs backdrop-blur-sm">
-                <AudioLines className="size-3.5 text-primary" />
-                <span>{t('live_session_ready')}</span>
-              </div>
-              <motion.h1
-                className="mb-2 bg-linear-to-r from-foreground via-foreground/80 to-foreground bg-clip-text font-semibold text-2xl tracking-tight md:text-3xl"
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                style={{
-                  backgroundSize: '200% 200%',
-                }}
-              >
-                {t('greeting')}
-              </motion.h1>
-              <p className="text-balance text-muted-foreground text-sm leading-relaxed">
-                {t('start_prompt')}
-              </p>
-              <div className="mt-3 flex items-center gap-1.5 text-muted-foreground/80 text-xs">
-                <ShieldCheck className="size-3.5 text-primary" />
-                <span>{t('privacy_note')}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Aurora Blob */}
+      <main
+        aria-label={t('live_stage_label')}
+        className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center"
+      >
         <AuroraBlob
           connected={connected}
           isUserSpeaking={isUserSpeaking}
@@ -419,8 +381,7 @@ export function AssistantVoiceSession({
           volume={volume}
         />
 
-        {/* Status indicator */}
-        <div className="absolute bottom-[22%]">
+        <div className="absolute bottom-[18%] sm:bottom-[20%]">
           <StatusPill
             connected={connected}
             connectionStatus={connectionStatus}
@@ -435,6 +396,7 @@ export function AssistantVoiceSession({
         <div className="mx-auto flex max-w-3xl flex-col gap-3 p-4 pb-6 md:p-6 md:pb-8">
           <ControlTray
             onError={onError}
+            onRestartSession={onRestartSession}
             videoRef={videoRef}
             supportsVideo={true}
             textChatOpen={textChatOpen}

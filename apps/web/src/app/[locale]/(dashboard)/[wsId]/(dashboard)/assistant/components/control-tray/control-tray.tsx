@@ -1,26 +1,19 @@
 'use client';
 
 import {
-  ImageIcon,
-  ImageOff,
   MessageSquareText,
   Mic,
   MicOff,
   MonitorUp,
   MonitorX,
-  Pause,
+  PhoneOff,
   Play,
+  Video,
+  VideoOff,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type Variants,
-} from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import {
   memo,
   type ReactNode,
@@ -39,6 +32,7 @@ export type ControlTrayProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
   children?: ReactNode;
   supportsVideo: boolean;
+  onRestartSession?: () => Promise<void>;
   onVideoStreamChange?: (
     stream: MediaStream | null,
     type: 'webcam' | 'screen' | null
@@ -46,253 +40,145 @@ export type ControlTrayProps = {
   onInputVolumeChange?: (volume: number) => void;
   onError?: (error: Error) => void;
   videoStopRequest?: number;
-  // New: Chat toggle props
   textChatOpen?: boolean;
   onToggleChat?: () => void;
 };
 
-type MediaStreamButtonProps = {
-  isStreaming: boolean;
-  onIcon: ReactNode;
-  offIcon: ReactNode;
-  start: () => Promise<any>;
-  stop: () => any;
+export async function runLiveSessionAction({
+  connected,
+  disconnect,
+  onRestartSession,
+}: {
+  connected: boolean;
+  disconnect: () => Promise<void>;
+  onRestartSession: () => Promise<void>;
+}) {
+  if (connected) await disconnect();
+  else await onRestartSession();
+}
+
+function MediaStreamButton({
+  active,
+  activeIcon,
+  activeLabel,
+  disabled,
+  inactiveIcon,
+  inactiveLabel,
+  onError,
+  start,
+  stop,
+}: {
+  active: boolean;
+  activeIcon: ReactNode;
+  activeLabel: string;
   disabled?: boolean;
-};
-
-/**
- * button used for triggering webcam or screen-capture
- */
-const MediaStreamButton = memo(
-  ({
-    isStreaming,
-    onIcon,
-    offIcon,
-    start,
-    stop,
-    disabled,
-  }: MediaStreamButtonProps) =>
-    isStreaming ? (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-12 w-12 hover:bg-foreground/10"
-        onClick={stop}
-        disabled={disabled}
-      >
-        {onIcon}
-      </Button>
-    ) : (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-12 w-12 hover:bg-foreground/10"
-        onClick={start}
-        disabled={disabled}
-      >
-        {offIcon}
-      </Button>
-    )
-);
-
-const trayContainerVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 12,
-    scale: 0.97,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.35,
-      ease: [0.16, 1, 0.3, 1],
-      when: 'beforeChildren',
-      staggerChildren: 0.08,
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: 8,
-    scale: 0.95,
-    transition: {
-      duration: 0.22,
-      ease: 'easeInOut',
-      staggerChildren: 0.05,
-      staggerDirection: -1,
-    },
-  },
-};
-
-const controlGroupVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    scale: 0.92,
-    filter: 'blur(8px)',
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    filter: 'blur(0px)',
-    transition: {
-      duration: 0.4,
-      ease: [0.16, 1, 0.3, 1],
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: -16,
-    scale: 0.95,
-    filter: 'blur(6px)',
-    transition: {
-      duration: 0.22,
-      ease: 'easeInOut',
-    },
-  },
-};
-
-const connectButtonVariants: Variants = {
-  connected: {
-    scale: 1,
-    boxShadow: '0px 12px 30px rgba(34, 197, 94, 0.25)',
-    transition: {
-      type: 'spring',
-      stiffness: 320,
-      damping: 24,
-    },
-  },
-  disconnected: {
-    scale: 1.05,
-    boxShadow: '0px 16px 32px rgba(59, 130, 246, 0.25)',
-    transition: {
-      type: 'spring',
-      stiffness: 300,
-      damping: 20,
-    },
-  },
-};
+  inactiveIcon: ReactNode;
+  inactiveLabel: string;
+  onError: (error: Error) => void;
+  start: () => Promise<unknown>;
+  stop: () => void;
+}) {
+  return (
+    <Button
+      aria-label={active ? activeLabel : inactiveLabel}
+      variant="ghost"
+      size="icon"
+      className={cn(
+        'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+        active && 'bg-primary/10 text-primary'
+      )}
+      disabled={disabled}
+      onClick={() => {
+        if (active) stop();
+        else {
+          void start().catch((error) => {
+            onError(error instanceof Error ? error : new Error(String(error)));
+          });
+        }
+      }}
+    >
+      {active ? activeIcon : inactiveIcon}
+    </Button>
+  );
+}
 
 function ControlTray({
   videoRef,
   children,
   onInputVolumeChange = () => {},
   onError = () => {},
-  onVideoStreamChange = () => {
-    // Default no-op
-  },
+  onRestartSession,
+  onVideoStreamChange = () => {},
   supportsVideo,
   textChatOpen,
   onToggleChat,
   videoStopRequest = 0,
 }: ControlTrayProps) {
+  const t = useTranslations('dashboard.voice_assistant');
   const videoStreams = [useWebcam(), useScreenCapture()];
+  const [webcam, screenCapture] = videoStreams;
   const [activeVideoStream, setActiveVideoStream] =
     useState<MediaStream | null>(null);
-  const [webcam, screenCapture] = videoStreams;
   const [audioRecorder] = useState(() => new AudioRecorder());
   const [muted, setMuted] = useState(false);
-  const [connectHovered, setConnectHovered] = useState(false);
-  const outputVolumeMotion = useMotionValue(0);
-  const outputVolumeSpring = useSpring(outputVolumeMotion, {
-    stiffness: 220,
-    damping: 30,
-    mass: 0.45,
-  });
-  const outputBlobScale = useTransform(
-    outputVolumeSpring,
-    (value) => 0.65 + Math.min(1.25, value * 1.4)
-  );
-  const outputBlobOpacity = useTransform(outputVolumeSpring, (value) =>
-    Math.min(0.95, Math.max(0, value * 0.9))
-  );
-  const outputBlobRotate = useTransform(
-    outputVolumeSpring,
-    (value) => -10 + Math.min(18, value * 36)
-  );
-  const outputBlobBlur = useTransform(
-    outputVolumeSpring,
-    (value) => `blur(${10 + Math.min(20, value * 24)}px)`
-  );
   const renderCanvasRef = useRef<HTMLCanvasElement>(null);
-  const connectButtonRef = useRef<HTMLButtonElement>(null);
+  const sessionButtonRef = useRef<HTMLButtonElement>(null);
   const lastVideoStopRequestRef = useRef(videoStopRequest);
   const videoStreamsRef = useRef(videoStreams);
   const onVideoStreamChangeRef = useRef(onVideoStreamChange);
   videoStreamsRef.current = videoStreams;
   onVideoStreamChangeRef.current = onVideoStreamChange;
 
-  const { client, connected, connect, disconnect, volume } =
-    useLiveAPIContext();
+  const { client, connected, disconnect } = useLiveAPIContext();
+  const canRestart = typeof onRestartSession === 'function';
 
   useEffect(() => {
-    if (!connected && connectButtonRef.current) {
-      connectButtonRef.current.focus();
-    }
+    if (!connected) sessionButtonRef.current?.focus();
   }, [connected]);
-
-  // Move visual effect handling to useEffect
-  useEffect(() => {
-    if (volume > 0 || connected) {
-      document.documentElement.style.setProperty(
-        '--volume',
-        `${Math.max(5, Math.min(volume * 200, 8))}px`
-      );
-    }
-  }, [volume, connected]);
-
-  useEffect(() => {
-    outputVolumeMotion.set(Math.min(1.4, volume * 6));
-  }, [volume, outputVolumeMotion]);
 
   useEffect(() => {
     const onData = (base64: string) => {
       client.sendRealtimeInput([
-        {
-          mimeType: 'audio/pcm;rate=16000',
-          data: base64,
-        },
+        { data: base64, mimeType: 'audio/pcm;rate=16000' },
       ]);
     };
 
-    if (connected && !muted && audioRecorder) {
-      const recorder = audioRecorder
-        .on('data', onData)
-        .on('volume', onInputVolumeChange);
-      void recorder
-        .start()
-        .then(() => {
-          audioRecorder.stream?.getAudioTracks().forEach((track) => {
-            track.enabled = true;
-          });
-        })
-        .catch((error) => {
-          onError(error instanceof Error ? error : new Error(String(error)));
-          void disconnect();
-        });
+    if (connected && !muted) {
+      audioRecorder.on('data', onData).on('volume', onInputVolumeChange);
+      void audioRecorder.start().catch((error) => {
+        onError(error instanceof Error ? error : new Error(String(error)));
+        void disconnect();
+      });
     } else {
       audioRecorder.stop();
     }
+
     return () => {
       audioRecorder.off('data', onData).off('volume', onInputVolumeChange);
       audioRecorder.stop();
       onInputVolumeChange(0);
     };
   }, [
-    connected,
-    client,
-    muted,
     audioRecorder,
-    onInputVolumeChange,
-    onError,
+    client,
+    connected,
     disconnect,
+    muted,
+    onError,
+    onInputVolumeChange,
   ]);
 
   useEffect(() => {
-    if (lastVideoStopRequestRef.current === videoStopRequest) return;
+    if (connected) return;
+    videoStreamsRef.current.forEach((stream) => {
+      stream?.stop();
+    });
+    setActiveVideoStream(null);
+    onVideoStreamChangeRef.current(null, null);
+  }, [connected]);
 
+  useEffect(() => {
+    if (lastVideoStopRequestRef.current === videoStopRequest) return;
     lastVideoStopRequestRef.current = videoStopRequest;
     videoStreamsRef.current.forEach((stream) => {
       stream?.stop();
@@ -302,279 +188,159 @@ function ControlTray({
   }, [videoStopRequest]);
 
   useEffect(() => {
-    if (!videoRef?.current || !activeVideoStream) return;
-
+    if (!videoRef.current || !activeVideoStream) return;
     const video = videoRef.current;
     video.srcObject = activeVideoStream;
-
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let isCapturing = false;
 
-    // Capture and send a video frame
-    function captureAndSendFrame() {
+    const captureFrame = () => {
       const canvas = renderCanvasRef.current;
-      if (!video || !canvas || !connected) {
-        return;
-      }
-
-      // Skip if video dimensions not ready
+      if (!canvas || !connected || !isCapturing) return;
       if (video.videoWidth === 0 || video.videoHeight === 0) {
-        console.log('[Video] Waiting for video dimensions...');
-        timeoutId = setTimeout(captureAndSendFrame, 500);
+        timeoutId = setTimeout(captureFrame, 500);
         return;
       }
 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      const scale = Math.min(
+        1,
+        1024 / Math.max(video.videoWidth, video.videoHeight)
+      );
+      canvas.width = Math.floor(video.videoWidth * scale);
+      canvas.height = Math.floor(video.videoHeight * scale);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const encoded = canvas.toDataURL('image/jpeg', 0.8);
+      client.sendRealtimeInput([
+        {
+          data: encoded.slice(encoded.indexOf(',') + 1),
+          mimeType: 'image/jpeg',
+        },
+      ]);
+      timeoutId = setTimeout(captureFrame, 1000);
+    };
 
-      // Calculate size - cap at 1024x1024 like Python example
-      const maxSize = 1024;
-      let width = video.videoWidth;
-      let height = video.videoHeight;
-
-      if (width > maxSize || height > maxSize) {
-        const scale = maxSize / Math.max(width, height);
-        width = Math.floor(width * scale);
-        height = Math.floor(height * scale);
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-
-      // Draw frame to canvas
-      ctx.drawImage(video, 0, 0, width, height);
-
-      // Convert to base64 JPEG
-      const base64 = canvas.toDataURL('image/jpeg', 0.8);
-      const data = base64.slice(base64.indexOf(',') + 1);
-
-      // Send to Gemini
-      console.log(`[Video] Sending frame ${width}x${height}`);
-      client.sendRealtimeInput([{ mimeType: 'image/jpeg', data }]);
-
-      // Schedule next frame - 1 second interval like Python example
-      if (isCapturing) {
-        timeoutId = setTimeout(captureAndSendFrame, 1000);
-      }
-    }
-
-    // Start capturing when video is ready to play
-    function startCapturing() {
+    const startCapture = () => {
       if (isCapturing) return;
       isCapturing = true;
-      console.log('[Video] Starting frame capture');
-      captureAndSendFrame();
-    }
+      captureFrame();
+    };
 
-    // Handle video ready state
-    if (video.readyState >= 2) {
-      // Video already has enough data
-      startCapturing();
-    } else {
-      // Wait for video to be ready
-      video.addEventListener('loadeddata', startCapturing, { once: true });
-    }
-
-    // Also try to play the video (needed for autoplay to work)
-    video.play().catch((err) => {
-      console.warn('[Video] Autoplay failed:', err);
-    });
+    if (video.readyState >= 2) startCapture();
+    else video.addEventListener('loadeddata', startCapture, { once: true });
+    void video.play().catch(() => undefined);
 
     return () => {
       isCapturing = false;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      video.removeEventListener('loadeddata', startCapturing);
+      if (timeoutId) clearTimeout(timeoutId);
+      video.removeEventListener('loadeddata', startCapture);
     };
-  }, [connected, activeVideoStream, client, videoRef]);
+  }, [activeVideoStream, client, connected, videoRef]);
 
-  //handler for swapping from one video-stream to the next
   const changeStreams = (next?: UseMediaStreamResult) => async () => {
-    if (next) {
-      const mediaStream = await next.start();
-      setActiveVideoStream(mediaStream);
-      onVideoStreamChange(mediaStream, next.type);
-    } else {
-      setActiveVideoStream(null);
-      onVideoStreamChange(null, null);
-    }
-
+    const stream = next ? await next.start() : null;
+    setActiveVideoStream(stream);
+    onVideoStreamChange(stream, next?.type ?? null);
     videoStreams
-      .filter((msr) => msr !== next)
-      .forEach((msr) => {
-        msr.stop();
+      .filter((item) => item !== next)
+      .forEach((item) => {
+        item.stop();
       });
   };
 
   return (
     <div className="mx-auto flex w-full max-w-2xl items-center justify-center">
-      <motion.div layout className="flex items-center gap-4">
-        <AnimatePresence initial={false} mode="popLayout">
-          {connected && (
-            <motion.div
-              key="connected-controls"
-              layout
-              className="flex items-center gap-4"
-              variants={trayContainerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              {/* Left group - Audio controls */}
-              <motion.div
-                layout
-                className="relative flex items-center gap-2 overflow-visible rounded-2xl p-2"
-                variants={controlGroupVariants}
-              >
-                <motion.span
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-10 -z-10"
-                  style={{
-                    scale: outputBlobScale,
-                    opacity: outputBlobOpacity,
-                    rotate: outputBlobRotate,
-                    filter: outputBlobBlur,
-                  }}
-                  animate={{
-                    borderRadius: [
-                      '48% 52% 58% 42%',
-                      '53% 47% 50% 50%',
-                      '44% 56% 60% 40%',
-                      '52% 48% 54% 46%',
-                    ],
-                  }}
-                  transition={{
-                    duration: 5.6,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                >
-                  <span className="absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_25%_30%,rgba(96,165,250,0.45),transparent_60%),radial-gradient(circle_at_70%_25%,rgba(74,222,128,0.4),transparent_55%),radial-gradient(circle_at_50%_80%,rgba(244,114,182,0.45),transparent_58%)] opacity-80 mix-blend-screen blur-3xl" />
-                </motion.span>
-                <Button
-                  variant={!muted ? 'destructive' : 'ghost'}
-                  size="icon"
-                  className="h-12 w-12"
-                  disabled={!connected}
-                  onClick={() => setMuted(!muted)}
-                >
-                  {!muted ? <Mic size={20} /> : <MicOff size={20} />}
-                </Button>
-              </motion.div>
-
-              {/* Center group - Video controls */}
-              {supportsVideo && (
-                <motion.div
-                  layout
-                  className="flex items-center gap-2 rounded-2xl p-2"
-                  variants={controlGroupVariants}
-                >
-                  <MediaStreamButton
-                    isStreaming={screenCapture?.isStreaming || false}
-                    start={changeStreams(screenCapture)}
-                    stop={changeStreams()}
-                    onIcon={<MonitorUp size={20} />}
-                    offIcon={<MonitorX size={20} />}
-                    disabled={!connected}
-                  />
-                  <MediaStreamButton
-                    isStreaming={webcam?.isStreaming || false}
-                    start={changeStreams(webcam)}
-                    stop={changeStreams()}
-                    onIcon={<ImageIcon size={20} />}
-                    offIcon={<ImageOff size={20} />}
-                    disabled={!connected}
-                  />
-                </motion.div>
+      <div className="flex items-center gap-1.5 rounded-2xl border border-border/60 bg-background/70 p-1.5 shadow-foreground/5 shadow-lg backdrop-blur-xl">
+        {connected && (
+          <>
+            <Button
+              aria-label={muted ? t('unmute_microphone') : t('mute_microphone')}
+              aria-pressed={muted}
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                muted && 'bg-destructive/10 text-destructive'
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              onClick={() => setMuted((value) => !value)}
+            >
+              {muted ? (
+                <MicOff className="size-4" />
+              ) : (
+                <Mic className="size-4" />
+              )}
+            </Button>
 
-        {/* Chat toggle appears only when connected and handler provided */}
-        {connected && typeof onToggleChat === 'function' && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-12 w-12 hover:bg-foreground/10"
-            aria-pressed={Boolean(textChatOpen)}
-            aria-label={textChatOpen ? 'Hide chat' : 'Show chat'}
-            onClick={onToggleChat}
-          >
-            <MessageSquareText size={20} />
-          </Button>
+            {supportsVideo && (
+              <>
+                <MediaStreamButton
+                  active={Boolean(screenCapture?.isStreaming)}
+                  activeIcon={<MonitorX className="size-4" />}
+                  activeLabel={t('stop_sharing')}
+                  inactiveIcon={<MonitorUp className="size-4" />}
+                  inactiveLabel={t('share_screen')}
+                  onError={onError}
+                  start={changeStreams(screenCapture)}
+                  stop={changeStreams()}
+                />
+                <MediaStreamButton
+                  active={Boolean(webcam?.isStreaming)}
+                  activeIcon={<VideoOff className="size-4" />}
+                  activeLabel={t('disable_camera')}
+                  inactiveIcon={<Video className="size-4" />}
+                  inactiveLabel={t('enable_camera')}
+                  onError={onError}
+                  start={changeStreams(webcam)}
+                  stop={changeStreams()}
+                />
+              </>
+            )}
+
+            {typeof onToggleChat === 'function' && (
+              <Button
+                aria-label={textChatOpen ? t('close_chat') : t('open_chat')}
+                aria-pressed={Boolean(textChatOpen)}
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'size-10 rounded-full text-muted-foreground hover:bg-foreground/8 hover:text-foreground',
+                  textChatOpen && 'bg-primary/10 text-primary'
+                )}
+                onClick={onToggleChat}
+              >
+                <MessageSquareText className="size-4" />
+              </Button>
+            )}
+
+            <span className="mx-0.5 h-6 w-px bg-border/60" />
+          </>
         )}
 
-        {/* Right group - Connection control + Chat toggle */}
-        <motion.div
-          layout
-          variants={connectButtonVariants}
-          initial={false}
-          animate={connected ? 'connected' : 'disconnected'}
-          className="relative flex items-center gap-2 rounded-2xl"
-          style={{ boxShadow: '0px 0px 0px rgba(0,0,0,0)' }}
+        <Button
+          ref={sessionButtonRef}
+          aria-label={connected ? t('end_session') : t('new_session')}
+          disabled={!connected && !canRestart}
+          variant={connected ? 'destructive' : 'default'}
+          size="icon"
+          className="size-11 rounded-xl shadow-sm"
+          onClick={() =>
+            void runLiveSessionAction({
+              connected,
+              disconnect,
+              onRestartSession: onRestartSession ?? (() => Promise.resolve()),
+            })
+          }
         >
-          <AnimatePresence>
-            {connectHovered && (
-              <motion.span
-                key="connect-blob"
-                className="pointer-events-none absolute -inset-6 -z-10"
-                initial={{ opacity: 0, scale: 0.45, rotate: -12 }}
-                animate={{ opacity: 1, scale: 1.12, rotate: 0 }}
-                exit={{ opacity: 0, scale: 0.3, rotate: 8 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-              >
-                <motion.span
-                  className="absolute inset-0 rounded-[45%] bg-[radial-gradient(circle_at_20%_20%,rgba(74,222,128,0.48),transparent_60%),radial-gradient(circle_at_80%_25%,rgba(59,130,246,0.45),transparent_55%),radial-gradient(circle_at_50%_80%,rgba(192,132,252,0.52),transparent_60%)] opacity-90 mix-blend-screen blur-2xl"
-                  animate={{
-                    scale: [0.95, 1.08, 0.98, 1.12],
-                    rotate: [0, 8, -6, 0],
-                    borderRadius: [
-                      '44% 56% 58% 42%',
-                      '50% 50% 46% 54%',
-                      '40% 60% 55% 45%',
-                      '44% 56% 58% 42%',
-                    ],
-                  }}
-                  transition={{
-                    duration: 2.6,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                />
-              </motion.span>
-            )}
-          </AnimatePresence>
-          <Button
-            ref={connectButtonRef}
-            variant="ghost"
-            size="icon"
-            className={cn(
-              'h-16 w-16 hover:bg-transparent',
-              connected &&
-                'bg-foreground text-background hover:bg-transparent hover:text-foreground'
-            )}
-            onClick={connected ? disconnect : connect}
-            onPointerEnter={() => setConnectHovered(true)}
-            onPointerLeave={() => setConnectHovered(false)}
-          >
-            {connected ? <Pause size={20} /> : <Play size={20} />}
-          </Button>
-        </motion.div>
+          {connected ? (
+            <PhoneOff className="size-4" />
+          ) : (
+            <Play className="size-4" />
+          )}
+        </Button>
 
-        {children ? (
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {children}
-          </motion.div>
-        ) : null}
-      </motion.div>
-
+        {children}
+      </div>
       <canvas className="hidden" ref={renderCanvasRef} />
     </div>
   );

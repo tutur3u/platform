@@ -3,18 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 
 describe('Mira Live states', () => {
-  it('explains the secure session while Live mode is preparing', () => {
+  it('keeps session startup focused and concise', () => {
     render(
       <VoiceLoadingState
-        description="Securing your session"
-        privacyNote="Audio uses a short-lived session"
-        title="Preparing Live mode"
+        description="Setting up your microphone and session."
+        title="Opening Live"
       />
     );
 
-    expect(screen.getByText('Preparing Live mode')).toBeVisible();
-    expect(screen.getByText('Securing your session')).toBeVisible();
-    expect(screen.getByText('Audio uses a short-lived session')).toBeVisible();
+    expect(screen.getByText('Opening Live')).toBeVisible();
+    expect(
+      screen.getByText('Setting up your microphone and session.')
+    ).toBeVisible();
+    expect(screen.queryByText(/short-lived/i)).not.toBeInTheDocument();
   });
 
   it('offers retry and a clear path back to Chat from errors', () => {
@@ -23,20 +24,19 @@ describe('Mira Live states', () => {
     render(
       <VoiceErrorState
         description="Check your network"
-        note="Unused credits are released"
         onRetry={onRetry}
         onReturnToChat={onReturnToChat}
-        retryLabel="Try again"
-        returnLabel="Return to Chat"
-        title="Unable to connect"
+        retryLabel="Reconnect"
+        returnLabel="Chat"
+        title="Connection interrupted"
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Return to Chat' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
 
     expect(onRetry).toHaveBeenCalledOnce();
     expect(onReturnToChat).toHaveBeenCalledOnce();
-    expect(screen.getByText('Unused credits are released')).toBeVisible();
+    expect(screen.queryByText(/reserved credits/i)).not.toBeInTheDocument();
   });
 });

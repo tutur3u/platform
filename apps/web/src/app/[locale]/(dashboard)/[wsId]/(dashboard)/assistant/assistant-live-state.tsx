@@ -1,21 +1,18 @@
 'use client';
 
 import {
+  ArrowLeft,
   AudioLines,
-  MessageSquareText,
   RefreshCw,
-  ShieldCheck,
   TriangleAlert,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 
 export function VoiceLoadingState({
   description,
-  privacyNote,
   title,
 }: {
   description: string;
-  privacyNote: string;
   title: string;
 }) {
   return (
@@ -23,20 +20,18 @@ export function VoiceLoadingState({
       aria-live="polite"
       className="flex min-h-0 flex-1 items-center justify-center p-6 text-center"
     >
-      <div className="flex max-w-sm flex-col items-center">
-        <div className="relative mb-6 grid size-20 place-items-center">
-          <div className="absolute inset-0 animate-ping rounded-full border border-primary/15 [animation-duration:2.4s]" />
-          <div className="absolute inset-2 rounded-full border border-primary/20 bg-primary/5" />
-          <AudioLines className="relative size-7 animate-pulse text-primary" />
+      <div className="flex max-w-xs flex-col items-center">
+        <div className="relative mb-7 grid size-24 place-items-center">
+          <div className="absolute inset-0 animate-pulse rounded-full border border-primary/10 [animation-duration:2.4s]" />
+          <div className="absolute inset-3 animate-pulse rounded-full border border-primary/20 bg-primary/5 [animation-delay:240ms] [animation-duration:2.4s]" />
+          <div className="grid size-12 place-items-center rounded-full border border-primary/20 bg-background/70 shadow-sm backdrop-blur-xl">
+            <AudioLines className="size-5 text-primary" />
+          </div>
         </div>
-        <p className="font-semibold text-lg tracking-tight">{title}</p>
+        <h2 className="font-semibold text-xl tracking-tight">{title}</h2>
         <p className="mt-2 text-balance text-muted-foreground text-sm leading-relaxed">
           {description}
         </p>
-        <div className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/45 px-3 py-1.5 text-muted-foreground text-xs backdrop-blur-sm">
-          <ShieldCheck className="size-3.5 text-primary" />
-          <span>{privacyNote}</span>
-        </div>
       </div>
     </section>
   );
@@ -44,7 +39,6 @@ export function VoiceLoadingState({
 
 export function VoiceErrorState({
   description,
-  note,
   onReturnToChat,
   onRetry,
   retryLabel,
@@ -52,7 +46,6 @@ export function VoiceErrorState({
   title,
 }: {
   description: string;
-  note: string;
   onReturnToChat: () => void;
   onRetry: () => void;
   retryLabel: string;
@@ -62,19 +55,21 @@ export function VoiceErrorState({
   return (
     <section
       aria-live="assertive"
-      className="flex min-h-0 flex-1 items-center justify-center p-4 sm:p-8"
+      className="flex min-h-0 flex-1 items-center justify-center p-6 sm:p-10"
     >
-      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background/55 p-5 text-center shadow-foreground/5 shadow-lg backdrop-blur-md sm:p-7">
-        <div className="mx-auto grid size-12 place-items-center rounded-xl border border-destructive/15 bg-destructive/8">
-          <TriangleAlert className="size-5 text-destructive" />
+      <div className="flex w-full max-w-sm flex-col items-center text-center">
+        <div className="relative grid size-16 place-items-center">
+          <div className="absolute inset-0 rounded-full border border-destructive/15 bg-destructive/5" />
+          <div className="absolute inset-2 rounded-full border border-destructive/20 bg-background/70 backdrop-blur-xl" />
+          <TriangleAlert className="relative size-5 text-destructive" />
         </div>
-        <h2 className="mt-5 font-semibold text-xl tracking-tight">{title}</h2>
+        <h2 className="mt-6 font-semibold text-2xl tracking-tight">{title}</h2>
         <p className="mx-auto mt-2 max-w-sm text-pretty text-muted-foreground text-sm leading-relaxed">
           {description}
         </p>
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-center">
-          <Button variant="outline" onClick={onReturnToChat}>
-            <MessageSquareText className="size-4" />
+        <div className="mt-7 flex items-center justify-center gap-2">
+          <Button variant="ghost" onClick={onReturnToChat}>
+            <ArrowLeft className="size-4" />
             {returnLabel}
           </Button>
           <Button onClick={onRetry}>
@@ -82,9 +77,6 @@ export function VoiceErrorState({
             {retryLabel}
           </Button>
         </div>
-        <p className="mt-5 border-border/50 border-t pt-4 text-muted-foreground text-xs leading-relaxed">
-          {note}
-        </p>
       </div>
     </section>
   );

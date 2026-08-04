@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
   classifyLiveInitializationError,
   type LiveInitializationErrorCode,
@@ -26,6 +26,7 @@ export default function AssistantClient({
 }: AssistantClientProps) {
   const t = useTranslations('dashboard.voice_assistant');
   const [sessionError, setSessionError] = useState<Error | null>(null);
+  const [isRestarting, setIsRestarting] = useState(false);
   const {
     token,
     scopeKey,
@@ -42,6 +43,16 @@ export default function AssistantClient({
       console.error('[Voice Assistant] Failed to initialize:', error);
     }
   }, [error]);
+
+  const restartSession = useCallback(async () => {
+    setSessionError(null);
+    setIsRestarting(true);
+    try {
+      await refreshToken();
+    } finally {
+      setIsRestarting(false);
+    }
+  }, [refreshToken]);
 
   let content: ReactNode;
 
@@ -75,11 +86,10 @@ export default function AssistantClient({
             ? t('session_expired_title')
             : t('unable_to_connect');
 
-  if (isLoading) {
+  if (isLoading || isRestarting) {
     content = (
       <VoiceLoadingState
         description={t('initializing')}
-        privacyNote={t('privacy_note')}
         title={t('preparing_live')}
       />
     );
@@ -87,12 +97,8 @@ export default function AssistantClient({
     content = (
       <VoiceErrorState
         description={errorDescription}
-        note={t('reservation_release_note')}
         onReturnToChat={onReturnToChat}
-        onRetry={() => {
-          setSessionError(null);
-          void refreshToken();
-        }}
+        onRetry={() => void restartSession()}
         retryLabel={t('try_again')}
         returnLabel={t('return_to_chat')}
         title={errorTitle}
@@ -111,7 +117,11 @@ export default function AssistantClient({
         wsId={wsId}
         scopeKey={scopeKey}
       >
-        <AssistantVoiceSession onError={setSessionError} wsId={wsId} />
+        <AssistantVoiceSession
+          onError={setSessionError}
+          onRestartSession={restartSession}
+          wsId={wsId}
+        />
       </LiveAPIProvider>
     );
   }
