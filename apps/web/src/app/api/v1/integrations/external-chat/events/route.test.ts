@@ -418,7 +418,7 @@ describe('external chat ingest route', () => {
 
   it('rejects deeply nested dynamic metadata before canonicalization', async () => {
     let context: Record<string, unknown> = {};
-    for (let depth = 0; depth < 20; depth += 1) context = { nested: context };
+    for (let depth = 1; depth < 17; depth += 1) context = { nested: context };
     const { POST } = await import('./route');
     const response = await POST(
       eventRequest('old-secret', { ...validEvent, context })
@@ -431,7 +431,7 @@ describe('external chat ingest route', () => {
 
   it('accepts dynamic metadata at the documented maximum depth', async () => {
     let context: Record<string, unknown> = {};
-    for (let depth = 0; depth < 16; depth += 1) context = { nested: context };
+    for (let depth = 1; depth < 16; depth += 1) context = { nested: context };
     const { POST } = await import('./route');
     const response = await POST(
       eventRequest('old-secret', { ...validEvent, context })

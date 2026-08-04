@@ -154,7 +154,7 @@ export function isExternalChatLiveAuthority(settings: unknown) {
 
 function exceedsDepth(value: unknown, maxDepth: number) {
   const pending: Array<{ depth: number; value: unknown }> = [
-    { depth: 0, value },
+    { depth: 1, value },
   ];
   while (pending.length > 0) {
     const current = pending.pop();
