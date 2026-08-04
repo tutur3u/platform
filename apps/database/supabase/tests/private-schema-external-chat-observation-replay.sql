@@ -1,5 +1,5 @@
 begin;
-select plan(4);
+select plan(5);
 
 create temporary table observation_context (ws_id uuid primary key, actor_id uuid not null);
 insert into observation_context
@@ -40,6 +40,15 @@ select is(
   ),
   1,
   'replay retains one thread'
+);
+select is(
+  (
+    select count(*)::integer from private.external_chat_observations o
+    cross join observation_context c
+    where o.ws_id = c.ws_id and o.connector_key = 'opaque-replay'
+  ),
+  1,
+  'replay retains one observation'
 );
 select is(
   (
