@@ -8,8 +8,9 @@ import { DEFAULT_LOCALE } from './helpers/public-routes';
  * loader (before any workspace/backend resolution). The gate is fail-closed:
  * when the session cannot be validated — no cookies, or the internal-api
  * `/users/me/profile` call errors/times out/returns non-2xx — `resolveCurrentUser`
- * resolves to `null` and the loader throws `redirect(/{locale}/login?nextUrl=...)`
- * with a 307. See `src/lib/platform/auth-gate.ts`.
+ * resolves to `null` and the loader redirects to the login route with the
+ * original page in `nextUrl`. English then canonicalizes to `/login` under the
+ * platform's as-needed locale policy. See `src/lib/platform/auth-gate.ts`.
  *
  * Because the redirect happens before workspace resolution, these assertions do
  * NOT depend on a reachable Rust/legacy backend or a seeded workspace: an
@@ -83,11 +84,12 @@ test.describe('Dashboard auth gate (unauthenticated)', () => {
 
       const url = new URL(page.url());
 
-      // Landed on the locale-scoped login route, not the gated route.
+      // English canonicalizes to the unprefixed login route under the
+      // platform's as-needed locale policy.
       expect(
         url.pathname,
         `Expected anonymous access to ${target} to redirect to the login route`
-      ).toBe(`/${DEFAULT_LOCALE}/login`);
+      ).toBe('/login');
 
       // The original path is preserved (decoded once) in nextUrl so the user
       // returns to the route after authenticating. Open-redirect-safe: it is a
@@ -110,7 +112,7 @@ test.describe('Dashboard auth gate (unauthenticated)', () => {
     expect(
       url.pathname,
       'Expected anonymous logout access to redirect to the login route'
-    ).toBe(`/${DEFAULT_LOCALE}/login`);
+    ).toBe('/login');
     expect(
       url.searchParams.get('nextUrl'),
       'Expected logout login redirect to preserve the localized return path'
