@@ -329,7 +329,7 @@ export async function readExternalChatSourceEvent({
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { data, error } = await (externalChatPrivateDb(admin) as any)
+  const { data, error } = await externalChatPrivateDb(admin)
     .from('external_chat_source_events')
     .select('payload_digest, result')
     .eq('ws_id', wsId)
@@ -355,7 +355,7 @@ export async function recordExternalChatSourceEvent({
 }) {
   const admin = await createAdminClient({ noCookie: true });
   const payloadDigest = digestExternalChatEnvelope(event);
-  const { error } = await (externalChatPrivateDb(admin) as any)
+  const { error } = await externalChatPrivateDb(admin)
     .from('external_chat_source_events')
     .upsert(
       {
@@ -364,7 +364,7 @@ export async function recordExternalChatSourceEvent({
         event_kind: event.kind,
         occurred_at: event.timestamp,
         payload_digest: payloadDigest,
-        result,
+        result: result as Json,
         source_event_id: event.eventId,
         source_record_id:
           'messageId' in event
