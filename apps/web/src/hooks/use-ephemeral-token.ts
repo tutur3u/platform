@@ -7,16 +7,24 @@ import {
   type LiveCreditSource,
 } from '@tuturuuu/internal-api';
 import { useCallback } from 'react';
+import { LiveClientError } from '@/lib/live/errors';
 
 export type LiveInitializationErrorCode =
   | 'INSUFFICIENT_CREDITS'
+  | 'AUTHORIZATION_EXPIRED'
+  | 'CONNECTION_FAILED'
   | 'MICROPHONE_DENIED'
+  | 'MICROPHONE_UNAVAILABLE'
   | 'NOT_CONFIGURED'
   | 'UNKNOWN';
 
 export function classifyLiveInitializationError(
   error: unknown
 ): LiveInitializationErrorCode {
+  if (error instanceof LiveClientError) {
+    return 'CONNECTION_FAILED';
+  }
+
   if (error instanceof InternalApiError) {
     if (error.code === 'INSUFFICIENT_CREDITS' || error.status === 402) {
       return 'INSUFFICIENT_CREDITS';
@@ -31,6 +39,24 @@ export function classifyLiveInitializationError(
     (error.name === 'NotAllowedError' || error.name === 'SecurityError')
   ) {
     return 'MICROPHONE_DENIED';
+  }
+
+  if (
+    error instanceof DOMException &&
+    (error.name === 'NotFoundError' ||
+      error.name === 'NotReadableError' ||
+      error.name === 'AbortError')
+  ) {
+    return 'MICROPHONE_UNAVAILABLE';
+  }
+
+  if (error instanceof Error) {
+    if (error.message === 'LIVE_AUTHORIZATION_EXPIRED') {
+      return 'AUTHORIZATION_EXPIRED';
+    }
+    if (/live|websocket|connection/i.test(error.message)) {
+      return 'CONNECTION_FAILED';
+    }
   }
 
   return 'UNKNOWN';

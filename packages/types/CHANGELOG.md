@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/types-v0.25.0...types-v0.26.0) (2026-08-04)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **ai:** enforce external app usage policy ([e229116](https://github.com/tutur3u/platform/commit/e229116990ee03cab2197f41d48134b652252dbe))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add single-use bridge pairing tickets ([0496bb6](https://github.com/tutur3u/platform/commit/0496bb65530aff7b829c4be2c0df0722bd9cc172))
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **editor:** add localized external project editing ([38cae2c](https://github.com/tutur3u/platform/commit/38cae2c08d0586491c8695b671d46eaef509e693))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** improve AI policy workspace explorer ([2eae218](https://github.com/tutur3u/platform/commit/2eae218c3fe84dadd019eeb332563e935202d30b))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+* **inventory:** improve sales exports ([1c27668](https://github.com/tutur3u/platform/commit/1c27668770b09803e29c668556bfbdc13fecb464))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ai:** include workspace credit usage ([854b1e7](https://github.com/tutur3u/platform/commit/854b1e74fc30b3ea0c3e657932d04fd48926d523))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** fence concurrent AI retries ([8fbf14b](https://github.com/tutur3u/platform/commit/8fbf14bca243f568640b79ca94658f783430e9b7))
+* **chat:** harden bridge review edge cases ([0ecfad7](https://github.com/tutur3u/platform/commit/0ecfad7c66454fdb3bcd971f1362d3789287f086))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** make retries converge safely ([e2c9eb8](https://github.com/tutur3u/platform/commit/e2c9eb8d17322f66f35808e417d91b41e2086a0a))
+* **cms:** address managed delivery review findings ([7888033](https://github.com/tutur3u/platform/commit/78880336632d69d11ee462df3a9d69d9732a2e1f))
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **tasks:** restore app-session history reads ([12bbc01](https://github.com/tutur3u/platform/commit/12bbc017f673a8e9c18a9b803dc180ccf2133684))
+* **web:** repair and meter Mira Live mode ([2fb0ec4](https://github.com/tutur3u/platform/commit/2fb0ec40af8126b7ba5fa585f521ad43cc299c72))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/types-v0.24.0...types-v0.25.0) (2026-07-29)
 
 

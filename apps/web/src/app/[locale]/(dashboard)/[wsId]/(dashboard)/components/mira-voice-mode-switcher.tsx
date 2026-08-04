@@ -12,9 +12,24 @@ const AssistantVoiceClient = dynamic(
   () => import('../assistant/assistant-client'),
   {
     ssr: false,
-    loading: () => <div className="min-h-0 flex-1" />,
+    loading: () => <VoiceClientModuleLoading />,
   }
 );
+
+function VoiceClientModuleLoading() {
+  const t = useTranslations('dashboard.voice_assistant');
+  return (
+    <div
+      aria-live="polite"
+      className="flex min-h-0 flex-1 items-center justify-center"
+    >
+      <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/45 px-4 py-2 text-muted-foreground text-sm backdrop-blur-sm">
+        <AudioLines className="size-4 animate-pulse text-primary" />
+        <span>{t('preparing_live')}</span>
+      </div>
+    </div>
+  );
+}
 
 export function MiraVoiceModeSwitcher({
   creditSource,
@@ -86,18 +101,17 @@ export function MiraVoiceModeSwitcher({
   const modeControl = (
     <ToggleGroup
       aria-label={t('mode_label')}
-      className="h-8 shrink-0 border bg-background/75 p-0.5 shadow-sm backdrop-blur-md"
+      className="h-8 shrink-0 gap-0.5 rounded-[10px] bg-muted/55 p-0.5 shadow-foreground/5 shadow-inner"
       onValueChange={(value) => {
         if (value === 'chat') exitVoice();
         if (value === 'live') enterVoice();
       }}
       type="single"
       value={mode}
-      variant="outline"
     >
       <ToggleGroupItem
         aria-label={t('chat_mode')}
-        className="h-7 gap-1.5 border-0 px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+        className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         value="chat"
       >
         <MessageSquareText className="size-3.5" />
@@ -105,7 +119,7 @@ export function MiraVoiceModeSwitcher({
       </ToggleGroupItem>
       <ToggleGroupItem
         aria-label={t('live_mode')}
-        className="h-7 gap-1.5 border-0 px-2.5 text-xs data-[state=on]:bg-foreground data-[state=on]:text-background"
+        className="h-7 gap-1.5 rounded-lg px-2.5 text-muted-foreground text-xs transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background/90 data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         value="live"
       >
         <AudioLines className="size-3.5" />
@@ -130,6 +144,7 @@ export function MiraVoiceModeSwitcher({
         <AssistantVoiceClient
           creditSource={creditSource}
           creditWsId={creditWsId}
+          onReturnToChat={exitVoice}
           wsId={wsId}
         />
       )}

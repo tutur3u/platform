@@ -1,64 +1,20 @@
 import type { InventorySalesExportRpcRow } from '@tuturuuu/inventory-core/sales-export';
 import { XLSX } from '@tuturuuu/ui/xlsx';
 import { minorToMajor } from '@tuturuuu/utils/money';
+import {
+  CSV_TECHNICAL_COLUMNS,
+  type NormalizedInventorySalesExportRow,
+  type ProductSummaryRow,
+  READABLE_COLUMN_WIDTHS,
+  READABLE_COLUMNS,
+  type ReadableInventorySalesExportRow,
+  SUMMARY_COLUMNS,
+  TECHNICAL_COLUMNS,
+} from './export-schema';
+
+export type { NormalizedInventorySalesExportRow } from './export-schema';
 
 export type InventorySalesExportFormat = 'csv' | 'xlsx';
-
-export type NormalizedInventorySalesExportRow = Omit<
-  InventorySalesExportRpcRow,
-  'currency' | 'line_total' | 'monetary_unit' | 'sale_amount' | 'unit_price'
-> & {
-  currency: string;
-  line_total: number | null;
-  sale_amount: number;
-  sale_timestamp: string | null;
-  unit_price: number | null;
-};
-
-const SALE_COLUMNS = [
-  ['Sale ID', 'sale_id'],
-  ['Source', 'sale_source'],
-  ['Period ID', 'period_id'],
-  ['Period Name', 'period_name'],
-  ['Sale Timestamp', 'sale_timestamp'],
-  ['Created At', 'created_at'],
-  ['Completed At', 'completed_at'],
-  ['Sale Amount', 'sale_amount'],
-  ['Currency', 'currency'],
-  ['Customer Name', 'customer_name'],
-  ['Customer Email', 'customer_email'],
-  ['Creator Name', 'creator_name'],
-  ['Wallet', 'wallet_name'],
-  ['Category', 'category_name'],
-  ['Notice', 'notice'],
-  ['Note', 'note'],
-  ['Transaction ID', 'transaction_id'],
-  ['Finance Invoice ID', 'finance_invoice_id'],
-  ['Public Token', 'public_token'],
-  ['Checkout Provider', 'checkout_provider'],
-  ['Polar Order ID', 'polar_order_id'],
-  ['Square Order ID', 'square_order_id'],
-] as const satisfies ReadonlyArray<
-  readonly [string, keyof NormalizedInventorySalesExportRow]
->;
-
-const LINE_COLUMNS = [
-  ['Line ID', 'line_id'],
-  ['Product ID', 'product_id'],
-  ['Product Name', 'product_name'],
-  ['Owner ID', 'owner_id'],
-  ['Owner Name', 'owner_name'],
-  ['Unit ID', 'unit_id'],
-  ['Unit Name', 'unit_name'],
-  ['Warehouse ID', 'warehouse_id'],
-  ['Warehouse Name', 'warehouse_name'],
-  ['Quantity', 'quantity'],
-  ['Unit Price', 'unit_price'],
-  ['Line Total', 'line_total'],
-  ['Revenue Allocation Source', 'allocation_source'],
-] as const satisfies ReadonlyArray<
-  readonly [string, keyof NormalizedInventorySalesExportRow]
->;
 
 function normalizeMoney(
   value: number | null,
@@ -98,11 +54,127 @@ function cellValue(value: unknown) {
     : value;
 }
 
-function valuesForColumns(
-  row: NormalizedInventorySalesExportRow,
-  columns: typeof SALE_COLUMNS | typeof LINE_COLUMNS
-) {
+function valuesForColumns<
+  Row extends Record<string, unknown>,
+  Key extends keyof Row,
+>(row: Row, columns: ReadonlyArray<readonly [string, Key]>) {
   return columns.map(([, key]) => cellValue(row[key]));
+}
+
+function titleCaseIdentifier(value: string) {
+  return value
+    .trim()
+    .split(/[_\-\s]+/u)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function salesChannel(row: NormalizedInventorySalesExportRow) {
+  if (row.sale_source === 'finance_invoice') return 'Finance Invoice';
+  switch (row.checkout_provider) {
+    case 'cash':
+      return 'Cash';
+    case 'polar':
+      return 'Polar';
+    case 'square_pos':
+      return 'Square POS';
+    case 'square_terminal':
+      return 'Square Terminal';
+    case null:
+      return 'Checkout';
+    default:
+      return titleCaseIdentifier(row.checkout_provider);
+  }
+}
+
+function readableRow(
+  row: NormalizedInventorySalesExportRow
+): ReadableInventorySalesExportRow {
+  const reference = row.public_token?.trim() || row.sale_id;
+  return {
+    creator: row.creator_name ?? '',
+    currency: row.currency,
+    customer_email: row.customer_email ?? '',
+    customer_name: row.customer_name ?? '',
+    item_category: row.product_category_name?.trim() || 'Uncategorized',
+    item_name: row.product_name?.trim() || 'Unnamed item',
+    line_total: row.line_total,
+    note: row.note ?? '',
+    notice: row.notice ?? '',
+    owner: row.owner_name?.trim() || 'Unassigned',
+    quantity: row.quantity,
+    sale_reference: reference.slice(0, 8).toUpperCase(),
+    sales_channel: salesChannel(row),
+    sold_at: row.sale_timestamp,
+    transaction_category: row.category_name?.trim() || 'Unassigned',
+    unit: row.unit_name?.trim() || 'Unassigned',
+    unit_price: row.unit_price,
+    wallet: row.wallet_name ?? '',
+    warehouse: row.warehouse_name?.trim() || 'Unassigned',
+  };
+}
+
+function sortedRows(rows: NormalizedInventorySalesExportRow[]) {
+  return [...rows].sort((left, right) => {
+    const dateComparison = (right.sale_timestamp ?? '').localeCompare(
+      left.sale_timestamp ?? ''
+    );
+    if (dateComparison !== 0) return dateComparison;
+    const saleComparison = left.sale_id.localeCompare(right.sale_id);
+    if (saleComparison !== 0) return saleComparison;
+    return (left.product_name ?? '').localeCompare(right.product_name ?? '');
+  });
+}
+
+function productSummary(rows: NormalizedInventorySalesExportRow[]) {
+  const grouped = new Map<
+    string,
+    ProductSummaryRow & { saleIds: Set<string> }
+  >();
+
+  for (const row of rows) {
+    if (!row.product_id && !row.product_name) continue;
+    const readable = readableRow(row);
+    const key = JSON.stringify([
+      readable.item_category,
+      readable.item_name,
+      readable.owner,
+      readable.unit,
+      readable.currency,
+    ]);
+    const current = grouped.get(key) ?? {
+      average_unit_price: null,
+      currency: readable.currency,
+      item_category: readable.item_category,
+      item_name: readable.item_name,
+      owner: readable.owner,
+      quantity_sold: 0,
+      revenue: 0,
+      saleIds: new Set<string>(),
+      sales_count: 0,
+      unit: readable.unit,
+    };
+    current.quantity_sold += row.quantity ?? 0;
+    current.revenue += row.line_total ?? 0;
+    current.saleIds.add(`${row.sale_source}:${row.sale_id}`);
+    grouped.set(key, current);
+  }
+
+  return [...grouped.values()]
+    .map(({ saleIds, ...row }) => ({
+      ...row,
+      average_unit_price:
+        row.quantity_sold === 0 ? null : row.revenue / row.quantity_sold,
+      sales_count: saleIds.size,
+    }))
+    .sort(
+      (left, right) =>
+        left.item_category.localeCompare(right.item_category) ||
+        left.item_name.localeCompare(right.item_name) ||
+        left.owner.localeCompare(right.owner) ||
+        left.currency.localeCompare(right.currency)
+    );
 }
 
 function csvCell(value: unknown) {
@@ -112,49 +184,97 @@ function csvCell(value: unknown) {
 export function buildInventorySalesCsv(
   rows: NormalizedInventorySalesExportRow[]
 ) {
-  const header = [...SALE_COLUMNS, ...LINE_COLUMNS].map(([label]) => label);
-  const dataRows = rows.map((row) => [
-    ...valuesForColumns(row, SALE_COLUMNS),
-    ...valuesForColumns(row, LINE_COLUMNS),
+  const header = [...READABLE_COLUMNS, ...CSV_TECHNICAL_COLUMNS].map(
+    ([label]) => label
+  );
+  const dataRows = sortedRows(rows).map((row) => [
+    ...valuesForColumns(readableRow(row), READABLE_COLUMNS),
+    ...valuesForColumns(row, CSV_TECHNICAL_COLUMNS),
   ]);
   return `\uFEFF${[header, ...dataRows]
     .map((row) => row.map(csvCell).join(','))
     .join('\r\n')}`;
 }
 
+function toUtcDate(value: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date;
+}
+
+function setSheetLayout(
+  sheet: XLSX.WorkSheet,
+  widths: number[],
+  numericColumns: number[],
+  dateColumns: number[] = []
+) {
+  sheet['!cols'] = widths.map((wch) => ({ wch }));
+  if (sheet['!ref']) sheet['!autofilter'] = { ref: sheet['!ref'] };
+  const range = sheet['!ref'] ? XLSX.utils.decode_range(sheet['!ref']) : null;
+  if (!range) return;
+
+  for (let row = 1; row <= range.e.r; row += 1) {
+    for (const column of numericColumns) {
+      const cell = sheet[XLSX.utils.encode_cell({ c: column, r: row })];
+      if (cell) cell.z = '#,##0.00########';
+    }
+    for (const column of dateColumns) {
+      const cell = sheet[XLSX.utils.encode_cell({ c: column, r: row })];
+      if (cell) cell.z = 'yyyy-mm-dd hh:mm "UTC"';
+    }
+  }
+}
+
 export function buildInventorySalesWorkbook(
   rows: NormalizedInventorySalesExportRow[]
 ) {
-  const sales = [
-    ...new Map(
-      rows.map((row) => [`${row.sale_source}:${row.sale_id}`, row])
-    ).values(),
-  ];
-  const saleSheet = XLSX.utils.aoa_to_sheet([
-    SALE_COLUMNS.map(([label]) => label),
-    ...sales.map((row) => valuesForColumns(row, SALE_COLUMNS)),
+  const orderedRows = sortedRows(rows);
+  const details = orderedRows.map(readableRow);
+  const summary = productSummary(orderedRows);
+  const detailSheet = XLSX.utils.aoa_to_sheet(
+    [
+      READABLE_COLUMNS.map(([label]) => label),
+      ...details.map((row) =>
+        READABLE_COLUMNS.map(([, key]) =>
+          key === 'sold_at' ? toUtcDate(row[key]) : cellValue(row[key])
+        )
+      ),
+    ],
+    { cellDates: true, dateNF: 'yyyy-mm-dd hh:mm "UTC"' }
+  );
+  const summarySheet = XLSX.utils.aoa_to_sheet([
+    SUMMARY_COLUMNS.map(([label]) => label),
+    ...summary.map((row) => valuesForColumns(row, SUMMARY_COLUMNS)),
   ]);
-  const lineSheet = XLSX.utils.aoa_to_sheet([
-    ['Sale ID', 'Source', 'Currency', ...LINE_COLUMNS.map(([label]) => label)],
-    ...rows.map((row) => [
-      cellValue(row.sale_id),
-      cellValue(row.sale_source),
-      cellValue(row.currency),
-      ...valuesForColumns(row, LINE_COLUMNS),
-    ]),
+  const technicalSheet = XLSX.utils.aoa_to_sheet([
+    TECHNICAL_COLUMNS.map(([label]) => label),
+    ...orderedRows.map((row) => valuesForColumns(row, TECHNICAL_COLUMNS)),
   ]);
-  saleSheet['!cols'] = SALE_COLUMNS.map(() => ({ wch: 20 }));
-  lineSheet['!cols'] = [
-    { wch: 38 },
-    { wch: 18 },
-    { wch: 10 },
-    ...LINE_COLUMNS.map(() => ({ wch: 20 })),
-  ];
+
+  setSheetLayout(detailSheet, READABLE_COLUMN_WIDTHS, [6, 8, 9], [1]);
+  setSheetLayout(
+    summarySheet,
+    [24, 36, 24, 16, 12, 16, 14, 16, 20],
+    [5, 6, 7, 8]
+  );
+  setSheetLayout(
+    technicalSheet,
+    TECHNICAL_COLUMNS.map(([, key]) =>
+      String(key).endsWith('_id') || key === 'sale_id' ? 38 : 22
+    ),
+    [7, 32, 33, 34]
+  );
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, saleSheet, 'Sales');
-  XLSX.utils.book_append_sheet(workbook, lineSheet, 'Line Items');
-  return XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  XLSX.utils.book_append_sheet(workbook, detailSheet, 'Sales Details');
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Product Summary');
+  XLSX.utils.book_append_sheet(workbook, technicalSheet, 'Technical Data');
+  return XLSX.write(workbook, {
+    bookType: 'xlsx',
+    cellDates: true,
+    compression: true,
+    type: 'array',
+  });
 }
 
 export function inventorySalesExportFilename(

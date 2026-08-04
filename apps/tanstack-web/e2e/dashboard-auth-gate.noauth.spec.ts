@@ -8,9 +8,9 @@ import { DEFAULT_LOCALE } from './helpers/public-routes';
  * loader (before any workspace/backend resolution). The gate is fail-closed:
  * when the session cannot be validated — no cookies, or the internal-api
  * `/users/me/profile` call errors/times out/returns non-2xx — `resolveCurrentUser`
- * resolves to `null` and the loader throws a locale-aware login redirect with
- * a 307. The default locale is canonicalized without a prefix. See
- * `src/lib/platform/auth-gate.ts`.
+ * resolves to `null` and the loader redirects to the login route with the
+ * original page in `nextUrl`. English then canonicalizes to `/login` under the
+ * platform's as-needed locale policy. See `src/lib/platform/auth-gate.ts`.
  *
  * Because the redirect happens before workspace resolution, these assertions do
  * NOT depend on a reachable Rust/legacy backend or a seeded workspace: an
@@ -84,7 +84,8 @@ test.describe('Dashboard auth gate (unauthenticated)', () => {
 
       const url = new URL(page.url());
 
-      // The default locale uses the canonical unprefixed login route.
+      // English canonicalizes to the unprefixed login route under the
+      // platform's as-needed locale policy.
       expect(
         url.pathname,
         `Expected anonymous access to ${target} to redirect to the login route`

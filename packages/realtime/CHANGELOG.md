@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.0](https://github.com/tutur3u/platform/compare/realtime-v0.0.3...realtime-v0.1.0) (2026-08-04)
+
+
+### Features
+
+* **meet:** add Google-Meet-style calls on Cloudflare Realtime SFU ([a32dd52](https://github.com/tutur3u/platform/commit/a32dd522cdb1a176f9e1312fe52a85e9516870f5))
+
 ## [0.0.3](https://github.com/tutur3u/platform/compare/realtime-v0.0.2...realtime-v0.0.3) (2026-06-08)
 
 

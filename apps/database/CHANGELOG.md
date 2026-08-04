@@ -1,5 +1,88 @@
 # Changelog
 
+## [1.25.0](https://github.com/tutur3u/platform/compare/database-v1.24.0...database-v1.25.0) (2026-08-04)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **ai:** enforce external app usage policy ([e229116](https://github.com/tutur3u/platform/commit/e229116990ee03cab2197f41d48134b652252dbe))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add single-use bridge pairing tickets ([0496bb6](https://github.com/tutur3u/platform/commit/0496bb65530aff7b829c4be2c0df0722bd9cc172))
+* **chat:** mirror Zalo history media to Drive ([b8b5d7b](https://github.com/tutur3u/platform/commit/b8b5d7bb86ccac6351d17020fec16605d8413451))
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** improve AI policy workspace explorer ([2eae218](https://github.com/tutur3u/platform/commit/2eae218c3fe84dadd019eeb332563e935202d30b))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+* **inventory:** improve sales exports ([1c27668](https://github.com/tutur3u/platform/commit/1c27668770b09803e29c668556bfbdc13fecb464))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** support cent-level Square prices ([146f90f](https://github.com/tutur3u/platform/commit/146f90fa513bbb5d6e75082fcd7ec9460125d935))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **tasks:** revamp progress, goals, analytics & leaderboards with TrackBear parity ([d1bda0e](https://github.com/tutur3u/platform/commit/d1bda0e37a6ed45eb22aaa3bb20c4d62dc41a19f))
+
+
+### Bug Fixes
+
+* **ai:** include workspace credit usage ([854b1e7](https://github.com/tutur3u/platform/commit/854b1e74fc30b3ea0c3e657932d04fd48926d523))
+* **ai:** reconcile expired Studio reservations ([aeeadd4](https://github.com/tutur3u/platform/commit/aeeadd4bbbb6f14b5598f298a9d0c801bdf8ea53))
+* **ai:** release zero-credit reservations ([7a07de1](https://github.com/tutur3u/platform/commit/7a07de1e6ec9f600031c359b34aa34076aee7388))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** close bridge edge cases ([db585c8](https://github.com/tutur3u/platform/commit/db585c8486064837dcbce615a30f66c38c0a3ec0))
+* **chat:** close external delivery review gaps ([62e339f](https://github.com/tutur3u/platform/commit/62e339f0a8a3fdf9cbd35cdd7c7d61b8397a7edd))
+* **chat:** close final bridge review gaps ([9d9a9b1](https://github.com/tutur3u/platform/commit/9d9a9b14e04b5645f2237a7db8e4c5102c1958c4))
+* **chat:** close ingest delivery gaps ([12fef72](https://github.com/tutur3u/platform/commit/12fef72923710ab365f663d46a099b35a41bbd85))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** fence concurrent AI retries ([8fbf14b](https://github.com/tutur3u/platform/commit/8fbf14bca243f568640b79ca94658f783430e9b7))
+* **chat:** harden attachment retries ([1e8ecf6](https://github.com/tutur3u/platform/commit/1e8ecf6f387d0fde784cc35bef7feee66a2362af))
+* **chat:** harden bridge recovery paths ([9dc22a7](https://github.com/tutur3u/platform/commit/9dc22a758a4b8e1543ba65d53395048b2a206ff6))
+* **chat:** harden bridge retry boundaries ([9affb39](https://github.com/tutur3u/platform/commit/9affb39ea2fda5370c92e7cfe855617698111124))
+* **chat:** harden bridge review edge cases ([0ecfad7](https://github.com/tutur3u/platform/commit/0ecfad7c66454fdb3bcd971f1362d3789287f086))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** make retries converge safely ([e2c9eb8](https://github.com/tutur3u/platform/commit/e2c9eb8d17322f66f35808e417d91b41e2086a0a))
+* **chat:** validate bridge reply replays ([f802774](https://github.com/tutur3u/platform/commit/f802774e83a0874e63ac27b4d1319d244e612911))
+* **ci:** unblock database and legal checks ([01496bf](https://github.com/tutur3u/platform/commit/01496bf89f6839517a5de0ea918f83c1c10eb9ee))
+* **cms:** address managed delivery review findings ([7888033](https://github.com/tutur3u/platform/commit/78880336632d69d11ee462df3a9d69d9732a2e1f))
+* **cms:** grant relation tables to service role ([62d1d11](https://github.com/tutur3u/platform/commit/62d1d112a3d6990b1c6ccfbc4ccc77ec75d2d423))
+* **cms:** grant relation tables to service role ([#4991](https://github.com/tutur3u/platform/issues/4991)) ([c34a711](https://github.com/tutur3u/platform/commit/c34a711d0cb7b7beb073a0f32fc732535ec4ade0))
+* **cms:** harden managed import recovery ([f266874](https://github.com/tutur3u/platform/commit/f2668747130606a4479d51df881fb1f2f06d9c9f))
+* **database:** deduplicate workspace user archive audit entries ([27a0aff](https://github.com/tutur3u/platform/commit/27a0aff4f2590f2e42cd9e3e219e242244617f3b))
+* **database:** order connected chat migrations ([f7f5903](https://github.com/tutur3u/platform/commit/f7f5903b436f7a7e0d164a7f97d9b14cc8937cfb))
+* **database:** rerun creator membership repair ([81a6a07](https://github.com/tutur3u/platform/commit/81a6a07ebc629d94cf8b0d13be83e74689383609))
+* **database:** separate creator membership repair ([8316c8f](https://github.com/tutur3u/platform/commit/8316c8f6de4ae616fea3cf566fa3bc5eaa582205))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **inventory:** gate cent prices on schema readiness ([276aa58](https://github.com/tutur3u/platform/commit/276aa58ad5f52f579005cae8deca6ab41c595a73))
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **inventory:** repair storefront removal rollout ([cb5828b](https://github.com/tutur3u/platform/commit/cb5828bc3cc16ba2cf1b823e8af0841c6f663e8f))
+* **reports:** scale delivery maintenance and report counts ([4dd4f47](https://github.com/tutur3u/platform/commit/4dd4f47dfff4bafa1ef512311eec16a6fbadc964))
+* **tasks:** restore app-session history reads ([12bbc01](https://github.com/tutur3u/platform/commit/12bbc017f673a8e9c18a9b803dc180ccf2133684))
+* **web:** repair and meter Mira Live mode ([2fb0ec4](https://github.com/tutur3u/platform/commit/2fb0ec40af8126b7ba5fa585f521ad43cc299c72))
+* **workspaces:** keep the creator a member of the workspace they create ([8b33f42](https://github.com/tutur3u/platform/commit/8b33f42470149a51e864fc5bf22020f961121014))
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+
+
+### Performance Improvements
+
+* **contacts:** accelerate virtual user listing ([8d0b86c](https://github.com/tutur3u/platform/commit/8d0b86c46f7045b2e7475d2e6211dc0cc2ebb6ab))
+
 ## [1.24.0](https://github.com/tutur3u/platform/compare/database-v1.23.0...database-v1.24.0) (2026-07-29)
 
 

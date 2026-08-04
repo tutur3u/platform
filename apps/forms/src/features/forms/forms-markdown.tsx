@@ -11,7 +11,12 @@ import { Streamdown } from 'streamdown';
 
 import { containsRichTextHtml, normalizeMarkdownToText } from './content';
 
-const plugins = { code, mermaid: mermaidPlugin, math, cjk };
+const plugins = {
+  code,
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 function normalizeMarkdownTables(text: string) {
   if (!text.includes('```')) {

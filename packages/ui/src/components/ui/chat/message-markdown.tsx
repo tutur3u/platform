@@ -10,7 +10,10 @@ import { Streamdown } from 'streamdown';
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
-const plugins = { code, math };
+const plugins = {
+  code,
+  math,
+};
 
 function isMarkdownTableSeparator(separator: string) {
   for (const char of separator) {

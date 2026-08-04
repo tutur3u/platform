@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/ai-v0.6.0...ai-v0.7.0) (2026-08-04)
+
+
+### Features
+
+* **ai:** add production playground and run traces ([ced609b](https://github.com/tutur3u/platform/commit/ced609b655ab44b49f06e19e369f1234a2576687))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+
+
+### Bug Fixes
+
+* **ai:** diagnose production settlement failures ([60411c3](https://github.com/tutur3u/platform/commit/60411c30ee4c3aab213f90b0ecddcf33ffcbfb51))
+* **ai:** keep chat sdk server-only ([b110543](https://github.com/tutur3u/platform/commit/b110543584d01db0ee6f672549dda00539f8523f))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** fence concurrent AI retries ([8fbf14b](https://github.com/tutur3u/platform/commit/8fbf14bca243f568640b79ca94658f783430e9b7))
+* **chat:** harden bridge recovery paths ([9dc22a7](https://github.com/tutur3u/platform/commit/9dc22a758a4b8e1543ba65d53395048b2a206ff6))
+* **chat:** harden bridge retry boundaries ([9affb39](https://github.com/tutur3u/platform/commit/9affb39ea2fda5370c92e7cfe855617698111124))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **web:** repair and meter Mira Live mode ([2fb0ec4](https://github.com/tutur3u/platform/commit/2fb0ec40af8126b7ba5fa585f521ad43cc299c72))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/ai-v0.5.0...ai-v0.6.0) (2026-07-27)
 
 

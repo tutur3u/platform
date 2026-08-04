@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tools",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -17,7 +17,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "next": "^16.3.0-preview.10",
+    "next": "^16.3.0",
     "next-intl": "^4.13.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -28,10 +28,10 @@
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.25",

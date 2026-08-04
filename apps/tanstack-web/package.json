@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tanstack-web",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -26,12 +26,12 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.5.7",
+    "@hookform/resolvers": "^5.7.1",
     "@react-email/render": "^2.1.0",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-router": "^1.170.18",
-    "@tanstack/react-start": "^1.168.33",
+    "@tanstack/react-start": "^1.168.34",
     "@tanstack/react-table": "^8.21.3",
     "@tiptap/react": "3.29.2",
     "@tuturuuu/icons": "workspace:*",
@@ -52,27 +52,27 @@
     "nuqs": "^2.9.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-hook-form": "^7.83.0",
+    "react-hook-form": "^7.84.0",
     "react-papaparse": "^4.4.0",
     "use-intl": "^4.13.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.49.0",
-    "@playwright/test": "1.62.0",
+    "@cloudflare/vite-plugin": "^1.50.0",
+    "@playwright/test": "1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "next-intl": "^4.13.4",
     "nitro": "^3.0.260610-beta",
     "tailwindcss": "^4.3.3",
     "typescript": "7.0.2",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "4.1.10",
-    "wrangler": "^4.116.0"
+    "wrangler": "^4.118.0"
   }
 }

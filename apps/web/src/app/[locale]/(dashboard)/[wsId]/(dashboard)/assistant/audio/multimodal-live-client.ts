@@ -7,6 +7,7 @@ import {
 } from '@google/genai';
 import { EventEmitter } from 'eventemitter3';
 import { GEMINI_LIVE_API_VERSION } from '@/lib/live/api-version';
+import { createLiveConnectionError } from '@/lib/live/errors';
 import type {
   LiveConfig,
   ServerContent,
@@ -223,16 +224,22 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
 
       // When using ephemeral token, pass model only - let token provide the rest
       // Otherwise, pass full config for regular API key mode
-      this.session = await this.ai.live.connect({
+      let rejectConnection: (error: Error) => void = () => {};
+      let connectionSettled = false;
+      const connectionFailure = new Promise<never>((_, reject) => {
+        rejectConnection = reject;
+      });
+      const failConnection = (error: Error) => {
+        if (!connectionSettled) rejectConnection(error);
+      };
+
+      const connection = this.ai.live.connect({
         model: config.model,
         ...(isUsingEphemeralToken ? {} : { config: sdkConfig }),
         callbacks: {
           onopen: () => {
             this.log('client.open', 'connected to Gemini Live');
             this.emit('open');
-            // Emit setup complete after connection
-            this.log('server.send', 'setupComplete');
-            this.emit('setupcomplete');
           },
           onmessage: (message: LiveServerMessage) => {
             this.handleMessage(message);
@@ -243,9 +250,10 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
               type: e.type,
               error: e,
             });
-            const error = new Error(e.message || 'Connection error');
+            const error = createLiveConnectionError(e.message, e);
             this.log('server.error', error.message);
-            this.emit('error', error);
+            if (connectionSettled) this.emit('error', error);
+            failConnection(error);
           },
           onclose: (event: {
             code: number;
@@ -263,9 +271,15 @@ export class MultimodalLiveClient extends EventEmitter<MultimodalLiveClientEvent
             );
             this.emit('close', { reason: event.reason });
             this.session = null;
+            failConnection(createLiveConnectionError(event.reason));
           },
         },
       });
+
+      this.session = await Promise.race([connection, connectionFailure]);
+      connectionSettled = true;
+      this.log('server.send', 'setupComplete');
+      this.emit('setupcomplete');
 
       return true;
     } catch (error) {

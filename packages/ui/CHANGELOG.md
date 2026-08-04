@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/ui-v0.23.0...ui-v0.24.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** close bridge edge cases ([db585c8](https://github.com/tutur3u/platform/commit/db585c8486064837dcbce615a30f66c38c0a3ec0))
+* **chat:** harden bridge review edge cases ([0ecfad7](https://github.com/tutur3u/platform/commit/0ecfad7c66454fdb3bcd971f1362d3789287f086))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** mount query state adapter ([#5084](https://github.com/tutur3u/platform/issues/5084)) ([60253f8](https://github.com/tutur3u/platform/commit/60253f82477fc54923556706d12e4dc525a7a170))
+* **chat:** preserve native message behavior ([fc09530](https://github.com/tutur3u/platform/commit/fc095301f2d26ca2bc39de02ce17b1f341327de9))
+* **deps:** align Streamdown with Shiki 4 ([0d89f55](https://github.com/tutur3u/platform/commit/0d89f555b3228307e893a5d7723aaf8db8505d63))
+* **platform:** stabilize offline and calendar initialization ([8ef8fbc](https://github.com/tutur3u/platform/commit/8ef8fbc1274e108930adf38bb8e998384551058b))
+* **ui:** preserve hosted workspace logos ([1f8e8b2](https://github.com/tutur3u/platform/commit/1f8e8b28c23f659952ad58f00a2a371acd8fcef9))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/ui-v0.22.0...ui-v0.23.0) (2026-07-28)
 
 

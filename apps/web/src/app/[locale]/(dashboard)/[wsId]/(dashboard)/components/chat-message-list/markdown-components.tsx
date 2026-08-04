@@ -17,7 +17,12 @@ import { Streamdown } from 'streamdown';
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
-const plugins = { code, mermaid: mermaidPlugin, math, cjk };
+const plugins = {
+  code,
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 function isSingleDollarMathEnabled(): boolean {
   const remarkPlugin = math.remarkPlugin;

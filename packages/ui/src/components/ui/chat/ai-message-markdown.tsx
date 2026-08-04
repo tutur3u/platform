@@ -8,7 +8,12 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Streamdown } from 'streamdown';
 
 const math = createMathPlugin({ singleDollarTextMath: true });
-const markdownPlugins = { code, mermaid: mermaidPlugin, math, cjk };
+const markdownPlugins = {
+  code,
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 class AiMarkdownErrorBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/editor",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Lightweight localized rich-text editor and rendering utilities",
   "license": "MIT",
   "repository": {
@@ -48,7 +48,7 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/react": "^19.2.0",
+    "@types/react": "^19.2.18",
     "jsdom": "^30.0.1",
     "typescript": "7.0.2",
     "vitest": "^4.1.10"

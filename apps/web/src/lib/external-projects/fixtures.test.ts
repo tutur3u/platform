@@ -5,6 +5,7 @@ describe('external project adapter fixtures', () => {
   it('covers all supported adapters with source references', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
       'custom',
+      'cybershield35',
       'exocorpse',
       'junly',
       'kendra',
@@ -18,7 +19,7 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(CMS site|junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
+        /(CMS site|CyberShield35|junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -39,6 +40,49 @@ describe('external project adapter fixtures', () => {
       'redirects',
       'media-assets',
     ]);
+
+    expect({
+      collections: externalProjectAdapterFixtures.cybershield35.collections.map(
+        (collection) => ({
+          collectionType: collection.collectionType,
+          description: collection.description,
+          slug: collection.slug,
+        })
+      ),
+      profileData: externalProjectAdapterFixtures.cybershield35.profileData,
+      schema:
+        externalProjectAdapterFixtures.cybershield35.schema?.collections.map(
+          (collection) => ({
+            assetTypes: collection.assetTypes ?? [],
+            metadataFields:
+              collection.metadataFields?.map((field) => field.key) ?? [],
+            profileFields:
+              collection.profileFields?.map((field) => field.key) ?? [],
+            slug: collection.slug,
+          })
+        ),
+    }).toEqual({
+      collections: [
+        {
+          collectionType: 'article-media',
+          description:
+            'Private draft media and durable published assets for CyberShield35 articles.',
+          slug: 'article-media',
+        },
+      ],
+      profileData: {
+        deliveryPreset: 'article-media',
+        mediaAuthority: 'tuturuuu-cms',
+      },
+      schema: [
+        {
+          assetTypes: ['image'],
+          metadataFields: ['cs35ArticleId'],
+          profileFields: ['caption', 'altText'],
+          slug: 'article-media',
+        },
+      ],
+    });
 
     expect(
       externalProjectAdapterFixtures.junly.collections.map(

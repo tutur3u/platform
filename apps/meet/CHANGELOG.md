@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/meet-v0.18.0...meet-v0.19.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **meet:** add Google-Meet-style calls on Cloudflare Realtime SFU ([a32dd52](https://github.com/tutur3u/platform/commit/a32dd522cdb1a176f9e1312fe52a85e9516870f5))
+* **meet:** drop the /workspace prefix and move rooms to /r ([9e370e9](https://github.com/tutur3u/platform/commit/9e370e9fe7072b26e48ed5a1fd04e67d74eb2921))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **meet:** attribute remote tracks to their publisher ([7f206bc](https://github.com/tutur3u/platform/commit/7f206bc5a6ca847d62a817585bd66c7498c76f88))
+* **meet:** authorise meeting edit and delete from the satellite ([00524ab](https://github.com/tutur3u/platform/commit/00524ab615a028963fc3bb2a12df098cf3ce6f8a))
+* **meet:** mount the nuqs adapter in the root layout ([3931063](https://github.com/tutur3u/platform/commit/3931063fd5d82c5bd26d66d47cf13e249b88aa85))
+* **meet:** reconnect dropped call signaling with a fresh join token ([3c6cb41](https://github.com/tutur3u/platform/commit/3c6cb4102b8ec9b9a96248e57fcd17ff763b0981))
+* **meet:** restore the notifications namespace so Plans stops erroring ([675611d](https://github.com/tutur3u/platform/commit/675611d273cf602cab366e173600497c5754c917))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/meet-v0.17.0...meet-v0.18.0) (2026-07-28)
 
 

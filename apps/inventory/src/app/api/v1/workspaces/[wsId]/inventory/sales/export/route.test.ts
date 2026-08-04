@@ -98,6 +98,7 @@ describe('inventory sales export route', () => {
         period_id: PERIOD_ID,
         period_name: 'Offkai 2026',
         polar_order_id: null,
+        product_category_name: 'Posters',
         product_id: 'product-1',
         product_name: 'Poster',
         public_token: 'token-1',
@@ -187,6 +188,23 @@ describe('inventory sales export route', () => {
     expect(response.headers.get('content-disposition')).toContain(
       'inventory-sales-offkai-2026.xlsx'
     );
-    expect(workbook.SheetNames).toEqual(['Sales', 'Line Items']);
+    expect(workbook.SheetNames).toEqual([
+      'Sales Details',
+      'Product Summary',
+      'Technical Data',
+    ]);
+    const details = XLSX.utils.sheet_to_json<unknown[]>(
+      workbook.Sheets['Sales Details']!,
+      { header: 1 }
+    );
+    expect(details[0]?.slice(0, 5)).toEqual([
+      'Sale Reference',
+      'Sold At (UTC)',
+      'Sales Channel',
+      'Item Category',
+      'Item Name',
+    ]);
+    expect(details[1]).toContain('Posters');
+    expect(details[1]).toContain('Poster');
   });
 });

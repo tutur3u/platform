@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/hive",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
@@ -29,10 +29,10 @@
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.29",
+    "@ai-sdk/google": "^4.0.33",
     "@formatjs/intl-localematcher": "^0.8.13",
     "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
+    "@react-three/fiber": "^9.7.0",
     "@tanstack/react-query": "^5.101.4",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -51,7 +51,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@xyflow/react": "^12.11.2",
     "negotiator": "^1.0.0",
-    "next": "^16.3.0-preview.10",
+    "next": "^16.3.0",
     "next-intl": "^4.13.4",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.9",
@@ -61,18 +61,18 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^26.1.2",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.185.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/three": "^0.185.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "babel-plugin-react-compiler": "^1.0.0",
     "jsdom": "^30.0.1",
     "postcss": "^8.5.25",
