@@ -23,7 +23,7 @@ describe('buildLiveConnectConfig', () => {
     });
 
     expect(config?.uses).toBe(1);
-    expect(config?.httpOptions).toEqual({ apiVersion: 'v1beta' });
+    expect(config?.httpOptions).toEqual({ apiVersion: 'v1alpha' });
     expect(config?.lockAdditionalFields).toEqual([]);
     expect(
       new Date(config?.expireTime ?? 0).getTime() - Date.now()

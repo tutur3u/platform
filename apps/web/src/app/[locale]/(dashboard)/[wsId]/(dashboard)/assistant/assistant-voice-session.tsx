@@ -1,5 +1,6 @@
 'use client';
 
+import { AudioLines, ShieldCheck } from '@tuturuuu/icons';
 import { executeLiveTool, InternalApiError } from '@tuturuuu/internal-api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -77,6 +78,14 @@ export function AssistantVoiceSession({
   useEffect(() => {
     activeVideoStreamRef.current = activeVideoStream;
   }, [activeVideoStream]);
+
+  useEffect(() => {
+    const handleConnectionError = (error: Error) => onError(error);
+    client.on('error', handleConnectionError);
+    return () => {
+      client.off('error', handleConnectionError);
+    };
+  }, [client, onError]);
 
   useEffect(
     () => () => {
@@ -369,10 +378,14 @@ export function AssistantVoiceSession({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
-              className="absolute top-[15%] text-center"
+              className="absolute top-[10%] flex max-w-md flex-col items-center px-6 text-center md:top-[12%]"
             >
+              <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-background/45 px-3 py-1 text-muted-foreground text-xs backdrop-blur-sm">
+                <AudioLines className="size-3.5 text-primary" />
+                <span>{t('live_session_ready')}</span>
+              </div>
               <motion.h1
-                className="mb-3 bg-linear-to-r from-foreground via-foreground/80 to-foreground bg-clip-text font-semibold text-2xl tracking-tight md:text-3xl"
+                className="mb-2 bg-linear-to-r from-foreground via-foreground/80 to-foreground bg-clip-text font-semibold text-2xl tracking-tight md:text-3xl"
                 animate={{
                   backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
                 }}
@@ -387,7 +400,13 @@ export function AssistantVoiceSession({
               >
                 {t('greeting')}
               </motion.h1>
-              <p className="text-foreground/50 text-sm">{t('start_prompt')}</p>
+              <p className="text-balance text-muted-foreground text-sm leading-relaxed">
+                {t('start_prompt')}
+              </p>
+              <div className="mt-3 flex items-center gap-1.5 text-muted-foreground/80 text-xs">
+                <ShieldCheck className="size-3.5 text-primary" />
+                <span>{t('privacy_note')}</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
