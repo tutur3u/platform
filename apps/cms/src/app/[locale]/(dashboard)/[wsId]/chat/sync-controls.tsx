@@ -34,7 +34,8 @@ export function ConnectedChatSyncControls({
         : false,
   });
   const latest = query.data?.runs[0];
-  const active = query.data?.runs.some((run) => isRunActive(run.state));
+  const activeRun = query.data?.runs.find((run) => isRunActive(run.state));
+  const active = Boolean(activeRun);
   const mutation = useMutation({
     mutationFn: (payload: ExternalChatSyncAction) =>
       mutateExternalChatSync(wsId, payload),
@@ -47,9 +48,11 @@ export function ConnectedChatSyncControls({
   const runAction = (action: ExternalChatSyncAction['action']) =>
     mutation.mutate({
       action,
-      ...(['cancel', 'resume'].includes(action) && latest?.id
-        ? { runId: latest.id }
-        : {}),
+      ...(action === 'cancel' && activeRun?.id
+        ? { runId: activeRun.id }
+        : action === 'resume' && latest?.id
+          ? { runId: latest.id }
+          : {}),
     });
 
   return (
@@ -115,7 +118,7 @@ export function ConnectedChatSyncControls({
         >
           {t('sync_reconcile')}
         </Button>
-        {active && latest ? (
+        {activeRun ? (
           <Button
             disabled={mutation.isPending}
             onClick={() => runAction('cancel')}

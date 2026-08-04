@@ -51,7 +51,11 @@ describe('external chat historical batch', () => {
     const { POST } = await import('./route');
     const response = await POST(
       new Request('http://localhost/events/batch', {
-        body: JSON.stringify({ events: [event], cursor: { id: '10' } }),
+        body: JSON.stringify({
+          events: [event],
+          cursor: { id: '10' },
+          highWaterMark: { id: '20' },
+        }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
       })
@@ -62,6 +66,7 @@ describe('external chat historical batch', () => {
       expect.objectContaining({
         connector_key: 'opaque',
         cursor: { id: '10' },
+        high_water_mark: { id: '20' },
         stream_key: 'historical-events',
         ws_id: '00000000-0000-4000-8000-000000000001',
       }),
@@ -144,18 +149,35 @@ describe('external chat historical batch', () => {
     const { POST } = await import('./route');
     const response = await POST(
       new Request('http://localhost/events/batch', {
-        body: JSON.stringify({ events: [event], cursor: { id: '10' } }),
+        body: JSON.stringify({
+          events: [event],
+          cursor: { id: '10' },
+          highWaterMark: { id: '20' },
+        }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
       })
     );
     expect(response.status).toBe(207);
     expect(upsert).toHaveBeenCalledWith(
-      expect.not.objectContaining({ cursor: expect.anything() }),
+      expect.not.objectContaining({
+        cursor: expect.anything(),
+        high_water_mark: expect.anything(),
+      }),
       { onConflict: 'ws_id,connector_key,stream_key' }
     );
     expect(await response.json()).toEqual(
-      expect.objectContaining({ accepted: 0, duplicates: 0, failed: 1 })
+      expect.objectContaining({
+        accepted: 0,
+        duplicates: 0,
+        failed: 1,
+        failures: [
+          {
+            code: 'external_chat_event_payload_mismatch',
+            eventId: event.eventId,
+          },
+        ],
+      })
     );
   });
 });

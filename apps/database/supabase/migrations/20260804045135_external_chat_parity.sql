@@ -18,11 +18,6 @@ alter table private.external_chat_events
     source_digest is null or char_length(source_digest) = 64
   ) not valid;
 
-alter table private.external_chat_events
-  validate constraint external_chat_events_kind_check,
-  validate constraint external_chat_events_delivery_mode_check,
-  validate constraint external_chat_events_source_digest_check;
-
 create table private.external_chat_source_events (
   id uuid primary key default gen_random_uuid(),
   ws_id uuid not null references public.workspace_external_project_bindings(ws_id) on delete cascade,

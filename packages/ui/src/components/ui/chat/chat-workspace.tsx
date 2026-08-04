@@ -251,8 +251,9 @@ export function ChatWorkspace({
   const externalDetailsOpen =
     requestedDetails === 'external' && selectedExternalConversation;
   const detailsOpen = Boolean(
-    (sharedContentOpen || agentDetailsOpen || externalDetailsOpen) &&
-      activeConversationId
+    (selectedExternalConversation
+      ? externalDetailsOpen
+      : sharedContentOpen || agentDetailsOpen) && activeConversationId
   );
 
   useChatRealtime(wsId);

@@ -18,7 +18,7 @@ export const GET = withSessionAuth<Params>(
     const db = admin.schema('private') as any;
     const { data: thread, error: threadError } = await db
       .from('external_chat_threads')
-      .select('id, metadata, created_at, updated_at')
+      .select('id, conversation_id, metadata, created_at, updated_at')
       .eq('ws_id', context.context.normalizedWsId)
       .eq('conversation_id', params.conversationId)
       .maybeSingle();
@@ -29,6 +29,17 @@ export const GET = withSessionAuth<Params>(
       );
     if (!thread)
       return NextResponse.json({ error: 'thread_not_found' }, { status: 404 });
+
+    const { data: conversation, error: conversationError } = await db
+      .from('chat_conversations')
+      .select('created_at')
+      .eq('id', thread.conversation_id)
+      .maybeSingle();
+    if (conversationError)
+      return NextResponse.json(
+        { error: 'context_unavailable' },
+        { status: 503 }
+      );
 
     const { data: observations, error } = await db
       .from('external_chat_observations')
@@ -43,9 +54,14 @@ export const GET = withSessionAuth<Params>(
         { status: 503 }
       );
 
-    return NextResponse.json(serializeContext(thread, observations ?? []), {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+    return NextResponse.json(
+      serializeContext(
+        thread,
+        observations ?? [],
+        conversation?.created_at ?? null
+      ),
+      { headers: { 'Cache-Control': 'no-store' } }
+    );
   },
   { allowAppSessionAuth: { targetApp: ['chat', 'cms'] }, rateLimitKind: 'read' }
 );
@@ -60,14 +76,15 @@ function serializeContext(
     category: string;
     occurred_at: string;
     payload: Record<string, unknown>;
-  }>
+  }>,
+  conversationCreatedAt: string | null
 ) {
   const profile = observations.find(
     (item) => item.category === 'profile_context'
   );
   const payload = profile?.payload ?? {};
   return {
-    firstActivityAt: thread.created_at,
+    firstActivityAt: conversationCreatedAt ?? thread.created_at,
     lastActivityAt: observations[0]?.occurred_at ?? thread.updated_at,
     networkHint: maskNetwork(readNestedString(payload, 'network', 'address')),
     profile: {

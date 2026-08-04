@@ -68,6 +68,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 const params = { params: Promise.resolve({ wsId: 'workspace-1' }) };
 const localRun = {
   created_at: '2026-08-04T00:00:00.000Z',
+  cursor: { messages: '3' },
   digest_results: [],
   error_code: null,
   finished_at: '2026-08-04T00:01:00.000Z',

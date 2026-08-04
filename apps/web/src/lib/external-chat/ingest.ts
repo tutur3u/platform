@@ -50,7 +50,7 @@ export async function processExternalChatEnvelope(
         connectorKey: context.connectorKey,
         event,
         result,
-        threadId: result.threadId ?? null,
+        threadId: typeof result.threadId === 'string' ? result.threadId : null,
         wsId: context.wsId,
       });
     }

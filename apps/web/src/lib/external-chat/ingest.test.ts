@@ -62,6 +62,24 @@ describe('processExternalChatEnvelope replay handling', () => {
       threadId: 'thread-1',
       wsId: context.wsId,
     });
+    expect(store.importExternalChatEvent).not.toHaveBeenCalled();
+    expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
+    expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
+  });
+
+  it('drops malformed persisted thread ids during probe promotion', async () => {
+    store.readExternalChatSourceEvent.mockResolvedValue({
+      delivery_mode: 'probe',
+      payload_digest: 'digest',
+      result: { messageId: 'native-message', threadId: { invalid: true } },
+    });
+
+    await processExternalChatEnvelope(event, context);
+
+    expect(store.recordExternalChatSourceEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ threadId: null })
+    );
+    expect(store.importExternalChatEvent).not.toHaveBeenCalled();
   });
 
   it('classifies a changed-payload replay as a conflict', async () => {
@@ -76,5 +94,8 @@ describe('processExternalChatEnvelope replay handling', () => {
       duplicate: true,
     });
     expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
+    expect(store.importExternalChatEvent).not.toHaveBeenCalled();
+    expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
+    expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
   });
 });

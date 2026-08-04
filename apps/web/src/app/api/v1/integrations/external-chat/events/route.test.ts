@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  applyExternalChatMessageState: vi.fn(),
   importExternalChatEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
   readExternalChatSourceEvent: vi.fn(),
@@ -27,7 +28,8 @@ vi.mock('@/lib/external-chat/crypto', () => ({
 }));
 
 vi.mock('@/lib/external-chat/store', () => ({
-  applyExternalChatMessageState: vi.fn(),
+  applyExternalChatMessageState: (...args: unknown[]) =>
+    mocks.applyExternalChatMessageState(...args),
   digestExternalChatEnvelope: vi.fn(() => 'digest'),
   importExternalChatEvent: (...args: unknown[]) =>
     mocks.importExternalChatEvent(...args),
@@ -308,6 +310,46 @@ describe('external chat ingest route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledTimes(2);
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
+  });
+
+  it('republishes duplicate live message state events', async () => {
+    const stateEvent = {
+      agentId: 'agent-1',
+      deliveryMode: 'live',
+      direction: 'visitor',
+      eventId: 'state:message-1:seen',
+      kind: 'message_state',
+      messageId: 'message-1',
+      status: 'seen',
+      timestamp: new Date().toISOString(),
+      version: 2,
+      visitorId: 'visitor-1',
+    };
+    mocks.readExternalChatSourceEvent.mockResolvedValueOnce({
+      delivery_mode: 'live',
+      payload_digest: 'digest',
+      result: {
+        message: {
+          conversationId: 'conversation-1',
+          id: 'native-message-1',
+        },
+        messageId: 'native-message-1',
+        threadId: 'thread-1',
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret', stateEvent));
+
+    expect(response.status).toBe(200);
+    expect(mocks.applyExternalChatMessageState).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: 'conversation-1',
+        type: 'message.updated',
+        wsId,
+      })
+    );
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
