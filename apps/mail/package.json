@@ -21,7 +21,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.32",
+    "@ai-sdk/google": "^4.0.33",
     "@aws-sdk/client-s3": "3.1101.0",
     "@formatjs/intl-localematcher": "^0.8.13",
     "@tanstack/react-query": "5.101.4",
@@ -42,7 +42,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "ai": "^7.0.50",
+    "ai": "^7.0.51",
     "cookies-next": "^6.1.1",
     "dayjs": "1.11.21",
     "isomorphic-dompurify": "^3.21.0",

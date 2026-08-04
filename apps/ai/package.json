@@ -16,7 +16,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.32",
+    "@ai-sdk/google": "^4.0.33",
     "@tanstack/react-query": "^5.101.4",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -28,7 +28,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
-    "ai": "^7.0.50",
+    "ai": "^7.0.51",
     "next": "^16.3.0",
     "next-intl": "^4.13.4",
     "next-themes": "^0.4.6",

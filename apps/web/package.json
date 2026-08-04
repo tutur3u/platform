@@ -41,7 +41,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.32",
+    "@ai-sdk/google": "^4.0.33",
     "@aws-sdk/client-s3": "3.1101.0",
     "@aws-sdk/s3-request-presigner": "^3.1101.0",
     "@deepgram/sdk": "^5.7.0",
@@ -126,7 +126,7 @@
     "@upstash/redis": "^1.38.1",
     "@vercel/functions": "^3.7.6",
     "@xyflow/react": "^12.11.2",
-    "ai": "^7.0.50",
+    "ai": "^7.0.51",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",

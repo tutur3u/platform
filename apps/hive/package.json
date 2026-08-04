@@ -29,7 +29,7 @@
     "sb:typegen": "cd ../database && bun sb:typegen"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.32",
+    "@ai-sdk/google": "^4.0.33",
     "@formatjs/intl-localematcher": "^0.8.13",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.7.0",
