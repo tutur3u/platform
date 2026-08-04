@@ -415,4 +415,17 @@ describe('external chat ingest route', () => {
     expect(response.status).toBe(400);
     expect(mocks.importExternalChatEvent).not.toHaveBeenCalled();
   });
+
+  it('rejects deeply nested dynamic metadata before canonicalization', async () => {
+    let context: Record<string, unknown> = {};
+    for (let depth = 0; depth < 20; depth += 1) context = { nested: context };
+    const { POST } = await import('./route');
+    const response = await POST(
+      eventRequest('old-secret', { ...validEvent, context })
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.claimExternalChatSourceEvent).not.toHaveBeenCalled();
+    expect(mocks.importExternalChatEvent).not.toHaveBeenCalled();
+  });
 });

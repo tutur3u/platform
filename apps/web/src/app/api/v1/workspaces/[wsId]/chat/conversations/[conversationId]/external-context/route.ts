@@ -87,11 +87,12 @@ function serializeContext(
   const payload = profile?.payload ?? {};
   return {
     firstActivityAt: conversationCreatedAt ?? thread.created_at,
-    lastActivityAt: latestTimestamp([
-      observations[0]?.occurred_at,
-      conversationUpdatedAt,
-      thread.updated_at,
-    ]),
+    lastActivityAt:
+      latestTimestamp([
+        observations[0]?.occurred_at,
+        conversationUpdatedAt,
+        thread.updated_at,
+      ]) ?? thread.created_at,
     networkHint: maskNetwork(readNestedString(payload, 'network', 'address')),
     profile: {
       displayName:

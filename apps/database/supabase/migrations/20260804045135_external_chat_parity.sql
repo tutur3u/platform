@@ -151,6 +151,7 @@ as $$
 declare
   v_event private.external_chat_events%rowtype;
   v_state_occurred_at timestamptz;
+  v_conversation_id uuid;
 begin
   if char_length(coalesce(p_status, '')) > 80
     or jsonb_typeof(coalesce(p_metadata, '{}'::jsonb)) <> 'object' then
@@ -168,6 +169,10 @@ begin
     return jsonb_build_object('found', false);
   end if;
 
+  select conversation_id into v_conversation_id
+  from private.external_chat_threads
+  where id = v_event.thread_id;
+
   select nullif(metadata->>'stateOccurredAt', '')::timestamptz
   into v_state_occurred_at
   from private.chat_messages
@@ -177,6 +182,7 @@ begin
     and v_state_occurred_at > coalesce(p_occurred_at, now()) then
     return jsonb_build_object(
       'found', true,
+      'conversationId', v_conversation_id,
       'message', (
         select private.chat_message_json(message_row)
         from private.chat_messages message_row
@@ -211,6 +217,7 @@ begin
 
   return jsonb_build_object(
     'found', true,
+    'conversationId', v_conversation_id,
     'message', (
       select private.chat_message_json(message_row)
       from private.chat_messages message_row
@@ -247,6 +254,7 @@ as $$
 declare
   v_thread private.external_chat_threads%rowtype;
   v_observation_id uuid;
+  v_observation_thread_id uuid;
   v_conversation_id uuid;
   v_title text;
 begin
@@ -306,14 +314,18 @@ begin
       payload = excluded.payload,
       occurred_at = excluded.occurred_at
   where external_chat_observations.occurred_at <= excluded.occurred_at
-  returning id into v_observation_id;
+  returning id, thread_id into v_observation_id, v_observation_thread_id;
 
   if v_observation_id is null then
-    select id into v_observation_id
+    select id, thread_id into v_observation_id, v_observation_thread_id
     from private.external_chat_observations
     where ws_id = p_ws_id
       and connector_key = p_connector_key
       and remote_observation_id = p_remote_observation_id;
+  end if;
+
+  if v_observation_thread_id <> v_thread.id then
+    raise exception 'external_chat_observation_identity_mismatch';
   end if;
 
   return jsonb_build_object(

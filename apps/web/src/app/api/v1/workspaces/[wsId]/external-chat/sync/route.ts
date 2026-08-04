@@ -283,7 +283,8 @@ function buildRunUpdate(
     update.error_code = remote.errorCode;
   assignTimestampField(update, 'started_at', remote?.startedAt);
   assignTimestampField(update, 'finished_at', remote?.finishedAt);
-  if (!update.started_at && !existingStartedAt) update.started_at = now;
+  if (state !== 'cancelled' && !update.started_at && !existingStartedAt)
+    update.started_at = now;
   if (terminalStates.has(state) && !update.finished_at)
     update.finished_at = now;
   return update;
@@ -308,7 +309,7 @@ function assignTimestampField(
 
 function expectedControlStates(action: z.infer<typeof actionSchema>['action']) {
   if (action === 'cancel') return ['pending', 'running'];
-  if (action === 'resume') return ['paused'];
+  if (action === 'resume') return ['failed', 'paused'];
   return ['pending'];
 }
 

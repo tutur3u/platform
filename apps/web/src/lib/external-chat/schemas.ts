@@ -1,6 +1,16 @@
 import { z } from 'zod';
 
-const dynamicMetadataObjectSchema = z.record(z.string(), z.unknown());
+const MAX_DYNAMIC_METADATA_DEPTH = 16;
+
+const dynamicMetadataObjectSchema = z
+  .record(z.string(), z.unknown())
+  .superRefine((value, context) => {
+    if (exceedsDepth(value, MAX_DYNAMIC_METADATA_DEPTH))
+      context.addIssue({
+        code: 'custom',
+        message: 'Dynamic metadata is too deeply nested',
+      });
+  });
 const dynamicMetadataSchema = dynamicMetadataObjectSchema.default({});
 const timestampSchema = z
   .string()
@@ -140,4 +150,21 @@ export function isExternalChatLiveAuthority(settings: unknown) {
     parsed.data.enabled &&
     !['fallback_queue', 'paused'].includes(parsed.data.authorityMode)
   );
+}
+
+function exceedsDepth(value: unknown, maxDepth: number) {
+  const pending: Array<{ depth: number; value: unknown }> = [
+    { depth: 0, value },
+  ];
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current?.value || typeof current.value !== 'object') continue;
+    if (current.depth >= maxDepth) return true;
+    const children = Array.isArray(current.value)
+      ? current.value
+      : Object.values(current.value as Record<string, unknown>);
+    for (const child of children)
+      pending.push({ depth: current.depth + 1, value: child });
+  }
+  return false;
 }

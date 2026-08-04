@@ -293,4 +293,53 @@ describe('external chat sync status', () => {
     });
     expect(mocks.transitionRun).toHaveBeenCalledTimes(1);
   });
+
+  it('does not invent a start time when cancelling a pending run', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      state: 'cancelled',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'cancel', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.transitionRun).toHaveBeenCalledWith(
+      'external_chat_transition_sync_run',
+      expect.objectContaining({
+        p_expected_states: ['pending', 'running'],
+        p_update: expect.not.objectContaining({
+          started_at: expect.anything(),
+        }),
+      })
+    );
+  });
+
+  it('allows failed runs to resume', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      state: 'running',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'resume', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.transitionRun).toHaveBeenCalledWith(
+      'external_chat_transition_sync_run',
+      expect.objectContaining({ p_expected_states: ['failed', 'paused'] })
+    );
+  });
 });

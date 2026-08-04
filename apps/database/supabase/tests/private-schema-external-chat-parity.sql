@@ -1,5 +1,5 @@
 begin;
-select plan(39);
+select plan(41);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -104,6 +104,18 @@ select is(
   ),
   'Updated visitor',
   'a stale observation cannot replace newer dynamic content'
+);
+select throws_ok(
+  format(
+    $$select private.external_chat_upsert_observation(
+      %L, 'opaque-connector', 'bucket-2', 'visitor-2', 'profile:visitor-1',
+      'profile_context', '{"displayName":"Wrong visitor"}', now()
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'P0001',
+  'external_chat_observation_identity_mismatch',
+  'an observation identity cannot move between external threads'
 );
 select is(
   (
@@ -359,6 +371,16 @@ select lives_ok(
     (select ws_id from parity_context)
   ),
   'a newer delivery state is applied'
+);
+select ok(
+  (
+    select private.external_chat_apply_message_state(
+      ws_id, 'opaque-state', 'message-state', 'seen',
+      '2026-08-01T00:02:00Z', false
+    )->>'conversationId' is not null
+    from parity_context
+  ),
+  'message state replay retains its native conversation identity'
 );
 select lives_ok(
   format(
