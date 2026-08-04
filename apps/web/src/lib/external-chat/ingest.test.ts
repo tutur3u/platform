@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const store = vi.hoisted(() => ({
   applyExternalChatMessageState: vi.fn(),
   claimExternalChatSourceEvent: vi.fn(),
+  hydrateExternalChatReplayResult: vi.fn(),
   importExternalChatEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
   releaseExternalChatSourceEvent: vi.fn(),
@@ -10,6 +11,7 @@ const store = vi.hoisted(() => ({
 }));
 
 vi.mock('./store', () => store);
+vi.mock('./source-events', () => store);
 
 import { processExternalChatEnvelope } from './ingest';
 import type { ExternalChatEventEnvelope } from './schemas';
@@ -54,13 +56,20 @@ const stateEvent: ExternalChatEventEnvelope = {
 describe('processExternalChatEnvelope replay handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    store.claimExternalChatSourceEvent.mockResolvedValue({ status: 'claimed' });
+    store.claimExternalChatSourceEvent.mockResolvedValue({
+      claimToken: 'claim-token',
+      status: 'claimed',
+    });
+    store.hydrateExternalChatReplayResult.mockImplementation(
+      async (result) => result
+    );
     store.recordExternalChatSourceEvent.mockResolvedValue(undefined);
     store.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
   });
 
   it('promotes a matching probe ledger entry to authoritative history', async () => {
     store.claimExternalChatSourceEvent.mockResolvedValue({
+      claimToken: 'claim-token',
       result: { messageId: 'native-message', threadId: 'thread-1' },
       status: 'duplicate',
     });
@@ -80,6 +89,7 @@ describe('processExternalChatEnvelope replay handling', () => {
 
   it('defers while another request owns the source event claim', async () => {
     store.claimExternalChatSourceEvent.mockResolvedValue({
+      claimToken: 'claim-token',
       status: 'in_progress',
     });
 
@@ -95,6 +105,7 @@ describe('processExternalChatEnvelope replay handling', () => {
 
   it('classifies a changed-payload replay as a conflict', async () => {
     store.claimExternalChatSourceEvent.mockResolvedValue({
+      claimToken: 'claim-token',
       status: 'payload_mismatch',
     });
 
@@ -116,6 +127,7 @@ describe('processExternalChatEnvelope replay handling', () => {
     ).resolves.toEqual({ deferred: true, found: false });
     expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
     expect(store.releaseExternalChatSourceEvent).toHaveBeenCalledWith({
+      claimToken: 'claim-token',
       connectorKey: 'opaque',
       event: stateEvent,
       wsId: context.wsId,
@@ -131,7 +143,11 @@ describe('processExternalChatEnvelope replay handling', () => {
 
     expect(store.importExternalChatEvent).not.toHaveBeenCalled();
     expect(store.recordExternalChatSourceEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ event: probeEvent, result: { accepted: true } })
+      expect.objectContaining({
+        claimToken: 'claim-token',
+        event: probeEvent,
+        result: { accepted: true },
+      })
     );
   });
 });

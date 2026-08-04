@@ -1,5 +1,5 @@
 begin;
-select plan(33);
+select plan(39);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -85,6 +85,26 @@ select is(
   'Updated visitor',
   'observation replay updates canonical dynamic content'
 );
+select lives_ok(
+  format(
+    $$select private.external_chat_upsert_observation(
+      %L, 'opaque-connector', 'bucket-1', 'visitor-1', 'profile:visitor-1',
+      'profile_context', '{"displayName":"Stale visitor"}', '2020-01-01T00:00:00Z'
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'a stale observation replay is handled idempotently'
+);
+select is(
+  (
+    select payload->>'displayName' from private.external_chat_observations o
+    cross join parity_context c
+    where o.ws_id = c.ws_id and o.connector_key = 'opaque-connector'
+      and o.remote_observation_id = 'profile:visitor-1'
+  ),
+  'Updated visitor',
+  'a stale observation cannot replace newer dynamic content'
+);
 select is(
   (
     select count(*)::integer from pg_constraint
@@ -163,7 +183,7 @@ select lives_ok(
   format(
     $$select private.external_chat_claim_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', %L, now()
+      'probe', %L, '10000000-0000-4000-8000-000000000001', now()
     )$$,
     (select ws_id from parity_context),
     repeat('c', 64)
@@ -174,7 +194,8 @@ select is(
   (
     select private.external_chat_claim_source_event(
       ws_id, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', repeat('c', 64), now()
+      'probe', repeat('c', 64),
+      '10000000-0000-4000-8000-000000000002', now()
     )->>'status'
     from parity_context
   ),
@@ -185,7 +206,8 @@ select is(
   (
     select private.external_chat_claim_source_event(
       ws_id, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', repeat('d', 64), now()
+      'probe', repeat('d', 64),
+      '10000000-0000-4000-8000-000000000003', now()
     )->>'status'
     from parity_context
   ),
@@ -196,7 +218,8 @@ select lives_ok(
   format(
     $$select private.external_chat_record_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', %L, %L, '{"accepted":true}', now()
+      'probe', %L, '10000000-0000-4000-8000-000000000001',
+      %L, '{"accepted":true}', now()
     )$$,
     (select ws_id from parity_context),
     repeat('c', 64),
@@ -209,7 +232,7 @@ select lives_ok(
   format(
     $$select private.external_chat_claim_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'historical', %L, now()
+      'historical', %L, '10000000-0000-4000-8000-000000000004', now()
     )$$,
     (select ws_id from parity_context),
     repeat('c', 64)
@@ -218,9 +241,23 @@ select lives_ok(
 );
 select lives_ok(
   format(
+    $$select private.external_chat_record_source_event(
+      %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'historical', %L, '10000000-0000-4000-8000-000000000004',
+      %L, '{"accepted":true}', now()
+    )$$,
+    (select ws_id from parity_context),
+    repeat('c', 64),
+    (select id from private.external_chat_threads
+      where ws_id = (select ws_id from parity_context) limit 1)
+  ),
+  'an authoritative replay finalizes the promoted claim'
+);
+select lives_ok(
+  format(
     $$select private.external_chat_claim_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', %L, now()
+      'probe', %L, '10000000-0000-4000-8000-000000000005', now()
     )$$,
     (select ws_id from parity_context),
     repeat('c', 64)
@@ -246,6 +283,62 @@ select is(
   ),
   false,
   'source replay results retain identifiers without message content'
+);
+select is(
+  (
+    select private.external_chat_claim_source_event(
+      ws_id, 'opaque-connector', 'lease:1', 'lease:1', 'message',
+      'historical', repeat('e', 64),
+      '20000000-0000-4000-8000-000000000001', now()
+    )->>'status'
+    from parity_context
+  ),
+  'claimed',
+  'a source identity receives an initial fenced claim'
+);
+update private.external_chat_source_events
+set created_at = now() - interval '6 minutes'
+where ws_id = (select ws_id from parity_context)
+  and connector_key = 'opaque-connector'
+  and source_event_id = 'lease:1';
+select is(
+  (
+    select private.external_chat_claim_source_event(
+      ws_id, 'opaque-connector', 'lease:1', 'lease:1', 'message',
+      'historical', repeat('e', 64),
+      '20000000-0000-4000-8000-000000000002', now()
+    )->>'status'
+    from parity_context
+  ),
+  'claimed',
+  'a stale source claim can be taken over with a new fence token'
+);
+do $$
+declare
+  v_ws_id uuid := (select ws_id from parity_context);
+begin
+  perform private.external_chat_record_source_event(
+    v_ws_id, 'opaque-connector', 'lease:1', 'lease:1', 'message',
+    'historical', repeat('e', 64),
+    '20000000-0000-4000-8000-000000000001', null,
+    '{"accepted":true}'::jsonb, now()
+  );
+  perform private.external_chat_release_source_event(
+    v_ws_id, 'opaque-connector', 'lease:1', repeat('e', 64),
+    '20000000-0000-4000-8000-000000000001'
+  );
+end;
+$$;
+select is(
+  (
+    select result->>'claimToken'
+    from private.external_chat_source_events
+    where ws_id = (select ws_id from parity_context)
+      and connector_key = 'opaque-connector'
+      and source_event_id = 'lease:1'
+  ),
+  '20000000-0000-4000-8000-000000000002',
+  'an expired claim cannot release the active fenced takeover'
 );
 select lives_ok(
   format(

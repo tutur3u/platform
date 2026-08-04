@@ -16251,6 +16251,7 @@ export type Database = {
       };
       external_chat_claim_source_event: {
         Args: {
+          p_claim_token: string;
           p_connector_key: string;
           p_delivery_mode: string;
           p_event_kind: string;
@@ -16340,6 +16341,7 @@ export type Database = {
       };
       external_chat_record_source_event: {
         Args: {
+          p_claim_token: string;
           p_connector_key: string;
           p_delivery_mode: string;
           p_event_kind: string;
@@ -16355,12 +16357,21 @@ export type Database = {
       };
       external_chat_release_source_event: {
         Args: {
+          p_claim_token: string;
           p_connector_key: string;
           p_payload_digest: string;
           p_source_event_id: string;
           p_ws_id: string;
         };
         Returns: undefined;
+      };
+      external_chat_replay_projection: {
+        Args: {
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       external_chat_reserve_reply: {
         Args: {
@@ -16382,6 +16393,15 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: undefined;
+      };
+      external_chat_transition_sync_run: {
+        Args: {
+          p_expected_states: string[];
+          p_run_id: string;
+          p_update: Json;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       external_chat_update_settings: {
         Args: { p_actor_user_id: string; p_chat: Json; p_ws_id: string };

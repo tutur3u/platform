@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   readExternalChatBinding: vi.fn(),
   insertRun: vi.fn(),
   requestExternalChatControl: vi.fn(),
+  transitionRun: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   updateRun: vi.fn(),
   upsert: vi.fn(),
@@ -32,6 +33,11 @@ vi.mock('@/lib/chat/private-rpc', () => ({
 }));
 
 vi.mock('@/lib/external-chat/delivery', () => ({
+  createExternalChatControlClient: vi.fn(
+    async () =>
+      (path: string, payload: Record<string, unknown>, options?: unknown) =>
+        mocks.requestExternalChatControl('workspace-1', path, payload, options)
+  ),
   requestExternalChatControl: (...args: unknown[]) =>
     mocks.requestExternalChatControl(...args),
 }));
@@ -44,7 +50,10 @@ vi.mock('@/lib/external-chat/store', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
     schema: () => ({
-      rpc: (...args: unknown[]) => mocks.compareAndSetRun(...args),
+      rpc: (name: string, args: unknown) =>
+        name === 'external_chat_transition_sync_run'
+          ? mocks.transitionRun(name, args)
+          : mocks.compareAndSetRun(name, args),
       from: (table: string) => {
         if (table === 'external_chat_sync_runs')
           return {
@@ -109,6 +118,7 @@ describe('external chat sync status', () => {
     });
     mocks.updateRun.mockResolvedValue({ error: null });
     mocks.compareAndSetRun.mockResolvedValue({ data: true, error: null });
+    mocks.transitionRun.mockResolvedValue({ data: true, error: null });
     mocks.listRuns.mockResolvedValue({ data: [localRun], error: null });
     mocks.readCheckpoint.mockResolvedValue({ data: null, error: null });
   });
@@ -245,13 +255,42 @@ describe('external chat sync status', () => {
       '/control/v1/sync/audit',
       { runId: localRun.id, stream: 'canonical' }
     );
-    expect(mocks.updateRun).toHaveBeenCalledWith(
+    expect(mocks.transitionRun).toHaveBeenCalledWith(
+      'external_chat_transition_sync_run',
       expect.objectContaining({
-        finished_at: expect.any(String),
-        high_water_mark: { messages: '3' },
-        source_counts: { messages: 3 },
-        state: 'completed',
+        p_expected_states: ['pending'],
+        p_update: expect.objectContaining({
+          finished_at: expect.any(String),
+          high_water_mark: { messages: '3' },
+          source_counts: { messages: 3 },
+          started_at: expect.any(String),
+          state: 'completed',
+        }),
       })
     );
+  });
+
+  it('rejects a stale control result when the run changed concurrently', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      state: 'completed',
+    });
+    mocks.transitionRun.mockResolvedValueOnce({ data: false, error: null });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'audit' }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'sync_run_changed',
+      runId: localRun.id,
+    });
+    expect(mocks.transitionRun).toHaveBeenCalledTimes(1);
   });
 });

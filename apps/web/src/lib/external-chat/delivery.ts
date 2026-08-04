@@ -129,6 +129,11 @@ export async function requestExternalChatControl(
   payload: Record<string, unknown>,
   options?: { timeoutMs?: number }
 ) {
+  const client = await createExternalChatControlClient(wsId);
+  return client(path, payload, options);
+}
+
+export async function createExternalChatControlClient(wsId: string) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
@@ -144,17 +149,24 @@ export async function requestExternalChatControl(
   )
     throw new Error('external_chat_control_unavailable');
 
-  const body = JSON.stringify(payload);
-  const response = await postSignedControlRequest({
-    body,
-    bridgeBaseUrl,
-    path,
-    secret: await decryptControlSecret(wsId, ciphertext),
-    timeoutMs: options?.timeoutMs,
-  });
-  if (!response.ok)
-    throw new Error(`external_chat_control_failed:${response.status}`);
-  return (await response.json()) as Record<string, unknown>;
+  const secret = await decryptControlSecret(wsId, ciphertext);
+  return async (
+    path: string,
+    payload: Record<string, unknown>,
+    options?: { timeoutMs?: number }
+  ) => {
+    const body = JSON.stringify(payload);
+    const response = await postSignedControlRequest({
+      body,
+      bridgeBaseUrl,
+      path,
+      secret,
+      timeoutMs: options?.timeoutMs,
+    });
+    if (!response.ok)
+      throw new Error(`external_chat_control_failed:${response.status}`);
+    return (await response.json()) as Record<string, unknown>;
+  };
 }
 
 export async function verifyExternalChatControl(wsId: string) {

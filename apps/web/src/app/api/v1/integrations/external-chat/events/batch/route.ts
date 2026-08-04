@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { processExternalChatEnvelope } from '@/lib/external-chat/ingest';
 import { authenticateExternalChatIngest } from '@/lib/external-chat/ingest-auth';
 import { externalChatBatchSchema } from '@/lib/external-chat/schemas';
-import { digestExternalChatBatch } from '@/lib/external-chat/store';
+import { digestExternalChatBatch } from '@/lib/external-chat/source-events';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
 export async function POST(request: Request) {

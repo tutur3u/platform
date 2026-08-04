@@ -2,11 +2,14 @@ import { z } from 'zod';
 import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
 import type { ExternalChatEvent, ExternalChatEventEnvelope } from './schemas';
 import {
-  applyExternalChatMessageState,
   claimExternalChatSourceEvent,
-  importExternalChatEvent,
+  hydrateExternalChatReplayResult,
   recordExternalChatSourceEvent,
   releaseExternalChatSourceEvent,
+} from './source-events';
+import {
+  applyExternalChatMessageState,
+  importExternalChatEvent,
   upsertExternalChatObservation,
 } from './store';
 
@@ -40,7 +43,6 @@ export async function processExternalChatEnvelope(
   const claim = await claimExternalChatSourceEvent({
     connectorKey: context.connectorKey,
     event,
-    sourceEventId: event.eventId,
     wsId: context.wsId,
   });
   if (claim.status === 'payload_mismatch')
@@ -48,8 +50,12 @@ export async function processExternalChatEnvelope(
   if (claim.status === 'in_progress') return { deferred: true };
   if (claim.status === 'duplicate') {
     const result = (claim.result ?? {}) as ExternalChatProcessResult;
+    const replay =
+      event.deliveryMode === 'live'
+        ? await hydrateExternalChatReplayResult(result, context.wsId)
+        : result;
     return {
-      ...result,
+      ...replay,
       duplicate: true,
     };
   }
@@ -81,6 +87,7 @@ export async function processExternalChatEnvelope(
       });
       if (result.found === false) {
         await releaseExternalChatSourceEvent({
+          claimToken: claim.claimToken,
           connectorKey: context.connectorKey,
           event,
           wsId: context.wsId,
@@ -98,6 +105,7 @@ export async function processExternalChatEnvelope(
     }
 
     await recordExternalChatSourceEvent({
+      claimToken: claim.claimToken,
       connectorKey: context.connectorKey,
       event,
       result,
@@ -107,6 +115,7 @@ export async function processExternalChatEnvelope(
     return result;
   } catch (error) {
     await releaseExternalChatSourceEvent({
+      claimToken: claim.claimToken,
       connectorKey: context.connectorKey,
       event,
       wsId: context.wsId,

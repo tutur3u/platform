@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  digestExternalChatEnvelope,
-  serializeExternalChatBinding,
-} from './store';
+import { digestExternalChatEnvelope } from './source-events';
+import { serializeExternalChatBinding } from './store';
 
 describe('external chat source identity', () => {
   it('treats delivery mode as transport metadata during replay', () => {

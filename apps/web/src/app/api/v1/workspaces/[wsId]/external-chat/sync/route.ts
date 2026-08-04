@@ -3,7 +3,10 @@ import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveChatRouteContext } from '@/lib/chat/private-rpc';
-import { requestExternalChatControl } from '@/lib/external-chat/delivery';
+import {
+  createExternalChatControlClient,
+  requestExternalChatControl,
+} from '@/lib/external-chat/delivery';
 import { readExternalChatBinding } from '@/lib/external-chat/store';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
@@ -119,23 +122,34 @@ export const POST = withSessionAuth<Params>(
         parsed.data.action === 'cancel' ? 'cancelled' : 'running',
         null
       );
-      const { error: updateError } = await db
-        .from('external_chat_sync_runs')
-        .update(update)
-        .eq('id', runId)
-        .eq('ws_id', wsId);
+      const expectedStates = expectedControlStates(parsed.data.action);
+      const { data: applied, error: updateError } = await db.rpc(
+        'external_chat_transition_sync_run',
+        {
+          p_expected_states: expectedStates,
+          p_run_id: runId,
+          p_update: update,
+          p_ws_id: wsId,
+        }
+      );
       if (updateError) throw new Error(updateError.message);
+      if (!applied)
+        return NextResponse.json(
+          { error: 'sync_run_changed', runId },
+          { status: 409 }
+        );
       return NextResponse.json({ remote, runId });
     } catch (error) {
-      await db
-        .from('external_chat_sync_runs')
-        .update({
+      await db.rpc('external_chat_transition_sync_run', {
+        p_expected_states: expectedControlStates(parsed.data.action),
+        p_run_id: runId,
+        p_update: {
           error_code: 'control_unavailable',
           state: 'failed',
           updated_at: new Date().toISOString(),
-        })
-        .eq('id', runId)
-        .eq('ws_id', wsId);
+        },
+        p_ws_id: wsId,
+      });
       console.error('External chat sync control failed', { error, wsId });
       return NextResponse.json(
         { error: 'control_unavailable', runId },
@@ -160,9 +174,24 @@ async function refreshActiveRuns(
 ) {
   // Bound degraded-bridge latency without serializing every active run.
   const refreshed = [...runs];
-  const activeIndexes = runs.flatMap((run, index) =>
-    activeStates.has(String(run.state)) ? [index] : []
-  );
+  const activeIndexes = runs
+    .flatMap((run, index) =>
+      activeStates.has(String(run.state)) ? [index] : []
+    )
+    .slice(0, 4);
+  if (activeIndexes.length === 0) return refreshed;
+  let requestControl: Awaited<
+    ReturnType<typeof createExternalChatControlClient>
+  >;
+  try {
+    requestControl = await createExternalChatControlClient(wsId);
+  } catch (error) {
+    console.warn('Failed to prepare external chat sync refresh', {
+      error,
+      wsId,
+    });
+    return refreshed;
+  }
   let nextIndex = 0;
 
   async function worker() {
@@ -171,7 +200,7 @@ async function refreshActiveRuns(
       if (position === undefined) return;
       const run = runs[position];
       if (!run) continue;
-      refreshed[position] = await refreshRun(db, wsId, run);
+      refreshed[position] = await refreshRun(db, wsId, run, requestControl);
     }
   }
 
@@ -181,10 +210,14 @@ async function refreshActiveRuns(
   return refreshed;
 }
 
-async function refreshRun(db: any, wsId: string, run: Record<string, unknown>) {
+async function refreshRun(
+  db: any,
+  wsId: string,
+  run: Record<string, unknown>,
+  requestControl: Awaited<ReturnType<typeof createExternalChatControlClient>>
+) {
   try {
-    const remote = await requestExternalChatControl(
-      wsId,
+    const remote = await requestControl(
       '/control/v1/sync/status',
       { runId: run.id },
       { timeoutMs: 2_500 }
@@ -240,27 +273,43 @@ function buildRunUpdate(
   const state =
     remoteState && runStates.has(remoteState) ? remoteState : fallback;
   const update: Record<string, unknown> = { state, updated_at: now };
-  assignRemoteField(update, 'cursor', remote?.cursor);
-  assignRemoteField(update, 'high_water_mark', remote?.highWater);
-  assignRemoteField(update, 'source_counts', remote?.sourceCounts);
-  assignRemoteField(update, 'target_counts', remote?.targetCounts);
-  assignRemoteField(update, 'digest_results', remote?.digestResults);
-  assignRemoteField(update, 'error_code', remote?.errorCode);
-  assignRemoteField(update, 'started_at', remote?.startedAt);
-  assignRemoteField(update, 'finished_at', remote?.finishedAt);
-  if (activeStates.has(state) && !update.started_at && !existingStartedAt)
-    update.started_at = now;
+  assignObjectField(update, 'cursor', remote?.cursor);
+  assignObjectField(update, 'high_water_mark', remote?.highWater);
+  assignObjectField(update, 'source_counts', remote?.sourceCounts);
+  assignObjectField(update, 'target_counts', remote?.targetCounts);
+  if (Array.isArray(remote?.digestResults))
+    update.digest_results = remote.digestResults;
+  if (typeof remote?.errorCode === 'string' || remote?.errorCode === null)
+    update.error_code = remote.errorCode;
+  assignTimestampField(update, 'started_at', remote?.startedAt);
+  assignTimestampField(update, 'finished_at', remote?.finishedAt);
+  if (!update.started_at && !existingStartedAt) update.started_at = now;
   if (terminalStates.has(state) && !update.finished_at)
     update.finished_at = now;
   return update;
 }
 
-function assignRemoteField(
+function assignObjectField(
   target: Record<string, unknown>,
   key: string,
   value: unknown
 ) {
-  if (value !== undefined) target[key] = value;
+  if (isRecord(value)) target[key] = value;
+}
+
+function assignTimestampField(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown
+) {
+  if (typeof value === 'string' && Number.isFinite(Date.parse(value)))
+    target[key] = value;
+}
+
+function expectedControlStates(action: z.infer<typeof actionSchema>['action']) {
+  if (action === 'cancel') return ['pending', 'running'];
+  if (action === 'resume') return ['paused'];
+  return ['pending'];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

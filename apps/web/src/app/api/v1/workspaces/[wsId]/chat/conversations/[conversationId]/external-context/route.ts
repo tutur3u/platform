@@ -32,7 +32,7 @@ export const GET = withSessionAuth<Params>(
 
     const { data: conversation, error: conversationError } = await db
       .from('chat_conversations')
-      .select('created_at')
+      .select('created_at, updated_at')
       .eq('id', thread.conversation_id)
       .maybeSingle();
     if (conversationError)
@@ -58,7 +58,8 @@ export const GET = withSessionAuth<Params>(
       serializeContext(
         thread,
         observations ?? [],
-        conversation?.created_at ?? null
+        conversation?.created_at ?? null,
+        conversation?.updated_at ?? null
       ),
       { headers: { 'Cache-Control': 'no-store' } }
     );
@@ -77,7 +78,8 @@ function serializeContext(
     occurred_at: string;
     payload: Record<string, unknown>;
   }>,
-  conversationCreatedAt: string | null
+  conversationCreatedAt: string | null,
+  conversationUpdatedAt: string | null
 ) {
   const profile = observations.find(
     (item) => item.category === 'profile_context'
@@ -85,7 +87,11 @@ function serializeContext(
   const payload = profile?.payload ?? {};
   return {
     firstActivityAt: conversationCreatedAt ?? thread.created_at,
-    lastActivityAt: observations[0]?.occurred_at ?? thread.updated_at,
+    lastActivityAt: latestTimestamp([
+      observations[0]?.occurred_at,
+      conversationUpdatedAt,
+      thread.updated_at,
+    ]),
     networkHint: maskNetwork(readNestedString(payload, 'network', 'address')),
     profile: {
       displayName:
@@ -102,6 +108,12 @@ function serializeContext(
       }))
       .filter((item) => item.location),
   };
+}
+
+function latestTimestamp(values: Array<string | null | undefined>) {
+  return values
+    .filter((value): value is string => Boolean(value))
+    .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
 }
 
 function readString(value: unknown) {

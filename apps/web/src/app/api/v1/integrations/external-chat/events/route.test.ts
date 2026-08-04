@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({
   applyExternalChatMessageState: vi.fn(),
   claimExternalChatSourceEvent: vi.fn(),
+  hydrateExternalChatReplayResult: vi.fn(),
   importExternalChatEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
   releaseExternalChatSourceEvent: vi.fn(),
@@ -31,17 +32,22 @@ vi.mock('@/lib/external-chat/crypto', () => ({
 vi.mock('@/lib/external-chat/store', () => ({
   applyExternalChatMessageState: (...args: unknown[]) =>
     mocks.applyExternalChatMessageState(...args),
-  claimExternalChatSourceEvent: (...args: unknown[]) =>
-    mocks.claimExternalChatSourceEvent(...args),
   importExternalChatEvent: (...args: unknown[]) =>
     mocks.importExternalChatEvent(...args),
-  releaseExternalChatSourceEvent: (...args: unknown[]) =>
-    mocks.releaseExternalChatSourceEvent(...args),
-  recordExternalChatSourceEvent: (...args: unknown[]) =>
-    mocks.recordExternalChatSourceEvent(...args),
   readExternalChatBinding: (...args: unknown[]) =>
     mocks.readExternalChatBinding(...args),
   upsertExternalChatObservation: vi.fn(),
+}));
+
+vi.mock('@/lib/external-chat/source-events', () => ({
+  claimExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.claimExternalChatSourceEvent(...args),
+  hydrateExternalChatReplayResult: (...args: unknown[]) =>
+    mocks.hydrateExternalChatReplayResult(...args),
+  recordExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.recordExternalChatSourceEvent(...args),
+  releaseExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.releaseExternalChatSourceEvent(...args),
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
@@ -106,7 +112,13 @@ describe('external chat ingest route', () => {
         verified_at: '2026-08-01T17:00:00.000Z',
       },
     });
-    mocks.claimExternalChatSourceEvent.mockResolvedValue({ status: 'claimed' });
+    mocks.claimExternalChatSourceEvent.mockResolvedValue({
+      claimToken: 'claim-token',
+      status: 'claimed',
+    });
+    mocks.hydrateExternalChatReplayResult.mockImplementation(
+      async (result) => result
+    );
     mocks.recordExternalChatSourceEvent.mockResolvedValue(undefined);
     mocks.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
     mocks.importExternalChatEvent.mockResolvedValue({
@@ -316,7 +328,7 @@ describe('external chat ingest route', () => {
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
-  it('does not republish a source-event replay from the minimal ledger', async () => {
+  it('hydrates and republishes a live source-event replay from native ids', async () => {
     const stateEvent = {
       agentId: 'agent-1',
       deliveryMode: 'live',
@@ -330,18 +342,36 @@ describe('external chat ingest route', () => {
       visitorId: 'visitor-1',
     };
     mocks.claimExternalChatSourceEvent.mockResolvedValueOnce({
+      claimToken: 'claim-token',
       result: {
         messageId: 'native-message-1',
         threadId: 'thread-1',
       },
       status: 'duplicate',
     });
+    mocks.hydrateExternalChatReplayResult.mockResolvedValueOnce({
+      conversation: { id: 'conversation-1' },
+      conversationId: 'conversation-1',
+      message: {
+        conversationId: 'conversation-1',
+        id: 'native-message-1',
+      },
+      messageId: 'native-message-1',
+      threadId: 'thread-1',
+    });
     const { POST } = await import('./route');
     const response = await POST(eventRequest('old-secret', stateEvent));
 
     expect(response.status).toBe(200);
     expect(mocks.applyExternalChatMessageState).not.toHaveBeenCalled();
-    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.hydrateExternalChatReplayResult).toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conversationId: 'conversation-1',
+        type: 'message.updated',
+        wsId,
+      })
+    );
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 

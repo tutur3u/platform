@@ -305,7 +305,16 @@ begin
   set category = excluded.category,
       payload = excluded.payload,
       occurred_at = excluded.occurred_at
+  where external_chat_observations.occurred_at <= excluded.occurred_at
   returning id into v_observation_id;
+
+  if v_observation_id is null then
+    select id into v_observation_id
+    from private.external_chat_observations
+    where ws_id = p_ws_id
+      and connector_key = p_connector_key
+      and remote_observation_id = p_remote_observation_id;
+  end if;
 
   return jsonb_build_object(
     'found', true,
