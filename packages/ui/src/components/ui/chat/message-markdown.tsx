@@ -5,13 +5,13 @@ import { createMathPlugin } from '@streamdown/math';
 import { cn } from '@tuturuuu/utils/format';
 import 'katex/dist/katex.min.css';
 import { Component, type ErrorInfo, type ReactNode, useMemo } from 'react';
-import { type PluginConfig, Streamdown } from 'streamdown';
+import { Streamdown } from 'streamdown';
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
 const plugins = {
-  code: code as unknown as PluginConfig['code'],
+  code,
   math,
 };
 

@@ -2,14 +2,14 @@
 
 import { code } from '@streamdown/code';
 import { cn } from '@tuturuuu/utils/format';
-import { type PluginConfig, Streamdown } from 'streamdown';
+import { Streamdown } from 'streamdown';
 import {
   type RepositoryMarkdownContext,
   resolveRepositoryMarkdownImage,
   resolveRepositoryMarkdownLink,
 } from '../../lib/github/markdown';
 
-const plugins = { code: code as unknown as PluginConfig['code'] };
+const plugins = { code };
 
 type Props = {
   children?: string;

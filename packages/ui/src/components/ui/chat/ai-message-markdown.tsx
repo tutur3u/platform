@@ -5,11 +5,11 @@ import { code } from '@streamdown/code';
 import { createMathPlugin } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { type PluginConfig, Streamdown } from 'streamdown';
+import { Streamdown } from 'streamdown';
 
 const math = createMathPlugin({ singleDollarTextMath: true });
 const markdownPlugins = {
-  code: code as unknown as PluginConfig['code'],
+  code,
   mermaid: mermaidPlugin,
   math,
   cjk,

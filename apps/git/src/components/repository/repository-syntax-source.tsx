@@ -2,9 +2,9 @@
 
 import { code } from '@streamdown/code';
 import { cn } from '@tuturuuu/utils/format';
-import { type PluginConfig, Streamdown } from 'streamdown';
+import { Streamdown } from 'streamdown';
 
-const plugins = { code: code as unknown as PluginConfig['code'] };
+const plugins = { code };
 
 const LANGUAGE_BY_EXTENSION: Record<string, string> = {
   bash: 'bash',

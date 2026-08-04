@@ -12,13 +12,13 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { type PluginConfig, Streamdown } from 'streamdown';
+import { Streamdown } from 'streamdown';
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
 const plugins = {
-  code: code as unknown as PluginConfig['code'],
+  code,
   mermaid: mermaidPlugin,
   math,
   cjk,
