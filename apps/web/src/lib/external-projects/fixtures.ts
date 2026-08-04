@@ -3,6 +3,7 @@ import {
   type ExternalProjectAdapterKind,
   type ExternalProjectSyncSchema,
 } from '@tuturuuu/types';
+import { cybershield35ExternalProjectFixture } from './fixtures-cybershield35';
 
 type FixtureAsset = {
   altText?: string;
@@ -677,45 +678,7 @@ export const externalProjectAdapterFixtures: Record<
     profileData: {},
     sourceReference: 'CMS site contract v1',
   },
-  cybershield35: {
-    adapter: 'cybershield35',
-    collections: [
-      {
-        collectionType: 'article-media',
-        description:
-          'Private draft media and durable published assets for CyberShield35 articles.',
-        entries: [],
-        slug: 'article-media',
-        sourceId: 'cybershield35:collection:article-media',
-        title: 'Article media',
-      },
-    ],
-    profileData: {
-      deliveryPreset: 'article-media',
-      mediaAuthority: 'tuturuuu-cms',
-    },
-    schema: {
-      collections: [
-        {
-          assetTypes: ['image'],
-          blockTypes: [],
-          collection_type: 'article-media',
-          description:
-            'Images uploaded by CyberShield35 for reviewed and published articles.',
-          metadataFields: [
-            { key: 'cs35ArticleId', label: 'CS35 article ID', type: 'string' },
-          ],
-          profileFields: [
-            { key: 'caption', label: 'Caption', type: 'string' },
-            { key: 'altText', label: 'Alternative text', type: 'string' },
-          ],
-          slug: 'article-media',
-          title: 'Article media',
-        },
-      ],
-    },
-    sourceReference: 'CyberShield35 article media contract',
-  },
+  cybershield35: cybershield35ExternalProjectFixture,
   junly: {
     adapter: 'junly',
     sourceReference: '../junly/components/launcher/content-data.ts',
