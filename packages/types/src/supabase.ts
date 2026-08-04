@@ -16249,9 +16249,32 @@ export type Database = {
         };
         Returns: Json;
       };
+      external_chat_claim_source_event: {
+        Args: {
+          p_connector_key: string;
+          p_delivery_mode: string;
+          p_event_kind: string;
+          p_occurred_at: string;
+          p_payload_digest: string;
+          p_source_event_id: string;
+          p_source_record_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       external_chat_clear_credential: {
         Args: { p_kind: string; p_ws_id: string };
         Returns: undefined;
+      };
+      external_chat_compare_and_set_sync_run: {
+        Args: {
+          p_expected_state: string;
+          p_expected_updated_at: string;
+          p_run_id: string;
+          p_update: Json;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       external_chat_consume_pairing_ticket: {
         Args: { p_ticket_hash: string; p_ws_id: string };
@@ -16326,6 +16349,15 @@ export type Database = {
           p_source_event_id: string;
           p_source_record_id: string;
           p_thread_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
+      external_chat_release_source_event: {
+        Args: {
+          p_connector_key: string;
+          p_payload_digest: string;
+          p_source_event_id: string;
           p_ws_id: string;
         };
         Returns: undefined;

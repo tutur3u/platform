@@ -116,7 +116,8 @@ export const POST = withSessionAuth<Params>(
       const remoteRun = readRemoteRun(remote, runId);
       const update = buildRunUpdate(
         remoteRun,
-        parsed.data.action === 'cancel' ? 'cancelled' : 'running'
+        parsed.data.action === 'cancel' ? 'cancelled' : 'running',
+        null
       );
       const { error: updateError } = await db
         .from('external_chat_sync_runs')
@@ -157,41 +158,64 @@ async function refreshActiveRuns(
   wsId: string,
   runs: Array<Record<string, unknown>>
 ) {
-  const refreshed = [];
-  for (const run of runs) {
-    if (!activeStates.has(String(run.state))) {
-      refreshed.push(run);
-      continue;
-    }
-    try {
-      const remote = await requestExternalChatControl(
-        wsId,
-        '/control/v1/sync/status',
-        { runId: run.id }
-      );
-      const remoteRun = readRemoteRun(remote, String(run.id));
-      if (!remoteRun) {
-        refreshed.push(run);
-        continue;
-      }
-      const update = buildRunUpdate(remoteRun, String(run.state));
-      const { error } = await db
-        .from('external_chat_sync_runs')
-        .update(update)
-        .eq('id', run.id)
-        .eq('ws_id', wsId);
-      if (error) throw new Error(error.message);
-      refreshed.push({ ...run, ...update });
-    } catch (error) {
-      console.warn('Failed to refresh external chat sync run', {
-        error,
-        runId: run.id,
-        wsId,
-      });
-      refreshed.push(run);
+  // Bound degraded-bridge latency without serializing every active run.
+  const refreshed = [...runs];
+  const activeIndexes = runs.flatMap((run, index) =>
+    activeStates.has(String(run.state)) ? [index] : []
+  );
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < activeIndexes.length) {
+      const position = activeIndexes[nextIndex++];
+      if (position === undefined) return;
+      const run = runs[position];
+      if (!run) continue;
+      refreshed[position] = await refreshRun(db, wsId, run);
     }
   }
+
+  await Promise.all(
+    Array.from({ length: Math.min(4, activeIndexes.length) }, () => worker())
+  );
   return refreshed;
+}
+
+async function refreshRun(db: any, wsId: string, run: Record<string, unknown>) {
+  try {
+    const remote = await requestExternalChatControl(
+      wsId,
+      '/control/v1/sync/status',
+      { runId: run.id },
+      { timeoutMs: 2_500 }
+    );
+    const remoteRun = readRemoteRun(remote, String(run.id));
+    if (!remoteRun) return run;
+    const update = buildRunUpdate(
+      remoteRun,
+      String(run.state),
+      typeof run.started_at === 'string' ? run.started_at : null
+    );
+    const { data: applied, error } = await db.rpc(
+      'external_chat_compare_and_set_sync_run',
+      {
+        p_expected_state: String(run.state),
+        p_expected_updated_at: run.updated_at,
+        p_run_id: run.id,
+        p_update: update,
+        p_ws_id: wsId,
+      }
+    );
+    if (error) throw new Error(error.message);
+    return applied ? { ...run, ...update } : run;
+  } catch (error) {
+    console.warn('Failed to refresh external chat sync run', {
+      error,
+      runId: run.id,
+      wsId,
+    });
+    return run;
+  }
 }
 
 function readRemoteRun(remote: unknown, runId: string) {
@@ -208,7 +232,8 @@ function readRemoteRun(remote: unknown, runId: string) {
 
 function buildRunUpdate(
   remote: Record<string, unknown> | null,
-  fallback: string
+  fallback: string,
+  existingStartedAt: string | null
 ) {
   const now = new Date().toISOString();
   const remoteState = typeof remote?.state === 'string' ? remote.state : null;
@@ -223,7 +248,8 @@ function buildRunUpdate(
   assignRemoteField(update, 'error_code', remote?.errorCode);
   assignRemoteField(update, 'started_at', remote?.startedAt);
   assignRemoteField(update, 'finished_at', remote?.finishedAt);
-  if (activeStates.has(state) && !update.started_at) update.started_at = now;
+  if (activeStates.has(state) && !update.started_at && !existingStartedAt)
+    update.started_at = now;
   if (terminalStates.has(state) && !update.finished_at)
     update.finished_at = now;
   return update;

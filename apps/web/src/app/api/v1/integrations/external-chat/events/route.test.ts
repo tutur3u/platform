@@ -4,9 +4,10 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   applyExternalChatMessageState: vi.fn(),
+  claimExternalChatSourceEvent: vi.fn(),
   importExternalChatEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
-  readExternalChatSourceEvent: vi.fn(),
+  releaseExternalChatSourceEvent: vi.fn(),
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   readExternalChatBinding: vi.fn(),
@@ -30,11 +31,12 @@ vi.mock('@/lib/external-chat/crypto', () => ({
 vi.mock('@/lib/external-chat/store', () => ({
   applyExternalChatMessageState: (...args: unknown[]) =>
     mocks.applyExternalChatMessageState(...args),
-  digestExternalChatEnvelope: vi.fn(() => 'digest'),
+  claimExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.claimExternalChatSourceEvent(...args),
   importExternalChatEvent: (...args: unknown[]) =>
     mocks.importExternalChatEvent(...args),
-  readExternalChatSourceEvent: (...args: unknown[]) =>
-    mocks.readExternalChatSourceEvent(...args),
+  releaseExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.releaseExternalChatSourceEvent(...args),
   recordExternalChatSourceEvent: (...args: unknown[]) =>
     mocks.recordExternalChatSourceEvent(...args),
   readExternalChatBinding: (...args: unknown[]) =>
@@ -104,8 +106,9 @@ describe('external chat ingest route', () => {
         verified_at: '2026-08-01T17:00:00.000Z',
       },
     });
-    mocks.readExternalChatSourceEvent.mockResolvedValue(null);
+    mocks.claimExternalChatSourceEvent.mockResolvedValue({ status: 'claimed' });
     mocks.recordExternalChatSourceEvent.mockResolvedValue(undefined);
+    mocks.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
     mocks.importExternalChatEvent.mockResolvedValue({
       conversation: { id: 'conversation-1' },
       conversationCreated: true,
@@ -313,7 +316,7 @@ describe('external chat ingest route', () => {
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
-  it('republishes duplicate live message state events', async () => {
+  it('does not republish a source-event replay from the minimal ledger', async () => {
     const stateEvent = {
       agentId: 'agent-1',
       deliveryMode: 'live',
@@ -326,30 +329,19 @@ describe('external chat ingest route', () => {
       version: 2,
       visitorId: 'visitor-1',
     };
-    mocks.readExternalChatSourceEvent.mockResolvedValueOnce({
-      delivery_mode: 'live',
-      payload_digest: 'digest',
+    mocks.claimExternalChatSourceEvent.mockResolvedValueOnce({
       result: {
-        message: {
-          conversationId: 'conversation-1',
-          id: 'native-message-1',
-        },
         messageId: 'native-message-1',
         threadId: 'thread-1',
       },
+      status: 'duplicate',
     });
     const { POST } = await import('./route');
     const response = await POST(eventRequest('old-secret', stateEvent));
 
     expect(response.status).toBe(200);
     expect(mocks.applyExternalChatMessageState).not.toHaveBeenCalled();
-    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        conversationId: 'conversation-1',
-        type: 'message.updated',
-        wsId,
-      })
-    );
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
@@ -370,11 +362,13 @@ describe('external chat ingest route', () => {
     const { POST } = await import('./route');
     const response = await POST(eventRequest('old-secret', stateEvent));
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(202);
+    expect(response.headers.get('retry-after')).toBe('2');
     expect(await response.json()).toEqual({
       error: 'external_chat_event_deferred',
     });
     expect(mocks.recordExternalChatSourceEvent).not.toHaveBeenCalled();
+    expect(mocks.releaseExternalChatSourceEvent).toHaveBeenCalled();
     expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
     expect(mocks.upsert).not.toHaveBeenCalled();
   });

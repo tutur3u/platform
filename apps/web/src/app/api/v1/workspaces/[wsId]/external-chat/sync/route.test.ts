@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  compareAndSetRun: vi.fn(),
   listRuns: vi.fn(),
   readCheckpoint: vi.fn(),
   readExternalChatBinding: vi.fn(),
@@ -43,6 +44,7 @@ vi.mock('@/lib/external-chat/store', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => ({
     schema: () => ({
+      rpc: (...args: unknown[]) => mocks.compareAndSetRun(...args),
       from: (table: string) => {
         if (table === 'external_chat_sync_runs')
           return {
@@ -106,6 +108,7 @@ describe('external chat sync status', () => {
       error: null,
     });
     mocks.updateRun.mockResolvedValue({ error: null });
+    mocks.compareAndSetRun.mockResolvedValue({ data: true, error: null });
     mocks.listRuns.mockResolvedValue({ data: [localRun], error: null });
     mocks.readCheckpoint.mockResolvedValue({ data: null, error: null });
   });
@@ -171,13 +174,19 @@ describe('external chat sync status', () => {
     expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
       'workspace-1',
       '/control/v1/sync/status',
-      { runId: localRun.id }
+      { runId: localRun.id },
+      { timeoutMs: 2500 }
     );
-    expect(mocks.updateRun).toHaveBeenCalledWith(
+    expect(mocks.compareAndSetRun).toHaveBeenCalledWith(
+      'external_chat_compare_and_set_sync_run',
       expect.objectContaining({
-        finished_at: '2026-08-04T00:02:00.000Z',
-        state: 'completed',
-        target_counts: { messages: 3 },
+        p_expected_state: 'running',
+        p_expected_updated_at: runningRun.updated_at,
+        p_update: expect.objectContaining({
+          finished_at: '2026-08-04T00:02:00.000Z',
+          state: 'completed',
+          target_counts: { messages: 3 },
+        }),
       })
     );
     expect(await response.json()).toEqual(
@@ -185,6 +194,31 @@ describe('external chat sync status', () => {
         runs: [expect.objectContaining({ state: 'completed' })],
       })
     );
+  });
+
+  it('keeps the local run when a newer transition wins the refresh race', async () => {
+    const runningRun = {
+      ...localRun,
+      finished_at: null,
+      state: 'running',
+    };
+    mocks.listRuns.mockResolvedValueOnce({ data: [runningRun], error: null });
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      state: 'completed',
+    });
+    mocks.compareAndSetRun.mockResolvedValueOnce({ data: false, error: null });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('http://localhost/sync') as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      checkpoint: null,
+      runs: [runningRun],
+    });
   });
 
   it('persists an immediately completed audit response', async () => {
@@ -205,6 +239,12 @@ describe('external chat sync status', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.insertRun).toHaveBeenCalledTimes(1);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/audit',
+      { runId: localRun.id, stream: 'canonical' }
+    );
     expect(mocks.updateRun).toHaveBeenCalledWith(
       expect.objectContaining({
         finished_at: expect.any(String),

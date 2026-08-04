@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   if (result.deferred)
     return NextResponse.json(
       { error: 'external_chat_event_deferred' },
-      { status: 409 }
+      { headers: { 'retry-after': '2' }, status: 202 }
     );
 
   if (

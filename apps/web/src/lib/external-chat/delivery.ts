@@ -102,11 +102,13 @@ async function postSignedControlRequest({
   bridgeBaseUrl,
   path,
   secret,
+  timeoutMs = 10_000,
 }: {
   body: string;
   bridgeBaseUrl: string;
   path: string;
   secret: string;
+  timeoutMs?: number;
 }) {
   const timestamp = new Date().toISOString();
   return safeExternalChatFetch(`${bridgeBaseUrl}${path}`, {
@@ -117,14 +119,15 @@ async function postSignedControlRequest({
       'x-control-timestamp': timestamp,
     },
     method: 'POST',
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 }
 
 export async function requestExternalChatControl(
   wsId: string,
   path: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  options?: { timeoutMs?: number }
 ) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
@@ -147,6 +150,7 @@ export async function requestExternalChatControl(
     bridgeBaseUrl,
     path,
     secret: await decryptControlSecret(wsId, ciphertext),
+    timeoutMs: options?.timeoutMs,
   });
   if (!response.ok)
     throw new Error(`external_chat_control_failed:${response.status}`);

@@ -320,29 +320,36 @@ export async function upsertExternalChatObservation({
   };
 }
 
-export async function readExternalChatSourceEvent({
+export async function claimExternalChatSourceEvent({
   connectorKey,
+  event,
   sourceEventId,
   wsId,
 }: {
   connectorKey: string;
+  event: ExternalChatEventEnvelope;
   sourceEventId: string;
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { data, error } = await externalChatPrivateDb(admin)
-    .from('external_chat_source_events')
-    .select('delivery_mode, payload_digest, result')
-    .eq('ws_id', wsId)
-    .eq('connector_key', connectorKey)
-    .eq('source_event_id', sourceEventId)
-    .maybeSingle();
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_claim_source_event' as never,
+    {
+      p_connector_key: connectorKey,
+      p_delivery_mode: event.deliveryMode,
+      p_event_kind: event.kind,
+      p_occurred_at: event.timestamp,
+      p_payload_digest: digestExternalChatEnvelope(event),
+      p_source_event_id: sourceEventId,
+      p_source_record_id: sourceRecordId(event),
+      p_ws_id: wsId,
+    } as never
+  );
   if (error) throw new Error(error.message);
-  return data as {
-    delivery_mode: 'historical' | 'live' | 'probe';
-    payload_digest: string;
-    result: Json;
-  } | null;
+  return data as unknown as {
+    result?: ExternalChatProcessResultRecord;
+    status: 'claimed' | 'duplicate' | 'in_progress' | 'payload_mismatch';
+  };
 }
 
 export async function recordExternalChatSourceEvent({
@@ -366,24 +373,70 @@ export async function recordExternalChatSourceEvent({
       args: Record<string, unknown>
     ) => Promise<{ error: { message: string } | null }>;
   };
-  const { error } = await db.rpc('external_chat_record_source_event', {
+  const { data, error } = (await db.rpc('external_chat_record_source_event', {
     p_connector_key: connectorKey,
     p_delivery_mode: event.deliveryMode,
     p_event_kind: event.kind,
     p_occurred_at: event.timestamp,
     p_payload_digest: payloadDigest,
-    p_result: result as Json,
+    p_result: minimizeExternalChatResult(result) as Json,
     p_source_event_id: event.eventId,
-    p_source_record_id:
-      'messageId' in event
-        ? event.messageId
-        : 'observationId' in event
-          ? event.observationId
-          : event.eventId,
+    p_source_record_id: sourceRecordId(event),
     p_thread_id: threadId ?? null,
     p_ws_id: wsId,
-  });
+  })) as unknown as { data: boolean; error: { message: string } | null };
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('external_chat_source_event_claim_lost');
+}
+
+export async function releaseExternalChatSourceEvent({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: ExternalChatEventEnvelope;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_release_source_event' as never,
+    {
+      p_connector_key: connectorKey,
+      p_payload_digest: digestExternalChatEnvelope(event),
+      p_source_event_id: event.eventId,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw new Error(error.message);
+}
+
+type ExternalChatProcessResultRecord = Record<string, unknown>;
+
+function minimizeExternalChatResult(result: Record<string, unknown>) {
+  const allowed = [
+    'accepted',
+    'conversationCreated',
+    'conversationId',
+    'ephemeral',
+    'found',
+    'messageId',
+    'observationId',
+    'threadId',
+  ] as const;
+  return Object.fromEntries(
+    allowed.flatMap((key) =>
+      result[key] === undefined ? [] : [[key, result[key]]]
+    )
+  );
+}
+
+function sourceRecordId(event: ExternalChatEventEnvelope) {
+  return 'messageId' in event
+    ? event.messageId
+    : 'observationId' in event
+      ? event.observationId
+      : event.eventId;
 }
 
 export function digestExternalChatEnvelope(event: ExternalChatEventEnvelope) {

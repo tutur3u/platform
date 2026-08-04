@@ -3,10 +3,10 @@ import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
 import type { ExternalChatEvent, ExternalChatEventEnvelope } from './schemas';
 import {
   applyExternalChatMessageState,
-  digestExternalChatEnvelope,
+  claimExternalChatSourceEvent,
   importExternalChatEvent,
-  readExternalChatSourceEvent,
   recordExternalChatSourceEvent,
+  releaseExternalChatSourceEvent,
   upsertExternalChatObservation,
 } from './store';
 
@@ -37,71 +37,88 @@ export async function processExternalChatEnvelope(
   event: ExternalChatEventEnvelope,
   context: ExternalChatIngestContext
 ): Promise<ExternalChatProcessResult> {
-  const existing = await readExternalChatSourceEvent({
+  const claim = await claimExternalChatSourceEvent({
     connectorKey: context.connectorKey,
+    event,
     sourceEventId: event.eventId,
     wsId: context.wsId,
   });
-  if (existing) {
-    if (existing.payload_digest !== digestExternalChatEnvelope(event))
-      return { conflict: 'payload_mismatch', duplicate: true };
-    const result = existing.result as ExternalChatProcessResult;
-    if (existing.delivery_mode === 'probe' && event.deliveryMode !== 'probe') {
-      await recordExternalChatSourceEvent({
-        connectorKey: context.connectorKey,
-        event,
-        result,
-        threadId: typeof result.threadId === 'string' ? result.threadId : null,
-        wsId: context.wsId,
-      });
-    }
+  if (claim.status === 'payload_mismatch')
+    return { conflict: 'payload_mismatch', duplicate: true };
+  if (claim.status === 'in_progress') return { deferred: true };
+  if (claim.status === 'duplicate') {
+    const result = (claim.result ?? {}) as ExternalChatProcessResult;
     return {
       ...result,
       duplicate: true,
     };
   }
 
-  let result: ExternalChatProcessResult;
-  if (event.kind === 'message') {
-    result = await importExternalChatEvent({
-      configurationRevision: context.configurationRevision,
-      connectorKey: context.connectorKey,
-      event,
-      mappedUserId: getRoutingUserId(
-        context.settings,
-        event.agentId,
-        event.direction
-      ),
-      wsId: context.wsId,
-    });
-  } else if (
-    event.kind === 'message_state' ||
-    event.kind === 'message_deleted'
-  ) {
-    result = await applyExternalChatMessageState({
-      connectorKey: context.connectorKey,
-      event,
-      wsId: context.wsId,
-    });
-    if (result.found === false) return { ...result, deferred: true };
-  } else if (event.kind === 'observation') {
-    result = await upsertExternalChatObservation({
-      connectorKey: context.connectorKey,
-      event,
-      wsId: context.wsId,
-    });
-  } else {
-    result = { accepted: true, ephemeral: true };
-  }
+  try {
+    let result: ExternalChatProcessResult;
+    if (event.deliveryMode === 'probe') {
+      result = { accepted: true };
+    } else if (event.kind === 'message') {
+      result = await importExternalChatEvent({
+        configurationRevision: context.configurationRevision,
+        connectorKey: context.connectorKey,
+        event,
+        mappedUserId: getRoutingUserId(
+          context.settings,
+          event.agentId,
+          event.direction
+        ),
+        wsId: context.wsId,
+      });
+    } else if (
+      event.kind === 'message_state' ||
+      event.kind === 'message_deleted'
+    ) {
+      result = await applyExternalChatMessageState({
+        connectorKey: context.connectorKey,
+        event,
+        wsId: context.wsId,
+      });
+      if (result.found === false) {
+        await releaseExternalChatSourceEvent({
+          connectorKey: context.connectorKey,
+          event,
+          wsId: context.wsId,
+        });
+        return { ...result, deferred: true };
+      }
+    } else if (event.kind === 'observation') {
+      result = await upsertExternalChatObservation({
+        connectorKey: context.connectorKey,
+        event,
+        wsId: context.wsId,
+      });
+    } else {
+      result = { accepted: true, ephemeral: true };
+    }
 
-  await recordExternalChatSourceEvent({
-    connectorKey: context.connectorKey,
-    event,
-    result,
-    threadId: typeof result.threadId === 'string' ? result.threadId : null,
-    wsId: context.wsId,
-  });
-  return result;
+    await recordExternalChatSourceEvent({
+      connectorKey: context.connectorKey,
+      event,
+      result,
+      threadId: typeof result.threadId === 'string' ? result.threadId : null,
+      wsId: context.wsId,
+    });
+    return result;
+  } catch (error) {
+    await releaseExternalChatSourceEvent({
+      connectorKey: context.connectorKey,
+      event,
+      wsId: context.wsId,
+    }).catch((releaseError) => {
+      console.warn('Failed to release external chat source event claim', {
+        error: releaseError,
+        sourceEventId: event.eventId,
+        wsId: context.wsId,
+      });
+    });
+    throw error;
+  }
 }
 
 export function getRoutingUserId(

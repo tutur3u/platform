@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const store = vi.hoisted(() => ({
   applyExternalChatMessageState: vi.fn(),
-  digestExternalChatEnvelope: vi.fn(() => 'digest'),
+  claimExternalChatSourceEvent: vi.fn(),
   importExternalChatEvent: vi.fn(),
-  readExternalChatSourceEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
+  releaseExternalChatSourceEvent: vi.fn(),
   upsertExternalChatObservation: vi.fn(),
 }));
 
@@ -52,13 +52,17 @@ const stateEvent: ExternalChatEventEnvelope = {
 };
 
 describe('processExternalChatEnvelope replay handling', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    store.claimExternalChatSourceEvent.mockResolvedValue({ status: 'claimed' });
+    store.recordExternalChatSourceEvent.mockResolvedValue(undefined);
+    store.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
+  });
 
   it('promotes a matching probe ledger entry to authoritative history', async () => {
-    store.readExternalChatSourceEvent.mockResolvedValue({
-      delivery_mode: 'probe',
-      payload_digest: 'digest',
+    store.claimExternalChatSourceEvent.mockResolvedValue({
       result: { messageId: 'native-message', threadId: 'thread-1' },
+      status: 'duplicate',
     });
 
     const result = await processExternalChatEnvelope(event, context);
@@ -68,40 +72,30 @@ describe('processExternalChatEnvelope replay handling', () => {
       messageId: 'native-message',
       threadId: 'thread-1',
     });
-    expect(store.recordExternalChatSourceEvent).toHaveBeenCalledWith({
-      connectorKey: 'opaque',
-      event,
-      result: { messageId: 'native-message', threadId: 'thread-1' },
-      threadId: 'thread-1',
-      wsId: context.wsId,
-    });
+    expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
     expect(store.importExternalChatEvent).not.toHaveBeenCalled();
     expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
     expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
   });
 
-  it('drops malformed persisted thread ids during probe promotion', async () => {
-    store.readExternalChatSourceEvent.mockResolvedValue({
-      delivery_mode: 'probe',
-      payload_digest: 'digest',
-      result: { messageId: 'native-message', threadId: { invalid: true } },
+  it('defers while another request owns the source event claim', async () => {
+    store.claimExternalChatSourceEvent.mockResolvedValue({
+      status: 'in_progress',
     });
 
-    await processExternalChatEnvelope(event, context);
+    await expect(processExternalChatEnvelope(event, context)).resolves.toEqual({
+      deferred: true,
+    });
 
-    expect(store.recordExternalChatSourceEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ threadId: null })
-    );
+    expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
     expect(store.importExternalChatEvent).not.toHaveBeenCalled();
     expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
     expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
   });
 
   it('classifies a changed-payload replay as a conflict', async () => {
-    store.readExternalChatSourceEvent.mockResolvedValue({
-      delivery_mode: 'historical',
-      payload_digest: 'different-digest',
-      result: {},
+    store.claimExternalChatSourceEvent.mockResolvedValue({
+      status: 'payload_mismatch',
     });
 
     await expect(processExternalChatEnvelope(event, context)).resolves.toEqual({
@@ -115,12 +109,29 @@ describe('processExternalChatEnvelope replay handling', () => {
   });
 
   it('defers state events until their message exists without consuming them', async () => {
-    store.readExternalChatSourceEvent.mockResolvedValue(null);
     store.applyExternalChatMessageState.mockResolvedValue({ found: false });
 
     await expect(
       processExternalChatEnvelope(stateEvent, context)
     ).resolves.toEqual({ deferred: true, found: false });
     expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
+    expect(store.releaseExternalChatSourceEvent).toHaveBeenCalledWith({
+      connectorKey: 'opaque',
+      event: stateEvent,
+      wsId: context.wsId,
+    });
+  });
+
+  it('keeps probe messages out of the native chat projection', async () => {
+    const probeEvent = { ...event, deliveryMode: 'probe' as const };
+
+    await expect(
+      processExternalChatEnvelope(probeEvent, context)
+    ).resolves.toEqual({ accepted: true });
+
+    expect(store.importExternalChatEvent).not.toHaveBeenCalled();
+    expect(store.recordExternalChatSourceEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ event: probeEvent, result: { accepted: true } })
+    );
   });
 });

@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(33);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -7,7 +7,7 @@ select has_table('private', 'external_chat_sync_runs', 'durable sync run store e
 select has_table('private', 'external_chat_stream_cursors', 'durable stream cursors exist');
 select has_function('private', 'external_chat_upsert_observation', 'observation upsert RPC exists');
 select has_function('private', 'external_chat_apply_message_state', 'message state replay RPC exists');
-select has_function('private', 'external_chat_record_source_event', 'atomic source ledger RPC exists');
+select has_function('private', 'external_chat_claim_source_event', 'atomic source claim RPC exists');
 
 select is_empty(
   $$select 1 from information_schema.table_privileges
@@ -161,42 +161,71 @@ select is(
 
 select lives_ok(
   format(
-    $$select private.external_chat_record_source_event(
+    $$select private.external_chat_claim_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', %L, %L, '{"authority":"probe"}', now()
+      'probe', %L, now()
     )$$,
     (select ws_id from parity_context),
-    repeat('c', 64),
-    (select id from private.external_chat_threads
-      where ws_id = (select ws_id from parity_context) limit 1)
+    repeat('c', 64)
   ),
-  'a probe source record can be inserted atomically'
+  'a source identity can be claimed atomically'
+);
+select is(
+  (
+    select private.external_chat_claim_source_event(
+      ws_id, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'probe', repeat('c', 64), now()
+    )->>'status'
+    from parity_context
+  ),
+  'in_progress',
+  'a concurrent matching delivery waits for the active claim'
+);
+select is(
+  (
+    select private.external_chat_claim_source_event(
+      ws_id, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'probe', repeat('d', 64), now()
+    )->>'status'
+    from parity_context
+  ),
+  'payload_mismatch',
+  'a concurrent changed payload is rejected atomically'
 );
 select lives_ok(
   format(
     $$select private.external_chat_record_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'historical', %L, %L, '{"authority":"historical"}', now()
+      'probe', %L, %L, '{"accepted":true}', now()
     )$$,
     (select ws_id from parity_context),
     repeat('c', 64),
     (select id from private.external_chat_threads
       where ws_id = (select ws_id from parity_context) limit 1)
   ),
-  'an authoritative source record promotes a probe atomically'
+  'a claimed source record can be finalized atomically'
 );
 select lives_ok(
   format(
-    $$select private.external_chat_record_source_event(
+    $$select private.external_chat_claim_source_event(
       %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
-      'probe', %L, %L, '{"authority":"late-probe"}', now()
+      'historical', %L, now()
     )$$,
     (select ws_id from parity_context),
-    repeat('c', 64),
-    (select id from private.external_chat_threads
-      where ws_id = (select ws_id from parity_context) limit 1)
+    repeat('c', 64)
   ),
-  'a later probe replay cannot downgrade authority'
+  'an authoritative replay promotes a finalized probe'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_claim_source_event(
+      %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'probe', %L, now()
+    )$$,
+    (select ws_id from parity_context),
+    repeat('c', 64)
+  ),
+  'a later probe replay is accepted without downgrading authority'
 );
 select is(
   (
@@ -210,15 +239,14 @@ select is(
 );
 select is(
   (
-    select result->>'authority' from private.external_chat_source_events
+    select result ? 'content' from private.external_chat_source_events
     where ws_id = (select ws_id from parity_context)
       and connector_key = 'opaque-connector'
       and source_event_id = 'authority:1'
   ),
-  'historical',
-  'a late probe cannot replace authoritative source results'
+  false,
+  'source replay results retain identifiers without message content'
 );
-
 select lives_ok(
   format(
     $$select private.external_chat_import_event(
