@@ -80,6 +80,8 @@ describe('processExternalChatEnvelope replay handling', () => {
       expect.objectContaining({ threadId: null })
     );
     expect(store.importExternalChatEvent).not.toHaveBeenCalled();
+    expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
+    expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
   });
 
   it('classifies a changed-payload replay as a conflict', async () => {

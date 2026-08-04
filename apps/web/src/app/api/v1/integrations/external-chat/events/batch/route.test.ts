@@ -160,10 +160,11 @@ describe('external chat historical batch', () => {
     );
     expect(response.status).toBe(207);
     expect(upsert).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        cursor: expect.anything(),
-        high_water_mark: expect.anything(),
-      }),
+      expect.not.objectContaining({ cursor: expect.anything() }),
+      { onConflict: 'ws_id,connector_key,stream_key' }
+    );
+    expect(upsert).toHaveBeenCalledWith(
+      expect.not.objectContaining({ high_water_mark: expect.anything() }),
       { onConflict: 'ws_id,connector_key,stream_key' }
     );
     expect(await response.json()).toEqual(
