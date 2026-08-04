@@ -17,7 +17,7 @@ test.describe('Public user profile auth gate (unauthenticated)', () => {
 
     const url = new URL(page.url());
 
-    expect(url.pathname).toBe(`/${DEFAULT_LOCALE}/login`);
+    expect(url.pathname).toBe('/login');
     expect(url.searchParams.get('nextUrl')).toBe(
       '/users/__e2e_missing_handle__'
     );
