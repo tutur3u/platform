@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({
   compareAndSetRun: vi.fn(),
   listRuns: vi.fn(),
+  readRun: vi.fn(),
   readCheckpoint: vi.fn(),
   readExternalChatBinding: vi.fn(),
   insertRun: vi.fn(),
@@ -62,6 +63,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             }),
             select: () => ({
               eq: () => ({
+                eq: () => ({ maybeSingle: () => mocks.readRun() }),
                 order: () => ({
                   limit: () => mocks.listRuns(),
                 }),
@@ -121,6 +123,10 @@ describe('external chat sync status', () => {
     mocks.transitionRun.mockResolvedValue({ data: true, error: null });
     mocks.listRuns.mockResolvedValue({ data: [localRun], error: null });
     mocks.readCheckpoint.mockResolvedValue({ data: null, error: null });
+    mocks.readRun.mockResolvedValue({
+      data: { started_at: localRun.started_at },
+      error: null,
+    });
   });
 
   it('returns stored status without polling or writing to the bridge', async () => {
@@ -295,6 +301,10 @@ describe('external chat sync status', () => {
   });
 
   it('does not invent a start time when cancelling a pending run', async () => {
+    mocks.readRun.mockResolvedValueOnce({
+      data: { started_at: null },
+      error: null,
+    });
     mocks.requestExternalChatControl.mockResolvedValueOnce({
       runId: localRun.id,
       state: 'cancelled',
@@ -339,7 +349,16 @@ describe('external chat sync status', () => {
     expect(response.status).toBe(200);
     expect(mocks.transitionRun).toHaveBeenCalledWith(
       'external_chat_transition_sync_run',
-      expect.objectContaining({ p_expected_states: ['failed', 'paused'] })
+      expect.objectContaining({
+        p_expected_states: ['failed', 'paused'],
+        p_update: expect.objectContaining({
+          error_code: null,
+          finished_at: null,
+          state: 'running',
+        }),
+      })
     );
+    const update = mocks.transitionRun.mock.calls[0]?.[1]?.p_update;
+    expect(update).not.toHaveProperty('started_at');
   });
 });

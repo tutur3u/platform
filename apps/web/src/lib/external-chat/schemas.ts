@@ -159,7 +159,7 @@ function exceedsDepth(value: unknown, maxDepth: number) {
   while (pending.length > 0) {
     const current = pending.pop();
     if (!current?.value || typeof current.value !== 'object') continue;
-    if (current.depth >= maxDepth) return true;
+    if (current.depth > maxDepth) return true;
     const children = Array.isArray(current.value)
       ? current.value
       : Object.values(current.value as Record<string, unknown>);

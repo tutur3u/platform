@@ -428,4 +428,16 @@ describe('external chat ingest route', () => {
     expect(mocks.claimExternalChatSourceEvent).not.toHaveBeenCalled();
     expect(mocks.importExternalChatEvent).not.toHaveBeenCalled();
   });
+
+  it('accepts dynamic metadata at the documented maximum depth', async () => {
+    let context: Record<string, unknown> = {};
+    for (let depth = 0; depth < 16; depth += 1) context = { nested: context };
+    const { POST } = await import('./route');
+    const response = await POST(
+      eventRequest('old-secret', { ...validEvent, context })
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.importExternalChatEvent).toHaveBeenCalledOnce();
+  });
 });

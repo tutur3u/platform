@@ -110,6 +110,27 @@ export const POST = withSessionAuth<Params>(
     if (!runId)
       return NextResponse.json({ error: 'run_id_required' }, { status: 400 });
 
+    let existingStartedAt: string | null = null;
+    if (parsed.data.runId) {
+      const { data: existingRun, error: existingRunError } = await db
+        .from('external_chat_sync_runs')
+        .select('started_at')
+        .eq('ws_id', wsId)
+        .eq('id', runId)
+        .maybeSingle();
+      if (existingRunError)
+        return NextResponse.json(
+          { error: 'sync_run_unavailable' },
+          { status: 503 }
+        );
+      if (!existingRun)
+        return NextResponse.json(
+          { error: 'sync_run_not_found' },
+          { status: 404 }
+        );
+      existingStartedAt = existingRun.started_at;
+    }
+
     try {
       const remote = await requestExternalChatControl(
         wsId,
@@ -120,7 +141,8 @@ export const POST = withSessionAuth<Params>(
       const update = buildRunUpdate(
         remoteRun,
         parsed.data.action === 'cancel' ? 'cancelled' : 'running',
-        null
+        existingStartedAt,
+        parsed.data.action
       );
       const expectedStates = expectedControlStates(parsed.data.action);
       const { data: applied, error: updateError } = await db.rpc(
@@ -266,7 +288,8 @@ function readRemoteRun(remote: unknown, runId: string) {
 function buildRunUpdate(
   remote: Record<string, unknown> | null,
   fallback: string,
-  existingStartedAt: string | null
+  existingStartedAt: string | null,
+  action?: z.infer<typeof actionSchema>['action']
 ) {
   const now = new Date().toISOString();
   const remoteState = typeof remote?.state === 'string' ? remote.state : null;
@@ -281,8 +304,13 @@ function buildRunUpdate(
     update.digest_results = remote.digestResults;
   if (typeof remote?.errorCode === 'string' || remote?.errorCode === null)
     update.error_code = remote.errorCode;
-  assignTimestampField(update, 'started_at', remote?.startedAt);
+  if (!existingStartedAt)
+    assignTimestampField(update, 'started_at', remote?.startedAt);
   assignTimestampField(update, 'finished_at', remote?.finishedAt);
+  if (action === 'resume' && !terminalStates.has(state)) {
+    update.error_code = null;
+    update.finished_at = null;
+  }
   if (state !== 'cancelled' && !update.started_at && !existingStartedAt)
     update.started_at = now;
   if (terminalStates.has(state) && !update.finished_at)
