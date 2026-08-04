@@ -28,12 +28,12 @@ describe('MultimodalLiveClient connection', () => {
     constructorMock.mockReset();
   });
 
-  it('uses the v1alpha endpoint required by ephemeral tokens', () => {
+  it('uses the v1beta endpoint required by ephemeral tokens', () => {
     new MultimodalLiveClient({ apiKey: 'auth_tokens/test' });
 
     expect(constructorMock).toHaveBeenCalledWith({
       apiKey: 'auth_tokens/test',
-      httpOptions: { apiVersion: 'v1alpha' },
+      httpOptions: { apiVersion: 'v1beta' },
     });
   });
 

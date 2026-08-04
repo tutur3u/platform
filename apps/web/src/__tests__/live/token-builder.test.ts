@@ -17,13 +17,13 @@ describe('buildLiveConnectConfig', () => {
     expect(config.config?.outputAudioTranscription).toEqual({});
   });
 
-  it('uses the documented v1alpha auth token config shape', () => {
+  it('uses the documented v1beta auth token config shape', () => {
     const config = buildCreateAuthTokenConfig({
       model: 'gemini-3.1-flash-live-preview',
     });
 
     expect(config?.uses).toBe(1);
-    expect(config?.httpOptions).toEqual({ apiVersion: 'v1alpha' });
+    expect(config?.httpOptions).toEqual({ apiVersion: 'v1beta' });
     expect(config?.lockAdditionalFields).toEqual([]);
     expect(
       new Date(config?.expireTime ?? 0).getTime() - Date.now()
