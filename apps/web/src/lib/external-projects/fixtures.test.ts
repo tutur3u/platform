@@ -5,6 +5,7 @@ describe('external project adapter fixtures', () => {
   it('covers all supported adapters with source references', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
       'custom',
+      'cybershield35',
       'exocorpse',
       'junly',
       'kendra',
@@ -18,7 +19,7 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(CMS site|junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
+        /(CMS site|CyberShield35|junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra|Richfield)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -39,6 +40,12 @@ describe('external project adapter fixtures', () => {
       'redirects',
       'media-assets',
     ]);
+
+    expect(
+      externalProjectAdapterFixtures.cybershield35.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual(['article-media']);
 
     expect(
       externalProjectAdapterFixtures.junly.collections.map(

@@ -44015,7 +44015,8 @@ export type Database = {
         | 'shiraoki'
         | 'kendra'
         | 'richfield'
-        | 'custom';
+        | 'custom'
+        | 'cybershield35';
       external_project_entry_status:
         | 'draft'
         | 'scheduled'
@@ -46764,6 +46765,7 @@ export const Constants = {
         'kendra',
         'richfield',
         'custom',
+        'cybershield35',
       ],
       external_project_entry_status: [
         'draft',
