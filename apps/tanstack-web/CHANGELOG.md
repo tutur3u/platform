@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.18.0...tanstack-web-v0.19.0) (2026-08-04)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add single-use bridge pairing tickets ([0496bb6](https://github.com/tutur3u/platform/commit/0496bb65530aff7b829c4be2c0df0722bd9cc172))
+* **cms:** add relation bundles and managed assets ([fe5ef8a](https://github.com/tutur3u/platform/commit/fe5ef8a4facaacf12e119a6093535097a836303b))
+* **cms:** add relation bundles and managed assets ([#4990](https://github.com/tutur3u/platform/issues/4990)) ([3148aa6](https://github.com/tutur3u/platform/commit/3148aa6292c5a706000e70fc9b05dda6b36502bc))
+* **cms:** redesign media library loading ([d382b3b](https://github.com/tutur3u/platform/commit/d382b3bd254086d344b1b066ccbaf913a303a682))
+* **cms:** support Richfield external project forms ([befa92f](https://github.com/tutur3u/platform/commit/befa92f30f4e4f7f2a56a043bf79a99c153845e6))
+* **external-projects:** list form submissions for scheduled forwarding ([d0ca353](https://github.com/tutur3u/platform/commit/d0ca3530363d1fe36569b47b634ec0ad6e3cdc77))
+* **external-projects:** send mail via SES and gate forms with Turnstile ([0fe6851](https://github.com/tutur3u/platform/commit/0fe6851b98b8340d915b34fb8bec49b78c67d405))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** drop the hero badge and rebuild the product frame ([b3259df](https://github.com/tutur3u/platform/commit/b3259df881968f03dbb4c5b28c5a30a6a236fd52))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+* **web:** add external app AI execution ([67c863a](https://github.com/tutur3u/platform/commit/67c863af44141ddf7ca94d674b8335c5de302855))
+* **web:** make Mira the workspace dashboard ([c2b8763](https://github.com/tutur3u/platform/commit/c2b87630eb92caffbf63da8d4446008a47c5604e))
+* **web:** make Mira the workspace dashboard ([#5079](https://github.com/tutur3u/platform/issues/5079)) ([9023dab](https://github.com/tutur3u/platform/commit/9023dab39afa4971d8a7bf629c90f563405216f3))
+
+
+### Bug Fixes
+
+* **auth:** redirect signup entry points to login ([14a8a0f](https://github.com/tutur3u/platform/commit/14a8a0fec5e8a031d24dfb5aef20c0d7dde14cd6))
+* **chat:** align bridge readiness contracts ([356f0d2](https://github.com/tutur3u/platform/commit/356f0d23b0670d6a4376f7e8b237c6180152be47))
+* **chat:** close final bridge review gaps ([9d9a9b1](https://github.com/tutur3u/platform/commit/9d9a9b14e04b5645f2237a7db8e4c5102c1958c4))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** validate bridge reply replays ([f802774](https://github.com/tutur3u/platform/commit/f802774e83a0874e63ac27b4d1319d244e612911))
+* **ci:** align legal effective date assertions ([ec89a8e](https://github.com/tutur3u/platform/commit/ec89a8e78f4a10f3244d0f78bb23cdec2b03da4d))
+* **ci:** align marketing migration checks ([7a94038](https://github.com/tutur3u/platform/commit/7a940387ca1a3cfa11b35e0109156c1816610558))
+* **ci:** align tanstack public route assertions ([3cf9547](https://github.com/tutur3u/platform/commit/3cf9547dd5e711a284c6e7bd84e3ed9bc4f14cd9))
+* **ci:** assert legal dates per route ([5ab0d0e](https://github.com/tutur3u/platform/commit/5ab0d0ebdf5ddb0c7257eecee6e5aeb49571b13c))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **ci:** unblock database and legal checks ([01496bf](https://github.com/tutur3u/platform/commit/01496bf89f6839517a5de0ea918f83c1c10eb9ee))
+* clear residual quality findings ([3ff6c3f](https://github.com/tutur3u/platform/commit/3ff6c3f91ffc93e3751b3a4ab5d1659db1a68019))
+* **contacts:** restore profile request links ([df3802f](https://github.com/tutur3u/platform/commit/df3802f60877b3389c8c5ceaf01c7ef2d1048ada))
+* **infrastructure:** own AI credit admin APIs ([4606857](https://github.com/tutur3u/platform/commit/46068572bb741155973a7602e21026b8e8beb02b))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* **platform:** repair calendar sync and member auth ([fcf8f89](https://github.com/tutur3u/platform/commit/fcf8f89100fb9fc5de024dccb7605a3b9d197cfb))
+* remove unreachable group queries ([0ff2882](https://github.com/tutur3u/platform/commit/0ff288256f74fdb15ebb07c1045e46e22f3802ef))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** restore workspace settings access ([6b4c4f9](https://github.com/tutur3u/platform/commit/6b4c4f92b06b5a68d3116b744a1b8fa6dd9668d2))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tanstack:** align migrated marketing routes ([6337286](https://github.com/tutur3u/platform/commit/6337286daa4d820be286a958875af0fba0f7bc7d))
+* **tasks:** compile task styles with UI globals ([bb1d600](https://github.com/tutur3u/platform/commit/bb1d600d392f78827cc9a6928a1ce0c264c2d80c))
+* **tasks:** restore task board layout styles ([29e052b](https://github.com/tutur3u/platform/commit/29e052b792af9626c5243e6f8178a4905e508a32))
+* **web:** accept satellite app sessions for member invites ([4d90ceb](https://github.com/tutur3u/platform/commit/4d90ceb6ac9bf3e482eb81ad9a1ab67424f2e773))
+* **web:** repair and meter Mira Live mode ([2fb0ec4](https://github.com/tutur3u/platform/commit/2fb0ec40af8126b7ba5fa585f521ad43cc299c72))
+* **web:** route the QR generator to the tools app ([424dbfd](https://github.com/tutur3u/platform/commit/424dbfd83e7e13e066afec6a63c5fe5576001d75))
+* **workspaces:** repair shared member administration ([8a1515b](https://github.com/tutur3u/platform/commit/8a1515ba970adbe690b9d92f77a447adb93c339f))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.17.0...tanstack-web-v0.18.0) (2026-07-29)
 
 

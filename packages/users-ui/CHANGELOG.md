@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/tutur3u/platform/compare/users-ui-v0.7.0...users-ui-v0.7.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **contacts:** improve class scheduling and attendance ([3bc9ef4](https://github.com/tutur3u/platform/commit/3bc9ef4f7af9cacefaa021d694b6f1afbf2a8e0b))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/users-ui-v0.6.0...users-ui-v0.7.0) (2026-07-27)
 
 

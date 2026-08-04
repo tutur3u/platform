@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/sdk-v0.19.0...sdk-v0.20.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+
+
+### Bug Fixes
+
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/sdk-v0.18.0...sdk-v0.19.0) (2026-07-27)
 
 

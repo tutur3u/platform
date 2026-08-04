@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/tutur3u/platform/compare/git-v0.2.0...git-v0.3.0) (2026-08-04)
+
+
+### Features
+
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **deps:** align Streamdown with Shiki 4 ([0d89f55](https://github.com/tutur3u/platform/commit/0d89f555b3228307e893a5d7723aaf8db8505d63))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/git-v0.1.0...git-v0.2.0) (2026-07-28)
 
 

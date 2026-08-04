@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/tutur3u/platform/compare/offline-v0.1.0...offline-v0.1.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **platform:** stabilize offline and calendar initialization ([8ef8fbc](https://github.com/tutur3u/platform/commit/8ef8fbc1274e108930adf38bb8e998384551058b))
+
 ## [0.1.0](https://github.com/tutur3u/platform/compare/offline-v0.0.3...offline-v0.1.0) (2026-07-25)
 
 

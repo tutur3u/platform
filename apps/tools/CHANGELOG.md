@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/tools-v0.12.0...tools-v0.13.0) (2026-08-04)
+
+
+### Features
+
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/tools-v0.11.0...tools-v0.12.0) (2026-07-28)
 
 

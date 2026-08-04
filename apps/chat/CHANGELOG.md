@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/chat-v0.15.0...chat-v0.16.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** defer workspace layout to request time ([#5083](https://github.com/tutur3u/platform/issues/5083)) ([fda02a6](https://github.com/tutur3u/platform/commit/fda02a6d304abcbbed2bb5d08d70c87284ade4bc))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** mount query state adapter ([#5084](https://github.com/tutur3u/platform/issues/5084)) ([60253f8](https://github.com/tutur3u/platform/commit/60253f82477fc54923556706d12e4dc525a7a170))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/chat-v0.14.0...chat-v0.15.0) (2026-07-28)
 
 

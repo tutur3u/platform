@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/satellite-v0.12.1...satellite-v0.13.0) (2026-08-04)
+
+
+### Features
+
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **auth:** redirect signup entry points to login ([14a8a0f](https://github.com/tutur3u/platform/commit/14a8a0fec5e8a031d24dfb5aef20c0d7dde14cd6))
+* **tasks:** unify settings navigation ([2f305e0](https://github.com/tutur3u/platform/commit/2f305e02e3936b69cca94b55e1d6ef1aa858b47e))
+
 ## [0.12.1](https://github.com/tutur3u/platform/compare/satellite-v0.12.0...satellite-v0.12.1) (2026-07-28)
 
 

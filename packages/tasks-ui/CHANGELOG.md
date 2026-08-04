@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.6.0...tasks-ui-v0.7.0) (2026-08-04)
+
+
+### Features
+
+* **tasks:** improve board settings controls ([acc14d5](https://github.com/tutur3u/platform/commit/acc14d56c55ad463ff35e226a2bd3ee9d8fba386))
+
+
+### Bug Fixes
+
+* **tasks:** stabilize settings and list ordering ([6dc9f2e](https://github.com/tutur3u/platform/commit/6dc9f2e8fdbe3185508fe6b14fa149e69cb040ed))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.5.0...tasks-ui-v0.6.0) (2026-07-27)
 
 

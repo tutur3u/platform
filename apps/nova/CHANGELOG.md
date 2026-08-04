@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/nova-v0.31.0...nova-v0.32.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/nova-v0.30.0...nova-v0.31.0) (2026-07-28)
 
 
