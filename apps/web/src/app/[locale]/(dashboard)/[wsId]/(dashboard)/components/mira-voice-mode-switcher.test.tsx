@@ -60,7 +60,12 @@ describe('MiraVoiceModeSwitcher', () => {
       'off'
     );
     expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Assistant mode')).toHaveClass('h-8');
+    expect(screen.getByLabelText('Assistant mode')).toHaveClass(
+      'h-8',
+      'gap-0.5',
+      'rounded-lg',
+      'p-0.5'
+    );
     expect(screen.getByLabelText('Assistant mode')).not.toHaveAttribute(
       'data-variant',
       'outline'
@@ -72,6 +77,12 @@ describe('MiraVoiceModeSwitcher', () => {
     expect(screen.getByRole('radio', { name: 'Live' })).not.toHaveAttribute(
       'data-variant',
       'outline'
+    );
+    expect(screen.getByRole('radio', { name: 'Chat' })).toHaveClass(
+      'rounded-[6px]'
+    );
+    expect(screen.getByRole('radio', { name: 'Live' })).toHaveClass(
+      'rounded-[6px]'
     );
     expect(screen.getByRole('radio', { name: 'Chat' })).toHaveClass(
       'focus-visible:ring-1'

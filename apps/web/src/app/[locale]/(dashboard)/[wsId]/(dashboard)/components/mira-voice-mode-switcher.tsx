@@ -101,7 +101,7 @@ export function MiraVoiceModeSwitcher({
   const modeControl = (
     <ToggleGroup
       aria-label={t('mode_label')}
-      className="h-8 shrink-0 rounded-lg border border-border/60 bg-muted/45 p-0.5 backdrop-blur-md"
+      className="h-8 shrink-0 gap-0.5 rounded-lg border border-border/60 bg-muted/45 p-0.5 backdrop-blur-md"
       onValueChange={(value) => {
         if (value === 'chat') exitVoice();
         if (value === 'live') enterVoice();
@@ -111,7 +111,7 @@ export function MiraVoiceModeSwitcher({
     >
       <ToggleGroupItem
         aria-label={t('chat_mode')}
-        className="h-7 gap-1.5 rounded-md px-2.5 text-muted-foreground text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        className="h-7 gap-1.5 rounded-[6px] px-2.5 text-muted-foreground text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         value="chat"
       >
         <MessageSquareText className="size-3.5" />
@@ -119,7 +119,7 @@ export function MiraVoiceModeSwitcher({
       </ToggleGroupItem>
       <ToggleGroupItem
         aria-label={t('live_mode')}
-        className="h-7 gap-1.5 rounded-md px-2.5 text-muted-foreground text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+        className="h-7 gap-1.5 rounded-[6px] px-2.5 text-muted-foreground text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         value="live"
       >
         <AudioLines className="size-3.5" />
