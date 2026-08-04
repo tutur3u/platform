@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/editor",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Lightweight localized rich-text editor and rendering utilities",
   "license": "MIT",
   "repository": {
@@ -9,7 +9,11 @@
     "directory": "packages/editor"
   },
   "type": "module",
-  "files": ["dist", "README.md", "styles.css"],
+  "files": [
+    "dist",
+    "README.md",
+    "styles.css"
+  ],
   "publishConfig": {
     "access": "public"
   },

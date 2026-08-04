@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/shortener-v0.13.0...shortener-v0.14.0) (2026-08-04)
+
+
+### Features
+
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/shortener-v0.12.0...shortener-v0.13.0) (2026-07-28)
 
 

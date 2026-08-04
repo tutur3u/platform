@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/utils-v0.21.0...utils-v0.22.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **ai:** accept rich embedding payloads ([a65b13f](https://github.com/tutur3u/platform/commit/a65b13fa80034959e5f18ee4515b3081002558e2))
+* **tooling:** support webpack verification builds ([5275e10](https://github.com/tutur3u/platform/commit/5275e10c4007ae92e84be6c057a79f223980700c))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/utils-v0.20.0...utils-v0.21.0) (2026-07-28)
 
 
