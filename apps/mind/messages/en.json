@@ -8,6 +8,19 @@
     "switch_account": "Switch Account",
     "unknown_user": "Unknown User"
   },
+  "chat": {
+    "first_activity": "First activity",
+    "last_activity": "Last activity",
+    "loading_visitor_context": "Loading visitor context...",
+    "network_hint": "Network",
+    "no_visited_routes": "No route history",
+    "visited_routes": "Visited routes",
+    "visitor_context": "Visitor context",
+    "visitor_context_unavailable": "Visitor context is unavailable.",
+    "visitor_email": "Email",
+    "visitor_name": "Name",
+    "visitor_phone": "Phone"
+  },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",
     "app_categories": {

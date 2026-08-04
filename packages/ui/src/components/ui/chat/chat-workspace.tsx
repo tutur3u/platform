@@ -16,6 +16,7 @@ import { Button } from '../button';
 import { toast } from '../sonner';
 import { ChatAgentDetailsSidebar } from './chat-agent-details-sidebar';
 import { ChatAiDetailsSidebar } from './chat-ai-details-sidebar';
+import { ChatExternalContextSidebar } from './chat-external-context-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
 import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
@@ -615,7 +616,13 @@ export function ChatWorkspace({
         )}
       </div>
 
-      {selectedAgentReadOnly ? (
+      {selectedExternalConversation ? (
+        <ChatExternalContextSidebar
+          conversationId={activeConversationId}
+          open={detailsOpen}
+          wsId={wsId}
+        />
+      ) : selectedAgentReadOnly ? (
         <ChatAgentDetailsSidebar
           conversation={selectedConversation}
           open={detailsOpen}

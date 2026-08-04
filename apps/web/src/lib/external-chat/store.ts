@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
+import { sanitizeExternalChatRecord } from './sanitize';
 import {
-  type ExternalChatEvent,
+  type ExternalChatEventEnvelope,
   type ExternalChatSettings,
   externalChatSettingsSchema,
   isExternalChatLiveAuthority,
@@ -199,7 +201,7 @@ export async function importExternalChatEvent({
 }: {
   configurationRevision: number;
   connectorKey: string;
-  event: ExternalChatEvent;
+  event: Extract<ExternalChatEventEnvelope, { kind: 'message' }>;
   mappedUserId: string | null;
   wsId: string;
 }) {
@@ -212,6 +214,7 @@ export async function importExternalChatEvent({
     contentType: event.contentType,
     context: event.context,
     externalChat: true,
+    externalDeliveryMode: event.deliveryMode,
     externalSender: {
       direction: event.direction,
       ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
@@ -221,6 +224,7 @@ export async function importExternalChatEvent({
   const threadMetadata = {
     ...event.visitorProfile,
     ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
+    lastExternalDeliveryMode: event.deliveryMode,
   };
   const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_import_event',
@@ -249,6 +253,158 @@ export async function importExternalChatEvent({
     messageId: string;
     threadId?: string;
   };
+}
+
+export async function applyExternalChatMessageState({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: Extract<
+    ExternalChatEventEnvelope,
+    { kind: 'message_deleted' | 'message_state' }
+  >;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_apply_message_state' as never,
+    {
+      p_connector_key: connectorKey,
+      p_deleted: event.kind === 'message_deleted',
+      p_metadata: sanitizeExternalChatRecord(event.metadata) as Json,
+      p_occurred_at: event.timestamp,
+      p_remote_message_id: event.messageId,
+      p_status: event.status,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw new Error(error.message);
+  return data as unknown as {
+    found: boolean;
+    messageId?: string;
+    threadId?: string;
+  };
+}
+
+export async function upsertExternalChatObservation({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: Extract<ExternalChatEventEnvelope, { kind: 'observation' }>;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_upsert_observation' as never,
+    {
+      p_category: event.category,
+      p_connector_key: connectorKey,
+      p_occurred_at: event.timestamp,
+      p_payload: sanitizeExternalChatRecord(event.payload) as Json,
+      p_remote_agent_id: event.agentId,
+      p_remote_observation_id: event.observationId,
+      p_remote_visitor_id: event.visitorId,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw new Error(error.message);
+  return data as unknown as {
+    found: boolean;
+    observationId?: string;
+    threadId?: string;
+  };
+}
+
+export async function readExternalChatSourceEvent({
+  connectorKey,
+  sourceEventId,
+  wsId,
+}: {
+  connectorKey: string;
+  sourceEventId: string;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await (externalChatPrivateDb(admin) as any)
+    .from('external_chat_source_events')
+    .select('payload_digest, result')
+    .eq('ws_id', wsId)
+    .eq('connector_key', connectorKey)
+    .eq('source_event_id', sourceEventId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data as { payload_digest: string; result: Json } | null;
+}
+
+export async function recordExternalChatSourceEvent({
+  connectorKey,
+  event,
+  result,
+  threadId,
+  wsId,
+}: {
+  connectorKey: string;
+  event: ExternalChatEventEnvelope;
+  result: Record<string, unknown>;
+  threadId?: string | null;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const payloadDigest = digestExternalChatEnvelope(event);
+  const { error } = await (externalChatPrivateDb(admin) as any)
+    .from('external_chat_source_events')
+    .upsert(
+      {
+        connector_key: connectorKey,
+        delivery_mode: event.deliveryMode,
+        event_kind: event.kind,
+        occurred_at: event.timestamp,
+        payload_digest: payloadDigest,
+        result,
+        source_event_id: event.eventId,
+        source_record_id:
+          'messageId' in event
+            ? event.messageId
+            : 'observationId' in event
+              ? event.observationId
+              : event.eventId,
+        thread_id: threadId ?? null,
+        ws_id: wsId,
+      },
+      {
+        ignoreDuplicates: true,
+        onConflict: 'ws_id,connector_key,source_event_id',
+      }
+    );
+  if (error) throw new Error(error.message);
+}
+
+export function digestExternalChatEnvelope(event: ExternalChatEventEnvelope) {
+  const { deliveryMode: _deliveryMode, ...canonicalEvent } = event;
+  return createHash('sha256')
+    .update(stableJson(canonicalEvent), 'utf8')
+    .digest('hex');
+}
+
+export function digestExternalChatBatch(events: ExternalChatEventEnvelope[]) {
+  return createHash('sha256')
+    .update(events.map(stableJson).sort().join('\n'), 'utf8')
+    .digest('hex');
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
 }
 
 function readDynamicString(value: unknown) {

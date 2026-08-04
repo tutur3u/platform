@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
 const dynamicMetadataSchema = z.record(z.string(), z.unknown()).default({});
+const timestampSchema = z
+  .string()
+  .datetime()
+  .refine(
+    (value) => new Date(value).getTime() <= Date.now() + 5 * 60_000,
+    'Event timestamp is too far in the future'
+  );
+const deliveryModeSchema = z.enum(['live', 'historical', 'probe']);
 const inboxDefaultsSchema = z
   .object({ recipientUserId: z.string().uuid().optional() })
   .catchall(z.unknown())
@@ -15,15 +23,62 @@ export const externalChatEventSchema = z.object({
   content: z.string().max(10000).default(''),
   contentType: z.union([z.literal(1), z.literal(2)]).default(1),
   status: z.string().max(80).default('sent'),
-  timestamp: z
-    .string()
-    .datetime()
-    .refine(
-      (value) => new Date(value).getTime() <= Date.now() + 5 * 60_000,
-      'Event timestamp is too far in the future'
-    ),
+  timestamp: timestampSchema,
   context: dynamicMetadataSchema,
   attachment: dynamicMetadataSchema.optional(),
+});
+
+const envelopeIdentitySchema = z.object({
+  version: z.literal(2),
+  eventId: z.string().min(1).max(255),
+  agentId: z.string().max(255).default(''),
+  visitorId: z.string().min(1).max(255),
+  timestamp: timestampSchema,
+  deliveryMode: deliveryModeSchema.default('live'),
+});
+
+const messageEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.literal('message'),
+  messageId: z.string().min(1).max(255),
+  direction: z.enum(['visitor', 'staff', 'system']),
+  content: z.string().max(10000).default(''),
+  contentType: z.union([z.literal(1), z.literal(2)]).default(1),
+  status: z.string().max(80).default('sent'),
+  visitorProfile: dynamicMetadataSchema,
+  context: dynamicMetadataSchema,
+  attachment: dynamicMetadataSchema.optional(),
+});
+
+const messageStateEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.enum(['message_state', 'message_deleted']),
+  messageId: z.string().min(1).max(255),
+  status: z.string().max(80).default('sent'),
+  metadata: dynamicMetadataSchema,
+});
+
+const observationEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.literal('observation'),
+  observationId: z.string().min(1).max(255),
+  category: z.string().min(1).max(80),
+  payload: dynamicMetadataSchema,
+});
+
+const ephemeralEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.enum(['presence', 'typing']),
+  payload: dynamicMetadataSchema,
+});
+
+export const externalChatEventEnvelopeSchema = z.discriminatedUnion('kind', [
+  messageEnvelopeSchema,
+  messageStateEnvelopeSchema,
+  observationEnvelopeSchema,
+  ephemeralEnvelopeSchema,
+]);
+
+export const externalChatBatchSchema = z.object({
+  events: z.array(externalChatEventEnvelopeSchema).min(1).max(100),
+  cursor: dynamicMetadataSchema.optional(),
+  highWaterMark: dynamicMetadataSchema.optional(),
 });
 
 export const externalChatSettingsSchema = z.object({
@@ -61,6 +116,9 @@ export const externalChatSettingsSchema = z.object({
 });
 
 export type ExternalChatEvent = z.infer<typeof externalChatEventSchema>;
+export type ExternalChatEventEnvelope = z.infer<
+  typeof externalChatEventEnvelopeSchema
+>;
 export type ExternalChatSettings = z.infer<typeof externalChatSettingsSchema>;
 
 export function isExternalChatEnabled(settings: unknown) {

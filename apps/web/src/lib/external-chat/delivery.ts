@@ -121,6 +121,34 @@ async function postSignedControlRequest({
   });
 }
 
+export async function requestExternalChatControl(
+  wsId: string,
+  path: string,
+  payload: Record<string, unknown>
+) {
+  const state = await readExternalChatBinding(wsId);
+  const ciphertext = state?.credentials?.control_secret_encrypted;
+  const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
+  if (
+    !state?.binding.is_enabled ||
+    !isExternalChatEnabled(state.binding.settings) ||
+    !ciphertext ||
+    !bridgeBaseUrl
+  )
+    throw new Error('external_chat_control_unavailable');
+
+  const body = JSON.stringify(payload);
+  const response = await postSignedControlRequest({
+    body,
+    bridgeBaseUrl,
+    path,
+    secret: await decryptControlSecret(wsId, ciphertext),
+  });
+  if (!response.ok)
+    throw new Error(`external_chat_control_failed:${response.status}`);
+  return (await response.json()) as Record<string, unknown>;
+}
+
 export async function verifyExternalChatControl(wsId: string) {
   const state = await readExternalChatBinding(wsId);
   const ciphertext = state?.credentials?.control_secret_encrypted;
@@ -304,6 +332,7 @@ export async function deliverExternalChatReplyIfBound({
     agentId: (thread as ExternalThreadRow).remote_agent_id,
     content,
     idempotencyKey,
+    mirrorToPlatform: false,
     senderId,
     visitorId: (thread as ExternalThreadRow).remote_visitor_id,
   });

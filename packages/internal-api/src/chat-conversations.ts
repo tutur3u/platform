@@ -180,6 +180,31 @@ export async function listWorkspaceChatConversationMessages(
   return payload.messages ?? [];
 }
 
+export type ExternalChatConversationContext = {
+  firstActivityAt: string;
+  lastActivityAt: string;
+  networkHint: string | null;
+  profile: {
+    displayName: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+  routes: Array<{ location: string; occurredAt: string }>;
+};
+
+export function getExternalChatConversationContext(
+  workspaceId: string,
+  conversationId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<ExternalChatConversationContext>(
+    `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
+      conversationId
+    )}/external-context`,
+    { cache: 'no-store' }
+  );
+}
+
 export async function sendWorkspaceChatMessage(
   workspaceId: string,
   conversationId: string,

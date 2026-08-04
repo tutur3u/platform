@@ -3562,33 +3562,45 @@ export type Database = {
         Row: {
           connector_key: string;
           created_at: string;
+          deleted_at: string | null;
+          delivery_mode: string;
           direction: string;
+          event_kind: string;
           id: string;
           message_id: string;
           metadata: Json;
           remote_message_id: string;
+          source_digest: string | null;
           thread_id: string;
           ws_id: string;
         };
         Insert: {
           connector_key: string;
           created_at?: string;
+          deleted_at?: string | null;
+          delivery_mode?: string;
           direction: string;
+          event_kind?: string;
           id?: string;
           message_id: string;
           metadata?: Json;
           remote_message_id: string;
+          source_digest?: string | null;
           thread_id: string;
           ws_id: string;
         };
         Update: {
           connector_key?: string;
           created_at?: string;
+          deleted_at?: string | null;
+          delivery_mode?: string;
           direction?: string;
+          event_kind?: string;
           id?: string;
           message_id?: string;
           metadata?: Json;
           remote_message_id?: string;
+          source_digest?: string | null;
           thread_id?: string;
           ws_id?: string;
         };
@@ -3602,6 +3614,50 @@ export type Database = {
           },
           {
             foreignKeyName: 'external_chat_events_thread_scope_fk';
+            columns: ['thread_id', 'ws_id', 'connector_key'];
+            isOneToOne: false;
+            referencedRelation: 'external_chat_threads';
+            referencedColumns: ['id', 'ws_id', 'connector_key'];
+          },
+        ];
+      };
+      external_chat_observations: {
+        Row: {
+          category: string;
+          connector_key: string;
+          created_at: string;
+          id: string;
+          occurred_at: string;
+          payload: Json;
+          remote_observation_id: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          category: string;
+          connector_key: string;
+          created_at?: string;
+          id?: string;
+          occurred_at: string;
+          payload?: Json;
+          remote_observation_id: string;
+          thread_id: string;
+          ws_id: string;
+        };
+        Update: {
+          category?: string;
+          connector_key?: string;
+          created_at?: string;
+          id?: string;
+          occurred_at?: string;
+          payload?: Json;
+          remote_observation_id?: string;
+          thread_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_chat_observations_thread_scope_fk';
             columns: ['thread_id', 'ws_id', 'connector_key'];
             isOneToOne: false;
             referencedRelation: 'external_chat_threads';
@@ -3696,6 +3752,95 @@ export type Database = {
           },
         ];
       };
+      external_chat_source_events: {
+        Row: {
+          connector_key: string;
+          created_at: string;
+          delivery_mode: string;
+          event_kind: string;
+          id: string;
+          occurred_at: string;
+          payload_digest: string;
+          result: Json;
+          source_event_id: string;
+          source_record_id: string;
+          thread_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          connector_key: string;
+          created_at?: string;
+          delivery_mode: string;
+          event_kind: string;
+          id?: string;
+          occurred_at: string;
+          payload_digest: string;
+          result?: Json;
+          source_event_id: string;
+          source_record_id: string;
+          thread_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          connector_key?: string;
+          created_at?: string;
+          delivery_mode?: string;
+          event_kind?: string;
+          id?: string;
+          occurred_at?: string;
+          payload_digest?: string;
+          result?: Json;
+          source_event_id?: string;
+          source_record_id?: string;
+          thread_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'external_chat_source_events_thread_scope_fk';
+            columns: ['thread_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'external_chat_threads';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
+      external_chat_stream_cursors: {
+        Row: {
+          connector_key: string;
+          cursor: Json;
+          dead_letter_count: number;
+          high_water_mark: Json;
+          last_error_code: string | null;
+          retry_count: number;
+          stream_key: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          connector_key: string;
+          cursor?: Json;
+          dead_letter_count?: number;
+          high_water_mark?: Json;
+          last_error_code?: string | null;
+          retry_count?: number;
+          stream_key: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          connector_key?: string;
+          cursor?: Json;
+          dead_letter_count?: number;
+          high_water_mark?: Json;
+          last_error_code?: string | null;
+          retry_count?: number;
+          stream_key?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       external_chat_sync_checkpoints: {
         Row: {
           bridge_checked_at: string | null;
@@ -3724,6 +3869,63 @@ export type Database = {
           pending_count?: number;
           reconciled_at?: string | null;
           state?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      external_chat_sync_runs: {
+        Row: {
+          connector_key: string;
+          created_at: string;
+          cursor: Json;
+          diagnostics: Json;
+          digest_results: Json;
+          error_code: string | null;
+          finished_at: string | null;
+          high_water_mark: Json;
+          id: string;
+          operation: string;
+          source_counts: Json;
+          started_at: string | null;
+          state: string;
+          target_counts: Json;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          connector_key: string;
+          created_at?: string;
+          cursor?: Json;
+          diagnostics?: Json;
+          digest_results?: Json;
+          error_code?: string | null;
+          finished_at?: string | null;
+          high_water_mark?: Json;
+          id?: string;
+          operation: string;
+          source_counts?: Json;
+          started_at?: string | null;
+          state?: string;
+          target_counts?: Json;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          connector_key?: string;
+          created_at?: string;
+          cursor?: Json;
+          diagnostics?: Json;
+          digest_results?: Json;
+          error_code?: string | null;
+          finished_at?: string | null;
+          high_water_mark?: Json;
+          id?: string;
+          operation?: string;
+          source_counts?: Json;
+          started_at?: string | null;
+          state?: string;
+          target_counts?: Json;
           updated_at?: string;
           ws_id?: string;
         };
@@ -16035,6 +16237,18 @@ export type Database = {
         };
         Returns: boolean;
       };
+      external_chat_apply_message_state: {
+        Args: {
+          p_connector_key: string;
+          p_deleted?: boolean;
+          p_metadata?: Json;
+          p_occurred_at: string;
+          p_remote_message_id: string;
+          p_status: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       external_chat_clear_credential: {
         Args: { p_kind: string; p_ws_id: string };
         Returns: undefined;
@@ -16125,6 +16339,19 @@ export type Database = {
       external_chat_update_settings: {
         Args: { p_actor_user_id: string; p_chat: Json; p_ws_id: string };
         Returns: undefined;
+      };
+      external_chat_upsert_observation: {
+        Args: {
+          p_category: string;
+          p_connector_key: string;
+          p_occurred_at: string;
+          p_payload: Json;
+          p_remote_agent_id: string;
+          p_remote_observation_id: string;
+          p_remote_visitor_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       external_project_set_cms_site_template: {
         Args: { p_actor_user_id: string; p_template: Json; p_ws_id: string };

@@ -4,6 +4,8 @@ vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   importExternalChatEvent: vi.fn(),
+  recordExternalChatSourceEvent: vi.fn(),
+  readExternalChatSourceEvent: vi.fn(),
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   readExternalChatBinding: vi.fn(),
@@ -25,10 +27,17 @@ vi.mock('@/lib/external-chat/crypto', () => ({
 }));
 
 vi.mock('@/lib/external-chat/store', () => ({
+  applyExternalChatMessageState: vi.fn(),
+  digestExternalChatEnvelope: vi.fn(() => 'digest'),
   importExternalChatEvent: (...args: unknown[]) =>
     mocks.importExternalChatEvent(...args),
+  readExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.readExternalChatSourceEvent(...args),
+  recordExternalChatSourceEvent: (...args: unknown[]) =>
+    mocks.recordExternalChatSourceEvent(...args),
   readExternalChatBinding: (...args: unknown[]) =>
     mocks.readExternalChatBinding(...args),
+  upsertExternalChatObservation: vi.fn(),
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
@@ -93,6 +102,8 @@ describe('external chat ingest route', () => {
         verified_at: '2026-08-01T17:00:00.000Z',
       },
     });
+    mocks.readExternalChatSourceEvent.mockResolvedValue(null);
+    mocks.recordExternalChatSourceEvent.mockResolvedValue(undefined);
     mocks.importExternalChatEvent.mockResolvedValue({
       conversation: { id: 'conversation-1' },
       conversationCreated: true,

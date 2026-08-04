@@ -1,72 +1,50 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
-import { verifyExternalChatSecret } from '@/lib/external-chat/crypto';
 import {
+  normalizeLegacyExternalChatEvent,
+  processExternalChatEnvelope,
+} from '@/lib/external-chat/ingest';
+import { authenticateExternalChatIngest } from '@/lib/external-chat/ingest-auth';
+import {
+  type ExternalChatEventEnvelope,
+  externalChatEventEnvelopeSchema,
   externalChatEventSchema,
-  isExternalChatLiveAuthority,
 } from '@/lib/external-chat/schemas';
-import {
-  importExternalChatEvent,
-  readExternalChatBinding,
-} from '@/lib/external-chat/store';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
 export async function POST(request: Request) {
-  const wsId = request.headers.get('x-external-binding-id');
-  const authorization = request.headers.get('authorization');
-  const secret = authorization?.startsWith('Bearer ')
-    ? authorization.slice(7)
-    : null;
-  if (!wsId || !z.string().uuid().safeParse(wsId).success || !secret) {
+  const authentication = await authenticateExternalChatIngest(request);
+  if (!authentication)
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const state = await readExternalChatBinding(wsId);
-  const expectedHash = state?.credentials?.ingest_secret_hash;
-  const pendingHash =
-    state?.credentials?.pending_action === 'set_ingest'
-      ? state.credentials.pending_secret_hash
-      : null;
-  const secretMatches = Boolean(
-    (expectedHash && verifyExternalChatSecret(secret, expectedHash)) ||
-      (pendingHash && verifyExternalChatSecret(secret, pendingHash))
-  );
-  if (
-    !state?.binding.is_enabled ||
-    !isExternalChatLiveAuthority(state.binding.settings) ||
-    !state.credentials?.verified_at ||
-    !expectedHash ||
-    !secretMatches
-  ) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const { state, wsId } = authentication;
 
   const body = await safeParseBody(request as never, 64 * 1024);
   if (body instanceof NextResponse) return body;
-  const parsed = externalChatEventSchema.safeParse(body.data);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid event', details: parsed.error.flatten() },
-      { status: 400 }
-    );
+  const envelope = externalChatEventEnvelopeSchema.safeParse(body.data);
+  let event: ExternalChatEventEnvelope;
+  if (envelope.success) event = envelope.data;
+  else {
+    const legacy = externalChatEventSchema.safeParse(body.data);
+    if (!legacy.success)
+      return NextResponse.json({ error: 'Invalid event' }, { status: 400 });
+    event = normalizeLegacyExternalChatEvent(legacy.data);
   }
 
-  const result = await importExternalChatEvent({
+  const result = await processExternalChatEnvelope(event, {
     connectorKey: state.binding.canonical_project_id ?? wsId,
-    event: parsed.data,
-    mappedUserId: getRoutingUserId(
-      state.binding.settings,
-      parsed.data.agentId,
-      parsed.data.direction
-    ),
     configurationRevision: state.credentials.configuration_revision,
+    settings: state.binding.settings,
     wsId,
   });
 
-  if (result.conversation && result.message) {
+  if (
+    event.kind === 'message' &&
+    event.deliveryMode === 'live' &&
+    result.conversation &&
+    result.message
+  ) {
     const audience = { scope: 'workspace' } as const;
     if (result.conversationCreated || result.duplicate) {
       await publishChatRealtimeEvent({
@@ -86,7 +64,7 @@ export async function POST(request: Request) {
       type: 'message.created',
       wsId,
     });
-    if (!result.duplicate && parsed.data.direction === 'visitor') {
+    if (!result.duplicate && event.direction === 'visitor') {
       await notifyChatMessageRecipients({
         actorUserId: null,
         conversation: result.conversation,
@@ -112,47 +90,10 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       conversationId: result.conversationId,
-      duplicate: result.duplicate,
+      duplicate: Boolean(result.duplicate),
       messageId: result.messageId,
       threadId: result.threadId,
     },
     { status: result.duplicate ? 200 : 201 }
   );
-}
-
-function getRoutingUserId(
-  settings: unknown,
-  agentId: string,
-  direction: 'staff' | 'system' | 'visitor'
-) {
-  if (!settings || typeof settings !== 'object') return null;
-  const chat = (settings as Record<string, unknown>).chat;
-  if (!chat || typeof chat !== 'object') return null;
-  const mappings = (chat as Record<string, unknown>).agentMappings;
-  const mapped =
-    mappings && typeof mappings === 'object' && !Array.isArray(mappings)
-      ? (mappings as Record<string, unknown>)[agentId]
-      : null;
-  if (
-    typeof mapped === 'string' &&
-    z.string().uuid().safeParse(mapped).success
-  ) {
-    return mapped;
-  }
-  if (direction !== 'visitor') return null;
-
-  const inboxDefaults = (chat as Record<string, unknown>).inboxDefaults;
-  if (
-    !inboxDefaults ||
-    typeof inboxDefaults !== 'object' ||
-    Array.isArray(inboxDefaults)
-  ) {
-    return null;
-  }
-  const recipientUserId = (inboxDefaults as Record<string, unknown>)
-    .recipientUserId;
-  return typeof recipientUserId === 'string' &&
-    z.string().uuid().safeParse(recipientUserId).success
-    ? recipientUserId
-    : null;
 }
