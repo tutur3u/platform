@@ -51,7 +51,8 @@ export const GET = withSessionAuth<Params>(
         { error: 'sync_status_unavailable' },
         { status: 503 }
       );
-    return NextResponse.json({ checkpoint, runs: runs ?? [] });
+    const refreshedRuns = await refreshActiveRuns(db, wsId, runs ?? []);
+    return NextResponse.json({ checkpoint, runs: refreshedRuns });
   },
   {
     allowAppSessionAuth: { targetApp: ['cms', 'infra'] },
@@ -112,14 +113,11 @@ export const POST = withSessionAuth<Params>(
         `/control/v1/sync/${parsed.data.action}`,
         { runId, stream: parsed.data.stream ?? 'canonical' }
       );
-      const update =
-        parsed.data.action === 'cancel'
-          ? { state: 'cancelled', updated_at: new Date().toISOString() }
-          : {
-              started_at: new Date().toISOString(),
-              state: 'running',
-              updated_at: new Date().toISOString(),
-            };
+      const remoteRun = readRemoteRun(remote, runId);
+      const update = buildRunUpdate(
+        remoteRun,
+        parsed.data.action === 'cancel' ? 'cancelled' : 'running'
+      );
       const { error: updateError } = await db
         .from('external_chat_sync_runs')
         .update(update)
@@ -149,3 +147,96 @@ export const POST = withSessionAuth<Params>(
     rateLimitKind: 'mutate',
   }
 );
+
+const activeStates = new Set(['pending', 'running']);
+const terminalStates = new Set(['cancelled', 'completed', 'failed']);
+const runStates = new Set([...activeStates, ...terminalStates, 'paused']);
+
+async function refreshActiveRuns(
+  db: any,
+  wsId: string,
+  runs: Array<Record<string, unknown>>
+) {
+  const refreshed = [];
+  for (const run of runs) {
+    if (!activeStates.has(String(run.state))) {
+      refreshed.push(run);
+      continue;
+    }
+    try {
+      const remote = await requestExternalChatControl(
+        wsId,
+        '/control/v1/sync/status',
+        { runId: run.id }
+      );
+      const remoteRun = readRemoteRun(remote, String(run.id));
+      if (!remoteRun) {
+        refreshed.push(run);
+        continue;
+      }
+      const update = buildRunUpdate(remoteRun, String(run.state));
+      const { error } = await db
+        .from('external_chat_sync_runs')
+        .update(update)
+        .eq('id', run.id)
+        .eq('ws_id', wsId);
+      if (error) throw new Error(error.message);
+      refreshed.push({ ...run, ...update });
+    } catch (error) {
+      console.warn('Failed to refresh external chat sync run', {
+        error,
+        runId: run.id,
+        wsId,
+      });
+      refreshed.push(run);
+    }
+  }
+  return refreshed;
+}
+
+function readRemoteRun(remote: unknown, runId: string) {
+  if (!isRecord(remote)) return null;
+  if (remote.runId === runId) return remote;
+  if (!Array.isArray(remote.runs)) return null;
+  return (
+    remote.runs.find(
+      (run): run is Record<string, unknown> =>
+        isRecord(run) && run.runId === runId
+    ) ?? null
+  );
+}
+
+function buildRunUpdate(
+  remote: Record<string, unknown> | null,
+  fallback: string
+) {
+  const now = new Date().toISOString();
+  const remoteState = typeof remote?.state === 'string' ? remote.state : null;
+  const state =
+    remoteState && runStates.has(remoteState) ? remoteState : fallback;
+  const update: Record<string, unknown> = { state, updated_at: now };
+  assignRemoteField(update, 'cursor', remote?.cursor);
+  assignRemoteField(update, 'high_water_mark', remote?.highWater);
+  assignRemoteField(update, 'source_counts', remote?.sourceCounts);
+  assignRemoteField(update, 'target_counts', remote?.targetCounts);
+  assignRemoteField(update, 'digest_results', remote?.digestResults);
+  assignRemoteField(update, 'error_code', remote?.errorCode);
+  assignRemoteField(update, 'started_at', remote?.startedAt);
+  assignRemoteField(update, 'finished_at', remote?.finishedAt);
+  if (activeStates.has(state) && !update.started_at) update.started_at = now;
+  if (terminalStates.has(state) && !update.finished_at)
+    update.finished_at = now;
+  return update;
+}
+
+function assignRemoteField(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown
+) {
+  if (value !== undefined) target[key] = value;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

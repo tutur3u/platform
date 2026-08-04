@@ -16315,6 +16315,21 @@ export type Database = {
         Args: { p_action: string; p_secret_encrypted: string; p_ws_id: string };
         Returns: undefined;
       };
+      external_chat_record_source_event: {
+        Args: {
+          p_connector_key: string;
+          p_delivery_mode: string;
+          p_event_kind: string;
+          p_occurred_at: string;
+          p_payload_digest: string;
+          p_result: Json;
+          p_source_event_id: string;
+          p_source_record_id: string;
+          p_thread_id: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
       external_chat_reserve_reply: {
         Args: {
           p_actor_user_id: string;

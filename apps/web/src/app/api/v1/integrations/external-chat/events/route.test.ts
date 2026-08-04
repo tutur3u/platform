@@ -353,6 +353,32 @@ describe('external chat ingest route', () => {
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
+  it('defers a live state event until its source message exists', async () => {
+    const stateEvent = {
+      agentId: 'agent-1',
+      deliveryMode: 'live',
+      direction: 'visitor',
+      eventId: 'state:missing-message:seen',
+      kind: 'message_state',
+      messageId: 'missing-message',
+      status: 'seen',
+      timestamp: new Date().toISOString(),
+      version: 2,
+      visitorId: 'visitor-1',
+    };
+    mocks.applyExternalChatMessageState.mockResolvedValueOnce({ found: false });
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret', stateEvent));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'external_chat_event_deferred',
+    });
+    expect(mocks.recordExternalChatSourceEvent).not.toHaveBeenCalled();
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
   it('rejects an event timestamp beyond the allowed clock skew', async () => {
     const { POST } = await import('./route');
     const response = await POST(

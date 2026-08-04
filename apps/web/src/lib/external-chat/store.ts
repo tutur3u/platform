@@ -360,30 +360,29 @@ export async function recordExternalChatSourceEvent({
 }) {
   const admin = await createAdminClient({ noCookie: true });
   const payloadDigest = digestExternalChatEnvelope(event);
-  const { error } = await externalChatPrivateDb(admin)
-    .from('external_chat_source_events')
-    .upsert(
-      {
-        connector_key: connectorKey,
-        delivery_mode: event.deliveryMode,
-        event_kind: event.kind,
-        occurred_at: event.timestamp,
-        payload_digest: payloadDigest,
-        result: result as Json,
-        source_event_id: event.eventId,
-        source_record_id:
-          'messageId' in event
-            ? event.messageId
-            : 'observationId' in event
-              ? event.observationId
-              : event.eventId,
-        thread_id: threadId ?? null,
-        ws_id: wsId,
-      },
-      {
-        onConflict: 'ws_id,connector_key,source_event_id',
-      }
-    );
+  const db = externalChatPrivateDb(admin) as unknown as {
+    rpc: (
+      name: string,
+      args: Record<string, unknown>
+    ) => Promise<{ error: { message: string } | null }>;
+  };
+  const { error } = await db.rpc('external_chat_record_source_event', {
+    p_connector_key: connectorKey,
+    p_delivery_mode: event.deliveryMode,
+    p_event_kind: event.kind,
+    p_occurred_at: event.timestamp,
+    p_payload_digest: payloadDigest,
+    p_result: result as Json,
+    p_source_event_id: event.eventId,
+    p_source_record_id:
+      'messageId' in event
+        ? event.messageId
+        : 'observationId' in event
+          ? event.observationId
+          : event.eventId,
+    p_thread_id: threadId ?? null,
+    p_ws_id: wsId,
+  });
   if (error) throw new Error(error.message);
 }
 

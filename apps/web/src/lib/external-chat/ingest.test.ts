@@ -38,6 +38,19 @@ const context = {
   wsId: '00000000-0000-4000-8000-000000000001',
 };
 
+const stateEvent: ExternalChatEventEnvelope = {
+  agentId: 'bucket-1',
+  deliveryMode: 'live',
+  eventId: 'state:1:seen',
+  kind: 'message_state',
+  messageId: '1',
+  metadata: {},
+  status: 'seen',
+  timestamp: '2026-08-01T00:01:00.000Z',
+  version: 2,
+  visitorId: 'visitor-1',
+};
+
 describe('processExternalChatEnvelope replay handling', () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -99,5 +112,15 @@ describe('processExternalChatEnvelope replay handling', () => {
     expect(store.importExternalChatEvent).not.toHaveBeenCalled();
     expect(store.applyExternalChatMessageState).not.toHaveBeenCalled();
     expect(store.upsertExternalChatObservation).not.toHaveBeenCalled();
+  });
+
+  it('defers state events until their message exists without consuming them', async () => {
+    store.readExternalChatSourceEvent.mockResolvedValue(null);
+    store.applyExternalChatMessageState.mockResolvedValue({ found: false });
+
+    await expect(
+      processExternalChatEnvelope(stateEvent, context)
+    ).resolves.toEqual({ deferred: true, found: false });
+    expect(store.recordExternalChatSourceEvent).not.toHaveBeenCalled();
   });
 });

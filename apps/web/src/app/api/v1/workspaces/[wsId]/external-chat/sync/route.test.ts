@@ -6,8 +6,10 @@ const mocks = vi.hoisted(() => ({
   listRuns: vi.fn(),
   readCheckpoint: vi.fn(),
   readExternalChatBinding: vi.fn(),
+  insertRun: vi.fn(),
   requestExternalChatControl: vi.fn(),
   resolveChatRouteContext: vi.fn(),
+  updateRun: vi.fn(),
   upsert: vi.fn(),
 }));
 
@@ -44,12 +46,18 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
       from: (table: string) => {
         if (table === 'external_chat_sync_runs')
           return {
+            insert: () => ({
+              select: () => ({ single: () => mocks.insertRun() }),
+            }),
             select: () => ({
               eq: () => ({
                 order: () => ({
                   limit: () => mocks.listRuns(),
                 }),
               }),
+            }),
+            update: (update: Record<string, unknown>) => ({
+              eq: () => ({ eq: () => mocks.updateRun(update) }),
             }),
             upsert: (...args: unknown[]) => mocks.upsert(...args),
           };
@@ -93,6 +101,11 @@ describe('external chat sync status', () => {
       binding: { canonical_project_id: 'opaque-connector' },
     });
     mocks.upsert.mockResolvedValue({ error: null });
+    mocks.insertRun.mockResolvedValue({
+      data: { id: localRun.id },
+      error: null,
+    });
+    mocks.updateRun.mockResolvedValue({ error: null });
     mocks.listRuns.mockResolvedValue({ data: [localRun], error: null });
     mocks.readCheckpoint.mockResolvedValue({ data: null, error: null });
   });
@@ -126,5 +139,79 @@ describe('external chat sync status', () => {
 
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: 'sync_status_unavailable' });
+  });
+
+  it('refreshes active runs from the bridge and persists completion', async () => {
+    const runningRun = {
+      ...localRun,
+      digest_results: [],
+      finished_at: null,
+      state: 'running',
+      target_counts: {},
+    };
+    mocks.listRuns.mockResolvedValueOnce({ data: [runningRun], error: null });
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runs: [
+        {
+          digestResults: [{ matched: true, stream: 'messages' }],
+          finishedAt: '2026-08-04T00:02:00.000Z',
+          runId: localRun.id,
+          state: 'completed',
+          targetCounts: { messages: 3 },
+        },
+      ],
+    });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('http://localhost/sync') as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/status',
+      { runId: localRun.id }
+    );
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finished_at: '2026-08-04T00:02:00.000Z',
+        state: 'completed',
+        target_counts: { messages: 3 },
+      })
+    );
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        runs: [expect.objectContaining({ state: 'completed' })],
+      })
+    );
+  });
+
+  it('persists an immediately completed audit response', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      highWater: { messages: '3' },
+      runId: localRun.id,
+      sourceCounts: { messages: 3 },
+      state: 'completed',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'audit' }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        finished_at: expect.any(String),
+        high_water_mark: { messages: '3' },
+        source_counts: { messages: 3 },
+        state: 'completed',
+      })
+    );
   });
 });

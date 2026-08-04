@@ -23,6 +23,7 @@ export type ExternalChatProcessResult = {
   conversationCreated?: boolean;
   conversationId?: string;
   conflict?: 'payload_mismatch';
+  deferred?: boolean;
   duplicate?: boolean;
   ephemeral?: boolean;
   found?: boolean;
@@ -82,6 +83,7 @@ export async function processExternalChatEnvelope(
       event,
       wsId: context.wsId,
     });
+    if (result.found === false) return { ...result, deferred: true };
   } else if (event.kind === 'observation') {
     result = await upsertExternalChatObservation({
       connectorKey: context.connectorKey,

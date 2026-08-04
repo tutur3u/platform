@@ -40,6 +40,11 @@ export async function POST(request: Request) {
           code: 'external_chat_event_payload_mismatch',
           eventId: event.eventId,
         });
+      } else if (result.deferred) {
+        failures.push({
+          code: 'external_chat_event_deferred',
+          eventId: event.eventId,
+        });
       } else {
         results.push(result);
       }

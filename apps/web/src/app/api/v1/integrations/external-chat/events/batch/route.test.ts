@@ -181,4 +181,50 @@ describe('external chat historical batch', () => {
       })
     );
   });
+
+  it('defers missing-message state events without advancing the cursor', async () => {
+    processEvent.mockResolvedValueOnce({ deferred: true, found: false });
+    const deferredEvent = {
+      ...event,
+      content: undefined,
+      contentType: undefined,
+      eventId: 'state:missing-message:seen',
+      kind: 'message_state',
+      status: 'seen',
+    };
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/events/batch', {
+        body: JSON.stringify({
+          events: [deferredEvent],
+          cursor: { id: '10' },
+          highWaterMark: { id: '20' },
+        }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(207);
+    expect(upsert).toHaveBeenCalledWith(
+      expect.not.objectContaining({ cursor: expect.anything() }),
+      { onConflict: 'ws_id,connector_key,stream_key' }
+    );
+    expect(upsert).toHaveBeenCalledWith(
+      expect.not.objectContaining({ high_water_mark: expect.anything() }),
+      { onConflict: 'ws_id,connector_key,stream_key' }
+    );
+    expect(await response.json()).toEqual(
+      expect.objectContaining({
+        accepted: 0,
+        failed: 1,
+        failures: [
+          {
+            code: 'external_chat_event_deferred',
+            eventId: deferredEvent.eventId,
+          },
+        ],
+      })
+    );
+  });
 });

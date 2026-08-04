@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(30);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -7,6 +7,7 @@ select has_table('private', 'external_chat_sync_runs', 'durable sync run store e
 select has_table('private', 'external_chat_stream_cursors', 'durable stream cursors exist');
 select has_function('private', 'external_chat_upsert_observation', 'observation upsert RPC exists');
 select has_function('private', 'external_chat_apply_message_state', 'message state replay RPC exists');
+select has_function('private', 'external_chat_record_source_event', 'atomic source ledger RPC exists');
 
 select is_empty(
   $$select 1 from information_schema.table_privileges
@@ -156,6 +157,66 @@ select is(
   ),
   1,
   'historical or live source records keep the thread visible'
+);
+
+select lives_ok(
+  format(
+    $$select private.external_chat_record_source_event(
+      %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'probe', %L, %L, '{"authority":"probe"}', now()
+    )$$,
+    (select ws_id from parity_context),
+    repeat('c', 64),
+    (select id from private.external_chat_threads
+      where ws_id = (select ws_id from parity_context) limit 1)
+  ),
+  'a probe source record can be inserted atomically'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_record_source_event(
+      %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'historical', %L, %L, '{"authority":"historical"}', now()
+    )$$,
+    (select ws_id from parity_context),
+    repeat('c', 64),
+    (select id from private.external_chat_threads
+      where ws_id = (select ws_id from parity_context) limit 1)
+  ),
+  'an authoritative source record promotes a probe atomically'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_record_source_event(
+      %L, 'opaque-connector', 'authority:1', 'authority:1', 'message',
+      'probe', %L, %L, '{"authority":"late-probe"}', now()
+    )$$,
+    (select ws_id from parity_context),
+    repeat('c', 64),
+    (select id from private.external_chat_threads
+      where ws_id = (select ws_id from parity_context) limit 1)
+  ),
+  'a later probe replay cannot downgrade authority'
+);
+select is(
+  (
+    select delivery_mode from private.external_chat_source_events
+    where ws_id = (select ws_id from parity_context)
+      and connector_key = 'opaque-connector'
+      and source_event_id = 'authority:1'
+  ),
+  'historical',
+  'source delivery authority is monotonic'
+);
+select is(
+  (
+    select result->>'authority' from private.external_chat_source_events
+    where ws_id = (select ws_id from parity_context)
+      and connector_key = 'opaque-connector'
+      and source_event_id = 'authority:1'
+  ),
+  'historical',
+  'a late probe cannot replace authoritative source results'
 );
 
 select lives_ok(
