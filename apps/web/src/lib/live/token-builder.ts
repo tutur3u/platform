@@ -45,7 +45,6 @@ export function buildCreateAuthTokenConfig({
       voiceName,
       thinkingLevel,
     }),
-    lockAdditionalFields: [],
     httpOptions: { apiVersion: GEMINI_LIVE_API_VERSION },
   };
 }
