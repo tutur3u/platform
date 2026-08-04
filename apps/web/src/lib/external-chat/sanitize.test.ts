@@ -7,8 +7,14 @@ describe('sanitizeExternalChatRecord', () => {
       sanitizeExternalChatRecord({
         connection: { ip: '203.0.113.8', authorization: 'Bearer value' },
         cookie: 'private',
+        accessToken: 'private',
         route: '/services',
-        nested: { api_key: 'private', city: 'Example' },
+        nested: {
+          api_key: 'private',
+          authorizationHeader: 'private',
+          city: 'Example',
+          sessionId: 'private',
+        },
       })
     ).toEqual({
       connection: { ip: '203.0.113.8' },

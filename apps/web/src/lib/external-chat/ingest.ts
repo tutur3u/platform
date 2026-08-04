@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
-import type { ExternalChatEventEnvelope } from './schemas';
+import type { ExternalChatEvent, ExternalChatEventEnvelope } from './schemas';
 import {
   applyExternalChatMessageState,
   digestExternalChatEnvelope,
@@ -22,6 +22,7 @@ export type ExternalChatProcessResult = {
   conversation?: ChatConversation;
   conversationCreated?: boolean;
   conversationId?: string;
+  conflict?: 'payload_mismatch';
   duplicate?: boolean;
   ephemeral?: boolean;
   found?: boolean;
@@ -42,9 +43,19 @@ export async function processExternalChatEnvelope(
   });
   if (existing) {
     if (existing.payload_digest !== digestExternalChatEnvelope(event))
-      throw new Error('external_chat_event_payload_mismatch');
+      return { conflict: 'payload_mismatch', duplicate: true };
+    const result = existing.result as ExternalChatProcessResult;
+    if (existing.delivery_mode === 'probe' && event.deliveryMode !== 'probe') {
+      await recordExternalChatSourceEvent({
+        connectorKey: context.connectorKey,
+        event,
+        result,
+        threadId: result.threadId ?? null,
+        wsId: context.wsId,
+      });
+    }
     return {
-      ...(existing.result as ExternalChatProcessResult),
+      ...result,
       duplicate: true,
     };
   }
@@ -119,16 +130,23 @@ export function getRoutingUserId(
 }
 
 export function normalizeLegacyExternalChatEvent(
-  event: Record<string, unknown>
+  event: ExternalChatEvent
 ): ExternalChatEventEnvelope {
   return {
-    ...(event as Omit<
-      ExternalChatEventEnvelope,
-      'deliveryMode' | 'eventId' | 'kind' | 'version'
-    >),
+    agentId: event.agentId,
+    attachment: event.attachment,
+    content: event.content,
+    contentType: event.contentType,
+    context: event.context,
     deliveryMode: 'live',
-    eventId: String(event.messageId),
+    direction: event.direction,
+    eventId: event.messageId,
     kind: 'message',
+    messageId: event.messageId,
+    status: event.status,
+    timestamp: event.timestamp,
     version: 2,
-  } as ExternalChatEventEnvelope;
+    visitorId: event.visitorId,
+    visitorProfile: event.visitorProfile,
+  };
 }

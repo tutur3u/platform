@@ -283,6 +283,7 @@ export async function applyExternalChatMessageState({
   if (error) throw new Error(error.message);
   return data as unknown as {
     found: boolean;
+    message?: ChatMessage;
     messageId?: string;
     threadId?: string;
   };
@@ -331,13 +332,17 @@ export async function readExternalChatSourceEvent({
   const admin = await createAdminClient({ noCookie: true });
   const { data, error } = await externalChatPrivateDb(admin)
     .from('external_chat_source_events')
-    .select('payload_digest, result')
+    .select('delivery_mode, payload_digest, result')
     .eq('ws_id', wsId)
     .eq('connector_key', connectorKey)
     .eq('source_event_id', sourceEventId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return data as { payload_digest: string; result: Json } | null;
+  return data as {
+    delivery_mode: 'historical' | 'live' | 'probe';
+    payload_digest: string;
+    result: Json;
+  } | null;
 }
 
 export async function recordExternalChatSourceEvent({
@@ -376,7 +381,6 @@ export async function recordExternalChatSourceEvent({
         ws_id: wsId,
       },
       {
-        ignoreDuplicates: true,
         onConflict: 'ws_id,connector_key,source_event_id',
       }
     );
@@ -400,7 +404,7 @@ function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
       .map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`)
       .join(',')}}`;
   }

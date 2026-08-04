@@ -39,6 +39,12 @@ export async function POST(request: Request) {
     wsId,
   });
 
+  if (result.conflict === 'payload_mismatch')
+    return NextResponse.json(
+      { error: 'external_chat_event_payload_mismatch' },
+      { status: 409 }
+    );
+
   if (
     event.kind === 'message' &&
     event.deliveryMode === 'live' &&
@@ -72,6 +78,25 @@ export async function POST(request: Request) {
         wsId,
       });
     }
+  }
+
+  if (
+    event.deliveryMode === 'live' &&
+    !result.duplicate &&
+    (event.kind === 'message_state' || event.kind === 'message_deleted') &&
+    result.message
+  ) {
+    await publishChatRealtimeEvent({
+      actorUserId: null,
+      audience: { scope: 'workspace' },
+      conversationId: result.message.conversationId,
+      message: result.message,
+      type:
+        event.kind === 'message_deleted'
+          ? 'message.deleted'
+          : 'message.updated',
+      wsId,
+    });
   }
 
   const admin = await createAdminClient({ noCookie: true });

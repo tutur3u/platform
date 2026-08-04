@@ -6,9 +6,8 @@ import { readExternalChatBinding } from './store';
 export async function authenticateExternalChatIngest(request: Request) {
   const wsId = request.headers.get('x-external-binding-id');
   const authorization = request.headers.get('authorization');
-  const secret = authorization?.startsWith('Bearer ')
-    ? authorization.slice(7)
-    : null;
+  const authorizationMatch = authorization?.match(/^Bearer\s+(.+)$/i);
+  const secret = authorizationMatch?.[1]?.trim() || null;
   if (!wsId || !z.string().uuid().safeParse(wsId).success || !secret)
     return null;
 

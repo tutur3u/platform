@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-const dynamicMetadataSchema = z.record(z.string(), z.unknown()).default({});
+const dynamicMetadataObjectSchema = z.record(z.string(), z.unknown());
+const dynamicMetadataSchema = dynamicMetadataObjectSchema.default({});
 const timestampSchema = z
   .string()
   .datetime()
@@ -14,19 +15,25 @@ const inboxDefaultsSchema = z
   .catchall(z.unknown())
   .default({});
 
-export const externalChatEventSchema = z.object({
-  agentId: z.string().max(255).default(''),
-  visitorId: z.string().min(1).max(255),
-  visitorProfile: dynamicMetadataSchema,
+const messageFieldsSchema = z.object({
   messageId: z.string().min(1).max(255),
   direction: z.enum(['visitor', 'staff', 'system']),
   content: z.string().max(10000).default(''),
   contentType: z.union([z.literal(1), z.literal(2)]).default(1),
   status: z.string().max(80).default('sent'),
+  visitorProfile: dynamicMetadataSchema,
   timestamp: timestampSchema,
   context: dynamicMetadataSchema,
   attachment: dynamicMetadataSchema.optional(),
 });
+
+export const externalChatEventSchema = z
+  .object({
+    agentId: z.string().max(255).default(''),
+    visitorId: z.string().min(1).max(255),
+    timestamp: timestampSchema,
+  })
+  .extend(messageFieldsSchema.shape);
 
 const envelopeIdentitySchema = z.object({
   version: z.literal(2),
@@ -37,17 +44,9 @@ const envelopeIdentitySchema = z.object({
   deliveryMode: deliveryModeSchema.default('live'),
 });
 
-const messageEnvelopeSchema = envelopeIdentitySchema.extend({
-  kind: z.literal('message'),
-  messageId: z.string().min(1).max(255),
-  direction: z.enum(['visitor', 'staff', 'system']),
-  content: z.string().max(10000).default(''),
-  contentType: z.union([z.literal(1), z.literal(2)]).default(1),
-  status: z.string().max(80).default('sent'),
-  visitorProfile: dynamicMetadataSchema,
-  context: dynamicMetadataSchema,
-  attachment: dynamicMetadataSchema.optional(),
-});
+const messageEnvelopeSchema = envelopeIdentitySchema
+  .extend(messageFieldsSchema.shape)
+  .extend({ kind: z.literal('message') });
 
 const messageStateEnvelopeSchema = envelopeIdentitySchema.extend({
   kind: z.enum(['message_state', 'message_deleted']),
@@ -77,8 +76,8 @@ export const externalChatEventEnvelopeSchema = z.discriminatedUnion('kind', [
 
 export const externalChatBatchSchema = z.object({
   events: z.array(externalChatEventEnvelopeSchema).min(1).max(100),
-  cursor: dynamicMetadataSchema.optional(),
-  highWaterMark: dynamicMetadataSchema.optional(),
+  cursor: dynamicMetadataObjectSchema.optional(),
+  highWaterMark: dynamicMetadataObjectSchema.optional(),
 });
 
 export const externalChatSettingsSchema = z.object({

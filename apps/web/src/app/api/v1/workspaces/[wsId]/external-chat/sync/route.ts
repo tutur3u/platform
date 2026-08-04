@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveChatRouteContext } from '@/lib/chat/private-rpc';
@@ -14,23 +14,9 @@ const actionSchema = z.object({
   stream: z.string().min(1).max(80).optional(),
 });
 
-const remoteRunSchema = z.object({
-  createdAt: z.string(),
-  digestResults: z.array(z.unknown()),
-  errorCode: z.string().nullable(),
-  finishedAt: z.string().nullable(),
-  highWater: z.record(z.string(), z.unknown()),
-  operation: z.string(),
-  runId: z.string().uuid(),
-  sourceCounts: z.record(z.string(), z.number()),
-  startedAt: z.string().nullable(),
-  state: z.string(),
-  targetCounts: z.record(z.string(), z.number()),
-  updatedAt: z.string(),
-});
-
 export const GET = withSessionAuth<Params>(
   async (_request, auth, params) => {
+    await connection();
     const context = await resolveChatRouteContext({
       auth,
       permission: 'manage_external_projects',
@@ -40,47 +26,6 @@ export const GET = withSessionAuth<Params>(
     const wsId = context.context.normalizedWsId;
     const admin = await createAdminClient({ noCookie: true });
     const db = admin.schema('private') as any;
-    try {
-      const binding = await readExternalChatBinding(wsId);
-      if (binding) {
-        const remote = await requestExternalChatControl(
-          wsId,
-          '/control/v1/sync/status',
-          {}
-        );
-        const parsed = z
-          .object({ runs: z.array(remoteRunSchema).max(20) })
-          .safeParse(remote);
-        if (parsed.success && parsed.data.runs.length > 0) {
-          const connectorKey = binding.binding.canonical_project_id ?? wsId;
-          const { error } = await db.from('external_chat_sync_runs').upsert(
-            parsed.data.runs.map((run) => ({
-              connector_key: connectorKey,
-              created_at: run.createdAt,
-              digest_results: run.digestResults,
-              error_code: run.errorCode,
-              finished_at: run.finishedAt,
-              high_water_mark: run.highWater,
-              id: run.runId,
-              operation: run.operation,
-              source_counts: run.sourceCounts,
-              started_at: run.startedAt,
-              state: run.state,
-              target_counts: run.targetCounts,
-              updated_at: run.updatedAt,
-              ws_id: wsId,
-            })),
-            { onConflict: 'id' }
-          );
-          if (error) throw error;
-        }
-      }
-    } catch (error) {
-      console.warn('External chat sync status refresh unavailable', {
-        code: error instanceof Error ? error.name : 'unknown',
-        wsId,
-      });
-    }
     const [
       { data: runs, error: runsError },
       { data: checkpoint, error: checkpointError },
@@ -175,11 +120,12 @@ export const POST = withSessionAuth<Params>(
               state: 'running',
               updated_at: new Date().toISOString(),
             };
-      await db
+      const { error: updateError } = await db
         .from('external_chat_sync_runs')
         .update(update)
         .eq('id', runId)
         .eq('ws_id', wsId);
+      if (updateError) throw new Error(updateError.message);
       return NextResponse.json({ remote, runId });
     } catch (error) {
       await db

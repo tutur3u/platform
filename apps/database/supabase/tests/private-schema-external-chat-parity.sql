@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(24);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -15,18 +15,24 @@ select is_empty(
         'external_chat_source_events', 'external_chat_observations',
         'external_chat_sync_runs', 'external_chat_stream_cursors'
       )
-      and grantee in ('anon', 'authenticated')$$,
+      and grantee in ('PUBLIC', 'anon', 'authenticated')$$,
   'parity stores have no direct client grants'
 );
 
 create temporary table parity_context (ws_id uuid primary key, actor_id uuid not null);
 insert into parity_context
 select '77777777-7777-4777-8777-777777777777'::uuid, id
-from public.users order by created_at limit 1;
+from public.users
+order by created_at
+limit 1;
 insert into public.workspaces (id, name, personal, creator_id)
 select ws_id, 'External parity test', false, actor_id from parity_context;
 insert into public.workspace_external_project_bindings (ws_id, is_enabled, settings)
 select ws_id, true, '{"chat":{"enabled":true}}'::jsonb from parity_context;
+insert into private.external_chat_binding_credentials (
+  ws_id, configuration_revision, verified_at, verified_revision
+)
+select ws_id, 1, now(), 1 from parity_context;
 
 select lives_ok(
   format(
@@ -150,6 +156,82 @@ select is(
   ),
   1,
   'historical or live source records keep the thread visible'
+);
+
+select lives_ok(
+  format(
+    $$select private.external_chat_import_event(
+      %L, 'opaque-state', 'bucket-1', 'visitor-state', 'message-state',
+      'visitor', 'State replay content', '2026-08-01T00:00:00Z', 1
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'a canonical message can be imported for state replay'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_apply_message_state(
+      %L, 'opaque-state', 'message-state', 'seen',
+      '2026-08-01T00:02:00Z', false
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'a newer delivery state is applied'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_apply_message_state(
+      %L, 'opaque-state', 'message-state', 'sent',
+      '2026-08-01T00:01:00Z', false
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'an out-of-order state replay is handled without failure'
+);
+select is(
+  (
+    select message.metadata->>'status'
+    from private.external_chat_events event
+    join private.chat_messages message on message.id = event.message_id
+    where event.ws_id = (select ws_id from parity_context)
+      and event.connector_key = 'opaque-state'
+      and event.remote_message_id = 'message-state'
+  ),
+  'seen',
+  'a stale replay cannot replace the newer message state'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_apply_message_state(
+      %L, 'opaque-state', 'message-state', 'deleted',
+      '2026-08-01T00:03:00Z', true
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'a deletion state is applied'
+);
+select is(
+  (
+    select message.content
+    from private.external_chat_events event
+    join private.chat_messages message on message.id = event.message_id
+    where event.ws_id = (select ws_id from parity_context)
+      and event.connector_key = 'opaque-state'
+      and event.remote_message_id = 'message-state'
+  ),
+  '',
+  'a deleted external message has no retained visible content'
+);
+select ok(
+  (
+    select message.deleted_at is not null
+    from private.external_chat_events event
+    join private.chat_messages message on message.id = event.message_id
+    where event.ws_id = (select ws_id from parity_context)
+      and event.connector_key = 'opaque-state'
+      and event.remote_message_id = 'message-state'
+  ),
+  'a deleted external message is tombstoned natively'
 );
 
 select * from finish();

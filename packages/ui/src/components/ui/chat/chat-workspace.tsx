@@ -248,8 +248,11 @@ export function ChatWorkspace({
   const requestedDetails = searchParams.get('details');
   const agentDetailsOpen =
     requestedDetails === 'agent' && selectedAgentReadOnly;
+  const externalDetailsOpen =
+    requestedDetails === 'external' && selectedExternalConversation;
   const detailsOpen = Boolean(
-    (sharedContentOpen || agentDetailsOpen) && activeConversationId
+    (sharedContentOpen || agentDetailsOpen || externalDetailsOpen) &&
+      activeConversationId
   );
 
   useChatRealtime(wsId);
@@ -545,6 +548,17 @@ export function ChatWorkspace({
           onDeleteConversation={handleDeleteConversation}
           onGenerateConversationTitle={handleGenerateConversationTitle}
           onToggleSharedContent={() => {
+            if (selectedExternalConversation) {
+              replaceChatSelection({
+                conversationId: activeConversationId,
+                details: externalDetailsOpen ? null : 'external',
+                pathname,
+                router,
+                searchParams,
+                storageKey: selectionStorageKey,
+              });
+              return;
+            }
             if (requestedDetails) {
               replaceChatSelection({
                 conversationId: activeConversationId,

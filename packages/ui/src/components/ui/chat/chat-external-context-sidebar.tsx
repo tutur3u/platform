@@ -104,11 +104,10 @@ function ContextContent({
 }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
-  const t = useTranslations('chat');
   return (
     <div>
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="mt-0.5 break-words text-sm">{value || t('unknown')}</dd>
+      <dd className="mt-0.5 break-words text-sm">{value || '-'}</dd>
     </div>
   );
 }

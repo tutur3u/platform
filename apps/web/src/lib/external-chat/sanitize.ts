@@ -6,6 +6,11 @@ const MAX_ARRAY_LENGTH = 100;
 const MAX_OBJECT_KEYS = 100;
 const MAX_STRING_LENGTH = 4096;
 
+function isDeniedKey(key: string) {
+  const normalized = key.replace(/([a-z0-9])([A-Z])/g, '$1_$2');
+  return DENIED_KEY.test(normalized);
+}
+
 export function sanitizeExternalChatPayload(value: unknown): unknown {
   return sanitizeValue(value, 0);
 }
@@ -23,7 +28,7 @@ function sanitizeValue(value: unknown, depth: number): unknown {
 
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
-      .filter(([key]) => !DENIED_KEY.test(key))
+      .filter(([key]) => !isDeniedKey(key))
       .slice(0, MAX_OBJECT_KEYS)
       .map(([key, child]) => [key, sanitizeValue(child, depth + 1)])
   );

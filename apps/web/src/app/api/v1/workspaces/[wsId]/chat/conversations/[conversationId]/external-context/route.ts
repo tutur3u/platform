@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { resolveChatRouteContext } from '@/lib/chat/private-rpc';
 
@@ -7,6 +7,7 @@ type Params = { conversationId: string; wsId: string };
 
 export const GET = withSessionAuth<Params>(
   async (_request: NextRequest, auth, params) => {
+    await connection();
     const context = await resolveChatRouteContext({
       auth,
       permission: 'view_chat',
@@ -42,7 +43,9 @@ export const GET = withSessionAuth<Params>(
         { status: 503 }
       );
 
-    return NextResponse.json(serializeContext(thread, observations ?? []));
+    return NextResponse.json(serializeContext(thread, observations ?? []), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   },
   { allowAppSessionAuth: { targetApp: ['chat', 'cms'] }, rateLimitKind: 'read' }
 );
@@ -64,7 +67,7 @@ function serializeContext(
   );
   const payload = profile?.payload ?? {};
   return {
-    firstActivityAt: profile?.occurred_at ?? thread.created_at,
+    firstActivityAt: thread.created_at,
     lastActivityAt: observations[0]?.occurred_at ?? thread.updated_at,
     networkHint: maskNetwork(readNestedString(payload, 'network', 'address')),
     profile: {

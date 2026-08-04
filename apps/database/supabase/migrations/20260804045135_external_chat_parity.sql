@@ -10,13 +10,18 @@ alter table private.external_chat_events
 alter table private.external_chat_events
   add constraint external_chat_events_kind_check check (
     event_kind in ('message', 'message_state', 'message_deleted')
-  ),
+  ) not valid,
   add constraint external_chat_events_delivery_mode_check check (
     delivery_mode in ('live', 'historical', 'probe')
-  ),
+  ) not valid,
   add constraint external_chat_events_source_digest_check check (
     source_digest is null or char_length(source_digest) = 64
-  );
+  ) not valid;
+
+alter table private.external_chat_events
+  validate constraint external_chat_events_kind_check,
+  validate constraint external_chat_events_delivery_mode_check,
+  validate constraint external_chat_events_source_digest_check;
 
 create table private.external_chat_source_events (
   id uuid primary key default gen_random_uuid(),
@@ -150,6 +155,7 @@ set search_path = private, public, pg_temp
 as $$
 declare
   v_event private.external_chat_events%rowtype;
+  v_state_occurred_at timestamptz;
 begin
   if char_length(coalesce(p_status, '')) > 80
     or jsonb_typeof(coalesce(p_metadata, '{}'::jsonb)) <> 'object' then
@@ -167,6 +173,26 @@ begin
     return jsonb_build_object('found', false);
   end if;
 
+  select nullif(metadata->>'stateOccurredAt', '')::timestamptz
+  into v_state_occurred_at
+  from private.chat_messages
+  where id = v_event.message_id;
+
+  if v_state_occurred_at is not null
+    and v_state_occurred_at > coalesce(p_occurred_at, now()) then
+    return jsonb_build_object(
+      'found', true,
+      'message', (
+        select private.chat_message_json(message_row)
+        from private.chat_messages message_row
+        where message_row.id = v_event.message_id
+      ),
+      'messageId', v_event.message_id,
+      'stale', true,
+      'threadId', v_event.thread_id
+    );
+  end if;
+
   update private.external_chat_events
   set metadata = metadata || coalesce(p_metadata, '{}'::jsonb)
       || jsonb_build_object('status', p_status),
@@ -181,11 +207,20 @@ begin
         'deleted', p_deleted,
         'stateOccurredAt', coalesce(p_occurred_at, now())
       ),
-      content = case when p_deleted then '' else content end
+      content = case when p_deleted then '' else content end,
+      deleted_at = case
+        when p_deleted then coalesce(p_occurred_at, now())
+        else deleted_at
+      end
   where id = v_event.message_id;
 
   return jsonb_build_object(
     'found', true,
+    'message', (
+      select private.chat_message_json(message_row)
+      from private.chat_messages message_row
+      where message_row.id = v_event.message_id
+    ),
     'messageId', v_event.message_id,
     'threadId', v_event.thread_id
   );
@@ -220,7 +255,8 @@ declare
   v_conversation_id uuid;
   v_title text;
 begin
-  if jsonb_typeof(coalesce(p_payload, '{}'::jsonb)) <> 'object' then
+  if char_length(coalesce(p_remote_agent_id, '')) > 255
+    or jsonb_typeof(coalesce(p_payload, '{}'::jsonb)) <> 'object' then
     raise exception 'external_chat_invalid_observation';
   end if;
 

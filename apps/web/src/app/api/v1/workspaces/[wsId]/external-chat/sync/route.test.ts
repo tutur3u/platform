@@ -3,10 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  listRuns: vi.fn(),
+  readCheckpoint: vi.fn(),
   readExternalChatBinding: vi.fn(),
   requestExternalChatControl: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   upsert: vi.fn(),
+}));
+
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: vi.fn(),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -40,7 +47,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             select: () => ({
               eq: () => ({
                 order: () => ({
-                  limit: async () => ({ data: [], error: null }),
+                  limit: () => mocks.listRuns(),
                 }),
               }),
             }),
@@ -49,7 +56,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         return {
           select: () => ({
             eq: () => ({
-              maybeSingle: async () => ({ data: null, error: null }),
+              maybeSingle: () => mocks.readCheckpoint(),
             }),
           }),
         };
@@ -59,19 +66,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 const params = { params: Promise.resolve({ wsId: 'workspace-1' }) };
-const remoteRun = {
-  createdAt: '2026-08-04T00:00:00.000Z',
-  digestResults: [],
-  errorCode: null,
-  finishedAt: '2026-08-04T00:01:00.000Z',
-  highWater: { messages: '3' },
+const localRun = {
+  created_at: '2026-08-04T00:00:00.000Z',
+  digest_results: [],
+  error_code: null,
+  finished_at: '2026-08-04T00:01:00.000Z',
+  high_water_mark: { messages: '3' },
+  id: '7a3eb868-6bb9-46da-b803-a96703e4df5f',
   operation: 'backfill',
-  runId: '7a3eb868-6bb9-46da-b803-a96703e4df5f',
-  sourceCounts: { messages: 3 },
-  startedAt: '2026-08-04T00:00:01.000Z',
+  source_counts: { messages: 3 },
+  started_at: '2026-08-04T00:00:01.000Z',
   state: 'completed',
-  targetCounts: { messages: 3 },
-  updatedAt: '2026-08-04T00:01:00.000Z',
+  target_counts: { messages: 3 },
+  updated_at: '2026-08-04T00:01:00.000Z',
 };
 
 describe('external chat sync status', () => {
@@ -84,11 +91,12 @@ describe('external chat sync status', () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: { canonical_project_id: 'opaque-connector' },
     });
-    mocks.requestExternalChatControl.mockResolvedValue({ runs: [remoteRun] });
     mocks.upsert.mockResolvedValue({ error: null });
+    mocks.listRuns.mockResolvedValue({ data: [localRun], error: null });
+    mocks.readCheckpoint.mockResolvedValue({ data: null, error: null });
   });
 
-  it('refreshes masked bridge run state before returning local status', async () => {
+  it('returns stored status without polling or writing to the bridge', async () => {
     const { GET } = await import('./route');
     const response = await GET(
       new Request('http://localhost/sync') as never,
@@ -96,42 +104,26 @@ describe('external chat sync status', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
-      'workspace-1',
-      '/control/v1/sync/status',
-      {}
-    );
-    expect(mocks.upsert).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          connector_key: 'opaque-connector',
-          id: remoteRun.runId,
-          source_counts: { messages: 3 },
-          state: 'completed',
-          ws_id: 'workspace-1',
-        }),
-      ],
-      { onConflict: 'id' }
-    );
-  });
-
-  it('returns the last local state when the bridge is temporarily unavailable', async () => {
-    mocks.requestExternalChatControl.mockRejectedValueOnce(
-      new Error('sensitive remote failure')
-    );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { GET } = await import('./route');
-    const response = await GET(
-      new Request('http://localhost/sync') as never,
-      params
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ checkpoint: null, runs: [] });
+    expect(await response.json()).toEqual({
+      checkpoint: null,
+      runs: [localRun],
+    });
+    expect(mocks.requestExternalChatControl).not.toHaveBeenCalled();
     expect(mocks.upsert).not.toHaveBeenCalled();
-    expect(JSON.stringify(warn.mock.calls)).not.toContain(
-      'sensitive remote failure'
+  });
+
+  it('returns a stable error when stored status cannot be read', async () => {
+    mocks.listRuns.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'sensitive database failure' },
+    });
+    const { GET } = await import('./route');
+    const response = await GET(
+      new Request('http://localhost/sync') as never,
+      params
     );
-    warn.mockRestore();
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'sync_status_unavailable' });
   });
 });

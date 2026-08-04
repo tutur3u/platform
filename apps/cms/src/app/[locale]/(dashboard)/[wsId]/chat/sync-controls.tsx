@@ -22,17 +22,19 @@ export function ConnectedChatSyncControls({
   const t = useTranslations('connected-chat');
   const queryClient = useQueryClient();
   const queryKey = ['connected-chat-sync', wsId] as const;
+  const isRunActive = (state: string) =>
+    state === 'running' || state === 'pending';
   const query = useQuery({
     enabled,
     queryFn: () => getExternalChatSyncStatus(wsId),
     queryKey,
     refetchInterval: (state) =>
-      state.state.data?.runs.some((run) => run.state === 'running')
+      state.state.data?.runs.some((run) => isRunActive(run.state))
         ? 5000
         : false,
   });
   const latest = query.data?.runs[0];
-  const active = latest?.state === 'running' || latest?.state === 'pending';
+  const active = query.data?.runs.some((run) => isRunActive(run.state));
   const mutation = useMutation({
     mutationFn: (payload: ExternalChatSyncAction) =>
       mutateExternalChatSync(wsId, payload),

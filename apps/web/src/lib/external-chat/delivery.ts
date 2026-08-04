@@ -132,6 +132,10 @@ export async function requestExternalChatControl(
   if (
     !state?.binding.is_enabled ||
     !isExternalChatEnabled(state.binding.settings) ||
+    !state.credentials?.verified_at ||
+    state.credentials.verified_revision !==
+      state.credentials.configuration_revision ||
+    state.credentials.pending_action ||
     !ciphertext ||
     !bridgeBaseUrl
   )

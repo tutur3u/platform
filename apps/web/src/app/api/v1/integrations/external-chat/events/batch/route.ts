@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const parsed = externalChatBatchSchema.safeParse(body.data);
   if (
     !parsed.success ||
-    parsed.data.events.some((event) => event.deliveryMode === 'live')
+    parsed.data.events.some((event) => event.deliveryMode !== 'historical')
   )
     return NextResponse.json(
       { error: 'Invalid historical batch' },
@@ -31,8 +31,27 @@ export async function POST(request: Request) {
     wsId,
   };
   const results = [];
-  for (const event of parsed.data.events)
-    results.push(await processExternalChatEnvelope(event, context));
+  const failures: Array<{ code: string; eventId: string }> = [];
+  for (const event of parsed.data.events) {
+    try {
+      const result = await processExternalChatEnvelope(event, context);
+      if (result.conflict) {
+        failures.push({
+          code: 'external_chat_event_payload_mismatch',
+          eventId: event.eventId,
+        });
+      } else {
+        results.push(result);
+      }
+    } catch (error) {
+      console.error('External chat historical event import failed', {
+        error,
+        eventId: event.eventId,
+        wsId,
+      });
+      failures.push({ code: 'event_import_failed', eventId: event.eventId });
+    }
+  }
 
   const admin = await createAdminClient({ noCookie: true });
   const { error } = await (admin.schema('private') as any)
@@ -40,10 +59,14 @@ export async function POST(request: Request) {
     .upsert(
       {
         connector_key: context.connectorKey,
-        cursor: parsed.data.cursor ?? {},
-        high_water_mark: parsed.data.highWaterMark ?? {},
-        last_error_code: null,
-        retry_count: 0,
+        ...(failures.length === 0 && parsed.data.cursor
+          ? { cursor: parsed.data.cursor }
+          : {}),
+        ...(failures.length === 0 && parsed.data.highWaterMark
+          ? { high_water_mark: parsed.data.highWaterMark }
+          : {}),
+        last_error_code: failures.length > 0 ? 'batch_partial_failure' : null,
+        retry_count: failures.length > 0 ? 1 : 0,
         stream_key: 'historical-events',
         updated_at: new Date().toISOString(),
         ws_id: wsId,
@@ -52,9 +75,14 @@ export async function POST(request: Request) {
     );
   if (error) throw new Error(error.message);
 
-  return NextResponse.json({
-    accepted: results.length,
-    digest: digestExternalChatBatch(parsed.data.events),
-    duplicates: results.filter((result) => result.duplicate).length,
-  });
+  return NextResponse.json(
+    {
+      accepted: results.length,
+      digest: digestExternalChatBatch(parsed.data.events),
+      duplicates: results.filter((result) => result.duplicate).length,
+      failed: failures.length,
+      failures,
+    },
+    { status: failures.length > 0 ? 207 : 200 }
+  );
 }

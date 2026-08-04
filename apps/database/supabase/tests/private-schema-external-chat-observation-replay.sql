@@ -4,7 +4,9 @@ select plan(4);
 create temporary table observation_context (ws_id uuid primary key, actor_id uuid not null);
 insert into observation_context
 select '77777777-7777-4777-8777-777777777777'::uuid, id
-from public.users order by created_at limit 1;
+from public.users
+order by created_at
+limit 1;
 insert into public.workspaces (id, name, personal, creator_id)
 select ws_id, 'Observation replay test', false, actor_id from observation_context;
 insert into public.workspace_external_project_bindings (ws_id, is_enabled, settings)
