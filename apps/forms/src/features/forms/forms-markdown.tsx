@@ -7,11 +7,16 @@ import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { cn } from '@tuturuuu/utils/format';
 import DOMPurify from 'isomorphic-dompurify';
 import { Component, type ErrorInfo, type ReactNode, useMemo } from 'react';
-import { Streamdown } from 'streamdown';
+import { type PluginConfig, Streamdown } from 'streamdown';
 
 import { containsRichTextHtml, normalizeMarkdownToText } from './content';
 
-const plugins = { code, mermaid: mermaidPlugin, math, cjk };
+const plugins = {
+  code: code as unknown as PluginConfig['code'],
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 function normalizeMarkdownTables(text: string) {
   if (!text.includes('```')) {

@@ -5,10 +5,15 @@ import { code } from '@streamdown/code';
 import { createMathPlugin } from '@streamdown/math';
 import { mermaid as mermaidPlugin } from '@streamdown/mermaid';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Streamdown } from 'streamdown';
+import { type PluginConfig, Streamdown } from 'streamdown';
 
 const math = createMathPlugin({ singleDollarTextMath: true });
-const markdownPlugins = { code, mermaid: mermaidPlugin, math, cjk };
+const markdownPlugins = {
+  code: code as unknown as PluginConfig['code'],
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 class AiMarkdownErrorBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },

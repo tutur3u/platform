@@ -5,12 +5,15 @@ import { createMathPlugin } from '@streamdown/math';
 import { cn } from '@tuturuuu/utils/format';
 import 'katex/dist/katex.min.css';
 import { Component, type ErrorInfo, type ReactNode, useMemo } from 'react';
-import { Streamdown } from 'streamdown';
+import { type PluginConfig, Streamdown } from 'streamdown';
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
-const plugins = { code, math };
+const plugins = {
+  code: code as unknown as PluginConfig['code'],
+  math,
+};
 
 function isMarkdownTableSeparator(separator: string) {
   for (const char of separator) {

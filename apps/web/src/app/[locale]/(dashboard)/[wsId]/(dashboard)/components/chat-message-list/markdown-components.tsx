@@ -12,12 +12,17 @@ import {
   useMemo,
   useState,
 } from 'react';
-import { Streamdown } from 'streamdown';
+import { type PluginConfig, Streamdown } from 'streamdown';
 
 const math = createMathPlugin({
   singleDollarTextMath: true,
 });
-const plugins = { code, mermaid: mermaidPlugin, math, cjk };
+const plugins = {
+  code: code as unknown as PluginConfig['code'],
+  mermaid: mermaidPlugin,
+  math,
+  cjk,
+};
 
 function isSingleDollarMathEnabled(): boolean {
   const remarkPlugin = math.remarkPlugin;
