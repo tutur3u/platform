@@ -34,8 +34,10 @@ jobs:
   merge:
     name: Merge release-please and align production
     runs-on: ubuntu-latest
-    # `bun git-release-please` runs the full repo check before committing.
-    timeout-minutes: 90
+    # `bun git-release-please` runs the full repo check before committing, and
+    # every release bumps apps/mobile/pubspec.yaml, so the Flutter suite runs
+    # too.
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -110,6 +112,31 @@ jobs:
             echo "needs_sync=${needs_sync}"
           } >> "$GITHUB_OUTPUT"
 
+      # Checked before the ~40 minutes of install, build and `bun check` that
+      # follow, because none of it can land without this. `main` and
+      # `production` are covered by a ruleset whose only bypass actor is
+      # OrganizationAdmin, so `github.token` is refused by the remote with
+      # `GH013: Changes must be made through a pull request`. Granting the
+      # Actions app a bypass instead would not work either: pushes made with
+      # `GITHUB_TOKEN` do not trigger `push` workflows, so the production push
+      # would skip the Vercel production planner and the next Release Please
+      # run.
+      - name: Require a token that can push protected branches
+        if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true
+        shell: bash
+        env:
+          RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${RELEASE_PLEASE_TOKEN}" ]; then
+            echo "RELEASE_PLEASE_TOKEN is configured."
+            exit 0
+          fi
+
+          echo "::error::RELEASE_PLEASE_TOKEN is not configured, so this run fell back to GITHUB_TOKEN and its push to main would be rejected. Add a repository secret named RELEASE_PLEASE_TOKEN holding a personal access token (repo + workflow scopes) owned by an organization admin, then re-run this workflow."
+          exit 1
+
       - name: Install dependencies
         if: steps.plan.outputs.should_merge == 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -128,6 +155,28 @@ jobs:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/masonry --filter=@tuturuuu/internal-api --filter=tuturuuu
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+      # Release-please bumps apps/mobile/pubspec.yaml on every release, so
+      # `touchesMobile()` in scripts/git-release-please.js is always true and
+      # `bun check` is followed by `bun check:mobile` — dart-format,
+      # flutter-analyze and flutter-test. Without a Flutter toolchain all three
+      # exit 127 and the merge never reaches the push. Keep the version pin in
+      # step with mobile.yaml.
+      - name: Setup Flutter
+        if: steps.plan.outputs.should_merge == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.x"
+          channel: stable
+          cache: true
+          pub-cache: true
+
+      # `generate: true` in pubspec.yaml means this also runs gen-l10n, which
+      # flutter-analyze needs before it can resolve lib/l10n/gen.
+      - name: Install mobile dependencies
+        if: steps.plan.outputs.should_merge == 'true'
+        working-directory: apps/mobile
+        run: flutter pub get
 
       - name: Configure git identity
         if: steps.plan.outputs.should_merge == 'true'

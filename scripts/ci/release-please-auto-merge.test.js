@@ -108,6 +108,80 @@ test('release merge builds the dist-only packages before running bun check', () 
   }
 });
 
+test('release merge installs the Flutter toolchain bun check:mobile needs', () => {
+  // Release-please bumps apps/mobile/pubspec.yaml on every release, so
+  // touchesMobile() in scripts/git-release-please.js is always true and the
+  // merge runs dart-format, flutter-analyze and flutter-test. A runner with no
+  // Flutter exits 127 on all three (run 30891619937).
+  const flutterIndex = workflow.indexOf('- name: Setup Flutter');
+
+  assert.ok(flutterIndex !== -1, 'the Flutter toolchain must be installed');
+  assert.ok(
+    flutterIndex < workflow.indexOf('- name: Merge release-please branch'),
+    'Flutter must be installed before bun check:mobile runs'
+  );
+  assert.match(
+    workflow,
+    /- name: Install mobile dependencies\n {8}if: steps\.plan\.outputs\.should_merge == 'true'\n {8}working-directory: apps\/mobile\n {8}run: flutter pub get/,
+    'flutter-analyze and flutter-test need pub get (and the gen-l10n it runs)'
+  );
+});
+
+test('release merge pins the same Flutter version as the mobile workflow', () => {
+  const mobileWorkflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'mobile.yaml'),
+    'utf8'
+  );
+  const mobileVersion = mobileWorkflow.match(/flutter-version: "([^"]+)"/)?.[1];
+
+  assert.ok(mobileVersion, 'mobile.yaml must pin a Flutter version');
+  assert.match(
+    workflow,
+    new RegExp(`flutter-version: "${mobileVersion.replaceAll('.', '\\.')}"`),
+    'the release merge must check mobile with the version mobile CI uses'
+  );
+});
+
+test('release merge fails fast when it has no token that can push', () => {
+  // main and production are covered by a ruleset whose only bypass actor is
+  // OrganizationAdmin, so a run that falls back to github.token cannot push.
+  // Finding that out after bun check has already run wastes ~40 minutes.
+  const gateIndex = workflow.indexOf(
+    '- name: Require a token that can push protected branches'
+  );
+
+  assert.ok(gateIndex !== -1, 'a run that cannot push must say so up front');
+  assert.ok(
+    gateIndex < workflow.indexOf('- name: Install dependencies'),
+    'the token gate must run before the expensive steps'
+  );
+  assert.ok(
+    gateIndex > workflow.indexOf('- name: Resolve work to do'),
+    'a run with nothing to merge or sync must not need a token at all'
+  );
+
+  const gateStep = workflow.slice(
+    gateIndex,
+    workflow.indexOf('- name: Install dependencies')
+  );
+
+  assert.match(
+    gateStep,
+    /RELEASE_PLEASE_TOKEN: \$\{\{ secrets\.RELEASE_PLEASE_TOKEN \}\}/,
+    'the secret must reach the script through the environment'
+  );
+  assert.match(
+    gateStep,
+    /inputs\.dry_run != true/,
+    'a dry run pushes nothing, so it must not require the token'
+  );
+  assert.match(
+    gateStep,
+    /::error::RELEASE_PLEASE_TOKEN is not configured/,
+    'the failure must name the secret to create'
+  );
+});
+
 test('release merge deletes both release-please branches once they are merged', () => {
   const cleanupIndex = workflow.indexOf(
     '- name: Delete merged release-please branches'
