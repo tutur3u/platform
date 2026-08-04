@@ -41,11 +41,48 @@ describe('external project adapter fixtures', () => {
       'media-assets',
     ]);
 
-    expect(
-      externalProjectAdapterFixtures.cybershield35.collections.map(
-        (collection) => collection.slug
-      )
-    ).toEqual(['article-media']);
+    expect({
+      collections: externalProjectAdapterFixtures.cybershield35.collections.map(
+        (collection) => ({
+          collectionType: collection.collectionType,
+          description: collection.description,
+          slug: collection.slug,
+        })
+      ),
+      profileData: externalProjectAdapterFixtures.cybershield35.profileData,
+      schema:
+        externalProjectAdapterFixtures.cybershield35.schema?.collections.map(
+          (collection) => ({
+            assetTypes: collection.assetTypes ?? [],
+            metadataFields:
+              collection.metadataFields?.map((field) => field.key) ?? [],
+            profileFields:
+              collection.profileFields?.map((field) => field.key) ?? [],
+            slug: collection.slug,
+          })
+        ),
+    }).toEqual({
+      collections: [
+        {
+          collectionType: 'article-media',
+          description:
+            'Private draft media and durable published assets for CyberShield35 articles.',
+          slug: 'article-media',
+        },
+      ],
+      profileData: {
+        deliveryPreset: 'article-media',
+        mediaAuthority: 'tuturuuu-cms',
+      },
+      schema: [
+        {
+          assetTypes: ['image'],
+          metadataFields: ['cs35ArticleId'],
+          profileFields: ['caption', 'altText'],
+          slug: 'article-media',
+        },
+      ],
+    });
 
     expect(
       externalProjectAdapterFixtures.junly.collections.map(
