@@ -25,6 +25,7 @@ export type InventorySalesExportRpcRow = {
   polar_order_id: string | null;
   product_id: string | null;
   product_name: string | null;
+  product_category_name: string | null;
   public_token: string | null;
   quantity: number | null;
   sale_amount: number;

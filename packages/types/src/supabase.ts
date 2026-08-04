@@ -17211,6 +17211,7 @@ export type Database = {
           period_id: string;
           period_name: string;
           polar_order_id: string;
+          product_category_name: string;
           product_id: string;
           product_name: string;
           public_token: string;

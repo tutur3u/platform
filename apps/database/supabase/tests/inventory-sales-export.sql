@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(14);
 
 insert into public.users (id, display_name)
 values (
@@ -410,7 +410,12 @@ select results_eq(
 
 select results_eq(
   $$
-    select product_name, owner_name, unit_name, warehouse_name
+    select
+      product_name,
+      product_category_name,
+      owner_name,
+      unit_name,
+      warehouse_name
     from private.list_inventory_sales_export_rows(
       '20000000-0000-4000-8000-000000001002',
       '20000000-0000-4000-8000-000000001012'
@@ -420,12 +425,28 @@ select results_eq(
   $$
     values (
       'Export product'::text,
+      'Export category'::text,
       'Export owner'::text,
       'Piece'::text,
       'Export booth'::text
     )
   $$,
-  'exports complete line-item metadata'
+  'exports complete finance-invoice line-item metadata'
+);
+
+select results_eq(
+  $$
+    select distinct product_name, product_category_name
+    from private.list_inventory_sales_export_rows(
+      '20000000-0000-4000-8000-000000001002',
+      '20000000-0000-4000-8000-000000001012'
+    )
+    where sale_id = '20000000-0000-4000-8000-000000001015'
+  $$,
+  $$
+    values ('Export product'::text, 'Export category'::text)
+  $$,
+  'exports checkout product names and inventory categories'
 );
 
 select is(
