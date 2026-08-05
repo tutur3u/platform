@@ -188,7 +188,10 @@ export async function beginAiStudioRun(
 }
 
 export type BeginExternalAiStudioRunInput = {
-  actorId: string;
+  /** Null for machine credentials, which run without a user. */
+  actorId: string | null;
+  /** Set when a bound API key authenticated the request, for rotation traceability. */
+  apiKeyId?: string | null;
   externalAppId: string;
   feature: string;
   idempotencyKey?: string | null;
@@ -205,13 +208,18 @@ export async function beginExternalAiStudioRun(
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('begin_external_ai_studio_run', {
+      p_api_key_id: input.apiKeyId ?? undefined,
       p_external_app_id: input.externalAppId,
       p_feature: input.feature,
       p_idempotency_key: input.idempotencyKey ?? undefined,
       p_metadata: input.metadata,
       p_model_id: input.modelId,
       p_request_id: input.requestId,
-      p_user_id: input.actorId,
+      // Explicit null, never undefined: p_user_id has no default, so omitting it
+      // makes PostgREST fail to resolve the function. A machine credential
+      // genuinely has no user, and the column accepts NULL — the generated RPC
+      // types just cannot express a nullable argument.
+      p_user_id: input.actorId as unknown as string,
       p_ws_id: input.workspaceId,
     });
 
@@ -277,8 +285,20 @@ export async function settleAiStudioRun(
   }
 }
 
+export type SettleExternalAiStudioRunInput = Omit<
+  SettleAiStudioRunInput,
+  'actualCredits'
+> & {
+  /**
+   * What this run would have billed had it been metered. Recorded, not charged,
+   * so an app's consumption of its unmetered allocation is a reportable number
+   * rather than an invisible zero.
+   */
+  unmeteredCredits?: number;
+};
+
 export async function settleExternalAiStudioRun(
-  input: Omit<SettleAiStudioRunInput, 'actualCredits'>
+  input: SettleExternalAiStudioRunInput
 ): Promise<void> {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = await sbAdmin
@@ -297,6 +317,7 @@ export async function settleExternalAiStudioRun(
       p_reasoning_tokens: input.reasoningTokens ?? 0,
       p_run_id: input.runId,
       p_status: input.status,
+      p_unmetered_credits: Math.max(0, input.unmeteredCredits ?? 0),
     });
 
   if (error || !data?.[0]?.success) {

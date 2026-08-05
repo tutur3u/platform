@@ -127,6 +127,100 @@ describe('AI Studio billing policy', () => {
     expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
   });
 
+  it('attributes an app-bound API key to the app without reserving credits', async () => {
+    // CS35 background jobs have no browser session, so they authenticate with an
+    // API key bound to the app. The same workload must not be billed differently
+    // just because a worker rather than a person triggered it.
+    mocks.authenticatePublicAiRequest.mockResolvedValue({
+      actorId: 'key-owner',
+      apiKey: { external_app_id: 'cybershield35', id: 'bound-key' },
+      kind: 'api-key',
+      workspaceId: 'workspace',
+    });
+
+    const context = await prepareMeteredExecution({
+      feature: 'risk_classification',
+      maxUsage: { inputTokens: 10, outputTokens: 20 },
+      modelId: 'google/gemini-3.1-flash-lite',
+      request: new Request('https://ai.tuturuuu.com/v1/responses', {
+        headers: { 'idempotency-key': 'job-1' },
+      }),
+    });
+
+    expect(context.runId).toBe('external-run');
+    expect(mocks.beginExternalAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKeyId: 'bound-key',
+        externalAppId: 'cybershield35',
+        idempotencyKey: 'cybershield35:job-1',
+        workspaceId: 'workspace',
+      })
+    );
+    expect(mocks.beginAiStudioRun).not.toHaveBeenCalled();
+
+    await settleMeteredExecution(context, {
+      status: 'succeeded',
+      usage: { inputTokens: 7, outputTokens: 9 },
+    });
+
+    // Provider cost is still recorded even though no credits are billed.
+    expect(mocks.settleExternalAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerCostUsd: 0.0025,
+        runId: 'external-run',
+      })
+    );
+    expect(mocks.settleAiStudioRun).not.toHaveBeenCalled();
+  });
+
+  it('keeps an unbound API key on the metered path', async () => {
+    mocks.authenticatePublicAiRequest.mockResolvedValue({
+      actorId: 'actor',
+      apiKey: { external_app_id: null, id: 'plain-key' },
+      kind: 'api-key',
+      workspaceId: 'workspace',
+    });
+
+    const context = await prepareMeteredExecution({
+      feature: 'responses',
+      maxUsage: { inputTokens: 10, outputTokens: 20 },
+      modelId: 'google/gemini-3.1-flash-lite',
+      request: new Request('https://ai.tuturuuu.com/v1/responses'),
+    });
+
+    expect(context.runId).toBe('metered-run');
+    expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
+
+    await settleMeteredExecution(context, {
+      status: 'succeeded',
+      usage: { inputTokens: 7, outputTokens: 9 },
+    });
+
+    expect(mocks.settleAiStudioRun).toHaveBeenCalledWith(
+      expect.objectContaining({ actualCredits: 25, runId: 'metered-run' })
+    );
+    expect(mocks.settleExternalAiStudioRun).not.toHaveBeenCalled();
+  });
+
+  it('ignores a blank app binding rather than treating it as attribution', async () => {
+    mocks.authenticatePublicAiRequest.mockResolvedValue({
+      actorId: 'actor',
+      apiKey: { external_app_id: '   ', id: 'blank-key' },
+      kind: 'api-key',
+      workspaceId: 'workspace',
+    });
+
+    const context = await prepareMeteredExecution({
+      feature: 'responses',
+      maxUsage: { inputTokens: 10, outputTokens: 20 },
+      modelId: 'google/gemini-3.1-flash-lite',
+      request: new Request('https://ai.tuturuuu.com/v1/responses'),
+    });
+
+    expect(context.runId).toBe('metered-run');
+    expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
+  });
+
   it('rejects non-text models before reserving credits', async () => {
     mocks.createAdminClient.mockResolvedValue({
       schema: vi.fn().mockReturnValue({

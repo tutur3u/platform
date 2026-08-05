@@ -11,6 +11,8 @@ const STATUSES = new Set([
   'failed',
   'aborted',
 ]);
+const EXECUTION_MODES = new Set(['background', 'interactive']);
+const EXTERNAL_APP_PATTERN = /^[a-z0-9_-]{1,64}$/u;
 
 export async function GET(
   request: NextRequest,
@@ -37,13 +39,23 @@ export async function GET(
   const feature = request.nextUrl.searchParams.get('feature')?.slice(0, 120);
   const model = request.nextUrl.searchParams.get('model')?.slice(0, 200);
   const cursor = parseCursor(request.nextUrl.searchParams.get('cursor'));
+  const externalApp = request.nextUrl.searchParams.get('externalApp');
+  const executionMode = request.nextUrl.searchParams.get('executionMode');
 
   if (status && !STATUSES.has(status)) {
     return Response.json({ error: 'Invalid run status' }, { status: 400 });
   }
+  if (externalApp && !EXTERNAL_APP_PATTERN.test(externalApp)) {
+    return Response.json({ error: 'Invalid external app' }, { status: 400 });
+  }
+  if (executionMode && !EXECUTION_MODES.has(executionMode)) {
+    return Response.json({ error: 'Invalid execution mode' }, { status: 400 });
+  }
 
   const { data, error } = await listAiStudioConsumptionEvents({
     cursor,
+    executionMode: executionMode ?? undefined,
+    externalApp: externalApp ?? undefined,
     feature,
     from: range.from.toISOString(),
     limit: limit + 1,
@@ -80,6 +92,7 @@ export async function GET(
         createdAt: run.created_at,
         embeddingUnits: run.embedding_units,
         errorClass: run.error_class,
+        executionMode: run.execution_mode,
         feature: run.feature,
         firstTokenLatencyMs: run.first_token_latency_ms,
         id: run.event_id,
@@ -92,8 +105,10 @@ export async function GET(
         reasoningTokens: run.reasoning_tokens,
         requestId: run.request_id,
         searchUnits: run.search_units,
+        sourceId: run.source_id,
         sourceType: run.source_type,
         status: run.status,
+        unmeteredCredits: Number(run.unmetered_credits),
         stepCount: stepCounts.get(run.event_id)?.steps ?? 0,
         toolCallCount: stepCounts.get(run.event_id)?.tools ?? 0,
       })),

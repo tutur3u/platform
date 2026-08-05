@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/auth/app-coordination';
 import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
@@ -63,6 +64,84 @@ function invalidExternalCredential(message: string, status = 403) {
   });
 }
 
+export type ExternalAppRegistration = {
+  allowedScopes: string[];
+  allowedWorkspaceIds: string[];
+  enabled: boolean;
+};
+
+/**
+ * Reads an external app's registration from the root workspace's secrets.
+ *
+ * Both credential kinds that can belong to an app — a user's session token and a
+ * bound API key — must be checked against the same record, otherwise disabling an
+ * app or unlinking a workspace would only stop the interactive half of its
+ * traffic.
+ */
+export async function loadExternalAppRegistration(
+  sbAdmin: TypedSupabaseClient,
+  appId: string
+): Promise<ExternalAppRegistration> {
+  const { data, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('name, value')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .in('name', [
+      externalAppField(appId, 'allowedScopes'),
+      externalAppField(appId, 'allowedWorkspaceIds'),
+      externalAppField(appId, 'enabled'),
+    ]);
+
+  if (error) {
+    throw new AiStudioError(
+      'The external-app registration could not be verified.',
+      {
+        code: 'server_error',
+        status: 500,
+        type: 'server_error',
+      }
+    );
+  }
+
+  const fields = new Map((data ?? []).map((row) => [row.name, row.value]));
+  return {
+    allowedScopes: parseStringArray(
+      fields.get(externalAppField(appId, 'allowedScopes'))
+    ),
+    allowedWorkspaceIds: parseStringArray(
+      fields.get(externalAppField(appId, 'allowedWorkspaceIds'))
+    ).map((value) => value.trim().toLowerCase()),
+    enabled: fields.get(externalAppField(appId, 'enabled')) === 'true',
+  };
+}
+
+/**
+ * Whether the app is live for this workspace at all. This is what issuing a bound
+ * key requires: which operations that key may then perform is decided per request
+ * by `externalAppRegistrationAllows`, so an app registered for speech only does
+ * not need `ai:use` just to hold a key.
+ */
+export function externalAppRegistrationLinks(
+  registration: ExternalAppRegistration,
+  workspaceId: string
+) {
+  return (
+    registration.enabled &&
+    registration.allowedWorkspaceIds.includes(workspaceId.toLowerCase())
+  );
+}
+
+export function externalAppRegistrationAllows(
+  registration: ExternalAppRegistration,
+  workspaceId: string,
+  requiredScope: string
+) {
+  return (
+    externalAppRegistrationLinks(registration, workspaceId) &&
+    scopeAllowed(registration.allowedScopes, requiredScope)
+  );
+}
+
 async function authenticateExternalAppRequest(
   request: Request,
   requiredScope: string
@@ -100,44 +179,11 @@ async function authenticateExternalAppRequest(
   }
 
   const appId = claims.target_app;
-  const names = [
-    externalAppField(appId, 'allowedScopes'),
-    externalAppField(appId, 'allowedWorkspaceIds'),
-    externalAppField(appId, 'enabled'),
-  ];
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: registrationRows, error: registrationError } = await sbAdmin
-    .from('workspace_secrets')
-    .select('name, value')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .in('name', names);
-
-  if (registrationError) {
-    throw new AiStudioError(
-      'The external-app registration could not be verified.',
-      {
-        code: 'server_error',
-        status: 500,
-        type: 'server_error',
-      }
-    );
-  }
-
-  const fields = new Map(
-    (registrationRows ?? []).map((row) => [row.name, row.value])
-  );
-  const enabled = fields.get(externalAppField(appId, 'enabled')) === 'true';
-  const allowedScopes = parseStringArray(
-    fields.get(externalAppField(appId, 'allowedScopes'))
-  );
-  const allowedWorkspaceIds = parseStringArray(
-    fields.get(externalAppField(appId, 'allowedWorkspaceIds'))
-  ).map((value) => value.trim().toLowerCase());
+  const registration = await loadExternalAppRegistration(sbAdmin, appId);
 
   if (
-    !enabled ||
-    !scopeAllowed(allowedScopes, requiredScope) ||
-    !allowedWorkspaceIds.includes(workspaceId)
+    !externalAppRegistrationAllows(registration, workspaceId, requiredScope)
   ) {
     throw invalidExternalCredential(
       'The external app is not enabled or linked for this AI request.'
@@ -182,8 +228,32 @@ export async function authenticatePublicAiRequest(
     return authenticateExternalAppRequest(request, requiredScope);
   }
 
-  return {
+  const credential = {
     ...(await authenticateAiStudioRequest(request)),
-    kind: 'api-key',
+    kind: 'api-key' as const,
   };
+
+  // A bound key spends on the app's unmetered allocation, so it has to satisfy
+  // the same registration the app's session tokens do. Checking only at issuance
+  // would let a key keep working after the app was disabled, unlinked from the
+  // workspace, or had the scope for this operation withdrawn — and speech in
+  // particular is gated on `tts:use` rather than the default `ai:use`.
+  const boundAppId = credential.apiKey.external_app_id?.trim();
+  if (boundAppId) {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const registration = await loadExternalAppRegistration(sbAdmin, boundAppId);
+    if (
+      !externalAppRegistrationAllows(
+        registration,
+        credential.workspaceId,
+        requiredScope
+      )
+    ) {
+      throw invalidExternalCredential(
+        'The external app this key is bound to is not enabled, linked to this workspace, or authorized for this operation.'
+      );
+    }
+  }
+
+  return credential;
 }

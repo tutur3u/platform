@@ -8,7 +8,13 @@ export function aggregateUsageRows(
 ) {
   const values = new Map<
     string,
-    { cost: number; credits: number; requests: number; units: number }
+    {
+      cost: number;
+      credits: number;
+      requests: number;
+      unmetered: number;
+      units: number;
+    }
   >();
   for (const row of rows) {
     const key = label(row);
@@ -16,11 +22,13 @@ export function aggregateUsageRows(
       cost: 0,
       credits: 0,
       requests: 0,
+      unmetered: 0,
       units: 0,
     };
     current.cost += row.providerCostUsd;
     current.credits += row.billedCredits;
     current.requests += row.requestCount;
+    current.unmetered += row.unmeteredCredits;
     current.units +=
       row.inputTokens +
       row.outputTokens +
@@ -32,7 +40,12 @@ export function aggregateUsageRows(
   }
   return [...values.entries()]
     .map(([entryLabel, value]) => ({ label: entryLabel, ...value }))
-    .sort((a, b) => b.credits - a.credits || b.cost - a.cost);
+    .sort(
+      (a, b) =>
+        // Unmetered rows bill zero credits, so ordering on credits alone would
+        // sink an external app to the bottom no matter how much it consumed.
+        b.credits + b.unmetered - (a.credits + a.unmetered) || b.cost - a.cost
+    );
 }
 
 /**

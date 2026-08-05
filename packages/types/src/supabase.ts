@@ -994,6 +994,7 @@ export type Database = {
           credits_used: number;
           environment: string;
           expires_at: string | null;
+          external_app_id: string | null;
           id: string;
           last_used_at: string | null;
           last_used_ip_hash: string | null;
@@ -1015,6 +1016,7 @@ export type Database = {
           credits_used?: number;
           environment?: string;
           expires_at?: string | null;
+          external_app_id?: string | null;
           id?: string;
           last_used_at?: string | null;
           last_used_ip_hash?: string | null;
@@ -1036,6 +1038,7 @@ export type Database = {
           credits_used?: number;
           environment?: string;
           expires_at?: string | null;
+          external_app_id?: string | null;
           id?: string;
           last_used_at?: string | null;
           last_used_ip_hash?: string | null;
@@ -1672,6 +1675,7 @@ export type Database = {
           reserved_credits: number;
           started_at: string | null;
           status: string;
+          unmetered_credits: number;
           ws_id: string;
         };
         Insert: {
@@ -1702,6 +1706,7 @@ export type Database = {
           reserved_credits?: number;
           started_at?: string | null;
           status?: string;
+          unmetered_credits?: number;
           ws_id: string;
         };
         Update: {
@@ -1732,6 +1737,7 @@ export type Database = {
           reserved_credits?: number;
           started_at?: string | null;
           status?: string;
+          unmetered_credits?: number;
           ws_id?: string;
         };
         Relationships: [
@@ -15446,6 +15452,7 @@ export type Database = {
       };
       begin_external_ai_studio_run: {
         Args: {
+          p_api_key_id?: string;
           p_external_app_id: string;
           p_feature: string;
           p_idempotency_key?: string;
@@ -15952,6 +15959,7 @@ export type Database = {
           embedding_units: number;
           error_class: string;
           event_id: string;
+          execution_mode: string;
           feature: string;
           first_token_latency_ms: number;
           image_units: number;
@@ -15966,6 +15974,7 @@ export type Database = {
           source_id: string;
           source_type: string;
           status: string;
+          unmetered_credits: number;
         }[];
       };
       complete_devbox_run: {
@@ -16475,6 +16484,7 @@ export type Database = {
           billed_credits: number;
           bucket_date: string;
           embedding_units: number;
+          execution_mode: string;
           failed_count: number;
           feature: string;
           image_units: number;
@@ -16489,6 +16499,7 @@ export type Database = {
           source_id: string;
           source_type: string;
           succeeded_count: number;
+          unmetered_credits: number;
         }[];
       };
       get_ai_studio_usage_breakdown: {
@@ -17379,6 +17390,8 @@ export type Database = {
         Args: {
           p_cursor_created_at?: string;
           p_cursor_id?: string;
+          p_execution_mode?: string;
+          p_external_app?: string;
           p_feature?: string;
           p_from: string;
           p_limit?: number;
@@ -17395,6 +17408,7 @@ export type Database = {
           embedding_units: number;
           error_class: string;
           event_id: string;
+          execution_mode: string;
           feature: string;
           first_token_latency_ms: number;
           image_units: number;
@@ -17406,8 +17420,10 @@ export type Database = {
           reasoning_tokens: number;
           request_id: string;
           search_units: number;
+          source_id: string;
           source_type: string;
           status: string;
+          unmetered_credits: number;
         }[];
       };
       list_enabled_managed_cron_domains: {
@@ -18023,6 +18039,7 @@ export type Database = {
           p_reasoning_tokens?: number;
           p_run_id: string;
           p_status: string;
+          p_unmetered_credits?: number;
         };
         Returns: {
           error_code: string;

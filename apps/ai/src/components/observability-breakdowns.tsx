@@ -30,6 +30,7 @@ export function ObservabilityBreakdowns({
         return t('source_session');
     }
   };
+  const appRows = rows.filter((row) => row.sourceType === 'external_app');
   const tables = [
     {
       rows: aggregateUsageRows(rows, (row) => row.modelId),
@@ -43,6 +44,24 @@ export function ObservabilityBreakdowns({
       rows: aggregateUsageRows(rows, sourceLabel),
       title: t('by_source'),
     },
+    // Only shown when an app actually ran something: an empty "by app" table on
+    // a workspace with no integrations is noise, not information.
+    ...(appRows.length
+      ? [
+          {
+            rows: aggregateUsageRows(appRows, (row) => row.sourceId),
+            title: t('by_external_app'),
+          },
+          {
+            rows: aggregateUsageRows(appRows, (row) =>
+              row.executionMode === 'background'
+                ? t('execution_background')
+                : t('execution_interactive')
+            ),
+            title: t('by_execution_mode'),
+          },
+        ]
+      : []),
   ];
 
   if (isLoading) {
@@ -85,7 +104,13 @@ function BreakdownTable({
   title: string;
 }) {
   const t = useTranslations('ai-studio.observability');
-  const maxCredits = Math.max(...rows.map((row) => row.credits), 0);
+  // Consumption, not billing: an unmetered app consumes real capacity even
+  // though it is charged nothing, and a bar drawn from billed credits alone
+  // would render it as a flat zero.
+  const maxConsumed = Math.max(
+    ...rows.map((row) => row.credits + row.unmetered),
+    0
+  );
 
   return (
     <SectionCard flush title={title}>
@@ -100,6 +125,9 @@ function BreakdownTable({
                 </th>
                 <th className={tableClasses.headCellNumeric}>
                   {t('billed_credits')}
+                </th>
+                <th className={tableClasses.headCellNumeric}>
+                  {t('unmetered_credits_short')}
                 </th>
                 <th className={tableClasses.headCellNumeric}>
                   {t('provider_cost_short')}
@@ -117,8 +145,8 @@ function BreakdownTable({
                       <div
                         className="h-full rounded-full bg-dynamic-purple/70"
                         style={{
-                          width: maxCredits
-                            ? `${(row.credits / maxCredits) * 100}%`
+                          width: maxConsumed
+                            ? `${((row.credits + row.unmetered) / maxConsumed) * 100}%`
                             : '0%',
                         }}
                       />
@@ -131,6 +159,15 @@ function BreakdownTable({
                     {row.credits.toLocaleString(undefined, {
                       maximumFractionDigits: 4,
                     })}
+                  </td>
+                  <td
+                    className={`${tableClasses.numericCell} text-dynamic-blue text-xs`}
+                  >
+                    {row.unmetered
+                      ? row.unmetered.toLocaleString(undefined, {
+                          maximumFractionDigits: 4,
+                        })
+                      : '—'}
                   </td>
                   <td
                     className={`${tableClasses.numericCell} text-muted-foreground text-xs`}
