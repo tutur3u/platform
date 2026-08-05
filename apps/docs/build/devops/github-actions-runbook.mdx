@@ -511,6 +511,29 @@ file from the merged manifest bump and current `production` changelogs, then the
 normal Release Please action can create the releases. If the script reports
 `skipped`, inspect the pending labels and merged release PR body before retrying.
 
+The same workflow then runs
+`node scripts/ci/release-please-auto-approve.js --target-branch production`,
+which approves the generated release PR while it is still nothing but generated
+output. The `Protected branches` ruleset requires an approving review, so an
+untouched release PR otherwise sits at `REVIEW_REQUIRED` indefinitely. Every one
+of these must hold or the script skips and leaves the PR for a human: the head
+branch is a `release-please--branches--` branch against the target branch, the
+PR was opened by a release automation identity, every commit is a
+`chore(release): release ...` commit by that same account, and every changed
+file is one release-please itself rewrites. That last allowlist is **derived
+from `release-please-config.json`** — each package's changelog, its version file
+for its release type, and its `extra-files` — so adding a package or changing
+its release type cannot silently widen what auto-approval accepts.
+
+Nothing needs to un-approve: the ruleset sets `dismiss_stale_reviews_on_push`,
+so any later push to the release branch drops the approval, including one this
+workflow never observes. The step deliberately uses `github.token` rather than
+`RELEASE_PLEASE_TOKEN`, because GitHub refuses a review from the account that
+opened the pull request — release-please and the approval have to be different
+identities. While `RELEASE_PLEASE_TOKEN` is unset both are `github-actions[bot]`,
+and the script reports `blocked` and leaves the run green rather than failing.
+Use `--dry-run` to see the decision without posting a review.
+
 `release-please-auto-merge.yaml` closes the loop on the generated release PR. It
 runs every third day at 06:00 UTC (`cron: "0 6 */3 * *"`) and on manual dispatch,
 and it does not reimplement the merge in YAML: it runs `bun git-release-please`
@@ -534,9 +557,28 @@ Day-of-month cron stepping restarts each month, so the 31st and the 1st can land
 a day apart. That is harmless here precisely because an empty run does nothing.
 
 The job checks out `main` with `fetch-depth: 0` and
-`secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The token must be
-able to push to `main` and `production`; with only the default token the push
-fails against branch protection. Top-level `permissions` is `{}` and
+`secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The fallback
+cannot complete a release: the `Protected branches` ruleset covers `main` and
+`production` and its only bypass actor is `OrganizationAdmin`, so a run on
+`github.token` merges cleanly and then dies on
+`GH013: Changes must be made through a pull request`. `RELEASE_PLEASE_TOKEN`
+must therefore hold a personal access token (`repo` + `workflow` scopes) owned
+by an organization admin. Granting the Actions app a ruleset bypass is **not**
+an alternative: pushes made with `GITHUB_TOKEN` do not trigger `push`
+workflows, so the `production` push would silently skip
+`Vercel Production Deployment Planner` and the next `Release Please` run and
+stall the release chain. A run that would need to push checks for the secret up
+front and fails with an actionable error, rather than discovering it after
+`bun check`.
+
+The job also installs Flutter (`3.44.x`, the same pin as `mobile.yaml`) and runs
+`flutter pub get` in `apps/mobile` before the merge. Release Please bumps
+`apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` in
+`scripts/git-release-please.js` is always true and `bun check` is always
+followed by `bun check:mobile`; without a toolchain `dart-format`,
+`flutter-analyze` and `flutter-test` all exit `127`.
+
+Top-level `permissions` is `{}` and
 `contents: write` is granted on the job alone, and `concurrency` is grouped with
 `cancel-in-progress: false` because cancelling a half-finished release merge
 would leave `main` and `production` split. Use the `dry_run` dispatch input to

@@ -15,6 +15,11 @@
       "targetOwner": "rust-backend",
       "note": "Binding-authenticated external chat ingest remains on the live Next.js backend while its private RPC and secret-verification contract are prepared for Rust parity."
     },
+    "api:/api/v1/integrations/external-chat/events/batch:apps/web/src/app/api/v1/integrations/external-chat/events/batch/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-authenticated bounded historical ingest remains on the live Next.js backend pending Rust parity."
+    },
     "api:/api/v1/integrations/external-chat/pairing/verify:apps/web/src/app/api/v1/integrations/external-chat/pairing/verify/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -35,6 +40,11 @@
       "targetOwner": "rust-backend",
       "note": "Binding-scoped secret rotation and masked credential state remain on the live Next.js backend pending Rust parity."
     },
+    "api:/api/v1/workspaces/:wsId/external-chat/sync:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/sync/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Binding-scoped parity audit and reconciliation controls remain on the live Next.js backend pending Rust parity."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -53,6 +63,11 @@
           "note": "Conversation creation remains on the live Next.js backend pending Rust parity."
         }
       }
+    },
+    "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/external-context:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/external-context/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Masked external visitor context remains on the live Next.js backend pending Rust parity."
     },
     "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts": {
       "methods": {

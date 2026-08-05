@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/storefront-v0.20.0...storefront-v0.21.0) (2026-08-04)
+
+
+### Features
+
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/storefront-v0.19.0...storefront-v0.20.0) (2026-07-28)
 
 

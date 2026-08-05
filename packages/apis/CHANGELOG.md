@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/apis-v0.10.0...apis-v0.11.0) (2026-08-04)
+
+
+### Features
+
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/apis-v0.9.2...apis-v0.10.0) (2026-07-25)
 
 

@@ -1,5 +1,91 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/inventory-v0.23.0...inventory-v0.24.0) (2026-08-04)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **infrastructure:** manage internal accounts ([02fd9f3](https://github.com/tutur3u/platform/commit/02fd9f3d1b4edb23c881e2dbb04bf244b36e6ed0))
+* **inventory:** add analytics and storefront setup ([82503f2](https://github.com/tutur3u/platform/commit/82503f2b8c01a14ed6b2cd492987d5fdd0c6575e))
+* **inventory:** add bulk sales period controls ([8140a46](https://github.com/tutur3u/platform/commit/8140a4615dfc4f57908086b8cf6ab70ca3a44805))
+* **inventory:** add guarded bulk stock management ([3516913](https://github.com/tutur3u/platform/commit/3516913093066c01b2b601d558310a63e398378f))
+* **inventory:** add POS device management ([822a171](https://github.com/tutur3u/platform/commit/822a171ae280511d6453fd5547f584f9c796d077))
+* **inventory:** add responsive catalog workflows ([f81815f](https://github.com/tutur3u/platform/commit/f81815feff041a5ef47318db8cbefc668592c531))
+* **inventory:** add sales periods and mobile commerce ([fa442c9](https://github.com/tutur3u/platform/commit/fa442c9eb06321d91f76b33ee111907d10c85eb7))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** export sales periods ([00e6a04](https://github.com/tutur3u/platform/commit/00e6a0482ad78a73687e3decedb12114df2e0b0c))
+* **inventory:** guide Square POS launch ([74e0a3a](https://github.com/tutur3u/platform/commit/74e0a3ab77356ceb4d576455cff4ac9c53730091))
+* **inventory:** improve sales discovery and cart ([cced561](https://github.com/tutur3u/platform/commit/cced5611796e3a0760b65987fbe50afb0876d055))
+* **inventory:** improve sales exports ([1c27668](https://github.com/tutur3u/platform/commit/1c27668770b09803e29c668556bfbdc13fecb464))
+* **inventory:** improve search sales and analytics ([9af9256](https://github.com/tutur3u/platform/commit/9af92569336948cb03ee9f6a1520f8026dfb00d6))
+* **inventory:** keep sale entry open ([cba815d](https://github.com/tutur3u/platform/commit/cba815da970bb2a08ea624a8a6e8bf722e248d0c))
+* **inventory:** optimize mobile sales workflow ([1ee5f6b](https://github.com/tutur3u/platform/commit/1ee5f6b533c25440302057e35149370faa0e470b))
+* **inventory:** revamp payments control center ([0f3d220](https://github.com/tutur3u/platform/commit/0f3d2201ca071315b1a93657d3dda322de773167))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **inventory:** streamline sales entry ([ae22db5](https://github.com/tutur3u/platform/commit/ae22db56b982756fe6f76cdb65cfbac913dda807))
+* **inventory:** support cent-level Square prices ([146f90f](https://github.com/tutur3u/platform/commit/146f90fa513bbb5d6e75082fcd7ec9460125d935))
+* **inventory:** support Square POS app payments ([2cd087e](https://github.com/tutur3u/platform/commit/2cd087e15abe2a43da3c21333fe8d9494564fe37))
+* **inventory:** unify commerce currency and sales periods ([2042bc5](https://github.com/tutur3u/platform/commit/2042bc5a7d4f347d1f610432f379da42f3aa2b8b))
+* **inventory:** unify promotions and referrals ([ea9b3be](https://github.com/tutur3u/platform/commit/ea9b3be2ea762b216522da4b5d6c1b8242b4c3b7))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **satellite:** add workspace management to app settings ([68df8c3](https://github.com/tutur3u/platform/commit/68df8c337c36d70b5b5770fc8ad43ce9e450add8))
+* **satellite:** clarify app picker ([6549e6b](https://github.com/tutur3u/platform/commit/6549e6bde4da9e1c44f88a7c1782dbd8778c54d7))
+* **satellite:** refine app picker header controls ([89b860d](https://github.com/tutur3u/platform/commit/89b860d7e93e4edda463a805b6e5726741c70785))
+* **satellite:** unify app switcher headers ([411a00c](https://github.com/tutur3u/platform/commit/411a00c9cbb584579e0d8f8e7fa4c2721c414ba3))
+* **seo:** standardize app metadata ([6523d91](https://github.com/tutur3u/platform/commit/6523d91fedf38e19804d10ea3b82890db180bc6f))
+
+
+### Bug Fixes
+
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **e2e:** align workspace fixtures with creator membership ([cfb13b6](https://github.com/tutur3u/platform/commit/cfb13b66c6b4d3c9a609c2118d51a314c015346b))
+* **inventory:** authorize admin POS fallback ([9ba0fbc](https://github.com/tutur3u/platform/commit/9ba0fbc6765913a83b5ba1a5b1709a608eb7f46c))
+* **inventory:** clarify unconfigured Square readiness ([c56d583](https://github.com/tutur3u/platform/commit/c56d58337dcbe573d1b90748540f8dcfd846c1d1))
+* **inventory:** compact mobile sale workflow ([779712c](https://github.com/tutur3u/platform/commit/779712c9c7e950afcea291d9851a0b1a7e69d947))
+* **inventory:** condense mobile sale catalog ([fdea63b](https://github.com/tutur3u/platform/commit/fdea63b4716dd856fa63e45b2de835850076436e))
+* **inventory:** distinguish Square POS device paths ([4654605](https://github.com/tutur3u/platform/commit/4654605a366a00134b0a9a27a1dd2124f579c35c))
+* **inventory:** harden sales analytics and access ([53968d3](https://github.com/tutur3u/platform/commit/53968d38a0c5425a3c1065ab2f645e30a0145c8f))
+* **inventory:** harden Square production handoff ([8ef0395](https://github.com/tutur3u/platform/commit/8ef0395187c1f7b74dc21753a417802d9a7bc99f))
+* **inventory:** honor adjusted sale prices ([1393ac9](https://github.com/tutur3u/platform/commit/1393ac9e44390a54b856ced49fa82229230e2aa8))
+* **inventory:** improve sales period workflows ([2a7cad5](https://github.com/tutur3u/platform/commit/2a7cad54b5af7bdcdcaf4233508eed91d5cd6832))
+* **inventory:** localize Square POS checkout ([a74a2be](https://github.com/tutur3u/platform/commit/a74a2be7a81c0cd0bafb02e313b362aa0bcf547f))
+* **inventory:** make storefront removal safe ([9dd4dc6](https://github.com/tutur3u/platform/commit/9dd4dc67ff264860e8b83785db2e2e87ec91959d))
+* **inventory:** normalize sales revenue units ([99fa671](https://github.com/tutur3u/platform/commit/99fa67173b738f4dc7dc83c7ef4639524a3dc449))
+* **inventory:** polish mobile sales and settings ([59ef49c](https://github.com/tutur3u/platform/commit/59ef49cde2095361e2b13ce36848e1e39f772c18))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* **inventory:** reconcile provider checkout stock ([2160487](https://github.com/tutur3u/platform/commit/2160487a4cdd45acb31e44e71519ee25a1b684d0))
+* **inventory:** recover Square exact-price imports ([a377ed8](https://github.com/tutur3u/platform/commit/a377ed89626ae7b77346a984e4e8f7cf3926d4f5))
+* **inventory:** require Drive image uploads ([943a39d](https://github.com/tutur3u/platform/commit/943a39d19b7afa9ddc58bfbfd3eaf575b9edaf8b))
+* **inventory:** reset bulk edit controls ([bffc4b9](https://github.com/tutur3u/platform/commit/bffc4b9d316865e99014da1b3e1040fd1e7d987a))
+* **inventory:** restore product and sales CRUD ([c691e74](https://github.com/tutur3u/platform/commit/c691e74c1e67c0523d55a1449647c30873582143))
+* **inventory:** restore referral settings and currency ([6676838](https://github.com/tutur3u/platform/commit/667683841b9823159ae84cf999034c1c364dac4e))
+* **inventory:** streamline mobile sales and shared settings ([72b7724](https://github.com/tutur3u/platform/commit/72b7724f9ca70048f5cb37db9f6a9809cf028f26))
+* **mobile:** preserve bearer auth across satellites ([f890170](https://github.com/tutur3u/platform/commit/f89017044cf3aaaa6a1b15c31c64a81d75cfdab2))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **satellite:** harden workspace settings translations ([7315a2d](https://github.com/tutur3u/platform/commit/7315a2da7b75fd1d66c1c89885aaebc857a44a19))
+* **satellite:** restore mobile workspace settings ([e276f40](https://github.com/tutur3u/platform/commit/e276f4006175cfb501410b3875e661d3975c27f2))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **settings:** restore satellite workspace management ([be1fb5a](https://github.com/tutur3u/platform/commit/be1fb5aade1955ce0a73be29a090a3d7488aa8a6))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/inventory-v0.22.0...inventory-v0.23.0) (2026-07-29)
 
 

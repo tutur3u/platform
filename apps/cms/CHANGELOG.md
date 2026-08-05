@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/cms-v0.25.0...cms-v0.26.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add first bridge pairing flow ([78d0ccf](https://github.com/tutur3u/platform/commit/78d0ccffd2ed139b3fa034477808486058b2c570))
+* **chat:** add single-use bridge pairing tickets ([0496bb6](https://github.com/tutur3u/platform/commit/0496bb65530aff7b829c4be2c0df0722bd9cc172))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
+
+### Bug Fixes
+
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** harden bridge recovery paths ([9dc22a7](https://github.com/tutur3u/platform/commit/9dc22a758a4b8e1543ba65d53395048b2a206ff6))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** preserve native message behavior ([fc09530](https://github.com/tutur3u/platform/commit/fc095301f2d26ca2bc39de02ce17b1f341327de9))
+* **cms:** enable chat for custom templates ([3f4cea1](https://github.com/tutur3u/platform/commit/3f4cea1722bd32e1f58d44a569e83d0f4e28b0d8))
+* **external-chat:** complete connected-site setup ([#5081](https://github.com/tutur3u/platform/issues/5081)) ([17a2b16](https://github.com/tutur3u/platform/commit/17a2b1689d547dc37339a922c90f22b976e97e6e))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/cms-v0.24.0...cms-v0.25.0) (2026-07-28)
 
 

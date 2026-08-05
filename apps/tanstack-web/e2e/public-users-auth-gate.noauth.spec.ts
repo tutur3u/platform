@@ -17,7 +17,9 @@ test.describe('Public user profile auth gate (unauthenticated)', () => {
 
     const url = new URL(page.url());
 
-    expect(url.pathname).toBe(`/${DEFAULT_LOCALE}/login`);
+    // English uses the platform's canonical as-needed locale policy, so the
+    // final browser URL omits the default-locale prefix after the auth gate.
+    expect(url.pathname).toBe('/login');
     expect(url.searchParams.get('nextUrl')).toBe(
       '/users/__e2e_missing_handle__'
     );

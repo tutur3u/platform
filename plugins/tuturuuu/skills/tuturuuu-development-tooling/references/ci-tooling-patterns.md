@@ -143,6 +143,22 @@ formatting behavior, or repo-wide verification.
 - Keep the Release Please token fallback ordered as
   `secrets.RELEASE_PLEASE_TOKEN || github.token`; the bot token is still needed
   for generated PRs and releases to trigger downstream workflows.
+- `RELEASE_PLEASE_TOKEN` must be a PAT (`repo` + `workflow`) owned by an
+  organization admin. Ruleset `Protected branches` covers `main` and
+  `production` with only `OrganizationAdmin` as a bypass actor, so a run that
+  falls back to `github.token` merges fine and then dies on
+  `GH013: Changes must be made through a pull request`. Do not "fix" this by
+  giving the Actions app a ruleset bypass: `GITHUB_TOKEN` pushes do not trigger
+  `push` workflows, so the `production` push would skip the Vercel production
+  planner and the next Release Please run. Gate any workflow that will push
+  protected branches on the secret being present, before the expensive steps —
+  discovering it after `bun check` wastes ~40 minutes per run.
+- Any CI job that runs `bun git-release-please` needs a Flutter toolchain
+  (`subosito/flutter-action@v2`, pinned to the same version as `mobile.yaml`,
+  plus `flutter pub get` in `apps/mobile`). Release Please bumps
+  `apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` is always
+  true and `bun check:mobile` always runs; `flutter pub get` also covers the
+  `generate: true` gen-l10n step that `flutter-analyze` needs.
 - Keep the Release Please overflow recovery step before
   `googleapis/release-please-action@v5`. It runs
   `node scripts/ci/release-please-overflow-recovery.js --target-branch production`

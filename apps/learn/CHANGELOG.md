@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/learn-v0.15.0...learn-v0.16.0) (2026-08-04)
+
+
+### Features
+
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/learn-v0.14.0...learn-v0.15.0) (2026-07-28)
 
 

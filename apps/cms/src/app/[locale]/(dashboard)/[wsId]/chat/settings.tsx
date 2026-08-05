@@ -23,6 +23,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { TTR_URL } from '@/constants/common';
+import { ConnectedChatSyncControls } from './sync-controls';
 
 export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const t = useTranslations('connected-chat');
@@ -158,6 +159,11 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
           </AlertDescription>
         </Alert>
       )}
+
+      <ConnectedChatSyncControls
+        enabled={Boolean(query.data?.readiness.ready)}
+        wsId={wsId}
+      />
 
       <section className="grid gap-5 border-b pb-6 md:grid-cols-2">
         <div className="space-y-4">

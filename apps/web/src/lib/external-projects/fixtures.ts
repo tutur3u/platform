@@ -3,6 +3,7 @@ import {
   type ExternalProjectAdapterKind,
   type ExternalProjectSyncSchema,
 } from '@tuturuuu/types';
+import { cybershield35ExternalProjectFixture } from './fixtures-cybershield35';
 
 type FixtureAsset = {
   altText?: string;
@@ -677,6 +678,7 @@ export const externalProjectAdapterFixtures: Record<
     profileData: {},
     sourceReference: 'CMS site contract v1',
   },
+  cybershield35: cybershield35ExternalProjectFixture,
   junly: {
     adapter: 'junly',
     sourceReference: '../junly/components/launcher/content-data.ts',

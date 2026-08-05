@@ -8,7 +8,7 @@ type RouterLike = {
   replace: (href: string, options?: { scroll?: boolean }) => void;
 };
 
-export type ChatDetailsTarget = 'agent' | null;
+export type ChatDetailsTarget = 'agent' | 'external' | null;
 
 export function buildChatSelectionHref({
   conversationId,

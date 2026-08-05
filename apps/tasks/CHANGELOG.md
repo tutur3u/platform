@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/tasks-v0.21.0...tasks-v0.22.0) (2026-08-04)
+
+
+### Features
+
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **tasks:** improve board settings controls ([acc14d5](https://github.com/tutur3u/platform/commit/acc14d56c55ad463ff35e226a2bd3ee9d8fba386))
+
+
+### Bug Fixes
+
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **tasks:** keep board settings tabs in context ([b26c6c3](https://github.com/tutur3u/platform/commit/b26c6c35f9ddb1a383bdbdd47424d6b6db942655))
+* **tasks:** redirect roots to canonical boards ([bfc7cf2](https://github.com/tutur3u/platform/commit/bfc7cf219dc632d24158a8353fdd54b3eb6b66f9))
+* **tasks:** stabilize settings and list ordering ([6dc9f2e](https://github.com/tutur3u/platform/commit/6dc9f2e8fdbe3185508fe6b14fa149e69cb040ed))
+* **tasks:** translate board reorder feedback ([4d355d1](https://github.com/tutur3u/platform/commit/4d355d11d9084007e2ab63fbc8f9ed8adbb30ded))
+* **tasks:** unify settings navigation ([2f305e0](https://github.com/tutur3u/platform/commit/2f305e02e3936b69cca94b55e1d6ef1aa858b47e))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/tasks-v0.20.0...tasks-v0.21.0) (2026-07-28)
 
 

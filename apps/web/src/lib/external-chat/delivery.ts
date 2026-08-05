@@ -102,11 +102,13 @@ async function postSignedControlRequest({
   bridgeBaseUrl,
   path,
   secret,
+  timeoutMs = 10_000,
 }: {
   body: string;
   bridgeBaseUrl: string;
   path: string;
   secret: string;
+  timeoutMs?: number;
 }) {
   const timestamp = new Date().toISOString();
   return safeExternalChatFetch(`${bridgeBaseUrl}${path}`, {
@@ -117,8 +119,54 @@ async function postSignedControlRequest({
       'x-control-timestamp': timestamp,
     },
     method: 'POST',
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
+}
+
+export async function requestExternalChatControl(
+  wsId: string,
+  path: string,
+  payload: Record<string, unknown>,
+  options?: { timeoutMs?: number }
+) {
+  const client = await createExternalChatControlClient(wsId);
+  return client(path, payload, options);
+}
+
+export async function createExternalChatControlClient(wsId: string) {
+  const state = await readExternalChatBinding(wsId);
+  const ciphertext = state?.credentials?.control_secret_encrypted;
+  const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
+  if (
+    !state?.binding.is_enabled ||
+    !isExternalChatEnabled(state.binding.settings) ||
+    !state.credentials?.verified_at ||
+    state.credentials.verified_revision !==
+      state.credentials.configuration_revision ||
+    state.credentials.pending_action ||
+    !ciphertext ||
+    !bridgeBaseUrl
+  )
+    throw new Error('external_chat_control_unavailable');
+
+  const secret = await decryptControlSecret(wsId, ciphertext);
+  return async (
+    path: string,
+    payload: Record<string, unknown>,
+    options?: { timeoutMs?: number }
+  ) => {
+    const body = JSON.stringify(payload);
+    const response = await postSignedControlRequest({
+      body,
+      bridgeBaseUrl,
+      path,
+      secret,
+      timeoutMs: options?.timeoutMs,
+    });
+    if (!response.ok)
+      throw new Error(`external_chat_control_failed:${response.status}`);
+    return (await response.json()) as Record<string, unknown>;
+  };
 }
 
 export async function verifyExternalChatControl(wsId: string) {
@@ -304,6 +352,7 @@ export async function deliverExternalChatReplyIfBound({
     agentId: (thread as ExternalThreadRow).remote_agent_id,
     content,
     idempotencyKey,
+    mirrorToPlatform: false,
     senderId,
     visitorId: (thread as ExternalThreadRow).remote_visitor_id,
   });

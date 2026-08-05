@@ -343,6 +343,7 @@ export type {
   ChatUserProfile,
   CreateChatConversationPayload,
   DeleteChatConversationResult,
+  ExternalChatConversationContext,
   GenerateChatConversationTitleResult,
   SendChatMessagePayload,
   SendChatMessageResult,
@@ -363,6 +364,7 @@ export {
   deleteWorkspaceChatTyping,
   editWorkspaceChatMessage,
   generateWorkspaceChatConversationTitle,
+  getExternalChatConversationContext,
   getWorkspaceChatAiObservability,
   getWorkspaceChatAiSettings,
   getWorkspaceChatAttachmentSignedUrl,
@@ -530,8 +532,12 @@ export {
   type ExternalChatBindingState,
   type ExternalChatCredentialAction,
   type ExternalChatSettings,
+  type ExternalChatSyncAction,
+  type ExternalChatSyncStatus,
   getExternalChatBindingState,
+  getExternalChatSyncStatus,
   mutateExternalChatCredential,
+  mutateExternalChatSync,
   updateExternalChatSettings,
 } from './external-chat';
 export {

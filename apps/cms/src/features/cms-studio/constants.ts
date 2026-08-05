@@ -8,6 +8,7 @@ export const EXTERNAL_PROJECT_PREVIEW_QUERY_PARAM = 'preview';
 
 export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
   'custom',
+  'cybershield35',
   'junly',
   'yoola',
   'theguyser',
@@ -74,6 +75,7 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'redirects',
     'media-assets',
   ],
+  cybershield35: ['article-media'],
   exocorpse: [...EXOCORPSE_EXTERNAL_PROJECT_COLLECTIONS],
   kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
   richfield: [
@@ -134,6 +136,7 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
 
 export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
   custom: 'Connected site',
+  cybershield35: 'CyberShield35',
   exocorpse: 'Exocorpse',
   junly: 'Junly',
   kendra: 'Kendra',

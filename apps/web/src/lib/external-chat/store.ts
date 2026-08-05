@@ -2,8 +2,9 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import type { ChatConversation, ChatMessage } from '@/lib/chat/private-rpc';
+import { sanitizeExternalChatRecord } from './sanitize';
 import {
-  type ExternalChatEvent,
+  type ExternalChatEventEnvelope,
   type ExternalChatSettings,
   externalChatSettingsSchema,
   isExternalChatLiveAuthority,
@@ -199,7 +200,7 @@ export async function importExternalChatEvent({
 }: {
   configurationRevision: number;
   connectorKey: string;
-  event: ExternalChatEvent;
+  event: Extract<ExternalChatEventEnvelope, { kind: 'message' }>;
   mappedUserId: string | null;
   wsId: string;
 }) {
@@ -212,6 +213,7 @@ export async function importExternalChatEvent({
     contentType: event.contentType,
     context: event.context,
     externalChat: true,
+    externalDeliveryMode: event.deliveryMode,
     externalSender: {
       direction: event.direction,
       ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
@@ -221,6 +223,7 @@ export async function importExternalChatEvent({
   const threadMetadata = {
     ...event.visitorProfile,
     ...(profileDisplayName ? { displayName: profileDisplayName } : {}),
+    lastExternalDeliveryMode: event.deliveryMode,
   };
   const { data, error } = await externalChatPrivateDb(admin).rpc(
     'external_chat_import_event',
@@ -247,6 +250,71 @@ export async function importExternalChatEvent({
     duplicate: boolean;
     message?: ChatMessage;
     messageId: string;
+    threadId?: string;
+  };
+}
+
+export async function applyExternalChatMessageState({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: Extract<
+    ExternalChatEventEnvelope,
+    { kind: 'message_deleted' | 'message_state' }
+  >;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_apply_message_state' as never,
+    {
+      p_connector_key: connectorKey,
+      p_deleted: event.kind === 'message_deleted',
+      p_metadata: sanitizeExternalChatRecord(event.metadata) as Json,
+      p_occurred_at: event.timestamp,
+      p_remote_message_id: event.messageId,
+      p_status: event.status,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw new Error(error.message);
+  return data as unknown as {
+    found: boolean;
+    message?: ChatMessage;
+    messageId?: string;
+    threadId?: string;
+  };
+}
+
+export async function upsertExternalChatObservation({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: Extract<ExternalChatEventEnvelope, { kind: 'observation' }>;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin).rpc(
+    'external_chat_upsert_observation' as never,
+    {
+      p_category: event.category,
+      p_connector_key: connectorKey,
+      p_occurred_at: event.timestamp,
+      p_payload: sanitizeExternalChatRecord(event.payload) as Json,
+      p_remote_agent_id: event.agentId,
+      p_remote_observation_id: event.observationId,
+      p_remote_visitor_id: event.visitorId,
+      p_ws_id: wsId,
+    } as never
+  );
+  if (error) throw new Error(error.message);
+  return data as unknown as {
+    found: boolean;
+    observationId?: string;
     threadId?: string;
   };
 }
