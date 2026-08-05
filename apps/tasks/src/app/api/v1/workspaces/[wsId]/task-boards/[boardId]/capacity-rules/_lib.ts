@@ -1,3 +1,4 @@
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -14,6 +15,10 @@ export const capacityParamsSchema = z.object({
   wsId: z.string().min(1),
   boardId: z.guid(),
 });
+
+export const TASK_CAPACITY_RULE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 export const capacityRuleSchema = z.object({
   name: z.string().trim().min(1).max(120),
