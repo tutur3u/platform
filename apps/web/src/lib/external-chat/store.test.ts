@@ -1,5 +1,31 @@
 import { describe, expect, it } from 'vitest';
+import { digestExternalChatEnvelope } from './source-events';
 import { serializeExternalChatBinding } from './store';
+
+describe('external chat source identity', () => {
+  it('treats delivery mode as transport metadata during replay', () => {
+    const event = {
+      agentId: 'agent-1',
+      content: 'Same canonical message',
+      contentType: 1 as const,
+      context: {},
+      deliveryMode: 'live' as const,
+      direction: 'visitor' as const,
+      eventId: 'message:1',
+      kind: 'message' as const,
+      messageId: '1',
+      status: 'sent',
+      timestamp: '2026-08-04T00:00:00.000Z',
+      version: 2 as const,
+      visitorId: 'visitor-1',
+      visitorProfile: {},
+    };
+
+    expect(digestExternalChatEnvelope(event)).toBe(
+      digestExternalChatEnvelope({ ...event, deliveryMode: 'historical' })
+    );
+  });
+});
 
 describe('external chat binding serialization', () => {
   it('never exposes hashes or encrypted control credentials', () => {

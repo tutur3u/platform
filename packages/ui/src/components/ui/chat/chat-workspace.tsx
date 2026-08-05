@@ -16,6 +16,7 @@ import { Button } from '../button';
 import { toast } from '../sonner';
 import { ChatAgentDetailsSidebar } from './chat-agent-details-sidebar';
 import { ChatAiDetailsSidebar } from './chat-ai-details-sidebar';
+import { ChatExternalContextSidebar } from './chat-external-context-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
 import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
@@ -247,8 +248,12 @@ export function ChatWorkspace({
   const requestedDetails = searchParams.get('details');
   const agentDetailsOpen =
     requestedDetails === 'agent' && selectedAgentReadOnly;
+  const externalDetailsOpen =
+    requestedDetails === 'external' && selectedExternalConversation;
   const detailsOpen = Boolean(
-    (sharedContentOpen || agentDetailsOpen) && activeConversationId
+    (selectedExternalConversation
+      ? externalDetailsOpen
+      : sharedContentOpen || agentDetailsOpen) && activeConversationId
   );
 
   useChatRealtime(wsId);
@@ -544,6 +549,17 @@ export function ChatWorkspace({
           onDeleteConversation={handleDeleteConversation}
           onGenerateConversationTitle={handleGenerateConversationTitle}
           onToggleSharedContent={() => {
+            if (selectedExternalConversation) {
+              replaceChatSelection({
+                conversationId: activeConversationId,
+                details: externalDetailsOpen ? null : 'external',
+                pathname,
+                router,
+                searchParams,
+                storageKey: selectionStorageKey,
+              });
+              return;
+            }
             if (requestedDetails) {
               replaceChatSelection({
                 conversationId: activeConversationId,
@@ -615,7 +631,13 @@ export function ChatWorkspace({
         )}
       </div>
 
-      {selectedAgentReadOnly ? (
+      {selectedExternalConversation ? (
+        <ChatExternalContextSidebar
+          conversationId={activeConversationId}
+          open={detailsOpen}
+          wsId={wsId}
+        />
+      ) : selectedAgentReadOnly ? (
         <ChatAgentDetailsSidebar
           conversation={selectedConversation}
           open={detailsOpen}

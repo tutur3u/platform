@@ -257,6 +257,19 @@
   "calendar-sidebar": {
     "ready": "Sẵn sàng"
   },
+  "chat": {
+    "first_activity": "Hoạt động đầu tiên",
+    "last_activity": "Hoạt động gần nhất",
+    "loading_visitor_context": "Đang tải thông tin khách truy cập...",
+    "network_hint": "Mạng",
+    "no_visited_routes": "Chưa có lịch sử truy cập",
+    "visited_routes": "Trang đã truy cập",
+    "visitor_context": "Thông tin khách truy cập",
+    "visitor_context_unavailable": "Không thể tải thông tin khách truy cập.",
+    "visitor_email": "Email",
+    "visitor_name": "Tên",
+    "visitor_phone": "Số điện thoại"
+  },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",
     "app_categories": {
