@@ -137,6 +137,8 @@ describe('external chat credential verification', () => {
       credentials: {
         configuration_revision: 3,
         control_secret_encrypted: 'encrypted',
+        verified_at: '2026-08-05T00:00:00.000Z',
+        verified_revision: 3,
       },
     });
     mocks.updateExternalChatBridgeCredential.mockRejectedValue(
@@ -159,6 +161,30 @@ describe('external chat credential verification', () => {
     );
     expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(await response.json()).toMatchObject({ secret: 'ecs_test_secret' });
+  });
+
+  it('rotates ingest locally when the binding must be re-paired', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'rotate_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'set_ingest',
+      'encrypted-pending'
+    );
   });
 
   it('replaces an unverified local control credential before re-pairing', async () => {
