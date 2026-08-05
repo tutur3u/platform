@@ -8,6 +8,7 @@ import {
   replaceSelectors,
   requireCapacityAccess,
   rulePayload,
+  TASK_CAPACITY_RULE_APP_SESSION_AUTH,
   validateSelectors,
 } from './_lib';
 
@@ -39,7 +40,8 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: TASK_CAPACITY_RULE_APP_SESSION_AUTH }
 );
 
 export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
@@ -103,5 +105,6 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: TASK_CAPACITY_RULE_APP_SESSION_AUTH }
 );
