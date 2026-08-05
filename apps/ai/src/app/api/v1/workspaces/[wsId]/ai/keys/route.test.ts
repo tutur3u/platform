@@ -27,6 +27,130 @@ import { GET, POST } from './route';
 
 const context = { params: Promise.resolve({ wsId: 'workspace-1' }) };
 
+function adminClientReturning(rows: Array<{ name: string; value: string }>) {
+  return {
+    from: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ data: rows, error: null }),
+      select: vi.fn().mockReturnThis(),
+    }),
+    schema: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi
+              .fn()
+              .mockResolvedValue({ data: { id: 'key-1' }, error: null }),
+          }),
+        }),
+      }),
+    }),
+  };
+}
+
+function issueRequest(body: Record<string, unknown>) {
+  return new Request('https://ai.example/api/keys', {
+    body: JSON.stringify(body),
+    method: 'POST',
+  });
+}
+
+describe('binding a key to an external app', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.approval.mockResolvedValue({ approved: true });
+    mocks.generate.mockResolvedValue({ hash: 'hash', prefix: 'ttr_ai_abc123' });
+  });
+
+  it('refuses a binding to an app that is not linked to this workspace', async () => {
+    // Otherwise anyone able to manage keys could invent an app id and move their
+    // usage onto the unmetered path.
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      permissions: {},
+      sbAdmin: adminClientReturning([
+        { name: 'EXTERNAL_APP_REGISTRY:cybershield35:enabled', value: 'true' },
+        {
+          name: 'EXTERNAL_APP_REGISTRY:cybershield35:allowedWorkspaceIds',
+          value: '["another-workspace"]',
+        },
+      ]),
+      user: { id: 'user-1' },
+      workspace: { id: 'workspace-1' },
+    });
+
+    const response = await POST(
+      issueRequest({ externalAppId: 'cybershield35', name: 'cs35 worker' }),
+      context
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('refuses a binding to a disabled app', async () => {
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      permissions: {},
+      sbAdmin: adminClientReturning([
+        { name: 'EXTERNAL_APP_REGISTRY:cybershield35:enabled', value: 'false' },
+        {
+          name: 'EXTERNAL_APP_REGISTRY:cybershield35:allowedWorkspaceIds',
+          value: '["workspace-1"]',
+        },
+      ]),
+      user: { id: 'user-1' },
+      workspace: { id: 'workspace-1' },
+    });
+
+    const response = await POST(
+      issueRequest({ externalAppId: 'cybershield35', name: 'cs35 worker' }),
+      context
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('issues a bound key when the app is enabled and linked', async () => {
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      permissions: {},
+      sbAdmin: adminClientReturning([
+        { name: 'EXTERNAL_APP_REGISTRY:cybershield35:enabled', value: 'true' },
+        {
+          name: 'EXTERNAL_APP_REGISTRY:cybershield35:allowedWorkspaceIds',
+          value: '["workspace-1"]',
+        },
+      ]),
+      user: { id: 'user-1' },
+      workspace: { id: 'workspace-1' },
+    });
+
+    const response = await POST(
+      issueRequest({ externalAppId: 'cybershield35', name: 'cs35 worker' }),
+      context
+    );
+
+    expect(response.status).toBe(201);
+  });
+
+  it('rejects a malformed app id before touching the registry', async () => {
+    mocks.authorize.mockResolvedValue({
+      ok: true,
+      permissions: {},
+      sbAdmin: adminClientReturning([]),
+      user: { id: 'user-1' },
+      workspace: { id: 'workspace-1' },
+    });
+
+    const response = await POST(
+      issueRequest({ externalAppId: 'Not An App!', name: 'cs35 worker' }),
+      context
+    );
+
+    expect(response.status).toBe(400);
+  });
+});
+
 describe('AI Studio key creation approval', () => {
   beforeEach(() => {
     vi.clearAllMocks();

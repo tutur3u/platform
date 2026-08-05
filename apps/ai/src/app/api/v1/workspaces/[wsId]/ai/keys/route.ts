@@ -1,4 +1,5 @@
 import { generateAiApiKey } from '@tuturuuu/ai/api-key-hash';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { connection } from 'next/server';
 import { z } from 'zod';
 import {
@@ -14,9 +15,71 @@ const createKeySchema = z.object({
     .enum(['development', 'staging', 'production'])
     .default('development'),
   expiresAt: z.string().datetime().optional(),
+  /**
+   * Binds the key to a registered external app so its background workloads are
+   * attributed to that app and settle unmetered, matching the app's interactive
+   * traffic. The binding is verified against the app registry below, because it
+   * changes how the key is billed.
+   */
+  externalAppId: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_-]{1,64}$/u)
+    .optional(),
   name: z.string().trim().min(1).max(120),
   requestsPerMinute: z.number().int().min(1).max(10_000).optional(),
 });
+type AiStudioAdminClient = Awaited<
+  ReturnType<typeof authorizeAiStudioWorkspaceRequest>
+> extends infer Result
+  ? Result extends { ok: true; sbAdmin: infer Client }
+    ? Client
+    : never
+  : never;
+
+/**
+ * A key may only be bound to an app that the platform has enabled and linked to
+ * this workspace. Without this check anyone able to manage keys could invent an
+ * app id and route their usage onto the unmetered path.
+ */
+async function externalAppIsLinkedToWorkspace(
+  sbAdmin: AiStudioAdminClient,
+  appId: string,
+  workspaceId: string
+): Promise<boolean> {
+  const prefix = `EXTERNAL_APP_REGISTRY:${appId}`;
+  const { data, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('name, value')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .in('name', [`${prefix}:enabled`, `${prefix}:allowedWorkspaceIds`]);
+
+  if (error) return false;
+
+  const fields = new Map(
+    ((data ?? []) as Array<{ name: string; value: string | null }>).map(
+      (row) => [row.name, row.value]
+    )
+  );
+  if (fields.get(`${prefix}:enabled`) !== 'true') return false;
+
+  try {
+    const allowed = JSON.parse(
+      fields.get(`${prefix}:allowedWorkspaceIds`) ?? '[]'
+    ) as unknown;
+    return (
+      Array.isArray(allowed) &&
+      allowed.some(
+        (entry) =>
+          typeof entry === 'string' &&
+          entry.trim().toLowerCase() === workspaceId.toLowerCase()
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -44,7 +107,7 @@ export async function GET(
     .schema('private')
     .from('ai_studio_api_keys')
     .select(
-      'id, name, prefix, environment, allowed_models, expires_at, revoked_at, rotated_to, requests_per_minute, credit_budget, credits_used, last_used_at, created_at'
+      'id, name, prefix, environment, allowed_models, expires_at, external_app_id, revoked_at, rotated_to, requests_per_minute, credit_budget, credits_used, last_used_at, created_at'
     )
     .eq('ws_id', auth.workspace.id)
     .order('created_at', { ascending: false })
@@ -102,6 +165,23 @@ export async function POST(
     );
   }
 
+  if (parsed.data.externalAppId) {
+    const linked = await externalAppIsLinkedToWorkspace(
+      auth.sbAdmin,
+      parsed.data.externalAppId,
+      auth.workspace.id
+    );
+    if (!linked) {
+      return Response.json(
+        {
+          error:
+            'That external app is not enabled for this workspace, so a key cannot be bound to it.',
+        },
+        { status: 400 }
+      );
+    }
+  }
+
   const generated = await generateAiApiKey();
   const { data, error } = await auth.sbAdmin
     .schema('private')
@@ -112,6 +192,7 @@ export async function POST(
       credit_budget: parsed.data.creditBudget,
       environment: parsed.data.environment,
       expires_at: parsed.data.expiresAt,
+      external_app_id: parsed.data.externalAppId,
       name: parsed.data.name,
       prefix: generated.prefix,
       requests_per_minute: parsed.data.requestsPerMinute,
@@ -119,7 +200,7 @@ export async function POST(
       ws_id: auth.workspace.id,
     })
     .select(
-      'id, name, prefix, environment, allowed_models, expires_at, requests_per_minute, credit_budget, created_at'
+      'id, name, prefix, environment, allowed_models, expires_at, external_app_id, requests_per_minute, credit_budget, created_at'
     )
     .single();
 
