@@ -304,20 +304,48 @@ describe('external chat sync status', () => {
     );
   });
 
-  it('rejects an invalid agent scope before creating a run', async () => {
+  it.each(['all', '0', '01', '123456789012345678901'])(
+    'rejects invalid agent scope %s before creating a run',
+    async (agentId) => {
+      const { POST } = await import('./route');
+      const response = await POST(
+        new Request('http://localhost/sync', {
+          body: JSON.stringify({ action: 'start', agentId }),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        }) as never,
+        params
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.requestExternalChatControl).not.toHaveBeenCalled();
+      expect(mocks.insertRun).not.toHaveBeenCalled();
+    }
+  );
+
+  it('accepts a 20-digit agent scope', async () => {
+    const agentId = '12345678901234567890';
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      scope: { agentId },
+      state: 'running',
+    });
     const { POST } = await import('./route');
     const response = await POST(
       new Request('http://localhost/sync', {
-        body: JSON.stringify({ action: 'start', agentId: 'all' }),
+        body: JSON.stringify({ action: 'start', agentId }),
         headers: { 'content-type': 'application/json' },
         method: 'POST',
       }) as never,
       params
     );
 
-    expect(response.status).toBe(400);
-    expect(mocks.requestExternalChatControl).not.toHaveBeenCalled();
-    expect(mocks.insertRun).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/start',
+      { agentId, runId: localRun.id, stream: 'canonical' }
+    );
   });
 
   it('rejects a stale control result when the run changed concurrently', async () => {

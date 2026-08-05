@@ -187,6 +187,49 @@ describe('external chat credential verification', () => {
     );
   });
 
+  it('promotes an interrupted unverified ingest rotation without bridge mutation', async () => {
+    const pendingState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        pending_action: 'set_ingest',
+        pending_secret_encrypted: 'encrypted-pending',
+        verified_at: null,
+        verified_revision: null,
+      },
+    };
+    const promotedState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 4,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    };
+    mocks.readExternalChatBinding
+      .mockResolvedValueOnce(pendingState)
+      .mockResolvedValue(promotedState);
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'pair',
+        ingestSecret: 'ingest-secret-value-123456789',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'set_ingest',
+      'encrypted-pending'
+    );
+  });
+
   it('replaces an unverified local control credential before re-pairing', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},
