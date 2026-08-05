@@ -43,6 +43,8 @@ export async function GET(
     billedCredits: numberValue(row.billed_credits),
     bucketDate: row.bucket_date,
     embeddingUnits: numberValue(row.embedding_units),
+    executionMode:
+      row.execution_mode === 'background' ? 'background' : 'interactive',
     failedCount: numberValue(row.failed_count),
     feature: row.feature,
     imageUnits: numberValue(row.image_units),
@@ -57,6 +59,7 @@ export async function GET(
     sourceId: row.source_id,
     sourceType: row.source_type,
     succeededCount: numberValue(row.succeeded_count),
+    unmeteredCredits: numberValue(row.unmetered_credits),
   }));
 
   const totals = rows.reduce(
@@ -74,6 +77,7 @@ export async function GET(
       requestCount: total.requestCount + row.requestCount,
       searchUnits: total.searchUnits + row.searchUnits,
       succeededCount: total.succeededCount + row.succeededCount,
+      unmeteredCredits: total.unmeteredCredits + row.unmeteredCredits,
       weightedLatencyMs:
         total.weightedLatencyMs + row.averageLatencyMs * row.latencySampleCount,
     }),
@@ -91,6 +95,7 @@ export async function GET(
       requestCount: 0,
       searchUnits: 0,
       succeededCount: 0,
+      unmeteredCredits: 0,
       weightedLatencyMs: 0,
     }
   );

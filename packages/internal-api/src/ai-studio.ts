@@ -78,12 +78,16 @@ export interface AiStudioKeySecretResponse {
   warning: string;
 }
 
+export type AiStudioExecutionMode = 'background' | 'interactive';
+
 export interface AiStudioUsageRow {
   abortedCount: number;
   averageLatencyMs: number;
   billedCredits: number;
   bucketDate: string;
   embeddingUnits: number;
+  /** Whether a user was waiting on this work or a machine credential ran it. */
+  executionMode: AiStudioExecutionMode;
   failedCount: number;
   feature: string;
   imageUnits: number;
@@ -98,6 +102,14 @@ export interface AiStudioUsageRow {
   sourceId: string;
   sourceType: 'api_key' | 'external_app' | 'session' | 'workspace_credit';
   succeededCount: number;
+  /**
+   * Credits this usage would have cost had it been metered. Distinct from
+   * `billedCredits` (what was actually charged, zero here) and from
+   * `providerCostUsd` (what the provider charged us). An external app running
+   * unmetered shows zero billed, a real provider cost, and this as the size of
+   * the allocation it consumed.
+   */
+  unmeteredCredits: number;
 }
 
 export interface AiStudioUsageResponse {
@@ -106,7 +118,12 @@ export interface AiStudioUsageResponse {
   to: string;
   totals: Omit<
     AiStudioUsageRow,
-    'bucketDate' | 'feature' | 'modelId' | 'sourceId' | 'sourceType'
+    | 'bucketDate'
+    | 'executionMode'
+    | 'feature'
+    | 'modelId'
+    | 'sourceId'
+    | 'sourceType'
   >;
 }
 
@@ -126,10 +143,13 @@ export interface AiStudioRun {
   outputTokens: number;
   providerCostUsd: number;
   reasoningTokens: number;
+  executionMode: AiStudioExecutionMode;
   requestId: string;
   searchUnits: number;
+  sourceId: string;
   sourceType: 'api_key' | 'external_app' | 'session' | 'workspace_credit';
   status: 'aborted' | 'failed' | 'reserved' | 'running' | 'succeeded';
+  unmeteredCredits: number;
   stepCount: number;
   toolCallCount: number;
 }

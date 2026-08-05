@@ -42,6 +42,7 @@ describe('AI Studio observability helpers', () => {
         billedCredits: 2,
         bucketDate: '2026-07-29',
         embeddingUnits: 3,
+        executionMode: 'interactive' as const,
         failedCount: 0,
         feature: 'chat',
         imageUnits: 4,
@@ -56,6 +57,7 @@ describe('AI Studio observability helpers', () => {
         sourceId: 'user-1',
         sourceType: 'workspace_credit' as const,
         succeededCount: 1,
+        unmeteredCredits: 9,
       },
     ];
 
@@ -65,6 +67,7 @@ describe('AI Studio observability helpers', () => {
         credits: 2,
         label: 'chat',
         requests: 1,
+        unmetered: 9,
         units: 33,
       },
     ]);

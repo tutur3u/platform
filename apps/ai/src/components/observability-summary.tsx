@@ -7,6 +7,7 @@ import {
   Coins,
   Cpu,
   DollarSign,
+  Gift,
   Wallet,
 } from '@tuturuuu/icons';
 import type {
@@ -67,6 +68,21 @@ export function ObservabilitySummary({
           tone="purple"
           value={formatNumber(totals?.billedCredits)}
         />
+        {/*
+          Three different questions, so three different numbers: what was
+          charged, what an unmetered app consumed instead of being charged, and
+          what the providers actually cost us. Collapsing them would make an
+          external app look free.
+        */}
+        {totals?.unmeteredCredits ? (
+          <StatCard
+            icon={Gift}
+            isLoading={isLoading}
+            label={t('unmetered_credits')}
+            tone="blue"
+            value={formatNumber(totals.unmeteredCredits)}
+          />
+        ) : null}
         <StatCard
           icon={DollarSign}
           isLoading={isLoading}

@@ -281,7 +281,13 @@ export async function settleMeteredExecution(
   };
 
   if (externalAppAttribution(context.credential)) {
-    await settleExternalAiStudioRun(settlement);
+    // The app is not charged, but what it *would* have cost is exactly the
+    // number needed to judge whether the unmetered arrangement still makes
+    // sense, so it is recorded rather than discarded.
+    await settleExternalAiStudioRun({
+      ...settlement,
+      unmeteredCredits: cost.billedCredits,
+    });
   } else {
     await settleAiStudioRun({
       ...settlement,

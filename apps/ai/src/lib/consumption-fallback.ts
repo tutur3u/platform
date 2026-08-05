@@ -100,11 +100,7 @@ export async function listLedgerConsumptionEvents({
   });
   if (result.error) return result;
 
-  return {
-    data:
-      result.data?.map(({ source_id: _sourceId, ...event }) => event) ?? null,
-    error: null,
-  };
+  return { data: result.data, error: null };
 }
 
 async function fetchLedgerConsumptionEvents({
@@ -203,6 +199,8 @@ function ledgerRowToEvent(row: LedgerRow): LedgerEvent {
     embedding_units: 0,
     error_class: null,
     event_id: row.id,
+    // Ledger deductions predate the Studio run model and were all user-driven.
+    execution_mode: 'interactive',
     feature: row.feature?.trim() || 'unclassified',
     first_token_latency_ms: null,
     image_units: nonNegative(row.image_count),
@@ -217,6 +215,8 @@ function ledgerRowToEvent(row: LedgerRow): LedgerEvent {
     source_id: row.user_id ?? 'workspace',
     source_type: 'workspace_credit',
     status: 'succeeded',
+    // A ledger deduction is a real charge, so it has no unmetered allocation.
+    unmetered_credits: 0,
   };
 }
 

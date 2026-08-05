@@ -8,7 +8,7 @@ import {
 } from './consumption-fallback';
 
 const LEGACY_RUN_FIELDS =
-  'id, request_id, api_key_id, feature, model_id, status, billed_credits, provider_cost_usd, input_tokens, output_tokens, reasoning_tokens, embedding_units, image_units, latency_ms, first_token_latency_ms, error_class, metadata, created_at, completed_at';
+  'id, request_id, api_key_id, actor_id, feature, model_id, status, billed_credits, unmetered_credits, provider_cost_usd, input_tokens, output_tokens, reasoning_tokens, embedding_units, image_units, latency_ms, first_token_latency_ms, error_class, metadata, created_at, completed_at';
 
 export async function getAiStudioConsumptionBreakdown({
   from,
@@ -57,8 +57,12 @@ export async function getAiStudioConsumptionBreakdown({
     legacy.data?.map(
       (row): BreakdownRow => ({
         ...row,
+        // The legacy breakdown predates both dimensions: everything it covers was
+        // user-triggered, and nothing on it ran unmetered.
+        execution_mode: 'interactive',
         latency_sample_count: row.request_count,
         search_units: 0,
+        unmetered_credits: 0,
       })
     ) ?? [];
 
@@ -70,6 +74,8 @@ export async function getAiStudioConsumptionBreakdown({
 
 export async function listAiStudioConsumptionEvents({
   cursor,
+  executionMode,
+  externalApp,
   feature,
   from,
   limit,
@@ -81,6 +87,8 @@ export async function listAiStudioConsumptionEvents({
   workspaceId,
 }: {
   cursor: { createdAt: string; id: string } | null;
+  executionMode?: string;
+  externalApp?: string;
   feature?: string;
   from: string;
   limit: number;
@@ -96,6 +104,8 @@ export async function listAiStudioConsumptionEvents({
     .rpc('list_ai_studio_consumption_events', {
       p_cursor_created_at: cursor?.createdAt,
       p_cursor_id: cursor?.id,
+      p_execution_mode: executionMode,
+      p_external_app: externalApp,
       p_feature: feature,
       p_from: from,
       p_limit: limit,
@@ -122,6 +132,18 @@ export async function listAiStudioConsumptionEvents({
   if (status) query = query.eq('status', status);
   if (feature) query = query.eq('feature', feature);
   if (model) query = query.eq('model_id', model);
+  // The legacy table has no generated columns for these, so they are matched
+  // against the run metadata the RPC derives them from. 'interactive' is the
+  // absence of a background marker, not a stored value — runs predating the
+  // machine credential carry no execution_mode at all and are all interactive.
+  if (externalApp) {
+    query = query.contains('metadata', { external_app_id: externalApp });
+  }
+  if (executionMode === 'background') {
+    query = query.contains('metadata', { execution_mode: 'background' });
+  } else if (executionMode === 'interactive') {
+    query = query.not('metadata->>execution_mode', 'eq', 'background');
+  }
   if (cursor) {
     query = query.or(
       `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`
@@ -131,18 +153,23 @@ export async function listAiStudioConsumptionEvents({
   const legacy = await query;
   if (legacy.error) return { data: null, error: legacy.error };
 
-  const ledger = await listLedgerConsumptionEvents({
-    cursor,
-    feature,
-    from,
-    maxRows: limit,
-    model,
-    sbAdmin,
-    status,
-    to,
-    userId,
-    workspaceId,
-  });
+  // Ledger deductions are workspace credit spend by a user; no external app and
+  // no background execution can appear there, so either filter excludes them all.
+  const ledger =
+    externalApp || executionMode === 'background'
+      ? { data: [], error: null }
+      : await listLedgerConsumptionEvents({
+          cursor,
+          feature,
+          from,
+          maxRows: limit,
+          model,
+          sbAdmin,
+          status,
+          to,
+          userId,
+          workspaceId,
+        });
   if (ledger.error) return ledger;
 
   const legacyEvents =
@@ -154,6 +181,7 @@ export async function listAiStudioConsumptionEvents({
         embedding_units: run.embedding_units,
         error_class: run.error_class,
         event_id: run.id,
+        execution_mode: resolveLegacyExecutionMode(run.metadata),
         feature: run.feature,
         first_token_latency_ms: run.first_token_latency_ms,
         image_units: run.image_units,
@@ -165,8 +193,14 @@ export async function listAiStudioConsumptionEvents({
         reasoning_tokens: run.reasoning_tokens,
         request_id: run.request_id,
         search_units: 0,
+        source_id: resolveLegacySourceId(
+          run.api_key_id,
+          run.actor_id,
+          run.metadata
+        ),
         source_type: resolveLegacySourceType(run.api_key_id, run.metadata),
         status: run.status,
+        unmetered_credits: run.unmetered_credits,
       })
     ) ?? [];
 
@@ -186,17 +220,42 @@ function isMissingFunction(error: { code?: string } | null) {
   return error?.code === '42883' || error?.code === 'PGRST202';
 }
 
+function metadataRecord(metadata: unknown) {
+  return metadata && !Array.isArray(metadata) && typeof metadata === 'object'
+    ? (metadata as Record<string, unknown>)
+    : null;
+}
+
+function externalAppIdOf(metadata: unknown) {
+  const record = metadataRecord(metadata);
+  const appId = record?.external_app_id;
+  return typeof appId === 'string' && appId.trim() ? appId.trim() : null;
+}
+
+// Mirrors collect_ai_studio_consumption_events: a key bound to an app is a
+// credential the app authenticates with, so the app — not the key — is the
+// spender. Diverging here would make the fallback disagree with the RPC.
 function resolveLegacySourceType(apiKeyId: string | null, metadata: unknown) {
-  if (apiKeyId) return 'api_key';
+  const record = metadataRecord(metadata);
   if (
-    metadata &&
-    !Array.isArray(metadata) &&
-    typeof metadata === 'object' &&
-    ('external_app_id' in metadata ||
-      ('billing_mode' in metadata &&
-        metadata.billing_mode === 'external_app_unmetered'))
+    externalAppIdOf(metadata) ||
+    (record && record.billing_mode === 'external_app_unmetered')
   ) {
     return 'external_app';
   }
+  if (apiKeyId) return 'api_key';
   return 'session';
+}
+
+function resolveLegacySourceId(
+  apiKeyId: string | null,
+  actorId: string | null,
+  metadata: unknown
+) {
+  return externalAppIdOf(metadata) ?? apiKeyId ?? actorId ?? 'session';
+}
+
+function resolveLegacyExecutionMode(metadata: unknown) {
+  const mode = metadataRecord(metadata)?.execution_mode;
+  return mode === 'background' ? 'background' : 'interactive';
 }

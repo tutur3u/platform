@@ -13,7 +13,7 @@ export type ConsumptionEvent = Omit<
   first_token_latency_ms: number | null;
   latency_ms: number | null;
 };
-export type LedgerEvent = ConsumptionEvent & { source_id: string };
+export type LedgerEvent = ConsumptionEvent;
 
 export function mergeConsumptionBreakdowns(
   legacyRows: BreakdownRow[],
@@ -42,6 +42,8 @@ export function mergeConsumptionBreakdowns(
           latencySamples;
     current.billed_credits =
       Number(current.billed_credits) + Number(row.billed_credits);
+    current.unmetered_credits =
+      Number(current.unmetered_credits) + Number(row.unmetered_credits);
     current.embedding_units =
       Number(current.embedding_units) + Number(row.embedding_units);
     current.failed_count =
@@ -80,6 +82,7 @@ export function aggregateLedgerEvents(events: LedgerEvent[]) {
       event.feature,
       event.source_type,
       event.source_id,
+      event.execution_mode,
     ].join('\u0000');
     const current = grouped.get(key);
     if (current) {
@@ -96,6 +99,8 @@ export function aggregateLedgerEvents(events: LedgerEvent[]) {
       current.reasoning_tokens =
         Number(current.reasoning_tokens) + Number(event.reasoning_tokens);
       current.request_count = Number(current.request_count) + 1;
+      current.unmetered_credits =
+        Number(current.unmetered_credits) + Number(event.unmetered_credits);
       current.search_units =
         Number(current.search_units) + Number(event.search_units);
       current.succeeded_count = Number(current.succeeded_count) + 1;
@@ -108,6 +113,7 @@ export function aggregateLedgerEvents(events: LedgerEvent[]) {
       billed_credits: event.billed_credits,
       bucket_date: bucketDate,
       embedding_units: 0,
+      execution_mode: event.execution_mode,
       failed_count: 0,
       feature: event.feature,
       image_units: event.image_units,
@@ -122,6 +128,7 @@ export function aggregateLedgerEvents(events: LedgerEvent[]) {
       source_id: event.source_id,
       source_type: event.source_type,
       succeeded_count: 1,
+      unmetered_credits: event.unmetered_credits,
     });
   }
 
@@ -135,5 +142,6 @@ function breakdownKey(row: BreakdownRow) {
     row.feature,
     row.source_type,
     row.source_id,
+    row.execution_mode,
   ].join('\u0000');
 }

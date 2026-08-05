@@ -129,6 +129,7 @@ describe('AI Studio consumption rollout fallback', () => {
         embedding_units: 0,
         error_class: null,
         event_id: '00000000-0000-4000-8000-000000000001',
+        execution_mode: 'interactive',
         feature: 'chat',
         first_token_latency_ms: null,
         image_units: 0,
@@ -140,8 +141,12 @@ describe('AI Studio consumption rollout fallback', () => {
         reasoning_tokens: 0,
         request_id: 'credit:00000000-0000-4000-8000-000000000001',
         search_units: 0,
+        // Retained now that the event feed reports which app or user spent:
+        // it was previously stripped, which made per-app attribution impossible.
+        source_id: 'user-1',
         source_type: 'workspace_credit',
         status: 'succeeded',
+        unmetered_credits: 0,
       },
     ]);
     expect(JSON.stringify(result.data)).not.toContain(
