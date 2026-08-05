@@ -202,6 +202,7 @@
       "daily_usage": "Mức sử dụng hàng ngày",
       "daily_usage_description": "Yêu cầu, tín dụng và chi phí nhà cung cấp theo ngày trong khoảng đã chọn.",
       "dimension": "Chiều phân tích",
+      "display_currency": "Đơn vị tiền tệ hiển thị",
       "embedding_units": "Đơn vị embedding",
       "empty": "Không có mức sử dụng được đo trong khoảng này",
       "empty_description": "Hãy thử khoảng thời gian rộng hơn sau khi hoạt động AI đã được ghi nhận.",

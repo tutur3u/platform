@@ -8,6 +8,7 @@ import {
   getAiStudioUsage,
 } from '@tuturuuu/internal-api/ai-studio';
 import { useTranslations } from 'next-intl';
+import type { DisplayCurrency } from '@/lib/display-currency';
 import { ObservabilityBreakdowns } from './observability-breakdowns';
 import { useObservabilityFilters } from './observability-filters';
 import { ObservabilityRuns } from './observability-runs';
@@ -19,9 +20,12 @@ import { StudioErrorState } from './studio/states';
 type ObservabilitySection = 'credits' | 'runs' | 'usage';
 
 export function ObservabilityPanel({
+  currency,
   section,
   workspaceId,
 }: {
+  /** Display-only conversion of provider cost; nothing stored changes. */
+  currency: DisplayCurrency;
   section: ObservabilitySection;
   workspaceId: string;
 }) {
@@ -89,6 +93,7 @@ export function ObservabilityPanel({
     <div className="space-y-4">
       <ObservabilityToolbar
         controls={controls}
+        currency={currency}
         isRefreshing={isRefreshing}
         onRefresh={refresh}
         showRunFilters={isRunSection}
@@ -105,6 +110,7 @@ export function ObservabilityPanel({
 
       <ObservabilitySummary
         credits={creditsQuery.data}
+        currency={currency}
         isLoading={
           usageQuery.isPending ||
           (section === 'credits' && creditsQuery.isPending)

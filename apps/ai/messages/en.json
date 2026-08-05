@@ -202,6 +202,7 @@
       "daily_usage": "Daily usage",
       "daily_usage_description": "Requests, credits and provider cost per day across the selected range.",
       "dimension": "Dimension",
+      "display_currency": "Display currency",
       "embedding_units": "Embedding units",
       "empty": "No metered usage in this range",
       "empty_description": "Try a broader date range after AI activity has settled.",

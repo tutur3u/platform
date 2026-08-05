@@ -11,7 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import {
+  DEFAULT_DISPLAY_CURRENCY,
+  type DisplayCurrency,
+  SUPPORTED_DISPLAY_CURRENCIES,
+} from '@/lib/display-currency';
 import {
   type ObservabilityFilters,
   RUN_STATUS_FILTERS,
@@ -24,21 +30,58 @@ import type { ObservabilityPreset } from './observability-helpers';
  */
 export function ObservabilityToolbar({
   controls,
+  currency,
   isRefreshing,
   onRefresh,
   showRunFilters,
 }: {
   controls: ObservabilityFilters;
+  currency: DisplayCurrency;
   isRefreshing: boolean;
   onRefresh: () => void;
   showRunFilters: boolean;
 }) {
   const t = useTranslations('ai-studio.observability');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { activeFilterCount, filters } = controls;
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        {/*
+          Display-only: the stored provider cost stays USD, so switching here
+          changes how the number reads, never what was billed. It lives in the
+          URL so a converted view can be linked and bookmarked.
+        */}
+        <Select
+          onValueChange={(value) => {
+            const next = new URLSearchParams(searchParams);
+            if (value === DEFAULT_DISPLAY_CURRENCY) next.delete('currency');
+            else next.set('currency', value);
+            const query = next.toString();
+            router.replace(query ? `${pathname}?${query}` : pathname, {
+              scroll: false,
+            });
+          }}
+          value={currency.code}
+        >
+          <SelectTrigger
+            aria-label={t('display_currency')}
+            className="h-9 w-full sm:w-28"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SUPPORTED_DISPLAY_CURRENCIES.map((code) => (
+              <SelectItem key={code} value={code}>
+                {code}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Select
           onValueChange={(value) =>
             controls.setPreset(value as ObservabilityPreset)
