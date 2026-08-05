@@ -47,6 +47,7 @@ export type ExternalChatCredentialAction =
 
 export type ExternalChatSyncAction = {
   action: 'audit' | 'start' | 'resume' | 'cancel' | 'reconcile';
+  agentId?: string;
   runId?: string;
   stream?: string;
 };
