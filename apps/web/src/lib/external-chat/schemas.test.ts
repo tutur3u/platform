@@ -30,6 +30,34 @@ describe('external chat settings', () => {
     expect(isExternalChatLiveAuthority(settings)).toBe(false);
   });
 
+  it('accepts only a credential-free HTTPS origin for an optional replica', () => {
+    const settings = {
+      agentMappings: {},
+      authorityMode: 'legacy_primary',
+      bridgeBaseUrl: 'https://bridge.example.com',
+      enabled: true,
+      inboxDefaults: {},
+    } as const;
+    expect(
+      externalChatSettingsSchema.safeParse({
+        ...settings,
+        replicaBaseUrl: 'https://chat.example.com',
+      }).success
+    ).toBe(true);
+    expect(
+      externalChatSettingsSchema.safeParse({
+        ...settings,
+        replicaBaseUrl: 'https://chat.example.com/private',
+      }).success
+    ).toBe(false);
+    expect(
+      externalChatSettingsSchema.safeParse({
+        ...settings,
+        replicaBaseUrl: 'http://chat.example.com',
+      }).success
+    ).toBe(false);
+  });
+
   it('validates the fallback recipient while preserving dynamic inbox data', () => {
     const parsed = externalChatSettingsSchema.safeParse({
       agentMappings: {},

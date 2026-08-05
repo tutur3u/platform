@@ -127,6 +127,26 @@ export const externalChatSettingsSchema = z.object({
         return false;
       }
     }, 'Bridge URL must be an HTTPS origin or approved bridge path without credentials, query, or fragment'),
+  replicaBaseUrl: z
+    .string()
+    .url()
+    .max(2048)
+    .refine((value) => {
+      try {
+        const url = new URL(value);
+        return (
+          url.protocol === 'https:' &&
+          !url.username &&
+          !url.password &&
+          url.pathname === '/' &&
+          !url.search &&
+          !url.hash
+        );
+      } catch {
+        return false;
+      }
+    }, 'Replica URL must be an HTTPS origin without credentials, query, or fragment')
+    .optional(),
   agentMappings: z.record(z.string(), z.string().uuid()).default({}),
   inboxDefaults: inboxDefaultsSchema,
   authorityMode: z

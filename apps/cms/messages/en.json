@@ -3453,6 +3453,7 @@
     "ready": "Ready for canary synchronization",
     "ready_description": "Both directions can be tested without changing live authority.",
     "refresh": "Refresh synchronization status",
+    "replica_url": "Modern replica URL",
     "retry": "Retry",
     "rotate_ingest": "Rotate ingest credential",
     "save": "Save chat settings",

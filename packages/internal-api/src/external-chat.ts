@@ -34,6 +34,7 @@ export type ExternalChatSettings = {
   bridgeBaseUrl: string;
   enabled: boolean;
   inboxDefaults: Record<string, unknown> & { recipientUserId?: string };
+  replicaBaseUrl?: string;
 };
 
 export type ExternalChatCredentialAction =

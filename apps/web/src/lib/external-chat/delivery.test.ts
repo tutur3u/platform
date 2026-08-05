@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  configureExternalChatBridge,
   prepareExternalChatAttachment,
   updateExternalChatBridgeCredential,
 } from './delivery';
@@ -60,10 +61,33 @@ describe('external chat credential delivery', () => {
           chat: {
             bridgeBaseUrl: 'https://bridge.example.com',
             enabled: true,
+            replicaBaseUrl: 'https://chat.example.com',
           },
         },
       },
-      credentials: { control_secret_encrypted: 'encrypted-control' },
+      credentials: {
+        control_secret_encrypted: 'encrypted-control',
+        ingest_secret_hash: 'a'.repeat(64),
+      },
+    });
+  });
+
+  it('pairs the bridge with the optional modern replica origin', async () => {
+    mocks.safeExternalChatFetch.mockResolvedValue(Response.json({ ok: true }));
+
+    await configureExternalChatBridge({
+      ingestSecret: 'ingest-secret',
+      pairingTicket: 'pairing-ticket',
+      wsId: 'workspace-1',
+    });
+
+    const [, request] = mocks.safeExternalChatFetch.mock.calls[0] ?? [];
+    expect(JSON.parse(String(request?.body))).toMatchObject({
+      bindingId: 'workspace-1',
+      controlSecret: 'control-secret',
+      ingestSecret: 'ingest-secret',
+      pairingTicket: 'pairing-ticket',
+      replicaBaseUrl: 'https://chat.example.com',
     });
   });
 

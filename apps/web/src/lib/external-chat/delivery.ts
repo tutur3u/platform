@@ -146,6 +146,14 @@ function getBridgeBaseUrl(settings: unknown) {
   return typeof value === 'string' ? value.replace(/\/+$/u, '') : null;
 }
 
+function getReplicaBaseUrl(settings: unknown) {
+  if (!settings || typeof settings !== 'object') return null;
+  const chat = (settings as Record<string, unknown>).chat;
+  if (!chat || typeof chat !== 'object') return null;
+  const value = (chat as Record<string, unknown>).replicaBaseUrl;
+  return typeof value === 'string' ? value.replace(/\/+$/u, '') : null;
+}
+
 function getPublicPlatformUrl() {
   return resolveTuturuuuWebAppUrl({
     env: {
@@ -271,6 +279,7 @@ export async function configureExternalChatBridge({
   const state = await readExternalChatBinding(wsId);
   const controlCiphertext = state?.credentials?.control_secret_encrypted;
   const bridgeBaseUrl = getBridgeBaseUrl(state?.binding.settings);
+  const replicaBaseUrl = getReplicaBaseUrl(state?.binding.settings);
   if (
     !state?.binding.is_enabled ||
     !isExternalChatEnabled(state.binding.settings) ||
@@ -287,6 +296,7 @@ export async function configureExternalChatBridge({
     ingestSecret,
     pairingTicket,
     platformUrl: getPublicPlatformUrl(),
+    ...(replicaBaseUrl ? { replicaBaseUrl } : {}),
   });
   const response = await safeExternalChatFetch(
     `${bridgeBaseUrl}/control/v1/configure`,
