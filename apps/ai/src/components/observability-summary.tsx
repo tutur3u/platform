@@ -16,17 +16,22 @@ import type {
 } from '@tuturuuu/internal-api/ai-studio';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { formatCurrency } from '@tuturuuu/utils/format';
+import { getCurrencyFractionDigits } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
+import type { DisplayCurrency } from '@/lib/display-currency';
 import { SectionCard } from './studio/section-card';
 import { StatCard, StatCardGrid } from './studio/stat-card';
 
 export function ObservabilitySummary({
   credits,
+  currency,
   isLoading,
   section,
   totals,
 }: {
   credits?: AiStudioCreditStatus;
+  currency: DisplayCurrency;
   isLoading: boolean;
   section: 'credits' | 'runs' | 'usage';
   totals?: AiStudioUsageResponse['totals'];
@@ -88,7 +93,9 @@ export function ObservabilitySummary({
           isLoading={isLoading}
           label={t('provider_cost')}
           tone="orange"
-          value={totals ? formatUsd(totals.providerCostUsd) : '—'}
+          value={
+            totals ? formatProviderCost(totals.providerCostUsd, currency) : '—'
+          }
         />
         <StatCard
           icon={Cpu}
@@ -200,9 +207,24 @@ function formatNumber(value?: number) {
     : value.toLocaleString(undefined, { maximumFractionDigits: 4 });
 }
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString(undefined, {
+/**
+ * Provider cost is stored in USD; this only changes how it reads.
+ *
+ * Sub-cent amounts are the norm for a single run, so the fraction digits widen
+ * rather than rounding a real cost to "$0.00". Currencies without minor units,
+ * đồng among them, get none at all — "₫98,50" is not a number anyone writes.
+ */
+function formatProviderCost(valueUsd: number, currency: DisplayCurrency) {
+  const value = valueUsd * currency.rate;
+  const fractionless = getCurrencyFractionDigits(currency.code) === 0;
+  if (fractionless) {
+    return formatCurrency(Math.round(value), currency.code, undefined, {
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    });
+  }
+  return formatCurrency(value, currency.code, undefined, {
     maximumFractionDigits: 6,
     minimumFractionDigits: value > 0 && value < 0.01 ? 4 : 2,
-  })}`;
+  });
 }
