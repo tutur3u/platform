@@ -161,6 +161,61 @@ describe('external chat credential verification', () => {
     expect(await response.json()).toMatchObject({ secret: 'ecs_test_secret' });
   });
 
+  it('replaces an unverified local control credential before re-pairing', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'set_control',
+        secret: 'replacement-control-secret',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'rotate_control',
+      'encrypted-pending'
+    );
+  });
+
+  it('requires remote rotation while the current control credential is verified', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'verified-encrypted-control',
+        verified_at: '2026-08-05T00:00:00.000Z',
+        verified_revision: 3,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'set_control',
+        secret: 'replacement-control-secret',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
+      action: 'rotate_control',
+      secret: 'replacement-control-secret',
+      wsId: 'workspace-1',
+    });
+  });
+
   it('pairs with a transient single-use ticket and verifies before marking ready', async () => {
     mocks.readExternalChatBinding.mockResolvedValue({
       binding: {},

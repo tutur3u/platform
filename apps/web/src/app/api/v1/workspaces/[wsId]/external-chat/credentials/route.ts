@@ -199,7 +199,12 @@ export const POST = withSessionAuth<Params>(
       } catch (error) {
         return credentialMutationErrorResponse(error, current);
       }
-      if (current?.credentials?.control_secret_encrypted) {
+      if (
+        current?.credentials?.control_secret_encrypted &&
+        current.credentials.verified_at &&
+        current.credentials.verified_revision ===
+          current.credentials.configuration_revision
+      ) {
         try {
           await updateExternalChatBridgeCredential({
             action: 'rotate_control',
