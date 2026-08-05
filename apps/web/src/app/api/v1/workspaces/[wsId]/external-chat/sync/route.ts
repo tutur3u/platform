@@ -117,6 +117,7 @@ export const POST = withSessionAuth<Params>(
         .select('started_at')
         .eq('ws_id', wsId)
         .eq('id', runId)
+        .eq('connector_key', connectorKey)
         .maybeSingle();
       if (existingRunError)
         return NextResponse.json(

@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   compareAndSetRun: vi.fn(),
   listRuns: vi.fn(),
   readRun: vi.fn(),
+  readRunFilter: vi.fn(),
   readCheckpoint: vi.fn(),
   readExternalChatBinding: vi.fn(),
   insertRun: vi.fn(),
@@ -61,14 +62,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
             insert: () => ({
               select: () => ({ single: () => mocks.insertRun() }),
             }),
-            select: () => ({
-              eq: () => ({
-                eq: () => ({ maybeSingle: () => mocks.readRun() }),
-                order: () => ({
-                  limit: () => mocks.listRuns(),
-                }),
-              }),
-            }),
+            select: () => {
+              const query = {
+                eq: (column: string, value: unknown) => {
+                  mocks.readRunFilter(column, value);
+                  return query;
+                },
+                maybeSingle: () => mocks.readRun(),
+                order: () => ({ limit: () => mocks.listRuns() }),
+              };
+              return query;
+            },
             update: (update: Record<string, unknown>) => ({
               eq: () => ({ eq: () => mocks.updateRun(update) }),
             }),
@@ -360,5 +364,26 @@ describe('external chat sync status', () => {
     );
     const update = mocks.transitionRun.mock.calls[0]?.[1]?.p_update;
     expect(update).not.toHaveProperty('started_at');
+  });
+
+  it('rejects a run from the connector used before rebinding', async () => {
+    mocks.readRun.mockResolvedValueOnce({ data: null, error: null });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'resume', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'sync_run_not_found' });
+    expect(mocks.readRunFilter).toHaveBeenCalledWith(
+      'connector_key',
+      'opaque-connector'
+    );
+    expect(mocks.requestExternalChatControl).not.toHaveBeenCalled();
   });
 });
