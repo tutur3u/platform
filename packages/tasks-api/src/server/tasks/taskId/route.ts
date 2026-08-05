@@ -23,6 +23,10 @@ import {
   type TaskBoardGuestPermission,
 } from '../../board-access';
 import {
+  loadTaskCapacityWarnings,
+  parseTaskCapacityViolation,
+} from '../../capacity';
+import {
   loadPersonalTaskMetadata,
   replacePersonalTaskLabels,
   replacePersonalTaskProjects,
@@ -1125,6 +1129,8 @@ export async function handleTaskDetailRoutePUT(
 
     if (updateError) {
       console.error('Error updating task:', updateError);
+      const capacity = parseTaskCapacityViolation(updateError);
+      if (capacity) return NextResponse.json(capacity, { status: 409 });
       return NextResponse.json(
         { error: 'Failed to update task' },
         { status: 500 }
@@ -1172,7 +1178,14 @@ export async function handleTaskDetailRoutePUT(
       taskPayloadsById: new Map([[taskId, serializedTask]]),
     });
 
-    return NextResponse.json({ task: serializedTask });
+    const capacityWarnings = await loadTaskCapacityWarnings(
+      sbAdmin,
+      updatedTaskResult.task.task_lists?.board_id
+    );
+    return NextResponse.json({
+      task: serializedTask,
+      ...(capacityWarnings.length ? { capacityWarnings } : {}),
+    });
   } catch (error) {
     if (error instanceof ZodError) {
       return NextResponse.json(

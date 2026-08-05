@@ -161,6 +161,12 @@ vi.mock('../boards/board-share-dialog', () => ({
     open ? <div role="dialog">share-dialog</div> : null,
 }));
 
+vi.mock('../boards/create-board-anywhere-dialog', () => ({
+  CreateBoardAnywhereDialog: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="create-board-anywhere">{children}</div>
+  ),
+}));
+
 vi.mock('../boards/copy-board-dialog', () => ({
   CopyBoardDialog: () => <div data-testid="copy-board-dialog" />,
 }));

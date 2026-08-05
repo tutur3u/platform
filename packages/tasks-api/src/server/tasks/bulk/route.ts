@@ -20,6 +20,10 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  loadTaskCapacityWarnings,
+  parseTaskCapacityViolation,
+} from '../../capacity';
+import {
   addPersonalTaskLabel,
   addPersonalTaskProject,
   removePersonalTaskLabel,
@@ -1063,9 +1067,14 @@ export async function handleTaskBulkRoutePOST(
 
         succeededTaskIds.push(taskId);
       } catch (error) {
+        const capacity = parseTaskCapacityViolation(error);
         failures.push({
           taskId,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: capacity
+            ? JSON.stringify(capacity)
+            : error instanceof Error
+              ? error.message
+              : 'Unknown error',
         });
       }
     }
@@ -1114,6 +1123,10 @@ export async function handleTaskBulkRoutePOST(
       taskPayloadsById,
     });
 
+    const capacityWarnings = await loadTaskCapacityWarnings(
+      sbAdmin,
+      targetList?.board_id ?? taskRows?.[0]?.task_lists?.board_id
+    );
     return NextResponse.json({
       successCount: succeededTaskIds.length,
       failCount: failures.length,
@@ -1121,6 +1134,7 @@ export async function handleTaskBulkRoutePOST(
       succeededTaskIds,
       failures,
       taskMetaById,
+      ...(capacityWarnings.length ? { capacityWarnings } : {}),
     });
   } catch (error) {
     console.error('Error processing bulk task operation:', error);

@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -16,7 +17,10 @@ import {
   RefreshCw,
   RotateCcw,
 } from '@tuturuuu/icons';
-import type { ExternalTaskSortBy } from '@tuturuuu/internal-api/tasks';
+import {
+  type ExternalTaskSortBy,
+  listWorkspaceTaskBoardCapacityRules,
+} from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -241,7 +245,29 @@ export function BoardColumn({
     DEFAULT_EXTERNAL_TASK_SORT_BY
   );
   const [isRefreshingList, setIsRefreshingList] = useState(false);
+  const capacityQuery = useQuery({
+    queryKey: ['task-capacity-rules', wsId, boardId],
+    queryFn: () =>
+      listWorkspaceTaskBoardCapacityRules(wsId, boardId, {
+        baseUrl:
+          typeof window !== 'undefined' ? window.location.origin : undefined,
+      }),
+    enabled: Boolean(wsId && boardId && !isExternalStaging && !readOnly),
+    staleTime: 15_000,
+  });
   const isColumnCollapsed = isKanbanColumnCollapsed(column);
+  const directCapacityRules = (capacityQuery.data?.rules ?? []).filter(
+    (rule) =>
+      rule.enabled &&
+      rule.list_ids.includes(column.id) &&
+      rule.label_ids.length === 0 &&
+      rule.project_ids.length === 0
+  );
+  const mostConstrainedCapacityRule = [...directCapacityRules].sort(
+    (left, right) =>
+      right.current_value / right.limit_value -
+      left.current_value / left.limit_value
+  )[0];
   const hasActiveFilters =
     !!filters &&
     (filters.labels.length > 0 ||
@@ -594,6 +620,26 @@ export function BoardColumn({
           >
             {badgeCount}
           </Badge>
+          {mostConstrainedCapacityRule && (
+            <Badge
+              variant={
+                mostConstrainedCapacityRule.current_value >
+                mostConstrainedCapacityRule.limit_value
+                  ? 'destructive'
+                  : 'outline'
+              }
+              className="px-1.5 py-0.5 text-[10px]"
+              title={directCapacityRules
+                .map(
+                  (rule) =>
+                    `${rule.name}: ${rule.current_value} / ${rule.limit_value}`
+                )
+                .join('\n')}
+            >
+              {mostConstrainedCapacityRule.current_value} /{' '}
+              {mostConstrainedCapacityRule.limit_value}
+            </Badge>
+          )}
           <span
             className="max-h-48 truncate font-medium text-[11px]"
             style={{ writingMode: 'vertical-rl' }}

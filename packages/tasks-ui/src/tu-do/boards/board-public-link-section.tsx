@@ -34,6 +34,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { shareRequestOptions, shouldRetryShareRequest } from './share-request';
 
 interface BoardPublicLinkSectionProps {
   boardId: string;
@@ -65,8 +66,14 @@ export function BoardPublicLinkSection({
 
   const publicLinkQuery = useQuery({
     queryKey,
-    queryFn: () => getWorkspaceTaskBoardPublicLink(wsId, boardId),
-    enabled: open,
+    queryFn: ({ signal }) =>
+      getWorkspaceTaskBoardPublicLink(
+        wsId,
+        boardId,
+        shareRequestOptions(signal)
+      ),
+    enabled: open && sectionOpen,
+    retry: shouldRetryShareRequest,
     staleTime: 60_000,
   });
 
@@ -174,6 +181,18 @@ export function BoardPublicLinkSection({
           <div className="flex items-center gap-2 rounded-md border border-dashed p-3 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('common.loading')}
+          </div>
+        ) : publicLinkQuery.isError ? (
+          <div className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
+            <p>{t('ws-task-boards.share.load_error')}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void publicLinkQuery.refetch()}
+            >
+              {t('common.retry')}
+            </Button>
           </div>
         ) : publicLink ? (
           <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">

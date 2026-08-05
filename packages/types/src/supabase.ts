@@ -18047,6 +18047,27 @@ export type Database = {
         }[];
       };
       skip_rejected_post_email_queue: { Args: never; Returns: number };
+      task_capacity_rule_usage: {
+        Args: { p_rule_id: string };
+        Returns: number;
+      };
+      task_matches_capacity_rule: {
+        Args: { p_rule_id: string; p_task_id: string };
+        Returns: boolean;
+      };
+      task_matches_capacity_rule_state: {
+        Args: {
+          p_board_id: string;
+          p_closed_at: string;
+          p_completed: boolean;
+          p_completed_at: string;
+          p_deleted_at: string;
+          p_list_id: string;
+          p_rule_id: string;
+          p_task_id: string;
+        };
+        Returns: boolean;
+      };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };
         Returns: boolean;
@@ -26173,6 +26194,186 @@ export type Database = {
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_capacity_rule_labels: {
+        Row: {
+          label_id: string;
+          rule_id: string;
+        };
+        Insert: {
+          label_id: string;
+          rule_id: string;
+        };
+        Update: {
+          label_id?: string;
+          rule_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_capacity_rule_labels_label_id_fkey';
+            columns: ['label_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_task_labels';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rule_labels_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_capacity_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_capacity_rule_lists: {
+        Row: {
+          list_id: string;
+          rule_id: string;
+        };
+        Insert: {
+          list_id: string;
+          rule_id: string;
+        };
+        Update: {
+          list_id?: string;
+          rule_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_capacity_rule_lists_list_id_fkey';
+            columns: ['list_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_lists';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rule_lists_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_capacity_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_capacity_rule_projects: {
+        Row: {
+          project_id: string;
+          rule_id: string;
+        };
+        Insert: {
+          project_id: string;
+          rule_id: string;
+        };
+        Update: {
+          project_id?: string;
+          rule_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_capacity_rule_projects_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rule_projects_rule_id_fkey';
+            columns: ['rule_id'];
+            isOneToOne: false;
+            referencedRelation: 'task_capacity_rules';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_capacity_rules: {
+        Row: {
+          board_id: string;
+          counting_mode: Database['public']['Enums']['task_capacity_counting_mode'];
+          created_at: string;
+          created_by: string | null;
+          disabled_reason: string | null;
+          enabled: boolean;
+          enforcement: Database['public']['Enums']['task_capacity_enforcement'];
+          id: string;
+          label_match_mode: Database['public']['Enums']['task_capacity_match_mode'];
+          limit_value: number;
+          metric: Database['public']['Enums']['task_capacity_metric'];
+          name: string;
+          project_match_mode: Database['public']['Enums']['task_capacity_match_mode'];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          board_id: string;
+          counting_mode?: Database['public']['Enums']['task_capacity_counting_mode'];
+          created_at?: string;
+          created_by?: string | null;
+          disabled_reason?: string | null;
+          enabled?: boolean;
+          enforcement?: Database['public']['Enums']['task_capacity_enforcement'];
+          id?: string;
+          label_match_mode?: Database['public']['Enums']['task_capacity_match_mode'];
+          limit_value: number;
+          metric?: Database['public']['Enums']['task_capacity_metric'];
+          name: string;
+          project_match_mode?: Database['public']['Enums']['task_capacity_match_mode'];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          board_id?: string;
+          counting_mode?: Database['public']['Enums']['task_capacity_counting_mode'];
+          created_at?: string;
+          created_by?: string | null;
+          disabled_reason?: string | null;
+          enabled?: boolean;
+          enforcement?: Database['public']['Enums']['task_capacity_enforcement'];
+          id?: string;
+          label_match_mode?: Database['public']['Enums']['task_capacity_match_mode'];
+          limit_value?: number;
+          metric?: Database['public']['Enums']['task_capacity_metric'];
+          name?: string;
+          project_match_mode?: Database['public']['Enums']['task_capacity_match_mode'];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_capacity_rules_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rules_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rules_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rules_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_capacity_rules_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -42102,6 +42303,44 @@ export type Database = {
         Args: { p_board_id: string };
         Returns: string;
       };
+      get_task_board_workspace_members: {
+        Args: { p_ws_id: string };
+        Returns: {
+          avatar_url: string;
+          display_name: string;
+          email: string;
+          handle: string;
+          is_creator: boolean;
+          permission: string;
+          roles: Json;
+          user_id: string;
+          workspace_member_type: Database['public']['Enums']['workspace_member_type'];
+        }[];
+      };
+      get_task_capacity_rules: {
+        Args: { p_board_id: string };
+        Returns: {
+          board_id: string;
+          counting_mode: Database['public']['Enums']['task_capacity_counting_mode'];
+          created_at: string;
+          created_by: string;
+          current_value: number;
+          disabled_reason: string;
+          enabled: boolean;
+          enforcement: Database['public']['Enums']['task_capacity_enforcement'];
+          id: string;
+          label_ids: string[];
+          label_match_mode: Database['public']['Enums']['task_capacity_match_mode'];
+          limit_value: number;
+          list_ids: string[];
+          metric: Database['public']['Enums']['task_capacity_metric'];
+          name: string;
+          project_ids: string[];
+          project_match_mode: Database['public']['Enums']['task_capacity_match_mode'];
+          updated_at: string;
+          updated_by: string;
+        }[];
+      };
       get_task_children: {
         Args: { p_task_id: string };
         Returns: {
@@ -46097,6 +46336,10 @@ export type Database = {
         | 'done'
         | 'closed'
         | 'documents';
+      task_capacity_counting_mode: 'active' | 'all_non_deleted';
+      task_capacity_enforcement: 'soft' | 'hard';
+      task_capacity_match_mode: 'any' | 'all';
+      task_capacity_metric: 'task_count' | 'estimation_points';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
       task_relationship_type: 'parent_child' | 'blocks' | 'related';
       task_share_permission: 'view' | 'edit';
@@ -48860,6 +49103,10 @@ export const Constants = {
         'closed',
         'documents',
       ],
+      task_capacity_counting_mode: ['active', 'all_non_deleted'],
+      task_capacity_enforcement: ['soft', 'hard'],
+      task_capacity_match_mode: ['any', 'all'],
+      task_capacity_metric: ['task_count', 'estimation_points'],
       task_priority: ['low', 'normal', 'high', 'critical'],
       task_relationship_type: ['parent_child', 'blocks', 'related'],
       task_share_permission: ['view', 'edit'],

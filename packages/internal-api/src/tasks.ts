@@ -767,6 +767,7 @@ export interface WorkspaceTaskBoardViewableMember {
   handle: string | null;
   id: string;
   is_creator: boolean;
+  permission: WorkspaceTaskBoardSharePermission;
   roles: Array<{
     id: string;
     name: string;
@@ -787,6 +788,67 @@ export interface WorkspaceTaskBoardPublicLink {
   enabled: boolean;
   id: string;
   updated_at: string | null;
+}
+
+export type TaskCapacityMetric = 'task_count' | 'estimation_points';
+export type TaskCapacityEnforcement = 'soft' | 'hard';
+export type TaskCapacityCountingMode = 'active' | 'all_non_deleted';
+export type TaskCapacityMatchMode = 'any' | 'all';
+
+export interface TaskCapacityRule {
+  id: string;
+  board_id: string;
+  name: string;
+  enabled: boolean;
+  limit_value: number;
+  metric: TaskCapacityMetric;
+  enforcement: TaskCapacityEnforcement;
+  counting_mode: TaskCapacityCountingMode;
+  label_match_mode: TaskCapacityMatchMode;
+  project_match_mode: TaskCapacityMatchMode;
+  disabled_reason: string | null;
+  current_value: number;
+  list_ids: string[];
+  label_ids: string[];
+  project_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskCapacityRuleInput {
+  name: string;
+  enabled?: boolean;
+  limitValue: number;
+  metric?: TaskCapacityMetric;
+  enforcement?: TaskCapacityEnforcement;
+  countingMode?: TaskCapacityCountingMode;
+  labelMatchMode?: TaskCapacityMatchMode;
+  projectMatchMode?: TaskCapacityMatchMode;
+  listIds?: string[];
+  labelIds?: string[];
+  projectIds?: string[];
+}
+
+export interface TaskCapacityViolation {
+  ruleId: string;
+  ruleName: string;
+  metric: TaskCapacityMetric;
+  currentValue: number;
+  attemptedValue: number;
+  limit: number;
+}
+
+export interface TaskCapacityWarning extends TaskCapacityViolation {
+  enforcement: 'soft';
+}
+
+export interface TaskCapacityRulesResponse {
+  rules: TaskCapacityRule[];
+}
+
+export interface TaskCapacityExceededResponse {
+  code: 'TASK_CAPACITY_EXCEEDED';
+  violations: TaskCapacityViolation[];
 }
 
 export interface WorkspaceTaskBoardPublicLinkResponse {
@@ -1335,6 +1397,64 @@ export async function getWorkspaceTaskBoardPublicLink(
     {
       cache: 'no-store',
     }
+  );
+}
+
+export async function listWorkspaceTaskBoardCapacityRules(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<TaskCapacityRulesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/capacity-rules`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function createWorkspaceTaskBoardCapacityRule(
+  workspaceId: string,
+  boardId: string,
+  payload: TaskCapacityRuleInput,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<{ rule: TaskCapacityRule }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/capacity-rules`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskBoardCapacityRule(
+  workspaceId: string,
+  boardId: string,
+  ruleId: string,
+  payload: Partial<TaskCapacityRuleInput>,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<{ rule: TaskCapacityRule }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/capacity-rules/${encodePathSegment(ruleId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskBoardCapacityRule(
+  workspaceId: string,
+  boardId: string,
+  ruleId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/capacity-rules/${encodePathSegment(ruleId)}`,
+    { method: 'DELETE', cache: 'no-store' }
   );
 }
 
