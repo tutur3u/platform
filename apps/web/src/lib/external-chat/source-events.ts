@@ -142,8 +142,27 @@ export function digestExternalChatEnvelope(event: ExternalChatEventEnvelope) {
 
 export function digestExternalChatBatch(events: ExternalChatEventEnvelope[]) {
   return createHash('sha256')
-    .update(events.map(stableJson).sort().join('\n'), 'utf8')
+    .update(
+      events
+        .map(normalizeExternalChatDigestEvent)
+        .map(stableJson)
+        .sort()
+        .join('\n'),
+      'utf8'
+    )
     .digest('hex');
+}
+
+function normalizeExternalChatDigestEvent(event: ExternalChatEventEnvelope) {
+  if (
+    event.kind !== 'message' ||
+    !event.attachment ||
+    Object.keys(event.attachment).length > 0
+  ) {
+    return event;
+  }
+  const { attachment: _attachment, ...canonicalEvent } = event;
+  return canonicalEvent;
 }
 
 function minimizeExternalChatResult(result: Record<string, unknown>) {

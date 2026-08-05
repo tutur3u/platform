@@ -8,6 +8,13 @@ import type {
 export type ChatConversationScope = 'external' | 'personal' | 'workspaces';
 export type ChatConversationArchiveFilter = 'active' | 'all' | 'archived';
 
+export type ChatConversationDeliveryState =
+  | 'deleted'
+  | 'failed'
+  | 'seen'
+  | 'sending'
+  | 'sent';
+
 export const DEFAULT_CHAT_SCOPE: ChatConversationScope = 'personal';
 export const CHAT_CONVERSATION_TYPE_FILTERS = [
   'direct',
@@ -85,6 +92,40 @@ export function getChatConversationScope(
   }
 
   return 'workspaces';
+}
+
+export function getChatConversationQueueDetails(
+  conversation: Pick<
+    ChatConversation,
+    'latestMessage' | 'metadata' | 'updatedAt'
+  >
+) {
+  const latestMessage = conversation.latestMessage;
+  const phone = readNonEmptyString(conversation.metadata.phone);
+
+  return {
+    deliveryState: latestMessage
+      ? getChatConversationDeliveryState(latestMessage)
+      : null,
+    phone,
+    preview: latestMessage?.deletedAt
+      ? null
+      : (readNonEmptyString(latestMessage?.content) ??
+        readNonEmptyString(latestMessage?.attachments[0]?.filename)),
+    timestamp: latestMessage?.createdAt ?? conversation.updatedAt,
+  };
+}
+
+export function getChatConversationDeliveryState(
+  message: Pick<ChatMessage, 'deletedAt' | 'metadata'>
+): ChatConversationDeliveryState {
+  if (message.deletedAt) return 'deleted';
+
+  const status = readNonEmptyString(message.metadata.status)?.toLowerCase();
+  if (status && /fail|error|reject/u.test(status)) return 'failed';
+  if (status && /seen|read/u.test(status)) return 'seen';
+  if (status && /pending|queue|sending/u.test(status)) return 'sending';
+  return 'sent';
 }
 
 export function isChatConversation(value: unknown): value is ChatConversation {

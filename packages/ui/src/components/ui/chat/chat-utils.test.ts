@@ -5,6 +5,8 @@ import {
   filterChatConversationsByScope,
   formatChatRelativeTime,
   formatFileSize,
+  getChatConversationDeliveryState,
+  getChatConversationQueueDetails,
   getChatConversationTypesForScope,
   getChatInitials,
   getChatMessageSenderLabel,
@@ -357,6 +359,70 @@ describe('chat utils', () => {
     expect(getChatMessageSenderLabel(baseMessage, fallback)).toBe(
       'Unknown sender'
     );
+  });
+
+  it('builds a dense connected-site queue summary from dynamic metadata', () => {
+    const details = getChatConversationQueueDetails(
+      conversation({
+        latestMessage: {
+          ...baseMessage,
+          content: 'Need help with this page',
+          createdAt: '2026-08-05T07:15:00.000Z',
+          metadata: { status: 'seen' },
+        },
+        metadata: { externalChat: true, phone: '0900000000' },
+      })
+    );
+
+    expect(details).toEqual({
+      deliveryState: 'seen',
+      phone: '0900000000',
+      preview: 'Need help with this page',
+      timestamp: '2026-08-05T07:15:00.000Z',
+    });
+  });
+
+  it('normalizes connected-site delivery and deletion states', () => {
+    expect(
+      getChatConversationDeliveryState({
+        deletedAt: '2026-08-05T07:16:00.000Z',
+        metadata: { status: 'seen' },
+      })
+    ).toBe('deleted');
+    expect(
+      getChatConversationDeliveryState({
+        deletedAt: null,
+        metadata: { status: 'delivery_failed' },
+      })
+    ).toBe('failed');
+    expect(
+      getChatConversationDeliveryState({
+        deletedAt: null,
+        metadata: { status: 'queued' },
+      })
+    ).toBe('sending');
+    expect(
+      getChatConversationDeliveryState({
+        deletedAt: null,
+        metadata: { status: '2' },
+      })
+    ).toBe('sent');
+  });
+
+  it('does not expose deleted message content in queue previews', () => {
+    const details = getChatConversationQueueDetails(
+      conversation({
+        latestMessage: {
+          ...baseMessage,
+          attachments: [{ filename: 'private.png' } as never],
+          content: 'deleted private content',
+          deletedAt: '2026-08-05T07:16:00.000Z',
+        },
+      })
+    );
+
+    expect(details.deliveryState).toBe('deleted');
+    expect(details.preview).toBeNull();
   });
 
   it('resolves workspace chat selection from requested, stored, then first conversation', () => {

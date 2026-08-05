@@ -7,6 +7,7 @@ const store = vi.hoisted(() => ({
   importExternalChatEvent: vi.fn(),
   recordExternalChatSourceEvent: vi.fn(),
   releaseExternalChatSourceEvent: vi.fn(),
+  resolveExternalChatThread: vi.fn(),
   upsertExternalChatObservation: vi.fn(),
 }));
 
@@ -65,6 +66,11 @@ describe('processExternalChatEnvelope replay handling', () => {
     );
     store.recordExternalChatSourceEvent.mockResolvedValue(undefined);
     store.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
+    store.resolveExternalChatThread.mockResolvedValue({
+      conversationId: 'conversation-1',
+      found: true,
+      threadId: 'thread-1',
+    });
   });
 
   it('promotes a matching probe ledger entry to authoritative history', async () => {
@@ -149,5 +155,32 @@ describe('processExternalChatEnvelope replay handling', () => {
         result: { accepted: true },
       })
     );
+  });
+
+  it('resolves live ephemeral activity to an existing thread', async () => {
+    const activity: ExternalChatEventEnvelope = {
+      agentId: 'bucket-1',
+      deliveryMode: 'live',
+      eventId: 'typing:1',
+      kind: 'typing',
+      payload: { isTyping: true },
+      timestamp: '2026-08-01T00:02:00.000Z',
+      version: 2,
+      visitorId: 'visitor-1',
+    };
+
+    await expect(
+      processExternalChatEnvelope(activity, context)
+    ).resolves.toMatchObject({
+      accepted: true,
+      conversationId: 'conversation-1',
+      ephemeral: true,
+      threadId: 'thread-1',
+    });
+    expect(store.resolveExternalChatThread).toHaveBeenCalledWith({
+      connectorKey: 'opaque',
+      event: activity,
+      wsId: context.wsId,
+    });
   });
 });

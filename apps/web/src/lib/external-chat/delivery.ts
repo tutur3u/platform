@@ -1,4 +1,10 @@
 import { createHash } from 'node:crypto';
+import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
+import {
+  downloadWorkspaceStorageObjectForProvider,
+  getWorkspaceStorageObjectMetadataForProvider,
+  resolveWorkspaceStorageProvider,
+} from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import type { ChatMessage } from '@/lib/chat/private-rpc';
@@ -13,6 +19,14 @@ type ExternalThreadRow = {
   remote_agent_id: string;
   remote_visitor_id: string;
 };
+
+const MAX_EXTERNAL_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+export const EXTERNAL_ATTACHMENT_TYPES = new Set([
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
 
 type ExternalChatMutationDb = {
   from: (table: string) => {
@@ -46,6 +60,7 @@ function externalChatMutationDb(admin: unknown) {
 export type ExternalChatDelivery = {
   deliveryId: string;
   idempotencyKey: string;
+  remoteMessageId: string;
   thread: ExternalThreadRow;
 };
 
@@ -74,6 +89,53 @@ export async function isExternalChatConversation({
     .maybeSingle();
   if (error) throw new Error(error.message);
   return Boolean(data);
+}
+
+export async function deleteExternalChatMessageIfBound({
+  conversationId,
+  messageId,
+  wsId,
+}: {
+  conversationId: string;
+  messageId: string;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const privateDb = externalChatPrivateDb(admin);
+  const { data: thread, error: threadError } = await privateDb
+    .from('external_chat_threads')
+    .select('id, connector_key, remote_agent_id, remote_visitor_id')
+    .eq('ws_id', wsId)
+    .eq('conversation_id', conversationId)
+    .maybeSingle();
+  if (threadError) throw new Error(threadError.message);
+  if (!thread) return false;
+
+  const { data: event, error: eventError } = await privateDb
+    .from('external_chat_events')
+    .select('remote_message_id')
+    .eq('ws_id', wsId)
+    .eq('thread_id', thread.id)
+    .eq('message_id', messageId)
+    .maybeSingle();
+  if (eventError) throw new Error(eventError.message);
+  if (!event) throw new Error('external_chat_message_unmapped');
+
+  const state = await readExternalChatBinding(wsId);
+  if (
+    !state?.binding.is_enabled ||
+    !isExternalChatLiveAuthority(state.binding.settings)
+  ) {
+    throw new Error('external_chat_control_unavailable');
+  }
+
+  const control = await createExternalChatControlClient(wsId);
+  await control('/control/v1/messages/delete', {
+    agentId: thread.remote_agent_id,
+    messageId: event.remote_message_id,
+    visitorId: thread.remote_visitor_id,
+  });
+  return true;
 }
 
 function getBridgeBaseUrl(settings: unknown) {
@@ -304,6 +366,7 @@ async function provesCredentialAlreadyCleared(
 }
 
 export async function deliverExternalChatReplyIfBound({
+  attachments = [],
   content,
   conversationId,
   idempotencyKey,
@@ -312,6 +375,7 @@ export async function deliverExternalChatReplyIfBound({
   senderId,
   wsId,
 }: {
+  attachments?: ChatAttachmentDraft[];
   content: string;
   conversationId: string;
   idempotencyKey: string;
@@ -348,9 +412,14 @@ export async function deliverExternalChatReplyIfBound({
     throw new Error('External chat bridge is not ready');
   }
 
+  const attachment = attachments[0];
+  const attachmentPayload = attachment
+    ? await prepareExternalChatAttachment({ attachment, wsId })
+    : null;
   const body = JSON.stringify({
     agentId: (thread as ExternalThreadRow).remote_agent_id,
     content,
+    ...(attachmentPayload ?? {}),
     idempotencyKey,
     mirrorToPlatform: false,
     senderId,
@@ -360,7 +429,7 @@ export async function deliverExternalChatReplyIfBound({
   const response = await postSignedControlRequest({
     body,
     bridgeBaseUrl,
-    path: '/control/v1/replies',
+    path: attachmentPayload ? '/control/v1/attachments' : '/control/v1/replies',
     secret,
   });
   if (!response.ok) {
@@ -368,10 +437,21 @@ export async function deliverExternalChatReplyIfBound({
       `External chat bridge rejected delivery (${response.status})`
     );
   }
-  return { deliveryId, idempotencyKey, thread: thread as ExternalThreadRow };
+  const result = (await response.json()) as Record<string, unknown>;
+  const remoteMessageId =
+    typeof result.messageId === 'string' ? result.messageId.trim() : '';
+  if (!remoteMessageId)
+    throw new Error('External chat bridge returned no message identity');
+  return {
+    deliveryId,
+    idempotencyKey,
+    remoteMessageId,
+    thread: thread as ExternalThreadRow,
+  };
 }
 
 export async function reserveExternalChatReply({
+  attachments = [],
   clientRequestId,
   content,
   conversationId,
@@ -379,6 +459,7 @@ export async function reserveExternalChatReply({
   senderId,
   wsId,
 }: {
+  attachments?: ChatAttachmentDraft[];
   clientRequestId: string;
   content: string;
   conversationId: string;
@@ -390,6 +471,7 @@ export async function reserveExternalChatReply({
     .update(JSON.stringify({ clientRequestId, conversationId, senderId }))
     .digest('hex');
   const payloadHash = createExternalChatReplyPayloadHash({
+    attachments,
     content,
     replyToMessageId,
   });
@@ -411,19 +493,27 @@ export async function reserveExternalChatReply({
 
 export async function markExternalChatReplyDelivered({
   deliveryId,
+  remoteMessageId,
   wsId,
 }: {
   deliveryId: string;
+  remoteMessageId: string;
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await externalChatMutationDb(admin)
-    .from('external_chat_outbound_deliveries')
-    .update({ delivered_at: new Date().toISOString() })
-    .eq('id', deliveryId)
-    .eq('ws_id', wsId)
-    .is('delivered_at', null);
-  if (error) throw new Error(error.message);
+  const { data, error } = await externalChatMutationDb(admin).rpc(
+    'external_chat_mark_reply_delivered',
+    {
+      p_delivery_id: deliveryId,
+      p_remote_message_id: remoteMessageId,
+      p_ws_id: wsId,
+    }
+  );
+  if (error) throw error;
+  const result = data as { remoteMessageId?: unknown } | null;
+  if (result?.remoteMessageId !== remoteMessageId.trim()) {
+    throw new Error('external_chat_delivery_identity_mismatch');
+  }
 }
 
 export async function cancelExternalChatReply({
@@ -444,12 +534,14 @@ export async function cancelExternalChatReply({
 }
 
 export async function finalizeExternalChatReply({
+  attachments = [],
   content,
   deliveryId,
   replyToMessageId,
   senderId,
   wsId,
 }: {
+  attachments?: ChatAttachmentDraft[];
   content: string;
   deliveryId: string;
   replyToMessageId: string | null;
@@ -458,6 +550,7 @@ export async function finalizeExternalChatReply({
 }) {
   const admin = await createAdminClient({ noCookie: true });
   const payloadHash = createExternalChatReplyPayloadHash({
+    attachments,
     content,
     replyToMessageId,
   });
@@ -465,6 +558,7 @@ export async function finalizeExternalChatReply({
     'external_chat_finalize_reply',
     {
       p_actor_user_id: senderId,
+      p_attachments: attachments,
       p_content: content,
       p_delivery_id: deliveryId,
       p_payload_hash: payloadHash,
@@ -477,13 +571,73 @@ export async function finalizeExternalChatReply({
 }
 
 function createExternalChatReplyPayloadHash({
+  attachments = [],
   content,
   replyToMessageId,
 }: {
+  attachments?: ChatAttachmentDraft[];
   content: string;
   replyToMessageId: string | null;
 }) {
   return createHash('sha256')
-    .update(JSON.stringify({ content, replyToMessageId }))
+    .update(
+      JSON.stringify({
+        attachments: attachments.map((attachment) => ({
+          contentType: attachment.contentType ?? null,
+          filename: attachment.filename,
+          fullPath: attachment.fullPath ?? null,
+          path: attachment.path,
+          sizeBytes: attachment.sizeBytes ?? null,
+          storageWsId: attachment.storageWsId ?? null,
+        })),
+        content,
+        replyToMessageId,
+      })
+    )
     .digest('hex');
+}
+
+export async function prepareExternalChatAttachment({
+  attachment,
+  wsId,
+}: {
+  attachment: ChatAttachmentDraft;
+  wsId: string;
+}) {
+  if (attachment.storageWsId && attachment.storageWsId !== wsId)
+    throw new Error('external_attachment_workspace_invalid');
+  if (
+    typeof attachment.sizeBytes === 'number' &&
+    attachment.sizeBytes > MAX_EXTERNAL_ATTACHMENT_BYTES
+  ) {
+    throw new Error('external_attachment_size_invalid');
+  }
+  const { provider } = await resolveWorkspaceStorageProvider(wsId);
+  const metadata = await getWorkspaceStorageObjectMetadataForProvider(
+    wsId,
+    provider,
+    attachment.path
+  );
+  if (metadata.size < 1 || metadata.size > MAX_EXTERNAL_ATTACHMENT_BYTES) {
+    throw new Error('external_attachment_size_invalid');
+  }
+  const contentType = (metadata.contentType ?? '').toLowerCase();
+  if (!EXTERNAL_ATTACHMENT_TYPES.has(contentType))
+    throw new Error('external_attachment_type_invalid');
+  const downloaded = await downloadWorkspaceStorageObjectForProvider(
+    wsId,
+    provider,
+    attachment.path
+  );
+  if (
+    downloaded.buffer.byteLength < 1 ||
+    downloaded.buffer.byteLength > MAX_EXTERNAL_ATTACHMENT_BYTES
+  ) {
+    throw new Error('external_attachment_size_invalid');
+  }
+  return {
+    contentType,
+    data: Buffer.from(downloaded.buffer).toString('base64'),
+    filename: attachment.filename,
+  };
 }

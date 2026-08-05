@@ -96,6 +96,12 @@ vi.mock('@/lib/chat/realtime', () => ({
 }));
 
 vi.mock('@/lib/external-chat/delivery', () => ({
+  EXTERNAL_ATTACHMENT_TYPES: new Set([
+    'image/gif',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ]),
   cancelExternalChatReply: (
     ...args: Parameters<typeof mocks.cancelExternalChatReply>
   ) => mocks.cancelExternalChatReply(...args),

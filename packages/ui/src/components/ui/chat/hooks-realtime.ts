@@ -2,7 +2,13 @@
 
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
-import { useEffect } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { mergeCachedMessages, patchCachedMessages } from './hooks-messages';
 import { chatQueryKeys } from './query-keys';
 
@@ -28,12 +34,31 @@ type ChatRealtimeEvent =
       type: 'ping' | 'ready';
     }
   | {
+      conversationId?: string | null;
+      isTyping: boolean;
+      type: 'typing.updated';
+    }
+  | {
+      conversationId?: string | null;
+      isOnline: boolean;
+      type: 'presence.updated';
+    }
+  | {
       error?: string;
       type: 'error';
     };
 
 export function useChatRealtime(wsId: string) {
   const queryClient = useQueryClient();
+  const typingTimeouts = useRef(
+    new Map<string, ReturnType<typeof setTimeout>>()
+  );
+  const [typingConversationIds, setTypingConversationIds] = useState(
+    () => new Set<string>()
+  );
+  const [onlineConversationIds, setOnlineConversationIds] = useState(
+    () => new Set<string>()
+  );
 
   useEffect(() => {
     if (!wsId || typeof window === 'undefined') return;
@@ -50,15 +75,79 @@ export function useChatRealtime(wsId: string) {
         return;
       }
 
+      if (parsed.type === 'typing.updated' && parsed.conversationId) {
+        updateTypingState({
+          conversationId: parsed.conversationId,
+          isTyping: parsed.isTyping,
+          setTypingConversationIds,
+          typingTimeouts: typingTimeouts.current,
+        });
+        return;
+      }
+
+      if (parsed.type === 'presence.updated' && parsed.conversationId) {
+        setOnlineConversationIds((current) =>
+          updateConversationSet(
+            current,
+            parsed.conversationId ?? '',
+            parsed.isOnline
+          )
+        );
+        return;
+      }
+
       applyChatRealtimeEvent(queryClient, wsId, parsed);
     };
 
-    source.onerror = () => {
+    const timers = typingTimeouts.current;
+    return () => {
       source.close();
+      for (const timeout of timers.values()) clearTimeout(timeout);
+      timers.clear();
     };
-
-    return () => source.close();
   }, [queryClient, wsId]);
+
+  return { onlineConversationIds, typingConversationIds };
+}
+
+function updateTypingState({
+  conversationId,
+  isTyping,
+  setTypingConversationIds,
+  typingTimeouts,
+}: {
+  conversationId: string;
+  isTyping: boolean;
+  setTypingConversationIds: Dispatch<SetStateAction<Set<string>>>;
+  typingTimeouts: Map<string, ReturnType<typeof setTimeout>>;
+}) {
+  const existing = typingTimeouts.get(conversationId);
+  if (existing) clearTimeout(existing);
+  typingTimeouts.delete(conversationId);
+  setTypingConversationIds((current) =>
+    updateConversationSet(current, conversationId, isTyping)
+  );
+  if (!isTyping) return;
+  typingTimeouts.set(
+    conversationId,
+    setTimeout(() => {
+      setTypingConversationIds((current) =>
+        updateConversationSet(current, conversationId, false)
+      );
+      typingTimeouts.delete(conversationId);
+    }, 4_000)
+  );
+}
+
+function updateConversationSet(
+  current: Set<string>,
+  conversationId: string,
+  active: boolean
+) {
+  const next = new Set(current);
+  if (active) next.add(conversationId);
+  else next.delete(conversationId);
+  return next;
 }
 
 function parseChatRealtimeEvent(data: string): ChatRealtimeEvent | null {

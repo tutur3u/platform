@@ -2598,11 +2598,11 @@
       "parentId": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages/:messageId:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages/:messageId:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
       "kind": "api",
       "methods": ["PATCH", "DELETE"],
       "routePath": "/api/v1/workspaces/:wsId/chat/conversations/:conversationId/messages/:messageId",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },

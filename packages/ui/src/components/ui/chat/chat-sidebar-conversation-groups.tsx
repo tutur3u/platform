@@ -48,6 +48,7 @@ export function ConversationGroups({
   isFetchingMoreConversations,
   onArchiveConversation,
   onLoadMoreConversations,
+  onlineConversationIds,
   onPinConversation,
   onSelectConversation,
   scope,
@@ -61,6 +62,7 @@ export function ConversationGroups({
   isFetchingMoreConversations?: boolean;
   onArchiveConversation?: (conversationId: string) => void;
   onLoadMoreConversations?: () => Promise<unknown> | undefined;
+  onlineConversationIds?: ReadonlySet<string>;
   onPinConversation?: (conversationId: string, pinned: boolean) => void;
   onSelectConversation: (conversationId: string) => void;
   scope?: ChatConversationScope;
@@ -166,7 +168,8 @@ export function ConversationGroups({
     count: items.length,
     estimateSize: (index) => {
       const item = items[index];
-      if (item?.type === 'conversation') return 36;
+      if (item?.type === 'conversation')
+        return item.conversation.metadata.externalChat === true ? 66 : 36;
       if (item?.type === 'loader') return 44;
       if (item?.type === 'source-group-label') return 34;
       return 30;
@@ -252,6 +255,7 @@ export function ConversationGroups({
                   conversation={item.conversation}
                   currentUserId={currentUserId}
                   isSelected={item.conversation.id === selectedConversationId}
+                  isOnline={onlineConversationIds?.has(item.conversation.id)}
                   onArchiveConversation={onArchiveConversation}
                   onPinConversation={onPinConversation}
                   onSelectConversation={onSelectConversation}

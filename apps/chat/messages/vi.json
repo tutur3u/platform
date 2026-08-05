@@ -264,6 +264,11 @@
     "delete_group_warning": "Thao tác này sẽ khiến bạn rời nhóm và mất quyền truy cập vào toàn bộ tin nhắn.",
     "delete_message": "Xóa tin nhắn",
     "delete_workspace_conversation_warning": "Xóa cuộc trò chuyện workspace này sẽ làm tất cả mọi người mất quyền truy cập. Tin nhắn và tệp đính kèm trong kênh hoặc cuộc trò chuyện AI này sẽ không còn khả dụng.",
+    "delivery_deleted": "Đã xóa",
+    "delivery_failed": "Thất bại",
+    "delivery_seen": "Đã xem",
+    "delivery_sending": "Đang gửi",
+    "delivery_sent": "Đã gửi",
     "direct_message": "Tin nhắn trực tiếp",
     "direct_messages": "Tin nhắn trực tiếp",
     "directory_search_placeholder": "Tìm người",
@@ -275,6 +280,7 @@
     "empty_messages_description": "Tin nhắn và tệp đính kèm sẽ xuất hiện tại đây.",
     "empty_messages_title": "Chưa có tin nhắn",
     "external_sender": "Khách truy cập website",
+    "external_visitor_typing": "Khách truy cập website đang nhập",
     "files": "Tệp",
     "filter_conversations": "Lọc cuộc trò chuyện",
     "first_activity": "Hoạt động đầu tiên",
@@ -339,6 +345,7 @@
     "no_search_results": "Không tìm thấy tin nhắn",
     "no_sent_friend_requests": "Không có lời mời đã gửi",
     "no_visited_routes": "Chưa có lịch sử truy cập",
+    "online": "Trực tuyến",
     "photos": "Ảnh",
     "pin_conversation": "Ghim cuộc trò chuyện",
     "private_by_default": "Mặc định dùng schema riêng tư",
@@ -663,6 +670,7 @@
     "title": "Không gian làm việc"
   },
   "settings": {
+    "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {
       "close_settings": "Đóng cài đặt",
       "first_section": "Mục đầu tiên",
@@ -680,7 +688,8 @@
       "keyboard_shortcuts": "Phím tắt bàn phím",
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
-    }
+    },
+    "search_settings_placeholder": "Tìm cài đặt..."
   },
   "version-badge": {
     "app": "Ứng dụng",
