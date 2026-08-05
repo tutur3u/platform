@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import { listWorkspaceTemplates } from '@tuturuuu/internal-api/templates';
 import { BoardShareSettingsPanel } from '@tuturuuu/tasks-ui/tu-do/boards/board-share-settings-panel';
+import { CapacityRulesSettings } from '@tuturuuu/tasks-ui/tu-do/boards/capacity-rules-settings';
 import { DraftsPage } from '@tuturuuu/tasks-ui/tu-do/drafts/drafts-page';
 import TaskEstimatesClient from '@tuturuuu/tasks-ui/tu-do/estimates/client';
 import HabitsClientPage from '@tuturuuu/tasks-ui/tu-do/habits/client';
@@ -165,6 +166,7 @@ export function TaskBoardSettingsPanel({
             wsId={wsId}
           />
           <TaskBoardBehaviorSettings />
+          <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
         </TabsContent>
 
         <TabsContent value="layout">

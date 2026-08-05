@@ -370,7 +370,7 @@ describe('task bulk route', () => {
       })
     );
 
-    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+    expect(mocks.rpc).toHaveBeenCalledTimes(3);
     expect(mocks.rpc).toHaveBeenNthCalledWith(
       1,
       'update_task_fields_with_actor',
@@ -387,6 +387,9 @@ describe('task bulk route', () => {
         p_actor_user_id: '11111111-1111-4111-8111-111111111111',
       })
     );
+    expect(mocks.rpc).toHaveBeenNthCalledWith(3, 'get_task_capacity_rules', {
+      p_board_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    });
   });
 
   it('uses an injected satellite actor for bulk due-date updates', async () => {

@@ -18,6 +18,7 @@ import {
   PanelLeftClose,
   Pencil,
   Play,
+  Plus,
   RefreshCw,
   Search,
   Share2,
@@ -42,6 +43,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
+import { CreateBoardAnywhereDialog } from '../boards/create-board-anywhere-dialog';
 import { getActiveBoardRefresh } from './board-broadcast-context';
 import { saveBoardConfig } from './board-config-storage';
 import { BoardSwitcher } from './board-switcher';
@@ -520,26 +522,39 @@ export function BoardHeader({
               </span>
             </div>
           ) : (
-            <BoardSwitcher
-              board={{ ...board, ws_id: workspaceId }}
-              translations={{
-                loadingBoards: t('common.loading'),
-                noOtherBoards: t('common.no_other_boards'),
-                activeBoards: t('common.active_boards'),
-                archivedBoards: t('common.archived_boards'),
-                deletedBoards: t('common.deleted_boards'),
-                untitled: t('common.untitled'),
-                active: t('common.active'),
-                archived: t('common.archived'),
-                deleted: t('common.deleted'),
-                daysLeft: t('common.days_left', { count: '{count}' }),
-                searchBoards: t('common.search_boards'),
-                tasks: t('common.tasks'),
-                createBoard: t('ws-task-boards.create'),
-                creatingBoard: t('common.creating'),
-                createBoardError: t('ws-task-boards.errors.unexpected'),
-              }}
-            />
+            <div className="flex min-w-0 items-center gap-1">
+              <BoardSwitcher
+                board={{ ...board, ws_id: workspaceId }}
+                translations={{
+                  loadingBoards: t('common.loading'),
+                  noOtherBoards: t('common.no_other_boards'),
+                  activeBoards: t('common.active_boards'),
+                  archivedBoards: t('common.archived_boards'),
+                  deletedBoards: t('common.deleted_boards'),
+                  untitled: t('common.untitled'),
+                  active: t('common.active'),
+                  archived: t('common.archived'),
+                  deleted: t('common.deleted'),
+                  daysLeft: t('common.days_left', { count: '{count}' }),
+                  searchBoards: t('common.search_boards'),
+                  tasks: t('common.tasks'),
+                  createBoard: t('ws-task-boards.create'),
+                  creatingBoard: t('common.creating'),
+                  createBoardError: t('ws-task-boards.errors.unexpected'),
+                }}
+              />
+              <CreateBoardAnywhereDialog currentWorkspaceId={workspaceId}>
+                <Button
+                  aria-label={t('ws-task-boards.create_anywhere.action')}
+                  className="h-7 w-7 shrink-0 p-0 sm:h-8 sm:w-8"
+                  size="icon"
+                  type="button"
+                  variant="outline"
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </CreateBoardAnywhereDialog>
+            </div>
           )}
         </div>
 

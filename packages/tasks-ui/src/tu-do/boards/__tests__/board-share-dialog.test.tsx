@@ -125,6 +125,7 @@ describe('BoardShareDialog', () => {
           handle: null,
           id: 'user-1',
           is_creator: false,
+          permission: 'edit',
           roles: [{ id: 'role-1', name: 'Project manager' }],
           user_id: 'user-1',
           workspace_member_type: 'MEMBER',
@@ -158,12 +159,8 @@ describe('BoardShareDialog', () => {
     expect(
       screen.queryByText('ws-task-boards.share.guests.description')
     ).not.toBeInTheDocument();
-    await waitFor(() => {
-      expect(getWorkspaceTaskBoardPublicLinkMock).toHaveBeenCalledWith(
-        'ws-1',
-        'board-1'
-      );
-    });
+    expect(getWorkspaceTaskBoardPublicLinkMock).not.toHaveBeenCalled();
+    expect(listWorkspaceTaskBoardSharesMock).not.toHaveBeenCalled();
     expect(listWorkspaceTaskBoardViewableMembersMock).not.toHaveBeenCalled();
 
     expect(await screen.findByText('common.disabled')).toBeInTheDocument();
@@ -188,7 +185,8 @@ describe('BoardShareDialog', () => {
     await waitFor(() => {
       expect(listWorkspaceTaskBoardViewableMembersMock).toHaveBeenCalledWith(
         'ws-1',
-        'board-1'
+        'board-1',
+        expect.objectContaining({ fetch: expect.any(Function) })
       );
     });
     expect(await screen.findByText('Project Manager')).toBeInTheDocument();
@@ -211,6 +209,58 @@ describe('BoardShareDialog', () => {
     ).toBeInTheDocument();
   });
 
+  it('normalizes malformed roles without reaching the recovery boundary', async () => {
+    listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({
+      members: [
+        {
+          display_name: 'Safe Member',
+          id: 'user-safe',
+          user_id: 'user-safe',
+          roles: null,
+          permission: 'view',
+        },
+      ],
+    });
+    renderBoardShareDialog();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.workspace_members.title/,
+      })
+    );
+    expect(await screen.findByText('Safe Member')).toBeInTheDocument();
+    expect(
+      screen.getByText('ws-task-boards.share.permission.view')
+    ).toBeInTheDocument();
+  });
+
+  it('terminates failed member loading and retries on demand', async () => {
+    listWorkspaceTaskBoardViewableMembersMock.mockRejectedValue(
+      new Error('offline')
+    );
+    renderBoardShareDialog();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.workspace_members.title/,
+      })
+    );
+    expect(
+      await screen.findByText(
+        'ws-task-boards.share.load_error',
+        {},
+        { timeout: 5_000 }
+      )
+    ).toBeInTheDocument();
+    listWorkspaceTaskBoardViewableMembersMock.mockReset();
+    listWorkspaceTaskBoardViewableMembersMock.mockResolvedValue({
+      members: [],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'common.retry' }));
+    expect(
+      await screen.findByText('ws-task-boards.share.workspace_members.empty')
+    ).toBeInTheDocument();
+    expect(listWorkspaceTaskBoardViewableMembersMock).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps direct board guests first-class for invite, update, and remove', async () => {
     listWorkspaceTaskBoardSharesMock.mockResolvedValue({
       shares: [
@@ -225,10 +275,16 @@ describe('BoardShareDialog', () => {
     });
 
     renderBoardShareDialog();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /ws-task-boards.share.guests.title/,
+      })
+    );
     await waitFor(() => {
       expect(listWorkspaceTaskBoardSharesMock).toHaveBeenCalledWith(
         'ws-1',
-        'board-1'
+        'board-1',
+        expect.objectContaining({ fetch: expect.any(Function) })
       );
     });
     await waitFor(() => {
@@ -239,11 +295,6 @@ describe('BoardShareDialog', () => {
       ).toHaveTextContent('1');
     });
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /ws-task-boards.share.guests.title/,
-      })
-    );
     fireEvent.change(
       screen.getByPlaceholderText('ws-task-boards.share.email_placeholder'),
       {

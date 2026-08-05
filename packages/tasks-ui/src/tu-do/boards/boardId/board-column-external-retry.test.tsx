@@ -2,6 +2,7 @@
  * @vitest-environment jsdom
  */
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   act,
   fireEvent,
@@ -11,6 +12,7 @@ import {
 } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListPaginationState } from '../../shared/progressive-loader-context';
 import { BoardColumn } from './board-column';
@@ -113,6 +115,17 @@ function renderExternalColumn() {
   );
 }
 
+function renderWithQueryClient(ui: ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    ),
+  });
+}
+
 describe('BoardColumn external lane retry behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -125,7 +138,7 @@ describe('BoardColumn external lane retry behavior', () => {
   });
 
   it('does not immediately retry the same failed external-options signature', async () => {
-    const { rerender } = render(renderExternalColumn());
+    const { rerender } = renderWithQueryClient(renderExternalColumn());
 
     await waitFor(() => {
       expect(mocks.loadListPage).toHaveBeenCalledTimes(1);
@@ -155,7 +168,7 @@ describe('BoardColumn external lane retry behavior', () => {
     };
     const onTaskSelect = vi.fn();
 
-    render(
+    renderWithQueryClient(
       <BoardColumn
         boardId="board-1"
         column={regularColumn}
@@ -202,7 +215,7 @@ describe('BoardColumn external lane retry behavior', () => {
     const onTaskSelect = vi.fn();
     const setIsMultiSelectMode = vi.fn();
 
-    render(
+    renderWithQueryClient(
       <BoardColumn
         boardId="board-1"
         column={regularColumn}
@@ -243,7 +256,7 @@ describe('BoardColumn external lane retry behavior', () => {
     };
     const onTaskListCollapsedChange = vi.fn();
 
-    render(
+    renderWithQueryClient(
       <BoardColumn
         boardId="board-1"
         column={regularColumn}
@@ -275,7 +288,7 @@ describe('BoardColumn external lane retry behavior', () => {
       totalCount: regularTasks.length,
     });
 
-    render(
+    renderWithQueryClient(
       <BoardColumn
         boardId="board-1"
         column={regularColumn}

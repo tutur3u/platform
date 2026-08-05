@@ -36,6 +36,10 @@ import {
   canEditTaskBoardAccess,
   resolveTaskBoardAccess,
 } from '../board-access';
+import {
+  loadTaskCapacityWarnings,
+  parseTaskCapacityViolation,
+} from '../capacity';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
@@ -2673,6 +2677,8 @@ export async function handleTaskRoutePOST(
 
     if (error) {
       console.error('Error creating task:', error);
+      const capacity = parseTaskCapacityViolation(error);
+      if (capacity) return NextResponse.json(capacity, { status: 409 });
       return NextResponse.json(
         { error: 'Failed to create task' },
         { status: 500 }
@@ -2710,6 +2716,8 @@ export async function handleTaskRoutePOST(
       if (relationError) {
         console.error('Failed to attach task relationships:', relationError);
         await cleanupCreatedTask(sbAdmin, data.id);
+        const capacity = parseTaskCapacityViolation(relationError);
+        if (capacity) return NextResponse.json(capacity, { status: 409 });
         return NextResponse.json(
           { error: 'Failed to attach task relationships' },
           { status: 500 }
@@ -2792,7 +2800,14 @@ export async function handleTaskRoutePOST(
       list_name: data.task_lists?.name,
     };
 
-    return NextResponse.json({ task }, { status: 201 });
+    const capacityWarnings = await loadTaskCapacityWarnings(
+      sbAdmin,
+      listRow.board_id
+    );
+    return NextResponse.json(
+      { task, ...(capacityWarnings.length ? { capacityWarnings } : {}) },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

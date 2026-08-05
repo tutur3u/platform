@@ -43,6 +43,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
 import { TaskBoardSettingsPicker } from './task-board-settings-picker';
+import { TaskDefaultBoardSettings } from './task-default-board-settings';
 import { TaskIntelligenceSettingsPanel } from './task-intelligence-settings-panel';
 import {
   TaskBoardSettingsPanel,
@@ -310,6 +311,7 @@ export function SettingsDialog({
 
       {activeTab === 'tasks_general' && (
         <div className="h-full space-y-6">
+          {wsId ? <TaskDefaultBoardSettings wsId={wsId} /> : null}
           {wsId && onBoardSettingsOpen ? (
             <TaskBoardSettingsPicker
               boardId={boardId}

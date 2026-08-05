@@ -23,6 +23,11 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { BoardPublicLinkSection } from './board-public-link-section';
+import {
+  normalizeRoles,
+  shareRequestOptions,
+  shouldRetryShareRequest,
+} from './share-request';
 import { ShareSection } from './share-section';
 
 interface BoardShareSettingsPanelProps {
@@ -66,13 +71,21 @@ export function BoardShareSettingsPanel({
   const queryKey = ['task-board-shares', wsId, board.id] as const;
   const sharesQuery = useQuery({
     queryKey,
-    queryFn: () => listWorkspaceTaskBoardShares(wsId, board.id),
-    enabled,
+    queryFn: ({ signal }) =>
+      listWorkspaceTaskBoardShares(wsId, board.id, shareRequestOptions(signal)),
+    enabled: enabled && guestsOpen,
+    retry: shouldRetryShareRequest,
   });
   const viewableMembersQuery = useQuery({
     queryKey: ['task-board-viewable-members', wsId, board.id] as const,
-    queryFn: () => listWorkspaceTaskBoardViewableMembers(wsId, board.id),
+    queryFn: ({ signal }) =>
+      listWorkspaceTaskBoardViewableMembers(
+        wsId,
+        board.id,
+        shareRequestOptions(signal)
+      ),
     enabled: enabled && membersOpen,
+    retry: shouldRetryShareRequest,
     staleTime: 60_000,
   });
 
@@ -125,7 +138,9 @@ export function BoardShareSettingsPanel({
     },
   });
 
-  const shares = sharesQuery.data?.shares ?? [];
+  const shares = Array.isArray(sharesQuery.data?.shares)
+    ? sharesQuery.data.shares
+    : [];
   const members = Array.isArray(viewableMembersQuery.data?.members)
     ? viewableMembersQuery.data.members
     : undefined;
@@ -190,6 +205,18 @@ export function BoardShareSettingsPanel({
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('common.loading')}
           </div>
+        ) : viewableMembersQuery.isError ? (
+          <div className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
+            <p>{t('ws-task-boards.share.load_error')}</p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void viewableMembersQuery.refetch()}
+            >
+              {t('common.retry')}
+            </Button>
+          </div>
         ) : (members ?? []).length === 0 ? (
           <div className="text-muted-foreground text-sm">
             {t('ws-task-boards.share.workspace_members.empty')}
@@ -223,11 +250,20 @@ export function BoardShareSettingsPanel({
                       {t('ws-task-boards.share.workspace_members.creator')}
                     </Badge>
                   )}
-                  {member.roles.slice(0, 2).map((role) => (
-                    <Badge key={role.id} variant="outline">
-                      {role.name}
-                    </Badge>
-                  ))}
+                  {normalizeRoles(member.roles)
+                    .slice(0, 2)
+                    .map((role) => (
+                      <Badge key={role.id} variant="outline">
+                        {role.name}
+                      </Badge>
+                    ))}
+                  <Badge variant="outline">
+                    {t(
+                      member.permission === 'edit'
+                        ? 'ws-task-boards.share.permission.edit'
+                        : 'ws-task-boards.share.permission.view'
+                    )}
+                  </Badge>
                   <Badge variant="outline">
                     {t('ws-task-boards.share.workspace_members.badge')}
                   </Badge>
@@ -281,6 +317,18 @@ export function BoardShareSettingsPanel({
           {sharesQuery.isLoading ? (
             <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
               {t('common.loading')}
+            </div>
+          ) : sharesQuery.isError ? (
+            <div className="space-y-2 rounded-md border border-destructive/40 p-4 text-sm">
+              <p>{t('ws-task-boards.share.load_error')}</p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void sharesQuery.refetch()}
+              >
+                {t('common.retry')}
+              </Button>
             </div>
           ) : shares.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
