@@ -1,7 +1,10 @@
 import { generateAiApiKey } from '@tuturuuu/ai/api-key-hash';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import {
+  externalAppRegistrationLinks,
+  loadExternalAppRegistration,
+} from '@/lib/public-credential';
 import {
   aiKeyCreationApprovalRequiredResponse,
   authorizeAiStudioWorkspaceRequest,
@@ -29,52 +32,32 @@ const createKeySchema = z.object({
   name: z.string().trim().min(1).max(120),
   requestsPerMinute: z.number().int().min(1).max(10_000).optional(),
 });
-type AiStudioAdminClient = Awaited<
-  ReturnType<typeof authorizeAiStudioWorkspaceRequest>
-> extends infer Result
-  ? Result extends { ok: true; sbAdmin: infer Client }
-    ? Client
-    : never
-  : never;
+type AiStudioAdminClient =
+  Awaited<
+    ReturnType<typeof authorizeAiStudioWorkspaceRequest>
+  > extends infer Result
+    ? Result extends { ok: true; sbAdmin: infer Client }
+      ? Client
+      : never
+    : never;
 
 /**
  * A key may only be bound to an app that the platform has enabled and linked to
  * this workspace. Without this check anyone able to manage keys could invent an
  * app id and route their usage onto the unmetered path.
+ *
+ * This is the same predicate the request path applies on every call, so a key
+ * that stops qualifying later stops working rather than lingering on the
+ * unmetered path.
  */
 async function externalAppIsLinkedToWorkspace(
   sbAdmin: AiStudioAdminClient,
   appId: string,
   workspaceId: string
 ): Promise<boolean> {
-  const prefix = `EXTERNAL_APP_REGISTRY:${appId}`;
-  const { data, error } = await sbAdmin
-    .from('workspace_secrets')
-    .select('name, value')
-    .eq('ws_id', ROOT_WORKSPACE_ID)
-    .in('name', [`${prefix}:enabled`, `${prefix}:allowedWorkspaceIds`]);
-
-  if (error) return false;
-
-  const fields = new Map(
-    ((data ?? []) as Array<{ name: string; value: string | null }>).map(
-      (row) => [row.name, row.value]
-    )
-  );
-  if (fields.get(`${prefix}:enabled`) !== 'true') return false;
-
   try {
-    const allowed = JSON.parse(
-      fields.get(`${prefix}:allowedWorkspaceIds`) ?? '[]'
-    ) as unknown;
-    return (
-      Array.isArray(allowed) &&
-      allowed.some(
-        (entry) =>
-          typeof entry === 'string' &&
-          entry.trim().toLowerCase() === workspaceId.toLowerCase()
-      )
-    );
+    const registration = await loadExternalAppRegistration(sbAdmin, appId);
+    return externalAppRegistrationLinks(registration, workspaceId);
   } catch {
     return false;
   }
