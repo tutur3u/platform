@@ -994,6 +994,7 @@ export type Database = {
           credits_used: number;
           environment: string;
           expires_at: string | null;
+          external_app_id: string | null;
           id: string;
           last_used_at: string | null;
           last_used_ip_hash: string | null;
@@ -1015,6 +1016,7 @@ export type Database = {
           credits_used?: number;
           environment?: string;
           expires_at?: string | null;
+          external_app_id?: string | null;
           id?: string;
           last_used_at?: string | null;
           last_used_ip_hash?: string | null;
@@ -1036,6 +1038,7 @@ export type Database = {
           credits_used?: number;
           environment?: string;
           expires_at?: string | null;
+          external_app_id?: string | null;
           id?: string;
           last_used_at?: string | null;
           last_used_ip_hash?: string | null;
@@ -15244,13 +15247,14 @@ export type Database = {
       };
       begin_external_ai_studio_run: {
         Args: {
+          p_api_key_id?: string;
           p_external_app_id: string;
           p_feature: string;
           p_idempotency_key?: string;
           p_metadata?: Json;
           p_model_id: string;
           p_request_id: string;
-          p_user_id: string;
+          p_user_id?: string;
           p_ws_id: string;
         };
         Returns: {

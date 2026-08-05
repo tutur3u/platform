@@ -188,7 +188,10 @@ export async function beginAiStudioRun(
 }
 
 export type BeginExternalAiStudioRunInput = {
-  actorId: string;
+  /** Null for machine credentials, which run without a user. */
+  actorId: string | null;
+  /** Set when a bound API key authenticated the request, for rotation traceability. */
+  apiKeyId?: string | null;
   externalAppId: string;
   feature: string;
   idempotencyKey?: string | null;
@@ -205,13 +208,14 @@ export async function beginExternalAiStudioRun(
   const { data, error } = await sbAdmin
     .schema('private')
     .rpc('begin_external_ai_studio_run', {
+      p_api_key_id: input.apiKeyId ?? undefined,
       p_external_app_id: input.externalAppId,
       p_feature: input.feature,
       p_idempotency_key: input.idempotencyKey ?? undefined,
       p_metadata: input.metadata,
       p_model_id: input.modelId,
       p_request_id: input.requestId,
-      p_user_id: input.actorId,
+      p_user_id: input.actorId ?? undefined,
       p_ws_id: input.workspaceId,
     });
 

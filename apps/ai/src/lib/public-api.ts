@@ -56,6 +56,53 @@ type PrepareMeteredExecutionInput = {
   requiredExternalScope?: string;
 };
 
+/**
+ * Decides whether a request belongs to a registered external app.
+ *
+ * Two credentials reach the same place: a user's app-session token (interactive)
+ * and an API key bound to the app (background workers, which have no session).
+ * Both must be attributed to the app and settle unmetered, otherwise the same
+ * workload would be billed differently depending on who triggered it.
+ */
+export function externalAppAttribution(credential: PublicAiCredential): {
+  actorId: string | null;
+  apiKeyId: string | null;
+  appId: string;
+} | null {
+  if (credential.kind === 'external-app') {
+    return {
+      actorId: credential.actorId,
+      apiKeyId: null,
+      appId: credential.appId,
+    };
+  }
+
+  const boundAppId = credential.apiKey.external_app_id?.trim();
+  if (!boundAppId) return null;
+
+  return {
+    actorId: credential.actorId ?? null,
+    apiKeyId: credential.apiKey.id,
+    appId: boundAppId,
+  };
+}
+
+/**
+ * Only reached when `externalAppAttribution` returned null, which by construction
+ * means an unbound API key. The guard keeps that invariant checkable rather than
+ * silently substituting an empty id if the union ever gains a third member.
+ */
+function apiKeyIdForMeteredRun(credential: PublicAiCredential): string {
+  if (credential.kind !== 'api-key') {
+    throw new AiStudioError('This credential cannot start a metered run.', {
+      code: 'server_error',
+      status: 500,
+      type: 'server_error',
+    });
+  }
+  return credential.apiKey.id;
+}
+
 function positiveReservation(value: number): number {
   return Math.max(0.0001, value);
 }
@@ -122,31 +169,36 @@ export async function prepareMeteredExecution({
   });
 
   const idempotencyKey = getIdempotencyKey(request);
-  const reservation =
-    credential.kind === 'external-app'
-      ? await beginExternalAiStudioRun({
-          actorId: credential.actorId,
-          externalAppId: credential.appId,
-          feature,
-          idempotencyKey: idempotencyKey
-            ? `${credential.appId}:${idempotencyKey}`
-            : null,
-          metadata,
-          modelId,
-          requestId,
-          workspaceId: credential.workspaceId,
-        })
-      : await beginAiStudioRun({
-          actorId: credential.actorId,
-          apiKeyId: credential.apiKey.id,
-          feature,
-          idempotencyKey,
-          metadata,
-          modelId,
-          requestId,
-          reservedCredits: positiveReservation(estimatedCost.billedCredits),
-          workspaceId: credential.workspaceId,
-        });
+  const externalApp = externalAppAttribution(credential);
+
+  // An API key with no app binding is the only credential that spends workspace
+  // credits. Everything belonging to a registered app — a user's session token or
+  // a key bound to that app — is attributed to the app and settles unmetered.
+  const reservation = externalApp
+    ? await beginExternalAiStudioRun({
+        actorId: externalApp.actorId,
+        apiKeyId: externalApp.apiKeyId,
+        externalAppId: externalApp.appId,
+        feature,
+        idempotencyKey: idempotencyKey
+          ? `${externalApp.appId}:${idempotencyKey}`
+          : null,
+        metadata,
+        modelId,
+        requestId,
+        workspaceId: credential.workspaceId,
+      })
+    : await beginAiStudioRun({
+        actorId: credential.actorId,
+        apiKeyId: apiKeyIdForMeteredRun(credential),
+        feature,
+        idempotencyKey,
+        metadata,
+        modelId,
+        requestId,
+        reservedCredits: positiveReservation(estimatedCost.billedCredits),
+        workspaceId: credential.workspaceId,
+      });
 
   return {
     credential,
@@ -228,7 +280,7 @@ export async function settleMeteredExecution(
     status,
   };
 
-  if (context.credential.kind === 'external-app') {
+  if (externalAppAttribution(context.credential)) {
     await settleExternalAiStudioRun(settlement);
   } else {
     await settleAiStudioRun({
@@ -265,8 +317,9 @@ export async function recordMeteredExecutionStep(
 
   await recordAiStudioRunStep({
     ...input,
-    billedCredits:
-      context.credential.kind === 'external-app' ? 0 : cost.billedCredits,
+    billedCredits: externalAppAttribution(context.credential)
+      ? 0
+      : cost.billedCredits,
     modelId: input.kind === 'model' ? context.modelId : null,
     providerCostUsd: cost.providerCostUsd,
     runId: context.runId,
