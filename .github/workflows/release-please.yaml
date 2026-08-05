@@ -49,3 +49,26 @@ jobs:
           target-branch: production
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # The `Protected branches` ruleset requires an approving review, so an
+      # untouched release PR sits at REVIEW_REQUIRED until someone clicks it.
+      # This approves it only while it is still nothing but generated output:
+      # every commit a release commit by the account that opened the PR, and
+      # every changed file one release-please rewrites, derived from
+      # release-please-config.json rather than hard-coded.
+      #
+      # Nothing here needs to un-approve: the same ruleset sets
+      # `dismiss_stale_reviews_on_push`, so any later push to the release branch
+      # drops the approval, including one this workflow never sees.
+      #
+      # Deliberately `github.token` and not RELEASE_PLEASE_TOKEN — GitHub
+      # refuses a review from the account that opened the pull request, so the
+      # approval has to come from a different identity than release-please used
+      # above. A skip is reported and leaves the run green.
+      - name: Approve untouched release PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # Extend when release-please starts committing as another identity;
+          # the script names the login it saw when it skips for this reason.
+          RELEASE_PLEASE_AUTHORS: github-actions[bot]
+        run: node scripts/ci/release-please-auto-approve.js --target-branch production
