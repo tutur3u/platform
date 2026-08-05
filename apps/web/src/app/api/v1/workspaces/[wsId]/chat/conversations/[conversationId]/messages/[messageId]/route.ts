@@ -36,7 +36,7 @@ export const PATCH = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
       auth,
-      permission: 'view_chat',
+      permission: 'create_chat',
       wsId: params.wsId,
     });
     if (!context.ok) return context.response;
@@ -85,7 +85,7 @@ export const PATCH = withSessionAuth<RouteParams>(
     }
 
     try {
-      const message = await callPrivateChatRpc<ChatMessage>(
+      const message = await callPrivateChatRpc<ChatMessage | null>(
         'chat_edit_message',
         {
           p_actor_user_id: auth.user.id,
@@ -95,7 +95,13 @@ export const PATCH = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
-      const conversation = await callPrivateChatRpc<ChatConversation>(
+      if (!message) {
+        return NextResponse.json(
+          { message: 'Message not found' },
+          { status: 404 }
+        );
+      }
+      const conversation = await callPrivateChatRpc<ChatConversation | null>(
         'chat_get_conversation',
         {
           p_actor_user_id: auth.user.id,
@@ -103,6 +109,8 @@ export const PATCH = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      if (!conversation) return NextResponse.json({ message });
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
@@ -125,7 +133,7 @@ export const DELETE = withSessionAuth<RouteParams>(
   async (_request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
       auth,
-      permission: 'view_chat',
+      permission: 'create_chat',
       wsId: params.wsId,
     });
     if (!context.ok) return context.response;
@@ -177,7 +185,7 @@ export const DELETE = withSessionAuth<RouteParams>(
         );
       }
 
-      const message = await callPrivateChatRpc<ChatMessage>(
+      const message = await callPrivateChatRpc<ChatMessage | null>(
         'chat_delete_message',
         {
           p_actor_user_id: auth.user.id,
@@ -186,7 +194,13 @@ export const DELETE = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
-      const conversation = await callPrivateChatRpc<ChatConversation>(
+      if (!message) {
+        return NextResponse.json(
+          { message: 'Message not found' },
+          { status: 404 }
+        );
+      }
+      const conversation = await callPrivateChatRpc<ChatConversation | null>(
         'chat_get_conversation',
         {
           p_actor_user_id: auth.user.id,
@@ -194,6 +208,8 @@ export const DELETE = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      if (!conversation) return NextResponse.json({ message });
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,

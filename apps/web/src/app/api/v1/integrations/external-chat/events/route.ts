@@ -105,6 +105,7 @@ export async function POST(request: Request) {
 
   if (
     event.deliveryMode === 'live' &&
+    !result.duplicate &&
     (event.kind === 'typing' || event.kind === 'presence') &&
     result.conversationId
   ) {

@@ -108,9 +108,10 @@ export function getChatConversationQueueDetails(
       ? getChatConversationDeliveryState(latestMessage)
       : null,
     phone,
-    preview:
-      readNonEmptyString(latestMessage?.content) ??
-      readNonEmptyString(latestMessage?.attachments[0]?.filename),
+    preview: latestMessage?.deletedAt
+      ? null
+      : (readNonEmptyString(latestMessage?.content) ??
+        readNonEmptyString(latestMessage?.attachments[0]?.filename)),
     timestamp: latestMessage?.createdAt ?? conversation.updatedAt,
   };
 }

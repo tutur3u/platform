@@ -346,4 +346,38 @@ describe('chat message delivery and pagination route', () => {
       expect.objectContaining({ attachments: [normalizedAttachment] })
     );
   });
+
+  it('rejects unsupported connected-site attachments before reservation', async () => {
+    mocks.isExternalChatConversation.mockResolvedValue(true);
+    const request = new Request(createRequest().url, {
+      body: JSON.stringify({
+        attachments: [
+          {
+            contentType: 'application/pdf',
+            filename: 'document.pdf',
+            path: 'chats/conversation-1/document.pdf',
+            sizeBytes: 1024,
+          },
+        ],
+        clientRequestId: '55555555-5555-4555-8555-555555555555',
+        content: '',
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(request as never, {
+      params: Promise.resolve({
+        conversationId: 'conversation-1',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'external_attachment_type_unsupported',
+    });
+    expect(mocks.reserveExternalChatReply).not.toHaveBeenCalled();
+  });
 });

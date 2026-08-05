@@ -409,6 +409,22 @@ describe('chat utils', () => {
     ).toBe('sent');
   });
 
+  it('does not expose deleted message content in queue previews', () => {
+    const details = getChatConversationQueueDetails(
+      conversation({
+        latestMessage: {
+          ...baseMessage,
+          attachments: [{ filename: 'private.png' } as never],
+          content: 'deleted private content',
+          deletedAt: '2026-08-05T07:16:00.000Z',
+        },
+      })
+    );
+
+    expect(details.deliveryState).toBe('deleted');
+    expect(details.preview).toBeNull();
+  });
+
   it('resolves workspace chat selection from requested, stored, then first conversation', () => {
     const conversationIds = ['first', 'stored', 'requested'];
 

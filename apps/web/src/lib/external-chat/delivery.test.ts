@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { updateExternalChatBridgeCredential } from './delivery';
+import {
+  prepareExternalChatAttachment,
+  updateExternalChatBridgeCredential,
+} from './delivery';
 
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
   decryptControlSecret: vi.fn(),
+  downloadWorkspaceStorageObjectForProvider: vi.fn(),
+  getWorkspaceStorageObjectMetadataForProvider: vi.fn(),
   readExternalChatBinding: vi.fn(),
+  resolveWorkspaceStorageProvider: vi.fn(),
   safeExternalChatFetch: vi.fn(),
 }));
 
@@ -14,8 +20,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
-  downloadWorkspaceStorageObjectForProvider: vi.fn(),
-  resolveWorkspaceStorageProvider: vi.fn(),
+  downloadWorkspaceStorageObjectForProvider: (...args: unknown[]) =>
+    mocks.downloadWorkspaceStorageObjectForProvider(...args),
+  getWorkspaceStorageObjectMetadataForProvider: (...args: unknown[]) =>
+    mocks.getWorkspaceStorageObjectMetadataForProvider(...args),
+  resolveWorkspaceStorageProvider: (...args: unknown[]) =>
+    mocks.resolveWorkspaceStorageProvider(...args),
 }));
 
 vi.mock('@tuturuuu/utils/next-config', () => ({
@@ -130,5 +140,68 @@ describe('external chat credential delivery', () => {
         wsId: 'workspace-1',
       })
     ).rejects.toThrow('credential update failed (503)');
+  });
+});
+
+describe('external chat attachment delivery', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
+      provider: 'supabase',
+    });
+    mocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValue({
+      contentType: 'image/png',
+      size: 4,
+    });
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new Uint8Array([1, 2, 3, 4]),
+      contentType: 'image/png',
+    });
+  });
+
+  it('rejects authoritative oversized metadata before downloading', async () => {
+    mocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValueOnce({
+      contentType: 'image/png',
+      size: 8 * 1024 * 1024 + 1,
+    });
+
+    await expect(
+      prepareExternalChatAttachment({
+        attachment: {
+          contentType: 'image/png',
+          filename: 'large.png',
+          fullPath: null,
+          path: 'chats/conversation-1/large.png',
+          sizeBytes: null,
+        },
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('external_attachment_size_invalid');
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).not.toHaveBeenCalled();
+  });
+
+  it('uses authoritative storage content type instead of the declared type', async () => {
+    mocks.getWorkspaceStorageObjectMetadataForProvider.mockResolvedValueOnce({
+      contentType: 'application/pdf',
+      size: 4,
+    });
+
+    await expect(
+      prepareExternalChatAttachment({
+        attachment: {
+          contentType: 'image/png',
+          filename: 'spoofed.png',
+          fullPath: null,
+          path: 'chats/conversation-1/spoofed.png',
+          sizeBytes: null,
+        },
+        wsId: 'workspace-1',
+      })
+    ).rejects.toThrow('external_attachment_type_invalid');
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).not.toHaveBeenCalled();
   });
 });

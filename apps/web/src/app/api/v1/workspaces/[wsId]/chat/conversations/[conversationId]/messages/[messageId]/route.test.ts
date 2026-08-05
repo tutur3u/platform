@@ -39,7 +39,10 @@ vi.mock('@/lib/chat/private-rpc', () => ({
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
-  getChatRealtimeAudience: () => ({ conversationId: 'conversation-1' }),
+  getChatRealtimeAudience: (conversation: { id: string } | null) => {
+    if (!conversation) throw new Error('audience requires a conversation');
+    return { conversationId: conversation.id };
+  },
   getChatRealtimeUserAudience: () => ({ userId: 'user-1' }),
   publishChatRealtimeEvent: (...args: unknown[]) =>
     mocks.publishChatRealtimeEvent(...args),
@@ -145,5 +148,103 @@ describe('connected chat message mutations', () => {
 
     expect(response.status).toBe(409);
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+
+  it('edits a native message and publishes the update', async () => {
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost', {
+        body: JSON.stringify({ content: 'edit' }),
+        method: 'PATCH',
+      }) as never,
+      {
+        params: Promise.resolve({
+          conversationId: 'conversation-1',
+          messageId: 'message-1',
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.resolveChatRouteContext).toHaveBeenCalledWith(
+      expect.objectContaining({ permission: 'create_chat' })
+    );
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'message.updated' })
+    );
+  });
+
+  it.each([
+    ['PATCH', 'chat_edit_message'],
+    ['DELETE', 'chat_delete_message'],
+  ])('returns 404 when %s cannot find the message', async (method, rpc) => {
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === rpc) return null;
+      if (name === 'chat_get_conversation') {
+        return { id: 'conversation-1', members: [], type: 'channel' };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+    const route = await import('./route');
+    const request = new Request('http://localhost', {
+      body:
+        method === 'PATCH' ? JSON.stringify({ content: 'edit' }) : undefined,
+      method,
+    });
+    const response = await route[method as 'PATCH' | 'DELETE'](
+      request as never,
+      {
+        params: Promise.resolve({
+          conversationId: 'conversation-1',
+          messageId: 'missing',
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+  });
+
+  it('returns a committed mutation without publishing when its conversation is missing', async () => {
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_edit_message') return { ...message, content: 'edit' };
+      if (name === 'chat_get_conversation') return null;
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost', {
+        body: JSON.stringify({ content: 'edit' }),
+        method: 'PATCH',
+      }) as never,
+      {
+        params: Promise.resolve({
+          conversationId: 'conversation-1',
+          messageId: 'message-1',
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the AI message does not exist', async () => {
+    mocks.isAiChatConversationId.mockReturnValue(true);
+    mocks.deleteAiChatMessage.mockResolvedValue(null);
+    const { DELETE } = await import('./route');
+    const response = await DELETE(new Request('http://localhost') as never, {
+      params: Promise.resolve({
+        conversationId: 'ai:conversation-1',
+        messageId: 'missing',
+        wsId: 'workspace-1',
+      }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
   });
 });

@@ -438,6 +438,35 @@ describe('external chat ingest route', () => {
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
+  it('does not republish a duplicate ephemeral activity event', async () => {
+    const typingEvent = {
+      agentId: 'agent-1',
+      deliveryMode: 'live',
+      eventId: 'typing:visitor-1:1',
+      kind: 'typing',
+      payload: { isTyping: true },
+      timestamp: new Date().toISOString(),
+      version: 2,
+      visitorId: 'visitor-1',
+    };
+    mocks.claimExternalChatSourceEvent.mockResolvedValueOnce({
+      claimToken: 'claim-token',
+      result: { conversationId: 'conversation-1', threadId: 'thread-1' },
+      status: 'duplicate',
+    });
+    mocks.hydrateExternalChatReplayResult.mockResolvedValueOnce({
+      conversationId: 'conversation-1',
+      duplicate: true,
+      threadId: 'thread-1',
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret', typingEvent));
+
+    expect(response.status).toBe(200);
+    expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+  });
+
   it('rejects an event timestamp beyond the allowed clock skew', async () => {
     const { POST } = await import('./route');
     const response = await POST(

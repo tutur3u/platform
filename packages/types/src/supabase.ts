@@ -16378,6 +16378,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      external_chat_mark_reply_delivered: {
+        Args: {
+          p_delivery_id: string;
+          p_remote_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       external_chat_mark_verified: {
         Args: {
           p_configuration_revision: number;
@@ -16445,6 +16453,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      external_chat_state_rank: { Args: { p_status: string }; Returns: number };
       external_chat_transition_sync_run: {
         Args: {
           p_expected_states: string[];

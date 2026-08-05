@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import {
   downloadWorkspaceStorageObjectForProvider,
+  getWorkspaceStorageObjectMetadataForProvider,
   resolveWorkspaceStorageProvider,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -20,7 +21,7 @@ type ExternalThreadRow = {
 };
 
 const MAX_EXTERNAL_ATTACHMENT_BYTES = 8 * 1024 * 1024;
-const EXTERNAL_ATTACHMENT_TYPES = new Set([
+export const EXTERNAL_ATTACHMENT_TYPES = new Set([
   'image/gif',
   'image/jpeg',
   'image/png',
@@ -437,12 +438,14 @@ export async function deliverExternalChatReplyIfBound({
     );
   }
   const result = (await response.json()) as Record<string, unknown>;
-  if (typeof result.messageId !== 'string' || !result.messageId.trim())
+  const remoteMessageId =
+    typeof result.messageId === 'string' ? result.messageId.trim() : '';
+  if (!remoteMessageId)
     throw new Error('External chat bridge returned no message identity');
   return {
     deliveryId,
     idempotencyKey,
-    remoteMessageId: result.messageId,
+    remoteMessageId,
     thread: thread as ExternalThreadRow,
   };
 }
@@ -498,16 +501,19 @@ export async function markExternalChatReplyDelivered({
   wsId: string;
 }) {
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await externalChatMutationDb(admin)
-    .from('external_chat_outbound_deliveries')
-    .update({
-      delivered_at: new Date().toISOString(),
-      remote_message_id: remoteMessageId,
-    })
-    .eq('id', deliveryId)
-    .eq('ws_id', wsId)
-    .is('delivered_at', null);
-  if (error) throw new Error(error.message);
+  const { data, error } = await externalChatMutationDb(admin).rpc(
+    'external_chat_mark_reply_delivered',
+    {
+      p_delivery_id: deliveryId,
+      p_remote_message_id: remoteMessageId,
+      p_ws_id: wsId,
+    }
+  );
+  if (error) throw error;
+  const result = data as { remoteMessageId?: unknown } | null;
+  if (result?.remoteMessageId !== remoteMessageId.trim()) {
+    throw new Error('external_chat_delivery_identity_mismatch');
+  }
 }
 
 export async function cancelExternalChatReply({
@@ -591,7 +597,7 @@ function createExternalChatReplyPayloadHash({
     .digest('hex');
 }
 
-async function prepareExternalChatAttachment({
+export async function prepareExternalChatAttachment({
   attachment,
   wsId,
 }: {
@@ -607,18 +613,22 @@ async function prepareExternalChatAttachment({
     throw new Error('external_attachment_size_invalid');
   }
   const { provider } = await resolveWorkspaceStorageProvider(wsId);
+  const metadata = await getWorkspaceStorageObjectMetadataForProvider(
+    wsId,
+    provider,
+    attachment.path
+  );
+  if (metadata.size < 1 || metadata.size > MAX_EXTERNAL_ATTACHMENT_BYTES) {
+    throw new Error('external_attachment_size_invalid');
+  }
+  const contentType = (metadata.contentType ?? '').toLowerCase();
+  if (!EXTERNAL_ATTACHMENT_TYPES.has(contentType))
+    throw new Error('external_attachment_type_invalid');
   const downloaded = await downloadWorkspaceStorageObjectForProvider(
     wsId,
     provider,
     attachment.path
   );
-  const contentType = (
-    attachment.contentType ??
-    downloaded.contentType ??
-    ''
-  ).toLowerCase();
-  if (!EXTERNAL_ATTACHMENT_TYPES.has(contentType))
-    throw new Error('external_attachment_type_invalid');
   if (
     downloaded.buffer.byteLength < 1 ||
     downloaded.buffer.byteLength > MAX_EXTERNAL_ATTACHMENT_BYTES

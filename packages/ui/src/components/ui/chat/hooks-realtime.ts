@@ -99,10 +99,6 @@ export function useChatRealtime(wsId: string) {
       applyChatRealtimeEvent(queryClient, wsId, parsed);
     };
 
-    source.onerror = () => {
-      source.close();
-    };
-
     const timers = typingTimeouts.current;
     return () => {
       source.close();

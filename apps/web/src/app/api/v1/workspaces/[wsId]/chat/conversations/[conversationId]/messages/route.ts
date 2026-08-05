@@ -26,6 +26,7 @@ import {
 import {
   cancelExternalChatReply,
   deliverExternalChatReplyIfBound,
+  EXTERNAL_ATTACHMENT_TYPES,
   finalizeExternalChatReply,
   isExternalChatConversation,
   markExternalChatReplyDelivered,
@@ -249,6 +250,21 @@ export const POST = withSessionAuth<RouteParams>(
           {
             code: 'external_attachment_caption_unsupported',
             message: 'Send the image and text as separate replies.',
+          },
+          { status: 400 }
+        );
+      }
+      if (
+        attachments[0] &&
+        !EXTERNAL_ATTACHMENT_TYPES.has(
+          (attachments[0].contentType ?? '').toLowerCase()
+        )
+      ) {
+        return NextResponse.json(
+          {
+            code: 'external_attachment_type_unsupported',
+            message:
+              'Connected-site replies accept GIF, JPEG, PNG, or WebP images.',
           },
           { status: 400 }
         );

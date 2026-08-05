@@ -1,5 +1,5 @@
 begin;
-select plan(54);
+select plan(59);
 
 select has_table('private', 'external_chat_source_events', 'source event ledger exists');
 select has_table('private', 'external_chat_observations', 'dynamic observation store exists');
@@ -8,8 +8,21 @@ select has_table('private', 'external_chat_stream_cursors', 'durable stream curs
 select has_function('private', 'external_chat_upsert_observation', 'observation upsert RPC exists');
 select has_function('private', 'external_chat_apply_message_state', 'message state replay RPC exists');
 select has_function('private', 'external_chat_claim_source_event', 'atomic source claim RPC exists');
-select has_function('private', 'external_chat_finalize_reply', 'attachment-aware reply finalization RPC exists');
-select has_function('private', 'external_chat_attach_message_files', 'internal attachment projection helper exists');
+select has_function(
+  'private', 'external_chat_finalize_reply',
+  array['uuid', 'uuid', 'uuid', 'text', 'text', 'uuid', 'jsonb'],
+  'attachment-aware reply finalization RPC exists'
+);
+select has_function(
+  'private', 'external_chat_attach_message_files',
+  array['uuid', 'uuid', 'uuid', 'uuid', 'jsonb'],
+  'internal attachment projection helper exists'
+);
+select has_function(
+  'private', 'external_chat_mark_reply_delivered',
+  array['uuid', 'uuid', 'text'],
+  'atomic remote-delivery identity RPC exists'
+);
 select has_column(
   'private', 'external_chat_outbound_deliveries', 'remote_message_id',
   'outbound delivery retains the actual remote message identity'
@@ -379,6 +392,18 @@ select lives_ok(
   ),
   'a revised canonical snapshot updates the existing native record'
 );
+select throws_ok(
+  format(
+    $$select private.external_chat_import_event(
+      %L, 'opaque-state', 'bucket-1', 'other-visitor', 'message-state',
+      'visitor', 'Hijacked content', '2026-08-01T00:00:00Z', 1
+    )$$,
+    (select ws_id from parity_context)
+  ),
+  'P0001',
+  'external_chat_message_identity_mismatch',
+  'a replayed snapshot cannot move a message to another visitor identity'
+);
 with delivery as (
   insert into private.external_chat_outbound_deliveries (
     ws_id, thread_id, request_fingerprint, payload_hash,
@@ -421,6 +446,36 @@ select is(
   ),
   'legacy-message-91',
   'the outbound mapping stores the actual remote message identity'
+);
+select lives_ok(
+  format(
+    $$select private.external_chat_mark_reply_delivered(
+      %L, %L, 'legacy-message-91'
+    )$$,
+    (select ws_id from parity_context),
+    (
+      select id
+      from private.external_chat_outbound_deliveries
+      where request_fingerprint = 'remote-identity-test'
+    )
+  ),
+  'replaying the same remote delivery identity is idempotent'
+);
+select throws_ok(
+  format(
+    $$select private.external_chat_mark_reply_delivered(
+      %L, %L, 'other-message'
+    )$$,
+    (select ws_id from parity_context),
+    (
+      select id
+      from private.external_chat_outbound_deliveries
+      where request_fingerprint = 'remote-identity-test'
+    )
+  ),
+  '22023',
+  'external_chat_remote_message_id_mismatch',
+  'a delivered reservation cannot be rebound to another remote identity'
 );
 select is(
   (
@@ -466,7 +521,7 @@ declare
   v_ws_id uuid;
 begin
   select context.actor_id, context.ws_id, thread.conversation_id, event.message_id
-  into v_actor_id, v_ws_id, v_conversation_id, v_message_id
+  into strict v_actor_id, v_ws_id, v_conversation_id, v_message_id
   from parity_context context
   join private.external_chat_events event on event.ws_id = context.ws_id
   join private.external_chat_threads thread on thread.id = event.thread_id
@@ -501,6 +556,32 @@ select is(
   ),
   1,
   'attachment projection remains singular and scoped to the mapped message'
+);
+select throws_ok(
+  (
+    select format(
+      $sql$select private.external_chat_attach_message_files(
+        %L, %L, %L, %L,
+        jsonb_build_array(jsonb_build_object(
+          'path', %L,
+          'filename', 'escaped.png'
+        ))
+      )$sql$,
+      context.ws_id,
+      thread.conversation_id,
+      event.message_id,
+      context.actor_id,
+      format('chats/%s/../../escaped.png', thread.conversation_id)
+    )
+    from parity_context context
+    join private.external_chat_events event on event.ws_id = context.ws_id
+    join private.external_chat_threads thread on thread.id = event.thread_id
+    where event.connector_key = 'opaque-state'
+      and event.remote_message_id = 'message-state'
+  ),
+  '42501',
+  'chat_attachment_path_forbidden',
+  'an attachment path cannot escape the conversation prefix'
 );
 select lives_ok(
   format(

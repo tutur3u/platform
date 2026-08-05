@@ -5,13 +5,7 @@ alter table private.external_chat_outbound_deliveries
   add constraint external_chat_outbound_remote_message_length check (
     remote_message_id is null
     or char_length(remote_message_id) between 1 and 255
-  );
-
-create unique index external_chat_outbound_remote_message_key
-  on private.external_chat_outbound_deliveries (
-    ws_id, thread_id, remote_message_id
-  )
-  where remote_message_id is not null;
+  ) not valid;
 
 create or replace function private.external_chat_resolve_delivery_identity()
 returns trigger
@@ -167,6 +161,30 @@ grant execute on function private.external_chat_import_event(
   uuid, text, text, text, text, text, text, timestamptz, bigint, jsonb, jsonb, uuid
 ) to service_role;
 
+create or replace function private.external_chat_state_rank(p_status text)
+returns integer
+language sql
+immutable
+set search_path = private, public, pg_temp
+as $$
+  select case lower(coalesce(p_status, ''))
+    when 'deleted' then 100
+    when 'removed' then 100
+    when 'failed' then 90
+    when 'seen' then 80
+    when 'read' then 80
+    when 'received' then 60
+    when 'recive' then 60
+    when 'delivered' then 60
+    when 'sent' then 40
+    when 'send' then 40
+    else 0
+  end;
+$$;
+
+revoke all on function private.external_chat_state_rank(text)
+  from public, anon, authenticated, service_role;
+
 create or replace function private.external_chat_apply_message_state(
   p_ws_id uuid,
   p_connector_key text,
@@ -215,34 +233,10 @@ begin
   from private.chat_messages
   where id = v_event.message_id;
 
-  v_existing_rank := case lower(coalesce(v_existing_status, ''))
-    when 'deleted' then 100
-    when 'removed' then 100
-    when 'failed' then 90
-    when 'seen' then 80
-    when 'read' then 80
-    when 'received' then 60
-    when 'recive' then 60
-    when 'delivered' then 60
-    when 'sent' then 40
-    when 'send' then 40
-    else 0
-  end;
+  v_existing_rank := private.external_chat_state_rank(v_existing_status);
   v_incoming_rank := case
     when p_deleted then 100
-    else case lower(coalesce(p_status, ''))
-      when 'deleted' then 100
-      when 'removed' then 100
-      when 'failed' then 90
-      when 'seen' then 80
-      when 'read' then 80
-      when 'received' then 60
-      when 'recive' then 60
-      when 'delivered' then 60
-      when 'sent' then 40
-      when 'send' then 40
-      else 0
-    end
+    else private.external_chat_state_rank(p_status)
   end;
 
   if v_state_occurred_at is not null
@@ -334,6 +328,26 @@ begin
   if jsonb_array_length(coalesce(p_attachments, '[]'::jsonb)) = 0 then
     return;
   end if;
+
+  for v_attachment in
+    select value from jsonb_array_elements(coalesce(p_attachments, '[]'::jsonb))
+  loop
+    v_storage_path := v_attachment->>'path';
+    v_full_path := v_attachment->>'fullPath';
+    v_size_bytes := nullif(v_attachment->>'sizeBytes', '')::bigint;
+    if v_storage_path is null
+      or not starts_with(v_storage_path, format('chats/%s/', p_conversation_id))
+      or string_to_array(v_storage_path, '/') && array['..']::text[] then
+      raise exception 'chat_attachment_path_forbidden' using errcode = '42501';
+    end if;
+    if v_full_path is not null and (
+      not starts_with(v_full_path, format('%s/chats/%s/', p_ws_id, p_conversation_id))
+      or string_to_array(v_full_path, '/') && array['..']::text[]
+    ) then
+      raise exception 'chat_attachment_full_path_forbidden' using errcode = '42501';
+    end if;
+  end loop;
+
   if exists (
     select 1 from private.chat_message_attachments
     where message_id = p_message_id
@@ -347,18 +361,6 @@ begin
     v_storage_path := v_attachment->>'path';
     v_full_path := v_attachment->>'fullPath';
     v_size_bytes := nullif(v_attachment->>'sizeBytes', '')::bigint;
-    if v_storage_path is null or not starts_with(
-      v_storage_path,
-      format('chats/%s/', p_conversation_id)
-    ) then
-      raise exception 'chat_attachment_path_forbidden' using errcode = '42501';
-    end if;
-    if v_full_path is not null and not starts_with(
-      v_full_path,
-      format('%s/chats/%s/', p_ws_id, p_conversation_id)
-    ) then
-      raise exception 'chat_attachment_full_path_forbidden' using errcode = '42501';
-    end if;
     insert into private.chat_message_attachments (
       conversation_id,
       message_id,
