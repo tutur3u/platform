@@ -511,6 +511,29 @@ file from the merged manifest bump and current `production` changelogs, then the
 normal Release Please action can create the releases. If the script reports
 `skipped`, inspect the pending labels and merged release PR body before retrying.
 
+The same workflow then runs
+`node scripts/ci/release-please-auto-approve.js --target-branch production`,
+which approves the generated release PR while it is still nothing but generated
+output. The `Protected branches` ruleset requires an approving review, so an
+untouched release PR otherwise sits at `REVIEW_REQUIRED` indefinitely. Every one
+of these must hold or the script skips and leaves the PR for a human: the head
+branch is a `release-please--branches--` branch against the target branch, the
+PR was opened by a release automation identity, every commit is a
+`chore(release): release ...` commit by that same account, and every changed
+file is one release-please itself rewrites. That last allowlist is **derived
+from `release-please-config.json`** — each package's changelog, its version file
+for its release type, and its `extra-files` — so adding a package or changing
+its release type cannot silently widen what auto-approval accepts.
+
+Nothing needs to un-approve: the ruleset sets `dismiss_stale_reviews_on_push`,
+so any later push to the release branch drops the approval, including one this
+workflow never observes. The step deliberately uses `github.token` rather than
+`RELEASE_PLEASE_TOKEN`, because GitHub refuses a review from the account that
+opened the pull request — release-please and the approval have to be different
+identities. While `RELEASE_PLEASE_TOKEN` is unset both are `github-actions[bot]`,
+and the script reports `blocked` and leaves the run green rather than failing.
+Use `--dry-run` to see the decision without posting a review.
+
 `release-please-auto-merge.yaml` closes the loop on the generated release PR. It
 runs every third day at 06:00 UTC (`cron: "0 6 */3 * *"`) and on manual dispatch,
 and it does not reimplement the merge in YAML: it runs `bun git-release-please`
