@@ -319,6 +319,33 @@ export async function upsertExternalChatObservation({
   };
 }
 
+export async function resolveExternalChatThread({
+  connectorKey,
+  event,
+  wsId,
+}: {
+  connectorKey: string;
+  event: Extract<ExternalChatEventEnvelope, { kind: 'presence' | 'typing' }>;
+  wsId: string;
+}) {
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await externalChatPrivateDb(admin)
+    .from('external_chat_threads')
+    .select('id, conversation_id')
+    .eq('ws_id', wsId)
+    .eq('connector_key', connectorKey)
+    .eq('remote_agent_id', event.agentId)
+    .eq('remote_visitor_id', event.visitorId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return { found: false } as const;
+  return {
+    conversationId: data.conversation_id,
+    found: true,
+    threadId: data.id,
+  } as const;
+}
+
 function readDynamicString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }

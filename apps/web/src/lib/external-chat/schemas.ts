@@ -58,11 +58,20 @@ const messageEnvelopeSchema = envelopeIdentitySchema
   .extend(messageFieldsSchema.shape)
   .extend({ kind: z.literal('message') });
 
-const messageStateEnvelopeSchema = envelopeIdentitySchema.extend({
-  kind: z.enum(['message_state', 'message_deleted']),
+const messageStateFields = {
   messageId: z.string().min(1).max(255),
   status: z.string().max(80).default('sent'),
   metadata: dynamicMetadataSchema,
+};
+
+const messageStateEnvelopeSchema = envelopeIdentitySchema.extend({
+  ...messageStateFields,
+  kind: z.literal('message_state'),
+});
+
+const messageDeletedEnvelopeSchema = envelopeIdentitySchema.extend({
+  ...messageStateFields,
+  kind: z.literal('message_deleted'),
 });
 
 const observationEnvelopeSchema = envelopeIdentitySchema.extend({
@@ -72,16 +81,23 @@ const observationEnvelopeSchema = envelopeIdentitySchema.extend({
   payload: dynamicMetadataSchema,
 });
 
-const ephemeralEnvelopeSchema = envelopeIdentitySchema.extend({
-  kind: z.enum(['presence', 'typing']),
+const presenceEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.literal('presence'),
+  payload: dynamicMetadataSchema,
+});
+
+const typingEnvelopeSchema = envelopeIdentitySchema.extend({
+  kind: z.literal('typing'),
   payload: dynamicMetadataSchema,
 });
 
 export const externalChatEventEnvelopeSchema = z.discriminatedUnion('kind', [
   messageEnvelopeSchema,
   messageStateEnvelopeSchema,
+  messageDeletedEnvelopeSchema,
   observationEnvelopeSchema,
-  ephemeralEnvelopeSchema,
+  presenceEnvelopeSchema,
+  typingEnvelopeSchema,
 ]);
 
 export const externalChatBatchSchema = z.object({

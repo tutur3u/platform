@@ -13,6 +13,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
+  downloadWorkspaceStorageObjectForProvider: vi.fn(),
+  resolveWorkspaceStorageProvider: vi.fn(),
+}));
+
 vi.mock('@tuturuuu/utils/next-config', () => ({
   resolveTuturuuuWebAppUrl: vi.fn(),
 }));

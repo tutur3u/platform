@@ -1,3 +1,4 @@
+import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -60,6 +61,7 @@ const attachmentSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
   path: z.string().trim().min(1).max(1024),
   sizeBytes: z.number().int().min(0).max(104857600).nullable().optional(),
+  storageWsId: z.string().uuid().nullable().optional(),
 });
 
 const createMessageSchema = z.object({
@@ -173,9 +175,18 @@ export const POST = withSessionAuth<RouteParams>(
       );
     }
 
+    const attachments: ChatAttachmentDraft[] = (
+      parsed.data.attachments ?? []
+    ).map((attachment) => ({
+      ...attachment,
+      contentType: attachment.contentType ?? null,
+      fullPath: attachment.fullPath ?? null,
+      sizeBytes: attachment.sizeBytes ?? null,
+    }));
+
     if (isAiChatConversationId(params.conversationId)) {
       return sendAiChatMessage({
-        attachments: parsed.data.attachments ?? [],
+        attachments,
         auth,
         clientRequestId: parsed.data.clientRequestId,
         content: parsed.data.content,
@@ -224,16 +235,25 @@ export const POST = withSessionAuth<RouteParams>(
           { status: 400 }
         );
       }
-      if ((parsed.data.attachments?.length ?? 0) > 0) {
+      if (attachments.length > 1) {
         return NextResponse.json(
           {
-            code: 'external_attachments_unsupported',
-            message: 'Connected-site replies do not support attachments yet.',
+            code: 'external_attachment_limit',
+            message: 'Connected-site replies accept one image at a time.',
           },
           { status: 400 }
         );
       }
-      if (!parsed.data.content.trim()) {
+      if (attachments.length > 0 && parsed.data.content.trim()) {
+        return NextResponse.json(
+          {
+            code: 'external_attachment_caption_unsupported',
+            message: 'Send the image and text as separate replies.',
+          },
+          { status: 400 }
+        );
+      }
+      if (!parsed.data.content.trim() && attachments.length === 0) {
         return NextResponse.json(
           { message: 'Message content is required' },
           { status: 400 }
@@ -247,6 +267,7 @@ export const POST = withSessionAuth<RouteParams>(
       }
       try {
         externalReservation = await reserveExternalChatReply({
+          attachments,
           clientRequestId: parsed.data.clientRequestId,
           content: parsed.data.content,
           conversationId: params.conversationId,
@@ -272,7 +293,8 @@ export const POST = withSessionAuth<RouteParams>(
       if (!externalReservation.delivered) {
         const deliveryId = externalReservation.deliveryId;
         try {
-          await deliverExternalChatReplyIfBound({
+          const delivery = await deliverExternalChatReplyIfBound({
+            attachments,
             configurationRevision: externalReservation.configurationRevision,
             content: parsed.data.content,
             conversationId: params.conversationId,
@@ -281,8 +303,11 @@ export const POST = withSessionAuth<RouteParams>(
             senderId: auth.user.id,
             wsId: context.context.normalizedWsId,
           });
+          if (!delivery)
+            throw new Error('External chat delivery route disappeared');
           await markExternalChatReplyDelivered({
             deliveryId: externalReservation.deliveryId,
+            remoteMessageId: delivery.remoteMessageId,
             wsId: context.context.normalizedWsId,
           });
         } catch (error) {
@@ -317,6 +342,7 @@ export const POST = withSessionAuth<RouteParams>(
     try {
       const persistence = externalReservation
         ? await finalizeExternalChatReply({
+            attachments,
             content: parsed.data.content,
             deliveryId: externalReservation.deliveryId,
             replyToMessageId: parsed.data.replyToMessageId ?? null,
@@ -329,7 +355,7 @@ export const POST = withSessionAuth<RouteParams>(
               replayed: boolean;
             }>('chat_send_user_message_idempotent', {
               p_actor_user_id: auth.user.id,
-              p_attachments: parsed.data.attachments ?? [],
+              p_attachments: attachments,
               p_content: parsed.data.content,
               p_conversation_id: params.conversationId,
               p_reply_to_message_id: parsed.data.replyToMessageId ?? null,
@@ -341,7 +367,7 @@ export const POST = withSessionAuth<RouteParams>(
                 'chat_send_message',
                 {
                   p_actor_user_id: auth.user.id,
-                  p_attachments: parsed.data.attachments ?? [],
+                  p_attachments: attachments,
                   p_content: parsed.data.content,
                   p_conversation_id: params.conversationId,
                   p_kind: parsed.data.kind,

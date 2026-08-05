@@ -33,6 +33,21 @@ describe('chatRealtimeEventSchema', () => {
 
     expect(parsed.success).toBe(true);
   });
+
+  it('accepts connector-neutral presence and typing updates', () => {
+    for (const event of [
+      { isOnline: true, type: 'presence.updated' },
+      { isTyping: true, type: 'typing.updated' },
+    ]) {
+      expect(
+        chatRealtimeEventSchema.safeParse({
+          ...baseEvent,
+          ...event,
+          audience: { scope: 'workspace' },
+        }).success
+      ).toBe(true);
+    }
+  });
 });
 
 describe('canReceiveChatRealtimeEvent', () => {

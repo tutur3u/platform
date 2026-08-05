@@ -77,6 +77,7 @@ describe('chat message delivery and pagination route', () => {
     mocks.deliverExternalChatReplyIfBound.mockResolvedValue({
       deliveryId: reservation.deliveryId,
       idempotencyKey: reservation.idempotencyKey,
+      remoteMessageId: 'legacy-message-91',
       thread: {},
     });
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
@@ -101,6 +102,11 @@ describe('chat message delivery and pagination route', () => {
     expect(mocks.markExternalChatReplyDelivered).toHaveBeenCalledBefore(
       mocks.finalizeExternalChatReply
     );
+    expect(mocks.markExternalChatReplyDelivered).toHaveBeenCalledWith({
+      deliveryId: 'delivery-1',
+      remoteMessageId: 'legacy-message-91',
+      wsId: 'workspace-1',
+    });
     expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
       'chat_send_message',
       expect.anything()
@@ -291,7 +297,7 @@ describe('chat message delivery and pagination route', () => {
     );
   });
 
-  it('rejects attachments before connected-site delivery', async () => {
+  it('delivers one image to the connected site before native persistence', async () => {
     mocks.isExternalChatConversation.mockResolvedValue(true);
     mocks.reserveExternalChatReply.mockResolvedValue({
       configurationRevision: 3,
@@ -301,9 +307,22 @@ describe('chat message delivery and pagination route', () => {
       messageId: null,
       threadId: 'thread-1',
     });
+    mocks.deliverExternalChatReplyIfBound.mockResolvedValue({
+      deliveryId: 'delivery-1',
+      idempotencyKey: 'idempotency-1',
+      remoteMessageId: 'legacy-image-1',
+      thread: {},
+    });
+    const attachment = {
+      contentType: 'image/png',
+      filename: 'scan.png',
+      path: 'chats/conversation-1/scan.png',
+      sizeBytes: 1024,
+    };
     const request = new Request(createRequest().url, {
       body: JSON.stringify({
-        attachments: [{ filename: 'scan.pdf', path: 'chat/scan.pdf' }],
+        attachments: [attachment],
+        clientRequestId: '55555555-5555-4555-8555-555555555555',
         content: '',
       }),
       headers: { 'content-type': 'application/json' },
@@ -318,8 +337,13 @@ describe('chat message delivery and pagination route', () => {
       }),
     });
 
-    expect(response.status).toBe(400);
-    expect(mocks.deliverExternalChatReplyIfBound).not.toHaveBeenCalled();
-    expect(mocks.finalizeExternalChatReply).not.toHaveBeenCalled();
+    expect(response.status).toBe(201);
+    const normalizedAttachment = { ...attachment, fullPath: null };
+    expect(mocks.deliverExternalChatReplyIfBound).toHaveBeenCalledWith(
+      expect.objectContaining({ attachments: [normalizedAttachment] })
+    );
+    expect(mocks.finalizeExternalChatReply).toHaveBeenCalledWith(
+      expect.objectContaining({ attachments: [normalizedAttachment] })
+    );
   });
 });

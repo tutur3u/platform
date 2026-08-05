@@ -49,6 +49,7 @@ interface ChatSidebarProps {
   isFetchingMoreConversations?: boolean;
   onArchiveConversation?: (conversationId: string) => void;
   onLoadMoreConversations?: () => Promise<unknown> | undefined;
+  onlineConversationIds?: ReadonlySet<string>;
   onPinConversation?: (conversationId: string, pinned: boolean) => void;
   onSearchChange: (value: string) => void;
   onSelectConversation: (conversationId: string) => void;
@@ -75,6 +76,7 @@ export function ChatSidebar({
   isFetchingMoreConversations,
   onArchiveConversation,
   onLoadMoreConversations,
+  onlineConversationIds,
   onPinConversation,
   onSearchChange,
   onSelectConversation,
@@ -156,6 +158,7 @@ export function ChatSidebar({
             isFetchingMoreConversations={isFetchingMoreConversations}
             onArchiveConversation={onArchiveConversation}
             onLoadMoreConversations={onLoadMoreConversations}
+            onlineConversationIds={onlineConversationIds}
             onPinConversation={onPinConversation}
             onSelectConversation={onSelectConversation}
             archiveFilter={archiveFilter}

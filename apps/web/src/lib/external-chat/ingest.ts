@@ -10,6 +10,7 @@ import {
 import {
   applyExternalChatMessageState,
   importExternalChatEvent,
+  resolveExternalChatThread,
   upsertExternalChatObservation,
 } from './store';
 
@@ -101,7 +102,18 @@ export async function processExternalChatEnvelope(
         wsId: context.wsId,
       });
     } else {
-      result = { accepted: true, ephemeral: true };
+      const thread = await resolveExternalChatThread({
+        connectorKey: context.connectorKey,
+        event,
+        wsId: context.wsId,
+      });
+      result = {
+        accepted: true,
+        conversationId: thread.found ? thread.conversationId : undefined,
+        ephemeral: true,
+        found: thread.found,
+        threadId: thread.found ? thread.threadId : undefined,
+      };
     }
 
     await recordExternalChatSourceEvent({

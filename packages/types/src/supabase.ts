@@ -3683,6 +3683,7 @@ export type Database = {
           idempotency_key: string;
           message_id: string | null;
           payload_hash: string;
+          remote_message_id: string | null;
           reply_to_message_id: string | null;
           request_fingerprint: string;
           thread_id: string;
@@ -3699,6 +3700,7 @@ export type Database = {
           idempotency_key?: string;
           message_id?: string | null;
           payload_hash: string;
+          remote_message_id?: string | null;
           reply_to_message_id?: string | null;
           request_fingerprint: string;
           thread_id: string;
@@ -3715,6 +3717,7 @@ export type Database = {
           idempotency_key?: string;
           message_id?: string | null;
           payload_hash?: string;
+          remote_message_id?: string | null;
           reply_to_message_id?: string | null;
           request_fingerprint?: string;
           thread_id?: string;
@@ -16258,6 +16261,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      external_chat_attach_message_files: {
+        Args: {
+          p_actor_user_id: string;
+          p_attachments: Json;
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
       external_chat_claim_source_event: {
         Args: {
           p_claim_token: string;
@@ -16297,6 +16310,18 @@ export type Database = {
       external_chat_finalize_reply: {
         Args: {
           p_actor_user_id: string;
+          p_attachments?: Json;
+          p_content: string;
+          p_delivery_id: string;
+          p_payload_hash: string;
+          p_reply_to_message_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_chat_finalize_reply_base: {
+        Args: {
+          p_actor_user_id: string;
           p_content: string;
           p_delivery_id: string;
           p_payload_hash: string;
@@ -16306,6 +16331,23 @@ export type Database = {
         Returns: Json;
       };
       external_chat_import_event: {
+        Args: {
+          p_configuration_revision: number;
+          p_connector_key: string;
+          p_content: string;
+          p_direction: string;
+          p_mapped_user_id?: string;
+          p_message_metadata?: Json;
+          p_occurred_at: string;
+          p_remote_agent_id: string;
+          p_remote_message_id: string;
+          p_remote_visitor_id: string;
+          p_thread_metadata?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      external_chat_import_event_base: {
         Args: {
           p_configuration_revision: number;
           p_connector_key: string;

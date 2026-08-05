@@ -3,10 +3,11 @@
 import { Archive, Pin, PinOff } from '@tuturuuu/icons';
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import {
+  getChatConversationQueueDetails,
   getChatMessageSenderLabel,
   getConversationTitle,
   isChatConversationPinned,
@@ -15,6 +16,7 @@ import {
 export function ConversationRow({
   conversation,
   currentUserId,
+  isOnline,
   isSelected,
   onArchiveConversation,
   onPinConversation,
@@ -22,12 +24,14 @@ export function ConversationRow({
 }: {
   conversation: ChatConversation;
   currentUserId: string;
+  isOnline?: boolean;
   isSelected: boolean;
   onArchiveConversation?: (conversationId: string) => void;
   onPinConversation?: (conversationId: string, pinned: boolean) => void;
   onSelectConversation: (conversationId: string) => void;
 }) {
   const t = useTranslations('chat');
+  const locale = useLocale();
   const title = getConversationTitle(conversation, currentUserId, {
     ai: t('assistant_name'),
     channel: t('untitled_channel'),
@@ -36,6 +40,8 @@ export function ConversationRow({
     group: t('group_chat'),
   });
   const pinned = isChatConversationPinned(conversation, currentUserId);
+  const isExternal = conversation.metadata.externalChat === true;
+  const queueDetails = getChatConversationQueueDetails(conversation);
 
   return (
     <div
@@ -49,9 +55,39 @@ export function ConversationRow({
         onClick={() => onSelectConversation(conversation.id)}
         type="button"
       >
-        <span className="block min-w-0 truncate font-medium text-sm leading-5">
-          {title}
+        <span className="flex min-w-0 items-center justify-between gap-2 text-sm leading-5">
+          <span className="flex min-w-0 items-center gap-2 font-medium">
+            {isOnline ? (
+              <span
+                aria-label={t('online')}
+                className="size-2 shrink-0 rounded-full bg-primary"
+                role="status"
+              />
+            ) : null}
+            <span className="min-w-0 truncate">{title}</span>
+          </span>
+          {isExternal ? (
+            <span className="shrink-0 text-[11px] text-muted-foreground">
+              {formatQueueTimestamp(queueDetails.timestamp, locale)}
+            </span>
+          ) : null}
         </span>
+        {isExternal ? (
+          <>
+            <span className="mt-0.5 block truncate text-muted-foreground text-xs leading-4">
+              {queueDetails.preview ?? t('no_messages_yet')}
+            </span>
+            <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground leading-4">
+              <DeliveryStateDot
+                label={t(`delivery_${queueDetails.deliveryState ?? 'sent'}`)}
+                state={queueDetails.deliveryState ?? 'sent'}
+              />
+              <span className="truncate">
+                {queueDetails.phone ?? t('external_sender')}
+              </span>
+            </span>
+          </>
+        ) : null}
       </button>
       <ConversationUnreadState unreadCount={conversation.unreadCount} />
       <ConversationQuickActions
@@ -63,6 +99,46 @@ export function ConversationRow({
       />
     </div>
   );
+}
+
+function DeliveryStateDot({
+  label,
+  state,
+}: {
+  label: string;
+  state: 'deleted' | 'failed' | 'seen' | 'sending' | 'sent';
+}) {
+  return (
+    <span
+      aria-label={label}
+      className={cn(
+        'size-1.5 shrink-0 rounded-full',
+        state === 'failed' && 'bg-destructive',
+        state === 'seen' && 'bg-primary',
+        state === 'sending' && 'bg-muted-foreground',
+        state === 'sent' && 'bg-foreground/60',
+        state === 'deleted' && 'border border-muted-foreground'
+      )}
+      role="status"
+      title={label}
+    />
+  );
+}
+
+function formatQueueTimestamp(value: string, locale: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  const today = new Date();
+  const sameDay =
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
+  return new Intl.DateTimeFormat(
+    locale,
+    sameDay
+      ? { hour: '2-digit', minute: '2-digit' }
+      : { day: 'numeric', month: 'short' }
+  ).format(date);
 }
 
 export function SearchResultList({

@@ -256,7 +256,7 @@ export function ChatWorkspace({
       : sharedContentOpen || agentDetailsOpen) && activeConversationId
   );
 
-  useChatRealtime(wsId);
+  const realtime = useChatRealtime(wsId);
 
   useEffect(() => {
     setStoredSelectionLoaded(false);
@@ -530,6 +530,7 @@ export function ChatWorkspace({
           onPinConversation={handlePinConversation}
           onSearchChange={setSearchValue}
           onSelectConversation={selectConversation}
+          onlineConversationIds={realtime.onlineConversationIds}
           searchResults={searchResults}
           searchValue={searchValue}
           selectedConversationId={activeConversationId}
@@ -586,7 +587,14 @@ export function ChatWorkspace({
               hasMoreMessages={messagesQuery.hasNextPage}
               isLoading={messagesQuery.isLoading}
               isLoadingMoreMessages={messagesQuery.isFetchingNextPage}
-              isAgentTyping={selectedAiConversation && sendMessage.isPending}
+              isAgentTyping={
+                (selectedAiConversation && sendMessage.isPending) ||
+                Boolean(
+                  selectedExternalConversation &&
+                    activeConversationId &&
+                    realtime.typingConversationIds.has(activeConversationId)
+                )
+              }
               messages={messages}
               onDeleteMessage={handleDeleteMessage}
               onLoadMoreMessages={() => messagesQuery.fetchNextPage()}
@@ -598,6 +606,11 @@ export function ChatWorkspace({
                       toggleReaction.mutate({ emoji, messageId })
               }
               readOnly={selectedReadOnly}
+              typingLabel={
+                selectedExternalConversation
+                  ? t('external_visitor_typing')
+                  : undefined
+              }
               wsId={wsId}
             />
             {selectedReadOnly ? (
@@ -611,7 +624,7 @@ export function ChatWorkspace({
               </div>
             ) : (
               <MessageComposer
-                allowAttachments={conversationScope !== 'external'}
+                allowAttachments
                 disabled={!activeConversationId}
                 isSending={sendMessage.isPending}
                 isUploading={uploadAttachment.isPending}

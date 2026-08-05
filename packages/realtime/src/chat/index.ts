@@ -65,6 +65,10 @@ export const chatRealtimeEventSchema = z.discriminatedUnion('type', [
     isTyping: z.boolean(),
     type: z.literal('typing.updated'),
   }),
+  chatRealtimeBaseEventSchema.extend({
+    isOnline: z.boolean(),
+    type: z.literal('presence.updated'),
+  }),
 ]);
 
 export type ChatRealtimeEvent = z.infer<typeof chatRealtimeEventSchema>;

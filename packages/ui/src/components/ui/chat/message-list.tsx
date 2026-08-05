@@ -28,6 +28,7 @@ interface MessageListProps {
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   readOnly?: boolean;
+  typingLabel?: string;
   wsId: string;
 }
 
@@ -48,6 +49,7 @@ export function MessageList({
   onOpenAttachment,
   onToggleReaction,
   readOnly,
+  typingLabel,
   wsId,
 }: MessageListProps) {
   const t = useTranslations('chat');
@@ -210,7 +212,7 @@ export function MessageList({
                   </Button>
                 </div>
               ) : item.type === 'typing' ? (
-                <AgentTypingIndicator />
+                <AgentTypingIndicator label={typingLabel} />
               ) : (
                 <MessageRow
                   currentUserId={currentUserId}
@@ -270,7 +272,7 @@ function MessageRow({
   );
 }
 
-function AgentTypingIndicator() {
+function AgentTypingIndicator({ label }: { label?: string }) {
   const t = useTranslations('chat');
 
   return (
@@ -279,7 +281,7 @@ function AgentTypingIndicator() {
         <LoaderCircle className="size-4 animate-spin" />
       </div>
       <div className="rounded-md border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
-        <span className="sr-only">{t('agent_typing')}</span>
+        <span className="sr-only">{label ?? t('agent_typing')}</span>
         <span aria-hidden="true" className="flex items-center gap-1">
           <span className="size-1.5 animate-pulse rounded-full bg-current" />
           <span className="size-1.5 animate-pulse rounded-full bg-current delay-150" />

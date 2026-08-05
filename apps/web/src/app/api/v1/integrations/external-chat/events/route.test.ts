@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   readExternalChatBinding: vi.fn(),
+  resolveExternalChatThread: vi.fn(),
   upsert: vi.fn(),
   verifyExternalChatSecret: vi.fn(),
 }));
@@ -36,6 +37,8 @@ vi.mock('@/lib/external-chat/store', () => ({
     mocks.importExternalChatEvent(...args),
   readExternalChatBinding: (...args: unknown[]) =>
     mocks.readExternalChatBinding(...args),
+  resolveExternalChatThread: (...args: unknown[]) =>
+    mocks.resolveExternalChatThread(...args),
   upsertExternalChatObservation: vi.fn(),
 }));
 
@@ -121,6 +124,11 @@ describe('external chat ingest route', () => {
     );
     mocks.recordExternalChatSourceEvent.mockResolvedValue(undefined);
     mocks.releaseExternalChatSourceEvent.mockResolvedValue(undefined);
+    mocks.resolveExternalChatThread.mockResolvedValue({
+      conversationId: 'conversation-1',
+      found: true,
+      threadId: 'thread-1',
+    });
     mocks.importExternalChatEvent.mockResolvedValue({
       conversation: { id: 'conversation-1' },
       conversationCreated: true,
@@ -401,6 +409,33 @@ describe('external chat ingest route', () => {
     expect(mocks.releaseExternalChatSourceEvent).toHaveBeenCalled();
     expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('publishes live typing activity for the resolved conversation', async () => {
+    const typingEvent = {
+      agentId: 'agent-1',
+      deliveryMode: 'live',
+      eventId: 'typing:visitor-1:1',
+      kind: 'typing',
+      payload: { isTyping: true },
+      timestamp: new Date().toISOString(),
+      version: 2,
+      visitorId: 'visitor-1',
+    };
+    const { POST } = await import('./route');
+    const response = await POST(eventRequest('old-secret', typingEvent));
+
+    expect(response.status).toBe(201);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith({
+      actorUserId: null,
+      audience: { scope: 'workspace' },
+      conversationId: 'conversation-1',
+      isTyping: true,
+      type: 'typing.updated',
+      wsId,
+    });
+    expect(mocks.importExternalChatEvent).not.toHaveBeenCalled();
+    expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
   it('rejects an event timestamp beyond the allowed clock skew', async () => {

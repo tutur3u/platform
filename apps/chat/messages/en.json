@@ -264,6 +264,11 @@
     "delete_group_warning": "This will make you leave the group and lose access to all messages.",
     "delete_message": "Delete message",
     "delete_workspace_conversation_warning": "Deleting this workspace conversation will remove access for everyone. Messages and attachments in this channel or AI conversation will no longer be available.",
+    "delivery_deleted": "Deleted",
+    "delivery_failed": "Failed",
+    "delivery_seen": "Seen",
+    "delivery_sending": "Sending",
+    "delivery_sent": "Sent",
     "direct_message": "Direct message",
     "direct_messages": "Direct messages",
     "directory_search_placeholder": "Search people",
@@ -275,6 +280,7 @@
     "empty_messages_description": "Messages and attachments will appear here.",
     "empty_messages_title": "No messages yet",
     "external_sender": "Website visitor",
+    "external_visitor_typing": "Website visitor is typing",
     "files": "Files",
     "filter_conversations": "Filter conversations",
     "first_activity": "First activity",
@@ -339,6 +345,7 @@
     "no_search_results": "No messages found",
     "no_sent_friend_requests": "No sent requests",
     "no_visited_routes": "No route history",
+    "online": "Online",
     "photos": "Photos",
     "pin_conversation": "Pin conversation",
     "private_by_default": "Private schema by default",
@@ -663,6 +670,7 @@
     "title": "Workspace"
   },
   "settings": {
+    "back_to_app": "Back to app",
     "keyboard_shortcuts": {
       "close_settings": "Close settings",
       "first_section": "First section",
@@ -680,7 +688,8 @@
       "keyboard_shortcuts": "Keyboard Shortcuts",
       "keyboard_shortcuts_description": "Review keyboard shortcuts for app and sidebar actions",
       "sidebar_hidden": "Hidden"
-    }
+    },
+    "search_settings_placeholder": "Search settings..."
   },
   "version-badge": {
     "app": "App",

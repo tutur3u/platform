@@ -103,6 +103,23 @@ export async function POST(request: Request) {
     });
   }
 
+  if (
+    event.deliveryMode === 'live' &&
+    (event.kind === 'typing' || event.kind === 'presence') &&
+    result.conversationId
+  ) {
+    const active = readEphemeralActivity(event.payload);
+    await publishChatRealtimeEvent({
+      actorUserId: null,
+      audience: { scope: 'workspace' },
+      conversationId: result.conversationId,
+      ...(event.kind === 'typing'
+        ? { isTyping: active, type: 'typing.updated' as const }
+        : { isOnline: active, type: 'presence.updated' as const }),
+      wsId,
+    });
+  }
+
   const admin = await createAdminClient({ noCookie: true });
   const { error } = await (admin.schema('private') as any)
     .from('external_chat_sync_checkpoints')
@@ -124,5 +141,14 @@ export async function POST(request: Request) {
       threadId: result.threadId,
     },
     { status: result.duplicate ? 200 : 201 }
+  );
+}
+
+function readEphemeralActivity(payload: Record<string, unknown>) {
+  const explicit = payload.isTyping ?? payload.isOnline ?? payload.active;
+  if (typeof explicit === 'boolean') return explicit;
+  const state = String(payload.state ?? payload.status ?? '').toLowerCase();
+  return !['away', 'blur', 'closed', 'offline', 'stop', 'stopped'].includes(
+    state
   );
 }
