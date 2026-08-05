@@ -534,9 +534,28 @@ Day-of-month cron stepping restarts each month, so the 31st and the 1st can land
 a day apart. That is harmless here precisely because an empty run does nothing.
 
 The job checks out `main` with `fetch-depth: 0` and
-`secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The token must be
-able to push to `main` and `production`; with only the default token the push
-fails against branch protection. Top-level `permissions` is `{}` and
+`secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The fallback
+cannot complete a release: the `Protected branches` ruleset covers `main` and
+`production` and its only bypass actor is `OrganizationAdmin`, so a run on
+`github.token` merges cleanly and then dies on
+`GH013: Changes must be made through a pull request`. `RELEASE_PLEASE_TOKEN`
+must therefore hold a personal access token (`repo` + `workflow` scopes) owned
+by an organization admin. Granting the Actions app a ruleset bypass is **not**
+an alternative: pushes made with `GITHUB_TOKEN` do not trigger `push`
+workflows, so the `production` push would silently skip
+`Vercel Production Deployment Planner` and the next `Release Please` run and
+stall the release chain. A run that would need to push checks for the secret up
+front and fails with an actionable error, rather than discovering it after
+`bun check`.
+
+The job also installs Flutter (`3.44.x`, the same pin as `mobile.yaml`) and runs
+`flutter pub get` in `apps/mobile` before the merge. Release Please bumps
+`apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` in
+`scripts/git-release-please.js` is always true and `bun check` is always
+followed by `bun check:mobile`; without a toolchain `dart-format`,
+`flutter-analyze` and `flutter-test` all exit `127`.
+
+Top-level `permissions` is `{}` and
 `contents: write` is granted on the job alone, and `concurrency` is grouped with
 `cancel-in-progress: false` because cancelling a half-finished release merge
 would leave `main` and `production` split. Use the `dry_run` dispatch input to
