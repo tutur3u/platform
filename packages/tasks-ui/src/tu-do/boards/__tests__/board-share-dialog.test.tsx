@@ -90,7 +90,7 @@ function renderBoardShareDialog() {
     },
   });
 
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <BoardShareDialog
         board={{ id: 'board-1', name: 'Tasks' }}
@@ -100,6 +100,8 @@ function renderBoardShareDialog() {
       />
     </QueryClientProvider>
   );
+
+  return { ...result, queryClient };
 }
 
 describe('BoardShareDialog', () => {
@@ -174,7 +176,7 @@ describe('BoardShareDialog', () => {
   });
 
   it('fetches viewable members only when the workspace section opens', async () => {
-    renderBoardShareDialog();
+    const { queryClient } = renderBoardShareDialog();
 
     fireEvent.click(
       screen.getByRole('button', {
@@ -191,6 +193,20 @@ describe('BoardShareDialog', () => {
     });
     expect(await screen.findByText('Project Manager')).toBeInTheDocument();
     expect(screen.getByText('pm@example.com')).toBeInTheDocument();
+    expect(
+      queryClient.getQueryData([
+        'task-board-share-viewable-members',
+        'ws-1',
+        'board-1',
+      ])
+    ).toEqual(expect.objectContaining({ members: expect.any(Array) }));
+    expect(
+      queryClient.getQueryData([
+        'task-board-viewable-members',
+        'ws-1',
+        'board-1',
+      ])
+    ).toBeUndefined();
   });
 
   it('does not crash when viewable members payload is missing members', async () => {

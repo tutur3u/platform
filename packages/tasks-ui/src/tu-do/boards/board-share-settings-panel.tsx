@@ -77,7 +77,9 @@ export function BoardShareSettingsPanel({
     retry: shouldRetryShareRequest,
   });
   const viewableMembersQuery = useQuery({
-    queryKey: ['task-board-viewable-members', wsId, board.id] as const,
+    // Keep the full access response separate from the bulk-assignee cache,
+    // which stores a normalized WorkspaceMember array under a similar key.
+    queryKey: ['task-board-share-viewable-members', wsId, board.id] as const,
     queryFn: ({ signal }) =>
       listWorkspaceTaskBoardViewableMembers(
         wsId,

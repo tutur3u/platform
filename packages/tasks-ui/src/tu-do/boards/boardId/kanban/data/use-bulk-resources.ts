@@ -12,6 +12,12 @@ import {
   type WorkspaceMember,
 } from '@tuturuuu/ui/hooks/use-workspace-members';
 
+export function normalizeWorkspaceMemberList(
+  value: unknown
+): WorkspaceMember[] {
+  return Array.isArray(value) ? (value as WorkspaceMember[]) : [];
+}
+
 export function useBulkResources({
   boardId,
   canUseBoardAssignees,
@@ -60,16 +66,16 @@ export function useBulkResources({
     canUseBoardAssignees !== false && isMultiSelectMode && selectedCount > 0;
   const effectiveAssigneeMemberSource =
     assigneeMemberSource ?? (workspace.personal ? 'board' : 'workspace');
-  const { data: workspaceMembersData = [] } = useWorkspaceMembers(
-    workspace.id,
-    {
-      enabled:
-        !!workspace.id &&
-        shouldLoadMembers &&
-        effectiveAssigneeMemberSource !== 'board',
-    }
+  const { data: workspaceMembersResult } = useWorkspaceMembers(workspace.id, {
+    enabled:
+      !!workspace.id &&
+      shouldLoadMembers &&
+      effectiveAssigneeMemberSource !== 'board',
+  });
+  const workspaceMembersData = normalizeWorkspaceMemberList(
+    workspaceMembersResult
   );
-  const { data: boardViewableMembers = [] } = useQuery({
+  const { data: boardViewableMembersResult } = useQuery({
     queryKey: ['task-board-viewable-members', workspace.id, boardId],
     queryFn: async (): Promise<WorkspaceMember[]> => {
       if (!workspace.id || !boardId) return [];
@@ -96,6 +102,9 @@ export function useBulkResources({
       effectiveAssigneeMemberSource !== 'workspace',
     staleTime: 5 * 60 * 1000,
   });
+  const boardViewableMembers = normalizeWorkspaceMemberList(
+    boardViewableMembersResult
+  );
   const workspaceMembers: WorkspaceMember[] = [
     ...workspaceMembersData,
     ...boardViewableMembers.filter(
