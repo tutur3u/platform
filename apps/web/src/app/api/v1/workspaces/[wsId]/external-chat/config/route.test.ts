@@ -117,6 +117,18 @@ describe('external chat config route', () => {
     );
   });
 
+  it('validates only the bridge when no replica origin is configured', async () => {
+    const { replicaBaseUrl: _replicaBaseUrl, ...settings } = validSettings;
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(settings) as never, params);
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledTimes(1);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledWith(
+      settings.bridgeBaseUrl
+    );
+  });
+
   it('rejects a destination blocked by the network safety policy', async () => {
     mocks.assertSafeExternalChatUrl.mockRejectedValue(
       new mocks.ExternalChatUrlPolicyError('blocked')

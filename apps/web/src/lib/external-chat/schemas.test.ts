@@ -56,6 +56,12 @@ describe('external chat settings', () => {
         replicaBaseUrl: 'http://chat.example.com',
       }).success
     ).toBe(false);
+    expect(
+      externalChatSettingsSchema.safeParse({
+        ...settings,
+        replicaBaseUrl: 'not a URL',
+      }).success
+    ).toBe(false);
   });
 
   it('validates the fallback recipient while preserving dynamic inbox data', () => {
