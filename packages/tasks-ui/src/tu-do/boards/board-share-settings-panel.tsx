@@ -23,6 +23,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { BoardPublicLinkSection } from './board-public-link-section';
+import { MemberAccessSummary } from './member-access-summary';
 import {
   normalizeRoles,
   shareRequestOptions,
@@ -220,50 +221,54 @@ export function BoardShareSettingsPanel({
         ) : (
           <div className="divide-y rounded-md border">
             {members?.map((member) => (
-              <div
-                key={member.user_id}
-                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={member.avatar_url ?? undefined} />
-                    <AvatarFallback>
-                      {getInitials(viewableMemberDisplayName(member))}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <div className="truncate font-medium text-sm">
-                      {viewableMemberDisplayName(member)}
-                    </div>
-                    <div className="truncate text-muted-foreground text-xs">
-                      {member.email || member.user_id}
-                    </div>
+              <div key={member.user_id} className="flex items-center gap-3 p-3">
+                <Avatar className="h-8 w-8 shrink-0">
+                  <AvatarImage src={member.avatar_url ?? undefined} />
+                  <AvatarFallback>
+                    {getInitials(viewableMemberDisplayName(member))}
+                  </AvatarFallback>
+                </Avatar>
+                {/* The name gets the room. It was being squeezed to a few
+                    characters by badges that repeat across every row. */}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-sm">
+                    {viewableMemberDisplayName(member)}
+                  </div>
+                  <div className="truncate text-muted-foreground text-xs">
+                    {member.email || member.user_id}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {member.is_creator && (
-                    <Badge variant="secondary">
-                      {t('ws-task-boards.share.workspace_members.creator')}
-                    </Badge>
+                <MemberAccessSummary
+                  details={[
+                    ...(member.is_creator
+                      ? [
+                          {
+                            id: 'creator',
+                            label: t(
+                              'ws-task-boards.share.workspace_members.creator'
+                            ),
+                          },
+                        ]
+                      : []),
+                    ...normalizeRoles(member.roles).map((role) => ({
+                      id: role.id,
+                      label: role.name,
+                    })),
+                    {
+                      id: 'membership',
+                      label: t('ws-task-boards.share.workspace_members.badge'),
+                    },
+                  ]}
+                  permissionLabel={t(
+                    member.permission === 'edit'
+                      ? 'ws-task-boards.share.permission.edit'
+                      : 'ws-task-boards.share.permission.view'
                   )}
-                  {normalizeRoles(member.roles)
-                    .slice(0, 2)
-                    .map((role) => (
-                      <Badge key={role.id} variant="outline">
-                        {role.name}
-                      </Badge>
-                    ))}
-                  <Badge variant="outline">
-                    {t(
-                      member.permission === 'edit'
-                        ? 'ws-task-boards.share.permission.edit'
-                        : 'ws-task-boards.share.permission.view'
-                    )}
-                  </Badge>
-                  <Badge variant="outline">
-                    {t('ws-task-boards.share.workspace_members.badge')}
-                  </Badge>
-                </div>
+                  permissionTone={
+                    member.permission === 'edit' ? 'edit' : 'view'
+                  }
+                  srLabel={viewableMemberDisplayName(member)}
+                />
               </div>
             ))}
           </div>
@@ -326,31 +331,25 @@ export function BoardShareSettingsPanel({
           ) : (
             <div className="divide-y rounded-md border">
               {shares.map((share) => (
-                <div
-                  key={share.id}
-                  className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={share.user?.avatar_url ?? undefined} />
-                      <AvatarFallback>
-                        {getInitials(shareDisplayName(share))}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="truncate font-medium text-sm">
-                        {shareDisplayName(share)}
-                      </div>
-                      <div className="truncate text-muted-foreground text-xs">
-                        {share.email || share.user_id}
-                      </div>
+                <div key={share.id} className="flex items-center gap-3 p-3">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={share.user?.avatar_url ?? undefined} />
+                    <AvatarFallback>
+                      {getInitials(shareDisplayName(share))}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium text-sm">
+                      {shareDisplayName(share)}
+                    </div>
+                    <div className="truncate text-muted-foreground text-xs">
+                      {share.email || share.user_id}
                     </div>
                   </div>
 
-                  <Badge variant="outline" className="w-fit">
-                    {t('common.guest_access')}
-                  </Badge>
-
+                  {/* The section is titled "Direct board guests"; repeating
+                      "Guest access" on every row only competed with the name
+                      for space. */}
                   <Combobox
                     mode="single"
                     options={permissionOptions}
@@ -364,13 +363,14 @@ export function BoardShareSettingsPanel({
                     }
                     placeholder={t('ws-task-boards.share.permission.view')}
                     searchPlaceholder={t('common.search_members')}
-                    className="w-28 [&_button]:h-9"
+                    className="w-24 shrink-0 sm:w-28 [&_button]:h-9"
                   />
 
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
+                    className="shrink-0"
                     onClick={() => deleteMutation.mutate(share.id)}
                     disabled={deleteMutation.isPending}
                     aria-label={t('common.remove')}
