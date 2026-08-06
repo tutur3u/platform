@@ -280,6 +280,74 @@ describe('external chat sync status', () => {
     );
   });
 
+  it('forwards a validated agent scope for a bounded backfill', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      scope: { agentId: '7' },
+      state: 'running',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'start', agentId: '7' }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/start',
+      { agentId: '7', runId: localRun.id, stream: 'canonical' }
+    );
+  });
+
+  it.each(['all', '0', '01', '123456789012345678901'])(
+    'rejects invalid agent scope %s before creating a run',
+    async (agentId) => {
+      const { POST } = await import('./route');
+      const response = await POST(
+        new Request('http://localhost/sync', {
+          body: JSON.stringify({ action: 'start', agentId }),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        }) as never,
+        params
+      );
+
+      expect(response.status).toBe(400);
+      expect(mocks.requestExternalChatControl).not.toHaveBeenCalled();
+      expect(mocks.insertRun).not.toHaveBeenCalled();
+    }
+  );
+
+  it('accepts a 20-digit agent scope', async () => {
+    const agentId = '12345678901234567890';
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runId: localRun.id,
+      scope: { agentId },
+      state: 'running',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'start', agentId }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/start',
+      { agentId, runId: localRun.id, stream: 'canonical' }
+    );
+  });
+
   it('rejects a stale control result when the run changed concurrently', async () => {
     mocks.requestExternalChatControl.mockResolvedValueOnce({
       runId: localRun.id,

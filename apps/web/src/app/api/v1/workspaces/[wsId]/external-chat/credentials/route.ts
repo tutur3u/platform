@@ -153,7 +153,7 @@ export const POST = withSessionAuth<Params>(
       } catch (error) {
         return credentialMutationErrorResponse(error, current, issuedSecret);
       }
-      if (current?.credentials?.control_secret_encrypted) {
+      if (hasVerifiedCurrentControlCredential(current.credentials)) {
         try {
           await updateExternalChatBridgeCredential({
             action: 'set_ingest',
@@ -199,7 +199,7 @@ export const POST = withSessionAuth<Params>(
       } catch (error) {
         return credentialMutationErrorResponse(error, current);
       }
-      if (current?.credentials?.control_secret_encrypted) {
+      if (hasVerifiedCurrentControlCredential(current.credentials)) {
         try {
           await updateExternalChatBridgeCredential({
             action: 'rotate_control',
@@ -412,7 +412,7 @@ async function reconcilePendingCredential(wsId: string, state: BindingState) {
     wsId,
     credentials.pending_secret_encrypted
   );
-  if (credentials.control_secret_encrypted) {
+  if (hasVerifiedCurrentControlCredential(credentials)) {
     try {
       await updateExternalChatBridgeCredential({
         action: credentials.pending_action,
@@ -437,4 +437,14 @@ async function reconcilePendingCredential(wsId: string, state: BindingState) {
   const refreshed = await readExternalChatBinding(wsId);
   if (!refreshed) throw new Error('Binding disappeared during reconciliation');
   return refreshed;
+}
+
+function hasVerifiedCurrentControlCredential(
+  credentials: BindingState['credentials']
+) {
+  return Boolean(
+    credentials?.control_secret_encrypted &&
+      credentials.verified_at &&
+      credentials.verified_revision === credentials.configuration_revision
+  );
 }

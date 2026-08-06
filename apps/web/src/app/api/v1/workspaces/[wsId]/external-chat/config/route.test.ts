@@ -45,6 +45,7 @@ const validSettings = {
   bridgeBaseUrl: 'https://bridge.example.com',
   enabled: true,
   inboxDefaults: {},
+  replicaBaseUrl: 'https://chat.example.com',
 };
 
 function patchRequest(payload: unknown) {
@@ -116,6 +117,18 @@ describe('external chat config route', () => {
     );
   });
 
+  it('validates only the bridge when no replica origin is configured', async () => {
+    const { replicaBaseUrl: _replicaBaseUrl, ...settings } = validSettings;
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(settings) as never, params);
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledTimes(1);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledWith(
+      settings.bridgeBaseUrl
+    );
+  });
+
   it('rejects a destination blocked by the network safety policy', async () => {
     mocks.assertSafeExternalChatUrl.mockRejectedValue(
       new mocks.ExternalChatUrlPolicyError('blocked')
@@ -125,8 +138,23 @@ describe('external chat config route', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: 'Bridge URL is not allowed',
+      error: 'External chat URL is not allowed',
     });
+  });
+
+  it('applies the network safety policy to the replica origin', async () => {
+    mocks.assertSafeExternalChatUrl.mockImplementation(async (url: string) => {
+      if (url === validSettings.replicaBaseUrl)
+        throw new mocks.ExternalChatUrlPolicyError('blocked');
+    });
+    const { PATCH } = await import('./route');
+    const response = await PATCH(patchRequest(validSettings) as never, params);
+
+    expect(response.status).toBe(400);
+    expect(mocks.assertSafeExternalChatUrl).toHaveBeenCalledWith(
+      validSettings.replicaBaseUrl
+    );
+    expect(mocks.writeExternalChatSettings).not.toHaveBeenCalled();
   });
 
   it('returns 503 when destination validation is temporarily unavailable', async () => {

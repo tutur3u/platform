@@ -36,6 +36,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   const existing = (query.data?.settings ?? {}) as Record<string, unknown>;
   const [enabledOverride, setEnabled] = useState<boolean | null>(null);
   const [baseUrlOverride, setBaseUrl] = useState<string | null>(null);
+  const [replicaBaseUrlOverride, setReplicaBaseUrl] = useState<string | null>(
+    null
+  );
   const [controlSecret, setControlSecret] = useState('');
   const [agentMappingsOverride, setAgentMappings] = useState<string | null>(
     null
@@ -51,6 +54,8 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
   );
   const enabled = enabledOverride ?? existing.enabled === true;
   const baseUrl = baseUrlOverride ?? String(existing.bridgeBaseUrl ?? '');
+  const replicaBaseUrl =
+    replicaBaseUrlOverride ?? String(existing.replicaBaseUrl ?? '');
   const agentMappings =
     agentMappingsOverride ??
     JSON.stringify(existing.agentMappings ?? {}, null, 2);
@@ -85,6 +90,9 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
           existingInboxDefaults,
           recipientUserId
         ),
+        ...(replicaBaseUrl.trim()
+          ? { replicaBaseUrl: replicaBaseUrl.trim() }
+          : {}),
       });
     },
     onError: (error) =>
@@ -96,6 +104,7 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
     onSuccess: async () => {
       setEnabled(null);
       setBaseUrl(null);
+      setReplicaBaseUrl(null);
       setAgentMappings(null);
       setRecipientUserId(null);
       await refresh();
@@ -208,6 +217,13 @@ export function ConnectedChatSettings({ wsId }: { wsId: string }) {
                 onChange={(event) => setRecipientUserId(event.target.value)}
                 placeholder={t('inbox_recipient_placeholder')}
                 value={recipientUserId}
+              />
+              <Label htmlFor="replica-url">{t('replica_url')}</Label>
+              <Input
+                id="replica-url"
+                onChange={(event) => setReplicaBaseUrl(event.target.value)}
+                placeholder="https://chat.example.com"
+                value={replicaBaseUrl}
               />
             </div>
           </details>

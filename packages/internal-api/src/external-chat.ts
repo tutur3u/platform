@@ -34,6 +34,7 @@ export type ExternalChatSettings = {
   bridgeBaseUrl: string;
   enabled: boolean;
   inboxDefaults: Record<string, unknown> & { recipientUserId?: string };
+  replicaBaseUrl?: string;
 };
 
 export type ExternalChatCredentialAction =
@@ -46,6 +47,7 @@ export type ExternalChatCredentialAction =
 
 export type ExternalChatSyncAction = {
   action: 'audit' | 'start' | 'resume' | 'cancel' | 'reconcile';
+  agentId?: string;
   runId?: string;
   stream?: string;
 };

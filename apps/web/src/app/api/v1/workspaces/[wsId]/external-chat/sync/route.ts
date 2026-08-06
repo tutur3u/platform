@@ -13,6 +13,10 @@ import { safeParseBody } from '@/lib/safe-parse-body';
 type Params = { wsId: string };
 const actionSchema = z.object({
   action: z.enum(['audit', 'start', 'resume', 'cancel', 'reconcile']),
+  agentId: z
+    .string()
+    .regex(/^[1-9]\d{0,19}$/)
+    .optional(),
   runId: z.string().uuid().optional(),
   stream: z.string().min(1).max(80).optional(),
 });
@@ -136,7 +140,11 @@ export const POST = withSessionAuth<Params>(
       const remote = await requestExternalChatControl(
         wsId,
         `/control/v1/sync/${parsed.data.action}`,
-        { runId, stream: parsed.data.stream ?? 'canonical' }
+        {
+          ...(parsed.data.agentId ? { agentId: parsed.data.agentId } : {}),
+          runId,
+          stream: parsed.data.stream ?? 'canonical',
+        }
       );
       const remoteRun = readRemoteRun(remote, runId);
       const update = buildRunUpdate(

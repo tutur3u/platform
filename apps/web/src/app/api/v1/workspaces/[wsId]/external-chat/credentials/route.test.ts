@@ -137,6 +137,8 @@ describe('external chat credential verification', () => {
       credentials: {
         configuration_revision: 3,
         control_secret_encrypted: 'encrypted',
+        verified_at: '2026-08-05T00:00:00.000Z',
+        verified_revision: 3,
       },
     });
     mocks.updateExternalChatBridgeCredential.mockRejectedValue(
@@ -159,6 +161,128 @@ describe('external chat credential verification', () => {
     );
     expect(mocks.promoteExternalChatCredential).not.toHaveBeenCalled();
     expect(await response.json()).toMatchObject({ secret: 'ecs_test_secret' });
+  });
+
+  it('rotates ingest locally when the binding must be re-paired', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(request({ action: 'rotate_ingest' }) as never, {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'set_ingest',
+      'encrypted-pending'
+    );
+  });
+
+  it('promotes an interrupted unverified ingest rotation without bridge mutation', async () => {
+    const pendingState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        pending_action: 'set_ingest',
+        pending_secret_encrypted: 'encrypted-pending',
+        verified_at: null,
+        verified_revision: null,
+      },
+    };
+    const promotedState = {
+      binding: {},
+      credentials: {
+        configuration_revision: 4,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    };
+    mocks.readExternalChatBinding
+      .mockResolvedValueOnce(pendingState)
+      .mockResolvedValue(promotedState);
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'pair',
+        ingestSecret: 'ingest-secret-value-123456789',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'set_ingest',
+      'encrypted-pending'
+    );
+  });
+
+  it('replaces an unverified local control credential before re-pairing', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'stale-encrypted-control',
+        verified_at: null,
+        verified_revision: null,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'set_control',
+        secret: 'replacement-control-secret',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).not.toHaveBeenCalled();
+    expect(mocks.promoteExternalChatCredential).toHaveBeenCalledWith(
+      'workspace-1',
+      'rotate_control',
+      'encrypted-pending'
+    );
+  });
+
+  it('requires remote rotation while the current control credential is verified', async () => {
+    mocks.readExternalChatBinding.mockResolvedValue({
+      binding: {},
+      credentials: {
+        configuration_revision: 3,
+        control_secret_encrypted: 'verified-encrypted-control',
+        verified_at: '2026-08-05T00:00:00.000Z',
+        verified_revision: 3,
+      },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      request({
+        action: 'set_control',
+        secret: 'replacement-control-secret',
+      }) as never,
+      { params: Promise.resolve({ wsId: 'workspace-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateExternalChatBridgeCredential).toHaveBeenCalledWith({
+      action: 'rotate_control',
+      secret: 'replacement-control-secret',
+      wsId: 'workspace-1',
+    });
   });
 
   it('pairs with a transient single-use ticket and verifies before marking ready', async () => {

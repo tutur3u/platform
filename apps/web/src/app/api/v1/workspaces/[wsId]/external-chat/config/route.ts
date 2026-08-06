@@ -60,7 +60,12 @@ export const PATCH = withSessionAuth<Params>(
     }
     try {
       if (parsed.data.enabled) {
-        await assertSafeExternalChatUrl(parsed.data.bridgeBaseUrl);
+        await Promise.all([
+          assertSafeExternalChatUrl(parsed.data.bridgeBaseUrl),
+          ...(parsed.data.replicaBaseUrl
+            ? [assertSafeExternalChatUrl(parsed.data.replicaBaseUrl)]
+            : []),
+        ]);
       }
     } catch (error) {
       if (!(error instanceof ExternalChatUrlPolicyError)) {
@@ -71,7 +76,7 @@ export const PATCH = withSessionAuth<Params>(
         );
       }
       return NextResponse.json(
-        { error: 'Bridge URL is not allowed' },
+        { error: 'External chat URL is not allowed' },
         { status: 400 }
       );
     }

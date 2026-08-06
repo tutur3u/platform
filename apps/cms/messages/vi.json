@@ -3453,6 +3453,7 @@
     "ready": "Sẵn sàng đồng bộ canary",
     "ready_description": "Có thể thử cả hai chiều mà không thay đổi hệ thống chính.",
     "refresh": "Làm mới trạng thái đồng bộ hóa",
+    "replica_url": "Địa chỉ bản sao hiện đại",
     "retry": "Thử lại",
     "rotate_ingest": "Xoay thông tin tiếp nhận",
     "save": "Lưu cấu hình chat",
