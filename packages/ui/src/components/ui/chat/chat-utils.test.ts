@@ -171,6 +171,21 @@ describe('chat utils', () => {
     ).toBe('message_deleted');
   });
 
+  it('decodes external message previews without changing native previews', () => {
+    const encoded = 'T&ocirc;i &#273;&atilde; g&#7917;i tin';
+
+    expect(
+      getLastMessagePreview({
+        ...baseMessage,
+        content: encoded,
+        metadata: { externalChat: true },
+      })
+    ).toBe('Tôi đã gửi tin');
+    expect(getLastMessagePreview({ ...baseMessage, content: encoded })).toBe(
+      encoded
+    );
+  });
+
   it('formats file sizes for attachment rows', () => {
     expect(formatFileSize(0)).toBe('0 B');
     expect(formatFileSize(2048)).toBe('2.0 KB');
@@ -380,6 +395,21 @@ describe('chat utils', () => {
       preview: 'Need help with this page',
       timestamp: '2026-08-05T07:15:00.000Z',
     });
+  });
+
+  it('decodes connected-site queue previews using conversation scope', () => {
+    const details = getChatConversationQueueDetails(
+      conversation({
+        latestMessage: {
+          ...baseMessage,
+          content: 'T&ocirc;i &#273;&atilde; g&#7917;i tin',
+          metadata: { status: 'seen' },
+        },
+        metadata: { externalChat: true },
+      })
+    );
+
+    expect(details.preview).toBe('Tôi đã gửi tin');
   });
 
   it('normalizes connected-site delivery and deletion states', () => {

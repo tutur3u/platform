@@ -4,6 +4,10 @@ import type {
   ChatMessage,
   ChatUserProfile,
 } from '@tuturuuu/internal-api';
+import {
+  decodeExternalChatContent,
+  getChatMessageDisplayContent,
+} from './external-message-content';
 
 export type ChatConversationScope = 'external' | 'personal' | 'workspaces';
 export type ChatConversationArchiveFilter = 'active' | 'all' | 'archived';
@@ -102,6 +106,12 @@ export function getChatConversationQueueDetails(
 ) {
   const latestMessage = conversation.latestMessage;
   const phone = readNonEmptyString(conversation.metadata.phone);
+  const previewContent = latestMessage
+    ? decodeExternalChatContent(
+        latestMessage.content,
+        conversation.metadata.externalChat === true
+      )
+    : null;
 
   return {
     deliveryState: latestMessage
@@ -110,7 +120,7 @@ export function getChatConversationQueueDetails(
     phone,
     preview: latestMessage?.deletedAt
       ? null
-      : (readNonEmptyString(latestMessage?.content) ??
+      : (readNonEmptyString(previewContent) ??
         readNonEmptyString(latestMessage?.attachments[0]?.filename)),
     timestamp: latestMessage?.createdAt ?? conversation.updatedAt,
   };
@@ -412,7 +422,8 @@ export function getLastMessagePreview(
   if (message.deletedAt) return labels.messageDeleted ?? '';
   if (message.kind === 'system')
     return labels.systemEvent ?? labels.message ?? '';
-  if (message.content.trim()) return message.content.trim();
+  const displayContent = getChatMessageDisplayContent(message).trim();
+  if (displayContent) return displayContent;
   if (message.attachments.length > 0) {
     return message.attachments[0]?.filename ?? labels.attachment ?? '';
   }

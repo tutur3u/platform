@@ -6,6 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { Button } from '../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
+import { getChatMessageDisplayContent } from './external-message-content';
 import {
   getChatConversationQueueDetails,
   getChatMessageSenderLabel,
@@ -160,25 +161,29 @@ export function SearchResultList({
 
   return (
     <div className="h-full space-y-1 overflow-y-auto p-2">
-      {messages.map((message) => (
-        <button
-          className="w-full rounded-md px-2 py-2 text-left transition-colors hover:bg-accent"
-          key={message.id}
-          onClick={() => onSelectConversation(message.conversationId)}
-          type="button"
-        >
-          <span className="block truncate font-medium text-sm">
-            {getChatMessageSenderLabel(message, {
-              assistant: t('assistant_name'),
-              external: t('external_sender'),
-              unknown: t('unknown_sender'),
-            })}
-          </span>
-          <span className="mt-1 line-clamp-2 text-muted-foreground text-xs">
-            {message.content}
-          </span>
-        </button>
-      ))}
+      {messages.map((message) => {
+        const displayContent = getChatMessageDisplayContent(message);
+
+        return (
+          <button
+            className="w-full rounded-md px-2 py-2 text-left transition-colors hover:bg-accent"
+            key={message.id}
+            onClick={() => onSelectConversation(message.conversationId)}
+            type="button"
+          >
+            <span className="block truncate font-medium text-sm">
+              {getChatMessageSenderLabel(message, {
+                assistant: t('assistant_name'),
+                external: t('external_sender'),
+                unknown: t('unknown_sender'),
+              })}
+            </span>
+            <span className="mt-1 line-clamp-2 text-muted-foreground text-xs">
+              {displayContent}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
