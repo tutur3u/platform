@@ -86,6 +86,14 @@ const coordinatedCookieApps = [
 const supabaseFirstCookieApps = registeredSatelliteApps;
 
 const allowedSatelliteLocalApiRoutes = new Set([
+  // The build marker is deliberately local to every app. It answers "which
+  // commit is this deployment actually running?", which cannot be proxied: the
+  // whole point is to identify *this* app's bundle. Satellites are where that
+  // question bites hardest, since a cancelled deploy can leave one serving a
+  // commit that was merged but never built.
+  'apps/chat/src/app/api/build-info/route.ts',
+  'apps/drive/src/app/api/build-info/route.ts',
+  'apps/meet/src/app/api/build-info/route.ts',
   'apps/learn/src/app/api/auth/logout/route.ts',
   'apps/learn/src/app/api/auth/refresh-app-session/route.ts',
   'apps/learn/src/app/api/auth/verify-app-token/route.ts',

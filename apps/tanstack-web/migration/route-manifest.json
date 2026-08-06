@@ -6,12 +6,12 @@
         "acceptedRemoval": 11,
         "key": "api",
         "label": "api",
-        "legacyNext": 504,
+        "legacyNext": 505,
         "migrated": 62,
-        "percentComplete": 12.65,
-        "remaining": 504,
+        "percentComplete": 12.63,
+        "remaining": 505,
         "terminal": 73,
-        "total": 577,
+        "total": 578,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 11,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 512,
+        "legacyNext": 513,
         "migrated": 67,
-        "percentComplete": 13.22,
-        "remaining": 512,
+        "percentComplete": 13.2,
+        "remaining": 513,
         "terminal": 78,
-        "total": 590,
+        "total": 591,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 13,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 575,
+      "legacyNext": 576,
       "migrated": 215,
-      "percentComplete": 28.39,
-      "remaining": 575,
+      "percentComplete": 28.36,
+      "remaining": 576,
       "terminal": 228,
-      "total": 803,
+      "total": 804,
       "unknownStatus": 0
     }
   },
@@ -645,6 +645,15 @@
       "methods": ["POST"],
       "routePath": "/api/auth/verify-app-token",
       "sourceFile": "apps/web/src/legacy-api-routes/auth/verify-app-token/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/build-info:apps/web/src/app/api/build-info/route.ts",
+      "kind": "api",
+      "methods": ["GET"],
+      "routePath": "/api/build-info",
+      "sourceFile": "apps/web/src/app/api/build-info/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7666,13 +7675,13 @@
     }
   ],
   "summary": {
-    "apiRoutes": 577,
+    "apiRoutes": 578,
     "cronRoutes": 8,
     "layouts": 58,
     "pages": 151,
-    "routeHandlers": 590,
+    "routeHandlers": 591,
     "methodCounts": {
-      "GET": 291,
+      "GET": 292,
       "HEAD": 3,
       "POST": 292,
       "PUT": 53,
@@ -7680,6 +7689,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 803
+    "total": 804
   }
 }
