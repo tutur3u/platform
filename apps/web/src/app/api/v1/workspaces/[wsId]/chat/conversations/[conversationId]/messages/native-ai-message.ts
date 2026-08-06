@@ -19,11 +19,9 @@ import { getChatRealtimeAudience } from '@/lib/chat/realtime';
 import {
   buildNativeAiObservabilityContext,
   callAiChatRoute,
-  cleanupNativeAiResources,
   consumeAiResponseTextDeltas,
   copyChatAttachmentsToAiResources,
   maybeAutoRenameNativeAiConversation,
-  NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   normalizeNativeAiModel,
   publishChatRealtimeMessages,
   readRecord,
@@ -31,6 +29,9 @@ import {
   splitAiAssistantContent,
   toNativeAiUiMessages,
 } from './ai-message-shared';
+
+const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
+  'Assistant response failed. Your message was saved.';
 
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
@@ -41,10 +42,11 @@ type AiAssistantMessageRow = {
   prompt_tokens: number | null;
 };
 
-export type NativeAiMessagePersistence = {
-  messages: ChatMessage[];
-  replayed: boolean;
-};
+function wantsChatMessageStream(request: NextRequest) {
+  return (
+    request.headers.get('accept')?.includes('application/x-ndjson') ?? false
+  );
+}
 
 export function streamNativeAiConversationResponse({
   auth,
@@ -69,7 +71,7 @@ export function streamNativeAiConversationResponse({
 
       write({ message: userMessage, type: 'message' });
       try {
-        const persistence = await sendNativeAiConversationMessages({
+        const assistantMessages = await sendNativeAiConversationMessages({
           auth,
           context,
           conversation,
@@ -82,10 +84,10 @@ export function streamNativeAiConversationResponse({
         await publishChatRealtimeMessages({
           actorUserId: auth.user.id,
           audience: getChatRealtimeAudience(conversation),
-          messages: persistence.messages,
+          messages: assistantMessages,
           wsId: context.normalizedWsId,
         });
-        write({ messages: persistence.messages, type: 'messages' });
+        write({ messages: assistantMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
         console.error('Failed to stream native Chat AI response', {
@@ -129,33 +131,11 @@ export async function sendNativeAiConversationMessages({
   onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
   userMessage: ChatMessage;
-}): Promise<NativeAiMessagePersistence> {
+}) {
   const settings = await getNativeAiSettings(conversation.id);
-  const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
-    'chat_list_messages',
-    {
-      p_actor_user_id: auth.user.id,
-      p_before: null,
-      p_conversation_id: conversation.id,
-      p_limit: 100,
-      p_ws_id: context.normalizedWsId,
-    }
-  );
-  const replayedMessages = (privateMessages ?? []).filter((message) => {
-    const metadata = readRecord(message.metadata);
-    return (
-      message.kind === 'assistant' && metadata?.requestId === userMessage.id
-    );
-  });
-  if (replayedMessages.length > 0) {
-    return { messages: replayedMessages, replayed: true };
-  }
-
-  const shadowChatId = userMessage.id;
   const shadowChatResult = await ensureNativeAiShadowChat({
     auth,
     conversation,
-    shadowChatId,
     model: normalizeNativeAiModel(settings.model_id),
   });
 
@@ -163,123 +143,113 @@ export async function sendNativeAiConversationMessages({
     throw new Error('Failed to prepare AI chat');
   }
 
-  let assistantResponse = await getLatestAiAssistantMessage({
-    chatId: shadowChatId,
-    requestId: userMessage.id,
+  await copyChatAttachmentsToAiResources({
+    conversationId: conversation.id,
+    targetWsId: context.normalizedWsId,
+    userMessage,
+  });
+
+  const [privateMessages, existingAiMessages] = await Promise.all([
+    callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
+      p_actor_user_id: auth.user.id,
+      p_before: null,
+      p_conversation_id: conversation.id,
+      p_limit: 100,
+      p_ws_id: context.normalizedWsId,
+    }),
+    listExistingAiMessageIds({
+      chatId: conversation.id,
+      supabase: auth.supabase,
+    }),
+  ]);
+
+  await maybeAutoRenameNativeAiConversation({
+    auth,
+    context,
+    conversation,
+    firstMessageContent: userMessage.content,
+    messages: privateMessages ?? [],
+  });
+
+  const aiMessages = toNativeAiUiMessages(
+    privateMessages ?? [],
+    settings.system_prompt
+  );
+
+  const aiResponse = await callAiChatRoute({
+    chatId: conversation.id,
+    creditSource: settings.credit_source,
+    creditWsId:
+      settings.credit_source === 'personal'
+        ? (settings.credit_ws_id ?? undefined)
+        : (settings.credit_ws_id ?? context.normalizedWsId),
+    messages: aiMessages,
+    model: normalizeNativeAiModel(settings.model_id),
+    observabilityContext: buildNativeAiObservabilityContext(
+      privateMessages ?? []
+    ),
+    request,
+    supabase: auth.supabase,
+    thinkingMode: settings.thinking_mode,
+    user: auth.user,
+    wsId: context.normalizedWsId,
+  });
+
+  if (!aiResponse.ok) {
+    const errorText = await aiResponse.text().catch(() => '');
+    console.error('Native Chat AI response failed', {
+      conversationId: conversation.id,
+      status: aiResponse.status,
+      errorText,
+    });
+    throw new Error(errorText || 'Failed to send AI chat message');
+  }
+
+  await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
+
+  const assistantResponse = await getLatestNewAiAssistantMessage({
+    chatId: conversation.id,
+    knownMessageIds: existingAiMessages,
     supabase: auth.supabase,
   });
 
-  if (!assistantResponse) {
-    await copyChatAttachmentsToAiResources({
-      resourceChatId: shadowChatId,
-      targetWsId: context.normalizedWsId,
-      userMessage,
-    });
-
-    await maybeAutoRenameNativeAiConversation({
-      auth,
-      context,
-      conversation,
-      firstMessageContent: userMessage.content,
-      messages: privateMessages ?? [],
-    });
-
-    const aiMessages = toNativeAiUiMessages(
-      privateMessages ?? [],
-      settings.system_prompt
-    );
-
-    const aiResponse = await callAiChatRoute({
-      chatId: shadowChatId,
-      creditSource: settings.credit_source,
-      creditWsId:
-        settings.credit_source === 'personal'
-          ? (settings.credit_ws_id ?? undefined)
-          : (settings.credit_ws_id ?? context.normalizedWsId),
-      messages: aiMessages,
-      miraMode: false,
-      model: normalizeNativeAiModel(settings.model_id),
-      observabilityContext: buildNativeAiObservabilityContext(
-        privateMessages ?? []
-      ),
-      persistenceRequestId: userMessage.id,
-      request,
-      supabase: auth.supabase,
-      thinkingMode: settings.thinking_mode,
-      user: auth.user,
-      wsId: context.normalizedWsId,
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text().catch(() => '');
-      console.error('Native Chat AI response failed', {
-        conversationId: conversation.id,
-        status: aiResponse.status,
-        errorText,
-      });
-      throw new Error(errorText || 'Failed to send AI chat message');
-    }
-
-    await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
-
-    assistantResponse = await getLatestAiAssistantMessage({
-      chatId: shadowChatId,
-      requestId: userMessage.id,
-      supabase: auth.supabase,
-    });
-  }
-
-  const assistantContent = getPersistableAssistantContent(assistantResponse);
-  if (!assistantResponse || !assistantContent) {
+  if (!assistantResponse?.content?.trim()) {
     console.error('Native Chat AI response was not saved', {
       conversationId: conversation.id,
     });
     throw new Error('AI response was not saved');
   }
 
-  const assistantParts = splitAiAssistantContent(assistantContent);
-  const persistence = await callPrivateChatRpc<NativeAiMessagePersistence>(
-    'chat_persist_ai_message_batch_idempotent',
-    {
-      p_actor_user_id: auth.user.id,
-      p_conversation_id: conversation.id,
-      p_messages: assistantParts.map((content, index) => ({
-        content,
-        metadata: buildNativeAssistantMessageMetadata({
-          aiMessage: assistantResponse,
-          content,
-          splitIndex: index,
-          splitTotal: assistantParts.length,
-        }),
-      })),
-      p_request_id: userMessage.id,
-      p_ws_id: context.normalizedWsId,
+  const assistantParts = splitAiAssistantContent(assistantResponse.content);
+  const assistantMessages: ChatMessage[] = [];
+
+  for (let index = 0; index < assistantParts.length; index++) {
+    const content = assistantParts[index]!;
+    const metadata = buildNativeAssistantMessageMetadata({
+      aiMessage: assistantResponse,
+      content,
+      splitIndex: index,
+      splitTotal: assistantParts.length,
+    });
+    const message = await callPrivateChatRpc<ChatMessage>(
+      'chat_persist_ai_message',
+      {
+        p_actor_user_id: auth.user.id,
+        p_content: content,
+        p_conversation_id: conversation.id,
+        p_metadata: metadata,
+        p_ws_id: context.normalizedWsId,
+      }
+    );
+
+    if (!message) {
+      throw new Error('Chat conversation not found');
     }
-  );
 
-  if (!persistence?.messages.length) {
-    throw new Error('Chat conversation not found');
+    assistantMessages.push(message);
   }
 
-  await cleanupNativeAiShadowChat({
-    shadowChatId,
-    wsId: context.normalizedWsId,
-  });
-
-  return persistence;
-}
-
-function getPersistableAssistantContent(
-  response: AiAssistantMessageRow | null
-) {
-  const content = response?.content?.trim();
-  if (content) return content;
-  const metadata = readRecord(response?.metadata);
-  const ai = readRecord(metadata?.ai);
-  if (Array.isArray(ai?.parts) && ai.parts.length > 0) {
-    return 'Assistant completed the requested action.';
-  }
-  return null;
+  return assistantMessages;
 }
 
 async function getNativeAiSettings(conversationId: string) {
@@ -320,7 +290,6 @@ async function getNativeAiSettings(conversationId: string) {
       conversationId,
       error: serializeChatAiSettingsDbError(error),
     });
-    throw new Error('Failed to load native Chat AI settings');
   }
 
   return mapNativeChatAiSettingsRow(data);
@@ -329,22 +298,19 @@ async function getNativeAiSettings(conversationId: string) {
 async function ensureNativeAiShadowChat({
   auth,
   conversation,
-  shadowChatId,
   model,
 }: {
   auth: SessionAuthContext;
   conversation: ChatConversation;
-  shadowChatId: string;
   model: string;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { error } = await sbAdmin.from('ai_chats').upsert(
     {
-      id: shadowChatId,
+      id: conversation.id,
       creator_id: auth.user.id,
       is_public: false,
       model,
-      summary: `native-chat-shadow:${conversation.id}`,
       title: conversation.title ?? 'Mira',
     },
     { onConflict: 'id' }
@@ -358,13 +324,33 @@ async function ensureNativeAiShadowChat({
   return { ok: true };
 }
 
-async function getLatestAiAssistantMessage({
+async function listExistingAiMessageIds({
   chatId,
-  requestId,
   supabase,
 }: {
   chatId: string;
-  requestId: string;
+  supabase: SessionAuthContext['supabase'];
+}) {
+  const { data, error } = await supabase
+    .from('ai_chat_messages')
+    .select('id')
+    .eq('chat_id', chatId);
+
+  if (error) {
+    console.error('Failed to load native Chat AI message markers', error);
+    return new Set<string>();
+  }
+
+  return new Set((data ?? []).map((message) => message.id));
+}
+
+async function getLatestNewAiAssistantMessage({
+  chatId,
+  knownMessageIds,
+  supabase,
+}: {
+  chatId: string;
+  knownMessageIds: Set<string>;
   supabase: SessionAuthContext['supabase'];
 }) {
   const { data, error } = await supabase
@@ -382,30 +368,9 @@ async function getLatestAiAssistantMessage({
 
   return (
     ((data as AiAssistantMessageRow[] | null) ?? []).find(
-      (message) => readRecord(message.metadata)?.requestId === requestId
+      (message) => !knownMessageIds.has(message.id)
     ) ?? null
   );
-}
-
-async function cleanupNativeAiShadowChat({
-  shadowChatId,
-  wsId,
-}: {
-  shadowChatId: string;
-  wsId: string;
-}) {
-  await cleanupNativeAiResources({ chatId: shadowChatId, wsId });
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { error } = await sbAdmin
-    .from('ai_chats')
-    .delete()
-    .eq('id', shadowChatId);
-  if (error) {
-    console.warn('Failed to clean up native Chat AI shadow chat', {
-      error,
-      shadowChatId,
-    });
-  }
 }
 
 function buildNativeAssistantMessageMetadata({
@@ -436,10 +401,6 @@ function buildNativeAssistantMessageMetadata({
         ];
 
   return {
-    requestId:
-      typeof rootMetadata.requestId === 'string'
-        ? rootMetadata.requestId
-        : null,
     source: 'native-ai-chat',
     ai: {
       ...aiMetadata,
@@ -456,4 +417,23 @@ function buildNativeAssistantMessageMetadata({
       },
     },
   };
+}
+
+function buildNativeAiObservabilityContext(messages: ChatMessage[]) {
+  return messages.slice(-20).map((message) => {
+    const chars = message.content.length;
+
+    return {
+      chars,
+      id: message.id,
+      kind: message.kind,
+      label:
+        message.kind === 'assistant'
+          ? 'Assistant message'
+          : message.kind === 'system'
+            ? 'System message'
+            : 'User message',
+      tokensEstimate: Math.ceil(chars / 4),
+    };
+  });
 }
