@@ -165,6 +165,35 @@ describe('external project app-token scope checks', () => {
       )
     ).toBe(false);
   });
+
+  it('lets a broader scope answer for a narrower one', () => {
+    // `manage` is the right to change the content model, which nobody can
+    // exercise without also reading and publishing. Requiring the narrow scope
+    // by name meant an app granted everything could do nothing, and no
+    // permission change fixed it because the grant was never what was missing.
+    for (const mode of ['read', 'publish', 'manage'] as const) {
+      expect(
+        appTokenHasRequiredScope(
+          { ...baseClaims, scopes: ['external-projects:manage'] },
+          mode
+        )
+      ).toBe(true);
+    }
+
+    expect(
+      appTokenHasRequiredScope(
+        { ...baseClaims, scopes: ['external-projects:publish'] },
+        'read'
+      )
+    ).toBe(true);
+    // Narrower still cannot answer for broader.
+    expect(
+      appTokenHasRequiredScope(
+        { ...baseClaims, scopes: ['external-projects:publish'] },
+        'manage'
+      )
+    ).toBe(false);
+  });
 });
 
 type CanonicalProjectFixture = {

@@ -64,7 +64,9 @@ planner replaces.
 Each reusable production workflow uses a static per-app concurrency prefix plus
 the Git ref. Do not derive this key from reusable-workflow caller context: that
 can make sibling app jobs share one group, cancel one another, and surface red X
-statuses where unselected jobs should be skipped.
+statuses where unselected jobs should be skipped. Enable `cancel-in-progress`
+only when the inherited event is a push to `refs/heads/production`; `main`
+commits and manual recovery dispatches must not cancel the active deployment.
 
 `bun.lock`-only changes intentionally run all Vercel app deploys because ownership
 is ambiguous without a manifest or source path.
@@ -187,7 +189,8 @@ These workflows:
 - treat `vercel-preview-platform.yaml` as platform build validation only;
   self-hosted machines own their own Docker `apps/web` runtime deployment
 - cancel superseded production runs through per-workflow, per-branch
-  concurrency so the newest SHA remains deployable
+  concurrency only for newer `production` pushes, so `main` commits and manual
+  recovery dispatches cannot interrupt the active deployment
 - record non-blocking GitHub Deployment markers after successful Vercel preview
   builds and production deploys so the next production push can evaluate every
   change since the last successful run
@@ -651,10 +654,12 @@ native compiler path instead of trying to auto-install classic TypeScript.
 ### Superseded-run guards
 
 Production Vercel workflows use a static per-app concurrency prefix and Git ref
-with `cancel-in-progress: true`. A newer production push cancels only the older
-run for that same app instead of cancelling sibling app deployments or allowing
-an obsolete run to finish green. The newest run stays queued or active and
-deploys the cumulative branch state.
+with a `cancel-in-progress` predicate restricted to push events on
+`refs/heads/production`. A newer production push cancels only the older run for
+that same app instead of cancelling sibling app deployments or allowing an
+obsolete run to finish green. A `main` commit or manual recovery dispatch does
+not cancel the running production deploy. The newest production run stays queued
+or active and deploys the cumulative branch state.
 
 Deployment markers still let affected-app gating compare every change since
 the last successful deployment, including changes accumulated across canceled
