@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/cms-v0.26.0...cms-v0.27.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **chat:** complete external replica pairing ([#5098](https://github.com/tutur3u/platform/issues/5098)) ([05f0425](https://github.com/tutur3u/platform/commit/05f04250bd3d96e1b7a44d309c7400c47beb9b20))
+* **chat:** configure modern replica destination ([857d2a9](https://github.com/tutur3u/platform/commit/857d2a940427784fb18698546d94ed28b3058a25))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/cms-v0.25.0...cms-v0.26.0) (2026-08-04)
 
 

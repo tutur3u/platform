@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/learn-v0.16.0...learn-v0.17.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/learn-v0.15.0...learn-v0.16.0) (2026-08-04)
 
 

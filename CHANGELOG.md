@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/platform-v0.32.0...platform-v0.33.0) (2026-08-06)
+
+
+### Features
+
+* **ai:** let external apps authenticate background workloads with a bound API key ([#5091](https://github.com/tutur3u/platform/issues/5091)) ([0626284](https://github.com/tutur3u/platform/commit/062628483edc2e2d1a691a75bfb5ebf3935ca831))
+* **ai:** let the studio show provider cost in a chosen currency ([#5097](https://github.com/tutur3u/platform/issues/5097)) ([371ffe6](https://github.com/tutur3u/platform/commit/371ffe6957830772e8f6caf895ac9c8e8576e233))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **chat:** complete external replica pairing ([#5098](https://github.com/tutur3u/platform/issues/5098)) ([05f0425](https://github.com/tutur3u/platform/commit/05f04250bd3d96e1b7a44d309c7400c47beb9b20))
+* **chat:** configure modern replica destination ([857d2a9](https://github.com/tutur3u/platform/commit/857d2a940427784fb18698546d94ed28b3058a25))
+* **chat:** support bounded agent sync runs ([e9c66b5](https://github.com/tutur3u/platform/commit/e9c66b500193d71d03a053922276715b31422ddc))
+* **ci:** approve release PRs that are still only generated output ([#5090](https://github.com/tutur3u/platform/issues/5090)) ([f3d34f2](https://github.com/tutur3u/platform/commit/f3d34f20fbe686c71e3a2afefe4dc12d07d6b125))
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
+
+### Bug Fixes
+
+* **chat:** harden connected-site parity ([a0d3148](https://github.com/tutur3u/platform/commit/a0d31483a87ed0ebd59f2be5c3bdbb342bd67855))
+* **chat:** recover pending credentials safely ([0ef1e00](https://github.com/tutur3u/platform/commit/0ef1e00ca283af54c5eda9e85483ef14461202a7))
+* **chat:** recover unverified bridge credentials ([4d3a32f](https://github.com/tutur3u/platform/commit/4d3a32ff40d79e3bb1f60fbde73f3a112bca69f0))
+* **chat:** recover unverified ingest credentials ([66a7676](https://github.com/tutur3u/platform/commit/66a7676b3bb50695357dac5c7a93ab1c0d04156d))
+* **chat:** scope sync runs to connector ([90dbe5a](https://github.com/tutur3u/platform/commit/90dbe5ae1d5a84ed6fed551187e3d35bc4d2c20c))
+* **ci:** unblock release auto-merge with Flutter and a push-token gate ([#5089](https://github.com/tutur3u/platform/issues/5089)) ([45ed769](https://github.com/tutur3u/platform/commit/45ed769efcf3c4f7cce451844cef30b9252d043f))
+* **database:** retimestamp parity migrations ([6f8f034](https://github.com/tutur3u/platform/commit/6f8f0342a658bcee1f04ec54373a82e0c923b1cf))
+* **tasks:** allow capacity rules in app sessions ([f9f9f85](https://github.com/tutur3u/platform/commit/f9f9f85042cd8ffc4b975ce58f712ba56f24b76c))
+* **tasks:** isolate board member query cache ([31760be](https://github.com/tutur3u/platform/commit/31760be3d857cd4b55ee9ed89e18e8fa13f8e940))
+* **tasks:** isolate board member query cache ([#5096](https://github.com/tutur3u/platform/issues/5096)) ([687c402](https://github.com/tutur3u/platform/commit/687c402901e771872f0dbec8302c924f5b80b800))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/platform-v0.31.0...platform-v0.32.0) (2026-08-04)
 
 
