@@ -943,6 +943,7 @@ export function BoardColumn({
                   listName={column.name}
                   listStatus={column.status}
                   listColor={column.color as SupportedColor}
+                  lists={availableLists}
                   tasks={tasks}
                   boardId={boardId}
                   wsId={wsId}
