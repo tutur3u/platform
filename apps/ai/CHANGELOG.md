@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.6.0...ai-studio-v0.7.0) (2026-08-06)
+
+
+### Features
+
+* **ai:** let external apps authenticate background workloads with a bound API key ([#5091](https://github.com/tutur3u/platform/issues/5091)) ([0626284](https://github.com/tutur3u/platform/commit/062628483edc2e2d1a691a75bfb5ebf3935ca831))
+* **ai:** let the studio show provider cost in a chosen currency ([#5097](https://github.com/tutur3u/platform/issues/5097)) ([371ffe6](https://github.com/tutur3u/platform/commit/371ffe6957830772e8f6caf895ac9c8e8576e233))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.5.0...ai-studio-v0.6.0) (2026-08-04)
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/calendar-v0.20.0...calendar-v0.21.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+
 ## [0.20.0](https://github.com/tutur3u/platform/compare/calendar-v0.19.0...calendar-v0.20.0) (2026-08-04)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/tutur3u/platform/compare/realtime-v0.1.0...realtime-v0.2.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+
 ## [0.1.0](https://github.com/tutur3u/platform/compare/realtime-v0.0.3...realtime-v0.1.0) (2026-08-04)
 
 
