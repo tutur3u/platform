@@ -12,6 +12,15 @@ describe('getChatMessageDisplayContent', () => {
     ).toBe('Tôi đã gửi tin & chờ phản hồi.');
   });
 
+  it('decodes bounded nested entities from double-encoded legacy rows', () => {
+    expect(
+      getChatMessageDisplayContent({
+        content: 'Kh&aacute;m trực tiếp &amp;amp; mang theo kết quả',
+        metadata: { externalChat: true },
+      })
+    ).toBe('Khám trực tiếp & mang theo kết quả');
+  });
+
   it('leaves native chat content unchanged', () => {
     expect(
       getChatMessageDisplayContent({
