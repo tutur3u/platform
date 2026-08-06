@@ -75,6 +75,7 @@ interface NotificationsPage {
 }
 
 interface UseNotificationsOptions {
+  cacheScope?: string;
   wsId?: string;
   limit?: number;
   offset?: number;
@@ -210,6 +211,7 @@ export function dedupeNotifications(
  * @param wsId - If provided, filters to specific workspace. If omitted, fetches all notifications across all workspaces.
  */
 export function useNotifications({
+  cacheScope,
   wsId,
   limit = 20,
   offset = 0,
@@ -226,6 +228,7 @@ export function useNotifications({
       unreadOnly,
       readOnly,
       type,
+      ...(cacheScope ? [cacheScope] : []),
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -263,12 +266,14 @@ export function useNotifications({
  * Hook to fetch notifications with infinite scroll support
  */
 export function useInfiniteNotifications({
+  cacheScope,
   wsId,
   unreadOnly = false,
   readOnly = false,
   pageSize = 20,
   enabled = true,
 }: {
+  cacheScope?: string;
   wsId?: string;
   unreadOnly?: boolean;
   readOnly?: boolean;
@@ -282,6 +287,7 @@ export function useInfiniteNotifications({
       wsId || 'all',
       unreadOnly,
       readOnly,
+      ...(cacheScope ? [cacheScope] : []),
     ],
     queryFn: async ({ pageParam = 0 }) => {
       const params = new URLSearchParams({
@@ -317,9 +323,17 @@ export function useInfiniteNotifications({
  * Hook to get unread notification count.
  * If wsId is provided, scopes to that workspace. Otherwise returns total unread count.
  */
-export function useUnreadCount(wsId?: string, options?: { enabled?: boolean }) {
+export function useUnreadCount(
+  wsId?: string,
+  options?: { cacheScope?: string; enabled?: boolean }
+) {
   return useQuery({
-    queryKey: ['notifications', 'unread-count', wsId || 'all'],
+    queryKey: [
+      'notifications',
+      'unread-count',
+      wsId || 'all',
+      ...(options?.cacheScope ? [options.cacheScope] : []),
+    ],
     queryFn: async () => {
       const params = wsId ? `?wsId=${wsId}` : '';
       const response = await fetch(

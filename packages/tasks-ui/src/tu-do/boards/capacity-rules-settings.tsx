@@ -32,17 +32,19 @@ function browserOptions() {
 
 export function CapacityRulesSettings({
   boardId,
+  initialListId,
   lists,
   wsId,
 }: {
   boardId: string;
+  initialListId?: string;
   lists: TaskList[];
   wsId: string;
 }) {
   const t = useTranslations('ws-board-templates.capacity');
   const queryClient = useQueryClient();
   const queryKey = ['task-capacity-rules', wsId, boardId] as const;
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(Boolean(initialListId));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [limit, setLimit] = useState(5);
@@ -56,9 +58,37 @@ export function CapacityRulesSettings({
   const [projectMatchMode, setProjectMatchMode] =
     useState<TaskCapacityMatchMode>('any');
   const [search, setSearch] = useState('');
-  const [listIds, setListIds] = useState<string[]>([]);
+  const [listIds, setListIds] = useState<string[]>(
+    initialListId ? [initialListId] : []
+  );
   const [labelIds, setLabelIds] = useState<string[]>([]);
   const [projectIds, setProjectIds] = useState<string[]>([]);
+
+  function resetDraft() {
+    setEditingId(null);
+    setName('');
+    setLimit(5);
+    setMetric('task_count');
+    setEnforcement('soft');
+    setCountingMode('active');
+    setLabelMatchMode('any');
+    setProjectMatchMode('any');
+    setSearch('');
+    setListIds(initialListId ? [initialListId] : []);
+    setLabelIds([]);
+    setProjectIds([]);
+  }
+
+  function toggleCreateEditor() {
+    if (creating) {
+      setCreating(false);
+      resetDraft();
+      return;
+    }
+
+    resetDraft();
+    setCreating(true);
+  }
 
   const rulesQuery = useQuery({
     queryKey,
@@ -145,11 +175,7 @@ export function CapacityRulesSettings({
     },
     onSuccess: () => {
       setCreating(false);
-      setEditingId(null);
-      setName('');
-      setListIds([]);
-      setLabelIds([]);
-      setProjectIds([]);
+      resetDraft();
       void refresh();
       toast.success(t('saved'));
     },
@@ -198,11 +224,7 @@ export function CapacityRulesSettings({
           <h3 className="font-semibold">{t('title')}</h3>
           <p className="text-muted-foreground text-sm">{t('description')}</p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setCreating((value) => !value)}
-        >
+        <Button size="sm" variant="outline" onClick={toggleCreateEditor}>
           <Plus className="h-4 w-4" />
           {t('add')}
         </Button>
@@ -439,7 +461,7 @@ export function CapacityRulesSettings({
               variant="ghost"
               onClick={() => {
                 setCreating(false);
-                setEditingId(null);
+                resetDraft();
               }}
             >
               {t('cancel')}

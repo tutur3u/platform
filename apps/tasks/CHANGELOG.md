@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/tasks-v0.23.0...tasks-v0.24.0) (2026-08-06)
+
+
+### Features
+
+* **tasks:** add task list settings shortcuts ([50031da](https://github.com/tutur3u/platform/commit/50031dac99961f35ab88aa6b286c4f11d23df7cc))
+* **tasks:** add task list settings shortcuts ([#5103](https://github.com/tutur3u/platform/issues/5103)) ([9de306c](https://github.com/tutur3u/platform/commit/9de306c6e95c6dc0c7c71d058f5841c759bd91ff))
+
+## [0.23.0](https://github.com/tutur3u/platform/compare/tasks-v0.22.0...tasks-v0.23.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
+
+### Bug Fixes
+
+* **tasks:** allow capacity rules in app sessions ([f9f9f85](https://github.com/tutur3u/platform/commit/f9f9f85042cd8ffc4b975ce58f712ba56f24b76c))
+* **tasks:** isolate board member query cache ([#5096](https://github.com/tutur3u/platform/issues/5096)) ([687c402](https://github.com/tutur3u/platform/commit/687c402901e771872f0dbec8302c924f5b80b800))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/tasks-v0.21.0...tasks-v0.22.0) (2026-08-04)
 
 

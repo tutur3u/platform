@@ -13,25 +13,32 @@ function getTtrUrl(): string {
   );
 }
 
-export default async function NotificationPopover() {
-  const t = await getTranslations('notifications');
-  const appSession = await getSatelliteAppSession();
+export default async function NotificationPopover({
+  userId,
+}: {
+  userId?: string;
+} = {}) {
+  const t = await getTranslations();
+  const resolvedUserId = userId ?? (await getSatelliteAppSession())?.sub;
 
   return (
     <NotificationPopoverClient
-      userId={appSession?.sub}
-      noNotificationsText={t('no-notifications')}
-      notificationsText={t('notifications')}
-      viewAllText={t('view-all')}
-      markAsReadText={t('mark-as-read')}
-      markAsUnreadText={t('mark-as-unread')}
-      inboxText={t('inbox')}
-      archiveText={t('archive')}
-      archiveAllText={t('archive-all')}
-      emptyArchiveText={t('empty-archive')}
-      loadingMoreText={t('loading-more')}
-      acceptText={t('accept')}
-      declineText={t('decline')}
+      userId={resolvedUserId}
+      noNotificationsText={t('notifications.no-notifications')}
+      notificationsText={t('notifications.notifications')}
+      viewAllText={t('notifications.view-all')}
+      markAsReadText={t('notifications.mark-as-read')}
+      markAsUnreadText={t('notifications.mark-as-unread')}
+      inboxText={t('notifications.inbox')}
+      archiveText={t('notifications.archive')}
+      archiveAllText={t('notifications.archive-all')}
+      emptyArchiveText={t('notifications.empty-archive')}
+      loadingMoreText={t('notifications.loading-more')}
+      retryText={t('common.retry')}
+      acceptText={t('notifications.accept')}
+      declineText={t('notifications.decline')}
+      acceptedText={t('workspace-invitation.accept-success')}
+      declinedText={t('workspace-invitation.decline-success')}
       webAppUrl={getTtrUrl()}
     />
   );

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/contacts-v0.13.0...contacts-v0.13.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
+## [0.13.0](https://github.com/tutur3u/platform/compare/contacts-v0.12.0...contacts-v0.13.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/contacts-v0.11.0...contacts-v0.12.0) (2026-08-04)
 
 

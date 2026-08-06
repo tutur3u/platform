@@ -38,6 +38,22 @@ vi.mock('../board-selector', () => ({
   BoardSelector: () => null,
 }));
 
+vi.mock('../../capacity-rules-settings', () => ({
+  CapacityRulesSettings: ({
+    initialListId,
+    lists,
+  }: {
+    initialListId?: string;
+    lists: TaskList[];
+  }) => (
+    <div
+      data-list-count={lists.length}
+      data-selected-list={initialListId}
+      data-testid="capacity-rules-settings"
+    />
+  ),
+}));
+
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: {
     error: vi.fn(),
@@ -69,6 +85,15 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
     </button>
   ),
   DropdownMenuSeparator: () => null,
+  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => (
+    <button type="button">{children}</button>
+  ),
+  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 const baseList: TaskList = {
@@ -99,6 +124,7 @@ const baseTask: Task = {
 };
 
 function renderListActions(options?: {
+  lists?: TaskList[];
   tasks?: Task[];
   isEditOpen?: boolean;
   onEditOpenChange?: (open: boolean) => void;
@@ -120,6 +146,7 @@ function renderListActions(options?: {
         listId="list-1"
         listName="To Do"
         listStatus="not_started"
+        lists={options?.lists}
         tasks={options?.tasks ?? []}
         boardId="board-1"
         wsId="ws-1"
@@ -171,6 +198,30 @@ describe('ListActions', () => {
 
     expect(onEditOpenChange).not.toHaveBeenCalledWith(false);
     expect(toast.error).toHaveBeenCalledWith('Rename failed');
+  });
+
+  it('opens capacity settings preselected to the current task list', () => {
+    const secondList: TaskList = {
+      ...baseList,
+      id: 'list-2',
+      name: 'Doing',
+      position: 1,
+      status: 'active',
+    };
+    renderListActions({ lists: [baseList, secondList] });
+
+    expect(
+      screen.getByRole('button', { name: 'list_settings' })
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'ws-board-templates.capacity.title',
+      })
+    );
+
+    const capacitySettings = screen.getByTestId('capacity-rules-settings');
+    expect(capacitySettings).toHaveAttribute('data-selected-list', 'list-1');
+    expect(capacitySettings).toHaveAttribute('data-list-count', '2');
   });
 
   it('removes the list and its tasks from cache and broadcasts delete on success', async () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/ai-v0.7.0...ai-v0.8.0) (2026-08-06)
+
+
+### Features
+
+* **ai:** let external apps authenticate background workloads with a bound API key ([#5091](https://github.com/tutur3u/platform/issues/5091)) ([0626284](https://github.com/tutur3u/platform/commit/062628483edc2e2d1a691a75bfb5ebf3935ca831))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/ai-v0.6.0...ai-v0.7.0) (2026-08-04)
 
 

@@ -1,4 +1,8 @@
 {
+  "workspace-invitation": {
+    "accept-success": "Workspace invitation accepted",
+    "decline-success": "Workspace invitation rejected"
+  },
   "account_switcher": {
     "accounts": "Accounts",
     "current_account": "Current Account",

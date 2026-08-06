@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
 import {
   GEMINI_31_FLASH_LITE_GATEWAY_MODEL,
@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/ai/credits/model-mapping';
 import type { ChatRealtimeAudience } from '@tuturuuu/realtime/chat';
 import {
+  deleteWorkspaceStorageFolderByPath,
   downloadWorkspaceStorageObjectForProvider,
   resolveWorkspaceStorageProvider,
   uploadWorkspaceStorageFileDirect,
@@ -27,26 +28,20 @@ export type ChatMessageAttachmentInput = {
   metadata?: Record<string, unknown>;
   path: string;
   sizeBytes?: number | null;
+  storageWsId?: string | null;
 };
 
-const AI_MESSAGE_SPLIT_DECORATOR = '[[TUTURUUU_CHAT_SPLIT]]';
-const AI_MESSAGE_SPLIT_INSTRUCTION = `When a response would be easier to read as a natural chat, you may split it into multiple messages by putting ${AI_MESSAGE_SPLIT_DECORATOR} on its own line between message parts. Use it sparingly, keep each part self-contained, and never mention the decorator to the user.`;
-const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
+export const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
   'Assistant response failed. Your message was saved.';
+
+const AI_MESSAGE_SPLIT_DECORATOR = '[[TUTURUUU_CHAT_SPLIT]]';
+const MAX_AI_ATTACHMENT_BYTES = 100 * 1024 * 1024;
+const AI_MESSAGE_SPLIT_INSTRUCTION = `When a response would be easier to read as a natural chat, you may split it into multiple messages by putting ${AI_MESSAGE_SPLIT_DECORATOR} on its own line between message parts. Use it sparingly, keep each part self-contained, and never mention the decorator to the user.`;
 
 type UiMessageForAi = {
   id: string;
   role: 'assistant' | 'system' | 'user';
   parts: { text: string; type: 'text' }[];
-};
-
-type AiAssistantMessageRow = {
-  completion_tokens: number | null;
-  content: string | null;
-  id: string;
-  metadata: unknown;
-  model: string | null;
-  prompt_tokens: number | null;
 };
 
 export async function publishChatRealtimeMessages({
@@ -75,46 +70,125 @@ export async function publishChatRealtimeMessages({
 }
 
 export async function copyChatAttachmentsToAiResources({
-  conversationId,
+  resourceChatId,
   targetWsId,
   userMessage,
 }: {
-  conversationId: string;
+  resourceChatId: string;
   targetWsId: string;
   userMessage: ChatMessage;
 }) {
-  if (userMessage.attachments.length === 0) return;
+  await copyAttachmentInputsToAiResources({
+    attachments: userMessage.attachments.map((attachment) => ({
+      ...attachment,
+      path: attachment.storagePath,
+      storageWsId: attachment.storageWsId,
+    })),
+    resourceChatId,
+    targetWsId,
+  });
+}
 
-  await Promise.all(
-    userMessage.attachments.map(async (attachment) => {
-      const sourceWsId = attachment.storageWsId ?? targetWsId;
+export async function copyAiChatAttachmentInputsToResources({
+  attachments,
+  chatId,
+  wsId,
+}: {
+  attachments: ChatMessageAttachmentInput[];
+  chatId: string;
+  wsId: string;
+}) {
+  await copyAttachmentInputsToAiResources({
+    attachments,
+    resourceChatId: chatId,
+    targetWsId: wsId,
+  });
+}
 
-      try {
-        const { provider } = await resolveWorkspaceStorageProvider(sourceWsId);
-        const downloaded = await downloadWorkspaceStorageObjectForProvider(
-          sourceWsId,
-          provider,
-          attachment.storagePath
-        );
-        await uploadWorkspaceStorageFileDirect(
-          targetWsId,
-          `chats/ai/resources/${conversationId}/${attachment.id}-${attachment.filename}`,
-          downloaded.buffer,
-          {
-            contentType:
-              attachment.contentType ?? downloaded.contentType ?? undefined,
-            upsert: true,
-          }
-        );
-      } catch (error) {
-        console.error('Failed to mirror Chat attachment for AI context', {
-          attachmentId: attachment.id,
-          conversationId,
-          error,
-        });
-      }
-    })
+async function copyAttachmentInputsToAiResources({
+  attachments,
+  resourceChatId,
+  targetWsId,
+}: {
+  attachments: ChatMessageAttachmentInput[];
+  resourceChatId: string;
+  targetWsId: string;
+}) {
+  const claimedBytes = attachments.reduce(
+    (total, attachment) => total + (attachment.sizeBytes ?? 0),
+    0
   );
+  if (claimedBytes > MAX_AI_ATTACHMENT_BYTES) {
+    throw new Error('Chat attachments exceed the AI context size limit');
+  }
+
+  let downloadedBytes = 0;
+  for (const [index, attachment] of attachments.entries()) {
+    const sourceWsId = attachment.storageWsId ?? targetWsId;
+    try {
+      const { provider } = await resolveWorkspaceStorageProvider(sourceWsId);
+      const downloaded = await downloadWorkspaceStorageObjectForProvider(
+        sourceWsId,
+        provider,
+        attachment.path
+      );
+      downloadedBytes += downloaded.buffer.byteLength;
+      if (downloadedBytes > MAX_AI_ATTACHMENT_BYTES) {
+        throw new Error('Chat attachments exceed the AI context size limit');
+      }
+      const resourceKey = createHash('sha256')
+        .update(
+          JSON.stringify([
+            index,
+            sourceWsId,
+            attachment.path,
+            attachment.filename,
+          ])
+        )
+        .digest('hex')
+        .slice(0, 32);
+      await uploadWorkspaceStorageFileDirect(
+        targetWsId,
+        `chats/ai/resources/${resourceChatId}/${resourceKey}-${index}-${attachment.filename}`,
+        downloaded.buffer,
+        {
+          contentType:
+            attachment.contentType ?? downloaded.contentType ?? undefined,
+          upsert: true,
+        }
+      );
+    } catch (error) {
+      console.error('Failed to mirror Chat attachment for AI context', {
+        attachmentPath: attachment.path,
+        resourceChatId,
+        error,
+      });
+      throw new Error('Failed to prepare a Chat attachment for AI context', {
+        cause: error,
+      });
+    }
+  }
+}
+
+export async function cleanupNativeAiResources({
+  chatId,
+  wsId,
+}: {
+  chatId: string;
+  wsId: string;
+}) {
+  try {
+    await deleteWorkspaceStorageFolderByPath(
+      wsId,
+      'chats/ai/resources',
+      chatId
+    );
+  } catch (error) {
+    console.warn('Failed to clean up native Chat AI resources', {
+      chatId,
+      error,
+    });
+  }
 }
 
 export async function maybeAutoRenameAiChat({
@@ -213,7 +287,7 @@ function deriveAiChatTitle(content: string) {
 }
 
 export function getAiChatAttachmentPlaceholderContent(
-  attachments: z.infer<typeof attachmentSchema>[]
+  attachments: ChatMessageAttachmentInput[]
 ) {
   return attachments
     .map((attachment) =>
@@ -230,28 +304,30 @@ export async function consumeAiResponseTextDeltas(
   onDelta?: (delta: string) => void,
   onPart?: (part: Record<string, unknown>) => void
 ) {
-  if (!response.body) return;
+  if (!response.body) return '';
 
   const decoder = new TextDecoder();
   const reader = response.body.getReader();
   let buffer = '';
+  let text = '';
 
   while (true) {
     const { done, value } = await reader.read();
     if (value) {
       buffer += decoder.decode(value, { stream: !done });
-      const events = buffer.split('\n\n');
+      const events = buffer.split(/\r?\n\r?\n/u);
       buffer = events.pop() ?? '';
 
       for (const event of events) {
-        emitAiTextDeltaFromSseEvent(event, onDelta, onPart);
+        text += emitAiTextDeltaFromSseEvent(event, onDelta, onPart);
       }
     }
 
     if (done) break;
   }
 
-  emitAiTextDeltaFromSseEvent(buffer, onDelta, onPart);
+  text += emitAiTextDeltaFromSseEvent(buffer, onDelta, onPart);
+  return text;
 }
 
 function emitAiTextDeltaFromSseEvent(
@@ -259,21 +335,22 @@ function emitAiTextDeltaFromSseEvent(
   onDelta?: (delta: string) => void,
   onPart?: (part: Record<string, unknown>) => void
 ) {
-  if (!event.trim()) return;
+  if (!event.trim()) return '';
 
   const data = event
-    .split('\n')
+    .split(/\r?\n/u)
     .filter((line) => line.startsWith('data:'))
     .map((line) => line.slice(5).trimStart())
     .join('\n')
     .trim();
 
-  if (!data || data === '[DONE]') return;
+  if (!data || data === '[DONE]') return '';
 
   try {
     const chunk = JSON.parse(data) as Record<string, unknown>;
     if (chunk.type === 'text-delta' && typeof chunk.delta === 'string') {
       onDelta?.(chunk.delta);
+      return chunk.delta;
     } else if (
       chunk.type === 'reasoning-delta' &&
       typeof chunk.delta === 'string'
@@ -286,6 +363,7 @@ function emitAiTextDeltaFromSseEvent(
     // Ignore malformed stream chunks from upstream; the AI route still owns
     // final persistence and error reporting.
   }
+  return '';
 }
 
 function shouldForwardAiStreamPart(chunk: Record<string, unknown>) {
@@ -345,19 +423,27 @@ export function toNativeAiUiMessages(
   messages: ChatMessage[],
   systemPrompt?: string | null
 ): UiMessageForAi[] {
-  const uiMessages = messages
-    .filter(
-      (message) =>
-        (message.kind === 'assistant' || message.kind === 'user') &&
-        message.content.trim()
-    )
-    .map(
-      (message): UiMessageForAi => ({
-        id: message.id,
-        parts: [{ text: message.content, type: 'text' }],
-        role: message.kind,
-      })
-    );
+  const uiMessages = messages.flatMap((message): UiMessageForAi[] => {
+    if (message.kind !== 'assistant' && message.kind !== 'user') return [];
+    const content =
+      message.content.trim() ||
+      getAiChatAttachmentPlaceholderContent(
+        message.attachments.map((attachment) => ({
+          contentType: attachment.contentType,
+          filename: attachment.filename,
+          path: attachment.storagePath,
+        }))
+      );
+    return content
+      ? [
+          {
+            id: message.id,
+            parts: [{ text: content, type: 'text' }],
+            role: message.kind,
+          },
+        ]
+      : [];
+  });
 
   const prompt = systemPrompt?.trim();
   if (!prompt) return withAiMessageSplitInstruction(uiMessages);
@@ -388,8 +474,10 @@ export async function callAiChatRoute({
   creditSource,
   creditWsId,
   messages,
+  miraMode,
   model,
   observabilityContext,
+  persistenceRequestId,
   request,
   supabase,
   thinkingMode,
@@ -400,8 +488,10 @@ export async function callAiChatRoute({
   creditSource: 'personal' | 'workspace';
   creditWsId?: string;
   messages: UiMessageForAi[];
+  miraMode: boolean;
   model: string;
   observabilityContext?: Record<string, unknown>[];
+  persistenceRequestId?: string;
   request: NextRequest;
   supabase: SessionAuthContext['supabase'];
   thinkingMode: 'fast' | 'thinking';
@@ -416,10 +506,11 @@ export async function callAiChatRoute({
     body: JSON.stringify({
       creditSource,
       id: chatId,
-      isMiraMode: true,
+      isMiraMode: miraMode,
       messages,
       model,
       observabilityContext,
+      persistenceRequestId,
       thinkingMode,
       workspaceContextId: wsId,
       wsId,
@@ -454,7 +545,23 @@ export function normalizeAiChatModel(model: string | null) {
   return resolveGatewayModelId(model.trim());
 }
 
-export function normalizeNativeAiModel(model: string | null) {
-  if (!model?.trim()) return GEMINI_31_FLASH_LITE_GATEWAY_MODEL;
-  return resolveGatewayModelId(model.trim());
+export const normalizeNativeAiModel = normalizeAiChatModel;
+
+export function buildNativeAiObservabilityContext(messages: ChatMessage[]) {
+  return messages.slice(-20).map((message) => {
+    const chars = message.content.length;
+
+    return {
+      chars,
+      id: message.id,
+      kind: message.kind,
+      label:
+        message.kind === 'assistant'
+          ? 'Assistant message'
+          : message.kind === 'system'
+            ? 'System message'
+            : 'User message',
+      tokensEstimate: Math.ceil(chars / 4),
+    };
+  });
 }
