@@ -3,8 +3,10 @@ import {
   Archive,
   ArrowRightLeft,
   CheckSquare,
+  Gauge,
   MoreHorizontal,
   Pencil,
+  Settings2,
   Trash,
 } from '@tuturuuu/icons';
 import {
@@ -30,6 +32,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -40,12 +45,14 @@ import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { EditListDialog } from '../../shared/edit-list-dialog';
 import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BoardSelector } from '../board-selector';
+import { CapacityRulesSettings } from '../capacity-rules-settings';
 
 interface Props {
   listId: string;
   listName: string;
   listStatus?: TaskBoardStatus;
   listColor?: SupportedColor;
+  lists?: TaskList[];
   tasks?: Task[];
   boardId?: string;
   wsId?: string;
@@ -60,6 +67,7 @@ export function ListActions({
   listName,
   listStatus,
   listColor,
+  lists = [],
   tasks = [],
   boardId = '',
   wsId,
@@ -73,6 +81,7 @@ export function ListActions({
   const canManageList = Boolean(wsId && boardId);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const [isCapacityDialogOpen, setIsCapacityDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -81,6 +90,26 @@ export function ListActions({
   const allowedStatuses = useMemo<TaskBoardStatus[]>(() => {
     return ['documents', 'not_started', 'active', 'review', 'done', 'closed'];
   }, []);
+  const capacityLists = useMemo<TaskList[]>(
+    () =>
+      lists.length > 0
+        ? lists
+        : [
+            {
+              archived: false,
+              board_id: boardId,
+              color: listColor ?? 'GRAY',
+              created_at: '',
+              creator_id: '',
+              deleted: false,
+              id: listId,
+              name: listName,
+              position: 0,
+              status: listStatus ?? 'not_started',
+            },
+          ],
+    [boardId, listColor, listId, listName, listStatus, lists]
+  );
 
   const moveAllTasksFromListMutation = useMoveAllTasksFromList(
     boardId,
@@ -361,14 +390,24 @@ export function ListActions({
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-56">
           {canManageList && (
-            <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
-              <div className="h-4 w-4">
-                <Pencil className="h-4 w-4" />
-              </div>
-              {t('edit')}
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Settings2 className="h-4 w-4" />
+                {t('list_settings')}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-52">
+                <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
+                  <Pencil className="h-4 w-4" />
+                  {t('edit_list')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsCapacityDialogOpen(true)}>
+                  <Gauge className="h-4 w-4" />
+                  {taskBoardT('ws-board-templates.capacity.title')}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           )}
           {tasks.length > 0 && onSelectAll && (
             <>
@@ -422,6 +461,30 @@ export function ListActions({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog
+        open={canManageList && isCapacityDialogOpen}
+        onOpenChange={setIsCapacityDialogOpen}
+      >
+        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-5xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {taskBoardT('ws-board-templates.capacity.title')} · {listName}
+            </DialogTitle>
+            <DialogDescription>
+              {taskBoardT('ws-board-templates.capacity.description')}
+            </DialogDescription>
+          </DialogHeader>
+          {wsId && (
+            <CapacityRulesSettings
+              boardId={boardId}
+              initialListId={listId}
+              lists={capacityLists}
+              wsId={wsId}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={canManageList && isDeleteDialogOpen}
