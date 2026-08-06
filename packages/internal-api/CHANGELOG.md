@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/internal-api-v0.28.0...internal-api-v0.28.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/internal-api-v0.27.0...internal-api-v0.28.0) (2026-08-06)
 
 

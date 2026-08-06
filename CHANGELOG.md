@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.34.0](https://github.com/tutur3u/platform/compare/platform-v0.33.0...platform-v0.34.0) (2026-08-06)
+
+
+### Features
+
+* **tasks:** add task list settings shortcuts ([50031da](https://github.com/tutur3u/platform/commit/50031dac99961f35ab88aa6b286c4f11d23df7cc))
+* **tasks:** add task list settings shortcuts ([#5103](https://github.com/tutur3u/platform/issues/5103)) ([9de306c](https://github.com/tutur3u/platform/commit/9de306c6e95c6dc0c7c71d058f5841c759bd91ff))
+
+
+### Bug Fixes
+
+* **chat:** extend bridge pairing timeout ([314010e](https://github.com/tutur3u/platform/commit/314010e2cb3b7e5891cef429a6f9c07132633087))
+* **chat:** extend sync control timeout ([6233a91](https://github.com/tutur3u/platform/commit/6233a91a7087ce1927293e6440167a8a2dec1d13))
+* **chat:** extend sync control timeout ([#5101](https://github.com/tutur3u/platform/issues/5101)) ([6db92ff](https://github.com/tutur3u/platform/commit/6db92ffb3d3b287abed81a3767b4a4c73d8edf7e))
+* **ci:** tolerate a release branch GitHub already deleted ([#5100](https://github.com/tutur3u/platform/issues/5100)) ([3f3e45c](https://github.com/tutur3u/platform/commit/3f3e45cdce3863e81c2ae0b28f2408b549c63d52))
+* **workspaces:** harden invitation interactions ([b7f8f6c](https://github.com/tutur3u/platform/commit/b7f8f6cf52ceec1b67d36b11513eae7806284f5d))
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
 ## [0.33.0](https://github.com/tutur3u/platform/compare/platform-v0.32.0...platform-v0.33.0) (2026-08-06)
 
 

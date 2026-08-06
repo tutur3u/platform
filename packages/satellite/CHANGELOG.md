@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/satellite-v0.13.0...satellite-v0.13.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **auth:** isolate invitation caches by user ([c720f15](https://github.com/tutur3u/platform/commit/c720f1551b1276bedf393bd4fc8975e33f64aa83))
+* **workspaces:** harden invitation interactions ([b7f8f6c](https://github.com/tutur3u/platform/commit/b7f8f6cf52ceec1b67d36b11513eae7806284f5d))
+* **workspaces:** restore invitation access across apps ([3592699](https://github.com/tutur3u/platform/commit/35926990fc28e44996fd330c6403496d78d96872))
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/satellite-v0.12.1...satellite-v0.13.0) (2026-08-04)
 
 
