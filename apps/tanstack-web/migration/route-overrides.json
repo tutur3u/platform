@@ -43,7 +43,7 @@
     "api:/api/v1/workspaces/:wsId/external-chat/sync:apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/sync/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "Binding-scoped parity audit and reconciliation controls remain on the live Next.js backend pending Rust parity."
+      "note": "Binding-scoped parity audit, remote-run adoption, and reconciliation controls remain on the live Next.js backend pending Rust parity."
     },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",

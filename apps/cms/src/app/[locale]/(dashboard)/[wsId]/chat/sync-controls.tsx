@@ -9,8 +9,14 @@ import {
 } from '@tuturuuu/internal-api';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+const runIdPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function ConnectedChatSyncControls({
   enabled,
@@ -20,6 +26,7 @@ export function ConnectedChatSyncControls({
   wsId: string;
 }) {
   const t = useTranslations('connected-chat');
+  const [remoteRunId, setRemoteRunId] = useState('');
   const queryClient = useQueryClient();
   const queryKey = ['connected-chat-sync', wsId] as const;
   const isRunActive = (state: string) =>
@@ -40,7 +47,8 @@ export function ConnectedChatSyncControls({
     mutationFn: (payload: ExternalChatSyncAction) =>
       mutateExternalChatSync(wsId, payload),
     onError: () => toast.error(t('sync_action_error')),
-    onSuccess: async () => {
+    onSuccess: async (_data, variables) => {
+      if (variables.action === 'adopt') setRemoteRunId('');
       await queryClient.invalidateQueries({ queryKey });
       toast.success(t('sync_action_started'));
     },
@@ -137,6 +145,39 @@ export function ConnectedChatSyncControls({
           </Button>
         ) : null}
       </div>
+
+      <details className="border p-3">
+        <summary className="cursor-pointer font-medium text-sm">
+          {t('developer_details')}
+        </summary>
+        <div className="mt-3 space-y-2">
+          <Label htmlFor="remote-sync-run">{t('sync_existing_run')}</Label>
+          <p className="text-muted-foreground text-xs">
+            {t('sync_existing_run_description')}
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="remote-sync-run"
+              onChange={(event) => setRemoteRunId(event.target.value.trim())}
+              placeholder="00000000-0000-0000-0000-000000000000"
+              value={remoteRunId}
+            />
+            <Button
+              disabled={
+                !enabled ||
+                mutation.isPending ||
+                !runIdPattern.test(remoteRunId)
+              }
+              onClick={() =>
+                mutation.mutate({ action: 'adopt', runId: remoteRunId })
+              }
+              variant="outline"
+            >
+              {t('sync_existing_run_action')}
+            </Button>
+          </div>
+        </div>
+      </details>
     </section>
   );
 }

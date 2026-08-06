@@ -281,6 +281,142 @@ describe('external chat sync status', () => {
     );
   });
 
+  it('adopts an existing remote run with only approved fields', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      runs: [
+        {
+          diagnostics: { authorization: 'must-not-persist' },
+          digestResults: [{ matched: true, stream: 'messages' }],
+          finishedAt: null,
+          highWater: { messages: '6973' },
+          operation: 'backfill',
+          runId: localRun.id,
+          scope: { agentId: '1' },
+          sourceCounts: { messages: 6973 },
+          startedAt: '2026-08-04T00:00:01.000Z',
+          state: 'running',
+          targetCounts: { messages: 4025 },
+        },
+      ],
+    });
+    mocks.readRun.mockResolvedValueOnce({
+      data: { id: localRun.id },
+      error: null,
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
+      'workspace-1',
+      '/control/v1/sync/status',
+      { runId: localRun.id },
+      { timeoutMs: 60_000 }
+    );
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        connector_key: 'opaque-connector',
+        digest_results: [{ matched: true, stream: 'messages' }],
+        high_water_mark: { messages: '6973' },
+        id: localRun.id,
+        operation: 'backfill',
+        source_counts: { messages: 6973 },
+        state: 'running',
+        target_counts: { messages: 4025 },
+        ws_id: 'workspace-1',
+      }),
+      { ignoreDuplicates: true, onConflict: 'id' }
+    );
+    const adopted = mocks.upsert.mock.calls[0]?.[0];
+    expect(adopted).not.toHaveProperty('diagnostics');
+    expect(adopted).not.toHaveProperty('scope');
+    expect(await response.json()).toEqual({
+      remote: expect.objectContaining({
+        operation: 'backfill',
+        runId: localRun.id,
+        sourceCounts: { messages: 6973 },
+        state: 'running',
+        targetCounts: { messages: 4025 },
+      }),
+      runId: localRun.id,
+    });
+  });
+
+  it('rejects adoption when the bridge does not return the requested run', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({ runs: [] });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      error: 'remote_sync_run_not_found',
+      runId: localRun.id,
+    });
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects adoption of an unknown remote operation', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      operation: 'delete',
+      runId: localRun.id,
+      state: 'running',
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({
+      error: 'remote_sync_run_invalid',
+      runId: localRun.id,
+    });
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('does not adopt a run id already owned by another binding', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      operation: 'backfill',
+      runId: localRun.id,
+      state: 'running',
+    });
+    mocks.readRun.mockResolvedValueOnce({ data: null, error: null });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'sync_run_conflict',
+      runId: localRun.id,
+    });
+  });
+
   it('forwards a validated agent scope for a bounded backfill', async () => {
     mocks.requestExternalChatControl.mockResolvedValueOnce({
       runId: localRun.id,
