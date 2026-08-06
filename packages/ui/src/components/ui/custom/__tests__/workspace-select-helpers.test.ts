@@ -115,13 +115,9 @@ describe('mergeWorkspaceSelectWorkspaces', () => {
   });
 
   it('keeps workspace fallback images outside Radix AvatarImage context', () => {
-    const workspaceSelectSource = readFileSync(
-      join(process.cwd(), 'src/components/ui/custom/workspace-select.tsx'),
+    const workspaceIconSource = readFileSync(
+      join(process.cwd(), 'src/components/ui/custom/workspace-select-icon.tsx'),
       'utf8'
-    );
-    const workspaceIconSource = workspaceSelectSource.slice(
-      workspaceSelectSource.indexOf('function WorkspaceIcon'),
-      workspaceSelectSource.indexOf('export function WorkspaceSelect')
     );
 
     expect(workspaceIconSource).toContain('<AvatarFallback');
