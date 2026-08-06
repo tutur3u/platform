@@ -13886,6 +13886,7 @@
         "edit": "Có thể sửa",
         "view": "Có thể xem"
       },
+      "permission_error": "Bạn không có quyền xem mục này. Hãy yêu cầu quản trị viên cấp quyền quản lý dự án.",
       "public": {
         "active": "Công khai",
         "copy": "Sao chép liên kết",
@@ -13903,6 +13904,7 @@
         "tooltip": "Bất kỳ ai có URL này đều có thể xem bảng chỉ đọc đã được lược bỏ dữ liệu riêng tư mà không cần đăng nhập. Liên kết không được liệt kê công khai và có thể tắt tại đây."
       },
       "removed": "Đã xóa chia sẻ bảng",
+      "retry": "Thử lại",
       "saved": "Đã lưu chia sẻ bảng",
       "shared_with": "Đã chia sẻ với",
       "title": "Chia sẻ {name}",

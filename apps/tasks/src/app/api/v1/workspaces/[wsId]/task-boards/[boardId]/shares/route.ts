@@ -81,11 +81,17 @@ async function findExistingBoardShare(
 async function requireBoardShareManager({
   boardId,
   rawWsId,
+  requiredPermission,
   supabase,
   user,
 }: {
   boardId: string;
   rawWsId: string;
+  /**
+   * Reading who a board is shared with is a member-level question, the same as
+   * listing its members. Only changing the sharing needs manage rights.
+   */
+  requiredPermission: TaskBoardGuestPermission;
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<BoardShareManagerResult> {
@@ -102,7 +108,7 @@ async function requireBoardShareManager({
   })) as TypedSupabaseClient;
   const access = await resolveTaskBoardAccess({
     boardId,
-    requiredPermission: 'edit',
+    requiredPermission,
     sbAdmin,
     supabase,
     user: user as never,
@@ -138,6 +144,7 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
+        requiredPermission: 'view',
         rawWsId: params.wsId,
         supabase,
         user,
@@ -183,6 +190,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
+        requiredPermission: 'edit',
         rawWsId: params.wsId,
         supabase,
         user,
@@ -287,6 +295,7 @@ export const PATCH = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
+        requiredPermission: 'edit',
         rawWsId: params.wsId,
         supabase,
         user,
@@ -337,6 +346,7 @@ export const DELETE = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
+        requiredPermission: 'edit',
         rawWsId: params.wsId,
         supabase,
         user,

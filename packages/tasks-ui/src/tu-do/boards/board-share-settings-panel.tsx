@@ -29,6 +29,7 @@ import {
   shouldRetryShareRequest,
 } from './share-request';
 import { ShareSection } from './share-section';
+import { ShareSectionError } from './share-section-error';
 
 interface BoardShareSettingsPanelProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'name'>;
@@ -208,17 +209,10 @@ export function BoardShareSettingsPanel({
             {t('common.loading')}
           </div>
         ) : viewableMembersQuery.isError ? (
-          <div className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
-            <p>{t('ws-task-boards.share.load_error')}</p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void viewableMembersQuery.refetch()}
-            >
-              {t('common.retry')}
-            </Button>
-          </div>
+          <ShareSectionError
+            error={viewableMembersQuery.error}
+            onRetry={() => void viewableMembersQuery.refetch()}
+          />
         ) : (members ?? []).length === 0 ? (
           <div className="text-muted-foreground text-sm">
             {t('ws-task-boards.share.workspace_members.empty')}
@@ -321,17 +315,10 @@ export function BoardShareSettingsPanel({
               {t('common.loading')}
             </div>
           ) : sharesQuery.isError ? (
-            <div className="space-y-2 rounded-md border border-destructive/40 p-4 text-sm">
-              <p>{t('ws-task-boards.share.load_error')}</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => void sharesQuery.refetch()}
-              >
-                {t('common.retry')}
-              </Button>
-            </div>
+            <ShareSectionError
+              error={sharesQuery.error}
+              onRetry={() => void sharesQuery.refetch()}
+            />
           ) : shares.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
               {t('ws-task-boards.share.empty')}
