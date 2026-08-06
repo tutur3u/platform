@@ -35,19 +35,40 @@
   "languages": {
     "TypeScript": {
       "formatter": { "language_server": { "name": "biome" } },
-      "language_servers": ["tsgo", "oxlint", "!vtsls"]
+      "language_servers": [
+        "typescript-ls",
+        "vtsls",
+        "oxlint",
+        "!typescript-language-server"
+      ],
+      "semantic_tokens": "combined"
     },
     "JavaScript": {
       "formatter": { "language_server": { "name": "biome" } },
-      "language_servers": ["tsgo", "!vtsls"]
+      "language_servers": [
+        "typescript-ls",
+        "vtsls",
+        "!typescript-language-server"
+      ],
+      "semantic_tokens": "combined"
     },
     "JSX": {
       "formatter": { "language_server": { "name": "biome" } },
-      "language_servers": ["tsgo", "!vtsls"]
+      "language_servers": [
+        "typescript-ls",
+        "vtsls",
+        "!typescript-language-server"
+      ],
+      "semantic_tokens": "combined"
     },
     "TSX": {
       "formatter": { "language_server": { "name": "biome" } },
-      "language_servers": ["tsgo", "!vtsls"]
+      "language_servers": [
+        "typescript-ls",
+        "vtsls",
+        "!typescript-language-server"
+      ],
+      "semantic_tokens": "combined"
     },
     "JSON": { "formatter": { "language_server": { "name": "biome" } } },
     "JSONC": { "formatter": { "language_server": { "name": "biome" } } },
