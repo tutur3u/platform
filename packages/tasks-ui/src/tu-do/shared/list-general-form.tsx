@@ -293,14 +293,17 @@ export function ListGeneralForm({
 
       <div className="space-y-2">
         <Label>{labels.color}</Label>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-2 sm:gap-3">
           {colorOptions.map((colorOption) => (
             <button
+              aria-label={colorOption.label}
+              aria-pressed={color === colorOption.value}
               type="button"
               key={colorOption.value}
               onClick={() => setColor(colorOption.value)}
               className={cn(
-                'h-10 w-10 rounded-lg border-2 transition-all hover:scale-105',
+                'size-10 rounded-lg border-2 transition-all hover:scale-105',
+                'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 colorSwatchClass[colorOption.value],
                 color === colorOption.value &&
                   'scale-110 ring-1 ring-primary ring-offset-2 ring-offset-background'
