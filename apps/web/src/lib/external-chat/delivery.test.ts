@@ -74,24 +74,29 @@ describe('external chat credential delivery', () => {
 
   it('pairs the bridge with the optional modern replica origin', async () => {
     const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
-    mocks.safeExternalChatFetch.mockResolvedValue(Response.json({ ok: true }));
+    try {
+      mocks.safeExternalChatFetch.mockResolvedValue(
+        Response.json({ ok: true })
+      );
 
-    await configureExternalChatBridge({
-      ingestSecret: 'ingest-secret',
-      pairingTicket: 'pairing-ticket',
-      wsId: 'workspace-1',
-    });
+      await configureExternalChatBridge({
+        ingestSecret: 'ingest-secret',
+        pairingTicket: 'pairing-ticket',
+        wsId: 'workspace-1',
+      });
 
-    const [, request] = mocks.safeExternalChatFetch.mock.calls[0] ?? [];
-    expect(JSON.parse(String(request?.body))).toMatchObject({
-      bindingId: 'workspace-1',
-      controlSecret: 'control-secret',
-      ingestSecret: 'ingest-secret',
-      pairingTicket: 'pairing-ticket',
-      replicaBaseUrl: 'https://chat.example.com',
-    });
-    expect(timeoutSpy).toHaveBeenCalledWith(60_000);
-    timeoutSpy.mockRestore();
+      const [, request] = mocks.safeExternalChatFetch.mock.calls[0] ?? [];
+      expect(JSON.parse(String(request?.body))).toMatchObject({
+        bindingId: 'workspace-1',
+        controlSecret: 'control-secret',
+        ingestSecret: 'ingest-secret',
+        pairingTicket: 'pairing-ticket',
+        replicaBaseUrl: 'https://chat.example.com',
+      });
+      expect(timeoutSpy).toHaveBeenCalledWith(60_000);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
   });
 
   it.each([401, 403])(
