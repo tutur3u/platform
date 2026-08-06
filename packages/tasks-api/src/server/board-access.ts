@@ -510,6 +510,9 @@ export async function resolveTaskBoardAccess({
     };
   }
 
+  let permissionsResolved: boolean | null = null;
+  let manageProjectsGranted: boolean | null = null;
+
   if (memberCheck.ok) {
     const permissions = await getPermissions({
       wsId: context.wsId,
@@ -517,6 +520,8 @@ export async function resolveTaskBoardAccess({
     });
     const canManageProjects =
       permissions?.containsPermission('manage_projects') === true;
+    permissionsResolved = permissions !== null;
+    manageProjectsGranted = canManageProjects;
 
     if (canManageProjects || requiredPermission === 'view') {
       return {
@@ -551,6 +556,19 @@ export async function resolveTaskBoardAccess({
     !share ||
     comparePermission(share.permission) < comparePermission(requiredPermission)
   ) {
+    // A member denied here means the workspace-permission lookup disagreed with
+    // their membership. Without this the 403 is silent and indistinguishable
+    // from a genuine non-member.
+    if (memberCheck.ok) {
+      console.warn('Task board access denied for a workspace member', {
+        manageProjectsGranted,
+        membershipType: memberCheck.membershipType ?? null,
+        permissionsResolved,
+        requiredPermission,
+        wsId: context.wsId,
+      });
+    }
+
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },

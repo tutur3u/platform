@@ -35,6 +35,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { shareRequestOptions, shouldRetryShareRequest } from './share-request';
+import { ShareSectionError } from './share-section-error';
 
 interface BoardPublicLinkSectionProps {
   boardId: string;
@@ -183,17 +184,10 @@ export function BoardPublicLinkSection({
             {t('common.loading')}
           </div>
         ) : publicLinkQuery.isError ? (
-          <div className="space-y-2 rounded-md border border-destructive/40 p-3 text-sm">
-            <p>{t('ws-task-boards.share.load_error')}</p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => void publicLinkQuery.refetch()}
-            >
-              {t('common.retry')}
-            </Button>
-          </div>
+          <ShareSectionError
+            error={publicLinkQuery.error}
+            onRetry={() => void publicLinkQuery.refetch()}
+          />
         ) : publicLink ? (
           <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]">
             <Input value={publicUrl} readOnly className="min-w-0" />

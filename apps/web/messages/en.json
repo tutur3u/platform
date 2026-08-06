@@ -22189,6 +22189,7 @@
         "edit": "Can edit",
         "view": "Can view"
       },
+      "permission_error": "You don't have permission to view this. Ask a workspace admin for project management access.",
       "public": {
         "active": "Public",
         "copy": "Copy link",
@@ -22206,6 +22207,7 @@
         "tooltip": "Anyone with this URL can view a sanitized read-only board without signing in. The link is not listed publicly and can be disabled here."
       },
       "removed": "Board share removed",
+      "retry": "Try again",
       "saved": "Board share saved",
       "shared_with": "Shared with",
       "title": "Share {name}",

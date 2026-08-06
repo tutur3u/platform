@@ -1,6 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { resolveTaskBoardAccess } from '@tuturuuu/tasks-api/server/board-access';
+import {
+  resolveTaskBoardAccess,
+  type TaskBoardGuestPermission,
+} from '@tuturuuu/tasks-api/server/board-access';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -59,11 +62,17 @@ function serializePublicLink(row: PublicLinkRow) {
 async function requirePublicLinkManager({
   boardId,
   rawWsId,
+  requiredPermission,
   supabase,
   user,
 }: {
   boardId: string;
   rawWsId: string;
+  /**
+   * Reading who a board is shared with is a member-level question, the same as
+   * listing its members. Only changing the sharing needs manage rights.
+   */
+  requiredPermission: TaskBoardGuestPermission;
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<PublicLinkManagerResult> {
@@ -81,7 +90,7 @@ async function requirePublicLinkManager({
   })) as TypedSupabaseClient;
   const access = await resolveTaskBoardAccess({
     boardId,
-    requiredPermission: 'edit',
+    requiredPermission,
     sbAdmin,
     supabase,
     user: user as never,
@@ -135,6 +144,7 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requirePublicLinkManager({
         boardId: params.boardId,
+        requiredPermission: 'view',
         rawWsId: params.wsId,
         supabase,
         user,
@@ -176,6 +186,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requirePublicLinkManager({
         boardId: params.boardId,
+        requiredPermission: 'edit',
         rawWsId: params.wsId,
         supabase,
         user,
@@ -245,6 +256,7 @@ export const DELETE = withSessionAuth<{ wsId: string; boardId: string }>(
       const params = paramsSchema.parse(rawParams);
       const manager = await requirePublicLinkManager({
         boardId: params.boardId,
+        requiredPermission: 'edit',
         rawWsId: params.wsId,
         supabase,
         user,
