@@ -661,16 +661,25 @@ export function appTokenHasRequiredScope(
     return false;
   }
 
-  const requiredScope =
+  // Broader scopes answer for narrower ones. `manage` is the right to change the
+  // content model, which nobody can exercise without also reading and
+  // publishing — yet a token holding it was refused a plain read. An app granted
+  // everything could therefore do nothing, and no permission change fixed it,
+  // because the grant was never what was missing.
+  const acceptedScopes =
     mode === 'read'
-      ? 'external-projects:read'
+      ? [
+          'external-projects:read',
+          'external-projects:publish',
+          'external-projects:manage',
+        ]
       : mode === 'publish'
-        ? 'external-projects:publish'
-        : 'external-projects:manage';
+        ? ['external-projects:publish', 'external-projects:manage']
+        : ['external-projects:manage'];
 
   return (
     claims.scopes.includes('external-projects:*') ||
-    claims.scopes.includes(requiredScope)
+    acceptedScopes.some((scope) => claims.scopes.includes(scope))
   );
 }
 
