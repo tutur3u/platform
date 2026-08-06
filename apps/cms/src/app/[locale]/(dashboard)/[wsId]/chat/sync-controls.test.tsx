@@ -84,9 +84,7 @@ describe('ConnectedChatSyncControls', () => {
         }
       )
     );
-    await waitFor(() =>
-      expect((input as HTMLInputElement).value).toBe('')
-    );
+    await waitFor(() => expect((input as HTMLInputElement).value).toBe(''));
   });
 
   it('keeps adoption disabled until the connection is ready', () => {
