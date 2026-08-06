@@ -151,6 +151,40 @@ describe('external chat historical batch', () => {
     );
   });
 
+  it('does not merge visitor lanes when opaque identifiers contain colons', async () => {
+    let active = 0;
+    let maxActive = 0;
+    processEvent.mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return { duplicate: false };
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/events/batch', {
+        body: JSON.stringify({
+          events: [
+            { ...event, agentId: 'a:b', visitorId: 'c' },
+            {
+              ...event,
+              agentId: 'a',
+              eventId: 'message:11',
+              messageId: '11',
+              visitorId: 'b:c',
+            },
+          ],
+        }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(maxActive).toBe(2);
+  });
+
   it('rejects unauthenticated batches', async () => {
     authenticate.mockResolvedValueOnce(null);
     const { POST } = await import('./route');

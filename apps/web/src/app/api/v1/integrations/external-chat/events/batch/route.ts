@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     Array<{ event: HistoricalEvent; index: number }>
   >();
   parsed.data.events.forEach((event, index) => {
-    const laneKey = `${event.agentId}:${event.visitorId}`;
+    const laneKey = JSON.stringify([event.agentId, event.visitorId]);
     const lane = lanes.get(laneKey) ?? [];
     lane.push({ event, index });
     lanes.set(laneKey, lane);
