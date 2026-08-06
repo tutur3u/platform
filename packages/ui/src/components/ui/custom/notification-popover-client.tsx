@@ -562,9 +562,7 @@ function NotificationCard({
             }),
           ]);
 
-          toast.success(
-            accept ? 'Workspace invite accepted' : 'Workspace invite declined'
-          );
+          toast.success(accept ? acceptedText : declinedText);
 
           onMarkAsRead(notification.id, true);
           router.refresh();

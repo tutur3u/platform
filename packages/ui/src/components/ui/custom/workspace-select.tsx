@@ -2,25 +2,19 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Check,
   CheckIcon,
   ChevronDown,
   Link,
   Loader2,
-  Mail,
   PlusCircle,
   Star,
-  X,
 } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { updateCurrentUserDefaultWorkspace } from '@tuturuuu/internal-api/users';
-import type { WorkspaceInvitationRecord } from '@tuturuuu/internal-api/workspaces';
 import {
   acceptWorkspaceInvite,
   createTeamWorkspace,
-  declineWorkspaceInvite,
   getWorkspace,
-  listWorkspaceInvitations,
 } from '@tuturuuu/internal-api/workspaces';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -33,7 +27,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -43,7 +36,6 @@ import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
 import { useWorkspaceUser } from '../../../hooks/use-workspace-user';
 import { zodResolver } from '../../../resolvers';
-import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import {
@@ -80,6 +72,11 @@ import {
   normalizeWorkspaceSwitchPath,
   resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
+import { WorkspaceIcon } from './workspace-select-icon';
+import {
+  useWorkspaceInvitations,
+  WorkspaceInvitationItems,
+} from './workspace-select-invitations';
 import { useOpenWorkspaceSelectWhenRevealed } from './workspace-select-reveal';
 
 const FormSchema = z.object({
@@ -89,59 +86,6 @@ const FormSchema = z.object({
 const JoinWorkspaceByHandleFormSchema = z.object({
   handle: workspaceHandleSchema,
 });
-
-function WorkspaceIcon({
-  name,
-  avatarUrl,
-  className,
-  fallbackLogoUrl = TUTURUUU_LOGO_URL,
-}: {
-  name?: string | null;
-  avatarUrl?: string | null;
-  className?: string;
-  fallbackLogoUrl?: string;
-}) {
-  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(avatarUrl);
-  const shouldSkipFallbackOptimization = /^https?:\/\//u.test(fallbackLogoUrl);
-
-  return (
-    <Avatar
-      className={cn(
-        'h-5 max-h-5 min-h-5 w-5 min-w-5 max-w-5 flex-none overflow-hidden',
-        resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm',
-        className
-      )}
-    >
-      <AvatarImage
-        src={
-          resolvedAvatarUrl ||
-          (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
-        }
-        alt={name || 'Workspace'}
-        className={cn(
-          'h-full w-full object-cover',
-          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
-        )}
-      />
-      <AvatarFallback
-        className={cn(
-          'h-full w-full text-xs',
-          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
-        )}
-      >
-        <Image
-          alt=""
-          aria-hidden="true"
-          className="h-full w-full object-cover"
-          height={20}
-          src={fallbackLogoUrl}
-          unoptimized={shouldSkipFallbackOptimization}
-          width={20}
-        />
-      </AvatarFallback>
-    </Avatar>
-  );
-}
 
 export function WorkspaceSelect({
   wsId,
@@ -219,13 +163,6 @@ export function WorkspaceSelect({
     currentWorkspaceFallback
   );
   const { data: currentUser } = useWorkspaceUser();
-  const invitationsQuery = useQuery({
-    queryKey: ['workspace-invitations', ...(cacheScope ? [cacheScope] : [])],
-    queryFn: async () => (await listWorkspaceInvitations()).invitations,
-    retry: 1,
-  });
-  const invitations = invitationsQuery.data ?? [];
-
   const defaultWorkspaceId = currentUser?.default_workspace_id || null;
 
   const form = useForm({
@@ -247,6 +184,18 @@ export function WorkspaceSelect({
 
   const [loading, setLoading] = useState(false);
   const [joiningByHandle, setJoiningByHandle] = useState(false);
+  const invitationController = useWorkspaceInvitations({
+    cacheScope,
+    enabled: Boolean(wsId),
+    onAccepted: (invitation) => {
+      setOpen(false);
+      const slug = invitation.workspace.handle || invitation.workspace.id;
+      router.push(getWorkspaceLandingPath(slug));
+      router.refresh();
+    },
+    onDeclined: () => router.refresh(),
+  });
+  const invitations = invitationController.invitations;
 
   const updateDefaultWorkspaceMutation = useMutation({
     mutationFn: (workspaceId: string) =>
@@ -276,55 +225,7 @@ export function WorkspaceSelect({
     },
   });
 
-  const invitationMutation = useMutation({
-    mutationFn: async ({
-      action,
-      invitation,
-    }: {
-      action: 'accept' | 'decline';
-      invitation: WorkspaceInvitationRecord;
-    }) => {
-      if (action === 'accept') {
-        await acceptWorkspaceInvite(invitation.workspace.id);
-      } else {
-        await declineWorkspaceInvite(invitation.workspace.id);
-      }
-      return { action, invitation };
-    },
-    onSuccess: async ({ action, invitation }) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['workspace-invitations'] }),
-        queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
-        queryClient.invalidateQueries({ queryKey: ['user-workspaces'] }),
-        queryClient.invalidateQueries({ queryKey: ['workspace-user'] }),
-        queryClient.invalidateQueries({ queryKey: ['current-user'] }),
-        queryClient.invalidateQueries({ queryKey: ['user'] }),
-        queryClient.invalidateQueries({ queryKey: ['notifications'] }),
-      ]);
-
-      if (action === 'accept') {
-        toast.success(t('workspace-invitation.accept-success'));
-        setOpen(false);
-        const slug = invitation.workspace.handle || invitation.workspace.id;
-        router.push(getWorkspaceLandingPath(slug));
-        router.refresh();
-      } else {
-        toast.success(t('workspace-invitation.decline-success'));
-        router.refresh();
-      }
-    },
-    onError: (_error, { action }) => {
-      toast.error(
-        t(
-          action === 'accept'
-            ? 'workspace-invitation.accept-error'
-            : 'workspace-invitation.decline-error'
-        )
-      );
-    },
-  });
-
-  const getWorkspaceLandingPath = (nextSlug: string) => {
+  function getWorkspaceLandingPath(nextSlug: string) {
     if (resolveNextPathname) {
       return resolveNextPathname({
         currentPathname: pathname || `/${wsId}`,
@@ -335,7 +236,7 @@ export function WorkspaceSelect({
     return customRedirectSuffix
       ? `/${nextSlug}/${customRedirectSuffix}`
       : `/${nextSlug}`;
-  };
+  }
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     if (disableCreateNewWorkspace) return;
@@ -703,129 +604,10 @@ export function WorkspaceSelect({
               <CommandInput autoFocus placeholder="Search workspace..." />
               <CommandEmpty>No workspace found.</CommandEmpty>
               <CommandList className="max-h-64">
-                {invitations.length > 0 && (
-                  <CommandGroup
-                    heading={`${t('workspace-invitation.list-eyebrow')} (${invitations.length})`}
-                  >
-                    {invitations.map((invitation) => {
-                      const workspaceName =
-                        invitation.workspace.name ||
-                        invitation.workspace.handle ||
-                        invitation.workspace.id;
-                      const isPending =
-                        invitationMutation.isPending &&
-                        invitationMutation.variables?.invitation.workspace
-                          .id === invitation.workspace.id;
-
-                      return (
-                        <CommandItem
-                          className="gap-2"
-                          disabled={isPending}
-                          key={`${invitation.workspace.id}-${invitation.source}`}
-                          value={`${workspaceName} ${invitation.workspace.handle || ''} ${invitation.source} ${invitation.type}`}
-                          onSelect={() => undefined}
-                        >
-                          <WorkspaceIcon
-                            avatarUrl={
-                              invitation.workspace.avatar_url ||
-                              invitation.workspace.logo_url
-                            }
-                            fallbackLogoUrl={fallbackLogoUrl}
-                            name={workspaceName}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-xs">
-                              {workspaceName}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <Mail className="size-3" />
-                              {t(
-                                `workspace-invitation.${
-                                  invitation.source === 'email'
-                                    ? 'email-invite'
-                                    : 'direct-invite'
-                                }`
-                              )}
-                              <span aria-hidden="true">·</span>
-                              {invitation.type === 'GUEST'
-                                ? t('common.guest_access')
-                                : t('common.members')}
-                            </div>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-1">
-                            <Button
-                              aria-label={t('workspace-invitation.reject')}
-                              disabled={isPending}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                invitationMutation.mutate({
-                                  action: 'decline',
-                                  invitation,
-                                });
-                              }}
-                              onMouseDown={(event) => event.preventDefault()}
-                              size="icon"
-                              title={t('workspace-invitation.reject')}
-                              type="button"
-                              variant="ghost"
-                              className="size-7"
-                            >
-                              {isPending &&
-                              invitationMutation.variables?.action ===
-                                'decline' ? (
-                                <Loader2 className="size-3.5 animate-spin" />
-                              ) : (
-                                <X className="size-3.5" />
-                              )}
-                            </Button>
-                            <Button
-                              aria-label={t('workspace-invitation.accept')}
-                              disabled={isPending}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                invitationMutation.mutate({
-                                  action: 'accept',
-                                  invitation,
-                                });
-                              }}
-                              onMouseDown={(event) => event.preventDefault()}
-                              size="icon"
-                              title={t('workspace-invitation.accept')}
-                              type="button"
-                              className="size-7"
-                            >
-                              {isPending &&
-                              invitationMutation.variables?.action ===
-                                'accept' ? (
-                                <Loader2 className="size-3.5 animate-spin" />
-                              ) : (
-                                <Check className="size-3.5" />
-                              )}
-                            </Button>
-                          </div>
-                        </CommandItem>
-                      );
-                    })}
-                  </CommandGroup>
-                )}
-                {invitationsQuery.isError && (
-                  <CommandGroup>
-                    <CommandItem
-                      onSelect={() => invitationsQuery.refetch()}
-                      value="retry workspace invitations"
-                    >
-                      <Loader2
-                        className={cn(
-                          'size-4',
-                          invitationsQuery.isFetching && 'animate-spin'
-                        )}
-                      />
-                      {t.has('common.retry') ? t('common.retry') : 'Retry'}
-                    </CommandItem>
-                  </CommandGroup>
-                )}
+                <WorkspaceInvitationItems
+                  controller={invitationController}
+                  fallbackLogoUrl={fallbackLogoUrl}
+                />
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map(

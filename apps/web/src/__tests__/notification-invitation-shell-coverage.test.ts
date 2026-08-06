@@ -39,7 +39,7 @@ describe('notification and invitation shell coverage', () => {
 
   it('keeps pending invitation actions in the shared workspace picker', () => {
     const picker = source(
-      'packages/ui/src/components/ui/custom/workspace-select.tsx'
+      'packages/ui/src/components/ui/custom/workspace-select-invitations.tsx'
     );
 
     expect(picker).toContain('listWorkspaceInvitations');
@@ -47,7 +47,12 @@ describe('notification and invitation shell coverage', () => {
     expect(picker).toContain("action: 'decline'");
     expect(picker).toContain("'workspace-invitations',");
     expect(picker).toContain('...(cacheScope ? [cacheScope] : [])');
-    expect(picker).toContain('event.stopPropagation()');
+    expect(picker).toContain(
+      "mutation.mutate({ action: 'accept', invitation })"
+    );
+    expect(picker).toContain(
+      "mutation.mutate({ action: 'decline', invitation })"
+    );
   });
 
   it.each([

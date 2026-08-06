@@ -19,7 +19,7 @@ import type {
   TulearnBootstrapResponse,
   TulearnStudentSummary,
 } from '@tuturuuu/internal-api';
-import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import {

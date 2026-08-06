@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/storefront",
-  "version": "0.22.1",
+  "version": "0.22.2",
   "private": true,
   "scripts": {
     "test": "vitest run",
