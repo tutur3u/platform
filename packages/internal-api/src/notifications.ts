@@ -145,6 +145,11 @@ export type NotificationPreferencesMutationResponse = {
   success: true;
 };
 
+export type NotificationActionMetadata = {
+  action_taken: 'accepted' | 'declined';
+  action_timestamp: string;
+};
+
 export type ListNotificationsParams = {
   limit?: number;
   offset?: number;
@@ -182,6 +187,23 @@ export async function listNotifications(
       wsId: params.wsId,
     },
   });
+}
+
+export async function updateNotificationMetadata(
+  notificationId: string,
+  metadata: NotificationActionMetadata,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<{ data: NotificationData; success: true }>(
+    `/api/v1/notifications/${encodeURIComponent(notificationId)}/metadata`,
+    {
+      body: JSON.stringify(metadata),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
 }
 
 export async function listWorkspaceNotificationPreferences(

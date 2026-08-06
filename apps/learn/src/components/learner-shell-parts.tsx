@@ -19,7 +19,9 @@ import type {
   TulearnBootstrapResponse,
   TulearnStudentSummary,
 } from '@tuturuuu/internal-api';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { WorkspaceSelect as SharedWorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import {
   Tooltip,
   TooltipContent,
@@ -29,6 +31,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { LanguageSwitcher } from './language-switcher';
 
@@ -119,10 +122,12 @@ export function LearnerNavDock({
 
 export function LearnerHeader({
   bootstrap,
+  notificationPopover,
   selectedStudentId,
   wsId,
 }: {
   bootstrap: TulearnBootstrapResponse;
+  notificationPopover: ReactNode;
   selectedStudentId: string | null;
   wsId: string;
 }) {
@@ -150,11 +155,8 @@ export function LearnerHeader({
           </div>
         </div>
         <div className="ml-auto flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <WorkspaceSelect
-            bootstrap={bootstrap}
-            onChange={(value) => router.push(`/${value}`)}
-            value={wsId}
-          />
+          <WorkspaceSelect bootstrap={bootstrap} value={wsId} />
+          {notificationPopover}
           {linkedStudents.length ? (
             <StudentSelect
               linkedStudents={linkedStudents}
@@ -193,30 +195,32 @@ export function LearnerHeader({
 
 function WorkspaceSelect({
   bootstrap,
-  onChange,
   value,
 }: {
   bootstrap: TulearnBootstrapResponse;
-  onChange: (value: string) => void;
   value: string;
 }) {
-  const t = useTranslations();
   return (
-    <label className="relative">
-      <span className="sr-only">{t('workspace.switcher')}</span>
-      <select
-        aria-label={t('workspace.switcher')}
-        className="h-10 w-36 shrink-0 rounded-none border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] sm:w-44"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        {bootstrap.workspaces.map((workspace) => (
-          <option key={workspace.id} value={workspace.id}>
-            {workspace.name ?? t('workspace.untitled')}
-          </option>
-        ))}
-      </select>
-    </label>
+    <SharedWorkspaceSelect
+      disableCreateNewWorkspace
+      fetchWorkspaces={async () =>
+        bootstrap.workspaces.map(
+          (workspace): InternalApiWorkspaceSummary => ({
+            access_type: 'member',
+            avatar_url: workspace.avatar_url,
+            id: workspace.id,
+            logo_url: workspace.logo_url,
+            name: workspace.name,
+            personal: false,
+          })
+        )
+      }
+      resolveNextPathname={({ nextSlug }) => `/${nextSlug}`}
+      showTierBadges={false}
+      standalone
+      triggerClassName="h-10 w-36 shrink-0 rounded-none border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] sm:w-44"
+      wsId={value}
+    />
   );
 }
 

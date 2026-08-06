@@ -1,14 +1,17 @@
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
 import NotificationPopoverClient from './notification-popover-client';
 
-export default async function NotificationPopover() {
+export default async function NotificationPopover({
+  userId,
+}: {
+  userId: string;
+}) {
   const t = await getTranslations('notifications');
-  const user = await getCurrentSupabaseUser();
+  const tCommon = await getTranslations('common');
 
   return (
     <NotificationPopoverClient
-      userId={user?.id}
+      userId={userId}
       noNotificationsText={t('no-notifications')}
       notificationsText={t('notifications')}
       viewAllText={t('view-all')}
@@ -19,6 +22,11 @@ export default async function NotificationPopover() {
       archiveAllText={t('archive-all')}
       emptyArchiveText={t('empty-archive')}
       loadingMoreText={t('loading-more')}
+      retryText={tCommon('retry')}
+      acceptText={t('accept')}
+      declineText={t('decline')}
+      acceptedText={t('workspace-invite-accepted')}
+      declinedText={t('workspace-invite-declined')}
     />
   );
 }

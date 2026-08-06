@@ -1,7 +1,7 @@
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 
-async function hasAuthenticatedSessionUser() {
+async function getAuthenticatedSessionUser() {
   const [{ resolveAuthenticatedSessionUser }, { createClient }] =
     await Promise.all([
       import('@tuturuuu/supabase/next/auth-session-user'),
@@ -11,7 +11,7 @@ async function hasAuthenticatedSessionUser() {
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-  return Boolean(user);
+  return user;
 }
 
 export default async function NavbarActions({
@@ -27,12 +27,12 @@ export default async function NavbarActions({
   user?: WorkspaceUser | null;
   workspace?: Workspace | null;
 }) {
-  const hasUser =
+  const authenticatedUser =
     providedUser === undefined
-      ? await hasAuthenticatedSessionUser()
-      : Boolean(providedUser);
+      ? await getAuthenticatedSessionUser()
+      : providedUser;
 
-  if (hasUser) {
+  if (authenticatedUser) {
     const [{ UserNavWrapper }, { default: NotificationPopover }] =
       await Promise.all([
         import('./user-nav-wrapper'),
@@ -52,7 +52,7 @@ export default async function NavbarActions({
                 workspace={workspace}
               />
             </div>
-            <NotificationPopover />
+            <NotificationPopover userId={authenticatedUser.id} />
           </div>
         </div>
       </div>

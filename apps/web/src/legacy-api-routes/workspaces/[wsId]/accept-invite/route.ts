@@ -15,6 +15,7 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
 
 type PendingInvite = {
   email?: string | null;
@@ -149,6 +150,23 @@ export const POST = withSessionAuth<{ wsId: string }>(
     const candidateEmails = [...new Set([authEmail, privateEmail])].filter(
       (email): email is string => typeof email === 'string' && email.length > 0
     );
+    const finalizeNotifications = async () => {
+      try {
+        await finalizeWorkspaceInvitationNotifications({
+          action: 'accepted',
+          candidateEmails,
+          sbAdmin,
+          userId: user.id,
+          workspaceId: wsId,
+        });
+      } catch (error) {
+        console.error('Failed to finalize workspace invitation notifications', {
+          error,
+          userId: user.id,
+          wsId,
+        });
+      }
+    };
 
     // Validate that user has a pending direct or email invite; read type for membership row.
     // This route already authenticated the actor and constrains every lookup to
@@ -325,6 +343,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
           .in('email', candidateEmails);
       }
 
+      await finalizeNotifications();
       return NextResponse.json({ message: 'success' });
     }
 
@@ -433,6 +452,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
             .in('email', candidateEmails);
         }
 
+        await finalizeNotifications();
         return NextResponse.json({ message: 'success' });
       }
 
@@ -516,6 +536,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         .in('email', candidateEmails);
     }
 
+    await finalizeNotifications();
     return NextResponse.json({ message: 'success' });
   },
   { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }

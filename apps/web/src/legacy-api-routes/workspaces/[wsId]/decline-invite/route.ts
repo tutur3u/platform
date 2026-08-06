@@ -6,6 +6,7 @@ import {
 import { NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
 
 export const POST = withSessionAuth<{ wsId: string }>(
   async (_request, { supabase, user }, { wsId: rawWsId }) => {
@@ -89,6 +90,22 @@ export const POST = withSessionAuth<{ wsId: string }>(
         },
         { status: 500 }
       );
+    }
+
+    try {
+      await finalizeWorkspaceInvitationNotifications({
+        action: 'declined',
+        candidateEmails,
+        sbAdmin,
+        userId: user.id,
+        workspaceId: wsId,
+      });
+    } catch (error) {
+      console.error('Failed to finalize workspace invitation notifications', {
+        error,
+        userId: user.id,
+        wsId,
+      });
     }
 
     return NextResponse.json({

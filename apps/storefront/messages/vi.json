@@ -977,6 +977,22 @@
       "sidebar_hidden": "Ẩn"
     }
   },
+  "notifications": {
+    "accept": "Chấp nhận",
+    "archive": "Lưu trữ",
+    "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
+    "inbox": "Hộp thư",
+    "invited-to": "Bạn đã được mời tham gia",
+    "loading-more": "Đang tải thêm...",
+    "mark-as-read": "Đánh dấu đã đọc",
+    "mark-as-unread": "Đánh dấu chưa đọc",
+    "no-notifications": "Bạn không có thông báo nào.",
+    "notifications": "Thông báo",
+    "view-all": "Xem tất cả thông báo",
+    "workspace-invite": "Lời mời tham gia"
+  },
   "storefront": {
     "add": "Thêm",
     "allItems": "Tất cả",
