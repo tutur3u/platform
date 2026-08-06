@@ -1,32 +1,40 @@
 import { randomUUID } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
-import { getAiChatId, listAiChatMessages } from '@/lib/chat/agent-discovery';
-import type { ChatRouteContext } from '@/lib/chat/private-rpc';
+import {
+  getAiChatId,
+  isUserPersonalChatWorkspace,
+  listAiChatMessages,
+} from '@/lib/chat/agent-discovery';
+import type { ChatMessage, ChatRouteContext } from '@/lib/chat/private-rpc';
 import { getChatRealtimeUserAudience } from '@/lib/chat/realtime';
 import {
   buildNativeAiObservabilityContext,
   type ChatMessageAttachmentInput,
   callAiChatRoute,
   consumeAiResponseTextDeltas,
+  copyAiChatAttachmentInputsToResources,
   getAiChatAttachmentPlaceholderContent,
   maybeAutoRenameAiChat,
   normalizeAiChatModel,
   publishChatRealtimeMessages,
+  readRecord,
   toAiChatUiMessages,
 } from './ai-message-shared';
 
 export async function sendAiChatMessage({
   attachments,
   auth,
+  clientRequestId,
   content,
   context,
   conversationId,
   request,
   stream,
 }: {
-  attachments: z.infer<typeof attachmentSchema>[];
+  attachments: ChatMessageAttachmentInput[];
   auth: SessionAuthContext;
+  clientRequestId?: string;
   content: string;
   context: ChatRouteContext;
   conversationId: string;
@@ -37,8 +45,19 @@ export async function sendAiChatMessage({
   const trimmedContent = content.trim();
   const messageContent =
     trimmedContent || getAiChatAttachmentPlaceholderContent(attachments);
+  const requestId = clientRequestId ?? randomUUID();
 
   if (!chatId) {
+    return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
+  }
+
+  if (
+    !(await isUserPersonalChatWorkspace({
+      supabase: auth.supabase,
+      userId: auth.user.id,
+      wsId: context.normalizedWsId,
+    }))
+  ) {
     return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
   }
 
@@ -68,40 +87,68 @@ export async function sendAiChatMessage({
     return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
   }
 
-  const previousMessages =
-    (await listAiChatMessages({
-      conversationId,
-      supabase: auth.supabase,
-      user: auth.user,
-      wsId: context.normalizedWsId,
-    })) ?? [];
-  const previousMessageIds = new Set(
-    previousMessages.map((message) => message.id)
-  );
-
-  await maybeAutoRenameAiChat({
-    chatId: chat.id,
-    currentTitle:
-      'title' in chat && typeof chat.title === 'string' ? chat.title : null,
-    firstMessageContent: messageContent,
-    previousMessages,
-    supabase: auth.supabase,
-  });
+  let previousMessages: ChatMessage[];
+  let isResumingPersistedRequest = false;
+  try {
+    const existingRequestMessages =
+      (await listAiChatMessages({
+        conversationId,
+        requestId,
+        supabase: auth.supabase,
+        user: auth.user,
+        wsId: context.normalizedWsId,
+      })) ?? [];
+    if (
+      existingRequestMessages.some((message) => message.kind === 'assistant')
+    ) {
+      return replayAiChatMessageResponse(existingRequestMessages, stream);
+    }
+    isResumingPersistedRequest = existingRequestMessages.some(
+      (message) => message.kind === 'user'
+    );
+    previousMessages =
+      (await listAiChatMessages({
+        conversationId,
+        supabase: auth.supabase,
+        user: auth.user,
+        wsId: context.normalizedWsId,
+      })) ?? [];
+    if (!isResumingPersistedRequest) {
+      await copyAiChatAttachmentInputsToResources({
+        attachments,
+        chatId: chat.id,
+        wsId: context.normalizedWsId,
+      });
+    }
+  } catch (error) {
+    console.error('Failed to prepare AI chat message', {
+      chatId: chat.id,
+      error,
+    });
+    return NextResponse.json(
+      { message: 'Failed to send AI chat message' },
+      { status: 500 }
+    );
+  }
 
   const aiMessages = toAiChatUiMessages(previousMessages);
-  aiMessages.push({
-    id: randomUUID(),
-    parts: [{ text: messageContent, type: 'text' }],
-    role: 'user',
-  });
+  if (!isResumingPersistedRequest) {
+    aiMessages.push({
+      id: requestId,
+      parts: [{ text: messageContent, type: 'text' }],
+      role: 'user',
+    });
+  }
 
   const aiResponse = await callAiChatRoute({
     chatId: chat.id,
     creditSource: 'workspace',
     creditWsId: context.normalizedWsId,
     messages: aiMessages,
+    miraMode: false,
     model: normalizeAiChatModel(chat.model),
     observabilityContext: buildNativeAiObservabilityContext(previousMessages),
+    persistenceRequestId: requestId,
     request,
     supabase: auth.supabase,
     thinkingMode: 'fast',
@@ -121,29 +168,40 @@ export async function sendAiChatMessage({
     return streamAiChatMessageResponse({
       aiResponse,
       auth,
+      chatId: chat.id,
+      currentTitle:
+        'title' in chat && typeof chat.title === 'string' ? chat.title : null,
       conversationId,
-      previousMessageIds,
+      firstMessageContent: messageContent,
+      previousMessages,
+      requestId,
       wsId: context.normalizedWsId,
     });
   }
 
-  await consumeAiResponseTextDeltas(aiResponse);
+  try {
+    await consumeAiResponseTextDeltas(aiResponse);
+  } catch (error) {
+    console.error('Failed to consume AI chat response', {
+      chatId: chat.id,
+      error,
+    });
+    return NextResponse.json(
+      { message: 'Failed to send AI chat message' },
+      { status: 500 }
+    );
+  }
 
-  const latestMessages =
-    (await listAiChatMessages({
-      conversationId,
-      supabase: auth.supabase,
-      user: auth.user,
-      wsId: context.normalizedWsId,
-    })) ?? [];
-  const newMessages = latestMessages.filter(
-    (item) => !previousMessageIds.has(item.id)
-  );
+  const requestMessages = await listRequestMessages({
+    auth,
+    conversationId,
+    requestId,
+    wsId: context.normalizedWsId,
+  });
+  if (requestMessages instanceof NextResponse) return requestMessages;
   const message =
-    newMessages
-      .slice()
-      .reverse()
-      .find((item) => item.kind === 'assistant') ?? newMessages.at(-1);
+    requestMessages.findLast((item) => item.kind === 'assistant') ??
+    requestMessages.at(-1);
 
   if (!message) {
     return NextResponse.json(
@@ -152,27 +210,101 @@ export async function sendAiChatMessage({
     );
   }
 
+  await maybeAutoRenameAiChat({
+    chatId: chat.id,
+    currentTitle:
+      'title' in chat && typeof chat.title === 'string' ? chat.title : null,
+    firstMessageContent: messageContent,
+    previousMessages,
+    supabase: auth.supabase,
+  });
   await publishChatRealtimeMessages({
     actorUserId: auth.user.id,
     audience: getChatRealtimeUserAudience(auth.user.id),
-    messages: newMessages,
+    messages: requestMessages,
     wsId: context.normalizedWsId,
   });
 
-  return NextResponse.json({ message, messages: newMessages }, { status: 201 });
+  return NextResponse.json(
+    { message, messages: requestMessages },
+    { status: 201 }
+  );
+}
+
+async function listRequestMessages({
+  auth,
+  conversationId,
+  requestId,
+  wsId,
+}: {
+  auth: SessionAuthContext;
+  conversationId: string;
+  requestId: string;
+  wsId: string;
+}) {
+  try {
+    const latestMessages =
+      (await listAiChatMessages({
+        conversationId,
+        requestId,
+        supabase: auth.supabase,
+        user: auth.user,
+        wsId,
+      })) ?? [];
+    return filterRequestMessages(latestMessages, requestId);
+  } catch (error) {
+    console.error('Failed to load saved AI chat messages', {
+      conversationId,
+      error,
+      requestId,
+    });
+    return NextResponse.json(
+      { message: 'Failed to send AI chat message' },
+      { status: 500 }
+    );
+  }
+}
+
+function filterRequestMessages(messages: ChatMessage[], requestId: string) {
+  return messages.filter((message) => {
+    const wrappedMetadata = readRecord(message.metadata);
+    return readRecord(wrappedMetadata?.metadata)?.requestId === requestId;
+  });
+}
+
+function replayAiChatMessageResponse(messages: ChatMessage[], stream: boolean) {
+  if (!stream) {
+    return NextResponse.json({ message: messages.at(-1), messages });
+  }
+
+  const body = `${JSON.stringify({ messages, type: 'messages' })}\n${JSON.stringify({ type: 'done' })}\n`;
+  return new NextResponse(body, {
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+    },
+  });
 }
 
 function streamAiChatMessageResponse({
   aiResponse,
   auth,
+  chatId,
+  currentTitle,
   conversationId,
-  previousMessageIds,
+  firstMessageContent,
+  previousMessages,
+  requestId,
   wsId,
 }: {
   aiResponse: Response;
   auth: SessionAuthContext;
+  chatId: string;
+  currentTitle: string | null;
   conversationId: string;
-  previousMessageIds: Set<string>;
+  firstMessageContent: string;
+  previousMessages: Awaited<ReturnType<typeof listAiChatMessages>>;
+  requestId: string;
   wsId: string;
 }) {
   const encoder = new TextEncoder();
@@ -190,36 +322,55 @@ function streamAiChatMessageResponse({
           (part) => write({ part, type: 'assistant_part' })
         );
 
-        const latestMessages =
-          (await listAiChatMessages({
-            conversationId,
-            supabase: auth.supabase,
-            user: auth.user,
-            wsId,
-          })) ?? [];
-        const newMessages = latestMessages.filter(
-          (item) => !previousMessageIds.has(item.id)
-        );
-
-        if (newMessages.length === 0) {
-          write({ message: 'AI response was not saved', type: 'error' });
+        const requestMessages = await listRequestMessages({
+          auth,
+          conversationId,
+          requestId,
+          wsId,
+        });
+        if (requestMessages instanceof NextResponse) {
+          write({ message: 'Failed to send AI chat message', type: 'error' });
+          write({ type: 'done' });
           return;
         }
 
+        if (requestMessages.length === 0) {
+          write({ message: 'AI response was not saved', type: 'error' });
+          write({ type: 'done' });
+          return;
+        }
+
+        await maybeAutoRenameAiChat({
+          chatId,
+          currentTitle,
+          firstMessageContent,
+          previousMessages: previousMessages ?? [],
+          supabase: auth.supabase,
+        });
         await publishChatRealtimeMessages({
           actorUserId: auth.user.id,
           audience: getChatRealtimeUserAudience(auth.user.id),
-          messages: newMessages,
+          messages: requestMessages,
           wsId,
         });
-        write({ messages: newMessages, type: 'messages' });
+        write({ messages: requestMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
         console.error('Failed to stream AI chat response', {
           conversationId,
           error,
         });
+        const requestMessages = await listRequestMessages({
+          auth,
+          conversationId,
+          requestId,
+          wsId,
+        });
+        if (!(requestMessages instanceof NextResponse)) {
+          write({ messages: requestMessages, type: 'messages' });
+        }
         write({ message: 'Failed to send AI chat message', type: 'error' });
+        write({ type: 'done' });
       } finally {
         controller.close();
       }
