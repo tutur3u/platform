@@ -244,9 +244,29 @@ export function getConversationTitle(
     channel?: string;
     chat?: string;
     direct?: string;
+    external?: string;
     group?: string;
   }
 ) {
+  if (conversation.metadata.externalChat === true) {
+    const profileTitle =
+      readNonEmptyString(conversation.metadata.displayName) ??
+      readNonEmptyString(conversation.metadata.name);
+    if (profileTitle) return profileTitle;
+
+    const persistedTitle = readNonEmptyString(conversation.title);
+    if (persistedTitle && !isGenericExternalTitle(persistedTitle)) {
+      return persistedTitle;
+    }
+
+    const reference = conversation.id
+      .replaceAll('-', '')
+      .slice(-6)
+      .toUpperCase();
+    const label = fallback?.external ?? fallback?.channel ?? 'External visitor';
+    return reference ? `${label} #${reference}` : label;
+  }
+
   if (conversation.title) return conversation.title;
 
   if (conversation.type === 'direct') {
@@ -265,6 +285,11 @@ export function getConversationTitle(
   if (conversation.type === 'group') return fallback?.group ?? 'Group chat';
 
   return fallback?.chat ?? 'Untitled chat';
+}
+
+function isGenericExternalTitle(title: string) {
+  const normalized = title.trim().toLowerCase();
+  return normalized === 'external visitor' || normalized === 'website visitor';
 }
 
 export function getCurrentChatConversationMember(

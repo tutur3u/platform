@@ -38,6 +38,7 @@ export function ConversationRow({
     channel: t('untitled_channel'),
     chat: t('untitled_chat'),
     direct: t('direct_message'),
+    external: t('external_sender'),
     group: t('group_chat'),
   });
   const pinned = isChatConversationPinned(conversation, currentUserId);

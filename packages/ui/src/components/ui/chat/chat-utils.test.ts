@@ -134,6 +134,35 @@ describe('chat utils', () => {
     expect(title).toBe('Ada Lovelace');
   });
 
+  it('gives unnamed external conversations a stable pseudonymous title', () => {
+    const title = getConversationTitle(
+      conversation({
+        id: 'a7d12840-f72d-48f2-8057-a1ea15aecd29',
+        metadata: { externalChat: true },
+        title: 'External visitor',
+        type: 'channel',
+      }),
+      'user-1',
+      { external: 'Website visitor' }
+    );
+
+    expect(title).toBe('Website visitor #AECD29');
+  });
+
+  it('prefers an external profile name over a persisted generic title', () => {
+    const title = getConversationTitle(
+      conversation({
+        metadata: { displayName: 'Visitor 42', externalChat: true },
+        title: 'External visitor',
+        type: 'channel',
+      }),
+      'user-1',
+      { external: 'Website visitor' }
+    );
+
+    expect(title).toBe('Visitor 42');
+  });
+
   it('builds useful message previews for files and deleted messages', () => {
     expect(
       getLastMessagePreview(
