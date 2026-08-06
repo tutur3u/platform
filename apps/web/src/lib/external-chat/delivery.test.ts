@@ -73,6 +73,7 @@ describe('external chat credential delivery', () => {
   });
 
   it('pairs the bridge with the optional modern replica origin', async () => {
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout');
     mocks.safeExternalChatFetch.mockResolvedValue(Response.json({ ok: true }));
 
     await configureExternalChatBridge({
@@ -89,6 +90,8 @@ describe('external chat credential delivery', () => {
       pairingTicket: 'pairing-ticket',
       replicaBaseUrl: 'https://chat.example.com',
     });
+    expect(timeoutSpy).toHaveBeenCalledWith(60_000);
+    timeoutSpy.mockRestore();
   });
 
   it.each([401, 403])(

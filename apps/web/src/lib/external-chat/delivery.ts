@@ -21,6 +21,7 @@ type ExternalThreadRow = {
 };
 
 const MAX_EXTERNAL_ATTACHMENT_BYTES = 8 * 1024 * 1024;
+const EXTERNAL_CHAT_PAIRING_TIMEOUT_MS = 60_000;
 export const EXTERNAL_ATTACHMENT_TYPES = new Set([
   'image/gif',
   'image/jpeg',
@@ -304,7 +305,7 @@ export async function configureExternalChatBridge({
       body,
       headers: { 'content-type': 'application/json' },
       method: 'POST',
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(EXTERNAL_CHAT_PAIRING_TIMEOUT_MS),
     }
   );
   if (!response.ok) {
