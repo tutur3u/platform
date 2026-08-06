@@ -55,11 +55,18 @@ function renderCapacitySettings(props?: { initialListId?: string }) {
   );
 }
 
+function openSelectorsTab() {
+  // Radix activates a tab on mouseDown, not click.
+  fireEvent.mouseDown(screen.getByRole('tab', { name: /tab_selectors/ }));
+}
+
 describe('CapacityRulesSettings', () => {
   it('starts a new rule with the contextual task list selected', () => {
     renderCapacitySettings({ initialListId: readyList.id });
 
     expect(screen.getByLabelText('name')).toBeInTheDocument();
+
+    openSelectorsTab();
     expect(screen.getByRole('button', { name: 'Ready' })).toHaveClass(
       'bg-primary'
     );
@@ -67,6 +74,7 @@ describe('CapacityRulesSettings', () => {
     fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'add' }));
 
+    openSelectorsTab();
     expect(screen.getByRole('button', { name: 'Ready' })).toHaveClass(
       'bg-primary'
     );
@@ -76,5 +84,42 @@ describe('CapacityRulesSettings', () => {
     renderCapacitySettings();
 
     expect(screen.queryByLabelText('name')).not.toBeInTheDocument();
+  });
+
+  it('drops its card chrome when embedded in a surface that has its own', () => {
+    // The dialog already draws a border; rendering the section's border inside
+    // it is the doubled edge this prop exists to remove.
+    const { container, rerender } = render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <CapacityRulesSettings
+          boardId="board-1"
+          lists={[readyList]}
+          wsId="ws-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(container.querySelector('section')).toHaveClass('border');
+
+    rerender(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <CapacityRulesSettings
+          boardId="board-1"
+          embedded
+          lists={[readyList]}
+          wsId="ws-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(container.querySelector('section')).not.toHaveClass('border');
   });
 });
