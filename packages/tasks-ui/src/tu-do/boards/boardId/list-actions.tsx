@@ -3,9 +3,7 @@ import {
   Archive,
   ArrowRightLeft,
   CheckSquare,
-  Gauge,
   MoreHorizontal,
-  Pencil,
   Settings2,
   Trash,
 } from '@tuturuuu/icons';
@@ -32,9 +30,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -42,10 +37,9 @@ import { useMoveAllTasksFromList } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
-import { EditListDialog } from '../../shared/edit-list-dialog';
+import { ListSettingsDialog } from '../../shared/list-settings-dialog';
 import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BoardSelector } from '../board-selector';
-import { CapacityRulesSettings } from '../capacity-rules-settings';
 
 interface Props {
   listId: string;
@@ -81,7 +75,6 @@ export function ListActions({
   const canManageList = Boolean(wsId && boardId);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
-  const [isCapacityDialogOpen, setIsCapacityDialogOpen] = useState(false);
   const [isMoveAllDialogOpen, setIsMoveAllDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -392,22 +385,12 @@ export function ListActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           {canManageList && (
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
+            <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
+              <div className="h-4 w-4">
                 <Settings2 className="h-4 w-4" />
-                {t('list_settings')}
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-52">
-                <DropdownMenuItem onClick={() => onEditOpenChange(true)}>
-                  <Pencil className="h-4 w-4" />
-                  {t('edit_list')}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsCapacityDialogOpen(true)}>
-                  <Gauge className="h-4 w-4" />
-                  {taskBoardT('ws-board-templates.capacity.title')}
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+              </div>
+              {t('list_settings')}
+            </DropdownMenuItem>
           )}
           {tasks.length > 0 && onSelectAll && (
             <>
@@ -463,30 +446,6 @@ export function ListActions({
       </DropdownMenu>
 
       <Dialog
-        open={canManageList && isCapacityDialogOpen}
-        onOpenChange={setIsCapacityDialogOpen}
-      >
-        <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-5xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>
-              {taskBoardT('ws-board-templates.capacity.title')} · {listName}
-            </DialogTitle>
-            <DialogDescription>
-              {taskBoardT('ws-board-templates.capacity.description')}
-            </DialogDescription>
-          </DialogHeader>
-          {wsId && (
-            <CapacityRulesSettings
-              boardId={boardId}
-              initialListId={listId}
-              lists={capacityLists}
-              wsId={wsId}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
         open={canManageList && isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
@@ -511,16 +470,18 @@ export function ListActions({
         </DialogContent>
       </Dialog>
 
-      <EditListDialog
-        open={canManageList && isEditOpen}
-        onOpenChange={onEditOpenChange}
+      <ListSettingsDialog
+        allowedStatuses={allowedStatuses}
+        boardId={boardId}
+        isSaving={editListMutation.isPending}
         list={{
           id: listId,
           name: listName,
           status: listStatus,
           color: listColor ?? 'GRAY',
         }}
-        isSaving={editListMutation.isPending}
+        lists={capacityLists}
+        onOpenChange={onEditOpenChange}
         onSave={({ updates }) => {
           if (!allowedStatuses.includes(updates.status)) {
             toast.error(t('save_failed'));
@@ -532,7 +493,8 @@ export function ListActions({
             color: updates.color,
           });
         }}
-        allowedStatuses={allowedStatuses}
+        open={canManageList && isEditOpen}
+        wsId={wsId}
       />
 
       <Dialog

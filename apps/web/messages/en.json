@@ -19027,6 +19027,7 @@
       "description": "Set soft warnings or concurrency-safe hard limits for lists, labels, and projects.",
       "edit": "Edit rule",
       "empty": "No capacity rules yet. Add one to control work in progress on this board.",
+      "empty_selector": "No matches",
       "enabled": "Rule enabled",
       "enforcement": "Enforcement",
       "estimation_points": "Estimation points",
@@ -19048,6 +19049,8 @@
       "search_selectors": "Selectors",
       "selector_count": "{count, plural, =0 {Entire board} one {# selector} other {# selectors}}",
       "soft": "Soft warning",
+      "tab_rule": "Rule",
+      "tab_selectors": "Selectors",
       "task_count": "Task count",
       "title": "Capacity",
       "untitled": "Untitled"

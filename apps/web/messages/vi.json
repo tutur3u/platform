@@ -19027,6 +19027,7 @@
       "description": "Đặt cảnh báo mềm hoặc giới hạn cứng an toàn khi nhiều người thao tác cho danh sách, nhãn và dự án.",
       "edit": "Sửa quy tắc",
       "empty": "Chưa có quy tắc sức chứa. Hãy thêm quy tắc để kiểm soát lượng công việc đang xử lý.",
+      "empty_selector": "Không có kết quả",
       "enabled": "Đã bật quy tắc",
       "enforcement": "Chế độ áp dụng",
       "estimation_points": "Điểm ước lượng",
@@ -19048,6 +19049,8 @@
       "search_selectors": "Điều kiện chọn",
       "selector_count": "{count, plural, =0 {Toàn bộ bảng} other {# điều kiện}}",
       "soft": "Cảnh báo mềm",
+      "tab_rule": "Quy tắc",
+      "tab_selectors": "Bộ chọn",
       "task_count": "Số công việc",
       "title": "Sức chứa",
       "untitled": "Chưa đặt tên"

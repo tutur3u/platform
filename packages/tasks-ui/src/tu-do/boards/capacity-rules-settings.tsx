@@ -8,21 +8,22 @@ import {
   listWorkspaceLabels,
   listWorkspaceTaskBoardCapacityRules,
   listWorkspaceTaskProjects,
-  type TaskCapacityCountingMode,
-  type TaskCapacityEnforcement,
-  type TaskCapacityMatchMode,
-  type TaskCapacityMetric,
   updateWorkspaceTaskBoardCapacityRule,
 } from '@tuturuuu/internal-api/tasks';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  type CapacityDraft,
+  CapacityRuleEditor,
+  createEmptyDraft,
+  type SelectorGroup,
+} from './capacity-rule-editor';
 
 function browserOptions() {
   return typeof window === 'undefined'
@@ -32,11 +33,18 @@ function browserOptions() {
 
 export function CapacityRulesSettings({
   boardId,
+  embedded = false,
   initialListId,
   lists,
   wsId,
 }: {
   boardId: string;
+  /**
+   * Drop the card chrome when the caller already provides a surface — a dialog
+   * draws its own border, and nesting the section's border inside it is the
+   * doubled edge this used to render.
+   */
+  embedded?: boolean;
   initialListId?: string;
   lists: TaskList[];
   wsId: string;
@@ -44,51 +52,10 @@ export function CapacityRulesSettings({
   const t = useTranslations('ws-board-templates.capacity');
   const queryClient = useQueryClient();
   const queryKey = ['task-capacity-rules', wsId, boardId] as const;
-  const [creating, setCreating] = useState(Boolean(initialListId));
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState('');
-  const [limit, setLimit] = useState(5);
-  const [metric, setMetric] = useState<TaskCapacityMetric>('task_count');
-  const [enforcement, setEnforcement] =
-    useState<TaskCapacityEnforcement>('soft');
-  const [countingMode, setCountingMode] =
-    useState<TaskCapacityCountingMode>('active');
-  const [labelMatchMode, setLabelMatchMode] =
-    useState<TaskCapacityMatchMode>('any');
-  const [projectMatchMode, setProjectMatchMode] =
-    useState<TaskCapacityMatchMode>('any');
-  const [search, setSearch] = useState('');
-  const [listIds, setListIds] = useState<string[]>(
-    initialListId ? [initialListId] : []
+  const [editorDraft, setEditorDraft] = useState<CapacityDraft | null>(
+    initialListId ? createEmptyDraft(initialListId) : null
   );
-  const [labelIds, setLabelIds] = useState<string[]>([]);
-  const [projectIds, setProjectIds] = useState<string[]>([]);
-
-  function resetDraft() {
-    setEditingId(null);
-    setName('');
-    setLimit(5);
-    setMetric('task_count');
-    setEnforcement('soft');
-    setCountingMode('active');
-    setLabelMatchMode('any');
-    setProjectMatchMode('any');
-    setSearch('');
-    setListIds(initialListId ? [initialListId] : []);
-    setLabelIds([]);
-    setProjectIds([]);
-  }
-
-  function toggleCreateEditor() {
-    if (creating) {
-      setCreating(false);
-      resetDraft();
-      return;
-    }
-
-    resetDraft();
-    setCreating(true);
-  }
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const rulesQuery = useQuery({
     queryKey,
@@ -104,8 +71,8 @@ export function CapacityRulesSettings({
     queryFn: () => listWorkspaceTaskProjects(wsId, browserOptions()),
   });
   const rules = rulesQuery.data?.rules ?? [];
-  const normalizedSearch = search.trim().toLowerCase();
-  const selectorGroups = useMemo(
+
+  const selectorGroups = useMemo<SelectorGroup[]>(
     () => [
       {
         key: 'lists',
@@ -114,49 +81,50 @@ export function CapacityRulesSettings({
           id: item.id,
           name: item.name ?? t('untitled'),
         })),
-        selected: listIds,
-        setSelected: setListIds,
       },
       {
         key: 'labels',
         title: t('labels'),
         items: labelsQuery.data ?? [],
-        selected: labelIds,
-        setSelected: setLabelIds,
       },
       {
         key: 'projects',
         title: t('projects'),
         items: projectsQuery.data ?? [],
-        selected: projectIds,
-        setSelected: setProjectIds,
       },
     ],
-    [
-      labelIds,
-      labelsQuery.data,
-      listIds,
-      lists,
-      projectIds,
-      projectsQuery.data,
-      t,
-    ]
+    [labelsQuery.data, lists, projectsQuery.data, t]
   );
+
+  function closeEditor() {
+    setEditorDraft(null);
+    setEditingId(null);
+  }
+
+  function toggleCreateEditor() {
+    if (editorDraft) {
+      closeEditor();
+      return;
+    }
+
+    setEditingId(null);
+    setEditorDraft(createEmptyDraft(initialListId));
+  }
 
   const refresh = () => queryClient.invalidateQueries({ queryKey });
   const saveMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (draft: CapacityDraft) => {
       const payload = {
-        name,
-        limitValue: limit,
-        metric,
-        enforcement,
-        countingMode,
-        labelMatchMode,
-        projectMatchMode,
-        listIds,
-        labelIds,
-        projectIds,
+        name: draft.name,
+        limitValue: draft.limit,
+        metric: draft.metric,
+        enforcement: draft.enforcement,
+        countingMode: draft.countingMode,
+        labelMatchMode: draft.labelMatchMode,
+        projectMatchMode: draft.projectMatchMode,
+        listIds: draft.listIds,
+        labelIds: draft.labelIds,
+        projectIds: draft.projectIds,
       };
       return editingId
         ? updateWorkspaceTaskBoardCapacityRule(
@@ -174,27 +142,29 @@ export function CapacityRulesSettings({
           );
     },
     onSuccess: () => {
-      setCreating(false);
-      resetDraft();
+      closeEditor();
       void refresh();
       toast.success(t('saved'));
     },
     onError: () => toast.error(t('save_failed')),
   });
+
   function editRule(rule: (typeof rules)[number]) {
     setEditingId(rule.id);
-    setCreating(true);
-    setName(rule.name);
-    setLimit(rule.limit_value);
-    setMetric(rule.metric);
-    setEnforcement(rule.enforcement);
-    setCountingMode(rule.counting_mode);
-    setLabelMatchMode(rule.label_match_mode);
-    setProjectMatchMode(rule.project_match_mode);
-    setListIds(rule.list_ids);
-    setLabelIds(rule.label_ids);
-    setProjectIds(rule.project_ids);
+    setEditorDraft({
+      countingMode: rule.counting_mode,
+      enforcement: rule.enforcement,
+      labelIds: rule.label_ids,
+      labelMatchMode: rule.label_match_mode,
+      limit: rule.limit_value,
+      listIds: rule.list_ids,
+      metric: rule.metric,
+      name: rule.name,
+      projectIds: rule.project_ids,
+      projectMatchMode: rule.project_match_mode,
+    });
   }
+
   const toggleMutation = useMutation({
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       updateWorkspaceTaskBoardCapacityRule(
@@ -218,7 +188,12 @@ export function CapacityRulesSettings({
   });
 
   return (
-    <section className="space-y-4 rounded-2xl border bg-background p-4 sm:p-5">
+    <section
+      className={cn(
+        'space-y-4',
+        !embedded && 'rounded-2xl border bg-background p-4 sm:p-5'
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold">{t('title')}</h3>
@@ -244,7 +219,7 @@ export function CapacityRulesSettings({
             {t('retry')}
           </Button>
         </div>
-      ) : rules.length === 0 && !creating ? (
+      ) : rules.length === 0 && !editorDraft ? (
         <p className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
           {t('empty')}
         </p>
@@ -307,176 +282,15 @@ export function CapacityRulesSettings({
         </div>
       )}
 
-      {creating && (
-        <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
-          <div className="grid gap-3 sm:grid-cols-[1fr_7rem_10rem_10rem]">
-            <div>
-              <Label htmlFor="capacity-name">{t('name')}</Label>
-              <Input
-                id="capacity-name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="capacity-limit">{t('limit')}</Label>
-              <Input
-                id="capacity-limit"
-                type="number"
-                min={1}
-                value={limit}
-                onChange={(event) => setLimit(Number(event.target.value))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="capacity-metric">{t('metric')}</Label>
-              <select
-                id="capacity-metric"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                value={metric}
-                onChange={(event) =>
-                  setMetric(event.target.value as TaskCapacityMetric)
-                }
-              >
-                <option value="task_count">{t('task_count')}</option>
-                <option value="estimation_points">
-                  {t('estimation_points')}
-                </option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="capacity-enforcement">{t('enforcement')}</Label>
-              <select
-                id="capacity-enforcement"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                value={enforcement}
-                onChange={(event) =>
-                  setEnforcement(event.target.value as TaskCapacityEnforcement)
-                }
-              >
-                <option value="soft">{t('soft')}</option>
-                <option value="hard">{t('hard')}</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="capacity-selector-search">
-              {t('search_selectors')}
-            </Label>
-            <Input
-              id="capacity-selector-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t('search_placeholder')}
-            />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <Label htmlFor="capacity-counting">{t('counting_mode')}</Label>
-              <select
-                id="capacity-counting"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                value={countingMode}
-                onChange={(event) =>
-                  setCountingMode(
-                    event.target.value as TaskCapacityCountingMode
-                  )
-                }
-              >
-                <option value="active">{t('active')}</option>
-                <option value="all_non_deleted">{t('all_non_deleted')}</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="capacity-label-match">
-                {t('label_matching')}
-              </Label>
-              <select
-                id="capacity-label-match"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                value={labelMatchMode}
-                onChange={(event) =>
-                  setLabelMatchMode(event.target.value as TaskCapacityMatchMode)
-                }
-              >
-                <option value="any">{t('any')}</option>
-                <option value="all">{t('all')}</option>
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="capacity-project-match">
-                {t('project_matching')}
-              </Label>
-              <select
-                id="capacity-project-match"
-                className="h-9 w-full rounded-md border bg-background px-3 text-sm"
-                value={projectMatchMode}
-                onChange={(event) =>
-                  setProjectMatchMode(
-                    event.target.value as TaskCapacityMatchMode
-                  )
-                }
-              >
-                <option value="any">{t('any')}</option>
-                <option value="all">{t('all')}</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            {selectorGroups.map((group) => (
-              <div key={group.key} className="space-y-1">
-                <div className="font-medium text-xs">{group.title}</div>
-                <div className="max-h-36 space-y-1 overflow-auto rounded-md border p-2">
-                  {group.items
-                    .filter(
-                      (item) =>
-                        !normalizedSearch ||
-                        item.name.toLowerCase().includes(normalizedSearch)
-                    )
-                    .map((item) => {
-                      const selected = group.selected.includes(item.id);
-                      return (
-                        <button
-                          type="button"
-                          key={item.id}
-                          className={`block w-full rounded px-2 py-1 text-left text-xs ${selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
-                          onClick={() =>
-                            group.setSelected(
-                              selected
-                                ? group.selected.filter((id) => id !== item.id)
-                                : [...group.selected, item.id]
-                            )
-                          }
-                        >
-                          {item.name}
-                        </button>
-                      );
-                    })}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setCreating(false);
-                resetDraft();
-              }}
-            >
-              {t('cancel')}
-            </Button>
-            <Button
-              disabled={!name.trim() || limit < 1 || saveMutation.isPending}
-              onClick={() => saveMutation.mutate()}
-            >
-              {saveMutation.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              )}
-              {t('save')}
-            </Button>
-          </div>
-        </div>
+      {editorDraft && (
+        <CapacityRuleEditor
+          key={editingId ?? 'new'}
+          initialDraft={editorDraft}
+          isSaving={saveMutation.isPending}
+          onCancel={closeEditor}
+          onSubmit={(draft) => saveMutation.mutate(draft)}
+          selectorGroups={selectorGroups}
+        />
       )}
     </section>
   );

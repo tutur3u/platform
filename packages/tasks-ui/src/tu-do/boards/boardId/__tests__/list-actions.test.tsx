@@ -85,15 +85,6 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
     </button>
   ),
   DropdownMenuSeparator: () => null,
-  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => (
-    <button type="button">{children}</button>
-  ),
-  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
 }));
 
 const baseList: TaskList = {
@@ -208,20 +199,26 @@ describe('ListActions', () => {
       position: 1,
       status: 'active',
     };
-    renderListActions({ lists: [baseList, secondList] });
+    // The list's own attributes and its capacity rules now live in one dialog,
+    // so the menu entry opens it and capacity is a tab rather than a second
+    // dialog reached from a submenu.
+    renderListActions({ isEditOpen: true, lists: [baseList, secondList] });
 
-    expect(
-      screen.getByRole('button', { name: 'list_settings' })
-    ).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'ws-board-templates.capacity.title',
-      })
-    );
+    // Radix activates a tab on mouseDown, not click.
+    fireEvent.mouseDown(screen.getByRole('tab', { name: /title/ }));
 
     const capacitySettings = screen.getByTestId('capacity-rules-settings');
     expect(capacitySettings).toHaveAttribute('data-selected-list', 'list-1');
     expect(capacitySettings).toHaveAttribute('data-list-count', '2');
+  });
+
+  it('opens the consolidated list settings dialog from the menu', () => {
+    const onEditOpenChange = vi.fn();
+    renderListActions({ onEditOpenChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'list_settings' }));
+
+    expect(onEditOpenChange).toHaveBeenCalledWith(true);
   });
 
   it('removes the list and its tasks from cache and broadcasts delete on success', async () => {
