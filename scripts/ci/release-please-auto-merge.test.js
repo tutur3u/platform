@@ -199,12 +199,12 @@ test('release merge deletes both release-please branches once they are merged', 
 
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{branch\}"/,
+    /delete_remote_branch "\$\{branch\}"/,
     'the merged release branch must be deleted from origin'
   );
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{notes\}"/,
+    /delete_remote_branch "\$\{notes\}"/,
     'the overflow release-notes branch must be deleted from origin too'
   );
   assert.match(
@@ -228,6 +228,33 @@ test('release merge deletes both release-please branches once they are merged', 
         '- name: Verify main and production point at the same commit'
       ),
     'branches may only be deleted after main and production are verified aligned'
+  );
+});
+
+test('release merge treats an already-deleted branch as success', () => {
+  // Pushing production closes the release PR and GitHub deletes the head
+  // branch itself, moments after this step's fetch. Run 31070227736 failed on
+  // exactly that: `cannot lock ref ... unable to resolve reference`. Checking
+  // first cannot close the race, so the delete has to be tolerant instead.
+  const cleanupStep = workflow.slice(
+    workflow.indexOf('- name: Delete merged release-please branches'),
+    workflow.indexOf('- name: Write run summary')
+  );
+
+  assert.match(
+    cleanupStep,
+    /git ls-remote --exit-code --heads origin "\$\{target\}"/,
+    'a failed delete must be re-checked against origin rather than assumed fatal'
+  );
+  assert.match(
+    cleanupStep,
+    /::error::Could not delete origin\/\$\{target\}; it is still on origin\./,
+    'a delete that failed while the branch still exists is a real error'
+  );
+  assert.match(
+    cleanupStep,
+    /was already deleted, most likely by the merged pull request/,
+    'a branch that is already gone must not fail the run'
   );
 });
 
