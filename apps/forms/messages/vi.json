@@ -1117,7 +1117,10 @@
     "visitor_context_unavailable": "Không thể tải thông tin khách truy cập.",
     "visitor_email": "Email",
     "visitor_name": "Tên",
-    "visitor_phone": "Số điện thoại"
+    "visitor_phone": "Số điện thoại",
+    "attachment_too_large": "Tệp đính kèm phải nhỏ hơn hoặc bằng {size}.",
+    "attachment_limit_reached": "Bạn có thể đính kèm tối đa {count} tệp mỗi tin nhắn.",
+    "drop_files_here": "Thả tệp để đính kèm"
   },
   "command_launcher": {
     "aliases_slot": "Cũng khớp: {aliases}",

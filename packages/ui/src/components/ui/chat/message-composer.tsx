@@ -1,16 +1,27 @@
 'use client';
 
-import { LoaderCircle, Paperclip, Send, Upload, X } from '@tuturuuu/icons';
+import { LoaderCircle, Paperclip, Send } from '@tuturuuu/icons';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ClipboardEvent, type FormEvent, useRef, useState } from 'react';
+import {
+  type ClipboardEvent,
+  type DragEvent,
+  type FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '../button';
 import { toast } from '../sonner';
 import { Textarea } from '../textarea';
+import { ComposerAttachmentChip } from './composer-attachment-chip';
 import { formatFileSize } from './utils';
 
 const MAX_COMPOSER_ATTACHMENTS = 20;
+// Mirrors MAX_AI_ATTACHMENT_BYTES on the server. Rejecting here means the user
+// finds out before the upload instead of after it.
+const MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 
 interface MessageComposerProps {
   allowAttachments?: boolean;
@@ -37,6 +48,32 @@ export function MessageComposer({
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachmentDraft[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  // Thumbnails come from the local File, so they render immediately and cost
+  // no round trip. Object URLs leak unless revoked, hence the cleanup below.
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const previewUrlsRef = useRef(previewUrls);
+  previewUrlsRef.current = previewUrls;
+
+  useEffect(
+    () => () => {
+      for (const url of Object.values(previewUrlsRef.current)) {
+        URL.revokeObjectURL(url);
+      }
+    },
+    []
+  );
+
+  function releasePreview(path: string) {
+    setPreviewUrls((current) => {
+      const url = current[path];
+      if (!url) return current;
+      URL.revokeObjectURL(url);
+      const next = { ...current };
+      delete next[path];
+      return next;
+    });
+  }
 
   const busy = disabled || isSending || isUploading || uploadingCount > 0;
   const canSend = content.trim().length > 0 || attachments.length > 0;
@@ -50,6 +87,7 @@ export function MessageComposer({
 
     setContent('');
     setAttachments([]);
+    for (const draft of draftAttachments) releasePreview(draft.path);
 
     try {
       await onSend({
@@ -65,19 +103,47 @@ export function MessageComposer({
   async function handleFileCandidates(files: File[]) {
     if (!allowAttachments || disabled || files.length === 0) return;
 
+    const withinSizeLimit = files.filter(
+      (file) => file.size <= MAX_ATTACHMENT_BYTES
+    );
+    if (withinSizeLimit.length < files.length) {
+      toast.error(
+        t('attachment_too_large', {
+          size: formatFileSize(MAX_ATTACHMENT_BYTES),
+        })
+      );
+    }
+    if (withinSizeLimit.length === 0) return;
+
     const remainingSlots = Math.max(
       MAX_COMPOSER_ATTACHMENTS - attachments.length,
       0
     );
-    const nextFiles = files.slice(0, remainingSlots);
-    if (nextFiles.length === 0) return;
+    if (remainingSlots === 0) {
+      toast.error(
+        t('attachment_limit_reached', { count: MAX_COMPOSER_ATTACHMENTS })
+      );
+      return;
+    }
+
+    const nextFiles = withinSizeLimit.slice(0, remainingSlots);
+    if (nextFiles.length < withinSizeLimit.length) {
+      toast.error(
+        t('attachment_limit_reached', { count: MAX_COMPOSER_ATTACHMENTS })
+      );
+    }
 
     setUploadingCount((count) => count + nextFiles.length);
     const uploaded: ChatAttachmentDraft[] = [];
 
     for (const file of nextFiles) {
       try {
-        uploaded.push(await onUploadFile(file));
+        const draft = await onUploadFile(file);
+        uploaded.push(draft);
+        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+          const url = URL.createObjectURL(file);
+          setPreviewUrls((current) => ({ ...current, [draft.path]: url }));
+        }
       } catch {
         toast.error(t('upload_failed'));
       } finally {
@@ -92,6 +158,17 @@ export function MessageComposer({
     if (inputRef.current) {
       inputRef.current.value = '';
     }
+  }
+
+  function handleDrop(event: DragEvent<HTMLFormElement>) {
+    setIsDraggingOver(false);
+    if (!allowAttachments || disabled) return;
+
+    const dropped = Array.from(event.dataTransfer?.files ?? []);
+    if (dropped.length === 0) return;
+
+    event.preventDefault();
+    void handleFileCandidates(dropped);
   }
 
   async function handleFiles(files: FileList | null) {
@@ -122,38 +199,49 @@ export function MessageComposer({
   }
 
   return (
-    <form className="border-t bg-background/95 p-3" onSubmit={handleSubmit}>
+    <form
+      className={cn(
+        'relative border-t bg-background/95 p-3 transition-colors',
+        isDraggingOver && 'bg-primary/5 ring-2 ring-primary ring-inset'
+      )}
+      onDragLeave={(event) => {
+        // Only clear when the pointer actually leaves the composer, not when it
+        // crosses into a child element.
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsDraggingOver(false);
+        }
+      }}
+      onDragOver={(event) => {
+        if (!allowAttachments || disabled) return;
+        if (!Array.from(event.dataTransfer?.types ?? []).includes('Files')) {
+          return;
+        }
+        event.preventDefault();
+        setIsDraggingOver(true);
+      }}
+      onDrop={handleDrop}
+      onSubmit={handleSubmit}
+    >
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-sm bg-background/80 font-medium text-primary text-sm">
+          {t('drop_files_here')}
+        </div>
+      )}
       {attachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {attachments.map((attachment) => (
-            <div
-              className="flex min-w-0 max-w-full items-center gap-2 overflow-hidden rounded-md border bg-muted/40 px-2 py-1 text-sm"
+            <ComposerAttachmentChip
+              attachment={attachment}
               key={attachment.path}
-            >
-              <Upload className="size-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate" title={attachment.filename}>
-                {attachment.filename}
-              </span>
-              {attachment.sizeBytes ? (
-                <span className="shrink-0 text-muted-foreground text-xs">
-                  {formatFileSize(attachment.sizeBytes)}
-                </span>
-              ) : null}
-              <Button
-                aria-label={t('remove_attachment')}
-                className="size-6"
-                onClick={() =>
-                  setAttachments((current) =>
-                    current.filter((item) => item.path !== attachment.path)
-                  )
-                }
-                size="icon"
-                type="button"
-                variant="ghost"
-              >
-                <X className="size-3.5" />
-              </Button>
-            </div>
+              onRemove={() => {
+                releasePreview(attachment.path);
+                setAttachments((current) =>
+                  current.filter((item) => item.path !== attachment.path)
+                );
+              }}
+              previewUrl={previewUrls[attachment.path]}
+              removeLabel={t('remove_attachment')}
+            />
           ))}
         </div>
       )}

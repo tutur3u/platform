@@ -2,13 +2,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeTaskBoardShareEmail,
+  resolveTaskBoardAccess,
   type TaskBoardGuestPermission,
 } from '@tuturuuu/tasks-api/server/board-access';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -92,67 +89,29 @@ async function requireBoardShareManager({
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<BoardShareManagerResult> {
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    } as const;
-  }
-
-  if (!memberCheck.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
-  const permissions = await getPermissions({ wsId, user });
-  if (!permissions?.containsPermission('manage_projects')) {
-    return {
-      error: NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
+  // Same resolution path as every other board route. The workspace comes from
+  // the board via sbAdmin rather than from the request, so a `personal` alias
+  // that does not resolve for this user cannot throw the request away, and the
+  // membership lookup no longer depends on the session client having Supabase
+  // auth — which it does not in a satellite app.
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase).catch(
+    () => rawWsId
+  );
   const sbAdmin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
-  const { data: board, error: boardError } = await sbAdmin
-    .from('workspace_boards')
-    .select('id, ws_id')
-    .eq('id', boardId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
+  const access = await resolveTaskBoardAccess({
+    boardId,
+    requiredPermission: 'edit',
+    sbAdmin,
+    supabase,
+    user: user as never,
+    wsId,
+  });
 
-  if (boardError) {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to load task board' },
-        { status: 500 }
-      ),
-    } as const;
-  }
+  if ('error' in access) return access;
 
-  if (!board) {
-    return {
-      error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
-    } as const;
-  }
-
-  return { boardId, sbAdmin, wsId } as const;
+  return { boardId: access.boardId, sbAdmin, wsId: access.wsId } as const;
 }
 
 function serializeShare(row: ShareRow) {

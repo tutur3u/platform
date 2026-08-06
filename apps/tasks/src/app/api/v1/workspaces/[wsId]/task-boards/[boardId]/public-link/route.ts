@@ -1,10 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { resolveTaskBoardAccess } from '@tuturuuu/tasks-api/server/board-access';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -70,49 +67,34 @@ async function requirePublicLinkManager({
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<PublicLinkManagerResult> {
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    } as const;
-  }
-
-  if (!memberCheck.ok) {
-    return {
-      error: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
-  const permissions = await getPermissions({ wsId, user });
-  if (!permissions?.containsPermission('manage_projects')) {
-    return {
-      error: NextResponse.json(
-        { error: "You don't have permission to perform this operation" },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
+  // Resolve access the way every other board route does. Deriving the
+  // workspace from the board itself (via sbAdmin) rather than from the request
+  // means a `personal` alias that does not resolve for this user, or a wsId
+  // that is not the board's real workspace, no longer decides the answer — and
+  // the membership lookup goes through the shared helper instead of the
+  // session client, which carries no Supabase auth in a satellite app.
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase).catch(
+    () => rawWsId
+  );
   const sbAdmin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
+  const access = await resolveTaskBoardAccess({
+    boardId,
+    requiredPermission: 'edit',
+    sbAdmin,
+    supabase,
+    user: user as never,
+    wsId,
+  });
+
+  if ('error' in access) return access;
+
   const { data: board, error: boardError } = await sbAdmin
     .from('workspace_boards')
     .select('id, ws_id, archived_at, deleted_at')
-    .eq('id', boardId)
-    .eq('ws_id', wsId)
+    .eq('id', access.boardId)
+    .eq('ws_id', access.wsId)
     .maybeSingle();
 
   if (boardError) {
@@ -130,7 +112,12 @@ async function requirePublicLinkManager({
     } as const;
   }
 
-  return { board: board as BoardRow, boardId, sbAdmin, wsId } as const;
+  return {
+    board: board as BoardRow,
+    boardId: access.boardId,
+    sbAdmin,
+    wsId: access.wsId,
+  } as const;
 }
 
 async function getActivePublicLink(manager: PublicLinkManager) {
