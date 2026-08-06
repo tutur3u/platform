@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/inventory-v0.24.0...inventory-v0.25.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/inventory-v0.23.0...inventory-v0.24.0) (2026-08-04)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.3.0...tasks-api-v0.4.0) (2026-08-06)
+
+
+### Features
+
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
 ## [0.3.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.2.1...tasks-api-v0.3.0) (2026-07-25)
 
 

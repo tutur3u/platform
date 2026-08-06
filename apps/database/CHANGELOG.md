@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.26.0](https://github.com/tutur3u/platform/compare/database-v1.25.0...database-v1.26.0) (2026-08-06)
+
+
+### Features
+
+* **ai:** let external apps authenticate background workloads with a bound API key ([#5091](https://github.com/tutur3u/platform/issues/5091)) ([0626284](https://github.com/tutur3u/platform/commit/062628483edc2e2d1a691a75bfb5ebf3935ca831))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
+
+### Bug Fixes
+
+* **chat:** harden connected-site parity ([a0d3148](https://github.com/tutur3u/platform/commit/a0d31483a87ed0ebd59f2be5c3bdbb342bd67855))
+* **database:** retimestamp parity migrations ([6f8f034](https://github.com/tutur3u/platform/commit/6f8f0342a658bcee1f04ec54373a82e0c923b1cf))
+
 ## [1.25.0](https://github.com/tutur3u/platform/compare/database-v1.24.0...database-v1.25.0) (2026-08-04)
 
 

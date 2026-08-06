@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/storefront-v0.21.0...storefront-v0.22.0) (2026-08-06)
+
+
+### Features
+
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/storefront-v0.20.0...storefront-v0.21.0) (2026-08-04)
 
 
