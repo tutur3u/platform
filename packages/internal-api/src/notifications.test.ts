@@ -4,6 +4,7 @@ import {
   listNotifications,
   listWorkspaceNotificationPreferences,
   updateAccountNotificationPreferences,
+  updateNotificationMetadata,
   updateWorkspaceNotificationPreferences,
 } from './notifications';
 
@@ -20,6 +21,36 @@ function getFetchInit(fetchMock: ReturnType<typeof vi.fn>) {
 }
 
 describe('notification internal-api helpers', () => {
+  it('updates invitation action metadata through the typed notification endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: { action_taken: 'accepted' },
+        success: true,
+      })
+    );
+
+    await updateNotificationMetadata(
+      'notification/id',
+      {
+        action_taken: 'accepted',
+        action_timestamp: '2026-08-06T00:00:00.000Z',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/notifications/notification%2Fid/metadata',
+      expect.objectContaining({ method: 'PATCH' })
+    );
+    expect(JSON.parse(String(getFetchInit(fetchMock)?.body))).toEqual({
+      action_taken: 'accepted',
+      action_timestamp: '2026-08-06T00:00:00.000Z',
+    });
+  });
+
   it('lists notifications through the centralized API with supported filters', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({

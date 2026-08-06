@@ -256,6 +256,11 @@
       "targetOwner": "rust-backend",
       "note": "Rust backend handle_backend_request handles GET /api/v1/notifications/unread-count by preserving app-session and browser Supabase auth, validating the optional wsId query parameter, verifying workspace membership before scoped counts, building the legacy notification access filter, and reading the exact unread count through the service-role Supabase REST adapter with no-store JSON responses."
     },
+    "api:/api/v1/notifications/:id/metadata:apps/web/src/legacy-api-routes/v1/notifications/[id]/metadata/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "Legacy Next PATCH keeps notification action metadata app-session aware across the platform and registered satellite apps while enforcing the same per-user notification access filter; Rust parity must preserve both browser and app-session authentication before this route migrates."
+    },
     "api:/api/v1/cms/workspaces:apps/web/src/legacy-api-routes/v1/cms/workspaces/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",

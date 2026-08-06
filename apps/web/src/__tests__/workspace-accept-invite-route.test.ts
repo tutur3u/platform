@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
+  const finalizeWorkspaceInvitationNotifications = vi.fn();
   const adminMembershipDeleteWsEq = vi.fn(() => ({
     eq: adminMembershipDeleteUserEq,
   }));
@@ -160,8 +161,14 @@ const mocks = vi.hoisted(() => {
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
     sessionSupabase,
+    finalizeWorkspaceInvitationNotifications,
   };
 });
+
+vi.mock('@/lib/workspace-invitation-notifications', () => ({
+  finalizeWorkspaceInvitationNotifications:
+    mocks.finalizeWorkspaceInvitationNotifications,
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
@@ -254,6 +261,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
+    mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
   });
 
   it('returns 404 when no invite and guest self-join disabled', async () => {
@@ -337,6 +345,13 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       }),
       expect.objectContaining({
         onConflict: 'platform_user_id,ws_id',
+      })
+    );
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'accepted',
+        userId: 'user-1',
+        workspaceId: NORMALIZED_WS_ID,
       })
     );
     expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(

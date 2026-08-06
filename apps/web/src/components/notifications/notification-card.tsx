@@ -11,6 +11,11 @@ import {
   X,
   XCircle,
 } from '@tuturuuu/icons';
+import { updateNotificationMetadata } from '@tuturuuu/internal-api';
+import {
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
+} from '@tuturuuu/internal-api/workspaces';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -88,52 +93,34 @@ export function NotificationCard({
         case 'WORKSPACE_INVITE_DECLINE': {
           const accept = action.type === 'WORKSPACE_INVITE_ACCEPT';
           const targetWsId = action.payload.wsId;
-          const url = `/api/workspaces/${targetWsId}/${
-            accept ? 'accept-invite' : 'decline-invite'
-          }`;
+          await (accept
+            ? acceptWorkspaceInvite(targetWsId)
+            : declineWorkspaceInvite(targetWsId));
+          await updateNotificationMetadata(notification.id, {
+            action_taken: accept ? 'accepted' : 'declined',
+            action_timestamp: new Date().toISOString(),
+          });
 
-          const res = await fetch(url, { method: 'POST' });
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: ['workspaces'],
+              refetchType: 'active',
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['notifications'],
+              refetchType: 'active',
+            }),
+          ]);
 
-          if (res.ok) {
-            const updateRes = await fetch(
-              `/api/v1/notifications/${notification.id}/metadata`,
-              {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action_taken: accept ? 'accepted' : 'declined',
-                  action_timestamp: new Date().toISOString(),
-                }),
-              }
-            );
+          toast.success(
+            accept
+              ? t('workspace-invite-accepted')
+              : t('workspace-invite-declined')
+          );
 
-            if (updateRes.ok) {
-              await Promise.all([
-                queryClient.invalidateQueries({
-                  queryKey: ['workspaces'],
-                  refetchType: 'active',
-                }),
-                queryClient.invalidateQueries({
-                  queryKey: ['notifications'],
-                  refetchType: 'active',
-                }),
-              ]);
-
-              toast.success(
-                accept
-                  ? t('workspace-invite-accepted')
-                  : t('workspace-invite-declined')
-              );
-
-              router.refresh();
-              onActionComplete?.();
-              onMarkAsRead(notification.id, true);
-            } else {
-              toast.error('Failed to update notification');
-            }
-          } else {
-            toast.error('Failed to process invite');
-          }
+          router.refresh();
+          onActionComplete?.();
+          onMarkAsRead(notification.id, true);
           break;
         }
         default:

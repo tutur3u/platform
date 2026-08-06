@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
   const adminPrivateEmailMaybeSingle = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
+  const finalizeWorkspaceInvitationNotifications = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -62,8 +63,14 @@ const mocks = vi.hoisted(() => {
     authGetUser,
     normalizeWorkspaceId,
     sessionSupabase,
+    finalizeWorkspaceInvitationNotifications,
   };
 });
+
+vi.mock('@/lib/workspace-invitation-notifications', () => ({
+  finalizeWorkspaceInvitationNotifications:
+    mocks.finalizeWorkspaceInvitationNotifications,
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
@@ -95,6 +102,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
+    mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
   });
 
   it('declines direct and email invites through the server-owned cleanup path', async () => {
@@ -123,6 +131,13 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       'private@example.com',
     ]);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'declined',
+        userId: 'user-1',
+        workspaceId: NORMALIZED_WS_ID,
+      })
+    );
   });
 
   it('declines UUID invite paths without workspace RLS normalization', async () => {

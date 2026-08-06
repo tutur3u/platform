@@ -30,6 +30,8 @@ export default async function NotificationPopover() {
       archiveAllText={t('archive-all')}
       emptyArchiveText={t('empty-archive')}
       loadingMoreText={t('loading-more')}
+      acceptText={t('accept')}
+      declineText={t('decline')}
       webAppUrl={getTtrUrl()}
     />
   );

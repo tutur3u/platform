@@ -977,6 +977,22 @@
       "sidebar_hidden": "Hidden"
     }
   },
+  "notifications": {
+    "accept": "Accept",
+    "archive": "Archive",
+    "archive-all": "Archive all",
+    "decline": "Decline",
+    "empty-archive": "No archived notifications yet.",
+    "inbox": "Inbox",
+    "invited-to": "You have been invited to",
+    "loading-more": "Loading more...",
+    "mark-as-read": "Mark as read",
+    "mark-as-unread": "Mark as unread",
+    "no-notifications": "You have no notifications yet.",
+    "notifications": "Notifications",
+    "view-all": "View All Notifications",
+    "workspace-invite": "Workspace invite"
+  },
   "storefront": {
     "add": "Add",
     "allItems": "All",

@@ -1,3 +1,4 @@
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
@@ -19,7 +20,10 @@ export default async function NavbarActions({
     <div className="relative">
       <div className="flex items-center gap-1">
         {sbUser ? (
-          <UserNavWrapper hideMetadata={hideMetadata} />
+          <>
+            <NotificationPopover />
+            <UserNavWrapper hideMetadata={hideMetadata} />
+          </>
         ) : (
           <>
             <GetStartedButton text={t('home.get-started')} href="/home" />

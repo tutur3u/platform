@@ -1,6 +1,7 @@
 import { ReceiptText, Store } from '@tuturuuu/icons';
 import type { InventoryStorefront } from '@tuturuuu/internal-api/inventory';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { Button } from '@tuturuuu/ui/button';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { connection } from 'next/server';
@@ -74,6 +75,7 @@ export async function StorefrontHeaderActions({
             </Link>
           </Button>
         ) : null}
+        <NotificationPopover />
         <UserNav hideMetadata />
       </div>
     );
