@@ -1117,7 +1117,10 @@
     "visitor_context_unavailable": "Visitor context is unavailable.",
     "visitor_email": "Email",
     "visitor_name": "Name",
-    "visitor_phone": "Phone"
+    "visitor_phone": "Phone",
+    "attachment_too_large": "Attachments must be {size} or smaller.",
+    "attachment_limit_reached": "You can attach up to {count} files per message.",
+    "drop_files_here": "Drop files to attach"
   },
   "command_launcher": {
     "aliases_slot": "Also matches: {aliases}",

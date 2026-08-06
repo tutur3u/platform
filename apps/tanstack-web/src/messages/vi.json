@@ -3829,7 +3829,10 @@
     "unread_messages_count": "{count} tin nhắn chưa đọc",
     "untitled_channel": "Kênh chưa đặt tên",
     "untitled_chat": "Cuộc trò chuyện chưa đặt tên",
-    "upload_failed": "Không thể tải tệp lên"
+    "upload_failed": "Không thể tải tệp lên",
+    "attachment_too_large": "Tệp đính kèm phải nhỏ hơn hoặc bằng {size}.",
+    "attachment_limit_reached": "Bạn có thể đính kèm tối đa {count} tệp mỗi tin nhắn.",
+    "drop_files_here": "Thả tệp để đính kèm"
   },
   "command_launcher": {
     "apps": "Ứng dụng",
