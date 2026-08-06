@@ -559,15 +559,18 @@ export async function resolveTaskBoardAccess({
     // A member denied here means the workspace-permission lookup disagreed with
     // their membership. Without this the 403 is silent and indistinguishable
     // from a genuine non-member.
-    if (memberCheck.ok) {
-      console.warn('Task board access denied for a workspace member', {
-        manageProjectsGranted,
-        membershipType: memberCheck.membershipType ?? null,
-        permissionsResolved,
-        requiredPermission,
-        wsId: context.wsId,
-      });
-    }
+    console.warn('Task board access denied', {
+      boardId: context.boardId,
+      manageProjectsGranted,
+      memberCheckError: memberCheck.error ?? null,
+      memberCheckOk: memberCheck.ok,
+      membershipType: memberCheck.membershipType ?? null,
+      permissionsResolved,
+      requiredPermission,
+      shareCount: shares.length,
+      userId: user.id,
+      wsId: context.wsId,
+    });
 
     return {
       error: NextResponse.json(
