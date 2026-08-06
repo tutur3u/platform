@@ -29,7 +29,9 @@ This page explains how Tuturuuu moves from code to running environments.
 - `e2e-tests.yaml` also runs only on non-`production` pushes; production
   promotion relies on the already-green validation before the branch is
   promoted plus the production build-validation gates below.
-- Production workflows cancel superseded per-app runs before they can publish stale artifacts.
+- Production workflows cancel superseded per-app runs only when a newer
+  `production` push arrives; `main` commits and manual recovery runs leave an
+  active production deployment untouched.
 - Each deploy job is bound to a `vercel-preview-<app>` GitHub Environment and
   introduces Vercel credentials only after dependency installation.
 - Platform preview is build validation only; on-premise machines own the actual
@@ -65,7 +67,10 @@ This page explains how Tuturuuu moves from code to running environments.
   release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
 - `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
-- Each production app uses a workflow-and-branch concurrency group with `cancel-in-progress: true`, so the newest `production` SHA remains the deployable run.
+- Each production app uses a workflow-and-branch concurrency group whose
+  `cancel-in-progress` predicate matches only `production` push events, so the
+  newest production SHA remains deployable without letting `main` commits or
+  manual recovery runs cancel it.
 - Production deploy jobs are bound to `vercel-production-<app>` GitHub
   Environments and reject manual dispatches unless the selected branch is
   `production`.

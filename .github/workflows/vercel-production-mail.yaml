@@ -8,7 +8,7 @@ permissions:
 
 concurrency:
   group: vercel-production-mail-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}
 
 jobs:
   Deploy-Production:

@@ -271,7 +271,9 @@ formatting behavior, or repo-wide verification.
 - Give every reusable production app workflow a static per-app concurrency
   prefix plus the Git ref. Reusable workflows inherit caller context, so a
   shared caller-derived key can cancel sibling deploys and turn intended skips
-  into red X statuses.
+  into red X statuses. Set `cancel-in-progress` only for inherited push events
+  on `refs/heads/production`; protected `main` commits and manual recovery
+  dispatches must leave an active production deployment running.
 - Key preview concurrency by workflow and `preview_ref` and enable
   `cancel-in-progress`. This lets a newer protected-main platform signal or a
   repeated manual preview replace stale work without serializing unrelated

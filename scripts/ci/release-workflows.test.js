@@ -23,6 +23,7 @@ const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
 ]);
+const PRODUCTION_PUSH_CANCEL_PREDICATE = `cancel-in-progress: \${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}`;
 const SECRET_INTERPOLATION_PATTERN =
   /\$\{\{[^}\n]*\bsecrets\.[A-Z_][A-Z0-9_]*[^}\n]*\}\}/u;
 
@@ -90,7 +91,7 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
-test('production Vercel workflows cancel superseded runs instead of passing no-op deploys', () => {
+test('production Vercel workflows cancel only superseded production push runs', () => {
   const productionWorkflows = vercelWorkflows.filter((workflowName) =>
     workflowName.startsWith('vercel-production-')
   );
@@ -107,9 +108,9 @@ test('production Vercel workflows cancel superseded runs instead of passing no-o
 
     assert.ok(
       header.includes(
-        `\nconcurrency:\n  ${concurrencyGroup}\n  cancel-in-progress: true\n`
+        `\nconcurrency:\n  ${concurrencyGroup}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
       ),
-      `${workflowName} must cancel its superseded production run`
+      `${workflowName} must cancel only a superseded production push run`
     );
     assert.ok(
       !concurrencyGroups.has(concurrencyGroup),
@@ -149,6 +150,12 @@ test('production Vercel planner resolves once and calls affected apps in the pus
 
   assert.match(workflow, /\n {2}push:\n {4}branches:\n {6}- production\n/);
   assert.match(workflow, /\n {2}workflow_dispatch:/);
+  assert.ok(
+    workflow.includes(
+      `\nconcurrency:\n  group: vercel-production-planner-\${{ github.ref }}\n  ${PRODUCTION_PUSH_CANCEL_PREDICATE}\n`
+    ),
+    'the production planner must not be canceled by main commits or manual recovery runs'
+  );
   assert.match(workflow, /actions:\s*write/);
   assert.match(workflow, /deployments:\s*write/);
   assert.match(
@@ -181,6 +188,32 @@ test('production Vercel planner resolves once and calls affected apps in the pus
     plannerJob,
     /uses: \.\/\.github\/workflows\/ci-check\.yml/
   );
+});
+
+test('non-Vercel deployment cancellation policies remain environment-specific', () => {
+  for (const workflowName of [
+    'mobile-deploy-stores.yaml',
+    'supabase-production.yaml',
+  ]) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+
+    assert.match(
+      workflow,
+      /cancel-in-progress: false/,
+      `${workflowName} must not cancel an in-progress production operation`
+    );
+  }
+
+  const discordWorkflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'discord-modal-deploy.yml'),
+    'utf8'
+  );
+  assert.match(discordWorkflow, /workflow_run\.head_branch == 'main'/);
+  assert.match(discordWorkflow, /group: discord-modal-deploy/);
+  assert.match(discordWorkflow, /cancel-in-progress: true/);
 });
 
 test('external app build cancels superseded runs instead of passing a skipped build', () => {

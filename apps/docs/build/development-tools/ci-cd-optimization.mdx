@@ -140,9 +140,11 @@ Environment and a static per-app concurrency group. The group must include the
 app identifier because reusable workflows inherit caller context; a shared
 caller-derived key would cancel sibling deployments and show red X statuses
 instead of clean skips. They accept `workflow_call` for commit-driven planner
-jobs and retain `workflow_dispatch` for deliberate operator reruns. A missing
-or untrusted marker fails open for that app without forcing every other app's
-gate open.
+jobs and retain `workflow_dispatch` for deliberate operator reruns. Their
+`cancel-in-progress` predicate is enabled only for a `production` push, so a
+`main` commit or manual recovery run cannot cancel an active production deploy.
+A missing or untrusted marker fails open for that app without forcing every
+other app's gate open.
 
 ### The decision function
 
@@ -332,13 +334,15 @@ concurrency:
 ```yaml
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' }}
 ```
 
 When another production commit arrives, GitHub cancels the superseded run and
 keeps the newest run deployable. Older runs no longer finish green after
 skipping every deployment step, which makes queued and deployed SHAs
 observable without allowing stale artifacts to replace newer production code.
+Commits that exist only on `main` and manual recovery dispatches leave an active
+production deployment running.
 
 Affected-app gating always diffs the newest SHA against the last successful
 deployment marker. If no trustworthy marker is available, the gate fails open

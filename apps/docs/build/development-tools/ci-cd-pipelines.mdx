@@ -36,7 +36,9 @@ Tuturuuu currently automates:
 - Vercel workflows use `tuturuuu.ts` app metadata and workspace `workspace:*` dependency closures to run only affected app deploys.
 - `bun.lock` changes run all Vercel app deploys because lockfile ownership is ambiguous without a source or manifest path.
 - Manual `workflow_dispatch` runs enabled workflows even when changed paths would otherwise be unaffected.
-- Production Vercel workflows cancel superseded per-app runs and keep the newest branch SHA deployable.
+- Production Vercel workflows cancel superseded per-app runs only for newer
+  `production` pushes. A `main` commit or manual recovery run never cancels an
+  active production deployment.
 - The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.
 - Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
 - Docker changes are guarded by `docker-setup-check.yaml`, including dev and production image builds.

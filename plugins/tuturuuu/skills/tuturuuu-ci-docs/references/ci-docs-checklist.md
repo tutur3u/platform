@@ -29,6 +29,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Document and test a unique static concurrency prefix for every reusable
   production app workflow; caller-derived shared keys can cancel sibling jobs
   instead of leaving unselected jobs cleanly skipped.
+- Restrict production deployment `cancel-in-progress` to push events on
+  `refs/heads/production`. Protected `main` commits and manual recovery
+  dispatches must not cancel an active production deployment.
 - Keep preview concurrency keyed by workflow and `preview_ref` with
   `cancel-in-progress: true`; repeated requests for one target should replace
   stale runs without canceling a distinct preview ref.
