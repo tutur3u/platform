@@ -300,7 +300,19 @@ describe('external chat sync status', () => {
       ],
     });
     mocks.readRun.mockResolvedValueOnce({
-      data: { id: localRun.id },
+      data: {
+        cursor: {},
+        digest_results: [{ matched: true, stream: 'messages' }],
+        error_code: null,
+        finished_at: null,
+        high_water_mark: { messages: '6973' },
+        id: localRun.id,
+        operation: 'backfill',
+        source_counts: { messages: 6973 },
+        started_at: '2026-08-04T00:00:01.000Z',
+        state: 'running',
+        target_counts: { messages: 4025 },
+      },
       error: null,
     });
     const { POST } = await import('./route');
@@ -367,6 +379,55 @@ describe('external chat sync status', () => {
       runId: localRun.id,
     });
     expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('returns a stable error when the remote run cannot be read', async () => {
+    mocks.requestExternalChatControl.mockRejectedValueOnce(
+      new Error('sensitive control failure')
+    );
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: 'control_unavailable',
+      runId: localRun.id,
+    });
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('returns a stable error when the adopted run cannot be persisted', async () => {
+    mocks.requestExternalChatControl.mockResolvedValueOnce({
+      operation: 'backfill',
+      runId: localRun.id,
+      state: 'running',
+    });
+    mocks.upsert.mockResolvedValueOnce({
+      error: { message: 'sensitive database failure' },
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/sync', {
+        body: JSON.stringify({ action: 'adopt', runId: localRun.id }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      }) as never,
+      params
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      error: 'sync_run_unavailable',
+      runId: localRun.id,
+    });
+    expect(mocks.readRun).not.toHaveBeenCalled();
   });
 
   it('rejects adoption of an unknown remote operation', async () => {

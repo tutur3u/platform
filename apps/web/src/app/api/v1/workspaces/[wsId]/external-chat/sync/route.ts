@@ -273,7 +273,9 @@ async function adoptRemoteRun({
 
   const { data: adopted, error: readError } = await db
     .from('external_chat_sync_runs')
-    .select('id')
+    .select(
+      'id, operation, state, cursor, high_water_mark, source_counts, target_counts, digest_results, error_code, started_at, finished_at'
+    )
     .eq('ws_id', wsId)
     .eq('id', runId)
     .eq('connector_key', connectorKey)
@@ -290,7 +292,11 @@ async function adoptRemoteRun({
     );
 
   return NextResponse.json({
-    remote: publicRemoteRun(runId, operation, update),
+    remote: publicRemoteRun(
+      runId,
+      typeof adopted.operation === 'string' ? adopted.operation : operation,
+      adopted
+    ),
     runId,
   });
 }
