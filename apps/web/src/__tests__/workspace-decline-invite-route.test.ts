@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
   const adminPrivateEmailMaybeSingle = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
+  const finalizeWorkspaceInvitationNotifications = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -62,6 +63,22 @@ const mocks = vi.hoisted(() => {
     authGetUser,
     normalizeWorkspaceId,
     sessionSupabase,
+    finalizeWorkspaceInvitationNotifications,
+  };
+});
+
+vi.mock('@/lib/workspace-invitation-notifications', () => ({
+  finalizeWorkspaceInvitationNotifications:
+    mocks.finalizeWorkspaceInvitationNotifications,
+}));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return {
+    ...actual,
+    after: (callback: () => unknown) => {
+      void callback();
+    },
   };
 });
 
@@ -95,6 +112,7 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
+    mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
   });
 
   it('declines direct and email invites through the server-owned cleanup path', async () => {
@@ -123,6 +141,31 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
       'private@example.com',
     ]);
     expect(mocks.sessionSupabase.from).not.toHaveBeenCalled();
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'declined',
+        userId: 'user-1',
+        workspaceId: NORMALIZED_WS_ID,
+      })
+    );
+  });
+
+  it('keeps a successful decline when notification finalization fails', async () => {
+    mocks.finalizeWorkspaceInvitationNotifications.mockRejectedValueOnce(
+      new Error('notification write failed')
+    );
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Invites declined successfully',
+    });
   });
 
   it('declines UUID invite paths without workspace RLS normalization', async () => {

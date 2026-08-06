@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
+  const finalizeWorkspaceInvitationNotifications = vi.fn();
   const adminMembershipDeleteWsEq = vi.fn(() => ({
     eq: adminMembershipDeleteUserEq,
   }));
@@ -160,6 +161,22 @@ const mocks = vi.hoisted(() => {
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
     sessionSupabase,
+    finalizeWorkspaceInvitationNotifications,
+  };
+});
+
+vi.mock('@/lib/workspace-invitation-notifications', () => ({
+  finalizeWorkspaceInvitationNotifications:
+    mocks.finalizeWorkspaceInvitationNotifications,
+}));
+
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return {
+    ...actual,
+    after: (callback: () => unknown) => {
+      void callback();
+    },
   };
 });
 
@@ -254,6 +271,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
+    mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
   });
 
   it('returns 404 when no invite and guest self-join disabled', async () => {
@@ -337,6 +355,13 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       }),
       expect.objectContaining({
         onConflict: 'platform_user_id,ws_id',
+      })
+    );
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'accepted',
+        userId: 'user-1',
+        workspaceId: NORMALIZED_WS_ID,
       })
     );
     expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
@@ -446,6 +471,78 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       'auth@example.com',
       'private@example.com',
     ]);
+  });
+
+  it('keeps a successful acceptance when notification finalization fails', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+    mocks.finalizeWorkspaceInvitationNotifications.mockRejectedValueOnce(
+      new Error('notification write failed')
+    );
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'success',
+    });
+  });
+
+  it('finalizes stale invitations for an existing member', async () => {
+    const { verifyWorkspaceMembershipType } = await import(
+      '@tuturuuu/utils/workspace-helper'
+    );
+    vi.mocked(verifyWorkspaceMembershipType).mockResolvedValueOnce({
+      membershipType: 'MEMBER',
+      ok: true,
+    });
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
+  });
+
+  it('finalizes invitations after a duplicate member insert', async () => {
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
+      error: null,
+    });
+    mocks.adminMembershipInsert.mockResolvedValueOnce({
+      error: { code: '23505', message: 'duplicate membership' },
+    });
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
   });
 
   it('assigns the validated POS operator role from an accepted invite', async () => {

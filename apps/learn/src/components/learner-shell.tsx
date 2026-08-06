@@ -16,10 +16,12 @@ import {
 export function LearnerShell({
   bootstrap,
   children,
+  notificationPopover,
   wsId,
 }: {
   bootstrap: TulearnBootstrapResponse;
   children: ReactNode;
+  notificationPopover: ReactNode;
   wsId: string;
 }) {
   const selectedStudentId = useSelectedStudentId();
@@ -30,6 +32,7 @@ export function LearnerShell({
       <main className="min-h-screen pb-28 md:pb-8 md:pl-32">
         <LearnerHeader
           bootstrap={bootstrap}
+          notificationPopover={notificationPopover}
           selectedStudentId={selectedStudentId}
           wsId={wsId}
         />

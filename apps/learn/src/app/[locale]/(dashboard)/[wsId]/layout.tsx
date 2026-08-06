@@ -2,6 +2,7 @@ import {
   getTulearnBootstrap,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
@@ -65,7 +66,11 @@ export default async function DashboardLayout({
   }
 
   return (
-    <LearnerShell bootstrap={bootstrap} wsId={wsId}>
+    <LearnerShell
+      bootstrap={bootstrap}
+      notificationPopover={<NotificationPopover />}
+      wsId={wsId}
+    >
       {children}
     </LearnerShell>
   );

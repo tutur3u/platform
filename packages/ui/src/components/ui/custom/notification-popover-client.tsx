@@ -22,6 +22,11 @@ import {
   X,
   XCircle,
 } from '@tuturuuu/icons';
+import { updateNotificationMetadata } from '@tuturuuu/internal-api';
+import {
+  acceptWorkspaceInvite,
+  declineWorkspaceInvite,
+} from '@tuturuuu/internal-api/workspaces';
 import { Button } from '@tuturuuu/ui/button';
 import {
   dedupeNotifications,
@@ -61,6 +66,11 @@ interface NotificationPopoverClientProps {
   archiveAllText?: string;
   emptyArchiveText?: string;
   loadingMoreText?: string;
+  retryText?: string;
+  acceptText?: string;
+  declineText?: string;
+  acceptedText?: string;
+  declinedText?: string;
   /** Base URL for external redirect (e.g. 'https://tuturuuu.com'). When set, "View All" links to {webAppUrl}/{wsId}/notifications. */
   webAppUrl?: string;
 }
@@ -93,6 +103,11 @@ export default function NotificationPopoverClient({
   archiveAllText = 'Archive all',
   emptyArchiveText = 'No archived notifications yet.',
   loadingMoreText = 'Loading more...',
+  retryText = 'Retry',
+  acceptText = 'Accept',
+  declineText = 'Decline',
+  acceptedText = 'Joined',
+  declinedText = 'Declined',
   webAppUrl,
 }: NotificationPopoverClientProps) {
   const [open, setOpen] = useState(false);
@@ -111,11 +126,13 @@ export default function NotificationPopoverClient({
 
   // Accurate unread count from dedicated endpoint
   const { data: unreadCount = 0 } = useUnreadCount(wsIdForFiltering, {
+    cacheScope: userId,
     enabled: Boolean(userId),
   });
 
   // Infinite scroll for inbox (unread) and archive (read)
   const inboxQuery = useInfiniteNotifications({
+    cacheScope: userId,
     wsId: wsIdForFiltering,
     unreadOnly: true,
     pageSize: 15,
@@ -123,6 +140,7 @@ export default function NotificationPopoverClient({
   });
 
   const archiveQuery = useInfiniteNotifications({
+    cacheScope: userId,
     wsId: wsIdForFiltering,
     readOnly: true,
     pageSize: 15,
@@ -176,7 +194,9 @@ export default function NotificationPopoverClient({
         <Button
           variant="ghost"
           size="icon"
-          className="group relative hidden flex-none transition-all md:flex"
+          aria-label={notificationsText}
+          title={notificationsText}
+          className="group relative flex size-10 flex-none transition-all"
         >
           <Bell className="h-6 w-6" />
           {unreadCount > 0 && (
@@ -261,6 +281,11 @@ export default function NotificationPopoverClient({
           noNotificationsText={noNotificationsText}
           emptyArchiveText={emptyArchiveText}
           loadingMoreText={loadingMoreText}
+          retryText={retryText}
+          acceptText={acceptText}
+          declineText={declineText}
+          acceptedText={acceptedText}
+          declinedText={declinedText}
           markAsReadText={markAsReadText}
           markAsUnreadText={markAsUnreadText}
           onMarkAsRead={handleMarkAsRead}
@@ -293,6 +318,11 @@ function NotificationList({
   noNotificationsText,
   emptyArchiveText,
   loadingMoreText,
+  retryText,
+  acceptText,
+  declineText,
+  acceptedText,
+  declinedText,
   markAsReadText,
   markAsUnreadText,
   onMarkAsRead,
@@ -307,6 +337,11 @@ function NotificationList({
   noNotificationsText: string;
   emptyArchiveText: string;
   loadingMoreText: string;
+  retryText: string;
+  acceptText: string;
+  declineText: string;
+  acceptedText: string;
+  declinedText: string;
   markAsReadText: string;
   markAsUnreadText: string;
   onMarkAsRead: (id: string, isUnread: boolean) => void;
@@ -357,6 +392,21 @@ function NotificationList({
         <p className="mt-1 text-foreground/40 text-xs">
           {query.error instanceof Error ? query.error.message : 'Unknown error'}
         </p>
+        <Button
+          className="mt-3"
+          disabled={query.isFetching}
+          onClick={() => query.refetch()}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {query.isFetching ? (
+            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+          )}
+          {retryText}
+        </Button>
       </div>
     );
   }
@@ -406,6 +456,10 @@ function NotificationList({
             markAsUnreadText={markAsUnreadText}
             queryClient={queryClient}
             onActionComplete={onActionComplete}
+            acceptText={acceptText}
+            declineText={declineText}
+            acceptedText={acceptedText}
+            declinedText={declinedText}
           />
         ))}
 
@@ -431,6 +485,10 @@ interface NotificationCardProps {
   markAsUnreadText: string;
   queryClient: any;
   onActionComplete?: () => void;
+  acceptText: string;
+  declineText: string;
+  acceptedText: string;
+  declinedText: string;
 }
 
 function getWorkspaceInviteWorkspaceId(notification: Notification) {
@@ -456,6 +514,10 @@ function NotificationCard({
   markAsUnreadText,
   queryClient,
   onActionComplete,
+  acceptText,
+  declineText,
+  acceptedText,
+  declinedText,
 }: NotificationCardProps) {
   const isUnread = !notification.read_at;
   const [processingAction, setProcessingAction] = useState<string | null>(null);
@@ -477,58 +539,34 @@ function NotificationCard({
             break;
           }
 
-          const url = `/api/workspaces/${targetWsId}/${
-            accept ? 'accept-invite' : 'decline-invite'
-          }`;
+          await (accept
+            ? acceptWorkspaceInvite(targetWsId)
+            : declineWorkspaceInvite(targetWsId));
+          await updateNotificationMetadata(notification.id, {
+            action_taken: accept ? 'accepted' : 'declined',
+            action_timestamp: new Date().toISOString(),
+          });
 
-          const res = await fetch(url, { method: 'POST' });
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey: ['workspaces'],
+              refetchType: 'active',
+            }),
+            queryClient.invalidateQueries({
+              queryKey: ['notifications'],
+              refetchType: 'active',
+            }),
+            queryClient.refetchQueries({
+              queryKey: ['notifications'],
+              type: 'active',
+            }),
+          ]);
 
-          if (res.ok) {
-            const updateRes = await fetch(
-              `/api/v1/notifications/${notification.id}/metadata`,
-              {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action_taken: accept ? 'accepted' : 'declined',
-                  action_timestamp: new Date().toISOString(),
-                }),
-              }
-            );
+          toast.success(accept ? acceptedText : declinedText);
 
-            if (updateRes.ok) {
-              await Promise.all([
-                queryClient.invalidateQueries({
-                  queryKey: ['workspaces'],
-                  refetchType: 'active',
-                }),
-                queryClient.invalidateQueries({
-                  queryKey: ['notifications'],
-                  refetchType: 'active',
-                }),
-                queryClient.refetchQueries({
-                  queryKey: ['notifications'],
-                  type: 'active',
-                }),
-              ]);
-
-              toast.success(
-                accept
-                  ? 'Workspace invite accepted'
-                  : 'Workspace invite declined'
-              );
-
-              onMarkAsRead(notification.id, true);
-              router.refresh();
-              onActionComplete?.();
-            } else {
-              toast.error('Failed to update notification');
-            }
-          } else {
-            const errorData = await res.json();
-            console.error('Failed to process invite:', errorData);
-            toast.error(errorData.error || 'Failed to process invite');
-          }
+          onMarkAsRead(notification.id, true);
+          router.refresh();
+          onActionComplete?.();
           break;
         }
         default:
@@ -597,13 +635,15 @@ function NotificationCard({
               {notification.data.action_taken === 'accepted' ? (
                 <>
                   <CheckCircle2 className="h-3 w-3 text-dynamic-green" />
-                  <span className="font-medium text-dynamic-green">Joined</span>
+                  <span className="font-medium text-dynamic-green">
+                    {acceptedText}
+                  </span>
                 </>
               ) : (
                 <>
                   <XCircle className="h-3 w-3 text-foreground/40" />
                   <span className="font-medium text-foreground/60">
-                    Declined
+                    {declinedText}
                   </span>
                 </>
               )}
@@ -627,7 +667,7 @@ function NotificationCard({
                 ) : (
                   <X className="h-3 w-3" />
                 )}
-                Decline
+                {declineText}
               </Button>
               <Button
                 size="sm"
@@ -644,7 +684,7 @@ function NotificationCard({
                 ) : (
                   <Check className="h-3 w-3" />
                 )}
-                Accept
+                {acceptText}
               </Button>
             </div>
           ) : isTaskEntityNotification ? (

@@ -3,11 +3,13 @@ import type {
   TeachBootstrapResponse,
   TulearnWorkspaceSummary,
 } from '@tuturuuu/internal-api';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Link } from '@/i18n/navigation';
 import { TeachThemeControl } from './teach-theme-control';
 import { TeachWorkspaceNav } from './teach-workspace-nav';
+import { TeachWorkspaceSelect } from './teach-workspace-select';
 
 export async function TeachWorkspaceShell({
   bootstrap,
@@ -40,23 +42,14 @@ export async function TeachWorkspaceShell({
               </span>
             </Link>
             <div className="ml-auto flex min-w-0 items-center gap-2">
-              <details className="relative hidden md:block">
-                <summary className="flex h-9 max-w-44 cursor-pointer list-none items-center truncate border-2 border-border bg-card px-2 font-black text-xs shadow-[2px_2px_0_var(--border)] transition-transform active:translate-x-0.5 active:translate-y-0.5 active:shadow-none">
-                  {workspace.name ?? t('workspaceFallback')}
-                </summary>
-                <div className="absolute right-0 mt-2 grid w-56 gap-1 border-2 border-border bg-background p-2 shadow-[5px_5px_0_var(--border)]">
-                  {bootstrap.workspaces.map((candidate) => (
-                    <Link
-                      aria-current={candidate.id === wsId ? 'page' : undefined}
-                      className="truncate border-2 border-transparent px-2 py-2 font-bold text-xs transition-colors hover:border-border hover:bg-muted aria-[current=page]:border-border aria-[current=page]:bg-dynamic-cyan/15"
-                      href={`/${candidate.id}`}
-                      key={candidate.id}
-                    >
-                      {candidate.name ?? t('workspaceFallback')}
-                    </Link>
-                  ))}
-                </div>
-              </details>
+              <div className="min-w-0 max-w-44">
+                <TeachWorkspaceSelect
+                  cacheScope={bootstrap.profile.id}
+                  workspaces={bootstrap.workspaces}
+                  wsId={wsId}
+                />
+              </div>
+              <NotificationPopover />
               <TeachThemeControl compact />
               <a
                 className="inline-flex h-9 items-center justify-center border-2 border-border bg-card px-2 shadow-[2px_2px_0_var(--border)] transition-transform active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"

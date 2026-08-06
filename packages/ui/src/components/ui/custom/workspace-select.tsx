@@ -27,7 +27,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { workspaceHandleSchema } from '@tuturuuu/utils/workspace-handle';
 import { WORKSPACE_LIMIT_ERROR_CODE } from '@tuturuuu/utils/workspace-limits';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -37,7 +36,6 @@ import { z } from 'zod';
 import { useForm } from '../../../hooks/use-form';
 import { useWorkspaceUser } from '../../../hooks/use-workspace-user';
 import { zodResolver } from '../../../resolvers';
-import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import {
@@ -74,6 +72,11 @@ import {
   normalizeWorkspaceSwitchPath,
   resolveWorkspaceAvatarUrl,
 } from './workspace-select-helpers';
+import { WorkspaceIcon } from './workspace-select-icon';
+import {
+  useWorkspaceInvitations,
+  WorkspaceInvitationItems,
+} from './workspace-select-invitations';
 import { useOpenWorkspaceSelectWhenRevealed } from './workspace-select-reveal';
 
 const FormSchema = z.object({
@@ -83,59 +86,6 @@ const FormSchema = z.object({
 const JoinWorkspaceByHandleFormSchema = z.object({
   handle: workspaceHandleSchema,
 });
-
-function WorkspaceIcon({
-  name,
-  avatarUrl,
-  className,
-  fallbackLogoUrl = TUTURUUU_LOGO_URL,
-}: {
-  name?: string | null;
-  avatarUrl?: string | null;
-  className?: string;
-  fallbackLogoUrl?: string;
-}) {
-  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(avatarUrl);
-  const shouldSkipFallbackOptimization = /^https?:\/\//u.test(fallbackLogoUrl);
-
-  return (
-    <Avatar
-      className={cn(
-        'h-5 max-h-5 min-h-5 w-5 min-w-5 max-w-5 flex-none overflow-hidden',
-        resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm',
-        className
-      )}
-    >
-      <AvatarImage
-        src={
-          resolvedAvatarUrl ||
-          (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
-        }
-        alt={name || 'Workspace'}
-        className={cn(
-          'h-full w-full object-cover',
-          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
-        )}
-      />
-      <AvatarFallback
-        className={cn(
-          'h-full w-full text-xs',
-          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
-        )}
-      >
-        <Image
-          alt=""
-          aria-hidden="true"
-          className="h-full w-full object-cover"
-          height={20}
-          src={fallbackLogoUrl}
-          unoptimized={shouldSkipFallbackOptimization}
-          width={20}
-        />
-      </AvatarFallback>
-    </Avatar>
-  );
-}
 
 export function WorkspaceSelect({
   wsId,
@@ -152,6 +102,7 @@ export function WorkspaceSelect({
   triggerClassName,
   popoverModal = false,
   platformWorkspaceSetupUrl,
+  cacheScope,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -172,6 +123,8 @@ export function WorkspaceSelect({
   popoverModal?: boolean;
   /** Platform origin used to prepare a newly created satellite workspace. */
   platformWorkspaceSetupUrl?: string;
+  /** Authenticated identity used to isolate user-specific picker caches. */
+  cacheScope?: string;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -184,7 +137,7 @@ export function WorkspaceSelect({
       ? resolveWorkspaceId(wsId)
       : undefined;
   const { data: listedWorkspaces } = useQuery({
-    queryKey: ['workspaces'],
+    queryKey: ['workspaces', ...(cacheScope ? [cacheScope] : [])],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,
   });
@@ -195,7 +148,11 @@ export function WorkspaceSelect({
       )
   );
   const { data: currentWorkspaceFallback } = useQuery({
-    queryKey: ['workspace-select-current-workspace', resolvedWorkspaceId],
+    queryKey: [
+      'workspace-select-current-workspace',
+      resolvedWorkspaceId,
+      ...(cacheScope ? [cacheScope] : []),
+    ],
     queryFn: async () =>
       (await getWorkspace(resolvedWorkspaceId!)) as InternalApiWorkspaceSummary,
     enabled: Boolean(resolvedWorkspaceId && !hasListedCurrentWorkspace),
@@ -206,7 +163,6 @@ export function WorkspaceSelect({
     currentWorkspaceFallback
   );
   const { data: currentUser } = useWorkspaceUser();
-
   const defaultWorkspaceId = currentUser?.default_workspace_id || null;
 
   const form = useForm({
@@ -228,6 +184,18 @@ export function WorkspaceSelect({
 
   const [loading, setLoading] = useState(false);
   const [joiningByHandle, setJoiningByHandle] = useState(false);
+  const invitationController = useWorkspaceInvitations({
+    cacheScope,
+    enabled: Boolean(wsId),
+    onAccepted: (invitation) => {
+      setOpen(false);
+      const slug = invitation.workspace.handle || invitation.workspace.id;
+      router.push(getWorkspaceLandingPath(slug));
+      router.refresh();
+    },
+    onDeclined: () => router.refresh(),
+  });
+  const invitations = invitationController.invitations;
 
   const updateDefaultWorkspaceMutation = useMutation({
     mutationFn: (workspaceId: string) =>
@@ -257,7 +225,7 @@ export function WorkspaceSelect({
     },
   });
 
-  const getWorkspaceLandingPath = (nextSlug: string) => {
+  function getWorkspaceLandingPath(nextSlug: string) {
     if (resolveNextPathname) {
       return resolveNextPathname({
         currentPathname: pathname || `/${wsId}`,
@@ -268,7 +236,7 @@ export function WorkspaceSelect({
     return customRedirectSuffix
       ? `/${nextSlug}/${customRedirectSuffix}`
       : `/${nextSlug}`;
-  };
+  }
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     if (disableCreateNewWorkspace) return;
@@ -450,7 +418,8 @@ export function WorkspaceSelect({
     }
   };
 
-  const hasSelectableWorkspaces = workspaces.length > 0;
+  const hasSelectableWorkspaces =
+    workspaces.length > 0 || invitations.length > 0;
   useOpenWorkspaceSelectWhenRevealed(hasSelectableWorkspaces, setOpen);
 
   const workspace =
@@ -616,6 +585,15 @@ export function WorkspaceSelect({
                   </Badge>
                 )}
               </div>
+              {invitations.length > 0 && (
+                <Badge
+                  aria-label={`${invitations.length} ${t('workspace-invitation.list-eyebrow')}`}
+                  className="h-5 min-w-5 justify-center px-1 text-[10px]"
+                  variant="destructive"
+                >
+                  {invitations.length > 99 ? '99+' : invitations.length}
+                </Badge>
+              )}
               {hideLeading || (
                 <ChevronDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
               )}
@@ -626,6 +604,10 @@ export function WorkspaceSelect({
               <CommandInput autoFocus placeholder="Search workspace..." />
               <CommandEmpty>No workspace found.</CommandEmpty>
               <CommandList className="max-h-64">
+                <WorkspaceInvitationItems
+                  controller={invitationController}
+                  fallbackLogoUrl={fallbackLogoUrl}
+                />
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map(
