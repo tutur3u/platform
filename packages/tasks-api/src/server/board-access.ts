@@ -495,10 +495,17 @@ export async function resolveTaskBoardAccess({
   });
   if ('error' in context) return context;
 
+  // Look membership up with the admin client, not the caller's session client.
+  // withSessionAuth has already authenticated this user id; the session client
+  // is RLS-bound and in a satellite app carries no Supabase auth context, so
+  // workspace_members comes back empty and a workspace creator reads as
+  // `membership_missing`. Production proved it: this check reported
+  // membership_missing for the same user the admin-side RPC reports as
+  // is_creator with type MEMBER.
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: context.wsId,
     userId: user.id,
-    supabase,
+    supabase: sbAdmin,
   });
 
   if (memberCheck.error === 'membership_lookup_failed') {
