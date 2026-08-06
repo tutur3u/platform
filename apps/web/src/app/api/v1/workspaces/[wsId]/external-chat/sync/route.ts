@@ -20,6 +20,7 @@ const actionSchema = z.object({
   runId: z.string().uuid().optional(),
   stream: z.string().min(1).max(80).optional(),
 });
+const syncControlTimeoutMs = 60_000;
 
 export const GET = withSessionAuth<Params>(
   async (_request, auth, params) => {
@@ -144,7 +145,8 @@ export const POST = withSessionAuth<Params>(
           ...(parsed.data.agentId ? { agentId: parsed.data.agentId } : {}),
           runId,
           stream: parsed.data.stream ?? 'canonical',
-        }
+        },
+        { timeoutMs: syncControlTimeoutMs }
       );
       const remoteRun = readRemoteRun(remote, runId);
       const update = buildRunUpdate(

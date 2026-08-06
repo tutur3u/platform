@@ -263,7 +263,8 @@ describe('external chat sync status', () => {
     expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
       'workspace-1',
       '/control/v1/sync/audit',
-      { runId: localRun.id, stream: 'canonical' }
+      { runId: localRun.id, stream: 'canonical' },
+      { timeoutMs: 60_000 }
     );
     expect(mocks.transitionRun).toHaveBeenCalledWith(
       'external_chat_transition_sync_run',
@@ -300,7 +301,8 @@ describe('external chat sync status', () => {
     expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
       'workspace-1',
       '/control/v1/sync/start',
-      { agentId: '7', runId: localRun.id, stream: 'canonical' }
+      { agentId: '7', runId: localRun.id, stream: 'canonical' },
+      { timeoutMs: 60_000 }
     );
   });
 
@@ -344,7 +346,8 @@ describe('external chat sync status', () => {
     expect(mocks.requestExternalChatControl).toHaveBeenCalledWith(
       'workspace-1',
       '/control/v1/sync/start',
-      { agentId, runId: localRun.id, stream: 'canonical' }
+      { agentId, runId: localRun.id, stream: 'canonical' },
+      { timeoutMs: 60_000 }
     );
   });
 

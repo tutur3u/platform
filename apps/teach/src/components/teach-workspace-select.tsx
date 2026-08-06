@@ -5,14 +5,17 @@ import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 
 export function TeachWorkspaceSelect({
+  cacheScope,
   workspaces,
   wsId,
 }: {
+  cacheScope: string;
   workspaces: TulearnWorkspaceSummary[];
   wsId: string;
 }) {
   return (
     <WorkspaceSelect
+      cacheScope={cacheScope}
       disableCreateNewWorkspace
       fetchWorkspaces={async () =>
         workspaces.map(

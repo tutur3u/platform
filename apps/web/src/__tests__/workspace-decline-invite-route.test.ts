@@ -72,6 +72,16 @@ vi.mock('@/lib/workspace-invitation-notifications', () => ({
     mocks.finalizeWorkspaceInvitationNotifications,
 }));
 
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return {
+    ...actual,
+    after: (callback: () => unknown) => {
+      void callback();
+    },
+  };
+});
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
@@ -138,6 +148,24 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
         workspaceId: NORMALIZED_WS_ID,
       })
     );
+  });
+
+  it('keeps a successful decline when notification finalization fails', async () => {
+    mocks.finalizeWorkspaceInvitationNotifications.mockRejectedValueOnce(
+      new Error('notification write failed')
+    );
+
+    const { POST } = await import(
+      '@/legacy-api-routes/workspaces/[wsId]/decline-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Invites declined successfully',
+    });
   });
 
   it('declines UUID invite paths without workspace RLS normalization', async () => {

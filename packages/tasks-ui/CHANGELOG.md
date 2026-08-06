@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.9.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.8.0...tasks-ui-v0.9.0) (2026-08-06)
+
+
+### Features
+
+* **tasks:** add task list settings shortcuts ([50031da](https://github.com/tutur3u/platform/commit/50031dac99961f35ab88aa6b286c4f11d23df7cc))
+* **tasks:** add task list settings shortcuts ([#5103](https://github.com/tutur3u/platform/issues/5103)) ([9de306c](https://github.com/tutur3u/platform/commit/9de306c6e95c6dc0c7c71d058f5841c759bd91ff))
+
+## [0.8.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.7.0...tasks-ui-v0.8.0) (2026-08-06)
+
+
+### Features
+
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
+
+### Bug Fixes
+
+* **tasks:** isolate board member query cache ([31760be](https://github.com/tutur3u/platform/commit/31760be3d857cd4b55ee9ed89e18e8fa13f8e940))
+* **tasks:** isolate board member query cache ([#5096](https://github.com/tutur3u/platform/issues/5096)) ([687c402](https://github.com/tutur3u/platform/commit/687c402901e771872f0dbec8302c924f5b80b800))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.6.0...tasks-ui-v0.7.0) (2026-08-04)
 
 

@@ -242,6 +242,29 @@ jobs:
             exit 0
           fi
 
+          # Deleting a branch that is already gone is success, not failure.
+          # Pushing production closes the release PR, and GitHub deletes the
+          # head branch itself moments later — after the fetch below and
+          # sometimes mid-step, so no amount of re-checking first removes the
+          # race. Only a delete that failed while the branch is still on origin
+          # is a real error.
+          delete_remote_branch() {
+            local target="$1"
+
+            if git push origin --delete "${target}" 2>&1; then
+              echo "Deleted origin/${target}."
+              return 0
+            fi
+
+            if git ls-remote --exit-code --heads origin "${target}" >/dev/null 2>&1; then
+              echo "::error::Could not delete origin/${target}; it is still on origin."
+              return 1
+            fi
+
+            echo "origin/${target} was already deleted, most likely by the merged pull request."
+            return 0
+          }
+
           git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
 
           if ! git show-ref --verify --quiet "refs/remotes/origin/${branch}"; then
@@ -251,8 +274,7 @@ jobs:
             echo "::warning::origin/${branch} is not merged into main; leaving it in place."
             exit 0
           else
-            echo "Deleting origin/${branch}."
-            git push origin --delete "${branch}"
+            delete_remote_branch "${branch}"
           fi
 
           # The overflow notes branch is metadata for that same release and is
@@ -280,8 +302,7 @@ jobs:
             exit 0
           fi
 
-          echo "Deleting origin/${notes}."
-          git push origin --delete "${notes}"
+          delete_remote_branch "${notes}"
 
       - name: Write run summary
         if: always()

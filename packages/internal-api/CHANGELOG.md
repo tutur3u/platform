@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/internal-api-v0.28.0...internal-api-v0.28.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
+## [0.28.0](https://github.com/tutur3u/platform/compare/internal-api-v0.27.0...internal-api-v0.28.0) (2026-08-06)
+
+
+### Features
+
+* **ai:** let external apps authenticate background workloads with a bound API key ([#5091](https://github.com/tutur3u/platform/issues/5091)) ([0626284](https://github.com/tutur3u/platform/commit/062628483edc2e2d1a691a75bfb5ebf3935ca831))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete external replica pairing ([#5098](https://github.com/tutur3u/platform/issues/5098)) ([05f0425](https://github.com/tutur3u/platform/commit/05f04250bd3d96e1b7a44d309c7400c47beb9b20))
+* **chat:** configure modern replica destination ([857d2a9](https://github.com/tutur3u/platform/commit/857d2a940427784fb18698546d94ed28b3058a25))
+* **chat:** support bounded agent sync runs ([e9c66b5](https://github.com/tutur3u/platform/commit/e9c66b500193d71d03a053922276715b31422ddc))
+* **tasks:** add board access and capacity controls ([87456b0](https://github.com/tutur3u/platform/commit/87456b07c3ab1481caf143d88f03e79afa161e4b))
+* **tasks:** add board access and capacity controls ([#5094](https://github.com/tutur3u/platform/issues/5094)) ([d9e41ee](https://github.com/tutur3u/platform/commit/d9e41ee3a8dad0410648dc5544277147d23f9d73))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/internal-api-v0.26.0...internal-api-v0.27.0) (2026-08-04)
 
 

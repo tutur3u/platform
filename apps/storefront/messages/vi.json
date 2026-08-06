@@ -1,4 +1,8 @@
 {
+  "workspace-invitation": {
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc"
+  },
   "account_switcher": {
     "accounts": "Tài khoản",
     "current_account": "Tài khoản hiện tại",
