@@ -134,6 +134,35 @@ describe('chat utils', () => {
     expect(title).toBe('Ada Lovelace');
   });
 
+  it('gives unnamed external conversations a stable pseudonymous title', () => {
+    const title = getConversationTitle(
+      conversation({
+        id: 'a7d12840-f72d-48f2-8057-a1ea15aecd29',
+        metadata: { externalChat: true },
+        title: 'External visitor',
+        type: 'channel',
+      }),
+      'user-1',
+      { external: 'Website visitor' }
+    );
+
+    expect(title).toBe('Website visitor #AECD29');
+  });
+
+  it('prefers an external profile name over a persisted generic title', () => {
+    const title = getConversationTitle(
+      conversation({
+        metadata: { displayName: 'Visitor 42', externalChat: true },
+        title: 'External visitor',
+        type: 'channel',
+      }),
+      'user-1',
+      { external: 'Website visitor' }
+    );
+
+    expect(title).toBe('Visitor 42');
+  });
+
   it('builds useful message previews for files and deleted messages', () => {
     expect(
       getLastMessagePreview(
@@ -169,6 +198,21 @@ describe('chat utils', () => {
         { messageDeleted: 'message_deleted' }
       )
     ).toBe('message_deleted');
+  });
+
+  it('decodes external message previews without changing native previews', () => {
+    const encoded = 'T&ocirc;i &#273;&atilde; g&#7917;i tin';
+
+    expect(
+      getLastMessagePreview({
+        ...baseMessage,
+        content: encoded,
+        metadata: { externalChat: true },
+      })
+    ).toBe('Tôi đã gửi tin');
+    expect(getLastMessagePreview({ ...baseMessage, content: encoded })).toBe(
+      encoded
+    );
   });
 
   it('formats file sizes for attachment rows', () => {
@@ -380,6 +424,21 @@ describe('chat utils', () => {
       preview: 'Need help with this page',
       timestamp: '2026-08-05T07:15:00.000Z',
     });
+  });
+
+  it('decodes connected-site queue previews using conversation scope', () => {
+    const details = getChatConversationQueueDetails(
+      conversation({
+        latestMessage: {
+          ...baseMessage,
+          content: 'T&ocirc;i &#273;&atilde; g&#7917;i tin',
+          metadata: { status: 'seen' },
+        },
+        metadata: { externalChat: true },
+      })
+    );
+
+    expect(details.preview).toBe('Tôi đã gửi tin');
   });
 
   it('normalizes connected-site delivery and deletion states', () => {

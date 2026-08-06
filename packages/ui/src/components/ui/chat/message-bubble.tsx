@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { toast } from '../sonner';
 import { AiMessageParts } from './ai-message-parts';
 import { getAiMessagePartsFromMetadata } from './ai-message-render-utils';
+import { getChatMessageDisplayContent } from './external-message-content';
 import { MessageAttachmentButton } from './message-attachment-button';
 import { MessageLinkPreviews, MessageText } from './message-links';
 import {
@@ -259,6 +260,7 @@ function MessageContent({
   const t = useTranslations('chat');
   const aiParts = getAiMessagePartsFromMetadata(message.metadata);
   const externalAttachment = readExternalAttachment(message.metadata);
+  const displayContent = getChatMessageDisplayContent(message);
 
   return (
     <div
@@ -284,10 +286,10 @@ function MessageContent({
                   textFallback={message.content}
                 />
               ) : (
-                <MessageText content={message.content} />
+                <MessageText content={displayContent} />
               )}
               <MessageLinkPreviews
-                content={message.content}
+                content={displayContent}
                 conversationId={message.conversationId}
                 isOwnMessage={isOwnMessage}
                 wsId={wsId}
