@@ -81,6 +81,110 @@ describe('external chat historical batch', () => {
     });
   });
 
+  it('imports independent visitor lanes concurrently within a bounded limit', async () => {
+    let active = 0;
+    let maxActive = 0;
+    processEvent.mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return { duplicate: false };
+    });
+    const events = Array.from({ length: 20 }, (_, index) => ({
+      ...event,
+      eventId: `message:${index}`,
+      messageId: String(index),
+      visitorId: String(index),
+    }));
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/events/batch', {
+        body: JSON.stringify({ events }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(processEvent).toHaveBeenCalledTimes(20);
+    expect(maxActive).toBeGreaterThan(1);
+    expect(maxActive).toBeLessThanOrEqual(8);
+  });
+
+  it('preserves source order within each visitor lane', async () => {
+    const completed: string[] = [];
+    processEvent.mockImplementation(async (input) => {
+      if (input.kind === 'message')
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      completed.push(input.eventId);
+      return { duplicate: false };
+    });
+    const stateEvent = {
+      ...event,
+      content: undefined,
+      contentType: undefined,
+      eventId: 'state:10:seen',
+      kind: 'message_state',
+      status: 'seen',
+    };
+    const otherVisitorEvent = {
+      ...event,
+      eventId: 'message:11',
+      messageId: '11',
+      visitorId: '21',
+    };
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/events/batch', {
+        body: JSON.stringify({
+          events: [event, stateEvent, otherVisitorEvent],
+        }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(completed.indexOf(event.eventId)).toBeLessThan(
+      completed.indexOf(stateEvent.eventId)
+    );
+  });
+
+  it('does not merge visitor lanes when opaque identifiers contain colons', async () => {
+    let active = 0;
+    let maxActive = 0;
+    processEvent.mockImplementation(async () => {
+      active += 1;
+      maxActive = Math.max(maxActive, active);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      active -= 1;
+      return { duplicate: false };
+    });
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request('http://localhost/events/batch', {
+        body: JSON.stringify({
+          events: [
+            { ...event, agentId: 'a:b', visitorId: 'c' },
+            {
+              ...event,
+              agentId: 'a',
+              eventId: 'message:11',
+              messageId: '11',
+              visitorId: 'b:c',
+            },
+          ],
+        }),
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(maxActive).toBe(2);
+  });
+
   it('rejects unauthenticated batches', async () => {
     authenticate.mockResolvedValueOnce(null);
     const { POST } = await import('./route');

@@ -1,10 +1,13 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { Effect, forEachConcurrently } from '@tuturuuu/utils/effect';
 import { NextResponse } from 'next/server';
 import { processExternalChatEnvelope } from '@/lib/external-chat/ingest';
 import { authenticateExternalChatIngest } from '@/lib/external-chat/ingest-auth';
 import { externalChatBatchSchema } from '@/lib/external-chat/schemas';
 import { digestExternalChatBatch } from '@/lib/external-chat/source-events';
 import { safeParseBody } from '@/lib/safe-parse-body';
+
+const HISTORICAL_BATCH_CONCURRENCY = 8;
 
 export async function POST(request: Request) {
   const authentication = await authenticateExternalChatIngest(request);
@@ -32,29 +35,72 @@ export async function POST(request: Request) {
   };
   const results = [];
   const failures: Array<{ code: string; eventId: string }> = [];
-  for (const event of parsed.data.events) {
-    try {
-      const result = await processExternalChatEnvelope(event, context);
-      if (result.conflict) {
-        failures.push({
-          code: 'external_chat_event_payload_mismatch',
-          eventId: event.eventId,
-        });
-      } else if (result.deferred) {
-        failures.push({
-          code: 'external_chat_event_deferred',
-          eventId: event.eventId,
-        });
-      } else {
-        results.push(result);
+  type HistoricalEvent = (typeof parsed.data.events)[number];
+  type HistoricalOutcome = {
+    event: HistoricalEvent;
+    index: number;
+  } & (
+    | {
+        ok: true;
+        result: Awaited<ReturnType<typeof processExternalChatEnvelope>>;
       }
-    } catch (error) {
-      console.error('External chat historical event import failed', {
-        error,
-        eventId: event.eventId,
-        wsId,
+    | { ok: false }
+  );
+  const lanes = new Map<
+    string,
+    Array<{ event: HistoricalEvent; index: number }>
+  >();
+  parsed.data.events.forEach((event, index) => {
+    const laneKey = JSON.stringify([event.agentId, event.visitorId]);
+    const lane = lanes.get(laneKey) ?? [];
+    lane.push({ event, index });
+    lanes.set(laneKey, lane);
+  });
+  const laneOutcomes = await Effect.runPromise(
+    forEachConcurrently(
+      lanes.values(),
+      (lane) =>
+        Effect.promise(async () => {
+          const outcomes: HistoricalOutcome[] = [];
+          for (const item of lane) {
+            try {
+              outcomes.push({
+                ...item,
+                ok: true,
+                result: await processExternalChatEnvelope(item.event, context),
+              });
+            } catch (error) {
+              console.error('External chat historical event import failed', {
+                error,
+                eventId: item.event.eventId,
+                wsId,
+              });
+              outcomes.push({ ...item, ok: false });
+            }
+          }
+          return outcomes;
+        }),
+      { concurrency: HISTORICAL_BATCH_CONCURRENCY }
+    )
+  );
+  for (const outcome of laneOutcomes.flat().sort((a, b) => a.index - b.index)) {
+    if (!outcome.ok) {
+      failures.push({
+        code: 'event_import_failed',
+        eventId: outcome.event.eventId,
       });
-      failures.push({ code: 'event_import_failed', eventId: event.eventId });
+    } else if (outcome.result.conflict) {
+      failures.push({
+        code: 'external_chat_event_payload_mismatch',
+        eventId: outcome.event.eventId,
+      });
+    } else if (outcome.result.deferred) {
+      failures.push({
+        code: 'external_chat_event_deferred',
+        eventId: outcome.event.eventId,
+      });
+    } else {
+      results.push(outcome.result);
     }
   }
 
