@@ -45,7 +45,8 @@ describe('notification and invitation shell coverage', () => {
     expect(picker).toContain('listWorkspaceInvitations');
     expect(picker).toContain("action: 'accept'");
     expect(picker).toContain("action: 'decline'");
-    expect(picker).toContain("queryKey: ['workspace-invitations']");
+    expect(picker).toContain("'workspace-invitations',");
+    expect(picker).toContain('...(cacheScope ? [cacheScope] : [])');
     expect(picker).toContain('event.stopPropagation()');
   });
 
@@ -59,11 +60,22 @@ describe('notification and invitation shell coverage', () => {
   });
 
   it('uses the shared invitation-aware picker in Learn and Teach', () => {
-    expect(
-      source('apps/learn/src/components/learner-shell-parts.tsx')
-    ).toContain('WorkspaceSelect as SharedWorkspaceSelect');
-    expect(
-      source('apps/teach/src/components/teach-workspace-select.tsx')
-    ).toContain("from '@tuturuuu/ui/custom/workspace-select'");
+    const learn = source('apps/learn/src/components/learner-shell-parts.tsx');
+    const teach = source(
+      'apps/teach/src/components/teach-workspace-select.tsx'
+    );
+
+    expect(learn).toContain('WorkspaceSelect as SharedWorkspaceSelect');
+    expect(learn).toContain('cacheScope={bootstrap.profile.id}');
+    expect(teach).toContain("from '@tuturuuu/ui/custom/workspace-select'");
+    expect(teach).toContain('cacheScope={cacheScope}');
+  });
+
+  it('reuses the resolved Storefront identity instead of repeating session auth', () => {
+    const storefront = source(
+      'apps/storefront/src/app/[locale]/storefront-header-actions.tsx'
+    );
+
+    expect(storefront).toContain('<NotificationPopover userId={user.id} />');
   });
 });

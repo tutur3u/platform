@@ -75,7 +75,7 @@ export async function StorefrontHeaderActions({
             </Link>
           </Button>
         ) : null}
-        <NotificationPopover />
+        <NotificationPopover userId={user.id} />
         <UserNav hideMetadata />
       </div>
     );

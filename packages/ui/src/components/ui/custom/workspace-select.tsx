@@ -158,6 +158,7 @@ export function WorkspaceSelect({
   triggerClassName,
   popoverModal = false,
   platformWorkspaceSetupUrl,
+  cacheScope,
 }: {
   wsId: string;
   hideLeading?: boolean;
@@ -178,6 +179,8 @@ export function WorkspaceSelect({
   popoverModal?: boolean;
   /** Platform origin used to prepare a newly created satellite workspace. */
   platformWorkspaceSetupUrl?: string;
+  /** Authenticated identity used to isolate user-specific picker caches. */
+  cacheScope?: string;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -190,7 +193,7 @@ export function WorkspaceSelect({
       ? resolveWorkspaceId(wsId)
       : undefined;
   const { data: listedWorkspaces } = useQuery({
-    queryKey: ['workspaces'],
+    queryKey: ['workspaces', ...(cacheScope ? [cacheScope] : [])],
     queryFn: fetchWorkspaces,
     enabled: !!wsId,
   });
@@ -201,7 +204,11 @@ export function WorkspaceSelect({
       )
   );
   const { data: currentWorkspaceFallback } = useQuery({
-    queryKey: ['workspace-select-current-workspace', resolvedWorkspaceId],
+    queryKey: [
+      'workspace-select-current-workspace',
+      resolvedWorkspaceId,
+      ...(cacheScope ? [cacheScope] : []),
+    ],
     queryFn: async () =>
       (await getWorkspace(resolvedWorkspaceId!)) as InternalApiWorkspaceSummary,
     enabled: Boolean(resolvedWorkspaceId && !hasListedCurrentWorkspace),
@@ -213,7 +220,7 @@ export function WorkspaceSelect({
   );
   const { data: currentUser } = useWorkspaceUser();
   const invitationsQuery = useQuery({
-    queryKey: ['workspace-invitations'],
+    queryKey: ['workspace-invitations', ...(cacheScope ? [cacheScope] : [])],
     queryFn: async () => (await listWorkspaceInvitations()).invitations,
     retry: 1,
   });

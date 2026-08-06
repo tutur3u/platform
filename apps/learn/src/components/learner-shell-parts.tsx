@@ -202,6 +202,7 @@ function WorkspaceSelect({
 }) {
   return (
     <SharedWorkspaceSelect
+      cacheScope={bootstrap.profile.id}
       disableCreateNewWorkspace
       fetchWorkspaces={async () =>
         bootstrap.workspaces.map(

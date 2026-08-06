@@ -13,13 +13,17 @@ function getTtrUrl(): string {
   );
 }
 
-export default async function NotificationPopover() {
+export default async function NotificationPopover({
+  userId,
+}: {
+  userId?: string;
+} = {}) {
   const t = await getTranslations('notifications');
-  const appSession = await getSatelliteAppSession();
+  const resolvedUserId = userId ?? (await getSatelliteAppSession())?.sub;
 
   return (
     <NotificationPopoverClient
-      userId={appSession?.sub}
+      userId={resolvedUserId}
       noNotificationsText={t('no-notifications')}
       notificationsText={t('notifications')}
       viewAllText={t('view-all')}

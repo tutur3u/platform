@@ -44,6 +44,7 @@ export async function TeachWorkspaceShell({
             <div className="ml-auto flex min-w-0 items-center gap-2">
               <div className="min-w-0 max-w-44">
                 <TeachWorkspaceSelect
+                  cacheScope={bootstrap.profile.id}
                   workspaces={bootstrap.workspaces}
                   wsId={wsId}
                 />
