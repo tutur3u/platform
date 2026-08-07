@@ -220,7 +220,7 @@ export function getChatMessageSenderLabel(
     const displayName =
       readNonEmptyString(externalSender.displayName) ??
       readNonEmptyString(externalSender.name);
-    if (displayName) return displayName;
+    if (displayName) return decodeExternalChatContent(displayName, true);
   }
 
   return message.metadata?.externalChat === true
@@ -252,11 +252,11 @@ export function getConversationTitle(
     const profileTitle =
       readNonEmptyString(conversation.metadata.displayName) ??
       readNonEmptyString(conversation.metadata.name);
-    if (profileTitle) return profileTitle;
+    if (profileTitle) return decodeExternalChatContent(profileTitle, true);
 
     const persistedTitle = readNonEmptyString(conversation.title);
     if (persistedTitle && !isGenericExternalTitle(persistedTitle)) {
-      return persistedTitle;
+      return decodeExternalChatContent(persistedTitle, true);
     }
 
     const reference = conversation.id
