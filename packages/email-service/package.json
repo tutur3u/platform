@@ -18,12 +18,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.1101.0",
+    "@aws-sdk/client-ses": "^3.1104.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "@upstash/redis": "^1.38.1",
-    "juice": "^12.1.1",
+    "@upstash/redis": "^1.38.2",
+    "juice": "^12.1.2",
     "sanitize-html": "^2.17.6",
     "zod": "^4.4.3"
   },

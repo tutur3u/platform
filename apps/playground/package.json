@@ -25,7 +25,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.33",
+    "@ai-sdk/google": "^4.0.37",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",

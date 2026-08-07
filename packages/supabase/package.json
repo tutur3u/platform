@@ -105,7 +105,7 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.111.0",
+    "@supabase/supabase-js": "^2.112.1",
     "@tuturuuu/types": "workspace:*",
     "next": "^16.3.0",
     "react": "^19.2.7",
