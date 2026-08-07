@@ -163,6 +163,33 @@ describe('chat utils', () => {
     expect(title).toBe('Visitor 42');
   });
 
+  it('decodes external profile and persisted conversation titles', () => {
+    expect(
+      getConversationTitle(
+        conversation({
+          metadata: {
+            displayName: 'Nguyễn Thị Vi&amp;ecirc;n',
+            externalChat: true,
+          },
+          title: 'External visitor',
+          type: 'channel',
+        }),
+        'user-1'
+      )
+    ).toBe('Nguyễn Thị Viên');
+
+    expect(
+      getConversationTitle(
+        conversation({
+          metadata: { externalChat: true },
+          title: 'Nguyễn Thị Vi&ecirc;n',
+          type: 'channel',
+        }),
+        'user-1'
+      )
+    ).toBe('Nguyễn Thị Viên');
+  });
+
   it('builds useful message previews for files and deleted messages', () => {
     expect(
       getLastMessagePreview(
@@ -388,12 +415,12 @@ describe('chat utils', () => {
           ...baseMessage,
           metadata: {
             externalChat: true,
-            externalSender: { displayName: 'Visitor 42' },
+            externalSender: { displayName: 'Visitor &amp;amp; 42' },
           },
         },
         fallback
       )
-    ).toBe('Visitor 42');
+    ).toBe('Visitor & 42');
     expect(
       getChatMessageSenderLabel(
         { ...baseMessage, metadata: { externalChat: true } },
