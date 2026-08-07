@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.2](https://github.com/tutur3u/platform/compare/ui-v0.25.1...ui-v0.25.2) (2026-08-07)
+
+
+### Bug Fixes
+
+* **chat:** restore external inbox display parity ([#5108](https://github.com/tutur3u/platform/issues/5108)) ([b34ea6d](https://github.com/tutur3u/platform/commit/b34ea6d7d8ffda344053ed1f580128446d0d0a81))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/ui-v0.25.0...ui-v0.25.1) (2026-08-06)
 
 

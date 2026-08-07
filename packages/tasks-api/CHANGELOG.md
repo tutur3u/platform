@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.0...tasks-api-v0.4.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* **tasks:** let members read board sharing, and surface why access is denied ([81886e8](https://github.com/tutur3u/platform/commit/81886e813942f95ddef4ab6dd881962c83f725c7))
+* **tasks:** log every board access denial, not only member denials ([b852ad6](https://github.com/tutur3u/platform/commit/b852ad65fda4b71ace9071002e89d9fdcd0a6cbf))
+* **tasks:** resolve board membership with the admin client ([e5cc820](https://github.com/tutur3u/platform/commit/e5cc82009a675617ae00c6bf33109be4fd3b7efe))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/tasks-api-v0.3.0...tasks-api-v0.4.0) (2026-08-06)
 
 

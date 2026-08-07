@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/tutur3u/platform/compare/external-v0.4.0...external-v0.5.0) (2026-08-07)
+
+
+### Features
+
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+
 ## [0.4.0](https://github.com/tutur3u/platform/compare/external-v0.3.0...external-v0.4.0) (2026-07-28)
 
 

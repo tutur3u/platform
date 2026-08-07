@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/hive-v0.17.0...hive-v0.18.0) (2026-08-07)
+
+
+### Features
+
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/hive-v0.16.0...hive-v0.17.0) (2026-08-06)
 
 

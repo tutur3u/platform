@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.35.0](https://github.com/tutur3u/platform/compare/platform-v0.34.0...platform-v0.35.0) (2026-08-07)
+
+
+### Features
+
+* **chat:** adopt existing sync runs ([0741e33](https://github.com/tutur3u/platform/commit/0741e330f074369136cb00a148171b098fbe23f4))
+* **chat:** adopt existing sync runs ([#5106](https://github.com/tutur3u/platform/issues/5106)) ([1c1c438](https://github.com/tutur3u/platform/commit/1c1c4387ed5af517ff61ad7924f2e3b6ccd23d3e))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **tasks:** compact board share access and tidy list settings ([7102179](https://github.com/tutur3u/platform/commit/71021798d67e0308c0a7790569521bd7b949d3c6))
+
+
+### Bug Fixes
+
+* **chat:** restore AI message modules clobbered by fb60d3efd4 ([e4cef99](https://github.com/tutur3u/platform/commit/e4cef999ee6de338c82ccf651ebbd51d23d84646))
+* **chat:** restore external inbox display parity ([#5108](https://github.com/tutur3u/platform/issues/5108)) ([b34ea6d](https://github.com/tutur3u/platform/commit/b34ea6d7d8ffda344053ed1f580128446d0d0a81))
+* **chat:** return persisted adopted runs ([a194a35](https://github.com/tutur3u/platform/commit/a194a35db4b79ce3441b06f0710b4ae0ba2b5568))
+* **ci:** preserve active production deployments ([23a8c0f](https://github.com/tutur3u/platform/commit/23a8c0f3e2c610113de22d1806fa1c1d61ed5149))
+* **external-projects:** let a broader scope answer for a narrower one ([#5107](https://github.com/tutur3u/platform/issues/5107)) ([0d3eea4](https://github.com/tutur3u/platform/commit/0d3eea4b08e7429e33caba19cb7fe73a5460c633))
+* **tasks:** let members read board sharing, and surface why access is denied ([81886e8](https://github.com/tutur3u/platform/commit/81886e813942f95ddef4ab6dd881962c83f725c7))
+* **tasks:** log every board access denial, not only member denials ([b852ad6](https://github.com/tutur3u/platform/commit/b852ad65fda4b71ace9071002e89d9fdcd0a6cbf))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+* **tasks:** resolve board membership with the admin client ([e5cc820](https://github.com/tutur3u/platform/commit/e5cc82009a675617ae00c6bf33109be4fd3b7efe))
+
+
+### Performance Improvements
+
+* **chat:** parallelize historical ingest ([#5104](https://github.com/tutur3u/platform/issues/5104)) ([e3ca34c](https://github.com/tutur3u/platform/commit/e3ca34ccf01d2a1cb9cd5cc4cdb9d49c8563609e))
+
 ## [0.34.0](https://github.com/tutur3u/platform/compare/platform-v0.33.0...platform-v0.34.0) (2026-08-06)
 
 

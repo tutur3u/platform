@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/internal-api-v0.28.1...internal-api-v0.29.0) (2026-08-07)
+
+
+### Features
+
+* **chat:** adopt existing sync runs ([0741e33](https://github.com/tutur3u/platform/commit/0741e330f074369136cb00a148171b098fbe23f4))
+* **chat:** adopt existing sync runs ([#5106](https://github.com/tutur3u/platform/issues/5106)) ([1c1c438](https://github.com/tutur3u/platform/commit/1c1c4387ed5af517ff61ad7924f2e3b6ccd23d3e))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/internal-api-v0.28.0...internal-api-v0.28.1) (2026-08-06)
 
 
