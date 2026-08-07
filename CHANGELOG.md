@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.35.1](https://github.com/tutur3u/platform/compare/platform-v0.35.0...platform-v0.35.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* **tanstack-web:** align router with start ([6f14f31](https://github.com/tutur3u/platform/commit/6f14f31b01f3daf6f7fb2f238c1074af48993983))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/platform-v0.34.0...platform-v0.35.0) (2026-08-07)
 
 
