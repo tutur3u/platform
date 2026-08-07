@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.22.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.21.0...tanstack-web-v0.22.0) (2026-08-07)
+
+
+### Features
+
+* **chat:** adopt existing sync runs ([0741e33](https://github.com/tutur3u/platform/commit/0741e330f074369136cb00a148171b098fbe23f4))
+* **chat:** adopt existing sync runs ([#5106](https://github.com/tutur3u/platform/issues/5106)) ([1c1c438](https://github.com/tutur3u/platform/commit/1c1c4387ed5af517ff61ad7924f2e3b6ccd23d3e))
+
+
+### Bug Fixes
+
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+* **tasks:** resolve board membership with the admin client ([e5cc820](https://github.com/tutur3u/platform/commit/e5cc82009a675617ae00c6bf33109be4fd3b7efe))
+
 ## [0.21.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.20.0...tanstack-web-v0.21.0) (2026-08-06)
 
 

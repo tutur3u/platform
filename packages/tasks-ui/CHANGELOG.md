@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.9.0...tasks-ui-v0.10.0) (2026-08-07)
+
+
+### Features
+
+* **tasks:** compact board share access and tidy list settings ([7102179](https://github.com/tutur3u/platform/commit/71021798d67e0308c0a7790569521bd7b949d3c6))
+
+
+### Bug Fixes
+
+* **tasks:** let members read board sharing, and surface why access is denied ([81886e8](https://github.com/tutur3u/platform/commit/81886e813942f95ddef4ab6dd881962c83f725c7))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.8.0...tasks-ui-v0.9.0) (2026-08-06)
 
 

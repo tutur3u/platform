@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/meet-v0.20.1...meet-v0.21.0) (2026-08-07)
+
+
+### Features
+
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+
+
+### Bug Fixes
+
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/meet-v0.20.0...meet-v0.20.1) (2026-08-06)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.7.0...ai-studio-v0.8.0) (2026-08-07)
+
+
+### Features
+
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/ai-studio-v0.6.0...ai-studio-v0.7.0) (2026-08-06)
 
 

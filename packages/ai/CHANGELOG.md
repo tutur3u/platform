@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/tutur3u/platform/compare/ai-v0.8.0...ai-v0.8.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/ai-v0.7.0...ai-v0.8.0) (2026-08-06)
 
 
