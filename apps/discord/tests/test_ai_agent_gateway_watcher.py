@@ -187,8 +187,10 @@ async def test_resolve_watcher_webhook_urls_uses_apps_web_config_endpoint():
     assert webhook_urls == ("https://example.com/webhook/root-discord",)
     [(args, kwargs)] = session.calls
     assert args == (
-        "https://tuturuuu.com/api/v1/infrastructure/ai-agents/"
-        "discord-gateway/watcher-config?channelId=root-discord",
+        (
+            "https://tuturuuu.com/api/v1/infrastructure/ai-agents/"
+            "discord-gateway/watcher-config?channelId=root-discord"
+        ),
     )
     assert kwargs == {"headers": {"Authorization": f"Bearer {watcher_credential}"}}
 

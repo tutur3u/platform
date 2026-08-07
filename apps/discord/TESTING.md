@@ -139,6 +139,7 @@ apps/discord/
 import pytest
 from your_module import function_to_test
 
+
 class TestFeatureName:
     """Test suite for specific feature."""
 
@@ -182,6 +183,7 @@ Use pytest fixtures for reusable test setup:
 def sample_data():
     """Provide sample data for tests."""
     return {"key": "value"}
+
 
 def test_with_fixture(sample_data):
     """Test using fixture."""
@@ -313,8 +315,8 @@ async def test_async_function():
 ```python
 from typing import Optional, List
 
-def function(param: str) -> Optional[List[int]]:
-    ...
+
+def function(param: str) -> Optional[List[int]]: ...
 ```
 
 Or add `# type: ignore` comment for third-party modules:

@@ -1155,8 +1155,10 @@ class CommandHandler:
         mentioned_ids = mention_pattern.findall(users_raw)
         if not mentioned_ids:
             return (
-                "❌ **Error:** No valid @mentions found. "
-                "Use Discord autocomplete to mention users.",
+                (
+                    "❌ **Error:** No valid @mentions found. "
+                    "Use Discord autocomplete to mention users."
+                ),
                 task_id,
                 users_raw,
                 [],
