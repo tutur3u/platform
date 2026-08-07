@@ -1,9 +1,9 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Eye } from '@tuturuuu/icons';
 import type { WorkspaceAIExecution } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 
 interface RowActionsProps {

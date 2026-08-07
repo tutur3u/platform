@@ -1,9 +1,11 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Check, ExternalLink, X } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import type { CrawledUrlReadModel, CrawlerReadOnlyLabels } from './types';
 import { formatDateTime } from './utils';

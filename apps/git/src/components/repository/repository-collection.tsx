@@ -1,14 +1,7 @@
 'use client';
 
 import { useDebouncedValue } from '@tanstack/react-pacer/debouncer';
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getSortedRowModel,
-  type SortingState,
-  useReactTable,
-} from '@tanstack/react-table';
+import { type SortingState, useTable } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   ArrowDownAZ,
@@ -18,6 +11,10 @@ import {
   Search,
 } from '@tuturuuu/icons';
 import { Card } from '@tuturuuu/ui/card';
+import {
+  type ColumnDef,
+  dataTableFeatures,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
@@ -71,12 +68,10 @@ export function RepositoryCollection({
     [data]
   );
   const sorting = SORT_OPTIONS[sort];
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     columns,
     data,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     globalFilterFn: (row, _columnId, value) =>
       row.original.search.includes(String(value).trim().toLowerCase()),
     state: {

@@ -1,11 +1,13 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Copy } from '@tuturuuu/icons';
 import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';

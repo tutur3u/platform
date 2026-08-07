@@ -1,10 +1,12 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Building2, Key, Shield, User, Users } from '@tuturuuu/icons';
 import type { WorkspaceOverviewRow } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 

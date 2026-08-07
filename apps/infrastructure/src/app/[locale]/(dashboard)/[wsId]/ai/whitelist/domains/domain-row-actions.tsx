@@ -1,8 +1,8 @@
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import { deleteAIWhitelistDomain as deleteAIWhitelistDomainWithInternalApi } from '@tuturuuu/internal-api/infrastructure/ai';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

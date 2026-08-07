@@ -1,9 +1,11 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Clock, Shield, ShieldAlert, ShieldCheck } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { BlockedIPRowActions } from './row-actions';

@@ -1,7 +1,6 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye, Link2, Loader2, UserPen } from '@tuturuuu/icons';
 import {
   repairWorkspaceUserPlatformLinks,
@@ -18,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Dialog,
   DialogContent,

@@ -1,5 +1,6 @@
 'use client';
 
+import type { RowData } from '@tanstack/react-table';
 import {
   DataTable,
   type DataTableProps,
@@ -9,7 +10,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 
-export function CustomDataTable<TData, TValue>({
+export function CustomDataTable<TData extends RowData, TValue>({
   namespace,
   hideToolbar,
   hidePagination,

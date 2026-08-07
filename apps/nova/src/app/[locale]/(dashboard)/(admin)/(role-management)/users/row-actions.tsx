@@ -1,6 +1,5 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis, ExternalLink } from '@tuturuuu/icons';
 import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import {
@@ -14,6 +13,7 @@ import {
   AlertDialogTitle,
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

@@ -1,9 +1,9 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

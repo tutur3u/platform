@@ -1,10 +1,10 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { FileText } from '@tuturuuu/icons';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { formatCurrency } from '@tuturuuu/utils/format';

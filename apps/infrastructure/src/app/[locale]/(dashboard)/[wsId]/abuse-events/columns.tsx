@@ -1,10 +1,12 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, Shield, XCircle } from '@tuturuuu/icons';
 import type { AbuseEvent as AbuseEventRow } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 

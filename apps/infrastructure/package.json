@@ -26,7 +26,7 @@
     "@octokit/auth-app": "^8.3.0",
     "@react-email/render": "^2.1.0",
     "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.0.0",
     "@tiptap/react": "3.29.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",

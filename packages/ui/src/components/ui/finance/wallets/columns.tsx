@@ -1,6 +1,5 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import {
   BookOpen,
   Check,
@@ -14,7 +13,10 @@ import {
 } from '@tuturuuu/icons';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { WalletRowActions } from '@tuturuuu/ui/finance/wallets/row-actions';
 import type { ExchangeRate } from '@tuturuuu/utils/exchange-rates';

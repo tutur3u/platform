@@ -1,9 +1,11 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCourse } from '@tuturuuu/types';
 import { WorkspaceCourseRowActions } from '@tuturuuu/ui/custom/education/courses/course-row-actions';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';

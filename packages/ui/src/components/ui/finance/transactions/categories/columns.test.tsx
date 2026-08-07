@@ -1,5 +1,5 @@
-import type { ColumnDef } from '@tanstack/react-table';
 import { render, screen, waitFor } from '@testing-library/react';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { transactionCategoryColumns } from './columns';
 
@@ -15,8 +15,8 @@ function CategoryAmountCell({ amount }: { amount: number }) {
   });
   const amountColumn = columns.find(
     (column) =>
-      (column as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
-      'amount'
+      (column as ColumnDef<Record<string, unknown>> & { accessorKey?: string })
+        .accessorKey === 'amount'
   );
 
   if (typeof amountColumn?.cell !== 'function') return null;
@@ -45,8 +45,8 @@ function CategoryCountCell({ count }: { count: number }) {
   });
   const countColumn = columns.find(
     (column) =>
-      (column as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
-      'transaction_count'
+      (column as ColumnDef<Record<string, unknown>> & { accessorKey?: string })
+        .accessorKey === 'transaction_count'
   );
 
   if (typeof countColumn?.cell !== 'function') return null;

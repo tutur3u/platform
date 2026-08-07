@@ -1,11 +1,10 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
+import { flexRender, type RowData, useTable } from '@tanstack/react-table';
 import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+  type ColumnDef,
+  dataTableFeatures,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Table,
   TableBody,
@@ -15,21 +14,21 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<TData>[];
   data: TData[];
   emptyMessage?: string;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   emptyMessage,
-}: DataTableProps<TData, TValue>) {
-  const table = useReactTable({
+}: DataTableProps<TData>) {
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   return (

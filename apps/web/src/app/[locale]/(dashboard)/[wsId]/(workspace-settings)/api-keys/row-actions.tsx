@@ -1,6 +1,5 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import {
   BarChart,
   Ellipsis,
@@ -10,6 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import type { WorkspaceApiKey } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

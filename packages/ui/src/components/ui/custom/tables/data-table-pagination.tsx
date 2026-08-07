@@ -1,6 +1,6 @@
 'use client';
 
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -17,8 +17,9 @@ import {
   SelectValue,
 } from '../../select';
 import { Separator } from '../../separator';
+import type { Table } from './data-table';
 
-interface DataTablePaginationProps<TData> {
+interface DataTablePaginationProps<TData extends RowData> {
   table?: Table<TData>;
   count?: number | null;
   className?: string;
@@ -31,7 +32,7 @@ interface DataTablePaginationProps<TData> {
   setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends RowData>({
   table,
   count,
   className,
@@ -46,9 +47,8 @@ export function DataTablePagination<TData>({
   // When setParams is provided, we're in server-side pagination mode
   const isServerSide = !!setParams;
 
-  const pageIndex =
-    pageIndexProp ?? table?.getState().pagination.pageIndex ?? 0;
-  const pageSize = pageSizeProp ?? table?.getState().pagination.pageSize ?? 10;
+  const pageIndex = pageIndexProp ?? table?.state.pagination.pageIndex ?? 0;
+  const pageSize = pageSizeProp ?? table?.state.pagination.pageSize ?? 10;
   const pageCount = pageCountProp ?? table?.getPageCount() ?? 0;
 
   // filter duplicate and sort sizes

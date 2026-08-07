@@ -1,9 +1,9 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Eye } from '@tuturuuu/icons';
 import type { CrawledUrl } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 

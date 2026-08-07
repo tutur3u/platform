@@ -5,13 +5,15 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import {
   type ManagedCronWhitelistedDomain,
   updateManagedCronWhitelistedDomain,
 } from '@tuturuuu/internal-api/infrastructure';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';

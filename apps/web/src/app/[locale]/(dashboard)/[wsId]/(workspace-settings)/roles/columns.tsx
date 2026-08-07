@@ -1,9 +1,11 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { UserCircle } from '@tuturuuu/icons';
 import type { WorkspaceRole } from '@tuturuuu/types';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { ExpandableRoleRow } from './_components/expandable-role-row';

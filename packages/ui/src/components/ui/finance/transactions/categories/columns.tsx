@@ -1,13 +1,15 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { ArrowDownCircle, ArrowUpCircle } from '@tuturuuu/icons';
 import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
 import {
   getIconComponentByKey,
   type PlatformIconKey,
 } from '@tuturuuu/ui/custom/icon-picker';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';

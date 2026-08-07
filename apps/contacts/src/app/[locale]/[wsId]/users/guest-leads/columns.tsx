@@ -1,10 +1,12 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Mail } from '@tuturuuu/icons';
 import type { GuestUserLead } from '@tuturuuu/types/primitives/GuestUserLead';
 import { Button } from '@tuturuuu/ui/button';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';

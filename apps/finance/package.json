@@ -30,7 +30,7 @@
     "@formatjs/intl-localematcher": "^0.8.13",
     "@hookform/resolvers": "^5.7.1",
     "@tanstack/react-query": "^5.101.4",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.0.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",

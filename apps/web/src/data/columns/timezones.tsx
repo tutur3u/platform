@@ -1,12 +1,14 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from '@tuturuuu/icons';
 import type {
   Timezone,
   TimezoneStatus,
 } from '@tuturuuu/types/primitives/Timezone';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import { TimezoneRowActions } from '@/components/row-actions/timezones';

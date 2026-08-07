@@ -1,6 +1,7 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { cn } from '@tuturuuu/utils/format';
@@ -15,7 +16,7 @@ import {
 
 type OperationsTableSortValue = boolean | number | string | null | undefined;
 
-export type OperationsTableColumn<Row> = {
+export type OperationsTableColumn<Row extends RowData> = {
   cellClassName?: string;
   className?: string;
   header: ReactNode;
@@ -40,7 +41,7 @@ function isInteractiveTarget(target: EventTarget | null) {
   );
 }
 
-export function OperationsTable<Row>({
+export function OperationsTable<Row extends RowData>({
   ariaLabel,
   columns,
   getRowClassName,

@@ -1,12 +1,12 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import { deleteWorkspaceQuizSet } from '@tuturuuu/internal-api';
 import type { WorkspaceQuizSet } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

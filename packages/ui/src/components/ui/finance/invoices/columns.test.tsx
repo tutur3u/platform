@@ -1,5 +1,5 @@
-import type { ColumnDef } from '@tanstack/react-table';
 import { render, screen, waitFor } from '@testing-library/react';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { invoiceColumns } from './columns';
 
@@ -19,8 +19,8 @@ function InvoicePriceCell({ price }: { price: number }) {
   });
   const priceColumn = columns.find(
     (column) =>
-      (column as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
-      'price'
+      (column as ColumnDef<Record<string, unknown>> & { accessorKey?: string })
+        .accessorKey === 'price'
   );
 
   if (typeof priceColumn?.cell !== 'function') return null;

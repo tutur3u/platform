@@ -1,10 +1,10 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye, ShieldOff } from '@tuturuuu/icons';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { unblockBlockedIp } from '@tuturuuu/internal-api/infrastructure';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Dialog,
   DialogContent,

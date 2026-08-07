@@ -1,10 +1,10 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import { createWorkspaceStorageSignedUrl } from '@tuturuuu/internal-api';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   DropdownMenu,
   DropdownMenuContent,

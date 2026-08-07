@@ -1,7 +1,7 @@
 'use client';
 
 import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Settings2, UserCog } from '@tuturuuu/icons';
 import { Fragment } from 'react';
 import { Button } from '../../button';
@@ -13,15 +13,16 @@ import {
   DropdownMenuSeparator,
 } from '../../dropdown-menu';
 import { ScrollArea } from '../../scroll-area';
+import type { Table } from './data-table';
 
-interface DataTableViewOptionsProps<TData> {
+interface DataTableViewOptionsProps<TData extends RowData> {
   table: Table<TData>;
   extraColumns?: any[];
   namespace: string | undefined;
   t?: any;
 }
 
-export function DataTableViewOptions<TData>({
+export function DataTableViewOptions<TData extends RowData>({
   t,
   namespace,
   table,

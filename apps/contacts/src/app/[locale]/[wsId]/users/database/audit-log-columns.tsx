@@ -1,8 +1,10 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@tuturuuu/ui/badge';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import type { AuditLogEntry } from '@tuturuuu/users-core/database/audit-log-types';
 import { humanizeAuditField } from '@tuturuuu/users-core/lib/workspace-user-audit/normalize';
 import { format } from 'date-fns';

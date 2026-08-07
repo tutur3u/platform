@@ -1,4 +1,4 @@
-import type { Column } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Check, PlusCircle } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type * as React from 'react';
@@ -15,8 +15,9 @@ import {
 } from '../../command';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { Separator } from '../../separator';
+import type { Column } from './data-table';
 
-interface DataTableFacetedFilterProps<TData, TValue> {
+interface DataTableFacetedFilterProps<TData extends RowData, TValue> {
   column?: Column<TData, TValue>;
   title?: string;
   options: {
@@ -26,7 +27,7 @@ interface DataTableFacetedFilterProps<TData, TValue> {
   }[];
 }
 
-export function DataTableFacetedFilter<TData, TValue>({
+export function DataTableFacetedFilter<TData extends RowData, TValue>({
   column,
   title,
   options,

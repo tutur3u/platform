@@ -1,8 +1,8 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { useTranslations } from 'next-intl';
 import type { TableGroup } from './types';
 import { TIER_ORDER } from './types';

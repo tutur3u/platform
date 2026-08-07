@@ -1,4 +1,4 @@
-import type { Column } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ChevronDown, EyeOff } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
@@ -10,15 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../../dropdown-menu';
+import type { Column } from './data-table';
 
-interface DataTableColumnHeaderProps<TData, TValue>
+interface DataTableColumnHeaderProps<TData extends RowData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   t: any;
   column: Column<TData, TValue>;
   title?: string;
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   t,
   column,
   title,

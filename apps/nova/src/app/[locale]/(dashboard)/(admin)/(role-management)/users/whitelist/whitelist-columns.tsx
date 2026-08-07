@@ -5,9 +5,9 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type { NovaRoleBasic } from '@tuturuuu/types';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';

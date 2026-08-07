@@ -1,6 +1,5 @@
 'use client';
 
-import type { Row } from '@tanstack/react-table';
 import { FileText, Folder } from '@tuturuuu/icons';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -11,6 +10,7 @@ import {
   ContextMenuContent,
   ContextMenuTrigger,
 } from '@tuturuuu/ui/context-menu';
+import type { Row } from '@tuturuuu/ui/custom/tables/data-table';
 import {
   Table,
   TableBody,

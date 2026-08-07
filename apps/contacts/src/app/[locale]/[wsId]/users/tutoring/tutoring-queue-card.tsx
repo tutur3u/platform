@@ -5,7 +5,6 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
 import type {
   TutoringQueueItem,
@@ -22,6 +21,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTable } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';

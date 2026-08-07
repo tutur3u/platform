@@ -1,9 +1,11 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCircle, PowerOff } from '@tuturuuu/icons';
 import type { WorkspaceCronJobSummary } from '@tuturuuu/internal-api';
-import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
+import type {
+  ColumnDef,
+  ColumnGeneratorOptions,
+} from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 
 type CronJobsColumnExtraData = {

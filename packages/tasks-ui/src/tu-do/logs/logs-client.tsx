@@ -1,11 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
+import { flexRender, useTable } from '@tanstack/react-table';
 import {
   Activity,
   ChevronDown,
@@ -29,6 +25,7 @@ import {
   CollapsibleTrigger,
 } from '@tuturuuu/ui/collapsible';
 import { DataPagination } from '@tuturuuu/ui/custom/data-pagination';
+import { dataTableFeatures } from '@tuturuuu/ui/custom/tables/data-table';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -96,6 +93,8 @@ const FIELD_NAMES = [
   'list_id',
   'completed',
 ] as const;
+
+const EMPTY_LOGS: TaskHistoryLogEntry[] = [];
 
 export default function LogsClient({
   wsId,
@@ -220,10 +219,10 @@ export default function LogsClient({
     [wsId, locale, t, tasksHref]
   );
 
-  const table = useReactTable({
-    data: data?.data || [],
+  const table = useTable({
+    features: dataTableFeatures,
+    data: data?.data || EMPTY_LOGS,
     columns,
-    getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: Math.ceil((data?.count || 0) / pageSize),
   });

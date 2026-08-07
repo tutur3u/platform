@@ -1,9 +1,9 @@
-import type { ColumnDef } from '@tanstack/react-table';
 import type {
   TutoringAttendanceStatus,
   TutoringSessionRecord,
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   Select,

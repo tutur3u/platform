@@ -1,11 +1,12 @@
 'use client';
 
-import type { Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { Download, RotateCcw, Upload } from '@tuturuuu/icons';
 import { Dialog, DialogContent, DialogTrigger } from '@tuturuuu/ui/dialog';
 import type { ReactNode } from 'react';
 import { Button } from '../../button';
 import SearchBar from '../search-bar';
+import type { Table } from './data-table';
 import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
@@ -19,7 +20,7 @@ type DataTableTranslator = ((key: string) => string) & {
   has?: (key: string) => boolean;
 };
 
-interface DataTableToolbarProps<TData> {
+interface DataTableToolbarProps<TData extends RowData> {
   hasData: boolean;
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -42,7 +43,7 @@ interface DataTableToolbarProps<TData> {
   resetParams: () => void;
 }
 
-export function DataTableToolbar<TData>({
+export function DataTableToolbar<TData extends RowData>({
   hasData,
   newObjectTitle,
   editContent,
@@ -65,8 +66,7 @@ export function DataTableToolbar<TData>({
   const isFiltered =
     isFilteredProp !== undefined
       ? isFilteredProp
-      : table.getState().columnFilters.length > 0 ||
-        (defaultQuery?.length || 0) > 0;
+      : table.state.columnFilters.length > 0 || (defaultQuery?.length || 0) > 0;
 
   return (
     <div className="flex flex-col items-start justify-between gap-2 lg:flex-row">

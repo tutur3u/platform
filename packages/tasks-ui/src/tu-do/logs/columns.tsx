@@ -1,6 +1,5 @@
 'use client';
 
-import type { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowRight,
   Calendar,
@@ -21,6 +20,7 @@ import {
 } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import { format, formatDistanceToNow } from 'date-fns';

@@ -1,32 +1,72 @@
 'use client';
 
 import {
-  type ColumnDef,
   type ColumnFiltersState,
+  type ColumnVisibilityState,
+  columnFacetingFeature,
+  columnFilteringFeature,
+  columnVisibilityFeature,
+  createFacetedRowModel,
+  createFacetedUniqueValues,
+  createFilteredRowModel,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  type Row,
+  globalFilteringFeature,
+  type ReactTable,
+  type RowData,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  rowSortingFeature,
   type SortingState,
-  useReactTable,
-  type VisibilityState,
+  type Column as TanStackColumn,
+  type ColumnDef as TanStackColumnDef,
+  type Row as TanStackRow,
+  tableFeatures,
+  useTable,
 } from '@tanstack/react-table';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useState } from 'react';
 import { Card } from '../../card';
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
+  Table as UiTable,
 } from '../../table';
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
+
+export const dataTableFeatures = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  columnFacetingFeature,
+  rowSortingFeature,
+  rowPaginationFeature,
+  rowSelectionFeature,
+  columnVisibilityFeature,
+  filteredRowModel: createFilteredRowModel(),
+  sortedRowModel: createSortedRowModel(),
+  facetedRowModel: createFacetedRowModel(),
+  facetedUniqueValues: createFacetedUniqueValues(),
+});
+
+const EMPTY_DATA: never[] = [];
+
+export type DataTableFeatures = typeof dataTableFeatures;
+export type ColumnDef<TData extends RowData, TValue = any> = TanStackColumnDef<
+  DataTableFeatures,
+  TData,
+  TValue
+>;
+export type Row<TData extends RowData> = TanStackRow<DataTableFeatures, TData>;
+export type Column<TData extends RowData, TValue = unknown> = TanStackColumn<
+  DataTableFeatures,
+  TData,
+  TValue
+>;
+export type Table<TData extends RowData> = ReactTable<DataTableFeatures, TData>;
 
 function isInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -59,14 +99,14 @@ export interface ColumnGeneratorOptions<
 /**
  * Type for column generator functions that create table columns.
  */
-export type ColumnGenerator<TData = unknown, TValue = unknown> = (
+export type ColumnGenerator<TData extends RowData, TValue = unknown> = (
   options: ColumnGeneratorOptions<TData, TValue>
-) => ColumnDef<TData, TValue>[];
+) => ColumnDef<TData>[];
 
-export interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData extends RowData, TValue> {
   hideToolbar?: boolean;
   hidePagination?: boolean;
-  columns?: ColumnDef<TData, TValue>[];
+  columns?: ColumnDef<TData>[];
   filters?: ReactNode[] | ReactNode;
   extraColumns?: any[];
   extraData?: any;
@@ -78,7 +118,7 @@ export interface DataTableProps<TData, TValue> {
   pageIndex?: number;
   pageSize?: number;
   defaultQuery?: string;
-  defaultVisibility?: VisibilityState;
+  defaultVisibility?: ColumnVisibilityState;
   disableSearch?: boolean;
   isFiltered?: boolean;
   enableServerSideSorting?: boolean;
@@ -114,7 +154,7 @@ export interface DataTableProps<TData, TValue> {
   rowWrapper?: (row: React.ReactElement, rowData: TData) => React.ReactElement;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData, TValue>({
   hideToolbar = false,
   hidePagination = false,
   columns,
@@ -155,7 +195,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>(defaultVisibility);
+    useState<ColumnVisibilityState>(defaultVisibility);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [sorting, setSorting] = useState<SortingState>(
     enableServerSideSorting && currentSortBy && currentSortOrder
@@ -163,8 +203,9 @@ export function DataTable<TData, TValue>({
       : []
   );
 
-  const table = useReactTable({
-    data: data || [],
+  const table = useTable({
+    features: dataTableFeatures,
+    data: data || EMPTY_DATA,
     columns:
       columnGenerator && t
         ? columnGenerator({ t, namespace, extraColumns, extraData })
@@ -215,14 +256,7 @@ export function DataTable<TData, TValue>({
       : setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: enableServerSideSorting
-      ? undefined
-      : getSortedRowModel(),
     manualSorting: enableServerSideSorting,
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   return (
@@ -250,7 +284,7 @@ export function DataTable<TData, TValue>({
         />
       )}
       <Card className={tableCardClassName}>
-        <Table className={tableClassName}>
+        <UiTable className={tableClassName}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -348,7 +382,7 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
-        </Table>
+        </UiTable>
       </Card>
 
       {hidePagination ||
