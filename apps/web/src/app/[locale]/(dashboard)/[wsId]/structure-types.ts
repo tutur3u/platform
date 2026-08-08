@@ -10,6 +10,7 @@ export interface StructureProps {
   defaultCollapsed: boolean;
   disableCreateNewWorkspace?: boolean;
   links: (DashboardNavigationLink | null)[];
+  notificationPopover: ReactNode;
   user: WorkspaceUser | null;
   userPopover: ReactNode;
   workspace: (Workspace & { tier?: WorkspaceProductTier | null }) | null;

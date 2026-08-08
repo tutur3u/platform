@@ -14,6 +14,7 @@ interface StructureProps {
   children: ReactNode;
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   personalOrWsId: string;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
@@ -26,6 +27,7 @@ export function Structure({
   defaultCollapsed = false,
   links,
   personalOrWsId,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -78,6 +80,7 @@ export function Structure({
       actions={actions}
       appHref={mailHomeHref}
       appId="mail"
+      notificationPopover={notificationPopover}
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={[]}

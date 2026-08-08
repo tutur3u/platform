@@ -1,5 +1,6 @@
 import {
   createTuturuuuNextConfig,
+  createTuturuuuWebWorkspaceApiRewrites,
   resolveTuturuuuWebAppUrl,
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -11,7 +12,7 @@ export default withNextIntl(
   createTuturuuuNextConfig({
     async rewrites() {
       return {
-        beforeFiles: [],
+        beforeFiles: createTuturuuuWebWorkspaceApiRewrites(webAppUrl),
         afterFiles: [],
         fallback: [
           {

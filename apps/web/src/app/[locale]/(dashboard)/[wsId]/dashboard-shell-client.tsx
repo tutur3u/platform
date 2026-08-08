@@ -47,6 +47,7 @@ interface DashboardShellClientProps {
   isGuestWorkspace: boolean;
   isPersonalWorkspace: boolean;
   links: (DashboardNavigationLink | null)[];
+  notificationPopover: ReactNode;
   personalWorkspacePrompt?: ReactNode;
   showPersonalWorkspaceCollaborationBanner: boolean;
   sidebarBehavior: SidebarBehavior;
@@ -169,6 +170,7 @@ export function DashboardShellClient({
   isGuestWorkspace,
   isPersonalWorkspace,
   links,
+  notificationPopover,
   personalWorkspacePrompt,
   showPersonalWorkspaceCollaborationBanner,
   sidebarBehavior,
@@ -210,6 +212,7 @@ export function DashboardShellClient({
       defaultCollapsed={defaultCollapsed}
       links={links}
       actions={actions}
+      notificationPopover={notificationPopover}
       userPopover={userPopover}
     >
       {dashboardContent}

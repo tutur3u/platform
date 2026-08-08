@@ -247,6 +247,7 @@ export function StructureImpl({
   workspace,
   links,
   actions,
+  notificationPopover,
   userPopover,
   children,
   disableCreateNewWorkspace = false,
@@ -1024,6 +1025,7 @@ export function StructureImpl({
           sidebarHeader={sidebarHeader}
           sidebarContent={sidebarContent}
           actions={actions}
+          notificationPopover={notificationPopover}
           userPopover={userPopover}
           sidebarUtility={
             <SidebarSettingsButton

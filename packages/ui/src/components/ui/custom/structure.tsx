@@ -17,6 +17,7 @@ interface StructureProps {
   sidebarContent?: ReactNode;
   actions?: ReactNode;
   userPopover?: ReactNode;
+  notificationPopover?: ReactNode;
   sidebarUtility?: ReactNode;
   feedbackButton?: ReactNode;
   children: ReactNode;
@@ -40,6 +41,7 @@ export function Structure({
   sidebarContent,
   actions,
   userPopover,
+  notificationPopover,
   sidebarUtility,
   feedbackButton,
   children,
@@ -191,7 +193,14 @@ export function Structure({
                   isCollapsed ? 'justify-center' : ''
                 )}
               >
-                {isCollapsed ? userPopover : actions}
+                {isCollapsed ? (
+                  <div className="flex w-full flex-col items-center gap-1">
+                    {userPopover}
+                    {notificationPopover}
+                  </div>
+                ) : (
+                  actions
+                )}
               </div>
 
               {!hideSizeToggle && (

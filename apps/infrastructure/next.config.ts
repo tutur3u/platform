@@ -1,5 +1,6 @@
 import {
   createTuturuuuNextConfig,
+  createTuturuuuWebWorkspaceApiRewrites,
   resolveTuturuuuWebAppUrl,
 } from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
@@ -16,6 +17,7 @@ const nextConfig = createTuturuuuNextConfig({
     return {
       afterFiles: [],
       beforeFiles: [
+        ...createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
         {
           destination: `${WEB_APP_URL}/api/v1/workspaces`,
           source: '/api/v1/workspaces',

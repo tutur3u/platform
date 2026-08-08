@@ -112,6 +112,7 @@ export interface DataTableProps<TData extends RowData, TValue> {
   extraData?: any;
   newObjectTitle?: string;
   editContent?: ReactNode;
+  emptyState?: ReactNode;
   namespace?: string | undefined;
   data?: TData[];
   count?: number | null;
@@ -163,6 +164,7 @@ export function DataTable<TData extends RowData, TValue>({
   extraData,
   newObjectTitle,
   editContent,
+  emptyState,
   namespace,
   data,
   count,
@@ -373,10 +375,13 @@ export function DataTable<TData extends RowData, TValue>({
                     columns?.length ||
                     1
                   }
-                  className="h-24 text-center opacity-60"
+                  className={cn(
+                    'text-center',
+                    emptyState ? 'p-0' : 'h-24 opacity-60'
+                  )}
                 >
                   {data
-                    ? `${t?.('common.no-results')}.`
+                    ? emptyState || `${t?.('common.no-results')}.`
                     : `${t?.('common.loading')}…`}
                 </TableCell>
               </TableRow>

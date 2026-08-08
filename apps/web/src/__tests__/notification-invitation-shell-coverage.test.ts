@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -62,6 +62,65 @@ describe('notification and invitation shell coverage', () => {
     'apps/storefront/src/app/[locale]/storefront-header-actions.tsx',
   ])('renders the shared notification popover in %s', (path) => {
     expect(source(path)).toContain('NotificationPopover');
+  });
+
+  it.each([
+    'apps/ai/src/app/[locale]/[wsId]/layout.tsx',
+    'apps/calendar/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/chat/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/cms/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/contacts/src/app/[locale]/[wsId]/layout.tsx',
+    'apps/drive/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/finance/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/forms/src/app/[locale]/[wsId]/layout.tsx',
+    'apps/git/src/app/[locale]/-/[wsId]/layout.tsx',
+    'apps/infrastructure/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/inventory/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/mail/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/meet/src/app/[locale]/[wsId]/layout.tsx',
+    'apps/mind/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/rewise/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/tasks/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+    'apps/track/src/app/[locale]/(dashboard)/[wsId]/layout.tsx',
+  ])('supplies a dedicated authenticated notification slot in %s', (path) => {
+    const layout = source(path);
+
+    expect(layout).toContain('notificationPopover={');
+    expect(layout).toContain('userId={user.id}');
+  });
+
+  it('guards static platform workspace APIs from satellite dynamic routes', () => {
+    const platformWorkspaceApi = resolve(
+      repoRoot,
+      'apps/web/src/app/api/workspaces'
+    );
+    const staticRoutes = readdirSync(platformWorkspaceApi)
+      .filter((segment) => !segment.startsWith('['))
+      .filter((segment) =>
+        existsSync(resolve(platformWorkspaceApi, segment, 'route.ts'))
+      )
+      .map((segment) => `/api/workspaces/${segment}`);
+    const sharedConfig = source('packages/utils/src/next-config.ts');
+
+    for (const route of staticRoutes) {
+      expect(sharedConfig).toContain(`'${route}'`);
+    }
+
+    for (const app of readdirSync(resolve(repoRoot, 'apps'))) {
+      if (app === 'web') continue;
+
+      const dynamicRoute = resolve(
+        repoRoot,
+        'apps',
+        app,
+        'src/app/api/workspaces/[wsId]/route.ts'
+      );
+      if (!existsSync(dynamicRoute)) continue;
+
+      expect(source(`apps/${app}/next.config.ts`)).toContain(
+        'createTuturuuuWebWorkspaceApiRewrites'
+      );
+    }
   });
 
   it('uses the shared invitation-aware picker in Learn and Teach', () => {

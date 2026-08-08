@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import {
   getPendingWorkspaceInvitation,
@@ -110,6 +111,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             personalOrWsId: workspaceSlug,
           })
         }
+        notificationPopover={<NotificationPopover userId={user.id} />}
         userPopover={
           <Suspense
             key={user.id}

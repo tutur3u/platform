@@ -12,6 +12,7 @@ type StructureProps = {
   children: ReactNode;
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   workspaceSlug: string;
@@ -23,6 +24,7 @@ export function Structure({
   children,
   defaultCollapsed,
   links,
+  notificationPopover,
   userPopover,
   workspace,
   workspaceSlug,
@@ -35,6 +37,7 @@ export function Structure({
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
+      notificationPopover={notificationPopover}
       sidebarContentAfter={({ isCollapsed }) =>
         isCollapsed ? null : (
           <MindSidebarBoards workspaceSlug={workspaceSlug} wsId={wsId} />

@@ -46,6 +46,7 @@ export interface SidebarStructureProps {
   children: ReactNode;
   defaultCollapsed?: boolean;
   links: (NavLink | null)[];
+  notificationPopover?: ReactNode;
   sidebarCollapsedWidth?: string;
   sidebarContentAfter?: ReactNode | WorkspaceSelectRenderer;
   sidebarExpandedWidth?: string;
@@ -74,6 +75,7 @@ export function SidebarStructure({
   children,
   defaultCollapsed = false,
   links,
+  notificationPopover,
   sidebarCollapsedWidth,
   sidebarContentAfter,
   sidebarExpandedWidth,
@@ -281,6 +283,7 @@ export function SidebarStructure({
               workspaceSelectVisible={showWorkspaceSelect}
             />
           }
+          notificationPopover={notificationPopover}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
           overlayOnExpand={behavior === 'hover'}

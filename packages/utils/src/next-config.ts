@@ -13,6 +13,10 @@ export const TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS = [
   'lucide-react',
 ] as const;
 
+export const TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS = [
+  '/api/workspaces/invitations',
+] as const;
+
 type NextImageConfig = NonNullable<NextConfig['images']>;
 type NextImageRemotePattern = NonNullable<
   NextImageConfig['remotePatterns']
@@ -149,6 +153,15 @@ export function trimTrailingSlashes(value: string) {
   }
 
   return end === value.length ? value : value.slice(0, end);
+}
+
+export function createTuturuuuWebWorkspaceApiRewrites(webAppUrl: string) {
+  const destinationOrigin = trimTrailingSlashes(webAppUrl);
+
+  return TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS.map((source) => ({
+    source,
+    destination: `${destinationOrigin}${source}`,
+  }));
 }
 
 export function isTuturuuuNextDeployedEnvironment(

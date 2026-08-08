@@ -40,6 +40,7 @@ describe('Infrastructure Structure', () => {
         actions={<div />}
         defaultCollapsed={false}
         links={[]}
+        notificationPopover={<div />}
         userPopover={<div />}
         workspace={{ tier: 'FREE' }}
         wsId="internal"

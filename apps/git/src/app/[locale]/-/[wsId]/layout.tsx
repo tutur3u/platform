@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getSidebarBehaviorUpdatedAt,
   getSidebarCollapsedState,
@@ -86,6 +87,7 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
             <NavbarActions />
           </Suspense>
         }
+        notificationPopover={<NotificationPopover userId={user.id} />}
         userPopover={
           <Suspense
             key={user.id}
