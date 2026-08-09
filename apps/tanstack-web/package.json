@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/tanstack-web",
-  "version": "0.22.2",
+  "version": "0.23.0",
   "private": true,
   "sideEffects": false,
   "type": "module",

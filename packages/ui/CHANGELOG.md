@@ -1,5 +1,91 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/ui-v0.25.3...ui-v0.26.0) (2026-08-09)
+
+
+### Features
+
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add external parity reconciliation ([953b9d6](https://github.com/tutur3u/platform/commit/953b9d6315611ef86ec2c213bbbbc5e62d5f4ad4))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **chat:** complete connected-site operational parity ([#5093](https://github.com/tutur3u/platform/issues/5093)) ([397e11b](https://github.com/tutur3u/platform/commit/397e11bd87d583fe1c65f83a2b8019c287650e19))
+* **chat:** complete connected-site parity ([fd4061d](https://github.com/tutur3u/platform/commit/fd4061d8b2f654e521c40ea9819a348ae81575c9))
+* **finance:** reconcile inventory provider sales ([56650e0](https://github.com/tutur3u/platform/commit/56650e066c473337700998d8af607380e8ea6202))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **navigation:** open workspace selector on reveal ([c760d42](https://github.com/tutur3u/platform/commit/c760d42b5e0b8f7bd141e26e2ace956b7f39912e))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+* **web:** improve workspace navigation context ([73959e3](https://github.com/tutur3u/platform/commit/73959e3c6745f60513d23740f30024c5d24e7ee4))
+* **web:** redesign marketing landing page ([13ede78](https://github.com/tutur3u/platform/commit/13ede784ac03af9f25bbb7df61095826c335e002))
+* **web:** refine marketing experience ([c7f1cec](https://github.com/tutur3u/platform/commit/c7f1cec0dd667e6d5f59aaf0bab82069b79c7376))
+
+
+### Bug Fixes
+
+* **auth:** isolate invitation caches by user ([c720f15](https://github.com/tutur3u/platform/commit/c720f1551b1276bedf393bd4fc8975e33f64aa83))
+* **auth:** resume a pending sign-in after switching accounts ([5403718](https://github.com/tutur3u/platform/commit/54037189ee895863eac621239eb54b8ea94c6ed0))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** close bridge edge cases ([db585c8](https://github.com/tutur3u/platform/commit/db585c8486064837dcbce615a30f66c38c0a3ec0))
+* **chat:** decode external visitor labels ([1ca3e75](https://github.com/tutur3u/platform/commit/1ca3e75a939c06222c842da9fe5892a1bf9ce729))
+* **chat:** decode external visitor labels ([#5112](https://github.com/tutur3u/platform/issues/5112)) ([cb7af54](https://github.com/tutur3u/platform/commit/cb7af54264344961234da681c877c5677bf950fa))
+* **chat:** harden bridge review edge cases ([0ecfad7](https://github.com/tutur3u/platform/commit/0ecfad7c66454fdb3bcd971f1362d3789287f086))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden connected-site parity ([a0d3148](https://github.com/tutur3u/platform/commit/a0d31483a87ed0ebd59f2be5c3bdbb342bd67855))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([5b7c709](https://github.com/tutur3u/platform/commit/5b7c7092260b05c8de86c2383291433f81c9eead))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **chat:** harden external parity replay ([896923b](https://github.com/tutur3u/platform/commit/896923b3c498a09fe0974de1aa0f8d291f8b2c84))
+* **chat:** harden external parity replay ([89c5498](https://github.com/tutur3u/platform/commit/89c5498aef4ad5ebf05ef93bfb05168417a5dfe2))
+* **chat:** mount query state adapter ([#5084](https://github.com/tutur3u/platform/issues/5084)) ([60253f8](https://github.com/tutur3u/platform/commit/60253f82477fc54923556706d12e4dc525a7a170))
+* **chat:** preserve native message behavior ([fc09530](https://github.com/tutur3u/platform/commit/fc095301f2d26ca2bc39de02ce17b1f341327de9))
+* **chat:** restore external inbox display parity ([#5108](https://github.com/tutur3u/platform/issues/5108)) ([b34ea6d](https://github.com/tutur3u/platform/commit/b34ea6d7d8ffda344053ed1f580128446d0d0a81))
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **ci:** resolve shared task helper during e2e collection ([0319a3b](https://github.com/tutur3u/platform/commit/0319a3bd0df12592b823b7cebdff38cea3e50836))
+* **deps:** align Streamdown with Shiki 4 ([0d89f55](https://github.com/tutur3u/platform/commit/0d89f555b3228307e893a5d7723aaf8db8505d63))
+* **inventory:** correct storefront bundle checkout ([cb9c247](https://github.com/tutur3u/platform/commit/cb9c24740ceb77f9426ba640383a68bd9ed95d2c))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* **platform:** stabilize offline and calendar initialization ([8ef8fbc](https://github.com/tutur3u/platform/commit/8ef8fbc1274e108930adf38bb8e998384551058b))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tasks:** quiet the description toolbar and name the compact action honestly ([51838a0](https://github.com/tutur3u/platform/commit/51838a08a1875a44cd4c7f539b35203f890e1a39))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+* **tasks:** restore task description on deep-link opens ([56d4efa](https://github.com/tutur3u/platform/commit/56d4efabd2f036e7dae39588d8aed7b129fa9a11))
+* **tasks:** show one skeleton per task dialog open ([944288b](https://github.com/tutur3u/platform/commit/944288bdc869ee80b3cdf537ee10feb17fdada22))
+* **tasks:** stop the task dialog remounting after it opens ([9a423da](https://github.com/tutur3u/platform/commit/9a423daf7e7c1e901a63ddcc1a8a94ddff9192c9))
+* **ui:** make member management mobile responsive ([104c812](https://github.com/tutur3u/platform/commit/104c8120949ef34bfdc48da74fdc0e2d35eb4ce7))
+* **ui:** preserve hosted workspace logos ([1f8e8b2](https://github.com/tutur3u/platform/commit/1f8e8b28c23f659952ad58f00a2a371acd8fcef9))
+* **ui:** publish portable vendored dependencies ([99ad359](https://github.com/tutur3u/platform/commit/99ad35903a27b8f9df26f22fc5f1003aed363d6f))
+* **ui:** refine member access settings ([b5b1ebf](https://github.com/tutur3u/platform/commit/b5b1ebf49a4a3b93532da74357899927f6e5d988))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **web:** harden prerender client boundaries ([ab1596a](https://github.com/tutur3u/platform/commit/ab1596a769e5a6ae43b0247c651ecbecea52d20d))
+* **workspaces:** harden invitation interactions ([b7f8f6c](https://github.com/tutur3u/platform/commit/b7f8f6cf52ceec1b67d36b11513eae7806284f5d))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+* **workspaces:** repair shared member administration ([8a1515b](https://github.com/tutur3u/platform/commit/8a1515ba970adbe690b9d92f77a447adb93c339f))
+* **workspaces:** restore invitation access across apps ([3592699](https://github.com/tutur3u/platform/commit/35926990fc28e44996fd330c6403496d78d96872))
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+* **workspaces:** route satellite creation through setup ([754bf1b](https://github.com/tutur3u/platform/commit/754bf1b81360e4755a171819f3a8e6a7c102f351))
+
+
+### Performance Improvements
+
+* **inventory:** add event-driven storefront caching ([2f571f4](https://github.com/tutur3u/platform/commit/2f571f4fc534bf5dee0ca36c4310d87b44e6e613))
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+* **storefront:** stabilize navigation and cart rendering ([471c6b7](https://github.com/tutur3u/platform/commit/471c6b75abc6a4d69692e868cc1b220785e03262))
+
 ## [0.25.3](https://github.com/tutur3u/platform/compare/ui-v0.25.2...ui-v0.25.3) (2026-08-09)
 
 
