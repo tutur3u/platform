@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.1](https://github.com/tutur3u/platform/compare/mind-v0.16.0...mind-v0.16.1) (2026-08-09)
+
+
+### Bug Fixes
+
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/mind-v0.15.1...mind-v0.16.0) (2026-08-07)
 
 

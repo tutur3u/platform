@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.35.2](https://github.com/tutur3u/platform/compare/platform-v0.35.1...platform-v0.35.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* **chat:** decode external visitor labels ([1ca3e75](https://github.com/tutur3u/platform/commit/1ca3e75a939c06222c842da9fe5892a1bf9ce729))
+* **chat:** decode external visitor labels ([#5112](https://github.com/tutur3u/platform/issues/5112)) ([cb7af54](https://github.com/tutur3u/platform/commit/cb7af54264344961234da681c877c5677bf950fa))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* **security:** protect crawler metadata endpoints ([386bdb6](https://github.com/tutur3u/platform/commit/386bdb62b33ae200437225474e54adae2b8f1c0a))
+
 ## [0.35.1](https://github.com/tutur3u/platform/compare/platform-v0.35.0...platform-v0.35.1) (2026-08-07)
 
 
