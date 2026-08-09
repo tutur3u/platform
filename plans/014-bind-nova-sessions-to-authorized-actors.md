@@ -142,4 +142,3 @@ Record the policy conflict instead of guessing.
 Private-schema migration removed database RLS as a safety net. Future session
 methods must reuse this authorization boundary and must not assign ownership
 during updates. Reviewers should scrutinize authorization-to-mutation ordering.
-
