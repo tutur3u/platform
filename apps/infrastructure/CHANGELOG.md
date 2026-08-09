@@ -1,5 +1,73 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/infra-v0.19.1...infra-v0.20.0) (2026-08-09)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **ai:** decouple observability from key approval ([c1d96e1](https://github.com/tutur3u/platform/commit/c1d96e10a07094d3166978f4896ca27707f235b3))
+* **apps:** add resilient error recovery shells ([f0f514d](https://github.com/tutur3u/platform/commit/f0f514d2b1712ea76c6845801fa2803369418a63))
+* **chat:** add connected site sync bridge ([05c27f5](https://github.com/tutur3u/platform/commit/05c27f5ac4a545af366097ee2a919ec755970b9b))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **chat:** add external parity reconciliation ([953b9d6](https://github.com/tutur3u/platform/commit/953b9d6315611ef86ec2c213bbbbc5e62d5f4ad4))
+* **chat:** add external parity reconciliation ([#5086](https://github.com/tutur3u/platform/issues/5086)) ([5ef796f](https://github.com/tutur3u/platform/commit/5ef796f7812ec6a9f9a62193ba21633cd2503001))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **infrastructure:** add platform account recovery ([8a0c757](https://github.com/tutur3u/platform/commit/8a0c75718abc6807468e22496ccc65a1e9e862de))
+* **infrastructure:** improve AI policy workspace explorer ([2eae218](https://github.com/tutur3u/platform/commit/2eae218c3fe84dadd019eeb332563e935202d30b))
+* **inventory:** allocate bundle revenue and add cash checkout ([bd465f9](https://github.com/tutur3u/platform/commit/bd465f9bb35fad16d259378fa49611a8eb5ba95b))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **landing:** retile the app bento and rebuild the problem section ([c56f42a](https://github.com/tutur3u/platform/commit/c56f42adf754362a269ff08b380db1ee0cf8c6ca))
+* **meet:** revamp collaborative scheduling ([9124a5d](https://github.com/tutur3u/platform/commit/9124a5d559e071c7e6c1c713cfbca4d9f5205611))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+* **tasks:** consolidate task dialog details into one disclosure ([bcc2219](https://github.com/tutur3u/platform/commit/bcc2219708d78e1016fdd20c8a5640b0cf205b9f))
+
+
+### Bug Fixes
+
+* **ai:** repair studio settings administration ([ec4c5e9](https://github.com/tutur3u/platform/commit/ec4c5e9f18099bedf7b0e1e876bf215e4dc29fd0))
+* **ai:** restore workspace settings and translations ([45b3c4f](https://github.com/tutur3u/platform/commit/45b3c4faeb86ef669d28f530d8e5b614b02d2c0a))
+* **chat:** address external bridge review findings ([30533fc](https://github.com/tutur3u/platform/commit/30533fc64093fed4b25279bc0e45d43bdb7a6cde))
+* **chat:** close bridge edge cases ([db585c8](https://github.com/tutur3u/platform/commit/db585c8486064837dcbce615a30f66c38c0a3ec0))
+* **chat:** complete connected site hardening ([9175456](https://github.com/tutur3u/platform/commit/9175456f68bcdfad20216c7b03a59105fb55f0d5))
+* **chat:** harden bridge review edge cases ([0ecfad7](https://github.com/tutur3u/platform/commit/0ecfad7c66454fdb3bcd971f1362d3789287f086))
+* **chat:** harden connected site migration ([73cccd0](https://github.com/tutur3u/platform/commit/73cccd04e9bd85a443891f3e52b443ef755570cb))
+* **chat:** harden connected site sync ([70e8785](https://github.com/tutur3u/platform/commit/70e8785967e145a77330272e671ca58dfc38fbee))
+* **chat:** harden external bridge boundaries ([2d25202](https://github.com/tutur3u/platform/commit/2d252023e5cfb1c7414ee2ed2d161e7f5de613f8))
+* **chat:** harden external bridge synchronization ([5b7c709](https://github.com/tutur3u/platform/commit/5b7c7092260b05c8de86c2383291433f81c9eead))
+* **chat:** harden external bridge synchronization ([63ccf91](https://github.com/tutur3u/platform/commit/63ccf9129ff8e7cf255bef8c74a3e096ab45cb7d))
+* **ci:** stabilize satellite dependency installs ([8e8d05a](https://github.com/tutur3u/platform/commit/8e8d05a1ec2fa6830bb989b902fc8a880da6bf8e))
+* **e2e:** follow satellite route ownership ([591190c](https://github.com/tutur3u/platform/commit/591190cd24aa15ba6cde1eb17a98409a461e0201))
+* **infrastructure:** authorize external app registry sessions ([a09e8f7](https://github.com/tutur3u/platform/commit/a09e8f7a3290bdd814c0dddbbd9b6771db5f6ef0))
+* **infrastructure:** freeze Vercel dependency installs ([96cd10c](https://github.com/tutur3u/platform/commit/96cd10cd0f59d32a4ed1570944d469cfb3418393))
+* **infrastructure:** guard whitelist request rendering ([a84acac](https://github.com/tutur3u/platform/commit/a84acacbb1de012293f76ab2cf60fd014e89478c))
+* **infrastructure:** own admin APIs and paginate models ([a73514c](https://github.com/tutur3u/platform/commit/a73514cbdac132a9bd05f69979cd48561a223ee0))
+* **infrastructure:** own AI credit admin APIs ([4606857](https://github.com/tutur3u/platform/commit/46068572bb741155973a7602e21026b8e8beb02b))
+* **infrastructure:** pin Vercel Bun installer ([2dcaef0](https://github.com/tutur3u/platform/commit/2dcaef0dd6d87a89ebef87b34368ba926d949b50))
+* **infrastructure:** proxy workspace list ([a444f9d](https://github.com/tutur3u/platform/commit/a444f9d3ae68ec4be3b8844e7749d78863770bb0))
+* **infrastructure:** proxy workspace list ([#5080](https://github.com/tutur3u/platform/issues/5080)) ([36b7b21](https://github.com/tutur3u/platform/commit/36b7b21b7005d48e1ee24d5ba8efa34e4d4f99bb))
+* **infrastructure:** restore production builds ([a9adc4a](https://github.com/tutur3u/platform/commit/a9adc4adc728114d7153511e77dbfddd58714700))
+* **infrastructure:** select chat canary workspace ([4832ab5](https://github.com/tutur3u/platform/commit/4832ab5e312bb40b4336f6e4571b364afaf04260))
+* **infrastructure:** use satellite database runtime ([ee4044e](https://github.com/tutur3u/platform/commit/ee4044edada1b69615e2cb62765e81c51c315d2e))
+* localize realtime analytics filters ([10c14fa](https://github.com/tutur3u/platform/commit/10c14faadc0e0fc6e82fabb2001038e3005e08b6))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* **reports:** scale delivery maintenance and report counts ([4dd4f47](https://github.com/tutur3u/platform/commit/4dd4f47dfff4bafa1ef512311eec16a6fbadc964))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* resolve remaining quality suggestions ([826aec4](https://github.com/tutur3u/platform/commit/826aec4af9e8291eb02dc8430b4adab4b110018a))
+* **security:** enforce infrastructure workspace permissions ([00b469c](https://github.com/tutur3u/platform/commit/00b469c2345e9f13cf44ed27322e6536eaa90faa))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **tasks:** repair board share access and harden AI media attachments ([65b8092](https://github.com/tutur3u/platform/commit/65b809245cc01fb7a5f034f703083f329c20f1c1))
+* **tasks:** repair onboarding and external metadata ([e0b62eb](https://github.com/tutur3u/platform/commit/e0b62eb7119155f6e4cad3dc4fb4d0f9820c98e8))
+
 ## [0.19.1](https://github.com/tutur3u/platform/compare/infra-v0.19.0...infra-v0.19.1) (2026-08-09)
 
 
