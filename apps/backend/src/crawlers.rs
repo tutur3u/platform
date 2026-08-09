@@ -7,6 +7,9 @@ use crate::{
     method_not_allowed, no_store_response,
     outbound::{OutboundHttpClient, OutboundMethod, OutboundRequest, OutboundResponse},
     supabase_auth,
+    workspace_permission_check::{
+        WorkspacePermissionAuthorizationError, authorize_workspace_permission,
+    },
 };
 
 mod status;
@@ -15,6 +18,7 @@ mod uncrawled;
 const SUPABASE_MAX_ROWS: usize = 1000;
 const CRAWLED_URLS_TABLE: &str = "crawled_urls";
 const CRAWLED_URL_NEXT_URLS_TABLE: &str = "crawled_url_next_urls";
+const CRAWLER_PERMISSION: &str = "ai_lab";
 
 #[derive(Deserialize)]
 struct CrawlerUrlRow {
@@ -38,7 +42,13 @@ pub(crate) async fn handle_crawler_route(
 
     Some(match (request.method, route) {
         ("GET", CrawlerRoute::Domains) => {
-            crawler_domains_response(&config.contact_data, outbound).await
+            let Some(ws_id) = legacy_crawler_workspace_id(request.path) else {
+                return Some(internal_error_response());
+            };
+            match authorize_crawler_workspace(config, request, ws_id, outbound).await {
+                Ok(()) => crawler_domains_response(&config.contact_data, outbound).await,
+                Err(response) => response,
+            }
         }
         ("GET", CrawlerRoute::List) => {
             crawler_list_response(&config.contact_data, request, outbound).await
@@ -47,10 +57,50 @@ pub(crate) async fn handle_crawler_route(
             status::crawler_status_response(&config.contact_data, request, outbound).await
         }
         ("GET", CrawlerRoute::Uncrawled) => {
-            uncrawled::crawler_uncrawled_response(&config.contact_data, request, outbound).await
+            let Some(ws_id) = legacy_crawler_workspace_id(request.path) else {
+                return Some(internal_error_response());
+            };
+            match authorize_crawler_workspace(config, request, ws_id, outbound).await {
+                Ok(()) => {
+                    uncrawled::crawler_uncrawled_response(&config.contact_data, request, outbound)
+                        .await
+                }
+                Err(response) => response,
+            }
         }
         (method, _) => method_not_allowed(method, "GET"),
     })
+}
+
+async fn authorize_crawler_workspace(
+    config: &BackendConfig,
+    request: BackendRequest<'_>,
+    raw_ws_id: &str,
+    outbound: &impl OutboundHttpClient,
+) -> Result<(), BackendResponse> {
+    authorize_workspace_permission(
+        &config.contact_data,
+        request,
+        raw_ws_id,
+        CRAWLER_PERMISSION,
+        outbound,
+    )
+    .await
+    .map(|_| ())
+    .map_err(crawler_authorization_error_response)
+}
+
+fn crawler_authorization_error_response(
+    error: WorkspacePermissionAuthorizationError,
+) -> BackendResponse {
+    match error {
+        WorkspacePermissionAuthorizationError::Unauthorized => unauthorized_response(),
+        WorkspacePermissionAuthorizationError::Forbidden
+        | WorkspacePermissionAuthorizationError::NotFound => {
+            no_store_response(json_response(403, json!({ "error": "Forbidden" })))
+        }
+        WorkspacePermissionAuthorizationError::Internal => internal_error_response(),
+    }
 }
 
 async fn crawler_domains_response(
@@ -374,6 +424,21 @@ fn crawler_route(path: &str) -> Option<CrawlerRoute> {
     };
 
     segments.next().is_none().then_some(route)
+}
+
+fn legacy_crawler_workspace_id(path: &str) -> Option<&str> {
+    let mut segments = path.trim_start_matches('/').split('/');
+
+    if !matches!(segments.next(), Some("api")) {
+        return None;
+    }
+
+    let ws_id = segments.next()?;
+    if ws_id.is_empty() || ws_id == "v1" || !matches!(segments.next(), Some("crawlers")) {
+        return None;
+    }
+
+    Some(ws_id)
 }
 
 fn is_success_status(status: u16) -> bool {

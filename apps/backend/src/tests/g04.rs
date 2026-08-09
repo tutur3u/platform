@@ -87,10 +87,24 @@ async fn aurora_forecast_get_fails_closed_when_contact_data_is_not_configured() 
     assert_eq!(outbound.calls().len(), 0);
 }
 
+fn crawler_authorization_success_responses() -> Vec<OutboundResponse> {
+    vec![
+        outbound_response(200, r#"{"id":"user-1"}"#),
+        outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+        outbound_response(200, r#"[{"creator_id":"owner-1"}]"#),
+        outbound_response(
+            200,
+            r#"[{"workspace_roles":{"workspace_role_permissions":[{"permission":"ai_lab"}]}}]"#,
+        ),
+        outbound_response(200, r#"[]"#),
+    ]
+}
+
 #[tokio::test]
 async fn crawler_domains_aggregates_sorted_unique_domains() {
     let config = backend_config_with_contact_data();
-    let outbound = RecordingOutboundClient::with_responses(vec![
+    let mut responses = crawler_authorization_success_responses();
+    responses.extend([
         outbound_response(
             200,
             r#"[
@@ -108,10 +122,17 @@ async fn crawler_domains_aggregates_sorted_unique_domains() {
                 ]"#,
         ),
     ]);
+    let outbound = RecordingOutboundClient::with_responses(responses);
 
     let response = handle_backend_request(
         &config,
-        request("GET", "/api/personal/crawlers/domains"),
+        BackendRequest {
+            authorization: Some("Bearer user-access-token"),
+            ..request(
+                "GET",
+                "/api/11111111-1111-4111-8111-111111111111/crawlers/domains",
+            )
+        },
         &outbound,
     )
     .await;
@@ -125,36 +146,37 @@ async fn crawler_domains_aggregates_sorted_unique_domains() {
     );
 
     let calls = outbound.calls();
-    assert_eq!(calls.len(), 2);
-    assert_eq!(calls[0].method, OutboundMethod::Get);
+    assert_eq!(calls.len(), 7);
+    assert_eq!(calls[5].method, OutboundMethod::Get);
     assert_eq!(
-        calls[0].url,
+        calls[5].url,
         "https://project-ref.supabase.co/rest/v1/crawled_urls?select=url"
     );
     assert_eq!(
-        calls[1].url,
+        calls[6].url,
         "https://project-ref.supabase.co/rest/v1/crawled_url_next_urls?select=url&skipped=eq.false"
     );
 
-    for call in calls {
-        assert_eq!(recorded_header(&call, "Accept"), Some(APPLICATION_JSON));
+    for call in &calls[5..] {
+        assert_eq!(recorded_header(call, "Accept"), Some(APPLICATION_JSON));
         assert_eq!(
-            recorded_header(&call, "Authorization"),
+            recorded_header(call, "Authorization"),
             Some("Bearer test-service-role-secret")
         );
         assert_eq!(
-            recorded_header(&call, "apikey"),
+            recorded_header(call, "apikey"),
             Some("test-service-role-secret")
         );
-        assert_eq!(recorded_header(&call, "Range-Unit"), Some("items"));
-        assert_eq!(recorded_header(&call, "Range"), Some("0-999"));
+        assert_eq!(recorded_header(call, "Range-Unit"), Some("items"));
+        assert_eq!(recorded_header(call, "Range"), Some("0-999"));
     }
 }
 
 #[tokio::test]
 async fn crawler_uncrawled_filters_existing_urls_and_groups_results() {
     let config = backend_config_with_contact_data();
-    let outbound = RecordingOutboundClient::with_responses(vec![
+    let mut responses = crawler_authorization_success_responses();
+    responses.extend([
         outbound_response_with_headers(
             200,
             r#"[{"url":"https://example.com/new"}]"#,
@@ -181,14 +203,19 @@ async fn crawler_uncrawled_filters_existing_urls_and_groups_results() {
         ),
         outbound_response(200, r#"[{"url":"https://example.com/already/"}]"#),
     ]);
+    let outbound = RecordingOutboundClient::with_responses(responses);
 
     let response = handle_backend_request(
             &config,
             BackendRequest {
+                authorization: Some("Bearer user-access-token"),
                 url: Some(
-                    "https://tuturuuu.localhost/api/personal/crawlers/uncrawled?page=2&pageSize=2&domain=example.com&search=new",
+                    "https://tuturuuu.localhost/api/11111111-1111-4111-8111-111111111111/crawlers/uncrawled?page=2&pageSize=2&domain=example.com&search=new",
                 ),
-                ..request("GET", "/api/personal/crawlers/uncrawled")
+                ..request(
+                    "GET",
+                    "/api/11111111-1111-4111-8111-111111111111/crawlers/uncrawled",
+                )
             },
             &outbound,
         )
@@ -232,23 +259,23 @@ async fn crawler_uncrawled_filters_existing_urls_and_groups_results() {
     );
 
     let calls = outbound.calls();
-    assert_eq!(calls.len(), 3);
-    assert!(calls[0].url.contains("/rest/v1/crawled_url_next_urls?"));
-    assert!(calls[0].url.contains("select=url"));
-    assert!(calls[0].url.contains("skipped=eq.false"));
-    assert!(calls[0].url.contains("url=ilike.%25example.com%25"));
-    assert!(calls[0].url.contains("url=ilike.%25new%25"));
-    assert_eq!(recorded_header(&calls[0], "Range"), Some("0-0"));
-    assert_eq!(recorded_header(&calls[0], "Prefer"), Some("count=exact"));
+    assert_eq!(calls.len(), 8);
+    assert!(calls[5].url.contains("/rest/v1/crawled_url_next_urls?"));
+    assert!(calls[5].url.contains("select=url"));
+    assert!(calls[5].url.contains("skipped=eq.false"));
+    assert!(calls[5].url.contains("url=ilike.%25example.com%25"));
+    assert!(calls[5].url.contains("url=ilike.%25new%25"));
+    assert_eq!(recorded_header(&calls[5], "Range"), Some("0-0"));
+    assert_eq!(recorded_header(&calls[5], "Prefer"), Some("count=exact"));
 
-    assert!(calls[1].url.contains("/rest/v1/crawled_url_next_urls?"));
-    assert!(calls[1].url.contains("origin_url%3Aurl"));
-    assert_eq!(recorded_header(&calls[1], "Range"), Some("2-3"));
-    assert_eq!(recorded_header(&calls[1], "Prefer"), None);
+    assert!(calls[6].url.contains("/rest/v1/crawled_url_next_urls?"));
+    assert!(calls[6].url.contains("origin_url%3Aurl"));
+    assert_eq!(recorded_header(&calls[6], "Range"), Some("2-3"));
+    assert_eq!(recorded_header(&calls[6], "Prefer"), None);
 
-    assert!(calls[2].url.contains("/rest/v1/crawled_urls?select=url"));
-    assert!(calls[2].url.contains("url=in."));
-    assert_eq!(recorded_header(&calls[2], "Range"), None);
+    assert!(calls[7].url.contains("/rest/v1/crawled_urls?select=url"));
+    assert!(calls[7].url.contains("url=in."));
+    assert_eq!(recorded_header(&calls[7], "Range"), None);
 }
 
 #[tokio::test]

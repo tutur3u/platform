@@ -279,7 +279,7 @@
     "api:/api/:wsId/crawlers/domains:apps/web/src/legacy-api-routes/[wsId]/crawlers/domains/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/domains by reading crawled_urls and non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, extracting valid URL hostnames, deduplicating them, and returning the sorted legacy domain list with cached false. The legacy route ignored wsId; this migration preserves that behavior until crawler workspace ownership is redesigned."
+      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/domains by authenticating the Supabase session, resolving the requested workspace, requiring ai_lab permission, then reading crawled_urls and non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, extracting valid URL hostnames, deduplicating them, and returning the sorted domain list with cached false. The crawl corpus remains globally stored, but anonymous and unauthorized workspace reads fail before service-role access."
     },
     "api:/api/:wsId/crawlers/list:apps/web/src/legacy-api-routes/[wsId]/crawlers/list/route.ts": {
       "status": "migrated",
@@ -289,7 +289,7 @@
     "api:/api/:wsId/crawlers/uncrawled:apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/uncrawled by reading non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, preserving the legacy domain/search URL filters and pagination shape, removing URLs already present in crawled_urls, and returning uncrawledUrls, groupedUrls, and pagination. The legacy route ignored wsId and auth; this migration preserves that behavior until crawler workspace ownership is redesigned."
+      "note": "Rust backend handle_backend_request handles GET /api/:wsId/crawlers/uncrawled by authenticating the Supabase session, resolving the requested workspace, requiring ai_lab permission, then reading non-skipped crawled_url_next_urls through the server-owned Supabase REST adapter, preserving domain/search URL filters and pagination shape with pageSize capped at 100, removing URLs already present in crawled_urls, and returning uncrawledUrls, groupedUrls, and pagination. Anonymous and unauthorized workspace reads fail before service-role access."
     },
     "api:/api/v1/workspaces/:wsId/crawlers/status:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/crawlers/status/route.ts": {
       "status": "migrated",

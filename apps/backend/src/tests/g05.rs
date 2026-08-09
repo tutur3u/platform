@@ -117,6 +117,53 @@ async fn crawler_routes_reject_unsupported_methods_without_outbound_call() {
 }
 
 #[tokio::test]
+async fn crawler_sensitive_reads_require_authenticated_workspace_ai_lab_access() {
+    let config = backend_config_with_contact_data();
+    let outbound = RecordingOutboundClient::default();
+
+    for path in [
+        "/api/personal/crawlers/domains",
+        "/api/personal/crawlers/uncrawled",
+    ] {
+        let response = handle_backend_request(&config, request("GET", path), &outbound).await;
+
+        assert_eq!(response.status, 401, "{path}");
+        assert_eq!(response.body["error"], "Unauthorized", "{path}");
+    }
+
+    assert_eq!(outbound.calls().len(), 0);
+}
+
+#[tokio::test]
+async fn crawler_sensitive_reads_reject_members_without_ai_lab_before_data_reads() {
+    let config = backend_config_with_contact_data();
+    let outbound = RecordingOutboundClient::with_responses(vec![
+        outbound_response(200, r#"{"id":"user-1"}"#),
+        outbound_response(200, r#"[{"type":"MEMBER"}]"#),
+        outbound_response(200, r#"[{"creator_id":"owner-1"}]"#),
+        outbound_response(200, r#"[]"#),
+        outbound_response(200, r#"[]"#),
+    ]);
+
+    let response = handle_backend_request(
+        &config,
+        BackendRequest {
+            authorization: Some("Bearer user-access-token"),
+            ..request(
+                "GET",
+                "/api/11111111-1111-4111-8111-111111111111/crawlers/domains",
+            )
+        },
+        &outbound,
+    )
+    .await;
+
+    assert_eq!(response.status, 403);
+    assert_eq!(response.body["error"], "Forbidden");
+    assert_eq!(outbound.calls().len(), 5);
+}
+
+#[tokio::test]
 async fn crawler_routes_fail_closed_when_contact_data_is_not_configured() {
     let config = backend_config_with_internal_token();
     let outbound = RecordingOutboundClient::default();

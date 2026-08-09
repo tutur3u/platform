@@ -1,10 +1,19 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { authorizeCrawlerRead } from '../access-control';
+
+interface Params {
+  params: Promise<{ wsId: string }>;
+}
 
 const SUPABASE_MAX_ROWS = 1000;
 
-export async function GET() {
+export async function GET(req: Request, { params }: Params) {
   try {
+    const { wsId } = await params;
+    const authorizationError = await authorizeCrawlerRead(req, wsId);
+    if (authorizationError) return authorizationError;
+
     const sbAdmin = await createAdminClient();
     const domains = new Set<string>();
     let allDomainsProcessed = false;

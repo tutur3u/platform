@@ -1,5 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { authorizeCrawlerRead } from '../access-control';
+import { parseCrawlerPagination } from '../pagination';
+
+interface Params {
+  params: Promise<{ wsId: string }>;
+}
 
 interface CrawledUrlNextUrl {
   created_at: string;
@@ -8,11 +14,14 @@ interface CrawledUrlNextUrl {
   url: string;
 }
 
-export async function GET(req: Request) {
+export async function GET(req: Request, { params }: Params) {
   try {
+    const { wsId } = await params;
+    const authorizationError = await authorizeCrawlerRead(req, wsId);
+    if (authorizationError) return authorizationError;
+
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(searchParams.get('pageSize') || '20', 10);
+    const { page, pageSize } = parseCrawlerPagination(searchParams);
     const domain = searchParams.get('domain');
     const search = searchParams.get('search');
 

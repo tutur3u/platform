@@ -12,6 +12,8 @@ use super::{
     send_supabase_get,
 };
 
+const MAX_CRAWLER_PAGE_SIZE: usize = 100;
+
 #[derive(Clone, Deserialize, Serialize)]
 struct UncrawledUrlRow {
     created_at: String,
@@ -203,7 +205,9 @@ fn crawler_query_from_url(request_url: Option<&str>, default_page_size: usize) -
                 domain = Some(value.into_owned());
             }
             "page" => page = positive_usize(&value, 1),
-            "pageSize" => page_size = positive_usize(&value, default_page_size),
+            "pageSize" => {
+                page_size = positive_usize(&value, default_page_size).min(MAX_CRAWLER_PAGE_SIZE)
+            }
             "search" if search.is_none() && !value.is_empty() => {
                 search = Some(value.into_owned());
             }
@@ -262,5 +266,20 @@ fn normalized_crawled_url(raw_url: &str) -> String {
         trimmed.to_owned()
     } else {
         format!("{trimmed}/")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn crawler_query_caps_caller_controlled_page_size() {
+        let query = crawler_query_from_url(
+            Some("https://example.com/api/ws/crawlers/uncrawled?pageSize=1000000"),
+            20,
+        );
+
+        assert_eq!(query.page_size, MAX_CRAWLER_PAGE_SIZE);
     }
 }
