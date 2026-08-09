@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2](https://github.com/tutur3u/platform/compare/tanstack-web-v0.22.1...tanstack-web-v0.22.2) (2026-08-09)
+
+
+### Bug Fixes
+
+* **security:** protect crawler metadata endpoints ([386bdb6](https://github.com/tutur3u/platform/commit/386bdb62b33ae200437225474e54adae2b8f1c0a))
+
 ## [0.22.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.22.0...tanstack-web-v0.22.1) (2026-08-07)
 
 
