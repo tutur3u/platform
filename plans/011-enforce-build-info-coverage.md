@@ -142,4 +142,3 @@ canonical data model rather than adding a silent exception.
 Any new Vercel target should gain build-info coverage in the same commit. Keep
 this endpoint unauthenticated, metadata-only, and uncacheable; never expose
 environment variables or credentials.
-

@@ -144,4 +144,3 @@ auditable bootstrap contract rather than weakening this endpoint.
 All future `platform_user_roles` writers must use a server-side role-management
 boundary. Reviewers should verify negative cases do not construct a service-role
 client and that target IDs never come from both path and body.
-
