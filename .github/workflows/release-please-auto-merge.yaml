@@ -12,10 +12,8 @@ name: Release Please Auto Merge
 
 on:
   schedule:
-    # Every third day at 06:00 UTC. Day-of-month stepping restarts at the turn
-    # of each month, so the 31st and the 1st can land a day apart; that is
-    # harmless because a run with nothing to merge is a clean no-op.
-    - cron: "0 6 */3 * *"
+    # Daily at 06:00 UTC. A run with nothing to merge is a clean no-op.
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       dry_run:

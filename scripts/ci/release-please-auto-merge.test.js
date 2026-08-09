@@ -9,12 +9,12 @@ const workflowName = 'release-please-auto-merge.yaml';
 const workflowPath = path.join(repoRoot, '.github', 'workflows', workflowName);
 const workflow = fs.readFileSync(workflowPath, 'utf8');
 
-test('release merge runs on a three-day schedule and can be triggered by hand', () => {
+test('release merge runs daily and can be triggered by hand', () => {
   assert.match(workflow, /^ {2}schedule:$/m);
   assert.match(
     workflow,
-    /- cron: "0 6 \*\/3 \* \*"/,
-    'the release merge must run every third day'
+    /- cron: "0 6 \* \* \*"/,
+    'the release merge must run daily'
   );
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);
 });
