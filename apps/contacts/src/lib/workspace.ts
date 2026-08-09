@@ -8,6 +8,9 @@ import {
 export type ContactsWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspace>>
 >;
+export type ContactsActor = NonNullable<
+  Awaited<ReturnType<typeof getSatelliteAppSessionUser>>
+>;
 
 /**
  * Satellite-aware workspace/permission resolution for apps/contacts.
@@ -36,9 +39,10 @@ export async function getContactsWorkspace(
 }
 
 export async function getContactsWorkspacePermissions(
-  wsId: string
+  wsId: string,
+  actor?: ContactsActor
 ): Promise<PermissionsResult | null> {
-  const user = await getSatelliteAppSessionUser('contacts');
+  const user = actor ?? (await getSatelliteAppSessionUser('contacts'));
 
   if (!user?.id) {
     return null;

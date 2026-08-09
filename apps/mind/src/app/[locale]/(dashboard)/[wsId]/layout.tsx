@@ -1,3 +1,4 @@
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
@@ -84,6 +85,7 @@ export default async function MindWorkspaceLayout({
         }
         defaultCollapsed={defaultCollapsed}
         links={await getNavigationLinks({ workspaceSlug })}
+        notificationPopover={<NotificationPopover userId={user.id} />}
         userPopover={
           <Suspense
             key={user.id}

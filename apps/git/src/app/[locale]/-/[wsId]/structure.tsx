@@ -10,6 +10,7 @@ export function Structure({
   children,
   defaultCollapsed,
   links,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -18,6 +19,7 @@ export function Structure({
   children: ReactNode;
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   wsId: string;
@@ -29,6 +31,7 @@ export function Structure({
       childContainerClassName="mx-auto w-full max-w-[1500px] md:px-4 md:py-3"
       defaultCollapsed={defaultCollapsed}
       links={links}
+      notificationPopover={notificationPopover}
       userPopover={userPopover}
       workspace={workspace}
       workspaceSelect={({ isCollapsed, standalone }) => (

@@ -2,6 +2,7 @@ import { tryToParsePath } from 'next/dist/lib/try-to-parse-path';
 import { describe, expect, it } from 'vitest';
 import {
   createTuturuuuNextConfig,
+  createTuturuuuWebWorkspaceApiRewrites,
   isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
   isTuturuuuTurbopackRustReactCompilerEnabled,
@@ -246,6 +247,19 @@ describe('createTuturuuuNextConfig', () => {
 
     expect(config.cacheComponents).toBe(true);
     expect(config.partialPrefetching).toBe(false);
+  });
+});
+
+describe('createTuturuuuWebWorkspaceApiRewrites', () => {
+  it('routes reserved static workspace endpoints before satellite dynamic routes', () => {
+    expect(
+      createTuturuuuWebWorkspaceApiRewrites('https://tuturuuu.com/')
+    ).toEqual([
+      {
+        source: '/api/workspaces/invitations',
+        destination: 'https://tuturuuu.com/api/workspaces/invitations',
+      },
+    ]);
   });
 });
 

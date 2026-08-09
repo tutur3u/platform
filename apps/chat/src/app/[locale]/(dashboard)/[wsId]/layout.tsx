@@ -1,4 +1,5 @@
 import NavbarActions from '@tuturuuu/satellite/navbar-actions';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
 import {
@@ -89,6 +90,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         defaultConversationScope={defaultConversationScope}
         defaultCollapsed={defaultCollapsed}
         links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+        notificationPopover={<NotificationPopover userId={user.id} />}
         userPopover={
           <Suspense
             key={user.id}

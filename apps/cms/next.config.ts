@@ -1,4 +1,7 @@
-import { createTuturuuuNextConfig } from '@tuturuuu/utils/next-config';
+import {
+  createTuturuuuNextConfig,
+  createTuturuuuWebWorkspaceApiRewrites,
+} from '@tuturuuu/utils/next-config';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { resolveCmsWebAppUrl } from './src/lib/resolve-web-app-url';
 
@@ -17,7 +20,7 @@ const nextConfig = createTuturuuuNextConfig({
   },
   async rewrites() {
     return {
-      beforeFiles: [],
+      beforeFiles: createTuturuuuWebWorkspaceApiRewrites(WEB_APP_URL),
       afterFiles: [],
       // Fallback rewrites only apply when no local route matches,
       // so cms's local API routes can remain empty.

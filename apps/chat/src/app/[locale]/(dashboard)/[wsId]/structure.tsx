@@ -39,6 +39,7 @@ interface StructureProps {
   defaultCollapsed: boolean;
   disableCreateNewWorkspace?: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   wsId: string;
@@ -50,6 +51,7 @@ export function Structure({
   currentUserId,
   defaultConversationScope,
   defaultCollapsed = false,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -77,6 +79,7 @@ export function Structure({
     <SidebarStructure
       actions={actions}
       appId="chat"
+      notificationPopover={notificationPopover}
       brandActions={
         <ChatHeaderActions
           archiveFilter={archiveFilter}

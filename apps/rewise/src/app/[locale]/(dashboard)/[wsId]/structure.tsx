@@ -13,6 +13,7 @@ interface StructureProps {
   children: ReactNode;
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   personalOrWsId: string;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
@@ -25,6 +26,7 @@ export function Structure({
   defaultCollapsed = false,
   links,
   personalOrWsId,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -39,6 +41,7 @@ export function Structure({
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
+      notificationPopover={notificationPopover}
       sidebarContentAfter={({ closeOnMobile, isCollapsed }) => (
         <RewiseSidebarChats
           closeOnMobile={closeOnMobile}

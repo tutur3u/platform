@@ -115,6 +115,14 @@ async function NavbarActionsSlot({
   );
 }
 
+async function NotificationPopoverSlot({ userId }: { userId: string }) {
+  const { default: NotificationPopover } = await import(
+    '../../notification-popover'
+  );
+
+  return <NotificationPopover userId={userId} />;
+}
+
 async function UserPopoverSlot({
   user,
   workspace,
@@ -354,6 +362,16 @@ export default async function Layout({ children, params }: LayoutProps) {
           }
         >
           <NavbarActionsSlot user={user} workspace={workspace} />
+        </Suspense>
+      }
+      notificationPopover={
+        <Suspense
+          key={user.id}
+          fallback={
+            <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+          }
+        >
+          <NotificationPopoverSlot userId={user.id} />
         </Suspense>
       }
       userPopover={

@@ -10,6 +10,7 @@ interface StructureProps {
   children: ReactNode;
   defaultCollapsed: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   wsId: string;
@@ -20,6 +21,7 @@ export function Structure({
   children,
   defaultCollapsed = false,
   links,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -32,6 +34,7 @@ export function Structure({
       childContainerClassName="mx-auto flex w-full max-w-7xl flex-col gap-8 md:px-2"
       defaultCollapsed={defaultCollapsed}
       links={links}
+      notificationPopover={notificationPopover}
       sidebarExpandedWidth="18.5rem"
       sidebarHeaderClassName="border-foreground/10 border-b"
       upgradeExternal

@@ -13,6 +13,7 @@ interface StructureProps {
   defaultCollapsed: boolean;
   disableCreateNewWorkspace?: boolean;
   links: (NavLink | null)[];
+  notificationPopover: ReactNode;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   wsId: string;
@@ -24,6 +25,7 @@ export function Structure({
   defaultCollapsed = false,
   disableCreateNewWorkspace,
   links,
+  notificationPopover,
   userPopover,
   workspace,
   wsId,
@@ -35,6 +37,7 @@ export function Structure({
       brandHref={TTR_URL}
       defaultCollapsed={defaultCollapsed}
       links={links}
+      notificationPopover={notificationPopover}
       sidebarContentAfter={({ isCollapsed }) =>
         isCollapsed ? null : <CalendarSidebarContent wsId={wsId} />
       }

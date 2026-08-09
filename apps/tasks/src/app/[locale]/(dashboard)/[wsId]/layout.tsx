@@ -1,4 +1,5 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
   SatelliteWorkspaceInvitationCard,
@@ -102,6 +103,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <NavbarActions />
           </Suspense>
         }
+        notificationPopover={<NotificationPopover userId={user.id} />}
         userPopover={
           <Suspense
             key={user.id}

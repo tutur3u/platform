@@ -15,6 +15,10 @@ describe('Infrastructure next config rewrites', () => {
       afterFiles: [],
       beforeFiles: [
         {
+          destination: 'https://web.example.com/api/workspaces/invitations',
+          source: '/api/workspaces/invitations',
+        },
+        {
           destination: 'https://web.example.com/api/v1/workspaces',
           source: '/api/v1/workspaces',
         },

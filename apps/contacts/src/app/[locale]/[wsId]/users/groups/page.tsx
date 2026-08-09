@@ -1,23 +1,8 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { ArrowLeft, ShieldAlert } from '@tuturuuu/icons';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import {
-  applyAttendanceMemberCounts,
-  applyTodayAttendanceSnapshot,
-  fetchManagersForGroups,
-  fetchTodayAttendanceForGroups,
-  getShouldCountManagersInAttendance,
-  getUserGroupMemberships,
-} from '@tuturuuu/users-core/lib/user-groups/groups-utils';
-import {
-  countUserGroupsForTable,
-  listUserGroupsForTable,
-} from '@tuturuuu/users-core/lib/user-groups/table-repository';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -29,6 +14,7 @@ import {
   type UserGroupActivityLogSearchParams,
   UserGroupActivityLogTable,
 } from './activity-log-table';
+import { loadInitialUserGroups, type UserGroupStatusFilter } from './bootstrap';
 import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';
 
@@ -47,8 +33,6 @@ interface SearchParams {
   includedTags?: string | string[];
   excludedTags?: string | string[];
 }
-
-type UserGroupStatusFilter = 'all' | 'active' | 'archived';
 
 function parseUserGroupStatusFilter(
   status: string | undefined,
@@ -77,23 +61,35 @@ export default async function WorkspaceUserGroupsPage({
       {async ({ wsId }) => {
         const t = await getTranslations();
         const sp = await searchParams;
+        const actor = await getSatelliteAppSessionUser('contacts');
+        if (!actor?.id) notFound();
 
-        // Check permissions
-        const workspacePermissions =
-          await getContactsWorkspacePermissions(wsId);
+        const workspacePermissions = await getContactsWorkspacePermissions(
+          wsId,
+          actor
+        );
         if (!workspacePermissions) notFound();
         const { withoutPermission, containsPermission } = workspacePermissions;
 
         if (withoutPermission('view_user_groups')) {
           return (
-            <div className="flex h-96 items-center justify-center">
-              <div className="text-center">
-                <h2 className="font-semibold text-lg">
+            <div className="flex min-h-[28rem] items-center justify-center px-4">
+              <div className="w-full max-w-lg rounded-2xl border border-dynamic-red/25 bg-dynamic-red/5 p-8 text-center shadow-sm">
+                <div className="mx-auto mb-5 flex size-12 items-center justify-center rounded-full bg-dynamic-red/10 text-dynamic-red">
+                  <ShieldAlert className="size-6" aria-hidden="true" />
+                </div>
+                <h2 className="font-semibold text-xl">
                   {t('user-group-data-table.access_denied_title')}
                 </h2>
-                <p className="text-muted-foreground">
+                <p className="mx-auto mt-2 max-w-sm text-muted-foreground text-sm leading-6">
                   {t('user-group-data-table.access_denied_description')}
                 </p>
+                <Button asChild className="mt-6" variant="outline">
+                  <Link href={`/${wsId}/users`}>
+                    <ArrowLeft className="size-4" aria-hidden="true" />
+                    {t('user-group-data-table.access_denied_action')}
+                  </Link>
+                </Button>
               </div>
             </div>
           );
@@ -110,19 +106,18 @@ export default async function WorkspaceUserGroupsPage({
           sp.tab === 'audit-log' && canViewAuditLogs ? 'audit-log' : 'groups';
         const initialData =
           selectedTab === 'groups'
-            ? await getInitialData(
+            ? await loadInitialUserGroups({
+                actorId: actor.id,
+                hasManageUsers: containsPermission('manage_users'),
+                page: sp.page,
+                pageSize: sp.pageSize,
+                q: sp.q,
+                status: parseUserGroupStatusFilter(
+                  sp.status,
+                  sp.includeArchived
+                ),
                 wsId,
-                {
-                  page: sp.page,
-                  pageSize: sp.pageSize,
-                  q: sp.q,
-                  status: parseUserGroupStatusFilter(
-                    sp.status,
-                    sp.includeArchived
-                  ),
-                },
-                containsPermission('manage_users')
-              )
+              })
             : { data: [], count: 0 };
 
         const permissions = {
@@ -181,6 +176,7 @@ export default async function WorkspaceUserGroupsPage({
               <UserGroupsTable
                 wsId={wsId}
                 initialData={initialData}
+                isLimitedScope={!containsPermission('manage_users')}
                 permissions={permissions}
               />
             )}
@@ -189,102 +185,4 @@ export default async function WorkspaceUserGroupsPage({
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getInitialData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '50',
-    status = 'active',
-  }: {
-    q?: string;
-    page?: string;
-    pageSize?: string;
-    status?: UserGroupStatusFilter;
-  } = {},
-  hasManageUsers: boolean = false
-) {
-  try {
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
-
-    let accessibleGroupIds: string[] | null = null;
-
-    if (!hasManageUsers) {
-      const groupIds = await getUserGroupMemberships(wsId);
-      if (groupIds.length === 0) {
-        return { data: [], count: 0 };
-      }
-      accessibleGroupIds = groupIds;
-    }
-
-    // Validate and clamp page and pageSize parameters
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-
-    // Default to page 1 if invalid (NaN or <=0)
-    const validPage =
-      !Number.isNaN(parsedPage) && parsedPage > 0 ? parsedPage : 1;
-
-    // Default to 10 if invalid, enforce max of 100
-    let validPageSize =
-      !Number.isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
-    validPageSize = Math.min(validPageSize, 100);
-
-    const [fetchedGroups, filteredCount] = await Promise.all([
-      listUserGroupsForTable({
-        accessibleGroupIds,
-        client: sbAdmin,
-        page: validPage,
-        pageSize: validPageSize,
-        q,
-        status,
-        wsId,
-      }),
-      countUserGroupsForTable({
-        accessibleGroupIds,
-        client: sbAdmin,
-        q,
-        status,
-        wsId,
-      }),
-    ]);
-
-    let groups = fetchedGroups as UserGroup[];
-
-    // Fetch managers and today's attendance for the fetched groups in one batch
-    // each, instead of letting every table row fan out its own client fetches.
-    if (groups.length > 0) {
-      const groupIds = groups.map((g) => g.id);
-      const today = new Date().toISOString().split('T')[0] ?? '';
-      const [managersByGroup, countManagersInAttendance, attendanceByGroup] =
-        await Promise.all([
-          fetchManagersForGroups(supabase, groupIds),
-          getShouldCountManagersInAttendance(wsId),
-          fetchTodayAttendanceForGroups(sbAdmin, groupIds, today),
-        ]);
-
-      groups = applyAttendanceMemberCounts(
-        groups,
-        managersByGroup,
-        countManagersInAttendance
-      );
-      groups = applyTodayAttendanceSnapshot(groups, attendanceByGroup, today);
-    }
-
-    return {
-      data: groups,
-      count: filteredCount,
-    };
-  } catch (error) {
-    console.error('Error fetching initial user groups:', error);
-    return {
-      data: [],
-      count: 0,
-      error: true,
-      errorMessage: error instanceof Error ? error.message : String(error),
-    };
-  }
 }

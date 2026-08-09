@@ -13,7 +13,12 @@ describe('AI Studio next config rewrites', () => {
 
     expect(rewrites).toEqual({
       afterFiles: [],
-      beforeFiles: [],
+      beforeFiles: [
+        {
+          destination: 'https://web.example.com/api/workspaces/invitations',
+          source: '/api/workspaces/invitations',
+        },
+      ],
       fallback: [
         {
           destination: 'https://web.example.com/api/:path*',
