@@ -158,6 +158,52 @@ bun sb:up
   schema defined in the `production` branch.
 </Info>
 
+### Validating an Exact Worktree in Isolation
+
+Database plans pinned to an older commit must not reset or reuse the ordinary
+`tuturuuu` stack when its migration history belongs to another checkout. Run the
+disposable validator from the repository root instead:
+
+```bash
+bun --cwd apps/database sb:validate:isolated
+```
+
+For a focused pgTAP file, pass its path relative to `apps/database`:
+
+```bash
+bun --cwd apps/database sb:validate:isolated --test supabase/tests/workspace-creator-membership.sql
+```
+
+The runner derives a Docker-safe project identity from the exact worktree path
+and Git commit, selects an available deterministic eight-port block, and prints
+both before starting. It copies only Git-tracked files from
+`apps/database/supabase` into a directory named
+`tuturuuu-supabase-*` under the operating system's temporary directory. The
+temporary config receives the isolated project id and ports; the tracked
+`supabase/config.toml` is never edited.
+
+The isolated lifecycle starts that project, resets it from the copied exact-base
+migrations, runs the full or focused pgTAP suite, and stops that project with
+`--no-backup` in cleanup. It never invokes `supabase stop --all` or the default
+`sb:stop`/`sb:reset` aliases. Ordinary development continues to use
+`sb:start`, `sb:up`, and `sb:reset` unchanged.
+
+SIGINT and SIGTERM request the same scoped cleanup while preserving the failing
+command or signal exit code. A hard process or machine termination can leave the
+temporary directory behind; its `.tuturuuu-isolated-supabase.json` records the
+project id, worktree commit, ports, and last lifecycle step. Resume or explicitly
+clean that recorded directory without guessing its Docker identity:
+
+```bash
+bun --cwd apps/database sb:validate:isolated --resume /tmp/tuturuuu-supabase-EXAMPLE
+bun --cwd apps/database sb:validate:isolated --cleanup /tmp/tuturuuu-supabase-EXAMPLE
+```
+
+The exact temporary parent varies by operating system. Use the disposable path
+printed when the run starts; cleanup refuses paths outside the owned temporary
+directory pattern. If scoped Docker cleanup fails, the metadata directory is
+kept so the command can be retried safely.
+
 ### Generating TypeScript Types
 
 After schema changes, regenerate the TypeScript types to keep your code in sync with the database schema:
