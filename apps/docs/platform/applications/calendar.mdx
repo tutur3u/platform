@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Shared Calendar product surface across apps/web and apps/calendar."
-updatedAt: "2026-07-15"
+updatedAt: "2026-08-10"
 ---
 
 ## Overview
@@ -44,18 +44,31 @@ Supabase browser session.
 
 ## API Ownership
 
-Protected Calendar data APIs remain in `apps/web`. `apps/calendar` rewrites
-fallback `/api/*` requests to the central Web app, and routes consumed by
-Calendar must opt into app-session auth explicitly when used by the standalone
-host.
+`apps/calendar` owns the Calendar product APIs. Its local handlers cover events
+and calendars, categories and preferences, hours and default sources,
+scheduling and sync, Calendar connections, Google and Microsoft provider OAuth,
+Calendar media/generation helpers, and Calendar-owned cron work. Host-local
+auth/session and build-info routes are local as well.
 
-- Calendar-only routes use `targetApp: 'calendar'`.
-- Task and board helper routes that Calendar legitimately calls for quick task
-  creation, task sidebar scheduling, and time tracker task creation use
-  `targetApp: ['calendar', 'tasks']`.
-- Do not accept generic satellite app-session tokens for Calendar APIs.
-- Keep workspace membership checks and Calendar/task permissions on the central
-  route before admin-backed reads or writes.
+- Exact local handlers win before the fallback `/api/:path*` rewrite. The
+  fallback remains for cross-product routes that Calendar uses but does not
+  own, including workspace encryption and task, board, habit, and time-tracking
+  families; typed task helpers may target the Tasks app directly.
+- Central platform login, social-provider callbacks, and cross-app token
+  issuance remain Web-owned. Calendar-provider OAuth initiation and callbacks
+  are Calendar-local, even though their configured redirect origins retain Web
+  compatibility for existing provider registrations.
+- Calendar-only routes use `targetApp: 'calendar'`. Shared cross-product routes
+  must name the exact accepted app audiences, such as
+  `targetApp: ['calendar', 'tasks']`, rather than accepting generic satellite
+  sessions.
+- Keep workspace membership checks and Calendar/task permissions on the owning
+  route before admin-backed reads or writes. The Calendar proxy guard and
+  app-session refresh do not replace route-level authorization.
+- Prefer typed `packages/internal-api` helpers. Browser calls remain
+  same-origin so Calendar-local handlers are selected first; server calls to a
+  different owning app must use its configured API base URL with forwarded
+  authentication.
 
 ## OAuth Token Safety
 
@@ -71,23 +84,26 @@ Calendar server pages must therefore:
   `fetchUserWorkspaceCalendarGoogleTokenForClient()` helper from
   `@tuturuuu/utils/calendar-auth-token`, which projects only connection
   metadata (`id`, account email/name, provider, active state, expiry).
-- Keep token refresh and Google API calls on central `apps/web` API routes.
+- Keep token refresh and provider API calls on Calendar-local server routes;
+  never expose provider credentials to client components.
 
 When adding a new Calendar host route, reuse the helper instead of
 `select('*')` on `calendar_auth_tokens`.
 
 When adding new Calendar UI that needs protected data, update the shared
 Calendar component or helper first, then wire both host wrappers in the same
-change. Prefer a central `apps/web` API route and a `packages/internal-api`
-helper instead of host-local product API forks or direct client Supabase reads.
+change. Extend the route family in its owning app and expose a typed
+`packages/internal-api` seam instead of creating a host-local product API fork
+or adding direct client Supabase reads.
 
 ## Calendar OAuth And Connections
 
-Google Calendar OAuth is Web-owned even when the user starts from the
-standalone Calendar app. The `/api/v1/calendar/auth` route in `apps/web` must
-build its Google callback URL from a browser-safe Web origin and ignore wildcard
-listener addresses such as `0.0.0.0` or `::`. If no safe configured Web origin
-is available, the fallback origin is `https://tuturuuu.com`.
+Google Calendar OAuth initiation and callback handlers are owned by
+`apps/calendar`. The local `/api/v1/calendar/auth` route builds its callback URL
+from a browser-safe configured origin and ignores wildcard listener addresses
+such as `0.0.0.0` or `::`. Existing provider registrations may still configure
+the central Web origin; if no safe configured origin is available, the fallback
+origin is `https://tuturuuu.com`.
 
 After Google returns to the callback, the flow always sends the user to the
 central Web Calendar page at
