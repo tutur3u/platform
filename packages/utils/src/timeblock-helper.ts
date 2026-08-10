@@ -227,9 +227,8 @@ export function removeTimeblocks(
       .set('hour', soonestTime.hour())
       .set('minute', soonestTime.minute())
       .set('second', 0);
-    const removalEnd = removalStart.add(15, 'minutes');
 
-    return removeTimeblocksInRange(prevTimeblocks, removalStart, removalEnd);
+    return removeTimeblocksInRange(prevTimeblocks, removalStart, removalStart);
   }
 
   // Handle multi-day removal - process each day separately
@@ -298,8 +297,7 @@ export function removeTimeblocks(
 
   for (const date of sortedDates) {
     const removalStart = dayjs(date).set('second', 0);
-    const removalEnd = removalStart.add(15, 'minutes');
-    result = removeTimeblocksInRange(result, removalStart, removalEnd);
+    result = removeTimeblocksInRange(result, removalStart, removalStart);
   }
 
   return result;
