@@ -83,9 +83,9 @@ export function ConfirmDialog({
       }
 
       // Fetch existing problems first
-      const problems = await fetchChallengeProblems(challenge.id);
+      const hasProblems = await challengeHasProblems(challenge.id);
 
-      if (problems.length === 0) {
+      if (!hasProblems) {
         toast({
           title: 'No problems found.',
           description:
@@ -227,8 +227,11 @@ export function ConfirmDialog({
   );
 }
 
-async function fetchChallengeProblems(challengeId: string) {
-  const response = await fetch(`/api/v1/problems?challengeId=${challengeId}`);
-  if (!response.ok) return [];
-  return response.json();
+export async function challengeHasProblems(challengeId: string) {
+  const response = await fetch(
+    `/api/v1/problems?challengeId=${challengeId}&availability=true`
+  );
+  if (!response.ok) return false;
+  const data = (await response.json()) as { hasProblems?: boolean };
+  return data.hasProblems === true;
 }
