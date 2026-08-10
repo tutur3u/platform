@@ -15,6 +15,7 @@ const {
   getCheckQueuePaths,
   listTrackedCheckProcesses,
   parseBiomeIssueStats,
+  runCheck,
   touchesDiscordPython,
   touchesPlatformReleaseVersion,
 } = require('./check.js');
@@ -32,6 +33,15 @@ function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function assertCheckBeforeScriptTests(activeChecks, name, args) {
+  const checkIndex = activeChecks.findIndex((check) => check.name === name);
+  const scriptTestsIndex = activeChecks.findIndex(
+    (check) => check.name === 'script-tests'
+  );
+  assert.deepEqual(activeChecks[checkIndex]?.args, args);
+  assert.ok(checkIndex > -1 && checkIndex < scriptTestsIndex);
 }
 
 test('touchesDiscordPython detects Discord app and workflow paths', () => {
@@ -102,44 +112,18 @@ test('bun check always includes mobile iOS project settings validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/web/src/app/page.tsx'],
   });
-  const mobileIosProjectCheck = activeChecks.find(
-    (check) => check.name === 'mobile-ios-project-settings'
-  );
-  const scriptTestsIndex = activeChecks.findIndex(
-    (check) => check.name === 'script-tests'
-  );
-  const mobileIosProjectIndex = activeChecks.findIndex(
-    (check) => check.name === 'mobile-ios-project-settings'
-  );
-
-  assert.ok(mobileIosProjectCheck);
-  assert.deepEqual(mobileIosProjectCheck.args, [
+  assertCheckBeforeScriptTests(activeChecks, 'mobile-ios-project-settings', [
     'scripts/check-mobile-ios-project.js',
   ]);
-  assert.ok(mobileIosProjectIndex > -1);
-  assert.ok(mobileIosProjectIndex < scriptTestsIndex);
 });
 
 test('bun check always includes TanStack protected API access validation', () => {
   const activeChecks = getActiveChecks({
     changedFiles: ['apps/tanstack-web/src/routes/index.tsx'],
   });
-  const tanstackApiAccessCheck = activeChecks.find(
-    (check) => check.name === 'tanstack-api-access'
-  );
-  const scriptTestsIndex = activeChecks.findIndex(
-    (check) => check.name === 'script-tests'
-  );
-  const tanstackApiAccessIndex = activeChecks.findIndex(
-    (check) => check.name === 'tanstack-api-access'
-  );
-
-  assert.ok(tanstackApiAccessCheck);
-  assert.deepEqual(tanstackApiAccessCheck.args, [
+  assertCheckBeforeScriptTests(activeChecks, 'tanstack-api-access', [
     'scripts/check-tanstack-api-access.js',
   ]);
-  assert.ok(tanstackApiAccessIndex > -1);
-  assert.ok(tanstackApiAccessIndex < scriptTestsIndex);
 });
 
 test('bun check includes platform release sync validation for release-please files only', () => {
@@ -164,23 +148,10 @@ test('bun check includes platform release sync validation for release-please fil
   const activeChecks = getActiveChecks({
     changedFiles: ['platform-version.txt'],
   });
-  const platformReleaseCheck = activeChecks.find(
-    (check) => check.name === 'platform-release-version'
-  );
-  const scriptTestsIndex = activeChecks.findIndex(
-    (check) => check.name === 'script-tests'
-  );
-  const platformReleaseIndex = activeChecks.findIndex(
-    (check) => check.name === 'platform-release-version'
-  );
-
-  assert.ok(platformReleaseCheck);
-  assert.deepEqual(platformReleaseCheck.args, [
+  assertCheckBeforeScriptTests(activeChecks, 'platform-release-version', [
     'scripts/sync-platform-release-version.js',
     '--check',
   ]);
-  assert.ok(platformReleaseIndex > -1);
-  assert.ok(platformReleaseIndex < scriptTestsIndex);
 });
 
 test('Biome check treats warnings as blocking local check issues', () => {
@@ -208,6 +179,23 @@ test('Biome check treats warnings as blocking local check issues', () => {
     biomeCheck.validateOutput(output),
     'Found 2 Biome issue(s): 0 error(s), 2 warning(s), 0 info(s)'
   );
+});
+
+test('bun check registers, runs, and reports source-size failures', async () => {
+  const sourceSizeCheck = checks.find((check) => check.name === 'source-size');
+  assert.ok(sourceSizeCheck);
+  assert.deepEqual(sourceSizeCheck.args, ['check:source-size']);
+  for (const [code, success] of [
+    ['', true],
+    ["console.error('source-size failure'); process.exit(1)", false],
+  ]) {
+    const result = await runCheck(
+      { ...sourceSizeCheck, args: ['-e', code], command: process.execPath },
+      { forceBuffered: true }
+    );
+    assert.equal(result.success, success);
+    if (!success) assert.match(result.stderr, /source-size failure/u);
+  }
 });
 
 test('getTopLevelPythonFiles returns sorted top-level Python files only', () => {

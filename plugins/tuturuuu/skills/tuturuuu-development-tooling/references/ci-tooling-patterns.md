@@ -5,10 +5,12 @@ formatting behavior, or repo-wide verification.
 
 ## File Size Ceiling
 
-- Keep every source file well-maintained and under a hard **700-LOC ceiling**
-  whenever possible, in any language. Start splitting around ~400 LOC (~200 for
-  components/widgets); never leave a file you author or substantially edit above
-  700 LOC — extract cohesive submodules and keep import paths stable with thin
+- Keep every new authored source file at or below the hard **700-LOC ceiling** in
+  any language. Already-oversized authored files are grandfathered only while
+  they do not grow and should shrink when substantially edited. Tests and
+  migrations are authored source; generated and vendored files are excluded.
+  Start splitting around ~400 LOC (~200 for components/widgets) as review
+  guidance, extract cohesive submodules, and keep import paths stable with thin
   re-exports (`pub use`/barrel files).
 - Rust backend specifics (`apps/backend`): the crate root is split into
   `src/dispatch/` (one `dispatch_chunk_NN.rs` per route-table chunk) plus named

@@ -144,14 +144,15 @@ surface you are changing:
     documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
     cache headers faithful to the legacy route. A Rust handler being marked
     migrated means source parity is implemented, not that traffic has moved.
-- Keep every source file well-maintained and under a hard ceiling of 700 LOC
-  whenever possible. Treat ~400 LOC (and ~200 LOC for components/widgets) as the
-  point to start splitting when you create or significantly edit a file; never
-  let a file you author or substantially edit cross 700 LOC without splitting it
-  into focused modules. This applies to all languages, including the Rust
-  backend (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]`
-  blocks into a sibling `mod tests;` file). Keep existing import paths stable
-  with thin re-exports (or `pub use`) when callers depend on them.
+- Keep every new authored source file at or below the hard 700-LOC ceiling.
+  Already-oversized authored files are grandfathered only while they do not grow
+  and should shrink when substantially edited. Tests and migrations are authored
+  source; generated and vendored files are excluded from this gate. Treat ~400
+  LOC (and ~200 LOC for components/widgets) as review guidance to start splitting
+  into focused modules. This applies to all languages, including the Rust backend
+  (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]` blocks
+  into a sibling `mod tests;` file). Keep existing import paths stable with thin
+  re-exports (or `pub use`) when callers depend on them.
 - Update `apps/docs` when work changes how the team should build, run, debug,
   deploy, or operate the system. Add new docs pages to `apps/docs/docs.json`.
 - For TypeScript, JavaScript, root script, or repo config changes, finish with

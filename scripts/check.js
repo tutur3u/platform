@@ -3,9 +3,7 @@
 /**
  * Unified Check Runner
  *
- * Runs all quality checks (formatting, tests, type-check, i18n, migrations),
- * plus path-sensitive checks such as Discord Python validation, and displays a
- * summary at the end.
+ * Runs repository quality checks, including path-sensitive validation.
  *
  * Usage:
  *   node scripts/check.js [--table] [--timing] [--details] [--run-all] [--force-now]
@@ -21,6 +19,7 @@ const { execFileSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { sourceSizeCheck } = require('./check-source-size.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CHECK_QUEUE_ROOT = path.join(os.tmpdir(), 'tuturuuu-bun-check');
@@ -271,6 +270,7 @@ const checks = [
     },
     validateOutput: validateBiomeOutput,
   },
+  sourceSizeCheck,
   {
     name: 'server-console',
     command: 'node',

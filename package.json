@@ -83,6 +83,7 @@
     "dev": "bun turbo:local run dev --parallel",
     "check": "node scripts/check.js",
     "check:now": "node scripts/check.js --force-now",
+    "check:source-size": "node scripts/check-source-size.js",
     "check:workspace-members": "node scripts/check-workspace-member-type-guard.js",
     "check:docker": "node scripts/check-docker-web.js",
     "check:cloudflare": "node scripts/check-cloudflare-workers.js",
