@@ -9,13 +9,12 @@ import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
-import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 import { HIVE_BODY_CLASS_NAME } from './layout-classes';
 import '@xyflow/react/dist/style.css';
 import '@tuturuuu/ui/globals.css';
@@ -66,14 +65,8 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
-
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
+export default async function RootLayout({ children }: Props) {
+  const locale = await getLocale();
 
   return (
     <html className="dark" lang={locale} suppressHydrationWarning>

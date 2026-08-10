@@ -13,7 +13,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'toolsPage' });
+  const t = await getTranslations('toolsPage');
 
   return createPageMetadata({
     baseUrl: BASE_URL,

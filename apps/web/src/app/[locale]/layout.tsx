@@ -1,6 +1,6 @@
 import { AppThemeProvider, Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
 import '@/style/react-easy-crop.css';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -9,8 +9,7 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
 
@@ -108,18 +107,11 @@ async function ProductionDatabaseIndicator() {
   return <ProductionIndicator />;
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
+export default async function RootLayout({ children }: Props) {
+  const locale = await getLocale();
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
-
-  // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">

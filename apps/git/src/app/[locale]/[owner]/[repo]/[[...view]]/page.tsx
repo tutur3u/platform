@@ -64,7 +64,7 @@ export default async function RepositoryPage({
   params,
   searchParams,
 }: PageProps) {
-  const { locale, owner, repo, view = [] } = await params;
+  const { owner, repo, view = [] } = await params;
   const query = await searchParams;
   const activeView = resolveActiveView(view);
 
@@ -98,7 +98,7 @@ export default async function RepositoryPage({
         error.code === 'github_access_denied' ||
         error.code === 'github_request_failed')
     ) {
-      const t = await getTranslations({ locale, namespace: 'git' });
+      const t = await getTranslations('git');
       const rateLimited = error.code === 'github_rate_limited';
       return (
         <RepositoryFailure

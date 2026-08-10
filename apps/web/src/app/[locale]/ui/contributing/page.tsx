@@ -1,6 +1,6 @@
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { siteConfig } from '@/constants/configs';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../docs-primitives';
 import { getAccent } from '../ui-docs-theme';
@@ -23,10 +23,7 @@ const checklist = [
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs.metadata',
-  });
+  const t = await getTranslations('ui-showcase.docs.metadata');
 
   return {
     title: t('contributingTitle'),
@@ -37,15 +34,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiContributingPage({ params }: Props) {
-  const { locale } = await params;
-  const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  setRequestLocale(normalizedLocale);
-
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs',
-  });
+export default async function UiContributingPage() {
+  const t = await getTranslations('ui-showcase.docs');
   const a = getAccent('advanced');
 
   return (

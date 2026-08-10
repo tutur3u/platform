@@ -1,6 +1,6 @@
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { siteConfig } from '@/constants/configs';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../docs-primitives';
 import { getAccent } from '../ui-docs-theme';
@@ -17,10 +17,7 @@ const contributorSteps = ['metadata', 'preview', 'exports', 'tests'] as const;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs.metadata',
-  });
+  const t = await getTranslations('ui-showcase.docs.metadata');
 
   return {
     title: t('setupTitle'),
@@ -31,15 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiSetupPage({ params }: Props) {
-  const { locale } = await params;
-  const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
-  setRequestLocale(normalizedLocale);
-
-  const t = await getTranslations({
-    locale: normalizedLocale,
-    namespace: 'ui-showcase.docs',
-  });
+export default async function UiSetupPage() {
+  const t = await getTranslations('ui-showcase.docs');
   const translateDocs = t as unknown as (
     key: string,
     values?: Record<string, string | number>
