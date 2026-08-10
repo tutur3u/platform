@@ -23,6 +23,8 @@ import {
   stageDisposableProject,
   validateFocusedTestPath,
 } from '../apps/database/scripts/run-supabase-isolated.js';
+import { APPROVED_TYPEGEN_OUTPUT } from '../apps/database/scripts/run-supabase-isolated-typegen.js';
+import './run-supabase-isolated-typegen.cases.js';
 
 const CONFIG = `project_id = "tuturuuu"
 
@@ -74,6 +76,7 @@ function fakeMetadata(disposableRoot, overrides = {}) {
     repositoryRoot: '/repo',
     status: 'staged',
     testPath: 'supabase/tests/focused.sql',
+    typegenOutput: null,
     version: 1,
     ...overrides,
   };
@@ -317,7 +320,12 @@ test('argument parser keeps cleanup mutually exclusive', () => {
     cleanupRoot: null,
     resumeRoot: null,
     testPath: 'supabase/tests/a.sql',
+    typegenOutput: null,
   });
+  assert.equal(
+    parseArguments(['--typegen', APPROVED_TYPEGEN_OUTPUT]).typegenOutput,
+    APPROVED_TYPEGEN_OUTPUT
+  );
   assert.throws(
     () =>
       parseArguments(['--cleanup', '/tmp/a', '--test', 'supabase/tests/a.sql']),
@@ -357,6 +365,10 @@ test('database manifest and runbook expose the canonical commands', () => {
     runbook,
     /sb:validate:isolated --cleanup \/tmp\/tuturuuu-supabase-EXAMPLE/
   );
+  assert.match(
+    runbook,
+    /sb:validate:isolated --typegen packages\/types\/src\/supabase\.ts --test supabase\/tests\/habit-tracker-write-rls\.sql/
+  );
   assert.doesNotMatch(runbook, /bun --cwd apps\/database run /);
 });
 
@@ -392,6 +404,91 @@ test('lifecycle starts, resets, tests, and removes only its project', async () =
     ]
   );
   assert.deepEqual(removed, [metadata.disposableRoot]);
+});
+
+test('lifecycle generates only after reset and tests succeed', async () => {
+  const metadata = fakeMetadata('/tmp/tuturuuu-supabase-typegen-success', {
+    typegenOutput: APPROVED_TYPEGEN_OUTPUT,
+  });
+  const events = [];
+  const code = await runIsolatedLifecycle({
+    binaryPath: '/supabase',
+    metadata,
+    registerSignals: () => () => {},
+    removeRoot: async () => events.push('remove'),
+    runner: async (_command, args) => {
+      events.push(args[2] === 'stop' ? 'stop' : args.slice(2).join(' '));
+      return { code: 0, signal: null };
+    },
+    stderr: { write() {} },
+    typegen: async () => events.push('typegen'),
+    updateMetadata: async () => {},
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(events, [
+    'start',
+    'db reset',
+    `test db ${metadata.testPath}`,
+    'typegen',
+    'stop',
+    'remove',
+  ]);
+});
+
+for (const [name, results] of [
+  ['reset', [0, 18, 0]],
+  ['test', [0, 0, 19, 0]],
+]) {
+  test(`${name} failure never invokes typegen`, async () => {
+    const metadata = fakeMetadata(`/tmp/tuturuuu-supabase-no-${name}-typegen`, {
+      typegenOutput: APPROVED_TYPEGEN_OUTPUT,
+    });
+    const harness = lifecycleHarness(results);
+    let typegenCalled = false;
+    const code = await runIsolatedLifecycle({
+      binaryPath: '/supabase',
+      metadata,
+      registerSignals: harness.registerSignals,
+      removeRoot: async () => {},
+      runner: harness.runner,
+      stderr: { write() {} },
+      typegen: async () => {
+        typegenCalled = true;
+      },
+      updateMetadata: async () => {},
+    });
+    assert.equal(code, name === 'reset' ? 18 : 19);
+    assert.equal(typegenCalled, false);
+  });
+}
+
+test('typegen failure preserves its exit code and still scopes cleanup', async () => {
+  const metadata = fakeMetadata('/tmp/tuturuuu-supabase-typegen-exit', {
+    typegenOutput: APPROVED_TYPEGEN_OUTPUT,
+  });
+  const harness = lifecycleHarness([0, 0, 0, 0]);
+  let diagnostics = '';
+  const error = new Error('type generation failed with exit code 29.');
+  error.exitCode = 29;
+  const code = await runIsolatedLifecycle({
+    binaryPath: '/supabase',
+    metadata,
+    registerSignals: harness.registerSignals,
+    removeRoot: async () => {},
+    runner: harness.runner,
+    stderr: {
+      write(value) {
+        diagnostics += value;
+      },
+    },
+    typegen: async () => {
+      throw error;
+    },
+    updateMetadata: async () => {},
+  });
+  assert.equal(code, 29);
+  assert.equal(harness.commands.at(-1).args.includes(metadata.projectId), true);
+  assert.equal(diagnostics, 'type generation failed with exit code 29.\n');
 });
 
 for (const [name, results, expectedCode, commandCount] of [

@@ -21,6 +21,10 @@ import {
   runCommand,
   workspaceDir,
 } from './run-supabase.js';
+import {
+  generateTypesFromDisposableStack,
+  validateTypegenOutputPath,
+} from './run-supabase-isolated-typegen.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const DISPOSABLE_PREFIX = 'tuturuuu-supabase-';
@@ -29,6 +33,10 @@ const PORT_BLOCK_SIZE = 8;
 const PORT_SLOT_COUNT = 2500;
 const PORT_SLOT_ATTEMPTS = 8;
 const PORT_START = 12000;
+
+function runIsolatedCommand(command, args, cwd) {
+  return runCommand(command, args, cwd, { stdio: 'ignore' });
+}
 
 export const PORT_FIELDS = [
   { key: 'shadow_port', offset: 0, section: 'db' },
@@ -310,6 +318,7 @@ export async function stageDisposableProject({
   repositoryRoot,
   temporaryRoot = os.tmpdir(),
   testPath = null,
+  typegenOutput = null,
   trackedFiles = listTrackedSupabaseFiles(repositoryRoot),
 }) {
   const disposableRoot = await mkdtemp(
@@ -348,6 +357,7 @@ export async function stageDisposableProject({
       repositoryRoot: path.resolve(repositoryRoot),
       status: 'staged',
       testPath,
+      typegenOutput,
       version: 1,
     };
     await writeMetadata(ownedRoot, metadata);
@@ -386,8 +396,9 @@ export async function runIsolatedLifecycle({
   metadata,
   registerSignals = installSignalHandlers,
   removeRoot = removeDisposableRoot,
-  runner = runCommand,
+  runner = runIsolatedCommand,
   stderr = process.stderr,
+  typegen = generateTypesFromDisposableStack,
   updateMetadata = writeMetadata,
 }) {
   let originalCode = 0;
@@ -427,6 +438,22 @@ export async function runIsolatedLifecycle({
       testArgs.push(metadata.testPath);
     }
     await run('testing', testArgs);
+    if (metadata.typegenOutput) {
+      await updateMetadata(metadata.disposableRoot, {
+        ...metadata,
+        status: 'typegen',
+      });
+      try {
+        await typegen({ binaryPath, metadata });
+      } catch (error) {
+        originalCode = Number.isInteger(error?.exitCode) ? error.exitCode : 1;
+        throw error;
+      }
+      if (requestedSignal) {
+        originalCode = signalExitCode(requestedSignal);
+        throw new Error(`Interrupted by ${requestedSignal}.`);
+      }
+    }
   } catch (error) {
     if (originalCode === 0) {
       originalCode = 1;
@@ -469,7 +496,7 @@ export async function cleanupInterruptedProject({
   binaryPath,
   metadata,
   removeRoot = removeDisposableRoot,
-  runner = runCommand,
+  runner = runIsolatedCommand,
 }) {
   const result = await runner(
     binaryPath,
@@ -490,20 +517,34 @@ export async function cleanupInterruptedProject({
 }
 
 export function parseArguments(argv) {
-  const result = { cleanupRoot: null, resumeRoot: null, testPath: null };
+  const result = {
+    cleanupRoot: null,
+    resumeRoot: null,
+    testPath: null,
+    typegenOutput: null,
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     const value = argv[index + 1];
-    if (!['--cleanup', '--resume', '--test'].includes(argument) || !value) {
+    if (
+      !['--cleanup', '--resume', '--test', '--typegen'].includes(argument) ||
+      !value
+    ) {
       throw new Error(`Unknown or incomplete argument: ${argument}`);
     }
     if (argument === '--cleanup') result.cleanupRoot = value;
     if (argument === '--resume') result.resumeRoot = value;
     if (argument === '--test') result.testPath = value;
+    if (argument === '--typegen') result.typegenOutput = value;
     index += 1;
   }
-  if (result.cleanupRoot && (result.resumeRoot || result.testPath)) {
-    throw new Error('--cleanup cannot be combined with --resume or --test.');
+  if (
+    result.cleanupRoot &&
+    (result.resumeRoot || result.testPath || result.typegenOutput)
+  ) {
+    throw new Error(
+      '--cleanup cannot be combined with --resume, --test, or --typegen.'
+    );
   }
   return result;
 }
@@ -527,6 +568,10 @@ export async function main(
   try {
     const options = parseArguments(argv);
     const repositoryRoot = path.resolve(workspaceDir, '..', '..');
+    const typegenOutput = validateTypegenOutputPath(
+      repositoryRoot,
+      options.typegenOutput
+    );
     const binaryPath = await binaryResolver(workspaceDir);
 
     if (options.cleanupRoot) {
@@ -542,6 +587,11 @@ export async function main(
           ...metadata,
           testPath: validateFocusedTestPath(repositoryRoot, options.testPath),
         };
+      }
+      if (typegenOutput) {
+        metadata = { ...metadata, typegenOutput };
+      } else if (metadata.typegenOutput) {
+        validateTypegenOutputPath(repositoryRoot, metadata.typegenOutput);
       }
     } else {
       const headSha = gitValue(repositoryRoot, ['rev-parse', 'HEAD']);
@@ -565,6 +615,7 @@ export async function main(
         projectId: identity.projectId,
         repositoryRoot,
         testPath,
+        typegenOutput,
       });
     }
 

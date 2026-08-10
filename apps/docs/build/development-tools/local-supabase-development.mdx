@@ -174,6 +174,19 @@ For a focused pgTAP file, pass its path relative to `apps/database`:
 bun --cwd apps/database sb:validate:isolated --test supabase/tests/workspace-creator-membership.sql
 ```
 
+To replace the checked-in database types only after the disposable reset and
+focused pgTAP test both succeed, add the exact approved output path:
+
+```bash
+bun --cwd apps/database sb:validate:isolated --typegen packages/types/src/supabase.ts --test supabase/tests/habit-tracker-write-rls.sql
+```
+
+The type generator uses the same pinned Supabase binary and disposable project,
+includes the `public`, `private`, and `storage` schemas, buffers its output, and
+atomically replaces `packages/types/src/supabase.ts` only after a successful,
+non-empty result. Reset, pgTAP, type generation, or output-write failure keeps
+the existing generated file unchanged. No other output path is accepted.
+
 The runner derives a Docker-safe project identity from the exact worktree path
 and Git commit, selects an available deterministic eight-port block, and prints
 both before starting. It copies only Git-tracked files from
