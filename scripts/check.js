@@ -373,6 +373,15 @@ const checks = [
     },
   },
   {
+    name: 'next-intl-setup',
+    command: 'bun',
+    args: ['i18n:setup-check'],
+    parseOutput: (stdout) => {
+      const match = stdout.match(/verified for (\d+) apps/iu);
+      return match ? `${match[1]} Next apps verified` : 'Passed';
+    },
+  },
+  {
     name: 'i18n-key-parity',
     command: 'bun',
     args: ['i18n:key-parity'],
