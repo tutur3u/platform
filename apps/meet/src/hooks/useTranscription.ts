@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api';
 import type { RecordingStatus } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/sonner';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface UseTranscriptionProps {
@@ -16,11 +17,22 @@ interface UseTranscriptionProps {
   sessionId: string;
 }
 
+function getTranscriptionInputError(error: unknown) {
+  if (!(error instanceof Error)) return null;
+  const code = 'code' in error ? error.code : undefined;
+  const status = 'status' in error ? error.status : undefined;
+  return {
+    code: typeof code === 'string' ? code : undefined,
+    status: typeof status === 'number' ? status : undefined,
+  };
+}
+
 export function useTranscription({
   wsId,
   meetingId,
   sessionId,
 }: UseTranscriptionProps) {
+  const t = useTranslations('meet.transcription');
   const queryClient = useQueryClient();
   const [isTranscribing, setIsTranscribing] = useState(false);
 
@@ -111,11 +123,43 @@ export function useTranscription({
         console.error('Failed to update status to failed:', statusError);
       }
 
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to transcribe recording';
-      toast.error(`Transcription failed: ${errorMessage}`);
+      let errorMessage: string;
+      let knownInputError = false;
+      const inputError = getTranscriptionInputError(error);
+      if (inputError) {
+        if (
+          inputError.code === 'TRANSCRIPTION_AUDIO_TOO_LARGE' ||
+          inputError.status === 413
+        ) {
+          errorMessage = t('too_large');
+          knownInputError = true;
+        } else if (
+          inputError.code === 'UNSUPPORTED_TRANSCRIPTION_AUDIO_TYPE' ||
+          inputError.status === 415
+        ) {
+          errorMessage = t('unsupported_type');
+          knownInputError = true;
+        } else if (
+          inputError.code === 'EMPTY_TRANSCRIPTION_AUDIO' ||
+          inputError.status === 400
+        ) {
+          errorMessage = t('empty');
+          knownInputError = true;
+        } else {
+          errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'Failed to transcribe recording';
+        }
+      } else {
+        errorMessage =
+          error instanceof Error
+            ? error.message
+            : 'Failed to transcribe recording';
+      }
+      toast.error(
+        knownInputError ? errorMessage : `Transcription failed: ${errorMessage}`
+      );
     } finally {
       setIsTranscribing(false);
     }
