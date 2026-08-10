@@ -55,6 +55,18 @@ Tasks may serve credentialed browser API traffic from first-party Web/platform
 origins, but CORS must stay origin-specific. Do not use wildcard credentialed
 CORS for task APIs.
 
+### Task Embedding Webhook Operations
+
+The Supabase task embedding webhook must send its configured shared secret in
+the `x-webhook-secret` header. Set `SUPABASE_WEBHOOK_SECRET` in the Tasks
+deployment and use the same value in the Supabase Database Webhook header
+configuration. Use a secret placeholder in local examples and operational
+documentation; never record the deployed value.
+
+The route fails closed before parsing the payload or creating an admin Supabase
+client. Missing or empty server configuration returns a server configuration
+error, while an absent or mismatched request header returns `401 Unauthorized`.
+
 CLI task commands call the Tasks origin with bearer app-session tokens minted by
 `apps/web`. The Tasks proxy must pass `ttr_app_...` bearer tokens to route-level
 `withSessionAuth` so the route can verify CLI scope, expiry, and target-app
