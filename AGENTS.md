@@ -81,6 +81,18 @@ surface you are changing:
   the shared main checkout onto the PR branch. Run `bun setup` immediately after
   creating the worktree. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
+- When the user authorizes ongoing integration, periodically checkpoint verified
+  work instead of leaving it indefinitely only in retained worktrees: create
+  scoped commits, integrate them into `main`, wait for every workflow on the
+  exact main SHA to finish green, run `bun git-sync`, and verify production
+  follow-through. Only then remove the completed worktree and delete its local
+  task branch. Never remove dirty, blocked, unmerged, user-owned, or
+  other-agent-owned worktrees or branches.
+- Keep Rust build storage bounded with `bun rust-cache report` and the
+  repository-owned `prune`/`auto` commands. Inspect the owning worktree first,
+  use an explicit size/age bound, and prune only rebuildable
+  `apps/backend/target` artifacts; never delete source or an unmerged worktree
+  merely to reclaim Rust cache space.
 - Before staging, unstaging, committing, amending, rebasing, or user-requested
   commit-and-push work in a shared checkout, claim the Git commit window with
   `bun git-commit-window claim` or wait with `bun git-commit-window wait`.

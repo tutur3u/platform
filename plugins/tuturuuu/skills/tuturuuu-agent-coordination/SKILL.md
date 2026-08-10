@@ -47,6 +47,20 @@ uncommitted work; read it when the task spans more than one checkout.
   local task branch. Never remove an open or unmerged PR worktree as routine
   cleanup.
 
+## Verified Integration And Cleanup
+
+- When the user has authorized ongoing integration, checkpoint completed,
+  verified lanes periodically instead of accumulating finished worktrees.
+- Integrate a scoped commit into current `main`, wait until every workflow for
+  that exact main SHA is green, run `bun git-sync`, and verify the production
+  follow-through before cleanup.
+- Remove only the worktree that produced the confirmed integrated commit and
+  delete only its local task branch. Keep dirty, blocked, unmerged, user-owned,
+  and other-agent-owned worktrees and branches intact.
+- Before deleting a retained Rust-heavy worktree, or while retaining an
+  unmerged one, use `bun rust-cache report` and the bounded `prune`/`auto`
+  commands for `apps/backend/target`; never substitute broad filesystem cleanup.
+
 ## Coordination Posture
 
 - Run `git status --short` before choosing a write set.

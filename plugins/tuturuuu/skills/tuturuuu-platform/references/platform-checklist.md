@@ -73,6 +73,13 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - After an open PR is confirmed merged into `main` and its required sync checks
   finish, remove its `.worktrees/` checkout and delete the local task branch.
   Keep both intact while the PR remains open or unmerged.
+- For user-authorized ongoing integration, periodically land completed scoped
+  commits, require the exact main SHA to be fully green, run `bun git-sync`, and
+  verify production before removing only the completed worktree/branch. Preserve
+  dirty, blocked, unmerged, user-owned, and other-agent-owned lanes.
+- Keep retained Rust worktrees lightweight with `bun rust-cache report` and
+  explicit bounded `prune`/`auto` cleanup of `apps/backend/target`; never use
+  broad deletion as a substitute for branch/worktree lifecycle checks.
 - Format touched files with the repo-preferred command.
 - Run focused tests for changed behavior.
 - Run `bun check` for TypeScript, JavaScript, root script, or repo config changes.
