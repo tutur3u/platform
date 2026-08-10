@@ -1,13 +1,13 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import type { LaunchableAppSlug } from '@tuturuuu/utils/launchable-apps';
 import { type ReactNode, Suspense } from 'react';
 import { GlobalCommandLauncher } from '../components/command-launcher';
+import { createSatelliteQueryClient } from './query-client';
 
-const queryClient = new QueryClient();
+const queryClient = createSatelliteQueryClient();
 
 export function ClientProviders({
   children,
@@ -26,7 +26,6 @@ export function ClientProviders({
           </Suspense>
         )}
       </TooltipProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

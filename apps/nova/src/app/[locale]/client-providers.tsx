@@ -5,7 +5,14 @@ import { GlobalCommandLauncher } from '@tuturuuu/satellite/command-launcher';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import type { ReactNode } from 'react';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
 
 export function ClientProviders({ children }: { children: ReactNode }) {
   return (
