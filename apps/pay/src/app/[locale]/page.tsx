@@ -1,10 +1,7 @@
+import { getLocale } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
 
-export default async function PayPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
+export default async function PayPage() {
+  const locale = await getLocale();
   redirect({ href: '/dashboard', locale });
 }
