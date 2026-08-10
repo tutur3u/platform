@@ -1,9 +1,11 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const COURSE_ID = '33333333-3333-4333-8333-333333333333';
 
 const mocks = vi.hoisted(() => {
+  const containsPermission = vi.fn();
   const membershipMaybeSingle = vi.fn();
   const normalizeWorkspaceId = vi.fn();
   const courseMaybeSingle = vi.fn();
@@ -51,6 +53,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    containsPermission,
     courseMaybeSingle,
     listModulesEq,
     membershipMaybeSingle,
@@ -88,6 +91,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
     await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
   return {
     ...actual,
+    getPermissions: vi.fn(async () => ({
+      containsPermission: mocks.containsPermission,
+    })),
     normalizeWorkspaceId: (
       ...args: Parameters<typeof mocks.normalizeWorkspaceId>
     ) => mocks.normalizeWorkspaceId(...args),
@@ -105,6 +111,7 @@ describe('module order route', () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(
       '00000000-0000-0000-0000-000000000001'
     );
+    mocks.containsPermission.mockReturnValue(true);
     mocks.membershipMaybeSingle.mockResolvedValue({
       data: { type: 'MEMBER' as const },
       error: null,
@@ -121,6 +128,34 @@ describe('module order route', () => {
       error: null,
     });
     mocks.rpc.mockResolvedValue({ data: null, error: null });
+  });
+
+  it('rejects members without manage_users before parsing or creating an admin client', async () => {
+    mocks.containsPermission.mockReturnValueOnce(false);
+    const { PATCH } = await import('./route');
+    const request = new NextRequest(
+      `http://localhost/api/v1/workspaces/ws-1/courses/${COURSE_ID}/module-order`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          moduleIds: ['11111111-1111-4111-8111-111111111111'],
+        }),
+      }
+    );
+    const parseBody = vi.spyOn(request, 'json');
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({ wsId: 'ws-1', courseId: COURSE_ID }),
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Insufficient permissions',
+    });
+    expect(mocks.containsPermission).toHaveBeenCalledWith('manage_users');
+    expect(parseBody).not.toHaveBeenCalled();
+    expect(createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('returns 400 when module ids are duplicated', async () => {
@@ -173,6 +208,7 @@ describe('module order route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ message: 'success' });
+    expect(mocks.containsPermission).toHaveBeenCalledWith('manage_users');
     expect(mocks.rpc).toHaveBeenCalledWith('reorder_workspace_course_modules', {
       p_group_id: COURSE_ID,
       p_module_ids: [

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -50,6 +51,17 @@ export const PATCH = withSessionAuth(
     if (!membership.ok) {
       return NextResponse.json(
         { message: "You don't have access to this workspace" },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: normalizedWsId,
+    });
+    if (!permissions?.containsPermission('manage_users')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
         { status: 403 }
       );
     }
