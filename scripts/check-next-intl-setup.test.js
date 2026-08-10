@@ -35,7 +35,7 @@ function writeNextIntlApp(rootDir, app, { localeRoot = true } = {}) {
     rootDir,
     `apps/${app}/src/i18n/request.ts`,
     localeRoot
-      ? 'getRequestConfig(async ({locale: localeOverride}) => { const locale = await resolveRootLocale([]); return {locale, messages: {}}; });\n'
+      ? 'getRequestConfig(async ({locale: localeOverride, requestLocale}) => { const locale = await resolveRootLocale([], localeOverride ?? (await requestLocale)); return {locale, messages: {}}; });\n'
       : 'getRequestConfig(async ({requestLocale}) => ({locale: await requestLocale, messages: {}}));\n'
   );
   if (localeRoot) {
@@ -58,13 +58,13 @@ test('accepts locale-rooted and unsegmented next-intl apps', (t) => {
   assert.deepEqual(result.errors, []);
 });
 
-test('rejects requestLocale and setRequestLocale in locale-rooted apps', (t) => {
+test('rejects root params and setRequestLocale in locale-rooted apps', (t) => {
   const rootDir = createProject(t);
   writeNextIntlApp(rootDir, 'web');
   write(
     rootDir,
     'apps/web/src/i18n/request.ts',
-    'getRequestConfig(async ({requestLocale}) => ({locale: await requestLocale, messages: {}}));\n'
+    "import {locale} from 'next/root-params'; getRequestConfig(async () => ({locale: await locale(), messages: {}}));\n"
   );
   write(
     rootDir,
@@ -77,7 +77,10 @@ test('rejects requestLocale and setRequestLocale in locale-rooted apps', (t) => 
   assert.ok(errors.some((error) => error.includes('must accept locale')));
   assert.ok(errors.some((error) => error.includes('must resolve root locale')));
   assert.ok(
-    errors.some((error) => error.includes('must not use requestLocale'))
+    errors.some((error) => error.includes('must resolve requestLocale'))
+  );
+  assert.ok(
+    errors.some((error) => error.includes('must not import next/root-params'))
   );
   assert.ok(errors.some((error) => error.includes('legacy setRequestLocale')));
 });

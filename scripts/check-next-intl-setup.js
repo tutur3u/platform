@@ -88,9 +88,14 @@ function validateNextIntlApp({ appDir, name }) {
         `${name}: locale-root request config must resolve root locale`
       );
     }
-    if (request.includes('requestLocale')) {
+    if (!request.includes('requestLocale')) {
       errors.push(
-        `${name}: locale-root request config must not use requestLocale`
+        `${name}: locale-root request config must resolve requestLocale`
+      );
+    }
+    if (request.includes('next/root-params')) {
+      errors.push(
+        `${name}: locale-root request config must not import next/root-params`
       );
     }
     if (!layout.includes('const locale = await getLocale()')) {

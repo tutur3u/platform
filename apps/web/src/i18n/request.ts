@@ -17,31 +17,36 @@ export type IntlFormats = {
   };
 };
 
-export default getRequestConfig(async ({ locale: localeOverride }) => {
-  const locale = await resolveRootLocale(routing.locales, localeOverride);
+export default getRequestConfig(
+  async ({ locale: localeOverride, requestLocale }) => {
+    const locale = await resolveRootLocale(
+      routing.locales,
+      localeOverride ?? (await requestLocale)
+    );
 
-  return {
-    locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
-    formats: {
-      dateTime: {
-        short: {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
+    return {
+      locale,
+      messages: (await import(`../../messages/${locale}.json`)).default,
+      formats: {
+        dateTime: {
+          short: {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          },
         },
-      },
-      number: {
-        precise: {
-          maximumFractionDigits: 5,
+        number: {
+          precise: {
+            maximumFractionDigits: 5,
+          },
         },
-      },
-      list: {
-        enumeration: {
-          style: 'long',
-          type: 'conjunction',
+        list: {
+          enumeration: {
+            style: 'long',
+            type: 'conjunction',
+          },
         },
-      },
-    } as IntlFormats,
-  };
-});
+      } as IntlFormats,
+    };
+  }
+);
