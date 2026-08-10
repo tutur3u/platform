@@ -70,6 +70,10 @@ uncommitted work; read it when the task spans more than one checkout.
 - Treat `Status:` as canonical metadata: it must be exactly `working`,
   `blocked`, `handoff`, or `done`. Details belong in `Needs:`, `Verification:`,
   or `Risks:`. Missing or noncanonical statuses are active until resolved.
+- Run `bun coordination:audit` when ownership is ambiguous. Its default mode is
+  read-only and exits zero while reporting legacy debt; it never grants
+  ownership. Reserve `--strict` for clean fixtures or an owner-approved clean
+  environment.
 - Treat `tmp/agent-coordination/archive/` as historical context. Search it only
   with targeted keywords when a task mentions prior work, an active note points
   to archived context, or you need deployment/workflow history. Archived notes

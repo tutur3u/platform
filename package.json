@@ -53,6 +53,7 @@
     "ttr": "bun packages/sdk/src/cli/index.ts",
     "git-sync": "node scripts/git-sync.js",
     "git-commit-window": "node scripts/git-commit-window.js",
+    "coordination:audit": "node scripts/coordination-notes.js audit",
     "turbo:local": "bun --no-install run turbo --",
     "build": "bun turbo:local run build",
     "mobile:firebase:configure": "node scripts/mobile-firebase-config.js",

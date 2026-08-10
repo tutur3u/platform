@@ -147,6 +147,12 @@ now isolated and safe, but manual destructive Git in the shared checkout is not.
    Put details such as `committed`, `done with concerns`, or follow-up context
    in `Needs:`, `Verification:`, or `Risks:`. Treat missing or noncanonical
    statuses as active until you read the note and resolve the ambiguity.
+   When ownership is ambiguous, run `bun coordination:audit`. The default audit
+   is read-only, reports current legacy debt, and exits zero without granting
+   ownership. `bun coordination:audit --strict` exits nonzero on any diagnostic
+   and is reserved for clean fixtures or an owner-approved clean environment.
+   Only the note's owner or an explicitly authorized operator may fix or archive
+   a reported note.
 3. If the archive exists, search archived context only when the current task
    references previous work, an active note points there, or a shared
    workflow/deployment decision needs history:

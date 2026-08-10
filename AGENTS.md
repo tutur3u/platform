@@ -268,6 +268,14 @@ Use exact coordination statuses `working`, `blocked`, `handoff`, or `done`;
 archive top-level `done` notes, and treat missing or noncanonical statuses as
 active until resolved. Never stage coordination notes.
 
+Run `bun coordination:audit` when note ownership is ambiguous. The read-only
+default reports legacy lifecycle debt and exits zero; it does not grant path
+ownership. `bun coordination:audit --strict` exits nonzero when diagnostics are
+present and is intended only for clean fixtures or an owner-approved clean
+environment. Missing or noncanonical notes remain active under this policy, and
+only the note's owner or an explicitly authorized operator may fix or archive
+them.
+
 `bun git-commit-window` stores an advisory lock at
 `tmp/agent-coordination/git-commit-window.lock.json`. It serializes Git index
 and commit operations only; it does not grant file ownership or permission to
