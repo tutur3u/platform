@@ -18,6 +18,7 @@ import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { resolveTimeTrackingReadUser } from '@/lib/time-tracking/cross-user-read-authorization';
 import {
   getWorkspaceConfig,
   isPersonalWorkspace,
@@ -458,8 +459,6 @@ export const GET = withSessionAuth<{ wsId: string }>(
         supabase,
         request
       );
-      const sbAdmin = await createAdminClient();
-
       // Verify workspace access
       const memberCheck = await verifyWorkspaceMembershipType({
         wsId: normalizedWsId,
@@ -502,31 +501,17 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
       const cursor = url.searchParams.get('cursor');
 
-      // Determine which user's data to fetch (current user or specified user)
-      const queryUserId = targetUserId || user.id;
+      const readUser = await resolveTimeTrackingReadUser({
+        actorId: user.id,
+        request,
+        supabase,
+        targetUserId,
+        wsId: normalizedWsId,
+      });
+      if (!readUser.ok) return readUser.response;
 
-      // If targeting another user, verify they're in the same workspace
-      if (targetUserId && targetUserId !== user.id) {
-        const targetMembership = await verifyWorkspaceMembershipType({
-          wsId: normalizedWsId,
-          userId: targetUserId,
-          supabase,
-        });
-
-        if (targetMembership.error === 'membership_lookup_failed') {
-          return NextResponse.json(
-            { error: 'Failed to verify target user access' },
-            { status: 500 }
-          );
-        }
-
-        if (!targetMembership.ok) {
-          return NextResponse.json(
-            { error: 'Target user not found in workspace' },
-            { status: 404 }
-          );
-        }
-      }
+      const queryUserId = readUser.userId;
+      const sbAdmin = await createAdminClient();
 
       if (type === 'running') {
         // Get current running session, then resolve task info through a
