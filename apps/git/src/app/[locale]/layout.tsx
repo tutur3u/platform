@@ -5,13 +5,12 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
 import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
 import 'streamdown/styles.css';
 import '../git.css';
@@ -43,14 +42,8 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
-
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
+export default async function RootLayout({ children }: Props) {
+  const locale = await getLocale();
 
   return (
     <html lang={locale} suppressHydrationWarning>

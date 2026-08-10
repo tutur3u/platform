@@ -9,10 +9,10 @@ export async function generateMetadata({
 }: {
   params: Promise<{ locale: string; storeSlug: string }>;
 }): Promise<Metadata> {
-  const { locale, storeSlug } = await params;
+  const { storeSlug } = await params;
   const [response, t] = await Promise.all([
     getServerInventoryStorefront(storeSlug),
-    getTranslations({ locale, namespace: 'storefront.history' }),
+    getTranslations('storefront.history'),
   ]);
 
   return {

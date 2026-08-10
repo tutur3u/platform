@@ -32,7 +32,6 @@ vi.mock('./docs-primitives', async (importOriginal) => {
 });
 
 vi.mock('next-intl/server', () => ({
-  setRequestLocale: vi.fn(),
   getTranslations:
     async ({ namespace }: { namespace?: string }) =>
     (key: string, values?: Record<string, string | number>) => {

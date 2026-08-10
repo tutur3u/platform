@@ -9,13 +9,12 @@ import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { siteConfig } from '@/constants/configs';
-import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -54,14 +53,8 @@ export function generateStaticParams() {
   }));
 }
 
-export default async function RootLayout({ children, params }: Props) {
-  const { locale } = await params;
-
-  if (!routing.locales.includes(locale as Locale)) {
-    notFound();
-  }
-
-  setRequestLocale(locale as Locale);
+export default async function RootLayout({ children }: Props) {
+  const locale = await getLocale();
 
   return (
     <html lang={locale} suppressHydrationWarning>

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import { setRequestLocale } from 'next-intl/server';
-import { type Locale, supportedLocales } from '@/i18n/routing';
+import { supportedLocales } from '@/i18n/routing';
 
 interface Props {
   children: React.ReactNode;
@@ -86,9 +85,6 @@ export function generateStaticParams() {
   return supportedLocales.map((locale) => ({ locale }));
 }
 
-export default async function WomenInTechLayout({ children, params }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale as Locale);
-
+export default function WomenInTechLayout({ children }: Props) {
   return <>{children}</>;
 }
