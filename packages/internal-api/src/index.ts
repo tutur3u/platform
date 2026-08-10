@@ -1326,7 +1326,12 @@ export {
   type WorkspaceNotificationPreferencesResponse,
   type WorkspaceNotificationPreferenceUpdate,
 } from './notifications';
-export { getCurrentUserNovaTeam } from './nova';
+export {
+  getCurrentUserNovaTeam,
+  type NovaSubmissionUser,
+  type NovaSubmissionUserSearchResponse,
+  searchNovaSubmissionUsers,
+} from './nova';
 export {
   type ConnectedOnboardingProgress,
   type ConnectedOnboardingUpdate,
