@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2026-06-21'
+updatedAt: '2026-08-10'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -46,7 +46,8 @@ USING (
   ws_id IN (
     SELECT ws_id
     FROM workspace_members
-    WHERE user_id = auth.uid()
+    WHERE user_id = (select auth.uid())
+      AND type = 'MEMBER'
   )
 );
 ```
@@ -67,14 +68,31 @@ CREATE POLICY "Users can update tasks with manage_projects permission"
 ON workspace_tasks
 FOR UPDATE
 USING (
-  ws_id IN (
-    SELECT wm.ws_id
+  EXISTS (
+    SELECT 1
     FROM workspace_members wm
-    JOIN workspace_role_permissions wrp
-      ON wrp.ws_id = wm.ws_id
-      AND wrp.role_id = wm.role
-    WHERE wm.user_id = auth.uid()
-      AND wrp.permission = 'manage_projects'
+    WHERE wm.ws_id = workspace_tasks.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    workspace_tasks.ws_id,
+    (select auth.uid()),
+    'manage_projects'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    WHERE wm.ws_id = workspace_tasks.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    workspace_tasks.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 ```
@@ -155,14 +173,45 @@ CREATE POLICY "Users can manage calendar events with permission"
 ON workspace_calendar_events
 FOR ALL
 USING (
-  ws_id IN (
-    SELECT wm.ws_id
+  EXISTS (
+    SELECT 1
     FROM workspace_members wm
-    JOIN workspace_role_permissions wrp
-      ON wrp.ws_id = wm.ws_id
-      AND wrp.role_id = wm.role
-    WHERE wm.user_id = auth.uid()
-      AND wrp.permission IN ('manage_calendar', 'manage_workspace_settings')
+    WHERE wm.ws_id = workspace_calendar_events.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND (
+    public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
+    )
+    OR public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_workspace_settings'
+    )
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    WHERE wm.ws_id = workspace_calendar_events.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND (
+    public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_calendar'
+    )
+    OR public.has_workspace_permission(
+      workspace_calendar_events.ws_id,
+      (select auth.uid()),
+      'manage_workspace_settings'
+    )
   )
 );
 ```
@@ -179,8 +228,10 @@ CREATE POLICY "Members can view workspace settings"
 ON workspaces
 FOR SELECT
 USING (
-  id IN (
-    SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = workspaces.id
+      AND wm.user_id = (select auth.uid())
   )
 );
 
@@ -189,13 +240,31 @@ CREATE POLICY "Users can update workspace with permission"
 ON workspaces
 FOR UPDATE
 USING (
-  id IN (
-    SELECT wm.ws_id
+  EXISTS (
+    SELECT 1
     FROM workspace_members wm
-    JOIN workspace_role_permissions wrp
-      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
-    WHERE wm.user_id = auth.uid()
-      AND wrp.permission = 'manage_workspace_settings'
+    WHERE wm.ws_id = workspaces.id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    workspaces.id,
+    (select auth.uid()),
+    'manage_workspace_settings'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM workspace_members wm
+    WHERE wm.ws_id = workspaces.id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    workspaces.id,
+    (select auth.uid()),
+    'manage_workspace_settings'
   )
 );
 ```
@@ -319,7 +388,7 @@ create or replace function public.authorize_workspace_sensitive_rpc(
 returns void
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   if auth.role() = 'service_role' then
@@ -640,12 +709,29 @@ USING (ws_id IN (SELECT ws_id FROM workspace_members WHERE user_id = auth.uid())
 CREATE POLICY "permission_required_to_modify"
 ON resource FOR ALL
 USING (
-  ws_id IN (
-    SELECT wm.ws_id FROM workspace_members wm
-    JOIN workspace_role_permissions wrp
-      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
-    WHERE wm.user_id = auth.uid()
-      AND wrp.permission = 'specific_permission'
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = resource.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    resource.ws_id,
+    (select auth.uid()),
+    'manage_projects'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = resource.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    resource.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 ```
@@ -674,10 +760,27 @@ ON public_resource FOR ALL
 USING (
   EXISTS (
     SELECT 1 FROM workspace_members wm
-    JOIN workspace_role_permissions wrp
-      ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
-    WHERE wm.user_id = auth.uid()
-      AND wrp.permission = 'manage_workspace_settings'
+    WHERE wm.ws_id = public_resource.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    public_resource.ws_id,
+    (select auth.uid()),
+    'manage_workspace_settings'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = public_resource.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    public_resource.ws_id,
+    (select auth.uid()),
+    'manage_workspace_settings'
   )
 );
 ```
@@ -721,7 +824,7 @@ When adding a new table, always include RLS:
 -- Create table
 CREATE TABLE new_feature (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  ws_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,
   name text NOT NULL,
   created_by uuid REFERENCES workspace_users(id),
   created_at timestamptz DEFAULT now()
@@ -734,18 +837,39 @@ ALTER TABLE new_feature ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "workspace_members_can_view"
 ON new_feature FOR SELECT
 USING (ws_id IN (
-  SELECT ws_id FROM workspace_members WHERE user_id = auth.uid()
+  SELECT ws_id FROM workspace_members
+  WHERE user_id = (select auth.uid())
+    AND type = 'MEMBER'
 ));
 
 CREATE POLICY "permission_required_to_modify"
 ON new_feature FOR ALL
-USING (ws_id IN (
-  SELECT wm.ws_id FROM workspace_members wm
-  JOIN workspace_role_permissions wrp
-    ON wrp.ws_id = wm.ws_id AND wrp.role_id = wm.role
-  WHERE wm.user_id = auth.uid()
-    AND wrp.permission = 'manage_specific_feature'
-));
+USING (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = new_feature.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    new_feature.ws_id,
+    (select auth.uid()),
+    'manage_projects'
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM workspace_members wm
+    WHERE wm.ws_id = new_feature.ws_id
+      AND wm.user_id = (select auth.uid())
+      AND wm.type = 'MEMBER'
+  )
+  AND public.has_workspace_permission(
+    new_feature.ws_id,
+    (select auth.uid()),
+    'manage_projects'
+  )
+);
 
 -- Add indexes for policy performance
 CREATE INDEX idx_new_feature_ws_id ON new_feature(ws_id);

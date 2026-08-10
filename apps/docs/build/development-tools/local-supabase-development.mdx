@@ -1,7 +1,7 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-06-21'
+updatedAt: '2026-08-10'
 ---
 
 <Info>
@@ -342,7 +342,13 @@ Policies define the conditions under which users can access or modify data. Here
 
 #### Organization-based Access
 
-In Tuturuuu, most resources belong to an organization (workspace). Here's how to create policies for organization-based access:
+In Tuturuuu, workspace-scoped resource tables use `ws_id`, and membership rows
+use `workspace_members.ws_id` plus the `workspace_member_type` enum. Use
+`MEMBER` when an example requires a full member rather than a guest. For
+application-specific mutations, pair membership with the maintained permission
+helper and confirm the permission name in the generated enum. The canonical
+[RLS policy reference](/reference/database/rls-policies) explains when a
+different membership or permission rule is appropriate.
 
 ```sql
 -- Allow users to select data from their organizations
@@ -351,75 +357,161 @@ on public.table_name
 for select
 to authenticated
 using (
-  auth.uid() in (
-    select user_id from public.workspace_members
-    where workspace_id = table_name.workspace_id
+  exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
   )
 );
 
--- Allow organization admins to insert data
-create policy "Organization admins can insert data"
+-- Allow members with manage_projects to insert data
+create policy "Project managers can insert data"
 on public.table_name
 for insert
 to authenticated
 with check (
-  auth.uid() in (
-    select user_id from public.workspace_members
-    where workspace_id = table_name.workspace_id
-    and role = 'admin'
+  exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
+  )
+  and public.has_workspace_permission(
+    table_name.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 
--- Allow organization admins to update data
-create policy "Organization admins can update data"
+-- UPDATE needs USING for the existing row and WITH CHECK for the new row
+create policy "Project managers can update data"
 on public.table_name
 for update
 to authenticated
 using (
-  auth.uid() in (
-    select user_id from public.workspace_members
-    where workspace_id = table_name.workspace_id
-    and role = 'admin'
+  exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
+  )
+  and public.has_workspace_permission(
+    table_name.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 )
 with check (
-  auth.uid() in (
-    select user_id from public.workspace_members
-    where workspace_id = table_name.workspace_id
-    and role = 'admin'
+  exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
+  )
+  and public.has_workspace_permission(
+    table_name.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 
--- Allow organization admins to delete data
-create policy "Organization admins can delete data"
+-- DELETE uses USING because there is no new row to check
+create policy "Project managers can delete data"
 on public.table_name
 for delete
 to authenticated
 using (
-  auth.uid() in (
-    select user_id from public.workspace_members
-    where workspace_id = table_name.workspace_id
-    and role = 'admin'
+  exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
+  )
+  and public.has_workspace_permission(
+    table_name.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 ```
 
 #### Role-based Access
 
-For more granular control based on user roles:
+Use `public.has_workspace_permission(p_ws_id, p_user_id, p_permission)` rather
+than joining retired member-role columns. Permission checks should still be
+paired with membership when a workspace-wide default permission must not admit
+non-members.
+
+If a policy needs a recursion-free membership lookup, keep the helper in a
+non-exposed schema, derive identity from the request, and harden its execution
+boundary before referencing it from a policy:
 
 ```sql
--- Allow members with specific permission to access a resource
-create policy "Members with view_projects permission can view projects"
-on public.projects
+create or replace function private.can_access_workspace(p_ws_id uuid)
+returns boolean
+language plpgsql
+security definer
+stable
+set search_path = ''
+as $$
+declare
+  v_caller_id uuid := (select auth.uid());
+begin
+  if coalesce((select auth.jwt() ->> 'role'), '') = 'service_role' then
+    return true;
+  end if;
+
+  if v_caller_id is null then
+    return false;
+  end if;
+
+  return exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = p_ws_id
+      and workspace_member.user_id = v_caller_id
+      and workspace_member.type = 'MEMBER'
+  );
+end;
+$$;
+
+revoke execute on function private.can_access_workspace(uuid)
+from public, anon, authenticated, service_role;
+grant execute on function private.can_access_workspace(uuid)
+to authenticated, service_role;
+```
+
+Because `private` is not a Data API schema, this narrowly granted helper cannot
+be invoked as an exposed RPC. A public Data API RPC needs its own internal
+workspace permission check; a page or route check is not enough. Revoke
+`public` and `anon`, grant only the required caller role, and cover the grant
+matrix and allowed/denied calls with pgTAP. See
+[Workspace-Scoped Security Definer RPCs](/reference/database/rls-policies#pattern-9-workspace-scoped-security-definer-rpcs).
+
+```sql
+-- Allow full members with manage_projects to access a resource
+create policy "Project managers can view workspace data"
+on public.table_name
 for select
 to authenticated
 using (
   exists (
-    select 1 from public.workspace_member_permissions
-    where user_id = auth.uid()
-    and workspace_id = projects.workspace_id
-    and permission = 'view_projects'
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = table_name.ws_id
+      and workspace_member.user_id = (select auth.uid())
+      and workspace_member.type = 'MEMBER'
+  )
+  and public.has_workspace_permission(
+    table_name.ws_id,
+    (select auth.uid()),
+    'manage_projects'
   )
 );
 ```
@@ -438,29 +530,17 @@ For better performance in your RLS policies:
    using ((select auth.uid()) = user_id);
    ```
 
-2. **Use security definer functions** for complex access logic:
+2. **Use hardened security-definer helpers only when needed**. The
+   `private.can_access_workspace` recipe above shows the required caller,
+   service-role, search-path, and grant controls. Wrap stable helper calls in a
+   scalar subquery so Postgres can evaluate them once per statement:
 
    ```sql
-   create or replace function private.can_access_workspace(workspace_uuid uuid)
-   returns boolean
-   language plpgsql
-   security definer
-   as $$
-   begin
-     return exists (
-       select 1 from public.workspace_members
-       where user_id = auth.uid()
-       and workspace_id = workspace_uuid
-     );
-   end;
-   $$;
-
-   -- Use the function in your policy
    create policy "Users can access workspace data"
    on public.table_name
    for select
    to authenticated
-   using (private.can_access_workspace(workspace_id));
+   using ((select private.can_access_workspace(table_name.ws_id)));
    ```
 
 3. **Add explicit filters** in your queries even when you have RLS:
@@ -487,7 +567,7 @@ To run the database test suite locally:
 
    ```bash
    # From the repo root
-   bun --cwd apps/database run scripts/run-supabase.js test db
+   bun --cwd apps/database scripts/run-supabase.js test db
    ```
 
    `run-supabase.js` resolves the pinned local Supabase binary and invokes
@@ -555,23 +635,26 @@ create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
+set search_path = ''
 as $$
+declare
+  v_workspace_id uuid := gen_random_uuid();
 begin
   -- Create a personal workspace for the new user
-  insert into public.workspaces (id, name, created_by)
-  values (gen_random_uuid(), new.email || '''s workspace', new.id);
+  insert into public.workspaces (id, name, personal, creator_id)
+  values (v_workspace_id, new.email || '''s workspace', true, new.id);
 
-  -- Make the user an admin of their personal workspace
-  insert into public.workspace_members (workspace_id, user_id, role)
-  values (
-    (select id from public.workspaces where created_by = new.id),
-    new.id,
-    'admin'
-  );
+  -- Record the creator as a full member without re-querying the workspace
+  insert into public.workspace_members (ws_id, user_id, type)
+  values (v_workspace_id, new.id, 'MEMBER');
 
   return new;
 end;
 $$;
+
+revoke execute on function public.handle_new_user()
+from public, anon, authenticated, service_role;
+grant execute on function public.handle_new_user() to supabase_auth_admin;
 ```
 
 2. Then, create the trigger:
@@ -653,11 +736,11 @@ insert into auth.users (id, email)
 values ('test-uuid', 'test@example.com');
 
 -- Verify the trigger created a workspace
-select * from public.workspaces where created_by = 'test-uuid';
+select * from public.workspaces where creator_id = 'test-uuid';
 
--- Verify the user is an admin of the workspace
+-- Verify the creator is a full member of the workspace
 select * from public.workspace_members
-where user_id = 'test-uuid' and role = 'admin';
+where user_id = 'test-uuid' and type = 'MEMBER';
 ```
 
 ## Seeding Your Database
