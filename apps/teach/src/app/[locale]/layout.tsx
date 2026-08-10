@@ -5,9 +5,10 @@ import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import type { Metadata } from 'next';
+import { locale as getRootLocale } from 'next/root-params';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { TeachQueryProvider } from '@/components/teach-query-provider';
 import { TeachThemeProvider } from '@/components/teach-theme-provider';
@@ -50,7 +51,10 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children }: Props) {
-  const locale = await getLocale();
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>

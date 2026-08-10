@@ -310,10 +310,13 @@ files do not produce repeated 404s.
 All Next apps configured with `next-intl` are checked by
 `bun i18n:setup-check` (and therefore `bun check`). Locale-rooted apps must
 resolve and validate the explicit `locale` override or awaited `requestLocale`
-segment in `src/i18n/request.ts`, use `getLocale()` for the document language,
-and avoid the legacy `setRequestLocale` path. Do not import
-`next/root-params` from request configuration: Next only supports it in Server
-Components, while next-intl request configuration also runs for Route Handlers.
+segment in `src/i18n/request.ts`, then resolve the document language from
+`next/root-params` in the locale root layout and validate it with
+`resolveRootLocale`. Avoid the legacy `setRequestLocale` path. Do not import
+`next/root-params` from request configuration: Next supports it in Server
+Components such as the root layout, while next-intl request configuration also
+runs for Route Handlers. Do not call request-bound `getLocale()` from the root
+layout because it opts otherwise static locale roots into runtime rendering.
 Apps without a `[locale]` root segment use `requestLocale` directly; the checker
 discovers this architecture from the route tree rather than maintaining an app
 exception list.

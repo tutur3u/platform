@@ -42,7 +42,7 @@ function writeNextIntlApp(rootDir, app, { localeRoot = true } = {}) {
     write(
       rootDir,
       `apps/${app}/src/app/[locale]/layout.tsx`,
-      'export default async function Layout() { const locale = await getLocale(); return <html lang={locale} />; }\n'
+      "import {resolveRootLocale} from '@tuturuuu/utils/i18n-root-locale'; import {locale as getRootLocale} from 'next/root-params'; export default async function Layout() { const locale = await resolveRootLocale([], await getRootLocale()); return <html lang={locale} />; }\n"
     );
   }
 }
@@ -85,7 +85,7 @@ test('rejects root params and setRequestLocale in locale-rooted apps', (t) => {
   assert.ok(errors.some((error) => error.includes('legacy setRequestLocale')));
 });
 
-test('requires html lang to come from getLocale', (t) => {
+test('requires html lang to come from validated root params', (t) => {
   const rootDir = createProject(t);
   writeNextIntlApp(rootDir, 'web');
   write(
@@ -96,8 +96,23 @@ test('requires html lang to come from getLocale', (t) => {
 
   const { errors } = checkNextIntlSetup(rootDir);
 
-  assert.ok(errors.some((error) => error.includes('resolve getLocale')));
+  assert.ok(errors.some((error) => error.includes('import next/root-params')));
+  assert.ok(errors.some((error) => error.includes('validate root locale')));
   assert.ok(errors.some((error) => error.includes('set html lang')));
+});
+
+test('rejects request-bound getLocale in locale-root layouts', (t) => {
+  const rootDir = createProject(t);
+  writeNextIntlApp(rootDir, 'web');
+  write(
+    rootDir,
+    'apps/web/src/app/[locale]/layout.tsx',
+    "import {getLocale} from 'next-intl/server'; export default async function Layout() { const locale = await getLocale(); return <html lang={locale} />; }\n"
+  );
+
+  const { errors } = checkNextIntlSetup(rootDir);
+
+  assert.ok(errors.some((error) => error.includes('must not call getLocale')));
 });
 
 test('ignores Next apps that do not configure next-intl', (t) => {

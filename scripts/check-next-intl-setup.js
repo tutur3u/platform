@@ -98,12 +98,20 @@ function validateNextIntlApp({ appDir, name }) {
         `${name}: locale-root request config must not import next/root-params`
       );
     }
-    if (!layout.includes('const locale = await getLocale()')) {
-      errors.push(`${name}: locale-root layout must resolve getLocale()`);
+    if (!layout.includes('next/root-params')) {
+      errors.push(`${name}: locale-root layout must import next/root-params`);
+    }
+    if (!layout.includes('resolveRootLocale(')) {
+      errors.push(`${name}: locale-root layout must validate root locale`);
+    }
+    if (layout.includes('getLocale()')) {
+      errors.push(
+        `${name}: locale-root layout must not call getLocale at the prerender boundary`
+      );
     }
     if (!/<html\b[^>]*\blang=\{locale\}/u.test(layout)) {
       errors.push(
-        `${name}: locale-root layout must set html lang from getLocale()`
+        `${name}: locale-root layout must set html lang from validated root params`
       );
     }
   } else {
