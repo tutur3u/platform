@@ -6,6 +6,21 @@ export interface OpenBrowserCommand {
   command: string;
 }
 
+interface BrowserChild {
+  once(event: 'error', listener: () => void): void;
+  once(event: 'spawn', listener: () => void): void;
+  unref(): void;
+}
+
+interface BrowserDependencies {
+  getPlatform(): NodeJS.Platform;
+  spawnProcess(
+    command: string,
+    args: string[],
+    options: { detached: true; stdio: 'ignore' }
+  ): BrowserChild;
+}
+
 export function getOpenBrowserCommand(
   targetPlatform: NodeJS.Platform,
   url: string
@@ -21,17 +36,40 @@ export function getOpenBrowserCommand(
   return { command: 'xdg-open', args: [url] };
 }
 
-export async function openBrowser(url: string) {
-  const { command, args } = getOpenBrowserCommand(platform(), url);
+export function openBrowserWithDependencies(
+  url: string,
+  dependencies: BrowserDependencies
+): Promise<boolean> {
+  const { command, args } = getOpenBrowserCommand(
+    dependencies.getPlatform(),
+    url
+  );
 
-  try {
-    const child = spawn(command, args, {
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-    return true;
-  } catch {
-    return false;
-  }
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+
+    try {
+      const child = dependencies.spawnProcess(command, args, {
+        detached: true,
+        stdio: 'ignore',
+      });
+      child.once('error', () => settle(false));
+      child.once('spawn', () => settle(true));
+      child.unref();
+    } catch {
+      settle(false);
+    }
+  });
+}
+
+export function openBrowser(url: string) {
+  return openBrowserWithDependencies(url, {
+    getPlatform: platform,
+    spawnProcess: (command, args, options) => spawn(command, args, options),
+  });
 }

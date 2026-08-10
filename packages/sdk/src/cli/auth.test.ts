@@ -1,5 +1,39 @@
-import { describe, expect, it, vi } from 'vitest';
-import { exchangeCliToken, refreshCliSession } from './auth';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const { openBrowserMock } = vi.hoisted(() => ({
+  openBrowserMock: vi.fn(),
+}));
+
+vi.mock('./browser', () => ({
+  openBrowser: openBrowserMock,
+}));
+
+import {
+  exchangeCliToken,
+  receiveTokenFromBrowser,
+  refreshCliSession,
+} from './auth';
+
+afterEach(() => {
+  openBrowserMock.mockReset();
+  vi.restoreAllMocks();
+});
+
+async function completeBrowserLogin(loginUrl: string, token: string) {
+  const startUrl = new URL(loginUrl);
+  const redirectUri = startUrl.searchParams.get('redirect_uri');
+  if (!redirectUri) throw new Error('Expected a browser callback URL.');
+
+  const callbackUrl = new URL(redirectUri);
+  callbackUrl.searchParams.set(
+    'state',
+    startUrl.searchParams.get('state') ?? ''
+  );
+  callbackUrl.searchParams.set('token', token);
+
+  const response = await fetch(callbackUrl);
+  expect(response.status).toBe(200);
+}
 
 describe('CLI auth exchange', () => {
   it('uses the CLI-specific verification route and session label', async () => {
@@ -90,6 +124,57 @@ describe('CLI auth exchange', () => {
         body: JSON.stringify({ refreshToken: 'ttr_app_old-refresh-token' }),
         method: 'POST',
       })
+    );
+  });
+});
+
+describe('CLI browser login fallback', () => {
+  it('prints the exact login URL after an asynchronous opener failure', async () => {
+    let reportFailure: ((opened: boolean) => void) | undefined;
+    openBrowserMock.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          reportFailure = resolve;
+        })
+    );
+    const stdout = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    const tokenPromise = receiveTokenFromBrowser('https://tuturuuu.com');
+    await vi.waitFor(() => expect(openBrowserMock).toHaveBeenCalledOnce());
+
+    const loginUrl = openBrowserMock.mock.calls[0]?.[0] as string;
+    expect(stdout).not.toHaveBeenCalledWith(
+      expect.stringContaining('Open this URL to continue:')
+    );
+
+    reportFailure?.(false);
+    await vi.waitFor(() =>
+      expect(stdout).toHaveBeenCalledWith(
+        `Open this URL to continue:\n${loginUrl}\n`
+      )
+    );
+
+    await completeBrowserLogin(loginUrl, 'browser-token');
+    await expect(tokenPromise).resolves.toBe('browser-token');
+  });
+
+  it('does not print the fallback after a successful spawn', async () => {
+    openBrowserMock.mockResolvedValue(true);
+    const stdout = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    const tokenPromise = receiveTokenFromBrowser('https://tuturuuu.com');
+    await vi.waitFor(() => expect(openBrowserMock).toHaveBeenCalledOnce());
+
+    const loginUrl = openBrowserMock.mock.calls[0]?.[0] as string;
+    await completeBrowserLogin(loginUrl, 'browser-token');
+    await expect(tokenPromise).resolves.toBe('browser-token');
+
+    expect(stdout).not.toHaveBeenCalledWith(
+      expect.stringContaining('Open this URL to continue:')
     );
   });
 });
