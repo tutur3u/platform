@@ -58,7 +58,7 @@ function getComparablePath(
       ? new URL(target)
       : new URL(target, base);
 
-    if (isAbsoluteHttpUrl(target) && url.origin !== base) return null;
+    if (url.origin !== base) return null;
 
     return url.pathname;
   } catch {

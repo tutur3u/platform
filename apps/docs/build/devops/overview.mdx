@@ -66,9 +66,9 @@ Apply these controls in order:
    assets through application functions when a stable CDN URL is available.
 2. Cache only public or safely scoped data. Never apply shared CDN caching to
    authenticated, user-specific, or workspace-private responses.
-3. Shared satellite React Query clients use a 30-second stale window and one
-   retry. Override this only when a surface has a documented freshness or
-   reliability requirement.
+3. Shared Satellite and Nova React Query clients use a 30-second stale window
+   and one retry. Override this only when a surface has a documented freshness
+   or reliability requirement.
 4. Dashboard sidebar links disable viewport prefetch and prefetch on hover or
    keyboard focus. This preserves responsive navigation without invoking every
    visible destination merely because the sidebar rendered.

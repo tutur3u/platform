@@ -87,6 +87,20 @@ describe('NavLink', () => {
     expect(navigationState.prefetch).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['protocol-relative', '//docs.tuturuuu.com/guide'],
+    ['email', 'mailto:support@tuturuuu.com'],
+    ['telephone', 'tel:+84123456789'],
+  ])('does not prefetch %s URLs', (_label, href) => {
+    renderNavLink({ href, title: 'External destination' });
+
+    fireEvent.mouseEnter(
+      screen.getByRole('link', { name: 'External destination' })
+    );
+
+    expect(navigationState.prefetch).not.toHaveBeenCalled();
+  });
+
   it('matches wildcard aliases even when the primary route is exact', () => {
     navigationState.pathname = '/personal/tasks/boards/board-1';
 
