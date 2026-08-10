@@ -5,7 +5,92 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { revalidatePath } from 'next/cache';
+
+interface PollParticipantInput {
+  userType: 'PLATFORM' | 'GUEST';
+  guestId?: string;
+  guestPasswordHash?: string;
+}
+
+type PollActor =
+  | { id: string; type: 'PLATFORM' }
+  | { id: string; type: 'GUEST' };
+
+type PollActorResolution =
+  | { actor: PollActor; sbAdmin: TypedSupabaseClient }
+  | { error: string };
+
+async function resolvePollActor(
+  planId: string,
+  input: PollParticipantInput
+): Promise<PollActorResolution> {
+  if (input.userType === 'PLATFORM') {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user?.id) {
+      return { error: 'Unauthorized' };
+    }
+
+    return {
+      actor: { id: user.id, type: 'PLATFORM' },
+      sbAdmin: await createAdminClient(),
+    };
+  }
+
+  if (!input.guestId || !input.guestPasswordHash) {
+    return { error: 'Unauthorized' };
+  }
+
+  const sbAdmin = await createAdminClient();
+  const { data: guest, error } = await sbAdmin
+    .from('meet_together_guests')
+    .select('id')
+    .eq('plan_id', planId)
+    .eq('id', input.guestId)
+    .eq('password_hash', input.guestPasswordHash)
+    .maybeSingle();
+
+  if (error || !guest) {
+    return { error: 'Unauthorized' };
+  }
+
+  return {
+    actor: { id: guest.id, type: 'GUEST' },
+    sbAdmin,
+  };
+}
+
+async function getMutablePoll(
+  sbAdmin: TypedSupabaseClient,
+  planId: string,
+  pollId: string
+) {
+  const { data: poll, error: pollError } = await sbAdmin
+    .from('polls')
+    .select('id, creator_id, plan_id, name')
+    .eq('id', pollId)
+    .eq('plan_id', planId)
+    .maybeSingle();
+
+  if (pollError || !poll) {
+    return { error: 'Poll not found' } as const;
+  }
+
+  const { data: plan, error: planError } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirmed')
+    .eq('id', planId)
+    .maybeSingle();
+
+  if (planError || !plan) {
+    return { error: 'Plan not found' } as const;
+  }
+
+  return { plan, poll } as const;
+}
 
 export interface CreatePollInput {
   name: string;
@@ -25,13 +110,21 @@ export async function createPoll(planId: string, input: CreatePollInput) {
   const sbAdmin = await createAdminClient();
 
   // Check if plan is confirmed
-  const { data: plan } = await sbAdmin
+  const { data: plan, error: planError } = await sbAdmin
     .from('meet_together_plans')
-    .select('is_confirmed')
+    .select('creator_id, is_confirmed')
     .eq('id', planId)
-    .single();
+    .maybeSingle();
 
-  if (plan?.is_confirmed) {
+  if (planError || !plan) {
+    return { error: 'Plan not found' };
+  }
+
+  if (plan.creator_id !== user.id) {
+    return { error: 'You are not the creator of this plan' };
+  }
+
+  if (plan.is_confirmed) {
     return { error: 'Plan is confirmed. Poll creation is disabled.' };
   }
 
@@ -57,50 +150,31 @@ export async function createPoll(planId: string, input: CreatePollInput) {
 }
 
 export async function deletePoll(planId: string, pollId: string) {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
-
   try {
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
+    const actorResult = await resolvePollActor(planId, {
+      userType: 'PLATFORM',
+    });
+    if ('error' in actorResult) {
       return { error: 'Authentication required' };
     }
 
-    // Check if plan is confirmed
-    const { data: plan } = await sbAdmin
-      .from('meet_together_plans')
-      .select('is_confirmed')
-      .eq('id', planId)
-      .single();
+    const { actor, sbAdmin } = actorResult;
+    const pollResult = await getMutablePoll(sbAdmin, planId, pollId);
+    if ('error' in pollResult) {
+      return { error: pollResult.error };
+    }
 
-    if (plan?.is_confirmed) {
+    if (pollResult.plan.is_confirmed) {
       return { error: 'Plan is confirmed. Poll deletion is disabled.' };
     }
 
-    // Check if the poll exists and get its creator
-    const { data: poll, error: pollError } = await sbAdmin
-      .from('polls')
-      .select('creator_id, plan_id, name')
-      .eq('id', pollId)
-      .single();
-
-    if (pollError || !poll) {
-      return { error: pollError?.message || 'Poll not found' };
-    }
-
-    // Verify the poll belongs to the specified plan
-    if (poll.plan_id !== planId) {
-      return { error: 'Poll does not belong to the specified plan' };
-    }
-
     // Check if the current user is the creator of the poll
-    if (poll.creator_id !== user.id) {
+    if (pollResult.poll.creator_id !== actor.id) {
       return { error: 'Only the poll creator can delete this poll' };
     }
 
     // Prevent deletion of "Where to Meet?" poll
-    if (poll?.name === 'Where to Meet?') {
+    if (pollResult.poll.name === 'Where to Meet?') {
       return { error: 'Cannot delete the "Where to Meet?" poll' };
     }
 
@@ -108,7 +182,8 @@ export async function deletePoll(planId: string, pollId: string) {
     const { error: deleteError } = await sbAdmin
       .from('polls')
       .delete()
-      .eq('id', pollId);
+      .eq('id', pollId)
+      .eq('plan_id', planId);
 
     if (deleteError) {
       return { error: 'Error deleting poll' };
@@ -121,35 +196,25 @@ export async function deletePoll(planId: string, pollId: string) {
   }
 }
 
-export interface AddPollOptionInput {
+export interface AddPollOptionInput extends PollParticipantInput {
   pollId: string;
   value: string;
-  userType: 'PLATFORM' | 'GUEST';
-  guestId?: string;
 }
 
 export async function addPollOption(planId: string, input: AddPollOptionInput) {
-  const { pollId, value, userType, guestId } = input;
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
-
-  let userId: string | null = null;
-  if (userType === 'PLATFORM') {
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-    userId = user?.id ?? null;
-    if (!userId) {
-      return { error: 'Unauthorized' };
-    }
+  const { pollId, value } = input;
+  const actorResult = await resolvePollActor(planId, input);
+  if ('error' in actorResult) {
+    return { error: actorResult.error };
   }
 
-  // Check if plan is confirmed
-  const { data: pollWithPlan } = await sbAdmin
-    .from('polls')
-    .select('meet_together_plans!inner(is_confirmed)')
-    .eq('id', pollId)
-    .single();
+  const { actor, sbAdmin } = actorResult;
+  const pollResult = await getMutablePoll(sbAdmin, planId, pollId);
+  if ('error' in pollResult) {
+    return { error: pollResult.error };
+  }
 
-  if (pollWithPlan?.meet_together_plans?.is_confirmed) {
+  if (pollResult.plan.is_confirmed) {
     return { error: 'Plan is confirmed. Adding poll options is disabled.' };
   }
 
@@ -168,14 +233,14 @@ export async function addPollOption(planId: string, input: AddPollOptionInput) {
   }
 
   // Auto-vote for the new option
-  if (userType === 'PLATFORM' && userId) {
+  if (actor.type === 'PLATFORM') {
     await sbAdmin.from('poll_user_votes').insert({
-      user_id: userId,
+      user_id: actor.id,
       option_id: option.id,
     });
-  } else if (userType === 'GUEST' && guestId) {
+  } else {
     await sbAdmin.from('poll_guest_votes').insert({
-      guest_id: guestId,
+      guest_id: actor.id,
       option_id: option.id,
     });
   }
@@ -252,30 +317,18 @@ export async function deletePollOption(
   input: DeletePollOptionInput
 ) {
   const { userType } = input;
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
 
   // Only platform users allowed to delete
   if (userType !== 'PLATFORM') {
     return { error: 'Unauthorized' };
   }
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id) {
-    return { error: 'Unauthorized' };
+  const actorResult = await resolvePollActor(planId, { userType });
+  if ('error' in actorResult) {
+    return { error: actorResult.error };
   }
 
-  // Check if plan is confirmed
-  const { data: plan } = await sbAdmin
-    .from('meet_together_plans')
-    .select('is_confirmed')
-    .eq('id', planId)
-    .single();
-
-  if (plan?.is_confirmed) {
-    return { error: 'Plan is confirmed. Deleting poll options is disabled.' };
-  }
-
+  const { actor, sbAdmin } = actorResult;
   // Find poll_id for this option
   const { data: option, error: optionError } = await sbAdmin
     .from('poll_options')
@@ -287,19 +340,17 @@ export async function deletePollOption(
     return { error: 'Poll option not found' };
   }
 
-  // Find the poll to check creator
-  const { data: poll, error: pollError } = await sbAdmin
-    .from('polls')
-    .select('creator_id, plan_id')
-    .eq('id', option.poll_id)
-    .single();
+  const pollResult = await getMutablePoll(sbAdmin, planId, option.poll_id);
+  if ('error' in pollResult) {
+    return { error: pollResult.error };
+  }
 
-  if (pollError || !poll) {
-    return { error: 'Poll not found' };
+  if (pollResult.plan.is_confirmed) {
+    return { error: 'Plan is confirmed. Deleting poll options is disabled.' };
   }
 
   // Check that user is the poll creator (and correct plan)
-  if (poll.creator_id !== user.id || poll.plan_id !== planId) {
+  if (pollResult.poll.creator_id !== actor.id) {
     return { error: 'Forbidden' };
   }
 
@@ -307,7 +358,8 @@ export async function deletePollOption(
   const { error: deleteError } = await sbAdmin
     .from('poll_options')
     .delete()
-    .eq('id', optionId);
+    .eq('id', optionId)
+    .eq('poll_id', pollResult.poll.id);
 
   if (deleteError) {
     return { error: 'Failed to delete option' };
@@ -317,45 +369,26 @@ export async function deletePollOption(
   return { data: { optionId } };
 }
 
-export interface SubmitVoteInput {
+export interface SubmitVoteInput extends PollParticipantInput {
   pollId: string;
   optionIds: string[];
-  userType: 'PLATFORM' | 'GUEST';
-  guestId?: string;
 }
 
 export async function submitVote(planId: string, input: SubmitVoteInput) {
-  const { pollId, optionIds, userType, guestId } = input;
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
-
-  let userId: string | null = null;
-
-  if (userType === 'PLATFORM') {
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-    userId = user?.id ?? null;
-    if (!userId) {
-      return { error: 'Unauthorized' };
-    }
+  const { pollId, optionIds } = input;
+  const actorResult = await resolvePollActor(planId, input);
+  if ('error' in actorResult) {
+    return { error: actorResult.error };
   }
 
-  // Check if plan is confirmed
-  const { data: poll } = await sbAdmin
-    .from('polls')
-    .select('plan_id')
-    .eq('id', pollId)
-    .single();
+  const { actor, sbAdmin } = actorResult;
+  const pollResult = await getMutablePoll(sbAdmin, planId, pollId);
+  if ('error' in pollResult) {
+    return { error: pollResult.error };
+  }
 
-  if (poll?.plan_id) {
-    const { data: plan } = await sbAdmin
-      .from('meet_together_plans')
-      .select('is_confirmed')
-      .eq('id', poll.plan_id)
-      .single();
-
-    if (plan?.is_confirmed) {
-      return { error: 'Plan is confirmed. Voting is disabled.' };
-    }
+  if (pollResult.plan.is_confirmed) {
+    return { error: 'Plan is confirmed. Voting is disabled.' };
   }
 
   // Get all options for this poll
@@ -365,34 +398,33 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
     .eq('poll_id', pollId);
 
   const pollOptionIds = pollOptions?.map((o) => o.id) ?? [];
+  const validOptionIds = optionIds.filter((id: string) =>
+    pollOptionIds.includes(id)
+  );
+
+  if (validOptionIds.length !== optionIds.length) {
+    return { error: 'Some option IDs are invalid for this poll' };
+  }
 
   // Delete previous votes
-  if (userType === 'PLATFORM') {
+  if (actor.type === 'PLATFORM' && pollOptionIds.length > 0) {
     await sbAdmin
       .from('poll_user_votes')
       .delete()
-      .match({ user_id: userId })
+      .match({ user_id: actor.id })
       .in('option_id', pollOptionIds);
-  } else if (userType === 'GUEST' && guestId) {
+  } else if (actor.type === 'GUEST' && pollOptionIds.length > 0) {
     await sbAdmin
       .from('poll_guest_votes')
       .delete()
-      .match({ guest_id: guestId })
+      .match({ guest_id: actor.id })
       .in('option_id', pollOptionIds);
   }
 
   // Insert new votes
-  if (userType === 'PLATFORM' && userId) {
-    const validOptionIds = optionIds.filter((id: string) =>
-      pollOptionIds.includes(id)
-    );
-
-    if (validOptionIds.length !== optionIds.length) {
-      return { error: 'Some option IDs are invalid for this poll' };
-    }
-
+  if (actor.type === 'PLATFORM') {
     const toInsert = validOptionIds.map((option_id: string) => ({
-      user_id: userId,
+      user_id: actor.id,
       option_id,
     }));
     if (toInsert.length > 0) {
@@ -403,17 +435,9 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
         return { error: 'Failed to submit votes' };
       }
     }
-  } else if (userType === 'GUEST' && guestId) {
-    const validOptionIds = optionIds.filter((id: string) =>
-      pollOptionIds.includes(id)
-    );
-
-    if (validOptionIds.length !== optionIds.length) {
-      return { error: 'Some option IDs are invalid for this poll' };
-    }
-
+  } else {
     const toInsert = validOptionIds.map((option_id: string) => ({
-      guest_id: guestId,
+      guest_id: actor.id,
       option_id,
     }));
     if (toInsert.length > 0) {
@@ -424,8 +448,6 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
         return { error: 'Failed to submit votes' };
       }
     }
-  } else {
-    return { error: 'Invalid vote request' };
   }
 
   revalidatePath(`/meet/plans/${planId}`);
@@ -434,26 +456,33 @@ export async function submitVote(planId: string, input: SubmitVoteInput) {
 
 export async function toggleWherePoll(planId: string, whereToMeet: boolean) {
   try {
-    const sbAdmin = await createAdminClient();
-    const supabase = await createClient();
-
     if (typeof whereToMeet !== 'boolean') {
       return { error: 'whereToMeet must be a boolean' };
     }
 
+    const supabase = await createClient();
     const { user } = await resolveAuthenticatedSessionUser(supabase);
-    if (!user) {
+    if (!user?.id) {
       return { error: 'Unauthorized' };
     }
 
+    const sbAdmin = await createAdminClient();
     // Check if plan is confirmed
-    const { data: plan } = await sbAdmin
+    const { data: plan, error: planError } = await sbAdmin
       .from('meet_together_plans')
-      .select('is_confirmed')
+      .select('creator_id, is_confirmed')
       .eq('id', planId)
-      .single();
+      .maybeSingle();
 
-    if (plan?.is_confirmed) {
+    if (planError || !plan) {
+      return { error: 'Plan not found' };
+    }
+
+    if (plan.creator_id !== user.id) {
+      return { error: 'You are not the creator of this plan' };
+    }
+
+    if (plan.is_confirmed) {
       return { error: 'Plan is confirmed. Where-poll updates are disabled.' };
     }
 
@@ -462,6 +491,7 @@ export async function toggleWherePoll(planId: string, whereToMeet: boolean) {
       .from('meet_together_plans')
       .update({ where_to_meet: whereToMeet })
       .eq('id', planId)
+      .eq('creator_id', user.id)
       .select('id, where_to_meet')
       .single();
 
