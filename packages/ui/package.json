@@ -414,12 +414,6 @@
     },
     "./calendar-app/hooks/*": "./src/components/ui/calendar-app/hooks/*.ts",
     "./calendar-app/components/*": "./src/components/ui/calendar-app/components/*.tsx",
-    "./calendar-app/components/sidebar/*": "./src/components/ui/calendar-app/components/sidebar/*.tsx",
-    "./calendar-app/components/time-tracker": {
-      "types": "./src/components/ui/calendar-app/components/time-tracker/index.tsx",
-      "import": "./src/components/ui/calendar-app/components/time-tracker/index.tsx"
-    },
-    "./calendar-app/components/time-tracker/*": "./src/components/ui/calendar-app/components/time-tracker/*.tsx",
     "./custom/icon-picker": {
       "types": "./src/components/ui/custom/icon-picker/index.ts",
       "import": "./src/components/ui/custom/icon-picker/index.ts"
