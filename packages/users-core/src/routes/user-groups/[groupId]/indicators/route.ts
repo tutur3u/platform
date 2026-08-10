@@ -273,6 +273,13 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+  const { withoutPermission } = permissions;
+  if (withoutPermission('update_user_groups_scores')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to manage indicators' },
+      { status: 403 }
+    );
+  }
 
   const values = (await req.json()) as {
     user_id: string;
