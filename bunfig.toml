@@ -8,6 +8,8 @@ preload = ["./tests/bun-test-redirect.ts"]
 [install]
 # Explicitly set the linker to isolated
 linker = "isolated"
+# The global store currently splits peer/type identity across this monorepo.
+globalStore = false
 # Require npm releases to be at least 1 day old before Bun can install them
 minimumReleaseAge = 86400
 minimumReleaseAgeExcludes = [
