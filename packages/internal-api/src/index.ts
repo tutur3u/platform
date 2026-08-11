@@ -1256,28 +1256,7 @@ export {
   type WorkspaceMeetingStream,
   type WorkspaceMeetingStreamResponse,
 } from './meet';
-export {
-  createWorkspaceMeeting,
-  deleteWorkspaceMeeting,
-  deleteWorkspaceMeetingRecording,
-  getTranscriptionAudioMediaType,
-  getWorkspaceMeetingRecordingPlayback,
-  getWorkspaceMeetingRecordings,
-  getWorkspaceMeetings,
-  MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES,
-  MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES,
-  TRANSCRIPTION_AUDIO_MEDIA_TYPES,
-  TRANSCRIPTION_MULTIPART_HEADROOM_BYTES,
-  TranscriptionAudioInputError,
-  type TranscriptionAudioInputErrorCode,
-  type TranscriptionAudioMediaType,
-  toggleWorkspaceMeetingRecording,
-  transcribeWorkspaceMeetingAudio,
-  updateWorkspaceMeeting,
-  updateWorkspaceMeetingRecording,
-  uploadWorkspaceMeetingRecording,
-  validateTranscriptionAudioInput,
-} from './meetings';
+export * from './meetings';
 export {
   applyMindAiPatch,
   archiveMindBoard,
@@ -1326,12 +1305,7 @@ export {
   type WorkspaceNotificationPreferencesResponse,
   type WorkspaceNotificationPreferenceUpdate,
 } from './notifications';
-export {
-  getCurrentUserNovaTeam,
-  type NovaSubmissionUser,
-  type NovaSubmissionUserSearchResponse,
-  searchNovaSubmissionUsers,
-} from './nova';
+export * from './nova';
 export {
   type ConnectedOnboardingProgress,
   type ConnectedOnboardingUpdate,
