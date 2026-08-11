@@ -83,9 +83,9 @@ function validateNextIntlApp({ appDir, name }) {
     if (!request.includes('locale: localeOverride')) {
       errors.push(`${name}: locale-root request config must accept locale`);
     }
-    if (!request.includes('resolveRootLocale(')) {
+    if (!request.includes('resolveRequestLocale(')) {
       errors.push(
-        `${name}: locale-root request config must resolve root locale`
+        `${name}: locale-root request config must resolve request locale with a default`
       );
     }
     if (!request.includes('requestLocale')) {

@@ -35,7 +35,7 @@ function writeNextIntlApp(rootDir, app, { localeRoot = true } = {}) {
     rootDir,
     `apps/${app}/src/i18n/request.ts`,
     localeRoot
-      ? 'getRequestConfig(async ({locale: localeOverride, requestLocale}) => { const locale = await resolveRootLocale([], localeOverride ?? (await requestLocale)); return {locale, messages: {}}; });\n'
+      ? 'getRequestConfig(async ({locale: localeOverride, requestLocale}) => { const locale = resolveRequestLocale([], localeOverride ?? (await requestLocale), routing.defaultLocale); return {locale, messages: {}}; });\n'
       : 'getRequestConfig(async ({requestLocale}) => ({locale: await requestLocale, messages: {}}));\n'
   );
   if (localeRoot) {
@@ -75,7 +75,11 @@ test('rejects root params and setRequestLocale in locale-rooted apps', (t) => {
   const { errors } = checkNextIntlSetup(rootDir);
 
   assert.ok(errors.some((error) => error.includes('must accept locale')));
-  assert.ok(errors.some((error) => error.includes('must resolve root locale')));
+  assert.ok(
+    errors.some((error) =>
+      error.includes('must resolve request locale with a default')
+    )
+  );
   assert.ok(
     errors.some((error) => error.includes('must resolve requestLocale'))
   );

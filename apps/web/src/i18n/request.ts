@@ -1,4 +1,4 @@
-import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
+import { resolveRequestLocale } from '@tuturuuu/utils/i18n-root-locale';
 import type { DateTimeFormatOptions } from 'next-intl';
 import { getRequestConfig } from 'next-intl/server';
 import { routing } from './routing';
@@ -19,9 +19,10 @@ export type IntlFormats = {
 
 export default getRequestConfig(
   async ({ locale: localeOverride, requestLocale }) => {
-    const locale = await resolveRootLocale(
+    const locale = resolveRequestLocale(
       routing.locales,
-      localeOverride ?? (await requestLocale)
+      localeOverride ?? (await requestLocale),
+      routing.defaultLocale
     );
 
     return {

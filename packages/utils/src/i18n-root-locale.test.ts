@@ -8,7 +8,21 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound }));
 
-import { resolveRootLocale } from './i18n-root-locale';
+import { resolveRequestLocale, resolveRootLocale } from './i18n-root-locale';
+
+describe('resolveRequestLocale', () => {
+  it('accepts a supported request locale', () => {
+    expect(resolveRequestLocale(['en', 'vi'], 'vi', 'en')).toBe('vi');
+  });
+
+  it('uses the configured default for missing prerender locale context', () => {
+    expect(resolveRequestLocale(['en', 'vi'], undefined, 'en')).toBe('en');
+  });
+
+  it('uses the configured default for invalid route candidates', () => {
+    expect(resolveRequestLocale(['en', 'vi'], 'unknown', 'en')).toBe('en');
+  });
+});
 
 describe('resolveRootLocale', () => {
   beforeEach(() => {
