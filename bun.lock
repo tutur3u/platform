@@ -45,7 +45,7 @@
     },
     "apps/ai": {
       "name": "@tuturuuu/ai-studio",
-      "version": "0.8.1",
+      "version": "0.9.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@tanstack/react-query": "^5.101.4",
@@ -83,7 +83,7 @@
     },
     "apps/apps": {
       "name": "@tuturuuu/apps",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "dependencies": {
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
@@ -109,7 +109,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.23.1",
+      "version": "0.24.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -171,7 +171,7 @@
     },
     "apps/chat": {
       "name": "@tuturuuu/chat",
-      "version": "0.18.1",
+      "version": "0.19.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@tanstack/react-query": "^5.101.4",
@@ -214,7 +214,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.28.1",
+      "version": "0.29.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -269,7 +269,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.14.1",
+      "version": "0.15.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -341,7 +341,7 @@
     },
     "apps/drive": {
       "name": "@tuturuuu/drive",
-      "version": "0.23.1",
+      "version": "0.24.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -421,7 +421,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.24.1",
+      "version": "0.25.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -477,7 +477,7 @@
     },
     "apps/forms": {
       "name": "@tuturuuu/forms",
-      "version": "0.9.1",
+      "version": "0.10.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -536,7 +536,7 @@
     },
     "apps/git": {
       "name": "@tuturuuu/git",
-      "version": "0.5.1",
+      "version": "0.6.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@octokit/auth-app": "^8.3.0",
@@ -583,7 +583,7 @@
     },
     "apps/hive": {
       "name": "@tuturuuu/hive",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@formatjs/intl-localematcher": "^0.8.13",
@@ -654,7 +654,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.19.1",
+      "version": "0.20.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@aws-sdk/client-s3": "3.1101.0",
@@ -723,7 +723,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.26.1",
+      "version": "0.27.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@tanstack/react-query": "^5.101.4",
@@ -773,7 +773,7 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@gsap/react": "^2.1.2",
@@ -821,7 +821,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.16.1",
+      "version": "0.17.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@aws-sdk/client-s3": "3.1101.0",
@@ -878,7 +878,7 @@
     },
     "apps/meet": {
       "name": "@tuturuuu/meet",
-      "version": "0.21.1",
+      "version": "0.22.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -926,7 +926,7 @@
     },
     "apps/mind": {
       "name": "@tuturuuu/mind",
-      "version": "0.16.1",
+      "version": "0.17.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@json-render/core": "^0.19.0",
@@ -985,7 +985,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.34.0",
+      "version": "0.34.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1053,7 +1053,7 @@
     },
     "apps/pay": {
       "name": "@tuturuuu/pay",
-      "version": "0.13.0",
+      "version": "0.13.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@tanstack/react-query": "^5.101.4",
@@ -1132,7 +1132,7 @@
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.34.1",
+      "version": "0.35.1",
       "dependencies": {
         "@deepgram/sdk": "^5.7.0",
         "@emotion/react": "^11.14.0",
@@ -1244,7 +1244,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.23.0",
+      "version": "0.23.1",
       "dependencies": {
         "@tanstack/react-query": "^5.101.4",
         "@tuturuuu/auth": "workspace:*",
@@ -1282,7 +1282,7 @@
     },
     "apps/tanstack-web": {
       "name": "@tuturuuu/tanstack-web",
-      "version": "0.22.2",
+      "version": "0.23.0",
       "dependencies": {
         "@hookform/resolvers": "^5.7.1",
         "@react-email/render": "^2.1.0",
@@ -1336,7 +1336,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.25.1",
+      "version": "0.26.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@formatjs/intl-localematcher": "^0.8.13",
@@ -1395,7 +1395,7 @@
     },
     "apps/teach": {
       "name": "@tuturuuu/teach",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@ai-sdk/google": "^4.0.37",
         "@dnd-kit/core": "^6.3.1",
@@ -1451,7 +1451,7 @@
     },
     "apps/tools": {
       "name": "@tuturuuu/tools",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "dependencies": {
         "@tanstack/react-query": "^5.101.4",
         "@tuturuuu/icons": "workspace:*",
@@ -1483,7 +1483,7 @@
     },
     "apps/track": {
       "name": "@tuturuuu/track",
-      "version": "0.21.1",
+      "version": "0.22.1",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.7.1",
@@ -2284,7 +2284,7 @@
     },
     "packages/satellite": {
       "name": "@tuturuuu/satellite",
-      "version": "0.13.2",
+      "version": "0.14.1",
       "dependencies": {
         "@radix-ui/react-dialog": "^1.1.23",
         "@radix-ui/react-tooltip": "^1.2.16",
@@ -2524,7 +2524,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.25.3",
+      "version": "0.26.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2750,7 +2750,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.23.1",
+      "version": "0.24.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.2.0",
