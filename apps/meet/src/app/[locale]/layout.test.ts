@@ -48,5 +48,16 @@ describe('meet root layout providers', () => {
   it('renders the authenticated meeting list at request time', () => {
     expect(appPage).toContain("import { connection } from 'next/server'");
     expect(appPage).toContain('await connection()');
+
+    const suspense = appPage.match(/<Suspense(?:\s[^>]*)?>/)?.index ?? -1;
+    const requestTimePage = appPage.indexOf(
+      '<RequestTimeMeetPage searchParams={searchParams} />'
+    );
+    const suspenseEnd = appPage.indexOf('</Suspense>');
+    const connectionCall = appPage.indexOf('await connection()');
+    expect(suspense).toBeGreaterThan(-1);
+    expect(suspense).toBeLessThan(requestTimePage);
+    expect(requestTimePage).toBeLessThan(suspenseEnd);
+    expect(connectionCall).toBeGreaterThan(suspenseEnd);
   });
 });
