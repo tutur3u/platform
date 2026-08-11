@@ -6,6 +6,10 @@ const appLayout = readFileSync(
   new URL('./(app)/layout.tsx', import.meta.url),
   'utf8'
 );
+const appPage = readFileSync(
+  new URL('./(app)/page.tsx', import.meta.url),
+  'utf8'
+);
 
 describe('meet root layout providers', () => {
   it('mounts the nuqs adapter', () => {
@@ -39,5 +43,10 @@ describe('meet root layout providers', () => {
 
   it('keeps the theme provider outside root suspense boundaries', () => {
     expect(layout).not.toContain('<Suspense>');
+  });
+
+  it('renders the authenticated meeting list at request time', () => {
+    expect(appPage).toContain("import { connection } from 'next/server'");
+    expect(appPage).toContain('await connection()');
   });
 });
