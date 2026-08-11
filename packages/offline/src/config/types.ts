@@ -39,6 +39,12 @@ export interface OfflineNextConfig {
  */
 export interface TurbopackOfflineConfig {
   /**
+   * Service worker source file that the runtime route compiles.
+   * @default 'src/app/sw.ts'
+   */
+  workerSource?: string;
+
+  /**
    * Absolute path to the Next.js project root used as the base for output file
    * tracing includes.
    * @default process.cwd()
