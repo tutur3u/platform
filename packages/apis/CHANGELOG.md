@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/tutur3u/platform/compare/apis-v0.11.0...apis-v0.11.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **meet:** authorize poll mutations ([c5b3a2e](https://github.com/tutur3u/platform/commit/c5b3a2e6bb4156865807981e7e711e5ee6d20655))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/apis-v0.10.0...apis-v0.11.0) (2026-08-04)
 
 

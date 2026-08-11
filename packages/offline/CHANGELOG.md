@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/tutur3u/platform/compare/offline-v0.1.1...offline-v0.1.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **offline:** trace service worker source ([0115b9f](https://github.com/tutur3u/platform/commit/0115b9f7997fa048d698aa2fd11e910a27ec4beb))
+
 ## [0.1.1](https://github.com/tutur3u/platform/compare/offline-v0.1.0...offline-v0.1.1) (2026-08-04)
 
 

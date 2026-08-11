@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/teach",
-  "version": "0.18.1",
+  "version": "0.18.2",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
