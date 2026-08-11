@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const layout = readFileSync(new URL('./layout.tsx', import.meta.url), 'utf8');
+const appLayout = readFileSync(
+  new URL('./(app)/layout.tsx', import.meta.url),
+  'utf8'
+);
 
 describe('meet root layout providers', () => {
   it('mounts the nuqs adapter', () => {
@@ -22,19 +26,18 @@ describe('meet root layout providers', () => {
     expect(adapter).toBeLessThan(providers);
   });
 
-  it('keeps request-aware providers inside a suspense boundary', () => {
-    expect(layout).toContain(
-      "import { type ReactNode, Suspense } from 'react'"
-    );
+  it('keeps request-aware server layout inside a suspense boundary', () => {
+    expect(appLayout).toContain("import { Suspense } from 'react'");
 
-    const suspense = layout.indexOf('<Suspense>');
-    const adapter = layout.indexOf('<NuqsAdapter>');
-    const providers = layout.indexOf('<Providers');
-    const suspenseEnd = layout.indexOf('</Suspense>');
-
+    const suspense = appLayout.indexOf('<Suspense>');
+    const serverLayout = appLayout.indexOf('<ServerLayout>');
+    const suspenseEnd = appLayout.indexOf('</Suspense>');
     expect(suspense).toBeGreaterThan(-1);
-    expect(suspense).toBeLessThan(adapter);
-    expect(adapter).toBeLessThan(providers);
-    expect(providers).toBeLessThan(suspenseEnd);
+    expect(suspense).toBeLessThan(serverLayout);
+    expect(serverLayout).toBeLessThan(suspenseEnd);
+  });
+
+  it('keeps the theme provider outside root suspense boundaries', () => {
+    expect(layout).not.toContain('<Suspense>');
   });
 });

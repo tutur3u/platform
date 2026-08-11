@@ -1,4 +1,5 @@
 import type React from 'react';
+import { Suspense } from 'react';
 import ServerLayout from './server-layout';
 
 interface LayoutProps {
@@ -6,5 +7,9 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
-  return <ServerLayout>{children}</ServerLayout>;
+  return (
+    <Suspense>
+      <ServerLayout>{children}</ServerLayout>
+    </Suspense>
+  );
 }
