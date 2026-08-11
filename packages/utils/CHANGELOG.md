@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.1](https://github.com/tutur3u/platform/compare/utils-v0.24.0...utils-v0.24.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/utils-v0.23.1...utils-v0.24.0) (2026-08-09)
 
 

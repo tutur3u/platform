@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.1](https://github.com/tutur3u/platform/compare/mail-v0.17.0...mail-v0.17.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/mail-v0.16.1...mail-v0.17.0) (2026-08-09)
 
 
