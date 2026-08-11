@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.2](https://github.com/tutur3u/platform/compare/inventory-v0.27.1...inventory-v0.27.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+
 ## [0.27.1](https://github.com/tutur3u/platform/compare/inventory-v0.27.0...inventory-v0.27.1) (2026-08-11)
 
 

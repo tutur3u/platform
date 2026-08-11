@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/tutur3u/platform/compare/users-ui-v0.7.1...users-ui-v0.7.2) (2026-08-11)
+
+
+### Performance Improvements
+
+* **users:** dedupe approval filter directory query ([#5121](https://github.com/tutur3u/platform/issues/5121)) ([a0bf93e](https://github.com/tutur3u/platform/commit/a0bf93e7553ced110476d0be3b04f00339fe0809))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/users-ui-v0.7.0...users-ui-v0.7.1) (2026-08-04)
 
 

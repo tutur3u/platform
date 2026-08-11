@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/tutur3u/platform/compare/users-core-v0.7.1...users-core-v0.7.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **contacts:** authorize user group tags ([0773c3c](https://github.com/tutur3u/platform/commit/0773c3ce2ff80e446cccb6f67a5af39f58373ded))
+* **users:** authorize group indicator updates ([9461142](https://github.com/tutur3u/platform/commit/9461142c04b0ea84445498897cf7bf9e1d5f54db))
+
 ## [0.7.1](https://github.com/tutur3u/platform/compare/users-core-v0.7.0...users-core-v0.7.1) (2026-08-04)
 
 

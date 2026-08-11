@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/internal-api-v0.29.0...internal-api-v0.29.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **ai:** bound meeting transcription input ([07c1710](https://github.com/tutur3u/platform/commit/07c1710ec80441e8d230a3c8cd99c610cf73a10a))
+
+
+### Performance Improvements
+
+* **nova:** bound submission user search ([8a0c92b](https://github.com/tutur3u/platform/commit/8a0c92b24beee7aa0d9fa76a872381ae1fccaf6b))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/internal-api-v0.28.1...internal-api-v0.29.0) (2026-08-07)
 
 

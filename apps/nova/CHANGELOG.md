@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.2](https://github.com/tutur3u/platform/compare/nova-v0.34.1...nova-v0.34.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+
 ## [0.34.1](https://github.com/tutur3u/platform/compare/nova-v0.34.0...nova-v0.34.1) (2026-08-11)
 
 

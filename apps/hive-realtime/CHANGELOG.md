@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/hive-realtime-v0.9.0...hive-realtime-v0.9.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **hive:** evict empty realtime rooms ([520f602](https://github.com/tutur3u/platform/commit/520f602c2181b650f9a6d4a8aab5696d03bf06bc))
+* **hive:** restore request typing ([9fc5c3d](https://github.com/tutur3u/platform/commit/9fc5c3d2f423eb5d83b0fbbaa82c6f56a2b2c038))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/hive-realtime-v0.8.0...hive-realtime-v0.9.0) (2026-07-28)
 
 

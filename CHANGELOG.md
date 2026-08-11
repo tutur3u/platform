@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.36.2](https://github.com/tutur3u/platform/compare/platform-v0.36.1...platform-v0.36.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** preserve prerender locale fallback ([3a09b07](https://github.com/tutur3u/platform/commit/3a09b070abda729649f269310a70db78f9b3a1cc))
+* **offline:** trace service worker source ([0115b9f](https://github.com/tutur3u/platform/commit/0115b9f7997fa048d698aa2fd11e910a27ec4beb))
+
+
+### Performance Improvements
+
+* **users:** dedupe approval filter directory query ([#5121](https://github.com/tutur3u/platform/issues/5121)) ([a0bf93e](https://github.com/tutur3u/platform/commit/a0bf93e7553ced110476d0be3b04f00339fe0809))
+
 ## [0.36.1](https://github.com/tutur3u/platform/compare/platform-v0.36.0...platform-v0.36.1) (2026-08-11)
 
 
