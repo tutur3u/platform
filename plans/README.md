@@ -1,10 +1,10 @@
 # Continuous Improvement Audit Index
 
-Audit snapshot: `5af8af5d918d4a1701609bfd9d7833558b5b2141` on 2026-08-12.
+Audit snapshot: `b68f9f182ddd05454328dc75afa76f961d8c6ce6` on 2026-08-12.
 
 These began as advisor plans. Original reviewed commits remain as provenance in
 `DONE` rows; every DONE implementation is integrated in verified main
-`5af8af5d91`. Retained uncommitted implementations and external
+`b68f9f182d`. Retained uncommitted implementations and external
 dependencies are recorded in `BLOCKED` rows. Before resuming any plan, re-read
 the nearest `AGENTS.md`, load the named Tuturuuu skills, and compare its evidence
 with the current branch. If the relevant code has drifted, update the plan
@@ -333,6 +333,13 @@ before editing source.
 | 317 | [Retire Duplicate Web External-AI Execution](./317-retire-duplicate-web-external-ai-execution.md) | P1 | M | Medium-High | BLOCKED | Plans 167/293/299/303/314 plus AI/G22 transfer and consumer disposition |
 | 318 | [Reconcile Hive Access Across Both Member Stores](./318-reconcile-hive-access-stores.md) | P0 | M | Medium | TODO | Hive runtime/cron operator coordination |
 | 319 | [Single-Source Governed npm Package Releases](./319-single-source-npm-release-workflows.md) | P1 | L | Medium-High | BLOCKED | Plans 236/292/298 plus Forms/release/CI transfer |
+| 320 | [Require Expiry for Drive Export Capabilities](./320-expire-drive-export-capabilities.md) | P0 | M | Medium | BLOCKED | backend migration ownership transfer |
+| 321 | [Retire Crawler-Backed Pipelines and Queues](./321-retire-crawler-backed-pipelines-queues.md) | P1 | M | Low | BLOCKED | G22 TanStack migration-artifact transfer |
+| 322 | [Preserve a Mailbox Owner During Membership Mutations](./322-preserve-mailbox-owner.md) | P0 | M | Medium | BLOCKED | Plan 154 green, Plan 163, and Mail/database/type transfer |
+| 323 | [Aggregate Mail Bootstrap Unread Counts Set-Wise](./323-aggregate-mail-unread-counts.md) | P1 | M | Medium | BLOCKED | Plan 322 plus Plan 154/163 and Mail/database/type transfer |
+| 324 | [Bind Workspace Summary Actions to the Authenticated Actor](./324-bind-workspace-summary-actions-to-actor.md) | P0 | M | Medium | BLOCKED | G22 route-artifact transfer plus Web/Hive coordination |
+| 325 | [Commit External-App Secret Rotation Atomically](./325-commit-external-app-secret-rotation-atomically.md) | P0 | M | Medium | BLOCKED | Plan 154 green, Plan 163, and database/type transfer |
+| 326 | [Page Mailbox Members and Batch Their Profiles](./326-page-mailbox-members-and-batch-profiles.md) | P1 | M | Low-Medium | BLOCKED | Plan 322 plus Mail/internal-api transfer |
 
 Plan 131 is DONE on its reviewed documentation commit. Plans 136 and 138 have
 reviewed retained implementations but remain blocked by their mandatory app
@@ -861,9 +868,46 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   credential, and immutable-action contracts rather than refactoring stale
   copies. It also needs exact transfer of the Forms-owned shared release test
   and every affected release/CI workflow.
+- Plan 320 changes the prepared Rust parity handler as well as the live shared
+  TypeScript authority, so it waits for exact backend migration transfer; it
+  must not imply that Rust currently serves production traffic.
+- Plan 321 keeps both legacy URLs as redirects and requires G22 transfer before
+  regenerating coordinator-owned TanStack overrides, manifest, or route tree.
+- Plan 322 waits for the exact-base database gate and Mail/database/type
+  transfer before enforcing owner preservation transactionally.
+- Plan 323 sequences after Plan 322 because both change the Mail migration,
+  pgTAP, and generated-type lane; its performance contract is otherwise
+  independent.
+- Plan 324 removes caller-selected identity from the Server Action and moves the
+  changed Web route first-class; G22 must transfer its override/manifest before
+  regeneration, while Web/Hive retain their existing verified actor gates.
+- Plan 325 waits for the exact-base database gate and migration/type ownership
+  before replacing external-app field deletion/insertion with one locked RPC.
+- Plan 326 follows Plan 322 because both edit Mail membership repository/routes;
+  it additionally needs the active Mail/internal-api handoff to transfer.
 
 ## Latest audit additions
 
+- **Workspace-summary actor binding:** Plan 324 splits the injectable
+  server-only aggregation from the public Server Action so serialized caller
+  input can no longer select another user's service-role workspace directory.
+- **External-app credential settlement:** Plan 325 atomically replaces registry
+  fields and returns committed rows without a fallible post-rotation read,
+  while explicitly retaining honest transport-loss semantics.
+- **Mailbox member directory scaling:** Plan 326 cursor-pages membership rows,
+  bulk-loads both profile tables, and changes the settings UI to bounded manual
+  page loading.
+- **Drive export capability expiry:** Plan 320 replaces the TypeScript/Rust
+  fail-open TTL with one finite default and strict bounded configuration while
+  preserving the bearer token and downstream signed-URL formats.
+- **False workflow products:** Plan 321 removes Pipelines/Queues navigation and
+  redirects their crawler-backed copies to canonical Crawlers instead of
+  inventing unsupported semantics.
+- **Mailbox owner lifecycle:** Plan 322 serializes member mutations and freezes
+  owner/admin rules so no request or concurrent pair can leave a mailbox
+  ownerless.
+- **Mail bootstrap scaling:** Plan 323 replaces per-mailbox state scans/counts
+  with one bounded service-role-only grouped unread-count operation.
 - **Task Progress metric authority:** refreshed Plan 043 preserves member reads
   while requiring `manage_projects` through cookie/app-session routes and RLS,
   removes service-role writes from GETs, and retains atomic default switching.
@@ -1522,6 +1566,12 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   membership alone rewrite workspace-wide behavior and immutable metadata.
   Web also retains five weaker time-tracking route copies after their Track
   counterparts were fixed, including cross-user reads and comment containment.
+  Drive export capabilities also become permanent bearer links when their TTL
+  setting is missing or invalid, and Mail membership mutations do not preserve
+  a final owner or prevent admins from mutating owners. The exported workspace
+  summary Server Action also accepts a caller-selected user UUID before
+  service-role membership/share reads, exposing another actor's workspace and
+  tier/access directory.
   Five public-package build jobs expose production Supabase and proxy
   credential types before dependency installation despite credential-free
   build and test precedents. Workspace-role permission rows also have
@@ -1544,7 +1594,9 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   side effects can be acknowledged without durable retry. SePay endpoint
   rotation disables the callback token still configured at the provider, and
   auth-recovery replacement revokes the working emergency exception before its
-  successor is known to be valid. Rewise authorizes the route workspace but
+  successor is known to be valid. External-app registry rotation likewise
+  deletes credential fields before inserting replacements and performs a
+  fallible read after committing the new one-time secret. Rewise authorizes the route workspace but
   submits the platform root workspace for chat and files, while title/summary
   work resolves another implicit workspace. Square refund/dispute handlers can
   acknowledge returned finance errors or a partial won-dispute pair, and the
@@ -1616,6 +1668,11 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   once PostgREST caps the raw history. Task Progress import validates up to 500
   rows through as many as eight sequential reads per row, so preview and commit
   can each spend roughly 4,000 database round trips before one batch insert.
+  Mail bootstrap likewise performs at least two database operations per
+  mailbox and can materialize 5,000 user-state rows for each merely to render
+  unread badges. Its member settings route additionally materializes every
+  membership and launches two profile reads per row with no bound or stable
+  page contract.
 - **Architecture/migration:** Fourteen governed npm publication workflows copy
   one privileged release state machine across 5,273 YAML lines while a separate
   test registry repeats their package/build metadata, multiplying every fleet
@@ -1633,7 +1690,10 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   ownership remains weaker than the desired executable migration model. Ten
   app-local API-auth engines total roughly 9,700 lines and have already drifted
   in satellite audience policy. Learn/Teach contributor docs still describe the
-  pre-cutover Web-owned API architecture despite 70 local v1 handlers. Mind
+  pre-cutover Web-owned API architecture despite 70 local v1 handlers. The Web
+  dashboard also advertises Pipelines and Queues as separate products even
+  though both route families are copies of Crawlers and create crawler records.
+  Mind
   carries a 911-line Postgres log-drain fork whose only live context setter is a
   no-op, and Rewise retains a broad stale dependency/date-helper layer. The
   deprecated broad browser Supabase client remains enabled by default and
@@ -1811,6 +1871,12 @@ validate them with users and telemetry. Immediate security and CI gaps remain
 ahead of all twenty-two.
 
 ## Considered and deferred
+
+- Delete the byte-identical orphaned `color-helper.ts` files in Nova, Rewise,
+  and Web after repeating import/symbol reachability checks. The 291 dead lines
+  are high-confidence and LOW-risk, but deletion is lower leverage than the
+  promoted security/correctness/performance boundaries and should coordinate
+  with the retained Rewise lane rather than earn a standalone plan now.
 
 - Make app-token invitation acceptance retry-safe before promoting it into an
   implementation plan. The action-token replay row is consumed before pending
