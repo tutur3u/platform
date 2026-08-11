@@ -1,6 +1,6 @@
 # Continuous Improvement Audit Index
 
-Audit snapshot: `b68f9f182ddd05454328dc75afa76f961d8c6ce6` on 2026-08-12.
+Audit snapshot: `44742d2cedda465fa16cfbae8d6a234563cc39f6` on 2026-08-12.
 
 These began as advisor plans. Original reviewed commits remain as provenance in
 `DONE` rows; every DONE implementation is integrated in verified main
@@ -340,6 +340,10 @@ before editing source.
 | 324 | [Bind Workspace Summary Actions to the Authenticated Actor](./324-bind-workspace-summary-actions-to-actor.md) | P0 | M | Medium | BLOCKED | G22 route-artifact transfer plus Web/Hive coordination |
 | 325 | [Commit External-App Secret Rotation Atomically](./325-commit-external-app-secret-rotation-atomically.md) | P0 | M | Medium | BLOCKED | Plan 154 green, Plan 163, and database/type transfer |
 | 326 | [Page Mailbox Members and Batch Their Profiles](./326-page-mailbox-members-and-batch-profiles.md) | P1 | M | Low-Medium | BLOCKED | Plan 322 plus Mail/internal-api transfer |
+| 327 | [Require Calendar Management Permission for Connection Administration](./327-require-calendar-connection-permission.md) | P0 | M | Medium | BLOCKED | Plans 086/154/163 plus Calendar/backend/database transfer |
+| 328 | [Make Workspace AI Models Truthfully Read-Only](./328-make-workspace-ai-models-read-only.md) | P0 | S | Low-Medium | TODO | no active exact-path owner |
+| 329 | [Characterize Cross-App Token Issuance at the HTTP Boundary](./329-characterize-cross-app-token-issuance.md) | P1 | S | Low | TODO | no active exact-path owner |
+| 330 | [Make Cron Execution History Truthfully Read-Only](./330-make-cron-execution-history-read-only.md) | P2 | S | Low | BLOCKED | cron/frontend handoff exact-path transfer |
 
 Plan 131 is DONE on its reviewed documentation commit. Plans 136 and 138 have
 reviewed retained implementations but remain blocked by their mandatory app
@@ -885,9 +889,30 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   before replacing external-app field deletion/insertion with one locked RPC.
 - Plan 326 follows Plan 322 because both edit Mail membership repository/routes;
   it additionally needs the active Mail/internal-api handoff to transfer.
+- Plan 327 follows Plan 086 and the Plan 154/163 database/type foundation so
+  Calendar connections reuse the same actor-aware permission guard; it also
+  needs exact backend and database transfer because the prepared Rust GET and
+  direct RLS boundary must change together.
+- Plan 328 is an unowned read-only UI correction. It preserves the registered
+  Models list route and removes only wrong-domain mutations and nonexistent
+  detail actions, so aggregate migration artifacts stay unchanged.
+- Plan 329 is strictly characterization-only and unowned. Any runtime policy
+  decision about target apps or expiry bounds must become a separate plan.
+- Plan 330 waits for the nonterminal cron/frontend handoff to transfer both
+  execution-history consumers and their shared columns before dead copies are
+  removed.
 
 ## Latest audit additions
 
+- **Calendar connection authorization:** Plan 327 aligns every connection
+  method, the prepared Rust GET, and direct RLS with `manage_calendar` rather
+  than ordinary workspace membership.
+- **Truthful read-only surfaces:** Plans 328 and 330 remove wrong-domain user
+  mutations, nonexistent detail links, and dead copied actions from workspace
+  Models and Cron execution history without inventing unsupported CRUD.
+- **Cross-app credential coverage:** Plan 329 characterizes authentication,
+  forwarding, error mapping, and the shared issuer with synthetic tokens and
+  no runtime changes.
 - **Workspace-summary actor binding:** Plan 324 splits the injectable
   server-only aggregation from the public Server Action so serialized caller
   input can no longer select another user's service-role workspace directory.
