@@ -5,6 +5,13 @@ on:
     branches: [production]
   workflow_dispatch:
 
+# Production pushes regenerate the Release Please branch. Serialize that work
+# with the daily auto-merge so its selected head cannot be force-pushed midway
+# through validation or cleanup.
+concurrency:
+  group: release-please-production
+  cancel-in-progress: false
+
 jobs:
   reject-non-production-ref:
     if: github.ref != 'refs/heads/production'
@@ -43,12 +50,41 @@ jobs:
         run: node scripts/ci/release-please-overflow-recovery.js --target-branch production
 
       - name: Create or update release PR
+        id: release
         uses: googleapis/release-please-action@v5
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
           target-branch: production
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Overflow notes are still needed while the merged PR carries
+      # `autorelease: pending`. Release Please has consumed them once it reports
+      # releases_created=true, so this is the first safe owner and moment for
+      # deleting the metadata branch.
+      - name: Delete tagged overflow release notes
+        if: steps.release.outputs.releases_created == 'true'
+        env:
+          RELEASE_NOTES_BRANCH: release-please--branches--production--release-notes
+        run: |
+          set -euo pipefail
+
+          if ! git ls-remote --exit-code --heads origin "${RELEASE_NOTES_BRANCH}" >/dev/null 2>&1; then
+            echo "origin/${RELEASE_NOTES_BRANCH} is already deleted."
+            exit 0
+          fi
+
+          if git push origin --delete "${RELEASE_NOTES_BRANCH}" 2>&1; then
+            echo "Deleted origin/${RELEASE_NOTES_BRANCH} after tagging."
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --heads origin "${RELEASE_NOTES_BRANCH}" >/dev/null 2>&1; then
+            echo "::error::Could not delete origin/${RELEASE_NOTES_BRANCH} after tagging."
+            exit 1
+          fi
+
+          echo "origin/${RELEASE_NOTES_BRANCH} was deleted concurrently."
 
       # The `Protected branches` ruleset requires an approving review, so an
       # untouched release PR sits at REVIEW_REQUIRED until someone clicks it.

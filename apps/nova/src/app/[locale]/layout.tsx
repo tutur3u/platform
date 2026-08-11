@@ -5,11 +5,12 @@ import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { generateCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { locale as getRootLocale } from 'next/root-params';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { Providers } from './providers';
 
@@ -69,7 +70,10 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children }: Props) {
-  const locale = await getLocale();
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>

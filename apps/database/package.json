@@ -13,6 +13,7 @@
     "sbr:pull": "node scripts/run-supabase.js db pull --linked",
     "sbr:push": "node scripts/run-supabase.js db push --linked",
     "sb:status": "node scripts/run-supabase.js status",
+    "sb:validate:isolated": "node scripts/run-supabase-isolated.js",
     "sb:start": "node scripts/run-supabase.js start",
     "sb:stop": "node scripts/run-supabase.js stop",
     "sb:reset": "node scripts/run-supabase.js db reset && node scripts/post-reset-ai-credits.js",

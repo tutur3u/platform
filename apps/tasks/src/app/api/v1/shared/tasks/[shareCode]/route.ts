@@ -3,23 +3,38 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  SUPPORTED_COLORS,
+  type SupportedColor,
+} from '@tuturuuu/types/primitives/SupportedColors';
+import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { type NextRequest, NextResponse } from 'next/server';
+import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import type {
+  SharedTaskEditResponse,
+  SharedTaskRecord,
+  SharedTaskResponse,
+  SharedTaskViewResponse,
+} from './response';
 
 interface SharedTaskParams {
   shareCode: string;
+}
+
+function isSupportedColor(value: string | null): value is SupportedColor {
+  return SUPPORTED_COLORS.some((color) => color === value);
 }
 
 export async function GET(
   _: NextRequest,
   { params }: { params: Promise<SharedTaskParams> }
 ): Promise<NextResponse> {
+  await connection();
   try {
     const { shareCode } = await params;
 
@@ -128,30 +143,31 @@ export async function GET(
       isWorkspaceMember = memberCheck.ok;
     }
 
-    const { data: userPrivateDetails } = await adminClient
-      .from('user_private_details')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    if (!isWorkspaceMember) {
+      const { data: userPrivateDetails } = await adminClient
+        .from('user_private_details')
+        .select('email')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    const email = userPrivateDetails?.email ?? null;
+      const email = userPrivateDetails?.email ?? null;
 
-    let sharesQuery = adminClient
-      .from('task_shares')
-      .select('permission')
-      .eq('task_id', shareLink.task_id);
+      let sharesQuery = adminClient
+        .from('task_shares')
+        .select('permission')
+        .eq('task_id', shareLink.task_id);
 
-    if (email) {
-      // Use parameterized query structure provided by PostgREST syntax to handle emails safely
-      sharesQuery = sharesQuery.or(
-        `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
-      );
-    } else {
-      sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
+      if (email) {
+        sharesQuery = sharesQuery.or(
+          `shared_with_user_id.eq.${user.id},and(shared_with_email.ilike."${email}")`
+        );
+      } else {
+        sharesQuery = sharesQuery.eq('shared_with_user_id', user.id);
+      }
+
+      const { data: shareRow } = await sharesQuery.maybeSingle();
+      recipientPermission = shareRow?.permission ?? null;
     }
-
-    const { data: shareRow } = await sharesQuery.maybeSingle();
-    recipientPermission = shareRow?.permission ?? null;
 
     const hasPublicAccess = shareLink.public_access === 'view';
     const isEligible =
@@ -201,163 +217,217 @@ export async function GET(
       });
     }
 
-    // Get task assignees
-    const { data: assignees } = await adminClient
-      .from('task_assignees')
-      .select(
+    const [assigneeResult, labelResult, projectResult] = await Promise.all([
+      adminClient
+        .from('task_assignees')
+        .select(
+          `
+          user_id,
+          users (
+            id,
+            display_name,
+            handle,
+            avatar_url
+          )
         `
-        user_id,
-        users (
-          id,
-          display_name,
-          handle,
-          avatar_url
         )
-      `
-      )
-      .eq('task_id', shareLink.task_id);
-
-    // Get task labels
-    const { data: labels } = await adminClient
-      .from('task_labels')
-      .select(
+        .eq('task_id', shareLink.task_id),
+      adminClient
+        .from('task_labels')
+        .select(
+          `
+          label_id,
+          workspace_task_labels (
+            id,
+            name,
+            color,
+            created_at
+          )
         `
-        label_id,
-        workspace_task_labels (
-          id,
-          name,
-          color
         )
-      `
-      )
-      .eq('task_id', shareLink.task_id);
-
-    // Get task projects
-    const { data: projects } = await adminClient
-      .from('task_project_tasks')
-      .select(
+        .eq('task_id', shareLink.task_id),
+      adminClient
+        .from('task_project_tasks')
+        .select(
+          `
+          project_id,
+          task_projects (
+            id,
+            name,
+            status
+          )
         `
-        project_id,
-        task_projects (
-          id,
-          name,
-          status
         )
-      `
-      )
-      .eq('task_id', shareLink.task_id);
+        .eq('task_id', shareLink.task_id),
+    ]);
 
-    // Get all lists for the board
-    const { data: availableLists } = await adminClient
-      .from('task_lists')
-      .select('id, name, position, board_id, created_at')
-      .eq('board_id', boardId)
-      .eq('deleted', false)
-      .order('position')
-      .order('created_at');
+    const taskSource = shareLink.tasks;
+    const listSource = taskSource?.task_lists;
+    const boardSource = listSource?.workspace_boards;
+    const workspaceSource = boardSource?.workspaces;
+    if (
+      !taskSource?.name ||
+      !taskSource.created_at ||
+      !listSource?.id ||
+      !listSource.name ||
+      !boardSource?.name ||
+      !workspaceSource?.id ||
+      !workspaceSource.name
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid task configuration' },
+        { status: 500 }
+      );
+    }
 
-    // Get all workspace labels
-    const { data: workspaceLabels } = await adminClient
-      .from('workspace_task_labels')
-      .select('id, name, color, created_at')
-      .eq('ws_id', wsId)
-      .order('name');
-
-    // Get all workspace projects
-    const { data: workspaceProjects } = await adminClient
-      .from('task_projects')
-      .select('id, name, status')
-      .eq('ws_id', wsId)
-      .eq('deleted', false)
-      .order('name');
-
-    // Get workspace members
-    const { data: workspaceMembers } = await adminClient
-      .from('workspace_members')
-      .select(
-        `
-        user_id,
-        users!inner (
-          id,
-          display_name,
-          avatar_url
-        )
-      `
-      )
-      .eq('ws_id', wsId);
-
-    // Enrich task with assignees, labels, and projects
-    const task = {
-      ...shareLink.tasks,
+    const task: SharedTaskRecord = {
+      id: taskSource.id,
+      name: taskSource.name,
+      description: taskSource.description ?? undefined,
+      priority: taskSource.priority,
+      start_date: taskSource.start_date ?? undefined,
+      end_date: taskSource.end_date,
+      created_at: taskSource.created_at,
+      completed_at: taskSource.completed_at ?? undefined,
+      closed_at: taskSource.closed_at ?? undefined,
+      estimation_points: taskSource.estimation_points,
+      display_number: taskSource.display_number ?? 0,
+      list_id: taskSource.list_id ?? listSource.id,
       assignees:
-        assignees?.map((a) => ({
-          id: a.users?.id,
-          user_id: a.user_id,
-          display_name: a.users?.display_name,
-          handle: a.users?.handle,
-          avatar_url: a.users?.avatar_url,
-        })) || [],
+        assigneeResult.data?.flatMap((a) =>
+          a.users?.id
+            ? [
+                {
+                  id: a.users?.id,
+                  display_name: a.users.display_name ?? undefined,
+                  handle: a.users.handle ?? undefined,
+                  avatar_url: a.users.avatar_url ?? undefined,
+                },
+              ]
+            : []
+        ) || [],
       labels:
-        labels
+        labelResult.data
           ?.map((l) => l.workspace_task_labels)
           .filter(Boolean)
           .map((label) => ({
             id: label.id,
             name: label.name,
             color: label.color,
+            created_at: label.created_at ?? taskSource.created_at,
           })) || [],
       projects:
-        projects
+        projectResult.data
           ?.map((p) => p.task_projects)
           .filter(Boolean)
           .map((project) => ({
             id: project.id,
             name: project.name,
-            status: project.status,
+            status: project.status ?? 'not_started',
           })) || [],
     };
 
-    const boardConfig = {
-      id: boardId,
-      name: shareLink.tasks?.task_lists?.workspace_boards?.name,
-      ws_id: wsId,
-      ticket_prefix:
-        shareLink.tasks?.task_lists?.workspace_boards?.ticket_prefix,
-      estimation_type:
-        shareLink.tasks?.task_lists?.workspace_boards?.estimation_type,
-      extended_estimation:
-        shareLink.tasks?.task_lists?.workspace_boards?.extended_estimation,
-      allow_zero_estimates:
-        shareLink.tasks?.task_lists?.workspace_boards?.allow_zero_estimates,
-    };
-
-    return NextResponse.json({
+    const baseResponse = {
       task,
-      permission: effectivePermission,
-      workspace: shareLink.tasks?.task_lists?.workspace_boards?.workspaces,
-      board: {
+      workspace: { id: workspaceSource.id, name: workspaceSource.name },
+      board: { id: boardId, name: boardSource.name },
+      list: { id: listSource.id, name: listSource.name },
+    };
+
+    if (effectivePermission === 'view') {
+      const response: SharedTaskViewResponse = {
+        ...baseResponse,
+        permission: 'view',
+      };
+      return NextResponse.json<SharedTaskResponse>(response);
+    }
+
+    const [listsResult, labelsResult, projectsResult, membersResult] =
+      await Promise.all([
+        adminClient
+          .from('task_lists')
+          .select(
+            'id, name, archived, deleted, created_at, board_id, creator_id, status, color, position'
+          )
+          .eq('board_id', boardId)
+          .eq('deleted', false)
+          .order('position')
+          .order('created_at'),
+        adminClient
+          .from('workspace_task_labels')
+          .select('id, name, color, created_at')
+          .eq('ws_id', wsId)
+          .order('name'),
+        adminClient
+          .from('task_projects')
+          .select('id, name, status')
+          .eq('ws_id', wsId)
+          .eq('deleted', false)
+          .order('name'),
+        adminClient.rpc('get_task_board_workspace_members', {
+          p_ws_id: wsId,
+        }),
+      ]);
+
+    const response: SharedTaskEditResponse = {
+      ...baseResponse,
+      permission: 'edit',
+      boardConfig: {
         id: boardId,
-        name: shareLink.tasks?.task_lists?.workspace_boards?.name,
+        name: boardSource.name,
+        ws_id: wsId,
+        ticket_prefix: boardSource.ticket_prefix ?? undefined,
+        estimation_type: boardSource.estimation_type ?? undefined,
+        extended_estimation: boardSource.extended_estimation ?? undefined,
+        allow_zero_estimates: boardSource.allow_zero_estimates ?? undefined,
       },
-      list: {
-        id: shareLink.tasks?.task_lists?.id,
-        name: shareLink.tasks?.task_lists?.name,
-      },
-      // Additional data for TaskEditDialog
-      boardConfig,
-      availableLists: availableLists || [],
-      workspaceLabels: workspaceLabels || [],
-      workspaceProjects: workspaceProjects || [],
+      availableLists:
+        listsResult.data?.flatMap((list) =>
+          list.name &&
+          list.created_at &&
+          list.board_id &&
+          list.creator_id &&
+          list.status &&
+          isSupportedColor(list.color) &&
+          list.position !== null
+            ? [
+                {
+                  id: list.id,
+                  name: list.name,
+                  archived: list.archived === true,
+                  deleted: list.deleted === true,
+                  created_at: list.created_at,
+                  board_id: list.board_id,
+                  creator_id: list.creator_id,
+                  status: list.status,
+                  color: list.color,
+                  position: list.position,
+                },
+              ]
+            : []
+        ) || [],
+      workspaceLabels: labelsResult.data || [],
+      workspaceProjects:
+        projectsResult.data?.map((project) => ({
+          ...project,
+          status: project.status ?? 'not_started',
+        })) || [],
       workspaceMembers:
-        workspaceMembers
-          ?.filter((m) => m.user_id && m.users)
-          .map((m) => ({
-            id: m.user_id,
-            user_id: m.user_id,
-            display_name: m.users?.display_name || 'Unknown User',
-            avatar_url: m.users?.avatar_url,
-          })) || [],
-    });
+        membersResult.data?.flatMap((member) =>
+          member.user_id
+            ? [
+                {
+                  id: member.user_id,
+                  user_id: member.user_id,
+                  display_name: member.display_name || 'Unknown User',
+                  avatar_url: member.avatar_url,
+                },
+              ]
+            : []
+        ) || [],
+    };
+
+    return NextResponse.json<SharedTaskResponse>(response);
   } catch (error) {
     console.error('Error in GET /shared/tasks/[shareCode]:', error);
     return NextResponse.json(

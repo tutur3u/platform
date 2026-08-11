@@ -246,6 +246,13 @@ after the merge is confirmed on `main` and post-merge verification is complete.
 This lifecycle is documented in the Agent Operating Manual and enforced as a
 cross-cutting rule in `AGENTS.md`.
 
+For user-authorized continuous integration, the same lifecycle applies to each
+verified checkpoint: integrate it into current `main`, require the exact main
+SHA to be fully green, run `bun git-sync`, verify production, then remove only
+the completed worktree and local task branch. Rust-heavy retained worktrees use
+`bun rust-cache report` plus bounded `prune`/`auto` cleanup rather than broad
+filesystem deletion.
+
 Use `tmp/agent-coordination/` for lightweight agent-to-agent notes when work may
 overlap, the worktree is dirty, the task is long-running, or the task changes
 agent workflow rules. The directory is ignored by git, so it can hold live
@@ -384,7 +391,9 @@ library.
 - Keep the open-PR `.worktrees/` lifecycle, immediate `bun setup`, and
   post-merge worktree/branch cleanup guidance aligned across `AGENTS.md`, the
   Agent Operating Manual, `$tuturuuu-agent-coordination`, the platform
-  checklist, and `$tuturuuu-pr-merge-sync`.
+  checklist, and `$tuturuuu-pr-merge-sync`. Keep the authorized continuous
+  integration, main-green, `bun git-sync`, production verification, and bounded
+  Rust-cache cleanup rules aligned on those same surfaces.
 - Keep parallel subagent lane, staged-set ownership, generated-artifact
   ownership, and hook-failure guidance aligned across the Agent Operating
   Manual, `$tuturuuu-agent-coordination`, `$tuturuuu-commit`, and Git

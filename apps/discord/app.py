@@ -671,7 +671,7 @@ def test_bot_token():
         raise Exception("DISCORD_CLIENT_ID environment variable is not set")
 
     print(f"🤖: Testing bot token for CLIENT_ID: {client_id}")
-    print(f"🤖: BOT_TOKEN starts with: {bot_token[:10]}...")
+    print("🤖: BOT_TOKEN is configured")
 
     headers = {
         "Authorization": f"Bot {bot_token}",
@@ -754,9 +754,7 @@ def create_slash_command(force: bool = False):
         raise Exception("DISCORD_CLIENT_ID environment variable is not set")
 
     print(f"🤖: Using CLIENT_ID: {client_id}")
-    print(
-        f"🤖: BOT_TOKEN starts with: {bot_token[:10]}..." if bot_token else "🤖: BOT_TOKEN is empty"
-    )
+    print("🤖: BOT_TOKEN is configured")
 
     headers = {
         "Content-Type": "application/json",

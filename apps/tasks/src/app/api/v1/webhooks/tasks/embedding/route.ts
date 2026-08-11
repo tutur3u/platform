@@ -11,16 +11,22 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(req: Request) {
   try {
-    const supabase = await createAdminClient();
-
     // Verify webhook secret for security
     const webhookSecret = req.headers.get('x-webhook-secret');
     const expectedSecret = process.env.SUPABASE_WEBHOOK_SECRET;
 
-    if (expectedSecret && webhookSecret !== expectedSecret) {
+    if (!expectedSecret) {
+      return NextResponse.json(
+        { message: 'Webhook secret is not configured' },
+        { status: 500 }
+      );
+    }
+
+    if (webhookSecret !== expectedSecret) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabase = await createAdminClient();
     const body = await req.json();
     const { type, table, record, old_record } = body;
 

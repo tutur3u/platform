@@ -195,3 +195,133 @@ describe('time tracking sessions route task workspace binding', () => {
     expect(taskQuery.eq).toHaveBeenCalledWith('id', OTHER_WORKSPACE_TASK_ID);
   });
 });
+
+describe('time tracking sessions route cross-user authorization', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+
+    mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
+  });
+
+  it('keeps cookie-session self reads available without management permission', async () => {
+    const sessionQuery = createQuery({ data: null, error: null });
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClient({ time_tracking_sessions: [sessionQuery] })
+    );
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-1'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).toHaveBeenCalledOnce();
+    expect(sessionQuery.eq).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('denies an ordinary member before any admin session read', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => true),
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows an authorized manager to read another member sessions', async () => {
+    const withoutPermission = vi.fn(() => false);
+    mocks.getPermissions.mockResolvedValue({ withoutPermission });
+    const sessionQuery = createQuery({ data: null, error: null });
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClient({ time_tracking_sessions: [sessionQuery] })
+    );
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(withoutPermission).toHaveBeenCalledWith(
+      'manage_time_tracking_requests'
+    );
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledTimes(2);
+    expect(sessionQuery.eq).toHaveBeenCalledWith('user_id', 'user-2');
+  });
+
+  it('returns 404 for a target outside the workspace without an admin read', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(404);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when permission resolution fails without an admin read', async () => {
+    mocks.getPermissions.mockResolvedValue(null);
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(500);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 when target membership resolution fails without an admin read', async () => {
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        error: 'membership_lookup_failed',
+        ok: false,
+      });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&userId=user-2'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(500);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+});

@@ -81,6 +81,18 @@ surface you are changing:
   the shared main checkout onto the PR branch. Run `bun setup` immediately after
   creating the worktree. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
+- When the user authorizes ongoing integration, periodically checkpoint verified
+  work instead of leaving it indefinitely only in retained worktrees: create
+  scoped commits, integrate them into `main`, wait for every workflow on the
+  exact main SHA to finish green, run `bun git-sync`, and verify production
+  follow-through. Only then remove the completed worktree and delete its local
+  task branch. Never remove dirty, blocked, unmerged, user-owned, or
+  other-agent-owned worktrees or branches.
+- Keep Rust build storage bounded with `bun rust-cache report` and the
+  repository-owned `prune`/`auto` commands. Inspect the owning worktree first,
+  use an explicit size/age bound, and prune only rebuildable
+  `apps/backend/target` artifacts; never delete source or an unmerged worktree
+  merely to reclaim Rust cache space.
 - Before staging, unstaging, committing, amending, rebasing, or user-requested
   commit-and-push work in a shared checkout, claim the Git commit window with
   `bun git-commit-window claim` or wait with `bun git-commit-window wait`.
@@ -132,14 +144,15 @@ surface you are changing:
     documented in `apps/backend/AGENTS.md`. Keep behavior, status codes, and
     cache headers faithful to the legacy route. A Rust handler being marked
     migrated means source parity is implemented, not that traffic has moved.
-- Keep every source file well-maintained and under a hard ceiling of 700 LOC
-  whenever possible. Treat ~400 LOC (and ~200 LOC for components/widgets) as the
-  point to start splitting when you create or significantly edit a file; never
-  let a file you author or substantially edit cross 700 LOC without splitting it
-  into focused modules. This applies to all languages, including the Rust
-  backend (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]`
-  blocks into a sibling `mod tests;` file). Keep existing import paths stable
-  with thin re-exports (or `pub use`) when callers depend on them.
+- Keep every new authored source file at or below the hard 700-LOC ceiling.
+  Already-oversized authored files are grandfathered only while they do not grow
+  and should shrink when substantially edited. Tests and migrations are authored
+  source; generated and vendored files are excluded from this gate. Treat ~400
+  LOC (and ~200 LOC for components/widgets) as review guidance to start splitting
+  into focused modules. This applies to all languages, including the Rust backend
+  (`apps/backend/src/*.rs` — extract submodules; move large `#[cfg(test)]` blocks
+  into a sibling `mod tests;` file). Keep existing import paths stable with thin
+  re-exports (or `pub use`) when callers depend on them.
 - Update `apps/docs` when work changes how the team should build, run, debug,
   deploy, or operate the system. Add new docs pages to `apps/docs/docs.json`.
 - For TypeScript, JavaScript, root script, or repo config changes, finish with
@@ -255,6 +268,14 @@ another agent's note unless explicitly asked. Archive only your own completed
 Use exact coordination statuses `working`, `blocked`, `handoff`, or `done`;
 archive top-level `done` notes, and treat missing or noncanonical statuses as
 active until resolved. Never stage coordination notes.
+
+Run `bun coordination:audit` when note ownership is ambiguous. The read-only
+default reports legacy lifecycle debt and exits zero; it does not grant path
+ownership. `bun coordination:audit --strict` exits nonzero when diagnostics are
+present and is intended only for clean fixtures or an owner-approved clean
+environment. Missing or noncanonical notes remain active under this policy, and
+only the note's owner or an explicitly authorized operator may fix or archive
+them.
 
 `bun git-commit-window` stores an advisory lock at
 `tmp/agent-coordination/git-commit-window.lock.json`. It serializes Git index

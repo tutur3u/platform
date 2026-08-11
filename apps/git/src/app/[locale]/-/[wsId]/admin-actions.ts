@@ -94,13 +94,14 @@ export async function saveConfigurationAction(
 }
 
 export async function validateConfigurationAction(wsId: string) {
+  const admin = await requireGitAdmin();
+  if (!admin) redirect('/login');
+
   let destination = adminPath(wsId, 'github-app', {
     error: 'Unable to validate configuration',
   });
 
   try {
-    const admin = await requireGitAdmin();
-    if (!admin) redirect('/login');
     const token = await getInstallationToken(536896722);
     if (!token) throw new Error('Enable and save the GitHub App first');
     await fetchRepository('tutur3u', 'platform', token);

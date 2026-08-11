@@ -45,6 +45,12 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 12. After the merge is confirmed on `main`, remove the PR worktree and delete
     its local task branch.
 
+For a user-authorized direct integration without a PR, apply the same safety
+boundary after the scoped current-main commit: wait for the exact main SHA to be
+fully green, run `bun git-sync`, verify production, then remove only that
+completed worktree and its local branch. Never clean blocked, dirty, unmerged,
+user-owned, or other-agent-owned lanes.
+
 ## Watcher Scripts
 
 Prefer the bundled scripts for long waits. They print only changed summaries,
@@ -111,8 +117,8 @@ node <skill-dir>/scripts/watch_branch_runs.mjs --repo tutur3u/platform --branch 
 - Keep temporary watcher files under `tmp/` if custom one-off scripts are
   needed; never stage coordination notes or scratch watchers.
 - Keep the PR worktree and local task branch when the PR remains open, a required
-  gate is blocked, or post-merge verification has not established that the merge
-  is present on `main`.
+  gate is blocked, the merge is absent from `main`, main is not fully green,
+  `bun git-sync` has not completed, or production follow-through is unresolved.
 
 ## Final Report
 

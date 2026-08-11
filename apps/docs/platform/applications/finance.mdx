@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-06-03"
+updatedAt: "2026-08-10"
 ---
 
 ## Overview
@@ -39,21 +39,32 @@ Legacy nested category paths, such as
 
 ## API Ownership
 
-Protected Finance APIs stay centralized in `apps/web`.
-
 - `apps/finance` owns the standalone workspace shell, Finance UI route wrappers,
-  local `/verify-token` handoff, and local app-session logout.
+  local `/verify-token` handoff, host-local auth/session routes, and build-info.
 - `apps/web` owns platform-shell Finance route wrappers under
   `/{wsId}/finance/*`.
-- `apps/finance` should keep only host-local auth/session routes under its
-  local `api` tree.
-- Product CRUD, reporting, invoice, wallet, transaction, tag, promotion,
-  inventory product, settings, and invoice helper APIs should be added in
-  `apps/web` and consumed through forwarded `/api/*` requests or
-  `@tuturuuu/internal-api`.
-- Finance app-session cookies are accepted by central Finance API routes and
-  invoice-adjacent helper routes, then route-level permissions are enforced by
-  `apps/web`.
+- `apps/finance` owns the hard-cutover product handlers for transactions and
+  categories, wallets and checkpoints, budgets, debts, recurring transactions,
+  invoices, charts and overview reporting, and Inventory reconciliation. It
+  also has local supporting handlers for promotions, inventory products,
+  settings, linked products/promotions, and workspace/user lookup needs.
+- The local recurring, invoice, and wallet examples include
+  `/api/v1/workspaces/:wsId/finance/recurring-transactions`,
+  `/api/v1/workspaces/:wsId/finance/invoices`, and
+  `/api/workspaces/:wsId/wallets`. Exact local handlers win before the
+  `/api/:path*` fallback rewrite is considered.
+- Deliberately central exceptions remain in `apps/web`: the legacy
+  `/api/v1/workspaces/:wsId/wallets` list/create route, wallet-role whitelist
+  routes, shared workspace storage routes used by transaction attachments, and
+  the Finance exchange-rate cron. Unmatched requests reach Web through the
+  fallback rewrite.
+- Keep shared callers on `@tuturuuu/internal-api`. Finance-owned helpers use the
+  Finance API base URL for server calls, while helpers for the deliberate Web
+  exceptions remain on the central API origin; browser calls stay same-origin.
+- Finance-local protected handlers accept the Finance app-session actor and
+  enforce route-level workspace and product permissions. Forwarded Web
+  exceptions require the coordinated Web-issued session and retain their own
+  authorization checks.
 - Finance transaction attachment reads must authorize through the same
   authenticated transaction visibility path as normal transaction reads. Do not
   grant storage list, metadata, or signed-read URL access from coarse
@@ -78,10 +89,11 @@ Protected Finance APIs stay centralized in `apps/web`.
   nested service-role join on `customer_id`.
 
 When adding new Finance behavior, update the shared Finance UI/helper first,
-then wire both host wrappers in the same change. Add or extend the protected
-route in `apps/web`, expose a helper in `packages/internal-api` when shared UI
-needs it, and consume it from both hosts through TanStack Query or shared server
-components.
+then wire both host wrappers in the same change. Add or extend the route in
+`apps/finance` when it belongs to a hard-cutover family; preserve the explicit
+Web exceptions until their dependent platform callers migrate. Expose shared
+access in `packages/internal-api` and consume it through TanStack Query or
+shared server components.
 
 ## Inventory sales reconciliation
 

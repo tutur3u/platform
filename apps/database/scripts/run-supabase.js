@@ -95,11 +95,17 @@ export function getSupabaseBinaryPath(
   return getBundledSupabaseGoPath(wrapperPath, nativeOptions) ?? wrapperPath;
 }
 
-function run(command, args, cwd) {
+export function runCommand(
+  command,
+  args,
+  cwd,
+  { env = process.env, stdio = 'inherit' } = {}
+) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
-      stdio: 'inherit',
+      env,
+      stdio,
     });
 
     child.on('error', reject);
@@ -114,7 +120,7 @@ function run(command, args, cwd) {
 
 export async function ensureSupabaseBinary(
   baseWorkspaceDir = workspaceDir,
-  { runner = run, ...nativeOptions } = {}
+  { runner = runCommand, ...nativeOptions } = {}
 ) {
   const binaryPath = getSupabaseBinaryPath(baseWorkspaceDir, nativeOptions);
 
@@ -149,7 +155,7 @@ export async function ensureSupabaseBinary(
 
 export async function main(
   argv = process.argv.slice(2),
-  { runner = run, stderr = process.stderr } = {}
+  { runner = runCommand, stderr = process.stderr } = {}
 ) {
   try {
     const binaryPath = await ensureSupabaseBinary();

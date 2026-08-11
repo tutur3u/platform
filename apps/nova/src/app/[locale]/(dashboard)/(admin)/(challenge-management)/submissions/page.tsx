@@ -14,6 +14,7 @@ export default async function Page({
     search?: string;
     challengeId?: string;
     problemId?: string;
+    userId?: string;
   }>;
 }) {
   const t = await getTranslations('nova.submission-page');

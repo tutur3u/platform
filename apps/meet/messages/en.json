@@ -3800,6 +3800,11 @@
       "waiting_room": "Waiting to join ({count})",
       "you": "You",
       "your_name": "Your name"
+    },
+    "transcription": {
+      "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
+      "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
+      "unsupported_type": "This recording format cannot be transcribed inline yet. The saved recording remains available."
     }
   },
   "meet_workspace": {

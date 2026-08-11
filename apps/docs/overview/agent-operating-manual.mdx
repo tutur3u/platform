@@ -89,6 +89,18 @@ verification is complete, remove the completed worktree and delete its local
 task branch. Do not use that cleanup as permission to remove unrelated
 worktrees, branches, or unmerged work.
 
+When a user authorizes ongoing integration rather than a single PR, checkpoint
+completed lanes periodically. Integrate a scoped commit onto current `main`,
+wait until every workflow for that exact main SHA is green, run `bun git-sync`,
+and verify production before removing the completed worktree and its local task
+branch. Retain dirty, blocked, unmerged, user-owned, and other-agent-owned
+lanes.
+
+Rust build output is rebuildable but can be large in retained worktrees. Use
+`bun rust-cache report` to measure it and only the repository-owned bounded
+`prune`/`auto` commands to reclaim `apps/backend/target` space. Inspect the
+worktree first and never delete source or an unmerged worktree as cache cleanup.
+
 ### Shared Worktree Coordination
 
 Use `tmp/agent-coordination/` as the ignored, in-worktree conversation space for agent-to-agent coordination. This is not source-controlled and should not be committed.

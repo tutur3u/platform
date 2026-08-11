@@ -6,18 +6,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { buildHiveMindSimulationPlan } from '@/lib/hive/mind-simulation-blueprint';
 import {
-  buildHiveMindSimulationPlan,
-  buildHiveMindWorkflowDefinition,
-  type MaterializedHiveMindAgent,
-  type MaterializedHiveMindPair,
-} from '@/lib/hive/mind-simulation-blueprint';
-import { createHiveNpc } from '@/lib/hive/npcs';
-import type { HiveNpcRow } from '@/lib/hive/types';
-import {
-  createHiveWorkflow,
-  validateHiveWorkflowForPersistence,
-} from '@/lib/hive/workflows';
+  HiveMindMaterializationValidationError,
+  materializeHiveMindSimulation,
+} from '@/lib/hive/mind-simulation-materializer';
 import { mapHiveNpc, requireHiveAdmin, withHiveRoute } from '../../../_shared';
 
 type Params = {
@@ -115,85 +108,14 @@ export async function POST(request: NextRequest, { params }: Params) {
         );
       }
 
-      const agents: MaterializedHiveMindAgent[] = [];
-      const npcRows: HiveNpcRow[] = [];
-
-      for (const draft of plan.agents) {
-        const npc = await createHiveNpc({
-          createdBy: access.access.user.id,
-          npc: {
-            backstory: draft.backstory,
-            backstoryEnabled: true,
-            customPromptEnabled: draft.customPromptEnabled,
-            memoryEnabled: draft.memoryEnabled,
-            model: draft.model,
-            name: draft.name,
-            position: draft.position,
-            role: draft.role,
-            settings: draft.settings,
-            systemPrompt: draft.systemPrompt,
-          },
+      const { agents, npcRows, pairs, workflow } =
+        await materializeHiveMindSimulation({
+          actorUserId: access.access.user.id,
+          maxPairs: parsed.data.maxPairs,
+          plan,
           serverId,
+          snapshot,
         });
-
-        if (npc) {
-          agents.push({ ...draft, npcId: npc.id });
-          npcRows.push(npc);
-        }
-      }
-
-      if (agents.length < 2) {
-        return NextResponse.json(
-          { error: 'Failed to create enough Hive agents' },
-          { status: 400 }
-        );
-      }
-
-      const agentByNodeId = new Map(
-        agents.map((agent) => [agent.sourceNodeId, agent])
-      );
-      const pairs: MaterializedHiveMindPair[] = plan.pairs.flatMap((pair) => {
-        const source = agentByNodeId.get(pair.sourceNodeId);
-        const target = agentByNodeId.get(pair.targetNodeId);
-        if (!source || !target) return [];
-        return [
-          {
-            ...pair,
-            sourceNpcId: source.npcId,
-            targetNpcId: target.npcId,
-          },
-        ];
-      });
-      const definition = buildHiveMindWorkflowDefinition({
-        agents,
-        maxPairs: parsed.data.maxPairs,
-        pairs,
-        snapshot,
-      });
-      const validation = validateHiveWorkflowForPersistence(definition);
-
-      if (!validation.ok) {
-        return NextResponse.json(
-          { error: validation.errors.join(' ') },
-          { status: 400 }
-        );
-      }
-
-      const workflow = await createHiveWorkflow({
-        actorUserId: access.access.user.id,
-        definition,
-        description: `Imported from Mind board "${snapshot.board.title}" with ${agents.length} agents and ${pairs.length} interaction pairs.`,
-        enabled: true,
-        name: `Mind: ${snapshot.board.title}`.slice(0, 120),
-        serverId,
-      });
-
-      if (!workflow) {
-        return NextResponse.json(
-          { error: 'Failed to create Hive workflow' },
-          { status: 400 }
-        );
-      }
 
       return NextResponse.json(
         {
@@ -213,6 +135,10 @@ export async function POST(request: NextRequest, { params }: Params) {
         { status: 201 }
       );
     } catch (error) {
+      if (error instanceof HiveMindMaterializationValidationError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+
       console.error('Failed to create Hive simulation from Mind board', {
         boardId: parsed.data.boardId,
         error: error instanceof Error ? error.message : String(error),

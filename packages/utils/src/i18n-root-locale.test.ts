@@ -4,35 +4,54 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('not found');
   }),
-  rootLocale: vi.fn<() => Promise<string | undefined>>(),
 }));
 
-vi.mock('next/root-params', () => ({ locale: mocks.rootLocale }));
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound }));
 
-import { resolveRootLocale } from './i18n-root-locale';
+import { resolveRequestLocale, resolveRootLocale } from './i18n-root-locale';
+
+describe('resolveRequestLocale', () => {
+  it('accepts a supported request locale', () => {
+    expect(resolveRequestLocale(['en', 'vi'], 'vi', 'en')).toBe('vi');
+  });
+
+  it('uses the configured default for missing prerender locale context', () => {
+    expect(resolveRequestLocale(['en', 'vi'], undefined, 'en')).toBe('en');
+  });
+
+  it('uses the configured default for invalid route candidates', () => {
+    expect(resolveRequestLocale(['en', 'vi'], 'unknown', 'en')).toBe('en');
+  });
+});
 
 describe('resolveRootLocale', () => {
   beforeEach(() => {
     mocks.notFound.mockClear();
-    mocks.rootLocale.mockReset();
   });
 
-  it('reads the locale from the root dynamic segment', async () => {
-    mocks.rootLocale.mockResolvedValue('vi');
-
-    await expect(resolveRootLocale(['en', 'vi'])).resolves.toBe('vi');
-  });
-
-  it('uses an explicit override without reading root params', async () => {
+  it('accepts an explicit locale candidate', async () => {
     await expect(resolveRootLocale(['en', 'vi'], 'en')).resolves.toBe('en');
-    expect(mocks.rootLocale).not.toHaveBeenCalled();
   });
 
-  it('rejects unknown root locale values', async () => {
-    mocks.rootLocale.mockResolvedValue('unknown');
+  it('accepts an awaited request locale candidate', async () => {
+    const requestLocale = Promise.resolve('vi');
 
-    await expect(resolveRootLocale(['en', 'vi'])).rejects.toThrow('not found');
+    await expect(
+      resolveRootLocale(['en', 'vi'], await requestLocale)
+    ).resolves.toBe('vi');
+  });
+
+  it('rejects a missing locale candidate', async () => {
+    await expect(resolveRootLocale(['en', 'vi'], undefined)).rejects.toThrow(
+      'not found'
+    );
+    expect(mocks.notFound).toHaveBeenCalledOnce();
+  });
+
+  it('rejects unknown locale candidates', async () => {
+    await expect(resolveRootLocale(['en', 'vi'], 'unknown')).rejects.toThrow(
+      'not found'
+    );
     expect(mocks.notFound).toHaveBeenCalledOnce();
   });
 });

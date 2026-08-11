@@ -1,4 +1,5 @@
 import { MeetTogetherPage } from '@tuturuuu/ui/legacy/meet/page';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 
 interface TumeetPageProps {
@@ -9,10 +10,16 @@ interface TumeetPageProps {
   }>;
 }
 
-export default async function TumeetPage({ searchParams }: TumeetPageProps) {
+export default function TumeetPage({ searchParams }: TumeetPageProps) {
   return (
     <Suspense>
-      <MeetTogetherPage searchParams={searchParams} path="/plans" />
+      <RequestTimeMeetPage searchParams={searchParams} />
     </Suspense>
   );
+}
+
+async function RequestTimeMeetPage({ searchParams }: TumeetPageProps) {
+  await connection();
+
+  return <MeetTogetherPage searchParams={searchParams} path="/plans" />;
 }

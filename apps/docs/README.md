@@ -58,7 +58,7 @@ Static assets (images, favicon, logos) live alongside `docs.json` at the root of
 
 1. **Lifecycle-Oriented** – Content flows from vision → platform → build → learn → reference.
 2. **Single Source of Truth** – Each topic lives in exactly one place, with cross-links instead of duplicates.
-3. **Absolute Links** – Use absolute paths (e.g., `/platform/index`) to keep navigation resilient to future moves.
+3. **Absolute Links** – Use absolute paths (e.g., `/platform/overview`) to keep navigation resilient to future moves.
 4. **Mermaid 10.8.0** – All diagrams conform to Mermaid 10.8.0 syntax for consistent rendering.
 
 ## ✍️ Authoring Guidelines
@@ -88,15 +88,15 @@ updated: 'YYYY-MM-DD'
 All sidebar navigation lives in `apps/docs/docs.json`. When adding a page:
 
 1. Place the file in the correct directory.
-2. Update the relevant `index.mdx` with a pointer to your new doc.
-3. Add the path to the appropriate `navigation` group in `docs.json` (e.g., `platform/index`).
+2. Add the path to the appropriate `navigation` group in `docs.json`.
+3. Cross-link the page from the relevant overview page when it helps readers discover related content.
 4. Run `bun dev:docs` from the repo root to verify links render correctly.
 
 ## 🚀 Quick Start for Contributors
 
-1. Review the [Build & Ship](/build/index) section for environment setup and workflows.
+1. Review the [Build & Ship](/build/overview) section for environment setup and workflows.
 2. Read the [Documentation Organization Guide](/overview/organization-guide) to understand how we structure content.
-3. When documenting a product area, reference the [Platform Overview](/platform/index) for framing and terminology.
+3. When documenting a product area, reference the [Platform Overview](/platform/overview) for framing and terminology.
 
 ## 🤝 Contributing Tips
 

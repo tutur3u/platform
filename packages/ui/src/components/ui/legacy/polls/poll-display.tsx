@@ -94,6 +94,10 @@ export function PlanDetailsPollContent({
       optionIds,
       userType: userType as 'PLATFORM' | 'GUEST',
       guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
+      guestPasswordHash:
+        userType === 'GUEST' && guestUser?.is_guest
+          ? guestUser.password_hash
+          : undefined,
     });
     if (result.error) {
       toast({
@@ -111,6 +115,10 @@ export function PlanDetailsPollContent({
       value,
       userType: userType as 'PLATFORM' | 'GUEST',
       guestId: userType === 'GUEST' ? (user?.id ?? undefined) : undefined,
+      guestPasswordHash:
+        userType === 'GUEST' && guestUser?.is_guest
+          ? guestUser.password_hash
+          : undefined,
     });
     if (result.error) {
       toast({

@@ -5,10 +5,12 @@ formatting behavior, or repo-wide verification.
 
 ## File Size Ceiling
 
-- Keep every source file well-maintained and under a hard **700-LOC ceiling**
-  whenever possible, in any language. Start splitting around ~400 LOC (~200 for
-  components/widgets); never leave a file you author or substantially edit above
-  700 LOC — extract cohesive submodules and keep import paths stable with thin
+- Keep every new authored source file at or below the hard **700-LOC ceiling** in
+  any language. Already-oversized authored files are grandfathered only while
+  they do not grow and should shrink when substantially edited. Tests and
+  migrations are authored source; generated and vendored files are excluded.
+  Start splitting around ~400 LOC (~200 for components/widgets) as review
+  guidance, extract cohesive submodules, and keep import paths stable with thin
   re-exports (`pub use`/barrel files).
 - Rust backend specifics (`apps/backend`): the crate root is split into
   `src/dispatch/` (one `dispatch_chunk_NN.rs` per route-table chunk) plus named
@@ -55,6 +57,12 @@ formatting behavior, or repo-wide verification.
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
   and keeps hot target data warm by pruning only stale or size-pressure entries.
+  In long-lived or blocked worktrees, run `report` before handoff and use an
+  explicit `--max-size`/`--max-age-days` bound when storage pressure is real.
+  Inspect branch/worktree state first; prune rebuildable target artifacts, never
+  source or an unmerged worktree. Confirmed-merged worktrees should be removed
+  after main-green, `bun git-sync`, and production verification so their target
+  caches disappear with them.
 - Turborepo build outputs may include production `.next/**`, but must exclude
   volatile Next caches such as `.next/cache/**` and `.next/dev/**`. Next 16.3
   enables the Turbopack build filesystem cache locally through the shared Next

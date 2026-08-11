@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.14.1](https://github.com/tutur3u/platform/compare/satellite-v0.14.0...satellite-v0.14.1) (2026-08-11)
+
+
+### Performance Improvements
+
+* **vercel:** reduce speculative app requests ([423e240](https://github.com/tutur3u/platform/commit/423e2401c16b2cad4785ba46a08bf5b3d1c8a749))
+* **vercel:** reduce speculative app requests ([#5116](https://github.com/tutur3u/platform/issues/5116)) ([9e2b59b](https://github.com/tutur3u/platform/commit/9e2b59bcaa0bbc7a593ff91e2d2331aca4ab6595))
+
+## [0.14.0](https://github.com/tutur3u/platform/compare/satellite-v0.13.2...satellite-v0.14.0) (2026-08-09)
+
+
+### Features
+
+* **apps:** unify and redesign app catalog ([b679068](https://github.com/tutur3u/platform/commit/b679068339143a83b38610f363bec7f53ddc3706))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **navigation:** open workspace selector on reveal ([c760d42](https://github.com/tutur3u/platform/commit/c760d42b5e0b8f7bd141e26e2ace956b7f39912e))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **ui:** align landing and locale experience ([aa6e47f](https://github.com/tutur3u/platform/commit/aa6e47f17356ce74111ccf130e8b17071cc7aadf))
+
+
+### Bug Fixes
+
+* **auth:** isolate invitation caches by user ([c720f15](https://github.com/tutur3u/platform/commit/c720f1551b1276bedf393bd4fc8975e33f64aa83))
+* **auth:** redirect signup entry points to login ([14a8a0f](https://github.com/tutur3u/platform/commit/14a8a0fec5e8a031d24dfb5aef20c0d7dde14cd6))
+* **contacts:** stop shadowing the workspace permissions summary ([1a89892](https://github.com/tutur3u/platform/commit/1a8989280afa2897f8a92a972fd102c9aca8c17c))
+* **inventory:** reconcile checkout sales analytics ([b872994](https://github.com/tutur3u/platform/commit/b87299457e1abf8af51a2904818d04544aa2b785))
+* open pay billing links in new tabs ([c6c565f](https://github.com/tutur3u/platform/commit/c6c565f56bc08252fce1a1b96aed9c22b778b11c))
+* **platform:** improve satellite workspace routing ([0c49c48](https://github.com/tutur3u/platform/commit/0c49c4882d26704fb16ba94ee289ab0af7deb4de))
+* **platform:** improve task details and satellite saves ([441c283](https://github.com/tutur3u/platform/commit/441c283f3003718723e4cf89d7d140e1515a6eec))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** persist settings dialog state ([04d2128](https://github.com/tutur3u/platform/commit/04d212807b6fabf33f43743c0b779ba9499334ba))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* **satellite:** align sidebar workspace spacing ([199de40](https://github.com/tutur3u/platform/commit/199de404c484f626f9763af7bd82bd808369c081))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **settings:** enable satellite profile management ([4876ae2](https://github.com/tutur3u/platform/commit/4876ae26a8e41278e34989c52650fc33ad248dde))
+* **settings:** harden workspace role management ([0570687](https://github.com/tutur3u/platform/commit/0570687d255698e438d1eb02262ec0fa7c56240f))
+* **settings:** hydrate shared profile data ([7890e61](https://github.com/tutur3u/platform/commit/7890e61a86557bde1460526e0f0cfeed6ec30440))
+* **settings:** make the workspace permissions summary one total contract ([d88e709](https://github.com/tutur3u/platform/commit/d88e709d833c19026f370fe9f79c8ba7dbfd40b6))
+* **settings:** repair satellite workspace management ([63614cd](https://github.com/tutur3u/platform/commit/63614cdd1550cbf7084724dbed728e798b6f979c))
+* **settings:** restore satellite workspace management ([be1fb5a](https://github.com/tutur3u/platform/commit/be1fb5aade1955ce0a73be29a090a3d7488aa8a6))
+* **tasks:** unify settings navigation ([2f305e0](https://github.com/tutur3u/platform/commit/2f305e02e3936b69cca94b55e1d6ef1aa858b47e))
+* **ui:** make member management mobile responsive ([104c812](https://github.com/tutur3u/platform/commit/104c8120949ef34bfdc48da74fdc0e2d35eb4ce7))
+* **ui:** refine member access settings ([b5b1ebf](https://github.com/tutur3u/platform/commit/b5b1ebf49a4a3b93532da74357899927f6e5d988))
+* **ui:** unify workspace access and sidebar controls ([450183e](https://github.com/tutur3u/platform/commit/450183ef78af8e09a386bebb93be7018379c5152))
+* **workspaces:** harden invitation interactions ([b7f8f6c](https://github.com/tutur3u/platform/commit/b7f8f6cf52ceec1b67d36b11513eae7806284f5d))
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+* **workspaces:** propagate a workspace rename without a page reload ([cca0b2d](https://github.com/tutur3u/platform/commit/cca0b2d7e14f6d72f1fdda1deaac18aaf07e9eee))
+* **workspaces:** restore invitation access across apps ([3592699](https://github.com/tutur3u/platform/commit/35926990fc28e44996fd330c6403496d78d96872))
+* **workspaces:** restore invitation access across apps ([#5099](https://github.com/tutur3u/platform/issues/5099)) ([c7032c3](https://github.com/tutur3u/platform/commit/c7032c310639c2783b60ac560e83a84d65a5c7f5))
+
 ## [0.13.2](https://github.com/tutur3u/platform/compare/satellite-v0.13.1...satellite-v0.13.2) (2026-08-09)
 
 

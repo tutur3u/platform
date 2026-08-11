@@ -2852,6 +2852,9 @@
         "filter-challenges": "Lọc theo thử thách",
         "filter-problems": "Lọc theo vấn đề",
         "in-progress": "Đang làm",
+        "no-users-found": "Không tìm thấy người dùng",
+        "search-users": "Tìm kiếm theo email...",
+        "search-users-hint": "Nhập ít nhất 2 ký tự",
         "title": "Tất cả thử thách"
       },
       "latest-submission": "Bài nộp gần nhất",

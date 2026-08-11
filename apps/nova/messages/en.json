@@ -2852,6 +2852,9 @@
         "filter-challenges": "Filter by Challenge",
         "filter-problems": "Filter by Problem",
         "in-progress": "In progress",
+        "no-users-found": "No users found",
+        "search-users": "Search by email...",
+        "search-users-hint": "Enter at least 2 characters",
         "title": "All Challenges"
       },
       "latest-submission": "Latest Submission",

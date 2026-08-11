@@ -8,6 +8,10 @@ const { repoRoot } = require('./workflow-config-test-helpers.js');
 const workflowName = 'release-please-auto-merge.yaml';
 const workflowPath = path.join(repoRoot, '.github', 'workflows', workflowName);
 const workflow = fs.readFileSync(workflowPath, 'utf8');
+const releasePleaseWorkflow = fs.readFileSync(
+  path.join(repoRoot, '.github', 'workflows', 'release-please.yaml'),
+  'utf8'
+);
 
 test('release merge runs daily and can be triggered by hand', () => {
   assert.match(workflow, /^ {2}schedule:$/m);
@@ -19,10 +23,15 @@ test('release merge runs daily and can be triggered by hand', () => {
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);
 });
 
-test('release merge never races another run', () => {
+test('release merge never races release generation or another merge run', () => {
   assert.match(
     workflow,
-    /^concurrency:\n {2}group: release-please-auto-merge$/m
+    /^concurrency:\n {2}group: release-please-production$/m
+  );
+  assert.match(
+    releasePleaseWorkflow,
+    /^concurrency:\n {2}group: release-please-production$/m,
+    'release generation must hold the same lock as release merging'
   );
   assert.match(
     workflow,
@@ -182,9 +191,9 @@ test('release merge fails fast when it has no token that can push', () => {
   );
 });
 
-test('release merge deletes both release-please branches once they are merged', () => {
+test('release merge deletes only the merged release branch', () => {
   const cleanupIndex = workflow.indexOf(
-    '- name: Delete merged release-please branches'
+    '- name: Delete merged release-please branch'
   );
 
   assert.ok(
@@ -202,25 +211,10 @@ test('release merge deletes both release-please branches once they are merged', 
     /delete_remote_branch "\$\{branch\}"/,
     'the merged release branch must be deleted from origin'
   );
-  assert.match(
+  assert.doesNotMatch(
     cleanupStep,
-    /delete_remote_branch "\$\{notes\}"/,
-    'the overflow release-notes branch must be deleted from origin too'
-  );
-  assert.match(
-    cleanupStep,
-    /RELEASE_NOTES_SUFFIX: "--release-notes"/,
-    'the notes suffix must stay in step with scripts/git-release-please.js'
-  );
-  assert.match(
-    cleanupStep,
-    /labels=autorelease: pending/,
-    'the notes branch may only go once release-please has tagged the release'
-  );
-  assert.match(
-    cleanupStep,
-    /\|\| echo 1/,
-    'an unreadable label must be treated as pending so the branch is kept'
+    /release-notes|autorelease: pending|delete_remote_branch "\$\{notes\}"/,
+    'overflow notes remain live until Release Please has created the tags'
   );
   assert.ok(
     cleanupIndex >
@@ -237,7 +231,7 @@ test('release merge treats an already-deleted branch as success', () => {
   // exactly that: `cannot lock ref ... unable to resolve reference`. Checking
   // first cannot close the race, so the delete has to be tolerant instead.
   const cleanupStep = workflow.slice(
-    workflow.indexOf('- name: Delete merged release-please branches'),
+    workflow.indexOf('- name: Delete merged release-please branch'),
     workflow.indexOf('- name: Write run summary')
   );
 
@@ -260,7 +254,7 @@ test('release merge treats an already-deleted branch as success', () => {
 
 test('release merge never deletes an unmerged release branch', () => {
   const cleanupStep = workflow.slice(
-    workflow.indexOf('- name: Delete merged release-please branches'),
+    workflow.indexOf('- name: Delete merged release-please branch'),
     workflow.indexOf('- name: Write run summary')
   );
 

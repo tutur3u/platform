@@ -2,7 +2,7 @@ import { asHiveJson, getHiveSql } from './hive-db';
 import { ensureHiveResearchSchema } from './research-schema';
 import type { HiveNpcRow, HiveNpcRunRow } from './types';
 
-export async function createHiveNpc(input: {
+export type CreateHiveNpcInput = {
   createdBy: string;
   npc: {
     backstory: string;
@@ -17,45 +17,52 @@ export async function createHiveNpc(input: {
     systemPrompt: string;
   };
   serverId: string;
-}) {
+};
+
+export async function insertHiveNpcBundle(
+  tx: import('postgres').TransactionSql,
+  input: CreateHiveNpcInput
+) {
+  const [npc] = await tx<HiveNpcRow[]>`
+    insert into hive_npcs (
+      server_id, created_by, name, role, model, backstory, system_prompt,
+      memory_enabled, backstory_enabled, custom_prompt_enabled, position,
+      settings
+    )
+    values (
+      ${input.serverId},
+      ${input.createdBy},
+      ${input.npc.name},
+      ${input.npc.role},
+      ${input.npc.model},
+      ${input.npc.backstory},
+      ${input.npc.systemPrompt},
+      ${input.npc.memoryEnabled},
+      ${input.npc.backstoryEnabled},
+      ${input.npc.customPromptEnabled},
+      ${tx.json(asHiveJson(input.npc.position))},
+      ${tx.json(asHiveJson(input.npc.settings))}
+    )
+    returning id, server_id, name, role, model, backstory, system_prompt,
+      memory_enabled, backstory_enabled, custom_prompt_enabled, position,
+      settings, status, created_at
+  `;
+
+  if (!npc) return null;
+
+  await tx`insert into hive_npc_wallets (npc_id) values (${npc.id})`;
+  await tx`insert into hive_npc_needs (npc_id) values (${npc.id})`;
+  await tx`
+    insert into hive_ledger_entries (server_id, actor_npc_id, amount, reason)
+    values (${input.serverId}, ${npc.id}, 100, 'npc_spawn_grant')
+  `;
+
+  return npc;
+}
+
+export async function createHiveNpc(input: CreateHiveNpcInput) {
   const sql = getHiveSql();
-  return sql.begin(async (tx) => {
-    const [npc] = await tx<HiveNpcRow[]>`
-      insert into hive_npcs (
-        server_id, created_by, name, role, model, backstory, system_prompt,
-        memory_enabled, backstory_enabled, custom_prompt_enabled, position,
-        settings
-      )
-      values (
-        ${input.serverId},
-        ${input.createdBy},
-        ${input.npc.name},
-        ${input.npc.role},
-        ${input.npc.model},
-        ${input.npc.backstory},
-        ${input.npc.systemPrompt},
-        ${input.npc.memoryEnabled},
-        ${input.npc.backstoryEnabled},
-        ${input.npc.customPromptEnabled},
-        ${tx.json(asHiveJson(input.npc.position))},
-        ${tx.json(asHiveJson(input.npc.settings))}
-      )
-      returning id, server_id, name, role, model, backstory, system_prompt,
-        memory_enabled, backstory_enabled, custom_prompt_enabled, position,
-        settings, status, created_at
-    `;
-
-    if (!npc) return null;
-
-    await tx`insert into hive_npc_wallets (npc_id) values (${npc.id})`;
-    await tx`insert into hive_npc_needs (npc_id) values (${npc.id})`;
-    await tx`
-      insert into hive_ledger_entries (server_id, actor_npc_id, amount, reason)
-      values (${input.serverId}, ${npc.id}, 100, 'npc_spawn_grant')
-    `;
-
-    return npc;
-  });
+  return sql.begin((tx) => insertHiveNpcBundle(tx, input));
 }
 
 export async function updateHiveNpc(input: {

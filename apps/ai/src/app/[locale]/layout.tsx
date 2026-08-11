@@ -5,9 +5,10 @@ import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -46,7 +47,10 @@ export default async function LocaleLayout({
 }: {
   children: ReactNode;
 }) {
-  const locale = await getLocale();
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>

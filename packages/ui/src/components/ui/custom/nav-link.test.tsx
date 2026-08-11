@@ -7,10 +7,12 @@ import { NavLink } from './nav-link';
 
 const navigationState = vi.hoisted(() => ({
   pathname: '/personal/tasks',
+  prefetch: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => navigationState.pathname,
+  useRouter: () => ({ prefetch: navigationState.prefetch }),
 }));
 
 vi.mock('next-intl', () => ({
@@ -51,7 +53,52 @@ function renderNavLink(
 describe('NavLink', () => {
   beforeEach(() => {
     navigationState.pathname = '/personal/tasks';
+    navigationState.prefetch.mockReset();
     vi.restoreAllMocks();
+  });
+
+  it('prefetches internal routes only after navigation intent', () => {
+    renderNavLink({
+      href: '/personal/tasks/boards',
+      title: 'Boards',
+    });
+
+    const link = screen.getByRole('link', { name: 'Boards' });
+    expect(navigationState.prefetch).not.toHaveBeenCalled();
+
+    fireEvent.mouseEnter(link);
+    fireEvent.focus(link);
+
+    expect(navigationState.prefetch).toHaveBeenCalledTimes(1);
+    expect(navigationState.prefetch).toHaveBeenCalledWith(
+      '/personal/tasks/boards'
+    );
+  });
+
+  it('does not prefetch external routes', () => {
+    renderNavLink({
+      external: true,
+      href: 'https://docs.tuturuuu.com',
+      title: 'Docs',
+    });
+
+    fireEvent.mouseEnter(screen.getByRole('link', { name: 'Docs' }));
+
+    expect(navigationState.prefetch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['protocol-relative', '//docs.tuturuuu.com/guide'],
+    ['email', 'mailto:support@tuturuuu.com'],
+    ['telephone', 'tel:+84123456789'],
+  ])('does not prefetch %s URLs', (_label, href) => {
+    renderNavLink({ href, title: 'External destination' });
+
+    fireEvent.mouseEnter(
+      screen.getByRole('link', { name: 'External destination' })
+    );
+
+    expect(navigationState.prefetch).not.toHaveBeenCalled();
   });
 
   it('matches wildcard aliases even when the primary route is exact', () => {

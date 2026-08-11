@@ -7,10 +7,11 @@ import { NuqsAdapter } from '@tuturuuu/ui/nuqs-adapter';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
+import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
+import { locale as getRootLocale } from 'next/root-params';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { Providers } from '@/components/providers';
@@ -53,7 +54,10 @@ export function generateStaticParams() {
 }
 
 export default async function RootLayout({ children }: Props) {
-  const locale = await getLocale();
+  const locale = await resolveRootLocale(
+    supportedLocales,
+    await getRootLocale()
+  );
 
   return (
     <html lang={locale} suppressHydrationWarning>

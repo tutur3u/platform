@@ -1,5 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import {
+  MAX_LONG_TEXT_LENGTH,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -24,18 +27,18 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const sbAdmin = await createAdminClient();
+    const resolvedWorkspaceId = resolveWorkspaceId(wsId);
 
     // Get current user
     const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
+      allowAppSessionAuth: { targetApp: 'track' },
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({
-      wsId,
+      wsId: resolvedWorkspaceId,
       userId: user.id,
       supabase,
     });
@@ -49,6 +52,26 @@ export async function PATCH(
 
     if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const sbAdmin = await createAdminClient();
+    const { data: parentRequest, error: parentRequestError } = await sbAdmin
+      .schema('private')
+      .from('time_tracking_requests')
+      .select('id')
+      .eq('id', requestId)
+      .eq('workspace_id', resolvedWorkspaceId)
+      .maybeSingle();
+
+    if (parentRequestError) {
+      return NextResponse.json(
+        { error: 'Failed to verify request' },
+        { status: 500 }
+      );
+    }
+
+    if (!parentRequest) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
     // Parse and validate request body
@@ -95,6 +118,7 @@ export async function PATCH(
         updated_at: new Date().toISOString(),
       })
       .eq('id', commentId)
+      .eq('request_id', requestId)
       .select('id')
       .single();
 
@@ -147,17 +171,17 @@ export async function DELETE(
 ) {
   try {
     const { wsId, id: requestId, commentId } = await params;
-    const sbAdmin = await createAdminClient();
+    const resolvedWorkspaceId = resolveWorkspaceId(wsId);
 
     // Get current user
     const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: true,
+      allowAppSessionAuth: { targetApp: 'track' },
     });
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
     const membership = await verifyWorkspaceMembershipType({
-      wsId,
+      wsId: resolvedWorkspaceId,
       userId: user.id,
       supabase,
     });
@@ -171,6 +195,26 @@ export async function DELETE(
 
     if (!membership.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const sbAdmin = await createAdminClient();
+    const { data: parentRequest, error: parentRequestError } = await sbAdmin
+      .schema('private')
+      .from('time_tracking_requests')
+      .select('id')
+      .eq('id', requestId)
+      .eq('workspace_id', resolvedWorkspaceId)
+      .maybeSingle();
+
+    if (parentRequestError) {
+      return NextResponse.json(
+        { error: 'Failed to verify request' },
+        { status: 500 }
+      );
+    }
+
+    if (!parentRequest) {
+      return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
     // Get comment to verify ownership and time window
@@ -209,7 +253,8 @@ export async function DELETE(
       .schema('private')
       .from('time_tracking_request_comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', commentId)
+      .eq('request_id', requestId);
 
     if (deleteError) {
       console.error('Error deleting comment:', deleteError);

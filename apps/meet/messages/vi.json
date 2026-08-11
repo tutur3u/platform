@@ -3800,6 +3800,11 @@
       "waiting_room": "Đang chờ vào ({count})",
       "you": "Bạn",
       "your_name": "Tên của bạn"
+    },
+    "transcription": {
+      "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
+      "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
+      "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng."
     }
   },
   "meet_workspace": {

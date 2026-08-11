@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
-  getLocale: vi.fn(async () => 'en'),
+  rootLocale: vi.fn(async () => 'en'),
   nuqsAdapter: vi.fn(),
 }));
 
@@ -45,8 +45,8 @@ vi.mock('nuqs/adapters/next/app', () => ({
   },
 }));
 
-vi.mock('next-intl/server', () => ({
-  getLocale: () => mocks.getLocale(),
+vi.mock('next/root-params', () => ({
+  locale: () => mocks.rootLocale(),
 }));
 
 vi.mock('@tuturuuu/ui/custom/production-indicator', () => ({

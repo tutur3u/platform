@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.24.1](https://github.com/tutur3u/platform/compare/utils-v0.24.0...utils-v0.24.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
+## [0.24.0](https://github.com/tutur3u/platform/compare/utils-v0.23.1...utils-v0.24.0) (2026-08-09)
+
+
+### Features
+
+* **ai:** add workspace AI Studio and legal coverage ([6de4e39](https://github.com/tutur3u/platform/commit/6de4e395cc5568f4943604ac667e3cebf324be13))
+* **apps:** unify and redesign app catalog ([b679068](https://github.com/tutur3u/platform/commit/b679068339143a83b38610f363bec7f53ddc3706))
+* **chat:** add connected site sync bridge ([#5078](https://github.com/tutur3u/platform/issues/5078)) ([3de1a07](https://github.com/tutur3u/platform/commit/3de1a07dfa2fec96982aa0d116e003d0aa3fe47c))
+* **forms:** merge satellite migration ([e739f1b](https://github.com/tutur3u/platform/commit/e739f1bead568905458a42373ae24d13cd778907))
+* **forms:** migrate product to satellite app ([51b9392](https://github.com/tutur3u/platform/commit/51b93928f1a12ebd4f4c753595fb33902ebfa66c))
+* **git:** add fast repository satellite ([51982ae](https://github.com/tutur3u/platform/commit/51982ae8618bb7463e30c97f6e731551ec673660))
+* **inventory:** secure Square POS event checkout ([532b463](https://github.com/tutur3u/platform/commit/532b46372116ee0bebfd83ba2af762cc9f668c3c))
+* **offline:** own service worker runtime and refresh dependencies ([ae44477](https://github.com/tutur3u/platform/commit/ae44477603c39f0513244514771653287338a89f))
+* **onboarding:** connect product guidance across apps ([68cf626](https://github.com/tutur3u/platform/commit/68cf626c9650e5044b6c123f9423a6cebf1bba9a))
+* **platform:** expose the running build over HTTP for every app ([7b90d42](https://github.com/tutur3u/platform/commit/7b90d425a38048a1bf317b46f0da78225474f0e5))
+* **reports:** add periodic reporting automation ([ec7bd5e](https://github.com/tutur3u/platform/commit/ec7bd5e10abb137e217d1dcf143624530276392f))
+
+
+### Bug Fixes
+
+* **ai:** accept rich embedding payloads ([a65b13f](https://github.com/tutur3u/platform/commit/a65b13fa80034959e5f18ee4515b3081002558e2))
+* **ci:** keep task helper collection source-only ([7355a05](https://github.com/tutur3u/platform/commit/7355a05385ccd8d1e2d1bcf6ac15ae5297e057ad))
+* **e2e:** run tasks lifecycle in CI ([bed2cd5](https://github.com/tutur3u/platform/commit/bed2cd590572748f65e75fcb15b7e4b714b9034c))
+* **platform:** merge notification and group visibility fixes ([4fe9e97](https://github.com/tutur3u/platform/commit/4fe9e970bf61bffaee4353b1ebb83ce2f880a4c8))
+* **platform:** restore notifications and group visibility ([eb570a4](https://github.com/tutur3u/platform/commit/eb570a47e7a3d38fc855fbf3e887ecbde853ece0))
+* resolve code quality findings ([63f10b5](https://github.com/tutur3u/platform/commit/63f10b5ec22a4194f48f448ee2b1b088b5da8f08))
+* **security:** remediate code scanning findings ([023db2e](https://github.com/tutur3u/platform/commit/023db2edf4b0557be108a9d772cbc7e2223af947))
+* **tooling:** support webpack verification builds ([5275e10](https://github.com/tutur3u/platform/commit/5275e10c4007ae92e84be6c057a79f223980700c))
+* **workspaces:** preserve creator administration access ([cea32ea](https://github.com/tutur3u/platform/commit/cea32ea22acaae6be6e39552be4af47e6f4dcdc7))
+
+
+### Performance Improvements
+
+* **storefront:** share customer navigation shell ([21cb78d](https://github.com/tutur3u/platform/commit/21cb78db484d1e1fdb9f2469fcac4e3a948bd176))
+
 ## [0.23.1](https://github.com/tutur3u/platform/compare/utils-v0.23.0...utils-v0.23.1) (2026-08-09)
 
 
