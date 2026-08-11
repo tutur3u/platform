@@ -21,4 +21,20 @@ describe('meet root layout providers', () => {
     expect(adapter).toBeGreaterThan(-1);
     expect(adapter).toBeLessThan(providers);
   });
+
+  it('keeps request-aware providers inside a suspense boundary', () => {
+    expect(layout).toContain(
+      "import { type ReactNode, Suspense } from 'react'"
+    );
+
+    const suspense = layout.indexOf('<Suspense>');
+    const adapter = layout.indexOf('<NuqsAdapter>');
+    const providers = layout.indexOf('<Providers');
+    const suspenseEnd = layout.indexOf('</Suspense>');
+
+    expect(suspense).toBeGreaterThan(-1);
+    expect(suspense).toBeLessThan(adapter);
+    expect(adapter).toBeLessThan(providers);
+    expect(providers).toBeLessThan(suspenseEnd);
+  });
 });
