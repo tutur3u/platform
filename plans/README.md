@@ -1,10 +1,10 @@
 # Continuous Improvement Audit Index
 
-Audit snapshot: `cdef1c55339e052912f22d8872d6912c8ab03eb1` on 2026-08-12.
+Audit snapshot: `5af8af5d918d4a1701609bfd9d7833558b5b2141` on 2026-08-12.
 
 These began as advisor plans. Original reviewed commits remain as provenance in
 `DONE` rows; every DONE implementation is integrated in verified main
-`cdef1c5533`. Retained uncommitted implementations and external
+`5af8af5d91`. Retained uncommitted implementations and external
 dependencies are recorded in `BLOCKED` rows. Before resuming any plan, re-read
 the nearest `AGENTS.md`, load the named Tuturuuu skills, and compare its evidence
 with the current branch. If the relevant code has drifted, update the plan
@@ -119,7 +119,7 @@ before editing source.
 | 103 | [Make Calendar Reset Atomic](./059-make-calendar-reset-atomic.md) | P1 | M | Medium | BLOCKED | Mail/Zalo generated database type ownership transfer |
 | 104 | [Make Tulearn Answer Submission Atomic](./037-make-tulearn-answer-submission-atomic.md) | P1 | M | Medium | BLOCKED | Plan 036; Mail/Zalo generated database type ownership transfer |
 | 105 | [Make Track Pause and Resume Transitions Atomic](./038-make-track-pause-resume-transitions-atomic.md) | P1 | M | Medium | BLOCKED | Mail/Zalo generated database type ownership transfer |
-| 106 | [Make Task-Progress Default Metrics Atomic](./043-make-task-progress-default-metrics-atomic.md) | P1 | M | Medium | BLOCKED | Plan 057 must be DONE; generated database type ownership transfer |
+| 106 | [Authorize and Atomically Manage Task Progress Metrics](./043-make-task-progress-default-metrics-atomic.md) | P0 | M | Medium | BLOCKED | Plans 057/154/163 plus Tasks/database/generated-type transfer |
 | 107 | [Claim and Batch Task Deadline Reminders](./022-claim-and-batch-task-deadline-reminders.md) | P1 | M | Medium | BLOCKED | Mail/Zalo generated database type ownership transfer |
 | 108 | [Restore the Release Lockfile Invariant](./003-restore-release-lockfile-invariant.md) | P1 | M | Low | BLOCKED | Mail lockfile and release-lifecycle ownership transfer; preserve current unrelated lockfile drift |
 | 109 | [Characterize Web and Rust Cron-Job Deletion](./103-characterize-cron-job-deletion-parity.md) | P1 | S | Low | BLOCKED | cron/frontend status handoff ownership transfer |
@@ -331,6 +331,8 @@ before editing source.
 | 315 | [Page Microsoft Calendar Events Before Absence-Based Deletion](./315-page-microsoft-calendar-events-before-deletion.md) | P0 | M | Medium-High | BLOCKED | Plans 115/312 plus Calendar sync-route transfer |
 | 316 | [Characterize Nova Challenge-Manager Mutations](./316-characterize-nova-challenge-manager-mutations.md) | P1 | M | Low | TODO | adjacent Plan 013 coordination |
 | 317 | [Retire Duplicate Web External-AI Execution](./317-retire-duplicate-web-external-ai-execution.md) | P1 | M | Medium-High | BLOCKED | Plans 167/293/299/303/314 plus AI/G22 transfer and consumer disposition |
+| 318 | [Reconcile Hive Access Across Both Member Stores](./318-reconcile-hive-access-stores.md) | P0 | M | Medium | TODO | Hive runtime/cron operator coordination |
+| 319 | [Single-Source Governed npm Package Releases](./319-single-source-npm-release-workflows.md) | P1 | L | Medium-High | BLOCKED | Plans 236/292/298 plus Forms/release/CI transfer |
 
 Plan 131 is DONE on its reviewed documentation commit. Plans 136 and 138 have
 reviewed retained implementations but remain blocked by their mandatory app
@@ -342,7 +344,8 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
 ## Dependency and ownership notes
 
 - Plans 036 and 056 follow Plan 032; Plan 037 follows Plan 036. Plan 043 follows
-  Plan 057. Plans 068 and 069 follow Plan 066. Plan 073 follows Plan 072. Plan
+  Plans 057/154/163 so its member/object policies and isolated database baseline
+  are settled before metric RLS/default work. Plans 068 and 069 follow Plan 066. Plan 073 follows Plan 072. Plan
   075 follows Plan 074. Plan 091 follows Plan 014. Plan 105 follows Plan 086.
   Plan 115 follows Plans 031 and 086 so it can reuse the settled Calendar
   permission and canonical-sync contracts. Its refreshed contract also derives
@@ -850,9 +853,26 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
 - Plan 317 waits for the canonical AI boundary plans, CS35/G22 transfer, and an
   operator-approved external-consumer inventory. Repository search alone is
   not sufficient evidence to delete externally callable Web endpoints.
+- Plan 318 has no active exact-path owner: the historical Hive migration note
+  is canonically `done`. Its code can proceed after Hive runtime review, but the
+  plan cannot be marked DONE until the Docker-hosted reconciliation endpoint is
+  registered in the approved managed scheduler.
+- Plan 319 follows Plans 236/292/298 so it consolidates their final tarball,
+  credential, and immutable-action contracts rather than refactoring stale
+  copies. It also needs exact transfer of the Forms-owned shared release test
+  and every affected release/CI workflow.
 
 ## Latest audit additions
 
+- **Task Progress metric authority:** refreshed Plan 043 preserves member reads
+  while requiring `manage_projects` through cookie/app-session routes and RLS,
+  removes service-role writes from GETs, and retains atomic default switching.
+- **Hive access convergence:** Plan 318 records and lease-claims each accepted
+  member change before either store write, treats Supabase as the effective
+  gate, and retries the dedicated Hive mirror to an observable final state.
+- **Package-release architecture:** Plan 319 replaces 14 copied privileged
+  release state machines and their second metadata registry with one reusable
+  workflow, one checked config, and an operator-approved non-publishing canary.
 - **Microsoft Calendar deletion safety:** Plan 315 exhausts bounded Graph
   continuation pages and forbids absence-based deletion from any partial,
   cyclic, capped, invalid, or failed enumeration.
@@ -1470,7 +1490,9 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
 
 ## Audit summary
 
-- **Security:** Devbox documentation promises per-lease Docker isolation, but
+- **Security:** Task Progress metric administration currently treats ordinary
+  membership as authority in both service-role routes and direct RLS, allowing
+  any member to rewrite shared scoring semantics or defaults. Devbox documentation promises per-lease Docker isolation, but
   the runner executes approved jobs directly on the registered host and its
   top-level denylist still permits general process execution; any root-workspace
   member can enqueue those jobs. Nova allows an ordinary app-session caller to
@@ -1505,7 +1527,10 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   build and test precedents. Workspace-role permission rows also have
   independent role/workspace foreign keys, and the privileged item writer can
   attach a local permission row to another tenant's role.
-- **Correctness:** QR login consumes an approved challenge before session
+- **Correctness:** Hive access approval and direct member administration write
+  Supabase and the dedicated Hive database in opposite orders without a durable
+  reconciliation record, so a transient second-store failure leaves effective
+  access and the product/request mirror split. QR login consumes an approved challenge before session
   issuance succeeds, so a transient issuance error can make the approved login
   unrecoverable; concurrent mobile timer polls amplify the race. Mobile deep
   links also share a single asynchronously overwritten pending slot. CLI browser
@@ -1591,7 +1616,10 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   once PostgREST caps the raw history. Task Progress import validates up to 500
   rows through as many as eight sequential reads per row, so preview and commit
   can each spend roughly 4,000 database round trips before one batch insert.
-- **Architecture/migration:** Two registered Rust v1 workspace handlers use
+- **Architecture/migration:** Fourteen governed npm publication workflows copy
+  one privileged release state machine across 5,273 YAML lines while a separate
+  test registry repeats their package/build metadata, multiplying every fleet
+  security change. Two registered Rust v1 workspace handlers use
   unconditional-false API-key verifier stubs even though the crate contains a
   working scrypt implementation; the plan is blocked by active backend
   ownership and does not change live Next.js routing. The backend's 700-line
