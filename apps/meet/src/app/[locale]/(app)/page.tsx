@@ -10,12 +10,16 @@ interface TumeetPageProps {
   }>;
 }
 
-export default async function TumeetPage({ searchParams }: TumeetPageProps) {
-  await connection();
-
+export default function TumeetPage({ searchParams }: TumeetPageProps) {
   return (
     <Suspense>
-      <MeetTogetherPage searchParams={searchParams} path="/plans" />
+      <RequestTimeMeetPage searchParams={searchParams} />
     </Suspense>
   );
+}
+
+async function RequestTimeMeetPage({ searchParams }: TumeetPageProps) {
+  await connection();
+
+  return <MeetTogetherPage searchParams={searchParams} path="/plans" />;
 }
