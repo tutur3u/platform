@@ -49,7 +49,7 @@ describe('meet root layout providers', () => {
     expect(appPage).toContain("import { connection } from 'next/server'");
     expect(appPage).toContain('await connection()');
 
-    const suspense = appPage.indexOf('<Suspense>');
+    const suspense = appPage.match(/<Suspense(?:\s[^>]*)?>/)?.index ?? -1;
     const requestTimePage = appPage.indexOf(
       '<RequestTimeMeetPage searchParams={searchParams} />'
     );
