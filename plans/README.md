@@ -1,6 +1,6 @@
 # Continuous Improvement Audit Index
 
-Audit snapshot: `44742d2cedda465fa16cfbae8d6a234563cc39f6` on 2026-08-12.
+Audit snapshot: `f8fa36af4b87d40ae5647d1a6c3afc47aa2725d4` on 2026-08-12.
 
 These began as advisor plans. Original reviewed commits remain as provenance in
 `DONE` rows; every DONE implementation is integrated in verified main
@@ -344,6 +344,10 @@ before editing source.
 | 328 | [Make Workspace AI Models Truthfully Read-Only](./328-make-workspace-ai-models-read-only.md) | P0 | S | Low-Medium | TODO | no active exact-path owner |
 | 329 | [Characterize Cross-App Token Issuance at the HTTP Boundary](./329-characterize-cross-app-token-issuance.md) | P1 | S | Low | TODO | no active exact-path owner |
 | 330 | [Make Cron Execution History Truthfully Read-Only](./330-make-cron-execution-history-read-only.md) | P2 | S | Low | BLOCKED | cron/frontend handoff exact-path transfer |
+| 331 | [Apply Accepted Removal to Live Session and Migration Exports](./331-retire-live-session-and-migration-exports.md) | P0 | M | Medium | BLOCKED | aggregate migration-artifact and backend transfer |
+| 332 | [Contain and Sanitize Hive Realtime Handler Failures](./332-contain-hive-realtime-handler-failures.md) | P1 | S | Low | TODO | no active exact-path owner |
+| 333 | [Remove Unused Playground Dependency Declarations](./333-remove-playground-phantom-dependencies.md) | P2 | S | Low | BLOCKED | Mail-owned `bun.lock` transfer |
+| 334 | [Retire the Nonfunctional Playground Tool-Calling Demo](./334-retire-playground-tool-calling-demo.md) | P2 | S | Low | TODO | no active exact-path owner |
 
 Plan 131 is DONE on its reviewed documentation commit. Plans 136 and 138 have
 reviewed retained implementations but remain blocked by their mandatory app
@@ -901,9 +905,32 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
 - Plan 330 waits for the nonterminal cron/frontend handoff to transfer both
   execution-history consumers and their shared columns before dead copies are
   removed.
+- Plan 331 applies two already-recorded accepted-removal decisions to live Web.
+  It must wait for the named aggregate coordinator to resolve every nonterminal
+  override/manifest claim and for backend transfer, then move both changed
+  routes/tests first-class and add bodyless Rust/OpenAPI HEAD parity.
+- Plan 332 is route-local and unowned. It changes only Hive realtime failure
+  containment and stable public codes; database, protocol, room, and payload
+  semantics remain frozen.
+- Plan 333 promotes only Playground's portion of the deferred Day.js fleet
+  cleanup because the same manifest also has an unused direct Supabase
+  declaration. It is manifest hygiene—not Turbo-closure reduction—and remains
+  blocked until Mail transfers the shared lockfile.
+- Plan 334 is an unowned retirement of a no-op internal demo. It must not grow
+  into the separately owned external-AI authentication, provider, or metering
+  boundary.
 
 ## Latest audit additions
 
+- **Live accepted-removal enforcement:** Plan 331 replaces Web's raw
+  cookie/session response and permissionless admin migration export with
+  first-class terminal handlers matching checked migration decisions.
+- **Hive realtime failure containment:** Plan 332 catches initial and later
+  asynchronous handler failures, returns stable client codes, and prevents raw
+  runtime/database messages from reaching sockets.
+- **Playground manifest and product cleanup:** Plan 333 removes two proven
+  unused direct declarations without claiming transitive graph reduction, while
+  Plan 334 removes an advertised route whose API always returns an empty object.
 - **Calendar connection authorization:** Plan 327 aligns every connection
   method, the prepared Rust GET, and direct RLS with `manage_calendar` rather
   than ordinary workspace membership.
@@ -1601,7 +1628,11 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   credential types before dependency installation despite credential-free
   build and test precedents. Workspace-role permission rows also have
   independent role/workspace foreign keys, and the privileged item writer can
-  attach a local permission row to another tenant's role.
+  attach a local permission row to another tenant's role. Web additionally
+  retains a debug session endpoint that serializes raw Supabase cookies/session
+  and a workspace migration endpoint that grants broad admin exports to any
+  workspace API key; Plan 331 applies their existing accepted-removal decisions
+  to the live runtime.
 - **Correctness:** Hive access approval and direct member administration write
   Supabase and the dedicated Hive database in opposite orders without a durable
   reconciliation record, so a transient second-store failure leaves effective
@@ -1628,7 +1659,10 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   supplier compatibility routes authorize aliases but query raw route strings.
   Finance invoice deletion separately removes line items and promotions before
   the parent, so a later failure can preserve an invoice after erasing its
-  financial facts. Calendar event deletion removes the provider object before
+  financial facts. Hive realtime also leaves initial snapshot rejection
+  unhandled and sends later raw exception messages to connected clients; Plan
+  332 contains both paths without changing persistence semantics. Calendar
+  event deletion removes the provider object before
   fallible link, habit-skip, and local-row settlement, making retries unable to
   reliably converge after a database failure. Calendar PUT has the analogous
   provider-first defect for updates and moves; Google move/update fallback and
@@ -2080,9 +2114,10 @@ ahead of all twenty-two.
   newer rows at PostgREST's 1,000-row cap, but its exact route is already dirty
   in the retained authorization worktree; design root-thread/descendant cursor
   semantics only after that boundary lands (high confidence, M, MED).
-- Remove unused Day.js declarations from CMS, Drive, Mail, Meet, Nova,
-  Playground, and `packages/apis` with workspace package-manager commands once
-  CMS/Mail and `bun.lock` ownership transfers (high confidence, S, LOW).
+- Remove unused Day.js declarations from CMS, Drive, Mail, Meet, Nova, and
+  `packages/apis` with workspace package-manager commands once CMS/Mail and
+  `bun.lock` ownership transfers (high confidence, S, LOW). Playground is now
+  promoted separately in Plan 333 alongside its phantom Supabase edge.
 - Make Shortener click analytics inspect Supabase insert errors instead of
   logging success after a returned failure; fold this small correctness/test
   repair into the next Shortener route slice because Plan 015 already owns the
