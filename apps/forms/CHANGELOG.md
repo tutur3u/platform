@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/forms-v0.10.0...forms-v0.10.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/forms-v0.9.1...forms-v0.10.0) (2026-08-09)
 
 

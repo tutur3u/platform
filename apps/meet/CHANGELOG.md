@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.22.1](https://github.com/tutur3u/platform/compare/meet-v0.22.0...meet-v0.22.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **i18n:** keep locale roots prerenderable ([d0eb02c](https://github.com/tutur3u/platform/commit/d0eb02c452c4ad125907f4c67b24797782caf907))
+* **i18n:** keep request locale build-safe ([cc575a2](https://github.com/tutur3u/platform/commit/cc575a2e951ef8fb46a4b8593d0dcfcbe03cd4e7))
+* **meet:** narrow prerender suspense boundary ([e82cda6](https://github.com/tutur3u/platform/commit/e82cda698a4e8f028eaee0cd57ca46186765b36d))
+* **meet:** nest runtime work under suspense ([8da544d](https://github.com/tutur3u/platform/commit/8da544d5e98ec69adde9fa8e10225ae1ae59925b))
+* **meet:** nest runtime work under suspense ([#5119](https://github.com/tutur3u/platform/issues/5119)) ([83006f0](https://github.com/tutur3u/platform/commit/83006f034643f5dd759800e9fcaa9de50262b277))
+* **meet:** render authenticated root at request time ([0ba1e3d](https://github.com/tutur3u/platform/commit/0ba1e3d78010b18452dabcb95c06769ee3c16445))
+* **meet:** render authenticated root at request time ([#5118](https://github.com/tutur3u/platform/issues/5118)) ([ab10722](https://github.com/tutur3u/platform/commit/ab10722a8112b21bb4acb6076456abc99f66b2ad))
+* **meet:** restore prerender suspense boundary ([902c444](https://github.com/tutur3u/platform/commit/902c444e3527e07fea3297ac3b04a79b85d9c7fe))
+* **meet:** restore prerender suspense boundary ([#5117](https://github.com/tutur3u/platform/issues/5117)) ([9fb158f](https://github.com/tutur3u/platform/commit/9fb158f7a094724209679ad13b321ed14d6d6ca1))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/meet-v0.21.1...meet-v0.22.0) (2026-08-09)
 
 

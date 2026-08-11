@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/tutur3u/platform/compare/satellite-v0.14.0...satellite-v0.14.1) (2026-08-11)
+
+
+### Performance Improvements
+
+* **vercel:** reduce speculative app requests ([423e240](https://github.com/tutur3u/platform/commit/423e2401c16b2cad4785ba46a08bf5b3d1c8a749))
+* **vercel:** reduce speculative app requests ([#5116](https://github.com/tutur3u/platform/issues/5116)) ([9e2b59b](https://github.com/tutur3u/platform/commit/9e2b59bcaa0bbc7a593ff91e2d2331aca4ab6595))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/satellite-v0.13.2...satellite-v0.14.0) (2026-08-09)
 
 
