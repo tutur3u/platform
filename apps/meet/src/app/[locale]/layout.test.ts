@@ -2,6 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const layout = readFileSync(new URL('./layout.tsx', import.meta.url), 'utf8');
+const appLayout = readFileSync(
+  new URL('./(app)/layout.tsx', import.meta.url),
+  'utf8'
+);
 
 describe('meet root layout providers', () => {
   it('mounts the nuqs adapter', () => {
@@ -20,5 +24,20 @@ describe('meet root layout providers', () => {
     const providers = layout.indexOf('<Providers');
     expect(adapter).toBeGreaterThan(-1);
     expect(adapter).toBeLessThan(providers);
+  });
+
+  it('keeps request-aware server layout inside a suspense boundary', () => {
+    expect(appLayout).toContain("import { Suspense } from 'react'");
+
+    const suspense = appLayout.indexOf('<Suspense>');
+    const serverLayout = appLayout.indexOf('<ServerLayout>');
+    const suspenseEnd = appLayout.indexOf('</Suspense>');
+    expect(suspense).toBeGreaterThan(-1);
+    expect(suspense).toBeLessThan(serverLayout);
+    expect(serverLayout).toBeLessThan(suspenseEnd);
+  });
+
+  it('keeps the theme provider outside root suspense boundaries', () => {
+    expect(layout).not.toContain('<Suspense>');
   });
 });
