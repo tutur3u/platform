@@ -32,6 +32,7 @@ describe('meet root layout providers', () => {
 
   it('keeps request-aware server layout inside a suspense boundary', () => {
     expect(appLayout).toContain("import { Suspense } from 'react'");
+    expect(appLayout).toContain('export const instant = false');
 
     const suspense = appLayout.indexOf('<Suspense>');
     const serverLayout = appLayout.indexOf('<ServerLayout>');
