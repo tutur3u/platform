@@ -10,7 +10,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `558397b97117d131bae3f6e9c2dcac8eb086b2b1`
+  on branch `fix/discover-script-tests`; all 1,329 script tests, discovery
+  self-tests, `bun check`, whitespace, and hooks passed
 - **Priority:** P1
 - **Effort:** S
 - **Risk:** LOW
@@ -73,7 +76,10 @@ network, Docker, timing, or destructive assumptions before adding it to CI.
 
 Allowed files are `package.json`,
 `scripts/run-hive-docker-next-build.test.js`, new
-`scripts/run-script-tests.js`, and new `scripts/run-script-tests.test.js`. Do
+`scripts/run-script-tests.js`, new `scripts/run-script-tests.test.js`, and
+`scripts/ci/release-please-auto-approve.test.js`. The release test's current
+path-wall assertion embeds the old literal `test:scripts` command; update only
+that assertion so it verifies the discovery runner entrypoint instead. Do
 not edit `scripts/run-web-docker-next-build.js`: its 4096 MiB result matches the
 documented current small-container policy. Do not edit `scripts/check.js`; it already calls
 `bun run test:scripts`. Preserve these supplemental existing roots explicitly:
@@ -84,7 +90,9 @@ documented current small-container policy. Do not edit `scripts/check.js`; it al
 In scope: a deterministic test discovery runner, explicit supplemental roots and
 exclusions, package-script simplification, self-tests, and canonical gate parity.
 
-Out of scope: fixing unrelated failures inside newly activated tests, enabling
+Out of scope: fixing unrelated failures inside newly activated tests beyond the
+explicit stale Hive policy expectation and release-runner path-wall assertion,
+enabling
 true E2E suites that require secrets/services, or changing Node's test semantics.
 
 ## Git workflow

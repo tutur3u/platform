@@ -10,7 +10,10 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** DONE
+- **Verified implementation:** commit `91ae384722` on branch
+  `fix/hive-realtime-room-eviction`; ten focused tests, Hive realtime
+  typecheck, `bun check`, whitespace, and hooks passed
 - **Priority:** P2
 - **Effort:** S
 - **Risk:** LOW
@@ -48,7 +51,7 @@ Hive realtime note owns the server lifecycle before editing.
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused tests | `bun --cwd apps/hive-realtime vitest run tests/server-lifecycle.test.ts tests/protocol.test.ts` | last-client eviction and multi-client retention cases pass |
-| Typecheck | `bun --cwd apps/hive-realtime run type-check` | exit 0 |
+| Typecheck | `bun run --cwd apps/hive-realtime type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 

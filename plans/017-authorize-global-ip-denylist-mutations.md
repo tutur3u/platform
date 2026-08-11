@@ -10,13 +10,23 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P0
 - **Effort:** S
 - **Risk:** MED
 - **Category:** Security / Infrastructure authorization
 - **Depends on:** none
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Implementation is preserved uncommitted in
+`.worktrees/fix-infrastructure-blocked-ip-auth`. The focused 17-test suite,
+Infrastructure typecheck, `bun check`, and whitespace gate pass. The mandatory
+production build remains blocked by the execution environment: after an
+approved network retry fetched the required Google font, Turbopack panicked
+while processing `packages/ui/src/globals.css` because creating a subprocess
+and binding its internal port returned `EPERM`. Do not commit until the same
+worktree passes the real build in an environment that permits Turbopack's
+worker process.
 
 ## Why this matters
 
@@ -51,9 +61,9 @@ exact blocked-IP route or authorization helper.
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
 | Focused tests | `bun --cwd apps/infrastructure vitest run 'src/app/api/v1/infrastructure/blocked-ips/route.test.ts'` | exit 0; app-session/permission matrix passes |
-| Infrastructure typecheck | `bun --cwd apps/infrastructure run type-check` | exit 0 |
+| Infrastructure typecheck | `bun run --cwd apps/infrastructure type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Infrastructure build | `bun --cwd apps/infrastructure run build` | exit 0 |
+| Infrastructure build | `bun run --cwd apps/infrastructure build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

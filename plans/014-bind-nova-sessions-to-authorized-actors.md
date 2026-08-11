@@ -10,13 +10,17 @@
 
 ## Status
 
-- **Execution status:** TODO
+- **Execution status:** BLOCKED
 - **Priority:** P0
 - **Effort:** S
 - **Risk:** MED
 - **Category:** Security / Correctness / Nova
 - **Depends on:** Plan 013
 - **Planned at:** commit `68a1457aed`, 2026-08-10
+
+Execution is blocked while Plan 013's reviewed authorization foundation remains
+uncommitted behind the mandatory Nova build gate. Resume only after Plan 013 is
+DONE and available to the session routes.
 
 ## Why this matters
 
@@ -48,9 +52,9 @@ manager helper is `canManageNovaChallenge` in
 | --- | --- | --- |
 | Detail route | `bun --cwd apps/nova vitest run 'src/app/api/v1/sessions/[sessionId]/route.test.ts'` | exit 0; owner/manager/foreign matrix passes |
 | Collection regression | `bun --cwd apps/nova vitest run src/app/api/v1/sessions/route.test.ts` | exit 0; list/create remain actor-bound |
-| Nova typecheck | `bun --cwd apps/nova run type-check` | exit 0 |
+| Nova typecheck | `bun run --cwd apps/nova type-check` | exit 0 |
 | Repository gate | `bun check` | exit 0 |
-| Nova build | `bun --cwd apps/nova run build` | exit 0 |
+| Nova build | `bun run --cwd apps/nova build` | exit 0 |
 | Whitespace | `git diff --check` | no output |
 
 ## Scope

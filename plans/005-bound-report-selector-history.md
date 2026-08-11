@@ -111,7 +111,7 @@ adding a general report search service.
    `new`, and query failure behavior.
 
 6. **Verify.** Run the focused test, then `bun check`,
-   `bun --cwd apps/contacts run build`, and `git diff --check`; expected exit 0
+   `bun run --cwd apps/contacts build`, and `git diff --check`; expected exit 0
    and no whitespace output.
 
 ## Commands you will need
@@ -120,7 +120,7 @@ adding a general report search service.
 bun --cwd apps/contacts vitest run \
   'src/app/[locale]/[wsId]/users/reports/[reportId]/page.test.tsx'
 bun check
-bun --cwd apps/contacts run build
+bun run --cwd apps/contacts build
 git diff --check
 ```
 

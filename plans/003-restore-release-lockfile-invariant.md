@@ -5,25 +5,23 @@
 > lockfile diff. Stop and report on STOP conditions, then update the index row.
 >
 > **Drift check (run first):**
-> `git diff --stat 68a1457aed77cb9ba4b8b1f3b8f467fa4b04da9b..HEAD -- bun.lock apps/'*'/package.json packages/'*'/package.json scripts/git-release-please.js scripts/git-release-please.test.js .github/workflows/release-please-auto-merge.yaml`
+> `git diff --stat 60e33aebd95581573338156364ea9cf9d77aa931..HEAD -- bun.lock apps/'*'/package.json packages/'*'/package.json scripts/git-release-please.js scripts/git-release-please.test.js .github/workflows/release-please-auto-merge.yaml`
 > Reconcile any release-helper or lockfile change before proceeding.
 
 ## Status
 
-- **Execution status:** BLOCKED — active Release Please lifecycle work owns an
-  overlapping workflow and tests
+- **Execution status:** BLOCKED
 - **Priority:** P1
 - **Effort:** M
 - **Risk:** LOW
 - **Category:** Release Engineering / CI
-- **Depends on:** none
-- **Planned at:** commit `68a1457aed`, 2026-08-10
+- **Depends on:** Mail lockfile and release-lifecycle ownership transfer
+- **Planned at:** commit `60e33aebd9`, 2026-08-10
 
-Execution is temporarily blocked while
-`tmp/agent-coordination/20260810-090000-codex-release-please-lifecycle.md` is
-`working`, because it owns an overlapping Release Please workflow and tests.
-Reconcile that note and re-run the drift/mismatch checks before returning this
-plan to `TODO` in the index.
+Execution is blocked while the Mail handoff owns `bun.lock` and active release
+lanes own adjacent Release Please workflow/helper surfaces. The live shared
+checkout also contains unrelated lockfile version drift; preserve it until
+ownership and provenance are explicitly transferred.
 
 ## Why this matters
 
@@ -37,7 +35,7 @@ cannot detect drift introduced by the merge it is about to commit.
 
 - Example: `apps/ai/package.json` is `0.8.1`; the `apps/ai` workspace record in
   `bun.lock` is `0.8.0`.
-- A read-only comparison found 21 mismatches across satellite apps plus
+- A fresh read-only comparison at `60e33aebd9` still found 21 mismatches across satellite apps plus
   `packages/satellite`, `packages/ui`, and `packages/utils`.
 - `scripts/git-release-please.js::finalizeMerge` synchronizes the platform
   version, optionally formats, stages everything, runs release checks, and
