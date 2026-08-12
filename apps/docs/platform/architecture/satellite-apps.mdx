@@ -123,6 +123,23 @@ const user = actor?.id
 `@tuturuuu/utils/workspace-user-link` helper, so there is one implementation and
 web behavior is unchanged.
 
+Workspace-user link repair must not require an optional platform display name.
+New auth users initially have only a `public.users.id`; the repair RPC derives a
+workspace profile name from display name, private full name, handle, email, and
+finally a stable generic fallback. Membership remains mandatory, and the repair
+does not create or broaden workspace access.
+
+### Personal workspace aliases in APIs
+
+API routes that accept `personal` must preserve the same authenticated actor
+while resolving that alias. For user-group and Contacts-owned routes, use
+`resolveUserGroupRouteWorkspaceId(rawWsId, request)`: it resolves verified
+Contacts, Platform, or Teach app-session users through the actor-aware workspace
+lookup used by `getPermissions`, then falls back to the request-scoped Supabase
+session for normal web callers. Passing only a cookie-backed client on a
+satellite loses the app-session identity and incorrectly reports `User not
+authenticated`.
+
 ### The actorless-call trap
 
 <Warning>
