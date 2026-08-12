@@ -19,6 +19,22 @@ export interface TaskCardResourceContext {
   taskBoardId: string;
 }
 
+export function getTaskCardActionLists({
+  task,
+  pageAvailableLists,
+  resourceAvailableLists,
+}: {
+  task: Task;
+  pageAvailableLists?: TaskList[];
+  resourceAvailableLists: TaskList[];
+}) {
+  if (isPersonalExternalOverlayTask(task) && pageAvailableLists) {
+    return pageAvailableLists;
+  }
+
+  return resourceAvailableLists;
+}
+
 export function getTaskCardResourceContext({
   boardId,
   pageWorkspaceId,

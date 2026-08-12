@@ -158,7 +158,10 @@ import {
   getTaskCardHydratingOpenOptions,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
-import { getTaskCardResourceContext } from './task-card-resource-context';
+import {
+  getTaskCardActionLists,
+  getTaskCardResourceContext,
+} from './task-card-resource-context';
 import { getTaskCardVisibilityState } from './task-card-visibility';
 import { TaskSchedulingBadge } from './task-scheduling-badge';
 
@@ -395,7 +398,6 @@ function TaskCardInner({
     [menuGuardUntil]
   );
 
-  // Use React Query hooks for shared data (cached across all task cards)
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
   const pageWorkspaceId = workspaceId ?? boardConfig?.ws_id ?? wsId;
@@ -792,17 +794,11 @@ function TaskCardInner({
     initialData: initialAvailableLists,
     staleTime: 60 * 1000, // 1 minute - lists change less frequently
   });
-
-  // Find the first list with 'done' or 'closed' status
-  const getTargetCompletionList = () => {
-    const doneList = availableLists.find(
-      (list) => list.status === 'done' && !list.deleted
-    );
-    const closedList = availableLists.find(
-      (list) => list.status === 'closed' && !list.deleted
-    );
-    return doneList || closedList || null;
-  };
+  const actionAvailableLists = getTaskCardActionLists({
+    task,
+    pageAvailableLists: propAvailableLists,
+    resourceAvailableLists: availableLists,
+  });
 
   const duplicateTaskMutation = useMutation({
     mutationFn: async (tasksToDuplicate: Task[]) => {
@@ -891,17 +887,18 @@ function TaskCardInner({
     },
   });
 
-  // Find specifically the closed list
-  const getTargetClosedList = () => {
-    return (
-      availableLists.find(
-        (list) => list.status === 'closed' && !list.deleted
-      ) || null
-    );
-  };
-
-  const targetCompletionList = getTargetCompletionList();
-  const targetClosedList = getTargetClosedList();
+  const targetCompletionList =
+    actionAvailableLists.find(
+      (list) => list.status === 'done' && !list.deleted
+    ) ??
+    actionAvailableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    ) ??
+    null;
+  const targetClosedList =
+    actionAvailableLists.find(
+      (list) => list.status === 'closed' && !list.deleted
+    ) ?? null;
   const canMoveToCompletion =
     targetCompletionList && targetCompletionList.id !== task.list_id;
   const canMoveToClose =
