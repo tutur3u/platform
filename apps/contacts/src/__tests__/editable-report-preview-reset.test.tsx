@@ -124,12 +124,14 @@ vi.mock('@tuturuuu/users-ui/components/score-display', () => ({
 
 import EditableReportPreview from '@/app/[locale]/[wsId]/users/reports/[reportId]/editable-report-preview';
 
-function openBasicInfoDialog() {
+function openExistingReportEditor() {
   expect(
     screen.queryByLabelText('user-report-data-table.title')
   ).not.toBeInTheDocument();
 
-  fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'ws-reports.edit_report' })
+  );
 }
 
 describe('EditableReportPreview form reset behavior', () => {
@@ -167,7 +169,7 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    openBasicInfoDialog();
+    openExistingReportEditor();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
 
@@ -218,8 +220,6 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    openBasicInfoDialog();
-
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(
       'user-report-data-table.content'
@@ -242,7 +242,9 @@ describe('EditableReportPreview form reset behavior', () => {
       target: { value: 'Family feedback' },
     });
 
-    const createButton = screen.getByRole('button', { name: 'common.create' });
+    const createButton = screen.getByRole('button', {
+      name: 'ws-reports.create_report',
+    });
     expect(createButton).not.toBeDisabled();
 
     fireEvent.submit(createButton.closest('form')!);
@@ -277,8 +279,6 @@ describe('EditableReportPreview form reset behavior', () => {
         canCreateReports
       />
     );
-
-    openBasicInfoDialog();
 
     const pageShortcutHandler = vi.fn((event: KeyboardEvent) => {
       event.preventDefault();
@@ -322,8 +322,6 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    openBasicInfoDialog();
-
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(
       'user-report-data-table.content'
@@ -356,7 +354,7 @@ describe('EditableReportPreview form reset behavior', () => {
       screen.getByLabelText('user-report-data-table.feedback')
     ).toHaveValue('Draft report feedback');
     expect(
-      screen.getByRole('button', { name: 'common.create' })
+      screen.getByRole('button', { name: 'ws-reports.create_report' })
     ).toBeDisabled();
     expect(
       screen.getByText('ws-reports.create_permission_required')
@@ -385,7 +383,7 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    openBasicInfoDialog();
+    openExistingReportEditor();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(
@@ -418,9 +416,42 @@ describe('EditableReportPreview form reset behavior', () => {
     expect(
       screen.getByLabelText('user-report-data-table.feedback')
     ).toHaveValue('Local feedback draft');
-    expect(screen.getByRole('button', { name: 'common.save' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: 'ws-reports.save_report' })
+    ).toBeDisabled();
     expect(
       screen.getByText('ws-reports.update_permission_required')
     ).toBeInTheDocument();
+  });
+
+  it('keeps edit and delete actions visible for an existing report', () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          id: 'report-1',
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          creator_name: 'Manager',
+          title: 'May report',
+          content: 'Progress notes',
+          feedback: 'Family feedback',
+          scores: [],
+        }}
+        configs={[]}
+        isNew={false}
+        canDeleteReports
+        canUpdateReports
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'ws-reports.edit_report' })
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'ws-reports.delete_report' })
+    ).toBeVisible();
   });
 });

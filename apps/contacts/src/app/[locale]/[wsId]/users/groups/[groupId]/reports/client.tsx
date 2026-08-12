@@ -1,13 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Loader2,
-} from '@tuturuuu/icons';
+import { AlertCircle } from '@tuturuuu/icons';
 import {
   InternalApiError,
   listWorkspaceGroupReportDashboard,
@@ -18,23 +12,9 @@ import type { WorkspaceUserReport } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
-import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -58,6 +38,7 @@ import {
   ReportStatusIndicator,
 } from '../../../reports/components/report-status-indicator';
 import { BulkReportExporter } from './components/bulk-report-exporter';
+import { ReportWorkspaceToolbar } from './components/report-workspace-toolbar';
 
 // Feature flag for experimental factor functionality
 const ENABLE_FACTOR_CALCULATION = false;
@@ -662,151 +643,32 @@ export default function GroupReportsClient({
         lang={locale}
         theme={bulkExportTheme}
       />
-      <div className="mb-4 flex flex-row items-center justify-between gap-2">
-        <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
-          <div className="flex w-full items-center gap-1 sm:w-80 md:w-96">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              disabled={dashboardQuery.isLoading || currentUserIndex <= 0}
-              onClick={() => goToUser(currentUserIndex - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Combobox
-              t={t}
-              key="user-combobox"
-              options={userOptions}
-              selected={userId ?? ''}
-              label={
-                currentUserIndex >= 0 &&
-                totalUsers > 0 &&
-                selectedUserOption ? (
-                  <div className="flex min-w-0 items-center gap-2 text-left">
-                    <span className="flex min-w-0 flex-1 items-center gap-2">
-                      <span className="truncate">
-                        {selectedUserOption.label}
-                      </span>
-                      <span className="shrink-0">
-                        {selectedUserOption.badge}
-                      </span>
-                    </span>
-                    <span className="shrink-0 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-medium text-[11px] text-muted-foreground leading-none">
-                      {currentUserIndex + 1}/{totalUsers}
-                    </span>
-                  </div>
-                ) : undefined
-              }
-              placeholder={t('user-data-table.user')}
-              disabled={dashboardQuery.isLoading}
-              onChange={(val) => {
-                const nextUserId =
-                  typeof val === 'string'
-                    ? val
-                    : Array.isArray(val)
-                      ? val[0]
-                      : '';
-                setQueryParams({
-                  userId: nextUserId || null,
-                  reportId: null,
-                });
-              }}
-              className="min-w-0 flex-1"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              disabled={
-                dashboardQuery.isLoading ||
-                currentUserIndex < 0 ||
-                currentUserIndex >= totalUsers - 1
-              }
-              onClick={() => goToUser(currentUserIndex + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {Boolean(userId) && (
-            <div className="flex items-center gap-2">
-              <div className="min-w-56">
-                <Select
-                  value={reportId ?? ''}
-                  onValueChange={(val) =>
-                    setQueryParams({ reportId: val || null })
-                  }
-                  disabled={dashboardQuery.isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('ws-reports.select_report')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {canCreateReports && (
-                      <SelectItem value="new">
-                        + {t('ws-reports.new_report')}
-                      </SelectItem>
-                    )}
-                    {reportsOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        <span className="flex items-center gap-2">
-                          {opt.status === 'APPROVED' && (
-                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-green" />
-                          )}
-                          {opt.status === 'REJECTED' && (
-                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-red" />
-                          )}
-                          {opt.status === 'PENDING' && (
-                            <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-dynamic-yellow" />
-                          )}
-                          {opt.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="flex flex-row items-center gap-2">
-          {userId && canCreateReports ? (
-            <Button
-              type="button"
-              onClick={() => setQueryParams({ reportId: 'new' })}
-              disabled={!canCreateReports}
-            >
-              {t('common.new')}
-            </Button>
-          ) : null}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                disabled={isPreparingBulkExport}
-                className="gap-2"
-              >
-                {isPreparingBulkExport ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                {t('ws-reports.export')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleBulkExport('ALL')}>
-                {t('ws-reports.export_all_images')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkExport('APPROVED')}>
-                {t('ws-reports.export_approved_images')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+      <ReportWorkspaceToolbar
+        canCreateReports={canCreateReports}
+        currentUserIndex={currentUserIndex}
+        isLoading={dashboardQuery.isLoading}
+        isPreparingBulkExport={isPreparingBulkExport}
+        onCreateReport={() => setQueryParams({ reportId: 'new' })}
+        onExportAll={() => handleBulkExport('ALL')}
+        onExportApproved={() => handleBulkExport('APPROVED')}
+        onNextUser={() => goToUser(currentUserIndex + 1)}
+        onPreviousUser={() => goToUser(currentUserIndex - 1)}
+        onReportChange={(nextReportId) =>
+          setQueryParams({ reportId: nextReportId || null })
+        }
+        onUserChange={(nextUserId) =>
+          setQueryParams({
+            userId: nextUserId || null,
+            reportId: null,
+          })
+        }
+        reportId={reportId}
+        reportOptions={reportsOptions}
+        selectedUserOption={selectedUserOption}
+        totalUsers={totalUsers}
+        userId={userId}
+        userOptions={userOptions}
+      />
       {reportContent}
     </div>
   );

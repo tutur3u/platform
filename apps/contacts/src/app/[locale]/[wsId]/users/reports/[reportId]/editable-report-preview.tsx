@@ -521,22 +521,27 @@ export default function EditableReportPreview({
           <Collapsible
             open={formOpen}
             onOpenChange={setFormOpen}
-            className="rounded-lg border"
+            className={cn(
+              'order-first rounded-lg',
+              isNew ? 'border-0' : 'border'
+            )}
           >
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                className="flex w-full items-center justify-between p-4"
-              >
-                <span className="font-semibold text-sm">
-                  {t('ws-reports.basic_info')}
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 text-muted-foreground transition-transform ${formOpen ? 'rotate-180' : ''}`}
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="px-4 pb-4">
+            {!isNew ? (
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex w-full items-center justify-between p-4"
+                >
+                  <span className="font-semibold text-sm">
+                    {t('ws-reports.basic_info')}
+                  </span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground transition-transform ${formOpen ? 'rotate-180' : ''}`}
+                  />
+                </Button>
+              </CollapsibleTrigger>
+            ) : null}
+            <CollapsibleContent className={cn(!isNew && 'px-4 pb-4')}>
               {isLoadingRejectedBase ? (
                 <div className="flex h-48 flex-col items-center justify-center gap-2">
                   <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
@@ -548,7 +553,11 @@ export default function EditableReportPreview({
                 <ReportBasicInfoDialog
                   isNew={isNew}
                   form={form}
-                  submitLabel={isNew ? t('common.create') : t('common.save')}
+                  submitLabel={
+                    isNew
+                      ? t('ws-reports.create_report')
+                      : t('ws-reports.save_report')
+                  }
                   onSubmit={(values) => {
                     if (isNew) createMutation.mutate(values);
                     else
