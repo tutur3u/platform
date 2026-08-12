@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.3](https://github.com/tutur3u/platform/compare/platform-v0.36.2...platform-v0.36.3) (2026-08-12)
+
+
+### Bug Fixes
+
+* **tasks:** preserve bulk optimistic task caches ([8bfcb3e](https://github.com/tutur3u/platform/commit/8bfcb3efa24d36fdfdc0854890e240627b194eb1))
+
 ## [0.36.2](https://github.com/tutur3u/platform/compare/platform-v0.36.1...platform-v0.36.2) (2026-08-11)
 
 
