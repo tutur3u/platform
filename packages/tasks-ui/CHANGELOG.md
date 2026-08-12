@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.10.0...tasks-ui-v0.10.1) (2026-08-12)
+
+
+### Bug Fixes
+
+* **tasks:** preserve bulk optimistic task caches ([8bfcb3e](https://github.com/tutur3u/platform/commit/8bfcb3efa24d36fdfdc0854890e240627b194eb1))
+
 ## [0.10.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.9.0...tasks-ui-v0.10.0) (2026-08-07)
 
 
