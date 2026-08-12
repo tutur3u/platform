@@ -1,13 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ReferralSectionClient from './referral-section-client';
 
 type ComboboxMockProps = {
-  options: Array<{ label: string; value: string }>;
+  options: Array<{ label: string; searchValue?: string; value: string }>;
   placeholder: string;
   onSearchChange?: (value: string) => void;
+  shouldFilter?: boolean;
 };
 
 const {
@@ -38,18 +39,38 @@ vi.mock('@tuturuuu/internal-api/users', () => ({
 }));
 
 vi.mock('@tuturuuu/ui/custom/combobox', () => ({
-  Combobox: ({ options, placeholder, onSearchChange }: ComboboxMockProps) => (
-    <div>
-      <input
-        aria-label={placeholder}
-        onChange={(event) => onSearchChange?.(event.currentTarget.value)}
-        placeholder={placeholder}
-      />
-      <div data-testid="combobox-options">
-        {options.map((option) => option.label).join(',')}
+  Combobox: ({
+    options,
+    placeholder,
+    onSearchChange,
+    shouldFilter = true,
+  }: ComboboxMockProps) => {
+    const [query, setQuery] = useState('');
+    const visibleOptions = shouldFilter
+      ? options.filter((option) =>
+          (option.searchValue ?? option.label)
+            .toLowerCase()
+            .includes(query.toLowerCase())
+        )
+      : options;
+
+    return (
+      <div>
+        <input
+          aria-label={placeholder}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            setQuery(value);
+            onSearchChange?.(value);
+          }}
+          placeholder={placeholder}
+        />
+        <div data-testid="combobox-options">
+          {visibleOptions.map((option) => option.label).join(',')}
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
 }));
 
 vi.mock('@tuturuuu/users-ui/components/require-attention-name', () => ({
@@ -157,6 +178,55 @@ describe('ReferralSectionClient', () => {
       );
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows every candidate returned by server-backed search', async () => {
+    listWorkspaceUserReferralCandidatesMock.mockResolvedValue([
+      {
+        id: 'candidate-1',
+        full_name: 'Nguyen Anh Minh Khoa',
+        display_name: null,
+        email: 'khoa@example.com',
+        phone: null,
+      },
+    ]);
+
+    renderWithQueryClient(
+      <ReferralSectionClient
+        wsId="ws-123"
+        userId="user-123"
+        canUpdateUsers
+        workspaceSettings={{
+          referral_count_cap: 3,
+          referral_increment_percent: 10,
+          referral_promotion_id: null,
+          referral_reward_type: 'BOTH',
+        }}
+        initialAvailableUsers={[]}
+        initialAvailableUsersCount={0}
+        initialReferredUsers={[]}
+      />
+    );
+
+    fireEvent.change(
+      screen.getByRole('textbox', {
+        name: 'search_person_to_refer_placeholder',
+      }),
+      { target: { value: 'anh khoa' } }
+    );
+
+    await waitFor(() => {
+      expect(listWorkspaceUserReferralCandidatesMock).toHaveBeenCalledWith(
+        'ws-123',
+        'user-123',
+        { q: 'anh khoa' }
+      );
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('combobox-options')).toHaveTextContent(
+        'Nguyen Anh Minh Khoa'
+      );
+    });
   });
 
   it('keeps referral selection available when referred users exceed the discount cap', () => {

@@ -428,6 +428,7 @@ export default function ReferralSectionClient({
                   onChange={(value) => setSelectedUserId(value as string)}
                   placeholder={t('search_person_to_refer_placeholder')}
                   onSearchChange={setSearchQuery}
+                  shouldFilter={false}
                 />
                 {availableUsersQuery.error ? (
                   <div
