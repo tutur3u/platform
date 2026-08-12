@@ -26,7 +26,11 @@ function mergeRealtimeTask(
   old: Task[] | undefined,
   taskData: Partial<Task> & { id: string }
 ) {
+  const canInsert =
+    typeof taskData.name === 'string' && typeof taskData.list_id === 'string';
+
   if (!old) {
+    if (!canInsert) return old;
     return [
       {
         ...taskData,
@@ -44,6 +48,8 @@ function mergeRealtimeTask(
     );
   }
 
+  if (!canInsert) return old;
+
   return [
     ...old,
     {
@@ -53,6 +59,16 @@ function mergeRealtimeTask(
       projects: taskData.projects ?? [],
     } as Task,
   ];
+}
+
+function mergeExistingRealtimeTask(
+  old: Task[] | undefined,
+  taskData: Partial<Task> & { id: string }
+) {
+  if (!old?.some((task) => task.id === taskData.id)) return old;
+  return old.map((task) =>
+    task.id === taskData.id ? { ...task, ...taskData } : task
+  );
 }
 
 function deleteRealtimeTask(old: Task[] | undefined, taskId: string) {
@@ -72,6 +88,37 @@ function updateBoardTaskCaches(
     { queryKey: ['tasks-full', boardId] },
     updater
   );
+}
+
+function updateDeadlineTaskCaches(
+  queryClient: QueryClient,
+  boardId: string,
+  taskData: Partial<Task> & { id: string }
+) {
+  queryClient.setQueriesData<Task[]>(
+    {
+      predicate: (query) => {
+        const queryKey = query.queryKey;
+        return (
+          Array.isArray(queryKey) &&
+          queryKey[0] === 'kanban-deadline-tasks' &&
+          queryKey[2] === boardId
+        );
+      },
+    },
+    (old) => mergeExistingRealtimeTask(old, taskData)
+  );
+}
+
+export function applyRealtimeTaskUpsert(
+  queryClient: QueryClient,
+  boardId: string,
+  taskData: Partial<Task> & { id: string }
+) {
+  updateBoardTaskCaches(queryClient, boardId, (old) =>
+    mergeRealtimeTask(old, taskData)
+  );
+  updateDeadlineTaskCaches(queryClient, boardId, taskData);
 }
 
 function patchWorkspaceTaskCaches(
@@ -286,9 +333,7 @@ export function useBoardRealtimeEventHandler({
           : 'INSERT';
         onTaskChangeRef.current?.(taskData as Task, eventType);
 
-        updateBoardTaskCaches(queryClient, boardId, (old) =>
-          mergeRealtimeTask(old, taskData)
-        );
+        applyRealtimeTaskUpsert(queryClient, boardId, taskData);
         patchWorkspaceTaskCaches(queryClient, taskData);
         patchMyTasksCaches(queryClient, taskData);
         if (

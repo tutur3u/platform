@@ -889,9 +889,9 @@ describe('useBoardRealtime', () => {
           task: { id: 'task-1', name: 'Updated' },
         }),
       });
-      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
-        expect.objectContaining({ id: 'task-1', name: 'Updated' }),
-      ]);
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual(
+        []
+      );
       expect(
         MockBroadcastChannel.instances[0]?.postMessage
       ).toHaveBeenCalledWith({
