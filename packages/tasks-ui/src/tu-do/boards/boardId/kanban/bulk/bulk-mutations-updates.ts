@@ -92,6 +92,7 @@ export function useBulkUpdatePriority(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -202,6 +203,7 @@ export function useBulkUpdateEstimation(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -315,6 +317,7 @@ export function useBulkUpdateDueDate(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -428,6 +431,7 @@ export function useBulkUpdateCustomDueDate(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 

@@ -107,6 +107,7 @@ export function useBulkAddProject(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -252,6 +253,7 @@ export function useBulkRemoveProject(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 

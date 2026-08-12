@@ -80,6 +80,7 @@ export function useBulkClearLabels(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -178,6 +179,7 @@ export function useBulkClearProjects(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -276,6 +278,7 @@ export function useBulkClearAssignees(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -381,6 +384,7 @@ export function useBulkDeleteTasks(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
+        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
