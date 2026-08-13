@@ -17,6 +17,16 @@ export function isPersonalExternalTask(task?: Task) {
   return isPersonalExternalOverlayTask(task);
 }
 
+export function shouldMoveExternalTaskToCompletion(
+  task: Task,
+  targetCompletionList: TaskList | null | undefined
+) {
+  return (
+    isPersonalExternalTask(task) &&
+    Boolean(targetCompletionList && targetCompletionList.id !== task.list_id)
+  );
+}
+
 function findFirstListByStatus(lists: TaskList[], status: TaskBoardStatus) {
   return lists.find((list) => list.status === status && !list.deleted) ?? null;
 }

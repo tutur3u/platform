@@ -24,6 +24,7 @@ import {
 import {
   isPersonalExternalTask,
   moveExternalTaskToPersonalList,
+  shouldMoveExternalTaskToCompletion,
 } from './task-actions-personal-external';
 
 interface UseTaskActionsProps {
@@ -249,17 +250,15 @@ export function useTaskActions({
     if (!task || !onUpdate) return;
     setIsLoading(true);
 
-    const newClosedState = !task.closed_at;
+    const shouldMoveExternalToCompletion = shouldMoveExternalTaskToCompletion(
+      task,
+      targetCompletionList
+    );
+    const newClosedState = shouldMoveExternalToCompletion || !task.closed_at;
 
-    // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
 
-    if (
-      isPersonalExternalTask(task) &&
-      newClosedState &&
-      targetCompletionList &&
-      targetCompletionList.id !== task.list_id
-    ) {
+    if (shouldMoveExternalToCompletion && targetCompletionList) {
       try {
         await moveExternalTaskToPersonalList({
           boardId,

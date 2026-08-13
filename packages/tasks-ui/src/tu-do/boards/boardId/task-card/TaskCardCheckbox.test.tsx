@@ -60,4 +60,29 @@ describe('TaskCardCheckbox', () => {
       'Mark as Done'
     );
   });
+
+  it('uses personal list status for an external task with a completed source', () => {
+    render(
+      <TaskCardCheckbox
+        task={{
+          ...task,
+          closed_at: '2026-08-13T00:00:00.000Z',
+          is_personal_external: true,
+          personal_board_id: 'board-1',
+          personal_list_id: taskList.id,
+          source_board_id: 'source-board',
+          source_list_id: 'source-done',
+          source_list_status: 'done',
+        }}
+        taskList={taskList}
+        isLoading={false}
+        onToggle={vi.fn()}
+        tooltipLabel="Mark as Done"
+      />
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Mark as Done' })
+    ).not.toBeChecked();
+  });
 });
