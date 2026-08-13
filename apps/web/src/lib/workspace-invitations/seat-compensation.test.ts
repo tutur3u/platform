@@ -85,6 +85,8 @@ describe('invitation seat compensation', () => {
     expect(revokeSeat).toHaveBeenCalledWith({ seatId: 'seat-1' });
     expect(upsert).toHaveBeenCalledOnce();
     expect(deleteRecord).toHaveBeenCalledOnce();
+    expect(upsert).toHaveBeenCalledBefore(revokeSeat);
+    expect(revokeSeat).toHaveBeenCalledBefore(deleteRecord);
   });
 
   it('persists a retryable record when Polar revocation fails', async () => {
@@ -109,7 +111,7 @@ describe('invitation seat compensation', () => {
         user_id: USER_ID,
         ws_id: WORKSPACE_ID,
       }),
-      { onConflict: 'ws_id,user_id' }
+      { onConflict: 'ws_id,user_id,seat_id' }
     );
     expect(upsert).toHaveBeenCalledTimes(2);
   });

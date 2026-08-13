@@ -12,7 +12,7 @@ type CompensationTable = {
   select: (columns: 'seat_id') => CompensationTable;
   upsert: (
     value: Record<string, string>,
-    options: { onConflict: 'ws_id,user_id' }
+    options: { onConflict: 'ws_id,user_id,seat_id' }
   ) => Promise<{ error: unknown }>;
 };
 
@@ -62,7 +62,7 @@ export async function revokeInvitationSeatOrRecord({
   };
   const { error: recordError } = await compensationTable(admin).upsert(
     compensation,
-    { onConflict: 'ws_id,user_id' }
+    { onConflict: 'ws_id,user_id,seat_id' }
   );
   if (recordError) {
     console.error('Failed to persist invitation seat compensation', {
@@ -80,7 +80,7 @@ export async function revokeInvitationSeatOrRecord({
     const message = error instanceof Error ? error.message : String(error);
     const { error: updateError } = await compensationTable(admin).upsert(
       { ...compensation, last_error: message },
-      { onConflict: 'ws_id,user_id' }
+      { onConflict: 'ws_id,user_id,seat_id' }
     );
     console.error('Failed to revoke invitation seat', {
       error,
@@ -95,7 +95,8 @@ export async function revokeInvitationSeatOrRecord({
   const { error: clearError } = await compensationTable(admin)
     .delete()
     .eq('ws_id', workspaceId)
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('seat_id', seatId);
   if (clearError) {
     console.error('Failed to clear invitation seat compensation', {
       clearError,

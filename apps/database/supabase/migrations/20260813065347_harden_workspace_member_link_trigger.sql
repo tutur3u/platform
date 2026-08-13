@@ -1,6 +1,7 @@
 CREATE OR REPLACE FUNCTION public.create_workspace_user_linked_user()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
