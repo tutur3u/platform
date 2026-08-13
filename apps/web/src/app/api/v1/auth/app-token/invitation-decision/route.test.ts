@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceInviteCandidateEmails: vi.fn(),
   getWorkspaceInviteStatus: vi.fn(),
   revokeSeatFromMember: vi.fn(),
+  hasPendingInvitationSeatCompensation: vi.fn(),
+  revokeInvitationSeatOrRecord: vi.fn(),
   serverLoggerError: vi.fn(),
   serverLoggerWarn: vi.fn(),
   verifyExternalAppSecret: vi.fn(),
@@ -84,9 +86,15 @@ vi.mock('@/lib/workspace-invitations/status', async (importOriginal) => {
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: (...args: Parameters<typeof mocks.assignSeatToMember>) =>
     mocks.assignSeatToMember(...args),
-  revokeAssignedSeat: (
-    ...args: Parameters<typeof mocks.revokeSeatFromMember>
-  ) => mocks.revokeSeatFromMember(...args),
+}));
+
+vi.mock('@/lib/workspace-invitations/seat-compensation', () => ({
+  hasPendingInvitationSeatCompensation: (
+    ...args: Parameters<typeof mocks.hasPendingInvitationSeatCompensation>
+  ) => mocks.hasPendingInvitationSeatCompensation(...args),
+  revokeInvitationSeatOrRecord: (
+    ...args: Parameters<typeof mocks.revokeInvitationSeatOrRecord>
+  ) => mocks.revokeInvitationSeatOrRecord(...args),
 }));
 
 vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
@@ -355,6 +363,8 @@ describe('app token invitation decision route', () => {
       success: true,
     });
     mocks.revokeSeatFromMember.mockResolvedValue(undefined);
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
+    mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
     mocks.createPolarClient.mockReturnValue({});
     mocks.getAppCoordinationSessionPolicy.mockResolvedValue({
       policy: {

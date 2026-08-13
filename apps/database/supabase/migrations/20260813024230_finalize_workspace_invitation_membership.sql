@@ -46,8 +46,9 @@ BEGIN
 
   IF NOT FOUND THEN
     INSERT INTO public.workspace_members (ws_id, user_id, type)
-    VALUES (p_ws_id, p_user_id, p_member_type);
-    v_created := true;
+    VALUES (p_ws_id, p_user_id, p_member_type)
+    ON CONFLICT (ws_id, user_id) DO NOTHING;
+    v_created := FOUND;
   ELSIF p_member_type = 'MEMBER'::public.workspace_member_type
     AND v_existing_type = 'GUEST'::public.workspace_member_type
   THEN

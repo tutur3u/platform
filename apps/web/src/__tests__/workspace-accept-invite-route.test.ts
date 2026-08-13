@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => {
     Promise.resolve({ required: false })
   );
   const enforceSeatLimit = vi.fn(() => Promise.resolve({ allowed: true }));
-  const revokeAssignedSeat = vi.fn(() => Promise.resolve());
+  const hasPendingInvitationSeatCompensation = vi.fn();
+  const revokeInvitationSeatOrRecord = vi.fn();
   const normalizeWorkspaceId = vi.fn(
     async () => '11111111-1111-4111-8111-111111111111'
   );
@@ -141,7 +142,8 @@ const mocks = vi.hoisted(() => {
     authGetUser,
     enforceSeatLimit,
     normalizeWorkspaceId,
-    revokeAssignedSeat,
+    hasPendingInvitationSeatCompensation,
+    revokeInvitationSeatOrRecord,
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
     sessionSupabase,
@@ -197,7 +199,12 @@ vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
 
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: mocks.assignSeatToMember,
-  revokeAssignedSeat: mocks.revokeAssignedSeat,
+}));
+
+vi.mock('@/lib/workspace-invitations/seat-compensation', () => ({
+  hasPendingInvitationSeatCompensation:
+    mocks.hasPendingInvitationSeatCompensation,
+  revokeInvitationSeatOrRecord: mocks.revokeInvitationSeatOrRecord,
 }));
 
 describe('POST /api/workspaces/[wsId]/accept-invite', () => {
@@ -249,6 +256,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
     mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
     mocks.finalizeMembershipRpc.mockResolvedValue({ data: true, error: null });
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
+    mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
     mocks.enforceSeatLimit.mockResolvedValue({ allowed: true });
     mocks.assignSeatToMember.mockResolvedValue({
       required: false,
@@ -349,6 +358,30 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       'finalize_workspace_invitation_membership',
       expect.objectContaining({ p_member_type: 'GUEST' })
     );
+  });
+
+  it('blocks seat assignment while compensation is pending', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'private@example.com',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValueOnce(true);
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(503);
+    expect(mocks.assignSeatToMember).not.toHaveBeenCalled();
   });
 
   it('returns guest-match reason code when RPC says not eligible', async () => {

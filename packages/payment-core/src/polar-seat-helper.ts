@@ -205,14 +205,7 @@ export async function revokeAssignedSeat(
   polar: Polar,
   seatId: string
 ): Promise<void> {
-  try {
-    await polar.customerSeats.revokeSeat({ seatId });
-  } catch (error) {
-    console.error(
-      `Failed to revoke newly assigned Polar seat ${seatId}:`,
-      error
-    );
-  }
+  await polar.customerSeats.revokeSeat({ seatId });
 }
 
 /**

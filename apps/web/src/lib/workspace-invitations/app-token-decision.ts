@@ -1,13 +1,14 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import {
-  assignSeatToMember,
-  revokeAssignedSeat,
-} from '@tuturuuu/payment-core/polar-seat-helper';
+import { assignSeatToMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { finalizeInvitedWorkspaceMembership } from './finalize-membership';
+import {
+  hasPendingInvitationSeatCompensation,
+  revokeInvitationSeatOrRecord,
+} from './seat-compensation';
 import {
   getWorkspaceInviteCandidateEmails,
   type WorkspaceInvitationRecord,
@@ -125,6 +126,12 @@ export async function acceptAppTokenInvitation({
   }
 
   const polar = createPolarClient();
+  if (await hasPendingInvitationSeatCompensation(admin, workspaceId, userId)) {
+    return NextResponse.json(
+      { error: 'INVITATION_SEAT_RECONCILIATION_REQUIRED' },
+      { status: 503 }
+    );
+  }
   const seatAssignment = await assignSeatToMember(
     polar,
     admin,
@@ -149,13 +156,25 @@ export async function acceptAppTokenInvitation({
   );
   if (finalized.response) {
     if (seatAssignment.required) {
-      await revokeAssignedSeat(polar, seatAssignment.seatId);
+      await revokeInvitationSeatOrRecord({
+        admin,
+        polar,
+        seatId: seatAssignment.seatId,
+        userId,
+        workspaceId,
+      });
     }
     return finalized.response;
   }
 
   if (!finalized.created && seatAssignment.required) {
-    await revokeAssignedSeat(polar, seatAssignment.seatId);
+    await revokeInvitationSeatOrRecord({
+      admin,
+      polar,
+      seatId: seatAssignment.seatId,
+      userId,
+      workspaceId,
+    });
   }
 
   await clearPendingInvites({ admin, candidateEmails, userId, workspaceId });

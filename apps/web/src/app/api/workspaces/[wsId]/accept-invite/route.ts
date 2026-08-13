@@ -1,8 +1,5 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
-import {
-  assignSeatToMember,
-  revokeAssignedSeat,
-} from '@tuturuuu/payment-core/polar-seat-helper';
+import { assignSeatToMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -16,6 +13,10 @@ import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/s
 import { withSessionAuth } from '@/lib/api-auth';
 import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
 import { finalizeInvitedWorkspaceMembership } from '@/lib/workspace-invitations/finalize-membership';
+import {
+  hasPendingInvitationSeatCompensation,
+  revokeInvitationSeatOrRecord,
+} from '@/lib/workspace-invitations/seat-compensation';
 
 type PendingInvite = {
   email?: string | null;
@@ -317,6 +318,12 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     const polar = createPolarClient();
+    if (await hasPendingInvitationSeatCompensation(sbAdmin, wsId, user.id)) {
+      return NextResponse.json(
+        { error: 'INVITATION_SEAT_RECONCILIATION_REQUIRED' },
+        { status: 503 }
+      );
+    }
     // Complete the external seat mutation before exposing membership. If a
     // concurrent request wins the membership insert, revoke only the exact
     // seat created by this attempt.
@@ -353,7 +360,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
       if (linkError) {
         if (seatAssignment.required) {
-          await revokeAssignedSeat(polar, seatAssignment.seatId);
+          await revokeInvitationSeatOrRecord({
+            admin: sbAdmin,
+            polar,
+            seatId: seatAssignment.seatId,
+            userId: user.id,
+            workspaceId: wsId,
+          });
         }
         console.error(
           'Failed to link platform user to workspace user:',
@@ -378,7 +391,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
       membershipCreated = result.created;
     } catch (roleError) {
       if (seatAssignment.required) {
-        await revokeAssignedSeat(polar, seatAssignment.seatId);
+        await revokeInvitationSeatOrRecord({
+          admin: sbAdmin,
+          polar,
+          seatId: seatAssignment.seatId,
+          userId: user.id,
+          workspaceId: wsId,
+        });
       }
 
       if (matchedWorkspaceUserId) {
@@ -404,7 +423,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     if (!membershipCreated && seatAssignment.required) {
-      await revokeAssignedSeat(polar, seatAssignment.seatId);
+      await revokeInvitationSeatOrRecord({
+        admin: sbAdmin,
+        polar,
+        seatId: seatAssignment.seatId,
+        userId: user.id,
+        workspaceId: wsId,
+      });
     }
 
     // Delete the invite after accepting
