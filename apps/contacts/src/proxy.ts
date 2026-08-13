@@ -221,6 +221,15 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+function getSharedUserProfileRedirect(request: NextRequest) {
+  const unlocalizedPath = stripLocale(request.nextUrl.pathname);
+  if (!unlocalizedPath.startsWith('/shared/user-profile/')) return null;
+
+  return NextResponse.redirect(
+    new URL(`${unlocalizedPath}${request.nextUrl.search}`, WEB_APP_URL)
+  );
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
@@ -266,6 +275,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
     return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
+
+  const sharedUserProfileRedirect = getSharedUserProfileRedirect(request);
+  if (sharedUserProfileRedirect) {
+    return clearSupabaseAuthCookies(request, sharedUserProfileRedirect);
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {

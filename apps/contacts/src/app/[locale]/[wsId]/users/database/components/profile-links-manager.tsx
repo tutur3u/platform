@@ -28,6 +28,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { buildExternalUserProfileUrl } from '@/lib/user-profile-links';
 import { RequestProfileDetailsDialog } from './request-profile-details-dialog';
 
 function getTargetUserLabel(user: WorkspaceUserProfileLinkTargetUser | null) {
@@ -130,9 +131,7 @@ export function ProfileLinksManager({ wsId }: { wsId: string }) {
   });
 
   const copyLink = async (code: string) => {
-    await navigator.clipboard.writeText(
-      `${window.location.origin}/shared/user-profile/${code}`
-    );
+    await navigator.clipboard.writeText(buildExternalUserProfileUrl(code));
     toast.success(t('link_copied'));
   };
 
