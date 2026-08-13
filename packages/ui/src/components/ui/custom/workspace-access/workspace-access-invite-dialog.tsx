@@ -138,7 +138,7 @@ export function WorkspaceAccessInviteDialog({
             </Select>
           </div>
 
-          {canManageRoles && accessPreset !== 'pos_operator' ? (
+          {canManageRoles && accessPreset === 'member' ? (
             <div className="grid gap-2">
               <Label htmlFor="workspace-access-invite-role">
                 {t('ws-members.role-placeholder')}

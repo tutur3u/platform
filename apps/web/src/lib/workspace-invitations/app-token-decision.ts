@@ -251,7 +251,10 @@ export async function hasExistingWorkspaceMembership({
     : (emailInvite?.role_id ?? null);
 
   if (!directInvite && !emailInvite) return true;
-  if (!roleId) return true;
+  // A pending roleless invite means the acceptance flow has not completed its
+  // seat assignment and invite cleanup yet. Do not mint a session from the
+  // transient membership row created before those steps finish.
+  if (!roleId) return false;
 
   const { data: roleMember, error: roleMemberError } = await admin
     .from('workspace_role_members')

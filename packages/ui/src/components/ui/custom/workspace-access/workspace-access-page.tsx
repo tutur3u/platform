@@ -192,7 +192,7 @@ export function WorkspaceAccessPage({
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
         roleId:
-          canAssignInviteRoles && inviteAccessPreset !== 'pos_operator'
+          canAssignInviteRoles && inviteAccessPreset === 'member'
             ? inviteRoleId
             : null,
       }),
@@ -501,10 +501,13 @@ export function WorkspaceAccessPage({
         noRoleLabel={labels.noRolesLabel}
         onAccessPresetChange={(value) => {
           setInviteAccessPreset(value);
-          if (value !== 'pos_operator') {
+          if (value === 'member') {
             setConfirmDefaultAdminMigration(false);
           } else {
             setInviteRoleId(null);
+            if (value === 'guest') {
+              setConfirmDefaultAdminMigration(false);
+            }
           }
         }}
         onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}

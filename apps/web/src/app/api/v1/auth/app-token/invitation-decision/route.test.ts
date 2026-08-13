@@ -550,6 +550,28 @@ describe('app token invitation decision route', () => {
     });
   });
 
+  it('does not recognize a replay while a roleless invite is still pending', async () => {
+    const { admin, setPendingDirectInvite, setReplayInsertError } =
+      createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: null });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
+  });
+
   it('fails closed when the replay store is unavailable', async () => {
     const { admin, setReplayInsertError } = createAdminMock();
     setReplayInsertError({

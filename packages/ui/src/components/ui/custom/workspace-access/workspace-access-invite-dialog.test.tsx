@@ -51,5 +51,18 @@ describe('WorkspaceAccessInviteDialog', () => {
     );
     fireEvent.click(screen.getByText('No assigned roles'));
     expect(props.onRoleIdChange).toHaveBeenLastCalledWith(null);
+
+    rerender(
+      <WorkspaceAccessInviteDialog
+        {...props}
+        accessPreset="guest"
+        roleId={null}
+      />
+    );
+    expect(
+      screen.queryByRole('combobox', {
+        name: 'ws-members.role-placeholder',
+      })
+    ).toBeNull();
   });
 });
