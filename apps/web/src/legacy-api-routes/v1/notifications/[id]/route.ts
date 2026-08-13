@@ -1,10 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { withSessionAuth } from '@/lib/api-auth';
 import {
   buildNotificationAccessFilter,
   getNotificationAccessContext,
@@ -18,159 +16,139 @@ const updateSchema = z.object({
  * PATCH /api/v1/notifications/[id]
  * Updates a single notification (mark as read/unread)
  */
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
+export const PATCH = withSessionAuth<{ id: string }>(
+  async (req, { supabase, user }, { id }) => {
+    try {
+      const sbAdmin = await createAdminClient();
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessFilter = buildNotificationAccessFilter(accessContext);
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      // Parse and validate body
+      const body = await req.json();
+      const validatedData = updateSchema.safeParse(body);
 
-    const accessContext = await getNotificationAccessContext(supabase, user);
-    const accessFilter = buildNotificationAccessFilter(accessContext);
+      if (!validatedData.success) {
+        return NextResponse.json(
+          { error: 'Invalid request body', details: validatedData.error },
+          { status: 400 }
+        );
+      }
 
-    const { id } = await params;
+      const { read } = validatedData.data;
 
-    // Parse and validate body
-    const body = await req.json();
-    const validatedData = updateSchema.safeParse(body);
+      const { data: notification } = await sbAdmin
+        .from('notifications')
+        .select('id')
+        .eq('id', id)
+        .or(accessFilter)
+        .maybeSingle();
 
-    if (!validatedData.success) {
+      if (!notification) {
+        return NextResponse.json(
+          { error: 'Notification not found' },
+          { status: 404 }
+        );
+      }
+      const update = read
+        ? { read_at: new Date().toISOString() }
+        : { read_at: null };
+
+      const { data: updatedNotification, error } = await sbAdmin
+        .from('notifications')
+        .update(update)
+        .eq('id', id)
+        .or(accessFilter)
+        .select('id')
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error updating notification:', {
+          error,
+          notificationId: id,
+          update,
+        });
+        return NextResponse.json(
+          { error: 'Failed to update notification' },
+          { status: 500 }
+        );
+      }
+
+      if (!updatedNotification) {
+        return NextResponse.json(
+          { error: 'Notification not found' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Error in notification update:', error);
       return NextResponse.json(
-        { error: 'Invalid request body', details: validatedData.error },
-        { status: 400 }
-      );
-    }
-
-    const { read } = validatedData.data;
-
-    const { data: notification } = await sbAdmin
-      .from('notifications')
-      .select('id')
-      .eq('id', id)
-      .or(accessFilter)
-      .maybeSingle();
-
-    if (!notification) {
-      return NextResponse.json(
-        { error: 'Notification not found' },
-        { status: 404 }
-      );
-    }
-    const update = read
-      ? { read_at: new Date().toISOString() }
-      : { read_at: null };
-
-    const { data: updatedNotification, error } = await sbAdmin
-      .from('notifications')
-      .update(update)
-      .eq('id', id)
-      .or(accessFilter)
-      .select('id')
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error updating notification:', {
-        error,
-        notificationId: id,
-        update,
-      });
-      return NextResponse.json(
-        { error: 'Failed to update notification' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!updatedNotification) {
-      return NextResponse.json(
-        { error: 'Notification not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error in notification update:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);
 
 /**
  * DELETE /api/v1/notifications/[id]
  * Deletes a single notification
  */
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
+export const DELETE = withSessionAuth<{ id: string }>(
+  async (_req, { supabase, user }, { id }) => {
+    try {
+      const sbAdmin = await createAdminClient();
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+      const accessContext = await getNotificationAccessContext(supabase, user);
+      const accessFilter = buildNotificationAccessFilter(accessContext);
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      const { data: notification } = await sbAdmin
+        .from('notifications')
+        .select('id')
+        .eq('id', id)
+        .or(accessFilter)
+        .maybeSingle();
 
-    const accessContext = await getNotificationAccessContext(supabase, user);
-    const accessFilter = buildNotificationAccessFilter(accessContext);
+      if (!notification) {
+        return NextResponse.json(
+          { error: 'Notification not found' },
+          { status: 404 }
+        );
+      }
+      const { data: deletedNotification, error } = await sbAdmin
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+        .or(accessFilter)
+        .select('id')
+        .maybeSingle();
 
-    const { id } = await params;
+      if (error) {
+        console.error('Error deleting notification:', error);
+        return NextResponse.json(
+          { error: 'Failed to delete notification' },
+          { status: 500 }
+        );
+      }
 
-    const { data: notification } = await sbAdmin
-      .from('notifications')
-      .select('id')
-      .eq('id', id)
-      .or(accessFilter)
-      .maybeSingle();
+      if (!deletedNotification) {
+        return NextResponse.json(
+          { error: 'Notification not found' },
+          { status: 404 }
+        );
+      }
 
-    if (!notification) {
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Error in notification deletion:', error);
       return NextResponse.json(
-        { error: 'Notification not found' },
-        { status: 404 }
-      );
-    }
-    const { data: deletedNotification, error } = await sbAdmin
-      .from('notifications')
-      .delete()
-      .eq('id', id)
-      .or(accessFilter)
-      .select('id')
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error deleting notification:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete notification' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    if (!deletedNotification) {
-      return NextResponse.json(
-        { error: 'Notification not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error in notification deletion:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);
