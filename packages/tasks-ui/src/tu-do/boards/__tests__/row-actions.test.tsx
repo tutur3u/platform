@@ -150,6 +150,27 @@ describe('BoardActions', () => {
     expect(onBoardUnavailable).toHaveBeenCalledTimes(1);
   });
 
+  it('shows archive and delete as direct settings actions', () => {
+    render(
+      <BoardActions
+        board={{ id: 'board-1', name: 'Roadmap', ws_id: 'ws-1' }}
+        display="settings"
+      />
+    );
+
+    expect(
+      screen.getByRole('button', {
+        name: 'ws-task-boards.row_actions.archive',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'common.delete' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'common.actions' })
+    ).not.toBeInTheDocument();
+  });
+
   it('leaves the current board after it is moved to trash', () => {
     const onBoardUnavailable = vi.fn();
     actionMocks.softDeleteBoard.mockImplementation(

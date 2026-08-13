@@ -56,6 +56,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { BoardSettingsNavigation } from './board-settings-navigation';
+import { TaskBoardLifecycleSettings } from './task-board-lifecycle-settings';
 import { listPublicBoardTemplates } from './template-marketplace-actions';
 
 function getBrowserInternalApiOptions() {
@@ -167,6 +168,7 @@ export function TaskBoardSettingsPanel({
           />
           <TaskBoardBehaviorSettings />
           <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
+          <TaskBoardLifecycleSettings board={board} wsId={wsId} />
         </TabsContent>
 
         <TabsContent value="layout">

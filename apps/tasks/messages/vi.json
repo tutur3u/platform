@@ -13854,6 +13854,7 @@
       "duplicate": "Nhân bản",
       "restore": "Khôi phục",
       "save_as_template": "Lưu làm mẫu",
+      "settings_description": "Lưu trữ các bảng bạn không còn sử dụng, hoặc chuyển vào thùng rác trong 30 ngày trước khi xóa vĩnh viễn.",
       "toast": {
         "archive_error": "Không thể lưu trữ bảng",
         "archive_success": "Bảng đã được lưu trữ thành công",
