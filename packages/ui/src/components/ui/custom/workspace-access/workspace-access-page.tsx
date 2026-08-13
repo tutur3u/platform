@@ -149,7 +149,7 @@ export function WorkspaceAccessPage({
   const inviteRolesQuery = useQuery({
     enabled: inviteDialogOpen && canManageRoles,
     queryFn: () => adapter.listRoles(workspaceId, { pageSize: '100' }),
-    queryKey: ['workspace-access', workspaceId, 'roles', 'invite'],
+    queryKey: ['workspace-access', workspaceId, 'invite-roles'],
     staleTime: 30_000,
   });
   const memberDefaultQuery = useQuery({

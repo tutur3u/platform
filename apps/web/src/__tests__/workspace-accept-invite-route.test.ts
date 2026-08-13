@@ -291,7 +291,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -312,7 +312,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.normalizeWorkspaceId.mockResolvedValueOnce('triple-sss');
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -341,7 +341,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -390,7 +390,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -418,7 +418,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -452,7 +452,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -492,7 +492,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     );
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -518,7 +518,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -538,7 +538,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -562,7 +562,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -594,7 +594,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -624,7 +624,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -659,7 +659,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {

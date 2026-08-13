@@ -5442,11 +5442,11 @@
       "parentId": "api:/api/workspaces/:wsId:apps/web/src/legacy-api-routes/workspaces/[wsId]/route.ts"
     },
     {
-      "id": "api:/api/workspaces/:wsId/accept-invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts",
+      "id": "api:/api/workspaces/:wsId/accept-invite:apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts",
       "kind": "api",
       "methods": ["POST"],
       "routePath": "/api/workspaces/:wsId/accept-invite",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts",
+      "sourceFile": "apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
