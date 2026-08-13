@@ -144,7 +144,7 @@ describe('EditableReportPreview form reset behavior', () => {
     };
   });
 
-  it('does not overwrite typed title when approved snapshot object identity changes', () => {
+  it('shows the saved rejected revision and preserves local edits', () => {
     const report = {
       id: 'report-1',
       user_id: 'user-1',
@@ -172,8 +172,17 @@ describe('EditableReportPreview form reset behavior', () => {
     openExistingReportEditor();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
+    const contentInput = screen.getByLabelText(
+      'user-report-data-table.content'
+    );
+    const feedbackInput = screen.getByLabelText(
+      'user-report-data-table.feedback'
+    );
 
     expect(titleInput).not.toBeDisabled();
+    expect(titleInput).toHaveValue('Current title');
+    expect(contentInput).toHaveValue('Current content');
+    expect(feedbackInput).toHaveValue('Current feedback');
 
     fireEvent.change(titleInput, { target: { value: 'Typed by user' } });
     expect(titleInput).toHaveValue('Typed by user');

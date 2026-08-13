@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Loader2,
   Shield as ShieldIcon,
   TriangleAlert,
   Undo,
@@ -125,19 +124,13 @@ export default function EditableReportPreview({
   const t = useTranslations();
   const { resolvedTheme } = useTheme();
 
-  const {
-    logsQuery,
-    selectedLog,
-    setSelectedLog,
-    formatRelativeTime,
-    latestApprovedLog,
-    isLoadingRejectedBase,
-  } = useReportHistory({
-    wsId,
-    reportId: report.id,
-    reportApprovalStatus: report.report_approval_status,
-    isNew,
-  });
+  const { logsQuery, selectedLog, setSelectedLog, formatRelativeTime } =
+    useReportHistory({
+      wsId,
+      reportId: report.id,
+      reportApprovalStatus: report.report_approval_status,
+      isNew,
+    });
 
   const [scoreCalculationMethod, setScoreCalculationMethod] = useLocalStorage<
     'AVERAGE' | 'LATEST'
@@ -173,38 +166,14 @@ export default function EditableReportPreview({
 
   const defaultReportTitle = isNew ? getDefaultReportTitle() : '';
 
-  const latestApprovedTitle = latestApprovedLog?.title || '';
-  const latestApprovedContent = latestApprovedLog?.content || '';
-  const latestApprovedFeedback = latestApprovedLog?.feedback || '';
-  const hasLatestApprovedLog = Boolean(latestApprovedLog);
-
   const formValues = useMemo(() => {
-    const isRejected = report.report_approval_status === 'REJECTED';
-    if (isRejected && hasLatestApprovedLog) {
-      return {
-        title: latestApprovedTitle,
-        content: latestApprovedContent,
-        feedback: latestApprovedFeedback,
-      };
-    }
-
     const reportTitle = report?.title || '';
     return {
       title: reportTitle || defaultReportTitle,
       content: report?.content || '',
       feedback: report?.feedback || '',
     };
-  }, [
-    report.report_approval_status,
-    hasLatestApprovedLog,
-    latestApprovedTitle,
-    latestApprovedContent,
-    latestApprovedFeedback,
-    report?.title,
-    report?.content,
-    report?.feedback,
-    defaultReportTitle,
-  ]);
+  }, [report?.title, report?.content, report?.feedback, defaultReportTitle]);
 
   const form = useForm({
     resolver: zodResolver(UserReportFormSchema),
@@ -542,52 +511,41 @@ export default function EditableReportPreview({
               </CollapsibleTrigger>
             ) : null}
             <CollapsibleContent className={cn(!isNew && 'px-4 pb-4')}>
-              {isLoadingRejectedBase ? (
-                <div className="flex h-48 flex-col items-center justify-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-dynamic-blue" />
-                  <div className="text-muted-foreground text-sm">
-                    {t('ws-reports.loading_approved_version')}
-                  </div>
-                </div>
-              ) : (
-                <ReportBasicInfoDialog
-                  isNew={isNew}
-                  form={form}
-                  submitLabel={
-                    isNew
-                      ? t('ws-reports.create_report')
-                      : t('ws-reports.save_report')
-                  }
-                  onSubmit={(values) => {
-                    if (isNew) createMutation.mutate(values);
-                    else
-                      updateMutation.mutate({
-                        ...values,
-                        score: representativeScoreValue,
-                      });
-                  }}
-                  onDelete={
-                    !isNew && canDeleteReports
-                      ? () => setShowDeleteDialog(true)
-                      : undefined
-                  }
-                  managerOptions={managerOptions}
-                  selectedManagerName={
-                    selectedManagerName ?? report.creator_name
-                  }
-                  onChangeManager={(name) => onChangeManagerAction?.(name)}
-                  canSubmit={canSubmitReport}
-                  canDelete={canDeleteReports}
-                  readOnlyMessage={readOnlyMessage}
-                  isSubmitting={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  showHeading={false}
-                  titleValue={title}
-                  contentValue={content}
-                  feedbackValue={feedback}
-                />
-              )}
+              <ReportBasicInfoDialog
+                isNew={isNew}
+                form={form}
+                submitLabel={
+                  isNew
+                    ? t('ws-reports.create_report')
+                    : t('ws-reports.save_report')
+                }
+                onSubmit={(values) => {
+                  if (isNew) createMutation.mutate(values);
+                  else
+                    updateMutation.mutate({
+                      ...values,
+                      score: representativeScoreValue,
+                    });
+                }}
+                onDelete={
+                  !isNew && canDeleteReports
+                    ? () => setShowDeleteDialog(true)
+                    : undefined
+                }
+                managerOptions={managerOptions}
+                selectedManagerName={selectedManagerName ?? report.creator_name}
+                onChangeManager={(name) => onChangeManagerAction?.(name)}
+                canSubmit={canSubmitReport}
+                canDelete={canDeleteReports}
+                readOnlyMessage={readOnlyMessage}
+                isSubmitting={
+                  createMutation.isPending || updateMutation.isPending
+                }
+                showHeading={false}
+                titleValue={title}
+                contentValue={content}
+                feedbackValue={feedback}
+              />
             </CollapsibleContent>
           </Collapsible>
 
