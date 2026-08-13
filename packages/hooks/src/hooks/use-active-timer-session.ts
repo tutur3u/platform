@@ -1,10 +1,14 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import type { SessionWithRelations } from '../types/time-tracker';
 
-export function useActiveTimerSession(wsId: string | null) {
-  return useQuery({
+export const ACTIVE_TIMER_RUNNING_FALLBACK_INTERVAL_MS = 60_000;
+export const ACTIVE_TIMER_IDLE_FALLBACK_INTERVAL_MS = 5 * 60_000;
+export const ACTIVE_TIMER_STALE_TIME_MS = 30_000;
+
+export function activeTimerSessionQueryOptions(wsId: string | null) {
+  return queryOptions({
     queryKey: ['running-time-session', wsId],
     queryFn: async () => {
       if (!wsId) return null;
@@ -20,14 +24,22 @@ export function useActiveTimerSession(wsId: string | null) {
       return data.session as SessionWithRelations | null;
     },
     enabled: !!wsId,
-    // Optimized refetch strategy for sidebar
+    refetchOnWindowFocus: true,
+    staleTime: ACTIVE_TIMER_STALE_TIME_MS,
+  });
+}
+
+export function useActiveTimerSession(wsId: string | null) {
+  return useQuery({
+    ...activeTimerSessionQueryOptions(wsId),
+    // Mutations invalidate this query immediately, while the elapsed timer ticks
+    // locally. Poll only as a cross-device/disconnected-realtime safety net.
     refetchInterval: (query) => {
       const hasRunningSession = query.state.data;
-      // If there's a running session, refresh every 30 seconds
-      // If no running session, refresh every 2 minutes to check for new sessions
-      return hasRunningSession ? 30000 : 120000;
+      return hasRunningSession
+        ? ACTIVE_TIMER_RUNNING_FALLBACK_INTERVAL_MS
+        : ACTIVE_TIMER_IDLE_FALLBACK_INTERVAL_MS;
     },
-    refetchOnWindowFocus: true,
-    staleTime: 0, // Always consider data stale to ensure immediate updates when invalidated
+    refetchIntervalInBackground: false,
   });
 }
