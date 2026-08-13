@@ -74,6 +74,10 @@ Apply these controls in order:
    1-minute running / 5-minute idle reconciliation. Keep mutations and realtime
    events invalidating their query keys immediately instead of shortening these
    safety-net intervals.
+   Versioned external-project asset reads bypass the global API proxy guard and
+   rely on the asset route's publication/access checks, avoiding one middleware
+   invocation per cache-busted media redirect. Mutations, unversioned reads, and
+   WebGL delivery remain behind the global guard.
 4. Dashboard sidebar links disable viewport prefetch and prefetch on hover or
    keyboard focus. This preserves responsive navigation without invoking every
    visible destination merely because the sidebar rendered.
