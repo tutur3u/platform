@@ -9,6 +9,53 @@ type CallbackRef<T> = {
   current: T | undefined;
 };
 
+const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
+
+type LocallyMutatedTask = Task & { _localMutationAt?: number };
+
+function mergeRealtimeTaskData(
+  task: Task,
+  taskData: Partial<Task> & { id: string }
+): Task {
+  const localMutationAt = (task as LocallyMutatedTask)._localMutationAt;
+  const hasFreshLocalMutation =
+    typeof localMutationAt === 'number' &&
+    Date.now() - localMutationAt < LOCAL_MUTATION_MARKER_TTL_MS;
+
+  if (!hasFreshLocalMutation) return { ...task, ...taskData };
+
+  const incoming = taskData as Partial<LocallyMutatedTask>;
+  const hasConflictingMove =
+    ('list_id' in incoming && incoming.list_id !== task.list_id) ||
+    ('sort_key' in incoming && incoming.sort_key !== task.sort_key) ||
+    ('personal_list_id' in incoming &&
+      incoming.personal_list_id !== task.personal_list_id) ||
+    ('personal_sort_key' in incoming &&
+      incoming.personal_sort_key !== task.personal_sort_key) ||
+    ('completed' in incoming && incoming.completed !== task.completed) ||
+    ('completed_at' in incoming &&
+      incoming.completed_at !== task.completed_at) ||
+    ('closed_at' in incoming && incoming.closed_at !== task.closed_at);
+
+  if (!hasConflictingMove) return { ...task, ...taskData };
+
+  // Realtime delivery and local-tab broadcasts can arrive after a drop has
+  // already moved the card. Merge unrelated fields, but keep the fresh local
+  // placement until the mutation response (or a later revalidation) catches up.
+  return {
+    ...task,
+    ...taskData,
+    list_id: task.list_id,
+    sort_key: task.sort_key,
+    personal_list_id: task.personal_list_id,
+    personal_sort_key: task.personal_sort_key,
+    completed: task.completed,
+    completed_at: task.completed_at,
+    closed_at: task.closed_at,
+    _localMutationAt: localMutationAt,
+  } as LocallyMutatedTask;
+}
+
 type UseBoardRealtimeEventHandlerOptions = {
   boardId: string;
   queryClient: QueryClient;
@@ -44,7 +91,7 @@ function mergeRealtimeTask(
   const exists = old.some((task) => task.id === taskData.id);
   if (exists) {
     return old.map((task) =>
-      task.id === taskData.id ? { ...task, ...taskData } : task
+      task.id === taskData.id ? mergeRealtimeTaskData(task, taskData) : task
     );
   }
 

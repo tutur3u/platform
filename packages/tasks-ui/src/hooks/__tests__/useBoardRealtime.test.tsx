@@ -339,6 +339,87 @@ describe('useBoardRealtime', () => {
       expect(cachedTasks?.[0]?.assignees).toEqual([]);
     });
 
+    it('preserves a fresh optimistic move from a stale realtime payload', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [
+          {
+            ...mockTaskWithRelations,
+            list_id: 'target-list',
+            sort_key: 2_000_000,
+            personal_list_id: 'target-list',
+            personal_sort_key: 2_000_000,
+            _localMutationAt: Date.now(),
+          },
+        ]
+      );
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:upsert')!;
+
+      await act(async () => {
+        listener({
+          payload: {
+            task: {
+              id: 'task-1',
+              list_id: 'source-list',
+              sort_key: 1_000_000,
+              personal_list_id: 'source-list',
+              personal_sort_key: 1_000_000,
+              name: 'Updated while moving',
+            },
+          },
+        });
+      });
+
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]
+      ).toEqual(
+        expect.objectContaining({
+          list_id: 'target-list',
+          sort_key: 2_000_000,
+          personal_list_id: 'target-list',
+          personal_sort_key: 2_000_000,
+          name: 'Updated while moving',
+          _localMutationAt: expect.any(Number),
+        })
+      );
+    });
+
+    it('accepts realtime movement after the optimistic protection expires', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [
+          {
+            ...mockTaskWithRelations,
+            list_id: 'target-list',
+            _localMutationAt: Date.now() - 31_000,
+          },
+        ]
+      );
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:upsert')!;
+
+      await act(async () => {
+        listener({
+          payload: {
+            task: { id: 'task-1', list_id: 'source-list' },
+          },
+        });
+      });
+
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.list_id
+      ).toBe('source-list');
+    });
+
     it('should update the full task cache when it exists', async () => {
       queryClient.setQueryData(
         ['tasks', 'board-1'],

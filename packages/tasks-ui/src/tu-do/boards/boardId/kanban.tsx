@@ -1,14 +1,11 @@
 'use client';
 
 import {
-  type CollisionDetection,
-  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
-  pointerWithin,
   TouchSensor,
   useSensor,
   useSensors,
@@ -48,6 +45,7 @@ import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
 import { sortKanbanColumns } from './kanban/dnd/column-reorder';
 import { DragPreview } from './kanban/dnd/drag-preview';
+import { kanbanCollisionDetection } from './kanban/dnd/kanban-collision';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
@@ -59,19 +57,6 @@ import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
-
-// Prefer pointerWithin for precise targeting; fall back to closestCenter
-// when the pointer isn't inside any droppable (e.g. between columns).
-const kanbanCollisionDetection: CollisionDetection = (args) => {
-  if (args.active.data.current?.type === 'Task') {
-    const centerCollisions = closestCenter(args);
-    if (centerCollisions.length > 0) return centerCollisions;
-  }
-
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) return pointerCollisions;
-  return closestCenter(args);
-};
 
 const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
 
