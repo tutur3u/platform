@@ -293,6 +293,33 @@ describe('workspace invitation status helpers', () => {
     expect(result.status).toBe('member');
   });
 
+  it('can expose a pending role invite for an existing member decision', async () => {
+    const admin = createAdminClientMock({
+      directInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          role_id: 'role-editor',
+          type: 'MEMBER',
+          user_id: userId,
+          ws_id: workspaceId,
+        },
+      ],
+      members: [{ user_id: userId, ws_id: workspaceId }],
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'user@example.com',
+      preferPendingInvite: true,
+      userId,
+      workspaceId,
+    });
+
+    expect(result.status).toBe('pending_invite');
+    if (result.status === 'pending_invite') {
+      expect(result.invitation.roleId).toBe('role-editor');
+    }
+  });
+
   it('resolves the personal workspace alias with the authenticated user id', async () => {
     const admin = createAdminClientMock({
       members: [{ user_id: userId, ws_id: workspaceId }],

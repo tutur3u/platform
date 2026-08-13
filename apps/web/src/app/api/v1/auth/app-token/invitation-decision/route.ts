@@ -598,6 +598,7 @@ async function invitationDecision(request: NextRequest) {
 
   const inviteStatus = await getWorkspaceInviteStatus(admin, {
     authEmail: claims.email,
+    preferPendingInvite: true,
     userId: claims.sub,
     workspaceId,
   });

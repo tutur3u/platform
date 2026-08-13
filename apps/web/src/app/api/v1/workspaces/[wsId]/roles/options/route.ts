@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
+import { connection, NextResponse } from 'next/server';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -7,6 +7,7 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
+  await connection();
   const { wsId } = await params;
   const access = await resolveWorkspaceRouteAccess(req, wsId, [
     'manage_workspace_roles',

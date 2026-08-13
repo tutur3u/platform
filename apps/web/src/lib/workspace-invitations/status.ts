@@ -304,10 +304,12 @@ export async function getWorkspaceInviteStatus(
   admin: TypedSupabaseClient,
   {
     authEmail,
+    preferPendingInvite = false,
     userId,
     workspaceId,
   }: {
     authEmail: string | null | undefined;
+    preferPendingInvite?: boolean;
     userId: string;
     workspaceId: string;
   }
@@ -330,7 +332,8 @@ export async function getWorkspaceInviteStatus(
       }),
     ]);
 
-  if (memberWorkspaceIds.has(normalizedWorkspaceId)) {
+  const isMember = memberWorkspaceIds.has(normalizedWorkspaceId);
+  if (isMember && !preferPendingInvite) {
     const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
     if (!workspace) {
       return {
@@ -351,6 +354,13 @@ export async function getWorkspaceInviteStatus(
   });
 
   if (directInvites.length === 0 && emailInvites.length === 0) {
+    if (isMember) {
+      const workspace = await fetchWorkspace(admin, normalizedWorkspaceId);
+      return workspace
+        ? { status: 'member', workspace: toWorkspaceSummary(workspace) }
+        : { status: 'none', workspace: null };
+    }
+
     return {
       status: 'none',
       workspace: null,
