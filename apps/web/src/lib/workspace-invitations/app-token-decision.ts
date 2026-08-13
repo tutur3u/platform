@@ -5,6 +5,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { finalizeInvitedWorkspaceMembership } from './finalize-membership';
+import { getPendingWorkspaceInvitationRoleIds } from './get-pending-role-ids';
 import {
   hasPendingInvitationSeatCompensation,
   revokeInvitationSeatOrRecord,
@@ -47,10 +48,16 @@ async function finalizeMembershipOrError(
   workspaceId: string
 ) {
   try {
+    const roleIds = await getPendingWorkspaceInvitationRoleIds({
+      admin,
+      email: invitation.source === 'email' ? invitation.matchedEmail : null,
+      userId: invitation.source === 'direct' ? userId : null,
+      workspaceId,
+    });
     const result = await finalizeInvitedWorkspaceMembership({
       admin,
       invitationType: invitation.type,
-      roleId: invitation.roleId,
+      roleIds,
       userId,
       workspaceId,
     });
@@ -212,14 +219,14 @@ export async function hasExistingWorkspaceMembership({
   const [directInviteResult, emailInviteResult] = await Promise.all([
     admin
       .from('workspace_invites')
-      .select('role_id, type')
+      .select('type')
       .eq('ws_id', workspaceId)
       .eq('user_id', userId)
       .maybeSingle(),
     candidateEmails.length
       ? admin
           .from('workspace_email_invites')
-          .select('email, role_id, type')
+          .select('email, type')
           .eq('ws_id', workspaceId)
           .in('email', candidateEmails)
       : Promise.resolve({ data: [], error: null }),
@@ -233,16 +240,19 @@ export async function hasExistingWorkspaceMembership({
       emailInvites.find((invite) => invite.email.trim().toLowerCase() === email)
     )
     .find((invite) => Boolean(invite));
-  const roleId = directInvite
-    ? (directInvite.role_id ?? null)
-    : (emailInvite?.role_id ?? null);
   const invitationType = directInvite?.type ?? emailInvite?.type ?? null;
 
   if (!directInvite && !emailInvite) return true;
   // A pending roleless invite means the acceptance flow has not completed its
   // seat assignment and invite cleanup yet. Do not mint a session from the
   // transient membership row created before those steps finish.
-  if (!roleId) return false;
+  const roleIds = await getPendingWorkspaceInvitationRoleIds({
+    admin,
+    email: directInvite ? null : emailInvite?.email,
+    userId: directInvite ? userId : null,
+    workspaceId,
+  });
+  if (roleIds.length === 0) return false;
   if (
     invitationType === 'MEMBER' &&
     existingMember.membershipType !== 'MEMBER'
@@ -253,11 +263,10 @@ export async function hasExistingWorkspaceMembership({
   const { data: roleMember, error: roleMemberError } = await admin
     .from('workspace_role_members')
     .select('role_id')
-    .eq('role_id', roleId)
     .eq('user_id', userId)
-    .maybeSingle();
+    .in('role_id', roleIds);
 
-  return !roleMemberError && Boolean(roleMember);
+  return !roleMemberError && roleMember?.length === roleIds.length;
 }
 
 export async function rejectAppTokenInvitation({

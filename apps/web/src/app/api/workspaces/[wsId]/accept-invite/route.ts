@@ -13,6 +13,7 @@ import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/s
 import { withSessionAuth } from '@/lib/api-auth';
 import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
 import { finalizeInvitedWorkspaceMembership } from '@/lib/workspace-invitations/finalize-membership';
+import { getPendingWorkspaceInvitationRoleIds } from '@/lib/workspace-invitations/get-pending-role-ids';
 import {
   hasPendingInvitationSeatCompensation,
   revokeInvitationSeatOrRecord,
@@ -192,9 +193,30 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     let inviteMemberType: 'MEMBER' | 'GUEST' =
       pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
-    const pendingRoleId = pendingInvite
-      ? (pendingInvite.role_id ?? null)
-      : (pendingEmailInvite?.role_id ?? null);
+    let pendingRoleIds: string[] = [];
+    if (pendingInvite || pendingEmailInvite) {
+      try {
+        pendingRoleIds = await getPendingWorkspaceInvitationRoleIds({
+          admin: sbAdmin,
+          email: pendingInvite ? null : pendingEmailInvite?.email,
+          userId: pendingInvite ? user.id : null,
+          workspaceId: wsId,
+        });
+      } catch (roleLookupError) {
+        console.error('Failed to read pending workspace invitation roles:', {
+          error: roleLookupError,
+          userId: user.id,
+          wsId,
+        });
+        return NextResponse.json(
+          {
+            error: 'Failed to read pending invite roles',
+            errorCode: 'PENDING_INVITE_ROLE_LOOKUP_FAILED',
+          },
+          { status: 500 }
+        );
+      }
+    }
     let matchedWorkspaceUserId: string | null = null;
 
     if (!pendingInvite && !pendingEmailInvite) {
@@ -269,7 +291,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         await finalizeInvitedWorkspaceMembership({
           admin: sbAdmin,
           invitationType: inviteMemberType,
-          roleId: pendingRoleId,
+          roleIds: pendingRoleIds,
           userId: user.id,
           workspaceId: wsId,
         });
@@ -384,7 +406,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
       const result = await finalizeInvitedWorkspaceMembership({
         admin: sbAdmin,
         invitationType: inviteMemberType,
-        roleId: pendingRoleId,
+        roleIds: pendingRoleIds,
         userId: user.id,
         workspaceId: wsId,
       });

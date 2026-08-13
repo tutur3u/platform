@@ -2,10 +2,10 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 type FinalizeMembershipClient = {
   rpc: (
-    functionName: 'finalize_workspace_invitation_membership',
+    functionName: 'finalize_workspace_invitation_membership_v2',
     args: {
       p_member_type: 'GUEST' | 'MEMBER';
-      p_role_id: string | null;
+      p_role_ids: string[];
       p_user_id: string;
       p_ws_id: string;
     }
@@ -15,13 +15,13 @@ type FinalizeMembershipClient = {
 export async function finalizeInvitedWorkspaceMembership({
   admin,
   invitationType,
-  roleId,
+  roleIds,
   userId,
   workspaceId,
 }: {
   admin: TypedSupabaseClient;
   invitationType: 'GUEST' | 'MEMBER';
-  roleId: string | null | undefined;
+  roleIds: string[];
   userId: string;
   workspaceId: string;
 }) {
@@ -29,10 +29,10 @@ export async function finalizeInvitedWorkspaceMembership({
     'private'
   ) as unknown as FinalizeMembershipClient;
   const { data, error } = await privateDb.rpc(
-    'finalize_workspace_invitation_membership',
+    'finalize_workspace_invitation_membership_v2',
     {
       p_member_type: invitationType,
-      p_role_id: roleId ?? null,
+      p_role_ids: roleIds,
       p_user_id: userId,
       p_ws_id: workspaceId,
     }

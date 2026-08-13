@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceAccessInviteDialog } from './workspace-access-invite-dialog';
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string, values?: Record<string, number>) =>
+    values?.count === undefined ? key : `${values.count} ${key}`,
 }));
 
 describe('WorkspaceAccessInviteDialog', () => {
-  it('offers and maps an optional workspace role before the invitation is sent', () => {
+  it('selects multiple workspace roles before the invitation is sent', () => {
     const props = {
       accessPreset: 'member',
       canManageRoles: true,
@@ -22,47 +23,47 @@ describe('WorkspaceAccessInviteDialog', () => {
       onConfirmDefaultAdminMigrationChange: vi.fn(),
       onEmailsChange: vi.fn(),
       onOpenChange: vi.fn(),
-      onRoleIdChange: vi.fn(),
+      onRoleIdsChange: vi.fn(),
       onSubmit: vi.fn(),
       open: true,
-      roleId: null,
-      roles: [{ id: 'role-editor', name: 'Editor' }],
+      roleIds: [],
+      roles: [
+        { id: 'role-editor', name: 'Editor' },
+        { id: 'role-reviewer', name: 'Reviewer' },
+      ],
     } as ComponentProps<typeof WorkspaceAccessInviteDialog> & {
       noRoleLabel: string;
-      onRoleIdChange: (roleId: string | null) => void;
-      roleId: string | null;
+      onRoleIdsChange: (roleIds: string[]) => void;
+      roleIds: string[];
       roles: Array<{ id: string; name: string }>;
     };
 
     const { rerender } = render(<WorkspaceAccessInviteDialog {...props} />);
 
     expect(screen.getByText('ws-members.role-placeholder')).toBeDefined();
-    expect(screen.getByText('No assigned roles')).toBeDefined();
 
-    fireEvent.click(
-      screen.getByRole('combobox', { name: 'ws-members.role-placeholder' })
-    );
-    fireEvent.click(screen.getByText('Editor'));
-    expect(props.onRoleIdChange).toHaveBeenLastCalledWith('role-editor');
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Editor' }));
+    expect(props.onRoleIdsChange).toHaveBeenLastCalledWith(['role-editor']);
 
-    rerender(<WorkspaceAccessInviteDialog {...props} roleId="role-editor" />);
-    fireEvent.click(
-      screen.getByRole('combobox', { name: 'ws-members.role-placeholder' })
+    rerender(
+      <WorkspaceAccessInviteDialog {...props} roleIds={['role-editor']} />
     );
-    fireEvent.click(screen.getByText('No assigned roles'));
-    expect(props.onRoleIdChange).toHaveBeenLastCalledWith(null);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Reviewer' }));
+    expect(props.onRoleIdsChange).toHaveBeenLastCalledWith([
+      'role-editor',
+      'role-reviewer',
+    ]);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Editor' }));
+    expect(props.onRoleIdsChange).toHaveBeenLastCalledWith([]);
 
     rerender(
       <WorkspaceAccessInviteDialog
         {...props}
         accessPreset="guest"
-        roleId={null}
+        roleIds={[]}
       />
     );
-    expect(
-      screen.queryByRole('combobox', {
-        name: 'ws-members.role-placeholder',
-      })
-    ).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Editor' })).toBeNull();
   });
 });

@@ -12,16 +12,16 @@ describe('finalizeInvitedWorkspaceMembership', () => {
       finalizeInvitedWorkspaceMembership({
         admin,
         invitationType: 'MEMBER',
-        roleId: 'role-editor',
+        roleIds: ['role-editor', 'role-reviewer'],
         userId: 'user-1',
         workspaceId: 'workspace-1',
       })
     ).resolves.toEqual({ created: true });
     expect(rpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
+      'finalize_workspace_invitation_membership_v2',
       {
         p_member_type: 'MEMBER',
-        p_role_id: 'role-editor',
+        p_role_ids: ['role-editor', 'role-reviewer'],
         p_user_id: 'user-1',
         p_ws_id: 'workspace-1',
       }
@@ -36,7 +36,7 @@ describe('finalizeInvitedWorkspaceMembership', () => {
       finalizeInvitedWorkspaceMembership({
         admin,
         invitationType: 'GUEST',
-        roleId: null,
+        roleIds: [],
         userId: 'user-1',
         workspaceId: 'workspace-1',
       })
@@ -54,7 +54,7 @@ describe('finalizeInvitedWorkspaceMembership', () => {
       finalizeInvitedWorkspaceMembership({
         admin,
         invitationType: 'MEMBER',
-        roleId: 'missing-role',
+        roleIds: ['missing-role'],
         userId: 'user-1',
         workspaceId: 'workspace-1',
       })

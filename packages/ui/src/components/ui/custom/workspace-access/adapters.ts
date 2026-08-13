@@ -93,7 +93,10 @@ export function mergeWorkspaceInvitationRoles(
 
     return {
       ...member,
-      roles: invitation?.role ? [{ ...invitation.role, permissions: [] }] : [],
+      roles: (invitation?.roles ?? []).map((role) => ({
+        ...role,
+        permissions: [],
+      })),
     };
   });
 }
@@ -126,7 +129,7 @@ async function inviteStandardWorkspaceMembers(
         confirmDefaultAdminMigration: payload.confirmDefaultAdminMigration,
         email,
         memberType: payload.memberType,
-        roleId: payload.roleId,
+        roleIds: payload.roleIds,
       };
       return inviteWorkspaceMember(workspaceId, invitePayload);
     })

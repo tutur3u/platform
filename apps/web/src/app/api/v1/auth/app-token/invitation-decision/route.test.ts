@@ -14,11 +14,8 @@ const mocks = vi.hoisted(() => ({
   getAppCoordinationSessionPolicy: vi.fn(),
   getWorkspaceInviteCandidateEmails: vi.fn(),
   getWorkspaceInviteStatus: vi.fn(),
-  revokeSeatFromMember: vi.fn(),
   hasPendingInvitationSeatCompensation: vi.fn(),
   revokeInvitationSeatOrRecord: vi.fn(),
-  serverLoggerError: vi.fn(),
-  serverLoggerWarn: vi.fn(),
   verifyExternalAppSecret: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
@@ -58,12 +55,6 @@ vi.mock('@/lib/app-coordination/session-policy', () => ({
 }));
 
 vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
-      mocks.serverLoggerError(...args),
-    warn: (...args: Parameters<typeof mocks.serverLoggerWarn>) =>
-      mocks.serverLoggerWarn(...args),
-  },
   withRequestLogDrain: (_metadata: unknown, handler: () => Promise<Response>) =>
     handler(),
 }));
@@ -119,12 +110,17 @@ function createAdminMock() {
     data: true,
     error: null,
   });
+  const pendingInvitationRolesRpc = vi.fn(
+    (_functionName: string, _args: unknown) =>
+      Promise.resolve({ data: pendingRoleIds, error: null })
+  );
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
   let pendingDirectInvite: {
     role_id: string | null;
     type?: 'GUEST' | 'MEMBER';
   } | null = null;
+  let pendingRoleIds: string[] = [];
   let pendingRoleMember: { role_id: string } | null = null;
 
   function createBuilder(table: string) {
@@ -160,10 +156,6 @@ function createAdminMock() {
           });
         }
 
-        if (table === 'workspace_roles') {
-          return Promise.resolve({ data: { id: 'role-editor' }, error: null });
-        }
-
         if (table === 'workspace_invites') {
           return Promise.resolve({ data: pendingDirectInvite, error: null });
         }
@@ -182,10 +174,15 @@ function createAdminMock() {
         onFulfilled?: (value: unknown) => unknown,
         onRejected?: (reason: unknown) => unknown
       ) =>
-        Promise.resolve({ data: null, error: null }).then(
-          onFulfilled,
-          onRejected
-        ),
+        Promise.resolve({
+          data:
+            table === 'workspace_role_members'
+              ? pendingRoleMember
+                ? [pendingRoleMember]
+                : []
+              : null,
+          error: null,
+        }).then(onFulfilled, onRejected),
     });
 
     return builder;
@@ -236,7 +233,10 @@ function createAdminMock() {
           privateTableCalls.push(`${schema}.${table}`);
           return createPrivateBuilder(table);
         }),
-        rpc: finalizeMembershipRpc,
+        rpc: (functionName: string, args: unknown) =>
+          functionName === 'get_workspace_invitation_role_ids'
+            ? pendingInvitationRolesRpc(functionName, args)
+            : finalizeMembershipRpc(functionName, args),
       })),
     },
     inserts,
@@ -258,6 +258,10 @@ function createAdminMock() {
       invite: { role_id: string | null; type?: 'GUEST' | 'MEMBER' } | null
     ) => {
       pendingDirectInvite = invite;
+      pendingRoleIds = invite?.role_id ? [invite.role_id] : [];
+    },
+    setPendingRoleIds: (roleIds: string[]) => {
+      pendingRoleIds = roleIds;
     },
     setPendingRoleMember: (roleMember: { role_id: string } | null) => {
       pendingRoleMember = roleMember;
@@ -362,7 +366,6 @@ describe('app token invitation decision route', () => {
       required: false,
       success: true,
     });
-    mocks.revokeSeatFromMember.mockResolvedValue(undefined);
     mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
     mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
     mocks.createPolarClient.mockReturnValue({});
@@ -416,9 +419,10 @@ describe('app token invitation decision route', () => {
       }),
     });
     expect(finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
+      'finalize_workspace_invitation_membership_v2',
       expect.objectContaining({
         p_member_type: 'MEMBER',
+        p_role_ids: [],
         p_user_id: userId,
         p_ws_id: workspaceId,
       })
@@ -430,7 +434,9 @@ describe('app token invitation decision route', () => {
   });
 
   it('assigns the pending workspace role for an accepted invitation', async () => {
-    const { admin, finalizeMembershipRpc } = createAdminMock();
+    const { admin, finalizeMembershipRpc, setPendingRoleIds } =
+      createAdminMock();
+    setPendingRoleIds(['role-editor', 'role-reviewer']);
     mocks.createAdminClient.mockResolvedValue(admin);
     mocks.getWorkspaceInviteStatus.mockResolvedValue({
       invitation: {
@@ -456,8 +462,10 @@ describe('app token invitation decision route', () => {
 
     expect(response.status).toBe(200);
     expect(finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
-      expect.objectContaining({ p_role_id: 'role-editor' })
+      'finalize_workspace_invitation_membership_v2',
+      expect.objectContaining({
+        p_role_ids: ['role-editor', 'role-reviewer'],
+      })
     );
   });
 

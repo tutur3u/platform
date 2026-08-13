@@ -43,7 +43,7 @@ import { WorkspaceAccessTabsToolbar } from './workspace-access-tabs-toolbar';
 
 type InvitationRoleUpdate = {
   email?: null | string;
-  roleId: null | string;
+  roleIds: string[];
   userId?: null | string;
 };
 
@@ -64,7 +64,7 @@ export function WorkspaceAccessPage({
   const [inviteAccessPreset, setInviteAccessPreset] = useState<
     'guest' | 'member' | 'pos_operator'
   >('member');
-  const [inviteRoleId, setInviteRoleId] = useState<string | null>(null);
+  const [inviteRoleIds, setInviteRoleIds] = useState<string[]>([]);
   const [confirmDefaultAdminMigration, setConfirmDefaultAdminMigration] =
     useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -197,17 +197,17 @@ export function WorkspaceAccessPage({
         confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
-        roleId:
+        roleIds:
           canAssignInviteRoles && inviteAccessPreset === 'member'
-            ? inviteRoleId
-            : null,
+            ? inviteRoleIds
+            : [],
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async (result) => {
       setInviteEmails('');
       setInviteAccessPreset('member');
-      setInviteRoleId(null);
+      setInviteRoleIds([]);
       setConfirmDefaultAdminMigration(false);
       setInviteDialogOpen(false);
       toast.success(result.message ?? t('ws-members.invitation-sent'));
@@ -284,11 +284,15 @@ export function WorkspaceAccessPage({
         queryClient.getQueryData<InternalApiEnhancedWorkspaceMember[]>(
           queryKey
         );
-      const nextRole = payload.roleId
-        ? (inviteRolesQuery.data?.data ?? rolesQuery.data?.data ?? []).find(
-            (role) => role.id === payload.roleId
-          )
-        : null;
+      const roleById = new Map(
+        (inviteRolesQuery.data?.data ?? rolesQuery.data?.data ?? []).map(
+          (role) => [role.id, role]
+        )
+      );
+      const nextRoles = payload.roleIds.flatMap((roleId) => {
+        const role = roleById.get(roleId);
+        return role ? [{ id: role.id, name: role.name, permissions: [] }] : [];
+      });
       const normalizedEmail = payload.email?.trim().toLowerCase() ?? null;
 
       queryClient.setQueryData<InternalApiEnhancedWorkspaceMember[]>(
@@ -308,9 +312,7 @@ export function WorkspaceAccessPage({
 
             return {
               ...member,
-              roles: nextRole
-                ? [{ id: nextRole.id, name: nextRole.name, permissions: [] }]
-                : [],
+              roles: nextRoles,
             };
           })
       );
@@ -575,7 +577,7 @@ export function WorkspaceAccessPage({
           if (value === 'member') {
             setConfirmDefaultAdminMigration(false);
           } else {
-            setInviteRoleId(null);
+            setInviteRoleIds([]);
             if (value === 'guest') {
               setConfirmDefaultAdminMigration(false);
             }
@@ -584,10 +586,10 @@ export function WorkspaceAccessPage({
         onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}
         onEmailsChange={setInviteEmails}
         onOpenChange={setInviteDialogOpen}
-        onRoleIdChange={setInviteRoleId}
+        onRoleIdsChange={setInviteRoleIds}
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}
-        roleId={inviteRoleId}
+        roleIds={inviteRoleIds}
         roles={inviteRolesQuery.data?.data ?? []}
       />
 

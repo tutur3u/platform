@@ -378,7 +378,7 @@ export async function listEnhancedWorkspaceMembers(
 
 export type WorkspaceInvitationRoleAssignment = {
   email: string | null;
-  role: { id: string; name: string } | null;
+  roles: Array<{ id: string; name: string }>;
   userId: string | null;
 };
 
@@ -397,7 +397,7 @@ export async function updateWorkspaceInvitationRole(
   workspaceId: string,
   payload: {
     email?: string | null;
-    roleId: string | null;
+    roleIds: string[];
     userId?: string | null;
   },
   options?: InternalApiClientOptions
@@ -471,7 +471,7 @@ export async function inviteWorkspaceMember(
     confirmDefaultAdminMigration?: boolean;
     email: string;
     memberType: 'MEMBER' | 'GUEST';
-    roleId?: string | null;
+    roleIds?: string[];
   },
   options?: InternalApiClientOptions
 ) {

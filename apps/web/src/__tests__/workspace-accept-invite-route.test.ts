@@ -28,6 +28,7 @@ const mocks = vi.hoisted(() => {
   const adminEmailInviteDeleteIn = vi.fn();
   const finalizeWorkspaceInvitationNotifications = vi.fn();
   const finalizeMembershipRpc = vi.fn();
+  const pendingInvitationRolesRpc = vi.fn();
   const sessionSupabase = {
     auth: {
       getUser: authGetUser,
@@ -126,7 +127,12 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
-    schema: vi.fn(() => ({ rpc: finalizeMembershipRpc })),
+    schema: vi.fn(() => ({
+      rpc: (functionName: string, args: unknown) =>
+        functionName === 'get_workspace_invitation_role_ids'
+          ? pendingInvitationRolesRpc(functionName, args)
+          : finalizeMembershipRpc(functionName, args),
+    })),
   };
 
   return {
@@ -149,6 +155,7 @@ const mocks = vi.hoisted(() => {
     sessionSupabase,
     finalizeWorkspaceInvitationNotifications,
     finalizeMembershipRpc,
+    pendingInvitationRolesRpc,
   };
 });
 
@@ -256,6 +263,10 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
     mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
     mocks.finalizeMembershipRpc.mockResolvedValue({ data: true, error: null });
+    mocks.pendingInvitationRolesRpc.mockResolvedValue({
+      data: [],
+      error: null,
+    });
     mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
     mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
     mocks.enforceSeatLimit.mockResolvedValue({ allowed: true });
@@ -355,7 +366,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       })
     );
     expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
+      'finalize_workspace_invitation_membership_v2',
       expect.objectContaining({ p_member_type: 'GUEST' })
     );
   });
@@ -472,7 +483,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
     expect(mocks.sessionEmailInviteIn).not.toHaveBeenCalled();
     expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
+      'finalize_workspace_invitation_membership_v2',
       expect.objectContaining({ p_member_type: 'GUEST' })
     );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
@@ -585,8 +596,8 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
-      expect.objectContaining({ p_member_type: 'GUEST', p_role_id: null })
+      'finalize_workspace_invitation_membership_v2',
+      expect.objectContaining({ p_member_type: 'GUEST', p_role_ids: [] })
     );
   });
 
@@ -645,7 +656,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
     expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
     expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership',
+      'finalize_workspace_invitation_membership_v2',
       expect.objectContaining({ p_ws_id: POSTGRES_FIXTURE_WS_ID })
     );
   });

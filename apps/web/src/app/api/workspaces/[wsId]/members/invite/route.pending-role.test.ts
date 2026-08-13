@@ -1,15 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ROLE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const REVIEWER_ROLE_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const USER_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 const mocks = vi.hoisted(() => ({
   resolveWorkspaceRouteAccess: vi.fn(),
-  updates: [] as Array<{
-    filters: Record<string, string>;
-    table: string;
-    value: unknown;
-  }>,
+  rpcCalls: [] as Array<{ args: unknown; functionName: string }>,
 }));
 
 function resultFor(
@@ -21,7 +18,7 @@ function resultFor(
     return mode === 'single'
       ? { data: { type: 'MEMBER' }, error: null }
       : {
-          data: [{ role_id: ROLE_ID, user_id: USER_ID }],
+          data: [],
           error: null,
         };
   }
@@ -29,21 +26,26 @@ function resultFor(
     return mode === 'single'
       ? { data: { type: 'MEMBER' }, error: null }
       : {
-          data: [{ email: 'pending@example.com', role_id: ROLE_ID }],
+          data: [],
           error: null,
         };
   }
   if (table === 'workspace_roles') {
     return mode === 'single'
       ? { data: filters.id === ROLE_ID ? { id: ROLE_ID } : null, error: null }
-      : { data: [{ id: ROLE_ID, name: 'Editor' }], error: null };
+      : {
+          data: [
+            { id: ROLE_ID, name: 'Editor' },
+            { id: REVIEWER_ROLE_ID, name: 'Reviewer' },
+          ],
+          error: null,
+        };
   }
   throw new Error(`Unexpected table: ${table}`);
 }
 
 function createQuery(table: string) {
   const filters: Record<string, string> = {};
-  let updateValue: unknown;
   const query = {
     eq: (column: string, value: string) => {
       filters[column] = value;
@@ -52,22 +54,10 @@ function createQuery(table: string) {
     in: () => query,
     maybeSingle: async () => resultFor(table, 'single', filters),
     select: () => query,
-    update: (value: unknown) => {
-      updateValue = value;
-      return query;
-    },
   };
 
   Object.defineProperty(query, 'then', {
     value: (resolve: (value: unknown) => unknown) => {
-      if (updateValue !== undefined) {
-        mocks.updates.push({
-          filters: { ...filters },
-          table,
-          value: updateValue,
-        });
-        return Promise.resolve(resolve({ error: null }));
-      }
       return Promise.resolve(resolve(resultFor(table, 'list', filters)));
     },
   });
@@ -76,7 +66,32 @@ function createQuery(table: string) {
 }
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(async () => ({ from: createQuery })),
+  createAdminClient: vi.fn(async () => ({
+    from: createQuery,
+    schema: () => ({
+      rpc: async (functionName: string, args: unknown) => {
+        mocks.rpcCalls.push({ args, functionName });
+        if (functionName === 'list_workspace_invitation_role_ids') {
+          return {
+            data: [
+              {
+                email: null,
+                role_ids: [ROLE_ID],
+                user_id: USER_ID,
+              },
+              {
+                email: 'pending@example.com',
+                role_ids: [ROLE_ID, REVIEWER_ROLE_ID],
+                user_id: null,
+              },
+            ],
+            error: null,
+          };
+        }
+        return { data: null, error: null };
+      },
+    }),
+  })),
 }));
 
 vi.mock('@/lib/workspace-route-access', () => ({
@@ -87,7 +102,7 @@ vi.mock('@/lib/workspace-route-access', () => ({
 describe('pending workspace invitation roles', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.updates.length = 0;
+    mocks.rpcCalls.length = 0;
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: true,
       permissions: {
@@ -109,12 +124,15 @@ describe('pending workspace invitation roles', () => {
     await expect(response.json()).resolves.toEqual([
       {
         email: null,
-        role: { id: ROLE_ID, name: 'Editor' },
+        roles: [{ id: ROLE_ID, name: 'Editor' }],
         userId: USER_ID,
       },
       {
         email: 'pending@example.com',
-        role: { id: ROLE_ID, name: 'Editor' },
+        roles: [
+          { id: ROLE_ID, name: 'Editor' },
+          { id: REVIEWER_ROLE_ID, name: 'Reviewer' },
+        ],
         userId: null,
       },
     ]);
@@ -128,7 +146,7 @@ describe('pending workspace invitation roles', () => {
         {
           body: JSON.stringify({
             email: 'Pending@Example.com',
-            roleId: ROLE_ID,
+            roleIds: [ROLE_ID, REVIEWER_ROLE_ID],
           }),
           headers: { 'Content-Type': 'application/json' },
           method: 'PATCH',
@@ -138,10 +156,14 @@ describe('pending workspace invitation roles', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.updates).toContainEqual({
-      filters: { email: 'pending@example.com', ws_id: 'workspace-1' },
-      table: 'workspace_email_invites',
-      value: { role_id: ROLE_ID },
+    expect(mocks.rpcCalls).toContainEqual({
+      args: {
+        p_email: 'pending@example.com',
+        p_role_ids: [ROLE_ID, REVIEWER_ROLE_ID],
+        p_user_id: null,
+        p_ws_id: 'workspace-1',
+      },
+      functionName: 'set_workspace_invitation_roles',
     });
   });
 });

@@ -61,7 +61,7 @@ type Props = {
   onRemoveRole: (payload: { roleId: string; userId: string }) => void;
   onUpdateInvitationRole: (payload: {
     email?: null | string;
-    roleId: null | string;
+    roleIds: string[];
     userId?: null | string;
   }) => void;
   roles: Array<Pick<WorkspaceAccessRole, 'id' | 'name'>>;
@@ -300,7 +300,7 @@ export function WorkspaceAccessMemberRow({
               email={member.email}
               isMutating={isMutating}
               onUpdate={onUpdateInvitationRole}
-              role={member.roles[0]}
+              assignedRoles={member.roles}
               roles={roles}
               userId={member.id}
             />

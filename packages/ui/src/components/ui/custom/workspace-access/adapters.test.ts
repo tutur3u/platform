@@ -81,12 +81,15 @@ describe('workspace access adapters', () => {
       [
         {
           email: 'Pending@Example.com',
-          role: { id: 'role-editor', name: 'Editor' },
+          roles: [
+            { id: 'role-editor', name: 'Editor' },
+            { id: 'role-reviewer', name: 'Reviewer' },
+          ],
           userId: null,
         },
         {
           email: null,
-          role: { id: 'role-reviewer', name: 'Reviewer' },
+          roles: [{ id: 'role-reviewer', name: 'Reviewer' }],
           userId: 'user-2',
         },
       ]
@@ -94,6 +97,7 @@ describe('workspace access adapters', () => {
 
     expect(members[0]?.roles).toEqual([
       { id: 'role-editor', name: 'Editor', permissions: [] },
+      { id: 'role-reviewer', name: 'Reviewer', permissions: [] },
     ]);
     expect(members[1]?.roles).toEqual([
       { id: 'role-reviewer', name: 'Reviewer', permissions: [] },
@@ -103,22 +107,22 @@ describe('workspace access adapters', () => {
     ]);
   });
 
-  it('forwards an optional role assignment with every standard invite', async () => {
+  it('forwards multiple role assignments with every standard invite', async () => {
     const adapter = createStandardWorkspaceAccessAdapter();
 
     await adapter.inviteMembers('ws-1', {
       accessPreset: 'member',
       emails: ['editor@example.com'],
       memberType: 'MEMBER',
-      roleId: 'role-editor',
-    } as Parameters<typeof adapter.inviteMembers>[1] & { roleId: string });
+      roleIds: ['role-editor', 'role-reviewer'],
+    });
 
     expect(mocks.inviteWorkspaceMember).toHaveBeenCalledWith('ws-1', {
       accessPreset: 'member',
       confirmDefaultAdminMigration: undefined,
       email: 'editor@example.com',
       memberType: 'MEMBER',
-      roleId: 'role-editor',
+      roleIds: ['role-editor', 'role-reviewer'],
     });
   });
 });
