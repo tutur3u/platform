@@ -310,7 +310,7 @@ export function getInfraAppOrigin() {
     ],
     fallback:
       process.env.NODE_ENV === 'production'
-        ? 'https://infra.tuturuuu.com'
+        ? 'https://infrastructure.tuturuuu.com'
         : getLocalInternalAppUrl('infra', 'http://localhost:7823'),
   });
 }

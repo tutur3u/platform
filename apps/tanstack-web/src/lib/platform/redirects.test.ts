@@ -117,6 +117,14 @@ describe('public redirect helpers', () => {
     );
   });
 
+  it('uses the resolvable Infrastructure production origin', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+
+    expect(workspaceInfrastructureAppCoordinationRedirectHref('ws-1')).toBe(
+      'https://infrastructure.tuturuuu.com/ws-1/app-coordination'
+    );
+  });
+
   it('preserves legacy education permanent redirect targets', () => {
     expect(educationLibraryRedirectHref('ws-1', 'flashcards')).toBe(
       '/ws-1/education/library/flashcards'
