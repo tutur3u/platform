@@ -11,7 +11,10 @@ type CallbackRef<T> = {
 
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 
-type LocallyMutatedTask = Task & { _localMutationAt?: number };
+type LocallyMutatedTask = Task & {
+  _localMutationAt?: number;
+  completed?: boolean | null;
+};
 
 function mergeRealtimeTaskData(
   task: Task,
@@ -24,6 +27,7 @@ function mergeRealtimeTaskData(
 
   if (!hasFreshLocalMutation) return { ...task, ...taskData };
 
+  const current = task as LocallyMutatedTask;
   const incoming = taskData as Partial<LocallyMutatedTask>;
   const hasConflictingMove =
     ('list_id' in incoming && incoming.list_id !== task.list_id) ||
@@ -32,7 +36,7 @@ function mergeRealtimeTaskData(
       incoming.personal_list_id !== task.personal_list_id) ||
     ('personal_sort_key' in incoming &&
       incoming.personal_sort_key !== task.personal_sort_key) ||
-    ('completed' in incoming && incoming.completed !== task.completed) ||
+    ('completed' in incoming && incoming.completed !== current.completed) ||
     ('completed_at' in incoming &&
       incoming.completed_at !== task.completed_at) ||
     ('closed_at' in incoming && incoming.closed_at !== task.closed_at);
@@ -49,7 +53,7 @@ function mergeRealtimeTaskData(
     sort_key: task.sort_key,
     personal_list_id: task.personal_list_id,
     personal_sort_key: task.personal_sort_key,
-    completed: task.completed,
+    completed: current.completed,
     completed_at: task.completed_at,
     closed_at: task.closed_at,
     _localMutationAt: localMutationAt,

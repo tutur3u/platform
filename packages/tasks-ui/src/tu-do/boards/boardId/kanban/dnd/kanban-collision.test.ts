@@ -15,7 +15,7 @@ import { kanbanCollisionDetection } from './kanban-collision';
 
 const taskDragArgs = {
   active: { data: { current: { type: 'Task' } } },
-} as Parameters<CollisionDetection>[0];
+} as unknown as Parameters<CollisionDetection>[0];
 
 describe('kanbanCollisionDetection', () => {
   beforeEach(() => {
