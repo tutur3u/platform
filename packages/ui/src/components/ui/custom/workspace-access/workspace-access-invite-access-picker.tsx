@@ -1,7 +1,7 @@
 'use client';
 
 import { CreditCard, ShieldUser, UserPlus } from '@tuturuuu/icons';
-import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 
 type AccessPreset = 'guest' | 'member' | 'pos_operator';
@@ -10,24 +10,28 @@ const OPTIONS: Array<{
   descriptionKey: string;
   icon: typeof UserPlus;
   labelKey: string;
+  shortLabelKey: string;
   value: AccessPreset;
 }> = [
   {
     descriptionKey: 'ws-members.invite_membership_member_description',
     icon: UserPlus,
     labelKey: 'ws-members.invite_membership_member',
+    shortLabelKey: 'ws-members.invite_access_member_tab',
     value: 'member',
   },
   {
     descriptionKey: 'ws-members.invite_membership_guest_description',
     icon: ShieldUser,
     labelKey: 'ws-members.invite_membership_guest',
+    shortLabelKey: 'ws-members.invite_access_guest_tab',
     value: 'guest',
   },
   {
     descriptionKey: 'ws-members.pos_operator_description',
     icon: CreditCard,
     labelKey: 'ws-members.invite_membership_pos_operator',
+    shortLabelKey: 'ws-members.invite_access_pos_tab',
     value: 'pos_operator',
   },
 ];
@@ -42,50 +46,63 @@ export function WorkspaceAccessInviteAccessPicker({
   value: AccessPreset;
 }) {
   const t = useTranslations() as (key: string) => string;
+  const options = canManageRoles
+    ? OPTIONS
+    : OPTIONS.filter((option) => option.value !== 'pos_operator');
 
   return (
-    <fieldset className="space-y-3">
-      <legend className="font-medium text-sm">
+    <div className="space-y-2">
+      <p className="font-medium text-sm">
         {t('ws-members.invite_membership_label')}
-      </legend>
-      <RadioGroup
-        className="gap-2"
+      </p>
+      <Tabs
         value={value}
         onValueChange={(nextValue) => onChange(nextValue as AccessPreset)}
       >
-        {OPTIONS.map((option) => {
-          const Icon = option.icon;
-          const disabled = option.value === 'pos_operator' && !canManageRoles;
-          const selected = option.value === value;
+        <TabsList
+          aria-label={t('ws-members.invite_membership_label')}
+          className={`grid h-auto w-full gap-1 rounded-xl bg-muted/60 p-1 ${canManageRoles ? 'grid-cols-3' : 'grid-cols-2'}`}
+        >
+          {options.map((option) => {
+            const Icon = option.icon;
 
-          return (
-            <label
-              key={option.value}
-              className={`group flex items-start gap-3 rounded-xl border p-3 transition-colors active:scale-[0.99] ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${selected ? 'border-dynamic-blue/40 bg-dynamic-blue/5' : 'hover:border-foreground/20 hover:bg-muted/30'}`}
-            >
-              <span
-                className={`mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg border ${selected ? 'border-dynamic-blue/25 bg-background text-dynamic-blue' : 'bg-muted/40 text-muted-foreground'}`}
+            return (
+              <TabsTrigger
+                key={option.value}
+                value={option.value}
+                className="min-h-10 min-w-0 rounded-lg px-2.5 py-2 data-[state=active]:text-dynamic-blue"
               >
                 <Icon className="size-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-medium text-sm">
-                  {t(option.labelKey)}
+                <span className="truncate">{t(option.shortLabelKey)}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+
+        {options.map((option) => {
+          const Icon = option.icon;
+
+          return (
+            <TabsContent
+              key={option.value}
+              value={option.value}
+              className="mt-1 rounded-xl border bg-background px-3.5 py-3"
+            >
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/30 text-dynamic-blue">
+                  <Icon className="size-4" />
                 </span>
-                <span className="mt-0.5 block text-muted-foreground text-xs leading-4">
-                  {t(option.descriptionKey)}
-                </span>
-              </span>
-              <RadioGroupItem
-                aria-label={t(option.labelKey)}
-                className="mt-1"
-                disabled={disabled}
-                value={option.value}
-              />
-            </label>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm">{t(option.labelKey)}</p>
+                  <p className="mt-0.5 text-muted-foreground text-xs leading-5">
+                    {t(option.descriptionKey)}
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
           );
         })}
-      </RadioGroup>
-    </fieldset>
+      </Tabs>
+    </div>
   );
 }
