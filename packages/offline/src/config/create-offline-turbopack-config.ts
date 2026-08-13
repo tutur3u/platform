@@ -12,6 +12,11 @@ const esbuildWasmSidecars = [
   'wasm_exec.js',
   'esbuild.wasm',
 ] as const;
+const workerRuntimeSources = [
+  path.resolve(__dirname, '../worker/index.ts'),
+  path.resolve(__dirname, '../worker/create-offline-worker.ts'),
+  path.resolve(__dirname, '../worker/types.ts'),
+] as const;
 
 function getWorkerTracingIncludes(
   projectRoot: string,
@@ -19,6 +24,7 @@ function getWorkerTracingIncludes(
 ): NonNullable<NextConfig['outputFileTracingIncludes']> {
   const paths = [
     path.resolve(projectRoot, workerSource),
+    ...workerRuntimeSources,
     ...esbuildWasmSidecars.map((sidecar) =>
       path.join(esbuildWasmPackageRoot, sidecar)
     ),

@@ -1,123 +1,113 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { NextResponse } from 'next/server';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
+import { withSessionAuth } from '@/lib/api-auth';
 
-export async function PATCH(req: Request) {
-  const supabase = await createClient();
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json(
-      { message: 'Invalid request body' },
-      { status: 400 }
-    );
-  }
-
-  if (
-    body.guidance_mode === 'employee_test' &&
-    !isExactTuturuuuDotComEmail(user.email)
-  ) {
-    return NextResponse.json(
-      { message: 'Employee test mode is restricted' },
-      { status: 403 }
-    );
-  }
-
-  // Build the update object with only allowed fields
-  const allowedFields = [
-    'completed_steps',
-    'current_step',
-    'workspace_name',
-    'workspace_description',
-    'workspace_avatar_url',
-    'profile_completed',
-    'tour_completed',
-    'completed_at',
-    'use_case',
-    'flow_type',
-    'invited_emails',
-    'theme_preference',
-    'language_preference',
-    'notifications_enabled',
-    'team_workspace_id',
-    'persona',
-    'goals',
-    'completed_missions',
-    'dismissed_at',
-    'replay_app',
-    'guidance_mode',
-    'journey_revision',
-  ];
-
-  const updates: Record<string, unknown> = {};
-  for (const field of allowedFields) {
-    if (field in body) {
-      updates[field] = body[field];
+export const PATCH = withSessionAuth(
+  async (req, { supabase, user }) => {
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
     }
-  }
 
-  if (Object.keys(updates).length === 0) {
-    return NextResponse.json(
-      { message: 'No valid fields to update' },
-      { status: 400 }
-    );
-  }
+    if (
+      body.guidance_mode === 'employee_test' &&
+      !isExactTuturuuuDotComEmail(user.email)
+    ) {
+      return NextResponse.json(
+        { message: 'Employee test mode is restricted' },
+        { status: 403 }
+      );
+    }
 
-  // Upsert the onboarding progress
-  const { data, error } = await supabase
-    .from('onboarding_progress')
-    .upsert(
-      {
-        user_id: user.id,
-        ...updates,
-      },
-      { onConflict: 'user_id' }
-    )
-    .select()
-    .single();
+    // Build the update object with only allowed fields
+    const allowedFields = [
+      'completed_steps',
+      'current_step',
+      'workspace_name',
+      'workspace_description',
+      'workspace_avatar_url',
+      'profile_completed',
+      'tour_completed',
+      'completed_at',
+      'use_case',
+      'flow_type',
+      'invited_emails',
+      'theme_preference',
+      'language_preference',
+      'notifications_enabled',
+      'team_workspace_id',
+      'persona',
+      'goals',
+      'completed_missions',
+      'dismissed_at',
+      'replay_app',
+      'guidance_mode',
+      'journey_revision',
+    ];
 
-  if (error) {
-    console.error('Error updating onboarding progress:', error);
-    return NextResponse.json(
-      { message: 'Failed to update onboarding progress' },
-      { status: 500 }
-    );
-  }
+    const updates: Record<string, unknown> = {};
+    for (const field of allowedFields) {
+      if (field in body) {
+        updates[field] = body[field];
+      }
+    }
 
-  return NextResponse.json(data);
-}
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { message: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
 
-export async function GET() {
-  const supabase = await createClient();
+    // Upsert the onboarding progress
+    const { data, error } = await supabase
+      .from('onboarding_progress')
+      .upsert(
+        {
+          user_id: user.id,
+          ...updates,
+        },
+        { onConflict: 'user_id' }
+      )
+      .select()
+      .single();
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+    if (error) {
+      console.error('Error updating onboarding progress:', error);
+      return NextResponse.json(
+        { message: 'Failed to update onboarding progress' },
+        { status: 500 }
+      );
+    }
 
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+    return NextResponse.json(data);
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);
 
-  const { data, error } = await supabase
-    .from('onboarding_progress')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle();
+export const GET = withSessionAuth(
+  async (_req, { supabase, user }) => {
+    const { data, error } = await supabase
+      .from('onboarding_progress')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-  if (error) {
-    console.error('Error fetching onboarding progress:', error);
-    return NextResponse.json(
-      { message: 'Failed to fetch onboarding progress' },
-      { status: 500 }
-    );
-  }
+    if (error) {
+      console.error('Error fetching onboarding progress:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch onboarding progress' },
+        { status: 500 }
+      );
+    }
 
-  return NextResponse.json(data);
-}
+    return NextResponse.json(data);
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);

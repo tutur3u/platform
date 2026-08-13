@@ -9,6 +9,7 @@ const repoRoot = resolve(
 );
 
 const satelliteRouteRoots = [
+  'apps/web/src/app/api/v1/user/onboarding-progress/route.ts',
   'apps/web/src/legacy-api-routes/v1/notifications/[id]/route.ts',
   'apps/web/src/legacy-api-routes/v1/notifications/[id]/metadata/route.ts',
   // tulearn + guest course routes now live in apps/learn.

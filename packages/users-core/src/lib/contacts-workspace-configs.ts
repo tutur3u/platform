@@ -19,6 +19,8 @@ export const CONTACTS_USER_MANAGEMENT_CONFIG_IDS = new Set([
   'DEFAULT_GROUP_FOR_NEW_WORKSPACE_USERS',
 ]);
 
+export const CONTACTS_USER_STATUS_CONFIG_IDS = new Set(['user_status_labels']);
+
 export const CONTACTS_REPORT_CONFIG_IDS = new Set(
   availableConfigs
     .map((config) => config.id)
@@ -41,6 +43,14 @@ export function areContactsConfigIdsAllowed(
   if (permissions.containsPermission('manage_workspace_settings')) return true;
 
   return ids.every((id) => {
+    if (CONTACTS_USER_STATUS_CONFIG_IDS.has(id)) {
+      return (
+        permissions.containsPermission('view_users_public_info') ||
+        permissions.containsPermission('view_users_private_info') ||
+        permissions.containsPermission('view_user_groups') ||
+        permissions.containsPermission('update_users')
+      );
+    }
     if (CONTACTS_USER_MANAGEMENT_CONFIG_IDS.has(id)) {
       return (
         permissions.containsPermission('view_user_groups') ||

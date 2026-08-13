@@ -43,8 +43,11 @@ describe('getOfflineTurbopackConfig', () => {
       '/serwist/[path]'
     );
     expect(includes?.map((include) => path.basename(include)).sort()).toEqual([
+      'create-offline-worker.ts',
       'esbuild.wasm',
+      'index.ts',
       'sw.ts',
+      'types.ts',
       'wasm_exec.js',
       'wasm_exec_node.js',
     ]);

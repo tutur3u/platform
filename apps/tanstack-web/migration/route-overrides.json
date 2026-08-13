@@ -414,7 +414,7 @@
     "api:/api/v1/user/onboarding-progress:apps/web/src/app/api/v1/user/onboarding-progress/route.ts": {
       "status": "migrated",
       "targetOwner": "rust-backend",
-      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, empty update rejection, null missing-row response, and unsupported-method behavior."
+      "note": "Rust backend handle_backend_request handles GET and PATCH /api/v1/user/onboarding-progress by accepting the same registered current-user satellite app sessions as the live Next.js route or validating the browser Supabase session with Supabase Auth, reading or upserting only the authenticated user's onboarding_progress row through the server-owned Supabase REST adapter, preserving the legacy allowed-field filter, employee-test email restriction, empty update rejection, null missing-row response, and unsupported-method behavior."
     },
     "api:/api/v1/aurora/health:apps/web/src/legacy-api-routes/v1/aurora/health/route.ts": {
       "status": "migrated",

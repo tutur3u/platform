@@ -55,10 +55,8 @@ pub(crate) async fn handle_onboarding_progress_route(
     }
 
     Some(match request.method {
-        "GET" => onboarding_progress_get_response(&config.contact_data, request, outbound).await,
-        "PATCH" => {
-            onboarding_progress_patch_response(&config.contact_data, request, outbound).await
-        }
+        "GET" => onboarding_progress_get_response(config, request, outbound).await,
+        "PATCH" => onboarding_progress_patch_response(config, request, outbound).await,
         method => method_not_allowed(method, "GET, PATCH"),
     })
 }
@@ -68,18 +66,15 @@ pub(crate) fn should_buffer_request_body(method: &str, path: &str) -> bool {
 }
 
 async fn onboarding_progress_get_response(
-    contact_data: &contact::ContactDataConfig,
+    config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(user) = authenticated_user(contact_data, request, outbound).await else {
-        return unauthorized_response();
-    };
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
+    let Some((user_id, _)) = authenticated_user(config, request, outbound).await else {
         return unauthorized_response();
     };
 
-    let progress = match fetch_onboarding_progress(contact_data, &user_id, outbound).await {
+    let progress = match fetch_onboarding_progress(&config.contact_data, &user_id, outbound).await {
         Ok(progress) => progress,
         Err(()) => return fetch_failed_response(),
     };
@@ -88,11 +83,11 @@ async fn onboarding_progress_get_response(
 }
 
 async fn onboarding_progress_patch_response(
-    contact_data: &contact::ContactDataConfig,
+    config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
 ) -> BackendResponse {
-    let Some(user) = authenticated_user(contact_data, request, outbound).await else {
+    let Some((user_id, user_email)) = authenticated_user(config, request, outbound).await else {
         return unauthorized_response();
     };
     let updates = match onboarding_progress_updates(request.body_text) {
@@ -100,7 +95,7 @@ async fn onboarding_progress_patch_response(
         Err(error) => return onboarding_progress_updates_error_response(error),
     };
     if updates.get("guidance_mode").and_then(Value::as_str) == Some("employee_test")
-        && !supabase_auth::is_exact_tuturuuu_dot_com_email(user.email.as_deref())
+        && !supabase_auth::is_exact_tuturuuu_dot_com_email(user_email.as_deref())
     {
         return no_store_response(json_response(
             403,
@@ -109,26 +104,39 @@ async fn onboarding_progress_patch_response(
             }),
         ));
     }
-    let Some(user_id) = user.id.filter(|id| !id.trim().is_empty()) else {
-        return unauthorized_response();
-    };
-
-    let progress = match upsert_onboarding_progress(contact_data, &user_id, updates, outbound).await
-    {
-        Ok(progress) => progress,
-        Err(()) => return update_failed_response(),
-    };
+    let progress =
+        match upsert_onboarding_progress(&config.contact_data, &user_id, updates, outbound).await {
+            Ok(progress) => progress,
+            Err(()) => return update_failed_response(),
+        };
 
     no_store_response(json_response(200, progress))
 }
 
 async fn authenticated_user(
-    contact_data: &contact::ContactDataConfig,
+    config: &BackendConfig,
     request: BackendRequest<'_>,
     outbound: &impl OutboundHttpClient,
-) -> Option<supabase_auth::SupabaseAuthUser> {
+) -> Option<(String, Option<String>)> {
+    if contact::request_has_app_session_token(request) {
+        let identity = contact::resolve_app_session_identity(
+            config,
+            request,
+            contact::current_user_app_session_targets(),
+        )
+        .ok()?;
+        let user_id = identity.id.trim();
+
+        return (!user_id.is_empty()).then(|| (user_id.to_owned(), identity.email));
+    }
+
     let access_token = supabase_auth::request_access_token(request)?;
-    supabase_auth::fetch_supabase_auth_user(contact_data, &access_token, outbound).await
+    let user =
+        supabase_auth::fetch_supabase_auth_user(&config.contact_data, &access_token, outbound)
+            .await?;
+    let user_id = user.id?.trim().to_owned();
+
+    (!user_id.is_empty()).then_some((user_id, user.email))
 }
 
 async fn fetch_onboarding_progress(
