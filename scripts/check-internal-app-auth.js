@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '..');
 const REGISTERED_APPS = [
   'ai',
   'calendar',
+  'chat',
   'cms',
   'contacts',
   'drive',
@@ -17,6 +18,8 @@ const REGISTERED_APPS = [
   'inventory',
   'storefront',
   'learn',
+  'mail',
+  'meet',
   'mind',
   'nova',
   'pay',
@@ -28,6 +31,7 @@ const REGISTERED_APPS = [
 const REGISTERED_APP_TARGETS = {
   ai: 'ai',
   calendar: 'calendar',
+  chat: 'chat',
   cms: 'cms',
   contacts: 'contacts',
   drive: 'drive',
@@ -38,6 +42,8 @@ const REGISTERED_APP_TARGETS = {
   inventory: 'inventory',
   storefront: 'storefront',
   learn: 'learn',
+  mail: 'mail',
+  meet: 'meet',
   mind: 'mind',
   nova: 'nova',
   pay: 'pay',
@@ -51,6 +57,7 @@ const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/hive/src/lib/api-auth.ts',
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
+  'apps/mail/src/lib/mail/auth.ts',
   'apps/mind/src/lib/api-auth.ts',
   'apps/teach/src/lib/api-auth.ts',
   'packages/satellite/src/workspace-access.ts',
@@ -208,6 +215,40 @@ function findActorlessWorkspaceCalls(filePath, rawSource) {
   return problems;
 }
 
+function findMissingSessionRequestBoundary(filePath, rawSource) {
+  if (
+    !filePath.endsWith('/layout.tsx') ||
+    /\.(test|spec)\.tsx$/u.test(filePath)
+  ) {
+    return [];
+  }
+
+  const source = stripComments(rawSource);
+  const sessionCallIndex = source.indexOf('getSatelliteAppSessionUser(');
+  if (sessionCallIndex === -1) {
+    return [];
+  }
+
+  const connectionCallIndex = source.indexOf('await connection()');
+  if (connectionCallIndex === -1 || connectionCallIndex > sessionCallIndex) {
+    return [
+      'Workspace layouts must call await connection() before satellite session resolution so Cache Components never prerenders request-specific auth state.',
+    ];
+  }
+
+  if (
+    !/import\s*\{[^}]*\bconnection\b[^}]*\}\s*from\s*['"]next\/server['"]/su.test(
+      source
+    )
+  ) {
+    return [
+      'Workspace layouts that call await connection() must import connection from next/server.',
+    ];
+  }
+
+  return [];
+}
+
 for (const filePath of files) {
   const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
   // Match against comment-free source for the same reason the actorless rule
@@ -229,6 +270,10 @@ for (const filePath of files) {
   }
 
   for (const problem of findActorlessWorkspaceCalls(filePath, source)) {
+    failures.push(`${filePath}: ${problem}`);
+  }
+
+  for (const problem of findMissingSessionRequestBoundary(filePath, source)) {
     failures.push(`${filePath}: ${problem}`);
   }
 }
@@ -365,6 +410,7 @@ if (/\bsupabase-session-user\b/u.test(authIndexSource)) {
 const registeredProxyPaths = [
   'apps/ai/src/proxy.ts',
   'apps/calendar/src/proxy.ts',
+  'apps/chat/src/proxy.ts',
   'apps/cms/src/proxy.ts',
   'apps/contacts/src/proxy.ts',
   'apps/drive/src/proxy.ts',
@@ -375,6 +421,8 @@ const registeredProxyPaths = [
   'apps/inventory/src/proxy.ts',
   'apps/storefront/src/proxy.ts',
   'apps/learn/src/proxy.ts',
+  'apps/mail/src/proxy.ts',
+  'apps/meet/src/proxy.ts',
   'apps/mind/src/proxy.ts',
   'apps/nova/src/proxy.ts',
   'apps/pay/src/proxy.ts',
@@ -396,6 +444,7 @@ for (const proxyPath of registeredProxyPaths) {
 const registeredAppConstantPaths = [
   ['apps/ai/src/constants/common.ts', REGISTERED_APP_TARGETS.ai],
   ['apps/calendar/src/constants/common.ts', REGISTERED_APP_TARGETS.calendar],
+  ['apps/chat/src/constants/common.ts', REGISTERED_APP_TARGETS.chat],
   ['apps/cms/src/constants/common.ts', REGISTERED_APP_TARGETS.cms],
   ['apps/contacts/src/constants/common.ts', REGISTERED_APP_TARGETS.contacts],
   ['apps/drive/src/constants/common.ts', REGISTERED_APP_TARGETS.drive],
@@ -409,6 +458,8 @@ const registeredAppConstantPaths = [
     REGISTERED_APP_TARGETS.storefront,
   ],
   ['apps/learn/src/constants/common.ts', REGISTERED_APP_TARGETS.learn],
+  ['apps/mail/src/constants/common.ts', REGISTERED_APP_TARGETS.mail],
+  ['apps/meet/src/constants/common.ts', REGISTERED_APP_TARGETS.meet],
   ['apps/mind/src/constants/common.ts', REGISTERED_APP_TARGETS.mind],
   ['apps/nova/src/constants/common.ts', REGISTERED_APP_TARGETS.nova],
   ['apps/pay/src/constants/common.ts', REGISTERED_APP_TARGETS.pay],

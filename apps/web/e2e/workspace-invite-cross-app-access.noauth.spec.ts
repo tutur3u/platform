@@ -5,6 +5,7 @@ import {
   createAppSessionToken,
   WEB_APP_SESSION_COOKIE_NAME,
 } from '@tuturuuu/auth/app-session';
+import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { TEST_USER } from './helpers/constants';
 import {
   assertSafeE2EEnvironment,
@@ -24,8 +25,11 @@ const FINANCE_BASE_URL = process.env.FINANCE_BASE_URL;
 const APP_SECRET =
   process.env.TUTURUUU_APP_COORDINATION_SECRET ??
   LOCAL_E2E_APP_COORDINATION_SECRET;
+const WORKSPACE_SATELLITE_TARGETS = LAUNCHABLE_APPS.filter(
+  (app) => app.slug !== 'platform' && 'workspacePathResolver' in app
+).map((app) => app.portlessApp);
 
-function appToken(targetApp: 'contacts' | 'finance') {
+function appToken(targetApp: string) {
   return createAppSessionToken(
     {
       email: TEST_USER.email,
@@ -161,6 +165,23 @@ test.describe('accepted workspace invitation cross-app access', () => {
         })
       );
       const virtualUserId = linkedProfiles[0]!.virtual_user_id;
+
+      for (const targetApp of WORKSPACE_SATELLITE_TARGETS) {
+        const workspacesResponse = await request.get(
+          `${WEB_BASE_URL}/api/v1/workspaces?q=${encodeURIComponent(`E2E Cross-app ${suffix}`)}`,
+          {
+            failOnStatusCode: false,
+            headers: { authorization: `Bearer ${appToken(targetApp)}` },
+          }
+        );
+        expect(
+          workspacesResponse.status(),
+          `${targetApp}: ${await workspacesResponse.text()}`
+        ).toBe(200);
+        await expect(workspacesResponse.json()).resolves.toEqual(
+          expect.arrayContaining([expect.objectContaining({ id: workspaceId })])
+        );
+      }
 
       await postRestRow({
         request,

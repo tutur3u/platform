@@ -28,6 +28,9 @@ const finance = OWNED_E2E_SATELLITES.find(
 const infrastructure = OWNED_E2E_SATELLITES.find(
   (satellite) => satellite.appName === 'infrastructure'
 );
+const mail = OWNED_E2E_SATELLITES.find(
+  (satellite) => satellite.appName === 'mail'
+);
 
 test('selects only satellite owners present in a Playwright shard', () => {
   assert.deepEqual(
@@ -55,6 +58,13 @@ test('selects only satellite owners present in a Playwright shard', () => {
     ['contacts', 'finance']
   );
   assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['workspace-invite-mail-access.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['mail']
+  );
+  assert.deepEqual(
     getRequiredOwnedSatellites(['public-marketing-routes.noauth.spec.ts'], {}),
     []
   );
@@ -74,6 +84,7 @@ test('supports explicit satellite enable and disable controls', () => {
       E2E_FINANCE_SATELLITE_ENABLED: '0',
       E2E_FORMS_SATELLITE_ENABLED: '0',
       E2E_INFRASTRUCTURE_SATELLITE_ENABLED: '0',
+      E2E_MAIL_SATELLITE_ENABLED: '0',
     }),
     false
   );
@@ -114,6 +125,11 @@ test('builds host-safe owned-satellite runtime environments', () => {
     getOwnedSatelliteUrl(infrastructure, env),
     'https://infra.tuturuuu.localhost:1355'
   );
+  assert.equal(
+    getOwnedSatelliteUrl(mail, env),
+    'https://mail.tuturuuu.localhost:1355'
+  );
+  assert.equal(getOwnedSatelliteReadinessUrl(mail), 'http://127.0.0.1:7820');
   assert.equal(getOwnedSatelliteReadinessUrl(forms), 'http://127.0.0.1:7828');
   assert.deepEqual(getOwnedSatelliteDependencyBuildArgs(forms), [
     'turbo:local',
@@ -135,7 +151,7 @@ test('builds host-safe owned-satellite runtime environments', () => {
   assert.equal(infraPortless.DOCKER_WEB_PROXY_HOST_PORT, '7823');
 
   const playwright = getOwnedSatellitesPlaywrightEnv(
-    [contacts, finance, forms, infrastructure],
+    [contacts, finance, forms, infrastructure, mail],
     env
   );
   assert.equal(
@@ -153,6 +169,20 @@ test('builds host-safe owned-satellite runtime environments', () => {
   assert.equal(
     playwright.INFRASTRUCTURE_BASE_URL,
     'https://infra.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    playwright.MAIL_BASE_URL,
+    'https://mail.tuturuuu.localhost:1355'
+  );
+
+  const mailRuntime = createOwnedSatelliteEnv(mail, env);
+  assert.equal(
+    mailRuntime.MAIL_APP_URL,
+    'https://mail.tuturuuu.localhost:1355'
+  );
+  assert.equal(
+    mailRuntime.NEXT_PUBLIC_MAIL_APP_URL,
+    'https://mail.tuturuuu.localhost:1355'
   );
 });
 

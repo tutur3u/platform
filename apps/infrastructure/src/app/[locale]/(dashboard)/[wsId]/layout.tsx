@@ -20,6 +20,7 @@ import {
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
@@ -34,6 +35,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId } = await params;
   if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID) notFound();
 

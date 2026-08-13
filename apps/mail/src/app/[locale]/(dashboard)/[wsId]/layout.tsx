@@ -18,6 +18,7 @@ import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { MailWorkspace } from './mail-workspace';
 import { getNavigationLinks } from './navigation';
@@ -31,6 +32,8 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
+  await connection();
+
   const { wsId: id } = await params;
   const requestHeaders = await headers();
   const user = await getSatelliteAppSessionUser('mail');

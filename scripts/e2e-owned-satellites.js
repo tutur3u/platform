@@ -56,6 +56,17 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     routeName: 'infra.tuturuuu',
     specs: ['ai-credits.spec.ts'],
   }),
+  Object.freeze({
+    appEnv: {
+      MAIL_APP_URL: 'url',
+      NEXT_PUBLIC_MAIL_APP_URL: 'url',
+    },
+    appName: 'mail',
+    baseUrlEnv: 'MAIL_BASE_URL',
+    port: '7820',
+    routeName: 'mail.tuturuuu',
+    specs: ['workspace-invite-mail-access.noauth.spec.ts'],
+  }),
 ]);
 
 function isTruthy(value) {
