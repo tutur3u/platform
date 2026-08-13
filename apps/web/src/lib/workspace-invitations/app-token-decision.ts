@@ -239,7 +239,9 @@ export async function hasExistingWorkspaceMembership({
       emailInvites.find((invite) => invite.email.trim().toLowerCase() === email)
     )
     .find((invite) => Boolean(invite));
-  const roleId = directInvite?.role_id ?? emailInvite?.role_id ?? null;
+  const roleId = directInvite
+    ? (directInvite.role_id ?? null)
+    : (emailInvite?.role_id ?? null);
 
   if (!directInvite && !emailInvite) return true;
   if (!roleId) return true;
