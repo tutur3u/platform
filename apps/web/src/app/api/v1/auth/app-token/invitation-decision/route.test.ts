@@ -113,7 +113,10 @@ function createAdminMock() {
   });
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
-  let pendingDirectInvite: { role_id: string | null } | null = null;
+  let pendingDirectInvite: {
+    role_id: string | null;
+    type?: 'GUEST' | 'MEMBER';
+  } | null = null;
   let pendingRoleMember: { role_id: string } | null = null;
 
   function createBuilder(table: string) {
@@ -243,7 +246,9 @@ function createAdminMock() {
     ) => {
       replayInsertError = error;
     },
-    setPendingDirectInvite: (invite: { role_id: string | null } | null) => {
+    setPendingDirectInvite: (
+      invite: { role_id: string | null; type?: 'GUEST' | 'MEMBER' } | null
+    ) => {
       pendingDirectInvite = invite;
     },
     setPendingRoleMember: (roleMember: { role_id: string } | null) => {
@@ -549,6 +554,34 @@ describe('app token invitation decision route', () => {
     setPendingRoleMember(null);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
+  });
+
+  it('does not recognize a member-invite replay before guest promotion completes', async () => {
+    const {
+      admin,
+      setPendingDirectInvite,
+      setPendingRoleMember,
+      setReplayInsertError,
+    } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: 'role-editor', type: 'MEMBER' });
+    setPendingRoleMember({ role_id: 'role-editor' });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      membershipType: 'GUEST',
       ok: true,
     });
     mocks.createAdminClient.mockResolvedValue(admin);

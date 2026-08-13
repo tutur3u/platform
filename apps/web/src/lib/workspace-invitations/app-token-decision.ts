@@ -193,14 +193,14 @@ export async function hasExistingWorkspaceMembership({
   const [directInviteResult, emailInviteResult] = await Promise.all([
     admin
       .from('workspace_invites')
-      .select('role_id')
+      .select('role_id, type')
       .eq('ws_id', workspaceId)
       .eq('user_id', userId)
       .maybeSingle(),
     candidateEmails.length
       ? admin
           .from('workspace_email_invites')
-          .select('email, role_id')
+          .select('email, role_id, type')
           .eq('ws_id', workspaceId)
           .in('email', candidateEmails)
       : Promise.resolve({ data: [], error: null }),
@@ -217,12 +217,19 @@ export async function hasExistingWorkspaceMembership({
   const roleId = directInvite
     ? (directInvite.role_id ?? null)
     : (emailInvite?.role_id ?? null);
+  const invitationType = directInvite?.type ?? emailInvite?.type ?? null;
 
   if (!directInvite && !emailInvite) return true;
   // A pending roleless invite means the acceptance flow has not completed its
   // seat assignment and invite cleanup yet. Do not mint a session from the
   // transient membership row created before those steps finish.
   if (!roleId) return false;
+  if (
+    invitationType === 'MEMBER' &&
+    existingMember.membershipType !== 'MEMBER'
+  ) {
+    return false;
+  }
 
   const { data: roleMember, error: roleMemberError } = await admin
     .from('workspace_role_members')
