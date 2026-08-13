@@ -7,8 +7,7 @@ import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { assignPendingWorkspaceInviteRole } from './assign-pending-role';
-import { promoteInvitedWorkspaceMember } from './promote-invited-member';
+import { finalizeInvitedWorkspaceMembership } from './finalize-membership';
 import {
   getWorkspaceInviteCandidateEmails,
   type WorkspaceInvitationRecord,
@@ -40,33 +39,37 @@ async function clearPendingInvites({
   }
 }
 
-async function assignInviteRoleOrError(
+async function finalizeMembershipOrError(
   admin: TypedSupabaseClient,
   invitation: WorkspaceInvitationRecord,
   userId: string,
   workspaceId: string
 ) {
   try {
-    await assignPendingWorkspaceInviteRole({
+    const result = await finalizeInvitedWorkspaceMembership({
       admin,
+      invitationType: invitation.type,
       roleId: invitation.roleId,
       userId,
       workspaceId,
     });
-    return null;
+    return { response: null, ...result };
   } catch (roleError) {
     console.error('Failed to assign invited workspace role', {
       error: roleError,
       userId,
       workspaceId,
     });
-    return NextResponse.json(
-      {
-        error: 'Failed to assign invited workspace role',
-        errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
-      },
-      { status: 500 }
-    );
+    return {
+      created: false,
+      response: NextResponse.json(
+        {
+          error: 'Failed to finalize invited workspace access',
+          errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
+        },
+        { status: 500 }
+      ),
+    };
   }
 }
 
@@ -102,34 +105,13 @@ export async function acceptAppTokenInvitation({
   }
 
   if (existingMember.ok) {
-    try {
-      await promoteInvitedWorkspaceMember({
-        admin,
-        invitationType: invitation.type,
-        userId,
-        workspaceId,
-      });
-    } catch (error) {
-      console.error('Failed to promote invited workspace member', {
-        error,
-        userId,
-        workspaceId,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to promote invited member',
-          errorCode: 'ACCEPT_INVITE_FAILED',
-        },
-        { status: 500 }
-      );
-    }
-    const roleError = await assignInviteRoleOrError(
+    const finalized = await finalizeMembershipOrError(
       admin,
       invitation,
       userId,
       workspaceId
     );
-    if (roleError) return roleError;
+    if (finalized.response) return finalized.response;
     await clearPendingInvites({ admin, candidateEmails, userId, workspaceId });
     return null;
   }
@@ -159,79 +141,21 @@ export async function acceptAppTokenInvitation({
     );
   }
 
-  const { error } = await admin.from('workspace_members').insert({
-    type: invitation.type,
-    user_id: userId,
-    ws_id: workspaceId,
-  });
-
-  if (error?.code === '23505') {
-    if (seatAssignment.required) {
-      await revokeAssignedSeat(polar, seatAssignment.seatId);
-    }
-    try {
-      await promoteInvitedWorkspaceMember({
-        admin,
-        invitationType: invitation.type,
-        userId,
-        workspaceId,
-      });
-    } catch (promotionError) {
-      console.error('Failed to promote invited workspace member', {
-        error: promotionError,
-        userId,
-        workspaceId,
-      });
-      return NextResponse.json(
-        {
-          error: 'Failed to promote invited member',
-          errorCode: 'ACCEPT_INVITE_FAILED',
-        },
-        { status: 500 }
-      );
-    }
-    const roleError = await assignInviteRoleOrError(
-      admin,
-      invitation,
-      userId,
-      workspaceId
-    );
-    if (roleError) return roleError;
-    await clearPendingInvites({ admin, candidateEmails, userId, workspaceId });
-    return null;
-  }
-
-  if (error) {
-    if (seatAssignment.required) {
-      await revokeAssignedSeat(polar, seatAssignment.seatId);
-    }
-    console.error('Error accepting external app invite:', {
-      code: error.code,
-      userId,
-      workspaceId,
-    });
-    return NextResponse.json(
-      { error: 'Failed to accept invite', errorCode: 'ACCEPT_INVITE_FAILED' },
-      { status: 500 }
-    );
-  }
-
-  const roleError = await assignInviteRoleOrError(
+  const finalized = await finalizeMembershipOrError(
     admin,
     invitation,
     userId,
     workspaceId
   );
-  if (roleError) {
-    await admin
-      .from('workspace_members')
-      .delete()
-      .eq('ws_id', workspaceId)
-      .eq('user_id', userId);
+  if (finalized.response) {
     if (seatAssignment.required) {
       await revokeAssignedSeat(polar, seatAssignment.seatId);
     }
-    return roleError;
+    return finalized.response;
+  }
+
+  if (!finalized.created && seatAssignment.required) {
+    await revokeAssignedSeat(polar, seatAssignment.seatId);
   }
 
   await clearPendingInvites({ admin, candidateEmails, userId, workspaceId });

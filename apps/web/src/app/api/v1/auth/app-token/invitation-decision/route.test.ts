@@ -107,6 +107,10 @@ function createAdminMock() {
   const privateTableCalls: string[] = [];
   const replayInserts: Array<{ table: string; value: unknown }> = [];
   const replayDeletes: Array<{ column: string; value: string }> = [];
+  const finalizeMembershipRpc = vi.fn().mockResolvedValue({
+    data: true,
+    error: null,
+  });
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
   let pendingDirectInvite: { role_id: string | null } | null = null;
@@ -221,9 +225,11 @@ function createAdminMock() {
           privateTableCalls.push(`${schema}.${table}`);
           return createPrivateBuilder(table);
         }),
+        rpc: finalizeMembershipRpc,
       })),
     },
     inserts,
+    finalizeMembershipRpc,
     privateTableCalls,
     replayInserts,
     replayDeletes,
@@ -355,8 +361,13 @@ describe('app token invitation decision route', () => {
   });
 
   it('accepts a pending invitation, consumes the action token, and returns an app session', async () => {
-    const { admin, inserts, privateTableCalls, replayInserts, tableCalls } =
-      createAdminMock();
+    const {
+      admin,
+      finalizeMembershipRpc,
+      privateTableCalls,
+      replayInserts,
+      tableCalls,
+    } = createAdminMock();
     mocks.createAdminClient.mockResolvedValue(admin);
 
     const response = await POST(createDecisionRequest());
@@ -389,26 +400,22 @@ describe('app token invitation decision route', () => {
         workspace_id: workspaceId,
       }),
     });
-    expect(inserts).toContainEqual({
-      table: 'workspace_members',
-      value: {
-        type: 'MEMBER',
-        user_id: userId,
-        ws_id: workspaceId,
-      },
-    });
+    expect(finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({
+        p_member_type: 'MEMBER',
+        p_user_id: userId,
+        p_ws_id: workspaceId,
+      })
+    );
     expect(tableCalls).toEqual(
-      expect.arrayContaining([
-        'workspace_email_invites',
-        'workspace_invites',
-        'workspace_members',
-      ])
+      expect.arrayContaining(['workspace_email_invites', 'workspace_invites'])
     );
     expect(JSON.stringify(body)).not.toContain(appSecret);
   });
 
   it('assigns the pending workspace role for an accepted invitation', async () => {
-    const { admin, inserts } = createAdminMock();
+    const { admin, finalizeMembershipRpc } = createAdminMock();
     mocks.createAdminClient.mockResolvedValue(admin);
     mocks.getWorkspaceInviteStatus.mockResolvedValue({
       invitation: {
@@ -433,10 +440,10 @@ describe('app token invitation decision route', () => {
     const response = await POST(createDecisionRequest());
 
     expect(response.status).toBe(200);
-    expect(inserts).toContainEqual({
-      table: 'workspace_role_members',
-      value: { role_id: 'role-editor', user_id: userId },
-    });
+    expect(finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_role_id: 'role-editor' })
+    );
   });
 
   it('releases the action token when acceptance fails so it can be retried', async () => {

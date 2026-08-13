@@ -15,8 +15,7 @@ import { after, NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
-import { assignPendingWorkspaceInviteRole } from '@/lib/workspace-invitations/assign-pending-role';
-import { promoteInvitedWorkspaceMember } from '@/lib/workspace-invitations/promote-invited-member';
+import { finalizeInvitedWorkspaceMembership } from '@/lib/workspace-invitations/finalize-membership';
 
 type PendingInvite = {
   email?: string | null;
@@ -32,15 +31,6 @@ const guestJoinReasonToErrorCodeMap: Record<string, string> = {
   workspace_user_linked_to_other_platform_user:
     'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
 };
-
-function getSupabaseErrorMessage(
-  error: { message?: unknown } | null | undefined,
-  fallback: string
-) {
-  return typeof error?.message === 'string' && error.message.length > 0
-    ? error.message
-    : fallback;
-}
 
 function normalizeGuestJoinErrorCode(
   reason: string | null | undefined
@@ -275,14 +265,9 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     if (existingMember.ok) {
       try {
-        await promoteInvitedWorkspaceMember({
+        await finalizeInvitedWorkspaceMembership({
           admin: sbAdmin,
           invitationType: inviteMemberType,
-          userId: user.id,
-          workspaceId: wsId,
-        });
-        await assignPendingWorkspaceInviteRole({
-          admin: sbAdmin,
           roleId: pendingRoleId,
           userId: user.id,
           workspaceId: wsId,
@@ -381,96 +366,17 @@ export const POST = withSessionAuth<{ wsId: string }>(
       }
     }
 
-    // Insert user as workspace member (preserve MEMBER vs GUEST from the invite)
-    const { error } = await sbAdmin.from('workspace_members').insert({
-      ws_id: wsId,
-      user_id: user.id,
-      type: inviteMemberType,
-    });
-
-    if (error) {
-      if (seatAssignment.required) {
-        await revokeAssignedSeat(polar, seatAssignment.seatId);
-      }
-
-      if (error.code === '23505') {
-        try {
-          await promoteInvitedWorkspaceMember({
-            admin: sbAdmin,
-            invitationType: inviteMemberType,
-            userId: user.id,
-            workspaceId: wsId,
-          });
-          await assignPendingWorkspaceInviteRole({
-            admin: sbAdmin,
-            roleId: pendingRoleId,
-            userId: user.id,
-            workspaceId: wsId,
-          });
-        } catch (roleError) {
-          return NextResponse.json(
-            {
-              error:
-                roleError instanceof Error
-                  ? roleError.message
-                  : 'Failed to assign invited workspace role',
-              errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
-            },
-            { status: 500 }
-          );
-        }
-
-        await sbAdmin
-          .from('workspace_invites')
-          .delete()
-          .eq('ws_id', wsId)
-          .eq('user_id', user.id);
-
-        if (candidateEmails.length) {
-          await sbAdmin
-            .from('workspace_email_invites')
-            .delete()
-            .eq('ws_id', wsId)
-            .in('email', candidateEmails);
-        }
-
-        scheduleNotificationFinalization();
-        return NextResponse.json({ message: 'success' });
-      }
-
-      if (matchedWorkspaceUserId) {
-        await sbAdmin
-          .from('workspace_user_linked_users')
-          .delete()
-          .eq('platform_user_id', user.id)
-          .eq('ws_id', wsId)
-          .eq('virtual_user_id', matchedWorkspaceUserId);
-      }
-
-      console.error('Error accepting invite:', error);
-      return NextResponse.json(
-        {
-          error: getSupabaseErrorMessage(error, 'Failed to accept invite'),
-          errorCode: 'ACCEPT_INVITE_FAILED',
-        },
-        { status: 500 }
-      );
-    }
-
+    let membershipCreated = false;
     try {
-      await assignPendingWorkspaceInviteRole({
+      const result = await finalizeInvitedWorkspaceMembership({
         admin: sbAdmin,
+        invitationType: inviteMemberType,
         roleId: pendingRoleId,
         userId: user.id,
         workspaceId: wsId,
       });
+      membershipCreated = result.created;
     } catch (roleError) {
-      await sbAdmin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id);
-
       if (seatAssignment.required) {
         await revokeAssignedSeat(polar, seatAssignment.seatId);
       }
@@ -495,6 +401,10 @@ export const POST = withSessionAuth<{ wsId: string }>(
         },
         { status: 500 }
       );
+    }
+
+    if (!membershipCreated && seatAssignment.required) {
+      await revokeAssignedSeat(polar, seatAssignment.seatId);
     }
 
     // Delete the invite after accepting
