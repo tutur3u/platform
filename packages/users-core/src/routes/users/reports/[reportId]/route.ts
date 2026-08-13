@@ -12,6 +12,7 @@ import {
   resolveRequestActorAuthUid,
   resolveUserGroupRouteWorkspaceId,
 } from '../../../../lib/user-groups/route-helpers';
+import { resolveReportReviewTransition } from '../report-review-transition';
 
 const UpdateReportSchema = z.object({
   title: z.string().max(MAX_MONTHLY_REPORT_TITLE_LENGTH).optional(),
@@ -89,16 +90,30 @@ export async function PUT(request: Request, context: Params) {
 
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
-    const existing = await privateDb
-      .from('external_user_monthly_reports_workspace_view')
-      .select('id, generation_mode')
-      .eq('id', reportId)
-      .eq('user_ws_id', wsId)
-      .maybeSingle();
+    const [existing, configResult] = await Promise.all([
+      privateDb
+        .from('external_user_monthly_reports_workspace_view')
+        .select('id, generation_mode')
+        .eq('id', reportId)
+        .eq('user_ws_id', wsId)
+        .maybeSingle(),
+      sbAdmin
+        .from('workspace_configs')
+        .select('value')
+        .eq('ws_id', wsId)
+        .eq('id', 'ENABLE_REPORT_APPROVAL')
+        .maybeSingle(),
+    ]);
     if (existing.error || !existing.data) {
       return NextResponse.json(
         { message: 'Report not found' },
         { status: 404 }
+      );
+    }
+    if (configResult.error) {
+      return NextResponse.json(
+        { message: 'Error resolving report approval settings' },
+        { status: 500 }
       );
     }
 
@@ -106,14 +121,23 @@ export async function PUT(request: Request, context: Params) {
       { schema: 'private' },
       'external_user_monthly_reports'
     > = { ...parsed.data, updated_at: new Date().toISOString() };
-    const narrativeChanged =
+    const reviewableFieldsChanged =
+      parsed.data.title !== undefined ||
       parsed.data.content !== undefined ||
       parsed.data.feedback !== undefined ||
       parsed.data.generation_status === 'ready';
     const isAiReport =
       parsed.data.generation_mode === 'ai' ||
       existing.data.generation_mode === 'ai';
-    if (isAiReport && narrativeChanged && !approvalTouched) {
+    const approvalEnabled = (configResult.data?.value ?? 'true') === 'true';
+    const reviewTransition = resolveReportReviewTransition({
+      approvalEnabled,
+      approvalTouched,
+      canApproveReports: permissions.containsPermission('approve_reports'),
+      isAiReport,
+      reviewableFieldsChanged,
+    });
+    if (reviewTransition === 'pending') {
       Object.assign(updatePayload, {
         report_approval_status: 'PENDING',
         approved_by: null,
@@ -123,7 +147,8 @@ export async function PUT(request: Request, context: Params) {
         rejection_reason: null,
       });
     }
-    if (approvalTouched) {
+    let reviewActorId: string | null = null;
+    if (approvalTouched || reviewTransition === 'approved') {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
         ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
@@ -136,6 +161,19 @@ export async function PUT(request: Request, context: Params) {
           { status: 403 }
         );
       }
+      reviewActorId = actorLink.virtual_user_id;
+      if (reviewTransition === 'approved') {
+        Object.assign(updatePayload, {
+          report_approval_status: 'APPROVED',
+          approved_by: reviewActorId,
+          approved_at: new Date().toISOString(),
+          rejected_by: null,
+          rejected_at: null,
+          rejection_reason: null,
+        });
+      }
+    }
+    if (approvalTouched) {
       if (
         parsed.data.report_approval_status === 'REJECTED' &&
         !parsed.data.rejection_reason?.trim()
@@ -148,7 +186,7 @@ export async function PUT(request: Request, context: Params) {
       const now = new Date().toISOString();
       if (parsed.data.report_approval_status === 'APPROVED') {
         Object.assign(updatePayload, {
-          approved_by: actorLink.virtual_user_id,
+          approved_by: reviewActorId,
           approved_at: parsed.data.approved_at ?? now,
           rejected_by: null,
           rejected_at: null,
@@ -156,7 +194,7 @@ export async function PUT(request: Request, context: Params) {
         });
       } else if (parsed.data.report_approval_status === 'REJECTED') {
         Object.assign(updatePayload, {
-          rejected_by: actorLink.virtual_user_id,
+          rejected_by: reviewActorId,
           rejected_at: parsed.data.rejected_at ?? now,
           approved_by: null,
           approved_at: null,
