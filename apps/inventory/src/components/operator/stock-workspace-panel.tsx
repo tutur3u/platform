@@ -18,7 +18,8 @@ import { Accordion } from '@tuturuuu/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { parseAsStringLiteral, useQueryState } from 'nuqs';
-import type { InventoryStockTab } from './operator-types';
+import type { InventoryFilters, InventoryStockTab } from './operator-types';
+import { ProductExportDropdown } from './product-export-dropdown';
 import { ProductsTable } from './products-table';
 import type { ResourceConfig } from './setup-helpers';
 import { ResourceSection } from './setup-resource-section';
@@ -28,12 +29,14 @@ const stockTabs = ['stock', 'warehouses'] as const;
 export function StockWorkspacePanel({
   costingProfiles,
   formOptions,
+  filters,
   pagination,
   products,
   wsId,
 }: {
   costingProfiles: InventoryCostProfile[];
   formOptions?: InventoryProductFormOptionsResponse;
+  filters: InventoryFilters;
   pagination: {
     fetchNextPage: () => void;
     hasNextPage: boolean;
@@ -80,7 +83,7 @@ export function StockWorkspacePanel({
       }}
       value={tab}
     >
-      <div className="min-w-0 rounded-lg border border-border bg-card p-2">
+      <div className="grid min-w-0 gap-2 rounded-lg border border-border bg-card p-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-muted/40 p-1 sm:w-fit sm:min-w-72">
           <TabsTrigger
             className="min-h-10 touch-manipulation gap-2 rounded-md px-3 py-2 sm:min-h-9"
@@ -97,6 +100,9 @@ export function StockWorkspacePanel({
             {t('tabs.warehouses')}
           </TabsTrigger>
         </TabsList>
+        {tab === 'stock' ? (
+          <ProductExportDropdown filters={filters} showLabel wsId={wsId} />
+        ) : null}
       </div>
       <TabsContent className="mt-0" value="stock">
         <ProductsTable

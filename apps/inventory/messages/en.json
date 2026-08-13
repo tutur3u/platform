@@ -2433,6 +2433,32 @@
         "warehouseToggle": "Move stock to another warehouse",
         "warehouseToggleDescription": "Keep each row's unit, price, and quantity while changing its warehouse."
       },
+      "productExport": {
+        "active": "Active",
+        "archived": "Archived",
+        "button": "Export products",
+        "chooseFormat": "Choose an export format",
+        "columns": {
+          "category": "Category",
+          "description": "Description",
+          "manufacturer": "Manufacturer",
+          "name": "Product",
+          "owner": "Owner",
+          "price": "Price by location",
+          "status": "Status",
+          "stock": "Stock by location",
+          "usage": "Usage"
+        },
+        "csv": "CSV file",
+        "csvDescription": "Best for spreadsheets and data tools",
+        "error": "Could not export products. Try again.",
+        "excel": "Excel workbook",
+        "excelDescription": "Formatted workbook for Excel and Sheets",
+        "exporting": "Exporting…",
+        "sheet": "Products",
+        "success": "Product export downloaded.",
+        "unlimited": "Unlimited"
+      },
       "promotions": {
         "campaignsDescription": "Create storefront discounts, monitor usage, and see which campaigns are mirrored to Polar.",
         "code": "Coupon code",
