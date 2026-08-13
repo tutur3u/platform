@@ -39,15 +39,13 @@ async function assignPendingInviteRole({
 
   const { data: role, error: roleError } = await sbAdmin
     .from('workspace_roles')
-    .select('id, workspace_role_permissions!inner(permission, enabled)')
+    .select('id')
     .eq('id', roleId)
     .eq('ws_id', wsId)
-    .eq('workspace_role_permissions.permission', 'initiate_pos_checkout')
-    .eq('workspace_role_permissions.enabled', true)
     .maybeSingle();
 
   if (roleError || !role) {
-    throw new Error('The limited POS operator role is no longer available.');
+    throw new Error('The invited workspace role is no longer available.');
   }
 
   const { error: assignmentError } = await sbAdmin
@@ -59,7 +57,7 @@ async function assignPendingInviteRole({
 
   if (assignmentError) {
     throw new Error(
-      assignmentError.message || 'Failed to assign limited POS operator access.'
+      assignmentError.message || 'Failed to assign the invited workspace role.'
     );
   }
 }

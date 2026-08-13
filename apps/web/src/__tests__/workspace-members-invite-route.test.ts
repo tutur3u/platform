@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => {
   const insertInvite = vi.fn();
   const personalWorkspaceMaybeSingle = vi.fn();
   const posOperatorRpc = vi.fn();
+  const roleMaybeSingle = vi.fn();
   const resolveSessionAuthContext = vi.fn();
   const serverLoggerError = vi.fn();
   const serverLoggerWarn = vi.fn();
@@ -56,6 +57,16 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'workspace_roles') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({ maybeSingle: roleMaybeSingle })),
+            })),
+          })),
+        };
+      }
+
       throw new Error(`Unexpected admin table: ${table}`);
     }),
     schema: vi.fn((schema: string) => {
@@ -77,6 +88,7 @@ const mocks = vi.hoisted(() => {
     personalWorkspaceMaybeSingle,
     personalWorkspaceSelect,
     posOperatorRpc,
+    roleMaybeSingle,
     resolveSessionAuthContext,
     serverLoggerError,
     serverLoggerWarn,
@@ -206,6 +218,10 @@ describe('workspace members invite route', () => {
       },
       error: null,
     });
+    mocks.roleMaybeSingle.mockResolvedValue({
+      data: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+      error: null,
+    });
   });
 
   it('inserts a default member invite with the admin client, canonical workspace id, and lowercase email', async () => {
@@ -247,6 +263,53 @@ describe('workspace members invite route', () => {
       type: 'GUEST',
       ws_id: 'canonical-ws',
     });
+  });
+
+  it('persists a validated workspace role for the pending invite', async () => {
+    const roleId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    const response = await postInvite({
+      body: { email: 'editor@example.com', roleId },
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.insertInvite).toHaveBeenCalledWith({
+      email: 'editor@example.com',
+      invited_by: 'admin-user',
+      role_id: roleId,
+      type: 'MEMBER',
+      ws_id: 'canonical-ws',
+    });
+  });
+
+  it('requires role-management permission to preassign an invitation role', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      createPermissions({ canManageRoles: false })
+    );
+
+    const response = await postInvite({
+      body: {
+        email: 'editor@example.com',
+        roleId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.roleMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invitation role outside the target workspace', async () => {
+    mocks.roleMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    const response = await postInvite({
+      body: {
+        email: 'editor@example.com',
+        roleId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
   });
 
   it('requires explicit confirmation before changing default admin access', async () => {

@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => {
   const adminMembershipInsert = vi.fn();
   const adminMembershipDeleteUserEq = vi.fn();
   const adminRoleMaybeSingle = vi.fn();
+  const adminRoleSelect = vi.fn();
   const adminRoleMemberUpsert = vi.fn();
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
@@ -31,6 +32,7 @@ const mocks = vi.hoisted(() => {
     eq: adminRoleEq,
     maybeSingle: adminRoleMaybeSingle,
   }));
+  adminRoleSelect.mockImplementation(() => ({ eq: adminRoleEq }));
   const sessionSupabase = {
     auth: {
       getUser: authGetUser,
@@ -93,7 +95,7 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'workspace_roles') {
         return {
-          select: vi.fn(() => ({ eq: adminRoleEq })),
+          select: adminRoleSelect,
         };
       }
 
@@ -153,6 +155,7 @@ const mocks = vi.hoisted(() => {
     adminMembershipDeleteUserEq,
     adminPrivateEmailMaybeSingle,
     adminRoleMaybeSingle,
+    adminRoleSelect,
     adminRoleMemberUpsert,
     adminSupabase,
     adminWorkspaceSingle,
@@ -545,12 +548,12 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
   });
 
-  it('assigns the validated POS operator role from an accepted invite', async () => {
+  it('assigns a validated workspace role from an accepted invite', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {
           email: 'auth@example.com',
-          role_id: 'pos-role',
+          role_id: 'project-editor',
           type: 'MEMBER',
           ws_id: NORMALIZED_WS_ID,
         },
@@ -566,13 +569,14 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     expect(response.status).toBe(200);
+    expect(mocks.adminRoleSelect).toHaveBeenCalledWith('id');
     expect(mocks.adminRoleMemberUpsert).toHaveBeenCalledWith(
-      { role_id: 'pos-role', user_id: 'user-1' },
+      { role_id: 'project-editor', user_id: 'user-1' },
       { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
     );
   });
 
-  it('rolls membership back when the invited POS role is invalid', async () => {
+  it('rolls membership back when the invited workspace role is invalid', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {

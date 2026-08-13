@@ -56,6 +56,7 @@ export type WorkspaceAccessInvitePayload = {
   confirmDefaultAdminMigration?: boolean;
   emails: string[];
   memberType: WorkspaceDefaultPermissionMemberType;
+  roleId?: string | null;
 };
 
 export type WorkspaceAccessAdapter = {

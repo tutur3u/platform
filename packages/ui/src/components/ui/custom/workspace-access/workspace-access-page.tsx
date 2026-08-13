@@ -57,6 +57,7 @@ export function WorkspaceAccessPage({
   const [inviteAccessPreset, setInviteAccessPreset] = useState<
     'guest' | 'member' | 'pos_operator'
   >('member');
+  const [inviteRoleId, setInviteRoleId] = useState<string | null>(null);
   const [confirmDefaultAdminMigration, setConfirmDefaultAdminMigration] =
     useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -145,6 +146,12 @@ export function WorkspaceAccessPage({
     queryKey: ['workspace-access', workspaceId, 'roles', search],
     staleTime: 30_000,
   });
+  const inviteRolesQuery = useQuery({
+    enabled: inviteDialogOpen && canManageRoles,
+    queryFn: () => adapter.listRoles(workspaceId, { pageSize: '100' }),
+    queryKey: ['workspace-access', workspaceId, 'roles', 'invite'],
+    staleTime: 30_000,
+  });
   const memberDefaultQuery = useQuery({
     enabled: canManageRoles,
     queryFn: () => adapter.getDefaultRole(workspaceId, 'MEMBER'),
@@ -179,12 +186,14 @@ export function WorkspaceAccessPage({
         confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
+        roleId: inviteAccessPreset === 'pos_operator' ? null : inviteRoleId,
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async (result) => {
       setInviteEmails('');
       setInviteAccessPreset('member');
+      setInviteRoleId(null);
       setConfirmDefaultAdminMigration(false);
       setInviteDialogOpen(false);
       toast.success(result.message ?? t('ws-members.invitation-sent'));
@@ -481,17 +490,23 @@ export function WorkspaceAccessPage({
         emails={inviteEmails}
         isSubmitting={inviteMutation.isPending}
         joinedMemberCount={joinedCount}
+        noRoleLabel={labels.noRolesLabel}
         onAccessPresetChange={(value) => {
           setInviteAccessPreset(value);
           if (value !== 'pos_operator') {
             setConfirmDefaultAdminMigration(false);
+          } else {
+            setInviteRoleId(null);
           }
         }}
         onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}
         onEmailsChange={setInviteEmails}
         onOpenChange={setInviteDialogOpen}
+        onRoleIdChange={setInviteRoleId}
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}
+        roleId={inviteRoleId}
+        roles={inviteRolesQuery.data?.data ?? []}
       />
 
       {profileMember ? (

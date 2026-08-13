@@ -74,6 +74,7 @@ async function inviteStandardWorkspaceMembers(
         confirmDefaultAdminMigration: payload.confirmDefaultAdminMigration,
         email,
         memberType: payload.memberType,
+        roleId: payload.roleId,
       };
       return inviteWorkspaceMember(workspaceId, invitePayload);
     })
