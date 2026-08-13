@@ -215,7 +215,7 @@ export async function hasExistingWorkspaceMembership({
     authEmail,
     userId,
   });
-  const [{ data: directInvite }, emailInviteResult] = await Promise.all([
+  const [directInviteResult, emailInviteResult] = await Promise.all([
     admin
       .from('workspace_invites')
       .select('role_id')
@@ -230,6 +230,9 @@ export async function hasExistingWorkspaceMembership({
           .in('email', candidateEmails)
       : Promise.resolve({ data: [], error: null }),
   ]);
+  if (directInviteResult.error || emailInviteResult.error) return false;
+
+  const directInvite = directInviteResult.data;
   const emailInvites = emailInviteResult.data ?? [];
   const emailInvite = candidateEmails
     .map((email) =>

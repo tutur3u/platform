@@ -23,10 +23,17 @@ WITH CHECK (
   AND public.workspace_has_available_seats(ws_id)
   AND (
     role_id IS NULL
-    OR public.has_workspace_permission(
-      ws_id,
-      (SELECT auth.uid()),
-      'manage_workspace_roles'::text
+    OR (
+      public.has_workspace_permission(
+        ws_id,
+        (SELECT auth.uid()),
+        'manage_workspace_members'::text
+      )
+      AND public.has_workspace_permission(
+        ws_id,
+        (SELECT auth.uid()),
+        'manage_workspace_roles'::text
+      )
     )
     AND EXISTS (
       SELECT 1
@@ -92,10 +99,17 @@ WITH CHECK (
   AND public.workspace_has_available_seats(ws_id)
   AND (
     role_id IS NULL
-    OR public.has_workspace_permission(
-      ws_id,
-      (SELECT auth.uid()),
-      'manage_workspace_roles'::text
+    OR (
+      public.has_workspace_permission(
+        ws_id,
+        (SELECT auth.uid()),
+        'manage_workspace_members'::text
+      )
+      AND public.has_workspace_permission(
+        ws_id,
+        (SELECT auth.uid()),
+        'manage_workspace_roles'::text
+      )
     )
     AND EXISTS (
       SELECT 1
