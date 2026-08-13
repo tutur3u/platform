@@ -265,6 +265,18 @@ export function applyTaskDropPreviewToCache({
 }) {
   if (!boardId) return null;
 
+  // A board query may already be revalidating when the user drops a card.
+  // Cancel it without reverting so its pre-drag snapshot cannot replace the
+  // destination preview while the move request is still being persisted.
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks', boardId] },
+    { revert: false }
+  );
+  void queryClient.cancelQueries(
+    { queryKey: ['tasks-full', boardId] },
+    { revert: false }
+  );
+
   const localMutationAt = Date.now();
   const previewTasks = getTaskDropPreviewCacheTasks({
     activeTask,

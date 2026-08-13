@@ -150,8 +150,17 @@ export function useReorderTask(boardId: string, wsId: string) {
         boardId,
       ]);
 
-      // Cancel any outgoing refetches without delaying the optimistic landing.
-      void queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
+      // Keep the drop preview visible while cancelling stale board responses.
+      // The default cancellation behavior reverts to the pre-fetch snapshot,
+      // which makes a dropped card briefly jump back to its source list.
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
 
       // Check if moving to a done or closed list
       const targetList = queryClient.getQueryData(['task_lists', boardId]) as
