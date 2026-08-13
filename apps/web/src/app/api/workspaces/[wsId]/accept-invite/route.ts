@@ -198,8 +198,9 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     let inviteMemberType: 'MEMBER' | 'GUEST' =
       pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
-    const pendingRoleId =
-      pendingInvite?.role_id ?? pendingEmailInvite?.role_id ?? null;
+    const pendingRoleId = pendingInvite
+      ? (pendingInvite.role_id ?? null)
+      : (pendingEmailInvite?.role_id ?? null);
     let matchedWorkspaceUserId: string | null = null;
 
     if (!pendingInvite && !pendingEmailInvite) {

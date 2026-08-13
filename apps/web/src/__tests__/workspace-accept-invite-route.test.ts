@@ -576,6 +576,43 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     );
   });
 
+  it('keeps a roleless direct invite authoritative over an email invite role', async () => {
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: {
+        role_id: null,
+        type: 'GUEST',
+        ws_id: NORMALIZED_WS_ID,
+      },
+      error: null,
+    });
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          role_id: 'role-admin',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith({
+      type: 'GUEST',
+      user_id: 'user-1',
+      ws_id: NORMALIZED_WS_ID,
+    });
+    expect(mocks.adminRoleMemberUpsert).not.toHaveBeenCalled();
+  });
+
   it('rolls membership back when the invited workspace role is invalid', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
