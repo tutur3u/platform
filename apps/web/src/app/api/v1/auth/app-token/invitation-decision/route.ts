@@ -565,6 +565,7 @@ async function invitationDecision(request: NextRequest) {
       action === 'accept' &&
       (await hasExistingWorkspaceMembership({
         admin,
+        authEmail: claims.email,
         userId: claims.sub,
         workspaceId,
       }))

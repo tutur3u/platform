@@ -108,6 +108,8 @@ function createAdminMock() {
   const replayInserts: Array<{ table: string; value: unknown }> = [];
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
+  let pendingDirectInvite: { role_id: string | null } | null = null;
+  let pendingRoleMember: { role_id: string } | null = null;
 
   function createBuilder(table: string) {
     const builder = {
@@ -140,6 +142,14 @@ function createAdminMock() {
 
         if (table === 'workspace_roles') {
           return Promise.resolve({ data: { id: 'role-editor' }, error: null });
+        }
+
+        if (table === 'workspace_invites') {
+          return Promise.resolve({ data: pendingDirectInvite, error: null });
+        }
+
+        if (table === 'workspace_role_members') {
+          return Promise.resolve({ data: pendingRoleMember, error: null });
         }
 
         return Promise.resolve({ data: null, error: null });
@@ -216,6 +226,12 @@ function createAdminMock() {
       error: { code?: string; message?: string } | null
     ) => {
       replayInsertError = error;
+    },
+    setPendingDirectInvite: (invite: { role_id: string | null } | null) => {
+      pendingDirectInvite = invite;
+    },
+    setPendingRoleMember: (roleMember: { role_id: string } | null) => {
+      pendingRoleMember = roleMember;
     },
     tableCalls,
   };
@@ -482,6 +498,33 @@ describe('app token invitation decision route', () => {
     expect(inserts).toEqual([]);
     expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
     expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+
+  it('does not recognize a replay before the pending role assignment completes', async () => {
+    const {
+      admin,
+      setPendingDirectInvite,
+      setPendingRoleMember,
+      setReplayInsertError,
+    } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: 'role-editor' });
+    setPendingRoleMember(null);
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
   });
 
   it('fails closed when the replay store is unavailable', async () => {

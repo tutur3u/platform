@@ -189,10 +189,12 @@ export async function acceptAppTokenInvitation({
 
 export async function hasExistingWorkspaceMembership({
   admin,
+  authEmail,
   userId,
   workspaceId,
 }: {
   admin: TypedSupabaseClient;
+  authEmail: string | null;
   userId: string;
   workspaceId: string;
 }) {
@@ -202,9 +204,51 @@ export async function hasExistingWorkspaceMembership({
     userId,
     wsId: workspaceId,
   });
-  return existingMember.error === 'membership_lookup_failed'
-    ? false
-    : existingMember.ok;
+  if (
+    existingMember.error === 'membership_lookup_failed' ||
+    !existingMember.ok
+  ) {
+    return false;
+  }
+
+  const candidateEmails = await getWorkspaceInviteCandidateEmails(admin, {
+    authEmail,
+    userId,
+  });
+  const [{ data: directInvite }, emailInviteResult] = await Promise.all([
+    admin
+      .from('workspace_invites')
+      .select('role_id')
+      .eq('ws_id', workspaceId)
+      .eq('user_id', userId)
+      .maybeSingle(),
+    candidateEmails.length
+      ? admin
+          .from('workspace_email_invites')
+          .select('email, role_id')
+          .eq('ws_id', workspaceId)
+          .in('email', candidateEmails)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const emailInvites = emailInviteResult.data ?? [];
+  const emailInvite = candidateEmails
+    .map((email) =>
+      emailInvites.find((invite) => invite.email.trim().toLowerCase() === email)
+    )
+    .find((invite) => Boolean(invite));
+  const roleId = directInvite?.role_id ?? emailInvite?.role_id ?? null;
+
+  if (!directInvite && !emailInvite) return true;
+  if (!roleId) return true;
+
+  const { data: roleMember, error: roleMemberError } = await admin
+    .from('workspace_role_members')
+    .select('role_id')
+    .eq('role_id', roleId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  return !roleMemberError && Boolean(roleMember);
 }
 
 export async function rejectAppTokenInvitation({

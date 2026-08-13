@@ -253,10 +253,12 @@ async function fetchEmailInvites(
 }
 
 function chooseInviteForWorkspace({
+  candidateEmails,
   directInvites,
   emailInvites,
   workspace,
 }: {
+  candidateEmails: string[];
   directInvites: DirectInviteRow[];
   emailInvites: EmailInviteRow[];
   workspace: WorkspaceInvitationWorkspace;
@@ -275,9 +277,15 @@ function chooseInviteForWorkspace({
     };
   }
 
-  const emailInvite = emailInvites.find(
-    (invite) => invite.ws_id === workspace.id
-  );
+  const emailInvite = candidateEmails
+    .map((candidateEmail) =>
+      emailInvites.find(
+        (invite) =>
+          invite.ws_id === workspace.id &&
+          normalizeEmail(invite.email) === candidateEmail
+      )
+    )
+    .find((invite): invite is EmailInviteRow => Boolean(invite));
   if (!emailInvite) {
     return null;
   }
@@ -360,6 +368,7 @@ export async function getWorkspaceInviteStatus(
 
   const workspaceSummary = toWorkspaceSummary(workspace);
   const invitation = chooseInviteForWorkspace({
+    candidateEmails,
     directInvites,
     emailInvites,
     workspace: workspaceSummary,
@@ -433,6 +442,7 @@ export async function listPendingWorkspaceInvitations(
 
     const workspaceSummary = toWorkspaceSummary(workspace);
     const invitation = chooseInviteForWorkspace({
+      candidateEmails,
       directInvites,
       emailInvites,
       workspace: workspaceSummary,

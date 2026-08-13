@@ -237,6 +237,40 @@ describe('workspace invitation status helpers', () => {
     }
   });
 
+  it('prefers the authenticated email role when multiple email invites match', async () => {
+    const admin = createAdminClientMock({
+      emailInvites: [
+        {
+          created_at: '2026-06-01T00:00:00.000Z',
+          email: 'private@example.com',
+          role_id: 'role-private',
+          type: 'MEMBER',
+          ws_id: workspaceId,
+        },
+        {
+          created_at: '2026-06-02T00:00:00.000Z',
+          email: 'auth@example.com',
+          role_id: 'role-auth',
+          type: 'MEMBER',
+          ws_id: workspaceId,
+        },
+      ],
+      privateEmail: 'private@example.com',
+    });
+
+    const result = await getWorkspaceInviteStatus(admin as never, {
+      authEmail: 'auth@example.com',
+      userId,
+      workspaceId,
+    });
+
+    expect(result.status).toBe('pending_invite');
+    if (result.status === 'pending_invite') {
+      expect(result.invitation.matchedEmail).toBe('auth@example.com');
+      expect(result.invitation.roleId).toBe('role-auth');
+    }
+  });
+
   it('returns member before pending invite when membership already exists', async () => {
     const admin = createAdminClientMock({
       directInvites: [
