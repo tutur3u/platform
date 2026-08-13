@@ -37,6 +37,7 @@ import { WorkspaceAccessMembers } from './workspace-access-members';
 import { WorkspaceAccessPageHeader } from './workspace-access-page-header';
 import { WorkspaceAccessPeopleFilters } from './workspace-access-people-filters';
 import { WorkspaceAccessRoleEditorDialog } from './workspace-access-role-editor-dialog';
+import { listAllWorkspaceAccessRoles } from './workspace-access-role-options';
 import { WorkspaceAccessRoles } from './workspace-access-roles';
 import { WorkspaceAccessTabsToolbar } from './workspace-access-tabs-toolbar';
 
@@ -149,7 +150,7 @@ export function WorkspaceAccessPage({
   });
   const inviteRolesQuery = useQuery({
     enabled: inviteDialogOpen && canAssignInviteRoles,
-    queryFn: () => adapter.listRoles(workspaceId, { pageSize: '100' }),
+    queryFn: () => listAllWorkspaceAccessRoles(adapter, workspaceId),
     queryKey: ['workspace-access', workspaceId, 'invite-roles'],
     staleTime: 30_000,
   });

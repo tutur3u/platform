@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live external-app invitation decision route applies any optional workspace-scoped role before clearing an accepted invite, including idempotent existing-member and duplicate-insert paths, and rolls back newly created membership and seat state if role assignment fails. The Rust port is pending."
+    },
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

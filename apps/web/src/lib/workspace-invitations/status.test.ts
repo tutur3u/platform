@@ -12,6 +12,7 @@ const otherWorkspaceId = '33333333-3333-4333-8333-333333333333';
 type TestState = {
   directInvites?: Array<{
     created_at: string | null;
+    role_id?: string | null;
     type: 'MEMBER' | 'GUEST';
     user_id: string;
     ws_id: string;
@@ -19,6 +20,7 @@ type TestState = {
   emailInvites?: Array<{
     created_at: string | null;
     email: string;
+    role_id?: string | null;
     type: 'MEMBER' | 'GUEST';
     ws_id: string;
   }>;
@@ -162,6 +164,7 @@ describe('workspace invitation status helpers', () => {
       directInvites: [
         {
           created_at: '2026-06-01T00:00:00.000Z',
+          role_id: 'role-editor',
           type: 'MEMBER',
           user_id: userId,
           ws_id: workspaceId,
@@ -178,6 +181,7 @@ describe('workspace invitation status helpers', () => {
     expect(result.status).toBe('pending_invite');
     if (result.status === 'pending_invite') {
       expect(result.invitation.source).toBe('direct');
+      expect(result.invitation.roleId).toBe('role-editor');
       expect(result.invitation.workspace.id).toBe(workspaceId);
     }
   });

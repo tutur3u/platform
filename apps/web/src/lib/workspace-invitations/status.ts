@@ -22,6 +22,7 @@ export type WorkspaceInvitationWorkspace = {
 export type WorkspaceInvitationRecord = {
   createdAt: string | null;
   matchedEmail: string | null;
+  roleId: string | null;
   source: WorkspaceInviteSource;
   type: WorkspaceMemberType;
   workspace: WorkspaceInvitationWorkspace;
@@ -53,6 +54,7 @@ type WorkspaceRow = {
 
 type DirectInviteRow = {
   created_at: string | null;
+  role_id: string | null;
   type: WorkspaceMemberType;
   ws_id: string;
 };
@@ -202,7 +204,7 @@ async function fetchDirectInvites(
 ) {
   let query = admin
     .from('workspace_invites')
-    .select('ws_id, type, created_at')
+    .select('ws_id, type, created_at, role_id')
     .eq('user_id', userId);
 
   if (workspaceId) {
@@ -234,7 +236,7 @@ async function fetchEmailInvites(
 
   let query = admin
     .from('workspace_email_invites')
-    .select('ws_id, type, created_at, email')
+    .select('ws_id, type, created_at, email, role_id')
     .in('email', candidateEmails);
 
   if (workspaceId) {
@@ -266,6 +268,7 @@ function chooseInviteForWorkspace({
     return {
       createdAt: directInvite.created_at,
       matchedEmail: null,
+      roleId: directInvite.role_id,
       source: 'direct',
       type: directInvite.type,
       workspace,
@@ -282,6 +285,7 @@ function chooseInviteForWorkspace({
   return {
     createdAt: emailInvite.created_at,
     matchedEmail: normalizeEmail(emailInvite.email),
+    roleId: emailInvite.role_id,
     source: 'email',
     type: emailInvite.type,
     workspace,

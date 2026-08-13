@@ -118,6 +118,10 @@ function createAdminMock() {
         inserts.push({ table, value });
         return Promise.resolve({ error: null });
       }),
+      upsert: vi.fn((value: unknown) => {
+        inserts.push({ table, value });
+        return Promise.resolve({ error: null });
+      }),
       maybeSingle: vi.fn(() => {
         if (table === 'users') {
           return Promise.resolve({
@@ -132,6 +136,10 @@ function createAdminMock() {
             },
             error: null,
           });
+        }
+
+        if (table === 'workspace_roles') {
+          return Promise.resolve({ data: { id: 'role-editor' }, error: null });
         }
 
         return Promise.resolve({ data: null, error: null });
@@ -283,6 +291,7 @@ describe('app token invitation decision route', () => {
       invitation: {
         createdAt: '2026-07-04T00:00:00.000Z',
         email: null,
+        roleId: null,
         source: 'direct',
         type: 'MEMBER',
         workspace: {
@@ -370,6 +379,38 @@ describe('app token invitation decision route', () => {
       ])
     );
     expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+
+  it('assigns the pending workspace role before clearing an accepted invitation', async () => {
+    const { admin, inserts } = createAdminMock();
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({
+      invitation: {
+        createdAt: '2026-07-04T00:00:00.000Z',
+        matchedEmail: null,
+        roleId: 'role-editor',
+        source: 'direct',
+        type: 'MEMBER',
+        workspace: {
+          avatar_url: null,
+          handle: 'cs35',
+          id: workspaceId,
+          logo_url: null,
+          name: 'CyberShield 35',
+          personal: false,
+        },
+      },
+      status: 'pending_invite',
+      workspace: null,
+    });
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(200);
+    expect(inserts).toContainEqual({
+      table: 'workspace_role_members',
+      value: { role_id: 'role-editor', user_id: userId },
+    });
   });
 
   it('rejects a pending invitation without issuing a session', async () => {

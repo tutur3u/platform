@@ -4,7 +4,6 @@ import {
   revokeSeatFromMember,
 } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   isWorkspaceUuidLiteral,
@@ -16,6 +15,7 @@ import { after, NextResponse } from 'next/server';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
+import { assignPendingWorkspaceInviteRole } from '@/lib/workspace-invitations/assign-pending-role';
 
 type PendingInvite = {
   email?: string | null;
@@ -23,44 +23,6 @@ type PendingInvite = {
   type: 'MEMBER' | 'GUEST';
   ws_id: string;
 };
-
-async function assignPendingInviteRole({
-  roleId,
-  sbAdmin,
-  userId,
-  wsId,
-}: {
-  roleId: string | null | undefined;
-  sbAdmin: TypedSupabaseClient;
-  userId: string;
-  wsId: string;
-}) {
-  if (!roleId) return;
-
-  const { data: role, error: roleError } = await sbAdmin
-    .from('workspace_roles')
-    .select('id')
-    .eq('id', roleId)
-    .eq('ws_id', wsId)
-    .maybeSingle();
-
-  if (roleError || !role) {
-    throw new Error('The invited workspace role is no longer available.');
-  }
-
-  const { error: assignmentError } = await sbAdmin
-    .from('workspace_role_members')
-    .upsert(
-      { role_id: roleId, user_id: userId },
-      { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
-    );
-
-  if (assignmentError) {
-    throw new Error(
-      assignmentError.message || 'Failed to assign the invited workspace role.'
-    );
-  }
-}
 
 const guestJoinReasonToErrorCodeMap: Record<string, string> = {
   already_member: 'ALREADY_MEMBER',
@@ -309,11 +271,11 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     if (existingMember.ok) {
       try {
-        await assignPendingInviteRole({
+        await assignPendingWorkspaceInviteRole({
+          admin: sbAdmin,
           roleId: pendingRoleId,
-          sbAdmin,
           userId: user.id,
-          wsId,
+          workspaceId: wsId,
         });
       } catch (roleError) {
         return NextResponse.json(
@@ -418,11 +380,11 @@ export const POST = withSessionAuth<{ wsId: string }>(
     if (error) {
       if (error.code === '23505') {
         try {
-          await assignPendingInviteRole({
+          await assignPendingWorkspaceInviteRole({
+            admin: sbAdmin,
             roleId: pendingRoleId,
-            sbAdmin,
             userId: user.id,
-            wsId,
+            workspaceId: wsId,
           });
         } catch (roleError) {
           return NextResponse.json(
@@ -480,11 +442,11 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     try {
-      await assignPendingInviteRole({
+      await assignPendingWorkspaceInviteRole({
+        admin: sbAdmin,
         roleId: pendingRoleId,
-        sbAdmin,
         userId: user.id,
-        wsId,
+        workspaceId: wsId,
       });
     } catch (roleError) {
       await sbAdmin
