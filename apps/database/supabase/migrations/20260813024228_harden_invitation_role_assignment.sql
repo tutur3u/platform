@@ -28,6 +28,12 @@ WITH CHECK (
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
     )
+    AND EXISTS (
+      SELECT 1
+      FROM public.workspace_roles wr
+      WHERE wr.id = workspace_invites.role_id
+        AND wr.ws_id = workspace_invites.ws_id
+    )
   )
 );
 
@@ -54,6 +60,12 @@ WITH CHECK (
       ws_id,
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.workspace_roles wr
+      WHERE wr.id = workspace_invites.role_id
+        AND wr.ws_id = workspace_invites.ws_id
     )
   )
 );
@@ -85,6 +97,12 @@ WITH CHECK (
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
     )
+    AND EXISTS (
+      SELECT 1
+      FROM public.workspace_roles wr
+      WHERE wr.id = workspace_email_invites.role_id
+        AND wr.ws_id = workspace_email_invites.ws_id
+    )
   )
 );
 
@@ -104,6 +122,12 @@ WITH CHECK (
       ws_id,
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.workspace_roles wr
+      WHERE wr.id = workspace_email_invites.role_id
+        AND wr.ws_id = workspace_email_invites.ws_id
     )
   )
 );
@@ -131,6 +155,12 @@ WITH CHECK (
       ws_id,
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
+    )
+    AND EXISTS (
+      SELECT 1
+      FROM public.workspace_roles wr
+      WHERE wr.id = workspace_email_invites.role_id
+        AND wr.ws_id = workspace_email_invites.ws_id
     )
   )
 );

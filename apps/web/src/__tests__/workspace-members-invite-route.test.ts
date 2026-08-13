@@ -312,6 +312,20 @@ describe('workspace members invite route', () => {
     expect(mocks.insertInvite).not.toHaveBeenCalled();
   });
 
+  it('rejects an explicit role for a POS operator invitation', async () => {
+    const response = await postInvite({
+      body: {
+        accessPreset: 'pos_operator',
+        email: 'staff@example.com',
+        roleId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(mocks.posOperatorRpc).not.toHaveBeenCalled();
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
   it('requires explicit confirmation before changing default admin access', async () => {
     const response = await postInvite({
       body: {

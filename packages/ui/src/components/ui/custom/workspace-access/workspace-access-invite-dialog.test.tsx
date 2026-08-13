@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceAccessInviteDialog } from './workspace-access-invite-dialog';
@@ -8,7 +8,7 @@ vi.mock('next-intl', () => ({
 }));
 
 describe('WorkspaceAccessInviteDialog', () => {
-  it('offers an optional workspace role before the invitation is sent', () => {
+  it('offers and maps an optional workspace role before the invitation is sent', () => {
     const props = {
       accessPreset: 'member',
       canManageRoles: true,
@@ -34,9 +34,22 @@ describe('WorkspaceAccessInviteDialog', () => {
       roles: Array<{ id: string; name: string }>;
     };
 
-    render(<WorkspaceAccessInviteDialog {...props} />);
+    const { rerender } = render(<WorkspaceAccessInviteDialog {...props} />);
 
     expect(screen.getByText('ws-members.role-placeholder')).toBeDefined();
     expect(screen.getByText('No assigned roles')).toBeDefined();
+
+    fireEvent.click(
+      screen.getByRole('combobox', { name: 'ws-members.role-placeholder' })
+    );
+    fireEvent.click(screen.getByText('Editor'));
+    expect(props.onRoleIdChange).toHaveBeenLastCalledWith('role-editor');
+
+    rerender(<WorkspaceAccessInviteDialog {...props} roleId="role-editor" />);
+    fireEvent.click(
+      screen.getByRole('combobox', { name: 'ws-members.role-placeholder' })
+    );
+    fireEvent.click(screen.getByText('No assigned roles'));
+    expect(props.onRoleIdChange).toHaveBeenLastCalledWith(null);
   });
 });
