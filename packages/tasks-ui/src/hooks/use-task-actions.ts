@@ -18,6 +18,13 @@ import { useCallback } from 'react';
 import { invalidateKanbanDeadlineTasks } from '../tu-do/boards/boardId/kanban/data/kanban-deadline-query';
 import { useBoardBroadcast } from '../tu-do/shared/board-broadcast-context';
 import {
+  patchTaskInVisibleCaches,
+  patchTasksInVisibleCaches,
+  restoreTasksFromVisibleCacheSnapshot,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from '../tu-do/shared/task-cache-patches';
+import {
   dispatchTaskSoundCue,
   type TaskSoundCue,
 } from '../tu-do/shared/task-sound-effects';
@@ -162,19 +169,24 @@ export function useTaskActions({
 
   const mergeLocallyMutatedTask = useCallback(
     (taskId: string, taskPatch: Partial<Task>) => {
-      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
-        if (!current) {
-          return current;
-        }
+      patchTaskInVisibleCaches({
+        boardId,
+        queryClient,
+        taskId,
+        updater: (item) =>
+          markLocallyMutatedTask({ ...item, ...taskPatch } as Task),
+      });
+    },
+    [boardId, markLocallyMutatedTask, queryClient]
+  );
 
-        return current.map((item) =>
-          item.id === taskId
-            ? markLocallyMutatedTask({
-                ...item,
-                ...taskPatch,
-              } as Task)
-            : item
-        );
+  const patchLocallyMutatedTasks = useCallback(
+    (taskIds: string[], updater: (task: Task) => Task) => {
+      patchTasksInVisibleCaches({
+        boardId,
+        queryClient,
+        taskIds,
+        updater: (item) => markLocallyMutatedTask(updater(item)),
       });
     },
     [boardId, markLocallyMutatedTask, queryClient]
@@ -256,7 +268,9 @@ export function useTaskActions({
     );
     const newClosedState = shouldMoveExternalToCompletion || !task.closed_at;
 
-    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousCaches = snapshotVisibleTaskCaches(queryClient, boardId, [
+      task.id,
+    ]);
 
     if (shouldMoveExternalToCompletion && targetCompletionList) {
       try {
@@ -296,23 +310,16 @@ export function useTaskActions({
 
       try {
         // Optimistic update: move task to completion list and set closed_at
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              t.id === task.id
-                ? markLocallyMutatedTask({
-                    ...t,
-                    list_id: targetCompletionList.id,
-                    completed: targetCompletionList.status === 'done',
-                    closed_at: now,
-                    completed_at:
-                      targetCompletionList.status === 'done' ? now : null,
-                  } as Task)
-                : t
-            );
-          }
+        patchLocallyMutatedTasks(
+          [task.id],
+          (item) =>
+            ({
+              ...item,
+              list_id: targetCompletionList.id,
+              completed: targetCompletionList.status === 'done',
+              closed_at: now,
+              completed_at: targetCompletionList.status === 'done' ? now : null,
+            }) as Task
         );
 
         // moveTask handles setting archived status based on target list
@@ -349,9 +356,7 @@ export function useTaskActions({
         dispatchTaskActionSound('complete');
       } catch (error) {
         // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreVisibleTaskCaches(queryClient, previousCaches);
         console.error('Failed to complete task:', error);
         toast.error('Error', {
           description: 'Failed to complete task. Please try again.',
@@ -361,19 +366,13 @@ export function useTaskActions({
       }
     } else {
       // Optimistic update for simple toggle
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) =>
-            t.id === task.id
-              ? markLocallyMutatedTask({
-                  ...t,
-                  closed_at: newClosedState ? new Date().toISOString() : null,
-                } as Task)
-              : t
-          );
-        }
+      patchLocallyMutatedTasks(
+        [task.id],
+        (item) =>
+          ({
+            ...item,
+            closed_at: newClosedState ? new Date().toISOString() : null,
+          }) as Task
       );
 
       try {
@@ -403,9 +402,7 @@ export function useTaskActions({
         invalidateDeadlineTasks();
       } catch (error) {
         // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreVisibleTaskCaches(queryClient, previousCaches);
         console.error('Failed to toggle task status:', error);
         toast.error('Error', {
           description: 'Failed to update task. Please try again.',
@@ -428,6 +425,7 @@ export function useTaskActions({
     getWorkspaceId,
     markLocallyMutatedTask,
     mergeLocallyMutatedTask,
+    patchLocallyMutatedTasks,
     invalidateDeadlineTasks,
   ]);
 
@@ -441,6 +439,11 @@ export function useTaskActions({
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousCaches = snapshotVisibleTaskCaches(
+      queryClient,
+      boardId,
+      tasksToMove
+    );
 
     try {
       if (isPersonalExternalTask(task) && !shouldBulkMove) {
@@ -464,26 +467,14 @@ export function useTaskActions({
       }
 
       // Optimistic update: move tasks to completion list and set closed_at/completed_at
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          const now = new Date().toISOString();
-          return old.map((t) =>
-            tasksToMove.includes(t.id)
-              ? markLocallyMutatedTask({
-                  ...t,
-                  list_id: targetCompletionList.id,
-                  closed_at: now,
-                  completed_at:
-                    targetCompletionList.status === 'done'
-                      ? now
-                      : t.completed_at,
-                } as Task)
-              : t
-          );
-        }
-      );
+      const now = new Date().toISOString();
+      patchLocallyMutatedTasks(tasksToMove, (item) => ({
+        ...item,
+        list_id: targetCompletionList.id,
+        closed_at: now,
+        completed_at:
+          targetCompletionList.status === 'done' ? now : item.completed_at,
+      }));
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
@@ -513,7 +504,11 @@ export function useTaskActions({
           successCount++;
         } catch (error) {
           failedTaskIds.push(taskId);
-          rollbackTaskIds(previousTasks, [taskId]);
+          restoreTasksFromVisibleCacheSnapshot({
+            queryClient,
+            snapshot: previousCaches,
+            taskIds: [taskId],
+          });
           const previousTask = previousTaskMap.get(taskId);
           if (previousTask) {
             broadcast?.('task:upsert', { task: previousTask });
@@ -545,9 +540,7 @@ export function useTaskActions({
       dispatchTaskActionSound('complete', taskCount);
     } catch (error) {
       // Rollback on error
-      if (previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
-      }
+      restoreVisibleTaskCaches(queryClient, previousCaches);
       console.error('Failed to move task to completion:', error);
       toast.error('Error', {
         description: 'Failed to complete task. Please try again.',
@@ -569,7 +562,7 @@ export function useTaskActions({
     broadcast,
     getWorkspaceId,
     markLocallyMutatedTask,
-    rollbackTaskIds,
+    patchLocallyMutatedTasks,
     invalidateDeadlineTasks,
   ]);
 
@@ -583,6 +576,11 @@ export function useTaskActions({
 
     // Store previous state for rollback
     const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+    const previousCaches = snapshotVisibleTaskCaches(
+      queryClient,
+      boardId,
+      tasksToMove
+    );
 
     try {
       if (isPersonalExternalTask(task) && !shouldBulkMove) {
@@ -605,22 +603,12 @@ export function useTaskActions({
       }
 
       // Optimistic update: move tasks to closed list and set closed_at
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          const now = new Date().toISOString();
-          return old.map((t) =>
-            tasksToMove.includes(t.id)
-              ? markLocallyMutatedTask({
-                  ...t,
-                  list_id: targetClosedList.id,
-                  closed_at: now,
-                } as Task)
-              : t
-          );
-        }
-      );
+      const now = new Date().toISOString();
+      patchLocallyMutatedTasks(tasksToMove, (item) => ({
+        ...item,
+        list_id: targetClosedList.id,
+        closed_at: now,
+      }));
 
       // Move tasks one by one to ensure triggers fire for each task
       let successCount = 0;
@@ -650,7 +638,11 @@ export function useTaskActions({
           successCount++;
         } catch (error) {
           failedTaskIds.push(taskId);
-          rollbackTaskIds(previousTasks, [taskId]);
+          restoreTasksFromVisibleCacheSnapshot({
+            queryClient,
+            snapshot: previousCaches,
+            taskIds: [taskId],
+          });
           const previousTask = previousTaskMap.get(taskId);
           if (previousTask) {
             broadcast?.('task:upsert', { task: previousTask });
@@ -679,9 +671,7 @@ export function useTaskActions({
       dispatchTaskActionSound('complete', taskCount);
     } catch (error) {
       // Rollback on error
-      if (previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
-      }
+      restoreVisibleTaskCaches(queryClient, previousCaches);
       console.error('Failed to move task to closed:', error);
       toast.error('Error', {
         description: 'Failed to close task. Please try again.',
@@ -703,7 +693,7 @@ export function useTaskActions({
     broadcast,
     getWorkspaceId,
     markLocallyMutatedTask,
-    rollbackTaskIds,
+    patchLocallyMutatedTasks,
     invalidateDeadlineTasks,
   ]);
 

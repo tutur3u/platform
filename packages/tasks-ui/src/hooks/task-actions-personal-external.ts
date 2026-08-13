@@ -12,6 +12,11 @@ import {
   isTaskBoardCompletedStatus,
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
+import {
+  patchTaskInVisibleCaches,
+  restoreVisibleTaskCaches,
+  snapshotVisibleTaskCaches,
+} from '../tu-do/shared/task-cache-patches';
 
 export function isPersonalExternalTask(task?: Task) {
   return isPersonalExternalOverlayTask(task);
@@ -56,18 +61,6 @@ function findFirstMatchingSourceList(
   }
 
   return null;
-}
-
-function mergeTaskIntoCache(current: Task[] | undefined, nextTask: Task) {
-  const existing = current ?? [];
-  let found = false;
-  const merged = existing.map((item) => {
-    if (item.id !== nextTask.id) return item;
-    found = true;
-    return { ...item, ...nextTask } as Task;
-  });
-
-  return found ? merged : [...merged, nextTask];
 }
 
 function getPersonalPlacementOrder({
@@ -123,15 +116,12 @@ function upsertLocallyMutatedTask({
 }) {
   const locallyMutatedTask = markLocallyMutatedTask(task);
 
-  queryClient.setQueryData<Task[]>(['tasks', boardId], (current) =>
-    mergeTaskIntoCache(current, locallyMutatedTask)
-  );
-
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData<Task[]>(['tasks-full', boardId], (current) =>
-      mergeTaskIntoCache(current, locallyMutatedTask)
-    );
-  }
+  patchTaskInVisibleCaches({
+    boardId,
+    queryClient,
+    taskId: task.id,
+    updater: (current) => ({ ...current, ...locallyMutatedTask }) as Task,
+  });
 }
 
 export async function moveExternalTaskToPersonalList({
@@ -154,10 +144,8 @@ export async function moveExternalTaskToPersonalList({
   const personalBoardId = task.personal_board_id ?? boardId;
   const sourceWorkspaceId = task.source_workspace_id;
   const sourceBoardId = task.source_board_id;
-  const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-  const previousFullTasks = queryClient.getQueryData<Task[]>([
-    'tasks-full',
-    boardId,
+  const previousCaches = snapshotVisibleTaskCaches(queryClient, boardId, [
+    task.id,
   ]);
   const now = new Date().toISOString();
   let sourceTargetList: TaskList | null = null;
@@ -312,12 +300,7 @@ export async function moveExternalTaskToPersonalList({
       sourceTargetList,
     };
   } catch (error) {
-    if (previousTasks) {
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
-    }
-    if (previousFullTasks) {
-      queryClient.setQueryData(['tasks-full', boardId], previousFullTasks);
-    }
+    restoreVisibleTaskCaches(queryClient, previousCaches);
     throw error;
   }
 }
