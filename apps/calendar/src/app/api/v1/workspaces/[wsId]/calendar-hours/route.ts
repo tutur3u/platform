@@ -97,7 +97,7 @@ function toHoursSettingsData(
 export const GET = withSessionAuth<{ wsId: string }>(
   async (_request, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
+      const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
       const membership = await verifyWorkspaceMembershipType({
         wsId: normalizedWsId,
         userId: user.id,
@@ -146,9 +146,13 @@ export const GET = withSessionAuth<{ wsId: string }>(
 );
 
 export const PATCH = withSessionAuth<{ wsId: string }>(
-  async (request, { supabase }, { wsId }) => {
+  async (request, { supabase, user }, { wsId }) => {
     try {
-      const permissions = await getPermissions({ wsId, request });
+      const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+      const permissions = await getPermissions({
+        user,
+        wsId: normalizedWsId,
+      });
 
       if (!permissions) {
         return NextResponse.json(
@@ -173,7 +177,6 @@ export const PATCH = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      const normalizedWsId = await normalizeWorkspaceId(wsId);
       const { error } = await supabase
         .from('workspace_calendar_hour_settings')
         .upsert(

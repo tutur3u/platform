@@ -1,19 +1,11 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   canCreateInventorySales,
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@tuturuuu/inventory-core/permissions';
 import { getInventoryCatalogProducts } from '@tuturuuu/inventory-core/product-rpc';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -25,35 +17,10 @@ interface Params {
 export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    const permissions = await getPermissions({ wsId, request });
+    const authorization = await authorizeInventoryWorkspace(request, id);
+    if (!authorization.ok) return authorization.response;
+    const { permissions, wsId } = authorization.value;
     if (!permissions || !canViewInventoryCatalog(permissions)) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }

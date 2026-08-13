@@ -49,17 +49,16 @@ export async function GET(
 ) {
   try {
     const { wsId, projectId } = await params;
+    const supabase = await createClient(request);
     let normalizedWorkspaceId: string;
     try {
-      normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
+      normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return NextResponse.json(
         { error: 'Workspace not found' },
         { status: 404 }
       );
     }
-
-    const supabase = await createClient(request);
 
     const { user, authError: userError } =
       await resolveAuthenticatedSessionUser(supabase);
@@ -268,17 +267,16 @@ export async function POST(
 ) {
   try {
     const { wsId, projectId } = await params;
+    const supabase = await createClient(request);
     let normalizedWorkspaceId: string;
     try {
-      normalizedWorkspaceId = await normalizeWorkspaceId(wsId);
+      normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return NextResponse.json(
         { error: 'Workspace not found' },
         { status: 404 }
       );
     }
-    const supabase = await createClient(request);
-
     const { user, authError: userError } =
       await resolveAuthenticatedSessionUser(supabase);
 

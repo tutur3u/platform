@@ -32,7 +32,7 @@ export async function GET(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,

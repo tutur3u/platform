@@ -114,7 +114,6 @@ export async function PATCH(
 ) {
   try {
     const { wsId, id } = await context.params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
 
     // Parse and validate request body
     const body = await request.json();
@@ -136,6 +135,7 @@ export async function PATCH(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access and admin permissions
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -158,8 +158,8 @@ export async function PATCH(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
@@ -242,7 +242,7 @@ export async function PUT(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace membership
     const memberCheck = await verifyWorkspaceMembershipType({

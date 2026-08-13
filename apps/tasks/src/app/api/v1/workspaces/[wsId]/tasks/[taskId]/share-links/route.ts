@@ -41,19 +41,18 @@ export async function GET(
   try {
     const { wsId, taskId } = await params;
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
       );
-    }
-
-    const { supabase, user, authError } =
-      await resolveAuthenticatedSessionUser();
-    if (authError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify workspace access
@@ -257,19 +256,18 @@ export async function PATCH(
   try {
     const { wsId, taskId } = await params;
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
       );
-    }
-
-    const { supabase, user, authError } =
-      await resolveAuthenticatedSessionUser();
-    if (authError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -436,19 +434,18 @@ export async function DELETE(
   try {
     const { wsId, taskId } = await params;
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const { supabase, user, authError } =
+      await resolveAuthenticatedSessionUser();
+    if (authError || !user || !supabase) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     if (!normalizedWsId || !validate(normalizedWsId) || !validate(taskId)) {
       return NextResponse.json(
         { error: 'Invalid workspace or task ID' },
         { status: 400 }
       );
-    }
-
-    const { supabase, user, authError } =
-      await resolveAuthenticatedSessionUser();
-    if (authError || !user || !supabase) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);

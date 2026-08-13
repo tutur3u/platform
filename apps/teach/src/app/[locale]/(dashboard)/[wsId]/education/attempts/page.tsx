@@ -1,5 +1,6 @@
 import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@tuturuuu/education-core/education/access';
 import { ClipboardList, Filter } from '@tuturuuu/icons';
+import { getSatelliteWorkspacePermissions } from '@tuturuuu/satellite/workspace-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/education-content-surface';
@@ -15,10 +16,10 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
@@ -50,10 +51,14 @@ export default async function QuizAttemptsPage({
   params,
   searchParams,
 }: Props) {
+  await connection();
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
-  const permissions = await getPermissions({ wsId: resolvedWsId });
+  const permissions = await getSatelliteWorkspacePermissions(
+    'teach',
+    resolvedWsId
+  );
   if (
     !permissions ||
     permissions.withoutPermission(EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION)

@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/hooks/utils/time-tracker-utils';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   escapeLikePattern,
   sanitizeSearchQuery,
@@ -143,16 +144,16 @@ async function attachWorkspaceTaskSummary<
 
 async function checkMissedEntryPermission({
   wsId,
-  request,
   sbAdmin,
+  user,
 }: {
   wsId: string;
-  request: Request;
   sbAdmin: AdminClient;
+  user: SupabaseUser;
 }): Promise<MissedEntryPermissionCheckResult> {
   const permissions = await getPermissions({
+    user,
     wsId,
-    request,
   });
 
   if (!permissions) {
@@ -196,13 +197,11 @@ async function handleManualEntry({
   user,
   normalizedWsId,
   sbAdmin,
-  request,
 }: {
   requestBody: SessionRequestBody;
-  user: { id: string };
+  user: SupabaseUser;
   normalizedWsId: string;
   sbAdmin: AdminClient;
-  request: Request;
 }): Promise<NextResponse> {
   const { title, description, categoryId, taskId, startTime, endTime } =
     requestBody;
@@ -226,8 +225,8 @@ async function handleManualEntry({
 
   const permissionCheck = await checkMissedEntryPermission({
     wsId: normalizedWsId,
-    request,
     sbAdmin,
+    user,
   });
 
   if ('errorResponse' in permissionCheck && permissionCheck.errorResponse) {
@@ -502,10 +501,9 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const cursor = url.searchParams.get('cursor');
 
       const readUser = await resolveTimeTrackingReadUser({
-        actorId: user.id,
-        request,
         supabase,
         targetUserId,
+        user,
         wsId: normalizedWsId,
       });
       if (!readUser.ok) return readUser.response;
@@ -888,7 +886,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
           user,
           normalizedWsId,
           sbAdmin,
-          request,
         });
       }
 

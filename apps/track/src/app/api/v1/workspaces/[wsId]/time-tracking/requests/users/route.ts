@@ -54,8 +54,8 @@ export async function GET(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });

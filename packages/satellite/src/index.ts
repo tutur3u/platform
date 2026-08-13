@@ -42,3 +42,12 @@ export {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from './utils/workspace-layout-helpers';
+export {
+  getSatelliteRequestWorkspaceAccess,
+  getSatelliteWorkspace,
+  getSatelliteWorkspacePermissions,
+  resolveSatelliteRequestActor,
+  resolveSatelliteWorkspaceId,
+  type SatelliteAppSessionAudience,
+  type SatelliteRequestActorContext,
+} from './workspace-access';

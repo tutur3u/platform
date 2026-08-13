@@ -16,7 +16,6 @@ import {
   getUserGroupMemberships,
   verifyGroupAccess,
 } from '@tuturuuu/users-core/lib/user-groups/groups-utils';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -46,10 +45,9 @@ async function GroupLayoutContent({ children, params }: LayoutProps) {
   await connection();
 
   const { wsId: id, groupId } = await params;
-  const wsId = await normalizeWorkspaceId(id);
-
-  const permissions = await getContactsWorkspacePermissions(wsId);
+  const permissions = await getContactsWorkspacePermissions(id);
   if (!permissions) notFound();
+  const wsId = permissions.wsId;
   const { containsPermission } = permissions;
   const hasManageUsersPermission = containsPermission('manage_users');
 

@@ -1,5 +1,5 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
 
@@ -14,10 +14,9 @@ interface Params {
 export async function PATCH(req: Request, { params }: Params) {
   const { wsId, groupId, productId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, wsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions } = authorization.value;
 
   if (permissions.withoutPermission('update_user_groups')) {
     return NextResponse.json(
@@ -63,10 +62,9 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId, groupId, productId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, wsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions } = authorization.value;
 
   if (permissions.withoutPermission('update_user_groups')) {
     return NextResponse.json(

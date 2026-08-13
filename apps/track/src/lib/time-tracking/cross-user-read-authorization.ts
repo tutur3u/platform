@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -10,23 +11,22 @@ type ResolveTimeTrackingReadUserResult =
   | { ok: false; response: NextResponse };
 
 export async function resolveTimeTrackingReadUser({
-  actorId,
-  request,
   supabase,
   targetUserId,
+  user,
   wsId,
 }: {
-  actorId: string;
-  request: Request;
   supabase: TypedSupabaseClient;
   targetUserId: string | null;
+  user: SupabaseUser;
   wsId: string;
 }): Promise<ResolveTimeTrackingReadUserResult> {
+  const actorId = user.id;
   if (!targetUserId || targetUserId === actorId) {
     return { ok: true, userId: actorId };
   }
 
-  const permissions = await getPermissions({ request, wsId });
+  const permissions = await getPermissions({ user, wsId });
 
   if (!permissions) {
     return {

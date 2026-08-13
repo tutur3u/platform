@@ -9,6 +9,7 @@
     "./providers": "./src/providers/providers.tsx",
     "./client-providers": "./src/providers/client-providers.tsx",
     "./auth": "./src/auth.ts",
+    "./workspace-access": "./src/workspace-access.ts",
     "./user-nav": "./src/components/user-nav.tsx",
     "./user-nav-wrapper": "./src/components/user-nav-wrapper.tsx",
     "./user-nav-client": "./src/components/user-nav-client.tsx",

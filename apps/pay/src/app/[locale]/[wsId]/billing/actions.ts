@@ -10,8 +10,10 @@ import {
   createCustomerSession,
   getOrCreatePolarCustomer,
 } from '@tuturuuu/payment-core/customer-helper';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  resolveSatellitePageActor,
+  type SatelliteRequestActorContext,
+} from '@tuturuuu/satellite/workspace-access';
 
 interface ActionResult<T = void> {
   success: boolean;
@@ -53,13 +55,11 @@ export interface UpdateWorkspaceBillingDetailsInput {
  */
 async function checkManageSubscriptionPermission(
   wsId: string,
-  userId: string
+  actor: SatelliteRequestActorContext
 ): Promise<boolean> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc('has_workspace_permission', {
+  const { data, error } = await actor.admin.rpc('has_workspace_permission', {
     p_ws_id: wsId,
-    p_user_id: userId,
+    p_user_id: actor.user.id,
     p_permission: 'manage_subscription',
   });
 
@@ -78,21 +78,15 @@ export async function getWorkspaceBillingDetails(
   wsId: string
 ): Promise<ActionResult<WorkspaceBillingDetails>> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
       };
     }
 
-    const hasPermission = await checkManageSubscriptionPermission(
-      wsId,
-      user.id
-    );
+    const hasPermission = await checkManageSubscriptionPermission(wsId, actor);
 
     if (!hasPermission) {
       return {
@@ -102,7 +96,7 @@ export async function getWorkspaceBillingDetails(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const supabase = actor.admin;
 
     const polarCustomer = await getOrCreatePolarCustomer({
       polar,
@@ -153,21 +147,15 @@ export async function updateWorkspaceBillingDetails(
   payload: UpdateWorkspaceBillingDetailsInput
 ): Promise<ActionResult<WorkspaceBillingDetails>> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
       };
     }
 
-    const hasPermission = await checkManageSubscriptionPermission(
-      wsId,
-      user.id
-    );
+    const hasPermission = await checkManageSubscriptionPermission(wsId, actor);
 
     if (!hasPermission) {
       return {
@@ -186,7 +174,7 @@ export async function updateWorkspaceBillingDetails(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const supabase = actor.admin;
 
     const polarCustomer = await getOrCreatePolarCustomer({
       polar,
@@ -247,21 +235,15 @@ export async function getWorkspacePaymentMethods(
   wsId: string
 ): Promise<ActionResult<CustomerPaymentMethod[]>> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
       };
     }
 
-    const hasPermission = await checkManageSubscriptionPermission(
-      wsId,
-      user.id
-    );
+    const hasPermission = await checkManageSubscriptionPermission(wsId, actor);
 
     if (!hasPermission) {
       return {
@@ -271,7 +253,7 @@ export async function getWorkspacePaymentMethods(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const supabase = actor.admin;
 
     // Create a customer session to authenticate with customer portal
     const session = await createCustomerSession({
@@ -318,21 +300,15 @@ export async function deleteWorkspacePaymentMethod(
   paymentMethodId: string
 ): Promise<ActionResult> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
       };
     }
 
-    const hasPermission = await checkManageSubscriptionPermission(
-      wsId,
-      user.id
-    );
+    const hasPermission = await checkManageSubscriptionPermission(wsId, actor);
 
     if (!hasPermission) {
       return {
@@ -342,7 +318,7 @@ export async function deleteWorkspacePaymentMethod(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const supabase = actor.admin;
 
     // Create a customer session to authenticate with customer portal
     const session = await createCustomerSession({
@@ -381,11 +357,8 @@ export async function updateBillingAddress(
   address: AddressInput
 ): Promise<ActionResult> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
@@ -393,7 +366,7 @@ export async function updateBillingAddress(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const { admin: supabase, user } = actor;
 
     // Get the user's personal workspace to use for billing
     const { data: personalWorkspace } = await supabase
@@ -444,21 +417,15 @@ export async function getWorkspaceCustomerPortalUrl(
   wsId: string
 ): Promise<ActionResult<{ url: string }>> {
   try {
-    const { user } = await resolveAuthenticatedSessionUser(
-      await createClient()
-    );
-
-    if (!user) {
+    const actor = await resolveSatellitePageActor(['pay', 'platform']);
+    if (!actor) {
       return {
         success: false,
         error: 'Unauthorized - please log in',
       };
     }
 
-    const hasPermission = await checkManageSubscriptionPermission(
-      wsId,
-      user.id
-    );
+    const hasPermission = await checkManageSubscriptionPermission(wsId, actor);
 
     if (!hasPermission) {
       return {
@@ -468,7 +435,7 @@ export async function getWorkspaceCustomerPortalUrl(
     }
 
     const polar = createPolarClient();
-    const supabase = await createClient();
+    const supabase = actor.admin;
 
     // Create customer session to get portal URL
     const session = await createCustomerSession({

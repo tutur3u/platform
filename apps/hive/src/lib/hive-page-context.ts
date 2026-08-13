@@ -1,8 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
@@ -79,18 +76,13 @@ export async function resolveWebHiveAccess({
 export async function getWebHivePageContext(
   id: string
 ): Promise<WebHivePageContext | null> {
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user?.id) {
+  const actor = await resolveSatellitePageActor('hive');
+  if (!actor) {
     return null;
   }
-
-  const workspace = await getWorkspace(id);
-
-  if (!workspace) {
-    return null;
-  }
+  const { user } = actor;
+  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  if (!workspace) return null;
 
   const sbAdmin = await createAdminClient({ noCookie: true });
   const accessResult = await resolveWebHiveAccess({

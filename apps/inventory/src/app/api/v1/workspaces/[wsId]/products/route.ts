@@ -1,16 +1,9 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import {
   createInventoryProductResponse,
   InventoryProductCreateSchema,
 } from '@tuturuuu/inventory-core/product-create';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 export const ProductCreateSchema = InventoryProductCreateSchema;
@@ -23,9 +16,7 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
 
   const parsed = InventoryProductCreateSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -35,15 +26,12 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, userId, wsId } = authorization.value;
 
   return createInventoryProductResponse({
-    actorAuthUserId: user?.id ?? null,
+    actorAuthUserId: userId,
     payload: parsed.data,
     permissions,
     sbAdmin,

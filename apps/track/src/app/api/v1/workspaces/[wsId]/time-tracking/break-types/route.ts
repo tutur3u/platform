@@ -147,8 +147,8 @@ export async function POST(
     }
 
     const permissions = await getPermissions({
+      user,
       wsId: normalizedWsId,
-      request,
     });
 
     if (!permissions) {

@@ -54,10 +54,9 @@ export async function GET(
     const url = new URL(request.url);
     const targetUserId = url.searchParams.get('userId');
     const readUser = await resolveTimeTrackingReadUser({
-      actorId: user.id,
-      request,
       supabase,
       targetUserId,
+      user,
       wsId: normalizedWsId,
     });
     if (!readUser.ok) return readUser.response;

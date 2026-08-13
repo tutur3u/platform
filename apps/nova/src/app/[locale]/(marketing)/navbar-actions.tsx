@@ -10,18 +10,21 @@ import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
   hideMetadata = false,
+  userId,
 }: {
   hideMetadata?: boolean;
+  userId?: string;
 }) {
   const t = await getTranslations();
-  const sbUser = await getNovaAppSessionUserFromHeaders();
+  const sbUser = userId ? null : await getNovaAppSessionUserFromHeaders();
+  const resolvedUserId = userId ?? sbUser?.id;
 
   return (
     <div className="relative">
       <div className="flex items-center gap-1">
-        {sbUser ? (
+        {resolvedUserId ? (
           <>
-            <NotificationPopover />
+            <NotificationPopover userId={resolvedUserId} />
             <UserNavWrapper hideMetadata={hideMetadata} />
           </>
         ) : (

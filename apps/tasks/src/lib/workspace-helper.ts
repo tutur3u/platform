@@ -1,10 +1,10 @@
+import { resolveSatelliteWorkspaceId } from '@tuturuuu/satellite/workspace-access';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   PERSONAL_WORKSPACE_SLUG,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
-  getWorkspace,
   getWorkspaceConfig as getWorkspaceConfigUtil,
   isPersonalWorkspace as isPersonalWorkspaceUtil,
   normalizeWorkspaceId as normalizeWorkspaceIdUtil,
@@ -35,9 +35,9 @@ export const normalizeWorkspaceId = async (
     if (supabase || request) {
       return normalizeWorkspaceIdUtil(wsIdParam, supabase, request);
     }
-    const workspace = await getWorkspace(wsIdParam);
-    if (!workspace) notFound();
-    return workspace.id;
+    const workspaceId = await resolveSatelliteWorkspaceId('tasks', wsIdParam);
+    if (!workspaceId) notFound();
+    return workspaceId;
   }
 
   return resolveWorkspaceId(wsIdParam);

@@ -48,30 +48,12 @@ const REGISTERED_APP_TARGETS = {
 };
 const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/calendar/src/lib/api-auth.ts',
-  'apps/finance/src/app/api/workspaces/[wsId]/transactions/import/money-lover/route.ts',
-  'apps/finance/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts',
   'apps/hive/src/lib/api-auth.ts',
-  'apps/hive/src/lib/hive-page-context.ts',
-  'apps/inventory/src/__tests__/products-routes.test.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/integrations/sepay/shared.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/count/route.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.test.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/options/route.ts',
-  'apps/inventory/src/app/api/v1/workspaces/[wsId]/products/route.ts',
   'apps/inventory/src/lib/api-auth.ts',
   'apps/learn/src/lib/api-auth.ts',
   'apps/mind/src/lib/api-auth.ts',
-  'apps/pay/src/app/[locale]/[wsId]/billing/actions.ts',
-  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
-  'apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts',
-  'apps/pay/src/app/api/payment/customer-portal/subscriptions/[subscriptionId]/route.ts',
-  'apps/pay/src/app/api/payment/orders/[orderId]/invoice/route.ts',
-  'apps/pay/src/app/api/payment/seats/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/change/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/checkouts/route.ts',
-  'apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/preview/route.ts',
-  'apps/pay/src/app/api/v1/workspaces/[wsId]/billing/route.ts',
   'apps/teach/src/lib/api-auth.ts',
+  'packages/satellite/src/workspace-access.ts',
 ]);
 const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
   'apps/hive/src/app/api/v1/hive/_shared.ts',
@@ -92,10 +74,7 @@ const CHECKED_SUPABASE_AUTH_FALLBACK_FILES = new Set([
 // apps/pay is a KNOWN outstanding instance of this bug, allowlisted only so the
 // rule can be enforced for every other app. Its billing pages need the same
 // app-local wrapper treatment.
-const SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES = new Set([
-  'apps/pay/src/app/[locale]/[wsId]/billing/page.tsx',
-  'apps/pay/src/app/[locale]/[wsId]/billing/success/page.tsx',
-]);
+const SHARED_WORKSPACE_WRAPPER_ALLOWED_FILES = new Set();
 const FORBIDDEN_PATTERNS = [
   {
     allowedFiles: COMPATIBLE_SESSION_FALLBACK_FILES,
@@ -164,12 +143,13 @@ const failures = [];
 // mode). A registered app must always pass the app-session `user` (or a
 // `request` for route handlers), normally via its `src/lib/workspace.ts`.
 //
-// Rolled out per-app. apps/contacts is audited and clean; apps/calendar,
-// apps/tasks, apps/track, apps/teach, apps/hive, and apps/inventory each still
-// have actorless call sites and must be audited before they are added here.
-const ACTORLESS_CHECK_APPS = new Set(['contacts', 'forms', 'git']);
+// Registered satellites must keep the verified app-session actor through every
+// workspace lookup. Do not allow new per-app debt: all registered apps are
+// checked together after the actor-aware migration.
+const ACTORLESS_CHECK_APPS = new Set(REGISTERED_APPS);
 const ACTORLESS_WORKSPACE_CALL = /\bgetWorkspace\(\s*[\w.]+\s*\)/gu;
 const ACTORLESS_PERMISSIONS_CALL = /\bgetPermissions\(\s*\{([\s\S]*?)\}\s*\)/gu;
+const ACTORLESS_NORMALIZE_CALL = /\bnormalizeWorkspaceId\(\s*[^,()]+\s*\)/gu;
 
 // Comments routinely quote the very call shapes this rule forbids (including in
 // the helpers written to fix them), so strip them before matching.
@@ -181,6 +161,13 @@ function stripComments(source) {
 
 function findActorlessWorkspaceCalls(filePath, rawSource) {
   const problems = [];
+
+  if (
+    /\.(test|spec)\.(ts|tsx)$/u.test(filePath) ||
+    filePath.includes('/__tests__/')
+  ) {
+    return problems;
+  }
 
   const app = filePath.split('/')[1];
   if (!ACTORLESS_CHECK_APPS.has(app)) {
@@ -203,13 +190,20 @@ function findActorlessWorkspaceCalls(filePath, rawSource) {
 
   for (const match of source.matchAll(ACTORLESS_PERMISSIONS_CALL)) {
     const args = match[1] ?? '';
-    if (!/\buser\b/u.test(args) && !/\brequest\b/u.test(args)) {
+    if (!/\buser\b/u.test(args)) {
       problems.push(
-        'getPermissions() called without an actor. Pass the app-session user: getPermissions({ user, wsId }).'
+        'getPermissions() called without an explicit actor. A request-only client is anonymous for satellite app sessions; pass getPermissions({ user, wsId }).'
       );
       break;
     }
   }
+
+  if (ACTORLESS_NORMALIZE_CALL.test(source)) {
+    problems.push(
+      'normalizeWorkspaceId() called without actor-bearing context. Resolve the satellite actor first or pass the authenticated client from the app auth wrapper.'
+    );
+  }
+  ACTORLESS_NORMALIZE_CALL.lastIndex = 0;
 
   return problems;
 }
@@ -221,8 +215,15 @@ for (const filePath of files) {
   // call shape they replaced, and quoting it must not re-trip the guard.
   const executableSource = stripComments(source);
 
+  const isTestFile =
+    /\.(test|spec)\.(ts|tsx)$/u.test(filePath) ||
+    filePath.includes('/__tests__/');
   for (const { allowedFiles, pattern, message } of FORBIDDEN_PATTERNS) {
-    if (pattern.test(executableSource) && !allowedFiles?.has(filePath)) {
+    if (
+      !isTestFile &&
+      pattern.test(executableSource) &&
+      !allowedFiles?.has(filePath)
+    ) {
       failures.push(`${filePath}: ${message}`);
     }
   }

@@ -84,7 +84,7 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions userId={user.id} />
           </Suspense>
         }
         notificationPopover={<NotificationPopover userId={user.id} />}

@@ -49,7 +49,7 @@ export const POST = withSessionAuth(
     params: RouteParams | Promise<RouteParams>
   ) => {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
     // Verify workspace membership
     const memberCheck = await verifyWorkspaceMembershipType({

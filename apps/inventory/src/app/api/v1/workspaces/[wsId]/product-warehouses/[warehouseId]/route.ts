@@ -1,12 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -23,14 +17,9 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, warehouseId: id } = await params;
-  const supabase = await createClient(req);
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, rawWsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('update_inventory')) {
     return NextResponse.json(
@@ -77,14 +66,9 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId: rawWsId, warehouseId: id } = await params;
-  const supabase = await createClient(req);
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, rawWsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('delete_inventory')) {
     return NextResponse.json(

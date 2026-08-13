@@ -1,5 +1,5 @@
+import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -10,13 +10,11 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const { wsId, supplierId: id } = await params;
+  const { wsId: rawWsId, supplierId: id } = await params;
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, rawWsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('update_inventory')) {
     return NextResponse.json(
@@ -45,14 +43,12 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const { wsId, supplierId: id } = await params;
+export async function DELETE(req: Request, { params }: Params) {
+  const { wsId: rawWsId, supplierId: id } = await params;
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
+  const authorization = await authorizeInventoryWorkspace(req, rawWsId);
+  if (!authorization.ok) return authorization.response;
+  const { permissions, wsId } = authorization.value;
   const { containsPermission } = permissions;
   if (!containsPermission('delete_inventory')) {
     return NextResponse.json(

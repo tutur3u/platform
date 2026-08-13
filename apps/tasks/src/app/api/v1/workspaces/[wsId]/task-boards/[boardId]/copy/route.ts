@@ -94,7 +94,7 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const permissions = await getPermissions({ wsId, request: req });
+    const permissions = await getPermissions({ user, wsId });
     if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
         { error: "You don't have permission to perform this operation" },

@@ -176,8 +176,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
       // If targeting another user, verify they're in the same workspace
       if (targetUserId && targetUserId !== user.id) {
         const permissions = await getPermissions({
+          user,
           wsId: normalizedWsId,
-          request,
         });
 
         if (!permissions) {
