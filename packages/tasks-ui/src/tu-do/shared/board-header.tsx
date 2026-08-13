@@ -34,7 +34,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { useOptionalSidebar } from '@tuturuuu/ui/custom/sidebar-context';
 import { Input } from '@tuturuuu/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -44,8 +43,11 @@ import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CreateBoardAnywhereDialog } from '../boards/create-board-anywhere-dialog';
+import { BoardActions } from '../boards/row-actions';
+import { useTasksHref } from '../tasks-route-context';
 import { getActiveBoardRefresh } from './board-broadcast-context';
 import { saveBoardConfig } from './board-config-storage';
+import { BoardHeaderToolbarTooltip as ToolbarTooltip } from './board-header-toolbar-tooltip';
 import { BoardSwitcher } from './board-switcher';
 import { BoardUserPresenceAvatarsComponent } from './board-user-presence-avatars';
 import type { ViewType } from './board-views';
@@ -87,21 +89,6 @@ interface Props {
   readOnly?: boolean;
   titlePrefix?: ReactNode;
   onBoardSettingsIntent?: () => void;
-}
-
-function ToolbarTooltip({
-  children,
-  label,
-}: {
-  children: ReactNode;
-  label: string;
-}) {
-  return (
-    <Tooltip delayDuration={0}>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
 }
 
 const toolbarButtonClass =
@@ -152,6 +139,7 @@ export function BoardHeader({
     filters.searchQuery || ''
   );
   const router = useRouter();
+  const tasksHref = useTasksHref();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
@@ -554,6 +542,15 @@ export function BoardHeader({
                   <Plus className="size-4" />
                 </Button>
               </CreateBoardAnywhereDialog>
+              {managerControlsVisible && (
+                <BoardActions
+                  board={{ ...board, ws_id: workspaceId }}
+                  onBoardUnavailable={() =>
+                    router.replace(`/${workspaceId}${tasksHref('/boards')}`)
+                  }
+                  wsId={workspaceId}
+                />
+              )}
             </div>
           )}
         </div>

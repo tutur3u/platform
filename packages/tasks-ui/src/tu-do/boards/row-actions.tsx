@@ -40,14 +40,17 @@ import { BoardShareDialog } from './board-share-dialog';
 import { TaskBoardForm } from './form';
 
 interface BoardActionsProps {
-  board: WorkspaceTaskBoard;
+  board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id'> &
+    Partial<WorkspaceTaskBoard>;
   canManageBoards?: boolean;
+  onBoardUnavailable?: () => void;
   wsId?: string;
 }
 
 export function BoardActions({
   board,
   canManageBoards = true,
+  onBoardUnavailable,
   wsId,
 }: BoardActionsProps) {
   const t = useTranslations();
@@ -59,7 +62,18 @@ export function BoardActions({
     archiveBoard,
     unarchiveBoard,
     duplicateBoard,
+    isArchiving,
+    isDeleting,
+    isPermanentlyDeleting,
+    isRestoring,
+    isUnarchiving,
   } = useBoardActions(wsId || data.ws_id);
+  const isPending =
+    isArchiving ||
+    isDeleting ||
+    isPermanentlyDeleting ||
+    isRestoring ||
+    isUnarchiving;
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -95,10 +109,11 @@ export function BoardActions({
             <Button
               variant="ghost"
               className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+              aria-label={t('common.actions')}
+              disabled={isPending}
               onClick={(e) => e.stopPropagation()}
             >
               <Ellipsis className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
@@ -256,10 +271,21 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => softDeleteBoard(data.id)}
+              disabled={isDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                softDeleteBoard(data.id, {
+                  onSuccess: () => {
+                    setShowDeleteDialog(false);
+                    onBoardUnavailable?.();
+                  },
+                });
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {t('ws-task-boards.row_actions.dialog.delete_button')}
+              {isDeleting
+                ? t('ws-task-boards.row_actions.dialog.delete_button_moving')
+                : t('ws-task-boards.row_actions.dialog.delete_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -286,10 +312,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => restoreBoard(data.id)}
+              disabled={isRestoring}
+              onClick={(event) => {
+                event.preventDefault();
+                restoreBoard(data.id, {
+                  onSuccess: () => setShowRestoreDialog(false),
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.restore_button')}
+              {isRestoring
+                ? t(
+                    'ws-task-boards.row_actions.dialog.restore_button_restoring'
+                  )
+                : t('ws-task-boards.row_actions.dialog.restore_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -319,10 +355,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => permanentDeleteBoard(data.id)}
+              disabled={isPermanentlyDeleting}
+              onClick={(event) => {
+                event.preventDefault();
+                permanentDeleteBoard(data.id, {
+                  onSuccess: () => setShowPermanentDeleteDialog(false),
+                });
+              }}
               className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
             >
-              {t('ws-task-boards.row_actions.dialog.delete_perm_button')}
+              {isPermanentlyDeleting
+                ? t(
+                    'ws-task-boards.row_actions.dialog.delete_perm_button_deleting'
+                  )
+                : t('ws-task-boards.row_actions.dialog.delete_perm_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -349,10 +395,23 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => archiveBoard(data.id)}
+              disabled={isArchiving}
+              onClick={(event) => {
+                event.preventDefault();
+                archiveBoard(data.id, {
+                  onSuccess: () => {
+                    setShowArchiveDialog(false);
+                    onBoardUnavailable?.();
+                  },
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.archive_button')}
+              {isArchiving
+                ? t(
+                    'ws-task-boards.row_actions.dialog.archive_button_archiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.archive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -382,10 +441,20 @@ export function BoardActions({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => unarchiveBoard(data.id)}
+              disabled={isUnarchiving}
+              onClick={(event) => {
+                event.preventDefault();
+                unarchiveBoard(data.id, {
+                  onSuccess: () => setShowUnarchiveDialog(false),
+                });
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {t('ws-task-boards.row_actions.dialog.unarchive_button')}
+              {isUnarchiving
+                ? t(
+                    'ws-task-boards.row_actions.dialog.unarchive_button_unarchiving'
+                  )
+                : t('ws-task-boards.row_actions.dialog.unarchive_button')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
