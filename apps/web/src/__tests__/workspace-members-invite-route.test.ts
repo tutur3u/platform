@@ -281,6 +281,23 @@ describe('workspace members invite route', () => {
     });
   });
 
+  it('rejects workspace roles for guest invitations', async () => {
+    const response = await postInvite({
+      body: {
+        email: 'guest@example.com',
+        memberType: 'GUEST',
+        roleId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      message: 'Workspace roles can only be assigned to member invitations.',
+    });
+    expect(mocks.roleMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.insertInvite).not.toHaveBeenCalled();
+  });
+
   it('requires role-management permission to preassign an invitation role', async () => {
     mocks.getPermissions.mockResolvedValue(
       createPermissions({ canManageRoles: false })

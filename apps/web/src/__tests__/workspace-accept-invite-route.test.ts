@@ -1,3 +1,4 @@
+import type { SeatAssignmentResult } from '@tuturuuu/payment-core/polar-seat-helper';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,10 +6,11 @@ const NORMALIZED_WS_ID = '11111111-1111-4111-8111-111111111111';
 const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 
 const mocks = vi.hoisted(() => {
-  const assignSeatToMember = vi.fn(() =>
-    Promise.resolve({ required: false, success: true })
+  const assignSeatToMember = vi.fn<() => Promise<SeatAssignmentResult>>(() =>
+    Promise.resolve({ required: false })
   );
   const enforceSeatLimit = vi.fn(() => Promise.resolve({ allowed: true }));
+  const revokeAssignedSeat = vi.fn(() => Promise.resolve());
   const normalizeWorkspaceId = vi.fn(
     async () => '11111111-1111-4111-8111-111111111111'
   );
@@ -167,6 +169,7 @@ const mocks = vi.hoisted(() => {
     authGetUser,
     enforceSeatLimit,
     normalizeWorkspaceId,
+    revokeAssignedSeat,
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
     sessionSupabase,
@@ -221,7 +224,7 @@ vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
 
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: mocks.assignSeatToMember,
-  revokeSeatFromMember: vi.fn(() => Promise.resolve()),
+  revokeAssignedSeat: mocks.revokeAssignedSeat,
 }));
 
 describe('POST /api/workspaces/[wsId]/accept-invite', () => {
@@ -282,7 +285,6 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.enforceSeatLimit.mockResolvedValue({ allowed: true });
     mocks.assignSeatToMember.mockResolvedValue({
       required: false,
-      success: true,
     });
   });
 
@@ -591,10 +593,10 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
-    expect(mocks.assignSeatToMember).not.toHaveBeenCalled();
+    expect(mocks.assignSeatToMember).toHaveBeenCalled();
   });
 
-  it('assigns a billable seat only after creating the membership', async () => {
+  it('assigns a billable seat before exposing the membership', async () => {
     mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
       data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
       error: null,
@@ -610,9 +612,37 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(response.status).toBe(200);
     expect(mocks.adminMembershipInsert).toHaveBeenCalled();
     expect(mocks.assignSeatToMember).toHaveBeenCalled();
-    expect(
-      mocks.adminMembershipInsert.mock.invocationCallOrder[0]
-    ).toBeLessThan(mocks.assignSeatToMember.mock.invocationCallOrder[0] ?? 0);
+    expect(mocks.assignSeatToMember.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.adminMembershipInsert.mock.invocationCallOrder[0] ?? 0
+    );
+  });
+
+  it('revokes only the new seat when a concurrent insert wins', async () => {
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
+      error: null,
+    });
+    mocks.assignSeatToMember.mockResolvedValueOnce({
+      required: true,
+      seatId: 'new-seat-id',
+      success: true,
+    });
+    mocks.adminMembershipInsert.mockResolvedValueOnce({
+      error: { code: '23505', message: 'duplicate membership' },
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.revokeAssignedSeat).toHaveBeenCalledWith(
+      expect.anything(),
+      'new-seat-id'
+    );
   });
 
   it('assigns a validated workspace role from an accepted invite', async () => {

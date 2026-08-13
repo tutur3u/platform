@@ -1,7 +1,7 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   assignSeatToMember,
-  revokeSeatFromMember,
+  revokeAssignedSeat,
 } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -325,6 +325,24 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     const polar = createPolarClient();
+    // Complete the external seat mutation before exposing membership. If a
+    // concurrent request wins the membership insert, revoke only the exact
+    // seat created by this attempt.
+    const seatAssignment = await assignSeatToMember(
+      polar,
+      sbAdmin,
+      wsId,
+      user.id
+    );
+    if (seatAssignment.required && !seatAssignment.success) {
+      return NextResponse.json(
+        {
+          error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+          message: seatAssignment.error,
+        },
+        { status: 403 }
+      );
+    }
 
     if (matchedWorkspaceUserId) {
       const { error: linkError } = await sbAdmin
@@ -342,6 +360,9 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
 
       if (linkError) {
+        if (seatAssignment.required) {
+          await revokeAssignedSeat(polar, seatAssignment.seatId);
+        }
         console.error(
           'Failed to link platform user to workspace user:',
           linkError
@@ -361,6 +382,10 @@ export const POST = withSessionAuth<{ wsId: string }>(
     });
 
     if (error) {
+      if (seatAssignment.required) {
+        await revokeAssignedSeat(polar, seatAssignment.seatId);
+      }
+
       if (error.code === '23505') {
         try {
           await assignPendingWorkspaceInviteRole({
@@ -419,39 +444,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
     }
 
-    // Assign a billable seat only after this request created the membership.
-    // A duplicate insert represents an existing member and must not add a seat.
-    const seatAssignment = await assignSeatToMember(
-      polar,
-      sbAdmin,
-      wsId,
-      user.id
-    );
-    if (seatAssignment.required && !seatAssignment.success) {
-      await sbAdmin
-        .from('workspace_members')
-        .delete()
-        .eq('ws_id', wsId)
-        .eq('user_id', user.id);
-
-      if (matchedWorkspaceUserId) {
-        await sbAdmin
-          .from('workspace_user_linked_users')
-          .delete()
-          .eq('platform_user_id', user.id)
-          .eq('ws_id', wsId)
-          .eq('virtual_user_id', matchedWorkspaceUserId);
-      }
-
-      return NextResponse.json(
-        {
-          error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
-          message: seatAssignment.error,
-        },
-        { status: 403 }
-      );
-    }
-
     try {
       await assignPendingWorkspaceInviteRole({
         admin: sbAdmin,
@@ -466,8 +458,8 @@ export const POST = withSessionAuth<{ wsId: string }>(
         .eq('ws_id', wsId)
         .eq('user_id', user.id);
 
-      if (seatAssignment.required && seatAssignment.success) {
-        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
+      if (seatAssignment.required) {
+        await revokeAssignedSeat(polar, seatAssignment.seatId);
       }
 
       if (matchedWorkspaceUserId) {

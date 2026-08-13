@@ -146,10 +146,21 @@ export async function POST(req: Request, { params }: Params) {
 
   const email = payload.email.trim().toLowerCase();
   const isPosOperatorInvite = payload.accessPreset === 'pos_operator';
+  const isGuestInvite =
+    payload.accessPreset === 'guest' || payload.memberType === 'GUEST';
 
   if (isPosOperatorInvite && payload.roleId) {
     return NextResponse.json(
       { message: 'POS operator invitations manage their role automatically.' },
+      { status: 400 }
+    );
+  }
+
+  if (isGuestInvite && payload.roleId) {
+    return NextResponse.json(
+      {
+        message: 'Workspace roles can only be assigned to member invitations.',
+      },
       { status: 400 }
     );
   }

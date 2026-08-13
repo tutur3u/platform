@@ -1,7 +1,7 @@
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import {
   assignSeatToMember,
-  revokeSeatFromMember,
+  revokeAssignedSeat,
 } from '@tuturuuu/payment-core/polar-seat-helper';
 import { enforceSeatLimit } from '@tuturuuu/payment-core/seat-limits';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -121,6 +121,22 @@ export async function acceptAppTokenInvitation({
   }
 
   const polar = createPolarClient();
+  const seatAssignment = await assignSeatToMember(
+    polar,
+    admin,
+    workspaceId,
+    userId
+  );
+  if (seatAssignment.required && !seatAssignment.success) {
+    return NextResponse.json(
+      {
+        error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+        message: seatAssignment.error,
+      },
+      { status: 403 }
+    );
+  }
+
   const { error } = await admin.from('workspace_members').insert({
     type: invitation.type,
     user_id: userId,
@@ -128,6 +144,9 @@ export async function acceptAppTokenInvitation({
   });
 
   if (error?.code === '23505') {
+    if (seatAssignment.required) {
+      await revokeAssignedSeat(polar, seatAssignment.seatId);
+    }
     const roleError = await assignInviteRoleOrError(
       admin,
       invitation,
@@ -140,6 +159,9 @@ export async function acceptAppTokenInvitation({
   }
 
   if (error) {
+    if (seatAssignment.required) {
+      await revokeAssignedSeat(polar, seatAssignment.seatId);
+    }
     console.error('Error accepting external app invite:', {
       code: error.code,
       userId,
@@ -148,27 +170,6 @@ export async function acceptAppTokenInvitation({
     return NextResponse.json(
       { error: 'Failed to accept invite', errorCode: 'ACCEPT_INVITE_FAILED' },
       { status: 500 }
-    );
-  }
-
-  const seatAssignment = await assignSeatToMember(
-    polar,
-    admin,
-    workspaceId,
-    userId
-  );
-  if (seatAssignment.required && !seatAssignment.success) {
-    await admin
-      .from('workspace_members')
-      .delete()
-      .eq('ws_id', workspaceId)
-      .eq('user_id', userId);
-    return NextResponse.json(
-      {
-        error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
-        message: seatAssignment.error,
-      },
-      { status: 403 }
     );
   }
 
@@ -184,8 +185,8 @@ export async function acceptAppTokenInvitation({
       .delete()
       .eq('ws_id', workspaceId)
       .eq('user_id', userId);
-    if (seatAssignment.required && seatAssignment.success) {
-      await revokeSeatFromMember(polar, admin, workspaceId, userId);
+    if (seatAssignment.required) {
+      await revokeAssignedSeat(polar, seatAssignment.seatId);
     }
     return roleError;
   }

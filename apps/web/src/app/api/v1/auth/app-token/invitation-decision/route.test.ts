@@ -84,7 +84,7 @@ vi.mock('@/lib/workspace-invitations/status', async (importOriginal) => {
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: (...args: Parameters<typeof mocks.assignSeatToMember>) =>
     mocks.assignSeatToMember(...args),
-  revokeSeatFromMember: (
+  revokeAssignedSeat: (
     ...args: Parameters<typeof mocks.revokeSeatFromMember>
   ) => mocks.revokeSeatFromMember(...args),
 }));
