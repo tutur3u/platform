@@ -1,10 +1,14 @@
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 
 const paramsSchema = z.object({
-  wsId: z.guid(),
+  wsId: z.string().min(1),
   boardId: z.guid(),
 });
 
@@ -13,7 +17,7 @@ interface BoardParams {
   boardId: string;
 }
 
-async function verifyWorkspaceAccess(
+async function requireWorkspaceAccess(
   supabase: Parameters<Parameters<typeof withSessionAuth>[0]>[1]['supabase'],
   wsId: string,
   userId: string
@@ -23,23 +27,37 @@ async function verifyWorkspaceAccess(
     userId,
     supabase,
   });
-  return member.ok;
+
+  if (member.error === 'membership_lookup_failed') {
+    return NextResponse.json(
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
+    );
+  }
+
+  if (!member.ok) {
+    return NextResponse.json(
+      { error: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  return null;
 }
 
 // POST handler for archiving
 export const POST = withSessionAuth<BoardParams>(
   async (_req, { user, supabase }, rawParams) => {
     try {
-      const { wsId, boardId } = paramsSchema.parse(rawParams);
+      const { wsId: rawWsId, boardId } = paramsSchema.parse(rawParams);
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
-        return NextResponse.json(
-          { error: "You don't have access to this workspace" },
-          { status: 403 }
-        );
-      }
+      const accessError = await requireWorkspaceAccess(supabase, wsId, user.id);
+      if (accessError) return accessError;
 
-      const { data: board, error: boardCheckError } = await supabase
+      const sbAdmin = await createAdminClient();
+
+      const { data: board, error: boardCheckError } = await sbAdmin
         .from('workspace_boards')
         .select('id, archived_at, deleted_at')
         .eq('id', boardId)
@@ -64,10 +82,11 @@ export const POST = withSessionAuth<BoardParams>(
         );
       }
 
-      const { error: archiveError } = await supabase
+      const { error: archiveError } = await sbAdmin
         .from('workspace_boards')
         .update({ archived_at: new Date().toISOString() })
-        .eq('id', boardId);
+        .eq('id', boardId)
+        .eq('ws_id', wsId);
 
       if (archiveError) {
         console.error('Error archiving board:', archiveError);
@@ -92,16 +111,15 @@ export const POST = withSessionAuth<BoardParams>(
 export const DELETE = withSessionAuth<BoardParams>(
   async (_req, { user, supabase }, rawParams) => {
     try {
-      const { wsId, boardId } = paramsSchema.parse(rawParams);
+      const { wsId: rawWsId, boardId } = paramsSchema.parse(rawParams);
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      if (!(await verifyWorkspaceAccess(supabase, wsId, user.id))) {
-        return NextResponse.json(
-          { error: "You don't have access to this workspace" },
-          { status: 403 }
-        );
-      }
+      const accessError = await requireWorkspaceAccess(supabase, wsId, user.id);
+      if (accessError) return accessError;
 
-      const { data: board, error: boardCheckError } = await supabase
+      const sbAdmin = await createAdminClient();
+
+      const { data: board, error: boardCheckError } = await sbAdmin
         .from('workspace_boards')
         .select('id, archived_at, deleted_at')
         .eq('id', boardId)
@@ -126,10 +144,11 @@ export const DELETE = withSessionAuth<BoardParams>(
         );
       }
 
-      const { error: unarchiveError } = await supabase
+      const { error: unarchiveError } = await sbAdmin
         .from('workspace_boards')
         .update({ archived_at: null })
-        .eq('id', boardId);
+        .eq('id', boardId)
+        .eq('ws_id', wsId);
 
       if (unarchiveError) {
         console.error('Error unarchiving board:', unarchiveError);

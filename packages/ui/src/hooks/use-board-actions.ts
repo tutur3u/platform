@@ -2,6 +2,20 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getTaskApiUrl } from '../lib/tasks-app-url';
 
+export async function getBoardActionError(
+  response: Response,
+  fallback: string
+) {
+  const errorData = (await response.json().catch(() => null)) as {
+    error?: unknown;
+    message?: unknown;
+  } | null;
+
+  if (typeof errorData?.error === 'string') return errorData.error;
+  if (typeof errorData?.message === 'string') return errorData.message;
+  return fallback;
+}
+
 async function boardAction(
   wsId: string,
   boardId: string,
@@ -21,8 +35,7 @@ async function boardAction(
   );
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Board action failed');
+    throw new Error(await getBoardActionError(response, 'Board action failed'));
   }
 
   return response.json();
@@ -45,8 +58,9 @@ async function archiveAction(
   );
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Archive action failed');
+    throw new Error(
+      await getBoardActionError(response, 'Archive action failed')
+    );
   }
 
   return response.json();

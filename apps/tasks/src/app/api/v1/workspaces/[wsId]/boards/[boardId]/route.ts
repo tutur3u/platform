@@ -1,6 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
-  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -38,7 +37,7 @@ interface BoardParams {
 
 type SessionAuthContext = Parameters<Parameters<typeof withSessionAuth>[0]>[1];
 
-async function requireBoardManagementAccess(
+async function requireWorkspaceMembership(
   supabase: SessionAuthContext['supabase'],
   wsId: string,
   user: SessionAuthContext['user']
@@ -63,14 +62,6 @@ async function requireBoardManagementAccess(
     );
   }
 
-  const permissions = await getPermissions({ wsId, user });
-  if (!permissions?.containsPermission('manage_projects')) {
-    return NextResponse.json(
-      { error: "You don't have permission to perform this operation" },
-      { status: 403 }
-    );
-  }
-
   return null;
 }
 
@@ -82,7 +73,7 @@ export const DELETE = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user
@@ -146,7 +137,7 @@ export const PATCH = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user
@@ -217,7 +208,7 @@ export const PUT = withSessionAuth<BoardParams>(
       const { boardId } = paramsSchema.parse(rawParams);
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-      const accessError = await requireBoardManagementAccess(
+      const accessError = await requireWorkspaceMembership(
         supabase,
         wsId,
         user

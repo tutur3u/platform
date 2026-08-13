@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
-const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 
@@ -66,8 +65,6 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof getPermissionsMock>) =>
-    getPermissionsMock(...args),
   normalizeWorkspaceId: (
     ...args: Parameters<typeof normalizeWorkspaceIdMock>
   ) => normalizeWorkspaceIdMock(...args),
@@ -132,9 +129,6 @@ describe('workspace boards/[boardId] route', () => {
 
     normalizeWorkspaceIdMock.mockResolvedValue(WS_ID);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
-    getPermissionsMock.mockResolvedValue({
-      containsPermission: vi.fn().mockReturnValue(true),
-    });
 
     const fromMock = vi.fn((table: string) => {
       if (table !== 'workspace_boards') {
@@ -158,18 +152,15 @@ describe('workspace boards/[boardId] route', () => {
     ['PATCH', PATCH, { restore: true }],
     ['DELETE', DELETE, undefined],
   ] as const)(
-    'rejects %s for a workspace member without manage_projects',
+    'rejects %s when the user is not a workspace member',
     async (method, handler, body) => {
-      getPermissionsMock.mockResolvedValueOnce({
-        containsPermission: (permission: string) =>
-          permission !== 'manage_projects',
-      });
+      verifyWorkspaceMembershipTypeMock.mockResolvedValueOnce({ ok: false });
 
       const response = await handler(createRequest(method, body), routeContext);
 
       expect(response.status).toBe(403);
       await expect(response.json()).resolves.toEqual({
-        error: "You don't have permission to perform this operation",
+        error: "You don't have access to this workspace",
       });
       expect(createAdminClientMock).not.toHaveBeenCalled();
     }
