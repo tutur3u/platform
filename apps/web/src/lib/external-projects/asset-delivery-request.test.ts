@@ -11,6 +11,15 @@ describe('isVersionedExternalProjectAssetDeliveryRequest', () => {
     ).toBe(true);
   });
 
+  it.each(['?v', '?v='])('rejects an empty version in %s', (search) => {
+    expect(
+      isVersionedExternalProjectAssetDeliveryRequest(
+        'GET',
+        new URL(`${ASSET_URL.split('?')[0]}${search}`)
+      )
+    ).toBe(false);
+  });
+
   it.each([
     ['PATCH', ASSET_URL],
     ['DELETE', ASSET_URL],

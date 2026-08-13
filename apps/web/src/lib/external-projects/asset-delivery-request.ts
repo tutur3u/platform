@@ -7,7 +7,7 @@ export function isVersionedExternalProjectAssetDeliveryRequest(
 ) {
   return (
     (method === 'GET' || method === 'HEAD') &&
-    url.searchParams.has('v') &&
+    Boolean(url.searchParams.get('v')) &&
     VERSIONED_ASSET_DELIVERY_PATH.test(url.pathname)
   );
 }
