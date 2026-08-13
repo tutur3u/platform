@@ -3664,7 +3664,9 @@
     "assistant_response_failed": "Mira không thể phản hồi, nhưng tin nhắn của bạn đã được lưu.",
     "attach_files": "Đính kèm tệp",
     "attachment": "Tệp đính kèm",
+    "attachment_limit_reached": "Bạn có thể đính kèm tối đa {count} tệp mỗi tin nhắn.",
     "attachment_open_failed": "Không thể mở tệp đính kèm",
+    "attachment_too_large": "Tệp đính kèm phải nhỏ hơn hoặc bằng {size}.",
     "back": "Quay lại",
     "cancel": "Hủy",
     "channel_badge": "Kênh",
@@ -3707,6 +3709,7 @@
     "direct_messages": "Tin nhắn trực tiếp",
     "directory_search_placeholder": "Tìm người",
     "download_qr_code": "Tải mã QR",
+    "drop_files_here": "Thả tệp để đính kèm",
     "edited": "đã sửa",
     "empty_conversations_description": "Bắt đầu tin nhắn trực tiếp, nhóm trò chuyện, kênh hoặc cuộc trò chuyện AI.",
     "empty_conversations_title": "Chưa có cuộc trò chuyện",
@@ -3829,10 +3832,7 @@
     "unread_messages_count": "{count} tin nhắn chưa đọc",
     "untitled_channel": "Kênh chưa đặt tên",
     "untitled_chat": "Cuộc trò chuyện chưa đặt tên",
-    "upload_failed": "Không thể tải tệp lên",
-    "attachment_too_large": "Tệp đính kèm phải nhỏ hơn hoặc bằng {size}.",
-    "attachment_limit_reached": "Bạn có thể đính kèm tối đa {count} tệp mỗi tin nhắn.",
-    "drop_files_here": "Thả tệp để đính kèm"
+    "upload_failed": "Không thể tải tệp lên"
   },
   "command_launcher": {
     "apps": "Ứng dụng",
@@ -8755,31 +8755,31 @@
       },
       "video": {
         "floatingCards": {
-          "taskCard": {
-            "title": "Công việc",
-            "description": "Duyệt thiết kế",
-            "status": "Xong"
+          "aiCard": {
+            "action": "Đã thêm vào lịch",
+            "message": "\"Đã chặn ba giờ tập trung cho ngày mai.\"",
+            "title": "Mira"
           },
           "calendarCard": {
-            "title": "Lịch",
             "event": "Khối tập trung",
-            "time": "09:00 – 11:00"
+            "time": "09:00 – 11:00",
+            "title": "Lịch"
           },
-          "aiCard": {
-            "title": "Mira",
-            "message": "\"Đã chặn ba giờ tập trung cho ngày mai.\"",
-            "action": "Đã thêm vào lịch"
+          "taskCard": {
+            "description": "Duyệt thiết kế",
+            "status": "Xong",
+            "title": "Công việc"
           },
           "trackCard": {
+            "period": "Tuần này",
             "title": "Thời gian đã ghi",
-            "value": "24h 10m",
-            "period": "Tuần này"
+            "value": "24h 10m"
           }
         },
+        "tab": "Tuturuuu — Không gian làm việc",
         "thumbnail": "Demo Tuturuuu",
         "title": "Video Demo Tuturuuu",
-        "watchNow": "Xem demo",
-        "tab": "Tuturuuu — Không gian làm việc"
+        "watchNow": "Xem demo"
       }
     },
     "pricing": {
@@ -21248,6 +21248,36 @@
     "fix_recurring_link_description": "Gắn phiên học rời này trở lại lịch lặp lại, hoặc chuyển thành lịch hằng tuần khi không có lịch nào khớp.",
     "fix_recurring_preview_description": "Kiểm tra phiên lặp lại khớp trước khi gắn phiên học này.",
     "fix_recurring_preview_title": "Sửa liên kết lặp lại",
+    "frequency_added": "Thêm mới",
+    "frequency_added_dates": "Ngày được thêm ({count})",
+    "frequency_adjusted": "Điều chỉnh giờ",
+    "frequency_adjusted_dates": "Ngày được điều chỉnh giờ ({count})",
+    "frequency_apply_changes": "Áp dụng {count} thay đổi",
+    "frequency_complete_change_list": "Danh sách thay đổi đầy đủ",
+    "frequency_current_pattern": "Tần suất hiện tại",
+    "frequency_effective_from": "Áp dụng từ",
+    "frequency_future_only_description": "Các buổi học và điểm danh trong quá khứ sẽ không thay đổi. Các thứ mới được áp dụng từ buổi học sắp tới đầu tiên trong lịch định kỳ này.",
+    "frequency_future_only_title": "Chỉ các buổi học sắp tới",
+    "frequency_history_unchanged": "Các buổi học và điểm danh trong quá khứ vẫn được giữ nguyên.",
+    "frequency_kept": "Giữ lại",
+    "frequency_kept_dates": "Ngày được giữ lại ({count})",
+    "frequency_load_failed": "Không thể tải lịch định kỳ sắp tới. Hãy thử lại trước khi quyết định.",
+    "frequency_loading": "Đang tải toàn bộ lịch sắp tới...",
+    "frequency_new_pattern": "Tần suất mới",
+    "frequency_no_changes": "Tần suất này đang khớp với lịch sắp tới hiện tại. Hãy chọn thứ hoặc khoảng lặp khác để xem lại thay đổi.",
+    "frequency_no_dates": "Không có",
+    "frequency_no_recurring_schedule": "Không có lịch định kỳ sắp tới",
+    "frequency_no_recurring_schedule_description": "Hãy tạo lịch định kỳ trước hoặc chọn nhóm khác.",
+    "frequency_removed": "Loại bỏ",
+    "frequency_removed_dates": "Ngày bị loại bỏ ({count})",
+    "frequency_review_changes": "Xem lại thay đổi",
+    "frequency_review_description": "Chưa có thay đổi nào được áp dụng. Hãy xem lại mọi ngày bị ảnh hưởng và chỉ áp dụng khi kết quả chính xác.",
+    "frequency_schedule_to_change": "Lịch định kỳ cần thay đổi",
+    "frequency_time_and_timezone": "Giờ học và múi giờ",
+    "frequency_update": "Cập nhật tần suất",
+    "frequency_update_description": "Chọn các thứ và khoảng lặp tuần cho toàn bộ buổi học sắp tới. Bạn sẽ thấy chính xác những gì bị loại bỏ, thêm mới, giữ lại hoặc điều chỉnh trước khi áp dụng.",
+    "frequency_update_failed": "Không thể cập nhật tần suất lịch. Chưa có xác nhận nào được ghi nhận.",
+    "frequency_update_success": "Đã cập nhật tần suất lịch với {count} thay đổi hiển thị.",
     "group": "Nhóm",
     "group_managers_count_short": "{count} quản lý",
     "group_members_count": "{count} người dùng",

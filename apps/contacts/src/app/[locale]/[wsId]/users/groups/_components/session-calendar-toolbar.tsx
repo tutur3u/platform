@@ -29,6 +29,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import '@tuturuuu/users-core/lib/dayjs-setup';
+import { FrequencyUpdateDialog } from './frequency-update-dialog';
 import { QuickWeeklyScheduleDialog } from './quick-weekly-schedule-dialog';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { getWeekStart } from './session-time-utils';
@@ -92,6 +93,12 @@ export function SessionCalendarToolbar({
   const locale = useLocale();
   const scheduleActions = canUpdateSchedule ? (
     <div className="flex flex-wrap items-center gap-2">
+      <FrequencyUpdateDialog
+        canChooseGroup={canChooseGroup}
+        defaultGroupId={activeGroupId ?? undefined}
+        groups={groups}
+        wsId={wsId}
+      />
       <QuickWeeklyScheduleDialog
         canChooseGroup={canChooseGroup}
         defaultGroupId={activeGroupId ?? undefined}
