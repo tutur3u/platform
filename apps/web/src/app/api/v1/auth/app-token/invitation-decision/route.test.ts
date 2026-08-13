@@ -125,6 +125,10 @@ function createAdminMock() {
         inserts.push({ table, value });
         return Promise.resolve({ error: null });
       }),
+      update: vi.fn((value: unknown) => {
+        inserts.push({ table, value });
+        return builder;
+      }),
       maybeSingle: vi.fn(() => {
         if (table === 'users') {
           return Promise.resolve({

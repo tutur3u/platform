@@ -8,6 +8,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { assignPendingWorkspaceInviteRole } from './assign-pending-role';
+import { promoteInvitedWorkspaceMember } from './promote-invited-member';
 import {
   getWorkspaceInviteCandidateEmails,
   type WorkspaceInvitationRecord,
@@ -101,6 +102,27 @@ export async function acceptAppTokenInvitation({
   }
 
   if (existingMember.ok) {
+    try {
+      await promoteInvitedWorkspaceMember({
+        admin,
+        invitationType: invitation.type,
+        userId,
+        workspaceId,
+      });
+    } catch (error) {
+      console.error('Failed to promote invited workspace member', {
+        error,
+        userId,
+        workspaceId,
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to promote invited member',
+          errorCode: 'ACCEPT_INVITE_FAILED',
+        },
+        { status: 500 }
+      );
+    }
     const roleError = await assignInviteRoleOrError(
       admin,
       invitation,
@@ -146,6 +168,27 @@ export async function acceptAppTokenInvitation({
   if (error?.code === '23505') {
     if (seatAssignment.required) {
       await revokeAssignedSeat(polar, seatAssignment.seatId);
+    }
+    try {
+      await promoteInvitedWorkspaceMember({
+        admin,
+        invitationType: invitation.type,
+        userId,
+        workspaceId,
+      });
+    } catch (promotionError) {
+      console.error('Failed to promote invited workspace member', {
+        error: promotionError,
+        userId,
+        workspaceId,
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to promote invited member',
+          errorCode: 'ACCEPT_INVITE_FAILED',
+        },
+        { status: 500 }
+      );
     }
     const roleError = await assignInviteRoleOrError(
       admin,

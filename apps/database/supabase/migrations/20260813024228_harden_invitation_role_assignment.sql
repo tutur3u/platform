@@ -40,6 +40,8 @@ WITH CHECK (
   AND (
     role_id IS NULL
     OR (
+      type = 'MEMBER'
+      AND
       public.has_workspace_permission(
         ws_id,
         (SELECT auth.uid()),
@@ -79,7 +81,8 @@ WITH CHECK (
   AND public.is_org_member((SELECT auth.uid()), ws_id)
   AND (
     role_id IS NULL
-    OR public.has_workspace_permission(
+    OR type = 'MEMBER'
+    AND public.has_workspace_permission(
       ws_id,
       (SELECT auth.uid()),
       'manage_workspace_roles'::text
@@ -116,6 +119,8 @@ WITH CHECK (
   AND (
     role_id IS NULL
     OR (
+      type = 'MEMBER'
+      AND
       public.has_workspace_permission(
         ws_id,
         (SELECT auth.uid()),
@@ -149,6 +154,8 @@ WITH CHECK (
   AND (
     role_id IS NULL
     OR (
+      type = 'MEMBER'
+      AND
       public.has_workspace_permission(
         ws_id,
         (SELECT auth.uid()),
@@ -188,7 +195,8 @@ WITH CHECK (
   AND public.is_org_member((SELECT auth.uid()), ws_id)
   AND (
     role_id IS NULL
-    OR public.has_workspace_permission(
+    OR type = 'MEMBER'
+    AND public.has_workspace_permission(
       ws_id,
       (SELECT auth.uid()),
       'manage_workspace_roles'::text

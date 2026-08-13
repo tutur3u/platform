@@ -16,6 +16,7 @@ import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/s
 import { withSessionAuth } from '@/lib/api-auth';
 import { finalizeWorkspaceInvitationNotifications } from '@/lib/workspace-invitation-notifications';
 import { assignPendingWorkspaceInviteRole } from '@/lib/workspace-invitations/assign-pending-role';
+import { promoteInvitedWorkspaceMember } from '@/lib/workspace-invitations/promote-invited-member';
 
 type PendingInvite = {
   email?: string | null;
@@ -274,6 +275,12 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
     if (existingMember.ok) {
       try {
+        await promoteInvitedWorkspaceMember({
+          admin: sbAdmin,
+          invitationType: inviteMemberType,
+          userId: user.id,
+          workspaceId: wsId,
+        });
         await assignPendingWorkspaceInviteRole({
           admin: sbAdmin,
           roleId: pendingRoleId,
@@ -388,6 +395,12 @@ export const POST = withSessionAuth<{ wsId: string }>(
 
       if (error.code === '23505') {
         try {
+          await promoteInvitedWorkspaceMember({
+            admin: sbAdmin,
+            invitationType: inviteMemberType,
+            userId: user.id,
+            workspaceId: wsId,
+          });
           await assignPendingWorkspaceInviteRole({
             admin: sbAdmin,
             roleId: pendingRoleId,

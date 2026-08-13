@@ -23,6 +23,8 @@ const mocks = vi.hoisted(() => {
   const adminInviteMaybeSingle = vi.fn();
   const adminEmailInviteIn = vi.fn();
   const adminMembershipInsert = vi.fn();
+  const adminMembershipUpdate = vi.fn();
+  const adminMembershipUpdateUserEq = vi.fn();
   const adminMembershipDeleteUserEq = vi.fn();
   const adminRoleMaybeSingle = vi.fn();
   const adminRoleSelect = vi.fn();
@@ -96,6 +98,7 @@ const mocks = vi.hoisted(() => {
         return {
           delete: vi.fn(() => ({ eq: adminMembershipDeleteWsEq })),
           insert: adminMembershipInsert,
+          update: adminMembershipUpdate,
         };
       }
 
@@ -159,6 +162,8 @@ const mocks = vi.hoisted(() => {
     adminInviteMaybeSingle,
     adminLinkedUsersUpsert,
     adminMembershipInsert,
+    adminMembershipUpdate,
+    adminMembershipUpdateUserEq,
     adminMembershipDeleteUserEq,
     adminPrivateEmailMaybeSingle,
     adminRoleMaybeSingle,
@@ -270,6 +275,10 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     mocks.adminMembershipInsert.mockResolvedValue({ error: null });
+    mocks.adminMembershipUpdate.mockImplementation(() => ({
+      eq: vi.fn(() => ({ eq: mocks.adminMembershipUpdateUserEq })),
+    }));
+    mocks.adminMembershipUpdateUserEq.mockResolvedValue({ error: null });
     mocks.adminMembershipDeleteUserEq.mockResolvedValue({ error: null });
     mocks.adminRoleMaybeSingle.mockResolvedValue({
       data: { id: 'pos-role' },
@@ -573,6 +582,40 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
+  });
+
+  it('promotes an existing guest before assigning a member invite role', async () => {
+    const { verifyWorkspaceMembershipType } = await import(
+      '@tuturuuu/utils/workspace-helper'
+    );
+    vi.mocked(verifyWorkspaceMembershipType).mockResolvedValueOnce({
+      membershipType: 'GUEST',
+      ok: true,
+    });
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          role_id: 'role-editor',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMembershipUpdate).toHaveBeenCalledWith({
+      type: 'MEMBER',
+    });
+    expect(mocks.adminRoleMemberUpsert).toHaveBeenCalled();
   });
 
   it('finalizes invitations after a duplicate member insert', async () => {
