@@ -15,6 +15,7 @@ export const TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS = [
 
 export const TUTURUUU_WEB_WORKSPACE_API_RESERVED_PATHS = [
   '/api/workspaces/invitations',
+  '/api/v1/workspaces/:wsId/settings/permissions',
 ] as const;
 
 type NextImageConfig = NonNullable<NextConfig['images']>;

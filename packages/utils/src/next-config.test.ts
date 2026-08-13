@@ -259,6 +259,11 @@ describe('createTuturuuuWebWorkspaceApiRewrites', () => {
         source: '/api/workspaces/invitations',
         destination: 'https://tuturuuu.com/api/workspaces/invitations',
       },
+      {
+        source: '/api/v1/workspaces/:wsId/settings/permissions',
+        destination:
+          'https://tuturuuu.com/api/v1/workspaces/:wsId/settings/permissions',
+      },
     ]);
   });
 });
