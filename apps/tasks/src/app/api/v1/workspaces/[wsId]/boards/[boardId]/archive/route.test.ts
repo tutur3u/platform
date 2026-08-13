@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const createAdminClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
+const authMocks = vi.hoisted(() => ({ withSessionAuth: vi.fn() }));
 
 const sessionSupabase = { from: vi.fn() };
 const sessionUser = { id: '00000000-0000-4000-8000-000000000999' };
@@ -57,7 +58,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
+  withSessionAuth: authMocks.withSessionAuth.mockImplementation(
     <T>(
       handler: (
         request: NextRequest,
@@ -65,19 +66,20 @@ vi.mock('@/lib/api-auth', () => ({
         params: T
       ) => Promise<Response> | Response
     ) =>
-    async (
-      request: NextRequest,
-      routeContext?: { params?: Promise<T> | T }
-    ) => {
-      const params = routeContext?.params
-        ? await Promise.resolve(routeContext.params)
-        : ({} as T);
-      return handler(
-        request,
-        { supabase: sessionSupabase, user: sessionUser },
-        params
-      );
-    },
+      async (
+        request: NextRequest,
+        routeContext?: { params?: Promise<T> | T }
+      ) => {
+        const params = routeContext?.params
+          ? await Promise.resolve(routeContext.params)
+          : ({} as T);
+        return handler(
+          request,
+          { supabase: sessionSupabase, user: sessionUser },
+          params
+        );
+      }
+  ),
 }));
 
 import { DELETE, POST } from './route';
@@ -99,6 +101,25 @@ describe('workspace boards/[boardId]/archive route', () => {
     mutationEqCalls.length = 0;
     normalizeWorkspaceIdMock.mockResolvedValue(WS_ID);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+  });
+
+  it('accepts configured app sessions for archive mutations', async () => {
+    vi.resetModules();
+    authMocks.withSessionAuth.mockClear();
+
+    await import('./route');
+
+    expect(authMocks.withSessionAuth).toHaveBeenCalledTimes(2);
+    for (const call of authMocks.withSessionAuth.mock.calls) {
+      expect(call).toEqual([
+        expect.any(Function),
+        {
+          allowAppSessionAuth: {
+            targetApp: ['platform', 'calendar', 'tasks'],
+          },
+        },
+      ]);
+    }
   });
 
   it.each([

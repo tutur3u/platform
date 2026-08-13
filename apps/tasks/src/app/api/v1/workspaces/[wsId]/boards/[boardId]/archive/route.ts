@@ -1,3 +1,4 @@
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -16,6 +17,10 @@ interface BoardParams {
   wsId: string;
   boardId: string;
 }
+
+const BOARD_LIFECYCLE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
 
 async function requireWorkspaceAccess(
   supabase: Parameters<Parameters<typeof withSessionAuth>[0]>[1]['supabase'],
@@ -104,7 +109,8 @@ export const POST = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
 
 // DELETE handler for unarchiving
@@ -166,5 +172,6 @@ export const DELETE = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );

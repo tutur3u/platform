@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const createAdminClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
+const authMocks = vi.hoisted(() => ({ withSessionAuth: vi.fn() }));
 
 const sessionSupabase = { from: vi.fn() };
 const sessionUser = {
@@ -74,7 +75,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
+  withSessionAuth: authMocks.withSessionAuth.mockImplementation(
     <T>(
       handler: (
         request: NextRequest,
@@ -82,19 +83,20 @@ vi.mock('@/lib/api-auth', () => ({
         params: T
       ) => Promise<Response> | Response
     ) =>
-    async (
-      request: NextRequest,
-      routeContext?: { params?: Promise<T> | T }
-    ) => {
-      const params = routeContext?.params
-        ? await Promise.resolve(routeContext.params)
-        : ({} as T);
-      return handler(
-        request,
-        { supabase: sessionSupabase, user: sessionUser },
-        params
-      );
-    },
+      async (
+        request: NextRequest,
+        routeContext?: { params?: Promise<T> | T }
+      ) => {
+        const params = routeContext?.params
+          ? await Promise.resolve(routeContext.params)
+          : ({} as T);
+        return handler(
+          request,
+          { supabase: sessionSupabase, user: sessionUser },
+          params
+        );
+      }
+  ),
 }));
 
 import { DELETE, PATCH, PUT } from './route';
@@ -145,6 +147,25 @@ describe('workspace boards/[boardId] route', () => {
     deleteMock.mockImplementation(() => createThenableMutationQuery());
     updateMock.mockImplementation(() => createThenableMutationQuery());
     createAdminClientMock.mockResolvedValue({ from: fromMock });
+  });
+
+  it('accepts configured app sessions for every lifecycle mutation', async () => {
+    vi.resetModules();
+    authMocks.withSessionAuth.mockClear();
+
+    await import('./route');
+
+    expect(authMocks.withSessionAuth).toHaveBeenCalledTimes(3);
+    for (const call of authMocks.withSessionAuth.mock.calls) {
+      expect(call).toEqual([
+        expect.any(Function),
+        {
+          allowAppSessionAuth: {
+            targetApp: ['platform', 'calendar', 'tasks'],
+          },
+        },
+      ]);
+    }
   });
 
   it.each([

@@ -1,3 +1,4 @@
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -36,6 +37,10 @@ interface BoardParams {
 }
 
 type SessionAuthContext = Parameters<Parameters<typeof withSessionAuth>[0]>[1];
+
+const BOARD_LIFECYCLE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
 
 async function requireWorkspaceMembership(
   supabase: SessionAuthContext['supabase'],
@@ -122,7 +127,8 @@ export const DELETE = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
 
 // PATCH handler for restoration
@@ -197,7 +203,8 @@ export const PATCH = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
 
 // PUT handler for soft deletion (moving to trash)
@@ -257,5 +264,6 @@ export const PUT = withSessionAuth<BoardParams>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: BOARD_LIFECYCLE_APP_SESSION_AUTH }
 );
