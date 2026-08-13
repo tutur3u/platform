@@ -85,4 +85,40 @@ describe('TaskCardCheckbox', () => {
       screen.getByRole('checkbox', { name: 'Mark as Done' })
     ).not.toBeChecked();
   });
+
+  it('uses current list status when an internal task has stale completion metadata', () => {
+    render(
+      <TaskCardCheckbox
+        task={{
+          ...task,
+          closed_at: '2026-08-13T00:00:00.000Z',
+          completed_at: '2026-08-13T00:00:00.000Z',
+        }}
+        taskList={taskList}
+        isLoading={false}
+        onToggle={vi.fn()}
+        tooltipLabel="Mark as Done"
+      />
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Mark as Done' })
+    ).not.toBeChecked();
+  });
+
+  it('renders checked when the task is actually in a resolved list', () => {
+    render(
+      <TaskCardCheckbox
+        task={task}
+        taskList={{ ...taskList, status: 'done' }}
+        isLoading={false}
+        onToggle={vi.fn()}
+        tooltipLabel="Mark as Done"
+      />
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Mark as Done' })
+    ).toBeChecked();
+  });
 });

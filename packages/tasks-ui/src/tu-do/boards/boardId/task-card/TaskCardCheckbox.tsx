@@ -2,7 +2,6 @@ import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors'
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
-import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
@@ -30,16 +29,13 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
 }: TaskCardCheckboxProps) {
   const taskIsOverdue = isOverdue(task.end_date);
   const isInResolvedList = isTaskBoardResolvedStatus(taskList?.status);
-  const isChecked = isPersonalExternalOverlayTask(task)
-    ? isInResolvedList
-    : Boolean(task.closed_at);
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Checkbox
           aria-label={tooltipLabel}
-          checked={isChecked}
+          checked={isInResolvedList}
           className={cn(
             'h-4 w-4 flex-none rounded-full transition-all duration-200',
             'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
