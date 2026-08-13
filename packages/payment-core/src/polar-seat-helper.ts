@@ -200,6 +200,14 @@ export async function revokeSeatFromMember(
   }
 }
 
+/** Revoke the exact seat created by the current acceptance attempt. */
+export async function revokeAssignedSeat(
+  polar: Polar,
+  seatId: string
+): Promise<void> {
+  await polar.customerSeats.revokeSeat({ seatId });
+}
+
 /**
  * Assigns seats to all current workspace members
  * Used during plan upgrade to seat-based subscription

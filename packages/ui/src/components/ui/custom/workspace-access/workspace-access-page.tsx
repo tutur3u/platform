@@ -37,6 +37,7 @@ import { WorkspaceAccessMembers } from './workspace-access-members';
 import { WorkspaceAccessPageHeader } from './workspace-access-page-header';
 import { WorkspaceAccessPeopleFilters } from './workspace-access-people-filters';
 import { WorkspaceAccessRoleEditorDialog } from './workspace-access-role-editor-dialog';
+import { listAllWorkspaceAccessRoles } from './workspace-access-role-options';
 import { WorkspaceAccessRoles } from './workspace-access-roles';
 import { WorkspaceAccessTabsToolbar } from './workspace-access-tabs-toolbar';
 
@@ -57,6 +58,7 @@ export function WorkspaceAccessPage({
   const [inviteAccessPreset, setInviteAccessPreset] = useState<
     'guest' | 'member' | 'pos_operator'
   >('member');
+  const [inviteRoleId, setInviteRoleId] = useState<string | null>(null);
   const [confirmDefaultAdminMigration, setConfirmDefaultAdminMigration] =
     useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -92,6 +94,7 @@ export function WorkspaceAccessPage({
   const workspaceId = context.workspaceId;
   const canManageMembers = context.canManageMembers;
   const canManageRoles = context.canManageRoles;
+  const canAssignInviteRoles = canManageRoles && mode === 'workspace';
   const canInvite = canManageMembers && !disableInvite;
   const permissionUser = useMemo(
     () =>
@@ -145,6 +148,12 @@ export function WorkspaceAccessPage({
     queryKey: ['workspace-access', workspaceId, 'roles', search],
     staleTime: 30_000,
   });
+  const inviteRolesQuery = useQuery({
+    enabled: inviteDialogOpen && canAssignInviteRoles,
+    queryFn: () => listAllWorkspaceAccessRoles(adapter, workspaceId),
+    queryKey: ['workspace-access', workspaceId, 'invite-roles'],
+    staleTime: 30_000,
+  });
   const memberDefaultQuery = useQuery({
     enabled: canManageRoles,
     queryFn: () => adapter.getDefaultRole(workspaceId, 'MEMBER'),
@@ -167,6 +176,9 @@ export function WorkspaceAccessPage({
         queryKey: ['workspace-access', workspaceId, 'roles'],
       }),
       queryClient.invalidateQueries({
+        queryKey: ['workspace-access', workspaceId, 'invite-roles'],
+      }),
+      queryClient.invalidateQueries({
         queryKey: ['workspace-access', workspaceId, 'defaults'],
       }),
     ]);
@@ -179,12 +191,17 @@ export function WorkspaceAccessPage({
         confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
+        roleId:
+          canAssignInviteRoles && inviteAccessPreset === 'member'
+            ? inviteRoleId
+            : null,
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
     onSuccess: async (result) => {
       setInviteEmails('');
       setInviteAccessPreset('member');
+      setInviteRoleId(null);
       setConfirmDefaultAdminMigration(false);
       setInviteDialogOpen(false);
       toast.success(result.message ?? t('ws-members.invitation-sent'));
@@ -475,23 +492,32 @@ export function WorkspaceAccessPage({
 
       <WorkspaceAccessInviteDialog
         accessPreset={inviteAccessPreset}
-        canManageRoles={canManageRoles}
+        canManageRoles={canAssignInviteRoles}
         confirmDefaultAdminMigration={confirmDefaultAdminMigration}
         defaultAdminEnabled={defaultAdminEnabled}
         emails={inviteEmails}
         isSubmitting={inviteMutation.isPending}
         joinedMemberCount={joinedCount}
+        noRoleLabel={labels.noRolesLabel}
         onAccessPresetChange={(value) => {
           setInviteAccessPreset(value);
-          if (value !== 'pos_operator') {
+          if (value === 'member') {
             setConfirmDefaultAdminMigration(false);
+          } else {
+            setInviteRoleId(null);
+            if (value === 'guest') {
+              setConfirmDefaultAdminMigration(false);
+            }
           }
         }}
         onConfirmDefaultAdminMigrationChange={setConfirmDefaultAdminMigration}
         onEmailsChange={setInviteEmails}
         onOpenChange={setInviteDialogOpen}
+        onRoleIdChange={setInviteRoleId}
         onSubmit={() => inviteMutation.mutate()}
         open={inviteDialogOpen}
+        roleId={inviteRoleId}
+        roles={inviteRolesQuery.data?.data ?? []}
       />
 
       {profileMember ? (

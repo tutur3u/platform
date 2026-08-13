@@ -19,6 +19,7 @@ const InviteMemberSchema = z.object({
   confirmDefaultAdminMigration: z.boolean().optional().default(false),
   email: z.email().max(MAX_EMAIL_LENGTH),
   memberType: z.enum(['MEMBER', 'GUEST']).optional().default('MEMBER'),
+  roleId: z.uuid().nullable().optional(),
 });
 
 type PosOperatorSetupResult = {
@@ -145,6 +146,24 @@ export async function POST(req: Request, { params }: Params) {
 
   const email = payload.email.trim().toLowerCase();
   const isPosOperatorInvite = payload.accessPreset === 'pos_operator';
+  const isGuestInvite =
+    payload.accessPreset === 'guest' || payload.memberType === 'GUEST';
+
+  if (isPosOperatorInvite && payload.roleId) {
+    return NextResponse.json(
+      { message: 'POS operator invitations manage their role automatically.' },
+      { status: 400 }
+    );
+  }
+
+  if (isGuestInvite && payload.roleId) {
+    return NextResponse.json(
+      {
+        message: 'Workspace roles can only be assigned to member invitations.',
+      },
+      { status: 400 }
+    );
+  }
 
   if (
     isPosOperatorInvite &&
@@ -158,6 +177,46 @@ export async function POST(req: Request, { params }: Params) {
       },
       { status: 403 }
     );
+  }
+
+  if (
+    payload.roleId &&
+    permissions.withoutPermission('manage_workspace_roles')
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          'You do not have permission to assign workspace roles to invitations.',
+      },
+      { status: 403 }
+    );
+  }
+
+  if (payload.roleId) {
+    const { data: role, error: roleError } = await sbAdmin
+      .from('workspace_roles')
+      .select('id')
+      .eq('id', payload.roleId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (roleError) {
+      console.error('Failed to validate workspace invitation role', {
+        error: roleError,
+        wsId,
+      });
+      return NextResponse.json(
+        { message: 'Error validating workspace invitation role.' },
+        { status: 500 }
+      );
+    }
+
+    if (!role) {
+      return NextResponse.json(
+        { message: 'The selected workspace role is not available.' },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: disableInvite, error: disableInviteError } = await sbAdmin
@@ -242,7 +301,7 @@ export async function POST(req: Request, { params }: Params) {
         ws_id: wsId,
         email,
         invited_by: user.id,
-        role_id: null,
+        role_id: payload.roleId ?? null,
         type: payload.accessPreset === 'guest' ? 'GUEST' : payload.memberType,
       });
 

@@ -433,6 +433,7 @@ export async function inviteWorkspaceMember(
     confirmDefaultAdminMigration?: boolean;
     email: string;
     memberType: 'MEMBER' | 'GUEST';
+    roleId?: string | null;
   },
   options?: InternalApiClientOptions
 ) {

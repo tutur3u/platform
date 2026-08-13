@@ -1,5 +1,10 @@
 {
   "routes": {
+    "api:/api/v1/auth/app-token/invitation-decision:apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live external-app invitation decision route applies any optional workspace-scoped role before clearing an accepted invite, including idempotent existing-member and duplicate-insert paths, and rolls back newly created membership and seat state if role assignment fails. The Rust port is pending."
+    },
     "api:/api/v1/live/token:apps/web/src/app/api/v1/live/token/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
@@ -44,6 +49,11 @@
       "status": "legacy-next",
       "targetOwner": "rust-backend",
       "note": "Binding-scoped parity audit, remote-run adoption, and reconciliation controls remain on the live Next.js backend pending Rust parity."
+    },
+    "api:/api/v1/workspaces/:wsId/roles/options:apps/web/src/app/api/v1/workspaces/[wsId]/roles/options/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live lightweight role-options endpoint returns only paginated role ids and names for pre-join invitation assignment, avoiding full permission and member graph transfer. The Rust port is pending."
     },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",
@@ -106,15 +116,15 @@
         }
       }
     },
-    "api:/api/workspaces/:wsId/accept-invite:apps/web/src/legacy-api-routes/workspaces/[wsId]/accept-invite/route.ts": {
+    "api:/api/workspaces/:wsId/accept-invite:apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "The live Next.js invite acceptance flow assigns an optional least-privilege POS Operator role and rolls back membership and seat state if that assignment fails. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation acceptance flow assigns any optional, workspace-scoped role recorded on the pending invite and rolls back membership and seat state if that assignment fails. The Rust port is pending."
     },
     "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation flow resolves current-user satellite app sessions through resolveWorkspaceRouteAccess before authorizing manage_workspace_members, so invites work from Inventory and every registered satellite, and it supports the confirmed POS Operator access migration, preserving existing member admins before disabling default Admin and attaching the limited role to the invite. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation flow resolves current-user satellite app sessions through resolveWorkspaceRouteAccess before authorizing manage_workspace_members, supports assigning an optional workspace-scoped role when the actor can manage roles, and supports the confirmed POS Operator access migration while preserving existing member admins before disabling default Admin and attaching the limited role to the invite. The Rust port is pending."
     },
     "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
       "status": "legacy-next",

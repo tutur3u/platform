@@ -121,6 +121,11 @@ export interface WorkspaceRolesListResponse {
   data: WorkspaceRole[];
 }
 
+export interface WorkspaceRoleOptionsListResponse {
+  count: number;
+  data: Array<{ id: string; name: string }>;
+}
+
 export interface WorkspaceRolesListQuery extends InternalApiQuery {
   page?: string | number;
   pageSize?: string | number;
@@ -204,6 +209,18 @@ export async function listWorkspaceRoles(
       query,
       cache: 'no-store',
     }
+  );
+}
+
+export async function listWorkspaceRoleOptions(
+  workspaceId: string,
+  query?: Pick<WorkspaceRolesListQuery, 'page' | 'pageSize'>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceRoleOptionsListResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/options`,
+    { query, cache: 'no-store' }
   );
 }
 

@@ -38,13 +38,19 @@ type Props = {
   emails: string;
   isSubmitting: boolean;
   joinedMemberCount: number;
+  noRoleLabel: string;
   onAccessPresetChange: (value: 'guest' | 'member' | 'pos_operator') => void;
   onConfirmDefaultAdminMigrationChange: (value: boolean) => void;
   onEmailsChange: (value: string) => void;
   onOpenChange: (open: boolean) => void;
+  onRoleIdChange: (roleId: string | null) => void;
   onSubmit: () => void;
   open: boolean;
+  roleId: string | null;
+  roles: Array<{ id: string; name: string }>;
 };
+
+const NO_ROLE_VALUE = '__none__';
 
 export function WorkspaceAccessInviteDialog({
   accessPreset,
@@ -54,12 +60,16 @@ export function WorkspaceAccessInviteDialog({
   emails,
   isSubmitting,
   joinedMemberCount,
+  noRoleLabel,
   onAccessPresetChange,
   onConfirmDefaultAdminMigrationChange,
   onEmailsChange,
   onOpenChange,
+  onRoleIdChange,
   onSubmit,
   open,
+  roleId,
+  roles,
 }: Props) {
   const t = useTranslations() as (key: string) => string;
   const count = parseInviteEmails(emails).length;
@@ -127,6 +137,35 @@ export function WorkspaceAccessInviteDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {canManageRoles && accessPreset === 'member' ? (
+            <div className="grid gap-2">
+              <Label htmlFor="workspace-access-invite-role">
+                {t('ws-members.role-placeholder')}
+              </Label>
+              <Select
+                value={roleId ?? NO_ROLE_VALUE}
+                onValueChange={(value) =>
+                  onRoleIdChange(value === NO_ROLE_VALUE ? null : value)
+                }
+              >
+                <SelectTrigger
+                  id="workspace-access-invite-role"
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_ROLE_VALUE}>{noRoleLabel}</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
 
           {accessPreset === 'pos_operator' ? (
             <div className="space-y-3 rounded-xl border border-dynamic-blue/25 bg-dynamic-blue/5 p-3.5 sm:p-4">

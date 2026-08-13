@@ -1,3 +1,4 @@
+import type { SeatAssignmentResult } from '@tuturuuu/payment-core/polar-seat-helper';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -5,6 +6,12 @@ const NORMALIZED_WS_ID = '11111111-1111-4111-8111-111111111111';
 const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 
 const mocks = vi.hoisted(() => {
+  const assignSeatToMember = vi.fn<() => Promise<SeatAssignmentResult>>(() =>
+    Promise.resolve({ required: false })
+  );
+  const enforceSeatLimit = vi.fn(() => Promise.resolve({ allowed: true }));
+  const hasPendingInvitationSeatCompensation = vi.fn();
+  const revokeInvitationSeatOrRecord = vi.fn();
   const normalizeWorkspaceId = vi.fn(
     async () => '11111111-1111-4111-8111-111111111111'
   );
@@ -16,21 +23,11 @@ const mocks = vi.hoisted(() => {
   const adminPrivateEmailMaybeSingle = vi.fn();
   const adminInviteMaybeSingle = vi.fn();
   const adminEmailInviteIn = vi.fn();
-  const adminMembershipInsert = vi.fn();
-  const adminMembershipDeleteUserEq = vi.fn();
-  const adminRoleMaybeSingle = vi.fn();
-  const adminRoleMemberUpsert = vi.fn();
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
   const adminEmailInviteDeleteIn = vi.fn();
   const finalizeWorkspaceInvitationNotifications = vi.fn();
-  const adminMembershipDeleteWsEq = vi.fn(() => ({
-    eq: adminMembershipDeleteUserEq,
-  }));
-  const adminRoleEq = vi.fn(() => ({
-    eq: adminRoleEq,
-    maybeSingle: adminRoleMaybeSingle,
-  }));
+  const finalizeMembershipRpc = vi.fn();
   const sessionSupabase = {
     auth: {
       getUser: authGetUser,
@@ -84,27 +81,15 @@ const mocks = vi.hoisted(() => {
         };
       }
 
-      if (table === 'workspace_members') {
-        return {
-          delete: vi.fn(() => ({ eq: adminMembershipDeleteWsEq })),
-          insert: adminMembershipInsert,
-        };
-      }
-
-      if (table === 'workspace_roles') {
-        return {
-          select: vi.fn(() => ({ eq: adminRoleEq })),
-        };
-      }
-
-      if (table === 'workspace_role_members') {
-        return {
-          upsert: adminRoleMemberUpsert,
-        };
-      }
-
       if (table === 'workspace_user_linked_users') {
         return {
+          delete: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                eq: vi.fn().mockResolvedValue({ error: null }),
+              })),
+            })),
+          })),
           upsert: adminLinkedUsersUpsert,
         };
       }
@@ -141,27 +126,29 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
+    schema: vi.fn(() => ({ rpc: finalizeMembershipRpc })),
   };
 
   return {
+    assignSeatToMember,
     adminEmailInviteDeleteIn,
     adminEmailInviteIn,
     adminInviteDeleteEq,
     adminInviteMaybeSingle,
     adminLinkedUsersUpsert,
-    adminMembershipInsert,
-    adminMembershipDeleteUserEq,
     adminPrivateEmailMaybeSingle,
-    adminRoleMaybeSingle,
-    adminRoleMemberUpsert,
     adminSupabase,
     adminWorkspaceSingle,
     authGetUser,
+    enforceSeatLimit,
     normalizeWorkspaceId,
+    hasPendingInvitationSeatCompensation,
+    revokeInvitationSeatOrRecord,
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
     sessionSupabase,
     finalizeWorkspaceInvitationNotifications,
+    finalizeMembershipRpc,
   };
 });
 
@@ -207,14 +194,17 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
-  enforceSeatLimit: vi.fn(() => Promise.resolve({ allowed: true })),
+  enforceSeatLimit: mocks.enforceSeatLimit,
 }));
 
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
-  assignSeatToMember: vi.fn(() =>
-    Promise.resolve({ required: false, success: true })
-  ),
-  revokeSeatFromMember: vi.fn(() => Promise.resolve()),
+  assignSeatToMember: mocks.assignSeatToMember,
+}));
+
+vi.mock('@/lib/workspace-invitations/seat-compensation', () => ({
+  hasPendingInvitationSeatCompensation:
+    mocks.hasPendingInvitationSeatCompensation,
+  revokeInvitationSeatOrRecord: mocks.revokeInvitationSeatOrRecord,
 }));
 
 describe('POST /api/workspaces/[wsId]/accept-invite', () => {
@@ -259,19 +249,19 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       error: null,
     });
 
-    mocks.adminMembershipInsert.mockResolvedValue({ error: null });
-    mocks.adminMembershipDeleteUserEq.mockResolvedValue({ error: null });
-    mocks.adminRoleMaybeSingle.mockResolvedValue({
-      data: { id: 'pos-role' },
-      error: null,
-    });
-    mocks.adminRoleMemberUpsert.mockResolvedValue({ error: null });
     mocks.adminLinkedUsersUpsert.mockResolvedValue({ error: null });
     mocks.adminInviteDeleteEq.mockImplementation(() => ({
       eq: vi.fn().mockResolvedValue({ error: null }),
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
     mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
+    mocks.finalizeMembershipRpc.mockResolvedValue({ data: true, error: null });
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
+    mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
+    mocks.enforceSeatLimit.mockResolvedValue({ allowed: true });
+    mocks.assignSeatToMember.mockResolvedValue({
+      required: false,
+    });
   });
 
   it('returns 404 when no invite and guest self-join disabled', async () => {
@@ -288,7 +278,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -309,7 +299,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     mocks.normalizeWorkspaceId.mockResolvedValueOnce('triple-sss');
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -338,7 +328,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -364,13 +354,34 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
         workspaceId: NORMALIZED_WS_ID,
       })
     );
-    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ws_id: NORMALIZED_WS_ID,
-        user_id: 'user-1',
-        type: 'GUEST',
-      })
+    expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_member_type: 'GUEST' })
     );
+  });
+
+  it('blocks seat assignment while compensation is pending', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'private@example.com',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValueOnce(true);
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(503);
+    expect(mocks.assignSeatToMember).not.toHaveBeenCalled();
   });
 
   it('returns guest-match reason code when RPC says not eligible', async () => {
@@ -387,7 +398,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -398,7 +409,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     await expect(response.json()).resolves.toMatchObject({
       errorCode: 'NO_MATCHING_WORKSPACE_USER',
     });
-    expect(mocks.adminMembershipInsert).not.toHaveBeenCalled();
+    expect(mocks.finalizeMembershipRpc).not.toHaveBeenCalled();
   });
 
   it('returns linked-user reason code when RPC says candidate is linked elsewhere', async () => {
@@ -415,7 +426,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -426,7 +437,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     await expect(response.json()).resolves.toMatchObject({
       errorCode: 'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
     });
-    expect(mocks.adminMembershipInsert).not.toHaveBeenCalled();
+    expect(mocks.finalizeMembershipRpc).not.toHaveBeenCalled();
   });
 
   it('accepts pending email invites through the server-owned lookup path', async () => {
@@ -449,7 +460,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -460,12 +471,9 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
     expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
     expect(mocks.sessionEmailInviteIn).not.toHaveBeenCalled();
-    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ws_id: NORMALIZED_WS_ID,
-        user_id: 'user-1',
-        type: 'GUEST',
-      })
+    expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_member_type: 'GUEST' })
     );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',
@@ -489,7 +497,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     );
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -515,7 +523,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -530,12 +538,13 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
       error: null,
     });
-    mocks.adminMembershipInsert.mockResolvedValueOnce({
-      error: { code: '23505', message: 'duplicate membership' },
+    mocks.finalizeMembershipRpc.mockResolvedValueOnce({
+      data: false,
+      error: null,
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
@@ -543,14 +552,23 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
+    expect(mocks.assignSeatToMember).toHaveBeenCalled();
   });
 
-  it('assigns the validated POS operator role from an accepted invite', async () => {
+  it('keeps a roleless direct invite authoritative over an email invite role', async () => {
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: {
+        role_id: null,
+        type: 'GUEST',
+        ws_id: NORMALIZED_WS_ID,
+      },
+      error: null,
+    });
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {
           email: 'auth@example.com',
-          role_id: 'pos-role',
+          role_id: 'role-admin',
           type: 'MEMBER',
           ws_id: NORMALIZED_WS_ID,
         },
@@ -559,20 +577,20 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
-      params: Promise.resolve({ wsId: 'ws-1' }),
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.adminRoleMemberUpsert).toHaveBeenCalledWith(
-      { role_id: 'pos-role', user_id: 'user-1' },
-      { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
+    expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_member_type: 'GUEST', p_role_id: null })
     );
   });
 
-  it('rolls membership back when the invited POS role is invalid', async () => {
+  it('rolls membership back when the invited workspace role is invalid', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
         {
@@ -584,13 +602,13 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       ],
       error: null,
     });
-    mocks.adminRoleMaybeSingle.mockResolvedValueOnce({
+    mocks.finalizeMembershipRpc.mockResolvedValueOnce({
       data: null,
-      error: null,
+      error: { message: 'The invited workspace role is no longer available' },
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
@@ -600,10 +618,6 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     await expect(response.json()).resolves.toMatchObject({
       errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
     });
-    expect(mocks.adminMembershipDeleteUserEq).toHaveBeenCalledWith(
-      'user_id',
-      'user-1'
-    );
     expect(mocks.adminEmailInviteDeleteIn).not.toHaveBeenCalled();
   });
 
@@ -620,7 +634,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -630,12 +644,9 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(response.status).toBe(200);
     expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
     expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
-    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ws_id: POSTGRES_FIXTURE_WS_ID,
-        user_id: 'user-1',
-        type: 'MEMBER',
-      })
+    expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_ws_id: POSTGRES_FIXTURE_WS_ID })
     );
   });
 
@@ -650,12 +661,13 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       ],
       error: null,
     });
-    mocks.adminMembershipInsert.mockResolvedValueOnce({
+    mocks.finalizeMembershipRpc.mockResolvedValueOnce({
+      data: null,
       error: {},
     });
 
     const { POST } = await import(
-      '@/legacy-api-routes/workspaces/[wsId]/accept-invite/route'
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
     );
 
     const response = await POST(new NextRequest('http://localhost/test'), {
@@ -664,8 +676,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toMatchObject({
-      error: 'Failed to accept invite',
-      errorCode: 'ACCEPT_INVITE_FAILED',
+      errorCode: 'INVITE_ROLE_ASSIGNMENT_FAILED',
     });
   });
 });

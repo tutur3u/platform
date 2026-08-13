@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   getWorkspaceInviteCandidateEmails: vi.fn(),
   getWorkspaceInviteStatus: vi.fn(),
   revokeSeatFromMember: vi.fn(),
+  hasPendingInvitationSeatCompensation: vi.fn(),
+  revokeInvitationSeatOrRecord: vi.fn(),
   serverLoggerError: vi.fn(),
   serverLoggerWarn: vi.fn(),
   verifyExternalAppSecret: vi.fn(),
@@ -84,9 +86,15 @@ vi.mock('@/lib/workspace-invitations/status', async (importOriginal) => {
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
   assignSeatToMember: (...args: Parameters<typeof mocks.assignSeatToMember>) =>
     mocks.assignSeatToMember(...args),
-  revokeSeatFromMember: (
-    ...args: Parameters<typeof mocks.revokeSeatFromMember>
-  ) => mocks.revokeSeatFromMember(...args),
+}));
+
+vi.mock('@/lib/workspace-invitations/seat-compensation', () => ({
+  hasPendingInvitationSeatCompensation: (
+    ...args: Parameters<typeof mocks.hasPendingInvitationSeatCompensation>
+  ) => mocks.hasPendingInvitationSeatCompensation(...args),
+  revokeInvitationSeatOrRecord: (
+    ...args: Parameters<typeof mocks.revokeInvitationSeatOrRecord>
+  ) => mocks.revokeInvitationSeatOrRecord(...args),
 }));
 
 vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
@@ -106,8 +114,18 @@ function createAdminMock() {
   const inserts: Array<{ table: string; value: unknown }> = [];
   const privateTableCalls: string[] = [];
   const replayInserts: Array<{ table: string; value: unknown }> = [];
+  const replayDeletes: Array<{ column: string; value: string }> = [];
+  const finalizeMembershipRpc = vi.fn().mockResolvedValue({
+    data: true,
+    error: null,
+  });
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
+  let pendingDirectInvite: {
+    role_id: string | null;
+    type?: 'GUEST' | 'MEMBER';
+  } | null = null;
+  let pendingRoleMember: { role_id: string } | null = null;
 
   function createBuilder(table: string) {
     const builder = {
@@ -117,6 +135,14 @@ function createAdminMock() {
       insert: vi.fn((value: unknown) => {
         inserts.push({ table, value });
         return Promise.resolve({ error: null });
+      }),
+      upsert: vi.fn((value: unknown) => {
+        inserts.push({ table, value });
+        return Promise.resolve({ error: null });
+      }),
+      update: vi.fn((value: unknown) => {
+        inserts.push({ table, value });
+        return builder;
       }),
       maybeSingle: vi.fn(() => {
         if (table === 'users') {
@@ -132,6 +158,18 @@ function createAdminMock() {
             },
             error: null,
           });
+        }
+
+        if (table === 'workspace_roles') {
+          return Promise.resolve({ data: { id: 'role-editor' }, error: null });
+        }
+
+        if (table === 'workspace_invites') {
+          return Promise.resolve({ data: pendingDirectInvite, error: null });
+        }
+
+        if (table === 'workspace_role_members') {
+          return Promise.resolve({ data: pendingRoleMember, error: null });
         }
 
         return Promise.resolve({ data: null, error: null });
@@ -156,6 +194,10 @@ function createAdminMock() {
   function createPrivateBuilder(table: string) {
     const builder = {
       delete: vi.fn(() => builder),
+      eq: vi.fn((column: string, value: string) => {
+        replayDeletes.push({ column, value });
+        return Promise.resolve({ error: replayDeleteError });
+      }),
       insert: vi.fn((value: unknown) => {
         replayInserts.push({ table, value });
         return Promise.resolve({ error: replayInsertError });
@@ -194,11 +236,14 @@ function createAdminMock() {
           privateTableCalls.push(`${schema}.${table}`);
           return createPrivateBuilder(table);
         }),
+        rpc: finalizeMembershipRpc,
       })),
     },
     inserts,
+    finalizeMembershipRpc,
     privateTableCalls,
     replayInserts,
+    replayDeletes,
     setReplayDeleteError: (
       error: { code?: string; message?: string } | null
     ) => {
@@ -208,6 +253,14 @@ function createAdminMock() {
       error: { code?: string; message?: string } | null
     ) => {
       replayInsertError = error;
+    },
+    setPendingDirectInvite: (
+      invite: { role_id: string | null; type?: 'GUEST' | 'MEMBER' } | null
+    ) => {
+      pendingDirectInvite = invite;
+    },
+    setPendingRoleMember: (roleMember: { role_id: string } | null) => {
+      pendingRoleMember = roleMember;
     },
     tableCalls,
   };
@@ -283,6 +336,7 @@ describe('app token invitation decision route', () => {
       invitation: {
         createdAt: '2026-07-04T00:00:00.000Z',
         email: null,
+        roleId: null,
         source: 'direct',
         type: 'MEMBER',
         workspace: {
@@ -309,6 +363,8 @@ describe('app token invitation decision route', () => {
       success: true,
     });
     mocks.revokeSeatFromMember.mockResolvedValue(undefined);
+    mocks.hasPendingInvitationSeatCompensation.mockResolvedValue(false);
+    mocks.revokeInvitationSeatOrRecord.mockResolvedValue(true);
     mocks.createPolarClient.mockReturnValue({});
     mocks.getAppCoordinationSessionPolicy.mockResolvedValue({
       policy: {
@@ -320,8 +376,13 @@ describe('app token invitation decision route', () => {
   });
 
   it('accepts a pending invitation, consumes the action token, and returns an app session', async () => {
-    const { admin, inserts, privateTableCalls, replayInserts, tableCalls } =
-      createAdminMock();
+    const {
+      admin,
+      finalizeMembershipRpc,
+      privateTableCalls,
+      replayInserts,
+      tableCalls,
+    } = createAdminMock();
     mocks.createAdminClient.mockResolvedValue(admin);
 
     const response = await POST(createDecisionRequest());
@@ -354,22 +415,67 @@ describe('app token invitation decision route', () => {
         workspace_id: workspaceId,
       }),
     });
-    expect(inserts).toContainEqual({
-      table: 'workspace_members',
-      value: {
-        type: 'MEMBER',
-        user_id: userId,
-        ws_id: workspaceId,
-      },
-    });
+    expect(finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({
+        p_member_type: 'MEMBER',
+        p_user_id: userId,
+        p_ws_id: workspaceId,
+      })
+    );
     expect(tableCalls).toEqual(
-      expect.arrayContaining([
-        'workspace_email_invites',
-        'workspace_invites',
-        'workspace_members',
-      ])
+      expect.arrayContaining(['workspace_email_invites', 'workspace_invites'])
     );
     expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+
+  it('assigns the pending workspace role for an accepted invitation', async () => {
+    const { admin, finalizeMembershipRpc } = createAdminMock();
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({
+      invitation: {
+        createdAt: '2026-07-04T00:00:00.000Z',
+        matchedEmail: null,
+        roleId: 'role-editor',
+        source: 'direct',
+        type: 'MEMBER',
+        workspace: {
+          avatar_url: null,
+          handle: 'cs35',
+          id: workspaceId,
+          logo_url: null,
+          name: 'CyberShield 35',
+          personal: false,
+        },
+      },
+      status: 'pending_invite',
+      workspace: null,
+    });
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(200);
+    expect(finalizeMembershipRpc).toHaveBeenCalledWith(
+      'finalize_workspace_invitation_membership',
+      expect.objectContaining({ p_role_id: 'role-editor' })
+    );
+  });
+
+  it('releases the action token when acceptance fails so it can be retried', async () => {
+    const { admin, replayDeletes } = createAdminMock();
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.enforceSeatLimit.mockResolvedValueOnce({
+      allowed: false,
+      message: 'No seats available',
+    });
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(403);
+    expect(replayDeletes).toContainEqual({
+      column: 'token_jti',
+      value: expect.any(String),
+    });
   });
 
   it('rejects a pending invitation without issuing a session', async () => {
@@ -441,6 +547,83 @@ describe('app token invitation decision route', () => {
     expect(inserts).toEqual([]);
     expect(mocks.getWorkspaceInviteStatus).not.toHaveBeenCalled();
     expect(JSON.stringify(body)).not.toContain(appSecret);
+  });
+
+  it('does not recognize a replay before the pending role assignment completes', async () => {
+    const {
+      admin,
+      setPendingDirectInvite,
+      setPendingRoleMember,
+      setReplayInsertError,
+    } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: 'role-editor' });
+    setPendingRoleMember(null);
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
+  });
+
+  it('does not recognize a member-invite replay before guest promotion completes', async () => {
+    const {
+      admin,
+      setPendingDirectInvite,
+      setPendingRoleMember,
+      setReplayInsertError,
+    } = createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: 'role-editor', type: 'MEMBER' });
+    setPendingRoleMember({ role_id: 'role-editor' });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      membershipType: 'GUEST',
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
+  });
+
+  it('does not recognize a replay while a roleless invite is still pending', async () => {
+    const { admin, setPendingDirectInvite, setReplayInsertError } =
+      createAdminMock();
+    setReplayInsertError({
+      code: '23505',
+      message: 'duplicate key value violates unique constraint',
+    });
+    setPendingDirectInvite({ role_id: null });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: null,
+      ok: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'INVITATION_ACTION_TOKEN_ALREADY_USED',
+    });
   });
 
   it('fails closed when the replay store is unavailable', async () => {
