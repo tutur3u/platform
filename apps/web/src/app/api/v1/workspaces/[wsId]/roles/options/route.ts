@@ -15,14 +15,24 @@ export async function GET(req: Request, { params }: Params) {
   if (!access.ok) return access.response;
 
   const { searchParams } = new URL(req.url);
-  const page = Math.max(
-    1,
-    Number.parseInt(searchParams.get('page') ?? '1', 10)
+  const parsedPage = Number.parseInt(searchParams.get('page') ?? '1', 10);
+  const parsedPageSize = Number.parseInt(
+    searchParams.get('pageSize') ?? '100',
+    10
   );
-  const pageSize = Math.min(
-    100,
-    Math.max(1, Number.parseInt(searchParams.get('pageSize') ?? '100', 10))
-  );
+  if (
+    !Number.isSafeInteger(parsedPage) ||
+    parsedPage < 1 ||
+    !Number.isSafeInteger(parsedPageSize) ||
+    parsedPageSize < 1
+  ) {
+    return NextResponse.json(
+      { message: 'Invalid pagination parameters' },
+      { status: 400 }
+    );
+  }
+  const page = parsedPage;
+  const pageSize = Math.min(100, parsedPageSize);
   const start = (page - 1) * pageSize;
   const supabase = await createAdminClient({ noCookie: true });
   const { data, error, count } = await supabase

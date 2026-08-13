@@ -1,0 +1,5 @@
+ALTER TABLE public.workspace_email_invites
+VALIDATE CONSTRAINT workspace_email_invites_role_id_fkey;
+
+ALTER TABLE public.workspace_invites
+VALIDATE CONSTRAINT workspace_invites_role_id_fkey;

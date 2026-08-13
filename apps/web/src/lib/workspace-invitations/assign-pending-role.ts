@@ -20,7 +20,13 @@ export async function assignPendingWorkspaceInviteRole({
     .eq('ws_id', workspaceId)
     .maybeSingle();
 
-  if (roleError || !role) {
+  if (roleError) {
+    throw new Error(
+      roleError.message || 'Failed to verify the invited workspace role.'
+    );
+  }
+
+  if (!role) {
     throw new Error('The invited workspace role is no longer available.');
   }
 

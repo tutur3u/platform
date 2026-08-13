@@ -4,18 +4,21 @@
 -- writes after checking both permissions; these policies protect direct
 -- authenticated PostgREST writes as well.
 
--- A referenced role must remain available until the invitation is accepted or
--- cancelled. SET NULL silently converted role-bearing invitations into
--- roleless invitations when an administrator deleted the selected role.
+-- Deleting a selected role cancels invitations that can no longer preserve the
+-- inviter's access intent. This also keeps workspace deletion compatible with
+-- the invitations' workspace-level cascades. Add without an initial scan; the
+-- follow-up migration validates both constraints separately.
 ALTER TABLE public.workspace_email_invites
 DROP CONSTRAINT IF EXISTS workspace_email_invites_role_id_fkey,
 ADD CONSTRAINT workspace_email_invites_role_id_fkey
-FOREIGN KEY (role_id) REFERENCES public.workspace_roles(id) ON DELETE RESTRICT;
+FOREIGN KEY (role_id) REFERENCES public.workspace_roles(id) ON DELETE CASCADE
+NOT VALID;
 
 ALTER TABLE public.workspace_invites
 DROP CONSTRAINT IF EXISTS workspace_invites_role_id_fkey,
 ADD CONSTRAINT workspace_invites_role_id_fkey
-FOREIGN KEY (role_id) REFERENCES public.workspace_roles(id) ON DELETE RESTRICT;
+FOREIGN KEY (role_id) REFERENCES public.workspace_roles(id) ON DELETE CASCADE
+NOT VALID;
 
 ALTER POLICY "Allow member managers to insert invites"
 ON public.workspace_invites

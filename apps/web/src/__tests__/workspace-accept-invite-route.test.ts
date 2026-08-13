@@ -5,6 +5,10 @@ const NORMALIZED_WS_ID = '11111111-1111-4111-8111-111111111111';
 const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 
 const mocks = vi.hoisted(() => {
+  const assignSeatToMember = vi.fn(() =>
+    Promise.resolve({ required: false, success: true })
+  );
+  const enforceSeatLimit = vi.fn(() => Promise.resolve({ allowed: true }));
   const normalizeWorkspaceId = vi.fn(
     async () => '11111111-1111-4111-8111-111111111111'
   );
@@ -146,6 +150,7 @@ const mocks = vi.hoisted(() => {
   };
 
   return {
+    assignSeatToMember,
     adminEmailInviteDeleteIn,
     adminEmailInviteIn,
     adminInviteDeleteEq,
@@ -160,6 +165,7 @@ const mocks = vi.hoisted(() => {
     adminSupabase,
     adminWorkspaceSingle,
     authGetUser,
+    enforceSeatLimit,
     normalizeWorkspaceId,
     sessionEmailInviteIn,
     sessionInviteMaybeSingle,
@@ -210,13 +216,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/payment-core/seat-limits', () => ({
-  enforceSeatLimit: vi.fn(() => Promise.resolve({ allowed: true })),
+  enforceSeatLimit: mocks.enforceSeatLimit,
 }));
 
 vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
-  assignSeatToMember: vi.fn(() =>
-    Promise.resolve({ required: false, success: true })
-  ),
+  assignSeatToMember: mocks.assignSeatToMember,
   revokeSeatFromMember: vi.fn(() => Promise.resolve()),
 }));
 
@@ -275,6 +279,11 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     }));
     mocks.adminEmailInviteDeleteIn.mockResolvedValue({ error: null });
     mocks.finalizeWorkspaceInvitationNotifications.mockResolvedValue(undefined);
+    mocks.enforceSeatLimit.mockResolvedValue({ allowed: true });
+    mocks.assignSeatToMember.mockResolvedValue({
+      required: false,
+      success: true,
+    });
   });
 
   it('returns 404 when no invite and guest self-join disabled', async () => {
@@ -476,6 +485,42 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     ]);
   });
 
+  it('selects matching email invites in authenticated-email priority order', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'private@example.com',
+          role_id: 'private-role',
+          type: 'GUEST',
+          ws_id: NORMALIZED_WS_ID,
+        },
+        {
+          email: 'auth@example.com',
+          role_id: 'auth-role',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'MEMBER' })
+    );
+    expect(mocks.adminRoleMemberUpsert).toHaveBeenCalledWith(
+      { role_id: 'auth-role', user_id: 'user-1' },
+      { ignoreDuplicates: true, onConflict: 'role_id,user_id' }
+    );
+  });
+
   it('keeps a successful acceptance when notification finalization fails', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({
       data: [
@@ -546,6 +591,28 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalled();
+    expect(mocks.assignSeatToMember).not.toHaveBeenCalled();
+  });
+
+  it('assigns a billable seat only after creating the membership', async () => {
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: { type: 'MEMBER', ws_id: NORMALIZED_WS_ID },
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.adminMembershipInsert).toHaveBeenCalled();
+    expect(mocks.assignSeatToMember).toHaveBeenCalled();
+    expect(
+      mocks.adminMembershipInsert.mock.invocationCallOrder[0]
+    ).toBeLessThan(mocks.assignSeatToMember.mock.invocationCallOrder[0] ?? 0);
   });
 
   it('assigns a validated workspace role from an accepted invite', async () => {

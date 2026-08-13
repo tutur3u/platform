@@ -106,6 +106,7 @@ function createAdminMock() {
   const inserts: Array<{ table: string; value: unknown }> = [];
   const privateTableCalls: string[] = [];
   const replayInserts: Array<{ table: string; value: unknown }> = [];
+  const replayDeletes: Array<{ column: string; value: string }> = [];
   let replayInsertError: { code?: string; message?: string } | null = null;
   let replayDeleteError: { code?: string; message?: string } | null = null;
   let pendingDirectInvite: { role_id: string | null } | null = null;
@@ -174,6 +175,10 @@ function createAdminMock() {
   function createPrivateBuilder(table: string) {
     const builder = {
       delete: vi.fn(() => builder),
+      eq: vi.fn((column: string, value: string) => {
+        replayDeletes.push({ column, value });
+        return Promise.resolve({ error: replayDeleteError });
+      }),
       insert: vi.fn((value: unknown) => {
         replayInserts.push({ table, value });
         return Promise.resolve({ error: replayInsertError });
@@ -217,6 +222,7 @@ function createAdminMock() {
     inserts,
     privateTableCalls,
     replayInserts,
+    replayDeletes,
     setReplayDeleteError: (
       error: { code?: string; message?: string } | null
     ) => {
@@ -397,7 +403,7 @@ describe('app token invitation decision route', () => {
     expect(JSON.stringify(body)).not.toContain(appSecret);
   });
 
-  it('assigns the pending workspace role before clearing an accepted invitation', async () => {
+  it('assigns the pending workspace role for an accepted invitation', async () => {
     const { admin, inserts } = createAdminMock();
     mocks.createAdminClient.mockResolvedValue(admin);
     mocks.getWorkspaceInviteStatus.mockResolvedValue({
@@ -426,6 +432,23 @@ describe('app token invitation decision route', () => {
     expect(inserts).toContainEqual({
       table: 'workspace_role_members',
       value: { role_id: 'role-editor', user_id: userId },
+    });
+  });
+
+  it('releases the action token when acceptance fails so it can be retried', async () => {
+    const { admin, replayDeletes } = createAdminMock();
+    mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.enforceSeatLimit.mockResolvedValueOnce({
+      allowed: false,
+      message: 'No seats available',
+    });
+
+    const response = await POST(createDecisionRequest());
+
+    expect(response.status).toBe(403);
+    expect(replayDeletes).toContainEqual({
+      column: 'token_jti',
+      value: expect.any(String),
     });
   });
 

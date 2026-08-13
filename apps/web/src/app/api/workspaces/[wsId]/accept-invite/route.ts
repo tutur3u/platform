@@ -187,13 +187,15 @@ export const POST = withSessionAuth<{ wsId: string }>(
     }
 
     const pendingEmailInvite = Array.isArray(pendingEmailInviteRows)
-      ? (pendingEmailInviteRows.find(
-          (row) =>
-            typeof row.email === 'string' &&
-            row.email.trim().toLowerCase() === candidateEmails[0]
-        ) ??
-        pendingEmailInviteRows[0] ??
-        null)
+      ? (candidateEmails
+          .map((candidateEmail) =>
+            pendingEmailInviteRows.find(
+              (row) =>
+                typeof row.email === 'string' &&
+                row.email.trim().toLowerCase() === candidateEmail
+            )
+          )
+          .find((row): row is PendingInvite => Boolean(row)) ?? null)
       : null;
 
     let inviteMemberType: 'MEMBER' | 'GUEST' =
@@ -322,23 +324,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
     }
 
-    // Assign Polar seat BEFORE adding member (if seat-based subscription)
     const polar = createPolarClient();
-    const seatAssignment = await assignSeatToMember(
-      polar,
-      sbAdmin,
-      wsId,
-      user.id
-    );
-    if (seatAssignment.required && !seatAssignment.success) {
-      return NextResponse.json(
-        {
-          error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
-          message: seatAssignment.error,
-        },
-        { status: 403 }
-      );
-    }
 
     if (matchedWorkspaceUserId) {
       const { error: linkError } = await sbAdmin
@@ -356,10 +342,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
 
       if (linkError) {
-        if (seatAssignment.required && seatAssignment.success) {
-          await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
-        }
-
         console.error(
           'Failed to link platform user to workspace user:',
           linkError
@@ -418,11 +400,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         return NextResponse.json({ message: 'success' });
       }
 
-      // Rollback: revoke the Polar seat if it was assigned
-      if (seatAssignment.required && seatAssignment.success) {
-        await revokeSeatFromMember(polar, sbAdmin, wsId, user.id);
-      }
-
       if (matchedWorkspaceUserId) {
         await sbAdmin
           .from('workspace_user_linked_users')
@@ -439,6 +416,39 @@ export const POST = withSessionAuth<{ wsId: string }>(
           errorCode: 'ACCEPT_INVITE_FAILED',
         },
         { status: 500 }
+      );
+    }
+
+    // Assign a billable seat only after this request created the membership.
+    // A duplicate insert represents an existing member and must not add a seat.
+    const seatAssignment = await assignSeatToMember(
+      polar,
+      sbAdmin,
+      wsId,
+      user.id
+    );
+    if (seatAssignment.required && !seatAssignment.success) {
+      await sbAdmin
+        .from('workspace_members')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('user_id', user.id);
+
+      if (matchedWorkspaceUserId) {
+        await sbAdmin
+          .from('workspace_user_linked_users')
+          .delete()
+          .eq('platform_user_id', user.id)
+          .eq('ws_id', wsId)
+          .eq('virtual_user_id', matchedWorkspaceUserId);
+      }
+
+      return NextResponse.json(
+        {
+          error: 'POLAR_SEAT_ASSIGNMENT_FAILED',
+          message: seatAssignment.error,
+        },
+        { status: 403 }
       );
     }
 

@@ -67,6 +67,10 @@ type SupabaseWriteError = {
 
 type InvitationActionReplayTable = {
   delete: () => {
+    eq: (
+      column: 'token_jti',
+      value: string
+    ) => Promise<{ error: SupabaseWriteError | null }>;
     lt: (
       column: 'expires_at',
       value: string
@@ -114,6 +118,26 @@ type ExchangeUserProfile = {
 
 function cleanString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+async function releaseInvitationActionToken(admin: AdminDb, tokenJti: string) {
+  const privateDb = admin.schema('private') as unknown as PrivateReplaySchema;
+  try {
+    const { error } = await privateDb
+      .from(INVITATION_ACTION_REPLAY_TABLE)
+      .delete()
+      .eq('token_jti', tokenJti);
+    if (error) {
+      console.warn('Failed to release invitation action token', {
+        code: error.code,
+        message: error.message,
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to release invitation action token', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function firstCleanString(...values: unknown[]) {
@@ -629,7 +653,10 @@ async function invitationDecision(request: NextRequest) {
     userId: claims.sub,
     workspaceId,
   });
-  if (acceptError) return acceptError;
+  if (acceptError) {
+    await releaseInvitationActionToken(admin, claims.jti);
+    return acceptError;
+  }
 
   return createAcceptedInvitationSessionResponse({
     admin,
