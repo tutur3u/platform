@@ -17,6 +17,7 @@ import {
   createWorkspaceRole,
   deleteWorkspaceRole,
   getWorkspaceDefaultPermissions,
+  listWorkspaceRoleOptions,
   listWorkspaceRoles,
   updateWorkspaceDefaultPermissions,
   updateWorkspaceRole,
@@ -134,6 +135,7 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
     },
     inviteMembers: inviteStandardWorkspaceMembers,
     listMembers: listEnhancedWorkspaceMembers,
+    listRoleOptions: listWorkspaceRoleOptions,
     listRoles: async (workspaceId, query) => {
       const result = await listWorkspaceRoles(workspaceId, {
         page: query?.page ?? '1',
@@ -171,6 +173,13 @@ export function createExternalProjectWorkspaceAccessAdapter(): WorkspaceAccessAd
     inviteMembers: (workspaceId, payload) =>
       inviteWorkspaceExternalProjectMembers(workspaceId, payload.emails),
     listMembers: listWorkspaceExternalProjectMembers,
+    listRoleOptions: async (workspaceId) => {
+      const roles = await listWorkspaceExternalProjectRoles(workspaceId);
+      return {
+        count: roles.length,
+        data: roles.map(({ id, name }) => ({ id, name })),
+      };
+    },
     listRoles: async (workspaceId, query) => {
       const roles = (await listWorkspaceExternalProjectRoles(workspaceId)).map(
         normalizeWorkspaceAccessRole

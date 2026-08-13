@@ -92,6 +92,10 @@ export type WorkspaceAccessAdapter = {
     workspaceId: string,
     status?: WorkspaceAccessMemberStatus
   ) => Promise<InternalApiEnhancedWorkspaceMember[]>;
+  listRoleOptions: (
+    workspaceId: string,
+    query?: { page?: string; pageSize?: string }
+  ) => Promise<{ count: number; data: Array<{ id: string; name: string }> }>;
   listRoles: (
     workspaceId: string,
     query?: { page?: string; pageSize?: string; q?: string }

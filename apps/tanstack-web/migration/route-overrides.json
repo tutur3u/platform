@@ -50,6 +50,11 @@
       "targetOwner": "rust-backend",
       "note": "Binding-scoped parity audit, remote-run adoption, and reconciliation controls remain on the live Next.js backend pending Rust parity."
     },
+    "api:/api/v1/workspaces/:wsId/roles/options:apps/web/src/app/api/v1/workspaces/[wsId]/roles/options/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "The live lightweight role-options endpoint returns only paginated role ids and names for pre-join invitation assignment, avoiding full permission and member graph transfer. The Rust port is pending."
+    },
     "api:/api/v1/workspaces/:wsId/external-projects/setup:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",

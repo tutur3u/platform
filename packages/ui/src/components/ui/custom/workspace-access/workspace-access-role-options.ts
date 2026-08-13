@@ -8,11 +8,11 @@ export async function listAllWorkspaceAccessRoles(
   const roles: WorkspaceAccessRole[] = [];
 
   for (let page = 1; ; page += 1) {
-    const result = await adapter.listRoles(workspaceId, {
+    const result = await adapter.listRoleOptions(workspaceId, {
       page: String(page),
       pageSize: String(pageSize),
     });
-    roles.push(...result.data);
+    roles.push(...result.data.map((role) => ({ ...role, permissions: [] })));
 
     if (roles.length >= result.count || result.data.length < pageSize) {
       return { count: result.count, data: roles };
