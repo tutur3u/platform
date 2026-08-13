@@ -93,6 +93,7 @@ export function WorkspaceAccessPage({
   const workspaceId = context.workspaceId;
   const canManageMembers = context.canManageMembers;
   const canManageRoles = context.canManageRoles;
+  const canAssignInviteRoles = canManageRoles && mode === 'workspace';
   const canInvite = canManageMembers && !disableInvite;
   const permissionUser = useMemo(
     () =>
@@ -147,7 +148,7 @@ export function WorkspaceAccessPage({
     staleTime: 30_000,
   });
   const inviteRolesQuery = useQuery({
-    enabled: inviteDialogOpen && canManageRoles,
+    enabled: inviteDialogOpen && canAssignInviteRoles,
     queryFn: () => adapter.listRoles(workspaceId, { pageSize: '100' }),
     queryKey: ['workspace-access', workspaceId, 'invite-roles'],
     staleTime: 30_000,
@@ -174,6 +175,9 @@ export function WorkspaceAccessPage({
         queryKey: ['workspace-access', workspaceId, 'roles'],
       }),
       queryClient.invalidateQueries({
+        queryKey: ['workspace-access', workspaceId, 'invite-roles'],
+      }),
+      queryClient.invalidateQueries({
         queryKey: ['workspace-access', workspaceId, 'defaults'],
       }),
     ]);
@@ -186,7 +190,10 @@ export function WorkspaceAccessPage({
         confirmDefaultAdminMigration,
         emails: parseInviteEmails(inviteEmails),
         memberType: inviteAccessPreset === 'guest' ? 'GUEST' : 'MEMBER',
-        roleId: inviteAccessPreset === 'pos_operator' ? null : inviteRoleId,
+        roleId:
+          canAssignInviteRoles && inviteAccessPreset !== 'pos_operator'
+            ? inviteRoleId
+            : null,
       }),
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
@@ -484,7 +491,7 @@ export function WorkspaceAccessPage({
 
       <WorkspaceAccessInviteDialog
         accessPreset={inviteAccessPreset}
-        canManageRoles={canManageRoles}
+        canManageRoles={canAssignInviteRoles}
         confirmDefaultAdminMigration={confirmDefaultAdminMigration}
         defaultAdminEnabled={defaultAdminEnabled}
         emails={inviteEmails}
