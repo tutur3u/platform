@@ -69,6 +69,11 @@ Apply these controls in order:
 3. Shared Satellite and Nova React Query clients use a 30-second stale window
    and one retry. Override this only when a surface has a documented freshness
    or reliability requirement.
+   Realtime-backed notification counts use a 15-minute fallback poll and a
+   5-minute stale window. Active timers render elapsed time locally and use
+   1-minute running / 5-minute idle reconciliation. Keep mutations and realtime
+   events invalidating their query keys immediately instead of shortening these
+   safety-net intervals.
 4. Dashboard sidebar links disable viewport prefetch and prefetch on hover or
    keyboard focus. This preserves responsive navigation without invoking every
    visible destination merely because the sidebar rendered.

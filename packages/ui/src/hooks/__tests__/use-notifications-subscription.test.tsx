@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetNotificationSubscriptionRegistryForTests,
   UNREAD_COUNT_FALLBACK_INTERVAL_MS,
+  UNREAD_COUNT_STALE_TIME_MS,
   useInfiniteNotifications,
   useNotificationSubscription,
   useUnreadCount,
@@ -16,6 +17,7 @@ import {
 
 type RealtimePayload = {
   new?: {
+    read_at?: string | null;
     data?: {
       action_taken?: boolean;
     };
@@ -126,8 +128,15 @@ describe('useNotificationSubscription', () => {
       wrapper: createWrapper(queryClient),
     });
 
+    const queryOptions = queryClient.getQueryCache().find({
+      queryKey: ['notifications', 'unread-count', 'all'],
+    })?.options as { refetchInterval?: number; staleTime?: number } | undefined;
+
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(UNREAD_COUNT_FALLBACK_INTERVAL_MS).toBe(5 * 60 * 1000);
+    expect(queryOptions?.staleTime).toBe(UNREAD_COUNT_STALE_TIME_MS);
+    expect(queryOptions?.refetchInterval).toBe(
+      UNREAD_COUNT_FALLBACK_INTERVAL_MS
+    );
   });
 
   it('shares one realtime channel across multiple consumers for the same user', async () => {
@@ -155,6 +164,30 @@ describe('useNotificationSubscription', () => {
     second.unmount();
 
     expect(removeChannelMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates unread counts for read-state-only realtime updates', async () => {
+    const queryClient = createQueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+    const subscription = renderHook(
+      () => useNotificationSubscription(null, 'user-1'),
+      { wrapper: createWrapper(queryClient) }
+    );
+
+    await waitFor(() => {
+      expect(postgresCallbacks).toHaveLength(3);
+    });
+
+    postgresCallbacks[1]?.({ new: { read_at: new Date().toISOString() } });
+
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ['notifications'],
+    });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: ['notifications', 'unread-count'],
+    });
+
+    subscription.unmount();
   });
 
   it('invalidates every mounted query client from the shared subscription', async () => {

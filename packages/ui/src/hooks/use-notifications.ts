@@ -91,7 +91,8 @@ interface NotificationSubscriptionEntry {
   supabase: SupabaseClient;
 }
 
-export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 5 * 60 * 1000;
+export const UNREAD_COUNT_STALE_TIME_MS = 5 * 60 * 1000;
+export const UNREAD_COUNT_FALLBACK_INTERVAL_MS = 15 * 60 * 1000;
 
 const notificationSubscriptionRegistry = new Map<
   string,
@@ -164,12 +165,7 @@ function createNotificationSubscriptionEntry(
         table: 'notifications',
         filter: `user_id=eq.${userId}`,
       },
-      (payload) => {
-        const newRecord = payload.new as Notification;
-        if (newRecord?.data?.action_taken) {
-          invalidateQueries();
-        }
-      }
+      invalidateQueries
     )
     .on(
       'postgres_changes',
@@ -348,7 +344,7 @@ export function useUnreadCount(
       return data.count as number;
     },
     enabled: options?.enabled ?? true,
-    staleTime: 60_000,
+    staleTime: UNREAD_COUNT_STALE_TIME_MS,
     // Realtime invalidation is the primary update path. Keep a low-frequency
     // refresh as a safety net for disconnected or suspended browser sessions.
     refetchInterval: UNREAD_COUNT_FALLBACK_INTERVAL_MS,
