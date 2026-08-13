@@ -1725,6 +1725,14 @@
     "trigger_label": "Open version details",
     "version": "Version"
   },
+  "ws-members": {
+    "assign_invitation_role": "Assign role",
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned"
+  },
   "ws-roles": {
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git."

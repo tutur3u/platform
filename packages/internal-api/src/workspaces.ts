@@ -376,6 +376,44 @@ export async function listEnhancedWorkspaceMembers(
   );
 }
 
+export type WorkspaceInvitationRoleAssignment = {
+  email: string | null;
+  role: { id: string; name: string } | null;
+  userId: string | null;
+};
+
+export async function listWorkspaceInvitationRoles(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceInvitationRoleAssignment[]>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/members/invite`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function updateWorkspaceInvitationRole(
+  workspaceId: string,
+  payload: {
+    email?: string | null;
+    roleId: string | null;
+    userId?: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/members/invite`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
 export async function updateWorkspaceMemberProfile(
   workspaceId: string,
   payload: {

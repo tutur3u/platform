@@ -5534,7 +5534,7 @@
     {
       "id": "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["GET", "POST", "PATCH"],
       "routePath": "/api/workspaces/:wsId/members/invite",
       "sourceFile": "apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts",
       "status": "legacy-next",
@@ -7690,11 +7690,11 @@
     "pages": 151,
     "routeHandlers": 592,
     "methodCounts": {
-      "GET": 293,
+      "GET": 294,
       "HEAD": 3,
       "POST": 292,
       "PUT": 53,
-      "PATCH": 61,
+      "PATCH": 62,
       "DELETE": 99,
       "OPTIONS": 23
     },

@@ -546,6 +546,22 @@
     "reports": "Reports",
     "settings": "Settings"
   },
+  "notifications": {
+    "accept": "Accept",
+    "archive": "Archive",
+    "archive-all": "Archive all",
+    "decline": "Decline",
+    "empty-archive": "No archived notifications yet.",
+    "inbox": "Inbox",
+    "invited-to": "You have been invited to",
+    "loading-more": "Loading more...",
+    "mark-as-read": "Mark as read",
+    "mark-as-unread": "Mark as unread",
+    "no-notifications": "You have no notifications yet.",
+    "notifications": "Notifications",
+    "view-all": "View All Notifications",
+    "workspace-invite": "Workspace invite"
+  },
   "onboarding_guide": {
     "close": "Close guide",
     "confirmation_note": "Sending, publishing, provider changes, billing, and paid AI actions always require an explicit confirmation.",
@@ -694,22 +710,6 @@
     "switcher": "Workspace",
     "untitled": "Education workspace"
   },
-  "notifications": {
-    "accept": "Accept",
-    "archive": "Archive",
-    "archive-all": "Archive all",
-    "decline": "Decline",
-    "empty-archive": "No archived notifications yet.",
-    "inbox": "Inbox",
-    "invited-to": "You have been invited to",
-    "loading-more": "Loading more...",
-    "mark-as-read": "Mark as read",
-    "mark-as-unread": "Mark as unread",
-    "no-notifications": "You have no notifications yet.",
-    "notifications": "Notifications",
-    "view-all": "View All Notifications",
-    "workspace-invite": "Workspace invite"
-  },
   "workspace-invitation": {
     "accept": "Accept invitation",
     "accept-error": "Failed to accept invitation",
@@ -734,11 +734,17 @@
     "start_date_required": "Start date is required"
   },
   "ws-members": {
+    "assign_invitation_role": "Assign role",
     "guest_self_join_description": "Allow signed-in users with matching workspace profile emails to join this workspace as guests.",
     "guest_self_join_label": "Enable guest self-join by email match",
     "guest_self_join_update_error": "Failed to update guest self-join setting.",
     "guest_self_join_update_success": "Guest self-join setting updated.",
-    "invite_membership_label": "Access"
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
+    "invite_membership_label": "Access",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned"
   },
   "ws-roles": {
     "manage_git_repositories": "Manage Git repositories",

@@ -1,8 +1,4 @@
 {
-  "workspace-invitation": {
-    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
-    "decline-success": "Đã từ chối lời mời vào không gian làm việc"
-  },
   "account_switcher": {
     "accounts": "Tài khoản",
     "current_account": "Tài khoản hiện tại",
@@ -899,6 +895,22 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "notifications": {
+    "accept": "Chấp nhận",
+    "archive": "Lưu trữ",
+    "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
+    "empty-archive": "Chưa có thông báo đã lưu trữ.",
+    "inbox": "Hộp thư",
+    "invited-to": "Bạn đã được mời tham gia",
+    "loading-more": "Đang tải thêm...",
+    "mark-as-read": "Đánh dấu đã đọc",
+    "mark-as-unread": "Đánh dấu chưa đọc",
+    "no-notifications": "Bạn không có thông báo nào.",
+    "notifications": "Thông báo",
+    "view-all": "Xem tất cả thông báo",
+    "workspace-invite": "Lời mời tham gia"
+  },
   "onboarding_guide": {
     "close": "Đóng hướng dẫn",
     "confirmation_note": "Gửi, xuất bản, thay đổi nhà cung cấp, thanh toán và thao tác AI có phí luôn yêu cầu xác nhận rõ ràng.",
@@ -980,22 +992,6 @@
       "keyboard_shortcuts_description": "Xem các phím tắt cho ứng dụng và thanh bên",
       "sidebar_hidden": "Ẩn"
     }
-  },
-  "notifications": {
-    "accept": "Chấp nhận",
-    "archive": "Lưu trữ",
-    "archive-all": "Lưu trữ tất cả",
-    "decline": "Từ chối",
-    "empty-archive": "Chưa có thông báo đã lưu trữ.",
-    "inbox": "Hộp thư",
-    "invited-to": "Bạn đã được mời tham gia",
-    "loading-more": "Đang tải thêm...",
-    "mark-as-read": "Đánh dấu đã đọc",
-    "mark-as-unread": "Đánh dấu chưa đọc",
-    "no-notifications": "Bạn không có thông báo nào.",
-    "notifications": "Thông báo",
-    "view-all": "Xem tất cả thông báo",
-    "workspace-invite": "Lời mời tham gia"
   },
   "storefront": {
     "add": "Thêm",
@@ -1158,12 +1154,22 @@
     "trigger_label": "Mở thông tin phiên bản",
     "version": "Phiên bản"
   },
+  "workspace-invitation": {
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc"
+  },
   "ws-members": {
+    "assign_invitation_role": "Gán vai trò",
     "guest_self_join_description": "Cho phép người dùng đã đăng nhập có email khớp hồ sơ trong không gian làm việc tham gia với vai trò khách.",
     "guest_self_join_label": "Bật tham gia khách bằng khớp email",
     "guest_self_join_update_error": "Không thể cập nhật cài đặt tham gia khách.",
     "guest_self_join_update_success": "Đã cập nhật cài đặt tham gia khách.",
-    "invite_membership_label": "Quyền truy cập"
+    "invitation_role": "Vai trò khi mời",
+    "invitation_role_helper": "Vai trò này sẽ được áp dụng khi người này chấp nhận lời mời.",
+    "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
+    "invite_membership_label": "Quyền truy cập",
+    "no_role_assigned": "Chưa gán vai trò",
+    "no_roles_assigned": "Chưa gán vai trò nào"
   },
   "ws-roles": {
     "manage_git_repositories": "Quản lý kho mã Git",

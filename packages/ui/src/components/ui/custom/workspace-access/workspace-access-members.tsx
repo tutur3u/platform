@@ -11,6 +11,7 @@ type Props = {
   canEditProfiles: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
+  canUpdateInvitationRoles: boolean;
   defaultAdminEnabled: boolean;
   isLoading: boolean;
   isMutating: boolean;
@@ -23,6 +24,11 @@ type Props = {
     userId?: null | string;
   }) => void;
   onRemoveRole: (payload: { roleId: string; userId: string }) => void;
+  onUpdateInvitationRole: (payload: {
+    email?: null | string;
+    roleId: null | string;
+    userId?: null | string;
+  }) => void;
   roles: Array<Pick<WorkspaceAccessRole, 'id' | 'name'>>;
   searchTerm: string;
   status: string;
@@ -32,6 +38,7 @@ export function WorkspaceAccessMembers({
   canEditProfiles,
   canManageMembers,
   canManageRoles,
+  canUpdateInvitationRoles,
   defaultAdminEnabled,
   isLoading,
   isMutating,
@@ -41,6 +48,7 @@ export function WorkspaceAccessMembers({
   onEditMemberProfile,
   onRemoveMember,
   onRemoveRole,
+  onUpdateInvitationRole,
   roles,
   searchTerm,
   status,
@@ -83,6 +91,7 @@ export function WorkspaceAccessMembers({
           canEditProfiles={canEditProfiles}
           canManageMembers={canManageMembers}
           canManageRoles={canManageRoles}
+          canUpdateInvitationRoles={canUpdateInvitationRoles}
           defaultAdminEnabled={defaultAdminEnabled}
           isMutating={isMutating}
           labels={labels}
@@ -91,6 +100,7 @@ export function WorkspaceAccessMembers({
           onEditMemberProfile={onEditMemberProfile}
           onRemoveMember={onRemoveMember}
           onRemoveRole={onRemoveRole}
+          onUpdateInvitationRole={onUpdateInvitationRole}
           roles={roles}
         />
       ))}

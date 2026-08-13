@@ -1725,6 +1725,14 @@
     "trigger_label": "Mở thông tin phiên bản",
     "version": "Phiên bản"
   },
+  "ws-members": {
+    "assign_invitation_role": "Gán vai trò",
+    "invitation_role": "Vai trò khi mời",
+    "invitation_role_helper": "Vai trò này sẽ được áp dụng khi người này chấp nhận lời mời.",
+    "invitation_role_updated": "Đã cập nhật vai trò của lời mời",
+    "no_role_assigned": "Chưa gán vai trò",
+    "no_roles_assigned": "Chưa gán vai trò nào"
+  },
   "ws-roles": {
     "manage_git_repositories": "Quản lý kho mã Git",
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git."

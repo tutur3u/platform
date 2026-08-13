@@ -22,13 +22,19 @@ import {
   updateWorkspaceDefaultPermissions,
   updateWorkspaceRole,
 } from '@tuturuuu/internal-api/settings';
+import type { WorkspaceInvitationRoleAssignment } from '@tuturuuu/internal-api/workspaces';
 import {
   inviteWorkspaceMember,
   listEnhancedWorkspaceMembers,
+  listWorkspaceInvitationRoles,
   removeWorkspaceMember,
+  updateWorkspaceInvitationRole,
   updateWorkspaceMemberProfile,
 } from '@tuturuuu/internal-api/workspaces';
-import type { WorkspaceRole } from '@tuturuuu/types';
+import type {
+  InternalApiEnhancedWorkspaceMember,
+  WorkspaceRole,
+} from '@tuturuuu/types';
 import type {
   WorkspaceAccessAdapter,
   WorkspaceAccessInvitePayload,
@@ -59,6 +65,51 @@ export function normalizeWorkspaceAccessRole(role: RoleLike) {
     user_count: role.user_count,
     ws_id: role.ws_id,
   } satisfies WorkspaceAccessRole;
+}
+
+export function mergeWorkspaceInvitationRoles(
+  members: InternalApiEnhancedWorkspaceMember[],
+  invitations: WorkspaceInvitationRoleAssignment[]
+) {
+  const byUserId = new Map(
+    invitations
+      .filter((invitation) => invitation.userId)
+      .map((invitation) => [invitation.userId, invitation])
+  );
+  const byEmail = new Map(
+    invitations
+      .filter((invitation) => invitation.email)
+      .map((invitation) => [invitation.email?.trim().toLowerCase(), invitation])
+  );
+
+  return members.map((member) => {
+    if (!member.pending) return member;
+
+    const invitation =
+      (member.id ? byUserId.get(member.id) : undefined) ??
+      (member.email
+        ? byEmail.get(member.email.trim().toLowerCase())
+        : undefined);
+
+    return {
+      ...member,
+      roles: invitation?.role ? [{ ...invitation.role, permissions: [] }] : [],
+    };
+  });
+}
+
+async function listStandardWorkspaceMembers(
+  workspaceId: string,
+  status?: 'all' | 'invited' | 'joined'
+) {
+  const [members, invitations] = await Promise.all([
+    listEnhancedWorkspaceMembers(workspaceId, status),
+    status === 'joined'
+      ? Promise.resolve([])
+      : listWorkspaceInvitationRoles(workspaceId),
+  ]);
+
+  return mergeWorkspaceInvitationRoles(members, invitations);
 }
 
 async function inviteStandardWorkspaceMembers(
@@ -134,7 +185,7 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
       return role;
     },
     inviteMembers: inviteStandardWorkspaceMembers,
-    listMembers: listEnhancedWorkspaceMembers,
+    listMembers: listStandardWorkspaceMembers,
     listRoleOptions: listWorkspaceRoleOptions,
     listRoles: async (workspaceId, query) => {
       const result = await listWorkspaceRoles(workspaceId, {
@@ -151,6 +202,7 @@ export function createStandardWorkspaceAccessAdapter(): WorkspaceAccessAdapter {
     removeMember: removeWorkspaceMember,
     removeRoleMember,
     updateMemberProfile: updateWorkspaceMemberProfile,
+    updateInvitationRole: updateWorkspaceInvitationRole,
     updateDefaultRole: (workspaceId, memberType, payload) =>
       updateWorkspaceDefaultPermissions(workspaceId, memberType, {
         permissions: payload.permissions as WorkspaceRole['permissions'],

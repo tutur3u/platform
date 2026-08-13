@@ -34,6 +34,7 @@ import {
   shouldShowProtectedMemberStatus,
 } from './member-filter-utils';
 import type { WorkspaceAccessLabels, WorkspaceAccessRole } from './types';
+import { WorkspaceAccessInvitationRoleMenu } from './workspace-access-invitation-role-menu';
 
 type GuestContext = InternalApiEnhancedWorkspaceMember & {
   direct_board_guest?: boolean;
@@ -46,6 +47,7 @@ type Props = {
   canEditProfiles: boolean;
   canManageMembers: boolean;
   canManageRoles: boolean;
+  canUpdateInvitationRoles: boolean;
   defaultAdminEnabled: boolean;
   isMutating: boolean;
   labels: WorkspaceAccessLabels;
@@ -57,6 +59,11 @@ type Props = {
     userId?: null | string;
   }) => void;
   onRemoveRole: (payload: { roleId: string; userId: string }) => void;
+  onUpdateInvitationRole: (payload: {
+    email?: null | string;
+    roleId: null | string;
+    userId?: null | string;
+  }) => void;
   roles: Array<Pick<WorkspaceAccessRole, 'id' | 'name'>>;
 };
 
@@ -64,6 +71,7 @@ export function WorkspaceAccessMemberRow({
   canEditProfiles,
   canManageMembers,
   canManageRoles,
+  canUpdateInvitationRoles,
   defaultAdminEnabled,
   isMutating,
   labels,
@@ -72,6 +80,7 @@ export function WorkspaceAccessMemberRow({
   onEditMemberProfile,
   onRemoveMember,
   onRemoveRole,
+  onUpdateInvitationRole,
   roles,
 }: Props) {
   const t = useTranslations();
@@ -81,6 +90,11 @@ export function WorkspaceAccessMemberRow({
   const memberName = getMemberDisplayName(member, t('common.unknown'));
   const guest = member as GuestContext;
   const canRemoveRoles = canManageRoles && memberId && !member.pending;
+  const canUpdateInvitationRole =
+    canUpdateInvitationRoles &&
+    member.pending &&
+    member.workspace_member_type !== 'GUEST' &&
+    Boolean(memberId || member.email);
   const canEditProfile =
     canEditProfiles &&
     canManageMembers &&
@@ -281,7 +295,16 @@ export function WorkspaceAccessMemberRow({
         </div>
 
         <div className="mt-2.5 flex flex-wrap gap-1.5 sm:mt-3">
-          {member.roles.length > 0 ? (
+          {canUpdateInvitationRole ? (
+            <WorkspaceAccessInvitationRoleMenu
+              email={member.email}
+              isMutating={isMutating}
+              onUpdate={onUpdateInvitationRole}
+              role={member.roles[0]}
+              roles={roles}
+              userId={member.id}
+            />
+          ) : member.roles.length > 0 ? (
             member.roles.map((role) => (
               <Badge
                 key={`${member.id ?? member.email}-${role.id}`}
@@ -297,7 +320,9 @@ export function WorkspaceAccessMemberRow({
             </Badge>
           ) : (
             <Badge variant="outline" className="h-5 px-1.5 text-xs">
-              {labels.noRolesLabel}
+              {member.pending
+                ? t('ws-members.no_role_assigned')
+                : labels.noRolesLabel}
             </Badge>
           )}
         </div>

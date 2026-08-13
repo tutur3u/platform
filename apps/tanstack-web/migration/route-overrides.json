@@ -124,7 +124,7 @@
     "api:/api/workspaces/:wsId/members/invite:apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
-      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). The live invitation flow resolves current-user satellite app sessions through resolveWorkspaceRouteAccess before authorizing manage_workspace_members, supports assigning an optional workspace-scoped role when the actor can manage roles, and supports the confirmed POS Operator access migration while preserving existing member admins before disabling default Admin and attaching the limited role to the invite. The Rust port is pending."
+      "note": "First-class Next.js route (no longer a legacy-api-routes wrapper). POST resolves current-user satellite app sessions before inviting members and supports an optional workspace-scoped role or confirmed POS Operator setup. GET exposes stored roles for pending email and registered-user invitations, while PATCH lets workspace role managers change or clear that assignment before acceptance. The Rust port is pending."
     },
     "api:/api/v1/workspaces/:wsId/members:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts": {
       "status": "legacy-next",

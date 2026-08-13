@@ -741,11 +741,17 @@
     "start_date_required": "Start date is required"
   },
   "ws-members": {
+    "assign_invitation_role": "Assign role",
     "guest_self_join_description": "Allow signed-in users with matching workspace profile emails to join this workspace as guests.",
     "guest_self_join_label": "Enable guest self-join by email match",
     "guest_self_join_update_error": "Failed to update guest self-join setting.",
     "guest_self_join_update_success": "Guest self-join setting updated.",
-    "invite_membership_label": "Access"
+    "invitation_role": "Invitation role",
+    "invitation_role_helper": "Applied when this person accepts the invitation.",
+    "invitation_role_updated": "Invitation role updated",
+    "invite_membership_label": "Access",
+    "no_role_assigned": "No role assigned",
+    "no_roles_assigned": "No roles assigned"
   },
   "ws-roles": {
     "manage_git_repositories": "Manage Git repositories",

@@ -41,6 +41,12 @@ import { listAllWorkspaceAccessRoles } from './workspace-access-role-options';
 import { WorkspaceAccessRoles } from './workspace-access-roles';
 import { WorkspaceAccessTabsToolbar } from './workspace-access-tabs-toolbar';
 
+type InvitationRoleUpdate = {
+  email?: null | string;
+  roleId: null | string;
+  userId?: null | string;
+};
+
 export function WorkspaceAccessPage({
   adapter,
   disableInvite = false,
@@ -264,6 +270,64 @@ export function WorkspaceAccessPage({
       await invalidateAccessData();
     },
   });
+  const invitationRoleMutation = useMutation({
+    mutationFn: (payload: InvitationRoleUpdate) => {
+      if (!adapter.updateInvitationRole) {
+        throw new Error(t('common.error'));
+      }
+      return adapter.updateInvitationRole(workspaceId, payload);
+    },
+    onMutate: async (payload) => {
+      const queryKey = ['workspace-access', workspaceId, 'members'] as const;
+      await queryClient.cancelQueries({ queryKey });
+      const previousMembers =
+        queryClient.getQueryData<InternalApiEnhancedWorkspaceMember[]>(
+          queryKey
+        );
+      const nextRole = payload.roleId
+        ? (inviteRolesQuery.data?.data ?? rolesQuery.data?.data ?? []).find(
+            (role) => role.id === payload.roleId
+          )
+        : null;
+      const normalizedEmail = payload.email?.trim().toLowerCase() ?? null;
+
+      queryClient.setQueryData<InternalApiEnhancedWorkspaceMember[]>(
+        queryKey,
+        (members = []) =>
+          members.map((member) => {
+            const matchesUser = Boolean(
+              payload.userId && member.id === payload.userId
+            );
+            const matchesEmail = Boolean(
+              normalizedEmail &&
+                member.email?.trim().toLowerCase() === normalizedEmail
+            );
+            if (!member.pending || (!matchesUser && !matchesEmail)) {
+              return member;
+            }
+
+            return {
+              ...member,
+              roles: nextRole
+                ? [{ id: nextRole.id, name: nextRole.name, permissions: [] }]
+                : [],
+            };
+          })
+      );
+
+      return { previousMembers, queryKey };
+    },
+    onError: (error, _payload, context) => {
+      if (context?.previousMembers) {
+        queryClient.setQueryData(context.queryKey, context.previousMembers);
+      }
+      toast.error(error instanceof Error ? error.message : t('common.error'));
+    },
+    onSettled: invalidateAccessData,
+    onSuccess: () => {
+      toast.success(t('ws-members.invitation_role_updated'));
+    },
+  });
   const deleteRoleMutation = useMutation({
     mutationFn: (roleId: string) => adapter.deleteRole(workspaceId, roleId),
     onError: (error) =>
@@ -411,11 +475,15 @@ export function WorkspaceAccessPage({
             canEditProfiles={Boolean(adapter.updateMemberProfile)}
             canManageMembers={canManageMembers}
             canManageRoles={canManageRoles}
+            canUpdateInvitationRoles={
+              canManageRoles && Boolean(adapter.updateInvitationRole)
+            }
             defaultAdminEnabled={defaultAdminEnabled}
             isLoading={membersQuery.isPending}
             isMutating={
               removeMemberMutation.isPending ||
               roleMembershipMutation.isPending ||
+              invitationRoleMutation.isPending ||
               updateMemberProfileMutation.isPending
             }
             labels={labels}
@@ -428,7 +496,10 @@ export function WorkspaceAccessPage({
             onRemoveRole={(payload) =>
               roleMembershipMutation.mutate({ ...payload, action: 'remove' })
             }
-            roles={roles}
+            onUpdateInvitationRole={(payload) =>
+              invitationRoleMutation.mutate(payload)
+            }
+            roles={inviteRolesQuery.data?.data ?? roles}
             searchTerm={search}
             status={status}
           />
@@ -498,7 +569,7 @@ export function WorkspaceAccessPage({
         emails={inviteEmails}
         isSubmitting={inviteMutation.isPending}
         joinedMemberCount={joinedCount}
-        noRoleLabel={labels.noRolesLabel}
+        noRoleLabel={t('ws-members.no_role_assigned')}
         onAccessPresetChange={(value) => {
           setInviteAccessPreset(value);
           if (value === 'member') {
