@@ -53,6 +53,10 @@ const {
   isBuildkitResourceProfileFallbackError,
   persistBuildResourceProfile,
 } = require('./resource-profiles.js');
+const {
+  isBlueGreenWebAlreadyPromoted,
+  resolveLatestCommitHash,
+} = require('./promotion-reuse.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -3585,17 +3589,13 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     }
   );
   const previousTargetState = readBlueGreenTargetState(paths, fsImpl);
-  const latestCommitHash =
-    typeof options.latestCommit?.hash === 'string' &&
-    options.latestCommit.hash.length > 0
-      ? options.latestCommit.hash
-      : null;
-  const webAlreadyPromoted =
-    latestCommitHash != null &&
-    previousTargetState.targets.web.commitHash === latestCommitHash &&
-    isBlueGreenColor(previousTargetState.targets.web.activeColor) &&
-    previousTargetState.targets.web.frontend === selectedFrontend &&
-    previousTargetState.targets.web.health === 'healthy';
+  const latestCommitHash = resolveLatestCommitHash(options.latestCommit);
+  const webAlreadyPromoted = isBlueGreenWebAlreadyPromoted({
+    activeColor,
+    latestCommitHash,
+    previousTargetState,
+    selectedFrontend,
+  });
   const proxyRunning = await hasComposeServiceContainer(
     BLUE_GREEN_PROXY_SERVICE,
     {

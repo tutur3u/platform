@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import { DEFAULT_LOCALE, TEST_USER } from './helpers/constants';
 import {
   assertSafeE2EEnvironment,
@@ -46,21 +47,23 @@ function isoDateWithOffset(days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-// TODO(#4956): Re-home this coverage in the Finance satellite E2E suite.
-// This web-only Docker suite does not start apps/finance, so its routes return
-// 404 here.
 test.describe('Finance permission boundaries', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
   });
 
-  test.skip('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
+  test('keeps invoice creators away from finance aggregates and confidential wallet amounts', async ({
     baseURL,
     browser,
     request,
   }, testInfo) => {
-    const origin = baseURL ?? 'https://tuturuuu.localhost';
-    const headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 262));
+    const webOrigin = baseURL ?? 'https://tuturuuu.localhost';
+    const origin = process.env.FINANCE_BASE_URL;
+    expect(
+      origin,
+      'FINANCE_BASE_URL must be provided by the E2E runner'
+    ).toBeTruthy();
+    let headers = e2eClientHeaders(e2eClientIpForTest(testInfo, 262));
     const categoryId = randomUUID();
     const confidentialInterestTransactionId = randomUUID();
     const interestConfigId = randomUUID();
@@ -89,7 +92,7 @@ test.describe('Finance permission boundaries', () => {
       });
 
       const sessionResponse = await lowPrivPage.request.post(
-        `${origin}/api/auth/dev-session`,
+        `${webOrigin}/api/auth/dev-session`,
         {
           data: {
             completeOnboarding: true,
@@ -102,13 +105,27 @@ test.describe('Finance permission boundaries', () => {
       expect(sessionResponse.status()).toBe(200);
 
       const profileResponse = await lowPrivPage.request.get(
-        `${origin}/api/v1/users/me/profile`,
+        `${webOrigin}/api/v1/users/me/profile`,
         { headers }
       );
       expect(profileResponse.status()).toBe(200);
       const profile = (await profileResponse.json()) as { id?: string };
       expect(profile.id).toEqual(expect.any(String));
       lowPrivUserId = profile.id ?? null;
+      const { token } = createAppSessionToken(
+        {
+          email: lowPrivEmail,
+          originApp: 'web',
+          targetApp: 'finance',
+          userId: lowPrivUserId!,
+        },
+        {
+          secret:
+            process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+            'local-e2e-app-coordination-secret',
+        }
+      );
+      headers = { ...headers, authorization: `Bearer ${token}` };
 
       const workspaceResponse = await request.post(
         `${SUPABASE_URL}/rest/v1/workspaces`,

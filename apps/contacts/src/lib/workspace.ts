@@ -1,9 +1,11 @@
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   getWorkspace,
   type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
 
 export type ContactsWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspace>>
@@ -49,4 +51,20 @@ export async function getContactsWorkspacePermissions(
   }
 
   return getPermissions({ user, wsId });
+}
+
+export async function getContactsWorkspaceUserLink(
+  wsId: string,
+  actor?: ContactsActor
+) {
+  const user = actor ?? (await getSatelliteAppSessionUser('contacts'));
+
+  if (!user?.id) {
+    return null;
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  return getWorkspaceUserLinkForUser(wsId, user.id, {
+    authorizationClient: sbAdmin,
+  });
 }

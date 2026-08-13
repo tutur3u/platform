@@ -9,6 +9,31 @@ const HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';
 const OWNED_E2E_SATELLITES = Object.freeze([
   Object.freeze({
     appEnv: {
+      CONTACTS_APP_URL: 'url',
+      NEXT_PUBLIC_CONTACTS_APP_URL: 'url',
+    },
+    appName: 'contacts',
+    baseUrlEnv: 'CONTACTS_BASE_URL',
+    port: '7827',
+    routeName: 'contacts.tuturuuu',
+    specs: ['workspace-invite-cross-app-access.noauth.spec.ts'],
+  }),
+  Object.freeze({
+    appEnv: {
+      FINANCE_APP_URL: 'url',
+      NEXT_PUBLIC_FINANCE_APP_URL: 'url',
+    },
+    appName: 'finance',
+    baseUrlEnv: 'FINANCE_BASE_URL',
+    port: '7808',
+    routeName: 'finance.tuturuuu',
+    specs: [
+      'finance-permission-boundaries.noauth.spec.ts',
+      'workspace-invite-cross-app-access.noauth.spec.ts',
+    ],
+  }),
+  Object.freeze({
+    appEnv: {
       FORMS_APP_URL: 'url',
       NEXT_PUBLIC_FORMS_APP_URL: 'url',
     },
@@ -16,7 +41,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     baseUrlEnv: 'FORMS_BASE_URL',
     port: '7828',
     routeName: 'forms.tuturuuu',
-    spec: 'forms-private.noauth.spec.ts',
+    specs: ['forms-private.noauth.spec.ts'],
   }),
   Object.freeze({
     appEnv: {
@@ -29,7 +54,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     baseUrlEnv: 'INFRASTRUCTURE_BASE_URL',
     port: '7823',
     routeName: 'infra.tuturuuu',
-    spec: 'ai-credits.spec.ts',
+    specs: ['ai-credits.spec.ts'],
   }),
 ]);
 
@@ -56,9 +81,10 @@ function shouldStartOwnedSatellite(
   if (isTruthy(enabled)) return true;
   if (playwrightArgs.length === 0) return true;
 
-  return (
-    playwrightArgs.some((arg) => String(arg).includes(satellite.spec)) ||
-    String(playwrightTestList).includes(satellite.spec)
+  return satellite.specs.some(
+    (spec) =>
+      playwrightArgs.some((arg) => String(arg).includes(spec)) ||
+      String(playwrightTestList).includes(spec)
   );
 }
 
@@ -71,7 +97,9 @@ function shouldDiscoverOwnedSatellitesFromTestList(
   return OWNED_E2E_SATELLITES.some((satellite) => {
     const enabled = env[getEnabledEnvName(satellite)];
     if (isTruthy(enabled) || isFalsy(enabled)) return false;
-    return !playwrightArgs.some((arg) => String(arg).includes(satellite.spec));
+    return !satellite.specs.some((spec) =>
+      playwrightArgs.some((arg) => String(arg).includes(spec))
+    );
   });
 }
 

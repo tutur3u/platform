@@ -6,6 +6,7 @@
  */
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { FinanceRouteAuthContext } from '../../../../request-access';
 import { getAccessibleWallet } from '../../../wallet-access';
 
 interface Params {
@@ -33,7 +34,11 @@ const updateConfigSchema = z.object({
 /**
  * PUT: Update interest config
  */
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -41,6 +46,7 @@ export async function PUT(req: Request, { params }: Params) {
     walletId,
     requiredPermission: 'update_wallets',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {
@@ -124,7 +130,11 @@ export async function PUT(req: Request, { params }: Params) {
 /**
  * DELETE: Remove interest tracking
  */
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -132,6 +142,7 @@ export async function DELETE(req: Request, { params }: Params) {
     walletId,
     requiredPermission: 'update_wallets',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {
