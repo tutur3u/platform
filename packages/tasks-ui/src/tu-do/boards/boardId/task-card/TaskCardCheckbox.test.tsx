@@ -106,7 +106,23 @@ describe('TaskCardCheckbox', () => {
     ).not.toBeChecked();
   });
 
-  it('renders checked when the task is actually in a resolved list', () => {
+  it('renders unchecked when the task is in a review list', () => {
+    render(
+      <TaskCardCheckbox
+        task={task}
+        taskList={{ ...taskList, status: 'review' }}
+        isLoading={false}
+        onToggle={vi.fn()}
+        tooltipLabel="Mark as Done"
+      />
+    );
+
+    expect(
+      screen.getByRole('checkbox', { name: 'Mark as Done' })
+    ).not.toBeChecked();
+  });
+
+  it('renders checked when the task is actually in a terminal list', () => {
     render(
       <TaskCardCheckbox
         task={task}
