@@ -18,6 +18,11 @@ describe('AI Studio next config rewrites', () => {
           destination: 'https://web.example.com/api/workspaces/invitations',
           source: '/api/workspaces/invitations',
         },
+        {
+          destination:
+            'https://web.example.com/api/v1/workspaces/:wsId/settings/permissions',
+          source: '/api/v1/workspaces/:wsId/settings/permissions',
+        },
       ],
       fallback: [
         {

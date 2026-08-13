@@ -19,6 +19,11 @@ describe('Infrastructure next config rewrites', () => {
           source: '/api/workspaces/invitations',
         },
         {
+          destination:
+            'https://web.example.com/api/v1/workspaces/:wsId/settings/permissions',
+          source: '/api/v1/workspaces/:wsId/settings/permissions',
+        },
+        {
           destination: 'https://web.example.com/api/v1/workspaces',
           source: '/api/v1/workspaces',
         },
