@@ -579,7 +579,26 @@ test.describe('workspace invitation account-shape resilience', () => {
       await expect(page).not.toHaveURL(
         /\/(?:[a-z]{2}\/)?(?:404|onboarding)(?:[/?#]|$)/u
       );
+      await expect(
+        page.getByRole('heading', { name: 'This page could not be found.' })
+      ).toHaveCount(0);
       await expect(page.getByText(reportTitle)).toBeVisible();
+
+      const reportsResponse = await request.get(
+        `${CONTACTS_BASE_URL}/api/v1/workspaces/${workspaceId}/users/reports?cadence=monthly&q=${encodeURIComponent(reportTitle)}`,
+        {
+          failOnStatusCode: false,
+          headers: { authorization: `Bearer ${contactsToken}` },
+        }
+      );
+      expect(reportsResponse.status(), await reportsResponse.text()).toBe(200);
+      await expect(reportsResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({ title: reportTitle }),
+          ]),
+        })
+      );
 
       const repairedLink = await getWorkspaceUserLink(
         request,

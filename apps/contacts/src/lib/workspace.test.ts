@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  getPermissions: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
   getWorkspaceUserLinkForUser: vi.fn(),
 }));
@@ -13,14 +14,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: vi.fn(),
+  getPermissions: mocks.getPermissions,
   getWorkspace: vi.fn(),
 }));
 vi.mock('@tuturuuu/utils/workspace-user-link', () => ({
   getWorkspaceUserLinkForUser: mocks.getWorkspaceUserLinkForUser,
 }));
 
-import { getContactsWorkspaceUserLink } from './workspace';
+import {
+  getContactsWorkspacePermissions,
+  getContactsWorkspaceUserLink,
+} from './workspace';
 
 describe('getContactsWorkspaceUserLink', () => {
   beforeEach(() => {
@@ -61,5 +65,53 @@ describe('getContactsWorkspaceUserLink', () => {
       null
     );
     expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('repairs the Contacts profile before resolving workspace permissions', async () => {
+    const actor = {
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: '2026-08-14T00:00:00.000Z',
+      email: 'member@example.com',
+      id: 'member-id',
+      user_metadata: {},
+    };
+    const adminClient = { from: vi.fn() };
+    const permissions = { containsPermission: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue(adminClient);
+    mocks.getWorkspaceUserLinkForUser.mockResolvedValue({
+      virtual_user_id: 'workspace-user-id',
+    });
+    mocks.getPermissions.mockResolvedValue(permissions);
+
+    await expect(
+      getContactsWorkspacePermissions('workspace-id', actor)
+    ).resolves.toBe(permissions);
+
+    expect(
+      mocks.getWorkspaceUserLinkForUser.mock.invocationCallOrder[0]
+    ).toBeLessThan(mocks.getPermissions.mock.invocationCallOrder[0]!);
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user: actor,
+      wsId: 'workspace-id',
+    });
+  });
+
+  it('does not resolve permissions when the Contacts profile cannot be repaired', async () => {
+    const actor = {
+      app_metadata: {},
+      aud: 'authenticated',
+      created_at: '2026-08-14T00:00:00.000Z',
+      email: 'member@example.com',
+      id: 'member-id',
+      user_metadata: {},
+    };
+    mocks.createAdminClient.mockResolvedValue({ from: vi.fn() });
+    mocks.getWorkspaceUserLinkForUser.mockResolvedValue(null);
+
+    await expect(
+      getContactsWorkspacePermissions('workspace-id', actor)
+    ).resolves.toBeNull();
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
   });
 });

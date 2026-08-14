@@ -151,6 +151,7 @@ test('builds host-safe owned-satellite runtime environments', () => {
     'https://forms.tuturuuu.localhost:1355'
   );
   assert.equal(formsRuntime.INTERNAL_WEB_API_ORIGIN, 'http://127.0.0.1:7803');
+  assert.equal(formsRuntime.NEXT_WEBPACK_BUILD, '1');
   assert.equal(formsRuntime.SUPABASE_SERVER_URL, 'http://127.0.0.1:8001');
 
   const infraPortless = getOwnedSatellitePortlessEnv(infrastructure, env);
@@ -217,8 +218,8 @@ test('starts an owned satellite and reports an early readiness exit', async () =
     },
   });
 
-  assert.equal(calls[0].command, 'bun');
-  assert.deepEqual(calls[0].args, ['run', 'dev:app']);
+  assert.equal(calls[0].command, 'bunx');
+  assert.deepEqual(calls[0].args, ['next', 'dev', '-p', '7828', '--webpack']);
   assert.equal(calls[0].options.cwd, '/repo/apps/forms');
   assert.equal(calls[0].options.env.PORT, '7828');
   assert.equal(runtime.readinessUrl, 'http://127.0.0.1:7828');

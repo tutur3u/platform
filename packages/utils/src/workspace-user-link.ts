@@ -37,6 +37,25 @@ function toLink(row: LinkRow): WorkspaceUserLink {
   };
 }
 
+async function readWorkspaceUserLink(
+  supabase: TypedSupabaseClient,
+  wsId: string,
+  userId: string
+) {
+  const { data, error } = await supabase
+    .from('workspace_user_linked_users')
+    .select(LINK_SELECT)
+    .eq('platform_user_id', userId)
+    .eq('ws_id', wsId)
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    error,
+    link: data ? toLink(data as LinkRow) : null,
+  };
+}
+
 /**
  * Resolves the workspace-user link for an EXPLICIT platform user id.
  *
@@ -60,15 +79,13 @@ export async function getWorkspaceUserLinkForUser(
   const supabase = authorizationClient ?? (await createClient());
   const resolvedWsId = resolveWorkspaceId(wsId);
 
-  const { data: workspaceUser } = await supabase
-    .from('workspace_user_linked_users')
-    .select(LINK_SELECT)
-    .eq('platform_user_id', userId)
-    .eq('ws_id', resolvedWsId)
-    .limit(1)
-    .maybeSingle();
+  const initialLookup = await readWorkspaceUserLink(
+    supabase,
+    resolvedWsId,
+    userId
+  );
 
-  if (workspaceUser) return toLink(workspaceUser as LinkRow);
+  if (initialLookup.link) return initialLookup.link;
 
   if (!autoRepair) return null;
 
@@ -94,23 +111,29 @@ export async function getWorkspaceUserLinkForUser(
       target_ws_id: resolvedWsId,
     });
 
+    // Always re-read with the service-role client, including after an RPC
+    // error. Another layout/page/API request may have repaired the same member
+    // concurrently, and returning null here would turn a valid membership into
+    // a route-level 404 or an empty profile-scoped module.
+    const repairedLookup = await readWorkspaceUserLink(
+      sbAdmin,
+      resolvedWsId,
+      userId
+    );
+
+    if (repairedLookup.link) return repairedLookup.link;
+
     if (repairError) {
       console.error(
         '[getWorkspaceUserLinkForUser] Failed to auto-repair workspace user link:',
         repairError
       );
-      return null;
+    } else if (repairedLookup.error) {
+      console.error(
+        '[getWorkspaceUserLinkForUser] Failed to fetch repaired workspace user link:',
+        repairedLookup.error
+      );
     }
-
-    const { data: repairedUser } = await supabase
-      .from('workspace_user_linked_users')
-      .select(LINK_SELECT)
-      .eq('platform_user_id', userId)
-      .eq('ws_id', resolvedWsId)
-      .limit(1)
-      .maybeSingle();
-
-    if (repairedUser) return toLink(repairedUser as LinkRow);
   } catch (err) {
     console.error(
       '[getWorkspaceUserLinkForUser] Error during auto-repair:',

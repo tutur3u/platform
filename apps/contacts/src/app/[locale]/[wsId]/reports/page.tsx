@@ -1,12 +1,8 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  getContactsWorkspacePermissions,
-  getContactsWorkspaceUserLink,
-} from '@/lib/workspace';
+import { getContactsWorkspaceAccess } from '@/lib/workspace';
 import { postsSearchParamsCache } from '../posts/search-params.server';
 import type { RawPostsSearchParams } from '../posts/types';
 import ReportsHub from './reports-hub';
@@ -31,12 +27,9 @@ export default async function ReportsPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
-        const actor = await getSatelliteAppSessionUser('contacts');
-        const [user, permissions] = await Promise.all([
-          getContactsWorkspaceUserLink(wsId, actor ?? undefined),
-          getContactsWorkspacePermissions(wsId, actor ?? undefined),
-        ]);
-        if (!user || !permissions) notFound();
+        const access = await getContactsWorkspaceAccess(wsId);
+        if (!access) notFound();
+        const { permissions } = access;
 
         const canViewDaily =
           permissions.containsPermission('view_user_groups_posts') ||

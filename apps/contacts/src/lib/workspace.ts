@@ -6,6 +6,7 @@ import {
   type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
 import { getWorkspaceUserLinkForUser } from '@tuturuuu/utils/workspace-user-link';
+import { cache } from 'react';
 
 export type ContactsWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspace>>
@@ -50,6 +51,13 @@ export async function getContactsWorkspacePermissions(
     return null;
   }
 
+  // Contacts permissions authorize the workspace, while most Contacts data is
+  // scoped through workspace_user_linked_users. Repair that profile first so a
+  // newly invited or historically incomplete member cannot pass permission
+  // checks and then receive an empty module or page-level 404.
+  const linkedUser = await getContactsWorkspaceUserLink(wsId, user);
+  if (!linkedUser) return null;
+
   return getPermissions({ user, wsId });
 }
 
@@ -68,3 +76,25 @@ export async function getContactsWorkspaceUserLink(
     authorizationClient: sbAdmin,
   });
 }
+
+async function resolveContactsWorkspaceAccess(wsId: string) {
+  const actor = await getSatelliteAppSessionUser('contacts');
+  if (!actor?.id) return null;
+
+  const user = await getContactsWorkspaceUserLink(wsId, actor);
+  if (!user) return null;
+
+  const permissions = await getPermissions({ user: actor, wsId });
+  if (!permissions) return null;
+
+  return { actor, permissions, user };
+}
+
+/**
+ * One request-scoped access result shared by the Contacts layout and page.
+ * React cache prevents parallel route segments from racing independent repair
+ * and permission reads for the same workspace.
+ */
+export const getContactsWorkspaceAccess = cache(async (wsId: string) =>
+  resolveContactsWorkspaceAccess(wsId)
+);

@@ -10,10 +10,10 @@ describe('Contacts workspace layout', () => {
     );
 
     expect(source).toContain(
-      "import { getContactsWorkspaceUserLink } from '@/lib/workspace';"
+      "import { getContactsWorkspaceAccess } from '@/lib/workspace';"
     );
     expect(source).toMatch(
-      /if \(!workspace\.joined\) redirect\('\/dashboard'\);[\s\S]*getContactsWorkspaceUserLink\(workspace\.id, user\)/u
+      /if \(!workspace\.joined\) redirect\('\/dashboard'\);[\s\S]*getContactsWorkspaceAccess\(workspace\.id\)/u
     );
   });
 });

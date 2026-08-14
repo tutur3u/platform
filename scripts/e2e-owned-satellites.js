@@ -185,6 +185,7 @@ function createOwnedSatelliteEnv(satellite, env = process.env) {
     INTERNAL_WEB_API_ORIGIN: `http://127.0.0.1:${webProxyPort}`,
     NEXT_PUBLIC_APP_URL: url,
     NEXT_PUBLIC_WEB_APP_URL: webUrl,
+    NEXT_WEBPACK_BUILD: '1',
     NODE_ENV: 'development',
     NODE_TLS_REJECT_UNAUTHORIZED: '0',
     PORT: satellite.port,
@@ -211,11 +212,19 @@ function startOwnedSatellite(satellite, options = {}) {
   const logFd = fsImpl.openSync(logPath, 'w');
   let child;
   try {
-    child = spawnImpl('bun', ['run', 'dev:app'], {
-      cwd: path.join(rootDir, 'apps', satellite.appName),
-      env: createOwnedSatelliteEnv(satellite, env),
-      stdio: ['ignore', logFd, logFd],
-    });
+    // The owned satellites are long-lived shared fixtures for a Playwright
+    // shard. Use webpack here because a Turbopack task-cache panic terminates
+    // the whole fixture and turns later authorization assertions into 502s.
+    // Production builds still use each app's normal Turbopack build command.
+    child = spawnImpl(
+      'bunx',
+      ['next', 'dev', '-p', satellite.port, '--webpack'],
+      {
+        cwd: path.join(rootDir, 'apps', satellite.appName),
+        env: createOwnedSatelliteEnv(satellite, env),
+        stdio: ['ignore', logFd, logFd],
+      }
+    );
   } finally {
     fsImpl.closeSync(logFd);
   }
