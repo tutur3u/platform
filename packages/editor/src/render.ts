@@ -107,7 +107,7 @@ function sanitizeNode(
   if (node.type === 'heading') {
     const level = Number(node.attrs?.level ?? 2);
     const allowed =
-      preset === 'full' ? [2, 3, 4] : preset === 'legacy' ? [1, 2, 3] : [];
+      preset === 'full' ? [1, 2, 3, 4] : preset === 'legacy' ? [1, 2, 3] : [];
     return allowed.includes(level)
       ? {
           attrs: { level, ...(alignmentAttrs ?? {}) },

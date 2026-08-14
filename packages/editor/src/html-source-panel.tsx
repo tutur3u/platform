@@ -1,26 +1,22 @@
 'use client';
 
-import { Code2, Eye, PencilLine } from 'lucide-react';
+import { Code2, PencilLine } from 'lucide-react';
 import type { EditorMessages } from './types.js';
 
-export type EditorMode = 'editor' | 'html' | 'preview';
+export type EditorMode = 'editor' | 'html';
 
 export function EditorModeSwitch({
   enableHTMLSource,
-  enablePreview,
   messages,
   mode,
   onEditor,
   onHTML,
-  onPreview,
 }: {
   enableHTMLSource: boolean;
-  enablePreview: boolean;
   messages: EditorMessages;
   mode: EditorMode;
   onEditor: () => void;
   onHTML: () => void;
-  onPreview: () => void;
 }) {
   return (
     <fieldset
@@ -35,16 +31,6 @@ export function EditorModeSwitch({
         <button aria-pressed={mode === 'html'} onClick={onHTML} type="button">
           <Code2 aria-hidden="true" />
           {messages.html}
-        </button>
-      ) : null}
-      {enablePreview ? (
-        <button
-          aria-pressed={mode === 'preview'}
-          onClick={onPreview}
-          type="button"
-        >
-          <Eye aria-hidden="true" />
-          {messages.preview}
         </button>
       ) : null}
     </fieldset>

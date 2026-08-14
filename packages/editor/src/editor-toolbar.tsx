@@ -68,6 +68,7 @@ export function EditorToolbar({
   const headingActions: Array<[1 | 2 | 3 | 4, string, ToolbarIcon]> =
     preset === 'full'
       ? [
+          [1, messages.heading1 ?? `${messages.heading} 1`, Heading1],
           [2, messages.heading2 ?? `${messages.heading} 2`, Heading2],
           [3, messages.heading3 ?? `${messages.heading} 3`, Heading3],
           [4, messages.heading4 ?? `${messages.heading} 4`, Heading4],

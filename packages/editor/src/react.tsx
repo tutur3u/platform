@@ -33,7 +33,6 @@ type InternalPreset = RichTextFeaturePreset | 'legacy';
 export function RichTextEditor({
   content,
   enableHTMLSource = false,
-  enablePreview = false,
   featurePreset,
   locale = 'en',
   messages: messageOverrides,
@@ -47,6 +46,7 @@ export function RichTextEditor({
 }: {
   content: JSONContent | null;
   enableHTMLSource?: boolean;
+  /** @deprecated Editing is now always a live WYSIWYG experience. */
   enablePreview?: boolean;
   featurePreset?: RichTextFeaturePreset;
   locale?: EditorLocale;
@@ -92,12 +92,12 @@ export function RichTextEditor({
   const extensions = useMemo(() => {
     const full = preset !== 'compact';
     const headingLevels =
-      preset === 'full' ? [2, 3, 4] : preset === 'legacy' ? [1, 2, 3] : [];
+      preset === 'full' ? [1, 2, 3, 4] : preset === 'legacy' ? [1, 2, 3] : [];
     return [
       StarterKit.configure({
         blockquote: full ? undefined : false,
         bulletList: full ? undefined : false,
-        heading: full ? { levels: headingLevels as [1, 2, 3] } : false,
+        heading: full ? { levels: headingLevels as [1, 2, 3, 4] } : false,
         horizontalRule: full ? undefined : false,
         link: false,
         listItem: full ? undefined : false,
@@ -157,10 +157,7 @@ export function RichTextEditor({
   }, [sourceDirty]);
 
   useEffect(() => {
-    const modeUnavailable =
-      readOnly ||
-      (mode === 'html' && !enableHTMLSource) ||
-      (mode === 'preview' && !enablePreview);
+    const modeUnavailable = readOnly || (mode === 'html' && !enableHTMLSource);
     if (!editor || mode === 'editor' || !modeUnavailable) return;
     const html = editor.getHTML();
     sourceBaseline.current = html;
@@ -168,7 +165,7 @@ export function RichTextEditor({
     setSourceError(null);
     setSourceNotice(null);
     setMode('editor');
-  }, [editor, enableHTMLSource, enablePreview, mode, readOnly]);
+  }, [editor, enableHTMLSource, mode, readOnly]);
 
   useEffect(() => {
     if (!editor || sourceDirty) return;
@@ -224,16 +221,6 @@ export function RichTextEditor({
     setMode('editor');
   };
 
-  const enterPreviewMode = () => {
-    if (sourceDirty) {
-      setSourceError(messages.htmlChangesPending);
-      return;
-    }
-    setSourceError(null);
-    setSourceNotice(null);
-    setMode('preview');
-  };
-
   const discardSource = () => {
     const html = editor.getHTML();
     sourceBaseline.current = html;
@@ -287,15 +274,13 @@ export function RichTextEditor({
       data-mode={mode}
       data-read-only={readOnly || undefined}
     >
-      {!readOnly && (enableHTMLSource || enablePreview) ? (
+      {!readOnly && enableHTMLSource ? (
         <EditorModeSwitch
           enableHTMLSource={enableHTMLSource}
-          enablePreview={enablePreview}
           messages={messages}
           mode={mode}
           onEditor={enterEditorMode}
           onHTML={enterHTMLMode}
-          onPreview={enterPreviewMode}
         />
       ) : null}
 

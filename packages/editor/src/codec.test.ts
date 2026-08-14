@@ -8,6 +8,9 @@ describe('rich text codecs', () => {
     expect(extractPlainText(content)).toContain('bilingual paragraph');
     expect(jsonToMarkdown(content)).toContain('# Story');
     expect(renderRichTextToHTML(content)).toContain('<h1>Story</h1>');
+    expect(renderRichTextToHTML(content, { featurePreset: 'full' })).toContain(
+      '<h1>Story</h1>'
+    );
   });
 
   it('preserves rich legacy Markdown through structured round trips', () => {

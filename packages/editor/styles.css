@@ -62,6 +62,110 @@
   margin-bottom: 0;
 }
 
+.tuturuuu-editor .tiptap h1,
+.tuturuuu-editor .tiptap h2,
+.tuturuuu-editor .tiptap h3,
+.tuturuuu-editor .tiptap h4 {
+  margin: 1.5em 0 0.5em;
+  color: inherit;
+  font-weight: 750;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.tuturuuu-editor .tiptap h1 {
+  font-size: clamp(1.875rem, 4vw, 2.5rem);
+  letter-spacing: -0.035em;
+}
+
+.tuturuuu-editor .tiptap h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  letter-spacing: -0.025em;
+}
+
+.tuturuuu-editor .tiptap h3 {
+  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  letter-spacing: -0.015em;
+}
+
+.tuturuuu-editor .tiptap h4 {
+  font-size: 1.125rem;
+}
+
+.tuturuuu-editor :where(.tiptap) p {
+  margin: 0.75rem 0;
+}
+
+.tuturuuu-editor .tiptap ul,
+.tuturuuu-editor .tiptap ol {
+  padding-inline-start: 1.625rem;
+  margin: 0.875rem 0;
+}
+
+.tuturuuu-editor .tiptap ul {
+  list-style: disc;
+}
+
+.tuturuuu-editor .tiptap ol {
+  list-style: decimal;
+}
+
+.tuturuuu-editor .tiptap li {
+  margin: 0.25rem 0;
+}
+
+.tuturuuu-editor .tiptap li > p {
+  margin: 0;
+}
+
+.tuturuuu-editor .tiptap blockquote {
+  padding: 0.125rem 0 0.125rem 1rem;
+  margin: 1.25rem 0;
+  border-inline-start: 0.25rem solid
+    var(--tuturuuu-editor-quote-border, rgb(127 127 127 / 0.35));
+  color: var(--tuturuuu-editor-quote-foreground, inherit);
+  font-style: italic;
+}
+
+.tuturuuu-editor .tiptap hr {
+  height: 1px;
+  margin: 1.75rem 0;
+  border: 0;
+  background: var(--tuturuuu-editor-border, #d1d5db);
+}
+
+.tuturuuu-editor .tiptap a {
+  color: var(--tuturuuu-editor-link, #2563eb);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+}
+
+.tuturuuu-editor .tiptap code {
+  padding: 0.125em 0.35em;
+  border-radius: 0.3rem;
+  background: var(
+    --tuturuuu-editor-code-inline-background,
+    rgb(127 127 127 / 0.12)
+  );
+  font-size: 0.875em;
+}
+
+.tuturuuu-editor .tiptap pre {
+  overflow-x: auto;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0.625rem;
+  background: var(--tuturuuu-editor-code-background, #111827);
+  color: var(--tuturuuu-editor-code-foreground, #f9fafb);
+}
+
+.tuturuuu-editor .tiptap pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
 .tuturuuu-editor .tiptap img {
   display: block;
   max-width: 100%;

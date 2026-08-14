@@ -12,7 +12,7 @@ import { RichTextEditor } from './react.js';
 
 afterEach(cleanup);
 
-describe('RichTextEditor source and preview modes', () => {
+describe('RichTextEditor WYSIWYG and source modes', () => {
   it('preserves unapplied source and discards it explicitly', async () => {
     const onChange = vi.fn();
     const onSourceModeDirtyChange = vi.fn();
@@ -41,7 +41,7 @@ describe('RichTextEditor source and preview modes', () => {
     await waitFor(() =>
       expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(true)
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Editor' }));
 
     expect((source as HTMLTextAreaElement).value).toBe('<p>Changed</p>');
     expect(screen.getByRole('alert').textContent).toContain(
@@ -55,7 +55,7 @@ describe('RichTextEditor source and preview modes', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('previews the live document without changing it', async () => {
+  it('keeps the formatted document editable without a legacy preview switch', async () => {
     const onChange = vi.fn();
     const { container } = render(
       <RichTextEditor
@@ -75,14 +75,11 @@ describe('RichTextEditor source and preview modes', () => {
           ],
           type: 'doc',
         }}
-        enableHTMLSource
         enablePreview
         featurePreset="full"
         onChange={onChange}
       />
     );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'Preview' }));
 
     await waitFor(() => {
       expect(container.querySelector('.tiptap')?.textContent).toBe(
@@ -90,21 +87,16 @@ describe('RichTextEditor source and preview modes', () => {
       );
       expect(
         container.querySelector('.tiptap')?.getAttribute('contenteditable')
-      ).toBe('false');
+      ).toBe('true');
     });
-    expect(screen.queryByRole('button', { name: 'Bold' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'Heading 1' })
+    ).toBeTruthy();
     expect(
       screen.getByRole('img', { name: 'Article detail' }).getAttribute('src')
     ).toBe('https://example.com/article-detail.png');
-    expect(onChange).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Editor' }));
-    await waitFor(() =>
-      expect(
-        container.querySelector('.tiptap')?.getAttribute('contenteditable')
-      ).toBe('true')
-    );
-    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -277,6 +269,9 @@ describe('RichTextEditor source and preview modes', () => {
     expect(screen.queryByRole('button', { name: 'Heading 2' })).toBeNull();
 
     rerender(<RichTextEditor content={null} featurePreset="full" />);
+    expect(
+      await screen.findByRole('button', { name: 'Heading 1' })
+    ).toBeTruthy();
     expect(
       await screen.findByRole('button', { name: 'Heading 2' })
     ).toBeTruthy();
