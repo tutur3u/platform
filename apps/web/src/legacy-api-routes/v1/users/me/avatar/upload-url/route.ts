@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH } from '../../session-auth';
 
 const PostAvatarUploadSchema = z.object({
   filename: z
@@ -70,7 +71,8 @@ export const POST = withSessionAuth(
   },
   // Upload URL generation — moderate limit to prevent storage abuse
   {
-    allowAppSessionAuth: true,
+    allowAppSessionAuth: CURRENT_USER_PROFILE_WRITE_APP_SESSION_AUTH,
     rateLimit: { windowMs: 60000, maxRequests: 10 },
+    skipAppSessionStepUpChallenge: true,
   }
 );
