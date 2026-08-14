@@ -14,7 +14,7 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useMemo } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -28,6 +28,7 @@ import { TaskBoardLoadingState } from './task-board-loading-state';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 const BOARD_REVALIDATE_COOLDOWN_MS = 5 * 60_000;
+const RELATION_REVALIDATE_DELAY_MS = 5_000;
 
 interface Props {
   boardId: string;
@@ -52,6 +53,9 @@ export function BoardClient({
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const relationRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const {
     data: board,
@@ -195,10 +199,28 @@ export function BoardClient({
     ]
   );
 
-  const { broadcast } = useBoardRealtime(boardId, {
-    onTaskRelationsChange: () => {
-      refreshActiveBoard({ invalidateTasks: false });
+  const scheduleRelationRefresh = useCallback(() => {
+    if (relationRefreshTimerRef.current) {
+      clearTimeout(relationRefreshTimerRef.current);
+    }
+
+    relationRefreshTimerRef.current = setTimeout(() => {
+      relationRefreshTimerRef.current = null;
+      void refreshActiveBoard({ invalidateTasks: false });
+    }, RELATION_REVALIDATE_DELAY_MS);
+  }, [refreshActiveBoard]);
+
+  useEffect(
+    () => () => {
+      if (relationRefreshTimerRef.current) {
+        clearTimeout(relationRefreshTimerRef.current);
+      }
     },
+    []
+  );
+
+  const { broadcast } = useBoardRealtime(boardId, {
+    onTaskRelationsChange: scheduleRelationRefresh,
   });
 
   // Register broadcast at module level so components outside the

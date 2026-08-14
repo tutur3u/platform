@@ -264,7 +264,7 @@ describe('BoardClient', () => {
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('revalidates loaded lists for relation broadcasts without invalidating visible task caches', async () => {
+  it('debounces relation revalidation so optimistic relation state can settle', async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -294,9 +294,26 @@ describe('BoardClient', () => {
         }
       | undefined;
 
-    await act(async () => {
-      realtimeOptions?.onTaskRelationsChange?.(['task-1']);
-    });
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        realtimeOptions?.onTaskRelationsChange?.(['task-1']);
+        realtimeOptions?.onTaskRelationsChange?.(['task-2']);
+      });
+
+      expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_999);
+      });
+      expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
 
     expect(invalidateSpy).not.toHaveBeenCalledWith({
       queryKey: ['tasks', 'board-1'],

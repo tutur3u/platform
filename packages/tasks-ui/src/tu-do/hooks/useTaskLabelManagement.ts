@@ -9,10 +9,7 @@ import type { TaskLabel as DbTaskLabel } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
-import {
-  getActiveBoardRefresh,
-  useBoardBroadcast,
-} from '../shared/board-broadcast-context';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import {
   applyOptimisticTaskPatch,
   getTaskFromVisibleCaches,
@@ -248,10 +245,6 @@ export function useTaskLabelManagement({
       for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
-      if (succeededTaskIds.length > 0) {
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
-      }
-
       toast.success(active ? 'Label removed' : 'Label added', {
         description:
           successCount > 1 ? `${successCount} tasks updated` : undefined,
@@ -416,7 +409,6 @@ export function useTaskLabelManagement({
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
         broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
 
         // Reset form and close dialog
         setNewLabelName('');

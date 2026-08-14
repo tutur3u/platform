@@ -6,10 +6,7 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
-import {
-  getActiveBoardRefresh,
-  useBoardBroadcast,
-} from '../shared/board-broadcast-context';
+import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import {
   applyOptimisticTaskPatch,
   getTaskFromVisibleCaches,
@@ -305,10 +302,6 @@ export function useTaskProjectManagement({
       for (const tid of succeededTaskIds) {
         broadcast?.('task:relations-changed', { taskId: tid });
       }
-      if (succeededTaskIds.length > 0) {
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
-      }
-
       if (failedTaskIds.length > 0) {
         toast.warning(
           active ? 'Partial project removal' : 'Partial project addition',
@@ -456,7 +449,6 @@ export function useTaskProjectManagement({
       // Only show success toast and reset form if link succeeded
       if (linkSucceeded) {
         broadcast?.('task:relations-changed', { taskId: canonicalTaskId });
-        getActiveBoardRefresh()?.({ invalidateTasks: false });
 
         // Reset form and close dialog
         setNewProjectName('');
