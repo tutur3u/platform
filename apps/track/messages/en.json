@@ -2411,6 +2411,7 @@
     "failed_to_delete": "Failed to delete",
     "failed_to_delete_tasks": "Failed to delete tasks.",
     "failed_to_restore": "Failed to restore tasks",
+    "failed_to_start_timer": "Couldn’t start the timer",
     "failed_to_stop_timer": "Failed to stop timer",
     "failed_to_update_assignees": "Failed to update assignees: {error}",
     "faq": "Frequently Asked Questions",
@@ -2716,12 +2717,14 @@
     "start_date": "Start date",
     "start_timer": "Start Timer",
     "start_tracking_time": "Start tracking time",
+    "starting_timer": "Starting timer…",
     "starts": "Starts",
     "starts_at": "Starts {date}",
     "status": "Status",
     "status_category": "Status Category",
     "stay-updated": "Stay in the Loop",
     "stop_tracking_time": "Stop tracking",
+    "stopping_timer": "Stopping timer…",
     "stress": "stress",
     "styles": "Styles",
     "submit": "Submit",
@@ -2734,6 +2737,7 @@
     "suggestion-improve": "Suggestion to Improve ",
     "suggestion-placeholder": "Describe the issue and any suggestions you have to improve the situation...",
     "switch_to": "Switch to {theme}",
+    "switch_tracking_to_task": "Switch timer to this task",
     "system": "System",
     "task": "task",
     "task_duplicated_successfully": "Task duplicated successfully",
@@ -2818,8 +2822,11 @@
     "timeline_unscheduled_prompt": "Unscheduled tasks",
     "timeline_view": "Timeline",
     "timeline_zoom": "Timeline zoom",
+    "timer_started": "Timer started",
+    "timer_started_for": "Now tracking {name}.",
     "timer_stopped": "Timer stopped",
     "timer_stopped_for": "Stopped tracking {name}.",
+    "timer_switched_to": "Stopped the previous timer and started {name}.",
     "title": "Title",
     "today": "Today",
     "toggle-columns": "Toggle Columns",
@@ -7806,6 +7813,9 @@
     "progress": {
       "log_entry": "Log progress",
       "recent_entries": "Recent entries"
+    },
+    "quicklog": {
+      "open": "Log progress"
     },
     "schema_unavailable": "Task progress needs the latest database migration before it can load.",
     "stats": {
