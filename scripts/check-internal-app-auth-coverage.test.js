@@ -120,3 +120,21 @@ test('satellite session layouts keep auth behind a request-time boundary', () =>
     }
   }
 });
+
+test('registered satellite request gates keep onboarding optional', () => {
+  const registeredApps = extractRegisteredApps(
+    read('scripts/check-internal-app-auth.js')
+  );
+
+  for (const app of registeredApps) {
+    const proxyPath = path.join(ROOT, 'apps', app, 'src', 'proxy.ts');
+    assert.ok(fs.existsSync(proxyPath), `${app} must keep a request proxy`);
+
+    const source = fs.readFileSync(proxyPath, 'utf8');
+    assert.doesNotMatch(
+      source,
+      /(?:hasCompletedOnboarding|completeOnboarding|onboarding_progress|\/onboarding)/u,
+      `${app} must not make onboarding a request-time access gate`
+    );
+  }
+});

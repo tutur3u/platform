@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(14);
 
 set local session_replication_role = replica;
 
@@ -16,7 +16,8 @@ values
   ('00000000-0000-0000-0000-000000041004', 'Ambiguous Member', null),
   ('00000000-0000-0000-0000-000000041005', 'Non-member', null),
   ('00000000-0000-0000-0000-000000041006', null, null),
-  ('00000000-0000-0000-0000-000000041007', null, null)
+  ('00000000-0000-0000-0000-000000041007', null, null),
+  ('00000000-0000-0000-0000-000000041008', null, null)
 on conflict (id) do nothing;
 
 insert into public.user_private_details (user_id, email, full_name)
@@ -64,6 +65,13 @@ values (
   'MEMBER'
 );
 
+insert into public.workspace_members (ws_id, user_id, type)
+values (
+  '00000000-0000-0000-0000-000000041010',
+  '00000000-0000-0000-0000-000000041008',
+  'MEMBER'
+);
+
 select ok(
   exists (
     select 1
@@ -84,6 +92,27 @@ select is(
   ),
   'Invited Incomplete Profile',
   'the membership trigger uses the hardened private-name fallback'
+);
+
+select ok(
+  exists (
+    select 1
+    from public.workspace_user_linked_users
+    where platform_user_id = '00000000-0000-0000-0000-000000041008'
+      and ws_id = '00000000-0000-0000-0000-000000041010'
+  ),
+  'the membership trigger links an account with no private-details row'
+);
+
+select ok(
+  (
+    select wu.display_name like 'User 00000000%'
+    from public.workspace_user_linked_users link
+    join public.workspace_users wu on wu.id = link.virtual_user_id
+    where link.platform_user_id = '00000000-0000-0000-0000-000000041008'
+      and link.ws_id = '00000000-0000-0000-0000-000000041010'
+  ),
+  'the membership trigger gives a private-details-free account a stable name'
 );
 
 do $$
@@ -210,7 +239,7 @@ select is(
     from public.workspace_user_linked_users
     where ws_id = '00000000-0000-0000-0000-000000041010'
   ),
-  5,
+  6,
   'only valid workspace members receive links'
 );
 

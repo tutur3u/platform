@@ -16,7 +16,10 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     baseUrlEnv: 'CONTACTS_BASE_URL',
     port: '7827',
     routeName: 'contacts.tuturuuu',
-    specs: ['workspace-invite-cross-app-access.noauth.spec.ts'],
+    specs: [
+      'workspace-invite-account-shapes.noauth.spec.ts',
+      'workspace-invite-cross-app-access.noauth.spec.ts',
+    ],
   }),
   Object.freeze({
     appEnv: {
@@ -29,6 +32,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     routeName: 'finance.tuturuuu',
     specs: [
       'finance-permission-boundaries.noauth.spec.ts',
+      'workspace-invite-account-shapes.noauth.spec.ts',
       'workspace-invite-cross-app-access.noauth.spec.ts',
     ],
   }),
