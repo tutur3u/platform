@@ -51,11 +51,11 @@ import { DescriptionOverflowWarningDialog } from './description-overflow-warning
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
-  normalizeTaskDialogPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
+  type TaskDialogPresentationPreferences,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
@@ -198,8 +198,8 @@ export interface TaskEditDialogProps {
   sharedContext?: SharedTaskContext;
   /** Whether draft mode is enabled from user settings */
   draftModeEnabled?: boolean;
-  /** Preferred opening presentation for normal task dialogs */
-  defaultPresentation?: TaskDialogPresentation;
+  /** Preferred opening presentation by task/document and create/edit flow. */
+  presentationPreferences?: TaskDialogPresentationPreferences;
   /** When editing an existing draft, this is the draft ID */
   draftId?: string;
   onClose: () => void;
@@ -240,7 +240,12 @@ export function TaskEditDialog({
   currentUser: propsCurrentUser,
   sharedContext,
   draftModeEnabled = false,
-  defaultPresentation = 'focused',
+  presentationPreferences = {
+    taskCreate: 'compact',
+    taskEdit: 'focused',
+    documentCreate: 'compact',
+    documentEdit: 'fullscreen',
+  },
   draftId,
   onClose,
   onUpdate,
@@ -685,19 +690,15 @@ export function TaskEditDialog({
   const currentList = availableLists?.find(
     (list) => list.id === formState.selectedListId
   );
-  const normalizedDefaultPresentation = useMemo(
-    () => normalizeTaskDialogPresentation(defaultPresentation),
-    [defaultPresentation]
-  );
   const openingPresentation = useMemo(
     () =>
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: normalizedDefaultPresentation,
+        preferences: presentationPreferences,
         draftId,
         mode,
         selectedListStatus: currentList?.status,
       }),
-    [currentList?.status, draftId, mode, normalizedDefaultPresentation]
+    [currentList?.status, draftId, mode, presentationPreferences]
   );
 
   // Update browser tab title
@@ -2313,15 +2314,10 @@ export function TaskEditDialog({
       return;
     }
 
-    // Wait for hydration before applying the documents rule. Otherwise a
-    // deep-linked document task resizes the dialog a beat after it opens —
-    // skeletons first, then a jump to fullscreen — instead of settling once.
-    if (
-      !isCreateMode &&
-      !isHydratingTask &&
-      currentList?.status === 'documents'
-    ) {
-      setPresentation('fullscreen');
+    // Deep links learn the list type during hydration. Apply the matching
+    // task/document preference once that context is available.
+    if (!isCreateMode && !isHydratingTask && currentList?.status) {
+      setPresentation(openingPresentation);
     }
   }, [
     currentList?.status,

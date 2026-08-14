@@ -62,13 +62,11 @@ import {
   serializeSpecialTaskListPins,
 } from './special-task-list-pins';
 import {
-  TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-  TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-} from './task-board-preferences';
-import {
   DEFAULT_TASK_QUICK_CREATE_TARGET_LIST,
   normalizeTaskQuickCreateTargetList,
 } from './task-quick-create-target-list';
+import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
+import { useTaskBoardListPreferences } from './use-task-board-list-preferences';
 
 export type ViewType =
   | 'kanban'
@@ -302,7 +300,6 @@ export function BoardViews({
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
-  // Local per-session optimistic overrides (e.g., timeline resize) so switching views preserves changes
   const [taskOverrides, setTaskOverrides] = useState<
     Record<string, Partial<Task>>
   >({});
@@ -323,22 +320,11 @@ export function BoardViews({
   const quickCreateTargetList = normalizeTaskQuickCreateTargetList(
     quickCreateTargetListRaw
   );
-  const { data: persistCollapsedTaskListsRaw } = useUserConfig(
-    TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-    'true',
-    { enabled: !localTaskState }
-  );
-  const { data: hideEmptyTaskListsByDefaultRaw } = useUserConfig(
-    TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-    'false',
-    { enabled: !localTaskState }
-  );
-  const persistCollapsedTaskLists = localTaskState
-    ? false
-    : persistCollapsedTaskListsRaw !== 'false';
-  const hideEmptyTaskListsByDefault = localTaskState
-    ? false
-    : hideEmptyTaskListsByDefaultRaw === 'true';
+  const {
+    persistCollapsedTaskLists,
+    hideEmptyTaskListsByDefault,
+    autoCollapseEmptyTaskLists,
+  } = useTaskBoardListPreferences(localTaskState);
   const boardAssigneesEnabled =
     !workspace.personal ||
     board.access_type === 'guest' ||
@@ -735,8 +721,12 @@ export function BoardViews({
     });
   }, [board.id, boardLists, persistCollapsedTaskLists]);
 
+  const manualCollapseChangeRef = useRef<
+    (listId: string, collapsed: boolean) => void
+  >(() => undefined);
   const handleTaskListCollapsedChange = useCallback(
     (listId: string, collapsed: boolean) => {
+      manualCollapseChangeRef.current(listId, collapsed);
       setTaskListsCollapsed((previous) => ({
         ...previous,
         [listId]: collapsed,
@@ -861,7 +851,11 @@ export function BoardViews({
       queryKey: ['task-list-counts', board.id, taskFilterKey],
       enabled:
         !localTaskState &&
-        Boolean(hasTaskFilters || filters.hideEmptyTaskLists),
+        Boolean(
+          hasTaskFilters ||
+            filters.hideEmptyTaskLists ||
+            autoCollapseEmptyTaskLists
+        ),
       queryFn: async () => {
         const result = await listWorkspaceTasks(effectiveWorkspaceId, {
           ...taskQueryOptions,
@@ -875,6 +869,14 @@ export function BoardViews({
       },
       staleTime: 30_000,
     });
+
+  const recordManualCollapseChange = useAutoCollapseEmptyTaskLists({
+    enabled: autoCollapseEmptyTaskLists,
+    listCounts: localTaskState ? null : filteredListCounts,
+    lists: boardLists,
+    setCollapsed: setTaskListsCollapsed,
+  });
+  manualCollapseChangeRef.current = recordManualCollapseChange;
 
   const locallyFilteredTasks = useMemo(
     () =>
@@ -907,7 +909,6 @@ export function BoardViews({
     locallyFilteredTasks,
   ]);
 
-  // Filter lists based on selected status filter
   const statusFilteredLists = useMemo(() => {
     if (listStatusFilter === 'all') return activeLists;
 
@@ -985,7 +986,6 @@ export function BoardViews({
     tasks,
   ]);
 
-  // Keep only tasks that belong to the server-visible lists/status scope.
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
     return isExternalSourceScope

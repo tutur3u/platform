@@ -282,11 +282,16 @@ describe('BoardHeader', () => {
     );
   });
 
-  it('exposes board lifecycle actions from the active board header', () => {
+  it('keeps board actions in the canonical settings dialog', () => {
     renderBoardHeader();
 
     expect(
-      screen.getByRole('button', { name: 'common.actions' })
+      screen.queryByRole('button', { name: 'common.actions' })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'ws-task-boards.actions.board_settings',
+      })
     ).toBeInTheDocument();
   });
 

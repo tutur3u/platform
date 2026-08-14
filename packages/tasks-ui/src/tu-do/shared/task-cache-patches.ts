@@ -210,6 +210,18 @@ export function getTaskFromVisibleCaches({
   taskId: string;
   fallback?: Task;
 }): Task | undefined {
+  // Board actions must prefer the board projection. Personal-board external
+  // tasks carry their source workspace metadata only on that projection; a
+  // previously opened task-detail cache can otherwise route mutations to the
+  // personal workspace instead of the task's source workspace.
+  const boardTaskEntries = queryClient.getQueriesData<Task[]>({
+    predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
+  });
+  for (const [, tasks] of boardTaskEntries) {
+    const task = tasks?.find((entry) => entry.id === taskId);
+    if (task) return task;
+  }
+
   const taskDetail = queryClient.getQueryData<Task>(['task', taskId]);
   if (taskDetail) return taskDetail;
 
@@ -219,14 +231,6 @@ export function getTaskFromVisibleCaches({
   });
   for (const [, entry] of workspaceTaskEntries) {
     if (entry?.task) return entry.task;
-  }
-
-  const boardTaskEntries = queryClient.getQueriesData<Task[]>({
-    predicate: (query) => isBoardTaskQuery(query.queryKey, boardId),
-  });
-  for (const [, tasks] of boardTaskEntries) {
-    const task = tasks?.find((entry) => entry.id === taskId);
-    if (task) return task;
   }
 
   return fallback;

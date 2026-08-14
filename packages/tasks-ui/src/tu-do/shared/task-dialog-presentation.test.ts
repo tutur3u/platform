@@ -38,38 +38,37 @@ describe('TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME', () => {
 });
 
 describe('resolveTaskDialogOpeningPresentation', () => {
-  it('opens existing document-list tasks fullscreen', () => {
+  const preferences = {
+    taskCreate: 'compact',
+    taskEdit: 'focused',
+    documentCreate: 'focused',
+    documentEdit: 'fullscreen',
+  } as const;
+
+  it('uses the configured document editing presentation', () => {
     expect(
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'compact',
+        preferences,
         mode: 'edit',
         selectedListStatus: 'documents',
       })
     ).toBe('fullscreen');
   });
 
-  it('keeps create mode compact even in document lists', () => {
+  it('uses a separate document creation presentation', () => {
     expect(
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'fullscreen',
+        preferences,
         mode: 'create',
         selectedListStatus: 'documents',
       })
-    ).toBe('compact');
+    ).toBe('focused');
   });
 
-  it('respects the user default for existing non-document tasks', () => {
+  it('uses separate task creation and editing presentations', () => {
     expect(
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'compact',
-        mode: 'edit',
-        selectedListStatus: 'active',
-      })
-    ).toBe('compact');
-
-    expect(
-      resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'focused',
+        preferences,
         mode: 'edit',
         selectedListStatus: 'active',
       })
@@ -77,32 +76,17 @@ describe('resolveTaskDialogOpeningPresentation', () => {
 
     expect(
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'fullscreen',
-        mode: 'edit',
-        selectedListStatus: 'not_started',
+        preferences,
+        mode: 'create',
+        selectedListStatus: 'active',
       })
-    ).toBe('fullscreen');
-  });
-
-  it('uses the focused view when a saved preference is missing or invalid', () => {
-    expect(
-      resolveTaskDialogOpeningPresentation({
-        defaultPresentation: undefined,
-        mode: 'edit',
-      })
-    ).toBe('focused');
-    expect(
-      resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'unknown',
-        mode: 'edit',
-      })
-    ).toBe('focused');
+    ).toBe('compact');
   });
 
   it('keeps drafts fullscreen', () => {
     expect(
       resolveTaskDialogOpeningPresentation({
-        defaultPresentation: 'compact',
+        preferences,
         draftId: 'draft-1',
         mode: 'create',
         selectedListStatus: 'documents',

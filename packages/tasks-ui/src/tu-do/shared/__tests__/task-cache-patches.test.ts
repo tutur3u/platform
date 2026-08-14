@@ -3,6 +3,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it } from 'vitest';
 import {
   applyOptimisticTaskPatch,
+  getTaskFromVisibleCaches,
   isTaskMutationPending,
   patchTaskInVisibleCaches,
   restoreTaskFieldsFromVisibleCacheSnapshot,
@@ -34,6 +35,29 @@ function createTask(id: string, name = id): Task {
 }
 
 describe('task-cache-patches', () => {
+  it('prefers external routing metadata from the visible board projection', () => {
+    const queryClient = createQueryClient();
+    const externalReviewTask = {
+      ...createTask('external-task'),
+      list_id: 'review-list',
+      source_workspace_id: 'source-ws',
+      ws_id: 'personal-ws',
+    } as Task;
+    queryClient.setQueryData(['tasks', 'personal-board'], [externalReviewTask]);
+    queryClient.setQueryData(['task', externalReviewTask.id], {
+      ...externalReviewTask,
+      source_workspace_id: undefined,
+    });
+
+    expect(
+      getTaskFromVisibleCaches({
+        queryClient,
+        boardId: 'personal-board',
+        taskId: externalReviewTask.id,
+      })?.source_workspace_id
+    ).toBe('source-ws');
+  });
+
   it('patches every visible cache that can render a task card or detail view', () => {
     const queryClient = createQueryClient();
     const task = createTask('task-1');

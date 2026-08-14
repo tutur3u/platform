@@ -43,8 +43,6 @@ import { BoardShareDialog } from '../boards/board-share-dialog';
 import { KanbanPlannerDialog } from '../boards/boardId/kanban/planner/kanban-planner-dialog';
 import { TaskFilter, type TaskFilters } from '../boards/boardId/task-filter';
 import { CreateBoardAnywhereDialog } from '../boards/create-board-anywhere-dialog';
-import { BoardActions } from '../boards/row-actions';
-import { useTasksHref } from '../tasks-route-context';
 import { getActiveBoardRefresh } from './board-broadcast-context';
 import { saveBoardConfig } from './board-config-storage';
 import { BoardHeaderToolbarTooltip as ToolbarTooltip } from './board-header-toolbar-tooltip';
@@ -139,7 +137,6 @@ export function BoardHeader({
     filters.searchQuery || ''
   );
   const router = useRouter();
-  const tasksHref = useTasksHref();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const enabledViews = availableViews ?? ['kanban', 'list', 'timeline'];
@@ -542,15 +539,6 @@ export function BoardHeader({
                   <Plus className="size-4" />
                 </Button>
               </CreateBoardAnywhereDialog>
-              {managerControlsVisible && (
-                <BoardActions
-                  board={{ ...board, ws_id: workspaceId }}
-                  onBoardUnavailable={() =>
-                    router.replace(`/${workspaceId}${tasksHref('/boards')}`)
-                  }
-                  wsId={workspaceId}
-                />
-              )}
             </div>
           )}
         </div>

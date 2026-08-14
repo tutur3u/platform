@@ -19,12 +19,9 @@ import {
   WorkspacePresenceProvider,
 } from '../providers/workspace-presence-provider';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
-import {
-  normalizeTaskDialogPresentation,
-  TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
-} from './task-dialog-presentation';
 import { TaskEditDialog } from './task-edit-dialog';
 import { buildWorkspaceTaskUrl } from './task-url';
+import { useTaskDialogPresentationPreferences } from './use-task-dialog-presentation-preferences';
 
 /**
  * Manager component that renders the centralized task dialog
@@ -167,16 +164,7 @@ export function TaskDialogManager({
   });
   const draftModeEnabled = draftModeRaw === 'true';
 
-  const { data: defaultPresentationRaw } = useQuery({
-    queryKey: ['user-config', TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID],
-    queryFn: async () =>
-      (await getUserConfig(TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID)).value ??
-      'focused',
-    staleTime: 5 * 60 * 1000,
-  });
-  const defaultPresentation = normalizeTaskDialogPresentation(
-    defaultPresentationRaw
-  );
+  const presentationPreferences = useTaskDialogPresentationPreferences();
 
   const handleClose = () => {
     triggerClose();
@@ -597,7 +585,7 @@ export function TaskDialogManager({
       pendingRelationship={state.pendingRelationship}
       currentUser={currentUser || undefined}
       draftModeEnabled={draftModeEnabled}
-      defaultPresentation={defaultPresentation}
+      presentationPreferences={presentationPreferences}
       draftId={state.draftId}
       onClose={handleClose}
       onUpdate={triggerUpdate}

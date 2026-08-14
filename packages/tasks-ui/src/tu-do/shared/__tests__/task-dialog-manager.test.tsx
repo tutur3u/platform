@@ -187,7 +187,7 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
 // Mock the TaskEditDialog component since it's lazy-loaded
 vi.mock('../task-edit-dialog', () => ({
   TaskEditDialog: ({
-    defaultPresentation,
+    presentationPreferences,
     isOpen,
     isHydratingTask,
     taskLoadError,
@@ -197,7 +197,7 @@ vi.mock('../task-edit-dialog', () => ({
     onClose,
     onNavigateToTask,
   }: {
-    defaultPresentation?: string;
+    presentationPreferences?: { taskEdit?: string };
     isOpen: boolean;
     isHydratingTask?: boolean;
     taskLoadError?: boolean;
@@ -218,7 +218,7 @@ vi.mock('../task-edit-dialog', () => ({
     return (
       <div
         data-testid="task-edit-dialog"
-        data-default-presentation={defaultPresentation}
+        data-default-presentation={presentationPreferences?.taskEdit}
         data-hydrating={String(!!isHydratingTask)}
         data-load-error={String(!!taskLoadError)}
         data-open={isOpen}
