@@ -58,7 +58,7 @@ describe('AccessRequestCard', () => {
     vi.useRealTimers();
   });
 
-  it('requests Hive access and polls every 5 seconds until approved', async () => {
+  it('requests Hive access and polls pending requests every 30 seconds', async () => {
     vi.mocked(getMyHiveAccessRequestStatus)
       .mockResolvedValueOnce({
         hasAccess: false,
@@ -122,7 +122,7 @@ describe('AccessRequestCard', () => {
     });
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(5_000);
+      await vi.advanceTimersByTimeAsync(30_000);
       await vi.advanceTimersByTimeAsync(0);
     });
     await act(async () => {

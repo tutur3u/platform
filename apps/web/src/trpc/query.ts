@@ -20,7 +20,9 @@ export function makeQueryClient(options?: MakeQueryClientOptions) {
     mutationCache: options?.mutationCache,
     defaultOptions: {
       queries: {
-        staleTime: 30 * 1000,
+        gcTime: 30 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        staleTime: 5 * 60 * 1000,
         retry: (failureCount, error) => {
           // Retry rate-limited requests up to 3 times
           if (isRateLimitError(error)) return failureCount < 3;

@@ -39,9 +39,10 @@ export default function OverviewTimer({
       const data = await response.json();
       return data.session ?? null;
     },
-    refetchInterval: 30000,
+    refetchInterval: (query) => (query.state.data ? 60_000 : 5 * 60_000),
+    refetchIntervalInBackground: false,
     initialData: initialRunningSession,
-    staleTime: 60000, // Don't refetch immediately after SSR
+    staleTime: 60_000,
   });
 
   // Derive isRunning from query data

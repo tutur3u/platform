@@ -307,8 +307,8 @@ describe('BoardClient', () => {
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('throttles focus-driven list revalidation for thirty seconds', async () => {
-    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(100_000);
+  it('throttles focus-driven list revalidation for five minutes', async () => {
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -337,7 +337,7 @@ describe('BoardClient', () => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
     });
 
-    nowSpy.mockReturnValue(101_500);
+    nowSpy.mockReturnValue(1_001_500);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));
@@ -345,7 +345,15 @@ describe('BoardClient', () => {
 
     expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
 
-    nowSpy.mockReturnValue(130_000);
+    nowSpy.mockReturnValue(1_299_999);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
+
+    nowSpy.mockReturnValue(1_300_000);
 
     await act(async () => {
       window.dispatchEvent(new Event('focus'));

@@ -521,7 +521,7 @@ export function BoardViews({
       void queryClient.prefetchQuery({
         queryKey: ['tasks-full', board.id, taskFilterKey],
         queryFn: fetchBoardTasks,
-        staleTime: 0,
+        staleTime: 5 * 60_000,
       });
     },
     [board.id, fetchBoardTasks, localTaskState, queryClient, taskFilterKey]
@@ -571,8 +571,8 @@ export function BoardViews({
     queryKey: ['tasks-full', board.id, taskFilterKey],
     enabled: !localTaskState && shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
-    refetchOnMount: 'always',
-    staleTime: 0,
+    refetchOnMount: false,
+    staleTime: 5 * 60_000,
   });
 
   const initialTaskLists = useMemo(
