@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.14.2](https://github.com/tutur3u/platform/compare/satellite-v0.14.1...satellite-v0.14.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **satellite:** isolate server workspace access ([283fe2c](https://github.com/tutur3u/platform/commit/283fe2c935cffafeaefd77cbadecbaeb688d2a60))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **settings:** refresh profile names across apps ([312f09a](https://github.com/tutur3u/platform/commit/312f09a203326161139c4d86e2da26eb15399117))
+
 ## [0.14.1](https://github.com/tutur3u/platform/compare/satellite-v0.14.0...satellite-v0.14.1) (2026-08-11)
 
 

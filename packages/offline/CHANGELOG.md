@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tutur3u/platform/compare/offline-v0.1.2...offline-v0.1.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
 ## [0.1.2](https://github.com/tutur3u/platform/compare/offline-v0.1.1...offline-v0.1.2) (2026-08-11)
 
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.23.0...tanstack-web-v0.24.0) (2026-08-14)
+
+
+### Features
+
+* **users:** add schedule frequency updates ([64f9dbe](https://github.com/tutur3u/platform/commit/64f9dbe07eceefa589367bedc43043451b6ca1a4))
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+
+
+### Bug Fixes
+
+* **infrastructure:** use canonical production origin ([9b0b80d](https://github.com/tutur3u/platform/commit/9b0b80dac7add611cfdeac95e95c5db4a597bf17))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.22.2...tanstack-web-v0.23.0) (2026-08-09)
 
 

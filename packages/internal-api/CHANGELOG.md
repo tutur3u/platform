@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/internal-api-v0.29.1...internal-api-v0.30.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/internal-api-v0.29.0...internal-api-v0.29.1) (2026-08-11)
 
 

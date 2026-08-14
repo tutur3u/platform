@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/contacts-v0.15.2...contacts-v0.16.0) (2026-08-14)
+
+
+### Features
+
+* **contacts:** improve user group report creation flow ([a8ebe41](https://github.com/tutur3u/platform/commit/a8ebe4172c4d3c44572e1e7653dca2d653cf70f0))
+* **users:** add schedule frequency updates ([64f9dbe](https://github.com/tutur3u/platform/commit/64f9dbe07eceefa589367bedc43043451b6ca1a4))
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **contacts:** preserve server referral search results ([8d0941d](https://github.com/tutur3u/platform/commit/8d0941de693fb784fd2487582d905f2cbd0fb16e))
+* **contacts:** restore external profile links ([b33b75e](https://github.com/tutur3u/platform/commit/b33b75e61eac0e749d836fc1f1b3053978324104))
+* **contacts:** restore rejected report revisions ([97275df](https://github.com/tutur3u/platform/commit/97275df7c3c0a0bd2698026778c7fcf083ff56f4))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **satellites:** restore invited member module access ([749adc5](https://github.com/tutur3u/platform/commit/749adc58cd175dc8c9f1f04fdbe21173d8b2e17a))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.15.2](https://github.com/tutur3u/platform/compare/contacts-v0.15.1...contacts-v0.15.2) (2026-08-11)
 
 

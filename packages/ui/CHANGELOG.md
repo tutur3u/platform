@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/ui-v0.26.1...ui-v0.27.0) (2026-08-14)
+
+
+### Features
+
+* **tasks:** add board lifecycle actions ([3295657](https://github.com/tutur3u/platform/commit/329565797b8bb3cefdf8f3812e6f5391576bf394))
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **contacts:** preserve server referral search results ([8d0941d](https://github.com/tutur3u/platform/commit/8d0941de693fb784fd2487582d905f2cbd0fb16e))
+* **tasks:** allow board lifecycle actions ([9a6bc0c](https://github.com/tutur3u/platform/commit/9a6bc0ce31c4191bed81607fdb5c9ee2af8e1d04))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
+
+### Performance Improvements
+
+* **vercel:** reduce realtime fallback polling ([e9e44a4](https://github.com/tutur3u/platform/commit/e9e44a4eb17c971beb9e1b737c4580466e427be5))
+* **vercel:** reduce realtime fallback polling ([#5126](https://github.com/tutur3u/platform/issues/5126)) ([fde2692](https://github.com/tutur3u/platform/commit/fde2692ff73a45616a40b93de9fff30ffc941fd2))
+
 ## [0.26.1](https://github.com/tutur3u/platform/compare/ui-v0.26.0...ui-v0.26.1) (2026-08-11)
 
 

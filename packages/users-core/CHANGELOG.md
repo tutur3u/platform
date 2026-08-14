@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.3](https://github.com/tutur3u/platform/compare/users-core-v0.7.2...users-core-v0.7.3) (2026-08-14)
+
+
+### Bug Fixes
+
+* **contacts:** harden satellite workspace access ([b160723](https://github.com/tutur3u/platform/commit/b160723b509062a4f8edf2694c0af27c25c05775))
+* **contacts:** preserve teacher report feedback ([a4fc9d4](https://github.com/tutur3u/platform/commit/a4fc9d4c0b86b6bcc06614495f278da7208c9251))
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
 ## [0.7.2](https://github.com/tutur3u/platform/compare/users-core-v0.7.1...users-core-v0.7.2) (2026-08-11)
 
 

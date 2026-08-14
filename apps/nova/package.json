@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/nova",
-  "version": "0.34.2",
+  "version": "0.35.0",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
