@@ -109,6 +109,7 @@ import {
 import { TaskEstimationDisplay } from '../../../shared/task-estimation-display';
 import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { TaskShareDialog } from '../../../shared/task-share-dialog';
+import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
 import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
 import { useTasksHref } from '../../../tasks-route-context';
 import {
@@ -2120,21 +2121,16 @@ function TaskCardInner({
                     e.stopPropagation(); // Prevent triggering task card click
                   }}
                 >
-                  {!isDocumentList && (
-                    <DropdownMenuItem
-                      className="cursor-pointer"
+                  {!isDocumentList && effectiveWorkspaceId && (
+                    <TaskTimerMenuItem
                       disabled={isLoading}
-                    >
-                      <Link
-                        href={`/${wsId}/time-tracker/timer?taskSelect=${task?.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2"
-                      >
-                        <Timer className="h-4 w-4 text-dynamic-blue" />
-                        {t('start_tracking_time')}
-                      </Link>
-                    </DropdownMenuItem>
+                      enabled={menuOpen}
+                      onStarted={() => setMenuOpen(false)}
+                      taskDescription={task.description}
+                      taskId={task.id}
+                      taskName={task.name}
+                      workspaceId={effectiveWorkspaceId}
+                    />
                   )}
                   {!isDocumentList && <DropdownMenuSeparator />}
                   {/* Quick Completion Action */}
