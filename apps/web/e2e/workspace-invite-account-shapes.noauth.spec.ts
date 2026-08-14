@@ -487,7 +487,7 @@ test.describe('workspace invitation account-shape resilience', () => {
         /\/(?:[a-z]{2}\/)?(?:404|onboarding)(?:[/?#]|$)/u
       );
       await expect(
-        accountSettingsPage.getByText('Manage accounts', { exact: true })
+        accountSettingsPage.getByText('Manage Accounts', { exact: true })
       ).toBeVisible();
       const onboardingAfterWebSession = await request.get(
         `${SUPABASE_URL}/rest/v1/onboarding_progress?user_id=eq.${user.id}&select=user_id`,
