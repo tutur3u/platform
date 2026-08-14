@@ -27,7 +27,7 @@ import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
-const BOARD_REVALIDATE_COOLDOWN_MS = 30_000;
+const BOARD_REVALIDATE_COOLDOWN_MS = 5 * 60_000;
 
 interface Props {
   boardId: string;

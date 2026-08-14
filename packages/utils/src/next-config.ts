@@ -38,6 +38,8 @@ export const TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS = [
   },
 ] satisfies NextImageRemotePattern[];
 
+export const TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 const TUTURUUU_ANTI_FRAMING_SOURCE =
   '/:path((?!api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(?:/|$)).*)';
 
@@ -112,6 +114,9 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
     ),
     images: {
       ...imageConfig,
+      minimumCacheTTL:
+        imageConfig.minimumCacheTTL ??
+        TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS,
       remotePatterns: mergeRemotePatterns(
         TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
         imageConfig.remotePatterns

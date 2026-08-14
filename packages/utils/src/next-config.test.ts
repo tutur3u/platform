@@ -8,6 +8,7 @@ import {
   isTuturuuuTurbopackRustReactCompilerEnabled,
   resolveTuturuuuInfrastructureAppUrl,
   resolveTuturuuuWebAppUrl,
+  TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS,
   TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS,
   TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
   trimTrailingSlashes,
@@ -25,6 +26,9 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.experimental?.turbopackRustReactCompiler).toBe(true);
     expect(config.images?.remotePatterns).toEqual(
       TUTURUUU_NEXT_IMAGE_REMOTE_PATTERNS
+    );
+    expect(config.images?.minimumCacheTTL).toBe(
+      TUTURUUU_NEXT_IMAGE_MINIMUM_CACHE_TTL_SECONDS
     );
     expect(config.poweredByHeader).toBe(false);
     expect(config.reactCompiler).toBe(true);
@@ -198,6 +202,7 @@ describe('createTuturuuuNextConfig', () => {
       partialPrefetching: false,
       reactCompiler: false,
       transpilePackages: ['@tuturuuu/ui'],
+      images: { minimumCacheTTL: 86_400 },
       experimental: {
         cpus: 2,
         turbopackFileSystemCacheForBuild: false,
@@ -213,6 +218,7 @@ describe('createTuturuuuNextConfig', () => {
     expect(config.partialPrefetching).toBe(false);
     expect(config.reactCompiler).toBe(true);
     expect(config.transpilePackages).toEqual(['@tuturuuu/ui']);
+    expect(config.images?.minimumCacheTTL).toBe(86_400);
     expect(config.experimental?.cpus).toBe(2);
     expect(config.experimental?.turbopackFileSystemCacheForBuild).toBe(false);
     expect(config.experimental?.turbopackRustReactCompiler).toBe(false);

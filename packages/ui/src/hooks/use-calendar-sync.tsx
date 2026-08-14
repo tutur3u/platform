@@ -240,7 +240,7 @@ export const CalendarSyncProvider = ({
     queryKey: ['workspace-calendars', wsId],
     enabled: !hasExternalEvents && !!wsId,
     queryFn: () => listWorkspaceCalendars(wsId),
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
   });
   const enabledWorkspaceCalendarIds = useMemo(
     () =>
@@ -438,12 +438,11 @@ export const CalendarSyncProvider = ({
     [isVisibleInCurrentRange]
   );
 
-  // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
     queryKey: ['databaseCalendarEvents', wsId, activeCacheKey],
     enabled: !hasExternalEvents && !!wsId && dates.length > 0,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 2 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       if (!activeCacheKey) return null;
 
@@ -515,7 +514,8 @@ export const CalendarSyncProvider = ({
         return cachedData?.dbEvents ?? [];
       }
     },
-    refetchInterval: 60000, // Reduced from 30s to 60s to lower load
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
   });
 
   // Legacy direct Google fetch/reconcile is disabled. Provider inbound sync is
@@ -523,18 +523,17 @@ export const CalendarSyncProvider = ({
   const { isLoading: isGoogleLoading } = useQuery({
     queryKey: ['googleCalendarEvents', wsId, activeCacheKey],
     enabled: false,
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 2 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => null,
-    refetchInterval: 60000, // Reduced from 30s to 60s to lower load
   });
 
   // Fetch habit calendar events to identify which events are habits
   const { data: habitEventData } = useQuery({
     queryKey: ['habitCalendarEvents', wsId, activeCacheKey],
     enabled: !hasExternalEvents && !!wsId && dates.length > 0,
-    staleTime: 60000, // Consider data fresh for 1 minute
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    staleTime: 2 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1])
@@ -571,7 +570,8 @@ export const CalendarSyncProvider = ({
         };
       }
     },
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 5 * 60_000,
+    refetchIntervalInBackground: false,
   });
 
   // Helper to check if dates have actually changed

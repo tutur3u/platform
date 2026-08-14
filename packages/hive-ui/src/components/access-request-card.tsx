@@ -36,8 +36,10 @@ export function AccessRequestCard({
   const statusQuery = useQuery({
     queryFn: () => getMyHiveAccessRequestStatus(),
     queryKey: HIVE_ACCESS_STATUS_QUERY_KEY,
-    refetchInterval: (query) => (query.state.data?.hasAccess ? false : 5_000),
-    refetchIntervalInBackground: true,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'pending' ? 30_000 : false,
+    refetchIntervalInBackground: false,
+    staleTime: 30_000,
   });
   const requestMutation = useMutation({
     mutationFn: () => requestHiveAccess({ note: note.trim() || null }),

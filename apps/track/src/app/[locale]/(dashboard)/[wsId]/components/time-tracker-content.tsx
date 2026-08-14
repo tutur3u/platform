@@ -94,7 +94,6 @@ export default function TimeTrackerContent({
     [t]
   );
 
-  // Use React Query for running session to sync with command palette
   const { data: runningSessionFromQuery } = useQuery({
     queryKey: ['running-time-session', wsId],
     queryFn: async () => {
@@ -106,9 +105,11 @@ export default function TimeTrackerContent({
       const data = await response.json();
       return data.session;
     },
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: (query) => (query.state.data ? 60_000 : 5 * 60_000),
+    refetchIntervalInBackground: false,
     initialData: initialData.runningSession,
     enabled: !!currentUser,
+    staleTime: 60_000,
   });
 
   const [currentSession, setCurrentSession] =
@@ -120,7 +121,6 @@ export default function TimeTrackerContent({
     initialData.recentSessions || []
   );
 
-  // Sync React Query data with local state
   useEffect(() => {
     if (currentUser && runningSessionFromQuery !== undefined) {
       setCurrentSession(runningSessionFromQuery);
