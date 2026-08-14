@@ -85,14 +85,23 @@ test.describe('accepted workspace invitation cross-app access', () => {
     const categoryId = randomUUID();
     const transactionId = randomUUID();
     const groupId = randomUUID();
+    const groupTagId = randomUUID();
     const notificationId = randomUUID();
     const suffix = workspaceId.slice(0, 8);
     const reportTitle = `Invitation regression report ${suffix}`;
     const notificationTitle = `Cross-app access restored ${suffix}`;
     const permissions = [
+      'approve_posts',
+      'approve_reports',
+      'check_user_attendance',
+      'create_users',
       'manage_users',
+      'view_users_private_info',
+      'view_users_public_info',
       'view_user_groups',
+      'view_user_groups_posts',
       'view_user_groups_reports',
+      'view_user_groups_scores',
       'create_user_groups_reports',
       'view_transactions',
       'view_finance_stats',
@@ -166,6 +175,30 @@ test.describe('accepted workspace invitation cross-app access', () => {
       );
       const virtualUserId = linkedProfiles[0]!.virtual_user_id;
 
+      // Reproduce a historical partial account: the membership and Contacts
+      // profile both exist, but their linking row was lost or never created.
+      // Profile-scoped pages must repair that link instead of returning 404.
+      await deleteRestRows({
+        request,
+        table: 'workspace_user_linked_users',
+        filter: `ws_id=eq.${workspaceId}&platform_user_id=eq.${TEST_USER.id}`,
+      });
+      const contactsToken = appToken('contacts');
+      const contactsHeaders = { authorization: `Bearer ${contactsToken}` };
+      const repairResponse = await request.get(
+        `${CONTACTS_BASE_URL}/${workspaceId}/reports?view=periodic`,
+        { failOnStatusCode: false, headers: contactsHeaders }
+      );
+      expect(repairResponse.status(), await repairResponse.text()).toBe(200);
+      const repairedLinkResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_user_linked_users?ws_id=eq.${workspaceId}&platform_user_id=eq.${TEST_USER.id}&select=virtual_user_id`,
+        { failOnStatusCode: false, headers: serviceHeaders() }
+      );
+      expect(repairedLinkResponse.status()).toBe(200);
+      await expect(repairedLinkResponse.json()).resolves.toEqual([
+        { virtual_user_id: virtualUserId },
+      ]);
+
       for (const targetApp of WORKSPACE_SATELLITE_TARGETS) {
         const workspacesResponse = await request.get(
           `${WEB_BASE_URL}/api/v1/workspaces?q=${encodeURIComponent(`E2E Cross-app ${suffix}`)}`,
@@ -196,6 +229,20 @@ test.describe('accepted workspace invitation cross-app access', () => {
         request,
         table: 'workspace_user_groups_users',
         data: { group_id: groupId, role: 'STUDENT', user_id: virtualUserId },
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_user_group_tags',
+        data: {
+          id: groupTagId,
+          name: `Visible tag ${suffix}`,
+          ws_id: workspaceId,
+        },
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_user_group_tag_groups',
+        data: { group_id: groupId, tag_id: groupTagId },
       });
       await postRestRow({
         request,
@@ -244,8 +291,6 @@ test.describe('accepted workspace invitation cross-app access', () => {
         },
       });
 
-      const contactsToken = appToken('contacts');
-      const contactsHeaders = { authorization: `Bearer ${contactsToken}` };
       const createReportResponse = await request.post(
         `${CONTACTS_BASE_URL}/api/v1/workspaces/${workspaceId}/users/reports`,
         {
@@ -283,16 +328,82 @@ test.describe('accepted workspace invitation cross-app access', () => {
         })
       );
 
+      const contactsApiChecks = [
+        {
+          method: 'get' as const,
+          path: `/api/v1/workspaces/${workspaceId}/users/${virtualUserId}/emails?page=0&pageSize=10`,
+        },
+        {
+          method: 'get' as const,
+          path: `/api/v1/workspaces/${workspaceId}/users/database?page=1&pageSize=10`,
+        },
+        {
+          method: 'get' as const,
+          path: `/api/v1/workspaces/${workspaceId}/users/groups?page=1&pageSize=10`,
+        },
+        {
+          method: 'get' as const,
+          path: `/api/v1/workspaces/${workspaceId}/group-tags?page=1&pageSize=10`,
+        },
+        {
+          data: {
+            contentType: 'image/png',
+            fileName: `invite-regression-${suffix}.png`,
+          },
+          method: 'post' as const,
+          path: `/api/v1/workspaces/${workspaceId}/users/avatar`,
+        },
+      ];
+      for (const check of contactsApiChecks) {
+        const response = await request[check.method](
+          `${CONTACTS_BASE_URL}${check.path}`,
+          {
+            data: check.data,
+            failOnStatusCode: false,
+            headers: contactsHeaders,
+          }
+        );
+        expect(
+          response.status(),
+          `${check.method.toUpperCase()} ${check.path}: ${await response.text()}`
+        ).toBe(200);
+      }
+
       contactsContext = await browser.newContext({
         extraHTTPHeaders: contactsHeaders,
         ignoreHTTPSErrors: true,
       });
       await addAppCookies(contactsContext, CONTACTS_BASE_URL!, contactsToken);
       const contactsPage = await contactsContext.newPage();
-      const contactsNavigation = await contactsPage.goto(
-        `${CONTACTS_BASE_URL}/${workspaceId}/reports?view=periodic`
-      );
-      expect(contactsNavigation?.status()).toBeLessThan(400);
+      for (const route of [
+        '/users',
+        '/users/database',
+        '/users/attendance',
+        '/users/groups',
+        `/users/groups/${groupId}`,
+        `/users/groups/${groupId}/schedule`,
+        '/users/groups/calendar',
+        '/users/group-tags',
+        '/users/feedbacks',
+        '/users/tutoring',
+        '/reports?view=periodic',
+      ]) {
+        const navigation = await contactsPage.goto(
+          `${CONTACTS_BASE_URL}/${workspaceId}${route}`
+        );
+        expect(navigation?.status(), route).toBeLessThan(400);
+        await expect(contactsPage).not.toHaveURL(/\/404(?:\?|$)/u);
+        if (route === '/users/groups') {
+          await expect(
+            contactsPage.getByText(`Assigned group ${suffix}`)
+          ).toBeVisible();
+        }
+        if (route === '/users/group-tags') {
+          await expect(
+            contactsPage.getByText(`Visible tag ${suffix}`)
+          ).toBeVisible();
+        }
+      }
       await expect(contactsPage).toHaveURL(/\/reports\?view=periodic/u);
       await expect(contactsPage.getByText(reportTitle)).toBeVisible();
       await expect(
@@ -345,6 +456,133 @@ test.describe('accepted workspace invitation cross-app access', () => {
         table: 'external_user_monthly_reports',
         filter: `ws_id=eq.${workspaceId}`,
       });
+      await deleteRestRows({
+        request,
+        table: 'workspaces',
+        filter: `id=eq.${workspaceId}`,
+      });
+    }
+  });
+
+  test('shows assigned Contacts groups to an invited limited-scope member', async ({
+    browser,
+    request,
+  }) => {
+    test.setTimeout(120_000);
+
+    const workspaceId = randomUUID();
+    const roleId = randomUUID();
+    const groupId = randomUUID();
+    const suffix = workspaceId.slice(0, 8);
+    const groupName = `Limited member group ${suffix}`;
+    let contactsContext: import('@playwright/test').BrowserContext | null =
+      null;
+
+    try {
+      await postRestRow({
+        request,
+        table: 'workspaces',
+        data: {
+          creator_id: WORKSPACE_CREATOR_ID,
+          handle: `e2e-limited-contact-${suffix}`,
+          id: workspaceId,
+          name: `E2E Limited Contacts ${suffix}`,
+          personal: false,
+        },
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_roles',
+        data: { id: roleId, name: 'Assigned group member', ws_id: workspaceId },
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_role_permissions',
+        data: ['view_user_groups', 'view_user_groups_reports'].map(
+          (permission) => ({
+            enabled: true,
+            permission,
+            role_id: roleId,
+            ws_id: workspaceId,
+          })
+        ),
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_invites',
+        data: {
+          role_id: roleId,
+          type: 'MEMBER',
+          user_id: TEST_USER.id,
+          ws_id: workspaceId,
+        },
+      });
+
+      const contactsToken = appToken('contacts');
+      const contactsHeaders = { authorization: `Bearer ${contactsToken}` };
+      const acceptResponse = await request.post(
+        `${WEB_BASE_URL}/api/workspaces/${workspaceId}/accept-invite`,
+        { failOnStatusCode: false, headers: contactsHeaders }
+      );
+      expect(acceptResponse.status(), await acceptResponse.text()).toBe(200);
+
+      const linkResponse = await request.get(
+        `${SUPABASE_URL}/rest/v1/workspace_user_linked_users?ws_id=eq.${workspaceId}&platform_user_id=eq.${TEST_USER.id}&select=virtual_user_id`,
+        { failOnStatusCode: false, headers: serviceHeaders() }
+      );
+      expect(linkResponse.status()).toBe(200);
+      const links = (await linkResponse.json()) as Array<{
+        virtual_user_id: string;
+      }>;
+      expect(links).toHaveLength(1);
+
+      await postRestRow({
+        request,
+        table: 'workspace_user_groups',
+        data: { id: groupId, name: groupName, ws_id: workspaceId },
+      });
+      await postRestRow({
+        request,
+        table: 'workspace_user_groups_users',
+        data: {
+          group_id: groupId,
+          role: 'STUDENT',
+          user_id: links[0]!.virtual_user_id,
+        },
+      });
+
+      const groupsResponse = await request.get(
+        `${CONTACTS_BASE_URL}/api/v1/workspaces/${workspaceId}/users/groups?page=1&pageSize=10`,
+        { failOnStatusCode: false, headers: contactsHeaders }
+      );
+      expect(groupsResponse.status(), await groupsResponse.text()).toBe(200);
+      await expect(groupsResponse.json()).resolves.toEqual(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({ id: groupId, name: groupName }),
+          ]),
+        })
+      );
+
+      contactsContext = await browser.newContext({
+        extraHTTPHeaders: contactsHeaders,
+        ignoreHTTPSErrors: true,
+      });
+      await addAppCookies(contactsContext, CONTACTS_BASE_URL!, contactsToken);
+      const page = await contactsContext.newPage();
+      for (const route of ['/users/groups', `/users/groups/${groupId}`]) {
+        const navigation = await page.goto(
+          `${CONTACTS_BASE_URL}/${workspaceId}${route}`
+        );
+        expect(navigation?.status(), route).toBeLessThan(400);
+        await expect(page).not.toHaveURL(/\/404(?:\?|$)/u);
+        await expect(page.getByText(groupName).first()).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: 'Notifications' })
+        ).toBeVisible();
+      }
+    } finally {
+      await contactsContext?.close();
       await deleteRestRows({
         request,
         table: 'workspaces',

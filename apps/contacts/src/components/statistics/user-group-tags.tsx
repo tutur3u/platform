@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import StatisticCard from '@tuturuuu/ui/custom/statistic-card';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -10,13 +10,19 @@ export default async function UserGroupTagsStatistics({
   wsId: string;
   redirect?: boolean;
 }) {
-  const supabase = await createClient();
   const t = await getTranslations();
 
   const enabled = true;
 
+  const permissions = await getContactsWorkspacePermissions(wsId);
+  if (!permissions) notFound();
+  const { containsPermission } = permissions;
+
+  if (!enabled || !containsPermission('manage_users')) return null;
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { count: userGroups } = enabled
-    ? await supabase
+    ? await sbAdmin
         .from('workspace_user_group_tags')
         .select('*', {
           count: 'exact',
@@ -24,12 +30,6 @@ export default async function UserGroupTagsStatistics({
         })
         .eq('ws_id', wsId)
     : { count: 0 };
-
-  const permissions = await getContactsWorkspacePermissions(wsId);
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!enabled || !containsPermission('manage_users')) return null;
 
   return (
     <StatisticCard
