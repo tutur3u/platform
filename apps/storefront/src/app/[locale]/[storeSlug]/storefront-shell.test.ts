@@ -67,4 +67,16 @@ describe('Storefront route shell', () => {
     expect(shellNavigation).toContain('aria-disabled={isCart || undefined}');
     expect(shellNavigation).not.toContain("isHistory ? 'secondary'");
   });
+
+  it('allows session-aware catalog routes to block instead of rendering the recovery boundary', () => {
+    const sessionAwareRoutes = ['page.tsx', 'products/[listingId]/page.tsx'];
+
+    for (const routePath of sessionAwareRoutes) {
+      const route = readFileSync(
+        join(storefrontRoot, 'src/app/[locale]/[storeSlug]/(shop)', routePath),
+        'utf8'
+      );
+      expect(route).toContain('export const instant = false;');
+    }
+  });
 });
