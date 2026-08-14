@@ -86,6 +86,7 @@
     "@tiptap/extension-collaboration": "3.30.0",
     "@tiptap/extension-collaboration-caret": "3.30.0",
     "@tiptap/extension-color": "3.30.0",
+    "@tiptap/extension-details": "3.30.0",
     "@tiptap/extension-drag-handle": "3.30.0",
     "@tiptap/extension-drag-handle-react": "3.30.0",
     "@tiptap/extension-highlight": "3.30.0",

@@ -2,6 +2,7 @@ import { InputRule } from '@tiptap/core';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { Color } from '@tiptap/extension-color';
+import { Details, DetailsContent } from '@tiptap/extension-details';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Link from '@tiptap/extension-link';
 import { TaskList } from '@tiptap/extension-list';
@@ -30,6 +31,7 @@ import { Mention, type TaskMentionNodeViewRenderer } from './mention-extension';
 import { NodeDrag } from './node-drag-extension';
 import { TaskItemCheckbox } from './task-item-checkbox-extension';
 import { TextShortcuts } from './text-shortcuts-extension';
+import { ToggleBlock, ToggleSummary } from './toggle-block-extension';
 import { Video } from './video-extension';
 
 interface EditorExtensionsOptions {
@@ -181,6 +183,23 @@ export function getEditorExtensions({
     Strike,
     Subscript,
     Superscript,
+    Details.configure({
+      persist: true,
+      HTMLAttributes: {
+        class: 'toggle-details',
+      },
+      renderToggleButton: ({ element, isOpen }) => {
+        element.className = 'toggle-details-button';
+        element.setAttribute(
+          'aria-label',
+          isOpen ? 'Collapse toggle' : 'Expand toggle'
+        );
+        element.setAttribute('aria-expanded', String(isOpen));
+      },
+    }),
+    ToggleSummary,
+    DetailsContent,
+    ToggleBlock,
     Mention.configure({
       renderTaskMention,
       translations: mentionTranslations,

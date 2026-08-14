@@ -19,6 +19,7 @@ function createEditorStub(): Editor {
     toggleSubscript: vi.fn(() => chain),
     toggleSuperscript: vi.fn(() => chain),
     toggleTaskListSmart: vi.fn(() => chain),
+    toggleDetailsBlock: vi.fn(() => chain),
     run: vi.fn(() => true),
   };
 
@@ -42,5 +43,34 @@ describe('inline task conversion toolbar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert to Task' }));
 
     expect(onConvertToTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes toggle blocks and delegates the command through the editor chain', () => {
+    const editor = createEditorStub();
+    render(<FixedToolbar editor={editor} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Toggle List or Heading' })
+    );
+
+    const chain = vi.mocked(editor.chain).mock.results[0]?.value as {
+      toggleDetailsBlock: ReturnType<typeof vi.fn>;
+      run: ReturnType<typeof vi.fn>;
+    };
+    expect(chain.toggleDetailsBlock).toHaveBeenCalledTimes(1);
+    expect(chain.run).toHaveBeenCalled();
+  });
+
+  it('uses the localized toggle block label when provided', () => {
+    render(
+      <FixedToolbar
+        editor={createEditorStub()}
+        toggleBlockLabel="Liste ou titre repliable"
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Liste ou titre repliable' })
+    ).toBeInTheDocument();
   });
 });

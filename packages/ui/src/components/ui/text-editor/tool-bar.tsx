@@ -1,4 +1,3 @@
-import { formatForDisplay } from '@tanstack/react-hotkeys';
 import type { Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -17,6 +16,7 @@ import {
   Italic,
   Link,
   List,
+  ListCollapse,
   ListOrdered,
   ListTodo,
   Loader2,
@@ -42,79 +42,9 @@ import {
   MAX_VIDEO_SIZE,
   StorageQuotaError,
 } from './media-utils';
+import { hotkeyLabel, TOOLBAR_GROUPS, TOOLBAR_LABELS } from './toolbar-config';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
-
-// ---------------------------------------------------------------------------
-// Hotkey definitions – use 'Mod' for cross-platform (⌘ on Mac, Ctrl on Win)
-// These match Tiptap's built-in shortcuts where applicable.
-// ---------------------------------------------------------------------------
-const HOTKEYS = {
-  'heading-1': 'Mod+Alt+1',
-  'heading-2': 'Mod+Alt+2',
-  'heading-3': 'Mod+Alt+3',
-  bold: 'Mod+B',
-  italic: 'Mod+I',
-  strike: 'Mod+Shift+S',
-  subscript: 'Mod+,',
-  superscript: 'Mod+.',
-  'align-left': 'Mod+Shift+L',
-  'align-center': 'Mod+Shift+E',
-  'align-right': 'Mod+Shift+R',
-  'bullet-list': 'Mod+Shift+8',
-  'ordered-list': 'Mod+Shift+7',
-  'task-list': 'Mod+Shift+9',
-  table: '',
-  link: 'Mod+K',
-  image: '',
-  video: '',
-  youtube: '',
-  'convert-to-task': '',
-} as const;
-
-// Labels for each formatting option
-const LABELS: Record<string, string> = {
-  'heading-1': 'Heading 1',
-  'heading-2': 'Heading 2',
-  'heading-3': 'Heading 3',
-  bold: 'Bold',
-  italic: 'Italic',
-  strike: 'Strikethrough',
-  subscript: 'Subscript',
-  superscript: 'Superscript',
-  'align-left': 'Align Left',
-  'align-center': 'Align Center',
-  'align-right': 'Align Right',
-  'bullet-list': 'Bullet List',
-  'ordered-list': 'Ordered List',
-  'task-list': 'Task List',
-  table: 'Insert Table',
-  link: 'Link',
-  image: 'Upload Image',
-  video: 'Upload Video',
-  youtube: 'YouTube Video',
-  'convert-to-task': 'Convert to Task',
-};
-
-// Semantic groups for the fixed toolbar
-const TOOLBAR_GROUPS = [
-  ['heading-1', 'heading-2', 'heading-3'],
-  ['bold', 'italic', 'strike', 'subscript', 'superscript'],
-  ['align-left', 'align-center', 'align-right'],
-  ['bullet-list', 'ordered-list', 'task-list'],
-  ['table', 'link'],
-] as const;
-
-/** Format a hotkey combo string for display (platform-aware). */
-function hotkeyLabel(key: string): string {
-  const combo = HOTKEYS[key as keyof typeof HOTKEYS];
-  if (!combo) return '';
-  try {
-    return formatForDisplay(combo);
-  } catch {
-    return combo;
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Shared sub-components
@@ -122,6 +52,7 @@ function hotkeyLabel(key: string): string {
 
 interface ToolbarButtonProps {
   id: string;
+  label?: string;
   icon: React.ReactNode;
   pressed: boolean;
   onClick: () => void;
@@ -131,12 +62,13 @@ interface ToolbarButtonProps {
 /** A single toolbar toggle button wrapped with a tooltip showing name + hotkey. */
 function ToolbarButton({
   id,
+  label: labelOverride,
   icon,
   pressed,
   onClick,
   disabled,
 }: ToolbarButtonProps) {
-  const label = LABELS[id] ?? id;
+  const label = labelOverride ?? TOOLBAR_LABELS[id] ?? id;
   const shortcut = hotkeyLabel(id);
 
   return (
@@ -183,6 +115,7 @@ interface ToolBarProps {
   onConvertToTask?: () => void | Promise<void>;
   /** When true, the BubbleMenu is hidden because the fixed toolbar is visible */
   fixedToolbarVisible?: boolean;
+  toggleBlockLabel?: string;
 }
 
 export function ToolBar({
@@ -191,6 +124,7 @@ export function ToolBar({
   workspaceId,
   onImageUpload,
   onConvertToTask,
+  toggleBlockLabel,
 }: ToolBarProps) {
   const [linkEditorContext, setLinkEditorContext] =
     useState<LinkEditorContext>(null);
@@ -357,6 +291,12 @@ export function ToolBar({
           icon: <ListTodo className="size-4" />,
           onClick: () => editor?.chain().focus().toggleTaskListSmart().run(),
           pressed: editor?.isActive('taskList'),
+        },
+        {
+          key: 'toggle-block',
+          icon: <ListCollapse className="size-4" />,
+          onClick: () => editor?.chain().focus().toggleDetailsBlock().run(),
+          pressed: editor?.isActive('details'),
         },
         {
           key: 'table',
@@ -587,6 +527,7 @@ export function ToolBar({
           <ToolbarButton
             key={`${option.key}-${source}`}
             id={option.key}
+            label={option.key === 'toggle-block' ? toggleBlockLabel : undefined}
             icon={option.icon}
             pressed={option.pressed as boolean}
             onClick={option.onClick}
@@ -673,6 +614,7 @@ export function ToolBar({
       isUploadingVideo,
       showYoutubeInput,
       onConvertToTask,
+      toggleBlockLabel,
     ]
   );
 
@@ -967,6 +909,7 @@ interface FixedToolbarProps {
   onConvertToTask?: () => void | Promise<void>;
   className?: string;
   ref?: React.Ref<HTMLDivElement>;
+  toggleBlockLabel?: string;
 }
 
 export function FixedToolbar({
@@ -976,6 +919,7 @@ export function FixedToolbar({
   onConvertToTask,
   className,
   ref,
+  toggleBlockLabel,
 }: FixedToolbarProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -1082,6 +1026,12 @@ export function FixedToolbar({
         icon: <ListTodo className="size-4" />,
         onClick: () => editor.chain().focus().toggleTaskListSmart().run(),
         pressed: editor.isActive('taskList'),
+      },
+      {
+        key: 'toggle-block',
+        icon: <ListCollapse className="size-4" />,
+        onClick: () => editor.chain().focus().toggleDetailsBlock().run(),
+        pressed: editor.isActive('details'),
       },
       {
         key: 'table',
@@ -1225,6 +1175,7 @@ export function FixedToolbar({
               <ToolbarButton
                 key={key}
                 id={key}
+                label={key === 'toggle-block' ? toggleBlockLabel : undefined}
                 icon={opt.icon}
                 pressed={opt.pressed}
                 onClick={opt.onClick}

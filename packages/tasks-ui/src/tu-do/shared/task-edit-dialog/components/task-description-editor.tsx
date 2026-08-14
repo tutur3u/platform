@@ -313,6 +313,7 @@ export function TaskDescriptionEditor({
           initialCursorOffset={targetEditorCursorRef.current}
           onEditorReady={handleEditorReady}
           onConvertToTask={onConvertToTask}
+          toggleBlockLabel={t('toggle_block')}
           boardId={boardId}
           availableLists={availableLists}
           queryClient={queryClient}
