@@ -18,8 +18,14 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
 
   assert.match(workflow, /label: invite-account-shapes/u);
   assert.match(workflow, /mode: invite-account-shapes/u);
-  assert.match(workflow, /label: workspace-invites/u);
-  assert.match(workflow, /mode: workspace-invites/u);
+  for (const suite of [
+    'workspace-invite-api',
+    'workspace-invite-cross-app',
+    'workspace-invite-mail',
+  ]) {
+    assert.match(workflow, new RegExp(`label: ${suite}`, 'u'));
+    assert.match(workflow, new RegExp(`mode: ${suite}`, 'u'));
+  }
   const generalShardEntries = workflow.match(
     /- label: \d+\/4\n\s+id: \d+\n\s+mode: shard\n\s+shard: \d+\n\s+total_shards: 4/gu
   );
@@ -35,8 +41,18 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
   );
   assert.match(
     workflow,
-    /bun test:e2e -- e2e\/workspace-invitations\.noauth\.spec\.ts e2e\/workspace-invite-cross-app-access\.noauth\.spec\.ts e2e\/workspace-invite-mail-access\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated workspace-invite runner must cover API, cross-app, and Mail acceptance'
+    /bun test:e2e -- e2e\/workspace-invitations\.noauth\.spec\.ts --reporter=line/u,
+    'the dedicated workspace-invite API runner must execute the API spec'
+  );
+  assert.match(
+    workflow,
+    /bun test:e2e -- e2e\/workspace-invite-cross-app-access\.noauth\.spec\.ts --reporter=line/u,
+    'the dedicated cross-app runner must execute the full cross-app spec'
+  );
+  assert.match(
+    workflow,
+    /bun test:e2e -- e2e\/workspace-invite-mail-access\.noauth\.spec\.ts --reporter=line/u,
+    'the dedicated Mail runner must execute the full Mail invitation spec'
   );
   assert.match(
     workflow,

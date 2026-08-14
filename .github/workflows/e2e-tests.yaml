@@ -206,9 +206,19 @@ jobs:
             mode: shard
             shard: 4
             total_shards: 4
-          - label: workspace-invites
-            id: workspace-invites
-            mode: workspace-invites
+          - label: workspace-invite-api
+            id: workspace-invite-api
+            mode: workspace-invite-api
+            shard: 1
+            total_shards: 1
+          - label: workspace-invite-cross-app
+            id: workspace-invite-cross-app
+            mode: workspace-invite-cross-app
+            shard: 1
+            total_shards: 1
+          - label: workspace-invite-mail
+            id: workspace-invite-mail
+            mode: workspace-invite-mail
             shard: 1
             total_shards: 1
           - label: invite-account-shapes
@@ -348,13 +358,29 @@ jobs:
           set -o pipefail
           bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
-      - name: Run workspace invite Playwright suite
-        if: matrix.mode == 'workspace-invites'
+      - name: Run workspace invite API Playwright suite
+        if: matrix.mode == 'workspace-invite-api'
         working-directory: apps/web
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- e2e/workspace-invitations.noauth.spec.ts e2e/workspace-invite-cross-app-access.noauth.spec.ts e2e/workspace-invite-mail-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          bun test:e2e -- e2e/workspace-invitations.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+
+      - name: Run workspace invite cross-app Playwright suite
+        if: matrix.mode == 'workspace-invite-cross-app'
+        working-directory: apps/web
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- e2e/workspace-invite-cross-app-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+
+      - name: Run workspace invite Mail Playwright suite
+        if: matrix.mode == 'workspace-invite-mail'
+        working-directory: apps/web
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- e2e/workspace-invite-mail-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Run invite account-shape Playwright suite
         if: matrix.mode == 'invite-account-shapes'
