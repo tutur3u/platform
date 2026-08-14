@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/mind-v0.17.2...mind-v0.18.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.17.2](https://github.com/tutur3u/platform/compare/mind-v0.17.1...mind-v0.17.2) (2026-08-11)
 
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.21.0](https://github.com/tutur3u/platform/compare/infra-v0.20.2...infra-v0.21.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **satellites:** harden invited workspace access ([3c60571](https://github.com/tutur3u/platform/commit/3c6057172cde3e5dc57acae164c946b405ba87cd))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.20.2](https://github.com/tutur3u/platform/compare/infra-v0.20.1...infra-v0.20.2) (2026-08-11)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/tutur3u/platform/compare/apis-v0.11.1...apis-v0.11.2) (2026-08-14)
+
+
+### Bug Fixes
+
+* **satellites:** restore invited member module access ([749adc5](https://github.com/tutur3u/platform/commit/749adc58cd175dc8c9f1f04fdbe21173d8b2e17a))
+
 ## [0.11.1](https://github.com/tutur3u/platform/compare/apis-v0.11.0...apis-v0.11.1) (2026-08-11)
 
 

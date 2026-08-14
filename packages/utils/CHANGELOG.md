@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/utils-v0.24.2...utils-v0.25.0) (2026-08-14)
+
+
+### Features
+
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+
+
+### Bug Fixes
+
+* **contacts:** harden satellite workspace access ([b160723](https://github.com/tutur3u/platform/commit/b160723b509062a4f8edf2694c0af27c25c05775))
+* **tasks:** keep dropped cards in destination ([de9353b](https://github.com/tutur3u/platform/commit/de9353b0b3574b240c0caa478ba52935d3ad00bb))
+* **tasks:** render dropped tasks immediately ([1dcdb65](https://github.com/tutur3u/platform/commit/1dcdb655ff960c59f91b93b7f13622d1b65f6f48))
+
 ## [0.24.2](https://github.com/tutur3u/platform/compare/utils-v0.24.1...utils-v0.24.2) (2026-08-11)
 
 

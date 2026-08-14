@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.10.1...tasks-ui-v0.11.0) (2026-08-14)
+
+
+### Features
+
+* **tasks:** add board lifecycle actions ([3295657](https://github.com/tutur3u/platform/commit/329565797b8bb3cefdf8f3812e6f5391576bf394))
+* **tasks:** add board lifecycle settings ([dc9dc4b](https://github.com/tutur3u/platform/commit/dc9dc4b87adb32aa47bc1123222154b142daf53e))
+
+
+### Bug Fixes
+
+* **tasks:** complete external tasks on personal board ([40d14e2](https://github.com/tutur3u/platform/commit/40d14e2b01cb4dbb4763ef17a697da920c855eb4))
+* **tasks:** derive completion control from list status ([a42411e](https://github.com/tutur3u/platform/commit/a42411ee410f316530de9f2d21aae91e2cd9f7ac))
+* **tasks:** keep dropped cards in destination ([de9353b](https://github.com/tutur3u/platform/commit/de9353b0b3574b240c0caa478ba52935d3ad00bb))
+* **tasks:** keep review completion control unchecked ([3b8d69a](https://github.com/tutur3u/platform/commit/3b8d69ada0c23fd009a279fe07c38073f5503efd))
+* **tasks:** make terminal actions immediately optimistic ([f5111f7](https://github.com/tutur3u/platform/commit/f5111f7967eafbb38cf1e2b9d77ba12557d8621b))
+* **tasks:** preserve deadline tasks after bulk updates ([cddb069](https://github.com/tutur3u/platform/commit/cddb06995315ff6ae04268de62c8e801dfdedb32))
+* **tasks:** recover external task completion ([a0a8b94](https://github.com/tutur3u/platform/commit/a0a8b9456f01d2fe8e7bcf22ac6e654eca92ab36))
+* **tasks:** render dropped tasks immediately ([1dcdb65](https://github.com/tutur3u/platform/commit/1dcdb655ff960c59f91b93b7f13622d1b65f6f48))
+* **tasks:** stabilize optimistic task dragging ([84874a6](https://github.com/tutur3u/platform/commit/84874a6e265c609a9e33d64923f1ce88c20f9ede))
+* **tasks:** type optimistic drag state safely ([a2731f4](https://github.com/tutur3u/platform/commit/a2731f47fe9148943dd8fca455a084b5378c4d46))
+
 ## [0.10.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.10.0...tasks-ui-v0.10.1) (2026-08-12)
 
 

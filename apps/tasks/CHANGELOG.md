@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/tasks-v0.26.2...tasks-v0.27.0) (2026-08-14)
+
+
+### Features
+
+* **tasks:** add board lifecycle settings ([dc9dc4b](https://github.com/tutur3u/platform/commit/dc9dc4b87adb32aa47bc1123222154b142daf53e))
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **tasks:** allow board lifecycle actions ([9a6bc0c](https://github.com/tutur3u/platform/commit/9a6bc0ce31c4191bed81607fdb5c9ee2af8e1d04))
+* **tasks:** authorize board lifecycle app sessions ([1c614dd](https://github.com/tutur3u/platform/commit/1c614dd4277c8be4563a18c2f2358c14989a876b))
+* **tasks:** recover external task completion ([a0a8b94](https://github.com/tutur3u/platform/commit/a0a8b9456f01d2fe8e7bcf22ac6e654eca92ab36))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+
 ## [0.26.2](https://github.com/tutur3u/platform/compare/tasks-v0.26.1...tasks-v0.26.2) (2026-08-11)
 
 

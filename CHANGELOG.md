@@ -1,5 +1,58 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/platform-v0.36.3...platform-v0.37.0) (2026-08-14)
+
+
+### Features
+
+* **contacts:** improve user group report creation flow ([a8ebe41](https://github.com/tutur3u/platform/commit/a8ebe4172c4d3c44572e1e7653dca2d653cf70f0))
+* **tasks:** add board lifecycle actions ([3295657](https://github.com/tutur3u/platform/commit/329565797b8bb3cefdf8f3812e6f5391576bf394))
+* **tasks:** add board lifecycle settings ([dc9dc4b](https://github.com/tutur3u/platform/commit/dc9dc4b87adb32aa47bc1123222154b142daf53e))
+* **users:** add schedule frequency updates ([64f9dbe](https://github.com/tutur3u/platform/commit/64f9dbe07eceefa589367bedc43043451b6ca1a4))
+* **workspaces:** assign roles to pending invites ([#5125](https://github.com/tutur3u/platform/issues/5125)) ([d4052fd](https://github.com/tutur3u/platform/commit/d4052fd40de66bda4e9535740bbcfd5a8da19123))
+* **workspaces:** revamp invitation access flow ([7ea94af](https://github.com/tutur3u/platform/commit/7ea94afc2c5e14af1c83d1478ad9c006268b13c0))
+* **workspaces:** support multi-role invitations ([f6f78ba](https://github.com/tutur3u/platform/commit/f6f78bac6c2120fd70c09e85c075c4206be4f897))
+
+
+### Bug Fixes
+
+* **contacts:** harden satellite workspace access ([b160723](https://github.com/tutur3u/platform/commit/b160723b509062a4f8edf2694c0af27c25c05775))
+* **contacts:** preserve server referral search results ([8d0941d](https://github.com/tutur3u/platform/commit/8d0941de693fb784fd2487582d905f2cbd0fb16e))
+* **contacts:** preserve teacher report feedback ([a4fc9d4](https://github.com/tutur3u/platform/commit/a4fc9d4c0b86b6bcc06614495f278da7208c9251))
+* **contacts:** restore external profile links ([b33b75e](https://github.com/tutur3u/platform/commit/b33b75e61eac0e749d836fc1f1b3053978324104))
+* **contacts:** restore rejected report revisions ([97275df](https://github.com/tutur3u/platform/commit/97275df7c3c0a0bd2698026778c7fcf083ff56f4))
+* **infrastructure:** use canonical production origin ([9b0b80d](https://github.com/tutur3u/platform/commit/9b0b80dac7add611cfdeac95e95c5db4a597bf17))
+* **inventory:** restore product export dropdown ([7049c08](https://github.com/tutur3u/platform/commit/7049c08dafe11377810056ae1430752e8be70a5e))
+* **notifications:** accept satellite mutation sessions ([cc3b1bf](https://github.com/tutur3u/platform/commit/cc3b1bf32731d17645dbcd45ce7f993c3bd0a8ef))
+* **satellite:** isolate server workspace access ([283fe2c](https://github.com/tutur3u/platform/commit/283fe2c935cffafeaefd77cbadecbaeb688d2a60))
+* **satellites:** harden invited workspace access ([3c60571](https://github.com/tutur3u/platform/commit/3c6057172cde3e5dc57acae164c946b405ba87cd))
+* **satellites:** preserve workspace actors ([e268b8d](https://github.com/tutur3u/platform/commit/e268b8d587f3d4d3025a16c3e001ff5dbb16200b))
+* **satellites:** restore invited member module access ([749adc5](https://github.com/tutur3u/platform/commit/749adc58cd175dc8c9f1f04fdbe21173d8b2e17a))
+* **settings:** refresh profile names across apps ([312f09a](https://github.com/tutur3u/platform/commit/312f09a203326161139c4d86e2da26eb15399117))
+* **tasks:** allow board lifecycle actions ([9a6bc0c](https://github.com/tutur3u/platform/commit/9a6bc0ce31c4191bed81607fdb5c9ee2af8e1d04))
+* **tasks:** authorize board lifecycle app sessions ([1c614dd](https://github.com/tutur3u/platform/commit/1c614dd4277c8be4563a18c2f2358c14989a876b))
+* **tasks:** complete external tasks on personal board ([40d14e2](https://github.com/tutur3u/platform/commit/40d14e2b01cb4dbb4763ef17a697da920c855eb4))
+* **tasks:** derive completion control from list status ([a42411e](https://github.com/tutur3u/platform/commit/a42411ee410f316530de9f2d21aae91e2cd9f7ac))
+* **tasks:** keep dropped cards in destination ([de9353b](https://github.com/tutur3u/platform/commit/de9353b0b3574b240c0caa478ba52935d3ad00bb))
+* **tasks:** keep review completion control unchecked ([3b8d69a](https://github.com/tutur3u/platform/commit/3b8d69ada0c23fd009a279fe07c38073f5503efd))
+* **tasks:** make terminal actions immediately optimistic ([f5111f7](https://github.com/tutur3u/platform/commit/f5111f7967eafbb38cf1e2b9d77ba12557d8621b))
+* **tasks:** preserve deadline tasks after bulk updates ([cddb069](https://github.com/tutur3u/platform/commit/cddb06995315ff6ae04268de62c8e801dfdedb32))
+* **tasks:** recover external task completion ([a0a8b94](https://github.com/tutur3u/platform/commit/a0a8b9456f01d2fe8e7bcf22ac6e654eca92ab36))
+* **tasks:** render dropped tasks immediately ([1dcdb65](https://github.com/tutur3u/platform/commit/1dcdb655ff960c59f91b93b7f13622d1b65f6f48))
+* **tasks:** stabilize optimistic task dragging ([84874a6](https://github.com/tutur3u/platform/commit/84874a6e265c609a9e33d64923f1ce88c20f9ede))
+* **tasks:** type optimistic drag state safely ([a2731f4](https://github.com/tutur3u/platform/commit/a2731f47fe9148943dd8fca455a084b5378c4d46))
+* **vercel:** require nonempty asset versions ([3aa671d](https://github.com/tutur3u/platform/commit/3aa671d6c6ec42fac01b5abbc87e030e48e97f44))
+* **workspaces:** manage roles for pending invites ([2466f6c](https://github.com/tutur3u/platform/commit/2466f6cbbd447207d87eb0e0d78b3c713b02b739))
+* **workspaces:** restore invited member access ([f81bd3e](https://github.com/tutur3u/platform/commit/f81bd3e912179636f002eda5f6b4e16504cff782))
+
+
+### Performance Improvements
+
+* **vercel:** bypass proxy for cached asset reads ([e00552f](https://github.com/tutur3u/platform/commit/e00552f4b0ff5c73a7979b3ec198350e62f4c58f))
+* **vercel:** bypass proxy for cached asset reads ([#5127](https://github.com/tutur3u/platform/issues/5127)) ([4bafc07](https://github.com/tutur3u/platform/commit/4bafc0736fcdf10905617c2fa7f6dbb82c48cfaf))
+* **vercel:** reduce realtime fallback polling ([e9e44a4](https://github.com/tutur3u/platform/commit/e9e44a4eb17c971beb9e1b737c4580466e427be5))
+* **vercel:** reduce realtime fallback polling ([#5126](https://github.com/tutur3u/platform/issues/5126)) ([fde2692](https://github.com/tutur3u/platform/commit/fde2692ff73a45616a40b93de9fff30ffc941fd2))
+
 ## [0.36.3](https://github.com/tutur3u/platform/compare/platform-v0.36.2...platform-v0.36.3) (2026-08-12)
 
 
