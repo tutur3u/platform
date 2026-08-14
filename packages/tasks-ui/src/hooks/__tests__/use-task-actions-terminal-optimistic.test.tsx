@@ -8,6 +8,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { isTaskMutationPending } from '../../tu-do/shared/task-cache-patches';
 import { useTaskActions } from '../use-task-actions';
 
 const apiMocks = vi.hoisted(() => ({
@@ -112,6 +113,49 @@ describe('useTaskActions terminal optimistic caches', () => {
       },
     });
     vi.clearAllMocks();
+  });
+
+  it('updates full-board metadata immediately and exposes pending state', async () => {
+    const deferred = createDeferred<{ task: Task }>();
+    apiMocks.updateWorkspaceTask.mockReturnValueOnce(deferred.promise);
+    queryClient.setQueryData(['tasks', 'board-1'], [baseTask]);
+    queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [baseTask]);
+
+    const { result } = renderHook(
+      () =>
+        useTaskActions({
+          task: baseTask,
+          boardId: 'board-1',
+          targetCompletionList: doneList,
+          targetClosedList: closedList,
+          availableLists: [doneList, closedList],
+          onUpdate: vi.fn(),
+          setIsLoading: vi.fn(),
+          setMenuOpen: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    let updatePromise!: Promise<void>;
+    act(() => {
+      updatePromise = result.current.handlePriorityChange('high');
+    });
+
+    const pendingTask = queryClient.getQueryData<Task[]>([
+      'tasks-full',
+      'board-1',
+      'all',
+    ])?.[0];
+    expect(pendingTask?.priority).toBe('high');
+    expect(isTaskMutationPending(pendingTask)).toBe(true);
+
+    deferred.resolve({ task: { ...baseTask, priority: 'high' } });
+    await act(async () => updatePromise);
+    expect(
+      isTaskMutationPending(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1', 'all'])?.[0]
+      )
+    ).toBe(false);
   });
 
   it.each<TerminalCase>([

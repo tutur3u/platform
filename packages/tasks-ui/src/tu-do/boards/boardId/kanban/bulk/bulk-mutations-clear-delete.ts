@@ -45,9 +45,15 @@ export function useBulkClearLabels(
 
       return { count: result.successCount, taskIds, failures: result.failures };
     },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
@@ -144,9 +150,15 @@ export function useBulkClearProjects(
 
       return { count: result.successCount, taskIds, failures: result.failures };
     },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
@@ -243,9 +255,15 @@ export function useBulkClearAssignees(
 
       return { count: result.successCount, taskIds, failures: result.failures };
     },
-    onMutate: async ({ taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 

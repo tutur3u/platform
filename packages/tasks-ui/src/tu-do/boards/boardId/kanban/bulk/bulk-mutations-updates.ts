@@ -59,9 +59,15 @@ export function useBulkUpdatePriority(
         succeededTaskIds: result.succeededTaskIds,
       };
     },
-    onMutate: async ({ priority, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ priority, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
@@ -168,9 +174,15 @@ export function useBulkUpdateEstimation(
         succeededTaskIds: result.succeededTaskIds,
       };
     },
-    onMutate: async ({ points, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ points, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const taskIdSet = new Set(taskIds);
 
@@ -281,9 +293,15 @@ export function useBulkUpdateDueDate(
         succeededTaskIds: result.succeededTaskIds,
       };
     },
-    onMutate: async ({ preset, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ preset, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const newDate = resolveDueDatePreset(preset, weekStartsOn);
       const taskIdSet = new Set(taskIds);
@@ -395,9 +413,15 @@ export function useBulkUpdateCustomDueDate(
         succeededTaskIds: result.succeededTaskIds,
       };
     },
-    onMutate: async ({ date, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ date, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const newDate = date ? date.toISOString() : null;
       const taskIdSet = new Set(taskIds);

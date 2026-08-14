@@ -56,9 +56,15 @@ export function useBulkAddLabel(
         failures: result.failures,
       };
     },
-    onMutate: async ({ labelId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ labelId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
       const labelMeta = workspaceLabels.find((l) => l.id === labelId);
@@ -193,9 +199,15 @@ export function useBulkRemoveLabel(
         failures: result.failures,
       };
     },
-    onMutate: async ({ labelId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ labelId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {

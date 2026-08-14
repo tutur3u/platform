@@ -100,6 +100,7 @@ import { AssigneeSelect } from '../../../shared/assignee-select';
 import { useBoardBroadcast } from '../../../shared/board-broadcast-context';
 import { CreateListDialog } from '../../../shared/create-list-dialog';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import { isTaskMutationPending } from '../../../shared/task-cache-patches';
 import {
   shouldShowTaskDueDate,
   shouldShowTaskStartDate,
@@ -916,8 +917,9 @@ function TaskCardInner({
     ? DESTINATION_TONE_COLORS[taskList.color]
     : DESTINATION_TONE_COLORS.GRAY;
 
-  // Check if task is optimistically added (pending realtime confirmation)
-  const isOptimistic = '_isOptimistic' in task && task._isOptimistic === true;
+  const isOptimistic =
+    ('_isOptimistic' in task && task._isOptimistic === true) ||
+    isTaskMutationPending(task);
   const isPersonalExternalTask = isExternalTaskSnapshot(task);
   const isPersonalExternalOverlay = isPersonalExternalOverlayTask(task);
   const sourceBoardUrl =
@@ -1083,8 +1085,6 @@ function TaskCardInner({
     taskList?.color as SupportedColor
   );
 
-  // Memoize description metadata to prevent unnecessary recalculations
-  // This is important because descriptionMeta is used in taskBadges dependency array
   const descriptionMeta = useMemo(
     () => getDescriptionMetadata(task.description),
     [task.description]

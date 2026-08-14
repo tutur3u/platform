@@ -18,10 +18,14 @@ import { useCallback } from 'react';
 import { invalidateKanbanDeadlineTasks } from '../tu-do/boards/boardId/kanban/data/kanban-deadline-query';
 import { useBoardBroadcast } from '../tu-do/shared/board-broadcast-context';
 import {
+  applyOptimisticTaskPatch,
+  getTaskFromVisibleCaches,
   patchTaskInVisibleCaches,
   patchTasksInVisibleCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
   restoreTasksFromVisibleCacheSnapshot,
   restoreVisibleTaskCaches,
+  settleOptimisticTaskPatch,
   snapshotVisibleTaskCaches,
 } from '../tu-do/shared/task-cache-patches';
 import {
@@ -33,6 +37,7 @@ import {
   moveExternalTaskToPersonalList,
   shouldMoveExternalTaskToCompletion,
 } from './task-actions-personal-external';
+import { updateTaskMetadata } from './task-metadata-updates';
 
 interface UseTaskActionsProps {
   task?: Task; // Made optional to handle loading states
@@ -141,6 +146,22 @@ export function useTaskActions({
       return [taskRecord.id];
     },
     [isMultiSelectMode, selectedTasks]
+  );
+
+  const updateTaskIds = useCallback(
+    (
+      taskIds: string[],
+      payload: Parameters<typeof updateTaskMetadata>[0]['payload']
+    ) =>
+      updateTaskMetadata({
+        queryClient,
+        boardId,
+        taskIds,
+        payload,
+        fallbackTask: task,
+        resolveWorkspaceId: resolveWorkspaceIdForTask,
+      }),
+    [boardId, queryClient, resolveWorkspaceIdForTask, task]
   );
 
   const getExternalMoveOptions = useCallback((targetList: TaskList) => {
@@ -823,22 +844,16 @@ export function useTaskActions({
     if (!task?.assignees || task.assignees.length === 0) return;
 
     setIsLoading(true);
-
-    await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-    const previousTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-
-    queryClient.setQueryData<Task[] | undefined>(
-      ['tasks', boardId],
-      (old: Task[] | undefined) => {
-        if (!old) return old;
-        return old.map((t) => {
-          if (t.id === task.id) {
-            return { ...t, assignees: [] };
-          }
-          return t;
-        });
-      }
-    );
+    const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+      task.id,
+    ]);
+    const mutationId = applyOptimisticTaskPatch({
+      queryClient,
+      boardId,
+      taskIds: [task.id],
+      updater: (cachedTask) => ({ ...cachedTask, assignees: [] }),
+    });
+    let mutationFailed = false;
 
     try {
       const workspaceId = await getWorkspaceId();
@@ -854,12 +869,29 @@ export function useTaskActions({
       });
       dispatchTaskActionSound('update');
     } catch (error) {
-      queryClient.setQueryData(['tasks', boardId], previousTasks);
+      mutationFailed = true;
+      restoreTaskFieldsFromVisibleCacheSnapshot({
+        queryClient,
+        boardId,
+        snapshot: cacheSnapshot,
+        taskIds: [task.id],
+        restore: (currentTask, previousTask) => ({
+          ...currentTask,
+          assignees: previousTask.assignees,
+        }),
+      });
       console.error('Failed to remove all assignees:', error);
       toast.error('Error', {
         description: 'Failed to remove assignees. Please try again.',
       });
     } finally {
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [task.id],
+        mutationId,
+        clearLocalMutationAt: mutationFailed,
+      });
       setIsLoading(false);
       setMenuOpen(false);
     }
@@ -879,36 +911,30 @@ export function useTaskActions({
     async (assigneeId: string) => {
       if (!task) return;
       setIsLoading(true);
-
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
-        boardId,
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        task.id,
       ]);
-
-      queryClient.setQueryData<Task[] | undefined>(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (t.id === task.id) {
-              return {
-                ...t,
-                assignees:
-                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
-              };
-            }
-            return t;
-          });
-        }
-      );
+      const previousTask = getTaskFromVisibleCaches({
+        queryClient,
+        boardId,
+        taskId: task.id,
+        fallback: task,
+      });
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [task.id],
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          assignees:
+            cachedTask.assignees?.filter((a) => a.id !== assigneeId) || [],
+        }),
+      });
+      let mutationFailed = false;
 
       try {
         const newIds =
-          previousTasks
-            ?.find((t) => t.id === task.id)
-            ?.assignees?.map((a) => a.id)
-            .filter(Boolean) ??
+          previousTask?.assignees?.map((a) => a.id).filter(Boolean) ??
           task.assignees?.map((a) => a.id).filter(Boolean) ??
           [];
         const filteredIds = newIds.filter((id) => id !== assigneeId);
@@ -926,12 +952,29 @@ export function useTaskActions({
         broadcast?.('task:relations-changed', { taskId: task.id });
         dispatchTaskActionSound('update');
       } catch (error) {
-        queryClient.setQueryData(['tasks', boardId], previousTasks);
+        mutationFailed = true;
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: [task.id],
+          restore: (currentTask, cachedPreviousTask) => ({
+            ...currentTask,
+            assignees: cachedPreviousTask.assignees,
+          }),
+        });
         console.error('Failed to remove assignee:', error);
         toast.error('Error', {
           description: 'Failed to remove assignee. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
         setIsLoading(false);
         setMenuOpen(false);
       }
@@ -1186,65 +1229,38 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      // Store previous state for rollback
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
         boardId,
-      ]);
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({ ...cachedTask, end_date: newDate }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id) ? { ...t, end_date: newDate } : t
-            );
-          }
+        const { succeededTaskIds, failedTaskIds } = await updateTaskIds(
+          tasksToUpdate,
+          { end_date: newDate }
         );
-
-        const succeededTaskIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              end_date: newDate,
-            });
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update due date for task ${taskId}:`,
-              error
-            );
-          }
-        }
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedTaskIds = tasksToUpdate.filter(
-          (taskId) => !succeededTaskIds.includes(taskId)
-        );
-
-        if (failedTaskIds.length > 0 && previousTasks) {
-          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (current: Task[] | undefined) => {
-              if (!current) return current;
-              return current.map((task) => {
-                if (!failedTaskIds.includes(task.id)) {
-                  return task;
-                }
-
-                return previousTaskMap.get(task.id) || task;
-              });
-            }
-          );
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            end_date: previousTask.end_date,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
@@ -1272,27 +1288,39 @@ export function useTaskActions({
         }
       } catch (error) {
         console.error('Failed to update due date:', error);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            end_date: previousTask.end_date,
+          }),
+        });
         toast.error('Error', {
           description: 'Failed to update due date. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setIsLoading(false);
       }
     },
     [
       task?.id,
       setIsLoading,
-      getWorkspaceId,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
       invalidateDeadlineTasks,
+      updateTaskIds,
     ]
   );
 
@@ -1305,65 +1333,41 @@ export function useTaskActions({
 
       setIsLoading(true);
 
-      // Store previous state for rollback
-      const previousTasks = queryClient.getQueryData<Task[]>([
-        'tasks',
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
         boardId,
-      ]);
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          priority: newPriority,
+        }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id) ? { ...t, priority: newPriority } : t
-            );
-          }
+        const { succeededTaskIds, failedTaskIds } = await updateTaskIds(
+          tasksToUpdate,
+          { priority: newPriority }
         );
-
-        const succeededTaskIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              priority: newPriority,
-            });
-            succeededTaskIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update priority for task ${taskId}:`,
-              error
-            );
-          }
-        }
 
         if (succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedTaskIds = tasksToUpdate.filter(
-          (taskId) => !succeededTaskIds.includes(taskId)
-        );
-
-        if (failedTaskIds.length > 0 && previousTasks) {
-          const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (current: Task[] | undefined) => {
-              if (!current) return current;
-              return current.map((task) => {
-                if (!failedTaskIds.includes(task.id)) {
-                  return task;
-                }
-
-                return previousTaskMap.get(task.id) || task;
-              });
-            }
-          );
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            priority: previousTask.priority,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:upsert', {
@@ -1388,18 +1392,28 @@ export function useTaskActions({
           });
           dispatchTaskActionSound('update', taskCount);
         }
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (error) {
         console.error('Failed to update priority:', error);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            priority: previousTask.priority,
+          }),
+        });
         toast.error('Error', {
           description: 'Failed to update priority. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setIsLoading(false);
       }
     },
@@ -1407,13 +1421,13 @@ export function useTaskActions({
       task?.id,
       task?.priority,
       setIsLoading,
-      getWorkspaceId,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
       isMultiSelectMode,
+      updateTaskIds,
     ]
   );
 
@@ -1422,82 +1436,59 @@ export function useTaskActions({
       if (!task) return;
       if (points === task.estimation_points && !isMultiSelectMode) return;
 
-      // Get current tasks from cache to filter out ones that already have the target value
-      const currentTasks = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-
-      // Filter tasks that actually need updating (don't already have the target estimation)
       const candidateTasks = getEffectiveTaskIds(task);
+      const tasksToUpdate = candidateTasks.filter((candidateTaskId) => {
+        const taskData = getTaskFromVisibleCaches({
+          queryClient,
+          boardId,
+          taskId: candidateTaskId,
+          fallback: candidateTaskId === task.id ? task : undefined,
+        });
+        return taskData?.estimation_points !== points;
+      });
 
-      const tasksToUpdate = currentTasks
-        ? candidateTasks.filter((taskId) => {
-            const taskData = currentTasks.find((t) => t.id === taskId);
-            return taskData?.estimation_points !== points;
-          })
-        : candidateTasks;
-
-      // If no tasks actually need updating, skip
       if (tasksToUpdate.length === 0) {
         return;
       }
 
       setEstimationSaving?.(true);
 
-      // Store previous state for rollback
-      const previousTasks = currentTasks;
-      const rollbackFailedTasks = (failedIds: string[]) => {
-        if (!previousTasks || failedIds.length === 0) return;
-        const previousTaskMap = new Map(previousTasks.map((t) => [t.id, t]));
-        queryClient.setQueryData<Task[]>(['tasks', boardId], (current) => {
-          if (!current) return current;
-          return current.map((task: Task) =>
-            failedIds.includes(task.id)
-              ? previousTaskMap.get(task.id) || task
-              : task
-          );
-        });
-      };
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        boardId,
+        tasksToUpdate
+      );
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: tasksToUpdate,
+        updater: (cachedTask) => ({
+          ...cachedTask,
+          estimation_points: points,
+        }),
+      });
 
       try {
-        // Optimistic update
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((t) =>
-              tasksToUpdate.includes(t.id)
-                ? { ...t, estimation_points: points }
-                : t
-            );
-          }
-        );
-
-        const succeededIds: string[] = [];
-        const workspaceId = await getWorkspaceId();
-
-        for (const taskId of tasksToUpdate) {
-          try {
-            await updateWorkspaceTask(workspaceId, taskId, {
-              estimation_points: points,
-            });
-            succeededIds.push(taskId);
-          } catch (error) {
-            console.error(
-              `Failed to update estimation for task ${taskId}:`,
-              error
-            );
-          }
-        }
+        const { succeededTaskIds: succeededIds, failedTaskIds: failedIds } =
+          await updateTaskIds(tasksToUpdate, {
+            estimation_points: points,
+          });
 
         if (succeededIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
 
-        const failedIds = tasksToUpdate.filter(
-          (taskId) => !succeededIds.includes(taskId)
-        );
-
         if (failedIds.length > 0) {
-          rollbackFailedTasks(failedIds);
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: failedIds,
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              estimation_points: previousTask.estimation_points,
+            }),
+          });
 
           for (const tid of succeededIds) {
             broadcast?.('task:upsert', {
@@ -1531,14 +1522,26 @@ export function useTaskActions({
         return;
       } catch (e: any) {
         console.error('Failed to update estimation', e);
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: tasksToUpdate,
+          restore: (currentTask, previousTask) => ({
+            ...currentTask,
+            estimation_points: previousTask.estimation_points,
+          }),
+        });
         toast.error('Failed to update estimation', {
           description: e.message || 'Please try again',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: tasksToUpdate,
+          mutationId,
+        });
         setEstimationSaving?.(false);
       }
     },
@@ -1546,13 +1549,13 @@ export function useTaskActions({
       task?.id,
       task?.estimation_points,
       setEstimationSaving,
-      getWorkspaceId,
       isMultiSelectMode,
       getEffectiveTaskIds,
       queryClient,
       boardId,
       task,
       broadcast,
+      updateTaskIds,
     ]
   );
 
@@ -1582,7 +1585,6 @@ export function useTaskActions({
       const shouldBulkUpdate = getEffectiveTaskIds(task).length > 1;
 
       if (shouldBulkUpdate && bulkUpdateCustomDueDate) {
-        // Use the centralized bulk update function from useBulkOperations
         try {
           await bulkUpdateCustomDueDate(date || null);
           invalidateDeadlineTasks();
@@ -1593,30 +1595,23 @@ export function useTaskActions({
           setIsLoading(false);
         }
       } else {
-        // Single task update via workspace API
-        const previousTasks = queryClient.getQueryData<Task[]>([
-          'tasks',
-          boardId,
+        const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+          task.id,
         ]);
+        const mutationId = applyOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [task.id],
+          updater: (cachedTask) => ({ ...cachedTask, end_date: newDate }),
+        });
 
         try {
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (old: Task[] | undefined) => {
-              if (!old) {
-                return old;
-              }
-
-              return old.map((item) =>
-                item.id === task.id ? { ...item, end_date: newDate } : item
-              );
-            }
-          );
-
-          const workspaceId = await getWorkspaceId();
-          await updateWorkspaceTask(workspaceId, task.id, {
+          const { succeededTaskIds } = await updateTaskIds([task.id], {
             end_date: newDate,
           });
+          if (succeededTaskIds.length === 0) {
+            throw new Error('Failed to update task');
+          }
 
           broadcast?.('task:upsert', {
             task: { id: task.id, end_date: newDate },
@@ -1630,19 +1625,31 @@ export function useTaskActions({
           });
           dispatchTaskActionSound('update');
         } catch (error) {
-          if (previousTasks) {
-            queryClient.setQueryData(['tasks', boardId], previousTasks);
-          }
+          restoreTaskFieldsFromVisibleCacheSnapshot({
+            queryClient,
+            boardId,
+            snapshot: cacheSnapshot,
+            taskIds: [task.id],
+            restore: (currentTask, previousTask) => ({
+              ...currentTask,
+              end_date: previousTask.end_date,
+            }),
+          });
           console.error('Failed to update due date:', error);
           toast.error('Failed to update due date. Please try again.');
         } finally {
+          settleOptimisticTaskPatch({
+            queryClient,
+            boardId,
+            taskIds: [task.id],
+            mutationId,
+          });
           setIsLoading(false);
         }
       }
     },
     [
       task?.id,
-      getWorkspaceId,
       setIsLoading,
       setCustomDateDialogOpen,
       getEffectiveTaskIds,
@@ -1652,6 +1659,7 @@ export function useTaskActions({
       boardId,
       broadcast,
       invalidateDeadlineTasks,
+      updateTaskIds,
     ]
   );
 
@@ -1659,8 +1667,6 @@ export function useTaskActions({
     async (assigneeId: string) => {
       if (!task) return;
 
-      // CRITICAL: Get current task state from cache instead of stale prop
-      // This ensures we read the most up-to-date state after optimistic updates
       const currentTask = taskId
         ? ((queryClient.getQueryData(['task', taskId]) as Task | undefined) ??
           task)
@@ -1670,42 +1676,42 @@ export function useTaskActions({
       const shouldBulkUpdate = tasksToUpdate.length > 1;
 
       setIsLoading(true);
+      const previousTasks = tasksToUpdate
+        .map((targetTaskId) =>
+          getTaskFromVisibleCaches({
+            queryClient,
+            boardId,
+            taskId: targetTaskId,
+            fallback: targetTaskId === currentTask.id ? currentTask : undefined,
+          })
+        )
+        .filter((cachedTask): cachedTask is Task => Boolean(cachedTask));
+      const cacheSnapshot = snapshotVisibleTaskCaches(
+        queryClient,
+        boardId,
+        tasksToUpdate
+      );
 
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-      // Snapshot the previous value BEFORE optimistic update
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]) as
-        | Task[]
-        | undefined;
-
-      // Determine action: remove if ALL selected tasks have the assignee, add otherwise
-      // Use currentTask from cache, not stale task prop
       let active = currentTask.assignees?.some((a) => a.id === assigneeId);
 
       if (shouldBulkUpdate && previousTasks) {
         const selectedTasksData = previousTasks.filter((t) =>
           tasksToUpdate.includes(t.id)
         );
-        // Only mark as active (to remove) if ALL selected tasks have the assignee
         active = selectedTasksData.every((t) =>
           t.assignees?.some((a) => a.id === assigneeId)
         );
       }
 
-      // Helper to get task from either board cache or individual cache
       const getTaskState = (taskId: string): Task | undefined => {
-        // First try board cache
         const fromBoardCache = previousTasks?.find((ct) => ct.id === taskId);
         if (fromBoardCache) return fromBoardCache;
 
-        // Fallback to individual task cache (for tasks not in board view)
         if (taskId === currentTask.id) return currentTask;
 
         return undefined;
       };
 
-      // Pre-calculate which tasks actually need to change
       const tasksNeedingAssignee = !active
         ? tasksToUpdate.filter((taskId) => {
             const t = getTaskState(taskId);
@@ -1720,10 +1726,8 @@ export function useTaskActions({
           })
         : [];
 
-      // Get assignee details for optimistic update
       let assigneeDetails = null;
       if (!active) {
-        // First try from board cache
         if (previousTasks) {
           for (const t of previousTasks) {
             const found = t.assignees?.find((a) => a.id === assigneeId);
@@ -1733,107 +1737,85 @@ export function useTaskActions({
             }
           }
         }
-        // Fallback to current task cache
         if (!assigneeDetails && currentTask.assignees) {
           assigneeDetails =
             currentTask.assignees.find((a) => a.id === assigneeId) || null;
         }
       }
 
-      // Optimistically update the cache - only update tasks that actually change
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((t) => {
-            if (active && tasksToRemoveFrom.includes(t.id)) {
-              // Remove the assignee
-              return {
-                ...t,
-                assignees:
-                  t.assignees?.filter((a) => a.id !== assigneeId) || [],
-              };
-            } else if (!active && tasksNeedingAssignee.includes(t.id)) {
-              // Add the assignee
-              return {
-                ...t,
-                assignees: [
-                  ...(t.assignees || []),
-                  assigneeDetails || {
-                    id: assigneeId,
-                    display_name: 'User',
-                    email: '',
-                  },
-                ],
-              };
-            }
-            return t;
-          });
-        }
-      );
-
-      // CRITICAL: Also update the individual task cache if taskId is provided
-      // This ensures the chip menu's task cache stays in sync with the board cache
-      if (taskId) {
-        queryClient.setQueryData(['task', taskId], (old: Task | undefined) => {
-          if (!old) return old;
-          if (active && tasksToRemoveFrom.includes(taskId)) {
-            // Remove the assignee
+      const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: targetTasks,
+        updater: (cachedTask) => {
+          if (active) {
             return {
-              ...old,
+              ...cachedTask,
               assignees:
-                old.assignees?.filter((a) => a.id !== assigneeId) || [],
-            };
-          } else if (!active && tasksNeedingAssignee.includes(taskId)) {
-            // Add the assignee
-            return {
-              ...old,
-              assignees: [
-                ...(old.assignees || []),
-                assigneeDetails || {
-                  id: assigneeId,
-                  display_name: 'User',
-                  email: '',
-                },
-              ],
+                cachedTask.assignees?.filter((a) => a.id !== assigneeId) || [],
             };
           }
-          return old;
-        });
-      }
+
+          return {
+            ...cachedTask,
+            assignees: [
+              ...(cachedTask.assignees || []),
+              assigneeDetails || {
+                id: assigneeId,
+                display_name: 'User',
+                email: '',
+              },
+            ],
+          };
+        },
+      });
+      let mutationFailed = false;
 
       try {
         const succeededTaskIds: string[] = [];
-        const targetTasks = active ? tasksToRemoveFrom : tasksNeedingAssignee;
-
-        const workspaceId = await getWorkspaceId();
-
-        for (const tid of targetTasks) {
-          const current = getTaskState(tid);
-          const existingIds =
-            current?.assignees
-              ?.map((assignee) => assignee.id)
-              .filter(Boolean) ?? [];
-          const newIds = active
-            ? existingIds.filter((id) => id !== assigneeId)
-            : Array.from(new Set([...existingIds, assigneeId]));
-
-          try {
-            await updateWorkspaceTask(workspaceId, tid, {
+        const settledResults = await Promise.allSettled(
+          targetTasks.map(async (tid) => {
+            const current = getTaskState(tid);
+            const existingIds =
+              current?.assignees
+                ?.map((assignee) => assignee.id)
+                .filter(Boolean) ?? [];
+            const newIds = active
+              ? existingIds.filter((id) => id !== assigneeId)
+              : Array.from(new Set([...existingIds, assigneeId]));
+            const targetWorkspaceId = await resolveWorkspaceIdForTask(current);
+            await updateWorkspaceTask(targetWorkspaceId, tid, {
               assignee_ids: newIds,
             });
-            succeededTaskIds.push(tid);
-          } catch (error) {
-            console.error(
-              `Failed to ${active ? 'remove' : 'add'} assignee from task ${tid}:`,
-              error
-            );
+            return tid;
+          })
+        );
+        settledResults.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            succeededTaskIds.push(result.value);
+          } else {
+            console.error('Failed to update task assignee:', result.reason);
           }
-        }
+        });
 
         if (targetTasks.length > 0 && succeededTaskIds.length === 0) {
           throw new Error('Failed to update any tasks');
         }
+
+        const failedTaskIds = targetTasks.filter(
+          (id) => !succeededTaskIds.includes(id)
+        );
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: failedTaskIds,
+          restore: (cachedTask, previousTask) => ({
+            ...cachedTask,
+            assignees: previousTask.assignees,
+          }),
+        });
 
         for (const tid of succeededTaskIds) {
           broadcast?.('task:relations-changed', { taskId: tid });
@@ -1855,18 +1837,30 @@ export function useTaskActions({
         if (succeededTaskIds.length > 0) {
           dispatchTaskActionSound('update', succeededTaskIds.length);
         }
-
-        // Don't auto-clear selection - let user manually clear with "Clear" button
       } catch (e: any) {
-        // Rollback on error
-        if (previousTasks) {
-          queryClient.setQueryData(['tasks', boardId], previousTasks);
-        }
+        mutationFailed = true;
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: cacheSnapshot,
+          taskIds: targetTasks,
+          restore: (cachedTask, previousTask) => ({
+            ...cachedTask,
+            assignees: previousTask.assignees,
+          }),
+        });
         console.error('Failed to toggle assignee:', e);
         toast.error('Error', {
           description: 'Failed to update assignee. Please try again.',
         });
       } finally {
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: targetTasks,
+          mutationId,
+          clearLocalMutationAt: mutationFailed,
+        });
         setIsLoading(false);
       }
     },
@@ -1878,7 +1872,7 @@ export function useTaskActions({
       setIsLoading,
       getEffectiveTaskIds,
       broadcast,
-      getWorkspaceId,
+      resolveWorkspaceIdForTask,
     ]
   );
 

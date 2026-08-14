@@ -7,6 +7,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { isTaskMutationPending } from '../../shared/task-cache-patches';
 import { LABEL_COLOR_PRESETS } from '../../utils/label-colors';
 import { useTaskLabelManagement } from '../useTaskLabelManagement';
 
@@ -119,6 +120,57 @@ describe('useTaskLabelManagement', () => {
   });
 
   describe('toggleTaskLabel', () => {
+    it('applies a label to full-board caches immediately while the request is pending', async () => {
+      let resolveUpdate: (() => void) | undefined;
+      mockAddWorkspaceTaskLabel.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveUpdate = () => resolve({ success: true });
+        })
+      );
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
+      queryClient.setQueryData(['tasks-full', 'board-1', 'all'], [mockTask]);
+
+      const { result } = renderHook(
+        () =>
+          useTaskLabelManagement({
+            task: mockTask,
+            boardId: 'board-1',
+            workspaceLabels: mockWorkspaceLabels,
+            workspaceId: 'ws-1',
+          }),
+        { wrapper }
+      );
+
+      let updatePromise: Promise<void> | undefined;
+      act(() => {
+        updatePromise = result.current.toggleTaskLabel('label-3');
+      });
+
+      const pendingTask = queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        'board-1',
+        'all',
+      ])?.[0];
+      expect(pendingTask?.labels?.some((label) => label.id === 'label-3')).toBe(
+        true
+      );
+      expect(isTaskMutationPending(pendingTask)).toBe(true);
+
+      resolveUpdate?.();
+      await act(async () => {
+        await updatePromise;
+      });
+      expect(
+        isTaskMutationPending(
+          queryClient.getQueryData<Task[]>([
+            'tasks-full',
+            'board-1',
+            'all',
+          ])?.[0]
+        )
+      ).toBe(false);
+    });
+
     it('should remove label when already active', async () => {
       // Set up initial cache
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);

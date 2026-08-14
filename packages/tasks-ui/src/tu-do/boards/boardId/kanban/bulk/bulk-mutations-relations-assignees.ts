@@ -129,9 +129,15 @@ export function useBulkAddAssignee(
         updatedAssigneesByTaskId,
       };
     },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ assigneeId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
 
@@ -286,9 +292,15 @@ export function useBulkRemoveAssignee(
         failedTaskIds,
       };
     },
-    onMutate: async ({ assigneeId, taskIds }) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-      await queryClient.cancelQueries({ queryKey: ['tasks-full', boardId] });
+    onMutate: ({ assigneeId, taskIds }) => {
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks', boardId] },
+        { revert: false }
+      );
+      void queryClient.cancelQueries(
+        { queryKey: ['tasks-full', boardId] },
+        { revert: false }
+      );
       const cacheSnapshot = snapshotBoardTaskCaches(queryClient, boardId);
       const current = cacheSnapshot.previousTasks || [];
       const modifiedTaskIds = taskIds.filter((id) => {
