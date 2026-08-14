@@ -252,7 +252,7 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/time-tracking(?:\/|$)/u,
-    targetApp: ['calendar', 'track'],
+    targetApp: ['calendar', 'tasks', 'track'],
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/inventory(?:\/|$)/u,
