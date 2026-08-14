@@ -112,6 +112,9 @@ describe('Tasks running time-tracking sessions route', () => {
       'personal',
       expect.anything()
     );
+    expect(mocks.membership).toHaveBeenCalledWith(
+      expect.objectContaining({ supabase: adminClient, userId: 'user-1' })
+    );
   });
 
   it('closes an active session and starts the selected task immediately', async () => {

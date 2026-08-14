@@ -20,13 +20,18 @@ const createSessionSchema = z.object({
 async function resolveWorkspaceAccess(
   wsId: string,
   userId: string,
-  supabase: TypedSupabaseClient
+  supabase: TypedSupabaseClient,
+  sbAdmin: TypedSupabaseClient
 ): Promise<
   { normalizedWsId: string; ok: true } | { ok: false; response: NextResponse }
 > {
   const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
   const membership = await verifyWorkspaceMembershipType({
-    supabase,
+    // Satellite session clients authenticate the actor through an app-session
+    // token, but do not carry Supabase auth context for RLS. Use the admin
+    // client for this actor-aware membership lookup after withSessionAuth has
+    // verified userId.
+    supabase: sbAdmin,
     userId,
     wsId: normalizedWsId,
   });
@@ -64,10 +69,14 @@ export const GET = withSessionAuth<Params>(
       );
     }
 
-    const access = await resolveWorkspaceAccess(wsId, user.id, supabase);
-    if (!access.ok) return access.response;
-
     const sbAdmin = await createAdminClient();
+    const access = await resolveWorkspaceAccess(
+      wsId,
+      user.id,
+      supabase,
+      sbAdmin
+    );
+    if (!access.ok) return access.response;
     const { data: session, error } = await sbAdmin
       .from('time_tracking_sessions')
       .select('*, category:time_tracking_categories(id, name, color)')
@@ -126,10 +135,14 @@ export const POST = withSessionAuth<Params>(
       );
     }
 
-    const access = await resolveWorkspaceAccess(wsId, user.id, supabase);
-    if (!access.ok) return access.response;
-
     const sbAdmin = await createAdminClient();
+    const access = await resolveWorkspaceAccess(
+      wsId,
+      user.id,
+      supabase,
+      sbAdmin
+    );
+    if (!access.ok) return access.response;
     const { categoryId, description, taskId, title } = validation.data;
 
     if (taskId) {
