@@ -511,7 +511,7 @@ export const CalendarSyncProvider = ({
           lastSyncTime: new Date(),
         });
 
-        return cachedData?.dbEvents ?? [];
+        throw err instanceof Error ? err : new Error(errorMessage);
       }
     },
     refetchInterval: 5 * 60_000,
