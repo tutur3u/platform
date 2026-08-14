@@ -22,6 +22,7 @@ const WORKSPACE_CREATOR_ID = '00000000-0000-0000-0000-000000000002';
 const WEB_BASE_URL = process.env.BASE_URL ?? 'https://tuturuuu.localhost:1355';
 const CONTACTS_BASE_URL = process.env.CONTACTS_BASE_URL;
 const FINANCE_BASE_URL = process.env.FINANCE_BASE_URL;
+const TASKS_BASE_URL = process.env.TASKS_BASE_URL ?? 'http://localhost:7809';
 const APP_SECRET =
   process.env.TUTURUUU_APP_COORDINATION_SECRET ??
   LOCAL_E2E_APP_COORDINATION_SECRET;
@@ -228,6 +229,30 @@ test.describe('accepted workspace invitation cross-app access', () => {
           expect.arrayContaining([expect.objectContaining({ id: workspaceId })])
         );
       }
+
+      const tasksToken = appToken('tasks');
+      const tasksFallbackResponse = await request.get(
+        `${TASKS_BASE_URL}/${workspaceId}/time-tracker/timer?taskSelect=invite-regression`,
+        {
+          failOnStatusCode: false,
+          headers: {
+            authorization: `Bearer ${tasksToken}`,
+            cookie: appCookieHeader(tasksToken),
+          },
+          maxRedirects: 0,
+        }
+      );
+      expect(tasksFallbackResponse.status()).toBe(307);
+      const tasksFallbackUrl = new URL(
+        tasksFallbackResponse.headers().location ?? ''
+      );
+      expect(tasksFallbackUrl.origin).toBe(new URL(WEB_BASE_URL).origin);
+      expect(tasksFallbackUrl.pathname).toBe(
+        `/${workspaceId}/time-tracker/timer`
+      );
+      expect(tasksFallbackUrl.searchParams.get('taskSelect')).toBe(
+        'invite-regression'
+      );
 
       await postRestRow({
         request,

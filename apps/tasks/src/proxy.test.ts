@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TTR_URL } from './constants/common';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
@@ -215,6 +216,56 @@ describe('Tasks proxy auth mode', () => {
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('redirects non-owned time tracker pages to the web app', async () => {
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.com/personal/time-tracker/timer?taskSelect=task-1'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      new URL(
+        '/personal/time-tracker/timer?taskSelect=task-1',
+        TTR_URL
+      ).toString()
+    );
+    expect(mocks.propagateAuthCookies).toHaveBeenCalledWith(
+      expect.any(NextResponse),
+      response
+    );
+  });
+
+  it('preserves locale and query when redirecting non-owned pages', async () => {
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.com/vi/workspace-1/time-tracker/history?period=week'
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      new URL(
+        '/vi/workspace-1/time-tracker/history?period=week',
+        TTR_URL
+      ).toString()
+    );
+  });
+
+  it.each([
+    '/personal/tasks',
+    '/workspace-1/boards/board-1',
+    '/workspace-1/analytics',
+    '/vi/workspace-1/progress/overview',
+    '/shared/task/share-code',
+  ])('keeps owned Tasks route %s in the satellite', async (path) => {
+    const response = await proxy(
+      new NextRequest(`https://tasks.tuturuuu.com${path}`)
+    );
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
   it('redirects auth-approved root requests to the personal default board', async () => {
