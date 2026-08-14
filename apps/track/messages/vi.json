@@ -2411,6 +2411,7 @@
     "failed_to_delete": "Không thể xóa",
     "failed_to_delete_tasks": "Không thể xóa công việc.",
     "failed_to_restore": "Không thể khôi phục công việc",
+    "failed_to_start_timer": "Không thể bắt đầu tính giờ",
     "failed_to_stop_timer": "Không thể dừng tính giờ",
     "failed_to_update_assignees": "Không thể cập nhật người thực hiện: {error}",
     "faq": "Câu hỏi thường gặp",
@@ -2716,12 +2717,14 @@
     "start_date": "Ngày bắt đầu",
     "start_timer": "Bắt đầu hẹn giờ",
     "start_tracking_time": "Bắt đầu tính giờ",
+    "starting_timer": "Đang bắt đầu tính giờ…",
     "starts": "Bắt đầu",
     "starts_at": "Bắt đầu {date}",
     "status": "Trạng thái",
     "status_category": "Nhóm trạng thái",
     "stay-updated": "Cập nhật thường xuyên",
     "stop_tracking_time": "Dừng tính giờ",
+    "stopping_timer": "Đang dừng tính giờ…",
     "stress": "căng thẳng",
     "styles": "Kiểu dáng",
     "submit": "Gửi",
@@ -2734,6 +2737,7 @@
     "suggestion-improve": "Đề xuất cải thiện",
     "suggestion-placeholder": "Mô tả vấn đề và bất kỳ đề xuất nào bạn có để cải thiện tình hình...",
     "switch_to": "Chuyển sang chế độ {theme}",
+    "switch_tracking_to_task": "Chuyển bộ tính giờ sang công việc này",
     "system": "Hệ thống",
     "task": "công việc",
     "task_duplicated_successfully": "Đã nhân bản công việc thành công",
@@ -2818,8 +2822,11 @@
     "timeline_unscheduled_prompt": "Công việc chưa lên lịch",
     "timeline_view": "Dòng thời gian",
     "timeline_zoom": "Thu phóng dòng thời gian",
+    "timer_started": "Đã bắt đầu tính giờ",
+    "timer_started_for": "Đang theo dõi {name}.",
     "timer_stopped": "Đã dừng tính giờ",
     "timer_stopped_for": "Đã dừng theo dõi {name}.",
+    "timer_switched_to": "Đã dừng bộ tính giờ trước và bắt đầu {name}.",
     "title": "Tiêu đề",
     "today": "Hôm nay",
     "toggle-columns": "Hiển thị cột",
@@ -7806,6 +7813,9 @@
     "progress": {
       "log_entry": "Ghi tiến độ",
       "recent_entries": "Ghi nhận gần đây"
+    },
+    "quicklog": {
+      "open": "Ghi tiến độ"
     },
     "schema_unavailable": "Tiến độ công việc cần migration cơ sở dữ liệu mới nhất trước khi tải.",
     "stats": {
