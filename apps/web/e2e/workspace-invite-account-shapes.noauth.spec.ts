@@ -280,6 +280,7 @@ test.describe('workspace invitation account-shape resilience', () => {
     let userId: string | null = null;
     let contactsContext: BrowserContext | null = null;
     let financeContext: BrowserContext | null = null;
+    let webContext: BrowserContext | null = null;
 
     try {
       const user = await createLocalAuthUser(request, {
@@ -434,9 +435,28 @@ test.describe('workspace invitation account-shape resilience', () => {
       await expect(
         financePage.getByRole('button', { name: 'Notifications' })
       ).toBeVisible();
+
+      const webToken = appToken(user, 'web');
+      webContext = await browser.newContext({
+        extraHTTPHeaders: { authorization: `Bearer ${webToken}` },
+        ignoreHTTPSErrors: true,
+      });
+      await addAppCookies(webContext, WEB_BASE_URL, webToken);
+      const accountSettingsPage = await webContext.newPage();
+      const accountSettingsNavigation = await accountSettingsPage.goto(
+        `${WEB_BASE_URL}/${workspaceId}?settingsDialog=open&settingsTab=accounts`
+      );
+      expect(accountSettingsNavigation?.status()).toBeLessThan(400);
+      await expect(accountSettingsPage).not.toHaveURL(
+        /\/(?:[a-z]{2}\/)?(?:404|onboarding)(?:[/?#]|$)/u
+      );
+      await expect(
+        accountSettingsPage.getByText('Manage accounts', { exact: true })
+      ).toBeVisible();
     } finally {
       await contactsContext?.close();
       await financeContext?.close();
+      await webContext?.close();
       await deleteRestRows({
         request,
         table: 'workspaces',
