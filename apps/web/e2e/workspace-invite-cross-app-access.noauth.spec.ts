@@ -41,6 +41,12 @@ function appToken(targetApp: string) {
   ).token;
 }
 
+function appCookieHeader(token: string) {
+  return [APP_SESSION_COOKIE_NAME, WEB_APP_SESSION_COOKIE_NAME]
+    .map((name) => `${name}=${token}`)
+    .join('; ');
+}
+
 async function addAppCookies(
   context: import('@playwright/test').BrowserContext,
   url: string,
@@ -187,9 +193,16 @@ test.describe('accepted workspace invitation cross-app access', () => {
       const contactsHeaders = { authorization: `Bearer ${contactsToken}` };
       const repairResponse = await request.get(
         `${CONTACTS_BASE_URL}/${workspaceId}/reports?view=periodic`,
-        { failOnStatusCode: false, headers: contactsHeaders }
+        {
+          failOnStatusCode: false,
+          headers: {
+            ...contactsHeaders,
+            cookie: appCookieHeader(contactsToken),
+          },
+        }
       );
       expect(repairResponse.status(), await repairResponse.text()).toBe(200);
+      expect(repairResponse.url()).not.toContain('/login');
       const repairedLinkResponse = await request.get(
         `${SUPABASE_URL}/rest/v1/workspace_user_linked_users?ws_id=eq.${workspaceId}&platform_user_id=eq.${TEST_USER.id}&select=virtual_user_id`,
         { failOnStatusCode: false, headers: serviceHeaders() }

@@ -16,6 +16,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { getContactsWorkspaceUserLink } from '@/lib/workspace';
 import NavbarActions from '../navbar-actions';
 import { UserNav } from '../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -68,7 +69,14 @@ async function WorkspaceLayoutContent({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
-  const permissions = await getPermissions({ user, wsId: workspace.id });
+  // A small number of legacy/partially accepted members have valid workspace
+  // membership but no Contacts profile link. Repair that once at the shared
+  // workspace shell so every Contacts module sees the same actor profile
+  // instead of returning an empty state or a route-specific 404.
+  const [permissions] = await Promise.all([
+    getPermissions({ user, wsId: workspace.id }),
+    getContactsWorkspaceUserLink(workspace.id, user),
+  ]);
 
   const cookieStore = await cookies();
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
