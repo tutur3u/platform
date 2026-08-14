@@ -486,6 +486,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       const dateFrom = url.searchParams.get('dateFrom');
       const dateTo = url.searchParams.get('dateTo');
       const targetUserId = url.searchParams.get('userId'); // New parameter for viewing other users
+      const scope = url.searchParams.get('scope');
       const userTimezone = url.searchParams.get('timezone') || 'UTC';
 
       // Filter parameters
@@ -515,7 +516,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         // Get current running session, then resolve task info through a
         // workspace-bound lookup so stale/cross-workspace task_id values do not
         // leak task metadata.
-        const { data, error } = await sbAdmin
+        let runningSessionQuery = sbAdmin
           .from('time_tracking_sessions')
           .select(
             `
@@ -523,16 +524,24 @@ export const GET = withSessionAuth<{ wsId: string }>(
           category:time_tracking_categories(id, name, color)
         `
           )
-          .eq('ws_id', normalizedWsId)
           .eq('user_id', queryUserId)
-          .eq('is_running', true)
+          .eq('is_running', true);
+        const useGlobalUserScope = scope === 'user' && queryUserId === user.id;
+        if (!useGlobalUserScope) {
+          runningSessionQuery = runningSessionQuery.eq('ws_id', normalizedWsId);
+        }
+        const { data, error } = await runningSessionQuery
+          .order('start_time', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (error) throw error;
         const session = await attachWorkspaceTaskSummary({
           sbAdmin,
           session: data,
-          wsId: normalizedWsId,
+          wsId: useGlobalUserScope
+            ? (data?.ws_id ?? normalizedWsId)
+            : normalizedWsId,
         });
         return NextResponse.json({ session });
       }

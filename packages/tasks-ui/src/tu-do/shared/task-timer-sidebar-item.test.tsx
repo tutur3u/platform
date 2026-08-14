@@ -82,8 +82,38 @@ describe('TaskTimerSidebarItem', () => {
     const trigger = await screen.findByRole('button', {
       name: 'tracking_task_named:Prepare launch',
     });
+    expect(trigger).toHaveClass('w-full', 'justify-center');
     fireEvent.focus(trigger);
 
     expect(await screen.findByText('Prepare launch')).toBeInTheDocument();
+  });
+
+  it('keeps a truncated expanded task name discoverable and actionable', async () => {
+    renderSidebar();
+
+    const taskButton = await screen.findByRole('button', {
+      name: 'tracking_task_named:Prepare launch',
+    });
+    fireEvent.focus(taskButton);
+    expect(await screen.findAllByText('Prepare launch')).toHaveLength(2);
+
+    fireEvent.click(taskButton);
+
+    expect(
+      screen.getByRole('dialog', {
+        name: 'tracking_task_named:Prepare launch',
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'view_task' }).getAttribute('href')
+    ).toMatch(/\/personal\?task=task-1$/u);
+
+    fireEvent.click(screen.getByRole('button', { name: 'stop_tracking_time' }));
+    await waitFor(() =>
+      expect(mocks.stopRunning).toHaveBeenCalledWith(
+        'source-workspace',
+        'session-1'
+      )
+    );
   });
 });

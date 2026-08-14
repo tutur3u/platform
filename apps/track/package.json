@@ -38,6 +38,7 @@
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/turnstile": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

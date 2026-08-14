@@ -77,7 +77,9 @@ function createQuery(result: QueryResult) {
   const query = {
     eq: vi.fn(() => query),
     insert: vi.fn(() => query),
+    limit: vi.fn(() => query),
     maybeSingle: vi.fn(async () => result),
+    order: vi.fn(() => query),
     select: vi.fn(() => query),
     single: vi.fn(async () => result),
   };
@@ -162,6 +164,50 @@ describe('time tracking sessions route task workspace binding', () => {
     );
     expect(taskQuery.eq).toHaveBeenCalledWith('id', OTHER_WORKSPACE_TASK_ID);
     expect(taskQuery.eq).toHaveBeenCalledWith('list.board.ws_id', 'ws-1');
+  });
+
+  it('resolves the signed-in users latest running task across workspaces', async () => {
+    const sessionQuery = createQuery({
+      data: {
+        id: 'session-1',
+        is_running: true,
+        task_id: OTHER_WORKSPACE_TASK_ID,
+        user_id: 'user-1',
+        ws_id: 'source-workspace',
+      },
+      error: null,
+    });
+    const taskQuery = createQuery({
+      data: { id: OTHER_WORKSPACE_TASK_ID, name: 'Source roadmap' },
+      error: null,
+    });
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClient({
+        tasks: [taskQuery],
+        time_tracking_sessions: [sessionQuery],
+      })
+    );
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/time-tracking/sessions?type=running&scope=user'
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      session: {
+        task: { id: OTHER_WORKSPACE_TASK_ID, name: 'Source roadmap' },
+        ws_id: 'source-workspace',
+      },
+    });
+    expect(sessionQuery.eq).not.toHaveBeenCalledWith('ws_id', 'ws-1');
+    expect(taskQuery.eq).toHaveBeenCalledWith(
+      'list.board.ws_id',
+      'source-workspace'
+    );
   });
 
   it('rejects running session creation with a task outside the workspace', async () => {

@@ -45,7 +45,6 @@ type StatsData = {
 type StatsCardClientProps = {
   wsId: string;
   userId: string;
-  isPersonal: boolean;
   locale: string;
   workspace?: Workspace | null;
 };
@@ -53,7 +52,6 @@ type StatsCardClientProps = {
 export function StatsCardClient({
   wsId,
   userId,
-  isPersonal,
   locale,
   workspace,
 }: StatsCardClientProps) {
@@ -74,7 +72,7 @@ export function StatsCardClient({
     ],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${workspaceId}/time-tracker/stats?userId=${userId}&isPersonal=${isPersonal}&timezone=${userTimezone}&summaryOnly=true`,
+        `/api/v1/workspaces/${workspaceId}/time-tracking/stats/summary?userId=${userId}&timezone=${userTimezone}&summaryOnly=true`,
         { cache: 'no-store' }
       );
       if (!response.ok) {

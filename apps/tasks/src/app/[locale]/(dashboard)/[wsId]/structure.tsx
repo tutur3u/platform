@@ -15,7 +15,7 @@ interface StructureProps {
   links: (NavLink | null)[];
   notificationPopover: ReactNode;
   userPopover: ReactNode;
-  workspace: { tier?: string | null } | null;
+  workspace: { personal?: boolean | null; tier?: string | null } | null;
   wsId: string;
 }
 
@@ -39,7 +39,11 @@ export function Structure({
       links={links}
       notificationPopover={notificationPopover}
       sidebarContentAfter={({ isCollapsed }) => (
-        <TaskTimerSidebarItem isCollapsed={isCollapsed} workspaceId={wsId} />
+        <TaskTimerSidebarItem
+          isCollapsed={isCollapsed}
+          workspaceId={wsId}
+          workspacePath={workspace?.personal ? 'personal' : wsId}
+        />
       )}
       upgradeExternal
       upgradeHref={`${TTR_URL}/${wsId}/billing`}
