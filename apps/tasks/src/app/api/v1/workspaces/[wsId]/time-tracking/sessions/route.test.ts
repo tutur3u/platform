@@ -119,6 +119,40 @@ describe('Tasks running time-tracking sessions route', () => {
     );
   });
 
+  it('includes the source board needed to open the tracked task', async () => {
+    mocks.sessionMaybeSingle.mockResolvedValue({
+      data: { id: 'session-1', task_id: 'task-1' },
+      error: null,
+    });
+    mocks.taskMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'task-1',
+        list: { board: { id: 'board-1', ws_id: 'workspace-1' } },
+        name: 'Prepare launch',
+      },
+      error: null,
+    });
+
+    const { GET } = await import('./route');
+    const response = await GET(
+      new NextRequest(
+        'https://tasks.test/api/v1/workspaces/personal/time-tracking/sessions?type=running'
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      session: {
+        task: {
+          board_id: 'board-1',
+          id: 'task-1',
+          name: 'Prepare launch',
+        },
+      },
+    });
+  });
+
   it('closes an active session and starts the selected task immediately', async () => {
     mocks.taskMaybeSingle.mockResolvedValue({
       data: {

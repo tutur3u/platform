@@ -53,7 +53,7 @@ type SessionTaskValidationResult =
 
 type TimeTrackingSessionWithTaskSummary = {
   task_id?: string | null;
-  task?: { id: string; name: string | null } | null;
+  task?: { board_id?: string; id: string; name: string | null } | null;
 };
 
 type MissedEntryPermissionCheckResult =
@@ -128,7 +128,7 @@ async function attachWorkspaceTaskSummary<
   const { data: task, error } = await sbAdmin
     .from('tasks')
     .select(
-      'id, name, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
+      'id, name, list:task_lists!inner(board:workspace_boards!inner(id, ws_id))'
     )
     .eq('id', session.task_id)
     .eq('list.board.ws_id', wsId)
@@ -138,7 +138,9 @@ async function attachWorkspaceTaskSummary<
 
   return {
     ...session,
-    task: task ? { id: task.id, name: task.name } : null,
+    task: task
+      ? { board_id: task.list.board.id, id: task.id, name: task.name }
+      : null,
   };
 }
 

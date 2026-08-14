@@ -81,7 +81,15 @@ export function TaskTimerSidebarItem({
   if (!session || !taskName) return null;
 
   const taskId = session.task_id ?? session.task?.id;
-  const taskDetailsPath = `/${encodeURIComponent(workspacePath)}?task=${encodeURIComponent(taskId ?? '')}`;
+  const taskSummary = session.task as
+    | (NonNullable<typeof session.task> & { board_id?: string })
+    | null
+    | undefined;
+  const taskWorkspacePath =
+    session.ws_id === workspaceId ? workspacePath : session.ws_id;
+  const taskDetailsPath = taskSummary?.board_id
+    ? `/${encodeURIComponent(taskWorkspacePath)}/boards/${encodeURIComponent(taskSummary.board_id)}?task=${encodeURIComponent(taskId ?? '')}`
+    : `/${encodeURIComponent(taskWorkspacePath)}?task=${encodeURIComponent(taskId ?? '')}`;
   const taskDetailsHref = getTasksAppUrl(taskDetailsPath);
 
   const handleTaskDetailsClick = (event: MouseEvent<HTMLAnchorElement>) => {

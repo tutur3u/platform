@@ -50,7 +50,11 @@ describe('TaskTimerSidebarItem', () => {
     mocks.getRunning.mockResolvedValue({
       id: 'session-1',
       task_id: 'task-1',
-      task: { id: 'task-1', name: 'Prepare launch' },
+      task: {
+        board_id: 'source-board',
+        id: 'task-1',
+        name: 'Prepare launch',
+      },
       title: 'Working on: Prepare launch',
       ws_id: 'source-workspace',
     });
@@ -106,7 +110,7 @@ describe('TaskTimerSidebarItem', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'view_task' }).getAttribute('href')
-    ).toMatch(/\/personal\?task=task-1$/u);
+    ).toMatch(/\/source-workspace\/boards\/source-board\?task=task-1$/u);
 
     fireEvent.click(screen.getByRole('button', { name: 'stop_tracking_time' }));
     await waitFor(() =>

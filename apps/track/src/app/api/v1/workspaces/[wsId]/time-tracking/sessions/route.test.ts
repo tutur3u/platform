@@ -178,7 +178,11 @@ describe('time tracking sessions route task workspace binding', () => {
       error: null,
     });
     const taskQuery = createQuery({
-      data: { id: OTHER_WORKSPACE_TASK_ID, name: 'Source roadmap' },
+      data: {
+        id: OTHER_WORKSPACE_TASK_ID,
+        list: { board: { id: 'source-board', ws_id: 'source-workspace' } },
+        name: 'Source roadmap',
+      },
       error: null,
     });
     mocks.createAdminClient.mockResolvedValue(
@@ -199,7 +203,11 @@ describe('time tracking sessions route task workspace binding', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       session: {
-        task: { id: OTHER_WORKSPACE_TASK_ID, name: 'Source roadmap' },
+        task: {
+          board_id: 'source-board',
+          id: OTHER_WORKSPACE_TASK_ID,
+          name: 'Source roadmap',
+        },
         ws_id: 'source-workspace',
       },
     });

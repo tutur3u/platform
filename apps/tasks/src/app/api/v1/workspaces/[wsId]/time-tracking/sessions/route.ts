@@ -61,7 +61,7 @@ export const GET = withSessionAuth<Params>(
     const { data: task, error: taskError } = await sbAdmin
       .from('tasks')
       .select(
-        'id, name, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
+        'id, name, list:task_lists!inner(board:workspace_boards!inner(id, ws_id))'
       )
       .eq('id', session.task_id)
       .maybeSingle();
@@ -77,7 +77,13 @@ export const GET = withSessionAuth<Params>(
     return NextResponse.json({
       session: {
         ...session,
-        task: task ? { id: task.id, name: task.name } : null,
+        task: task
+          ? {
+              board_id: task.list.board.id,
+              id: task.id,
+              name: task.name,
+            }
+          : null,
       },
     });
   }
