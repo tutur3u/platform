@@ -1,9 +1,9 @@
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import {
   type APIRequestContext,
   type BrowserContext,
   expect,
-  type Page,
   test,
 } from '@playwright/test';
 import {
@@ -15,6 +15,7 @@ import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import {
   assertSafeE2EEnvironment,
   LOCAL_E2E_APP_COORDINATION_SECRET,
+  LOCAL_E2E_DOCKER_SUPABASE_URL,
   LOCAL_E2E_SUPABASE_PUBLISHABLE_KEY,
 } from './helpers/environment';
 import {
@@ -42,6 +43,13 @@ const WORKSPACE_SATELLITE_TARGETS = LAUNCHABLE_APPS.filter(
 type LocalAuthUser = {
   email: string;
   id: string;
+};
+
+type LocalSupabaseSession = {
+  access_token: string;
+  expires_at?: number;
+  refresh_token?: string;
+  [key: string]: unknown;
 };
 
 function appToken(user: LocalAuthUser, targetApp: string) {
@@ -260,23 +268,32 @@ async function getWorkspaceUserLink(
   return links[0]!;
 }
 
-async function establishNativeWebSession(page: Page, email: string) {
-  await page.goto(`${WEB_BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
-  const response = await page.evaluate(async (sessionEmail) => {
-    const result = await fetch('/api/auth/dev-session', {
-      body: JSON.stringify({
-        completeOnboarding: false,
-        email: sessionEmail,
-        locale: 'en',
-      }),
-      headers: { 'content-type': 'application/json' },
-      method: 'POST',
-    });
+async function addNativeWebSessionCookies(
+  context: BrowserContext,
+  session: LocalSupabaseSession
+) {
+  const storageKeys = [
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? SUPABASE_URL,
+    process.env.SUPABASE_SERVER_URL ?? LOCAL_E2E_DOCKER_SUPABASE_URL,
+  ]
+    .map((url) => `sb-${new URL(url).hostname.split('.')[0]}-auth-token`)
+    .filter((key, index, keys) => keys.indexOf(key) === index);
+  const value = `base64-${Buffer.from(JSON.stringify(session), 'utf8').toString(
+    'base64url'
+  )}`;
 
-    return { body: await result.text(), status: result.status };
-  }, email);
-
-  expect(response.status, response.body).toBe(200);
+  await context.addCookies(
+    storageKeys.map((name) => ({
+      domain: '.tuturuuu.localhost',
+      expires: session.expires_at,
+      httpOnly: false,
+      name,
+      path: '/',
+      sameSite: 'Lax' as const,
+      secure: true,
+      value,
+    }))
+  );
 }
 
 test.describe('workspace invitation account-shape resilience', () => {
@@ -317,7 +334,8 @@ test.describe('workspace invitation account-shape resilience', () => {
 
       const signInResponse = await passwordSignIn(request, email);
       expect(signInResponse.status(), await signInResponse.text()).toBe(200);
-      const signIn = (await signInResponse.json()) as { access_token?: string };
+      const signIn = (await signInResponse.json()) as LocalSupabaseSession;
+      expect(signIn.access_token).toEqual(expect.any(String));
       const contactsToken = await mintAppSessionFromSupabase(request, {
         accessToken: signIn.access_token!,
         returnUrl: `${CONTACTS_BASE_URL}/${workspaceId}/reports`,
@@ -459,8 +477,8 @@ test.describe('workspace invitation account-shape resilience', () => {
       webContext = await browser.newContext({
         ignoreHTTPSErrors: true,
       });
+      await addNativeWebSessionCookies(webContext, signIn);
       const accountSettingsPage = await webContext.newPage();
-      await establishNativeWebSession(accountSettingsPage, email);
       const accountSettingsNavigation = await accountSettingsPage.goto(
         `${WEB_BASE_URL}/${workspaceId}?settingsDialog=open&settingsTab=accounts`
       );
