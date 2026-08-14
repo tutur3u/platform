@@ -18,10 +18,25 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
 
   assert.match(workflow, /label: invite-account-shapes/u);
   assert.match(workflow, /mode: invite-account-shapes/u);
+  assert.match(workflow, /label: workspace-invites/u);
+  assert.match(workflow, /mode: workspace-invites/u);
+  const generalShardEntries = workflow.match(
+    /- label: \d+\/4\n\s+id: \d+\n\s+mode: shard\n\s+shard: \d+\n\s+total_shards: 4/gu
+  );
+  assert.equal(
+    generalShardEntries?.length,
+    4,
+    'the ordinary suite must remain balanced across four shards'
+  );
   assert.match(
     workflow,
-    /--grep-invert "workspace invitation account-shape resilience"/u,
-    'the general shards must exclude the dedicated account-shape suite'
+    /--grep-invert "workspace invitation\|Workspace invitation"/u,
+    'the general shards must exclude both dedicated workspace-invite suites'
+  );
+  assert.match(
+    workflow,
+    /bun test:e2e -- e2e\/workspace-invitations\.noauth\.spec\.ts e2e\/workspace-invite-cross-app-access\.noauth\.spec\.ts e2e\/workspace-invite-mail-access\.noauth\.spec\.ts --reporter=line/u,
+    'the dedicated workspace-invite runner must cover API, cross-app, and Mail acceptance'
   );
   assert.match(
     workflow,

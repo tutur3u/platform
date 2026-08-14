@@ -206,6 +206,11 @@ jobs:
             mode: shard
             shard: 4
             total_shards: 4
+          - label: workspace-invites
+            id: workspace-invites
+            mode: workspace-invites
+            shard: 1
+            total_shards: 1
           - label: invite-account-shapes
             id: invite-account-shapes
             mode: invite-account-shapes
@@ -341,7 +346,15 @@ jobs:
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation account-shape resilience" 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+
+      - name: Run workspace invite Playwright suite
+        if: matrix.mode == 'workspace-invites'
+        working-directory: apps/web
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- e2e/workspace-invitations.noauth.spec.ts e2e/workspace-invite-cross-app-access.noauth.spec.ts e2e/workspace-invite-mail-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Run invite account-shape Playwright suite
         if: matrix.mode == 'invite-account-shapes'
