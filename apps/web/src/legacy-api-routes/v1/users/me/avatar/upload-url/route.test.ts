@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { withSessionAuthMock } = vi.hoisted(() => ({
-  withSessionAuthMock: vi.fn((handler: unknown, _options?: unknown) => handler),
+  withSessionAuthMock: vi.fn((handler: unknown) => handler),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
