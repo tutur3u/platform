@@ -1,15 +1,16 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Clock, Loader2, Play } from '@tuturuuu/icons';
+import { Loader2, Play, Square } from '@tuturuuu/icons';
 import type { SessionWithRelations } from '@tuturuuu/types';
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
   getRunningTaskTimeTrackingSession,
+  runningTimeSessionQueryKey,
   startTaskTimeTrackingSession,
+  stopTaskTimeTrackingSession,
 } from './task-time-tracking-api';
 
 interface TaskTimerMenuItemProps {
@@ -21,9 +22,6 @@ interface TaskTimerMenuItemProps {
   enabled?: boolean;
   onStarted?: () => void;
 }
-
-export const runningTimeSessionQueryKey = (workspaceId: string) =>
-  ['running-time-session', workspaceId] as const;
 
 export function TaskTimerMenuItem({
   taskId,
@@ -66,6 +64,10 @@ export function TaskTimerMenuItem({
         runningTimeSessionQueryKey(workspaceId),
         session
       );
+      queryClient.setQueriesData<SessionWithRelations>(
+        { queryKey: ['running-time-session', 'user'] },
+        session
+      );
       void queryClient.invalidateQueries({
         queryKey: ['time-tracking-sessions', workspaceId],
       });
@@ -84,54 +86,68 @@ export function TaskTimerMenuItem({
     },
   });
 
-  const isStarting = startTimerMutation.isPending;
-  const label = isStarting
-    ? t('starting_timer')
-    : isTrackingThisTask
-      ? t('tracking_this_task')
-      : isSwitchingTasks
-        ? t('switch_tracking_to_task')
-        : t('start_tracking_time');
-  const description = isTrackingThisTask
-    ? t('timer_is_running')
-    : isSwitchingTasks
-      ? t('current_timer_will_stop')
-      : t('timer_starts_immediately');
+  const stopTimerMutation = useMutation({
+    mutationFn: () =>
+      stopTaskTimeTrackingSession(workspaceId, runningSession!.id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: runningTimeSessionQueryKey(workspaceId),
+      });
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(runningTimeSessionQueryKey(workspaceId), null);
+      queryClient.setQueriesData(
+        { queryKey: ['running-time-session', 'user'] },
+        null
+      );
+      void queryClient.invalidateQueries({
+        queryKey: ['time-tracking-sessions', workspaceId],
+      });
+      toast.success(t('timer_stopped'), {
+        description: t('timer_stopped_for', { name: taskName }),
+      });
+      onStarted?.();
+    },
+    onError: (error) => {
+      toast.error(t('failed_to_stop_timer'), {
+        description:
+          error instanceof Error ? error.message : t('please_try_again_later'),
+      });
+    },
+  });
+
+  const isPending = startTimerMutation.isPending || stopTimerMutation.isPending;
+  const label = stopTimerMutation.isPending
+    ? t('stopping_timer')
+    : startTimerMutation.isPending
+      ? t('starting_timer')
+      : isTrackingThisTask
+        ? t('stop_tracking_time')
+        : isSwitchingTasks
+          ? t('switch_tracking_to_task')
+          : t('start_tracking_time');
 
   return (
     <DropdownMenuItem
-      className={cn(
-        'min-h-12 cursor-pointer items-start gap-3 py-2.5',
-        isTrackingThisTask && 'bg-dynamic-green/10 focus:bg-dynamic-green/15'
-      )}
-      disabled={disabled || isStarting || isTrackingThisTask}
+      className="cursor-pointer gap-2"
+      disabled={disabled || isPending}
       onSelect={(event) => {
         event.preventDefault();
-        startTimerMutation.mutate();
+        if (isTrackingThisTask) {
+          stopTimerMutation.mutate();
+        } else {
+          startTimerMutation.mutate();
+        }
       }}
     >
-      <span
-        className={cn(
-          'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border',
-          isTrackingThisTask
-            ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
-            : 'border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue'
-        )}
-      >
-        {isStarting ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        ) : isTrackingThisTask ? (
-          <Clock className="h-3.5 w-3.5" />
-        ) : (
-          <Play className="h-3.5 w-3.5" />
-        )}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-medium text-sm leading-5">{label}</span>
-        <span className="block whitespace-normal text-muted-foreground text-xs leading-4">
-          {description}
-        </span>
-      </span>
+      {isPending ? (
+        <Loader2 className="h-4 w-4 animate-spin text-dynamic-blue" />
+      ) : isTrackingThisTask ? (
+        <Square className="h-4 w-4 text-dynamic-red" />
+      ) : (
+        <Play className="h-4 w-4 text-dynamic-blue" />
+      )}
+      <span>{label}</span>
     </DropdownMenuItem>
   );
 }

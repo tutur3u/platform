@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getRunningTaskTimeTrackingSession,
   startTaskTimeTrackingSession,
+  stopTaskTimeTrackingSession,
 } from './task-time-tracking-api';
 
 function jsonResponse(payload: unknown) {
@@ -54,6 +55,24 @@ describe('task time tracking API', () => {
         }),
         cache: 'no-store',
         method: 'POST',
+      })
+    );
+  });
+
+  it('stops the selected running task through its session route', async () => {
+    const session = { id: 'session-1', is_running: false, task_id: 'task-1' };
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ session }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      stopTaskTimeTrackingSession('source workspace', 'session-1')
+    ).resolves.toEqual(session);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/workspaces/source%20workspace/time-tracking/sessions/session-1',
+      expect.objectContaining({
+        body: JSON.stringify({ action: 'stop' }),
+        cache: 'no-store',
+        method: 'PATCH',
       })
     );
   });

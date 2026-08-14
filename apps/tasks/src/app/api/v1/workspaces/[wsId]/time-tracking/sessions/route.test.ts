@@ -40,13 +40,15 @@ const adminClient = {
       insert: mocks.insert.mockImplementation(() => ({
         select: vi.fn(() => ({ single: mocks.insertSingle })),
       })),
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            eq: vi.fn(() => ({ maybeSingle: mocks.sessionMaybeSingle })),
-          })),
-        })),
-      })),
+      select: vi.fn(() => {
+        const query = {
+          eq: vi.fn(() => query),
+          limit: vi.fn(() => query),
+          maybeSingle: mocks.sessionMaybeSingle,
+          order: vi.fn(() => query),
+        };
+        return query;
+      }),
       update: mocks.update.mockImplementation(() =>
         threeEqQuery(mocks.updateResult)
       ),

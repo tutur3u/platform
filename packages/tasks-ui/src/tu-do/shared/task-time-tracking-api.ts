@@ -19,18 +19,54 @@ interface StartTaskTimeTrackingSessionInput {
   categoryId?: string | null;
 }
 
-export async function getRunningTaskTimeTrackingSession(workspaceId: string) {
+export const runningTimeSessionQueryKey = (workspaceId: string) =>
+  ['running-time-session', workspaceId] as const;
+
+export const runningUserTimeSessionQueryKey = (workspaceId: string) =>
+  ['running-time-session', 'user', workspaceId] as const;
+
+export async function getRunningTaskTimeTrackingSession(
+  workspaceId: string,
+  options?: { scope?: 'user' | 'workspace' }
+) {
   const client = getInternalApiClient();
   const payload = await client.json<RunningTimeTrackingSessionResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/sessions`,
     {
       method: 'GET',
       cache: 'no-store',
-      query: { type: 'running' },
+      query: {
+        type: 'running',
+        ...(options?.scope === 'user' ? { scope: 'user' } : {}),
+      },
     }
   );
 
   return payload.session ?? null;
+}
+
+export async function stopTaskTimeTrackingSession(
+  workspaceId: string,
+  sessionId: string
+) {
+  const client = getInternalApiClient();
+  const payload = await client.json<StartTaskTimeTrackingSessionResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/time-tracking/sessions/${encodePathSegment(sessionId)}`,
+    {
+      method: 'PATCH',
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action: 'stop' }),
+    }
+  );
+
+  if (!payload.session) {
+    throw new Error('The timer stopped without returning its session.');
+  }
+
+  return payload.session;
 }
 
 export async function startTaskTimeTrackingSession(

@@ -16,11 +16,13 @@ import { TaskTimerMenuItem } from './task-timer-menu-item';
 const {
   getRunningTimeTrackingSessionMock,
   startTaskTimeTrackingSessionMock,
+  stopTaskTimeTrackingSessionMock,
   toastErrorMock,
   toastSuccessMock,
 } = vi.hoisted(() => ({
   getRunningTimeTrackingSessionMock: vi.fn(),
   startTaskTimeTrackingSessionMock: vi.fn(),
+  stopTaskTimeTrackingSessionMock: vi.fn(),
   toastErrorMock: vi.fn(),
   toastSuccessMock: vi.fn(),
 }));
@@ -32,7 +34,12 @@ vi.mock('next-intl', () => ({
 
 vi.mock('./task-time-tracking-api', () => ({
   getRunningTaskTimeTrackingSession: getRunningTimeTrackingSessionMock,
+  runningTimeSessionQueryKey: (workspaceId: string) => [
+    'running-time-session',
+    workspaceId,
+  ],
   startTaskTimeTrackingSession: startTaskTimeTrackingSessionMock,
+  stopTaskTimeTrackingSession: stopTaskTimeTrackingSessionMock,
 }));
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
@@ -63,6 +70,11 @@ describe('TaskTimerMenuItem', () => {
     getRunningTimeTrackingSessionMock.mockResolvedValue(null);
     startTaskTimeTrackingSessionMock.mockResolvedValue({
       id: 'session-1',
+      task_id: 'task-1',
+    });
+    stopTaskTimeTrackingSessionMock.mockResolvedValue({
+      id: 'session-1',
+      is_running: false,
       task_id: 'task-1',
     });
   });
@@ -140,7 +152,9 @@ describe('TaskTimerMenuItem', () => {
     expect(
       await screen.findByText('switch_tracking_to_task')
     ).toBeInTheDocument();
-    expect(screen.getByText('current_timer_will_stop')).toBeInTheDocument();
+    expect(
+      screen.queryByText('current_timer_will_stop')
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('switch_tracking_to_task'));
     await waitFor(() => expect(toastSuccessMock).toHaveBeenCalled());
@@ -149,7 +163,7 @@ describe('TaskTimerMenuItem', () => {
     });
   });
 
-  it('shows the already-running state without restarting the task', async () => {
+  it('stops the already-running selected task immediately', async () => {
     getRunningTimeTrackingSessionMock.mockResolvedValue({
       id: 'session-1',
       task_id: 'task-1',
@@ -162,11 +176,22 @@ describe('TaskTimerMenuItem', () => {
       />
     );
 
-    const itemLabel = await screen.findByText('tracking_this_task');
-    expect(itemLabel.closest('[role="menuitem"]')).toHaveAttribute(
+    const itemLabel = await screen.findByText('stop_tracking_time');
+    expect(itemLabel.closest('[role="menuitem"]')).not.toHaveAttribute(
       'aria-disabled',
       'true'
     );
+    expect(screen.queryByText('timer_is_running')).not.toBeInTheDocument();
+    fireEvent.click(itemLabel);
+    await waitFor(() =>
+      expect(stopTaskTimeTrackingSessionMock).toHaveBeenCalledWith(
+        'workspace-1',
+        'session-1'
+      )
+    );
+    expect(toastSuccessMock).toHaveBeenCalledWith('timer_stopped', {
+      description: 'timer_stopped_for:Prepare launch',
+    });
     expect(startTaskTimeTrackingSessionMock).not.toHaveBeenCalled();
   });
 

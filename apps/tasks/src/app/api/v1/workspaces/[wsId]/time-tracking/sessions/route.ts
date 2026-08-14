@@ -1,12 +1,8 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { resolveTimeTrackingWorkspaceAccess } from './_lib';
 
 type Params = { wsId: string };
 
@@ -16,48 +12,6 @@ const createSessionSchema = z.object({
   taskId: z.guid().nullable().optional(),
   title: z.string().trim().min(1),
 });
-
-async function resolveWorkspaceAccess(
-  wsId: string,
-  userId: string,
-  supabase: TypedSupabaseClient,
-  sbAdmin: TypedSupabaseClient
-): Promise<
-  { normalizedWsId: string; ok: true } | { ok: false; response: NextResponse }
-> {
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const membership = await verifyWorkspaceMembershipType({
-    // Satellite session clients authenticate the actor through an app-session
-    // token, but do not carry Supabase auth context for RLS. Use the admin
-    // client for this actor-aware membership lookup after withSessionAuth has
-    // verified userId.
-    supabase: sbAdmin,
-    userId,
-    wsId: normalizedWsId,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Failed to verify workspace access' },
-        { status: 500 }
-      ),
-    };
-  }
-
-  if (!membership.ok) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  return { normalizedWsId, ok: true };
-}
 
 export const GET = withSessionAuth<Params>(
   async (request, { user, supabase }, { wsId }) => {
@@ -70,19 +24,24 @@ export const GET = withSessionAuth<Params>(
     }
 
     const sbAdmin = await createAdminClient();
-    const access = await resolveWorkspaceAccess(
-      wsId,
-      user.id,
-      supabase,
-      sbAdmin
-    );
+    const access = await resolveTimeTrackingWorkspaceAccess({
+      rawWsId: wsId,
+      sbAdmin,
+      sessionClient: supabase,
+      userId: user.id,
+    });
     if (!access.ok) return access.response;
-    const { data: session, error } = await sbAdmin
+    let sessionQuery = sbAdmin
       .from('time_tracking_sessions')
       .select('*, category:time_tracking_categories(id, name, color)')
-      .eq('ws_id', access.normalizedWsId)
       .eq('user_id', user.id)
-      .eq('is_running', true)
+      .eq('is_running', true);
+    if (new URL(request.url).searchParams.get('scope') !== 'user') {
+      sessionQuery = sessionQuery.eq('ws_id', access.normalizedWsId);
+    }
+    const { data: session, error } = await sessionQuery
+      .order('start_time', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -105,7 +64,6 @@ export const GET = withSessionAuth<Params>(
         'id, name, list:task_lists!inner(board:workspace_boards!inner(ws_id))'
       )
       .eq('id', session.task_id)
-      .eq('list.board.ws_id', access.normalizedWsId)
       .maybeSingle();
 
     if (taskError) {
@@ -136,12 +94,12 @@ export const POST = withSessionAuth<Params>(
     }
 
     const sbAdmin = await createAdminClient();
-    const access = await resolveWorkspaceAccess(
-      wsId,
-      user.id,
-      supabase,
-      sbAdmin
-    );
+    const access = await resolveTimeTrackingWorkspaceAccess({
+      rawWsId: wsId,
+      sbAdmin,
+      sessionClient: supabase,
+      userId: user.id,
+    });
     if (!access.ok) return access.response;
     const { categoryId, description, taskId, title } = validation.data;
 
