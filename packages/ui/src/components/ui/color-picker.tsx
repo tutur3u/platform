@@ -65,7 +65,7 @@ const ColorPicker = forwardRef<
             variant="outline"
             disabled={disabled}
           >
-            <TextIcon className="h-4 w-4" />
+            {text || <TextIcon className="h-4 w-4" />}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="flex w-full flex-col items-center justify-center gap-4">

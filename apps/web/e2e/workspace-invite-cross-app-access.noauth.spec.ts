@@ -376,10 +376,20 @@ test.describe('accepted workspace invitation cross-app access', () => {
             headers: contactsHeaders,
           }
         );
+        const responseBody = await response.text();
         expect(
           response.status(),
-          `${check.method.toUpperCase()} ${check.path}: ${await response.text()}`
+          `${check.method.toUpperCase()} ${check.path}: ${responseBody}`
         ).toBe(200);
+        if (check.path.includes('/group-tags?')) {
+          expect(JSON.parse(responseBody)).toEqual(
+            expect.objectContaining({
+              data: expect.arrayContaining([
+                expect.objectContaining({ name: `Visible tag ${suffix}` }),
+              ]),
+            })
+          );
+        }
       }
 
       contactsContext = await browser.newContext({
