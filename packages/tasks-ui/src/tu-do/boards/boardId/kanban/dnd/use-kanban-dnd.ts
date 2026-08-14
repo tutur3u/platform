@@ -1156,12 +1156,11 @@ export function useKanbanDnd({
           }
         }
 
-        if (optimisticDropPreview.previousFullTasks) {
-          const currentFullTasks = queryClient.getQueryData<Task[]>([
-            'tasks-full',
-            boardId,
-          ]);
-
+        for (const [
+          queryKey,
+          previousFullTasks,
+        ] of optimisticDropPreview.previousFullTaskEntries) {
+          const currentFullTasks = queryClient.getQueryData<Task[]>(queryKey);
           if (
             hasTaskLocalMutationAt(
               currentFullTasks,
@@ -1169,10 +1168,7 @@ export function useKanbanDnd({
               optimisticDropPreview.localMutationAt
             )
           ) {
-            queryClient.setQueryData(
-              ['tasks-full', boardId],
-              optimisticDropPreview.previousFullTasks
-            );
+            queryClient.setQueryData(queryKey, previousFullTasks);
           }
         }
       };
@@ -1578,6 +1574,8 @@ export function useKanbanDnd({
                           newSortKey: repair.sortKey,
                           optimisticPreviousFullTasks:
                             optimisticDropPreview?.previousFullTasks,
+                          optimisticPreviousFullTaskEntries:
+                            optimisticDropPreview?.previousFullTaskEntries,
                           optimisticPreviousTasks:
                             optimisticDropPreview?.previousTasks,
                         },
@@ -1622,6 +1620,8 @@ export function useKanbanDnd({
                   newSortKey: newSortKey ?? MAX_SAFE_INTEGER_SORT,
                   optimisticPreviousFullTasks:
                     optimisticDropPreview?.previousFullTasks,
+                  optimisticPreviousFullTaskEntries:
+                    optimisticDropPreview?.previousFullTaskEntries,
                   optimisticPreviousTasks: optimisticDropPreview?.previousTasks,
                 },
                 {

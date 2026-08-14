@@ -265,6 +265,10 @@ export function applyTaskDropPreviewToCache({
 }) {
   if (!boardId) return null;
 
+  const previousFullTaskEntries = queryClient.getQueriesData<Task[]>({
+    queryKey: ['tasks-full', boardId],
+  });
+
   // A board query may already be revalidating when the user drops a card.
   // Cancel it without reverting so its pre-drag snapshot cannot replace the
   // destination preview while the move request is still being persisted.
@@ -286,25 +290,29 @@ export function applyTaskDropPreviewToCache({
     targetList,
     targetListId,
   });
-  const previewFullTasks = getTaskDropPreviewCacheTasks({
-    activeTask,
-    localMutationAt,
-    orderedTasks,
-    tasks: snapshot.fullTasks,
-    targetList,
-    targetListId,
-  });
 
   if (previewTasks.tasks) {
     queryClient.setQueryData(['tasks', boardId], previewTasks.tasks);
   }
 
-  if (previewFullTasks.tasks) {
-    queryClient.setQueryData(['tasks-full', boardId], previewFullTasks.tasks);
+  for (const [queryKey, fullTasks] of previousFullTaskEntries) {
+    const previewFullTasks = getTaskDropPreviewCacheTasks({
+      activeTask,
+      localMutationAt,
+      orderedTasks,
+      tasks: fullTasks,
+      targetList,
+      targetListId,
+    });
+
+    if (previewFullTasks.tasks) {
+      queryClient.setQueryData(queryKey, previewFullTasks.tasks);
+    }
   }
 
   return {
     localMutationAt,
+    previousFullTaskEntries,
     previousFullTasks: snapshot.fullTasks,
     previousTasks: snapshot.tasks,
     previewSortKey: previewTasks.previewSortKey,
@@ -349,12 +357,10 @@ export function setBoardTaskCache(
     mergeTaskIntoBoardTaskCache(old, nextTask)
   );
 
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData(
-      ['tasks-full', boardId],
-      (old: Task[] | undefined) => mergeTaskIntoBoardTaskCache(old, nextTask)
-    );
-  }
+  queryClient.setQueriesData<Task[]>(
+    { queryKey: ['tasks-full', boardId] },
+    (old) => mergeTaskIntoBoardTaskCache(old, nextTask)
+  );
 }
 
 export function mergePersonalPlacementMutationTask(

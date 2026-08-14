@@ -33,6 +33,10 @@ describe('applyTaskDropPreviewToCache', () => {
 
     queryClient.setQueryData(['tasks', boardId], snapshot.tasks);
     queryClient.setQueryData(['tasks-full', boardId], snapshot.fullTasks);
+    queryClient.setQueryData(
+      ['tasks-full', boardId, 'filtered-query'],
+      snapshot.fullTasks
+    );
 
     applyTaskDropPreviewToCache({
       activeTask,
@@ -55,5 +59,12 @@ describe('applyTaskDropPreviewToCache', () => {
     expect(queryClient.getQueryData<Task[]>(['tasks', boardId])?.[0]).toEqual(
       expect.objectContaining({ list_id: targetList.id })
     );
+    expect(
+      queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        boardId,
+        'filtered-query',
+      ])?.[0]
+    ).toEqual(expect.objectContaining({ list_id: targetList.id }));
   });
 });
