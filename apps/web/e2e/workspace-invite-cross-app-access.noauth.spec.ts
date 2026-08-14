@@ -246,7 +246,9 @@ test.describe('accepted workspace invitation cross-app access', () => {
       const tasksFallbackUrl = new URL(
         tasksFallbackResponse.headers().location ?? ''
       );
-      expect(tasksFallbackUrl.origin).toBe(new URL(WEB_BASE_URL).origin);
+      const webBaseUrl = new URL(WEB_BASE_URL);
+      expect(tasksFallbackUrl.protocol).toBe(webBaseUrl.protocol);
+      expect(tasksFallbackUrl.hostname).toBe(webBaseUrl.hostname);
       expect(tasksFallbackUrl.pathname).toBe(
         `/${workspaceId}/time-tracker/timer`
       );
