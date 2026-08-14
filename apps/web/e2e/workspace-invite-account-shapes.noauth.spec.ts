@@ -3,6 +3,7 @@ import {
   type APIRequestContext,
   type BrowserContext,
   expect,
+  type Page,
   test,
 } from '@playwright/test';
 import {
@@ -259,6 +260,25 @@ async function getWorkspaceUserLink(
   return links[0]!;
 }
 
+async function establishNativeWebSession(page: Page, email: string) {
+  await page.goto(`${WEB_BASE_URL}/login`, { waitUntil: 'domcontentloaded' });
+  const response = await page.evaluate(async (sessionEmail) => {
+    const result = await fetch('/api/auth/dev-session', {
+      body: JSON.stringify({
+        completeOnboarding: false,
+        email: sessionEmail,
+        locale: 'en',
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+
+    return { body: await result.text(), status: result.status };
+  }, email);
+
+  expect(response.status, response.body).toBe(200);
+}
+
 test.describe('workspace invitation account-shape resilience', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
@@ -436,13 +456,11 @@ test.describe('workspace invitation account-shape resilience', () => {
         financePage.getByRole('button', { name: 'Notifications' })
       ).toBeVisible();
 
-      const webToken = appToken(user, 'web');
       webContext = await browser.newContext({
-        extraHTTPHeaders: { authorization: `Bearer ${webToken}` },
         ignoreHTTPSErrors: true,
       });
-      await addAppCookies(webContext, WEB_BASE_URL, webToken);
       const accountSettingsPage = await webContext.newPage();
+      await establishNativeWebSession(accountSettingsPage, email);
       const accountSettingsNavigation = await accountSettingsPage.goto(
         `${WEB_BASE_URL}/${workspaceId}?settingsDialog=open&settingsTab=accounts`
       );
@@ -453,6 +471,15 @@ test.describe('workspace invitation account-shape resilience', () => {
       await expect(
         accountSettingsPage.getByText('Manage accounts', { exact: true })
       ).toBeVisible();
+      const onboardingAfterWebSession = await request.get(
+        `${SUPABASE_URL}/rest/v1/onboarding_progress?user_id=eq.${user.id}&select=user_id`,
+        { failOnStatusCode: false, headers: serviceHeaders() }
+      );
+      expect(
+        onboardingAfterWebSession.status(),
+        await onboardingAfterWebSession.text()
+      ).toBe(200);
+      await expect(onboardingAfterWebSession.json()).resolves.toEqual([]);
     } finally {
       await contactsContext?.close();
       await financeContext?.close();
