@@ -4,8 +4,10 @@ import {
   ArrowDownAZ,
   ArrowUpDown,
   ListFilter,
+  Loader2,
   RotateCcw,
   Search,
+  X,
 } from '@tuturuuu/icons';
 import type {
   PeriodicReportCadence,
@@ -51,6 +53,8 @@ export function PeriodicReportsToolbar({
   onReset,
   onSortChange,
   query,
+  isSearching,
+  resultCount,
   sortBy,
   sortDirection,
 }: {
@@ -67,6 +71,8 @@ export function PeriodicReportsToolbar({
     sortDirection: PeriodicSortDirection
   ) => void;
   query: string;
+  isSearching: boolean;
+  resultCount: number;
   sortBy: PeriodicSortBy;
   sortDirection: PeriodicSortDirection;
 }) {
@@ -86,9 +92,23 @@ export function PeriodicReportsToolbar({
           <Input
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            className="pl-9"
+            className="pr-9 pl-9"
             placeholder={reportsT('search_periodic')}
           />
+          {isSearching ? (
+            <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : query ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+              onClick={() => onQueryChange('')}
+              aria-label={reportsT('clear_search')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          ) : null}
         </div>
         <Popover>
           <PopoverTrigger asChild>
@@ -199,6 +219,12 @@ export function PeriodicReportsToolbar({
             </Select>
           </PopoverContent>
         </Popover>
+      </div>
+      <div className="flex items-center justify-between gap-3 text-muted-foreground text-xs">
+        <span>{reportsT('search_periodic_help')}</span>
+        <span className="shrink-0 font-medium tabular-nums">
+          {reportsT('matching_reports', { count: resultCount })}
+        </span>
       </div>
       <Tabs
         value={cadence}

@@ -44,10 +44,14 @@ interface ReportWorkspaceToolbarProps {
   onPreviousUser: () => void;
   onReportChange: (reportId: string) => void;
   onUserChange: (userId: string) => void;
+  onUserSearchChange: (query: string) => void;
   reportId: string | null;
   reportOptions: ReportOption[];
   selectedUserOption?: ComboboxOption;
   totalUsers: number;
+  userSearchHasMore: boolean;
+  userSearchPending: boolean;
+  userSearchTotal: number;
   userId: string | null;
   userOptions: ComboboxOption[];
 }
@@ -75,10 +79,14 @@ export function ReportWorkspaceToolbar({
   onPreviousUser,
   onReportChange,
   onUserChange,
+  onUserSearchChange,
   reportId,
   reportOptions,
   selectedUserOption,
   totalUsers,
+  userSearchHasMore,
+  userSearchPending,
+  userSearchTotal,
   userId,
   userOptions,
 }: ReportWorkspaceToolbarProps) {
@@ -181,7 +189,14 @@ export function ReportWorkspaceToolbar({
                 ) : undefined
               }
               placeholder={t('user-data-table.user')}
+              searchPlaceholder={t('ws-reports.search_users_placeholder')}
+              emptyText={t('ws-reports.no_matching_users')}
               disabled={isLoading}
+              shouldFilter={false}
+              onSearchChange={onUserSearchChange}
+              onOpenChange={(open) => {
+                if (!open) onUserSearchChange('');
+              }}
               onChange={(value) => {
                 const nextUserId =
                   typeof value === 'string'
@@ -208,6 +223,18 @@ export function ReportWorkspaceToolbar({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+          <p className="flex min-h-4 items-center gap-1.5 text-muted-foreground text-xs">
+            {userSearchPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : null}
+            {userSearchHasMore
+              ? t('ws-reports.user_search_refine', {
+                  count: userSearchTotal,
+                })
+              : t('ws-reports.user_search_count', {
+                  count: totalUsers,
+                })}
+          </p>
         </div>
 
         <div className="space-y-2">

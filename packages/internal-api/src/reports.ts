@@ -81,12 +81,15 @@ export interface WorkspaceGroupReportDashboardResponse {
     rejected_count: number;
     user_id: string;
   }>;
+  userSearchHasMore: boolean;
+  userSearchTotal: number;
   users: WorkspaceUser[];
 }
 
 export interface ListWorkspaceGroupReportDashboardParams {
   groupId: string;
   reportId?: string | null;
+  userQuery?: string | null;
   userId?: string | null;
   workspaceId: string;
 }
@@ -111,6 +114,7 @@ export interface PeriodicReport {
   cadence: PeriodicReportCadence;
   content: string;
   created_at: string;
+  creator_name?: string | null;
   delivery_status: PeriodicReportDeliveryStatus;
   feedback: string;
   generation_mode: PeriodicReportGenerationMode;
@@ -234,6 +238,7 @@ export interface ReportGroupSelectorResponse {
     rejected_count: number;
   }>;
   groups: Array<{ id: string; name: string | null }>;
+  hasMore: boolean;
   selectedGroup: { id: string; name: string | null } | null;
   selectedGroupManagers: Array<{ id: string; full_name: string | null }>;
 }
@@ -307,6 +312,7 @@ export async function listWorkspaceGroupReportDashboard(
   {
     groupId,
     reportId,
+    userQuery,
     userId,
     workspaceId,
   }: ListWorkspaceGroupReportDashboardParams,
@@ -320,6 +326,7 @@ export async function listWorkspaceGroupReportDashboard(
       cache: 'no-store',
       query: {
         reportId: reportId || undefined,
+        userQuery: userQuery || undefined,
         userId: userId || undefined,
       },
     }

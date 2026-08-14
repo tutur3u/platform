@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AlertCircle } from '@tuturuuu/icons';
 import {
   InternalApiError,
@@ -13,6 +13,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import type { ComboboxOption } from '@tuturuuu/ui/custom/combobox';
+import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
@@ -44,6 +45,10 @@ import { ReportWorkspaceToolbar } from './components/report-workspace-toolbar';
 const ENABLE_FACTOR_CALCULATION = false;
 
 type ReportWithNames = WorkspaceGroupReportDashboardReport;
+type SearchableDashboardResponse = WorkspaceGroupReportDashboardResponse & {
+  userSearchHasMore: boolean;
+  userSearchTotal: number;
+};
 
 interface Props {
   wsId: string;
@@ -79,6 +84,8 @@ export default function GroupReportsClient({
     WorkspaceUserReport[]
   >([]);
   const [isPreparingBulkExport, setIsPreparingBulkExport] = useState(false);
+  const [userQuery, setUserQuery] = useState('');
+  const [debouncedUserQuery] = useDebounce(userQuery, 300);
 
   const resolveCurrentReportPreviewTheme = (): 'light' | 'dark' => {
     const fallbackTheme = resolvedTheme === 'dark' ? 'dark' : 'light';
@@ -128,15 +135,21 @@ export default function GroupReportsClient({
       'reports-dashboard',
       userId,
       reportId,
+      debouncedUserQuery,
     ],
-    queryFn: (): Promise<WorkspaceGroupReportDashboardResponse> =>
+    queryFn: (): Promise<SearchableDashboardResponse> =>
       listWorkspaceGroupReportDashboard({
         groupId,
         reportId,
+        userQuery: debouncedUserQuery,
         userId,
         workspaceId: wsId,
-      }),
+      } as Parameters<typeof listWorkspaceGroupReportDashboard>[0] & {
+        userQuery?: string | null;
+      }) as Promise<SearchableDashboardResponse>,
     enabled: Boolean(wsId && groupId),
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 
   const managerUserIds = useMemo(() => {
@@ -662,10 +675,16 @@ export default function GroupReportsClient({
             reportId: null,
           })
         }
+        onUserSearchChange={setUserQuery}
         reportId={reportId}
         reportOptions={reportsOptions}
         selectedUserOption={selectedUserOption}
         totalUsers={totalUsers}
+        userSearchHasMore={dashboardQuery.data?.userSearchHasMore ?? false}
+        userSearchTotal={dashboardQuery.data?.userSearchTotal ?? totalUsers}
+        userSearchPending={
+          dashboardQuery.isFetching || userQuery !== debouncedUserQuery
+        }
         userId={userId}
         userOptions={userOptions}
       />

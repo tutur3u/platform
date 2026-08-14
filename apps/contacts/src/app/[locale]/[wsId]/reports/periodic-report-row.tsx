@@ -57,10 +57,24 @@ export function PeriodicReportRow({
     canApproveReports: boolean;
     canSendReports: boolean;
   };
-  report: PeriodicReport;
+  report: PeriodicReport & { creator_name?: string | null };
   wsId: string;
 }) {
   const t = useTranslations('reports-hub');
+  const approvalLabel = {
+    APPROVED: t('status_approved'),
+    PENDING: t('status_pending'),
+    REJECTED: t('status_rejected'),
+  }[report.report_approval_status];
+  const deliveryLabel = {
+    blocked: t('status_blocked'),
+    cancelled: t('status_cancelled'),
+    draft: t('status_draft'),
+    failed: t('status_failed'),
+    processing: t('status_processing'),
+    queued: t('status_queued'),
+    sent: t('status_sent'),
+  }[report.delivery_status];
   return (
     <Card className="transition-colors hover:border-foreground/20">
       <CardContent className="flex flex-col gap-3 p-3 md:flex-row md:items-center md:p-4">
@@ -72,10 +86,10 @@ export function PeriodicReportRow({
           <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-medium">{report.title}</p>
             <Badge variant={statusVariant(report.report_approval_status)}>
-              {report.report_approval_status}
+              {approvalLabel}
             </Badge>
             <Badge variant={statusVariant(report.delivery_status)}>
-              {report.delivery_status}
+              {deliveryLabel}
             </Badge>
             {report.generation_mode === 'ai' ? (
               <Badge variant="outline">
@@ -88,6 +102,11 @@ export function PeriodicReportRow({
             {report.user_name ?? t('unknown_member')} ·{' '}
             {report.group_name ?? t('unknown_group')}
           </p>
+          {report.creator_name ? (
+            <p className="truncate text-muted-foreground text-xs">
+              {t('teacher_name', { name: report.creator_name })}
+            </p>
+          ) : null}
           <p className="text-muted-foreground text-xs">
             {report.period_start && report.period_end
               ? `${report.period_start} – ${report.period_end}`
