@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@lucide/lab": "^0.2.0",
-    "lucide-react": "^1.29.0"
+    "lucide-react": "^1.31.0"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

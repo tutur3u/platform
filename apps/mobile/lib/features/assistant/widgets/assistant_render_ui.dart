@@ -644,7 +644,7 @@ class _AssistantRenderUiState extends State<AssistantRenderUi> {
         const SizedBox(height: 8),
         shad.SecondaryButton(
           onPressed: () async {
-            final result = await FilePicker.pickFiles(allowMultiple: true);
+            final result = await FilePicker.pickFiles();
             final paths =
                 result?.files
                     .map((file) => file.path)

@@ -378,10 +378,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<void> _pickAttachments() async {
-    final result = await FilePicker.pickFiles(
-      allowMultiple: true,
-      withData: true,
-    );
+    final result = await FilePicker.pickFiles();
     if (result == null || result.files.isEmpty || !mounted) {
       return;
     }
@@ -433,17 +430,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   }
 
   Future<Uint8List?> _readAttachmentBytes(PlatformFile file) async {
-    final bytes = file.bytes;
-    if (bytes != null) {
-      return bytes;
-    }
-
-    final path = file.path;
-    if (path == null || path.isEmpty) {
-      return null;
-    }
-
-    return io.File(path).readAsBytes();
+    return file.readAsBytes();
   }
 
   void _setAttachmentStatus(

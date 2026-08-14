@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
@@ -788,7 +787,7 @@ class AssistantRepository {
     final signedUrl = uploadResponse['signedUrl'] as String;
     final token = uploadResponse['token'] as String;
     final path = uploadResponse['path'] as String;
-    final bytes = file.file.bytes ?? await File(file.path).readAsBytes();
+    final bytes = await file.file.readAsBytes();
 
     final initialType = _uploadContentType(file.mimeType);
     var response = await _httpClient.put(

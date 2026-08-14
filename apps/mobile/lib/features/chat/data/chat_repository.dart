@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
@@ -247,15 +246,7 @@ class ChatRepository {
     String conversationId, {
     required PlatformFile file,
   }) async {
-    final bytes =
-        file.bytes ??
-        (file.path == null ? null : await File(file.path!).readAsBytes());
-    if (bytes == null) {
-      throw const ApiException(
-        message: 'Unable to read selected file',
-        statusCode: 0,
-      );
-    }
+    final bytes = await file.readAsBytes();
     final contentType =
         lookupMimeType(file.name, headerBytes: bytes) ??
         'application/octet-stream';
