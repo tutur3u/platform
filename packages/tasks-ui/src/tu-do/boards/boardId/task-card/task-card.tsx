@@ -995,7 +995,7 @@ function TaskCardInner({
   const cardVisibilityState = getTaskCardVisibilityState({
     isDragging,
     optimisticUpdateInProgress:
-      optimisticUpdateInProgress?.has(task.id) ?? false,
+      isOptimistic || (optimisticUpdateInProgress?.has(task.id) ?? false),
   });
 
   const setCardRefs = useCallback(
