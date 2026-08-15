@@ -173,7 +173,22 @@ test.describe('accepted workspace invitation Mail access', () => {
       expect(invitationNavigation?.status()).toBeLessThan(400);
       await expect(page.getByText(invitation.workspaceName)).toBeVisible();
 
-      await page.getByRole('button', { name: /accept invitation/i }).click();
+      const acceptButton = page.getByRole('button', {
+        name: /accept invitation/i,
+      });
+      await expect(acceptButton).toBeEnabled();
+      const acceptanceResponsePromise = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'POST' &&
+          response
+            .url()
+            .includes(`/api/workspaces/${invitation.workspaceId}/accept-invite`)
+      );
+      await acceptButton.click();
+      const acceptanceResponse = await acceptanceResponsePromise;
+      expect(acceptanceResponse.status(), await acceptanceResponse.text()).toBe(
+        200
+      );
       await expect(page).toHaveURL(
         new RegExp(`/${invitation.workspaceId}/inbox(?:\\?|$)`, 'u')
       );

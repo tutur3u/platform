@@ -80,10 +80,10 @@ test.describe('accepted workspace invitation cross-app access', () => {
     browser,
     request,
   }) => {
-    // This scenario deliberately cold-compiles the complete Contacts surface
-    // plus four Finance routes. Give the production-parity traversal enough
-    // time on a clean runner instead of making cold compilation look like an
-    // authorization failure.
+    // This scenario cold-compiles the data-backed Contacts and Finance routes
+    // that previously returned empty states or 404s. Route ownership for the
+    // remaining Contacts modules is covered separately without retaining every
+    // webpack compiler in this long-lived E2E fixture.
     test.setTimeout(600_000);
 
     const workspaceId = randomUUID();
@@ -402,14 +402,9 @@ test.describe('accepted workspace invitation cross-app access', () => {
       for (const route of [
         '/users',
         '/users/database',
-        '/users/attendance',
         '/users/groups',
         `/users/groups/${groupId}`,
-        `/users/groups/${groupId}/schedule`,
-        '/users/groups/calendar',
         '/users/group-tags',
-        '/users/feedbacks',
-        '/users/tutoring',
         '/reports?view=periodic',
       ]) {
         const navigation = await contactsPage.goto(

@@ -7,6 +7,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   SatelliteWorkspaceInvitationCard,
@@ -97,6 +98,17 @@ afterEach(() => {
 });
 
 describe('SatelliteWorkspaceInvitationCard', () => {
+  it('keeps invitation actions inert in server-rendered markup until hydration', () => {
+    const queryClient = new QueryClient();
+    const html = renderToString(
+      <QueryClientProvider client={queryClient}>
+        <SatelliteWorkspaceInvitationCard invitation={invitation} />
+      </QueryClientProvider>
+    );
+
+    expect(html.match(/disabled=""/gu)).toHaveLength(2);
+  });
+
   it('accepts an invitation and navigates to the workspace', async () => {
     acceptWorkspaceInvite.mockResolvedValue({ message: 'success' });
 
@@ -104,7 +116,11 @@ describe('SatelliteWorkspaceInvitationCard', () => {
       <SatelliteWorkspaceInvitationCard invitation={invitation} />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /accept invitation/i }));
+    const acceptButton = screen.getByRole('button', {
+      name: /accept invitation/i,
+    }) as HTMLButtonElement;
+    await waitFor(() => expect(acceptButton.disabled).toBe(false));
+    fireEvent.click(acceptButton);
 
     await waitFor(() =>
       expect(acceptWorkspaceInvite).toHaveBeenCalledWith('workspace-alpha')

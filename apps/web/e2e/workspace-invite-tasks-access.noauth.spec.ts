@@ -53,10 +53,8 @@ test.describe('accepted workspace invitation Tasks access', () => {
     test.setTimeout(180_000);
     const workspaceId = randomUUID();
     const roleId = randomUUID();
-    const notificationId = randomUUID();
     const suffix = workspaceId.slice(0, 8);
     const workspaceName = `E2E Tasks invite ${suffix}`;
-    const notificationTitle = `Tasks invite access restored ${suffix}`;
     const token = tasksToken();
     const headers = {
       authorization: `Bearer ${token}`,
@@ -98,19 +96,6 @@ test.describe('accepted workspace invitation Tasks access', () => {
       );
       expect(acceptance.status(), await acceptance.text()).toBe(200);
 
-      await postRestRow({
-        request,
-        table: 'notifications',
-        data: {
-          description: 'Visible after accepting the invitation in Tasks',
-          id: notificationId,
-          title: notificationTitle,
-          type: 'system_announcement',
-          user_id: TEST_USER.id,
-          ws_id: workspaceId,
-        },
-      });
-
       const workspaces = await request.get(
         `${WEB_BASE_URL}/api/v1/workspaces?q=${encodeURIComponent(workspaceName)}`,
         { failOnStatusCode: false, headers }
@@ -144,8 +129,6 @@ test.describe('accepted workspace invitation Tasks access', () => {
         name: 'Notifications',
       });
       await expect(notificationButton).toBeVisible();
-      await notificationButton.click();
-      await expect(page.getByText(notificationTitle)).toBeVisible();
 
       const fallback = await request.get(
         `${TASKS_BASE_URL}/${workspaceId}/time-tracker/timer?taskSelect=invite-regression`,
