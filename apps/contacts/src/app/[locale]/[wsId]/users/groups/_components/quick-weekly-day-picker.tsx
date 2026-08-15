@@ -24,11 +24,11 @@ export function QuickWeeklyDayPicker({
         <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
         {t('days_of_week')}
       </Label>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {SESSION_EDITOR_DAYS.map((day) => (
           <label
             key={day.value}
-            className="flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm transition-colors hover:bg-muted/40 has-[[data-state=checked]]:border-dynamic-blue/50 has-[[data-state=checked]]:bg-dynamic-blue/10"
           >
             <Checkbox
               checked={daysOfWeek.includes(day.value)}

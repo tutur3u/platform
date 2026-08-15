@@ -256,6 +256,7 @@ export default function GroupSchedule({
           onCreate={async (payload) => {
             await createMutation.mutateAsync(payload);
           }}
+          wsId={wsId}
         />
       }
     >

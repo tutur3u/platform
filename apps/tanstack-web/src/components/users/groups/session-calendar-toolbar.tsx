@@ -2,6 +2,7 @@
 
 import {
   CalendarDays,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   Globe,
@@ -28,8 +29,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
 import '@/lib/dayjs-setup';
-import { FrequencyUpdateDialog } from './frequency-update-dialog';
-import { QuickWeeklyScheduleDialog } from './quick-weekly-schedule-dialog';
+import { ScheduleSetupDialog } from './schedule-setup-dialog';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { getWeekStart } from './session-time-utils';
 import { SessionTimezoneCombobox } from './session-timezone-combobox';
@@ -87,21 +87,16 @@ export function SessionCalendarToolbar({
   const t = useTranslations('ws-user-group-schedule');
   const locale = useLocale();
   const scheduleActions = canUpdateSchedule ? (
-    <div className="flex flex-wrap items-center gap-2">
-      <FrequencyUpdateDialog
-        canChooseGroup={canChooseGroup}
-        defaultGroupId={activeGroupId ?? undefined}
-        groups={groups}
-        wsId={wsId}
-      />
-      <QuickWeeklyScheduleDialog
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+      <ScheduleSetupDialog
         canChooseGroup={canChooseGroup}
         defaultGroupId={activeGroupId ?? undefined}
         groups={groups}
         isPending={createPending}
-        onSubmit={(payload) =>
+        onCreate={(payload) =>
           onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
         }
+        wsId={wsId}
       />
       <SessionEditorDialog
         canChooseGroup={canChooseGroup}
@@ -111,6 +106,16 @@ export function SessionCalendarToolbar({
         onSubmit={(payload) =>
           onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
         }
+        trigger={
+          <Button
+            className="w-full sm:w-auto"
+            disabled={createPending}
+            size="sm"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            {t('new_session')}
+          </Button>
+        }
         wsId={wsId}
       />
     </div>
@@ -119,7 +124,7 @@ export function SessionCalendarToolbar({
   const controls = (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-2 rounded-md border bg-muted/20 p-2',
+        'flex min-w-0 flex-wrap items-center gap-2 rounded-xl border bg-muted/20 p-2',
         fullscreen && 'gap-1.5'
       )}
     >
@@ -151,12 +156,12 @@ export function SessionCalendarToolbar({
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
-      <div className="px-2 font-medium text-sm">
+      <div className="min-w-40 flex-1 px-2 font-medium text-sm tabular-nums">
         {dayjs(weekStart).locale(locale).format('MMM D')} -{' '}
         {dayjs(weekStart).add(6, 'day').locale(locale).format('MMM D, YYYY')}
       </div>
       {densityStats && densityStats.groupedTimeblockCount > 0 && (
-        <div className="flex min-h-9 items-center rounded-md border bg-background px-2 text-muted-foreground text-xs">
+        <div className="flex min-h-9 w-full items-center rounded-md border bg-background px-2 text-muted-foreground text-xs sm:w-auto">
           {t('calendar_density_summary', {
             sessionCount: densityStats.sessionCount,
             timeblockCount: densityStats.groupedTimeblockCount,
@@ -165,7 +170,7 @@ export function SessionCalendarToolbar({
       )}
       {canChooseGroup && (
         <Select value={groupFilter} onValueChange={onGroupFilterChange}>
-          <SelectTrigger className="h-9 w-[220px]">
+          <SelectTrigger className="h-9 w-full sm:w-56">
             <Users className="h-4 w-4 text-muted-foreground" />
             <SelectValue placeholder={t('group')} />
           </SelectTrigger>
@@ -180,7 +185,7 @@ export function SessionCalendarToolbar({
         </Select>
       )}
       <Select value={tagFilter} onValueChange={onTagFilterChange}>
-        <SelectTrigger className="h-9 w-[180px]">
+        <SelectTrigger className="h-9 w-full sm:w-48">
           <Tags className="h-4 w-4 text-muted-foreground" />
           <SelectValue placeholder={t('tags')} />
         </SelectTrigger>
@@ -195,7 +200,7 @@ export function SessionCalendarToolbar({
       </Select>
       <SessionTimezoneCombobox
         ariaLabel={t('timezone')}
-        className="h-9 w-[260px]"
+        className="h-9 w-full sm:w-64"
         emptyLabel={t('no_timezones_found')}
         leadingIcon={<Globe className="h-4 w-4" />}
         placeholder={t('select_timezone')}
@@ -240,7 +245,7 @@ export function SessionCalendarToolbar({
   return (
     <>
       {!fullscreen && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h1 className="flex items-center gap-2 font-semibold text-xl">
               <CalendarDays className="h-5 w-5" />
@@ -250,7 +255,7 @@ export function SessionCalendarToolbar({
               {t('calendar_subtitle')}
             </p>
           </div>
-          {scheduleActions}
+          <div className="w-full sm:w-auto">{scheduleActions}</div>
         </div>
       )}
 

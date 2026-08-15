@@ -64,7 +64,7 @@ import {
   type GroupedTimeblockMoveResult,
   type GroupedTimeblockMoveTarget,
 } from './grouped-session-timeblock-dialog';
-import { QuickWeeklyScheduleDialog } from './quick-weekly-schedule-dialog';
+import { ScheduleSetupDialog } from './schedule-setup-dialog';
 import { SessionCalendarToolbar } from './session-calendar-toolbar';
 import { SessionEditorDialog } from './session-editor-dialog';
 import { SessionScopeDialog } from './session-scope-dialog';
@@ -1014,15 +1014,14 @@ export function UserGroupSessionCalendar({
               </p>
             </div>
             {canUpdateSchedule && (
-              <QuickWeeklyScheduleDialog
+              <ScheduleSetupDialog
                 canChooseGroup={canChooseGroup}
                 defaultGroupId={activeGroupId ?? undefined}
                 groups={groups}
                 isPending={createMutation.isPending}
-                onSubmit={async (payload) => {
-                  await createMutation.mutateAsync(payload);
-                }}
-                trigger={<Button size="sm">{t('quick_weekly_setup')}</Button>}
+                onCreate={(payload) => createMutation.mutateAsync(payload)}
+                trigger={<Button size="sm">{t('schedule_setup')}</Button>}
+                wsId={wsId}
               />
             )}
           </div>

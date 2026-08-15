@@ -102,7 +102,7 @@ export function FrequencyUpdateFields({
       )}
 
       {draft && (
-        <div className="grid gap-4 rounded-xl border bg-muted/20 p-4 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-4 rounded-xl border bg-muted/20 p-3 md:grid-cols-2 md:p-4">
           <QuickWeeklyDayPicker
             daysOfWeek={draft.daysOfWeek}
             onChange={(daysOfWeek) => onDraftChange({ ...draft, daysOfWeek })}
@@ -132,7 +132,7 @@ export function FrequencyUpdateFields({
               }
             />
           </div>
-          <div className="flex gap-3 rounded-lg border bg-background p-3 sm:col-span-2">
+          <div className="flex gap-3 rounded-lg border bg-background p-3 md:col-span-2">
             <CalendarDays className="mt-0.5 h-4 w-4 text-dynamic-blue" />
             <div className="space-y-1 text-sm">
               <p className="font-medium">{t('frequency_future_only_title')}</p>

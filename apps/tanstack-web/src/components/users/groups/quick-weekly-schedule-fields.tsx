@@ -64,9 +64,9 @@ export function QuickWeeklyScheduleFields({
   const t = useTranslations('ws-user-group-schedule');
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid min-w-0 gap-4 md:grid-cols-2">
       {canChooseGroup ? (
-        <div className="space-y-2 sm:col-span-2">
+        <div className="min-w-0 space-y-2 md:col-span-2">
           <Label className="flex items-center gap-2">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
             {t('group')}
@@ -87,7 +87,7 @@ export function QuickWeeklyScheduleFields({
         </div>
       ) : null}
 
-      <div className="space-y-2 sm:col-span-2">
+      <div className="min-w-0 space-y-2 md:col-span-2">
         <Label className="flex items-center gap-2">
           <Globe className="h-3.5 w-3.5 text-muted-foreground" />
           {t('timezone')}
@@ -106,7 +106,7 @@ export function QuickWeeklyScheduleFields({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <Label className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
           {t('start_time')}
@@ -131,7 +131,7 @@ export function QuickWeeklyScheduleFields({
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="min-w-0 space-y-2">
         <Label className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-muted-foreground" />
           {t('end_time')}
