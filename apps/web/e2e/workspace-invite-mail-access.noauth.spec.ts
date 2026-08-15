@@ -211,10 +211,13 @@ test.describe('accepted workspace invitation Mail access', () => {
       });
 
       await page.reload({ waitUntil: 'domcontentloaded' });
-      await expect(
-        page.getByRole('button', { name: 'Notifications' })
-      ).toBeVisible();
-      await page.getByRole('button', { name: 'Notifications' }).click();
+      const notificationButton = page.getByRole('button', {
+        name: 'Notifications',
+      });
+      await expect(notificationButton).toBeVisible();
+      await expect(notificationButton).toBeEnabled();
+      await notificationButton.click();
+      await expect(notificationButton).toHaveAttribute('aria-expanded', 'true');
       await expect(page.getByText(notificationTitle)).toBeVisible();
 
       const mailResponse = await request.get(
