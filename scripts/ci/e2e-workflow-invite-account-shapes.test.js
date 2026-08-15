@@ -20,7 +20,8 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
   assert.match(workflow, /mode: invite-account-shapes/u);
   for (const suite of [
     'workspace-invite-api',
-    'workspace-invite-cross-app',
+    'workspace-invite-contacts',
+    'workspace-invite-finance',
     'workspace-invite-mail',
     'workspace-invite-tasks',
   ]) {
@@ -40,30 +41,26 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     /--grep-invert "workspace invitation\|Workspace invitation"/u,
     'the general shards must exclude both dedicated workspace-invite suites'
   );
-  assert.match(
-    workflow,
-    /bun test:e2e -- e2e\/workspace-invitations\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated workspace-invite API runner must execute the API spec'
-  );
-  assert.match(
-    workflow,
-    /bun test:e2e -- e2e\/workspace-invite-cross-app-access\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated cross-app runner must execute the full cross-app spec'
-  );
-  assert.match(
-    workflow,
-    /bun test:e2e -- e2e\/workspace-invite-mail-access\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated Mail runner must execute the full Mail invitation spec'
-  );
-  assert.match(
-    workflow,
-    /bun test:e2e -- e2e\/workspace-invite-tasks-access\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated Tasks runner must execute the Tasks invitation spec'
-  );
-  assert.match(
-    workflow,
-    /bun test:e2e -- e2e\/workspace-invite-account-shapes\.noauth\.spec\.ts --reporter=line/u,
-    'the dedicated runner must execute the full account-shape spec with readable diagnostics'
+  for (const spec of [
+    'workspace-invitations.noauth.spec.ts',
+    'workspace-invite-cross-app-access.noauth.spec.ts',
+    'workspace-invite-finance-access.noauth.spec.ts',
+    'workspace-invite-mail-access.noauth.spec.ts',
+    'workspace-invite-tasks-access.noauth.spec.ts',
+    'workspace-invite-account-shapes.noauth.spec.ts',
+  ]) {
+    assert.ok(
+      workflow.includes(`spec: ${spec}`),
+      `the dedicated matrix must register ${spec}`
+    );
+  }
+  assert.ok(
+    workflow.includes(
+      ['bun test:e2e -- "e2e/$', '{{ matrix.spec }}', '" --reporter=line'].join(
+        ''
+      )
+    ),
+    'the dedicated runner must execute its selected full spec with readable diagnostics'
   );
   assert.match(
     workflow,

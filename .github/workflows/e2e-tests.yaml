@@ -210,26 +210,37 @@ jobs:
             id: workspace-invite-api
             mode: workspace-invite-api
             shard: 1
+            spec: workspace-invitations.noauth.spec.ts
             total_shards: 1
-          - label: workspace-invite-cross-app
-            id: workspace-invite-cross-app
-            mode: workspace-invite-cross-app
+          - label: workspace-invite-contacts
+            id: workspace-invite-contacts
+            mode: workspace-invite-contacts
             shard: 1
+            spec: workspace-invite-cross-app-access.noauth.spec.ts
+            total_shards: 1
+          - label: workspace-invite-finance
+            id: workspace-invite-finance
+            mode: workspace-invite-finance
+            shard: 1
+            spec: workspace-invite-finance-access.noauth.spec.ts
             total_shards: 1
           - label: workspace-invite-mail
             id: workspace-invite-mail
             mode: workspace-invite-mail
             shard: 1
+            spec: workspace-invite-mail-access.noauth.spec.ts
             total_shards: 1
           - label: workspace-invite-tasks
             id: workspace-invite-tasks
             mode: workspace-invite-tasks
             shard: 1
+            spec: workspace-invite-tasks-access.noauth.spec.ts
             total_shards: 1
           - label: invite-account-shapes
             id: invite-account-shapes
             mode: invite-account-shapes
             shard: 1
+            spec: workspace-invite-account-shapes.noauth.spec.ts
             total_shards: 1
 
     env:
@@ -363,45 +374,13 @@ jobs:
           set -o pipefail
           bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }} --grep-invert "workspace invitation|Workspace invitation" 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
-      - name: Run workspace invite API Playwright suite
-        if: matrix.mode == 'workspace-invite-api'
+      - name: Run dedicated workspace invitation Playwright suite
+        if: matrix.mode != 'shard'
         working-directory: apps/web
         run: |
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
-          bun test:e2e -- e2e/workspace-invitations.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
-
-      - name: Run workspace invite cross-app Playwright suite
-        if: matrix.mode == 'workspace-invite-cross-app'
-        working-directory: apps/web
-        run: |
-          mkdir -p ../../tmp/e2e-diagnostics
-          set -o pipefail
-          bun test:e2e -- e2e/workspace-invite-cross-app-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
-
-      - name: Run workspace invite Mail Playwright suite
-        if: matrix.mode == 'workspace-invite-mail'
-        working-directory: apps/web
-        run: |
-          mkdir -p ../../tmp/e2e-diagnostics
-          set -o pipefail
-          bun test:e2e -- e2e/workspace-invite-mail-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
-
-      - name: Run workspace invite Tasks Playwright suite
-        if: matrix.mode == 'workspace-invite-tasks'
-        working-directory: apps/web
-        run: |
-          mkdir -p ../../tmp/e2e-diagnostics
-          set -o pipefail
-          bun test:e2e -- e2e/workspace-invite-tasks-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
-
-      - name: Run invite account-shape Playwright suite
-        if: matrix.mode == 'invite-account-shapes'
-        working-directory: apps/web
-        run: |
-          mkdir -p ../../tmp/e2e-diagnostics
-          set -o pipefail
-          bun test:e2e -- e2e/workspace-invite-account-shapes.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+          bun test:e2e -- "e2e/${{ matrix.spec }}" --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Collect Dockerized E2E diagnostics
         if: ${{ failure() }}

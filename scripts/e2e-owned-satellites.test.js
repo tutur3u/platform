@@ -55,7 +55,14 @@ test('selects only satellite owners present in a Playwright shard', () => {
       {},
       'workspace-invite-cross-app-access.noauth.spec.ts'
     ).map((satellite) => satellite.appName),
-    ['contacts', 'finance']
+    ['contacts']
+  );
+  assert.deepEqual(
+    getRequiredOwnedSatellites(
+      ['workspace-invite-finance-access.noauth.spec.ts'],
+      {}
+    ).map((satellite) => satellite.appName),
+    ['finance']
   );
   assert.deepEqual(
     getRequiredOwnedSatellites(

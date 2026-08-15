@@ -33,7 +33,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     specs: [
       'finance-permission-boundaries.noauth.spec.ts',
       'workspace-invite-account-shapes.noauth.spec.ts',
-      'workspace-invite-cross-app-access.noauth.spec.ts',
+      'workspace-invite-finance-access.noauth.spec.ts',
     ],
   }),
   Object.freeze({

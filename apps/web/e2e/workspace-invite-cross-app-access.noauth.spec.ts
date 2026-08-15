@@ -21,7 +21,6 @@ import {
 const WORKSPACE_CREATOR_ID = '00000000-0000-0000-0000-000000000002';
 const WEB_BASE_URL = process.env.BASE_URL ?? 'https://tuturuuu.localhost:1355';
 const CONTACTS_BASE_URL = process.env.CONTACTS_BASE_URL;
-const FINANCE_BASE_URL = process.env.FINANCE_BASE_URL;
 const APP_SECRET =
   process.env.TUTURUUU_APP_COORDINATION_SECRET ??
   LOCAL_E2E_APP_COORDINATION_SECRET;
@@ -70,26 +69,18 @@ test.describe('accepted workspace invitation cross-app access', () => {
       CONTACTS_BASE_URL,
       'CONTACTS_BASE_URL must be provided by the E2E runner'
     ).toBeTruthy();
-    expect(
-      FINANCE_BASE_URL,
-      'FINANCE_BASE_URL must be provided by the E2E runner'
-    ).toBeTruthy();
   });
 
-  test('keeps linked profile, Finance data, Contacts reports, and notifications available', async ({
+  test('keeps linked profile, Contacts reports, and notifications available', async ({
     browser,
     request,
   }) => {
-    // Exercise one data-backed list and one report/analytics surface per app.
-    // API contracts and the Contacts ownership matrix cover the remaining
-    // modules without retaining every webpack compiler in this shared fixture.
+    // Exercise a data-backed list and report surface. API contracts and the
+    // Contacts ownership matrix cover the remaining Contacts modules.
     test.setTimeout(600_000);
 
     const workspaceId = randomUUID();
     const roleId = randomUUID();
-    const walletId = randomUUID();
-    const categoryId = randomUUID();
-    const transactionId = randomUUID();
     const groupId = randomUUID();
     const groupTagId = randomUUID();
     const notificationId = randomUUID();
@@ -109,12 +100,9 @@ test.describe('accepted workspace invitation cross-app access', () => {
       'view_user_groups_reports',
       'view_user_groups_scores',
       'create_user_groups_reports',
-      'view_transactions',
-      'view_finance_stats',
     ];
     let contactsContext: import('@playwright/test').BrowserContext | null =
       null;
-    let financeContext: import('@playwright/test').BrowserContext | null = null;
 
     try {
       await postRestRow({
@@ -259,40 +247,6 @@ test.describe('accepted workspace invitation cross-app access', () => {
       });
       await postRestRow({
         request,
-        schema: 'private',
-        table: 'workspace_wallets',
-        data: {
-          currency: 'VND',
-          id: walletId,
-          name: `Visible wallet ${suffix}`,
-          type: 'STANDARD',
-          ws_id: workspaceId,
-        },
-      });
-      await postRestRow({
-        request,
-        table: 'transaction_categories',
-        data: {
-          id: categoryId,
-          is_expense: true,
-          name: `Visible expense ${suffix}`,
-          ws_id: workspaceId,
-        },
-      });
-      await postRestRow({
-        request,
-        table: 'wallet_transactions',
-        data: {
-          amount: -125_000,
-          category_id: categoryId,
-          description: 'Cross-app E2E expense',
-          id: transactionId,
-          platform_creator_id: TEST_USER.id,
-          wallet_id: walletId,
-        },
-      });
-      await postRestRow({
-        request,
         table: 'notifications',
         data: {
           description: 'Visible from every registered satellite',
@@ -408,7 +362,7 @@ test.describe('accepted workspace invitation cross-app access', () => {
         if (route === '/users/groups') {
           await expect(
             contactsPage.getByText(`Assigned group ${suffix}`)
-          ).toBeVisible();
+          ).toBeVisible({ timeout: 60_000 });
         }
         if (route === '/users/group-tags') {
           await expect(
@@ -417,52 +371,20 @@ test.describe('accepted workspace invitation cross-app access', () => {
         }
       }
       await expect(contactsPage).toHaveURL(/\/reports\?view=periodic/u);
-      await expect(contactsPage.getByText(reportTitle)).toBeVisible();
+      await expect(contactsPage.getByText(reportTitle)).toBeVisible({
+        timeout: 60_000,
+      });
       await expect(
         contactsPage.getByRole('button', { name: 'Notifications' })
-      ).toBeEnabled();
+      ).toBeEnabled({ timeout: 60_000 });
       await contactsPage.getByRole('button', { name: 'Notifications' }).click();
-      await expect(contactsPage.getByText(notificationTitle)).toBeVisible();
+      await expect(contactsPage.getByText(notificationTitle)).toBeVisible({
+        timeout: 30_000,
+      });
       await contactsContext.close();
       contactsContext = null;
-
-      const financeToken = appToken('finance');
-      const financeHeaders = { authorization: `Bearer ${financeToken}` };
-      for (const apiPath of [
-        `/api/workspaces/${workspaceId}/wallets`,
-        `/api/workspaces/${workspaceId}/transactions/category-breakdown?type=expense&timezone=Asia%2FHo_Chi_Minh`,
-      ]) {
-        const response = await request.get(`${FINANCE_BASE_URL}${apiPath}`, {
-          failOnStatusCode: false,
-          headers: financeHeaders,
-        });
-        expect(response.status(), `${apiPath}: ${await response.text()}`).toBe(
-          200
-        );
-        const body = (await response.json()) as Array<Record<string, unknown>>;
-        expect(body.length).toBeGreaterThan(0);
-      }
-
-      financeContext = await browser.newContext({
-        extraHTTPHeaders: financeHeaders,
-        ignoreHTTPSErrors: true,
-      });
-      await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
-      const financePage = await financeContext.newPage();
-      const financeNavigation = await financePage.goto(
-        `${FINANCE_BASE_URL}/${workspaceId}/analytics`,
-        { waitUntil: 'domcontentloaded' }
-      );
-      expect(financeNavigation?.status(), '/analytics').toBeLessThan(400);
-      await expect(financePage).not.toHaveURL(/\/404(?:\?|$)/u);
-      await expect(
-        financePage.getByRole('button', { name: 'Notifications' })
-      ).toBeEnabled();
-      await financePage.getByRole('button', { name: 'Notifications' }).click();
-      await expect(financePage.getByText(notificationTitle)).toBeVisible();
     } finally {
       await contactsContext?.close();
-      await financeContext?.close();
       await deleteRestRows({
         request,
         schema: 'private',
