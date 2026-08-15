@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.3](https://github.com/tutur3u/platform/compare/satellite-v0.14.2...satellite-v0.14.3) (2026-08-15)
+
+
+### Bug Fixes
+
+* **auth:** repair satellite account settings links ([aa498c7](https://github.com/tutur3u/platform/commit/aa498c7e6c20e74d7f415bc2d55ec691bb4cdfbe))
+
 ## [0.14.2](https://github.com/tutur3u/platform/compare/satellite-v0.14.1...satellite-v0.14.2) (2026-08-14)
 
 

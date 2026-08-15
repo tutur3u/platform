@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/calendar-v0.25.0...calendar-v0.26.0) (2026-08-15)
+
+
+### Features
+
+* **tasks:** improve task timer controls ([eb58df9](https://github.com/tutur3u/platform/commit/eb58df943a1e224bb864921eea43db4ed6d3dccf))
+
+
+### Bug Fixes
+
+* **i18n:** complete shared timer translations ([ee86911](https://github.com/tutur3u/platform/commit/ee8691178d2d51d6b2a5933dd273dbe28fe44c6b))
+* **tasks:** make task time tracking immediate ([ad2aae1](https://github.com/tutur3u/platform/commit/ad2aae1ab54eb1f4ac3b01d5414eb5693d488b35))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/calendar-v0.24.2...calendar-v0.25.0) (2026-08-14)
 
 

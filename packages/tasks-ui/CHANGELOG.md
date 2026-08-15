@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.12.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.11.0...tasks-ui-v0.12.0) (2026-08-15)
+
+
+### Features
+
+* **tasks:** add toggle blocks and repair editor indentation ([c0805c8](https://github.com/tutur3u/platform/commit/c0805c8cc0e26c172eb6f46582e267b084289501))
+* **tasks:** centralize board and dialog preferences ([50d7ff7](https://github.com/tutur3u/platform/commit/50d7ff75a984627f8c200c67c707914d88e46f6c))
+* **tasks:** improve task timer controls ([eb58df9](https://github.com/tutur3u/platform/commit/eb58df943a1e224bb864921eea43db4ed6d3dccf))
+
+
+### Bug Fixes
+
+* **tasks:** make metadata updates optimistic ([598bd40](https://github.com/tutur3u/platform/commit/598bd40a98c504ac877b2c1d3f2c41945a40b7b4))
+* **tasks:** make task time tracking immediate ([ad2aae1](https://github.com/tutur3u/platform/commit/ad2aae1ab54eb1f4ac3b01d5414eb5693d488b35))
+* **tasks:** prevent optimistic metadata flashback ([3507318](https://github.com/tutur3u/platform/commit/3507318f4d21a98c87a1da75cc1233cdb4b59c7d))
+* **time-tracking:** preserve task board context ([f83781a](https://github.com/tutur3u/platform/commit/f83781aa7fd426d53eec9d75daa6da5a04c2f3db))
+* **time-tracking:** unify task timer sidebars ([828f65d](https://github.com/tutur3u/platform/commit/828f65dd0174f803e10026ccadc56eca04e22254))
+* **track:** sync management and timer state ([d0f9aa6](https://github.com/tutur3u/platform/commit/d0f9aa6c9e897c52c6fe4fc627b02bc4cdb2d0b8))
+
 ## [0.11.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.10.1...tasks-ui-v0.11.0) (2026-08-14)
 
 

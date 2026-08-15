@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/internal-api-v0.30.0...internal-api-v0.31.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/internal-api-v0.29.1...internal-api-v0.30.0) (2026-08-14)
 
 

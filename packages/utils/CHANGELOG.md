@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/utils-v0.25.0...utils-v0.25.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **contacts:** harden invited profile access ([19878d0](https://github.com/tutur3u/platform/commit/19878d06466eafc8cef74af52e14ddbdb6eef510))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/utils-v0.24.2...utils-v0.25.0) (2026-08-14)
 
 

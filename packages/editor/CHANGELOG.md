@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/editor-v0.7.0...editor-v0.8.0) (2026-08-15)
+
+
+### Features
+
+* **editor:** make authoring fully WYSIWYG ([7d289ee](https://github.com/tutur3u/platform/commit/7d289ee0b583fd37875b57d6f99dbc96f0dd914f))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/editor-v0.6.0...editor-v0.7.0) (2026-08-04)
 
 

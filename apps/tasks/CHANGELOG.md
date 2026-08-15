@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/tasks-v0.27.0...tasks-v0.28.0) (2026-08-15)
+
+
+### Features
+
+* **tasks:** add toggle blocks and repair editor indentation ([c0805c8](https://github.com/tutur3u/platform/commit/c0805c8cc0e26c172eb6f46582e267b084289501))
+* **tasks:** centralize board and dialog preferences ([50d7ff7](https://github.com/tutur3u/platform/commit/50d7ff75a984627f8c200c67c707914d88e46f6c))
+* **tasks:** improve task timer controls ([eb58df9](https://github.com/tutur3u/platform/commit/eb58df943a1e224bb864921eea43db4ed6d3dccf))
+
+
+### Bug Fixes
+
+* **tasks:** authorize satellite task timers ([e6b64a1](https://github.com/tutur3u/platform/commit/e6b64a1e3da12aafab334cc96e6a6d9b84c30264))
+* **tasks:** localize timer task action ([1e99e2b](https://github.com/tutur3u/platform/commit/1e99e2bef7d9d2abd0d5dff1b8be0c9b4b949a25))
+* **tasks:** make task time tracking immediate ([ad2aae1](https://github.com/tutur3u/platform/commit/ad2aae1ab54eb1f4ac3b01d5414eb5693d488b35))
+* **tasks:** redirect non-owned workspace pages ([0a247e5](https://github.com/tutur3u/platform/commit/0a247e5eaa541c30cc75fc4b24f273fbb5a770f6))
+* **tasks:** serve task timer sessions locally ([1472f51](https://github.com/tutur3u/platform/commit/1472f51f73fb78bb4de8d5fc8de5a5384d97cced))
+* **time-tracking:** preserve task board context ([f83781a](https://github.com/tutur3u/platform/commit/f83781aa7fd426d53eec9d75daa6da5a04c2f3db))
+* **time-tracking:** unify task timer sidebars ([828f65d](https://github.com/tutur3u/platform/commit/828f65dd0174f803e10026ccadc56eca04e22254))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/tasks-v0.26.2...tasks-v0.27.0) (2026-08-14)
 
 
