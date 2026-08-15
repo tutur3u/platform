@@ -80,10 +80,9 @@ test.describe('accepted workspace invitation cross-app access', () => {
     browser,
     request,
   }) => {
-    // This scenario cold-compiles the data-backed Contacts and Finance routes
-    // that previously returned empty states or 404s. Route ownership for the
-    // remaining Contacts modules is covered separately without retaining every
-    // webpack compiler in this long-lived E2E fixture.
+    // Exercise one data-backed list and one report/analytics surface per app.
+    // API contracts and the Contacts ownership matrix cover the remaining
+    // modules without retaining every webpack compiler in this shared fixture.
     test.setTimeout(600_000);
 
     const workspaceId = randomUUID();
@@ -399,14 +398,7 @@ test.describe('accepted workspace invitation cross-app access', () => {
       });
       await addAppCookies(contactsContext, CONTACTS_BASE_URL!, contactsToken);
       const contactsPage = await contactsContext.newPage();
-      for (const route of [
-        '/users',
-        '/users/database',
-        '/users/groups',
-        `/users/groups/${groupId}`,
-        '/users/group-tags',
-        '/reports?view=periodic',
-      ]) {
+      for (const route of ['/users/groups', '/reports?view=periodic']) {
         const navigation = await contactsPage.goto(
           `${CONTACTS_BASE_URL}/${workspaceId}${route}`,
           { waitUntil: 'domcontentloaded' }
@@ -428,9 +420,11 @@ test.describe('accepted workspace invitation cross-app access', () => {
       await expect(contactsPage.getByText(reportTitle)).toBeVisible();
       await expect(
         contactsPage.getByRole('button', { name: 'Notifications' })
-      ).toBeVisible();
+      ).toBeEnabled();
       await contactsPage.getByRole('button', { name: 'Notifications' }).click();
       await expect(contactsPage.getByText(notificationTitle)).toBeVisible();
+      await contactsContext.close();
+      contactsContext = null;
 
       const financeToken = appToken('finance');
       const financeHeaders = { authorization: `Bearer ${financeToken}` };
@@ -455,17 +449,15 @@ test.describe('accepted workspace invitation cross-app access', () => {
       });
       await addAppCookies(financeContext, FINANCE_BASE_URL!, financeToken);
       const financePage = await financeContext.newPage();
-      for (const route of ['', '/transactions', '/wallets', '/analytics']) {
-        const navigation = await financePage.goto(
-          `${FINANCE_BASE_URL}/${workspaceId}${route}`,
-          { waitUntil: 'domcontentloaded' }
-        );
-        expect(navigation?.status(), route || '/').toBeLessThan(400);
-        await expect(financePage).not.toHaveURL(/\/404(?:\?|$)/u);
-        await expect(
-          financePage.getByRole('button', { name: 'Notifications' })
-        ).toBeVisible();
-      }
+      const financeNavigation = await financePage.goto(
+        `${FINANCE_BASE_URL}/${workspaceId}/analytics`,
+        { waitUntil: 'domcontentloaded' }
+      );
+      expect(financeNavigation?.status(), '/analytics').toBeLessThan(400);
+      await expect(financePage).not.toHaveURL(/\/404(?:\?|$)/u);
+      await expect(
+        financePage.getByRole('button', { name: 'Notifications' })
+      ).toBeEnabled();
       await financePage.getByRole('button', { name: 'Notifications' }).click();
       await expect(financePage.getByText(notificationTitle)).toBeVisible();
     } finally {

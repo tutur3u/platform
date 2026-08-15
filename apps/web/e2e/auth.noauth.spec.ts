@@ -96,6 +96,7 @@ test.describe('Authentication (unauthenticated)', () => {
       page.getByRole('button', { name: /continue with google/i })
     ).toBeVisible({ timeout: 10_000 });
 
+    await expect(emailInput).toBeEnabled({ timeout: 15_000 });
     await emailInput.clear();
     await emailInput.fill(TEST_USER.email);
 
@@ -255,6 +256,7 @@ test.describe('Authentication (unauthenticated)', () => {
         .getByPlaceholder('Enter your email or username')
         .first();
       await expect(emailInput).toBeVisible({ timeout: 30_000 });
+      await expect(emailInput).toBeEnabled({ timeout: 15_000 });
       await emailInput.clear();
       await emailInput.fill(otpStageOnlyEmail);
 
@@ -301,6 +303,7 @@ test.describe('Authentication (unauthenticated)', () => {
         .getByPlaceholder('Enter your email or username')
         .first();
       await expect(emailInput).toBeVisible({ timeout: 30_000 });
+      await expect(emailInput).toBeEnabled({ timeout: 15_000 });
       await emailInput.clear();
       await emailInput.fill(TEST_USER.email);
 
@@ -346,6 +349,7 @@ test.describe('Authentication (unauthenticated)', () => {
         .getByPlaceholder('Enter your email or username')
         .first();
       await expect(emailInput).toBeVisible({ timeout: 30_000 });
+      await expect(emailInput).toBeEnabled({ timeout: 15_000 });
       await emailInput.clear();
       await emailInput.fill(otpEmail);
 
