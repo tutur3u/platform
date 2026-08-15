@@ -80,6 +80,26 @@ describe('TaskTimerSidebarItem', () => {
     expect(mocks.toastSuccess).toHaveBeenCalled();
   });
 
+  it('hides the tracked task before the stop request settles', async () => {
+    let resolveStop: ((value: unknown) => void) | undefined;
+    mocks.stopRunning.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStop = resolve;
+      })
+    );
+    renderSidebar();
+
+    expect(await screen.findByText('Prepare launch')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'stop_tracking_time' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText('Prepare launch')).not.toBeInTheDocument()
+    );
+
+    resolveStop?.({ id: 'session-1', is_running: false });
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+  });
+
   it('keeps the task name available in a tooltip when collapsed', async () => {
     renderSidebar(true);
 

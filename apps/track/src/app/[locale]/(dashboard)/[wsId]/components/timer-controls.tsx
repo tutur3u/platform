@@ -31,6 +31,7 @@ import {
   Tag,
   Timer,
 } from '@tuturuuu/icons';
+import { withOptimisticallyClearedRunningTimeSession } from '@tuturuuu/tasks-ui/tu-do/shared/task-time-tracking-cache';
 import type {
   TimeTrackingCategory,
   Workspace,
@@ -1737,13 +1738,10 @@ export function TimerControls({
     t,
   ]);
 
-  // Stop timer - handle both active and paused sessions
   const stopTimer = useCallback(async () => {
     const sessionToStop = currentSession || pausedSession;
     if (!sessionToStop) return;
 
-    // Check if session exceeds threshold - show dialog instead of stopping directly
-    // BUT skip if session already has pending_approval=true (request already submitted)
     const hasPendingApproval = sessionToStop.pending_approval === true;
     if (sessionExceedsThreshold && !hasPendingApproval) {
       setShowExceededThresholdDialog(true);
@@ -1753,20 +1751,22 @@ export function TimerControls({
     setIsLoading(true);
 
     try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToStop.id}`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'stop' }),
-        }
+      const response = await withOptimisticallyClearedRunningTimeSession(
+        queryClient,
+        sessionToStop.id,
+        () =>
+          apiCall(
+            `/api/v1/workspaces/${wsId}/time-tracking/sessions/${sessionToStop.id}`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify({ action: 'stop' }),
+            }
+          )
       );
 
       const completedSession = response.session;
 
-      // If session has pending approval, just clear the UI state without showing celebration
-      // The session will appear in history only after the request is approved
       if (hasPendingApproval) {
-        // Clear all session states
         setCurrentSession(null);
         setPausedSession(null);
         setIsRunning(false);

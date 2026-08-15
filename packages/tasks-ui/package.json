@@ -30,6 +30,10 @@
       "types": "./src/tu-do/shared/recent-sidebar-events.ts",
       "import": "./src/tu-do/shared/recent-sidebar-events.ts"
     },
+    "./tu-do/shared/task-time-tracking-cache": {
+      "types": "./src/tu-do/shared/task-time-tracking-cache.ts",
+      "import": "./src/tu-do/shared/task-time-tracking-cache.ts"
+    },
     "./tu-do/hooks/*": "./src/tu-do/hooks/*",
     "./tu-do/providers/*": "./src/tu-do/providers/*.tsx",
     "./tu-do/shared/*": "./src/tu-do/shared/*.tsx",

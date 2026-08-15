@@ -10,8 +10,8 @@ import {
   getRunningTaskTimeTrackingSession,
   runningTimeSessionQueryKey,
   startTaskTimeTrackingSession,
-  stopTaskTimeTrackingSession,
 } from './task-time-tracking-api';
+import { useStopTaskTimer } from './use-stop-task-timer';
 
 interface TaskTimerMenuItemProps {
   taskId: string;
@@ -86,34 +86,11 @@ export function TaskTimerMenuItem({
     },
   });
 
-  const stopTimerMutation = useMutation({
-    mutationFn: () =>
-      stopTaskTimeTrackingSession(workspaceId, runningSession!.id),
-    onMutate: async () => {
-      await queryClient.cancelQueries({
-        queryKey: runningTimeSessionQueryKey(workspaceId),
-      });
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(runningTimeSessionQueryKey(workspaceId), null);
-      queryClient.setQueriesData(
-        { queryKey: ['running-time-session', 'user'] },
-        null
-      );
-      void queryClient.invalidateQueries({
-        queryKey: ['time-tracking-sessions', workspaceId],
-      });
-      toast.success(t('timer_stopped'), {
-        description: t('timer_stopped_for', { name: taskName }),
-      });
-      onStarted?.();
-    },
-    onError: (error) => {
-      toast.error(t('failed_to_stop_timer'), {
-        description:
-          error instanceof Error ? error.message : t('please_try_again_later'),
-      });
-    },
+  const stopTimerMutation = useStopTaskTimer({
+    session: runningSession,
+    taskName,
+    workspaceId,
+    onStopped: onStarted,
   });
 
   const isPending = startTimerMutation.isPending || stopTimerMutation.isPending;

@@ -532,7 +532,9 @@ export function SessionHistory({
       {/* Delete Confirmation Dialog */}
       <AlertDialog
         open={!!sessionToDelete}
-        onOpenChange={() => setSessionToDelete(null)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setSessionToDelete(null);
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -550,9 +552,16 @@ export function SessionHistory({
             <AlertDialogAction
               onClick={deleteSession}
               disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? t('deleting') : t('delete_session_action')}
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('deleting')}
+                </>
+              ) : (
+                t('delete_session_action')
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

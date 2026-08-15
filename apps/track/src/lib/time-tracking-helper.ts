@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   createAdminClient,
   createClient,
@@ -18,7 +19,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
 
-// Enhanced pagination interface
 export interface PaginationParams {
   page?: number;
   limit?: number;
@@ -37,7 +37,6 @@ export interface PaginatedResult<T> {
   };
 }
 
-// Type definitions for time tracking data
 export interface GroupedSession {
   title: string;
   category: {
@@ -92,14 +91,14 @@ export interface DailyActivity {
   users: number;
 }
 
-// Get paginated grouped sessions using database RPC
 export const getGroupedSessionsPaginated = async (
   wsId: string,
   period: 'day' | 'week' | 'month' = 'day',
-  params: PaginationParams = {}
+  params: PaginationParams = {},
+  client?: TypedSupabaseClient
 ): Promise<PaginatedResult<GroupedSession>> => {
   const { page = 1, limit = 50, search, startDate, endDate } = params;
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
   const userTimezone = dayjs.tz.guess();
 
   try {
@@ -120,7 +119,7 @@ export const getGroupedSessionsPaginated = async (
     if (error) {
       console.error('RPC error:', error);
       // Fall back to the JS implementation if RPC fails
-      return await getFallbackGroupedSessions(wsId, period, params);
+      return await getFallbackGroupedSessions(wsId, period, params, supabase);
     }
 
     // Transform the RPC result to match the expected GroupedSession interface
@@ -172,18 +171,18 @@ export const getGroupedSessionsPaginated = async (
       'Error calling RPC, falling back to JS implementation:',
       error
     );
-    return await getFallbackGroupedSessions(wsId, period, params);
+    return await getFallbackGroupedSessions(wsId, period, params, supabase);
   }
 };
 
-// Fallback method for when RPC is not available or date filtering is needed
 const getFallbackGroupedSessions = async (
   wsId: string,
   period: 'day' | 'week' | 'month' = 'day',
-  params: PaginationParams = {}
+  params: PaginationParams = {},
+  client?: TypedSupabaseClient
 ): Promise<PaginatedResult<GroupedSession>> => {
   const { page = 1, limit = 50, search, startDate, endDate } = params;
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   try {
     let query = supabase
@@ -321,9 +320,10 @@ const getFallbackGroupedSessions = async (
 // Get time tracking statistics using database RPC
 export const getTimeTrackingStats = async (
   wsId: string,
-  userId?: string
+  userId?: string,
+  client?: TypedSupabaseClient
 ): Promise<TimeTrackingStats> => {
-  const supabase = await createClient();
+  const supabase = client ?? (await createClient());
 
   try {
     const { data, error } = await supabase.rpc('get_time_tracking_stats', {

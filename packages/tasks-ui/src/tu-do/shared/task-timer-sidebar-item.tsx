@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2, Square, Timer } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { dispatchRequestOpenTask } from '@tuturuuu/ui/lib/task-open-events';
 import { getTasksAppUrl } from '@tuturuuu/ui/lib/tasks-app-url';
-import { toast } from '@tuturuuu/ui/sonner';
 import {
   Tooltip,
   TooltipContent,
@@ -22,10 +21,9 @@ import { useTranslations } from 'next-intl';
 import { type MouseEvent, useState } from 'react';
 import {
   getRunningTaskTimeTrackingSession,
-  runningTimeSessionQueryKey,
   runningUserTimeSessionQueryKey,
-  stopTaskTimeTrackingSession,
 } from './task-time-tracking-api';
+import { useStopTaskTimer } from './use-stop-task-timer';
 
 interface TaskTimerSidebarItemProps {
   isCollapsed: boolean;
@@ -40,7 +38,6 @@ export function TaskTimerSidebarItem({
 }: TaskTimerSidebarItemProps) {
   const t = useTranslations('common');
   const [actionsOpen, setActionsOpen] = useState(false);
-  const queryClient = useQueryClient();
   const runningQuery = useQuery({
     queryKey: runningUserTimeSessionQueryKey(workspaceId),
     queryFn: () =>
@@ -51,31 +48,10 @@ export function TaskTimerSidebarItem({
   });
   const session = runningQuery.data;
   const taskName = session?.task?.name ?? session?.title;
-  const stopMutation = useMutation({
-    mutationFn: () => stopTaskTimeTrackingSession(session!.ws_id, session!.id),
-    onSuccess: () => {
-      setActionsOpen(false);
-      queryClient.setQueryData(
-        runningUserTimeSessionQueryKey(workspaceId),
-        null
-      );
-      queryClient.setQueryData(
-        runningTimeSessionQueryKey(session!.ws_id),
-        null
-      );
-      void queryClient.invalidateQueries({
-        queryKey: ['time-tracking-sessions', session!.ws_id],
-      });
-      toast.success(t('timer_stopped'), {
-        description: t('timer_stopped_for', { name: taskName ?? '' }),
-      });
-    },
-    onError: (error) => {
-      toast.error(t('failed_to_stop_timer'), {
-        description:
-          error instanceof Error ? error.message : t('please_try_again_later'),
-      });
-    },
+  const stopMutation = useStopTaskTimer({
+    session,
+    taskName: taskName ?? '',
+    workspaceId: session?.ws_id ?? workspaceId,
   });
 
   if (!session || !taskName) return null;
