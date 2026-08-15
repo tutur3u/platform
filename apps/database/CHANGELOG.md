@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.28.0](https://github.com/tutur3u/platform/compare/database-v1.27.0...database-v1.28.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
 ## [1.27.0](https://github.com/tutur3u/platform/compare/database-v1.26.0...database-v1.27.0) (2026-08-14)
 
 

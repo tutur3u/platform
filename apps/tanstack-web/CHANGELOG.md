@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.24.0...tanstack-web-v0.25.0) (2026-08-15)
+
+
+### Features
+
+* **tasks:** improve task timer controls ([eb58df9](https://github.com/tutur3u/platform/commit/eb58df943a1e224bb864921eea43db4ed6d3dccf))
+* **users:** consolidate schedule setup ([b13f7fd](https://github.com/tutur3u/platform/commit/b13f7fdca17f3c1836cfafea5add9808a82edae2))
+* **users:** support flexible recurring schedules ([680aadd](https://github.com/tutur3u/platform/commit/680aadd0b7dc705dde6d2dc18b959cc5880bed78))
+
+
+### Bug Fixes
+
+* **auth:** allow scoped avatar uploads ([#5130](https://github.com/tutur3u/platform/issues/5130)) ([95a06eb](https://github.com/tutur3u/platform/commit/95a06eb462595852fc5a64601c84d876946f787a))
+* **tasks:** make task time tracking immediate ([ad2aae1](https://github.com/tutur3u/platform/commit/ad2aae1ab54eb1f4ac3b01d5414eb5693d488b35))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.23.0...tanstack-web-v0.24.0) (2026-08-14)
 
 

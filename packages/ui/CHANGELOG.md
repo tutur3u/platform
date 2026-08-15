@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.28.0](https://github.com/tutur3u/platform/compare/ui-v0.27.0...ui-v0.28.0) (2026-08-15)
+
+
+### Features
+
+* **tasks:** add toggle blocks and repair editor indentation ([c0805c8](https://github.com/tutur3u/platform/commit/c0805c8cc0e26c172eb6f46582e267b084289501))
+
+
+### Bug Fixes
+
+* **contacts:** restore group tag labels ([9fbcb25](https://github.com/tutur3u/platform/commit/9fbcb25bd44fcedcfad4a463599940e9497ebc06))
+* **notifications:** prevent pre-hydration bell clicks ([6adba83](https://github.com/tutur3u/platform/commit/6adba83f3db63817cc64e332c33a6a2939e0bf83))
+* **ui:** support button slots with TypeScript 7 ([3bdc636](https://github.com/tutur3u/platform/commit/3bdc6368daf0be48719a479c63a6325d414233d6))
+
 ## [0.27.0](https://github.com/tutur3u/platform/compare/ui-v0.26.1...ui-v0.27.0) (2026-08-14)
 
 

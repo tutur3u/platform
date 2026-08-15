@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/contacts-v0.16.0...contacts-v0.17.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+* **users:** consolidate schedule setup ([b13f7fd](https://github.com/tutur3u/platform/commit/b13f7fdca17f3c1836cfafea5add9808a82edae2))
+* **users:** support flexible recurring schedules ([680aadd](https://github.com/tutur3u/platform/commit/680aadd0b7dc705dde6d2dc18b959cc5880bed78))
+
+
+### Bug Fixes
+
+* **contacts:** harden invited profile access ([19878d0](https://github.com/tutur3u/platform/commit/19878d06466eafc8cef74af52e14ddbdb6eef510))
+* **contacts:** repair legacy member links in workspace shell ([c236cc2](https://github.com/tutur3u/platform/commit/c236cc22c4a04f9e4f4edf86adcf2d360ae92ede))
+* **contacts:** restore invited member data access ([9a1e079](https://github.com/tutur3u/platform/commit/9a1e079881e72529330203582dcfc4d0a8c509c4))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/contacts-v0.15.2...contacts-v0.16.0) (2026-08-14)
 
 

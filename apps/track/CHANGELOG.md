@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.23.1](https://github.com/tutur3u/platform/compare/track-v0.23.0...track-v0.23.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **i18n:** complete shared timer translations ([ee86911](https://github.com/tutur3u/platform/commit/ee8691178d2d51d6b2a5933dd273dbe28fe44c6b))
+* **time-tracking:** preserve task board context ([f83781a](https://github.com/tutur3u/platform/commit/f83781aa7fd426d53eec9d75daa6da5a04c2f3db))
+* **time-tracking:** unify task timer sidebars ([828f65d](https://github.com/tutur3u/platform/commit/828f65dd0174f803e10026ccadc56eca04e22254))
+* **track:** sync management and timer state ([d0f9aa6](https://github.com/tutur3u/platform/commit/d0f9aa6c9e897c52c6fe4fc627b02bc4cdb2d0b8))
+
 ## [0.23.0](https://github.com/tutur3u/platform/compare/track-v0.22.2...track-v0.23.0) (2026-08-14)
 
 

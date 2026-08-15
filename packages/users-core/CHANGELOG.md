@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/users-core-v0.7.3...users-core-v0.8.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+
+
+### Bug Fixes
+
+* **contacts:** restore invited member data access ([9a1e079](https://github.com/tutur3u/platform/commit/9a1e079881e72529330203582dcfc4d0a8c509c4))
+
 ## [0.7.3](https://github.com/tutur3u/platform/compare/users-core-v0.7.2...users-core-v0.7.3) (2026-08-14)
 
 

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/platform-v0.37.0...platform-v0.38.0) (2026-08-15)
+
+
+### Features
+
+* **contacts:** add smart report search ([579b6d5](https://github.com/tutur3u/platform/commit/579b6d5ce501386608079b4998d4456cdacfd9e8))
+* **editor:** make authoring fully WYSIWYG ([7d289ee](https://github.com/tutur3u/platform/commit/7d289ee0b583fd37875b57d6f99dbc96f0dd914f))
+* **tasks:** add toggle blocks and repair editor indentation ([c0805c8](https://github.com/tutur3u/platform/commit/c0805c8cc0e26c172eb6f46582e267b084289501))
+* **tasks:** centralize board and dialog preferences ([50d7ff7](https://github.com/tutur3u/platform/commit/50d7ff75a984627f8c200c67c707914d88e46f6c))
+* **tasks:** improve task timer controls ([eb58df9](https://github.com/tutur3u/platform/commit/eb58df943a1e224bb864921eea43db4ed6d3dccf))
+* **users:** consolidate schedule setup ([b13f7fd](https://github.com/tutur3u/platform/commit/b13f7fdca17f3c1836cfafea5add9808a82edae2))
+* **users:** support flexible recurring schedules ([680aadd](https://github.com/tutur3u/platform/commit/680aadd0b7dc705dde6d2dc18b959cc5880bed78))
+
+
+### Bug Fixes
+
+* **auth:** allow scoped avatar uploads ([0069cdd](https://github.com/tutur3u/platform/commit/0069cddb92cb4d433ca3541465358c678f57c659))
+* **auth:** allow scoped avatar uploads ([#5130](https://github.com/tutur3u/platform/issues/5130)) ([95a06eb](https://github.com/tutur3u/platform/commit/95a06eb462595852fc5a64601c84d876946f787a))
+* **auth:** gate login controls until hydration ([de8b0da](https://github.com/tutur3u/platform/commit/de8b0da6157fb4eb9880a831929517b5d2dcfda8))
+* **auth:** repair satellite account settings links ([aa498c7](https://github.com/tutur3u/platform/commit/aa498c7e6c20e74d7f415bc2d55ec691bb4cdfbe))
+* **contacts:** harden invited profile access ([19878d0](https://github.com/tutur3u/platform/commit/19878d06466eafc8cef74af52e14ddbdb6eef510))
+* **contacts:** repair legacy member links in workspace shell ([c236cc2](https://github.com/tutur3u/platform/commit/c236cc22c4a04f9e4f4edf86adcf2d360ae92ede))
+* **contacts:** restore group tag labels ([9fbcb25](https://github.com/tutur3u/platform/commit/9fbcb25bd44fcedcfad4a463599940e9497ebc06))
+* **contacts:** restore invited member data access ([9a1e079](https://github.com/tutur3u/platform/commit/9a1e079881e72529330203582dcfc4d0a8c509c4))
+* **e2e:** start satellites for invite coverage ([6400dac](https://github.com/tutur3u/platform/commit/6400dac14ed4a87acd39a9639ace741d157893c6))
+* **i18n:** complete shared timer translations ([ee86911](https://github.com/tutur3u/platform/commit/ee8691178d2d51d6b2a5933dd273dbe28fe44c6b))
+* **notifications:** prevent pre-hydration bell clicks ([6adba83](https://github.com/tutur3u/platform/commit/6adba83f3db63817cc64e332c33a6a2939e0bf83))
+* **storefront:** avoid instant navigation recovery ([726b736](https://github.com/tutur3u/platform/commit/726b7368462bf26bdb9664a8803c92f57cf57c17))
+* **tasks:** authorize satellite task timers ([e6b64a1](https://github.com/tutur3u/platform/commit/e6b64a1e3da12aafab334cc96e6a6d9b84c30264))
+* **tasks:** authorize task timer sessions ([57dfd4e](https://github.com/tutur3u/platform/commit/57dfd4e75a9a30363897950e0e9fda5fcd5c85e6))
+* **tasks:** localize timer task action ([1e99e2b](https://github.com/tutur3u/platform/commit/1e99e2bef7d9d2abd0d5dff1b8be0c9b4b949a25))
+* **tasks:** make metadata updates optimistic ([598bd40](https://github.com/tutur3u/platform/commit/598bd40a98c504ac877b2c1d3f2c41945a40b7b4))
+* **tasks:** make task time tracking immediate ([ad2aae1](https://github.com/tutur3u/platform/commit/ad2aae1ab54eb1f4ac3b01d5414eb5693d488b35))
+* **tasks:** prevent optimistic metadata flashback ([3507318](https://github.com/tutur3u/platform/commit/3507318f4d21a98c87a1da75cc1233cdb4b59c7d))
+* **tasks:** redirect non-owned workspace pages ([0a247e5](https://github.com/tutur3u/platform/commit/0a247e5eaa541c30cc75fc4b24f273fbb5a770f6))
+* **tasks:** serve task timer sessions locally ([1472f51](https://github.com/tutur3u/platform/commit/1472f51f73fb78bb4de8d5fc8de5a5384d97cced))
+* **time-tracking:** preserve task board context ([f83781a](https://github.com/tutur3u/platform/commit/f83781aa7fd426d53eec9d75daa6da5a04c2f3db))
+* **time-tracking:** unify task timer sidebars ([828f65d](https://github.com/tutur3u/platform/commit/828f65dd0174f803e10026ccadc56eca04e22254))
+* **track:** sync management and timer state ([d0f9aa6](https://github.com/tutur3u/platform/commit/d0f9aa6c9e897c52c6fe4fc627b02bc4cdb2d0b8))
+* **ui:** support button slots with TypeScript 7 ([3bdc636](https://github.com/tutur3u/platform/commit/3bdc6368daf0be48719a479c63a6325d414233d6))
+* **web:** restore Vercel runtime compatibility ([2519202](https://github.com/tutur3u/platform/commit/2519202d54f80dc316d79ab2660b745d3d26e15e))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/platform-v0.36.3...platform-v0.37.0) (2026-08-14)
 
 

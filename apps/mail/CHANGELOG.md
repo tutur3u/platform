@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/tutur3u/platform/compare/mail-v0.18.0...mail-v0.18.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **e2e:** start satellites for invite coverage ([6400dac](https://github.com/tutur3u/platform/commit/6400dac14ed4a87acd39a9639ace741d157893c6))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/mail-v0.17.2...mail-v0.18.0) (2026-08-14)
 
 

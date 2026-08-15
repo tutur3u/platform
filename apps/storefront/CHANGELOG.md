@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.1](https://github.com/tutur3u/platform/compare/storefront-v0.24.0...storefront-v0.24.1) (2026-08-15)
+
+
+### Bug Fixes
+
+* **storefront:** avoid instant navigation recovery ([726b736](https://github.com/tutur3u/platform/commit/726b7368462bf26bdb9664a8803c92f57cf57c17))
+
 ## [0.24.0](https://github.com/tutur3u/platform/compare/storefront-v0.23.2...storefront-v0.24.0) (2026-08-14)
 
 

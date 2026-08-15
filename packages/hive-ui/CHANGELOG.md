@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/tutur3u/platform/compare/hive-ui-v0.2.0...hive-ui-v0.2.1) (2026-08-15)
+
+
+### Performance Improvements
+
+* reduce cross-app Vercel request churn ([44c28d5](https://github.com/tutur3u/platform/commit/44c28d542d82ad9a92ba1225f7dc3852979d005c))
+* reduce cross-app Vercel request churn ([#5128](https://github.com/tutur3u/platform/issues/5128)) ([345a930](https://github.com/tutur3u/platform/commit/345a930198483273201a6a57f7761ec71280899b))
+
 ## [0.2.0](https://github.com/tutur3u/platform/compare/hive-ui-v0.1.1...hive-ui-v0.2.0) (2026-07-25)
 
 
