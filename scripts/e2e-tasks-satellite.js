@@ -8,7 +8,7 @@ const TASKS_PORT = '7809';
 const TASKS_ROUTE_NAME = 'tasks.tuturuuu';
 const TASKS_E2E_SPECS = Object.freeze([
   'tasks-workspace-lifecycle.noauth.spec.ts',
-  'workspace-invite-cross-app-access.noauth.spec.ts',
+  'workspace-invite-tasks-access.noauth.spec.ts',
 ]);
 const TASKS_LIFECYCLE_SPEC = TASKS_E2E_SPECS[0];
 const TASKS_HOST_REDIS_REST_URL = 'http://127.0.0.1:8079';

@@ -22,6 +22,7 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     'workspace-invite-api',
     'workspace-invite-cross-app',
     'workspace-invite-mail',
+    'workspace-invite-tasks',
   ]) {
     assert.match(workflow, new RegExp(`label: ${suite}`, 'u'));
     assert.match(workflow, new RegExp(`mode: ${suite}`, 'u'));
@@ -53,6 +54,11 @@ test('invite account-shape E2E has an isolated matrix runner', () => {
     workflow,
     /bun test:e2e -- e2e\/workspace-invite-mail-access\.noauth\.spec\.ts --reporter=line/u,
     'the dedicated Mail runner must execute the full Mail invitation spec'
+  );
+  assert.match(
+    workflow,
+    /bun test:e2e -- e2e\/workspace-invite-tasks-access\.noauth\.spec\.ts --reporter=line/u,
+    'the dedicated Tasks runner must execute the Tasks invitation spec'
   );
   assert.match(
     workflow,

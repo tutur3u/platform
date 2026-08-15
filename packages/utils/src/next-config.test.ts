@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createTuturuuuNextConfig,
   createTuturuuuWebWorkspaceApiRewrites,
+  getTuturuuuNextOptimizePackageImports,
   isTuturuuuNextCacheComponentsEnabled,
   isTuturuuuNextReactCompilerEnabled,
   isTuturuuuTurbopackRustReactCompilerEnabled,
@@ -174,6 +175,25 @@ describe('createTuturuuuNextConfig', () => {
     ]);
   });
 
+  it('stabilizes the webpack-only E2E satellite fallback', () => {
+    const originalWebpackBuild = process.env.NEXT_WEBPACK_BUILD;
+
+    try {
+      process.env.NEXT_WEBPACK_BUILD = '1';
+      const config = createTuturuuuNextConfig();
+
+      expect(config.experimental?.devMemoryThresholdRestart).toBe(false);
+      expect(config.experimental?.optimizePackageImports).toEqual([]);
+      expect(config.experimental?.turbopackRustReactCompiler).toBe(false);
+    } finally {
+      if (originalWebpackBuild === undefined) {
+        delete process.env.NEXT_WEBPACK_BUILD;
+      } else {
+        process.env.NEXT_WEBPACK_BUILD = originalWebpackBuild;
+      }
+    }
+  });
+
   it('dedupes image remote patterns while preserving app additions', () => {
     const config = createTuturuuuNextConfig({
       images: {
@@ -304,6 +324,22 @@ describe('isTuturuuuTurbopackRustReactCompilerEnabled', () => {
         NEXT_WEBPACK_BUILD: '1',
       })
     ).toBe(false);
+  });
+});
+
+describe('getTuturuuuNextOptimizePackageImports', () => {
+  it('keeps shared package optimization for Turbopack', () => {
+    expect(getTuturuuuNextOptimizePackageImports(['@tuturuuu/ui'], {})).toEqual(
+      [...TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS, '@tuturuuu/ui']
+    );
+  });
+
+  it('avoids webpack React Server Consumer Manifest barrel corruption', () => {
+    expect(
+      getTuturuuuNextOptimizePackageImports(['@tuturuuu/ui'], {
+        NEXT_WEBPACK_BUILD: '1',
+      })
+    ).toEqual(['@tuturuuu/ui']);
   });
 });
 

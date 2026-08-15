@@ -177,6 +177,7 @@
     "report-problem": "Leave a Feedback",
     "report-problem-description": "Help us improve by reporting issues you've encountered. Your feedback is valuable to us.",
     "report-submitted-success": "Report submitted successfully! Thank you for your feedback.",
+    "retry": "Retry",
     "root": "Root",
     "select-product-placeholder": "Select the product with the issue",
     "settings": "Settings",
@@ -401,8 +402,10 @@
     "title": "{tier} Plan Required"
   },
   "notifications": {
+    "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "decline": "Decline",
     "empty-archive": "No archived notifications yet.",
     "inbox": "Inbox",
     "loading-more": "Loading more...",

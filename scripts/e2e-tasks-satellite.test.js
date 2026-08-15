@@ -22,7 +22,7 @@ test('starts the Tasks satellite for full, focused, and explicitly enabled E2E r
   );
   assert.equal(
     shouldStartTasksSatellite(
-      ['workspace-invite-cross-app-access.noauth.spec.ts'],
+      ['workspace-invite-tasks-access.noauth.spec.ts'],
       {}
     ),
     true
@@ -51,7 +51,7 @@ test('starts the Tasks satellite for full, focused, and explicitly enabled E2E r
     shouldStartTasksSatellite(
       ['--shard=3/4'],
       {},
-      'workspace-invite-cross-app-access.noauth.spec.ts'
+      'workspace-invite-tasks-access.noauth.spec.ts'
     ),
     true
   );
@@ -75,7 +75,7 @@ test('discovers sharded Tasks lifecycle ownership without forcing every shard', 
   );
   assert.equal(
     shouldDiscoverTasksSatelliteFromTestList(
-      ['workspace-invite-cross-app-access.noauth.spec.ts'],
+      ['workspace-invite-tasks-access.noauth.spec.ts'],
       {}
     ),
     false

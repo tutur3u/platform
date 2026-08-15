@@ -605,8 +605,10 @@
     "title": "Cần gói {tier}"
   },
   "notifications": {
+    "accept": "Chấp nhận",
     "archive": "Lưu trữ",
     "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
     "empty-archive": "Không có thông báo đã lưu trữ.",
     "inbox": "Hộp thư",
     "loading-more": "Đang tải thêm",

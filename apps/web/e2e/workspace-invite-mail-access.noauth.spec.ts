@@ -167,7 +167,8 @@ test.describe('accepted workspace invitation Mail access', () => {
       await addMailCookies(context, token);
       const page = await context.newPage();
       const invitationNavigation = await page.goto(
-        `${MAIL_BASE_URL}/${invitation.workspaceId}`
+        `${MAIL_BASE_URL}/${invitation.workspaceId}`,
+        { waitUntil: 'domcontentloaded' }
       );
       expect(invitationNavigation?.status()).toBeLessThan(400);
       await expect(page.getByText(invitation.workspaceName)).toBeVisible();
@@ -194,7 +195,7 @@ test.describe('accepted workspace invitation Mail access', () => {
         },
       });
 
-      await page.reload();
+      await page.reload({ waitUntil: 'domcontentloaded' });
       await expect(
         page.getByRole('button', { name: 'Notifications' })
       ).toBeVisible();

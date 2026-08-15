@@ -96,6 +96,20 @@ export function isTuturuuuTurbopackRustReactCompilerEnabled(
   return env.NEXT_WEBPACK_BUILD !== '1';
 }
 
+export function getTuturuuuNextOptimizePackageImports(
+  appImports: readonly string[] | undefined,
+  env: Environment = process.env
+) {
+  // Next's webpack dev server can leave optimized workspace-package barrels
+  // out of the React Server Consumer Manifest after enough on-demand route
+  // compilations. E2E-owned satellites deliberately use webpack, so retain
+  // only explicit app imports there and keep the shared optimization for
+  // normal Turbopack development and production builds.
+  return env.NEXT_WEBPACK_BUILD === '1'
+    ? [...(appImports ?? [])]
+    : mergeStringArrays(TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS, appImports);
+}
+
 export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
   const experimentalConfig = config.experimental ?? {};
   const imageConfig = config.images ?? {};
@@ -134,8 +148,10 @@ export function createTuturuuuNextConfig(config: NextConfig = {}): NextConfig {
       turbopackRustReactCompiler:
         experimentalConfig.turbopackRustReactCompiler ??
         isTuturuuuTurbopackRustReactCompilerEnabled(),
-      optimizePackageImports: mergeStringArrays(
-        TUTURUUU_NEXT_OPTIMIZE_PACKAGE_IMPORTS,
+      devMemoryThresholdRestart:
+        experimentalConfig.devMemoryThresholdRestart ??
+        process.env.NEXT_WEBPACK_BUILD !== '1',
+      optimizePackageImports: getTuturuuuNextOptimizePackageImports(
         experimentalConfig.optimizePackageImports
       ),
     },

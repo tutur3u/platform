@@ -600,8 +600,10 @@
     "title": "Yêu cầu Gói {tier}"
   },
   "notifications": {
+    "accept": "Chấp nhận",
     "archive": "Lưu trữ",
     "archive-all": "Lưu trữ tất cả",
+    "decline": "Từ chối",
     "empty-archive": "Chưa có thông báo đã lưu trữ.",
     "inbox": "Hộp thư",
     "loading-more": "Đang tải thêm...",

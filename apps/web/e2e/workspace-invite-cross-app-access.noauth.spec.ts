@@ -22,7 +22,6 @@ const WORKSPACE_CREATOR_ID = '00000000-0000-0000-0000-000000000002';
 const WEB_BASE_URL = process.env.BASE_URL ?? 'https://tuturuuu.localhost:1355';
 const CONTACTS_BASE_URL = process.env.CONTACTS_BASE_URL;
 const FINANCE_BASE_URL = process.env.FINANCE_BASE_URL;
-const TASKS_BASE_URL = process.env.TASKS_BASE_URL ?? 'http://localhost:7809';
 const APP_SECRET =
   process.env.TUTURUUU_APP_COORDINATION_SECRET ??
   LOCAL_E2E_APP_COORDINATION_SECRET;
@@ -81,10 +80,11 @@ test.describe('accepted workspace invitation cross-app access', () => {
     browser,
     request,
   }) => {
-    // This scenario intentionally cold-starts two satellite apps and walks four
-    // Finance routes. Keep it stable when it runs after another satellite E2E
-    // in the same shard and both dev servers need to recompile.
-    test.setTimeout(180_000);
+    // This scenario deliberately cold-compiles the complete Contacts surface
+    // plus four Finance routes. Give the production-parity traversal enough
+    // time on a clean runner instead of making cold compilation look like an
+    // authorization failure.
+    test.setTimeout(600_000);
 
     const workspaceId = randomUUID();
     const roleId = randomUUID();
@@ -229,32 +229,6 @@ test.describe('accepted workspace invitation cross-app access', () => {
           expect.arrayContaining([expect.objectContaining({ id: workspaceId })])
         );
       }
-
-      const tasksToken = appToken('tasks');
-      const tasksFallbackResponse = await request.get(
-        `${TASKS_BASE_URL}/${workspaceId}/time-tracker/timer?taskSelect=invite-regression`,
-        {
-          failOnStatusCode: false,
-          headers: {
-            authorization: `Bearer ${tasksToken}`,
-            cookie: appCookieHeader(tasksToken),
-          },
-          maxRedirects: 0,
-        }
-      );
-      expect(tasksFallbackResponse.status()).toBe(307);
-      const tasksFallbackUrl = new URL(
-        tasksFallbackResponse.headers().location ?? ''
-      );
-      const webBaseUrl = new URL(WEB_BASE_URL);
-      expect(tasksFallbackUrl.protocol).toBe(webBaseUrl.protocol);
-      expect(tasksFallbackUrl.hostname).toBe(webBaseUrl.hostname);
-      expect(tasksFallbackUrl.pathname).toBe(
-        `/${workspaceId}/time-tracker/timer`
-      );
-      expect(tasksFallbackUrl.searchParams.get('taskSelect')).toBe(
-        'invite-regression'
-      );
 
       await postRestRow({
         request,
@@ -439,7 +413,8 @@ test.describe('accepted workspace invitation cross-app access', () => {
         '/reports?view=periodic',
       ]) {
         const navigation = await contactsPage.goto(
-          `${CONTACTS_BASE_URL}/${workspaceId}${route}`
+          `${CONTACTS_BASE_URL}/${workspaceId}${route}`,
+          { waitUntil: 'domcontentloaded' }
         );
         expect(navigation?.status(), route).toBeLessThan(400);
         await expect(contactsPage).not.toHaveURL(/\/404(?:\?|$)/u);
@@ -487,7 +462,8 @@ test.describe('accepted workspace invitation cross-app access', () => {
       const financePage = await financeContext.newPage();
       for (const route of ['', '/transactions', '/wallets', '/analytics']) {
         const navigation = await financePage.goto(
-          `${FINANCE_BASE_URL}/${workspaceId}${route}`
+          `${FINANCE_BASE_URL}/${workspaceId}${route}`,
+          { waitUntil: 'domcontentloaded' }
         );
         expect(navigation?.status(), route || '/').toBeLessThan(400);
         await expect(financePage).not.toHaveURL(/\/404(?:\?|$)/u);
@@ -622,7 +598,8 @@ test.describe('accepted workspace invitation cross-app access', () => {
       const page = await contactsContext.newPage();
       for (const route of ['/users/groups', `/users/groups/${groupId}`]) {
         const navigation = await page.goto(
-          `${CONTACTS_BASE_URL}/${workspaceId}${route}`
+          `${CONTACTS_BASE_URL}/${workspaceId}${route}`,
+          { waitUntil: 'domcontentloaded' }
         );
         expect(navigation?.status(), route).toBeLessThan(400);
         await expect(page).not.toHaveURL(/\/404(?:\?|$)/u);

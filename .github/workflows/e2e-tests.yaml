@@ -221,6 +221,11 @@ jobs:
             mode: workspace-invite-mail
             shard: 1
             total_shards: 1
+          - label: workspace-invite-tasks
+            id: workspace-invite-tasks
+            mode: workspace-invite-tasks
+            shard: 1
+            total_shards: 1
           - label: invite-account-shapes
             id: invite-account-shapes
             mode: invite-account-shapes
@@ -381,6 +386,14 @@ jobs:
           mkdir -p ../../tmp/e2e-diagnostics
           set -o pipefail
           bun test:e2e -- e2e/workspace-invite-mail-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
+
+      - name: Run workspace invite Tasks Playwright suite
+        if: matrix.mode == 'workspace-invite-tasks'
+        working-directory: apps/web
+        run: |
+          mkdir -p ../../tmp/e2e-diagnostics
+          set -o pipefail
+          bun test:e2e -- e2e/workspace-invite-tasks-access.noauth.spec.ts --reporter=line 2>&1 | tee ../../tmp/e2e-diagnostics/run-playwright-shard.log
 
       - name: Run invite account-shape Playwright suite
         if: matrix.mode == 'invite-account-shapes'

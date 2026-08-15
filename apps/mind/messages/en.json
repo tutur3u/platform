@@ -605,8 +605,10 @@
     "title": "{tier} plan required"
   },
   "notifications": {
+    "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "decline": "Decline",
     "empty-archive": "No archived notifications.",
     "inbox": "Inbox",
     "loading-more": "Loading more",

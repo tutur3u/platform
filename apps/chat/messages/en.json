@@ -600,8 +600,10 @@
     "title": "{tier} Plan Required"
   },
   "notifications": {
+    "accept": "Accept",
     "archive": "Archive",
     "archive-all": "Archive all",
+    "decline": "Decline",
     "empty-archive": "No archived notifications yet.",
     "inbox": "Inbox",
     "loading-more": "Loading more...",
