@@ -6,13 +6,18 @@ import type {
 } from '@tuturuuu/internal-api';
 import dayjs from 'dayjs';
 import '@tuturuuu/users-core/lib/dayjs-setup';
-import { buildQuickWeeklySchedulePreview } from './quick-weekly-schedule-utils';
+import {
+  buildQuickWeeklySchedulePreview,
+  type ScheduleEndMode,
+} from './quick-weekly-schedule-utils';
 
 const ROLLING_PREVIEW_MONTHS = 12;
 
 export interface FrequencyUpdateDraft {
   daysOfWeek: number[];
+  endMode: ScheduleEndMode;
   intervalWeeks: number;
+  untilDate: string;
 }
 
 export interface FrequencySeriesOption {
@@ -34,7 +39,8 @@ export interface FrequencyUpdatePreview {
   effectiveDate: string;
   kept: FrequencyPreviewEntry[];
   removed: FrequencyPreviewEntry[];
-  untilDate: string;
+  previewUntilDate: string;
+  untilDate: string | null;
 }
 
 export function buildFrequencySeriesOptions(
@@ -68,10 +74,33 @@ export function buildFrequencySeriesOptions(
 export function createFrequencyUpdateDraft(
   option: FrequencySeriesOption
 ): FrequencyUpdateDraft {
+  const effectiveDate = localDate(option.firstSession);
+  const untilDate = option.firstSession.recurrence?.untilDate;
   return {
     daysOfWeek: [...(option.firstSession.recurrence?.daysOfWeek ?? [])],
+    endMode: untilDate ? 'date' : 'never',
     intervalWeeks: option.firstSession.recurrence?.intervalWeeks ?? 1,
+    untilDate:
+      untilDate ??
+      dayjs(effectiveDate, 'YYYY-MM-DD')
+        .add(ROLLING_PREVIEW_MONTHS, 'month')
+        .format('YYYY-MM-DD'),
   };
+}
+
+export function frequencyUpdateDraftHasChanges(
+  draft: FrequencyUpdateDraft,
+  option: FrequencySeriesOption
+) {
+  const recurrence = option.firstSession.recurrence;
+  const currentDays = [...(recurrence?.daysOfWeek ?? [])].sort();
+  const nextDays = [...draft.daysOfWeek].sort();
+  return (
+    currentDays.join(',') !== nextDays.join(',') ||
+    (recurrence?.intervalWeeks ?? 1) !== draft.intervalWeeks ||
+    (recurrence?.untilDate ? 'date' : 'never') !== draft.endMode ||
+    (draft.endMode === 'date' && recurrence?.untilDate !== draft.untilDate)
+  );
 }
 
 function localDate(session: WorkspaceUserGroupSession) {
@@ -91,31 +120,33 @@ function formatSession(session: WorkspaceUserGroupSession, locale: string) {
 export function buildFrequencyUpdatePreview(
   option: FrequencySeriesOption,
   draft: FrequencyUpdateDraft,
-  locale: string,
-  now = dayjs()
+  locale: string
 ): FrequencyUpdatePreview {
   const first = option.firstSession;
-  const recurrence = first.recurrence!;
   const effectiveDate = localDate(first);
-  const untilDate =
-    recurrence.untilDate ??
-    now.add(ROLLING_PREVIEW_MONTHS, 'month').format('YYYY-MM-DD');
+  const untilDate = draft.endMode === 'date' ? draft.untilDate : null;
   const start = dayjs(first.startsAt).tz(first.startTimezone);
   const end = dayjs(first.endsAt).tz(first.endTimezone);
-  const generated = buildQuickWeeklySchedulePreview(
+  const generatedPreview = buildQuickWeeklySchedulePreview(
     {
-      daysOfWeek: draft.daysOfWeek,
-      endDate: end.format('YYYY-MM-DD'),
-      endTime: end.format('HH:mm'),
+      endMode: draft.endMode,
       intervalWeeks: draft.intervalWeeks,
+      patterns: [
+        {
+          daysOfWeek: draft.daysOfWeek,
+          endTime: end.format('HH:mm'),
+          id: option.id,
+          startTime: start.format('HH:mm'),
+        },
+      ],
       startDate: effectiveDate,
-      startTime: start.format('HH:mm'),
       timezone: first.startTimezone,
-      untilDate,
+      untilDate: draft.untilDate,
     },
     locale,
     Number.POSITIVE_INFINITY
-  ).firstDates;
+  );
+  const generated = generatedPreview.firstDates;
 
   const currentByDate = new Map(
     option.sessions.map((session) => [localDate(session), session])
@@ -168,18 +199,25 @@ export function buildFrequencyUpdatePreview(
     }
   }
 
-  return { added, adjusted, effectiveDate, kept, removed, untilDate };
+  return {
+    added,
+    adjusted,
+    effectiveDate,
+    kept,
+    previewUntilDate: generatedPreview.previewUntilDate,
+    removed,
+    untilDate,
+  };
 }
 
 export function buildFrequencyUpdatePayload(
-  draft: FrequencyUpdateDraft,
-  option: FrequencySeriesOption
+  draft: FrequencyUpdateDraft
 ): UpdateWorkspaceUserGroupSessionPayload {
   return {
     recurrence: {
       daysOfWeek: draft.daysOfWeek,
       intervalWeeks: draft.intervalWeeks,
-      untilDate: option.firstSession.recurrence?.untilDate ?? null,
+      untilDate: draft.endMode === 'never' ? null : draft.untilDate,
     },
     scope: 'future',
   };

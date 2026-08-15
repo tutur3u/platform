@@ -1019,7 +1019,6 @@ export function UserGroupSessionCalendar({
                 defaultGroupId={activeGroupId ?? undefined}
                 groups={groups}
                 isPending={createMutation.isPending}
-                onCreate={(payload) => createMutation.mutateAsync(payload)}
                 trigger={<Button size="sm">{t('schedule_setup')}</Button>}
                 wsId={wsId}
               />

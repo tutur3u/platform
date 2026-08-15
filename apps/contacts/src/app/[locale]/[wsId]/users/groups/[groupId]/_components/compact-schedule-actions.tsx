@@ -1,10 +1,7 @@
 'use client';
 
 import { CalendarDays } from '@tuturuuu/icons';
-import type {
-  CreateWorkspaceUserGroupSessionPayload,
-  WorkspaceUserGroupScheduleGroup,
-} from '@tuturuuu/internal-api';
+import type { WorkspaceUserGroupScheduleGroup } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -17,9 +14,6 @@ interface CompactScheduleActionsProps {
   fullScheduleHref: string;
   groupId: string;
   groups: WorkspaceUserGroupScheduleGroup[];
-  onCreate: (
-    payload: CreateWorkspaceUserGroupSessionPayload
-  ) => Promise<void> | void;
   wsId: string;
 }
 
@@ -29,7 +23,6 @@ export function CompactScheduleActions({
   fullScheduleHref,
   groupId,
   groups,
-  onCreate,
   wsId,
 }: CompactScheduleActionsProps) {
   const detailsT = useTranslations('ws-user-group-details');
@@ -48,7 +41,6 @@ export function CompactScheduleActions({
           defaultGroupId={groupId}
           groups={groups}
           isPending={createPending}
-          onCreate={(payload) => onCreate({ ...payload, groupId })}
           wsId={wsId}
         />
       ) : null}

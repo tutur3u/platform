@@ -6,6 +6,8 @@ import {
   buildFrequencySeriesOptions,
   buildFrequencyUpdatePayload,
   buildFrequencyUpdatePreview,
+  createFrequencyUpdateDraft,
+  frequencyUpdateDraftHasChanges,
 } from './frequency-update-utils';
 
 function session(
@@ -54,11 +56,11 @@ describe('frequency update helpers', () => {
       dayjs('2026-08-16T00:00:00.000Z')
     );
 
+    const draft = createFrequencyUpdateDraft(option!);
     const preview = buildFrequencyUpdatePreview(
       option!,
-      { daysOfWeek: [0, 6], intervalWeeks: 1 },
-      'en',
-      dayjs('2026-08-16T00:00:00.000Z')
+      { ...draft, daysOfWeek: [0, 6] },
+      'en'
     );
 
     expect(preview.removed.map((entry) => entry.date)).toEqual([
@@ -77,10 +79,11 @@ describe('frequency update helpers', () => {
     );
 
     expect(
-      buildFrequencyUpdatePayload(
-        { daysOfWeek: [0, 6], intervalWeeks: 2 },
-        option!
-      )
+      buildFrequencyUpdatePayload({
+        ...createFrequencyUpdateDraft(option!),
+        daysOfWeek: [0, 6],
+        intervalWeeks: 2,
+      })
     ).toEqual({
       recurrence: {
         daysOfWeek: [0, 6],
@@ -89,5 +92,19 @@ describe('frequency update helpers', () => {
       },
       scope: 'future',
     });
+  });
+
+  it('can switch an existing recurrence to repeat forever', () => {
+    const [option] = buildFrequencySeriesOptions(
+      [session('monday', '2026-08-17')],
+      dayjs('2026-08-16T00:00:00.000Z')
+    );
+
+    const draft = {
+      ...createFrequencyUpdateDraft(option!),
+      endMode: 'never' as const,
+    };
+    expect(frequencyUpdateDraftHasChanges(draft, option!)).toBe(true);
+    expect(buildFrequencyUpdatePayload(draft).recurrence?.untilDate).toBeNull();
   });
 });

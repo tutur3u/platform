@@ -143,8 +143,10 @@ export function FrequencyUpdateConfirmation({
           <div className="font-medium">{preview.effectiveDate}</div>
         </div>
         <div>
-          <div className="text-muted-foreground">{t('until_date')}</div>
-          <div className="font-medium">{preview.untilDate}</div>
+          <div className="text-muted-foreground">{t('schedule_ends')}</div>
+          <div className="font-medium">
+            {preview.untilDate ?? t('repeat_forever')}
+          </div>
         </div>
         <div className="flex gap-2 sm:col-span-2">
           <Check className="mt-0.5 h-4 w-4 text-dynamic-green" />
@@ -157,6 +159,13 @@ export function FrequencyUpdateConfirmation({
           <CalendarDays className="h-4 w-4" />
           {t('frequency_complete_change_list')}
         </div>
+        {draft.endMode === 'never' ? (
+          <p className="text-muted-foreground text-xs">
+            {t('frequency_preview_horizon', {
+              date: preview.previewUntilDate,
+            })}
+          </p>
+        ) : null}
         <ScrollArea className="h-64 rounded-xl border bg-muted/10 p-4">
           <div className="space-y-5 pr-3">
             <ChangeList entries={preview.removed} kind="removed" />

@@ -8,10 +8,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScheduleSetupDialog } from './schedule-setup-dialog';
 
 const listSessions = vi.fn();
+const createSession = vi.fn();
 const updateSession = vi.fn();
 
 vi.mock('@tuturuuu/internal-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tuturuuu/internal-api')>()),
+  createWorkspaceUserGroupSession: (...args: unknown[]) =>
+    createSession(...args),
   listWorkspaceUserGroupSessions: (...args: unknown[]) => listSessions(...args),
   updateWorkspaceUserGroupSession: (...args: unknown[]) =>
     updateSession(...args),
@@ -26,12 +29,14 @@ const labels: Record<string, string> = {
   'days_of_week.thursday': 'Thursday',
   'days_of_week.tuesday': 'Tuesday',
   'days_of_week.wednesday': 'Wednesday',
-  frequency_apply_changes: 'Apply {count} changes',
+  frequency_apply_update: 'Apply schedule update',
   frequency_review_changes: 'Review changes',
   group: 'Group',
   quick_weekly_back: 'Back to edit',
   quick_weekly_create: 'Create schedule',
   quick_weekly_review: 'Preview schedule',
+  repeat_forever: 'Repeat forever',
+  schedule_create_success: 'Created {count} recurring timeframes.',
   schedule_setup: 'Manage schedule',
   schedule_setup_choose_action: 'What do you want to do?',
   schedule_setup_create_description: 'Create another recurring plan.',
@@ -41,6 +46,9 @@ const labels: Record<string, string> = {
   schedule_setup_step_review: '2. Review',
   schedule_setup_update_description: 'Change future dates only.',
   schedule_setup_update_title: 'Update upcoming schedule',
+  timeframe_end: 'Ends at',
+  timeframe_start: 'Starts at',
+  weekday_short: '',
 };
 
 vi.mock('next-intl', () => ({
@@ -88,7 +96,7 @@ function session(id: string, date: string): WorkspaceUserGroupSession {
   };
 }
 
-function renderDialog(onCreate = vi.fn()) {
+function renderDialog() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -100,12 +108,10 @@ function renderDialog(onCreate = vi.fn()) {
         groups={[
           { id: '00000000-0000-4000-8000-000000000101', name: 'Math A1' },
         ]}
-        onCreate={onCreate}
         wsId="00000000-0000-4000-8000-000000000001"
       />
     </QueryClientProvider>
   );
-  return onCreate;
 }
 
 describe('ScheduleSetupDialog', () => {
@@ -113,15 +119,16 @@ describe('ScheduleSetupDialog', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-08-15T02:00:00.000Z'));
     updateSession.mockResolvedValue({ data: [], message: 'success' });
+    createSession.mockResolvedValue({ data: [], message: 'success' });
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it('uses one responsive flow to create a schedule when no recurrence exists', async () => {
+  it('creates distinct Saturday and Sunday timeframes that repeat forever', async () => {
     listSessions.mockResolvedValue({ data: [], groups: [], tags: [] });
-    const onCreate = renderDialog(vi.fn().mockResolvedValue(undefined));
+    renderDialog();
 
     fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
     expect(
@@ -132,17 +139,26 @@ describe('ScheduleSetupDialog', () => {
       screen.getByRole('button', { name: /Update upcoming schedule/u })
     ).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Tuesday' }));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Thursday' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Saturday' }));
+    fireEvent.click(screen.getByRole('button', { name: 'add_timeframe' }));
+    fireEvent.click(screen.getAllByRole('checkbox', { name: 'Sunday' })[1]!);
+    const startInputs = screen.getAllByLabelText('Starts at');
+    const endInputs = screen.getAllByLabelText('Ends at');
+    fireEvent.change(startInputs[1]!, { target: { value: '08:00' } });
+    fireEvent.change(endInputs[1]!, { target: { value: '09:30' } });
+    fireEvent.click(screen.getByRole('button', { name: /Repeat forever/u }));
     fireEvent.click(screen.getByRole('button', { name: 'Preview schedule' }));
     fireEvent.click(screen.getByRole('button', { name: 'Create schedule' }));
 
-    await waitFor(() => expect(onCreate).toHaveBeenCalledOnce());
-    expect(onCreate.mock.calls[0]?.[0]).toMatchObject({
-      groupId: '00000000-0000-4000-8000-000000000101',
-      recurrence: { daysOfWeek: [2, 4, 6], intervalWeeks: 1 },
-    });
+    await waitFor(() => expect(createSession).toHaveBeenCalledTimes(2));
+    expect(createSession.mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({
+        recurrence: { daysOfWeek: [6], intervalWeeks: 1, untilDate: null },
+      }),
+      expect.objectContaining({
+        recurrence: { daysOfWeek: [0], intervalWeeks: 1, untilDate: null },
+      }),
+    ]);
   });
 
   it('defaults to updating an existing series and reviews every future change', async () => {
@@ -168,7 +184,9 @@ describe('ScheduleSetupDialog', () => {
     expect(screen.getByText('Wed, Aug 19, 19:00')).toBeInTheDocument();
     expect(screen.getByText('Sun, Aug 23, 19:00')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Apply 3 changes' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Apply schedule update' })
+    );
     await waitFor(() =>
       expect(updateSession).toHaveBeenCalledWith(
         '00000000-0000-4000-8000-000000000001',

@@ -18,6 +18,7 @@ import type {
   FrequencyUpdateDraft,
 } from './frequency-update-utils';
 import { QuickWeeklyDayPicker } from './quick-weekly-day-picker';
+import { ScheduleEndingFields } from './schedule-ending-fields';
 
 interface FrequencyUpdateFieldsProps {
   canChooseGroup: boolean;
@@ -45,6 +46,9 @@ export function FrequencyUpdateFields({
   const t = useTranslations('ws-user-group-schedule');
   const commonT = useTranslations('common');
   const locale = useLocale();
+  const selectedSeries = seriesOptions.find(
+    (option) => option.id === selectedSeriesId
+  );
 
   return (
     <div className="space-y-5">
@@ -132,6 +136,14 @@ export function FrequencyUpdateFields({
               }
             />
           </div>
+          {selectedSeries ? (
+            <ScheduleEndingFields
+              endMode={draft.endMode}
+              timezone={selectedSeries.firstSession.startTimezone}
+              untilDate={draft.untilDate}
+              onChange={(ending) => onDraftChange({ ...draft, ...ending })}
+            />
+          ) : null}
           <div className="flex gap-3 rounded-lg border bg-background p-3 md:col-span-2">
             <CalendarDays className="mt-0.5 h-4 w-4 text-dynamic-blue" />
             <div className="space-y-1 text-sm">

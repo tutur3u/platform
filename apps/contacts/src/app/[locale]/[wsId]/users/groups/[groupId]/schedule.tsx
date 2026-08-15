@@ -253,9 +253,6 @@ export default function GroupSchedule({
           fullScheduleHref={fullScheduleHref}
           groupId={groupId}
           groups={groups}
-          onCreate={async (payload) => {
-            await createMutation.mutateAsync(payload);
-          }}
           wsId={wsId}
         />
       }

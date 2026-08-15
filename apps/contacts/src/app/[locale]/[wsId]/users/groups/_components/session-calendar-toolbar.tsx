@@ -98,9 +98,6 @@ export function SessionCalendarToolbar({
         defaultGroupId={activeGroupId ?? undefined}
         groups={groups}
         isPending={createPending}
-        onCreate={(payload) =>
-          onCreate(payload as CreateWorkspaceUserGroupSessionPayload)
-        }
         wsId={wsId}
       />
       <SessionEditorDialog

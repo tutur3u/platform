@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarClock, CalendarDays, CalendarPlus } from '@tuturuuu/icons';
 import {
-  type CreateWorkspaceUserGroupSessionPayload,
+  createWorkspaceUserGroupSession,
   listWorkspaceUserGroupSessions,
   updateWorkspaceUserGroupSession,
   type WorkspaceUserGroupScheduleGroup,
@@ -29,27 +29,36 @@ import {
   buildFrequencyUpdatePreview,
   createFrequencyUpdateDraft,
   type FrequencyUpdateDraft,
+  frequencyUpdateDraftHasChanges,
 } from './frequency-update-utils';
 import { QuickWeeklyScheduleConfirmation } from './quick-weekly-schedule-confirmation';
 import {
-  buildQuickWeeklySchedulePayload,
+  buildQuickWeeklySchedulePayloads,
   buildQuickWeeklySchedulePreview,
   createQuickWeeklyScheduleDraft,
+  isQuickWeeklyScheduleDraftValid,
 } from './quick-weekly-schedule-utils';
 import {
   ScheduleSetupEditor,
   type ScheduleSetupMode,
 } from './schedule-setup-editor';
-import { SESSION_EDITOR_DAYS } from './session-editor-utils';
 
 interface ScheduleSetupDialogProps {
   canChooseGroup: boolean;
   defaultGroupId?: string;
   groups: WorkspaceUserGroupScheduleGroup[];
   isPending?: boolean;
-  onCreate: (payload: CreateWorkspaceUserGroupSessionPayload) => unknown;
   trigger?: ReactNode;
   wsId: string;
+}
+
+class PartialScheduleCreationError extends Error {
+  constructor(
+    readonly created: number,
+    readonly total: number
+  ) {
+    super('Only part of the recurring schedule was created');
+  }
 }
 
 export function ScheduleSetupDialog({
@@ -57,7 +66,6 @@ export function ScheduleSetupDialog({
   defaultGroupId,
   groups,
   isPending,
-  onCreate,
   trigger,
   wsId,
 }: ScheduleSetupDialogProps) {
@@ -144,11 +152,64 @@ export function ScheduleSetupDialog({
       updatePreview.removed.length
     : 0;
   const selectedGroup = groups.find((group) => group.id === groupId);
-  const selectedDays = SESSION_EDITOR_DAYS.filter((day) =>
-    createDraft.daysOfWeek.includes(day.value)
-  )
-    .map((day) => commonT(day.labelKey))
-    .join(', ');
+  const updateHasChanges =
+    !!selectedSeries &&
+    !!updateDraft &&
+    frequencyUpdateDraftHasChanges(updateDraft, selectedSeries);
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      if (!groupId) throw new Error('Missing group selection');
+      const payloads = buildQuickWeeklySchedulePayloads({
+        draft: createDraft,
+        groupId,
+        groupName: selectedGroup?.name,
+      });
+      let created = 0;
+      try {
+        for (const payload of payloads) {
+          await createWorkspaceUserGroupSession(wsId, payload);
+          created += 1;
+        }
+      } catch {
+        throw new PartialScheduleCreationError(created, payloads.length);
+      }
+      return payloads.length;
+    },
+    onError: async (error) => {
+      if (error instanceof PartialScheduleCreationError && error.created > 0) {
+        await queryClient.invalidateQueries({
+          queryKey: ['workspace-user-group-sessions', wsId],
+        });
+        toast.warning(
+          t('schedule_create_partial', {
+            created: error.created,
+            total: error.total,
+          })
+        );
+        return;
+      }
+      toast.error(t('schedule_create_failed'));
+    },
+    onSuccess: async (count) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-group-sessions', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-group-schedule-group-summaries', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['group-schedule', groupId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-user-group-schedule-setup', wsId, groupId],
+        }),
+      ]);
+      toast.success(t('schedule_create_success', { count }));
+      setOpen(false);
+    },
+  });
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -157,7 +218,7 @@ export function ScheduleSetupDialog({
       return updateWorkspaceUserGroupSession(
         wsId,
         selectedSeries.firstSession.id,
-        buildFrequencyUpdatePayload(updateDraft, selectedSeries)
+        buildFrequencyUpdatePayload(updateDraft)
       );
     },
     onError: () => toast.error(t('frequency_update_failed')),
@@ -184,24 +245,20 @@ export function ScheduleSetupDialog({
     !scheduleQuery.isLoading &&
     !scheduleQuery.isError &&
     (mode === 'create'
-      ? !!groupId && createPreview.count > 0
-      : !!selectedSeries && !!updateDraft && updateChangeCount > 0);
-  const submitting = !!isPending || updateMutation.isPending;
+      ? !!groupId &&
+        isQuickWeeklyScheduleDraftValid(createDraft) &&
+        createPreview.firstDates.length > 0
+      : updateHasChanges);
+  const submitting =
+    !!isPending || createMutation.isPending || updateMutation.isPending;
 
   const submit = async () => {
     if (mode === 'update') {
       updateMutation.mutate();
       return;
     }
-    if (!groupId || createPreview.count === 0) return;
-    await onCreate(
-      buildQuickWeeklySchedulePayload({
-        draft: createDraft,
-        groupId,
-        groupName: selectedGroup?.name,
-      })
-    );
-    setOpen(false);
+    if (!groupId || !isQuickWeeklyScheduleDraftValid(createDraft)) return;
+    createMutation.mutate();
   };
 
   return (
@@ -261,7 +318,6 @@ export function ScheduleSetupDialog({
             <QuickWeeklyScheduleConfirmation
               draft={createDraft}
               preview={createPreview}
-              selectedDays={selectedDays}
               selectedGroupName={selectedGroup?.name}
             />
           ) : (
@@ -303,7 +359,7 @@ export function ScheduleSetupDialog({
           {!reviewing &&
             mode === 'update' &&
             updateDraft &&
-            updateChangeCount === 0 && (
+            !updateHasChanges && (
               <p className="mt-3 rounded-lg border bg-muted/20 px-3 py-2 text-muted-foreground text-sm">
                 {t('frequency_no_changes')}
               </p>
@@ -332,7 +388,7 @@ export function ScheduleSetupDialog({
                   <CalendarPlus className="h-4 w-4" />
                 )}
                 {mode === 'update'
-                  ? t('frequency_apply_changes', { count: updateChangeCount })
+                  ? t('frequency_apply_update')
                   : t('quick_weekly_create')}
               </Button>
             </>
