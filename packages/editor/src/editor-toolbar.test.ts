@@ -16,6 +16,9 @@ describe('collapsible toolbar action', () => {
 
     expect(insertCollapsibleSection(editor, 'Section title')).toBe(true);
     expect(editor.getText()).toContain('Keep this prose');
+    expect(
+      editor.getText().replace('Section title', '').replace(/\s+/gu, ' ').trim()
+    ).toBe('Keep this prose');
     expect(editor.getJSON().content).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'collapsible' })])
     );

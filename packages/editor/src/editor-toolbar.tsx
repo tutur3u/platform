@@ -38,13 +38,12 @@ import type {
 type InternalPreset = RichTextFeaturePreset | 'legacy';
 
 export function insertCollapsibleSection(editor: Editor, title: string) {
-  const { empty, to } = editor.state.selection;
-  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+  const insertionPosition = editor.state.selection.to;
 
-  if (!empty) chain.setTextSelection(to);
-
-  return chain
-    .insertContent({
+  return editor
+    .chain()
+    .focus(undefined, { scrollIntoView: false })
+    .insertContentAt(insertionPosition, {
       content: [
         {
           content: [{ text: title, type: 'text' }],
