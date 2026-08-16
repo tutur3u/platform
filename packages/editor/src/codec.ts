@@ -1,3 +1,7 @@
+import {
+  collapsibleToMarkdown,
+  parseCollapsibleBlock,
+} from './collapsible-codec.js';
 import type { JSONContent } from './types.js';
 import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
 
@@ -420,75 +424,17 @@ export function markdownToJSON(markdown: string): JSONContent {
       index += 1;
       continue;
     }
-    if (/^<details(?:\s+open)?\s*>$/u.test(line.trim())) {
-      const detailLines: string[] = [];
-      let cursor = index + 1;
-      let detailsDepth = 1;
-      while (cursor < lines.length && detailsDepth > 0) {
-        const detailLine = lines[cursor] ?? '';
-        if (/^<details(?:\s+open)?\s*>$/u.test(detailLine.trim())) {
-          detailsDepth += 1;
-          detailLines.push(detailLine);
-        } else if (/^<\/details>\s*$/u.test(detailLine.trim())) {
-          detailsDepth -= 1;
-          if (detailsDepth > 0) detailLines.push(detailLine);
-        } else {
-          detailLines.push(detailLine);
-        }
-        cursor += 1;
-      }
-      const summaryStartIndex = detailLines.findIndex((item) =>
-        item.trimStart().startsWith('<summary>')
-      );
-      const summaryEndIndex =
-        summaryStartIndex >= 0
-          ? detailLines.findIndex(
-              (item, detailIndex) =>
-                detailIndex >= summaryStartIndex && item.includes('</summary>')
-            )
-          : -1;
-      const summarySource =
-        summaryStartIndex >= 0 && summaryEndIndex >= summaryStartIndex
-          ? detailLines
-              .slice(summaryStartIndex, summaryEndIndex + 1)
-              .join('\n')
-              .trim()
-          : '';
-      const summaryMatch = /^<summary>([\s\S]*)<\/summary>\s*$/u.exec(
-        summarySource
-      );
-      if (summaryMatch && detailsDepth === 0) {
-        const summaryBlocks =
-          markdownToJSON(summaryMatch[1] ?? '').content ?? [];
-        const summaryContent = summaryBlocks.flatMap(
-          (summaryBlock, summaryBlockIndex) => [
-            ...(summaryBlockIndex > 0
-              ? [{ text: ' ', type: 'text' as const }]
-              : []),
-            ...(summaryBlock.content ?? []),
-          ]
-        );
-        const body = detailLines
-          .filter(
-            (_, detailIndex) =>
-              detailIndex < summaryStartIndex || detailIndex > summaryEndIndex
-          )
-          .join('\n')
-          .trim();
-        const bodyContent = markdownToJSON(body).content ?? [];
-        content.push({
-          content: [
-            {
-              content: summaryContent,
-              type: 'collapsibleSummary',
-            },
-            ...(bodyContent.length ? bodyContent : [paragraph('')]),
-          ],
-          type: 'collapsible',
-        });
-        index = cursor;
-        continue;
-      }
+    const collapsible = parseCollapsibleBlock({
+      index,
+      lines,
+      paragraph,
+      parseDocument: markdownToJSON,
+      parseInline,
+    });
+    if (collapsible) {
+      content.push(collapsible.node);
+      index = collapsible.nextIndex;
+      continue;
     }
     const alignedBlock = line.match(
       /^<(p|h([1-4])) style="text-align:\s*(left|center|right)">(.*)<\/\1>$/u
@@ -643,14 +589,8 @@ function nodeToMarkdown(node: JSONContent): string {
   }
 
   const children = (node.content ?? []).map(nodeToMarkdown).join('');
-  if (node.type === 'collapsible') {
-    const [summary, ...body] = node.content ?? [];
-    const summaryMarkdown = (summary?.content ?? [])
-      .map(nodeToMarkdown)
-      .join('');
-    const bodyMarkdown = body.map(nodeToMarkdown).join('\n\n');
-    return `<details>\n<summary>${summaryMarkdown}</summary>\n\n${bodyMarkdown}\n\n</details>`;
-  }
+  if (node.type === 'collapsible')
+    return collapsibleToMarkdown(node, nodeToMarkdown);
   if (node.type === 'collapsibleSummary') return children;
   if (node.type === 'heading') {
     const level = Math.min(4, Math.max(1, Number(node.attrs?.level ?? 2)));

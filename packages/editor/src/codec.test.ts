@@ -115,6 +115,26 @@ describe('rich text codecs', () => {
     );
   });
 
+  it.each(['- option', '1. item', '---'])(
+    'keeps block-like summary text inline: %s',
+    (summary) => {
+      const markdown = [
+        '<details>',
+        `<summary>${summary}</summary>`,
+        '',
+        'Hidden context.',
+        '',
+        '</details>',
+      ].join('\n');
+      const content = markdownToJSON(markdown);
+      const summaryNode = content.content?.[0]?.content?.[0];
+
+      expect(summaryNode?.type).toBe('collapsibleSummary');
+      expect(summaryNode?.content).toEqual([{ text: summary, type: 'text' }]);
+      expect(jsonToMarkdown(content)).toBe(markdown);
+    }
+  );
+
   it('keeps content immediately following a collapsible section', () => {
     const markdown = [
       '<details>',
