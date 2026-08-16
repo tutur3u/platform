@@ -31,6 +31,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { DATE_TIME_PICKER_LAYOUT_CLASS_NAMES } from './date-time-picker-layout';
 import { Separator } from './separator';
 
 interface DateTimePickerProps {
@@ -63,7 +64,6 @@ interface DateTimePickerProps {
   };
 }
 
-// Utility to find the nearest scrollable parent
 function getScrollableParent(node: HTMLElement | null): HTMLElement | null {
   if (!node) return null;
   let parent = node.parentElement;
@@ -530,7 +530,7 @@ export function DateTimePicker({
       : undefined;
 
   const timeControl = showTimeSelect ? (
-    <div className="flex min-w-0 flex-col gap-3 border-t p-3 sm:w-52 sm:border-t-0 sm:border-l">
+    <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.time}>
       <div className="space-y-1">
         <div className="flex items-center gap-2 font-medium text-sm">
           <Clock className="h-4 w-4 text-muted-foreground" />
@@ -628,7 +628,7 @@ export function DateTimePicker({
 
   // Inline content (used both for inline mode and popover content)
   const pickerContent = (
-    <div className="overflow-hidden">
+    <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.container}>
       {date && (
         <div className="border-b bg-muted/30 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2 text-sm">
@@ -646,8 +646,8 @@ export function DateTimePicker({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row">
-        <div className="p-2">
+      <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.layout}>
+        <div className={DATE_TIME_PICKER_LAYOUT_CLASS_NAMES.calendar}>
           <Calendar
             mode="single"
             selected={date}

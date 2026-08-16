@@ -67,6 +67,43 @@ const TASKS_NON_WORKSPACE_SEGMENTS = new Set([
   'shared',
   'verify-token',
 ]);
+const SOCIAL_LINK_PREVIEW_USER_AGENT =
+  /(?:facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|google-pagerenderer|googlebot|bingbot|pinterestbot)/iu;
+
+function isTaskLinkPreviewRequest(req: NextRequest) {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return false;
+
+  const userAgent = req.headers.get('user-agent') ?? '';
+  if (!SOCIAL_LINK_PREVIEW_USER_AGENT.test(userAgent)) return false;
+
+  const segments = req.nextUrl.pathname.split('/').filter(Boolean);
+  if (supportedLocales.includes(segments[0] as Locale)) segments.shift();
+
+  if (segments[0] === 'shared' && segments[1] === 'task' && segments[2]) {
+    return true;
+  }
+
+  const routeRoot = segments[1];
+  if (routeRoot === 'tasks' && segments[2]) return true;
+
+  return (
+    routeRoot === 'boards' &&
+    Boolean(segments[2]) &&
+    Boolean(req.nextUrl.searchParams.get('task'))
+  );
+}
+
+function getTaskLinkPreviewRewrite(req: NextRequest) {
+  if (!isTaskLinkPreviewRequest(req)) return null;
+
+  const { locale } = getLocale(req);
+  const previewUrl = new URL(`/${locale}/task-link-preview`, req.url);
+  previewUrl.search = '';
+  const response = NextResponse.rewrite(previewUrl);
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+  response.headers.append('Vary', 'User-Agent');
+  return response;
+}
 
 function getNonTasksWorkspaceRedirect(req: NextRequest) {
   const segments = req.nextUrl.pathname.split('/').filter(Boolean);
@@ -175,6 +212,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         clearSupabaseAuthCookies(req, NextResponse.next())
     );
   }
+
+  const taskLinkPreviewRewrite = getTaskLinkPreviewRewrite(req);
+  if (taskLinkPreviewRewrite) return taskLinkPreviewRewrite;
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
     locales: supportedLocales,

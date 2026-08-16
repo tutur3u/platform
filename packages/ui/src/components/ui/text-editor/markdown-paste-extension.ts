@@ -27,6 +27,26 @@ const BLOCK_START_PATTERNS = [
   /^\s*\|/,
 ];
 
+const VISUAL_BULLET_PATTERN = /^(\s*)[•◦▪‣●]\s+/u;
+const VISUAL_CHECKBOX_PATTERN = /^(\s*)[☐☑☒]\s+/u;
+
+function normalizePastedPlainText(text: string): string {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => {
+      const checkboxMatch = line.match(VISUAL_CHECKBOX_PATTERN);
+      if (checkboxMatch) {
+        const marker = line.trimStart().charAt(0);
+        const content = line.replace(VISUAL_CHECKBOX_PATTERN, '');
+        return `${checkboxMatch[1] ?? ''}- [${marker === '☐' ? ' ' : 'x'}] ${content}`;
+      }
+
+      return line.replace(VISUAL_BULLET_PATTERN, '$1- ');
+    })
+    .join('\n');
+}
+
 function isBlockStart(line: string): boolean {
   return BLOCK_START_PATTERNS.some((p) => p.test(line));
 }
@@ -496,7 +516,7 @@ function markdownToHtml(markdown: string): string {
       paraLines.push(lines[i]!);
       i++;
     }
-    result.push(`<p>${parseInline(paraLines.join(' '))}</p>`);
+    result.push(`<p>${paraLines.map(parseInline).join('<br>')}</p>`);
   }
 
   return result.join('\n');
@@ -539,6 +559,7 @@ function looksLikeMarkdown(text: string): boolean {
 export const __markdownPastePrivate = {
   markdownToHtml,
   looksLikeMarkdown,
+  normalizePastedPlainText,
 };
 
 const markdownPastePluginKey = new PluginKey('markdownPastePlugin');
@@ -569,7 +590,9 @@ export const MarkdownPaste = Extension.create({
                 return false;
               }
 
-              const text = clipboardData.getData('text/plain');
+              const text = normalizePastedPlainText(
+                clipboardData.getData('text/plain')
+              );
               if (!text || !looksLikeMarkdown(text)) {
                 return false;
               }

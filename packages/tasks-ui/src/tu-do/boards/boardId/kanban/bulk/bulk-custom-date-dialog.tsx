@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTranslations } from 'next-intl';
+import { CUSTOM_DATE_DIALOG_CLASS_NAMES } from '../../../../shared/custom-date-picker/custom-date-dialog-layout';
 
 interface BulkCustomDateDialogProps {
   open: boolean;
@@ -34,16 +35,16 @@ export function BulkCustomDateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-106.25">
-        <DialogHeader>
+      <DialogContent className={CUSTOM_DATE_DIALOG_CLASS_NAMES.content}>
+        <DialogHeader className={CUSTOM_DATE_DIALOG_CLASS_NAMES.header}>
           <DialogTitle>
             {t('ws-task-boards.bulk.set_custom_due_date')}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="break-words">
             {t('ws-task-boards.bulk.set_custom_due_date_description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className={CUSTOM_DATE_DIALOG_CLASS_NAMES.body}>
           <DateTimePicker
             date={undefined}
             setDate={onDateChange}
@@ -53,7 +54,7 @@ export function BulkCustomDateDialog({
             preferences={{ weekStartsOn, timezone, timeFormat }}
           />
         </div>
-        <DialogFooter>
+        <DialogFooter className={CUSTOM_DATE_DIALOG_CLASS_NAMES.footer}>
           <Button
             type="button"
             variant="outline"

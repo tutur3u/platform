@@ -268,6 +268,42 @@ describe('Tasks proxy auth mode', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
+  it.each([
+    ['/personal/boards/board-1?task=task-1', 'en'],
+    ['/vi/workspace-1/tasks/task-1', 'vi'],
+    ['/shared/task/share-code', 'en'],
+  ])(
+    'serves branded metadata on task links for social crawler %s',
+    async (path, locale) => {
+      const response = await proxy(
+        new NextRequest(`https://tasks.tuturuuu.com${path}`, {
+          headers: { 'user-agent': 'facebookexternalhit/1.1' },
+        })
+      );
+
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        `https://tasks.tuturuuu.com/${locale}/task-link-preview`
+      );
+      expect(response.headers.get('cache-control')).toBe(
+        'private, no-store, max-age=0'
+      );
+      expect(response.headers.get('vary')).toContain('User-Agent');
+      expect(mocks.authProxy).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps ordinary task-link navigation behind authentication', async () => {
+    const response = await proxy(
+      new NextRequest(
+        'https://tasks.tuturuuu.com/personal/boards/board-1?task=task-1',
+        { headers: { 'user-agent': 'Mozilla/5.0' } }
+      )
+    );
+
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+    expect(mocks.authProxy).toHaveBeenCalled();
+  });
+
   it('redirects auth-approved root requests to the personal default board', async () => {
     const authRequestHeaders = new Headers({
       cookie: 'sb-test-auth-token=shared',

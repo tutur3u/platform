@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { __markdownPastePrivate } from '../markdown-paste-extension';
 
-const { markdownToHtml } = __markdownPastePrivate;
+const { markdownToHtml, looksLikeMarkdown, normalizePastedPlainText } =
+  __markdownPastePrivate;
 
 describe('markdownToHtml', () => {
   it('should convert headings', () => {
@@ -45,6 +46,27 @@ describe('markdownToHtml', () => {
     expect(html).toContain('<ul>');
     expect(html).toContain('<li><p>item 1</p></li>');
     expect(html).toContain('<li><p>item 2</p></li>');
+  });
+
+  it('normalizes copied visual bullets into structured list markers', () => {
+    const text = normalizePastedPlainText(
+      'Next steps\r\n• Draft the interview plan\r\n◦ Share it with the team'
+    );
+
+    expect(text).toBe(
+      'Next steps\n- Draft the interview plan\n- Share it with the team'
+    );
+    expect(looksLikeMarkdown(text)).toBe(true);
+    expect(markdownToHtml(text)).toContain(
+      '<ul><li><p>Draft the interview plan</p></li><li><p>Share it with the team</p></li></ul>'
+    );
+  });
+
+  it('normalizes copied visual checkboxes into task list markers', () => {
+    const text = normalizePastedPlainText('☐ Plan interviews\n☑ Invite team');
+
+    expect(text).toBe('- [ ] Plan interviews\n- [x] Invite team');
+    expect(markdownToHtml(text)).toContain('data-type="taskList"');
   });
 
   it('should convert ordered lists', () => {
@@ -208,6 +230,12 @@ describe('markdownToHtml', () => {
     const md = 'Hello world';
     const html = markdownToHtml(md);
     expect(html).toContain('<p>Hello world</p>');
+  });
+
+  it('preserves intentional line breaks inside pasted paragraphs', () => {
+    const html = markdownToHtml('Line one\nLine two');
+
+    expect(html).toContain('<p>Line one<br>Line two</p>');
   });
 
   it('should escape HTML in plain text', () => {

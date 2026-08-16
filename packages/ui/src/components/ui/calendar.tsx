@@ -189,7 +189,7 @@ function Calendar({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div>
         <div className="mb-4 flex items-center justify-between gap-2 border-b px-2 pb-4">
           <button
@@ -318,21 +318,21 @@ function Calendar({
             root: 'bg-transparent',
             months: 'flex flex-col',
             month:
-              'space-y-4 max-w-[calc(100vw-4rem)] text-center p-2 font-semibold shrink-0',
+              'w-full min-w-0 max-w-[calc(100vw-4rem)] shrink-0 space-y-4 p-2 text-center font-semibold',
             month_caption: 'hidden',
             nav: 'hidden',
             button_next: 'hidden',
             button_previous: 'hidden',
             month_grid: 'w-full border-collapse',
             weeks: 'flex flex-col gap-1',
-            week: 'grid grid-cols-7 gap-1 mt-2',
-            weekdays: 'grid w-full grid-cols-7 gap-1 mb-2',
+            week: 'mt-2 grid grid-cols-7 gap-0.5 @[20rem]:gap-1',
+            weekdays: 'mb-2 grid w-full grid-cols-7 gap-0.5 @[20rem]:gap-1',
             weekday:
               'text-muted-foreground rounded-md font-normal text-[0.8rem] text-center',
-            day: 'text-center text-sm p-0 relative w-9',
+            day: 'relative min-w-0 p-0 text-center text-sm',
             day_button: cn(
               buttonVariants({ variant: 'ghost' }),
-              'h-9 w-full rounded-md p-0 font-normal transition-colors duration-300',
+              'aspect-square h-auto min-h-8 w-full rounded-md p-0 font-normal transition-colors duration-300',
               'aria-selected:bg-primary aria-selected:text-primary-foreground',
               'hover:bg-accent/50 hover:text-accent-foreground',
               'hover:aria-selected:bg-primary hover:aria-selected:text-primary-foreground'
