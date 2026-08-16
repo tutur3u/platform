@@ -29,6 +29,7 @@ export function ToolbarAction({
         aria-controls={controls}
         aria-expanded={expanded}
         onClick={run}
+        onMouseDown={(event) => event.preventDefault()}
         ref={buttonRef}
         type={type}
       >
