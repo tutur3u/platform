@@ -37,6 +37,26 @@ import type {
 
 type InternalPreset = RichTextFeaturePreset | 'legacy';
 
+export function insertCollapsibleSection(editor: Editor, title: string) {
+  const { empty, to } = editor.state.selection;
+  const chain = editor.chain().focus(undefined, { scrollIntoView: false });
+
+  if (!empty) chain.setTextSelection(to);
+
+  return chain
+    .insertContent({
+      content: [
+        {
+          content: [{ text: title, type: 'text' }],
+          type: 'collapsibleSummary',
+        },
+        { type: 'paragraph' },
+      ],
+      type: 'collapsible',
+    })
+    .run();
+}
+
 export function EditorToolbar({
   editor,
   messages,
@@ -154,26 +174,9 @@ export function EditorToolbar({
           )
         : null}
       {preset === 'full'
-        ? action(messages.collapsible, ListTree, () =>
-            editor
-              .chain()
-              .focus(undefined, { scrollIntoView: false })
-              .insertContent({
-                content: [
-                  {
-                    content: [
-                      { text: messages.collapsibleTitle, type: 'text' },
-                    ],
-                    type: 'collapsibleSummary',
-                  },
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-                type: 'collapsible',
-              })
-              .run()
-          )
+        ? action(messages.collapsible, ListTree, () => {
+            insertCollapsibleSection(editor, messages.collapsibleTitle);
+          })
         : null}
       {preset !== 'compact'
         ? action(messages.horizontalRule, Minus, () =>
