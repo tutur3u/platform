@@ -46,6 +46,24 @@ describe('collapsible editing', () => {
     editor.destroy();
   });
 
+  it('synchronizes the disclosure state after native details toggles', () => {
+    const editor = createEditor();
+    const details = editor.view.dom.querySelector('details');
+    const disclosure = editor.view.dom.querySelector<HTMLButtonElement>(
+      '.tuturuuu-editor-collapsible-toggle'
+    );
+
+    expect(details).not.toBeNull();
+    details!.open = false;
+    details!.dispatchEvent(new Event('toggle'));
+    expect(disclosure?.getAttribute('aria-expanded')).toBe('false');
+
+    details!.open = true;
+    details!.dispatchEvent(new Event('toggle'));
+    expect(disclosure?.getAttribute('aria-expanded')).toBe('true');
+    editor.destroy();
+  });
+
   it('removes a toggle with Backspace from the start of its summary', () => {
     const editor = createEditor();
     editor.commands.setTextSelection(2);

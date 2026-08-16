@@ -57,9 +57,17 @@ export const Collapsible = Node.create({
   addNodeView() {
     return () => {
       const dom = document.createElement('details');
+      const syncDisclosureState = () => {
+        dom
+          .querySelector('.tuturuuu-editor-collapsible-toggle')
+          ?.setAttribute('aria-expanded', String(dom.open));
+      };
+
       dom.open = this.editor.isEditable;
+      dom.addEventListener('toggle', syncDisclosureState);
       return {
         contentDOM: dom,
+        destroy: () => dom.removeEventListener('toggle', syncDisclosureState),
         dom,
         ignoreMutation: (mutation) =>
           mutation.type === 'attributes' && mutation.attributeName === 'open',
