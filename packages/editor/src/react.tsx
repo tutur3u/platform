@@ -90,7 +90,8 @@ export function RichTextEditor({
         orderedList: full ? undefined : false,
       }),
       Link.configure({ openOnClick: false }),
-      ...(full ? [Image, CollapsibleSummary, Collapsible] : []),
+      ...(full ? [Image] : []),
+      ...(preset === 'full' ? [CollapsibleSummary, Collapsible] : []),
       ...(enhanced && stylePolicy?.alignments?.length
         ? [TextAlign.configure({ types: ['heading', 'paragraph'] })]
         : []),

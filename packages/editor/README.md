@@ -10,19 +10,18 @@ Both the unchanged legacy preset and the `full` editorial preset expose the
 first-level heading. The full preset includes Heading 1 through Heading 4 for
 complete document authoring.
 
-## Live WYSIWYG editing and safe HTML source
+## Live WYSIWYG editing
 
-The authoring surface is always a live WYSIWYG document: headings, lists,
-quotes, links, images, and other prose styling appear as they will to readers.
-Consumers can optionally expose safe HTML source while continuing to store
-structured JSON:
+The authoring surface is always a single live WYSIWYG document: headings,
+lists, quotes, links, images, collapsible sections, and other prose styling
+appear as they will to readers. There is no separate editor, preview, or HTML
+source mode.
 
 ```tsx
 import { RichTextEditor } from "@tuturuuu/editor/react";
 
 <RichTextEditor
   content={content}
-  enableHTMLSource
   featurePreset="full"
   locale="en"
   onChange={setContent}
@@ -36,15 +35,10 @@ import { RichTextEditor } from "@tuturuuu/editor/react";
 
 `full` includes H1–H4, lists, quotes, dividers, and images. `compact` disables
 headings and block content, keeping narrative fields focused on inline
-formatting and paragraphs. When `featurePreset` is omitted it defaults to
-`full` if `enableHTMLSource` is set, and to the legacy H1–H3 preset otherwise.
-The legacy Editor/Preview switch has been retired because editing itself now
-shows the formatted document. The deprecated `enablePreview` prop is accepted
-for compatibility but no longer adds a separate mode. Source mode rejects
-executable markup, unsafe URLs, custom classes, and arbitrary CSS; it
-normalizes harmless unsupported markup before applying it to the canonical JSON.
-`onSourceModeDirtyChange` lets a host include unapplied source in its
-unsaved-navigation protection.
+formatting and paragraphs. When `featurePreset` is omitted, the editor uses the
+legacy H1–H3 preset for backward compatibility. The deprecated `enablePreview`,
+`enableHTMLSource`, and `onSourceModeDirtyChange` props remain accepted during
+migration but do not add another mode or surface.
 
 Use `renderRichTextToHTML(content, { featurePreset, stylePolicy })` on the
 server. The renderer escapes text and emits only approved URLs, marks,

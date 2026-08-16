@@ -423,23 +423,46 @@ export function markdownToJSON(markdown: string): JSONContent {
     if (/^<details(?:\s+open)?\s*>$/u.test(line.trim())) {
       const detailLines: string[] = [];
       let cursor = index + 1;
-      while (
-        cursor < lines.length &&
-        !/^<\/details>\s*$/u.test(lines[cursor] ?? '')
-      ) {
-        detailLines.push(lines[cursor] ?? '');
+      let detailsDepth = 1;
+      while (cursor < lines.length && detailsDepth > 0) {
+        const detailLine = lines[cursor] ?? '';
+        if (/^<details(?:\s+open)?\s*>$/u.test(detailLine.trim())) {
+          detailsDepth += 1;
+          detailLines.push(detailLine);
+        } else if (/^<\/details>\s*$/u.test(detailLine.trim())) {
+          detailsDepth -= 1;
+          if (detailsDepth > 0) detailLines.push(detailLine);
+        } else {
+          detailLines.push(detailLine);
+        }
         cursor += 1;
       }
-      const summaryIndex = detailLines.findIndex((item) => item.trim());
-      const summaryMatch =
-        summaryIndex >= 0
-          ? /^<summary>(.*)<\/summary>\s*$/u.exec(
-              detailLines[summaryIndex]?.trim() ?? ''
+      const summaryStartIndex = detailLines.findIndex((item) =>
+        item.trimStart().startsWith('<summary>')
+      );
+      const summaryEndIndex =
+        summaryStartIndex >= 0
+          ? detailLines.findIndex(
+              (item, detailIndex) =>
+                detailIndex >= summaryStartIndex && item.includes('</summary>')
             )
-          : null;
-      if (summaryMatch && cursor < lines.length) {
+          : -1;
+      const summarySource =
+        summaryStartIndex >= 0 && summaryEndIndex >= summaryStartIndex
+          ? detailLines
+              .slice(summaryStartIndex, summaryEndIndex + 1)
+              .join('\n')
+              .trim()
+          : '';
+      const summaryMatch = /^<summary>([\s\S]*)<\/summary>\s*$/u.exec(
+        summarySource
+      );
+      if (summaryMatch && detailsDepth === 0) {
         const body = detailLines
-          .filter((_, detailIndex) => detailIndex !== summaryIndex)
+          .filter(
+            (_, detailIndex) =>
+              detailIndex < summaryStartIndex || detailIndex > summaryEndIndex
+          )
           .join('\n')
           .trim();
         const bodyContent = markdownToJSON(body).content ?? [];

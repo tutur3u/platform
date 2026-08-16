@@ -68,6 +68,32 @@ describe('rich text codecs', () => {
     expect(extractPlainText(content)).toContain('Background details');
   });
 
+  it('round-trips nested collapsibles and multiline summaries', () => {
+    const markdown = [
+      '<details>',
+      '<summary>Outer line  ',
+      'continued</summary>',
+      '',
+      'Before the nested section.',
+      '',
+      '<details>',
+      '<summary>Inner details</summary>',
+      '',
+      'Nested body.',
+      '',
+      '</details>',
+      '',
+      'After the nested section.',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(content.content?.[0]?.type).toBe('collapsible');
+    expect(content.content?.[0]?.content?.[2]?.type).toBe('collapsible');
+    expect(jsonToMarkdown(content)).toBe(markdown);
+  });
+
   it('preserves literal Markdown delimiters through compatibility mirrors', () => {
     const content = {
       content: [
