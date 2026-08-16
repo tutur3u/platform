@@ -139,8 +139,45 @@
 }
 
 .tuturuuu-editor .tiptap summary {
-  cursor: text;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  list-style: none;
   font-weight: 700;
+}
+
+.tuturuuu-editor .tiptap summary::-webkit-details-marker {
+  display: none;
+}
+
+.tuturuuu-editor-collapsible-toggle {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+}
+
+.tuturuuu-editor-collapsible-toggle::before {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1;
+  content: '▶';
+  transition: transform 120ms ease;
+}
+
+.tuturuuu-editor .tiptap details[open] > summary
+  > .tuturuuu-editor-collapsible-toggle::before {
+  transform: rotate(90deg);
+}
+
+.tuturuuu-editor-collapsible-summary-content {
+  min-width: 0;
+  flex: 1;
+  cursor: text;
 }
 
 .tuturuuu-editor .tiptap details > :not(summary) {

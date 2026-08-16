@@ -157,6 +157,15 @@ describe('RichTextEditor WYSIWYG', () => {
         })
       );
     });
+
+    const details = container.querySelector('details');
+    const disclosure = screen.getByRole('button', {
+      name: 'Expand or collapse section',
+    });
+    fireEvent.click(disclosure);
+    expect(details?.hasAttribute('open')).toBe(false);
+    fireEvent.click(disclosure);
+    expect(details?.hasAttribute('open')).toBe(true);
   });
 
   it('renders product actions inside the formatting toolbar', async () => {
