@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.8.1](https://github.com/tutur3u/platform/compare/editor-v0.8.0...editor-v0.8.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **editor:** focus toggle summaries for editing ([d01ee1f](https://github.com/tutur3u/platform/commit/d01ee1f36263db169997a6ae373a23025dc73b13))
+* **editor:** harden toggle interaction edge cases ([984663d](https://github.com/tutur3u/platform/commit/984663dabe9e2c00099a01987f5d7ee4f6575a44))
+* **editor:** harden toggle markdown parsing ([82a35e0](https://github.com/tutur3u/platform/commit/82a35e044c9935bd19800b614d501d0acfe54be5))
+* **editor:** insert toggles at block boundaries ([e5faee1](https://github.com/tutur3u/platform/commit/e5faee17e213b38183e83c6045e9e4b8476d107f))
+* **editor:** insert toggles without replacing text ([1a272ca](https://github.com/tutur3u/platform/commit/1a272cad6c3fbb55e41a4571ac978d2279777b5c))
+* **editor:** insert toggles without selection commands ([b636964](https://github.com/tutur3u/platform/commit/b636964bd49c8d5eecbc5ce39285ea861d103c4a))
+* **editor:** keep toggle summaries editable ([e2d967c](https://github.com/tutur3u/platform/commit/e2d967cce2817e16518fa8ad81d8b5218800511b))
+* **editor:** make toggle blocks interactive ([6d3fc22](https://github.com/tutur3u/platform/commit/6d3fc221399ec03c1d236b9080b0c6b3bf800ffa))
+* **editor:** polish collapsible authoring ([828c95d](https://github.com/tutur3u/platform/commit/828c95d576b637d5abd8d8a2705f8f956668bc26))
+* **editor:** polish toggle insertion edge cases ([5fa9436](https://github.com/tutur3u/platform/commit/5fa943633dc0e15cb7b7ee8567762c62ead70028))
+* **editor:** preserve nested toggle content ([a62a065](https://github.com/tutur3u/platform/commit/a62a06510bf1f2b3653179bb2d629d71865b6683))
+* **editor:** preserve selected prose ([a769b13](https://github.com/tutur3u/platform/commit/a769b130e06feac0163e7ca6c87d89ef123b0a14))
+* **editor:** preserve toggle accessibility ([afe1820](https://github.com/tutur3u/platform/commit/afe182073c8cbdae79c8305fec1445f8027177ef))
+* **editor:** preserve toggle boundaries ([f56f8d7](https://github.com/tutur3u/platform/commit/f56f8d72925abbbdf4f140b9a03c40a05ed72572))
+* **editor:** preserve toggle selections and gestures ([51b4d42](https://github.com/tutur3u/platform/commit/51b4d4269a8447b43e906e7b6c217e794b2d1e4b))
+* **editor:** preserve toggle summary fidelity ([a1fa808](https://github.com/tutur3u/platform/commit/a1fa80801740df94e3113518e40087c37e962910))
+* **editor:** retain selection from toolbar actions ([50a729e](https://github.com/tutur3u/platform/commit/50a729e8d002594524011d35434d3d9a6d7dc754))
+* **editor:** retain toggle disclosure state ([a85582e](https://github.com/tutur3u/platform/commit/a85582e32ba2786d68e460e3e7cc1dd1c22cd643))
+* **editor:** run toolbar actions before focus moves ([07757e1](https://github.com/tutur3u/platform/commit/07757e161d971072d6e531dc7cc75bb754a5d1bb))
+* **editor:** synchronize toggle controls ([df72dc3](https://github.com/tutur3u/platform/commit/df72dc3206f1f143ccc17a614076445f6f77b0a1))
+* **editor:** unify WYSIWYG toolbar ([7767420](https://github.com/tutur3u/platform/commit/77674206ff341d2cbc9c0cbc5f412b5208774f53))
+* **editor:** unify WYSIWYG toolbar ([#5133](https://github.com/tutur3u/platform/issues/5133)) ([08971a0](https://github.com/tutur3u/platform/commit/08971a00de63a3b55f475a805959b0dc64d51bca))
+
 ## [0.8.0](https://github.com/tutur3u/platform/compare/editor-v0.7.0...editor-v0.8.0) (2026-08-15)
 
 

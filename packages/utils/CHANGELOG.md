@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.2](https://github.com/tutur3u/platform/compare/utils-v0.25.1...utils-v0.25.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* **tasks:** reconcile external task ordering ([2ebeefa](https://github.com/tutur3u/platform/commit/2ebeefa4c13ea9d0b62c33e50cf4f6fed7fac76a))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/utils-v0.25.0...utils-v0.25.1) (2026-08-15)
 
 

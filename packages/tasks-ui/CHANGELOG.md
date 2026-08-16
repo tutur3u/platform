@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.12.0...tasks-ui-v0.12.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **tasks:** preserve rich paste and responsive dialogs ([0a6c5a3](https://github.com/tutur3u/platform/commit/0a6c5a362f51b475c2e8fe984eb3569a46a878ee))
+* **tasks:** reconcile external task ordering ([2ebeefa](https://github.com/tutur3u/platform/commit/2ebeefa4c13ea9d0b62c33e50cf4f6fed7fac76a))
+
 ## [0.12.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.11.0...tasks-ui-v0.12.0) (2026-08-15)
 
 

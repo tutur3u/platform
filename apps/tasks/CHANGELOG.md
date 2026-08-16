@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/tutur3u/platform/compare/tasks-v0.28.0...tasks-v0.28.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **tasks:** preserve rich paste and responsive dialogs ([0a6c5a3](https://github.com/tutur3u/platform/commit/0a6c5a362f51b475c2e8fe984eb3569a46a878ee))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/tasks-v0.27.0...tasks-v0.28.0) (2026-08-15)
 
 
