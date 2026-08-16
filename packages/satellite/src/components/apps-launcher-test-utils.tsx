@@ -65,6 +65,7 @@ const messages = {
     default_destination: 'Default app home',
     no_apps_found: 'No apps found',
     no_apps_found_description: 'Try a different app name or keyword.',
+    navigate: 'navigate',
     open_apps_in: 'Open apps in',
     open_current_tab: 'This tab',
     open_here: 'Open here',
@@ -72,6 +73,7 @@ const messages = {
     open_new_tab: 'New tab',
     open_options: 'Open options',
     search_apps: 'Search apps',
+    select: 'select',
     workspace_destination: '{workspace} workspace',
   },
 };

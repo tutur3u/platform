@@ -33,6 +33,7 @@ import type {
   LaunchableAppCategory,
 } from '@tuturuuu/utils/launchable-apps';
 import Link from 'next/link';
+import type { KeyboardEventHandler } from 'react';
 import type { AppOpenMode } from './apps-launcher-catalog';
 
 const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
@@ -93,6 +94,9 @@ export function AppLauncherItem({
   app,
   description,
   getAppUrl,
+  isActive,
+  onFocus,
+  onKeyDown,
   onOpen,
   openMode,
   title,
@@ -100,6 +104,9 @@ export function AppLauncherItem({
   app: LaunchableApp;
   description: string;
   getAppUrl: (app: LaunchableApp) => string;
+  isActive: boolean;
+  onFocus: () => void;
+  onKeyDown: KeyboardEventHandler<HTMLAnchorElement>;
   onOpen: () => void;
   openMode: AppOpenMode;
   title: string;
@@ -113,10 +120,20 @@ export function AppLauncherItem({
     <Link
       aria-describedby={descriptionId}
       aria-label={title}
-      className="group relative flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/40 px-5 py-4 text-center text-card-foreground outline-none transition-[background-color,border-color,transform] duration-200 ease-out hover:-translate-y-px hover:border-foreground/20 hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className={cn(
+        'group relative flex min-h-36 w-full cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-2xl border border-border/70 bg-card/40 px-5 py-4 text-center text-card-foreground outline-none transition-[background-color,border-color,transform] duration-200 ease-out hover:-translate-y-px hover:border-foreground/20 hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:scale-[0.99] motion-reduce:transition-none motion-reduce:hover:translate-y-0',
+        isActive &&
+          'border-foreground/25 bg-muted/60 ring-2 ring-ring/70 ring-offset-2 ring-offset-background'
+      )}
+      data-active={isActive || undefined}
+      data-app-slug={app.slug}
       data-slot="app-card"
       href={href}
+      id={`apps-launcher-app-${app.slug}`}
       onClick={onOpen}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      onPointerEnter={onFocus}
       prefetch={false}
       rel={openMode === 'new-tab' ? 'noopener noreferrer' : undefined}
       target={openMode === 'new-tab' ? '_blank' : undefined}
