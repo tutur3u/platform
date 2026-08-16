@@ -218,6 +218,35 @@ describe('RichTextEditor WYSIWYG', () => {
     ).toBeTruthy();
   });
 
+  it('keeps authoring placeholders out of read-only collapsibles', async () => {
+    const { container } = render(
+      <RichTextEditor
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Read more', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                { type: 'paragraph' },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
+        featurePreset="full"
+        readOnly
+      />
+    );
+
+    await screen.findByText('Read more');
+    expect(
+      container.querySelector('details > p')?.hasAttribute('data-placeholder')
+    ).toBe(false);
+  });
+
   it('renders product actions inside the formatting toolbar', async () => {
     render(
       <RichTextEditor

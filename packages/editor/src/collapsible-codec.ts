@@ -101,6 +101,55 @@ export function parseCollapsibleBlock({
   };
 }
 
+export function parseIndentedCollapsibleBlock({
+  indent,
+  index,
+  lines,
+  paragraph,
+  parseDocument,
+  parseInline,
+}: {
+  indent: number;
+  index: number;
+  lines: string[];
+  paragraph: (value: string) => JSONContent;
+  parseDocument: ParseDocument;
+  parseInline: ParseInline;
+}): { nextIndex: number; node: JSONContent } | null {
+  const firstLine = lines[index] ?? '';
+  if (
+    firstLine.length < indent ||
+    firstLine.slice(0, indent).trim() ||
+    !/^<details(?:\s+open)?\s*>$/u.test(firstLine.slice(indent).trim())
+  )
+    return null;
+
+  const blockLines: string[] = [];
+  let cursor = index;
+  let detailsDepth = 0;
+  while (cursor < lines.length) {
+    const candidate = lines[cursor] ?? '';
+    if (candidate.length < indent || candidate.slice(0, indent).trim()) break;
+    const unindented = candidate.slice(indent);
+    blockLines.push(unindented);
+    if (/^<details(?:\s+open)?\s*>$/u.test(unindented.trim()))
+      detailsDepth += 1;
+    else if (/^<\/details>\s*$/u.test(unindented.trim())) detailsDepth -= 1;
+    cursor += 1;
+    if (detailsDepth === 0) break;
+  }
+
+  const collapsible = parseCollapsibleBlock({
+    index: 0,
+    lines: blockLines,
+    paragraph,
+    parseDocument,
+    parseInline,
+  });
+  if (collapsible?.nextIndex !== blockLines.length) return null;
+  return { nextIndex: cursor, node: collapsible.node };
+}
+
 export function collapsibleToMarkdown(
   node: JSONContent,
   serializeNode: (node: JSONContent) => string

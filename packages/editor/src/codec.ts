@@ -1,10 +1,10 @@
 import {
   collapsibleToMarkdown,
   parseCollapsibleBlock,
+  parseIndentedCollapsibleBlock,
 } from './collapsible-codec.js';
 import type { JSONContent } from './types.js';
 import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
-
 const textNode = (
   text: string,
   marks?: NonNullable<JSONContent['marks']>
@@ -374,6 +374,25 @@ function parseMarkdownList(
     const itemContent: JSONContent[] = [{ content: inline, type: 'paragraph' }];
     while (index < lines.length) {
       const nextLine = lines[index] ?? '';
+      const hasContinuationIndent =
+        nextLine.length >= continuationIndent &&
+        !nextLine.slice(0, continuationIndent).trim();
+      const continuation = hasContinuationIndent
+        ? nextLine.slice(continuationIndent)
+        : '';
+      const collapsible = parseIndentedCollapsibleBlock({
+        indent: continuationIndent,
+        index,
+        lines,
+        paragraph,
+        parseDocument: markdownToJSON,
+        parseInline,
+      });
+      if (collapsible) {
+        itemContent.push(collapsible.node);
+        index = collapsible.nextIndex;
+        continue;
+      }
       const nested = matchMarkdownListLine(nextLine);
       if (nested && nested.indent > indent) {
         const parsed = parseMarkdownList(
@@ -386,12 +405,8 @@ function parseMarkdownList(
         index = parsed.nextIndex;
         continue;
       }
-      if (
-        nextLine.length >= continuationIndent &&
-        !nextLine.slice(0, continuationIndent).trim() &&
-        nextLine.slice(continuationIndent).trim()
-      ) {
-        itemContent.push(paragraph(nextLine.slice(continuationIndent)));
+      if (hasContinuationIndent && continuation.trim()) {
+        itemContent.push(paragraph(continuation));
         index += 1;
         continue;
       }

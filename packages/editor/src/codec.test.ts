@@ -97,6 +97,47 @@ describe('rich text codecs', () => {
     expect(jsonToMarkdown(content)).toBe(markdown);
   });
 
+  it.each([
+    ['bulletList', undefined],
+    ['orderedList', { start: 3 }],
+  ] as const)('round-trips collapsibles nested in %s items', (type, attrs) => {
+    const content = {
+      content: [
+        {
+          ...(attrs ? { attrs } : {}),
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Visible item', type: 'text' }],
+                  type: 'paragraph',
+                },
+                {
+                  content: [
+                    {
+                      content: [{ text: 'Hidden details', type: 'text' }],
+                      type: 'collapsibleSummary',
+                    },
+                    {
+                      content: [{ text: 'Nested body', type: 'text' }],
+                      type: 'paragraph',
+                    },
+                  ],
+                  type: 'collapsible',
+                },
+              ],
+              type: 'listItem',
+            },
+          ],
+          type,
+        },
+      ],
+      type: 'doc',
+    };
+
+    expect(markdownToJSON(jsonToMarkdown(content))).toEqual(content);
+  });
+
   it('preserves whitespace in soft-wrapped collapsible summaries', () => {
     const markdown = [
       '<details>',

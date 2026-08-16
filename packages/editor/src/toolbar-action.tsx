@@ -29,10 +29,18 @@ export function ToolbarAction({
         aria-controls={controls}
         aria-expanded={expanded}
         onClick={(event) => {
-          if (event.detail === 0) run?.();
+          const handled =
+            event.currentTarget.dataset.pointerActionHandled === 'true';
+          delete event.currentTarget.dataset.pointerActionHandled;
+          if (!handled) run?.();
+        }}
+        onPointerCancel={(event) => {
+          delete event.currentTarget.dataset.pointerActionHandled;
         }}
         onPointerDown={(event) => {
+          if (event.button !== 0 || event.pointerType === 'touch') return;
           event.preventDefault();
+          event.currentTarget.dataset.pointerActionHandled = 'true';
           run?.();
         }}
         ref={buttonRef}

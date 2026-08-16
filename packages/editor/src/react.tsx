@@ -112,10 +112,12 @@ export function RichTextEditor({
       Extension.create({
         name: 'collapsiblePlaceholder',
         addProseMirrorPlugins() {
+          const editor = this.editor;
           return [
             new Plugin({
               props: {
                 decorations(state) {
+                  if (!editor.isEditable) return DecorationSet.empty;
                   const decorations: Decoration[] = [];
                   state.doc.descendants((node, pos, parent) => {
                     if (
