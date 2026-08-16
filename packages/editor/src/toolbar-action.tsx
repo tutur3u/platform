@@ -28,8 +28,13 @@ export function ToolbarAction({
         aria-pressed={active}
         aria-controls={controls}
         aria-expanded={expanded}
-        onClick={run}
-        onMouseDown={(event) => event.preventDefault()}
+        onClick={(event) => {
+          if (event.detail === 0) run?.();
+        }}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          run?.();
+        }}
         ref={buttonRef}
         type={type}
       >
