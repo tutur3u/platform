@@ -3,6 +3,18 @@ import type { JSONContent } from './types.js';
 type ParseDocument = (markdown: string) => JSONContent;
 type ParseInline = (value: string) => JSONContent[];
 
+function summaryInlineNode(node: JSONContent): JSONContent {
+  if (node.type !== 'image') return node;
+
+  const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt : '';
+  const src = typeof node.attrs?.src === 'string' ? node.attrs.src : '';
+  const title = typeof node.attrs?.title === 'string' ? node.attrs.title : '';
+  return {
+    text: `![${alt}](${src}${title ? ` "${title}"` : ''})`,
+    type: 'text',
+  };
+}
+
 function parseSummaryInline(
   value: string,
   parseInline: ParseInline
@@ -12,7 +24,11 @@ function parseSummaryInline(
 
   lines.forEach((line, index) => {
     const hardBreak = line.endsWith('  ');
-    content.push(...parseInline(hardBreak ? line.slice(0, -2) : line));
+    content.push(
+      ...parseInline(hardBreak ? line.slice(0, -2) : line).map(
+        summaryInlineNode
+      )
+    );
     if (index >= lines.length - 1) return;
     content.push(
       hardBreak ? { type: 'hardBreak' } : { text: ' ', type: 'text' }

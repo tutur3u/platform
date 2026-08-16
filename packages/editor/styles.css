@@ -258,6 +258,11 @@
 }
 
 .tuturuuu-editor .tiptap p.is-editor-empty:first-child::before,
+.tuturuuu-editor
+  .tiptap
+  details
+  > summary.is-empty
+  > .tuturuuu-editor-collapsible-summary-content::before,
 .tuturuuu-editor .tiptap details > p.is-empty::before {
   float: left;
   height: 0;

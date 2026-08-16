@@ -121,6 +121,17 @@ export function RichTextEditor({
                   const decorations: Decoration[] = [];
                   state.doc.descendants((node, pos, parent) => {
                     if (
+                      node.type.name === 'collapsibleSummary' &&
+                      node.content.size === 0
+                    ) {
+                      decorations.push(
+                        Decoration.node(pos, pos + node.nodeSize, {
+                          'data-placeholder': messages.collapsibleTitle,
+                          class: 'is-empty',
+                        })
+                      );
+                    }
+                    if (
                       node.type.name === 'paragraph' &&
                       node.content.size === 0 &&
                       parent?.type.name === 'collapsible'
@@ -150,6 +161,7 @@ export function RichTextEditor({
     enhanced,
     messages.collapsibleDisclosure,
     messages.collapsiblePlaceholder,
+    messages.collapsibleTitle,
     preset,
     resolvedPlaceholder,
     stylePolicy?.alignments,

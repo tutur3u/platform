@@ -1,5 +1,6 @@
 'use client';
 
+import { TextSelection } from '@tiptap/pm/state';
 import type { Editor } from '@tiptap/react';
 import {
   AlignCenter,
@@ -37,13 +38,12 @@ import type {
 
 type InternalPreset = RichTextFeaturePreset | 'legacy';
 
-export function insertCollapsibleSection(editor: Editor, title: string) {
+export function insertCollapsibleSection(editor: Editor) {
   const { $to } = editor.state.selection;
   const insertionPosition = $to.depth > 0 ? $to.after(1) : $to.pos;
   const collapsible = editor.schema.nodeFromJSON({
     content: [
       {
-        content: [{ text: title, type: 'text' }],
         type: 'collapsibleSummary',
       },
       { type: 'paragraph' },
@@ -54,7 +54,11 @@ export function insertCollapsibleSection(editor: Editor, title: string) {
   // Insert after the current top-level block. Putting a block node at an inline
   // selection endpoint splits the paragraph and controlled Markdown consumers
   // can then interpret the selected fragment as replaced content.
-  editor.view.dispatch(editor.state.tr.insert(insertionPosition, collapsible));
+  const transaction = editor.state.tr.insert(insertionPosition, collapsible);
+  transaction.setSelection(
+    TextSelection.create(transaction.doc, insertionPosition + 2)
+  );
+  editor.view.dispatch(transaction);
   editor.view.focus();
   return true;
 }
@@ -177,7 +181,7 @@ export function EditorToolbar({
         : null}
       {preset === 'full'
         ? action(messages.collapsible, ListTree, () => {
-            insertCollapsibleSection(editor, messages.collapsibleTitle);
+            insertCollapsibleSection(editor);
           })
         : null}
       {preset !== 'compact'

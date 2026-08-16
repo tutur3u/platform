@@ -14,11 +14,14 @@ describe('collapsible toolbar action', () => {
     });
     editor.commands.setTextSelection({ from: 1, to: 6 });
 
-    expect(insertCollapsibleSection(editor, 'Section title')).toBe(true);
+    expect(insertCollapsibleSection(editor)).toBe(true);
     expect(editor.getText()).toContain('Keep this prose');
-    expect(
-      editor.getText().replace('Section title', '').replace(/\s+/gu, ' ').trim()
-    ).toBe('Keep this prose');
+    expect(editor.getText().replace(/\s+/gu, ' ').trim()).toBe(
+      'Keep this prose'
+    );
+    expect(editor.state.selection.$from.parent.type.name).toBe(
+      'collapsibleSummary'
+    );
     expect(editor.getJSON().content).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: 'collapsible' })])
     );

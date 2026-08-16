@@ -1,4 +1,4 @@
-import type { ComponentType, Ref, SVGProps } from 'react';
+import { type ComponentType, type Ref, type SVGProps, useRef } from 'react';
 
 export type ToolbarIcon = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -21,6 +21,13 @@ export function ToolbarAction({
   run?: () => void;
   type?: 'button' | 'submit';
 }) {
+  const handledReset = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPointerHandled = (target: HTMLButtonElement) => {
+    if (handledReset.current !== null) clearTimeout(handledReset.current);
+    handledReset.current = null;
+    delete target.dataset.pointerActionHandled;
+  };
+
   return (
     <span className="tuturuuu-editor-tool">
       <button
@@ -31,16 +38,25 @@ export function ToolbarAction({
         onClick={(event) => {
           const handled =
             event.currentTarget.dataset.pointerActionHandled === 'true';
-          delete event.currentTarget.dataset.pointerActionHandled;
+          clearPointerHandled(event.currentTarget);
           if (!handled) run?.();
         }}
         onPointerCancel={(event) => {
-          delete event.currentTarget.dataset.pointerActionHandled;
+          clearPointerHandled(event.currentTarget);
         }}
         onPointerDown={(event) => {
           if (event.button !== 0 || event.pointerType === 'touch') return;
           event.preventDefault();
-          event.currentTarget.dataset.pointerActionHandled = 'true';
+          const target = event.currentTarget;
+          clearPointerHandled(target);
+          target.dataset.pointerActionHandled = 'true';
+          // A press released outside the button has no click or pointercancel
+          // here. Expire the marker after this activation turn so it cannot
+          // swallow the user's next keyboard or touch activation.
+          handledReset.current = setTimeout(
+            () => clearPointerHandled(target),
+            0
+          );
           run?.();
         }}
         ref={buttonRef}

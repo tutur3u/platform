@@ -164,9 +164,12 @@ describe('RichTextEditor WYSIWYG', () => {
     );
     await waitFor(() => {
       expect(container.querySelector('details[open]')).toBeTruthy();
-      expect(container.querySelector('summary')?.textContent).toBe(
-        'Section title'
-      );
+      expect(container.querySelector('summary')?.textContent).toBe('');
+      expect(
+        container
+          .querySelector('details > summary')
+          ?.getAttribute('data-placeholder')
+      ).toBe('Section title');
       expect(container.querySelector('details > p')?.textContent).toBe('');
       expect(
         container.querySelector('details > p')?.getAttribute('data-placeholder')
