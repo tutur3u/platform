@@ -1,3 +1,8 @@
+import {
+  collapsibleToMarkdown,
+  parseCollapsibleBlock,
+  parseIndentedCollapsibleBlock,
+} from './collapsible-codec.js';
 import type { JSONContent } from './types.js';
 import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
 
@@ -370,6 +375,25 @@ function parseMarkdownList(
     const itemContent: JSONContent[] = [{ content: inline, type: 'paragraph' }];
     while (index < lines.length) {
       const nextLine = lines[index] ?? '';
+      const hasContinuationIndent =
+        nextLine.length >= continuationIndent &&
+        !nextLine.slice(0, continuationIndent).trim();
+      const continuation = hasContinuationIndent
+        ? nextLine.slice(continuationIndent)
+        : '';
+      const collapsible = parseIndentedCollapsibleBlock({
+        indent: continuationIndent,
+        index,
+        lines,
+        paragraph,
+        parseDocument: markdownToJSON,
+        parseInline,
+      });
+      if (collapsible) {
+        itemContent.push(collapsible.node);
+        index = collapsible.nextIndex;
+        continue;
+      }
       const nested = matchMarkdownListLine(nextLine);
       if (nested && nested.indent > indent) {
         const parsed = parseMarkdownList(
@@ -382,12 +406,8 @@ function parseMarkdownList(
         index = parsed.nextIndex;
         continue;
       }
-      if (
-        nextLine.length >= continuationIndent &&
-        !nextLine.slice(0, continuationIndent).trim() &&
-        nextLine.slice(continuationIndent).trim()
-      ) {
-        itemContent.push(paragraph(nextLine.slice(continuationIndent)));
+      if (hasContinuationIndent && continuation.trim()) {
+        itemContent.push(paragraph(continuation));
         index += 1;
         continue;
       }
@@ -418,6 +438,18 @@ export function markdownToJSON(markdown: string): JSONContent {
     const line = lines[index] ?? '';
     if (!line.trim()) {
       index += 1;
+      continue;
+    }
+    const collapsible = parseCollapsibleBlock({
+      index,
+      lines,
+      paragraph,
+      parseDocument: markdownToJSON,
+      parseInline,
+    });
+    if (collapsible) {
+      content.push(collapsible.node);
+      index = collapsible.nextIndex;
       continue;
     }
     const alignedBlock = line.match(
@@ -573,6 +605,9 @@ function nodeToMarkdown(node: JSONContent): string {
   }
 
   const children = (node.content ?? []).map(nodeToMarkdown).join('');
+  if (node.type === 'collapsible')
+    return collapsibleToMarkdown(node, nodeToMarkdown);
+  if (node.type === 'collapsibleSummary') return children;
   if (node.type === 'heading') {
     const level = Math.min(4, Math.max(1, Number(node.attrs?.level ?? 2)));
     const textAlign = String(node.attrs?.textAlign ?? '');
@@ -638,7 +673,6 @@ function nodeToMarkdown(node: JSONContent): string {
 export function jsonToMarkdown(content: JSONContent | null): string {
   return (content?.content ?? []).map(nodeToMarkdown).join('\n\n').trim();
 }
-
 export function extractPlainText(content: JSONContent | null): string {
   if (!content) return '';
   const parts: string[] = [];
@@ -648,9 +682,13 @@ export function extractPlainText(content: JSONContent | null): string {
       parts.push(String(node.attrs.alt));
     for (const child of node.content ?? []) visit(child);
     if (
-      ['paragraph', 'heading', 'listItem', 'blockquote'].includes(
-        node.type ?? ''
-      )
+      [
+        'paragraph',
+        'heading',
+        'listItem',
+        'blockquote',
+        'collapsibleSummary',
+      ].includes(node.type ?? '')
     )
       parts.push('\n');
   };

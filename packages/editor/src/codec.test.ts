@@ -46,6 +46,136 @@ describe('rich text codecs', () => {
     );
   });
 
+  it('round-trips and renders collapsible Markdown sections', () => {
+    const markdown = [
+      '<details>',
+      '<summary>Background details</summary>',
+      '',
+      'A **formatted** secret.',
+      '',
+      '- First clue',
+      '- Second clue',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(content.content?.[0]?.type).toBe('collapsible');
+    expect(jsonToMarkdown(content)).toBe(markdown);
+    expect(renderRichTextToHTML(content, { featurePreset: 'full' })).toContain(
+      '<details><summary>Background details</summary><p>A <strong>formatted</strong> secret.</p><ul>'
+    );
+    expect(extractPlainText(content)).toContain('Background details');
+  });
+
+  it('round-trips nested collapsibles and multiline summaries', () => {
+    const markdown = [
+      '<details>',
+      '<summary>Outer line  ',
+      'continued</summary>',
+      '',
+      'Before the nested section.',
+      '',
+      '<details>',
+      '<summary>Inner details</summary>',
+      '',
+      'Nested body.',
+      '',
+      '</details>',
+      '',
+      'After the nested section.',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(content.content?.[0]?.type).toBe('collapsible');
+    expect(content.content?.[0]?.content?.[2]?.type).toBe('collapsible');
+    expect(content.content?.[0]?.content?.[0]?.content?.[1]?.type).toBe(
+      'hardBreak'
+    );
+    expect(jsonToMarkdown(content)).toBe(markdown);
+  });
+
+  it.each([
+    ['bulletList', undefined],
+    ['orderedList', { start: 3 }],
+  ] as const)('round-trips collapsibles nested in %s items', (type, attrs) => {
+    const content = {
+      content: [
+        {
+          ...(attrs ? { attrs } : {}),
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Visible item', type: 'text' }],
+                  type: 'paragraph',
+                },
+                {
+                  content: [
+                    {
+                      content: [{ text: 'Hidden details', type: 'text' }],
+                      type: 'collapsibleSummary',
+                    },
+                    {
+                      content: [{ text: 'Nested body', type: 'text' }],
+                      type: 'paragraph',
+                    },
+                  ],
+                  type: 'collapsible',
+                },
+              ],
+              type: 'listItem',
+            },
+          ],
+          type,
+        },
+      ],
+      type: 'doc',
+    };
+
+    expect(markdownToJSON(jsonToMarkdown(content))).toEqual(content);
+  });
+
+  it('preserves whitespace in soft-wrapped collapsible summaries', () => {
+    const markdown = [
+      '<details>',
+      '<summary>First',
+      'Second</summary>',
+      '',
+      'Hidden context.',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(extractPlainText(content)).toContain('First Second');
+    expect(jsonToMarkdown(content)).toContain(
+      '<summary>First Second</summary>'
+    );
+  });
+
+  it.each(['- option', '1. item', '---'])(
+    'keeps block-like summary text inline: %s',
+    (summary) => {
+      const markdown = [
+        '<details>',
+        `<summary>${summary}</summary>`,
+        '',
+        'Hidden context.',
+        '',
+        '</details>',
+      ].join('\n');
+      const content = markdownToJSON(markdown);
+      const summaryNode = content.content?.[0]?.content?.[0];
+
+      expect(summaryNode?.type).toBe('collapsibleSummary');
+      expect(summaryNode?.content).toEqual([{ text: summary, type: 'text' }]);
+      expect(jsonToMarkdown(content)).toBe(markdown);
+    }
+  );
+
   it('preserves literal Markdown delimiters through compatibility mirrors', () => {
     const content = {
       content: [
