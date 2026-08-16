@@ -14,6 +14,7 @@ import {
   Italic,
   List,
   ListOrdered,
+  ListTree,
   Minus,
   Palette,
   Quote,
@@ -22,6 +23,7 @@ import {
   Underline,
   Undo2,
 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { ImageUploadControl } from './image-upload-control.js';
 import { LinkToolbarControl } from './link-toolbar-control.js';
 import { StyleToolbarControl } from './style-toolbar-control.js';
@@ -42,6 +44,7 @@ export function EditorToolbar({
   onImageUploadError,
   preset,
   stylePolicy,
+  toolbarEnd,
 }: {
   editor: Editor;
   messages: EditorMessages;
@@ -49,6 +52,7 @@ export function EditorToolbar({
   onImageUploadError?: (error: unknown) => void;
   preset: InternalPreset;
   stylePolicy?: RichTextStylePolicy;
+  toolbarEnd?: ReactNode;
 }) {
   const enhanced = preset !== 'legacy';
   const action = (
@@ -149,6 +153,31 @@ export function EditorToolbar({
             editor.isActive('blockquote')
           )
         : null}
+      {preset === 'full'
+        ? action(messages.collapsible, ListTree, () =>
+            editor
+              .chain()
+              .focus(undefined, { scrollIntoView: false })
+              .insertContent({
+                content: [
+                  {
+                    content: [
+                      { text: messages.collapsibleTitle, type: 'text' },
+                    ],
+                    type: 'collapsibleSummary',
+                  },
+                  {
+                    content: [
+                      { text: messages.collapsiblePlaceholder, type: 'text' },
+                    ],
+                    type: 'paragraph',
+                  },
+                ],
+                type: 'collapsible',
+              })
+              .run()
+          )
+        : null}
       {preset !== 'compact'
         ? action(messages.horizontalRule, Minus, () =>
             editor.chain().focus().setHorizontalRule().run()
@@ -223,6 +252,7 @@ export function EditorToolbar({
           options={stylePolicy?.highlights ?? []}
         />
       ) : null}
+      {toolbarEnd}
       <span aria-hidden="true" className="tuturuuu-editor-toolbar-separator" />
       {action(messages.undo, Undo2, () => editor.chain().focus().undo().run())}
       {action(messages.redo, Redo2, () => editor.chain().focus().redo().run())}

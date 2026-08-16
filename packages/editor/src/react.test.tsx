@@ -12,49 +12,7 @@ import { RichTextEditor } from './react.js';
 
 afterEach(cleanup);
 
-describe('RichTextEditor WYSIWYG and source modes', () => {
-  it('preserves unapplied source and discards it explicitly', async () => {
-    const onChange = vi.fn();
-    const onSourceModeDirtyChange = vi.fn();
-    render(
-      <RichTextEditor
-        content={{
-          content: [
-            {
-              content: [{ text: 'Original', type: 'text' }],
-              type: 'paragraph',
-            },
-          ],
-          type: 'doc',
-        }}
-        enableHTMLSource
-        enablePreview
-        featurePreset="full"
-        onChange={onChange}
-        onSourceModeDirtyChange={onSourceModeDirtyChange}
-      />
-    );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    const source = screen.getByRole('textbox', { name: 'HTML source' });
-    fireEvent.change(source, { target: { value: '<p>Changed</p>' } });
-    await waitFor(() =>
-      expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(true)
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Editor' }));
-
-    expect((source as HTMLTextAreaElement).value).toBe('<p>Changed</p>');
-    expect(screen.getByRole('alert').textContent).toContain(
-      'Apply or discard your HTML changes'
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Discard changes' }));
-    expect(screen.queryByRole('textbox', { name: 'HTML source' })).toBeNull();
-    await waitFor(() =>
-      expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(false)
-    );
-    expect(onChange).not.toHaveBeenCalled();
-  });
-
+describe('RichTextEditor WYSIWYG', () => {
   it('keeps the formatted document editable without a legacy preview switch', async () => {
     const onChange = vi.fn();
     const { container } = render(
@@ -100,41 +58,24 @@ describe('RichTextEditor WYSIWYG and source modes', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('applies safe HTML as structured JSON and blocks unsafe source', async () => {
-    const onChange = vi.fn();
+  it('never exposes source or preview modes, even for legacy props', async () => {
+    const onSourceModeDirtyChange = vi.fn();
     render(
       <RichTextEditor
         content={null}
         enableHTMLSource
+        enablePreview
         featurePreset="full"
-        onChange={onChange}
+        onSourceModeDirtyChange={onSourceModeDirtyChange}
       />
     );
-
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    const source = screen.getByRole('textbox', { name: 'HTML source' });
-    fireEvent.change(source, { target: { value: '<p><u>Safe</u></p>' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply HTML' }));
-    await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({ type: 'doc' })
-      )
-    );
-    await waitFor(() =>
-      expect((source as HTMLTextAreaElement).value).toContain('Safe')
-    );
-
-    fireEvent.change(source, {
-      target: { value: '<script>alert(1)</script>' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Apply HTML' }));
-    expect(screen.getByRole('alert').textContent).toContain(
-      'contains unsafe or unsupported code'
-    );
-    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('button', { name: 'Bold' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'HTML' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(onSourceModeDirtyChange).toHaveBeenLastCalledWith(false);
   });
 
-  it('keeps read-only editors free of HTML controls', async () => {
+  it('keeps read-only editors free of authoring controls', async () => {
     render(
       <RichTextEditor
         content={null}
@@ -194,69 +135,43 @@ describe('RichTextEditor WYSIWYG and source modes', () => {
     });
   });
 
-  it('refreshes a clean HTML projection when controlled content changes', async () => {
-    const first = {
-      content: [
-        {
-          content: [{ text: 'First', type: 'text' }],
-          type: 'paragraph',
-        },
-      ],
-      type: 'doc',
-    };
-    const second = {
-      content: [
-        {
-          content: [{ text: 'Second', type: 'text' }],
-          type: 'paragraph',
-        },
-      ],
-      type: 'doc',
-    };
-    const { rerender } = render(
-      <RichTextEditor content={first} enableHTMLSource featurePreset="full" />
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    expect(
-      (
-        screen.getByRole('textbox', {
-          name: 'HTML source',
-        }) as HTMLTextAreaElement
-      ).value
-    ).toContain('First');
-
-    rerender(
-      <RichTextEditor content={second} enableHTMLSource featurePreset="full" />
+  it('adds collapsible sections as visible structured content', async () => {
+    const onChange = vi.fn();
+    const { container } = render(
+      <RichTextEditor content={null} featurePreset="full" onChange={onChange} />
     );
 
-    await waitFor(() =>
-      expect(
-        (
-          screen.getByRole('textbox', {
-            name: 'HTML source',
-          }) as HTMLTextAreaElement
-        ).value
-      ).toContain('Second')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Toggle section' })
     );
+    await waitFor(() => {
+      expect(container.querySelector('details[open]')).toBeTruthy();
+      expect(container.querySelector('summary')?.textContent).toBe(
+        'Section title'
+      );
+      expect(onChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: expect.arrayContaining([
+            expect.objectContaining({ type: 'collapsible' }),
+          ]),
+        })
+      );
+    });
   });
 
-  it('exits source mode when source editing becomes unavailable', async () => {
-    const { rerender } = render(
-      <RichTextEditor content={null} enableHTMLSource featurePreset="full" />
-    );
-    fireEvent.click(await screen.findByRole('button', { name: 'HTML' }));
-    expect(screen.getByRole('textbox', { name: 'HTML source' })).toBeTruthy();
-
-    rerender(
+  it('renders product actions inside the formatting toolbar', async () => {
+    render(
       <RichTextEditor
         content={null}
-        enableHTMLSource={false}
         featurePreset="full"
+        toolbarEnd={<button type="button">Expand editor</button>}
       />
     );
-    await waitFor(() =>
-      expect(screen.queryByRole('textbox', { name: 'HTML source' })).toBeNull()
-    );
+    const toolbar = await screen.findByRole('toolbar', { name: 'Formatting' });
+    expect(
+      toolbar.querySelector('button[aria-label="Expand editor"]') ??
+        screen.getByRole('button', { name: 'Expand editor' })
+    ).toBeTruthy();
   });
 
   it('rebuilds its schema when the feature preset changes', async () => {

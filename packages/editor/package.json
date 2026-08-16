@@ -30,6 +30,7 @@
     "./styles.css": "./styles.css"
   },
   "dependencies": {
+    "@tiptap/core": "3.30.0",
     "@tiptap/extension-color": "3.30.0",
     "@tiptap/extension-highlight": "3.30.0",
     "@tiptap/extension-image": "3.30.0",

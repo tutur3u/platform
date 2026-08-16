@@ -9,17 +9,12 @@ import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { extractPlainText } from './codec.js';
+import { Collapsible, CollapsibleSummary } from './collapsible.js';
 import { EditorToolbar } from './editor-toolbar.js';
-import { inspectRichTextHTML } from './html-source.js';
-import {
-  type EditorMode,
-  EditorModeSwitch,
-  HTMLSourcePanel,
-} from './html-source-panel.js';
 import { editorMessages } from './messages.js';
-import { sanitizeRichTextContent } from './render.js';
 import type {
   EditorLocale,
   EditorMessages,
@@ -32,7 +27,7 @@ type InternalPreset = RichTextFeaturePreset | 'legacy';
 
 export function RichTextEditor({
   content,
-  enableHTMLSource = false,
+  enableHTMLSource: legacyFullPreset = false,
   featurePreset,
   locale = 'en',
   messages: messageOverrides,
@@ -43,8 +38,10 @@ export function RichTextEditor({
   placeholder,
   readOnly = false,
   stylePolicy,
+  toolbarEnd,
 }: {
   content: JSONContent | null;
+  /** @deprecated Editing is always a live WYSIWYG experience. */
   enableHTMLSource?: boolean;
   /** @deprecated Editing is now always a live WYSIWYG experience. */
   enablePreview?: boolean;
@@ -54,39 +51,28 @@ export function RichTextEditor({
   onChange?: (content: JSONContent | null) => void;
   onImageUpload?: (file: File) => Promise<string>;
   onImageUploadError?: (error: unknown) => void;
+  /** @deprecated There is no separate source mode. */
   onSourceModeDirtyChange?: (dirty: boolean) => void;
   placeholder?: string;
   readOnly?: boolean;
   stylePolicy?: RichTextStylePolicy;
+  /** Additional product actions rendered in the existing formatting toolbar. */
+  toolbarEnd?: ReactNode;
 }) {
   const messages = useMemo(
     () => ({ ...editorMessages[locale], ...messageOverrides }),
     [locale, messageOverrides]
   );
   const preset: InternalPreset =
-    featurePreset ?? (enableHTMLSource ? 'full' : 'legacy');
+    featurePreset ?? (legacyFullPreset ? 'full' : 'legacy');
   const enhanced = preset !== 'legacy';
-  const [mode, setMode] = useState<EditorMode>('editor');
-  const [source, setSource] = useState('');
-  const [sourceError, setSourceError] = useState<string | null>(null);
-  const [sourceNotice, setSourceNotice] = useState<string | null>(null);
-  const sourceBaseline = useRef('');
-  const sourceId = useId();
-  const sourceFeedbackId = `${sourceId}-feedback`;
   const onChangeRef = useRef(onChange);
-  const onSourceModeDirtyChangeRef = useRef(onSourceModeDirtyChange);
-  const pendingAppliedContent = useRef<{
-    incoming: string;
-    value: string;
-  } | null>(null);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  useEffect(() => {
-    onSourceModeDirtyChangeRef.current = onSourceModeDirtyChange;
-  }, [onSourceModeDirtyChange]);
+  useEffect(() => onSourceModeDirtyChange?.(false), [onSourceModeDirtyChange]);
 
   const resolvedPlaceholder = placeholder ?? messages.placeholder;
   const extensions = useMemo(() => {
@@ -104,7 +90,7 @@ export function RichTextEditor({
         orderedList: full ? undefined : false,
       }),
       Link.configure({ openOnClick: false }),
-      ...(full ? [Image] : []),
+      ...(full ? [Image, CollapsibleSummary, Collapsible] : []),
       ...(enhanced && stylePolicy?.alignments?.length
         ? [TextAlign.configure({ types: ['heading', 'paragraph'] })]
         : []),
@@ -144,53 +130,20 @@ export function RichTextEditor({
     [schemaKey]
   );
 
-  const sourceDirty = source !== sourceBaseline.current;
-
   useEffect(() => {
-    const editable = !readOnly && mode === 'editor';
+    const editable = !readOnly;
     if (editor && editor.isEditable !== editable)
       editor.setEditable(editable, false);
-  }, [editor, mode, readOnly]);
+  }, [editor, readOnly]);
 
   useEffect(() => {
-    onSourceModeDirtyChangeRef.current?.(sourceDirty);
-  }, [sourceDirty]);
-
-  useEffect(() => {
-    const modeUnavailable = readOnly || (mode === 'html' && !enableHTMLSource);
-    if (!editor || mode === 'editor' || !modeUnavailable) return;
-    const html = editor.getHTML();
-    sourceBaseline.current = html;
-    setSource(html);
-    setSourceError(null);
-    setSourceNotice(null);
-    setMode('editor');
-  }, [editor, enableHTMLSource, mode, readOnly]);
-
-  useEffect(() => {
-    if (!editor || sourceDirty) return;
+    if (!editor) return;
     const next = content ?? { content: [], type: 'doc' };
     const incoming = JSON.stringify(next);
     const current = JSON.stringify(editor.getJSON());
-    const pending = pendingAppliedContent.current;
-
-    if (pending) {
-      if (incoming === pending.value) pendingAppliedContent.current = null;
-      else if (incoming === pending.incoming && current === pending.value)
-        return;
-      else if (incoming !== pending.incoming)
-        pendingAppliedContent.current = null;
-    }
-
-    if (current !== incoming) {
+    if (current !== incoming)
       editor.commands.setContent(next, { emitUpdate: false });
-      if (mode === 'html') {
-        const nextSource = editor.getHTML();
-        sourceBaseline.current = nextSource;
-        setSource(nextSource);
-      }
-    }
-  }, [content, editor, mode, sourceDirty]);
+  }, [content, editor]);
 
   const words = useMemo(() => {
     if (!editor) return 0;
@@ -201,121 +154,20 @@ export function RichTextEditor({
   if (!editor)
     return <div aria-busy="true" className="tuturuuu-editor-skeleton" />;
 
-  const enterHTMLMode = () => {
-    if (!sourceDirty) {
-      const html = editor.getHTML();
-      sourceBaseline.current = html;
-      setSource(html);
-    }
-    setSourceError(null);
-    setSourceNotice(null);
-    setMode('html');
-  };
-
-  const enterEditorMode = () => {
-    if (sourceDirty) {
-      setSourceError(messages.htmlChangesPending);
-      return;
-    }
-    setSourceError(null);
-    setMode('editor');
-  };
-
-  const discardSource = () => {
-    const html = editor.getHTML();
-    sourceBaseline.current = html;
-    setSource(html);
-    setSourceError(null);
-    setSourceNotice(null);
-    setMode('editor');
-  };
-
-  const applySource = () => {
-    try {
-      const inspection = inspectRichTextHTML(source, document, {
-        featurePreset: preset === 'legacy' ? 'full' : preset,
-        stylePolicy,
-      });
-      if (inspection.unsafe) {
-        setSourceError(messages.sourceUnsafe);
-        setSourceNotice(null);
-        return;
-      }
-
-      editor.commands.setContent(inspection.html, { emitUpdate: false });
-      const safeContent = sanitizeRichTextContent(editor.getJSON(), {
-        featurePreset: preset === 'legacy' ? 'full' : preset,
-        stylePolicy,
-      });
-      editor.commands.setContent(safeContent, { emitUpdate: false });
-      const normalizedHTML = editor.getHTML();
-      pendingAppliedContent.current = {
-        incoming: JSON.stringify(content ?? { content: [], type: 'doc' }),
-        value: JSON.stringify(safeContent),
-      };
-      sourceBaseline.current = normalizedHTML;
-      setSource(normalizedHTML);
-      setSourceError(null);
-      setSourceNotice(
-        inspection.normalized || normalizedHTML !== inspection.html
-          ? messages.htmlNormalized
-          : null
-      );
-      onChangeRef.current?.(safeContent);
-    } catch {
-      setSourceError(messages.sourceUnsafe);
-      setSourceNotice(null);
-    }
-  };
-
   return (
-    <div
-      className="tuturuuu-editor"
-      data-mode={mode}
-      data-read-only={readOnly || undefined}
-    >
-      {!readOnly && enableHTMLSource ? (
-        <EditorModeSwitch
-          enableHTMLSource={enableHTMLSource}
+    <div className="tuturuuu-editor" data-read-only={readOnly || undefined}>
+      {!readOnly ? (
+        <EditorToolbar
+          editor={editor}
           messages={messages}
-          mode={mode}
-          onEditor={enterEditorMode}
-          onHTML={enterHTMLMode}
+          onImageUpload={onImageUpload}
+          onImageUploadError={onImageUploadError}
+          preset={preset}
+          stylePolicy={stylePolicy}
+          toolbarEnd={toolbarEnd}
         />
       ) : null}
-
-      {mode !== 'html' || readOnly || !enableHTMLSource ? (
-        <>
-          {!readOnly && mode === 'editor' ? (
-            <EditorToolbar
-              editor={editor}
-              messages={messages}
-              onImageUpload={onImageUpload}
-              onImageUploadError={onImageUploadError}
-              preset={preset}
-              stylePolicy={stylePolicy}
-            />
-          ) : null}
-          <EditorContent editor={editor} />
-        </>
-      ) : (
-        <HTMLSourcePanel
-          feedbackId={sourceFeedbackId}
-          messages={messages}
-          onApply={applySource}
-          onChange={(value) => {
-            setSource(value);
-            setSourceError(null);
-            setSourceNotice(null);
-          }}
-          onDiscard={discardSource}
-          source={source}
-          sourceDirty={sourceDirty}
-          sourceError={sourceError}
-          sourceId={sourceId}
-          sourceNotice={sourceNotice}
-        />
-      )}
+      <EditorContent editor={editor} />
 
       {!readOnly ? (
         <output className="tuturuuu-editor-word-count">

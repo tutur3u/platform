@@ -46,6 +46,28 @@ describe('rich text codecs', () => {
     );
   });
 
+  it('round-trips and renders collapsible Markdown sections', () => {
+    const markdown = [
+      '<details>',
+      '<summary>Background details</summary>',
+      '',
+      'A **formatted** secret.',
+      '',
+      '- First clue',
+      '- Second clue',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(content.content?.[0]?.type).toBe('collapsible');
+    expect(jsonToMarkdown(content)).toBe(markdown);
+    expect(renderRichTextToHTML(content, { featurePreset: 'full' })).toContain(
+      '<details><summary>Background details</summary><p>A <strong>formatted</strong> secret.</p><ul>'
+    );
+    expect(extractPlainText(content)).toContain('Background details');
+  });
+
   it('preserves literal Markdown delimiters through compatibility mirrors', () => {
     const content = {
       content: [

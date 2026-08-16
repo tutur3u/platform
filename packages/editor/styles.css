@@ -127,6 +127,26 @@
   font-style: italic;
 }
 
+.tuturuuu-editor .tiptap details {
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--tuturuuu-editor-border, #d1d5db);
+  border-radius: 0.625rem;
+  background: var(
+    --tuturuuu-editor-collapsible-background,
+    rgb(127 127 127 / 0.035)
+  );
+}
+
+.tuturuuu-editor .tiptap summary {
+  cursor: text;
+  font-weight: 700;
+}
+
+.tuturuuu-editor .tiptap details > :not(summary) {
+  margin-inline-start: 1.25rem;
+}
+
 .tuturuuu-editor .tiptap hr {
   height: 1px;
   margin: 1.75rem 0;

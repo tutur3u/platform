@@ -420,6 +420,43 @@ export function markdownToJSON(markdown: string): JSONContent {
       index += 1;
       continue;
     }
+    if (/^<details(?:\s+open)?\s*>$/u.test(line.trim())) {
+      const detailLines: string[] = [];
+      let cursor = index + 1;
+      while (
+        cursor < lines.length &&
+        !/^<\/details>\s*$/u.test(lines[cursor] ?? '')
+      ) {
+        detailLines.push(lines[cursor] ?? '');
+        cursor += 1;
+      }
+      const summaryIndex = detailLines.findIndex((item) => item.trim());
+      const summaryMatch =
+        summaryIndex >= 0
+          ? /^<summary>(.*)<\/summary>\s*$/u.exec(
+              detailLines[summaryIndex]?.trim() ?? ''
+            )
+          : null;
+      if (summaryMatch && cursor < lines.length) {
+        const body = detailLines
+          .filter((_, detailIndex) => detailIndex !== summaryIndex)
+          .join('\n')
+          .trim();
+        const bodyContent = markdownToJSON(body).content ?? [];
+        content.push({
+          content: [
+            {
+              content: parseInline(summaryMatch[1] ?? ''),
+              type: 'collapsibleSummary',
+            },
+            ...(bodyContent.length ? bodyContent : [paragraph('')]),
+          ],
+          type: 'collapsible',
+        });
+        index = cursor + 1;
+        continue;
+      }
+    }
     const alignedBlock = line.match(
       /^<(p|h([1-4])) style="text-align:\s*(left|center|right)">(.*)<\/\1>$/u
     );
@@ -573,6 +610,15 @@ function nodeToMarkdown(node: JSONContent): string {
   }
 
   const children = (node.content ?? []).map(nodeToMarkdown).join('');
+  if (node.type === 'collapsible') {
+    const [summary, ...body] = node.content ?? [];
+    const summaryMarkdown = (summary?.content ?? [])
+      .map(nodeToMarkdown)
+      .join('');
+    const bodyMarkdown = body.map(nodeToMarkdown).join('\n\n');
+    return `<details>\n<summary>${summaryMarkdown}</summary>\n\n${bodyMarkdown}\n\n</details>`;
+  }
+  if (node.type === 'collapsibleSummary') return children;
   if (node.type === 'heading') {
     const level = Math.min(4, Math.max(1, Number(node.attrs?.level ?? 2)));
     const textAlign = String(node.attrs?.textAlign ?? '');
@@ -648,9 +694,13 @@ export function extractPlainText(content: JSONContent | null): string {
       parts.push(String(node.attrs.alt));
     for (const child of node.content ?? []) visit(child);
     if (
-      ['paragraph', 'heading', 'listItem', 'blockquote'].includes(
-        node.type ?? ''
-      )
+      [
+        'paragraph',
+        'heading',
+        'listItem',
+        'blockquote',
+        'collapsibleSummary',
+      ].includes(node.type ?? '')
     )
       parts.push('\n');
   };

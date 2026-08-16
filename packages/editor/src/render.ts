@@ -104,6 +104,17 @@ function sanitizeNode(
       type: 'paragraph',
     };
 
+  if (preset === 'full' && node.type === 'collapsibleSummary')
+    return { content: children, type: 'collapsibleSummary' };
+  if (preset === 'full' && node.type === 'collapsible') {
+    const [summary, ...body] = children;
+    if (summary?.type !== 'collapsibleSummary') return null;
+    return {
+      content: [summary, ...(body.length ? body : [{ type: 'paragraph' }])],
+      type: 'collapsible',
+    };
+  }
+
   if (node.type === 'heading') {
     const level = Number(node.attrs?.level ?? 2);
     const allowed =
@@ -254,6 +265,9 @@ function renderNode(
   if (node.type === 'hardBreak') return '<br>';
   if (node.type === 'paragraph')
     return `<p${styleAttribute(node, policy)}>${children}</p>`;
+  if (node.type === 'collapsibleSummary')
+    return `<summary>${children}</summary>`;
+  if (node.type === 'collapsible') return `<details>${children}</details>`;
   if (node.type === 'heading') {
     const level = Math.min(4, Math.max(1, Number(node.attrs?.level ?? 2)));
     return `<h${level}${styleAttribute(node, policy)}>${children}</h${level}>`;
