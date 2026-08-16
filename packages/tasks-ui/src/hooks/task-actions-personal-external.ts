@@ -13,10 +13,17 @@ import {
   isTaskBoardTerminalStatus,
 } from '@tuturuuu/utils/task-list-status';
 import {
+  compareTasksByEffectiveSortKey,
+  getEffectiveTaskSortKey,
+} from '../tu-do/boards/boardId/kanban/dnd/task-sort-key';
+import {
   patchTaskInVisibleCaches,
   restoreVisibleTaskCaches,
   snapshotVisibleTaskCaches,
 } from '../tu-do/shared/task-cache-patches';
+
+const PERSONAL_SORT_KEY_STEP = 1_000_000;
+const PERSONAL_SORT_KEY_DEFAULT = 1_000_000_001;
 
 export function isPersonalExternalTask(task?: Task) {
   return isPersonalExternalOverlayTask(task);
@@ -63,7 +70,7 @@ function findFirstMatchingSourceList(
   return null;
 }
 
-function getPersonalPlacementOrder({
+export function getPersonalPlacementOrder({
   boardId,
   queryClient,
   taskId,
@@ -80,26 +87,28 @@ function getPersonalPlacementOrder({
     queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
   const targetListTasks = currentTasks
     .filter((item) => item.id !== taskId && item.list_id === targetListId)
-    .sort((a, b) => {
-      const sortA = a.sort_key ?? Number.MAX_SAFE_INTEGER;
-      const sortB = b.sort_key ?? Number.MAX_SAFE_INTEGER;
-      if (sortA !== sortB) return sortA - sortB;
-      if (!a.created_at || !b.created_at) return 0;
-      return (
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-    });
+    .sort(compareTasksByEffectiveSortKey);
 
-  if (position === 'top') {
-    return {
-      previous_task_id: null,
-      next_task_id: targetListTasks[0]?.id ?? null,
-    };
-  }
+  const previousTask =
+    position === 'end' ? targetListTasks[targetListTasks.length - 1] : null;
+  const nextTask = position === 'top' ? targetListTasks[0] : null;
+  const previousSortKey = previousTask
+    ? getEffectiveTaskSortKey(previousTask)
+    : null;
+  const nextSortKey = nextTask ? getEffectiveTaskSortKey(nextTask) : null;
+  const personalSortKey =
+    previousSortKey !== null
+      ? previousSortKey + PERSONAL_SORT_KEY_STEP
+      : nextSortKey !== null
+        ? nextSortKey > 1
+          ? Math.max(1, Math.floor(nextSortKey / 2))
+          : nextSortKey / 2
+        : PERSONAL_SORT_KEY_DEFAULT;
 
   return {
-    previous_task_id: targetListTasks[targetListTasks.length - 1]?.id ?? null,
-    next_task_id: null,
+    personal_sort_key: personalSortKey,
+    previous_task_id: previousTask?.id ?? null,
+    next_task_id: nextTask?.id ?? null,
   };
 }
 
@@ -205,6 +214,13 @@ export async function moveExternalTaskToPersonalList({
 
     const isCompletedTarget = isTaskBoardCompletedStatus(targetList.status);
     const isClosedTarget = isTaskBoardTerminalStatus(targetList.status);
+    const order = getPersonalPlacementOrder({
+      boardId,
+      queryClient,
+      taskId: task.id,
+      targetListId: targetList.id,
+      position: placementPosition,
+    });
     const optimisticTask = {
       ...task,
       list_id: targetList.id,
@@ -213,6 +229,8 @@ export async function moveExternalTaskToPersonalList({
       personal_placed_at: now,
       is_personal_external: true,
       is_personal_external_default: false,
+      personal_sort_key: order.personal_sort_key,
+      sort_key: order.personal_sort_key,
       completed_at: isCompletedTarget ? (task.completed_at ?? now) : null,
       closed_at: isClosedTarget ? (task.closed_at ?? now) : null,
     } as Task;
@@ -224,18 +242,12 @@ export async function moveExternalTaskToPersonalList({
       task: optimisticTask,
     });
 
-    const order = getPersonalPlacementOrder({
-      boardId,
-      queryClient,
-      taskId: task.id,
-      targetListId: targetList.id,
-      position: placementPosition,
-    });
     const placementResponse = await upsertCurrentUserTaskPersonalPlacement(
       task.id,
       {
         personal_board_id: personalBoardId,
         personal_list_id: targetList.id,
+        personal_sort_key: order.personal_sort_key,
         previous_task_id: order.previous_task_id,
         next_task_id: order.next_task_id,
         terminal_status: terminalStatus,

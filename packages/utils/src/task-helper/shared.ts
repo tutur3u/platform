@@ -4,9 +4,12 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 
 export function getTicketIdentifier(
   prefix: string | null | undefined,
-  displayNumber: number
+  displayNumber: number | null | undefined
 ): string {
   const effectivePrefix = prefix?.trim() || 'TASK';
+  if (typeof displayNumber !== 'number' || !Number.isFinite(displayNumber)) {
+    return effectivePrefix.toUpperCase();
+  }
   return `${effectivePrefix}-${displayNumber}`.toUpperCase();
 }
 

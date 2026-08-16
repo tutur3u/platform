@@ -13,7 +13,6 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getPersonalExternalStagingBoardId,
@@ -51,6 +50,11 @@ import {
   getPendingTaskIdsForDrop,
   removePendingTaskIds,
 } from './task-drag-pending';
+import {
+  getPersonalPlacementTargetBoardId,
+  shouldPersistTaskDropDirectly,
+  usesPersonalPlacement,
+} from './task-drag-persistence';
 import {
   dragPreviewPositionsEqual,
   getTaskDropEndPreviewFromRects,
@@ -120,27 +124,6 @@ interface UseKanbanDndProps {
   reorderTaskMutation: any;
   taskHeightsRef: React.RefObject<Map<string, number>>;
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export function usesPersonalPlacement(task: Task) {
-  return isPersonalExternalOverlayTask(task);
-}
-
-export function getPersonalPlacementTargetBoardId({
-  boardId,
-  columns,
-  targetListId,
-}: {
-  boardId: string | null;
-  columns: Pick<TaskList, 'board_id' | 'id'>[];
-  targetListId: string;
-}) {
-  const stagingBoardId = getPersonalExternalStagingBoardId(targetListId);
-  if (stagingBoardId) return stagingBoardId;
-
-  return (
-    columns.find((column) => column.id === targetListId)?.board_id ?? boardId
-  );
 }
 
 function getTaskDropPosition(
@@ -1503,15 +1486,22 @@ export function useKanbanDnd({
 
           clearSelection();
         } else {
-          if (activeUsesPersonalPlacement || targetIsExternalStaging) {
+          const repairedTaskSortKeys =
+            optimisticDropPreview?.repairedTaskSortKeys ?? [];
+
+          if (
+            shouldPersistTaskDropDirectly(
+              activeUsesPersonalPlacement,
+              repairedTaskSortKeys.length,
+              targetIsExternalStaging
+            )
+          ) {
             persistPersonalPlacementMove(
               activeTaskForDrop,
               newSortKey,
               personalPlacementOrder
             );
           } else {
-            const repairedTaskSortKeys =
-              optimisticDropPreview?.repairedTaskSortKeys ?? [];
             const pendingTaskIds = getPendingTaskIdsForDrop({
               activeTaskId: activeTaskForDrop.id,
               repairedTaskSortKeys,

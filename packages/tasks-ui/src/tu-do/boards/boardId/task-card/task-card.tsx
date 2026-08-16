@@ -1113,7 +1113,7 @@ function TaskCardInner({
     workspaceId: effectiveWorkspaceId,
     targetCompletionList,
     targetClosedList,
-    availableLists,
+    availableLists: actionAvailableLists,
     onUpdate,
     setIsLoading,
     setMenuOpen,
@@ -2412,10 +2412,10 @@ function TaskCardInner({
                   )}
 
                   {/* Move Menu */}
-                  {availableLists.length > 0 && effectiveWorkspaceId && (
+                  {actionAvailableLists.length > 0 && effectiveWorkspaceId && (
                     <TaskMoveMenu
                       currentListId={task.list_id}
-                      availableLists={availableLists}
+                      availableLists={actionAvailableLists}
                       isLoading={isLoading}
                       onMoveToList={handleMoveToList}
                       onMenuItemSelect={handleMenuItemSelect}
