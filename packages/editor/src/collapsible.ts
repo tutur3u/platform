@@ -17,17 +17,28 @@ export const CollapsibleSummary = Node.create({
       disclosure.className = 'tuturuuu-editor-collapsible-toggle';
       disclosure.contentEditable = 'false';
       disclosure.setAttribute('aria-label', this.options.disclosureLabel);
+      disclosure.setAttribute('aria-expanded', String(this.editor.isEditable));
       disclosure.setAttribute('title', this.options.disclosureLabel);
       disclosure.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
         const details = dom.closest('details');
-        if (details) details.open = !details.open;
+        if (details) {
+          details.open = !details.open;
+          disclosure.setAttribute('aria-expanded', String(details.open));
+        }
       });
 
       contentDOM.className = 'tuturuuu-editor-collapsible-summary-content';
       dom.append(disclosure, contentDOM);
-      return { contentDOM, dom };
+      return {
+        contentDOM,
+        dom,
+        ignoreMutation: (mutation) =>
+          mutation.type === 'attributes' &&
+          mutation.target === disclosure &&
+          mutation.attributeName === 'aria-expanded',
+      };
     };
   },
   parseHTML() {
