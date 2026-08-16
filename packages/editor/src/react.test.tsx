@@ -181,9 +181,9 @@ describe('RichTextEditor WYSIWYG', () => {
       name: 'Expand or collapse section',
     });
     fireEvent.click(disclosure);
-    expect(details?.hasAttribute('open')).toBe(false);
+    await waitFor(() => expect(details?.hasAttribute('open')).toBe(false));
     fireEvent.click(disclosure);
-    expect(details?.hasAttribute('open')).toBe(true);
+    await waitFor(() => expect(details?.hasAttribute('open')).toBe(true));
   });
 
   it('renders product actions inside the formatting toolbar', async () => {

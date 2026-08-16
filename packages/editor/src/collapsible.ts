@@ -44,7 +44,12 @@ export const Collapsible = Node.create({
     return () => {
       const dom = document.createElement('details');
       dom.open = this.editor.isEditable;
-      return { contentDOM: dom, dom };
+      return {
+        contentDOM: dom,
+        dom,
+        ignoreMutation: (mutation) =>
+          mutation.type === 'attributes' && mutation.attributeName === 'open',
+      };
     };
   },
   addKeyboardShortcuts() {
