@@ -5,6 +5,7 @@ import {
 } from './collapsible-codec.js';
 import type { JSONContent } from './types.js';
 import { normalizeRichTextImageUrl, normalizeRichTextUrl } from './url.js';
+
 const textNode = (
   text: string,
   marks?: NonNullable<JSONContent['marks']>
@@ -672,7 +673,6 @@ function nodeToMarkdown(node: JSONContent): string {
 export function jsonToMarkdown(content: JSONContent | null): string {
   return (content?.content ?? []).map(nodeToMarkdown).join('\n\n').trim();
 }
-
 export function extractPlainText(content: JSONContent | null): string {
   if (!content) return '';
   const parts: string[] = [];

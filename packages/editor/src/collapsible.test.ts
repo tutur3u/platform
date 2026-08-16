@@ -64,6 +64,20 @@ describe('collapsible editing', () => {
     editor.destroy();
   });
 
+  it('keeps summary text editable without disabling native read-only toggles', () => {
+    const editor = createEditor();
+    const summary = editor.view.dom.querySelector('summary');
+
+    expect(
+      summary?.dispatchEvent(new MouseEvent('click', { cancelable: true }))
+    ).toBe(false);
+    editor.setEditable(false);
+    expect(
+      summary?.dispatchEvent(new MouseEvent('click', { cancelable: true }))
+    ).toBe(true);
+    editor.destroy();
+  });
+
   it('removes a toggle with Backspace from the start of its summary', () => {
     const editor = createEditor();
     editor.commands.setTextSelection(2);

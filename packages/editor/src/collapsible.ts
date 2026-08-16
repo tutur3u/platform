@@ -19,7 +19,7 @@ export const CollapsibleSummary = Node.create({
       disclosure.setAttribute('aria-label', this.options.disclosureLabel);
       disclosure.setAttribute('aria-expanded', String(this.editor.isEditable));
       disclosure.setAttribute('title', this.options.disclosureLabel);
-      disclosure.addEventListener('click', (event) => {
+      const toggleDisclosure = (event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
         const details = dom.closest('details');
@@ -27,12 +27,22 @@ export const CollapsibleSummary = Node.create({
           details.open = !details.open;
           disclosure.setAttribute('aria-expanded', String(details.open));
         }
-      });
+      };
+      const keepSummaryEditable = (event: MouseEvent) => {
+        if (this.editor.isEditable && event.target !== disclosure)
+          event.preventDefault();
+      };
+      disclosure.addEventListener('click', toggleDisclosure);
+      dom.addEventListener('click', keepSummaryEditable);
 
       contentDOM.className = 'tuturuuu-editor-collapsible-summary-content';
       dom.append(disclosure, contentDOM);
       return {
         contentDOM,
+        destroy: () => {
+          disclosure.removeEventListener('click', toggleDisclosure);
+          dom.removeEventListener('click', keepSummaryEditable);
+        },
         dom,
         ignoreMutation: (mutation) =>
           mutation.type === 'attributes' &&
