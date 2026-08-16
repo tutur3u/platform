@@ -154,10 +154,12 @@
   .tiptap
   summary:not(:has(> .tuturuuu-editor-collapsible-toggle))::before {
   display: block;
+  width: 0;
+  height: 0;
   flex: 0 0 auto;
-  font-size: 0.75rem;
-  line-height: 1;
-  content: "▶";
+  border-block: 0.3rem solid transparent;
+  border-inline-start: 0.45rem solid currentColor;
+  content: "";
   transition: transform 120ms ease;
 }
 
@@ -181,9 +183,12 @@
 
 .tuturuuu-editor-collapsible-toggle::before {
   display: block;
-  font-size: 0.75rem;
-  line-height: 1;
-  content: "▶";
+  width: 0;
+  height: 0;
+  margin: auto;
+  border-block: 0.3rem solid transparent;
+  border-inline-start: 0.45rem solid currentColor;
+  content: "";
   transition: transform 120ms ease;
 }
 

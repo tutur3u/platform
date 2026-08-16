@@ -458,10 +458,16 @@ export function markdownToJSON(markdown: string): JSONContent {
         summarySource
       );
       if (summaryMatch && detailsDepth === 0) {
-        const summaryContent =
-          markdownToJSON(summaryMatch[1] ?? '').content?.flatMap(
-            (summaryBlock) => summaryBlock.content ?? []
-          ) ?? [];
+        const summaryBlocks =
+          markdownToJSON(summaryMatch[1] ?? '').content ?? [];
+        const summaryContent = summaryBlocks.flatMap(
+          (summaryBlock, summaryBlockIndex) => [
+            ...(summaryBlockIndex > 0
+              ? [{ text: ' ', type: 'text' as const }]
+              : []),
+            ...(summaryBlock.content ?? []),
+          ]
+        );
         const body = detailLines
           .filter(
             (_, detailIndex) =>

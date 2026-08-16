@@ -97,6 +97,24 @@ describe('rich text codecs', () => {
     expect(jsonToMarkdown(content)).toBe(markdown);
   });
 
+  it('preserves whitespace in soft-wrapped collapsible summaries', () => {
+    const markdown = [
+      '<details>',
+      '<summary>First',
+      'Second</summary>',
+      '',
+      'Hidden context.',
+      '',
+      '</details>',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(extractPlainText(content)).toContain('First Second');
+    expect(jsonToMarkdown(content)).toContain(
+      '<summary>First Second</summary>'
+    );
+  });
+
   it('keeps content immediately following a collapsible section', () => {
     const markdown = [
       '<details>',
