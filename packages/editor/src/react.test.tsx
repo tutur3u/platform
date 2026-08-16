@@ -76,9 +76,26 @@ describe('RichTextEditor WYSIWYG', () => {
   });
 
   it('keeps read-only editors free of authoring controls', async () => {
-    render(
+    const { container } = render(
       <RichTextEditor
-        content={null}
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Read-only toggle', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                {
+                  content: [{ text: 'Hidden details', type: 'text' }],
+                  type: 'paragraph',
+                },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
         enableHTMLSource
         featurePreset="full"
         readOnly
@@ -88,6 +105,7 @@ describe('RichTextEditor WYSIWYG', () => {
       expect(screen.queryByRole('button', { name: 'HTML' })).toBeNull()
     );
     expect(screen.queryByRole('button', { name: 'Preview' })).toBeNull();
+    expect(container.querySelector('details[open]')).toBeNull();
   });
 
   it('updates visual editing when read-only changes', async () => {

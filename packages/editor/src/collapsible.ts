@@ -40,6 +40,13 @@ export const Collapsible = Node.create({
   group: 'block',
   content: 'collapsibleSummary block+',
   defining: true,
+  addNodeView() {
+    return () => {
+      const dom = document.createElement('details');
+      dom.open = this.editor.isEditable;
+      return { contentDOM: dom, dom };
+    };
+  },
   addKeyboardShortcuts() {
     const removeAtBoundary = (direction: 'backward' | 'forward') =>
       this.editor.commands.command(({ dispatch, state }) => {
@@ -85,7 +92,6 @@ export const Collapsible = Node.create({
     return [{ tag: 'details' }];
   },
   renderHTML({ HTMLAttributes }) {
-    // Keep authoring blocks open so their content is always directly editable.
-    return ['details', mergeAttributes(HTMLAttributes, { open: '' }), 0];
+    return ['details', mergeAttributes(HTMLAttributes), 0];
   },
 });

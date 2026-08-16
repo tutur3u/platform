@@ -476,7 +476,7 @@ export function markdownToJSON(markdown: string): JSONContent {
           ],
           type: 'collapsible',
         });
-        index = cursor + 1;
+        index = cursor;
         continue;
       }
     }

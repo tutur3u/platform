@@ -133,8 +133,12 @@ export function RichTextEditor({
 
   useEffect(() => {
     const editable = !readOnly;
-    if (editor && editor.isEditable !== editable)
+    if (editor && editor.isEditable !== editable) {
       editor.setEditable(editable, false);
+      editor.view.dom.querySelectorAll('details').forEach((details) => {
+        details.open = editable;
+      });
+    }
   }, [editor, readOnly]);
 
   useEffect(() => {

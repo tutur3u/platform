@@ -94,6 +94,25 @@ describe('rich text codecs', () => {
     expect(jsonToMarkdown(content)).toBe(markdown);
   });
 
+  it('keeps content immediately following a collapsible section', () => {
+    const markdown = [
+      '<details>',
+      '<summary>Notes</summary>',
+      '',
+      'Hidden context.',
+      '',
+      '</details>',
+      'Visible afterward.',
+    ].join('\n');
+    const content = markdownToJSON(markdown);
+
+    expect(content.content?.map((node) => node.type)).toEqual([
+      'collapsible',
+      'paragraph',
+    ]);
+    expect(extractPlainText(content)).toContain('Visible afterward.');
+  });
+
   it('preserves literal Markdown delimiters through compatibility mirrors', () => {
     const content = {
       content: [
