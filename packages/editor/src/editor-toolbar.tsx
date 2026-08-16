@@ -39,21 +39,23 @@ type InternalPreset = RichTextFeaturePreset | 'legacy';
 
 export function insertCollapsibleSection(editor: Editor, title: string) {
   const insertionPosition = editor.state.selection.to;
+  const collapsible = editor.schema.nodeFromJSON({
+    content: [
+      {
+        content: [{ text: title, type: 'text' }],
+        type: 'collapsibleSummary',
+      },
+      { type: 'paragraph' },
+    ],
+    type: 'collapsible',
+  });
 
-  return editor
-    .chain()
-    .focus(undefined, { scrollIntoView: false })
-    .insertContentAt(insertionPosition, {
-      content: [
-        {
-          content: [{ text: title, type: 'text' }],
-          type: 'collapsibleSummary',
-        },
-        { type: 'paragraph' },
-      ],
-      type: 'collapsible',
-    })
-    .run();
+  // Dispatch against the captured endpoint directly. Chained focus/insert
+  // commands can restore a stale DOM range after the toolbar receives focus,
+  // causing the selected prose to be replaced instead of inserting beside it.
+  editor.view.dispatch(editor.state.tr.insert(insertionPosition, collapsible));
+  editor.view.focus();
+  return true;
 }
 
 export function EditorToolbar({
