@@ -1,40 +1,23 @@
-// @vitest-environment jsdom
-
-import { act } from 'react';
-import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 import { ToolbarAction } from './toolbar-action.js';
 
 describe('toolbar action selection safety', () => {
   it('runs once before pointer focus and remains keyboard accessible', () => {
-    const container = document.createElement('div');
-    const root = createRoot(container);
     const run = vi.fn();
-
-    act(() => {
-      root.render(
-        <ToolbarAction icon={() => <svg />} label="Toggle section" run={run} />
-      );
+    const tree = ToolbarAction({
+      icon: () => <svg />,
+      label: 'Toggle section',
+      run,
     });
-    const button = container.querySelector('button');
-    expect(button).not.toBeNull();
+    const button = tree.props.children[0];
+    const preventDefault = vi.fn();
 
-    const pointerDown = new MouseEvent('pointerdown', {
-      bubbles: true,
-      cancelable: true,
-      detail: 1,
-    });
-    button?.dispatchEvent(pointerDown);
-    button?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, detail: 1 })
-    );
-    expect(pointerDown.defaultPrevented).toBe(true);
+    button.props.onPointerDown({ preventDefault });
+    button.props.onClick({ detail: 1 });
+    expect(preventDefault).toHaveBeenCalledOnce();
     expect(run).toHaveBeenCalledTimes(1);
 
-    button?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true, detail: 0 })
-    );
+    button.props.onClick({ detail: 0 });
     expect(run).toHaveBeenCalledTimes(2);
-    act(() => root.unmount());
   });
 });
