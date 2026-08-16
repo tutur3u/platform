@@ -66,6 +66,7 @@ describe('collapsible editing', () => {
 
   it('keeps summary text editable without disabling native read-only toggles', () => {
     const editor = createEditor();
+    document.body.append(editor.view.dom);
     const summary = editor.view.dom.querySelector('summary');
     const summaryContent = editor.view.dom.querySelector(
       '.tuturuuu-editor-collapsible-summary-content'
@@ -74,16 +75,18 @@ describe('collapsible editing', () => {
     const selection = window.getSelection();
     const range = document.createRange();
     range.setStart(summaryContent!.firstChild!, 4);
-    range.collapse(true);
+    range.setEnd(summaryContent!.firstChild!, 9);
     selection?.removeAllRanges();
     selection?.addRange(range);
+    expect(selection?.toString()).toBe('ion t');
 
     expect(
       summaryContent?.dispatchEvent(
         new MouseEvent('click', { bubbles: true, cancelable: true })
       )
     ).toBe(false);
-    expect(editor.state.selection.from).toBe(2);
+    expect(editor.state.selection.from).toBe(6);
+    expect(editor.state.selection.to).toBe(11);
     editor.setEditable(false);
     expect(
       summary?.dispatchEvent(new MouseEvent('click', { cancelable: true }))

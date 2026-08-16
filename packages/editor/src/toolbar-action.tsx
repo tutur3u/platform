@@ -50,14 +50,19 @@ export function ToolbarAction({
           const target = event.currentTarget;
           clearPointerHandled(target);
           target.dataset.pointerActionHandled = 'true';
-          // A press released outside the button has no click or pointercancel
-          // here. Expire the marker after this activation turn so it cannot
-          // swallow the user's next keyboard or touch activation.
+          target.setPointerCapture?.(event.pointerId);
+          run?.();
+        }}
+        onPointerUp={(event) => {
+          const target = event.currentTarget;
+          target.releasePointerCapture?.(event.pointerId);
+          // Pointer capture delivers an outside release here too. Keep the
+          // marker through the matching click, then expire it if no click was
+          // produced by an abandoned gesture.
           handledReset.current = setTimeout(
             () => clearPointerHandled(target),
             0
           );
-          run?.();
         }}
         ref={buttonRef}
         type={type}

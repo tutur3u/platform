@@ -37,27 +37,35 @@ export const CollapsibleSummary = Node.create({
         // that native toggle, then explicitly hand focus back to ProseMirror.
         const domSelection = dom.ownerDocument.getSelection();
         const anchorNode = domSelection?.anchorNode;
+        const focusNode = domSelection?.focusNode;
         const nodePosition = getPos();
         if (nodePosition === undefined) return;
-        let position = nodePosition + 1;
-
-        if (anchorNode && contentDOM.contains(anchorNode)) {
+        const positionFor = (
+          node: globalThis.Node | null | undefined,
+          offset: number
+        ) => {
+          if (!node || !contentDOM.contains(node)) return nodePosition + 1;
+          if (
+            node === contentDOM.firstChild &&
+            node.nodeType === globalThis.Node.TEXT_NODE
+          )
+            return nodePosition + 1 + offset;
           try {
-            position = view.posAtDOM(
-              anchorNode,
-              domSelection?.anchorOffset ?? 0
-            );
+            return view.posAtDOM(node, offset);
           } catch {
             // Keep the safe start-of-summary fallback for unusual browser
             // selections (for example, clicking directly between elements).
+            return nodePosition + 1;
           }
-        }
+        };
+        const anchor = positionFor(anchorNode, domSelection?.anchorOffset ?? 0);
+        const head = positionFor(focusNode, domSelection?.focusOffset ?? 0);
 
         event.preventDefault();
         view.focus();
         view.dispatch(
           view.state.tr.setSelection(
-            TextSelection.create(view.state.doc, position)
+            TextSelection.create(view.state.doc, anchor, head)
           )
         );
       };
