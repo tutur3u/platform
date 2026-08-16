@@ -167,6 +167,10 @@ describe('RichTextEditor WYSIWYG', () => {
       expect(container.querySelector('summary')?.textContent).toBe(
         'Section title'
       );
+      expect(container.querySelector('details > p')?.textContent).toBe('');
+      expect(
+        container.querySelector('details > p')?.getAttribute('data-placeholder')
+      ).toBe('Write the hidden details here…');
       expect(onChange).toHaveBeenCalledWith(
         expect.objectContaining({
           content: expect.arrayContaining([
@@ -184,6 +188,34 @@ describe('RichTextEditor WYSIWYG', () => {
     await waitFor(() => expect(details?.hasAttribute('open')).toBe(false));
     fireEvent.click(disclosure);
     await waitFor(() => expect(details?.hasAttribute('open')).toBe(true));
+  });
+
+  it('localizes the collapsible disclosure control', async () => {
+    render(
+      <RichTextEditor
+        content={{
+          content: [
+            {
+              content: [
+                {
+                  content: [{ text: 'Tiêu đề', type: 'text' }],
+                  type: 'collapsibleSummary',
+                },
+                { type: 'paragraph' },
+              ],
+              type: 'collapsible',
+            },
+          ],
+          type: 'doc',
+        }}
+        featurePreset="full"
+        locale="vi"
+      />
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'Mở rộng hoặc thu gọn mục' })
+    ).toBeTruthy();
   });
 
   it('renders product actions inside the formatting toolbar', async () => {

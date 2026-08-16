@@ -150,6 +150,24 @@
   display: none;
 }
 
+.tuturuuu-editor
+  .tiptap
+  summary:not(:has(> .tuturuuu-editor-collapsible-toggle))::before {
+  display: block;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  line-height: 1;
+  content: "▶";
+  transition: transform 120ms ease;
+}
+
+.tuturuuu-editor
+  .tiptap
+  details[open]
+  > summary:not(:has(> .tuturuuu-editor-collapsible-toggle))::before {
+  transform: rotate(90deg);
+}
+
 .tuturuuu-editor-collapsible-toggle {
   width: 1.5rem;
   height: 1.5rem;
@@ -165,11 +183,14 @@
   display: block;
   font-size: 0.75rem;
   line-height: 1;
-  content: '▶';
+  content: "▶";
   transition: transform 120ms ease;
 }
 
-.tuturuuu-editor .tiptap details[open] > summary
+.tuturuuu-editor
+  .tiptap
+  details[open]
+  > summary
   > .tuturuuu-editor-collapsible-toggle::before {
   transform: rotate(90deg);
 }
@@ -231,7 +252,8 @@
   border-radius: 0.5rem;
 }
 
-.tuturuuu-editor .tiptap p.is-editor-empty:first-child::before {
+.tuturuuu-editor .tiptap p.is-editor-empty:first-child::before,
+.tuturuuu-editor .tiptap details > p.is-empty::before {
   float: left;
   height: 0;
   color: var(--tuturuuu-editor-muted, #6b7280);

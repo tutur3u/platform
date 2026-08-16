@@ -167,9 +167,6 @@ export function EditorToolbar({
                     type: 'collapsibleSummary',
                   },
                   {
-                    content: [
-                      { text: messages.collapsiblePlaceholder, type: 'text' },
-                    ],
                     type: 'paragraph',
                   },
                 ],

@@ -1,5 +1,6 @@
 'use client';
 
+import { Extension } from '@tiptap/core';
 import { Color } from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Image from '@tiptap/extension-image';
@@ -7,6 +8,8 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Plugin } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { ReactNode } from 'react';
@@ -91,7 +94,14 @@ export function RichTextEditor({
       }),
       Link.configure({ openOnClick: false }),
       ...(full ? [Image] : []),
-      ...(preset === 'full' ? [CollapsibleSummary, Collapsible] : []),
+      ...(preset === 'full'
+        ? [
+            CollapsibleSummary.configure({
+              disclosureLabel: messages.collapsibleDisclosure,
+            }),
+            Collapsible,
+          ]
+        : []),
       ...(enhanced && stylePolicy?.alignments?.length
         ? [TextAlign.configure({ types: ['heading', 'paragraph'] })]
         : []),
@@ -99,12 +109,45 @@ export function RichTextEditor({
       ...(enhanced && stylePolicy?.highlights?.length
         ? [Highlight.configure({ multicolor: true })]
         : []),
+      Extension.create({
+        name: 'collapsiblePlaceholder',
+        addProseMirrorPlugins() {
+          return [
+            new Plugin({
+              props: {
+                decorations(state) {
+                  const decorations: Decoration[] = [];
+                  state.doc.descendants((node, pos, parent) => {
+                    if (
+                      node.type.name === 'paragraph' &&
+                      node.content.size === 0 &&
+                      parent?.type.name === 'collapsible'
+                    ) {
+                      decorations.push(
+                        Decoration.node(pos, pos + node.nodeSize, {
+                          'data-placeholder': messages.collapsiblePlaceholder,
+                          class: 'is-empty',
+                        })
+                      );
+                    }
+                  });
+                  return DecorationSet.create(state.doc, decorations);
+                },
+              },
+            }),
+          ];
+        },
+      }),
       Placeholder.configure({
+        includeChildren: true,
         placeholder: resolvedPlaceholder,
+        showOnlyCurrent: false,
       }),
     ];
   }, [
     enhanced,
+    messages.collapsibleDisclosure,
+    messages.collapsiblePlaceholder,
     preset,
     resolvedPlaceholder,
     stylePolicy?.alignments,
@@ -118,6 +161,8 @@ export function RichTextEditor({
     stylePolicy?.textTones?.length ? 'tones' : '',
     stylePolicy?.highlights?.length ? 'highlights' : '',
     resolvedPlaceholder,
+    messages.collapsibleDisclosure,
+    messages.collapsiblePlaceholder,
   ].join(':');
   const editor = useEditor(
     {

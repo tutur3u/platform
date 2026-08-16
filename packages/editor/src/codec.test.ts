@@ -91,6 +91,9 @@ describe('rich text codecs', () => {
 
     expect(content.content?.[0]?.type).toBe('collapsible');
     expect(content.content?.[0]?.content?.[2]?.type).toBe('collapsible');
+    expect(content.content?.[0]?.content?.[0]?.content?.[1]?.type).toBe(
+      'hardBreak'
+    );
     expect(jsonToMarkdown(content)).toBe(markdown);
   });
 

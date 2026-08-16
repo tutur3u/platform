@@ -36,6 +36,7 @@ export type EditorMessages = {
   clearHighlight: string;
   clearTextTone: string;
   collapsible: string;
+  collapsibleDisclosure: string;
   collapsiblePlaceholder: string;
   collapsibleTitle: string;
   discardHTML: string;

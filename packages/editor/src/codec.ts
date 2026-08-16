@@ -458,6 +458,10 @@ export function markdownToJSON(markdown: string): JSONContent {
         summarySource
       );
       if (summaryMatch && detailsDepth === 0) {
+        const summaryContent =
+          markdownToJSON(summaryMatch[1] ?? '').content?.flatMap(
+            (summaryBlock) => summaryBlock.content ?? []
+          ) ?? [];
         const body = detailLines
           .filter(
             (_, detailIndex) =>
@@ -469,7 +473,7 @@ export function markdownToJSON(markdown: string): JSONContent {
         content.push({
           content: [
             {
-              content: parseInline(summaryMatch[1] ?? ''),
+              content: summaryContent,
               type: 'collapsibleSummary',
             },
             ...(bodyContent.length ? bodyContent : [paragraph('')]),

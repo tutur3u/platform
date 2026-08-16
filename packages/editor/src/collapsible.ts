@@ -4,6 +4,9 @@ export const CollapsibleSummary = Node.create({
   name: 'collapsibleSummary',
   content: 'inline*',
   defining: true,
+  addOptions() {
+    return { disclosureLabel: 'Expand or collapse section' };
+  },
   addNodeView() {
     return () => {
       const dom = document.createElement('summary');
@@ -13,8 +16,8 @@ export const CollapsibleSummary = Node.create({
       disclosure.type = 'button';
       disclosure.className = 'tuturuuu-editor-collapsible-toggle';
       disclosure.contentEditable = 'false';
-      disclosure.setAttribute('aria-label', 'Expand or collapse section');
-      disclosure.setAttribute('title', 'Expand or collapse section');
+      disclosure.setAttribute('aria-label', this.options.disclosureLabel);
+      disclosure.setAttribute('title', this.options.disclosureLabel);
       disclosure.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
