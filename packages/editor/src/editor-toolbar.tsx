@@ -38,7 +38,8 @@ import type {
 type InternalPreset = RichTextFeaturePreset | 'legacy';
 
 export function insertCollapsibleSection(editor: Editor, title: string) {
-  const insertionPosition = editor.state.selection.to;
+  const { $to } = editor.state.selection;
+  const insertionPosition = $to.depth > 0 ? $to.after(1) : $to.pos;
   const collapsible = editor.schema.nodeFromJSON({
     content: [
       {
@@ -50,9 +51,9 @@ export function insertCollapsibleSection(editor: Editor, title: string) {
     type: 'collapsible',
   });
 
-  // Dispatch against the captured endpoint directly. Chained focus/insert
-  // commands can restore a stale DOM range after the toolbar receives focus,
-  // causing the selected prose to be replaced instead of inserting beside it.
+  // Insert after the current top-level block. Putting a block node at an inline
+  // selection endpoint splits the paragraph and controlled Markdown consumers
+  // can then interpret the selected fragment as replaced content.
   editor.view.dispatch(editor.state.tr.insert(insertionPosition, collapsible));
   editor.view.focus();
   return true;

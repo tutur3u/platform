@@ -12,7 +12,7 @@ describe('collapsible toolbar action', () => {
       content: '<p>Keep this prose</p>',
       extensions: [StarterKit, CollapsibleSummary, Collapsible],
     });
-    editor.commands.setTextSelection({ from: 1, to: 16 });
+    editor.commands.setTextSelection({ from: 1, to: 6 });
 
     expect(insertCollapsibleSection(editor, 'Section title')).toBe(true);
     expect(editor.getText()).toContain('Keep this prose');
