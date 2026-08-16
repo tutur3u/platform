@@ -217,7 +217,7 @@ describe('AppsLauncherDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('navigates the grid vertically from search without interrupting typing', () => {
+  it('navigates the grid in every direction from search', () => {
     renderDialog();
     const search = screen.getByRole('searchbox', { name: 'Search apps' });
 
@@ -235,6 +235,11 @@ describe('AppsLauncherDialog', () => {
     ).toBe('true');
 
     fireEvent.keyDown(search, { key: 'ArrowRight' });
+    expect(
+      screen.getByRole('link', { name: 'Calendar' }).getAttribute('data-active')
+    ).toBe('true');
+
+    fireEvent.keyDown(search, { key: 'ArrowLeft' });
     expect(
       screen
         .getByRole('link', { name: 'Workspace Platform' })

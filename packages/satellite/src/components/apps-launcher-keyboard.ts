@@ -130,7 +130,12 @@ export function useAppsLauncherKeyboard({
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowLeft' ||
+      event.key === 'ArrowRight' ||
+      event.key === 'ArrowUp'
+    ) {
       event.preventDefault();
       navigate(event.key, false);
     } else if (event.key === 'Enter' && activeApp) {
