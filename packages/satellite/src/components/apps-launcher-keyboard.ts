@@ -1,5 +1,97 @@
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
-import { type KeyboardEvent, type RefObject, useState } from 'react';
+import { type KeyboardEvent, type RefObject, useEffect, useState } from 'react';
+
+type GridNavigationKey =
+  | 'ArrowDown'
+  | 'ArrowLeft'
+  | 'ArrowRight'
+  | 'ArrowUp'
+  | 'End'
+  | 'Home';
+
+function getGridRows(apps: readonly LaunchableApp[], columnCount: number) {
+  const rows: LaunchableApp[][] = [];
+  let categoryApps: LaunchableApp[] = [];
+
+  for (const app of apps) {
+    if (categoryApps.length > 0 && categoryApps[0]?.category !== app.category) {
+      for (let index = 0; index < categoryApps.length; index += columnCount) {
+        rows.push(categoryApps.slice(index, index + columnCount));
+      }
+      categoryApps = [];
+    }
+    categoryApps.push(app);
+  }
+
+  for (let index = 0; index < categoryApps.length; index += columnCount) {
+    rows.push(categoryApps.slice(index, index + columnCount));
+  }
+
+  return rows;
+}
+
+export function getAppsLauncherGridTarget({
+  apps,
+  columnCount,
+  currentApp,
+  key,
+}: {
+  apps: readonly LaunchableApp[];
+  columnCount: number;
+  currentApp: LaunchableApp | undefined;
+  key: GridNavigationKey;
+}) {
+  if (apps.length === 0) return undefined;
+  if (key === 'Home') return apps[0];
+  if (key === 'End') return apps.at(-1);
+
+  const currentIndex = currentApp
+    ? apps.findIndex((app) => app.slug === currentApp.slug)
+    : 0;
+
+  if (key === 'ArrowLeft' || key === 'ArrowRight') {
+    const offset = key === 'ArrowLeft' ? -1 : 1;
+    return apps[(currentIndex + offset + apps.length) % apps.length];
+  }
+
+  const rows = getGridRows(apps, columnCount);
+  const rowIndex = rows.findIndex((row) =>
+    row.some((app) => app.slug === currentApp?.slug)
+  );
+  const safeRowIndex = rowIndex === -1 ? 0 : rowIndex;
+  const columnIndex = Math.max(
+    0,
+    rows[safeRowIndex]?.findIndex((app) => app.slug === currentApp?.slug) ?? 0
+  );
+  const rowOffset = key === 'ArrowUp' ? -1 : 1;
+  const targetRow =
+    rows[(safeRowIndex + rowOffset + rows.length) % rows.length];
+
+  return targetRow?.[Math.min(columnIndex, targetRow.length - 1)];
+}
+
+export function useAppsLauncherShortcut(onOpen: () => void) {
+  useEffect(() => {
+    const handleShortcut = (event: globalThis.KeyboardEvent) => {
+      if (
+        event.key.toLocaleLowerCase() === 'k' &&
+        (event.metaKey || event.ctrlKey) &&
+        event.shiftKey &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        onOpen();
+      }
+    };
+
+    document.addEventListener('keydown', handleShortcut, { capture: true });
+    return () =>
+      document.removeEventListener('keydown', handleShortcut, {
+        capture: true,
+      });
+  }, [onOpen]);
+}
 
 export function useAppsLauncherKeyboard({
   contentRef,
@@ -23,33 +115,24 @@ export function useAppsLauncherKeyboard({
     if (focus) element?.focus();
   }
 
-  function moveActiveApp(
-    offset: number,
-    focus = false,
-    fromApp: LaunchableApp | undefined = activeApp
-  ) {
-    if (navigationApps.length === 0) return;
-    const currentIndex = fromApp
-      ? navigationApps.findIndex((app) => app.slug === fromApp.slug)
-      : 0;
-    const nextIndex =
-      (currentIndex + offset + navigationApps.length) % navigationApps.length;
-    const nextApp = navigationApps[nextIndex];
-    if (nextApp) setActiveApp(nextApp, focus);
+  function getColumnCount() {
+    return window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
+  }
+
+  function navigate(key: GridNavigationKey, focus: boolean, app = activeApp) {
+    const target = getAppsLauncherGridTarget({
+      apps: navigationApps,
+      columnCount: getColumnCount(),
+      currentApp: app,
+      key,
+    });
+    if (target) setActiveApp(target, focus);
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      moveActiveApp(1);
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-      event.preventDefault();
-      moveActiveApp(-1);
-    } else if (event.key === 'Home' || event.key === 'End') {
-      event.preventDefault();
-      const target =
-        event.key === 'Home' ? navigationApps[0] : navigationApps.at(-1);
-      if (target) setActiveApp(target);
+      navigate(event.key, false);
     } else if (event.key === 'Enter' && activeApp) {
       event.preventDefault();
       contentRef.current
@@ -62,24 +145,16 @@ export function useAppsLauncherKeyboard({
     event: KeyboardEvent<HTMLAnchorElement>,
     app: LaunchableApp
   ) {
-    const columnCount =
-      window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
-    const offsets: Partial<Record<string, number>> = {
-      ArrowDown: columnCount,
-      ArrowLeft: -1,
-      ArrowRight: 1,
-      ArrowUp: -columnCount,
-    };
-    const offset = offsets[event.key];
-
-    if (offset !== undefined) {
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowLeft' ||
+      event.key === 'ArrowRight' ||
+      event.key === 'ArrowUp' ||
+      event.key === 'Home' ||
+      event.key === 'End'
+    ) {
       event.preventDefault();
-      moveActiveApp(offset, true, app);
-    } else if (event.key === 'Home' || event.key === 'End') {
-      event.preventDefault();
-      const target =
-        event.key === 'Home' ? navigationApps[0] : navigationApps.at(-1);
-      if (target) setActiveApp(target, true);
+      navigate(event.key, true, app);
     }
   }
 

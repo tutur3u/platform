@@ -1,6 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
+import { useState } from 'react';
 import { vi } from 'vitest';
 import { AppsLauncherDialog } from './apps-launcher';
 import { APP_OPEN_MODE_PREFERENCE_KEY } from './apps-launcher-preference';
@@ -78,20 +79,31 @@ const messages = {
   },
 };
 
-export function renderAppsLauncherDialog() {
+export function renderAppsLauncherDialog({ open = true } = {}) {
   const onOpenChange = vi.fn();
 
-  render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+  function AppsLauncherHarness() {
+    const [isOpen, setIsOpen] = useState(open);
+
+    return (
       <AppsLauncherDialog
         currentWorkspace={{
           id: 'personal-id',
           name: 'Personal Space',
           personal: true,
         }}
-        onOpenChange={onOpenChange}
-        open
+        onOpenChange={(nextOpen) => {
+          onOpenChange(nextOpen);
+          setIsOpen(nextOpen);
+        }}
+        open={isOpen}
       />
+    );
+  }
+
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <AppsLauncherHarness />
     </NextIntlClientProvider>
   );
 

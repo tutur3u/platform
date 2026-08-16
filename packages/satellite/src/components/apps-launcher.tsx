@@ -23,7 +23,10 @@ import { useTranslations } from 'next-intl';
 import { type CSSProperties, useRef, useState } from 'react';
 import { AppsLauncherCatalog } from './apps-launcher-catalog';
 import { AppsLauncherToolbar, LauncherMark } from './apps-launcher-controls';
-import { useAppsLauncherKeyboard } from './apps-launcher-keyboard';
+import {
+  useAppsLauncherKeyboard,
+  useAppsLauncherShortcut,
+} from './apps-launcher-keyboard';
 import { useAppsLauncherOpenMode } from './apps-launcher-preference';
 import { rankAppsLauncherMatches } from './apps-launcher-search';
 
@@ -66,6 +69,8 @@ export function AppsLauncherDialog({
     navigationApps,
     rankedApps,
   });
+
+  useAppsLauncherShortcut(() => onOpenChange(true));
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {

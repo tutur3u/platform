@@ -11,6 +11,38 @@ beforeEach(setupAppsLauncherTestEnvironment);
 afterEach(teardownAppsLauncherTestEnvironment);
 
 describe('AppsLauncherDialog', () => {
+  it('opens with Cmd/Ctrl+Shift+K without accepting extra modifiers', async () => {
+    const { onOpenChange } = renderDialog({ open: false });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.keyDown(document, {
+      altKey: true,
+      key: 'k',
+      metaKey: true,
+      shiftKey: true,
+    });
+    expect(onOpenChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(document, {
+      key: 'K',
+      metaKey: true,
+      shiftKey: true,
+    });
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    fireEvent.keyDown(document, {
+      ctrlKey: true,
+      key: 'k',
+      shiftKey: true,
+    });
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+  });
+
   it('renders the shared launchable app catalog in a bounded dialog', () => {
     const { onOpenChange } = renderDialog();
 
@@ -185,13 +217,13 @@ describe('AppsLauncherDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it('navigates ranked matches from search without interrupting typing', () => {
+  it('navigates the grid vertically from search without interrupting typing', () => {
     renderDialog();
     const search = screen.getByRole('searchbox', { name: 'Search apps' });
 
     fireEvent.keyDown(search, { key: 'ArrowDown' });
     expect(
-      screen.getByRole('link', { name: 'Calendar' }).getAttribute('data-active')
+      screen.getByRole('link', { name: 'Drive' }).getAttribute('data-active')
     ).toBe('true');
     expect(document.activeElement).toBe(search);
 
@@ -202,12 +234,13 @@ describe('AppsLauncherDialog', () => {
         .getAttribute('data-active')
     ).toBe('true');
 
-    fireEvent.keyDown(search, { key: 'End' });
+    fireEvent.keyDown(search, { key: 'ArrowRight' });
     expect(
       screen
-        .getByRole('link', { name: 'Shortener' })
+        .getByRole('link', { name: 'Workspace Platform' })
         .getAttribute('data-active')
     ).toBe('true');
+    expect(document.activeElement).toBe(search);
   });
 
   it('supports spatial arrow, Home, and End navigation between app cards', () => {
@@ -233,6 +266,61 @@ describe('AppsLauncherDialog', () => {
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'End' });
     expect(document.activeElement).toBe(
       screen.getByRole('link', { name: 'Shortener' })
+    );
+  });
+
+  it('preserves the visual column across category and incomplete-row boundaries', () => {
+    renderDialog();
+    const trackCard = screen.getByRole('link', { name: 'Track' });
+    trackCard.focus();
+
+    fireEvent.keyDown(trackCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Inventory' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: 'ArrowDown',
+    });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Contacts' })
+    );
+
+    fireEvent.keyDown(document.activeElement as HTMLElement, {
+      key: 'ArrowDown',
+    });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Forms' })
+    );
+  });
+
+  it('uses the responsive two-column grid for vertical movement', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 800,
+    });
+    renderDialog();
+    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
+    calendarCard.focus();
+
+    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Drive' })
+    );
+  });
+
+  it('uses a single navigation column on mobile', () => {
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+    });
+    renderDialog();
+    const calendarCard = screen.getByRole('link', { name: 'Calendar' });
+    calendarCard.focus();
+
+    fireEvent.keyDown(calendarCard, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(
+      screen.getByRole('link', { name: 'Chat' })
     );
   });
 
