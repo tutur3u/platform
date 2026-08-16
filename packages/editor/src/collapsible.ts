@@ -1,4 +1,5 @@
 import { mergeAttributes, Node } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 
 export const CollapsibleSummary = Node.create({
   name: 'collapsibleSummary',
@@ -8,7 +9,7 @@ export const CollapsibleSummary = Node.create({
     return { disclosureLabel: 'Expand or collapse section' };
   },
   addNodeView() {
-    return () => {
+    return ({ getPos, view }) => {
       const dom = document.createElement('summary');
       const disclosure = document.createElement('button');
       const contentDOM = document.createElement('span');
@@ -29,8 +30,36 @@ export const CollapsibleSummary = Node.create({
         }
       };
       const keepSummaryEditable = (event: MouseEvent) => {
-        if (this.editor.isEditable && event.target !== disclosure)
-          event.preventDefault();
+        if (!this.editor.isEditable || event.target === disclosure) return;
+
+        // Native <summary> clicks toggle <details> instead of focusing the
+        // contenteditable ancestor. Preserve the browser's caret, cancel only
+        // that native toggle, then explicitly hand focus back to ProseMirror.
+        const domSelection = dom.ownerDocument.getSelection();
+        const anchorNode = domSelection?.anchorNode;
+        const nodePosition = getPos();
+        if (nodePosition === undefined) return;
+        let position = nodePosition + 1;
+
+        if (anchorNode && contentDOM.contains(anchorNode)) {
+          try {
+            position = view.posAtDOM(
+              anchorNode,
+              domSelection?.anchorOffset ?? 0
+            );
+          } catch {
+            // Keep the safe start-of-summary fallback for unusual browser
+            // selections (for example, clicking directly between elements).
+          }
+        }
+
+        event.preventDefault();
+        view.focus();
+        view.dispatch(
+          view.state.tr.setSelection(
+            TextSelection.create(view.state.doc, position)
+          )
+        );
       };
       disclosure.addEventListener('click', toggleDisclosure);
       dom.addEventListener('click', keepSummaryEditable);
