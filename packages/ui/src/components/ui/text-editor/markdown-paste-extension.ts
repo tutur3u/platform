@@ -552,6 +552,19 @@ function looksLikeMarkdown(text: string): boolean {
   return MARKDOWN_SIGNATURES.some((pattern) => pattern.test(text));
 }
 
+const SEMANTIC_RICH_TEXT_TAG_PATTERN =
+  /<(?:a|b|blockquote|code|details|em|h[1-6]|i|img|li|mark|ol|pre|s|strong|summary|table|tbody|td|th|thead|tr|ul)\b/i;
+
+function shouldConvertPastedText({
+  html,
+  text,
+}: {
+  html: string;
+  text: string;
+}): boolean {
+  return looksLikeMarkdown(text) && !SEMANTIC_RICH_TEXT_TAG_PATTERN.test(html);
+}
+
 // ---------------------------------------------------------------------------
 // Test-only exports (not part of the public API contract)
 // ---------------------------------------------------------------------------
@@ -560,6 +573,7 @@ export const __markdownPastePrivate = {
   markdownToHtml,
   looksLikeMarkdown,
   normalizePastedPlainText,
+  shouldConvertPastedText,
 };
 
 const markdownPastePluginKey = new PluginKey('markdownPastePlugin');
@@ -593,24 +607,27 @@ export const MarkdownPaste = Extension.create({
               const text = normalizePastedPlainText(
                 clipboardData.getData('text/plain')
               );
-              if (!text || !looksLikeMarkdown(text)) {
+              const clipboardHtml = clipboardData.getData('text/html');
+              if (
+                !text ||
+                !shouldConvertPastedText({ html: clipboardHtml, text })
+              ) {
                 return false;
               }
 
-              // When plain text looks like markdown, convert it to editor nodes
-              // even if HTML is also present on the clipboard. Many apps wrap
-              // markdown in simple HTML tags that Tiptap would insert as plain
-              // text paragraphs; we prefer structured conversion instead.
+              // Convert Markdown from plain text when HTML is absent or only a
+              // visual wrapper. Genuine rich HTML keeps its headings, lists,
+              // inline emphasis, links, media, and paragraph boundaries.
               event.preventDefault();
 
-              const html = markdownToHtml(text);
+              const generatedHtml = markdownToHtml(text);
               const { state } = view;
               const { from, to } = state.selection;
 
               // Parse the generated HTML into a ProseMirror slice
               const browserParser = new DOMParser();
               const dom = browserParser.parseFromString(
-                `<div>${html}</div>`,
+                `<div>${generatedHtml}</div>`,
                 'text/html'
               );
               const firstChild = dom.body.firstChild;

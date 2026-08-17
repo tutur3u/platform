@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { __markdownPastePrivate } from '../markdown-paste-extension';
 
-const { markdownToHtml, looksLikeMarkdown, normalizePastedPlainText } =
-  __markdownPastePrivate;
+const {
+  markdownToHtml,
+  looksLikeMarkdown,
+  normalizePastedPlainText,
+  shouldConvertPastedText,
+} = __markdownPastePrivate;
 
 describe('markdownToHtml', () => {
   it('should convert headings', () => {
@@ -67,6 +71,28 @@ describe('markdownToHtml', () => {
 
     expect(text).toBe('- [ ] Plan interviews\n- [x] Invite team');
     expect(markdownToHtml(text)).toContain('data-type="taskList"');
+  });
+
+  it('keeps semantic rich HTML for long structured task descriptions', () => {
+    const text = normalizePastedPlainText(
+      'KEEPING FROM THE NEW VERSION:\n• The new About Me UI editor: I like the compactness of it more than the older version.'
+    );
+    const html = [
+      '<h1>KEEPING FROM THE NEW VERSION:</h1>',
+      '<ul><li><p><strong>The new About Me UI editor:</strong> ',
+      'I like the compactness of it more than the older version.</p></li></ul>',
+    ].join('');
+
+    expect(looksLikeMarkdown(text)).toBe(true);
+    expect(shouldConvertPastedText({ html, text })).toBe(false);
+  });
+
+  it('converts Markdown when clipboard HTML is only a visual wrapper', () => {
+    const text = '# Heading\n- Item';
+    const html = '<div># Heading<br>- Item</div>';
+
+    expect(shouldConvertPastedText({ html, text })).toBe(true);
+    expect(shouldConvertPastedText({ html: '', text })).toBe(true);
   });
 
   it('should convert ordered lists', () => {
