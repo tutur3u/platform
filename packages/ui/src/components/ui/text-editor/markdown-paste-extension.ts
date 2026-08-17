@@ -1,6 +1,10 @@
 import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/react';
+import {
+  collapseExcessBlankLines,
+  serializeClipboardText,
+} from './content-migration';
 
 // ---------------------------------------------------------------------------
 // Markdown -> HTML converter (toolbar-supported features only)
@@ -31,8 +35,7 @@ const VISUAL_BULLET_PATTERN = /^(\s*)[•◦▪‣●]\s+/u;
 const VISUAL_CHECKBOX_PATTERN = /^(\s*)[☐☑☒]\s+/u;
 
 function normalizePastedPlainText(text: string): string {
-  return text
-    .replace(/\r\n?/g, '\n')
+  return collapseExcessBlankLines(text)
     .split('\n')
     .map((line) => {
       const checkboxMatch = line.match(VISUAL_CHECKBOX_PATTERN);
@@ -214,10 +217,7 @@ function parseListTree(
 
   while (i < lines.length) {
     const line = lines[i];
-    if (line === undefined || line.trim() === '') {
-      i++;
-      continue;
-    }
+    if (line === undefined || line.trim() === '') break;
 
     const match = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
     if (!match) break;
@@ -329,8 +329,15 @@ function renderListTree(nodes: ListNode[], ordered: boolean): string {
   const tag = ordered ? 'ol' : 'ul';
   const isTaskList = nodes.some((n) => n.checked !== null);
   const dataType = isTaskList ? ' data-type="taskList"' : '';
+  const orderedStart = ordered
+    ? Number.parseInt(nodes[0]?.marker.replace('.', '') ?? '1', 10)
+    : 1;
+  const startAttribute =
+    ordered && Number.isFinite(orderedStart) && orderedStart !== 1
+      ? ` start="${orderedStart}"`
+      : '';
 
-  let html = `<${tag}${dataType}>`;
+  let html = `<${tag}${startAttribute}${dataType}>`;
 
   for (const node of nodes) {
     if (isTaskList) {
@@ -591,6 +598,7 @@ export const MarkdownPaste = Extension.create({
       new Plugin({
         key: markdownPastePluginKey,
         props: {
+          clipboardTextSerializer: serializeClipboardText,
           handleDOMEvents: {
             paste: (
               view: import('@tiptap/pm/view').EditorView,
