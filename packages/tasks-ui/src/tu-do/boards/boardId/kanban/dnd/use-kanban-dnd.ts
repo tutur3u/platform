@@ -57,6 +57,7 @@ import {
 } from './task-drag-persistence';
 import {
   dragPreviewPositionsEqual,
+  getDragPreviewStationaryTaskCount,
   getTaskDropEndPreviewFromRects,
   getTaskDropPreviewFromListSurface,
   getTaskDropPreviewFromRects,
@@ -285,8 +286,6 @@ export function useKanbanDnd({
   const [optimisticUpdateInProgress, setOptimisticUpdateInProgress] = useState<
     Set<string>
   >(new Set());
-
-  // Refs for drag state
   const pickedUpTaskColumn = useRef<string | null>(null);
   const isDraggingRef = useRef(false);
   const lastTargetListIdRef = useRef<string | null>(null);
@@ -342,12 +341,19 @@ export function useKanbanDnd({
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const taskIndexes = dragStartTaskIndexesByListRef.current.get(listId);
+      const stationaryTaskCount = getDragPreviewStationaryTaskCount({
+        activeTaskId: activeTask.id,
+        taskIndexes,
+        visibleTaskCount: visibleTaskRects.length,
+      });
       const preview = preferEnd
         ? getTaskDropEndPreviewFromRects({
             activeTask,
             height,
             listId,
             rects: visibleTaskRects,
+            stationaryTaskCount,
           })
         : getTaskDropPreviewFromRects({
             activeRect,
@@ -356,6 +362,7 @@ export function useKanbanDnd({
             height,
             listId,
             rects: visibleTaskRects,
+            stationaryTaskCount,
           });
 
       if (
@@ -387,6 +394,12 @@ export function useKanbanDnd({
           ? dragSession.height
           : (taskHeightsRef.current.get(activeTask.id) ?? 96);
       const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const taskIndexes = dragStartTaskIndexesByListRef.current.get(listId);
+      const stationaryTaskCount = getDragPreviewStationaryTaskCount({
+        activeTaskId: activeTask.id,
+        taskIndexes,
+        visibleTaskCount: visibleTaskRects.length,
+      });
       const preview = getTaskDropPreviewFromListSurface({
         activeRect,
         activeTask,
@@ -394,6 +407,7 @@ export function useKanbanDnd({
         height,
         listId,
         rects: visibleTaskRects,
+        stationaryTaskCount,
       });
 
       if (
@@ -556,7 +570,6 @@ export function useKanbanDnd({
     [boardId, columns, queryClient]
   );
 
-  // Use the extracted calculateSortKeyWithRetry helper
   const calculateSortKeyWithRetry = useCallback(
     (
       prevSortKey: number | null | undefined,
@@ -738,7 +751,6 @@ export function useKanbanDnd({
 
         if (!sourceListExists || !targetListExists) return;
 
-        // Skip if target list unchanged for current drag set to avoid redundant cache writes
         if (lastTargetListIdRef.current === targetListId) {
           return;
         }
@@ -758,13 +770,11 @@ export function useKanbanDnd({
     ]
   );
 
-  // Capture drag start card left position
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
     const { active } = event;
     if (!active.data?.current) return;
 
-    // Enable auto-scroll
     isDraggingRef.current = true;
     updateAutoScrollFromDragEvent(event);
     startAutoScroll();
@@ -839,7 +849,6 @@ export function useKanbanDnd({
         sourceListId,
       };
 
-      // If this is a multi-select drag, include all selected tasks
       if (isMultiSelectMode && selectedTasks.has(task.id)) {
         setActiveTask(task); // Set the dragged task as active for overlay
       } else {
@@ -864,12 +873,10 @@ export function useKanbanDnd({
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
 
-    // Store the original list ID before resetting drag state
     const originalListId = pickedUpTaskColumn.current;
     const activeType = active.data?.current?.type;
 
     if (!over) {
-      // Reset drag state only on invalid drop
       if (activeType === 'Task') {
         restoreDragStartCache();
       }
@@ -888,7 +895,6 @@ export function useKanbanDnd({
       return;
     }
 
-    // Handle column reordering
     if (activeType === 'Column') {
       const activeColumn = active.data?.current?.column;
       const overColumn = over.data?.current?.column;
@@ -1042,11 +1048,8 @@ export function useKanbanDnd({
         return;
       }
 
-      // Calculate target position based on drop location
-      // Get all tasks in the target list (INCLUDE the dragged task if it's in the same list)
       let targetListTasks = baseTasks.filter((t) => t.list_id === targetListId);
 
-      // Find the target list to check its status
       const targetList = columns.find((col) => String(col.id) === targetListId);
       const targetIsExternalStaging =
         isPersonalExternalStagingListId(targetListId) ||
@@ -1063,12 +1066,9 @@ export function useKanbanDnd({
         return;
       }
 
-      // IMPORTANT: For "done" and "closed" lists, always place at first position (top)
       const isCompletionList =
         targetList?.status === 'done' || targetList?.status === 'closed';
 
-      // Sort tasks from the drag-start snapshot so release persists exactly
-      // the same order shown in the live preview.
       targetListTasks = sortTasksForList({
         disableSort,
         targetList,

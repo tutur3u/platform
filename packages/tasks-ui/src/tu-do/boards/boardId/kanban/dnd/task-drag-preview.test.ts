@@ -1,6 +1,7 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it } from 'vitest';
 import {
+  getDragPreviewStationaryTaskCount,
   getTaskDropPreviewFromListSurface,
   getTaskDropPreviewFromRects,
 } from './task-drag-preview';
@@ -37,6 +38,32 @@ const sameListRects: TaskRect[] = [
   { taskId: 'task-4', top: 460, height: 100, originalIndex: 3 },
   { taskId: 'task-5', top: 580, height: 100, originalIndex: 4 },
 ];
+
+describe('drag preview stationary task counts', () => {
+  it('uses the full drag-start list instead of the mounted virtual window', () => {
+    expect(
+      getDragPreviewStationaryTaskCount({
+        activeTaskId: 'external-task',
+        taskIndexes: new Map(
+          Array.from({ length: 100 }, (_, index) => [`task-${index}`, index])
+        ),
+        visibleTaskCount: 8,
+      })
+    ).toBe(100);
+  });
+
+  it('removes the active task from same-list stationary counts', () => {
+    expect(
+      getDragPreviewStationaryTaskCount({
+        activeTaskId: 'task-50',
+        taskIndexes: new Map(
+          Array.from({ length: 100 }, (_, index) => [`task-${index}`, index])
+        ),
+        visibleTaskCount: 8,
+      })
+    ).toBe(99);
+  });
+});
 
 describe('task drag preview edge threshold', () => {
   it('keeps same-list upward movement in place until the dragged top reaches the previous card center', () => {
@@ -301,6 +328,22 @@ describe('task drag preview cross-list and surface slots', () => {
     ).toBe(0);
   });
 
+  it('uses the full virtualized task count when no mounted rect can resolve a slot', () => {
+    const activeTask = createTask('task-1', 'source-list');
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: null,
+        activeTask,
+        dragSession: createSession({ activeTaskId: activeTask.id }),
+        height: 100,
+        listId: 'target-list',
+        rects: [],
+        stationaryTaskCount: 100,
+      }).insertionIndex
+    ).toBe(100);
+  });
+
   it('treats column-surface whitespace as an append-to-end preview', () => {
     const activeTask = createTask('task-1', 'source-list');
 
@@ -314,5 +357,78 @@ describe('task drag preview cross-list and surface slots', () => {
         rects: targetRects,
       }).insertionIndex
     ).toBe(3);
+  });
+
+  it('preserves global insertion indexes when only a virtualized target window is mounted', () => {
+    const activeTask = createTask('task-1', 'source-list');
+    const virtualizedRects: TaskRect[] = [
+      { taskId: 'task-51', top: 100, height: 100, originalIndex: 50 },
+      { taskId: 'task-52', top: 220, height: 100, originalIndex: 51 },
+      { taskId: 'task-53', top: 340, height: 100, originalIndex: 52 },
+    ];
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 169 },
+        activeTask,
+        dragSession: createSession({
+          activeInitialRect: { height: 100, top: 0 },
+          activeTaskId: activeTask.id,
+          sourceListId: 'source-list',
+        }),
+        height: 100,
+        listId: 'target-list',
+        rects: virtualizedRects,
+        stationaryTaskCount: 100,
+      }).insertionIndex
+    ).toBe(51);
+  });
+
+  it('translates original indexes after the active task into stationary same-list indexes', () => {
+    const activeTask = createTask('task-51');
+    const virtualizedRects: TaskRect[] = [
+      { taskId: 'task-49', top: 100, height: 100, originalIndex: 48 },
+      { taskId: 'task-50', top: 220, height: 100, originalIndex: 49 },
+      { taskId: 'task-51', top: 340, height: 100, originalIndex: 50 },
+      { taskId: 'task-52', top: 460, height: 100, originalIndex: 51 },
+      { taskId: 'task-53', top: 580, height: 100, originalIndex: 52 },
+    ];
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 530 },
+        activeTask,
+        dragSession: createSession({
+          activeInitialRect: { height: 100, top: 340 },
+          activeTaskId: activeTask.id,
+          sourceInsertionIndex: 50,
+        }),
+        height: 100,
+        listId: 'list-1',
+        rects: virtualizedRects,
+        stationaryTaskCount: 99,
+      }).insertionIndex
+    ).toBe(52);
+  });
+
+  it('places a surface preview after the last visible virtual card instead of at the wrong local index', () => {
+    const activeTask = createTask('task-1', 'source-list');
+    const virtualizedRects: TaskRect[] = [
+      { taskId: 'task-51', top: 100, height: 100, originalIndex: 50 },
+      { taskId: 'task-52', top: 220, height: 100, originalIndex: 51 },
+      { taskId: 'task-53', top: 340, height: 100, originalIndex: 52 },
+    ];
+
+    expect(
+      getTaskDropPreviewFromListSurface({
+        activeRect: { height: 100, top: 500 },
+        activeTask,
+        dragSession: createSession({ activeTaskId: activeTask.id }),
+        height: 100,
+        listId: 'target-list',
+        rects: virtualizedRects,
+        stationaryTaskCount: 100,
+      }).insertionIndex
+    ).toBe(53);
   });
 });
