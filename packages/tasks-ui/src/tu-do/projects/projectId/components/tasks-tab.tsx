@@ -130,6 +130,7 @@ export function TasksTab({
             lists={lists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            onFiltersChange={setFilters}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}
@@ -168,6 +169,7 @@ export function TasksTab({
             lists={lists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            onFiltersChange={setFilters}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={isMultiSelectMode}

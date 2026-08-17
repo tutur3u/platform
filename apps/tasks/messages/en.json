@@ -13853,6 +13853,12 @@
       "title": "Board Layout Settings",
       "yellow": "Yellow"
     },
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
+    },
     "messages": {
       "task_id_copied": "Copied task ID",
       "task_link_copied": "Copied task link"

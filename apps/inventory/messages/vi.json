@@ -5150,6 +5150,14 @@
     "workspace_logo": "Logo",
     "workspace_logo_description": "Quản lý logo của không gian làm việc để sử dụng trong báo cáo."
   },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
+      "keep_sorting": "Giữ cách sắp xếp hiện tại",
+      "title": "Sắp xếp thủ công đang tạm dừng",
+      "use_manual": "Dùng thứ tự thủ công"
+    }
+  },
   "ws-task-templates": {
     "actions": {
       "archive": "Lưu trữ mẫu",

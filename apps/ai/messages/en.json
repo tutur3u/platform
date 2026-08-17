@@ -2891,5 +2891,13 @@
     "workspace_avatar_description": "Everyone in your workspace will see this avatar.",
     "workspace_logo": "Workspace Logo",
     "workspace_logo_description": "Manage the logo of your workspace to use in reports."
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
+    }
   }
 }

@@ -1123,7 +1123,6 @@ export function BoardViews({
       preventDefault: true,
     }
   );
-
   const renderView = () => {
     switch (currentView) {
       case 'kanban':
@@ -1137,6 +1136,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            onFiltersChange={setFilters}
             deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
@@ -1278,6 +1278,7 @@ export function BoardViews({
             lists={filteredLists}
             isLoading={false}
             disableSort={!!filters.sortBy}
+            onFiltersChange={setFilters}
             deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
@@ -1299,7 +1300,6 @@ export function BoardViews({
         );
     }
   };
-
   const showIdleBottomIsland =
     !readOnly &&
     !!idleBottomIsland &&

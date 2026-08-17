@@ -7758,6 +7758,12 @@
     "layout_settings": {
       "list_name_exists": "A list with this name already exists on this board."
     },
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
+    },
     "name": "Board name",
     "plural": "Task boards",
     "row_actions": {

@@ -1752,5 +1752,13 @@
   "ws-roles": {
     "manage_git_repositories": "Manage Git repositories",
     "manage_git_repositories_description": "Allows platform administrators to configure the GitHub App and approve public repositories for Git."
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
+      "keep_sorting": "Keep current sorting",
+      "title": "Manual ordering is paused",
+      "use_manual": "Use manual order"
+    }
   }
 }

@@ -1752,5 +1752,13 @@
   "ws-roles": {
     "manage_git_repositories": "Quản lý kho mã Git",
     "manage_git_repositories_description": "Cho phép quản trị viên nền tảng cấu hình Ứng dụng GitHub và phê duyệt các kho mã công khai cho Git."
+  },
+  "ws-task-boards": {
+    "manual_ordering_disabled": {
+      "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
+      "keep_sorting": "Giữ cách sắp xếp hiện tại",
+      "title": "Sắp xếp thủ công đang tạm dừng",
+      "use_manual": "Dùng thứ tự thủ công"
+    }
   }
 }
