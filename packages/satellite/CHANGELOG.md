@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/satellite-v0.14.3...satellite-v0.15.0) (2026-08-16)
+
+
+### Features
+
+* **satellite:** improve apps launcher keyboard navigation ([12f2c15](https://github.com/tutur3u/platform/commit/12f2c152482051e38729a37794fb6986f3e6ab51))
+
+
+### Bug Fixes
+
+* **satellite:** align apps launcher keyboard controls ([a091e35](https://github.com/tutur3u/platform/commit/a091e3560a6c56333018fd1d14de9d33b1c56a11))
+* **satellite:** restore apps launcher horizontal navigation ([45ce791](https://github.com/tutur3u/platform/commit/45ce791efaf75bd9f3d72205bf3c029a2f815091))
+
 ## [0.14.3](https://github.com/tutur3u/platform/compare/satellite-v0.14.2...satellite-v0.14.3) (2026-08-15)
 
 

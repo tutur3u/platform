@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.1](https://github.com/tutur3u/platform/compare/finance-v0.26.0...finance-v0.26.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* **tasks:** preserve rich paste and responsive dialogs ([0a6c5a3](https://github.com/tutur3u/platform/commit/0a6c5a362f51b475c2e8fe984eb3569a46a878ee))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/finance-v0.25.2...finance-v0.26.0) (2026-08-14)
 
 
