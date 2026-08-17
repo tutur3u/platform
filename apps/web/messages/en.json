@@ -21876,6 +21876,16 @@
       "disconnected": "Disconnected",
       "due_date": "Due Date",
       "edit_task": "Edit Task",
+      "editor_copy": {
+        "copy": "Copy content",
+        "copy_as_markdown": "Copy as Markdown",
+        "copy_as_plain_text": "Copy as plain text",
+        "copy_failed": "Could not copy content",
+        "markdown_copied": "Copied as Markdown",
+        "markdown_description": "Keep headings, lists, links, and formatting syntax",
+        "plain_text_copied": "Copied as plain text",
+        "plain_text_description": "Clean text for chat, email, or documents"
+      },
       "enlarge_dialog": "Enlarge dialog",
       "estimate": "Estimate",
       "estimated_duration": "Estimated Duration",

@@ -122,6 +122,7 @@ export function TaskDescriptionEditor({
   disabled = false,
 }: TaskDescriptionEditorProps) {
   const t = useTranslations('ws-task-boards.dialog');
+  const tCommon = useTranslations('ws-task-boards.dialog.editor_copy');
   const progressPercent = isDescriptionOverLimit
     ? 100
     : Math.max(0, Math.min(100, 100 - descriptionPercentLeft));
@@ -314,6 +315,16 @@ export function TaskDescriptionEditor({
           onEditorReady={handleEditorReady}
           onConvertToTask={onConvertToTask}
           toggleBlockLabel={t('toggle_block')}
+          copyLabels={{
+            copy: tCommon('copy'),
+            copyAsMarkdown: tCommon('copy_as_markdown'),
+            copyAsPlainText: tCommon('copy_as_plain_text'),
+            markdownDescription: tCommon('markdown_description'),
+            plainTextDescription: tCommon('plain_text_description'),
+            markdownCopied: tCommon('markdown_copied'),
+            plainTextCopied: tCommon('plain_text_copied'),
+            copyFailed: tCommon('copy_failed'),
+          }}
           boardId={boardId}
           availableLists={availableLists}
           queryClient={queryClient}

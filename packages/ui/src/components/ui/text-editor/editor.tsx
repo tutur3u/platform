@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
+import type { EditorCopyLabels } from './copy-menu';
 import { getRichTextEditorClasses } from './editor-classes';
 import { getEditorExtensions } from './extensions';
 import { handleListIndentation, handlePlainEnterFallback } from './keyboard';
@@ -130,6 +131,7 @@ export interface RichTextEditorProps {
   };
   renderTaskMention?: TaskMentionNodeViewRenderer;
   toggleBlockLabel?: string;
+  copyLabels?: EditorCopyLabels;
 }
 
 export function RichTextEditor({
@@ -159,6 +161,7 @@ export function RichTextEditor({
   mentionTranslations,
   renderTaskMention,
   toggleBlockLabel,
+  copyLabels,
 }: RichTextEditorProps) {
   // Use refs to ensure we have stable references for handlers
   const onImageUploadRef = useRef(onImageUpload);
@@ -636,6 +639,7 @@ export function RichTextEditor({
           onImageUpload={onImageUpload}
           onConvertToTask={onConvertToTask}
           toggleBlockLabel={toggleBlockLabel}
+          copyLabels={copyLabels}
         />
       )}
       {!readOnly && (

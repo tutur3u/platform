@@ -1,9 +1,17 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import type { Editor } from '@tiptap/react';
-import { describe, expect, it, vi } from 'vitest';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { Editor } from '@tiptap/core';
+import type { Editor as TiptapEditor } from '@tiptap/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getEditorExtensions } from '../extensions';
 import { FixedToolbar } from '../tool-bar';
 
-function createEditorStub(): Editor {
+function createEditorStub(): TiptapEditor {
   const chain = {
     focus: vi.fn(() => chain),
     insertTable: vi.fn(() => chain),
@@ -26,8 +34,15 @@ function createEditorStub(): Editor {
   return {
     chain: vi.fn(() => chain),
     isActive: vi.fn(() => false),
-  } as unknown as Editor;
+  } as unknown as TiptapEditor;
 }
+
+const editors: Editor[] = [];
+
+afterEach(() => {
+  for (const editor of editors.splice(0)) editor.destroy();
+  vi.restoreAllMocks();
+});
 
 describe('inline task conversion toolbar', () => {
   it('delegates conversion to the provided callback', async () => {
@@ -72,5 +87,70 @@ describe('inline task conversion toolbar', () => {
     expect(
       screen.getByRole('button', { name: 'Liste ou titre repliable' })
     ).toBeInTheDocument();
+  });
+
+  it('copies the full document in either Markdown or plain-text form', async () => {
+    const editor = new Editor({
+      extensions: getEditorExtensions(),
+      content: {
+        type: 'doc',
+        content: [
+          {
+            type: 'heading',
+            attrs: { level: 1 },
+            content: [{ type: 'text', text: 'Plan' }],
+          },
+          {
+            type: 'bulletList',
+            content: [
+              {
+                type: 'listItem',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [
+                      {
+                        type: 'text',
+                        text: 'Ship it',
+                        marks: [{ type: 'bold' }],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    editors.push(editor);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(<FixedToolbar editor={editor} />);
+
+    fireEvent.pointerDown(
+      await screen.findByRole('button', { name: 'Copy content' })
+    );
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: /Copy as Markdown/ })
+    );
+    await waitFor(() =>
+      expect(writeText).toHaveBeenLastCalledWith('# Plan\n\n- **Ship it**')
+    );
+
+    cleanup();
+    render(<FixedToolbar editor={editor} />);
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Copy content' }));
+    fireEvent.click(
+      await screen.findByRole('menuitem', { name: /Copy as plain text/ })
+    );
+    await waitFor(() =>
+      expect(writeText).toHaveBeenLastCalledWith('Plan\n\n• Ship it')
+    );
   });
 });

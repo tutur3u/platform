@@ -32,75 +32,19 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Toggle } from '@tuturuuu/ui/toggle';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TextEditorColorControls } from './color-controls';
+import { type EditorCopyLabels, EditorCopyMenu } from './copy-menu';
 import {
   MAX_IMAGE_SIZE,
   MAX_VIDEO_SIZE,
   StorageQuotaError,
 } from './media-utils';
-import { hotkeyLabel, TOOLBAR_GROUPS, TOOLBAR_LABELS } from './toolbar-config';
+import { TOOLBAR_GROUPS } from './toolbar-config';
+import { ToolbarButton, ToolbarSeparator } from './toolbar-controls';
 
 type LinkEditorContext = 'bubble' | 'popover' | null;
-
-// ---------------------------------------------------------------------------
-// Shared sub-components
-// ---------------------------------------------------------------------------
-
-interface ToolbarButtonProps {
-  id: string;
-  label?: string;
-  icon: React.ReactNode;
-  pressed: boolean;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-/** A single toolbar toggle button wrapped with a tooltip showing name + hotkey. */
-function ToolbarButton({
-  id,
-  label: labelOverride,
-  icon,
-  pressed,
-  onClick,
-  disabled,
-}: ToolbarButtonProps) {
-  const label = labelOverride ?? TOOLBAR_LABELS[id] ?? id;
-  const shortcut = hotkeyLabel(id);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Toggle
-          pressed={pressed}
-          onPressedChange={() => onClick()}
-          onMouseDown={(e) => e.preventDefault()}
-          disabled={disabled}
-          className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
-          aria-label={label}
-        >
-          {icon}
-        </Toggle>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="flex items-center gap-1.5">
-        <span>{label}</span>
-        {shortcut && (
-          <kbd className="rounded bg-foreground/10 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            {shortcut}
-          </kbd>
-        )}
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-/** Vertical divider between toolbar groups */
-function ToolbarSeparator() {
-  return <div className="mx-0.5 h-5 w-px shrink-0 bg-dynamic-border/60" />;
-}
 
 // ---------------------------------------------------------------------------
 // Main ToolBar (BubbleMenu)
@@ -910,6 +854,7 @@ interface FixedToolbarProps {
   className?: string;
   ref?: React.Ref<HTMLDivElement>;
   toggleBlockLabel?: string;
+  copyLabels?: EditorCopyLabels;
 }
 
 export function FixedToolbar({
@@ -920,6 +865,7 @@ export function FixedToolbar({
   className,
   ref,
   toggleBlockLabel,
+  copyLabels,
 }: FixedToolbarProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
@@ -1233,6 +1179,11 @@ export function FixedToolbar({
           />
         </>
       )}
+
+      <div className="ml-auto flex items-center pl-1">
+        <ToolbarSeparator />
+        <EditorCopyMenu editor={editor} labels={copyLabels} />
+      </div>
     </div>
   );
 }

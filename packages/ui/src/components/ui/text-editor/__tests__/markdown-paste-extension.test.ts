@@ -1,6 +1,9 @@
 import { Editor } from '@tiptap/core';
 import { afterEach, describe, expect, it } from 'vitest';
-import { serializeClipboardText } from '../content-migration';
+import {
+  serializeClipboardPlainText,
+  serializeClipboardText,
+} from '../clipboard-serialization';
 import { getEditorExtensions } from '../extensions';
 import { __markdownPastePrivate } from '../markdown-paste-extension';
 
@@ -21,6 +24,12 @@ function createEditor(content: Record<string, unknown>) {
 
 function copyDocument(editor: Editor) {
   return serializeClipboardText(
+    editor.state.doc.slice(0, editor.state.doc.content.size)
+  );
+}
+
+function copyDocumentAsPlainText(editor: Editor) {
+  return serializeClipboardPlainText(
     editor.state.doc.slice(0, editor.state.doc.content.size)
   );
 }
@@ -512,6 +521,101 @@ describe('task-description clipboard serialization', () => {
 
     expect(fromClipboardProp).toBe(
       '## **Bold** and *italic*\n\n[Docs](https://example.com)\n~~deleted~~'
+    );
+  });
+
+  it('creates clean plain text without Markdown formatting delimiters', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 2 },
+          content: [
+            { type: 'text', text: 'Important', marks: [{ type: 'bold' }] },
+          ],
+        },
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: 'Read the docs',
+              marks: [{ type: 'link', attrs: { href: 'https://example.com' } }],
+            },
+          ],
+        },
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'First point' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(copyDocumentAsPlainText(editor)).toBe(
+      'Important\n\nRead the docs\n\n• First point'
+    );
+  });
+
+  it('uses readable checkbox markers and preserves ordered-list starts in plain text', () => {
+    const editor = createEditor({
+      type: 'doc',
+      content: [
+        {
+          type: 'taskList',
+          content: [
+            {
+              type: 'taskItem',
+              attrs: { checked: false },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Todo' }],
+                },
+              ],
+            },
+            {
+              type: 'taskItem',
+              attrs: { checked: true },
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Done' }],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'orderedList',
+          attrs: { start: 4 },
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: 'Continue' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(copyDocumentAsPlainText(editor)).toBe(
+      '☐ Todo\n☑ Done\n\n4. Continue'
     );
   });
 

@@ -4,7 +4,7 @@ import { Extension } from '@tiptap/react';
 import {
   collapseExcessBlankLines,
   serializeClipboardText,
-} from './content-migration';
+} from './clipboard-serialization';
 
 // ---------------------------------------------------------------------------
 // Markdown -> HTML converter (toolbar-supported features only)
