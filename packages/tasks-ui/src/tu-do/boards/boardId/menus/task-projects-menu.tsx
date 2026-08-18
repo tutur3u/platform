@@ -2,7 +2,6 @@ import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
 import {
   Command,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -14,6 +13,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 import { projectNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskProject {
@@ -80,8 +80,7 @@ export function TaskProjectsMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             value={searchQuery}
             onValueChange={setSearchQuery}
             placeholder={t.searchProjects}

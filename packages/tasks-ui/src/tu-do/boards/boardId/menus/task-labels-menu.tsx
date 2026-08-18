@@ -2,7 +2,6 @@ import { Check, Loader2, Plus, Tag } from '@tuturuuu/icons';
 import {
   Command,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -15,6 +14,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { LabelChip, type TaskLabel } from '../../../shared/label-chip';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskLabelsMenuProps {
@@ -73,8 +73,7 @@ export function TaskLabelsMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             value={searchQuery}
             onValueChange={setSearchQuery}
             placeholder={t.searchLabels}

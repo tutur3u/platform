@@ -6,7 +6,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
@@ -21,6 +20,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 
 interface TaskBlockingMenuTranslations {
   dependencies: string;
@@ -219,8 +219,7 @@ export function TaskBlockingMenu({
 
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             placeholder={
               activeTab === 'blocks'
                 ? translations.search_tasks_to_block

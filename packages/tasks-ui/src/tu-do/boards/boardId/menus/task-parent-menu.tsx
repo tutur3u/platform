@@ -6,7 +6,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
@@ -20,6 +19,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -154,8 +154,7 @@ export function TaskParentMenu({
 
         {/* Search and Select */}
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             placeholder={translations.search_tasks}
             value={searchQuery}
             onValueChange={setSearchQuery}

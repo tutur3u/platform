@@ -7,7 +7,6 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   Command,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -16,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { EmptyStateCard } from '../../empty-state-card';
+import { TaskCommandSearchInput } from '../../task-command-search-input';
 import {
   type TaskListLabels,
   translateTaskListNameForDisplay,
@@ -145,8 +145,7 @@ export function TaskListPickerPanel({
       shouldFilter={false}
       className={cn('w-full min-w-0 rounded-none border-0', className)}
     >
-      <CommandInput
-        autoFocus
+      <TaskCommandSearchInput
         value={searchQuery}
         onValueChange={setSearchQuery}
         placeholder={`${t('common.search')}...`}

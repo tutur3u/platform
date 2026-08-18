@@ -13,7 +13,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
@@ -23,6 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 
 interface TaskPickerOption {
   id: string;
@@ -214,8 +214,7 @@ export function TaskPickerPopover({
         sideOffset={4}
       >
         <Command shouldFilter={false}>
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             placeholder="Search tasks..."
             value={searchQuery}
             onValueChange={setSearchQuery}

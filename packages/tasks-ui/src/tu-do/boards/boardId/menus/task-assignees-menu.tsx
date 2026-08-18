@@ -4,7 +4,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
@@ -15,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
+import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
 import { memberMatchesSearchQuery } from '../../../shared/task-resource-search-filters';
 
 interface Member {
@@ -109,8 +109,7 @@ export function TaskAssigneesMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
         <Command shouldFilter={false} className="rounded-none border-0">
-          <CommandInput
-            autoFocus
+          <TaskCommandSearchInput
             value={searchQuery}
             onValueChange={setSearchQuery}
             placeholder={t.searchMembers}

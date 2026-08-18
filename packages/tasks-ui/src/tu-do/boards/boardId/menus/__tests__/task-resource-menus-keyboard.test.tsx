@@ -62,6 +62,12 @@ describe('task resource menu keyboard UX', () => {
     fireEvent.change(search, { target: { value: 'feature' } });
     expect(screen.queryByText('Bug')).not.toBeInTheDocument();
 
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(search).toHaveValue('');
+    expect(screen.getByText('Bug')).toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'feature' } });
+
     fireEvent.keyDown(search, { key: 'Enter' });
     await waitFor(() => expect(onToggleLabel).toHaveBeenCalledWith('label-2'));
   });
