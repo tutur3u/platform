@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
@@ -8,19 +10,20 @@ import {
   MARKETING_CLIENT_MESSAGE_NAMESPACES,
   PUBLIC_CLIENT_MESSAGE_NAMESPACES,
   ROOT_CLIENT_MESSAGE_NAMESPACES,
+  ROOT_CLIENT_MESSAGE_PATHS,
   UI_CLIENT_MESSAGE_NAMESPACES,
 } from './client-messages';
 
 describe('getPublicClientMessages', () => {
-  it('keeps only explicitly client-visible namespaces', () => {
+  it('keeps only explicitly client-visible root paths', () => {
     const messages = {
-      common: { save: 'Save' },
+      common: { about: 'About', save: 'Save' },
       'marketing-nav': { products: 'Products' },
       'ws-users': { title: 'Users' },
     };
 
     expect(getPublicClientMessages(messages)).toEqual({
-      common: { save: 'Save' },
+      common: { about: 'About' },
       'marketing-nav': { products: 'Products' },
     });
   });
@@ -56,6 +59,45 @@ describe('getPublicClientMessages', () => {
     expect(marketing).not.toHaveProperty('login');
     expect(ui).toHaveProperty('ui-showcase');
     expect(ui).not.toHaveProperty('onboarding');
+  });
+
+  it('deep-picks only requested shell keys', () => {
+    const messages = {
+      common: { about: 'About', hidden: 'Do not serialize' },
+      'marketing-nav': { all_apps: 'All apps' },
+      landing: { title: 'Tuturuuu' },
+    };
+
+    expect(
+      getClientMessages(messages, ['common.about', 'marketing-nav'])
+    ).toEqual({
+      common: { about: 'About' },
+      'marketing-nav': { all_apps: 'All apps' },
+    });
+  });
+
+  it('keeps every root shell path available in every locale', () => {
+    for (const path of ROOT_CLIENT_MESSAGE_PATHS) {
+      expect(getClientMessages(en, [path])).not.toEqual({});
+      expect(getClientMessages(vi, [path])).not.toEqual({});
+    }
+  });
+
+  it('covers every literal common key used by the public shell', () => {
+    const sources = [
+      join('src/app/[locale]/marketing-nav/marketing-nav-menu.tsx'),
+      join('src/app/[locale]/mobile-menu.tsx'),
+      join('src/app/[locale]/public-navbar-actions.tsx'),
+      join('../../packages/ui/src/components/ui/custom/common-footer.tsx'),
+    ];
+    const commonKeyPattern = /\bt\(['"](common\.[^'"]+)['"]/g;
+
+    for (const source of sources) {
+      const contents = readFileSync(source, 'utf8');
+      for (const match of contents.matchAll(commonKeyPattern)) {
+        expect(ROOT_CLIENT_MESSAGE_PATHS).toContain(match[1]);
+      }
+    }
   });
 
   it('keeps public serialization below one third of the full catalog', () => {

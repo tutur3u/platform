@@ -6,6 +6,38 @@ export const ROOT_CLIENT_MESSAGE_NAMESPACES = [
   'marketing-nav',
 ] as const;
 
+export const ROOT_CLIENT_MESSAGE_PATHS = [
+  'common.about',
+  'common.acceptable-use',
+  'common.blog',
+  'common.branding',
+  'common.careers',
+  'common.changelog',
+  'common.community-guidelines',
+  'common.company',
+  'common.contact',
+  'common.copyright',
+  'common.developers',
+  'common.documentation',
+  'common.facebook_mockup',
+  'common.footer_tagline',
+  'common.get-started',
+  'common.legal',
+  'common.main_navigation',
+  'common.meet-together',
+  'common.open-source',
+  'common.partners',
+  'common.pricing',
+  'common.privacy',
+  'common.products',
+  'common.qr_generator',
+  'common.resources',
+  'common.security',
+  'common.terms',
+  'common.ui',
+  'marketing-nav',
+] as const;
+
 export const MARKETING_CLIENT_MESSAGE_NAMESPACES = [
   'about',
   'account_switcher',
@@ -55,17 +87,38 @@ export const PUBLIC_CLIENT_MESSAGE_NAMESPACES = [
 
 export function getClientMessages<T extends Record<string, unknown>>(
   messages: T,
-  namespaces: readonly string[]
+  paths: readonly string[]
 ): Partial<T> {
-  return Object.fromEntries(
-    namespaces.flatMap((namespace) =>
-      namespace in messages ? [[namespace, messages[namespace]]] : []
-    )
-  ) as Partial<T>;
+  const selected: Record<string, unknown> = {};
+
+  for (const path of paths) {
+    const segments = path.split('.');
+    let source: unknown = messages;
+
+    for (const segment of segments) {
+      if (!source || typeof source !== 'object' || !(segment in source)) {
+        source = undefined;
+        break;
+      }
+      source = (source as Record<string, unknown>)[segment];
+    }
+
+    if (source === undefined) continue;
+
+    let target = selected;
+    for (const segment of segments.slice(0, -1)) {
+      const child = target[segment];
+      if (!child || typeof child !== 'object') target[segment] = {};
+      target = target[segment] as Record<string, unknown>;
+    }
+    target[segments.at(-1)!] = source;
+  }
+
+  return selected as Partial<T>;
 }
 
 export function getPublicClientMessages<T extends Record<string, unknown>>(
   messages: T
 ): Partial<T> {
-  return getClientMessages(messages, ROOT_CLIENT_MESSAGE_NAMESPACES);
+  return getClientMessages(messages, ROOT_CLIENT_MESSAGE_PATHS);
 }
