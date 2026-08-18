@@ -7,6 +7,7 @@ import {
 import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
 import { toast } from '@tuturuuu/ui/sonner';
 import ImageResize from 'tiptap-extension-resize-image';
+import { getClipboardImageFiles } from './clipboard-image-files';
 import {
   formatBytes,
   getImageDimensions,
@@ -83,14 +84,6 @@ function resolveUploadHandler({
   }
 
   return configuredHandler;
-}
-
-function getClipboardImageFiles(
-  items: DataTransferItemList | DataTransferItem[]
-) {
-  return Array.from(items)
-    .map((item) => (item.type.startsWith('image/') ? item.getAsFile() : null))
-    .filter((file): file is File => file !== null);
 }
 
 export const __imageExtensionPrivate = {
