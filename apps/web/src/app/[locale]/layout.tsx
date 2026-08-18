@@ -11,8 +11,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
+import { getMessages } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
+import { getPublicClientMessages } from '@/i18n/client-messages';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';
 
@@ -116,6 +118,7 @@ export default async function RootLayout({ children }: Props) {
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
+  const publicClientMessages = getPublicClientMessages(await getMessages());
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
@@ -130,7 +133,9 @@ export default async function RootLayout({ children }: Props) {
           <AppThemeProvider>
             <Suspense>
               <NuqsAdapter>
-                <Providers>{children}</Providers>
+                <Providers messages={publicClientMessages}>
+                  {children}
+                </Providers>
               </NuqsAdapter>
             </Suspense>
           </AppThemeProvider>

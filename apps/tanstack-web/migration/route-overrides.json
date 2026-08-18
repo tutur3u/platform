@@ -20,6 +20,10 @@
       "targetOwner": "rust-backend",
       "note": "Idempotent Gemini Live usage settlement remains on the live Next.js backend pending Rust parity."
     },
+    "api:/api/v1/workspaces/:wsId/crawl:apps/web/src/app/api/v1/workspaces/[wsId]/crawl/route.ts": {
+      "status": "accepted-removal",
+      "note": "Crawler execution is retired. The live compatibility tombstone returns HTTP 410 without authenticating, reading crawler data, or calling the external scraper."
+    },
     "api:/api/v1/integrations/external-chat/events:apps/web/src/app/api/v1/integrations/external-chat/events/route.ts": {
       "status": "legacy-next",
       "targetOwner": "rust-backend",
