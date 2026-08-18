@@ -220,6 +220,7 @@ export function TaskBlockingMenu({
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
           <CommandInput
+            autoFocus
             placeholder={
               activeTab === 'blocks'
                 ? translations.search_tasks_to_block

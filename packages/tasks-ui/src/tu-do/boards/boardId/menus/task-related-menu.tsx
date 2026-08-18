@@ -167,6 +167,7 @@ export function TaskRelatedMenu({
         {/* Search and Add */}
         <Command shouldFilter={false} className="rounded-none border-0">
           <CommandInput
+            autoFocus
             placeholder={translations.search_tasks_to_link}
             value={searchQuery}
             onValueChange={setSearchQuery}

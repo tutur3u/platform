@@ -215,6 +215,7 @@ export function TaskPickerPopover({
       >
         <Command shouldFilter={false}>
           <CommandInput
+            autoFocus
             placeholder="Search tasks..."
             value={searchQuery}
             onValueChange={setSearchQuery}

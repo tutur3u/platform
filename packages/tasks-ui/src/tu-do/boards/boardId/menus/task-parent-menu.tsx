@@ -155,6 +155,7 @@ export function TaskParentMenu({
         {/* Search and Select */}
         <Command shouldFilter={false} className="rounded-none border-0">
           <CommandInput
+            autoFocus
             placeholder={translations.search_tasks}
             value={searchQuery}
             onValueChange={setSearchQuery}

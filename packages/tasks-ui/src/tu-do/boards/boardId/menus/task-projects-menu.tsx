@@ -1,13 +1,19 @@
 import { Box, Check, Loader2, Plus } from '@tuturuuu/icons';
 import {
-  DropdownMenuItem,
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@tuturuuu/ui/command';
+import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { TaskResourceSearchField } from '../../../shared/task-resource-search-field';
 import { projectNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskProject {
@@ -60,6 +66,11 @@ export function TaskProjectsMenu({
   const filteredProjects = availableProjects.filter((project) =>
     projectNameMatchesQuery(project.name, searchQuery)
   );
+  const select = (action: () => void) =>
+    onMenuItemSelect(
+      { preventDefault: () => undefined } as unknown as Event,
+      action
+    );
 
   return (
     <DropdownMenuSub>
@@ -68,75 +79,77 @@ export function TaskProjectsMenu({
         {t.projects}
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent className="w-80 p-0">
-        <TaskResourceSearchField
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder={t.searchProjects}
-        />
+        <Command shouldFilter={false} className="rounded-none border-0">
+          <CommandInput
+            autoFocus
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder={t.searchProjects}
+            className="h-9"
+          />
+          <CommandList className="max-h-64">
+            {/* Projects List */}
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 px-2 py-6">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <p className="text-muted-foreground text-xs">{t.loading}</p>
+              </div>
+            ) : filteredProjects.length === 0 ? (
+              <div className="px-2 py-6 text-center text-muted-foreground text-xs">
+                {searchQuery ? t.noProjectsFound : t.noProjectsAvailable}
+              </div>
+            ) : (
+              <CommandGroup>
+                {filteredProjects.map((project) => {
+                  const active = taskProjects.some((p) => p.id === project.id);
+                  return (
+                    <CommandItem
+                      key={project.id}
+                      value={`${project.name ?? ''} ${project.id}`}
+                      aria-checked={active}
+                      role="menuitemcheckbox"
+                      onSelect={() => select(() => onToggleProject(project.id))}
+                      className={cn(
+                        'flex cursor-pointer items-center justify-between gap-2',
+                        active && 'bg-dynamic-sky/10 text-dynamic-sky'
+                      )}
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
+                        <span className="truncate text-sm">{project.name}</span>
+                      </div>
+                      {active && <Check className="h-4 w-4 shrink-0" />}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
 
-        {/* Projects List */}
-        {isLoading ? (
-          <div className="flex items-center justify-center gap-2 px-2 py-6">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <p className="text-muted-foreground text-xs">{t.loading}</p>
-          </div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="px-2 py-6 text-center text-muted-foreground text-xs">
-            {searchQuery ? t.noProjectsFound : t.noProjectsAvailable}
-          </div>
-        ) : (
-          <div className="max-h-50 overflow-auto">
-            <div className="flex flex-col gap-1 p-1">
-              {filteredProjects.map((project) => {
-                const active = taskProjects.some((p) => p.id === project.id);
-                return (
-                  <DropdownMenuItem
-                    key={project.id}
-                    onSelect={(e) =>
-                      onMenuItemSelect(e as unknown as Event, () =>
-                        onToggleProject(project.id)
-                      )
-                    }
-                    className={cn(
-                      'flex cursor-pointer items-center justify-between gap-2',
-                      active && 'bg-dynamic-sky/10 text-dynamic-sky'
-                    )}
+            {/* Footer with count */}
+            {!isLoading && taskProjects.length > 0 && (
+              <div className="border-t px-3 py-1.5 text-[10px] text-muted-foreground">
+                {taskProjects.length} {t.assigned}
+              </div>
+            )}
+
+            {/* Create New Project Button */}
+            {!isLoading && (
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem
+                    value={t.createNewProject}
+                    onSelect={() => select(onCreateNewProject)}
+                    className="cursor-pointer text-muted-foreground"
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
-                      <span className="truncate text-sm">{project.name}</span>
-                    </div>
-                    {active && <Check className="h-4 w-4 shrink-0" />}
-                  </DropdownMenuItem>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Footer with count */}
-        {!isLoading && taskProjects.length > 0 && (
-          <div className="relative z-10 border-t bg-background shadow-sm">
-            <div className="px-2 pt-1 pb-1 text-[10px] text-muted-foreground">
-              {taskProjects.length} {t.assigned}
-            </div>
-          </div>
-        )}
-
-        {/* Create New Project Button */}
-        {!isLoading && (
-          <div className="border-t">
-            <DropdownMenuItem
-              onSelect={(e) =>
-                onMenuItemSelect(e as unknown as Event, onCreateNewProject)
-              }
-              className="cursor-pointer text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="h-4 w-4" />
-              {t.createNewProject}
-            </DropdownMenuItem>
-          </div>
-        )}
+                    <Plus className="h-4 w-4" />
+                    {t.createNewProject}
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            )}
+          </CommandList>
+        </Command>
       </DropdownMenuSubContent>
     </DropdownMenuSub>
   );
