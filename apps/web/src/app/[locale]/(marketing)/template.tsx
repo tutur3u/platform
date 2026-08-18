@@ -1,26 +1,21 @@
-import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
-import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import {
-  AUTH_CLIENT_MESSAGE_NAMESPACES,
   getClientMessages,
+  MARKETING_CLIENT_MESSAGE_NAMESPACES,
+  ROOT_CLIENT_MESSAGE_NAMESPACES,
 } from '@/i18n/client-messages';
 
-export const metadata: Metadata = {
-  robots: NO_INDEX_ROBOTS,
-};
-
-export default async function AuthLayout({
+export default async function MarketingIntlTemplate({
   children,
 }: {
   children: ReactNode;
 }) {
-  const messages = getClientMessages(
-    await getMessages(),
-    AUTH_CLIENT_MESSAGE_NAMESPACES
-  );
+  const messages = getClientMessages(await getMessages(), [
+    ...ROOT_CLIENT_MESSAGE_NAMESPACES,
+    ...MARKETING_CLIENT_MESSAGE_NAMESPACES,
+  ]);
 
   return (
     <NextIntlClientProvider messages={messages}>
