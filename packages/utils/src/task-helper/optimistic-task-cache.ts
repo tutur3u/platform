@@ -3,6 +3,58 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 
 export type OptimisticTask = Task & { _isOptimistic: true };
 
+const EMPTY_LIST_OPTIMISTIC_SORT_KEY = 1_000_000_000;
+
+function getEffectiveTaskSortKey(task: Task) {
+  if (
+    task.is_personal_external === true &&
+    task.is_personal_external_default !== true &&
+    typeof task.personal_sort_key === 'number' &&
+    Number.isFinite(task.personal_sort_key)
+  ) {
+    return task.personal_sort_key;
+  }
+
+  return typeof task.sort_key === 'number' && Number.isFinite(task.sort_key)
+    ? task.sort_key
+    : null;
+}
+
+function getOptimisticTopSortKey(
+  queryClient: QueryClient,
+  boardId: string,
+  optimisticTask: Task
+) {
+  const cachedTaskSets = queryClient.getQueriesData<Task[]>({
+    predicate: ({ queryKey }) =>
+      (queryKey[0] === 'tasks' || queryKey[0] === 'tasks-full') &&
+      queryKey[1] === boardId,
+  });
+  let minimumSortKey: number | null = null;
+
+  for (const [, tasks] of cachedTaskSets) {
+    for (const task of tasks ?? []) {
+      if (
+        task.id === optimisticTask.id ||
+        task.list_id !== optimisticTask.list_id
+      ) {
+        continue;
+      }
+
+      const sortKey = getEffectiveTaskSortKey(task);
+      if (
+        sortKey !== null &&
+        (minimumSortKey === null || sortKey < minimumSortKey)
+      ) {
+        minimumSortKey = sortKey;
+      }
+    }
+  }
+
+  if (minimumSortKey === null) return EMPTY_LIST_OPTIMISTIC_SORT_KEY;
+  return Math.max(Number.MIN_SAFE_INTEGER, minimumSortKey - 1);
+}
+
 function updateOptimisticTaskCaches(
   queryClient: QueryClient,
   boardId: string,
@@ -53,12 +105,17 @@ export function insertOptimisticTaskIntoBoardCaches(
     { revert: false }
   );
 
+  const taskAtTop = {
+    ...optimisticTask,
+    sort_key: getOptimisticTopSortKey(queryClient, boardId, optimisticTask),
+  };
+
   updateOptimisticTaskCaches(queryClient, boardId, (tasks) => {
     const currentTasks = tasks ?? [];
     if (currentTasks.some((task) => task.id === optimisticTask.id)) {
       return currentTasks;
     }
-    return [...currentTasks, optimisticTask];
+    return [taskAtTop, ...currentTasks];
   });
 }
 
