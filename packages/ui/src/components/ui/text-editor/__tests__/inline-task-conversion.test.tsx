@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Editor } from '@tiptap/core';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -89,6 +83,19 @@ describe('inline task conversion toolbar', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps copy alongside the formatting controls in one scrollable row', () => {
+    const { container } = render(<FixedToolbar editor={createEditorStub()} />);
+    const toolbar = container.firstElementChild;
+    const boldButton = screen.getByRole('button', { name: 'Bold' });
+    const copyButton = screen.getByRole('button', { name: 'Copy content' });
+
+    expect(toolbar).toHaveClass('flex-nowrap', 'overflow-x-auto');
+    expect(toolbar).not.toHaveClass('flex-wrap');
+    expect(copyButton.closest('.ml-auto')).toBeNull();
+    expect(copyButton).toHaveClass('h-8', 'w-8', 'rounded-md');
+    expect(boldButton).toHaveClass('h-8', 'w-8', 'rounded-md');
+  });
+
   it('copies the full document in either Markdown or plain-text form', async () => {
     const editor = new Editor({
       extensions: getEditorExtensions(),
@@ -139,15 +146,22 @@ describe('inline task conversion toolbar', () => {
       await screen.findByRole('menuitem', { name: /Copy as Markdown/ })
     );
     await waitFor(() =>
+      expect(
+        screen.queryByRole('menuitem', { name: /Copy as Markdown/ })
+      ).not.toBeInTheDocument()
+    );
+    await waitFor(() =>
       expect(writeText).toHaveBeenLastCalledWith('# Plan\n\n- **Ship it**')
     );
-
-    cleanup();
-    render(<FixedToolbar editor={editor} />);
 
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Copy content' }));
     fireEvent.click(
       await screen.findByRole('menuitem', { name: /Copy as plain text/ })
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('menuitem', { name: /Copy as plain text/ })
+      ).not.toBeInTheDocument()
     );
     await waitFor(() =>
       expect(writeText).toHaveBeenLastCalledWith('Plan\n\n• Ship it')

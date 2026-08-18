@@ -12,6 +12,9 @@ interface ToolbarButtonProps {
   disabled?: boolean;
 }
 
+export const TOOLBAR_BUTTON_CLASS_NAME =
+  'h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground';
+
 /** A toolbar toggle with an accessible label and optional hotkey hint. */
 export function ToolbarButton({
   id,
@@ -32,7 +35,7 @@ export function ToolbarButton({
           onPressedChange={() => onClick()}
           onMouseDown={(event) => event.preventDefault()}
           disabled={disabled}
-          className="h-8 w-8 rounded-md border border-transparent transition-colors data-[state=on]:border-foreground/10 data-[state=on]:bg-dynamic-surface/80 data-[state=on]:text-foreground"
+          className={TOOLBAR_BUTTON_CLASS_NAME}
           aria-label={label}
         >
           {icon}

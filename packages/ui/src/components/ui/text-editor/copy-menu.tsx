@@ -1,8 +1,7 @@
 'use client';
 
 import type { Editor } from '@tiptap/react';
-import { ChevronDown, Code2, Copy, FileText } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { Code2, Copy, FileText } from '@tuturuuu/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +11,13 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useCallback } from 'react';
+import { Toggle } from '@tuturuuu/ui/toggle';
+import { useCallback, useState } from 'react';
 import {
   serializeClipboardPlainText,
   serializeClipboardText,
 } from './clipboard-serialization';
+import { TOOLBAR_BUTTON_CLASS_NAME } from './toolbar-controls';
 
 export interface EditorCopyLabels {
   copy?: string;
@@ -46,6 +47,7 @@ const DEFAULT_LABELS = {
 } satisfies Required<EditorCopyLabels>;
 
 export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
+  const [open, setOpen] = useState(false);
   const copy = useCallback(
     async (format: 'markdown' | 'text') => {
       try {
@@ -69,21 +71,22 @@ export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
   );
 
   const copyLabel = labels?.copy ?? DEFAULT_LABELS.copy;
+  const copyAndClose = (format: 'markdown' | 'text') => {
+    setOpen(false);
+    void copy(format);
+  };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
+        <Toggle
+          pressed={open}
           disabled={editor.isEmpty}
           aria-label={copyLabel}
-          className="h-8 gap-0.5 rounded-md px-2 text-muted-foreground hover:bg-dynamic-surface/80 hover:text-foreground data-[state=open]:bg-dynamic-surface/80 data-[state=open]:text-foreground"
+          className={`${TOOLBAR_BUTTON_CLASS_NAME} data-[state=open]:border-foreground/10 data-[state=open]:bg-dynamic-surface/80 data-[state=open]:text-foreground`}
         >
           <Copy className="size-4" />
-          <ChevronDown className="size-3 opacity-60" />
-        </Button>
+        </Toggle>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-muted-foreground text-xs">
@@ -92,7 +95,7 @@ export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="items-start gap-3 py-2.5"
-          onSelect={() => void copy('markdown')}
+          onSelect={() => copyAndClose('markdown')}
         >
           <Code2 className="mt-0.5 size-4 shrink-0 text-dynamic-blue" />
           <span className="min-w-0">
@@ -107,7 +110,7 @@ export function EditorCopyMenu({ editor, labels }: EditorCopyMenuProps) {
         </DropdownMenuItem>
         <DropdownMenuItem
           className="items-start gap-3 py-2.5"
-          onSelect={() => void copy('text')}
+          onSelect={() => copyAndClose('text')}
         >
           <FileText className="mt-0.5 size-4 shrink-0 text-dynamic-green" />
           <span className="min-w-0">

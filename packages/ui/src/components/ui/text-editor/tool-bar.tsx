@@ -1091,7 +1091,7 @@ export function FixedToolbar({
     <div
       ref={ref}
       className={cn(
-        'sticky top-0 z-40 flex flex-wrap items-center gap-1 rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
+        'sticky top-0 z-40 flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
         className
       )}
     >
@@ -1180,10 +1180,8 @@ export function FixedToolbar({
         </>
       )}
 
-      <div className="ml-auto flex items-center pl-1">
-        <ToolbarSeparator />
-        <EditorCopyMenu editor={editor} labels={copyLabels} />
-      </div>
+      <ToolbarSeparator />
+      <EditorCopyMenu editor={editor} labels={copyLabels} />
     </div>
   );
 }
