@@ -1,39 +1,47 @@
-// These namespaces are only consumed below the authenticated dashboard route
-// group. Keeping them out of the root provider prevents every public page from
-// serializing dashboard-only translations into its HTML/RSC payload.
-export const DASHBOARD_ONLY_MESSAGE_NAMESPACES = [
-  'ai-credits-admin',
-  'ai-execution-charts',
-  'blue-green-monitoring',
-  'link-shortener',
-  'meet-together-plan-details',
-  'mobile-deployment-settings',
-  'rate-limits',
-  'task-progress',
-  'ws-api-keys',
-  'ws-board-templates',
-  'ws-debt-loan',
-  'ws-invoices',
-  'ws-overview',
-  'ws-reports',
-  'ws-roles',
-  'ws-storage-objects',
-  'ws-tasks',
-  'ws-topic-announcements',
-  'ws-user-group-schedule',
-  'ws-users',
+// The root provider is shared by public, auth, game, and UI routes. Only send
+// namespaces used by client components on those surfaces. Dashboard routes
+// install a nested provider with the complete catalog.
+export const PUBLIC_CLIENT_MESSAGE_NAMESPACES = [
+  'about',
+  'account_switcher',
+  'auth',
+  'auth-recovery',
+  'branding',
+  'changelog-page',
+  'common',
+  'contact',
+  'course-details-tabs',
+  'facebook_mockup',
+  'finance-analytics',
+  'finance-budgets',
+  'finance-overview',
+  'habit-tracker',
+  'invite',
+  'landing',
+  'login',
+  'marketing-models',
+  'marketing-nav',
+  'onboarding',
+  'products',
+  'security-policy',
+  'settings-account',
+  'transaction-category-data-table',
+  'ui-showcase',
+  'user-field-data-table',
+  'vietnameseWomensDay',
+  'ws-flashcards',
+  'ws-memories',
+  'ws-polls',
+  'ws-quiz-sets',
+  'ws-quizzes',
 ] as const;
-
-const dashboardOnlyNamespaces = new Set<string>(
-  DASHBOARD_ONLY_MESSAGE_NAMESPACES
-);
 
 export function getPublicClientMessages<T extends Record<string, unknown>>(
   messages: T
 ): Partial<T> {
   return Object.fromEntries(
-    Object.entries(messages).filter(
-      ([namespace]) => !dashboardOnlyNamespaces.has(namespace)
+    PUBLIC_CLIENT_MESSAGE_NAMESPACES.flatMap((namespace) =>
+      namespace in messages ? [[namespace, messages[namespace]]] : []
     )
   ) as Partial<T>;
 }
