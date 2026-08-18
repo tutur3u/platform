@@ -14,7 +14,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { LabelChip, type TaskLabel } from '../../../shared/label-chip';
-import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
 import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskLabelsMenuProps {
@@ -71,7 +74,12 @@ export function TaskLabelsMenu({
         <Tag className="h-4 w-4 text-dynamic-cyan" />
         {t.labels}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 p-0">
+      <DropdownMenuSubContent
+        className="w-80 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         <Command shouldFilter={false} className="rounded-none border-0">
           <TaskCommandSearchInput
             value={searchQuery}

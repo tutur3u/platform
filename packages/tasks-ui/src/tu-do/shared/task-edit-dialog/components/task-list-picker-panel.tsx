@@ -61,6 +61,8 @@ export interface TaskListPickerPanelProps {
   /** Parent-controlled create-list dialog opener */
   onRequestOpenCreateDialog: () => void;
   className?: string;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 }
 
 export function TaskListPickerPanel({
@@ -70,9 +72,13 @@ export function TaskListPickerPanel({
   onSelectList,
   onRequestOpenCreateDialog,
   className,
+  searchQuery: controlledSearchQuery,
+  onSearchQueryChange,
 }: TaskListPickerPanelProps) {
   const t = useTranslations();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [internalSearchQuery, setInternalSearchQuery] = useState('');
+  const searchQuery = controlledSearchQuery ?? internalSearchQuery;
+  const setSearchQuery = onSearchQueryChange ?? setInternalSearchQuery;
 
   const statusLabels = useMemo(
     (): Record<TaskBoardStatus, string> => ({

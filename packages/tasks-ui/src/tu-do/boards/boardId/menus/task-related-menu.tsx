@@ -20,7 +20,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
-import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
 
 interface TaskRelatedMenuTranslations {
   related_tasks: string;
@@ -106,7 +109,12 @@ export function TaskRelatedMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 p-0">
+      <DropdownMenuSubContent
+        className="w-80 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Current Related Tasks */}
         {relatedTasks.length > 0 && (
           <div className="border-b">

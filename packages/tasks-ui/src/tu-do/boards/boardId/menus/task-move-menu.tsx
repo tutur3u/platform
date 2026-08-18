@@ -5,6 +5,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useState } from 'react';
+import { clearTaskCommandSearchOnEscape } from '../../../shared/task-command-search-input';
 import { TaskListPickerPanel } from '../../../shared/task-edit-dialog/components/task-list-picker-panel';
 
 interface TaskMoveMenuProps {
@@ -29,6 +31,7 @@ export function TaskMoveMenu({
   translations,
 }: TaskMoveMenuProps) {
   const moveLabel = translations?.move ?? 'Move';
+  const [searchQuery, setSearchQuery] = useState('');
 
   const syntheticSelectEvent = () =>
     ({ preventDefault: () => {} }) as unknown as Event;
@@ -47,7 +50,12 @@ export function TaskMoveMenu({
           <span>{moveLabel}</span>
         </div>
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 overflow-hidden p-0">
+      <DropdownMenuSubContent
+        className="w-80 overflow-hidden p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         <TaskListPickerPanel
           selectedListId={currentListId}
           availableLists={availableLists}
@@ -59,6 +67,8 @@ export function TaskMoveMenu({
           }}
           onRequestOpenCreateDialog={onRequestOpenCreateDialog}
           className="w-full"
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
         />
       </DropdownMenuSubContent>
     </DropdownMenuSub>

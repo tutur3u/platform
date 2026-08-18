@@ -20,7 +20,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
-import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
 
 interface TaskBlockingMenuTranslations {
   dependencies: string;
@@ -136,7 +139,12 @@ export function TaskBlockingMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-80 p-0">
+      <DropdownMenuSubContent
+        className="w-80 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Tab Switcher */}
         <div className="flex border-b">
           <button

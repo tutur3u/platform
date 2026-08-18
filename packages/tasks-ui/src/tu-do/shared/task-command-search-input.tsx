@@ -9,10 +9,22 @@ interface TaskCommandSearchInputProps
   onValueChange: (value: string) => void;
 }
 
+export function clearTaskCommandSearchOnEscape(
+  event: { preventDefault: () => void },
+  value: string,
+  onValueChange: (value: string) => void
+) {
+  if (!value) return false;
+
+  event.preventDefault();
+  onValueChange('');
+  return true;
+}
+
 export function TaskCommandSearchInput({
   value,
   onValueChange,
-  onKeyDown,
+  onKeyDownCapture,
   ...props
 }: TaskCommandSearchInputProps) {
   return (
@@ -21,13 +33,16 @@ export function TaskCommandSearchInput({
       autoFocus
       value={value}
       onValueChange={onValueChange}
-      onKeyDown={(event) => {
-        onKeyDown?.(event);
-        if (event.defaultPrevented || event.key !== 'Escape' || !value) return;
+      onKeyDownCapture={(event) => {
+        onKeyDownCapture?.(event);
+        if (
+          event.defaultPrevented ||
+          event.key !== 'Escape' ||
+          !clearTaskCommandSearchOnEscape(event, value, onValueChange)
+        )
+          return;
 
-        event.preventDefault();
         event.stopPropagation();
-        onValueChange('');
       }}
     />
   );

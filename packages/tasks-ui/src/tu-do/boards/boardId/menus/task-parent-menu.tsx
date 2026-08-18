@@ -19,7 +19,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { useWorkspaceTasks } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import { formatRelationshipTaskIdentifier } from '../../../shared/relationship-task-identifier';
-import { TaskCommandSearchInput } from '../../../shared/task-command-search-input';
+import {
+  clearTaskCommandSearchOnEscape,
+  TaskCommandSearchInput,
+} from '../../../shared/task-command-search-input';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -121,7 +124,12 @@ export function TaskParentMenu({
           </span>
         )}
       </DropdownMenuSubTrigger>
-      <DropdownMenuSubContent className="w-72 p-0">
+      <DropdownMenuSubContent
+        className="w-72 p-0"
+        onEscapeKeyDown={(event) =>
+          clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
+        }
+      >
         {/* Current Parent Display */}
         {parentTask && (
           <div className="border-b p-2">
