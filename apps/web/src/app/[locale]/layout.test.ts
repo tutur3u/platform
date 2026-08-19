@@ -14,7 +14,7 @@ describe('Web root layout', () => {
     );
 
     expect(layoutSource).toMatch(
-      /<AppThemeProvider>\s*<Suspense>\s*<NuqsAdapter>\s*<Providers>\{children\}<\/Providers>\s*<\/NuqsAdapter>\s*<\/Suspense>\s*<\/AppThemeProvider>/
+      /<AppThemeProvider>\s*<Suspense>\s*<NuqsAdapter>\s*<Providers messages=\{publicClientMessages\}>\s*\{children\}\s*<\/Providers>\s*<\/NuqsAdapter>\s*<\/Suspense>\s*<\/AppThemeProvider>/
     );
     expect(providersSource).toMatch(
       /export function AppThemeProvider[\s\S]*<NextThemesProvider/
