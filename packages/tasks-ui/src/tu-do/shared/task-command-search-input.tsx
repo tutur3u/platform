@@ -14,7 +14,7 @@ interface TaskCommandSearchInputProps
   onValueChange: (value: string) => void;
 }
 
-const FOCUS_SETTLING_FRAMES = 6;
+const FOCUS_SETTLING_MS = 500;
 
 export function clearTaskCommandSearchOnEscape(
   event: { preventDefault: () => void },
@@ -44,45 +44,61 @@ export function TaskCommandSearchInput({
 
     const submenuContent = input.closest<HTMLElement>('[data-state]');
     let frame: number | undefined;
-    let remainingFrames = 0;
+    let settlingTimer: number | undefined;
+    let isSettling = false;
 
     const cancelFocusHandoff = () => {
-      remainingFrames = 0;
+      isSettling = false;
       if (frame !== undefined) window.cancelAnimationFrame(frame);
+      if (settlingTimer !== undefined) window.clearTimeout(settlingTimer);
       frame = undefined;
+      settlingTimer = undefined;
+    };
+
+    const scheduleFocus = () => {
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        frame = undefined;
+        if (!isSettling || submenuContent?.dataset.state === 'closed') return;
+
+        input.focus({ preventScroll: true });
+      });
     };
 
     const focusUntilSettled = () => {
       cancelFocusHandoff();
       if (submenuContent?.dataset.state === 'closed') return;
 
-      remainingFrames = FOCUS_SETTLING_FRAMES;
-      const focusOnFrame = () => {
-        frame = undefined;
-        if (remainingFrames === 0 || submenuContent?.dataset.state === 'closed')
-          return;
-
-        input.focus({ preventScroll: true });
-        remainingFrames -= 1;
-        if (remainingFrames > 0) {
-          frame = window.requestAnimationFrame(focusOnFrame);
-        }
-      };
-
-      focusOnFrame();
+      isSettling = true;
+      input.focus({ preventScroll: true });
+      settlingTimer = window.setTimeout(cancelFocusHandoff, FOCUS_SETTLING_MS);
     };
 
-    const stopForPointerInteraction = (event: Event) => {
+    const reclaimLateFocusHandoff = (event: FocusEvent) => {
+      if (!isSettling || event.target === input) return;
+
+      const nextSubmenu =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>(
+              '[data-slot="dropdown-menu-sub-content"]'
+            )
+          : null;
+      if (nextSubmenu && nextSubmenu !== submenuContent) {
+        cancelFocusHandoff();
+        return;
+      }
+
+      scheduleFocus();
+    };
+
+    const stopForPointerInteraction = (event: PointerEvent) => {
       if (event.target !== input) cancelFocusHandoff();
     };
 
     focusUntilSettled();
-    submenuContent?.addEventListener(
-      'pointerdown',
-      stopForPointerInteraction,
-      true
-    );
-    submenuContent?.addEventListener('keydown', cancelFocusHandoff, true);
+    document.addEventListener('focusin', reclaimLateFocusHandoff, true);
+    document.addEventListener('pointerdown', stopForPointerInteraction, true);
+    document.addEventListener('keydown', cancelFocusHandoff, true);
 
     const observer = submenuContent
       ? new MutationObserver((mutations) => {
@@ -104,12 +120,13 @@ export function TaskCommandSearchInput({
 
     return () => {
       observer?.disconnect();
-      submenuContent?.removeEventListener(
+      document.removeEventListener('focusin', reclaimLateFocusHandoff, true);
+      document.removeEventListener(
         'pointerdown',
         stopForPointerInteraction,
         true
       );
-      submenuContent?.removeEventListener('keydown', cancelFocusHandoff, true);
+      document.removeEventListener('keydown', cancelFocusHandoff, true);
       cancelFocusHandoff();
     };
   }, []);

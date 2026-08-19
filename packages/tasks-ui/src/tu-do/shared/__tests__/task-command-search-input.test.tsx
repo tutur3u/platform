@@ -176,6 +176,9 @@ describe('TaskCommandSearchInput', () => {
 
     // Radix may perform a later focus handoff after the submenu has mounted.
     // The search field must retain ownership through that opening lifecycle.
+    for (let frame = 0; frame < 10; frame += 1) {
+      await act(() => new Promise(requestAnimationFrame));
+    }
     toggle.focus();
     expect(toggle).toHaveFocus();
     await act(() => new Promise(requestAnimationFrame));
