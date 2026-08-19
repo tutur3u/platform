@@ -5409,11 +5409,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/workspaces:apps/web/src/legacy-api-routes/workspaces/route.ts",
+      "id": "api:/api/workspaces:apps/web/src/app/api/workspaces/route.ts",
       "kind": "api",
-      "methods": ["GET"],
+      "methods": ["GET", "HEAD"],
       "routePath": "/api/workspaces",
-      "sourceFile": "apps/web/src/legacy-api-routes/workspaces/route.ts",
+      "sourceFile": "apps/web/src/app/api/workspaces/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7700,7 +7700,7 @@
     "routeHandlers": 592,
     "methodCounts": {
       "GET": 294,
-      "HEAD": 3,
+      "HEAD": 4,
       "POST": 292,
       "PUT": 53,
       "PATCH": 62,

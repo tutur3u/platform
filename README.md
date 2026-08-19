@@ -21,22 +21,22 @@ CLI, documentation, local services, and deployment tooling behind that system.
 <!-- tanstack-rust-migration-progress:start -->
 _Generated from `apps/tanstack-web/migration/route-manifest.json`. Refresh with `bun migration:tanstack:readme` after route ownership changes._
 
-![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=28.32%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.18%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=70.42%25+terminal&style=flat-square)
+![Overall migration progress](https://img.shields.io/static/v1?color=fb8c00&label=Overall&message=28.41%25+terminal&style=flat-square) ![Rust backend migration progress](https://img.shields.io/static/v1?color=cf222e&label=Rust+backend&message=13.34%25+terminal&style=flat-square) ![TanStack Start migration progress](https://img.shields.io/static/v1?color=1f6feb&label=TanStack+Start&message=70.09%25+terminal&style=flat-square)
 
 | Track | Progress | Terminal | Migrated | Removed | Remaining |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Overall | `[######--------------]` 28.32% | 228 / 805 | 215 | 13 | 577 |
-| Rust backend | `[###-----------------]` 13.18% | 78 / 592 | 67 | 11 | 514 |
-| TanStack Start | `[##############------]` 70.42% | 150 / 213 | 148 | 2 | 63 |
+| Overall | `[######--------------]` 28.41% | 229 / 806 | 215 | 14 | 577 |
+| Rust backend | `[###-----------------]` 13.34% | 79 / 592 | 67 | 12 | 513 |
+| TanStack Start | `[##############------]` 70.09% | 150 / 214 | 148 | 2 | 64 |
 
 <details>
 <summary>Remaining work by route kind</summary>
 
 | Kind | Progress | Terminal | Remaining |
 | --- | --- | ---: | ---: |
-| api | `[##--------------]` 12.61% | 73 / 579 | 506 |
+| api | `[##--------------]` 12.78% | 74 / 579 | 505 |
 | page | `[###########-----]` 66.89% | 101 / 151 | 50 |
-| layout | `[#############---]` 81.03% | 47 / 58 | 11 |
+| layout | `[#############---]` 79.66% | 47 / 59 | 12 |
 | cron | `[####------------]` 25% | 2 / 8 | 6 |
 | route-handler | `[############----]` 75% | 3 / 4 | 1 |
 | error | `[########--------]` 50% | 1 / 2 | 1 |
