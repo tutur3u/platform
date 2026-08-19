@@ -1,7 +1,12 @@
 'use client';
 
 import { CommandInput } from '@tuturuuu/ui/command';
-import type { ComponentProps } from 'react';
+import {
+  type ComponentProps,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 
 interface TaskCommandSearchInputProps
   extends Omit<ComponentProps<typeof CommandInput>, 'value' | 'onValueChange'> {
@@ -25,12 +30,25 @@ export function TaskCommandSearchInput({
   value,
   onValueChange,
   onKeyDownCapture,
+  ref,
   ...props
 }: TaskCommandSearchInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   return (
     <CommandInput
       {...props}
       autoFocus
+      ref={inputRef}
       value={value}
       onValueChange={onValueChange}
       onKeyDownCapture={(event) => {

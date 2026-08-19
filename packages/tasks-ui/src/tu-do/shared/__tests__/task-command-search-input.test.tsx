@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Command, CommandItem, CommandList } from '@tuturuuu/ui/command';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useState } from 'react';
@@ -42,7 +45,48 @@ function SearchMenu({
   );
 }
 
+function HoverSearchMenu() {
+  const [query, setQuery] = useState('');
+
+  return (
+    <DropdownMenu open>
+      <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>Labels</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <Command>
+              <TaskCommandSearchInput
+                value={query}
+                onValueChange={setQuery}
+                placeholder="Search hover labels..."
+              />
+              <CommandList>
+                <CommandItem>Feature</CommandItem>
+              </CommandList>
+            </Command>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 describe('TaskCommandSearchInput', () => {
+  it('takes focus after a submenu expands from pointer hover', async () => {
+    render(<HoverSearchMenu />);
+
+    fireEvent.pointerMove(screen.getByText('Labels'), {
+      pointerType: 'mouse',
+    });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+
+    const search = await screen.findByPlaceholderText('Search hover labels...');
+    await act(() => new Promise(requestAnimationFrame));
+
+    expect(search).toHaveFocus();
+  });
+
   it('clears a query before Escape can dismiss its dropdown layer', () => {
     const onOpenChange = vi.fn();
     render(<SearchMenu onOpenChange={onOpenChange} />);
