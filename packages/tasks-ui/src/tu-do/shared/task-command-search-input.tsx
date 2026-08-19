@@ -3,8 +3,8 @@
 import { CommandInput } from '@tuturuuu/ui/command';
 import {
   type ComponentProps,
-  useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
 } from 'react';
 
@@ -13,6 +13,8 @@ interface TaskCommandSearchInputProps
   value: string;
   onValueChange: (value: string) => void;
 }
+
+const FOCUS_SETTLING_FRAMES = 6;
 
 export function clearTaskCommandSearchOnEscape(
   event: { preventDefault: () => void },
@@ -36,45 +38,79 @@ export function TaskCommandSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
-  useEffect(() => {
-    let frame: number | undefined;
+  useLayoutEffect(() => {
     const input = inputRef.current;
     if (!input) return;
 
     const submenuContent = input.closest<HTMLElement>('[data-state]');
-    const focusInput = () => {
-      if (submenuContent?.dataset.state === 'closed') return;
+    let frame: number | undefined;
+    let remainingFrames = 0;
 
+    const cancelFocusHandoff = () => {
+      remainingFrames = 0;
       if (frame !== undefined) window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        input.focus({ preventScroll: true });
-      });
+      frame = undefined;
     };
 
-    focusInput();
+    const focusUntilSettled = () => {
+      cancelFocusHandoff();
+      if (submenuContent?.dataset.state === 'closed') return;
 
-    let observer: MutationObserver | null = null;
-    if (submenuContent) {
-      observer = new MutationObserver((mutations) => {
-        if (
-          mutations.some(
-            (mutation) =>
-              mutation.type === 'attributes' &&
-              mutation.attributeName === 'data-state'
-          )
-        ) {
-          focusInput();
+      remainingFrames = FOCUS_SETTLING_FRAMES;
+      const focusOnFrame = () => {
+        frame = undefined;
+        if (remainingFrames === 0 || submenuContent?.dataset.state === 'closed')
+          return;
+
+        input.focus({ preventScroll: true });
+        remainingFrames -= 1;
+        if (remainingFrames > 0) {
+          frame = window.requestAnimationFrame(focusOnFrame);
         }
-      });
-      observer.observe(submenuContent, {
-        attributes: true,
-        attributeFilter: ['data-state'],
-      });
-    }
+      };
+
+      focusOnFrame();
+    };
+
+    const stopForPointerInteraction = (event: Event) => {
+      if (event.target !== input) cancelFocusHandoff();
+    };
+
+    focusUntilSettled();
+    submenuContent?.addEventListener(
+      'pointerdown',
+      stopForPointerInteraction,
+      true
+    );
+    submenuContent?.addEventListener('keydown', cancelFocusHandoff, true);
+
+    const observer = submenuContent
+      ? new MutationObserver((mutations) => {
+          if (
+            mutations.some(
+              (mutation) =>
+                mutation.type === 'attributes' &&
+                mutation.attributeName === 'data-state'
+            )
+          ) {
+            focusUntilSettled();
+          }
+        })
+      : null;
+    observer?.observe(submenuContent as HTMLElement, {
+      attributes: true,
+      attributeFilter: ['data-state'],
+    });
 
     return () => {
       observer?.disconnect();
-      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      submenuContent?.removeEventListener(
+        'pointerdown',
+        stopForPointerInteraction,
+        true
+      );
+      submenuContent?.removeEventListener('keydown', cancelFocusHandoff, true);
+      cancelFocusHandoff();
     };
   }, []);
 

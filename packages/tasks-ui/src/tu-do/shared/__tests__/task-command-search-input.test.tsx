@@ -105,6 +105,7 @@ function PersistentSearchMenu() {
             placeholder="Search persistent submenu..."
           />
         </Command>
+        <button type="button">Choose item</button>
       </div>
     </>
   );
@@ -125,25 +126,38 @@ describe('TaskCommandSearchInput', () => {
     expect(search).toHaveFocus();
   });
 
-  it('moves focus to each newly hover-expanded submenu', async () => {
+  it('stops reclaiming focus when the user interacts with submenu content', async () => {
+    render(<PersistentSearchMenu />);
+
+    const item = screen.getByRole('button', { name: 'Choose item' });
+    fireEvent.pointerDown(item, { pointerType: 'mouse' });
+    item.focus();
+    await act(() => new Promise(requestAnimationFrame));
+    await act(() => new Promise(requestAnimationFrame));
+
+    expect(item).toHaveFocus();
+  });
+
+  it('moves focus reliably across repeated hover-expanded submenus', async () => {
     render(<HoverSearchMenu />);
 
-    fireEvent.pointerMove(screen.getByText('Labels'), {
-      pointerType: 'mouse',
-    });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
-    expect(
-      await screen.findByPlaceholderText('Search hover labels...')
-    ).toHaveFocus();
+    for (let iteration = 0; iteration < 3; iteration += 1) {
+      fireEvent.pointerMove(screen.getByText('Labels'), {
+        pointerType: 'mouse',
+      });
+      await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+      expect(
+        await screen.findByPlaceholderText('Search hover labels...')
+      ).toHaveFocus();
 
-    fireEvent.pointerMove(screen.getByText('Projects'), {
-      pointerType: 'mouse',
-    });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
-
-    expect(
-      await screen.findByPlaceholderText('Search hover projects...')
-    ).toHaveFocus();
+      fireEvent.pointerMove(screen.getByText('Projects'), {
+        pointerType: 'mouse',
+      });
+      await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+      expect(
+        await screen.findByPlaceholderText('Search hover projects...')
+      ).toHaveFocus();
+    }
   });
 
   it('refocuses a persistent submenu input whenever it reopens', async () => {
@@ -158,6 +172,12 @@ describe('TaskCommandSearchInput', () => {
     expect(toggle).toHaveFocus();
 
     fireEvent.click(toggle);
+    await act(() => new Promise(requestAnimationFrame));
+
+    // Radix may perform a later focus handoff after the submenu has mounted.
+    // The search field must retain ownership through that opening lifecycle.
+    toggle.focus();
+    expect(toggle).toHaveFocus();
     await act(() => new Promise(requestAnimationFrame));
 
     expect(search).toHaveFocus();
