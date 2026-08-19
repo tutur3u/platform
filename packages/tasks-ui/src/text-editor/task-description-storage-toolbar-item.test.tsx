@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { TaskDescriptionStorageToolbarItem } from './task-description-storage-toolbar-item';
 
 describe('TaskDescriptionStorageToolbarItem', () => {
-  it('renders a compact, non-shrinking capacity summary with live detail', () => {
+  it('shows only the progress ring and rounded percentage in the toolbar', async () => {
     render(
       <TaskDescriptionStorageToolbarItem
         counterText="99% left"
@@ -19,14 +19,22 @@ describe('TaskDescriptionStorageToolbarItem', () => {
     const indicator = screen.getByRole('button', {
       name: 'Room left in your description. 99% left (120/10000)',
     });
-    expect(indicator).toHaveClass('h-8', 'max-w-72', 'shrink-0');
-    expect(screen.getByText('99% left')).toBeInTheDocument();
+    expect(indicator).toHaveClass('h-8', 'shrink-0');
+    const percentage = within(indicator).getByText('99%');
+    expect(percentage).toHaveClass('rounded-full', 'tabular-nums');
+    expect(within(indicator).queryByText('99% left')).not.toBeInTheDocument();
     expect(
-      screen.getByText(
+      within(indicator).queryByText(/Room left in your description/)
+    ).not.toBeInTheDocument();
+    fireEvent.focus(indicator);
+    expect(
+      await screen.findByText(
         'Room left in your description. Formatting, mentions, and embeds count too.'
       )
     ).toBeInTheDocument();
-    expect(screen.getByText(/120\/10000/)).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('tooltip')).getByText(/120\/10000/)
+    ).toBeInTheDocument();
   });
 
   it('uses the destructive treatment after the description exceeds its limit', () => {
@@ -47,6 +55,9 @@ describe('TaskDescriptionStorageToolbarItem', () => {
         name: 'Description is over 10000 characters. 0% left (10100/10000)',
       })
     ).toHaveClass('border-destructive/40');
-    expect(screen.getByText('0% left')).toHaveClass('text-destructive');
+    expect(screen.getByText('0%')).toHaveClass(
+      'rounded-full',
+      'text-destructive'
+    );
   });
 });
