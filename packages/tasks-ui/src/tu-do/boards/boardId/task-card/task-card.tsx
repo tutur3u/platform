@@ -2262,7 +2262,6 @@ function TaskCardInner({
                     />
                   )}
 
-                  {/* Estimation Menu */}
                   {boardConfig?.estimation_type && (
                     <TaskEstimationMenu
                       currentPoints={displayEstimation}
@@ -2272,6 +2271,7 @@ function TaskCardInner({
                       isLoading={estimationSaving}
                       onEstimationChange={updateEstimationPoints}
                       onMenuItemSelect={handleMenuItemSelect}
+                      onClose={() => setMenuOpen(false)}
                     />
                   )}
 

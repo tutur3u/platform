@@ -1021,7 +1021,6 @@ export function TaskMentionChip({
         onClose={() => setMenuOpen(false)}
       />
 
-      {/* Estimation Menu */}
       {boardConfig?.estimation_type && (
         <TaskEstimationMenu
           currentPoints={task.estimation_points}
@@ -1031,6 +1030,7 @@ export function TaskMentionChip({
           isLoading={isLoading}
           onEstimationChange={updateEstimationPoints}
           onMenuItemSelect={handleMenuItemSelect}
+          onClose={() => setMenuOpen(false)}
         />
       )}
 
