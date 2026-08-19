@@ -28,8 +28,11 @@ import {
 } from './group-attendance-member-card';
 import { GroupAttendanceOverview } from './group-attendance-overview';
 import {
+  attendanceSessionsQueryKey,
   buildAttendanceMap,
+  filterAttendanceSessions,
   getAttendanceMonth,
+  sessionAttendanceDate,
 } from './group-attendance-utils';
 
 export type InitialAttendanceProps = {
@@ -44,12 +47,6 @@ export type InitialAttendanceProps = {
   startingDate?: string | null;
   endingDate?: string | null;
 };
-
-function sessionLocalDate(session: WorkspaceUserGroupSession) {
-  return new Date(session.startsAt).toLocaleDateString('en-CA', {
-    timeZone: session.startTimezone || 'Asia/Ho_Chi_Minh',
-  });
-}
 
 export default function GroupAttendanceClient({
   wsId,
@@ -100,21 +97,17 @@ export default function GroupAttendanceClient({
     return { from: from.toISOString(), to: to.toISOString() };
   }, [calendarMonth]);
 
+  const initialVisibleSessions = useMemo(
+    () => filterAttendanceSessions(initialSessions),
+    [initialSessions]
+  );
+
   const {
-    data: sessions = initialSessions,
+    data: sessions = initialVisibleSessions,
     isError: isSessionsError,
     refetch: refetchSessions,
   } = useQuery({
-    queryKey: [
-      'workspaces',
-      wsId,
-      'users',
-      'groups',
-      groupId,
-      'session-timeblocks',
-      sessionRange.from,
-      sessionRange.to,
-    ],
+    queryKey: attendanceSessionsQueryKey(wsId, groupId, sessionRange),
     queryFn: async () => {
       const response = await listWorkspaceUserGroupSessions(wsId, {
         from: sessionRange.from,
@@ -122,9 +115,9 @@ export default function GroupAttendanceClient({
         includeCancelled: true,
         to: sessionRange.to,
       });
-      return response.data;
+      return filterAttendanceSessions(response.data);
     },
-    initialData: initialSessions,
+    initialData: initialVisibleSessions,
     staleTime: 60 * 1000,
   });
 
@@ -134,7 +127,7 @@ export default function GroupAttendanceClient({
   const sessionsByDate = useMemo(() => {
     const map = new Map<string, WorkspaceUserGroupSession[]>();
     for (const session of sessions) {
-      const key = sessionLocalDate(session);
+      const key = sessionAttendanceDate(session);
       const list = map.get(key) ?? [];
       list.push(session);
       map.set(key, list);

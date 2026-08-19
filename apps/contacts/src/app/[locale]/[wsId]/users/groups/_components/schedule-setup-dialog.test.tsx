@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
+import { attendanceSessionsQueryKey } from '@tuturuuu/users-ui/components/group-attendance-utils';
 import dayjs from 'dayjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScheduleSetupDialog } from './schedule-setup-dialog';
@@ -112,10 +113,12 @@ function renderDialog() {
       />
     </QueryClientProvider>
   );
+  return client;
 }
 
 describe('ScheduleSetupDialog', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-08-15T02:00:00.000Z'));
     updateSession.mockResolvedValue({ data: [], message: 'success' });
@@ -171,7 +174,18 @@ describe('ScheduleSetupDialog', () => {
       groups: [],
       tags: [],
     });
-    renderDialog();
+    const client = renderDialog();
+    const attendanceQueryKey = attendanceSessionsQueryKey(
+      '00000000-0000-4000-8000-000000000001',
+      '00000000-0000-4000-8000-000000000101',
+      {
+        from: '2026-08-01T00:00:00.000Z',
+        to: '2026-09-01T00:00:00.000Z',
+      }
+    );
+    client.setQueryData(attendanceQueryKey, [
+      session('stale-attendance-session', '2026-08-20'),
+    ]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Manage schedule' }));
     await screen.findByRole('checkbox', { name: 'Monday' });
@@ -200,6 +214,9 @@ describe('ScheduleSetupDialog', () => {
           scope: 'future',
         }
       )
+    );
+    await waitFor(() =>
+      expect(client.getQueryState(attendanceQueryKey)?.isInvalidated).toBe(true)
     );
   });
 });
