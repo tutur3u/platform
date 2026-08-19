@@ -14,7 +14,14 @@ import type {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   BoardBroadcastProvider,
   type BoardRefreshOptions,
@@ -61,10 +68,25 @@ export function BoardClient({
   const cacheScopeId = currentUserId
     ? `${currentUserId}:${workspace.id}`
     : workspace.id;
-  const cachedSnapshot = useMemo(
-    () => readTaskBoardCache(cacheScopeId, boardId),
-    [boardId, cacheScopeId]
-  );
+  const [cachedSnapshot, setCachedSnapshot] = useState<ReturnType<
+    typeof readTaskBoardCache
+  > | null>(null);
+
+  useEffect(() => {
+    const snapshot = readTaskBoardCache(cacheScopeId, boardId);
+    if (!snapshot) return;
+
+    setCachedSnapshot(snapshot);
+    queryClient.setQueryData(
+      ['task-board', workspace.id, boardId],
+      (current: WorkspaceTaskBoard | undefined) => current ?? snapshot.board
+    );
+    queryClient.setQueryData(
+      ['tasks', boardId],
+      (current: typeof snapshot.tasks | undefined) =>
+        current?.length ? current : snapshot.tasks
+    );
+  }, [boardId, cacheScopeId, queryClient, workspace.id]);
 
   const {
     data: board,
@@ -76,8 +98,6 @@ export function BoardClient({
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
-    initialData: cachedSnapshot?.board,
-    initialDataUpdatedAt: cachedSnapshot ? 0 : undefined,
     refetchOnMount: 'always',
     staleTime: 0,
   });

@@ -13,6 +13,7 @@ import type {
 const PAGE_SIZE = 50;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
+const EMPTY_PAGINATION: Record<string, ListPaginationState> = {};
 
 function hasFreshLocalMutation(task: Task) {
   const localTask = task as Task & { _localMutationAt?: number };
@@ -47,7 +48,7 @@ function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
 export function useProgressiveBoardLoader(
   wsId: string,
   boardId: string,
-  initialPagination: Record<string, ListPaginationState> = {}
+  initialPagination: Record<string, ListPaginationState> = EMPTY_PAGINATION
 ): ProgressiveLoaderValue {
   const queryClient = useQueryClient();
   const [pagination, setPagination] =
@@ -61,6 +62,21 @@ export function useProgressiveBoardLoader(
   useEffect(() => {
     paginationRef.current = pagination;
   }, [pagination]);
+
+  useEffect(() => {
+    if (Object.keys(initialPagination).length === 0) return;
+
+    setPagination((current) => {
+      const missingEntries = Object.entries(initialPagination).filter(
+        ([listId]) => !current[listId]
+      );
+      if (missingEntries.length === 0) return current;
+
+      const hydrated = { ...current, ...Object.fromEntries(missingEntries) };
+      paginationRef.current = hydrated;
+      return hydrated;
+    });
+  }, [initialPagination]);
 
   const loadListPage = useCallback(
     async (

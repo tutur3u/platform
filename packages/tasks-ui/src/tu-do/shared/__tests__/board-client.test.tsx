@@ -132,12 +132,13 @@ describe('BoardClient', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByTestId('board-views')).toBeInTheDocument();
-    expect(screen.queryByTestId('task-board-loading-state')).toBeNull();
-    expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
-      'board-ws-uuid',
-      'board-1',
-      cachedPagination
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
+        'board-ws-uuid',
+        'board-1',
+        cachedPagination
+      )
     );
     await waitFor(() =>
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1)
