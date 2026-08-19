@@ -46,7 +46,8 @@ function SearchMenu({
 }
 
 function HoverSearchMenu() {
-  const [query, setQuery] = useState('');
+  const [labelQuery, setLabelQuery] = useState('');
+  const [projectQuery, setProjectQuery] = useState('');
 
   return (
     <DropdownMenu open>
@@ -57,8 +58,8 @@ function HoverSearchMenu() {
           <DropdownMenuSubContent>
             <Command>
               <TaskCommandSearchInput
-                value={query}
-                onValueChange={setQuery}
+                value={labelQuery}
+                onValueChange={setLabelQuery}
                 placeholder="Search hover labels..."
               />
               <CommandList>
@@ -67,8 +68,45 @@ function HoverSearchMenu() {
             </Command>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>Projects</DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <Command>
+              <TaskCommandSearchInput
+                value={projectQuery}
+                onValueChange={setProjectQuery}
+                placeholder="Search hover projects..."
+              />
+              <CommandList>
+                <CommandItem>Platform</CommandItem>
+              </CommandList>
+            </Command>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function PersistentSearchMenu() {
+  const [open, setOpen] = useState(true);
+  const [query, setQuery] = useState('');
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen((value) => !value)}>
+        Toggle submenu
+      </button>
+      <div data-state={open ? 'open' : 'closed'}>
+        <Command>
+          <TaskCommandSearchInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder="Search persistent submenu..."
+          />
+        </Command>
+      </div>
+    </>
   );
 }
 
@@ -82,6 +120,44 @@ describe('TaskCommandSearchInput', () => {
     await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
 
     const search = await screen.findByPlaceholderText('Search hover labels...');
+    await act(() => new Promise(requestAnimationFrame));
+
+    expect(search).toHaveFocus();
+  });
+
+  it('moves focus to each newly hover-expanded submenu', async () => {
+    render(<HoverSearchMenu />);
+
+    fireEvent.pointerMove(screen.getByText('Labels'), {
+      pointerType: 'mouse',
+    });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+    expect(
+      await screen.findByPlaceholderText('Search hover labels...')
+    ).toHaveFocus();
+
+    fireEvent.pointerMove(screen.getByText('Projects'), {
+      pointerType: 'mouse',
+    });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+
+    expect(
+      await screen.findByPlaceholderText('Search hover projects...')
+    ).toHaveFocus();
+  });
+
+  it('refocuses a persistent submenu input whenever it reopens', async () => {
+    render(<PersistentSearchMenu />);
+
+    const toggle = screen.getByRole('button', { name: 'Toggle submenu' });
+    const search = screen.getByPlaceholderText('Search persistent submenu...');
+    expect(search).toHaveFocus();
+
+    toggle.focus();
+    fireEvent.click(toggle);
+    expect(toggle).toHaveFocus();
+
+    fireEvent.click(toggle);
     await act(() => new Promise(requestAnimationFrame));
 
     expect(search).toHaveFocus();

@@ -37,11 +37,45 @@ export function TaskCommandSearchInput({
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-    });
+    let frame: number | undefined;
+    const input = inputRef.current;
+    if (!input) return;
 
-    return () => window.cancelAnimationFrame(frame);
+    const submenuContent = input.closest<HTMLElement>('[data-state]');
+    const focusInput = () => {
+      if (submenuContent?.dataset.state === 'closed') return;
+
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        input.focus({ preventScroll: true });
+      });
+    };
+
+    focusInput();
+
+    let observer: MutationObserver | null = null;
+    if (submenuContent) {
+      observer = new MutationObserver((mutations) => {
+        if (
+          mutations.some(
+            (mutation) =>
+              mutation.type === 'attributes' &&
+              mutation.attributeName === 'data-state'
+          )
+        ) {
+          focusInput();
+        }
+      });
+      observer.observe(submenuContent, {
+        attributes: true,
+        attributeFilter: ['data-state'],
+      });
+    }
+
+    return () => {
+      observer?.disconnect();
+      if (frame !== undefined) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
