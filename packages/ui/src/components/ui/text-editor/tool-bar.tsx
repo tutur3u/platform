@@ -842,12 +842,9 @@ export function ToolBar({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Fixed Toolbar (always-visible, rendered above the editor)
-// ---------------------------------------------------------------------------
-
 interface FixedToolbarProps {
   editor: Editor | null;
+  leadingContent?: React.ReactNode;
   workspaceId?: string;
   onImageUpload?: (file: File) => Promise<string>;
   onConvertToTask?: () => void | Promise<void>;
@@ -856,9 +853,9 @@ interface FixedToolbarProps {
   toggleBlockLabel?: string;
   copyLabels?: EditorCopyLabels;
 }
-
 export function FixedToolbar({
   editor,
+  leadingContent,
   workspaceId,
   onImageUpload,
   onConvertToTask,
@@ -871,8 +868,6 @@ export function FixedToolbar({
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-
-  // Build the formatting option map
   const formattingOptions = useMemo(() => {
     if (!editor)
       return new Map<
@@ -1086,12 +1081,11 @@ export function FixedToolbar({
   );
 
   if (!editor) return null;
-
   return (
     <div
       ref={ref}
       className={cn(
-        'sticky top-0 z-40 flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
+        '@container scrollbar-hide sticky top-0 z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
         className
       )}
     >
@@ -1109,7 +1103,12 @@ export function FixedToolbar({
         onChange={handleVideoUpload}
         className="hidden"
       />
-
+      {leadingContent ? (
+        <>
+          <div className="shrink-0">{leadingContent}</div>
+          <ToolbarSeparator />
+        </>
+      ) : null}
       {/* Grouped formatting options with separators */}
       {TOOLBAR_GROUPS.map((group, gi) => (
         <div key={gi} className="contents">

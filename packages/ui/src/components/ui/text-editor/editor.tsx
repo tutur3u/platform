@@ -130,6 +130,7 @@ export interface RichTextEditorProps {
     create_project?: string;
   };
   renderTaskMention?: TaskMentionNodeViewRenderer;
+  toolbarLeadingContent?: React.ReactNode;
   toggleBlockLabel?: string;
   copyLabels?: EditorCopyLabels;
 }
@@ -160,6 +161,7 @@ export function RichTextEditor({
   revealToolbarOnFocus = false,
   mentionTranslations,
   renderTaskMention,
+  toolbarLeadingContent,
   toggleBlockLabel,
   copyLabels,
 }: RichTextEditorProps) {
@@ -638,6 +640,7 @@ export function RichTextEditor({
           workspaceId={workspaceId}
           onImageUpload={onImageUpload}
           onConvertToTask={onConvertToTask}
+          leadingContent={toolbarLeadingContent}
           toggleBlockLabel={toggleBlockLabel}
           copyLabels={copyLabels}
         />

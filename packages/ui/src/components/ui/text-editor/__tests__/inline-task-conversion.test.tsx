@@ -83,17 +83,34 @@ describe('inline task conversion toolbar', () => {
     ).toBeInTheDocument();
   });
 
-  it('keeps copy alongside the formatting controls in one scrollable row', () => {
-    const { container } = render(<FixedToolbar editor={createEditorStub()} />);
+  it('keeps every control in a scrollbar-free horizontal lane without shrinking', () => {
+    const { container } = render(
+      <FixedToolbar
+        editor={createEditorStub()}
+        leadingContent={<button type="button">99% left</button>}
+      />
+    );
     const toolbar = container.firstElementChild;
+    const capacityButton = screen.getByRole('button', { name: '99% left' });
     const boldButton = screen.getByRole('button', { name: 'Bold' });
     const copyButton = screen.getByRole('button', { name: 'Copy content' });
 
-    expect(toolbar).toHaveClass('flex-nowrap', 'overflow-x-auto');
+    expect(toolbar).toHaveClass(
+      '@container',
+      'flex-nowrap',
+      'max-w-full',
+      'overflow-x-auto',
+      'overflow-y-hidden',
+      'overscroll-x-contain',
+      'scrollbar-hide'
+    );
     expect(toolbar).not.toHaveClass('flex-wrap');
     expect(copyButton.closest('.ml-auto')).toBeNull();
-    expect(copyButton).toHaveClass('h-8', 'w-8', 'rounded-md');
-    expect(boldButton).toHaveClass('h-8', 'w-8', 'rounded-md');
+    expect(capacityButton.compareDocumentPosition(boldButton)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+    expect(copyButton).toHaveClass('h-8', 'w-8', 'shrink-0', 'rounded-md');
+    expect(boldButton).toHaveClass('h-8', 'w-8', 'shrink-0', 'rounded-md');
   });
 
   it('copies the full document in either Markdown or plain-text form', async () => {
