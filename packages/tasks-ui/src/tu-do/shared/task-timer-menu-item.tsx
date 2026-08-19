@@ -20,6 +20,7 @@ interface TaskTimerMenuItemProps {
   workspaceId: string;
   disabled?: boolean;
   enabled?: boolean;
+  activationGuardUntil?: number;
   onStarted?: () => void;
 }
 
@@ -30,6 +31,7 @@ export function TaskTimerMenuItem({
   workspaceId,
   disabled = false,
   enabled = true,
+  activationGuardUntil = 0,
   onStarted,
 }: TaskTimerMenuItemProps) {
   const t = useTranslations('common');
@@ -110,6 +112,7 @@ export function TaskTimerMenuItem({
       disabled={disabled || isPending}
       onSelect={(event) => {
         event.preventDefault();
+        if (Date.now() < activationGuardUntil) return;
         if (isTrackingThisTask) {
           stopTimerMutation.mutate();
         } else {

@@ -26,6 +26,7 @@ import {
 import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
 
 interface TaskDueDateMenuProps {
+  forceOpen?: boolean;
   endDate?: string | null;
   isLoading: boolean;
   weekStartsOn?: 0 | 1 | 6;
@@ -83,6 +84,7 @@ const formatCompactRelativeDate = (date: Date, now = new Date()) => {
 };
 
 export function TaskDueDateMenu({
+  forceOpen,
   endDate,
   isLoading,
   weekStartsOn = 0,
@@ -159,7 +161,7 @@ export function TaskDueDateMenu({
       : t.none;
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Calendar className="h-4 w-4 text-dynamic-purple" />

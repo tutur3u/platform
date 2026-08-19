@@ -26,6 +26,7 @@ interface TaskProject {
 }
 
 interface TaskProjectsMenuProps {
+  forceOpen?: boolean;
   taskProjects: TaskProject[];
   availableProjects: TaskProject[];
   isLoading: boolean;
@@ -44,6 +45,7 @@ interface TaskProjectsMenuProps {
 }
 
 export function TaskProjectsMenu({
+  forceOpen,
   taskProjects,
   availableProjects,
   isLoading,
@@ -76,7 +78,7 @@ export function TaskProjectsMenu({
     );
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger>
         <Box className="h-4 w-4 text-dynamic-sky" />
         {t.projects}

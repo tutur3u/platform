@@ -219,6 +219,7 @@ export function useProgressiveBoardLoader(
       const exactCount = pageResults.find(
         (result) => typeof result.count === 'number'
       )?.count;
+      const hasAuthoritativeCount = typeof exactCount === 'number';
       const loadedThrough = targetPage * PAGE_SIZE + lastPageTasks.length;
       const totalCount =
         typeof exactCount === 'number'
@@ -267,7 +268,7 @@ export function useProgressiveBoardLoader(
               continue;
             }
 
-            if (hasFreshLocalMutation(task)) {
+            if (!hasAuthoritativeCount || hasFreshLocalMutation(task)) {
               merged.push(task);
             }
           }

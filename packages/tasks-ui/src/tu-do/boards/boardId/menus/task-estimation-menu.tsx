@@ -23,6 +23,7 @@ import {
 } from '../../../shared/task-command-search-input';
 
 interface TaskEstimationMenuProps {
+  forceOpen?: boolean;
   currentPoints: number | null | undefined;
   estimationType?: string;
   extendedEstimation?: boolean;
@@ -34,6 +35,7 @@ interface TaskEstimationMenuProps {
 }
 
 export function TaskEstimationMenu({
+  forceOpen,
   currentPoints,
   estimationType,
   extendedEstimation,
@@ -68,7 +70,7 @@ export function TaskEstimationMenu({
     );
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger>
         <Timer className="h-4 w-4 text-dynamic-pink" />
         Estimation

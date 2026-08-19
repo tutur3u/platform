@@ -28,6 +28,7 @@ interface Member {
 }
 
 interface TaskAssigneesMenuProps {
+  forceOpen?: boolean;
   taskAssignees: Member[];
   availableMembers: Member[];
   isLoading: boolean;
@@ -45,6 +46,7 @@ interface TaskAssigneesMenuProps {
 }
 
 export function TaskAssigneesMenu({
+  forceOpen,
   taskAssignees,
   availableMembers,
   isLoading,
@@ -105,7 +107,7 @@ export function TaskAssigneesMenu({
     );
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger>
         <UserStar className="h-4 w-4 text-dynamic-yellow" />
         {t.assignees}

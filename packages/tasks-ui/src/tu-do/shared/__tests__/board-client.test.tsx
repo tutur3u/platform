@@ -380,4 +380,34 @@ describe('BoardClient', () => {
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('retries a failed wake refresh as soon as connectivity returns', async () => {
+    revalidateLoadedListsMock
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(undefined);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    await act(async () => window.dispatchEvent(new Event('focus')));
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1)
+    );
+
+    await act(async () => window.dispatchEvent(new Event('online')));
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2)
+    );
+  });
 });

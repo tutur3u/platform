@@ -110,6 +110,22 @@ describe('TaskTimerMenuItem', () => {
     expect(onStarted).toHaveBeenCalledOnce();
   });
 
+  it('ignores the pointer release that opened the task menu', async () => {
+    renderMenu(
+      <TaskTimerMenuItem
+        activationGuardUntil={Date.now() + 1_000}
+        taskId="task-1"
+        taskName="Prepare launch"
+        workspaceId="workspace-1"
+      />
+    );
+
+    fireEvent.click(await screen.findByText('start_tracking_time'));
+
+    expect(startTaskTimeTrackingSessionMock).not.toHaveBeenCalled();
+    expect(stopTaskTimeTrackingSessionMock).not.toHaveBeenCalled();
+  });
+
   it('renders an immediate pending state while the session is being created', async () => {
     let resolveStart: ((value: unknown) => void) | undefined;
     startTaskTimeTrackingSessionMock.mockReturnValue(

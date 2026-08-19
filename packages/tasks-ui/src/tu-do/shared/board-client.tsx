@@ -25,6 +25,7 @@ import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
 import { TaskBoardLoadingState } from './task-board-loading-state';
+import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 const BOARD_REVALIDATE_COOLDOWN_MS = 5 * 60_000;
@@ -109,27 +110,32 @@ export function BoardClient({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let isRevalidating = false;
-    let lastRevalidateAt = 0;
+    let inFlightRevalidation: Promise<void> | null = null;
+    let lastSuccessfulRevalidateAt = 0;
 
     const revalidateLoadedLists = () => {
       const now = Date.now();
       if (
-        isRevalidating ||
-        now - lastRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
+        inFlightRevalidation ||
+        now - lastSuccessfulRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
       ) {
         return;
       }
 
-      isRevalidating = true;
-      lastRevalidateAt = now;
-      progressiveLoader
+      inFlightRevalidation = progressiveLoader
         .revalidateLoadedLists()
+        .then(async () => {
+          lastSuccessfulRevalidateAt = Date.now();
+          await queryClient.invalidateQueries({
+            queryKey: ['tasks-full', boardId],
+            refetchType: 'active',
+          });
+        })
         .catch(() => {
           // best effort
         })
         .finally(() => {
-          isRevalidating = false;
+          inFlightRevalidation = null;
         });
     };
 
@@ -139,15 +145,21 @@ export function BoardClient({
         revalidateLoadedLists();
       }
     };
+    const onOnline = () => revalidateLoadedLists();
+    const onPageShow = () => revalidateLoadedLists();
 
     window.addEventListener('focus', onFocus);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('pageshow', onPageShow);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [progressiveLoader.revalidateLoadedLists]);
+  }, [boardId, progressiveLoader.revalidateLoadedLists, queryClient]);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
@@ -298,18 +310,20 @@ export function BoardClient({
   return (
     <BoardBroadcastProvider value={broadcast}>
       <ProgressiveLoaderProvider value={progressiveLoader}>
-        <BoardViews
-          workspace={workspace}
-          workspaceTier={workspaceTier}
-          board={board}
-          tasks={tasks}
-          lists={lists}
-          workspaceLabels={workspaceLabels}
-          currentUserId={currentUserId}
-          defaultView={defaultView}
-          canManageBoard={canManageBoard}
-          idleBottomIsland={idleBottomIsland}
-        />
+        <TaskCardHotkeysProvider enabled={canManageBoard}>
+          <BoardViews
+            workspace={workspace}
+            workspaceTier={workspaceTier}
+            board={board}
+            tasks={tasks}
+            lists={lists}
+            workspaceLabels={workspaceLabels}
+            currentUserId={currentUserId}
+            defaultView={defaultView}
+            canManageBoard={canManageBoard}
+            idleBottomIsland={idleBottomIsland}
+          />
+        </TaskCardHotkeysProvider>
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>
   );

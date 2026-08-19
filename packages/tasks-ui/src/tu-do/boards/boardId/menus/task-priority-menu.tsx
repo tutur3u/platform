@@ -29,6 +29,7 @@ import {
 } from '../../../shared/task-command-search-input';
 
 interface TaskPriorityMenuProps {
+  forceOpen?: boolean;
   currentPriority: TaskPriority | null;
   isLoading: boolean;
   onPriorityChange: (priority: TaskPriority | null) => void;
@@ -87,6 +88,7 @@ const priorityIconColor: Record<TaskPriority, string> = {
 };
 
 export function TaskPriorityMenu({
+  forceOpen,
   currentPriority,
   isLoading,
   onPriorityChange,
@@ -127,7 +129,7 @@ export function TaskPriorityMenu({
     );
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Flag className="h-4 w-4 text-dynamic-orange" />

@@ -11,6 +11,7 @@
     "./calendar/task-calendar-page-shell": "./src/calendar/task-calendar-page-shell.tsx",
     "./calendar/components/*": "./src/calendar/components/*.tsx",
     "./hooks/*": "./src/hooks/*.ts",
+    "./settings/task-card-hotkey-settings": "./src/settings/task-card-hotkey-settings.tsx",
     "./settings/task-settings": "./src/settings/task-settings.tsx",
     "./text-editor/task-mention-node-view": "./src/text-editor/task-mention-node-view.tsx",
     "./text-editor/task-rich-text-editor": "./src/text-editor/task-rich-text-editor.tsx",

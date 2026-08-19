@@ -21,6 +21,7 @@ import {
 import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskLabelsMenuProps {
+  forceOpen?: boolean;
   taskLabels: Array<Pick<TaskLabel, 'id' | 'name' | 'color'>>;
   availableLabels: Array<Pick<TaskLabel, 'id' | 'name' | 'color'>>;
   isLoading: boolean;
@@ -39,6 +40,7 @@ interface TaskLabelsMenuProps {
 }
 
 export function TaskLabelsMenu({
+  forceOpen,
   taskLabels,
   availableLabels,
   isLoading,
@@ -69,7 +71,7 @@ export function TaskLabelsMenu({
     );
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger>
         <Tag className="h-4 w-4 text-dynamic-cyan" />
         {t.labels}

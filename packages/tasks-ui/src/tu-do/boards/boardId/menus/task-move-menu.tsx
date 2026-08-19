@@ -10,6 +10,7 @@ import { clearTaskCommandSearchOnEscape } from '../../../shared/task-command-sea
 import { TaskListPickerPanel } from '../../../shared/task-edit-dialog/components/task-list-picker-panel';
 
 interface TaskMoveMenuProps {
+  forceOpen?: boolean;
   currentListId: string;
   availableLists: TaskList[];
   isLoading: boolean;
@@ -22,6 +23,7 @@ interface TaskMoveMenuProps {
 }
 
 export function TaskMoveMenu({
+  forceOpen,
   currentListId,
   availableLists,
   isLoading,
@@ -41,7 +43,7 @@ export function TaskMoveMenu({
   }
 
   return (
-    <DropdownMenuSub>
+    <DropdownMenuSub open={forceOpen || undefined}>
       <DropdownMenuSubTrigger>
         <div className="h-4 w-4">
           <Move className="h-4 w-4 text-dynamic-blue" />
