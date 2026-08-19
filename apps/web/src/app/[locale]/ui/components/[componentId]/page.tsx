@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { siteConfig } from '@/constants/configs';
 import { componentDocs, getComponentDoc } from '../../component-docs';
 import { ComponentDetail } from './component-detail';
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiComponentPage({ params }: Props) {
+export async function UiComponentRuntime({ params }: Props) {
   const { componentId, locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
 
@@ -69,5 +70,13 @@ export default async function UiComponentPage({ params }: Props) {
       tCategories={translateCategories}
       tCustomizations={translateCustomizations}
     />
+  );
+}
+
+export default function UiComponentPage(props: Props) {
+  return (
+    <Suspense fallback={<div className="min-h-96" />}>
+      <UiComponentRuntime {...props} />
+    </Suspense>
   );
 }
