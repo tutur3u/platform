@@ -25,6 +25,16 @@ interface Props {
   }>;
 }
 
+async function PublicClientProviders({ children }: { children: ReactNode }) {
+  const publicClientMessages = getPublicClientMessages(await getMessages());
+
+  return (
+    <NuqsAdapter>
+      <Providers messages={publicClientMessages}>{children}</Providers>
+    </NuqsAdapter>
+  );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
@@ -118,7 +128,6 @@ export default async function RootLayout({ children }: Props) {
   const deploymentStamp =
     process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || 'local';
   const serviceWorkerUrl = `/serwist/sw.js?v=${encodeURIComponent(deploymentStamp)}`;
-  const publicClientMessages = getPublicClientMessages(await getMessages());
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
@@ -132,11 +141,7 @@ export default async function RootLayout({ children }: Props) {
           <VercelRuntimeSignals />
           <AppThemeProvider>
             <Suspense>
-              <NuqsAdapter>
-                <Providers messages={publicClientMessages}>
-                  {children}
-                </Providers>
-              </NuqsAdapter>
+              <PublicClientProviders>{children}</PublicClientProviders>
             </Suspense>
           </AppThemeProvider>
           <TailwindIndicator />

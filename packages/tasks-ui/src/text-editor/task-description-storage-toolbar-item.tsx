@@ -22,13 +22,13 @@ export function TaskDescriptionStorageToolbarItem({
   percentLeft,
   statusText,
 }: TaskDescriptionStorageToolbarItemProps) {
-  const progressPercent = isOverLimit
-    ? 100
-    : Math.max(0, Math.min(100, 100 - percentLeft));
+  const remainingPercent = Math.max(0, Math.min(100, Math.round(percentLeft)));
+  const percentageText = `${remainingPercent}%`;
+  const ringPercent = isOverLimit ? 100 : remainingPercent;
   const radius = 7;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (progressPercent / 100) * circumference;
-  const isWarning = !isOverLimit && progressPercent >= 85;
+  const offset = circumference - (ringPercent / 100) * circumference;
+  const isWarning = !isOverLimit && remainingPercent <= 15;
   const toneClass = isOverLimit
     ? 'text-destructive'
     : isWarning
@@ -48,7 +48,7 @@ export function TaskDescriptionStorageToolbarItem({
             type="button"
             aria-label={liveMessage}
             className={cn(
-              'flex h-8 max-w-72 shrink-0 items-center gap-1.5 rounded-md border bg-dynamic-surface/35 px-2 text-left text-xs transition-colors hover:bg-dynamic-surface/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+              'flex h-8 shrink-0 items-center gap-1 rounded-lg border bg-dynamic-surface/35 px-1.5 text-xs transition-colors hover:bg-dynamic-surface/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               isOverLimit
                 ? 'border-destructive/40'
                 : isWarning
@@ -83,12 +83,12 @@ export function TaskDescriptionStorageToolbarItem({
               />
             </svg>
             <span
-              className={cn('shrink-0 font-medium tabular-nums', toneClass)}
+              className={cn(
+                'min-w-8 shrink-0 rounded-full bg-dynamic-surface px-1.5 py-0.5 text-center font-semibold text-[11px] tabular-nums leading-none',
+                toneClass
+              )}
             >
-              {counterText}
-            </span>
-            <span className="@lg:inline hidden min-w-0 truncate text-muted-foreground">
-              {statusText}
+              {percentageText}
             </span>
           </button>
         </TooltipTrigger>

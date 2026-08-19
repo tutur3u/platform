@@ -84,9 +84,14 @@ function wrapperContent(relativeRouteFile, methods) {
   const needsHeadFallback = hasGet && !hasHead;
   const legacyModulePath = legacyImportPath(relativeRouteFile);
   const routeImports = [
-    needsHeadFallback
+    hasGet
       ? {
-          line: "import { createLegacyHeadHandler } from '@/legacy-api-routes/head';",
+          line: needsHeadFallback
+            ? `import {
+  createLegacyGetHandler,
+  createLegacyHeadHandler,
+} from '@/legacy-api-routes/head';`
+            : "import { createLegacyGetHandler } from '@/legacy-api-routes/head';",
           modulePath: '@/legacy-api-routes/head',
         }
       : null,
@@ -102,10 +107,15 @@ function wrapperContent(relativeRouteFile, methods) {
   const exportLines = [];
 
   for (const method of HTTP_METHODS) {
-    if (method === 'HEAD' && needsHeadFallback) {
+    if (method === 'GET' && hasGet) {
       exportLines.push(
-        'export const HEAD = createLegacyHeadHandler(legacyRoute.GET);'
+        'export const GET = createLegacyGetHandler(legacyRoute.GET);'
       );
+      continue;
+    }
+
+    if (method === 'HEAD' && needsHeadFallback) {
+      exportLines.push('export const HEAD = createLegacyHeadHandler(GET);');
       continue;
     }
 

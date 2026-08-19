@@ -1,5 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import ModelsClient from './models-client';
 import { MODELS_PAGE_SIZE } from './models-constants';
@@ -22,7 +24,8 @@ export async function generateMetadata({ params }: MetadataProps) {
   );
 }
 
-export default async function ModelsPage() {
+export async function ModelsRuntime() {
+  await connection();
   const sbAdmin = await createAdminClient();
   const privateDb = sbAdmin.schema('private');
 
@@ -69,5 +72,13 @@ export default async function ModelsPage() {
         pagination: { limit: MODELS_PAGE_SIZE, page: 1, total: count ?? 0 },
       }}
     />
+  );
+}
+
+export default function ModelsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-root-background" />}>
+      <ModelsRuntime />
+    </Suspense>
   );
 }
