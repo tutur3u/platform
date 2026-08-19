@@ -36,6 +36,25 @@ describe('useProgressiveBoardLoader', () => {
     vi.restoreAllMocks();
   });
 
+  it('hydrates cached list pagination so stale tasks render before refresh', () => {
+    const initialPagination = {
+      'list-1': {
+        page: 0,
+        hasMore: false,
+        totalCount: 1,
+        isLoading: false,
+        isInitialLoad: false,
+      },
+    };
+
+    const { result } = renderHook(
+      () => useProgressiveBoardLoader('ws-1', 'board-1', initialPagination),
+      { wrapper }
+    );
+
+    expect(result.current.pagination).toEqual(initialPagination);
+  });
+
   it('upserts incoming task records instead of preserving stale cache entries', async () => {
     const cachedTask: Task = {
       id: 'task-1',

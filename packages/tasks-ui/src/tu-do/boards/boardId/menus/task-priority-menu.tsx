@@ -27,6 +27,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 
 interface TaskPriorityMenuProps {
   forceOpen?: boolean;
@@ -127,6 +131,11 @@ export function TaskPriorityMenu({
       { preventDefault: () => undefined } as unknown as Event,
       action
     );
+  const selectPriority = (priority: TaskPriority | null) =>
+    select(() => {
+      onPriorityChange(priority);
+      onClose();
+    });
 
   return (
     <DropdownMenuSub open={forceOpen || undefined}>
@@ -147,6 +156,19 @@ export function TaskPriorityMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-56 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            if (isLoading) return false;
+            if (digit === 0) {
+              selectPriority(null);
+              return true;
+            }
+            const option = filteredOptions[digit - 1];
+            if (!option) return false;
+            selectPriority(option.value);
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -168,12 +190,7 @@ export function TaskPriorityMenu({
                 {showNone && (
                   <CommandItem
                     value={`none ${t.none}`}
-                    onSelect={() =>
-                      select(() => {
-                        onPriorityChange(null);
-                        onClose();
-                      })
-                    }
+                    onSelect={() => selectPriority(null)}
                     className={cn(
                       'cursor-pointer text-muted-foreground',
                       !currentPriority && 'bg-muted/50'
@@ -182,10 +199,11 @@ export function TaskPriorityMenu({
                   >
                     <X className="h-4 w-4" />
                     <span className="min-w-0 flex-1 truncate">{t.none}</span>
+                    <TaskOptionShortcutHint digit={0} visible={!!forceOpen} />
                     {!currentPriority && <Check className="h-4 w-4" />}
                   </CommandItem>
                 )}
-                {filteredOptions.map((option) => {
+                {filteredOptions.map((option, index) => {
                   const IconComponent = option.icon;
                   const isActive = currentPriority === option.value;
                   const iconColor = priorityIconColor[option.value];
@@ -194,12 +212,7 @@ export function TaskPriorityMenu({
                     <CommandItem
                       key={option.value}
                       value={`${priorityLabelTranslated[option.value]} ${option.value}`}
-                      onSelect={() =>
-                        select(() => {
-                          onPriorityChange(option.value);
-                          onClose();
-                        })
-                      }
+                      onSelect={() => selectPriority(option.value)}
                       className={cn(
                         'cursor-pointer',
                         isActive && option.className
@@ -213,6 +226,10 @@ export function TaskPriorityMenu({
                       <span className="min-w-0 flex-1 truncate">
                         {priorityLabelTranslated[option.value]}
                       </span>
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
+                      />
                       {isActive && (
                         <Check className={cn('h-4 w-4', iconColor)} />
                       )}

@@ -71,6 +71,7 @@ export function TaskMoveMenu({
           className="w-full"
           searchQuery={searchQuery}
           onSearchQueryChange={setSearchQuery}
+          enableNumericShortcuts={!!forceOpen}
         />
       </DropdownMenuSubContent>
     </DropdownMenuSub>

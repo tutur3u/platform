@@ -29,9 +29,13 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
   DropdownMenuSubTrigger: ({ children }: { children: ReactNode }) => (
     <button type="button">{children}</button>
   ),
-  DropdownMenuSubContent: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
+  DropdownMenuSubContent: ({
+    children,
+    onKeyDownCapture,
+  }: {
+    children: ReactNode;
+    onKeyDownCapture?: React.KeyboardEventHandler<HTMLDivElement>;
+  }) => <div onKeyDownCapture={onKeyDownCapture}>{children}</div>,
 }));
 
 vi.mock('../../../../shared/create-list-dialog', () => ({
@@ -41,6 +45,32 @@ vi.mock('../../../../shared/create-list-dialog', () => ({
 const runMenuAction = (_event: Event, action: () => void) => action();
 
 describe('task resource menu keyboard UX', () => {
+  it('uses visible 1-9 hints to toggle an option immediately', async () => {
+    const onToggleLabel = vi.fn();
+    render(
+      <TaskLabelsMenu
+        forceOpen
+        taskLabels={[]}
+        availableLabels={[
+          { id: 'label-1', name: 'Bug', color: '#ef4444' },
+          { id: 'label-2', name: 'Feature', color: '#22c55e' },
+        ]}
+        isLoading={false}
+        onToggleLabel={onToggleLabel}
+        onCreateNewLabel={vi.fn()}
+        onMenuItemSelect={runMenuAction}
+      />
+    );
+
+    const search = screen.getByPlaceholderText('Search labels...');
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    fireEvent.keyDown(search, { key: '2' });
+
+    await waitFor(() => expect(onToggleLabel).toHaveBeenCalledWith('label-2'));
+    expect(search).toHaveValue('');
+  });
+
   it('auto-focuses labels, filters them, and toggles the highlighted result', async () => {
     const onToggleLabel = vi.fn();
     render(

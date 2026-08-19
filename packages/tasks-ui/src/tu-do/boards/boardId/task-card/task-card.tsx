@@ -396,16 +396,8 @@ function TaskCardInner({
   const { openTask, openTaskById } = useTaskDialog();
 
   const handleMenuItemSelect = useCallback(
-    (e: Event, action: () => void) => {
-      if (Date.now() < menuGuardUntil) {
-        if (e && typeof (e as any).preventDefault === 'function') {
-          (e as any).preventDefault();
-        }
-        return;
-      }
-      action();
-    },
-    [menuGuardUntil]
+    (_event: Event, action: () => void) => action(),
+    []
   );
 
   const workspaceContextWsId = workspaceId ?? wsId;

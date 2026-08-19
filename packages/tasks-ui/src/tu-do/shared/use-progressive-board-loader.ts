@@ -46,13 +46,14 @@ function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
  */
 export function useProgressiveBoardLoader(
   wsId: string,
-  boardId: string
+  boardId: string,
+  initialPagination: Record<string, ListPaginationState> = {}
 ): ProgressiveLoaderValue {
   const queryClient = useQueryClient();
-  const [pagination, setPagination] = useState<
-    Record<string, ListPaginationState>
-  >({});
-  const paginationRef = useRef<Record<string, ListPaginationState>>({});
+  const [pagination, setPagination] =
+    useState<Record<string, ListPaginationState>>(initialPagination);
+  const paginationRef =
+    useRef<Record<string, ListPaginationState>>(initialPagination);
   const listOptionsRef = useRef<Record<string, ProgressiveLoadListPageOptions>>(
     {}
   );

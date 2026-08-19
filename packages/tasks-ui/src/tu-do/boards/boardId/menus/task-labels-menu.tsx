@@ -18,6 +18,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskLabelsMenuProps {
@@ -78,6 +82,14 @@ export function TaskLabelsMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-80 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            const label = digit > 0 ? filteredLabels[digit - 1] : undefined;
+            if (!label || isLoading) return false;
+            select(() => onToggleLabel(label.id));
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -101,7 +113,7 @@ export function TaskLabelsMenu({
               </div>
             ) : (
               <CommandGroup>
-                {filteredLabels.map((label) => {
+                {filteredLabels.map((label, index) => {
                   const active = taskLabels.some((l) => l.id === label.id);
                   return (
                     <CommandItem
@@ -119,6 +131,10 @@ export function TaskLabelsMenu({
                         label={label as TaskLabel}
                         showIcon={false}
                         className="h-6 px-2 text-xs"
+                      />
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
                       />
                       {active && <Check className="h-4 w-4 shrink-0" />}
                     </CommandItem>

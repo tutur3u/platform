@@ -17,6 +17,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 import { projectNameMatchesQuery } from '../../../shared/task-resource-search-filters';
 
 interface TaskProject {
@@ -85,6 +89,14 @@ export function TaskProjectsMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-80 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            const project = digit > 0 ? filteredProjects[digit - 1] : undefined;
+            if (!project || isLoading) return false;
+            select(() => onToggleProject(project.id));
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -109,7 +121,7 @@ export function TaskProjectsMenu({
               </div>
             ) : (
               <CommandGroup>
-                {filteredProjects.map((project) => {
+                {filteredProjects.map((project, index) => {
                   const active = taskProjects.some((p) => p.id === project.id);
                   return (
                     <CommandItem
@@ -127,6 +139,10 @@ export function TaskProjectsMenu({
                         <Box className="h-3 w-3 shrink-0 text-dynamic-sky" />
                         <span className="truncate text-sm">{project.name}</span>
                       </div>
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
+                      />
                       {active && <Check className="h-4 w-4 shrink-0" />}
                     </CommandItem>
                   );

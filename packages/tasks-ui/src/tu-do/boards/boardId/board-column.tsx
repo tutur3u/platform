@@ -11,7 +11,6 @@ import {
   FileText,
   Filter,
   GripVertical,
-  Loader2,
   Pin,
   PinOff,
   RefreshCw,
@@ -61,6 +60,7 @@ import {
 } from './task-card/task-card-checkbox-style';
 import type { TaskFilters } from './task-filter';
 import { VirtualizedTaskList } from './task-list';
+import { TaskListLoadingSkeleton } from './task-list-loading-skeleton';
 
 // Color mappings for visual consistency
 const colorClasses: Record<SupportedColor, string> = {
@@ -960,9 +960,7 @@ export function BoardColumn({
 
       {/* Column content: skeleton during initial load, tasks after */}
       {isInitialLoad ? (
-        <div className="flex flex-1 items-center justify-center p-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <TaskListLoadingSkeleton />
       ) : (
         <VirtualizedTaskList
           tasks={visibleTasks}
@@ -985,7 +983,7 @@ export function BoardColumn({
           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           onLoadMore={handleLoadMore}
           hasMore={listState?.hasMore ?? false}
-          isLoadingMore={listState?.isLoading ?? false}
+          isLoadingMore={Boolean(listState?.isLoading && listState.page > 0)}
           readOnly={readOnly}
         />
       )}

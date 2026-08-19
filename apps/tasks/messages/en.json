@@ -6978,7 +6978,7 @@
       "shortcut_conflict": "Already assigned to {action}",
       "task_cards": "Hovered task cards",
       "task_cards_description": "Open quick-assignment menus without leaving the task card under your pointer.",
-      "task_cards_hint": "Hover a task card, then press its shortcut. Shortcuts pause while typing or using a dialog.",
+      "task_cards_hint": "Hover a task card, then press its shortcut. In the opened menu, press 1–9 to choose a visible option or 0 to clear priority, estimation, and due date.",
       "toggle_sidebar": "Expand or collapse sidebar"
     },
     "loading_workspace": "Loading workspace...",

@@ -21,6 +21,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 
 interface TaskEstimationMenuProps {
   forceOpen?: boolean;
@@ -68,6 +72,11 @@ export function TaskEstimationMenu({
       { preventDefault: () => undefined } as unknown as Event,
       action
     );
+  const selectEstimation = (points: number | null) =>
+    select(() => {
+      onEstimationChange(points);
+      onClose?.();
+    });
 
   return (
     <DropdownMenuSub open={forceOpen || undefined}>
@@ -77,6 +86,21 @@ export function TaskEstimationMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-48 overflow-hidden p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            if (isLoading) return false;
+            if (digit === 0) {
+              selectEstimation(null);
+              return true;
+            }
+            const option = filteredOptions[digit - 1];
+            if (!option || (!extendedEstimation && option.idx > 5)) {
+              return false;
+            }
+            selectEstimation(currentPoints === option.idx ? null : option.idx);
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -95,7 +119,7 @@ export function TaskEstimationMenu({
               </div>
             ) : (
               <CommandGroup>
-                {filteredOptions.map(({ idx, label }) => {
+                {filteredOptions.map(({ idx, label }, index) => {
                   const disabledByExtended = !extendedEstimation && idx > 5;
                   const isActive = currentPoints === idx;
 
@@ -103,12 +127,7 @@ export function TaskEstimationMenu({
                     <CommandItem
                       key={idx}
                       value={`${label} ${idx}`}
-                      onSelect={() =>
-                        select(() => {
-                          onEstimationChange(isActive ? null : idx);
-                          onClose?.();
-                        })
-                      }
+                      onSelect={() => selectEstimation(isActive ? null : idx)}
                       className={cn(
                         'flex cursor-pointer items-center justify-between',
                         isActive && 'bg-dynamic-pink/10 text-dynamic-pink'
@@ -126,6 +145,10 @@ export function TaskEstimationMenu({
                           )}
                         </span>
                       </div>
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
+                      />
                       {isActive && <Check className="h-4 w-4" />}
                     </CommandItem>
                   );
@@ -133,12 +156,7 @@ export function TaskEstimationMenu({
                 {showNone && (
                   <CommandItem
                     value={`none ${noneLabel}`}
-                    onSelect={() =>
-                      select(() => {
-                        onEstimationChange(null);
-                        onClose?.();
-                      })
-                    }
+                    onSelect={() => selectEstimation(null)}
                     className={cn(
                       'cursor-pointer text-muted-foreground',
                       currentPoints == null && 'bg-muted/50'
@@ -147,6 +165,7 @@ export function TaskEstimationMenu({
                   >
                     <X className="h-4 w-4" />
                     <span className="min-w-0 flex-1 truncate">{noneLabel}</span>
+                    <TaskOptionShortcutHint digit={0} visible={!!forceOpen} />
                     {currentPoints == null && <Check className="h-4 w-4" />}
                   </CommandItem>
                 )}

@@ -7,6 +7,7 @@ import {
   setActiveBoardRefresh,
 } from '../board-broadcast-context';
 import { BoardClient } from '../board-client';
+import { writeTaskBoardCache } from '../task-board-cache';
 
 const useWorkspaceLabelsMock = vi.fn();
 const getWorkspaceTaskBoardMock = vi.fn();
@@ -59,6 +60,7 @@ vi.mock('../board-views', () => ({
 
 describe('BoardClient', () => {
   beforeEach(() => {
+    localStorage.clear();
     useWorkspaceLabelsMock.mockReset();
     useWorkspaceLabelsMock.mockReturnValue({ data: [] });
     getWorkspaceTaskBoardMock.mockReset();
@@ -89,6 +91,59 @@ describe('BoardClient', () => {
     setActiveBoardRefresh(null);
   });
 
+  it('hydrates a cached board immediately and revalidates it in the background', async () => {
+    const cachedPagination = {
+      'list-1': {
+        page: 0,
+        hasMore: false,
+        totalCount: 1,
+        isLoading: false,
+        isInitialLoad: false,
+      },
+    };
+    writeTaskBoardCache('user-1:workspace-uuid', 'board-1', {
+      board: {
+        id: 'board-1',
+        name: 'Cached roadmap',
+        ws_id: 'board-ws-uuid',
+        task_lists: [],
+      } as any,
+      pagination: cachedPagination,
+      tasks: [
+        {
+          id: 'task-1',
+          name: 'Cached task',
+          list_id: 'list-1',
+        } as any,
+      ],
+    });
+    getWorkspaceTaskBoardMock.mockReturnValue(new Promise(() => {}));
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(screen.getByTestId('board-views')).toBeInTheDocument();
+    expect(screen.queryByTestId('task-board-loading-state')).toBeNull();
+    expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
+      'board-ws-uuid',
+      'board-1',
+      cachedPagination
+    );
+    await waitFor(() =>
+      expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1)
+    );
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -116,7 +171,8 @@ describe('BoardClient', () => {
     expect(useWorkspaceLabelsMock).toHaveBeenCalledWith('board-ws-uuid');
     expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
       'board-ws-uuid',
-      'board-1'
+      'board-1',
+      undefined
     );
   });
 

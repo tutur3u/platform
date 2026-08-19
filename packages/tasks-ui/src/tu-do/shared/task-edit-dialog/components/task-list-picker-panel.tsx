@@ -17,6 +17,10 @@ import { useMemo, useState } from 'react';
 import { EmptyStateCard } from '../../empty-state-card';
 import { TaskCommandSearchInput } from '../../task-command-search-input';
 import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../task-option-shortcuts';
+import {
   type TaskListLabels,
   translateTaskListNameForDisplay,
 } from '../../utils/translate-task-list-display-name';
@@ -63,6 +67,7 @@ export interface TaskListPickerPanelProps {
   className?: string;
   searchQuery?: string;
   onSearchQueryChange?: (value: string) => void;
+  enableNumericShortcuts?: boolean;
 }
 
 export function TaskListPickerPanel({
@@ -74,6 +79,7 @@ export function TaskListPickerPanel({
   className,
   searchQuery: controlledSearchQuery,
   onSearchQueryChange,
+  enableNumericShortcuts = false,
 }: TaskListPickerPanelProps) {
   const t = useTranslations();
   const [internalSearchQuery, setInternalSearchQuery] = useState('');
@@ -128,6 +134,10 @@ export function TaskListPickerPanel({
   }, [availableLists, nameLabels, searchQuery]);
 
   const addNewListLabel = t('ws-task-boards.layout_settings.add_new_list');
+  const shortcutLists = groupedLists.flatMap((group) => group.lists);
+  const shortcutIndexById = new Map(
+    shortcutLists.slice(0, 9).map((list, index) => [list.id, index + 1])
+  );
   const openCreateDialog = () => {
     if (!disabled) onRequestOpenCreateDialog();
   };
@@ -150,6 +160,14 @@ export function TaskListPickerPanel({
     <Command
       shouldFilter={false}
       className={cn('w-full min-w-0 rounded-none border-0', className)}
+      onKeyDownCapture={(event) =>
+        handleTaskOptionShortcut(event, enableNumericShortcuts, (digit) => {
+          const list = digit > 0 ? shortcutLists[digit - 1] : undefined;
+          if (!list || disabled) return false;
+          onSelectList(list.id);
+          return true;
+        })
+      }
     >
       <TaskCommandSearchInput
         value={searchQuery}
@@ -219,6 +237,12 @@ export function TaskListPickerPanel({
                     >
                       {displayName}
                     </span>
+                    <TaskOptionShortcutHint
+                      digit={shortcutIndexById.get(list.id) ?? 0}
+                      visible={
+                        enableNumericShortcuts && shortcutIndexById.has(list.id)
+                      }
+                    />
                     {isSelected && (
                       <Check className="h-4 w-4 shrink-0 text-primary" />
                     )}

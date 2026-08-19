@@ -24,6 +24,7 @@ import {
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import { readTaskBoardCache, writeTaskBoardCache } from './task-board-cache';
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
@@ -57,6 +58,13 @@ export function BoardClient({
   const relationRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const cacheScopeId = currentUserId
+    ? `${currentUserId}:${workspace.id}`
+    : workspace.id;
+  const cachedSnapshot = useMemo(
+    () => readTaskBoardCache(cacheScopeId, boardId),
+    [boardId, cacheScopeId]
+  );
 
   const {
     data: board,
@@ -68,7 +76,10 @@ export function BoardClient({
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
-    staleTime: 5 * 60 * 1000,
+    initialData: cachedSnapshot?.board,
+    initialDataUpdatedAt: cachedSnapshot ? 0 : undefined,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
   const boardWorkspaceId = board?.ws_id ?? workspace.id;
   const canManageBoard =
@@ -94,7 +105,8 @@ export function BoardClient({
       });
       return result.tasks;
     },
-    initialData: [],
+    gcTime: 7 * 24 * 60 * 60_000,
+    initialData: cachedSnapshot?.tasks ?? [],
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -104,8 +116,18 @@ export function BoardClient({
   // Progressive per-list loading
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
-    boardId
+    boardId,
+    cachedSnapshot?.pagination
   );
+
+  useEffect(() => {
+    if (!board?.id) return;
+    writeTaskBoardCache(cacheScopeId, boardId, {
+      board,
+      pagination: progressiveLoader.pagination,
+      tasks,
+    });
+  }, [board, boardId, cacheScopeId, progressiveLoader.pagination, tasks]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -152,6 +174,7 @@ export function BoardClient({
     window.addEventListener('online', onOnline);
     window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
+    if (cachedSnapshot) revalidateLoadedLists();
 
     return () => {
       window.removeEventListener('focus', onFocus);
@@ -159,7 +182,12 @@ export function BoardClient({
       window.removeEventListener('pageshow', onPageShow);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [boardId, progressiveLoader.revalidateLoadedLists, queryClient]);
+  }, [
+    boardId,
+    cachedSnapshot,
+    progressiveLoader.revalidateLoadedLists,
+    queryClient,
+  ]);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
@@ -254,9 +282,9 @@ export function BoardClient({
   }, [boardId, lists, queryClient]);
 
   useEffect(() => {
-    if (!boardError) return;
+    if (!boardError || board?.id) return;
     router.replace(`/${workspace.id}${routePrefix}/boards`);
-  }, [boardError, routePrefix, router, workspace.id]);
+  }, [board?.id, boardError, routePrefix, router, workspace.id]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !board?.id) return;

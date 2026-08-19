@@ -23,6 +23,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
 
 interface TaskDueDateMenuProps {
@@ -153,6 +157,16 @@ export function TaskDueDateMenu({
       { preventDefault: () => undefined } as unknown as Event,
       action
     );
+  const selectPreset = (preset: (typeof dueDateOptionsTranslated)[number]) =>
+    select(() => {
+      onDueDateChange(calculateDaysForPreset(preset.preset, weekStartsOn));
+      onClose();
+    });
+  const removeDueDate = () =>
+    select(() => {
+      onDueDateChange(null);
+      onClose();
+    });
 
   const parsedEndDate = endDate ? new Date(endDate) : null;
   const currentDateDisplay =
@@ -177,6 +191,20 @@ export function TaskDueDateMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-56 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            if (isLoading) return false;
+            if (digit === 0) {
+              if (!endDate) return false;
+              removeDueDate();
+              return true;
+            }
+            const option = filteredOptions[digit - 1];
+            if (!option) return false;
+            selectPreset(option);
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -195,23 +223,20 @@ export function TaskDueDateMenu({
               </div>
             ) : (
               <CommandGroup>
-                {filteredOptions.map((option) => (
+                {filteredOptions.map((option, index) => (
                   <CommandItem
                     key={option.preset}
                     value={`${option.label} ${option.preset}`}
-                    onSelect={() =>
-                      select(() => {
-                        onDueDateChange(
-                          calculateDaysForPreset(option.preset, weekStartsOn)
-                        );
-                        onClose();
-                      })
-                    }
+                    onSelect={() => selectPreset(option)}
                     className="cursor-pointer"
                     disabled={isLoading}
                   >
                     <Calendar className={`h-4 w-4 ${option.color}`} />
                     {option.label}
+                    <TaskOptionShortcutHint
+                      digit={index + 1}
+                      visible={!!forceOpen && index < 9}
+                    />
                   </CommandItem>
                 ))}
                 {showCustomDate && (
@@ -233,17 +258,13 @@ export function TaskDueDateMenu({
                 {showRemoveDate && (
                   <CommandItem
                     value={`remove ${t.removeDueDate}`}
-                    onSelect={() =>
-                      select(() => {
-                        onDueDateChange(null);
-                        onClose();
-                      })
-                    }
+                    onSelect={removeDueDate}
                     className="cursor-pointer text-muted-foreground"
                     disabled={isLoading}
                   >
                     <X className="h-4 w-4" />
                     {t.removeDueDate}
+                    <TaskOptionShortcutHint digit={0} visible={!!forceOpen} />
                   </CommandItem>
                 )}
               </CommandGroup>

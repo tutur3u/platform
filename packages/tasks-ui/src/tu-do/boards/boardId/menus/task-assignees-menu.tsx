@@ -18,6 +18,10 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import {
+  handleTaskOptionShortcut,
+  TaskOptionShortcutHint,
+} from '../../../shared/task-option-shortcuts';
 import { memberMatchesSearchQuery } from '../../../shared/task-resource-search-filters';
 
 interface Member {
@@ -114,6 +118,14 @@ export function TaskAssigneesMenu({
       </DropdownMenuSubTrigger>
       <DropdownMenuSubContent
         className="w-80 p-0"
+        onKeyDownCapture={(event) =>
+          handleTaskOptionShortcut(event, Boolean(forceOpen), (digit) => {
+            const member = digit > 0 ? filteredMembers[digit - 1] : undefined;
+            if (!member || isLoading) return false;
+            select(() => onToggleAssignee(member.id));
+            return true;
+          })
+        }
         onEscapeKeyDown={(event) =>
           clearTaskCommandSearchOnEscape(event, searchQuery, setSearchQuery)
         }
@@ -138,7 +150,7 @@ export function TaskAssigneesMenu({
               </CommandEmpty>
             ) : (
               <CommandGroup>
-                {filteredMembers.map((member) => {
+                {filteredMembers.map((member, index) => {
                   const active = taskAssignees.some((a) => a.id === member.id);
                   const isRemovedMember = removedMemberIds.has(member.id);
                   return (
@@ -177,6 +189,10 @@ export function TaskAssigneesMenu({
                           {member.display_name || member.email}
                         </span>
                       </div>
+                      <TaskOptionShortcutHint
+                        digit={index + 1}
+                        visible={!!forceOpen && index < 9}
+                      />
                       {active && <Check className="h-4 w-4 shrink-0" />}
                     </CommandItem>
                   );

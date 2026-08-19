@@ -6978,7 +6978,7 @@
       "shortcut_conflict": "Đã được gán cho {action}",
       "task_cards": "Thẻ công việc đang trỏ tới",
       "task_cards_description": "Mở menu gán nhanh mà không cần rời khỏi thẻ công việc dưới con trỏ.",
-      "task_cards_hint": "Di chuột lên thẻ công việc rồi nhấn phím tắt. Phím tắt tạm dừng khi đang nhập hoặc dùng hộp thoại.",
+      "task_cards_hint": "Di chuột lên thẻ công việc rồi nhấn phím tắt. Trong trình đơn vừa mở, nhấn 1–9 để chọn mục đang hiển thị hoặc 0 để xóa mức ưu tiên, ước tính và ngày đến hạn.",
       "toggle_sidebar": "Mở rộng hoặc thu gọn thanh bên"
     },
     "loading_workspace": "Đang tải không gian làm việc...",
