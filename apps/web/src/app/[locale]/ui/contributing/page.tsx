@@ -1,6 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 import { siteConfig } from '@/constants/configs';
 import { CodeBlock, DocsPageHeader, DocsSection } from '../docs-primitives';
 import { getAccent } from '../ui-docs-theme';
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiContributingPage() {
+export async function UiContributingRuntime() {
   const t = await getTranslations('ui-showcase.docs');
   const a = getAccent('advanced');
 
@@ -96,5 +97,13 @@ export default async function UiContributingPage() {
         />
       </DocsSection>
     </div>
+  );
+}
+
+export default function UiContributingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-96" />}>
+      <UiContributingRuntime />
+    </Suspense>
   );
 }

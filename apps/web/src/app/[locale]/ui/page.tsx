@@ -2,7 +2,7 @@ import { Blocks, Layers, Sparkles } from '@tuturuuu/icons/lucide-static';
 import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import type { ComponentType } from 'react';
+import { type ComponentType, Suspense } from 'react';
 import { siteConfig } from '@/constants/configs';
 import { componentDocs, componentDocsByCategory } from './component-docs';
 import {
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function UiDocsOverviewPage({ params }: Props) {
+export async function UiDocsOverviewRuntime({ params }: Props) {
   const { locale } = await params;
   const normalizedLocale = locale === 'vi' ? 'vi' : 'en';
 
@@ -165,6 +165,14 @@ export default async function UiDocsOverviewPage({ params }: Props) {
         />
       </DocsSection>
     </div>
+  );
+}
+
+export default function UiDocsOverviewPage(props: Props) {
+  return (
+    <Suspense fallback={<div className="min-h-96" />}>
+      <UiDocsOverviewRuntime {...props} />
+    </Suspense>
   );
 }
 
