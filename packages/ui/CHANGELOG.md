@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/ui-v0.28.1...ui-v0.29.0) (2026-08-20)
+
+
+### Features
+
+* **editor:** add copy format menu ([389a6f0](https://github.com/tutur3u/platform/commit/389a6f02d822feef271409a9ab31e8fcbb6ef18e))
+
+
+### Bug Fixes
+
+* **editor:** contain toolbar overflow ([6bda614](https://github.com/tutur3u/platform/commit/6bda61416cbd2e4d4d4af7c7337d7b4e905274ef))
+* **editor:** keep copy menu in toolbar ([c9dd241](https://github.com/tutur3u/platform/commit/c9dd2416f7e1b397c3293445d0bd0564a48c6bda))
+* **editor:** preserve semantic rich paste ([bea67ca](https://github.com/tutur3u/platform/commit/bea67cac57b52b82a9ed4d7fd1a8a892cf4ceea4))
+* **editor:** preserve task clipboard structure ([2d05d86](https://github.com/tutur3u/platform/commit/2d05d8602f39975805944edfccb2e10818863413))
+* **tasks:** restore pasted image uploads ([3edef4e](https://github.com/tutur3u/platform/commit/3edef4e04a1fc6963904b7861d422f8db9d5b749))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/ui-v0.28.0...ui-v0.28.1) (2026-08-16)
 
 

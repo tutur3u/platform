@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/inventory-v0.28.0...inventory-v0.29.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/inventory-v0.27.2...inventory-v0.28.0) (2026-08-14)
 
 

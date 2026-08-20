@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.3](https://github.com/tutur3u/platform/compare/utils-v0.25.2...utils-v0.25.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** keep optimistic creates at top ([fed3be6](https://github.com/tutur3u/platform/commit/fed3be688b954ebae8153647609cf8710b99171a))
+* **tasks:** preserve cached ticket prefixes ([59a4b31](https://github.com/tutur3u/platform/commit/59a4b3109046f910bd586aee8af3200afffcd65f))
+
 ## [0.25.2](https://github.com/tutur3u/platform/compare/utils-v0.25.1...utils-v0.25.2) (2026-08-16)
 
 

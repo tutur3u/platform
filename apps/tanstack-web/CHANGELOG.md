@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.25.0...tanstack-web-v0.25.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **web:** reduce origin transfer and retire crawler ([550acc6](https://github.com/tutur3u/platform/commit/550acc6886348fc37b5996e70744978e9225d134))
+* **web:** stream request-time route data ([c89711e](https://github.com/tutur3u/platform/commit/c89711e45723929ede9852bc5d04f453d6d1aeaa))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.24.0...tanstack-web-v0.25.0) (2026-08-15)
 
 

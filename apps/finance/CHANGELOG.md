@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/finance-v0.26.1...finance-v0.27.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.26.1](https://github.com/tutur3u/platform/compare/finance-v0.26.0...finance-v0.26.1) (2026-08-16)
 
 
