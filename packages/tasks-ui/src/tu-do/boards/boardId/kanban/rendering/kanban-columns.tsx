@@ -165,6 +165,7 @@ export function KanbanColumns({
   readOnly = false,
 }: KanbanColumnsProps) {
   const restoredScrollLayoutRef = useRef<string | null>(null);
+  const restoringScrollRef = useRef(false);
   const latestScrollLeftRef = useRef<number | null>(null);
   const saveScrollFrameRef = useRef<number | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
@@ -256,7 +257,12 @@ export function KanbanColumns({
     const container = boardRef.current;
     if (!container) return;
     const previousScrollBehavior = container.style.scrollBehavior;
+    const previousOpacity = container.style.opacity;
+    const previousPointerEvents = container.style.pointerEvents;
+    restoringScrollRef.current = true;
     container.style.scrollBehavior = 'auto';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
     const storedScrollLeft = readKanbanScrollPosition(boardId);
     const restore = () => {
       if (storedScrollLeft !== null) {
@@ -280,25 +286,40 @@ export function KanbanColumns({
 
     if (typeof window.requestAnimationFrame !== 'function') {
       container.style.scrollBehavior = previousScrollBehavior;
+      container.style.opacity = previousOpacity;
+      container.style.pointerEvents = previousPointerEvents;
+      restoringScrollRef.current = false;
       return;
     }
 
-    let behaviorFrame: number | null = null;
     const restoreFrame = window.requestAnimationFrame(() => {
       restore();
-      behaviorFrame = window.requestAnimationFrame(() => {
-        container.style.scrollBehavior = previousScrollBehavior;
-      });
     });
+    let finalFrame: number | null = null;
+    const settleTimer = window.setTimeout(() => {
+      restore();
+      finalFrame = window.requestAnimationFrame(() => {
+        restore();
+        container.style.scrollBehavior = previousScrollBehavior;
+        container.style.opacity = previousOpacity;
+        container.style.pointerEvents = previousPointerEvents;
+        restoringScrollRef.current = false;
+      });
+    }, 250);
     return () => {
       window.cancelAnimationFrame?.(restoreFrame);
-      if (behaviorFrame !== null) window.cancelAnimationFrame?.(behaviorFrame);
+      window.clearTimeout(settleTimer);
+      if (finalFrame !== null) window.cancelAnimationFrame?.(finalFrame);
       container.style.scrollBehavior = previousScrollBehavior;
+      container.style.opacity = previousOpacity;
+      container.style.pointerEvents = previousPointerEvents;
+      restoringScrollRef.current = false;
     };
   }, [boardId, boardRef, hasLeftSpecialColumns, scrollLayoutKey]);
 
   const handleKanbanScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
+      if (restoringScrollRef.current) return;
       const scrollLeft = event.currentTarget.scrollLeft;
       latestScrollLeftRef.current = scrollLeft;
       if (saveScrollFrameRef.current !== null) {

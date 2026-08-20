@@ -73,7 +73,6 @@ export type ViewType =
   | 'timeline'
   | 'drafts'
   | 'recycle_bin';
-
 const HOTKEY_CREATE_TASK = 'C';
 const HOTKEY_GO_TO_KANBAN: ['G', 'K'] = ['G', 'K'];
 const HOTKEY_GO_TO_LIST: ['G', 'L'] = ['G', 'L'];
@@ -94,7 +93,6 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceWorkspaceIds: [],
   sourceBoardIds: [],
 };
-
 function taskMatchesLocalFilters(
   task: Task,
   filters: TaskFilters,
@@ -114,7 +112,6 @@ function taskMatchesLocalFilters(
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
-
     if (!searchableText.includes(query)) return false;
   }
 
