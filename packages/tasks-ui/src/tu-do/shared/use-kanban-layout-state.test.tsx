@@ -43,6 +43,10 @@ describe('useKanbanLayoutState', () => {
       'true'
     );
     window.localStorage.setItem(
+      'task-board-list-collapsed:board-1:list-2',
+      'false'
+    );
+    window.localStorage.setItem(
       'task-board-deadline-section-collapsed:board-1:overdue',
       'false'
     );
@@ -61,6 +65,10 @@ describe('useKanbanLayoutState', () => {
     expect(result.current.kanbanLayoutRestored).toBe(true);
     expect(result.current.externalTasksCollapsed).toBe(false);
     expect(result.current.taskListsCollapsed).toMatchObject({
+      'list-1': true,
+      'list-2': false,
+    });
+    expect(result.current.taskListCollapsePreferences).toEqual({
       'list-1': true,
       'list-2': false,
     });
@@ -89,6 +97,7 @@ describe('useKanbanLayoutState', () => {
     rerender({ persist: false });
 
     expect(result.current.taskListsCollapsed['list-1']).toBe(true);
+    expect(result.current.taskListCollapsePreferences['list-1']).toBe(true);
     expect(result.current.externalTasksCollapsed).toBe(false);
   });
 });

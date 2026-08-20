@@ -63,6 +63,8 @@ export function useKanbanLayoutState({
   const [taskListsCollapsed, setTaskListsCollapsed] = useState<
     Record<string, boolean>
   >({});
+  const [taskListCollapsePreferences, setTaskListCollapsePreferences] =
+    useState<Record<string, boolean>>({});
   const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
     useState<KanbanDeadlineCollapsedState>({});
   const [restoredBoardId, setRestoredBoardId] = useState<string | null>(null);
@@ -72,6 +74,23 @@ export function useKanbanLayoutState({
       persistCollapsedTaskLists && typeof window !== 'undefined';
     const sameBoard = restoredBoardId === boardId;
     const visibleLists = lists.filter((list) => !list.deleted);
+    const storedTaskListPreferences: Record<string, boolean> = {};
+
+    if (canReadStorage) {
+      for (const list of visibleLists) {
+        const stored = parseStoredBoolean(
+          window.localStorage.getItem(
+            getTaskListCollapsedStorageKey(boardId, list.id)
+          ) ??
+            (list.status === 'closed'
+              ? window.localStorage.getItem(
+                  getLegacyClosedTaskListCollapsedStorageKey(boardId, list.id)
+                )
+              : null)
+        );
+        if (stored !== null) storedTaskListPreferences[list.id] = stored;
+      }
+    }
 
     setExternalTasksCollapsed((previous) => {
       if (!personalWorkspace) return false;
@@ -88,20 +107,8 @@ export function useKanbanLayoutState({
     setTaskListsCollapsed((previous) => {
       const next: Record<string, boolean> = {};
       for (const list of visibleLists) {
-        const stored = canReadStorage
-          ? parseStoredBoolean(
-              window.localStorage.getItem(
-                getTaskListCollapsedStorageKey(boardId, list.id)
-              ) ??
-                (list.status === 'closed'
-                  ? window.localStorage.getItem(
-                      getLegacyClosedTaskListCollapsedStorageKey(
-                        boardId,
-                        list.id
-                      )
-                    )
-                  : null)
-            )
+        const stored = Object.hasOwn(storedTaskListPreferences, list.id)
+          ? storedTaskListPreferences[list.id]
           : null;
         next[list.id] =
           stored ??
@@ -110,6 +117,9 @@ export function useKanbanLayoutState({
       }
       return next;
     });
+    setTaskListCollapsePreferences((current) =>
+      canReadStorage ? storedTaskListPreferences : sameBoard ? current : {}
+    );
 
     setDeadlineSectionsCollapsed((previous) => {
       const next: KanbanDeadlineCollapsedState = {};
@@ -174,6 +184,10 @@ export function useKanbanLayoutState({
   const handleTaskListCollapsedChange = useCallback(
     (listId: string, collapsed: boolean) => {
       manualCollapseChangeRef.current(listId, collapsed);
+      setTaskListCollapsePreferences((previous) => ({
+        ...previous,
+        [listId]: collapsed,
+      }));
       setTaskListsCollapsed((previous) => ({
         ...previous,
         [listId]: collapsed,
@@ -205,8 +219,8 @@ export function useKanbanLayoutState({
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored: restoredBoardId === boardId,
-    persistTaskListCollapsed,
     setTaskListsCollapsed,
+    taskListCollapsePreferences,
     taskListsCollapsed,
   };
 }

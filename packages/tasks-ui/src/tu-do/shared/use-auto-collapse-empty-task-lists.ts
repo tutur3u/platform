@@ -17,14 +17,14 @@ export function useAutoCollapseEmptyTaskLists({
   collapsed,
   listCounts,
   lists,
-  onAutoCollapseChange,
+  manualCollapsePreferences,
   setCollapsed,
 }: {
   enabled: boolean;
   collapsed: Record<string, boolean>;
   listCounts?: ListCount[] | null;
   lists: Array<TaskList & { is_external_staging?: boolean }>;
-  onAutoCollapseChange?: (listId: string, collapsed: boolean) => void;
+  manualCollapsePreferences: Record<string, boolean>;
   setCollapsed: Dispatch<SetStateAction<Record<string, boolean>>>;
 }) {
   const autoCollapsedIds = useRef(new Set<string>());
@@ -44,15 +44,28 @@ export function useAutoCollapseEmptyTaskLists({
       if (list.is_external_staging) continue;
       const isEmpty = (countByListId.get(list.id) ?? 0) === 0;
       const wasAutoCollapsed = autoCollapsedIds.current.has(list.id);
+      const manualPreference = manualCollapsePreferences[list.id];
+      const isManuallyExpanded =
+        manualPreference === false ||
+        manuallyExpandedEmptyIds.current.has(list.id);
 
-      if (!enabled) {
+      if (manualPreference !== undefined) {
+        if (next[list.id] !== manualPreference) {
+          next[list.id] = manualPreference;
+          changes.push([list.id, manualPreference]);
+        }
+        autoCollapsedIds.current.delete(list.id);
+        if (manualPreference) {
+          manuallyExpandedEmptyIds.current.delete(list.id);
+        }
+      } else if (!enabled) {
         if (wasAutoCollapsed && next[list.id]) {
           next[list.id] = false;
           changes.push([list.id, false]);
         }
         autoCollapsedIds.current.delete(list.id);
         manuallyExpandedEmptyIds.current.delete(list.id);
-      } else if (isEmpty && !manuallyExpandedEmptyIds.current.has(list.id)) {
+      } else if (isEmpty && !isManuallyExpanded) {
         if (!next[list.id]) {
           next[list.id] = true;
           changes.push([list.id, true]);
@@ -70,16 +83,13 @@ export function useAutoCollapseEmptyTaskLists({
 
     if (changes.length === 0) return;
     setCollapsed(next);
-    for (const [listId, isCollapsed] of changes) {
-      onAutoCollapseChange?.(listId, isCollapsed);
-    }
   }, [
     collapsed,
     countByListId,
     enabled,
     listCounts,
     lists,
-    onAutoCollapseChange,
+    manualCollapsePreferences,
     setCollapsed,
   ]);
 

@@ -3,7 +3,7 @@
 import { act, renderHook } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
 
 const lists = [
@@ -13,15 +13,17 @@ const lists = [
 
 function useHarness(
   counts: Array<{ list_id: string; count: number }>,
-  onAutoCollapseChange?: (listId: string, collapsed: boolean) => void
+  manualCollapsePreferences: Record<string, boolean> = {},
+  initialCollapsed: Record<string, boolean> = {}
 ) {
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [collapsed, setCollapsed] =
+    useState<Record<string, boolean>>(initialCollapsed);
   const recordManualChange = useAutoCollapseEmptyTaskLists({
     collapsed,
     enabled: true,
     listCounts: counts,
     lists,
-    onAutoCollapseChange,
+    manualCollapsePreferences,
     setCollapsed,
   });
   return { collapsed, recordManualChange, setCollapsed };
@@ -70,16 +72,29 @@ describe('useAutoCollapseEmptyTaskLists', () => {
     expect(result.current.collapsed.empty).toBe(false);
   });
 
-  it('reports automatic state changes so they can be restored next load', () => {
-    const onAutoCollapseChange = vi.fn();
-    const { rerender } = renderHook(
-      ({ counts }) => useHarness(counts, onAutoCollapseChange),
+  it('keeps an explicitly expanded empty list expanded across restoration', () => {
+    const { result, rerender } = renderHook(
+      ({ counts }) => useHarness(counts, { empty: false }, { empty: true }),
       { initialProps: { counts: [{ list_id: 'empty', count: 0 }] } }
     );
 
-    expect(onAutoCollapseChange).toHaveBeenCalledWith('empty', true);
+    expect(result.current.collapsed.empty).not.toBe(true);
 
     rerender({ counts: [{ list_id: 'empty', count: 1 }] });
-    expect(onAutoCollapseChange).toHaveBeenCalledWith('empty', false);
+    rerender({ counts: [{ list_id: 'empty', count: 0 }] });
+
+    expect(result.current.collapsed.empty).not.toBe(true);
+  });
+
+  it('keeps an explicitly collapsed populated list collapsed', () => {
+    const { result } = renderHook(() =>
+      useHarness(
+        [{ list_id: 'occupied', count: 1 }],
+        { occupied: true },
+        { occupied: false }
+      )
+    );
+
+    expect(result.current.collapsed.occupied).toBe(true);
   });
 });
