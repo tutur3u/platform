@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { KanbanSkeleton } from '../boards/boardId/kanban/rendering/kanban-skeleton';
 import type { ViewType } from './board-views';
+import { TaskBoardHeaderSkeleton } from './task-board-loading-state';
 
 interface KanbanPresentationProps {
   boardId: string;
@@ -13,7 +14,7 @@ interface KanbanPresentationProps {
   initialLayoutReady: boolean;
 }
 
-const KANBAN_ENTRANCE_WINDOW_MS = 1600;
+const KANBAN_ENTRANCE_WINDOW_MS = 1900;
 
 export function KanbanPresentation({
   boardId,
@@ -53,12 +54,11 @@ export function KanbanPresentation({
         currentView === 'kanban' ? String(ready) : undefined
       }
     >
-      <div
-        className={showSkeleton ? 'invisible' : undefined}
-        data-kanban-board-header="true"
-      >
-        {header}
-      </div>
+      {showSkeleton ? (
+        <TaskBoardHeaderSkeleton className="-mt-2" />
+      ) : (
+        <div data-kanban-board-header="true">{header}</div>
+      )}
       <div className="min-h-0 flex-1 overflow-hidden" data-kanban-board-body>
         {showSkeleton ? <KanbanSkeleton root /> : children}
       </div>

@@ -44,6 +44,8 @@ describe('task UI Tailwind source boundary', () => {
       '@media (prefers-reduced-motion: no-preference)'
     );
     expect(taskGlobals).toContain('[data-kanban-entrance="active"]');
+    expect(taskGlobals).not.toContain('filter: blur');
+    expect(taskGlobals).toContain('kanban-stream-list 640ms');
   });
 
   it.each([

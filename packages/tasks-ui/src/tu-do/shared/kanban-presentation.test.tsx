@@ -19,10 +19,11 @@ describe('KanbanPresentation', () => {
     );
 
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('task-board-header-skeleton')
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
-    expect(screen.getByTestId('board-header').parentElement).toHaveClass(
-      'invisible'
-    );
+    expect(screen.queryByTestId('board-header')).not.toBeInTheDocument();
 
     rerender(
       <KanbanPresentation
@@ -37,6 +38,9 @@ describe('KanbanPresentation', () => {
 
     expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
     expect(screen.queryByTestId('kanban-skeleton')).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('task-board-header-skeleton')
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId('board-header').parentElement).not.toHaveClass(
       'invisible'
     );
@@ -109,7 +113,7 @@ describe('KanbanPresentation', () => {
       .closest('[data-kanban-layout-restored]');
     expect(presentation).toHaveAttribute('data-kanban-entrance', 'active');
 
-    act(() => vi.advanceTimersByTime(1600));
+    act(() => vi.advanceTimersByTime(1900));
     expect(presentation).not.toHaveAttribute('data-kanban-entrance');
 
     rerender(
