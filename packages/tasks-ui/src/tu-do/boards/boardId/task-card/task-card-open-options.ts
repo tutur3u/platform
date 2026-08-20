@@ -1,6 +1,10 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
+import {
+  type BoardConfig,
+  getTicketIdentifier,
+} from '@tuturuuu/utils/task-helper';
 import type { SharedTaskContext } from '../../../shared/task-edit-dialog/hooks/use-task-data';
 
 interface TaskCardOpenOptionsInput {
@@ -43,6 +47,23 @@ function getTaskTicketPrefix(task: Task) {
   return 'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
     ? task.ticket_prefix
     : undefined;
+}
+
+export function getTaskCardTicketIdentifier({
+  boardConfig,
+  isExternalTask,
+  task,
+}: {
+  boardConfig: BoardConfig | null | undefined;
+  isExternalTask: boolean;
+  task: Task;
+}) {
+  if (!isExternalTask && boardConfig === undefined) return null;
+
+  return getTicketIdentifier(
+    isExternalTask ? getTaskTicketPrefix(task) : boardConfig?.ticket_prefix,
+    task.display_number
+  );
 }
 
 function buildInitialSourceList(

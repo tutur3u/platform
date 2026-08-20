@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
 import {
   createWorkspaceTaskBoard,
@@ -162,10 +167,41 @@ export interface BoardConfig {
   ticket_prefix: string | null;
 }
 
+export function toBoardConfig(board: WorkspaceTaskBoard): BoardConfig {
+  return {
+    id: board.id,
+    name: board.name ?? null,
+    estimation_type: board.estimation_type ?? null,
+    extended_estimation: board.extended_estimation ?? false,
+    allow_zero_estimates: board.allow_zero_estimates ?? false,
+    count_unestimated_issues: board.count_unestimated_issues ?? false,
+    ws_id: board.ws_id,
+    ticket_prefix: board.ticket_prefix ?? null,
+  };
+}
+
+export function getCachedBoardConfig(
+  queryClient: Pick<QueryClient, 'getQueriesData'>,
+  boardId: string,
+  wsId: string
+): BoardConfig | undefined {
+  const boards = queryClient
+    .getQueriesData<WorkspaceTaskBoard>({ queryKey: ['task-board'] })
+    .map(([, cachedBoard]) => cachedBoard);
+  const board =
+    boards.find(
+      (cachedBoard) => cachedBoard?.id === boardId && cachedBoard.ws_id === wsId
+    ) ?? boards.find((cachedBoard) => cachedBoard?.id === boardId);
+
+  return board ? toBoardConfig(board) : undefined;
+}
+
 export function useBoardConfig(
   boardId: string | null | undefined,
   wsId: string | null | undefined
 ) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['board-config', wsId, boardId],
     queryFn: async () => {
@@ -179,18 +215,13 @@ export function useBoardConfig(
         return null;
       }
 
-      return {
-        id: board.id,
-        name: board.name ?? null,
-        estimation_type: board.estimation_type ?? null,
-        extended_estimation: board.extended_estimation ?? false,
-        allow_zero_estimates: board.allow_zero_estimates ?? false,
-        count_unestimated_issues: board.count_unestimated_issues ?? false,
-        ws_id: board.ws_id,
-        ticket_prefix: board.ticket_prefix ?? null,
-      } as BoardConfig;
+      return toBoardConfig(board);
     },
     enabled: Boolean(boardId && wsId),
+    placeholderData: () =>
+      boardId && wsId
+        ? getCachedBoardConfig(queryClient, boardId, wsId)
+        : undefined,
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });

@@ -160,6 +160,7 @@ import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
   getTaskCardHydratingOpenOptions,
+  getTaskCardTicketIdentifier,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
 import {
@@ -940,14 +941,11 @@ function TaskCardInner({
   ].filter(
     (item): item is { href: string | undefined; label: string } => item !== null
   );
-  const taskTicketPrefix =
-    'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
-      ? task.ticket_prefix
-      : null;
-  const taskTicketIdentifier = getTicketIdentifier(
-    isPersonalExternalTask ? taskTicketPrefix : boardConfig?.ticket_prefix,
-    task.display_number
-  );
+  const taskTicketIdentifier = getTaskCardTicketIdentifier({
+    boardConfig,
+    isExternalTask: isPersonalExternalTask,
+    task,
+  });
   const externalSourceLabel =
     task.source_workspace_name ??
     task.source_board_name ??
@@ -2046,9 +2044,11 @@ function TaskCardInner({
                 task.priority
               )}
               ticketIdentifier={taskTicketIdentifier}
-              ticketTitle={t('ticket_id_label', {
-                id: taskTicketIdentifier,
-              })}
+              ticketTitle={
+                taskTicketIdentifier
+                  ? t('ticket_id_label', { id: taskTicketIdentifier })
+                  : ''
+              }
             />
             <div className="mb-1">
               {/* Task Name */}
