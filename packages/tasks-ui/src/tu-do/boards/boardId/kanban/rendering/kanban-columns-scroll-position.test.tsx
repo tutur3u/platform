@@ -84,10 +84,16 @@ describe('KanbanColumns scroll position', () => {
       const scrollContainer = container.firstElementChild as HTMLElement;
 
       expect(scrollContainer.scrollLeft).toBe(784);
+      expect(scrollContainer.style.scrollBehavior).toBe('auto');
       act(() => {
         for (const callback of frameCallbacks.splice(0)) callback(0);
       });
       expect(scrollContainer.scrollLeft).toBe(784);
+      expect(scrollContainer.style.scrollBehavior).toBe('auto');
+      act(() => {
+        for (const callback of frameCallbacks.splice(0)) callback(0);
+      });
+      expect(scrollContainer.style.scrollBehavior).toBe('');
 
       scrollContainer.scrollLeft = 1064;
       fireEvent.scroll(scrollContainer);

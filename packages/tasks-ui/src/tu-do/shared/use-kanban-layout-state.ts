@@ -152,13 +152,8 @@ export function useKanbanLayoutState({
     [boardId, persistCollapsedTaskLists, personalWorkspace]
   );
 
-  const handleTaskListCollapsedChange = useCallback(
+  const persistTaskListCollapsed = useCallback(
     (listId: string, collapsed: boolean) => {
-      manualCollapseChangeRef.current(listId, collapsed);
-      setTaskListsCollapsed((previous) => ({
-        ...previous,
-        [listId]: collapsed,
-      }));
       if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
       window.localStorage.setItem(
         getTaskListCollapsedStorageKey(boardId, listId),
@@ -173,7 +168,19 @@ export function useKanbanLayoutState({
         );
       }
     },
-    [boardId, lists, manualCollapseChangeRef, persistCollapsedTaskLists]
+    [boardId, lists, persistCollapsedTaskLists]
+  );
+
+  const handleTaskListCollapsedChange = useCallback(
+    (listId: string, collapsed: boolean) => {
+      manualCollapseChangeRef.current(listId, collapsed);
+      setTaskListsCollapsed((previous) => ({
+        ...previous,
+        [listId]: collapsed,
+      }));
+      persistTaskListCollapsed(listId, collapsed);
+    },
+    [manualCollapseChangeRef, persistTaskListCollapsed]
   );
 
   const handleDeadlineSectionCollapsedChange = useCallback(
@@ -198,6 +205,7 @@ export function useKanbanLayoutState({
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored: restoredBoardId === boardId,
+    persistTaskListCollapsed,
     setTaskListsCollapsed,
     taskListsCollapsed,
   };

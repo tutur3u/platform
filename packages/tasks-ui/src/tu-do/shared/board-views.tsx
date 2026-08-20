@@ -550,6 +550,7 @@ export function BoardViews({
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored,
+    persistTaskListCollapsed,
     setTaskListsCollapsed,
     taskListsCollapsed,
   } = useKanbanLayoutState({
@@ -715,9 +716,11 @@ export function BoardViews({
     });
 
   const recordManualCollapseChange = useAutoCollapseEmptyTaskLists({
+    collapsed: taskListsCollapsed,
     enabled: autoCollapseEmptyTaskLists,
     listCounts: localTaskState ? null : filteredListCounts,
     lists: boardLists,
+    onAutoCollapseChange: persistTaskListCollapsed,
     setCollapsed: setTaskListsCollapsed,
   });
   manualCollapseChangeRef.current = recordManualCollapseChange;

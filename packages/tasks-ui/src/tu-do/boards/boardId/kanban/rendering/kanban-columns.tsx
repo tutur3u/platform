@@ -255,6 +255,8 @@ export function KanbanColumns({
 
     const container = boardRef.current;
     if (!container) return;
+    const previousScrollBehavior = container.style.scrollBehavior;
+    container.style.scrollBehavior = 'auto';
     const storedScrollLeft = readKanbanScrollPosition(boardId);
     const restore = () => {
       if (storedScrollLeft !== null) {
@@ -277,11 +279,22 @@ export function KanbanColumns({
     restore();
 
     if (typeof window.requestAnimationFrame !== 'function') {
+      container.style.scrollBehavior = previousScrollBehavior;
       return;
     }
 
-    const frame = window.requestAnimationFrame(restore);
-    return () => window.cancelAnimationFrame?.(frame);
+    let behaviorFrame: number | null = null;
+    const restoreFrame = window.requestAnimationFrame(() => {
+      restore();
+      behaviorFrame = window.requestAnimationFrame(() => {
+        container.style.scrollBehavior = previousScrollBehavior;
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame?.(restoreFrame);
+      if (behaviorFrame !== null) window.cancelAnimationFrame?.(behaviorFrame);
+      container.style.scrollBehavior = previousScrollBehavior;
+    };
   }, [boardId, boardRef, hasLeftSpecialColumns, scrollLayoutKey]);
 
   const handleKanbanScroll = useCallback(
