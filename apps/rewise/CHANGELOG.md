@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/rewise-v0.36.0...rewise-v0.37.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/rewise-v0.35.2...rewise-v0.36.0) (2026-08-14)
 
 

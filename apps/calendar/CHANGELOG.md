@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/calendar-v0.26.0...calendar-v0.27.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** add searchable quick assignment menus ([5bfb7fb](https://github.com/tutur3u/platform/commit/5bfb7fbe87feff9759688dbd196efacb8d3702f5))
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/calendar-v0.25.0...calendar-v0.26.0) (2026-08-15)
 
 

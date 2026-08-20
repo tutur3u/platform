@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/tasks-v0.28.1...tasks-v0.29.0) (2026-08-20)
+
+
+### Features
+
+* **editor:** add copy format menu ([389a6f0](https://github.com/tutur3u/platform/commit/389a6f02d822feef271409a9ab31e8fcbb6ef18e))
+* **tasks:** add numeric shortcuts and cached board hydration ([97857ed](https://github.com/tutur3u/platform/commit/97857ed8543d0bc0c0779378fff41e61be40e00b))
+* **tasks:** add task card hotkeys and resilient resume ([a764c4b](https://github.com/tutur3u/platform/commit/a764c4bb204e5f6a8e1d55af7a67c8f2746b1dfc))
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+
+### Bug Fixes
+
+* **tasks:** keep submenu search focus current ([3e47720](https://github.com/tutur3u/platform/commit/3e47720c88c3bdf92d0d38f3f844b8ccd432f4a7))
+
 ## [0.28.1](https://github.com/tutur3u/platform/compare/tasks-v0.28.0...tasks-v0.28.1) (2026-08-16)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.31.1](https://github.com/tutur3u/platform/compare/internal-api-v0.31.0...internal-api-v0.31.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** restore pasted image uploads ([3edef4e](https://github.com/tutur3u/platform/commit/3edef4e04a1fc6963904b7861d422f8db9d5b749))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/internal-api-v0.30.0...internal-api-v0.31.0) (2026-08-15)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/drive-v0.25.0...drive-v0.26.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/drive-v0.24.2...drive-v0.25.0) (2026-08-14)
 
 

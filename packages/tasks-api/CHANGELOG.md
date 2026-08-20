@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.1...tasks-api-v0.4.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** align create ordering and hover focus ([053546c](https://github.com/tutur3u/platform/commit/053546c5287e28bb28840167569e044aff02f3dd))
+
 ## [0.4.1](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.0...tasks-api-v0.4.1) (2026-08-07)
 
 
