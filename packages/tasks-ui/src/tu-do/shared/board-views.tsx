@@ -1136,40 +1136,40 @@ export function BoardViews({
   };
   const showIdleBottomIsland =
     !readOnly &&
-    !!idleBottomIsland &&
+    idleBottomIsland &&
     (currentView !== 'kanban' || !kanbanBulkSelectionActive);
-
   return (
     <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
-      <BoardHeader
-        workspaceId={effectiveWorkspaceId}
-        board={board}
-        currentUserId={currentUserId}
-        currentView={currentView}
-        onViewChange={handleViewChange}
-        viewHotkeyLabels={viewHotkeyLabels}
-        filters={filters}
-        onFiltersChange={setFilters}
-        listStatusFilter={listStatusFilter}
-        onListStatusFilterChange={setListStatusFilter}
-        isPersonalWorkspace={workspace.personal}
-        isSearching={
-          !localTaskState &&
-          (isFullTasksFetching || isFilteredListCountsFetching)
-        }
-        lists={boardLists}
-        onUpdate={handleUpdate}
-        isMultiSelectMode={readOnly ? false : isMultiSelectMode}
-        setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
-        availableViews={enabledViews ?? undefined}
-        hideActions={!canManageBoard || readOnly}
-        publicView={publicView}
-        readOnly={readOnly}
-        titlePrefix={publicHeaderPrefix}
-      />
       <KanbanPresentation
         boardId={board.id}
         currentView={currentView}
+        header={
+          <BoardHeader
+            workspaceId={effectiveWorkspaceId}
+            board={board}
+            currentUserId={currentUserId}
+            currentView={currentView}
+            onViewChange={handleViewChange}
+            viewHotkeyLabels={viewHotkeyLabels}
+            filters={filters}
+            onFiltersChange={setFilters}
+            listStatusFilter={listStatusFilter}
+            onListStatusFilterChange={setListStatusFilter}
+            isPersonalWorkspace={workspace.personal}
+            isSearching={
+              !localTaskState &&
+              (isFullTasksFetching || isFilteredListCountsFetching)
+            }
+            onUpdate={handleUpdate}
+            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
+            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
+            availableViews={enabledViews ?? undefined}
+            hideActions={!canManageBoard || readOnly}
+            publicView={publicView}
+            readOnly={readOnly}
+            titlePrefix={publicHeaderPrefix}
+          />
+        }
         initialLayoutReady={initialKanbanLayoutReady}
       >
         {renderView()}

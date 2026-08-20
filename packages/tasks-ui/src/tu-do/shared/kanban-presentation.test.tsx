@@ -1,14 +1,17 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { KanbanPresentation } from './kanban-presentation';
 
 describe('KanbanPresentation', () => {
+  afterEach(() => vi.useRealTimers());
+
   it('shows one skeleton until the finalized layout is ready', () => {
     const { rerender } = render(
       <KanbanPresentation
         boardId="board-1"
         currentView="kanban"
+        header={<div data-testid="board-header" />}
         initialLayoutReady={false}
       >
         <div data-testid="kanban-view" />
@@ -17,11 +20,15 @@ describe('KanbanPresentation', () => {
 
     expect(screen.getByTestId('kanban-skeleton')).toBeInTheDocument();
     expect(screen.queryByTestId('kanban-view')).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-header').parentElement).toHaveClass(
+      'invisible'
+    );
 
     rerender(
       <KanbanPresentation
         boardId="board-1"
         currentView="kanban"
+        header={<div data-testid="board-header" />}
         initialLayoutReady
       >
         <div data-testid="kanban-view" />
@@ -30,6 +37,12 @@ describe('KanbanPresentation', () => {
 
     expect(screen.getByTestId('kanban-view')).toBeInTheDocument();
     expect(screen.queryByTestId('kanban-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-header').parentElement).not.toHaveClass(
+      'invisible'
+    );
+    expect(
+      screen.getByTestId('kanban-view').closest('[data-kanban-entrance]')
+    ).toHaveAttribute('data-kanban-entrance', 'active');
   });
 
   it('keeps settled content visible during background revalidation', () => {
@@ -37,6 +50,7 @@ describe('KanbanPresentation', () => {
       <KanbanPresentation
         boardId="board-1"
         currentView="kanban"
+        header={<div data-testid="board-header" />}
         initialLayoutReady
       >
         <div data-testid="kanban-view" />
@@ -47,6 +61,7 @@ describe('KanbanPresentation', () => {
       <KanbanPresentation
         boardId="board-1"
         currentView="kanban"
+        header={<div data-testid="board-header" />}
         initialLayoutReady={false}
       >
         <div data-testid="kanban-view" />
@@ -62,6 +77,7 @@ describe('KanbanPresentation', () => {
       <KanbanPresentation
         boardId="board-1"
         currentView="list"
+        header={<div data-testid="board-header" />}
         initialLayoutReady={false}
       >
         <div data-testid="list-view" />
@@ -70,5 +86,43 @@ describe('KanbanPresentation', () => {
 
     expect(screen.getByTestId('list-view')).toBeInTheDocument();
     expect(screen.queryByTestId('kanban-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByTestId('board-header').parentElement).not.toHaveClass(
+      'invisible'
+    );
+  });
+
+  it('ends the entrance window without replaying during revalidation', () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <KanbanPresentation
+        boardId="board-1"
+        currentView="kanban"
+        header={<div data-testid="board-header" />}
+        initialLayoutReady
+      >
+        <div data-testid="kanban-view" />
+      </KanbanPresentation>
+    );
+
+    const presentation = screen
+      .getByTestId('kanban-view')
+      .closest('[data-kanban-layout-restored]');
+    expect(presentation).toHaveAttribute('data-kanban-entrance', 'active');
+
+    act(() => vi.advanceTimersByTime(1600));
+    expect(presentation).not.toHaveAttribute('data-kanban-entrance');
+
+    rerender(
+      <KanbanPresentation
+        boardId="board-1"
+        currentView="kanban"
+        header={<div data-testid="board-header" />}
+        initialLayoutReady={false}
+      >
+        <div data-testid="kanban-view" />
+      </KanbanPresentation>
+    );
+
+    expect(presentation).not.toHaveAttribute('data-kanban-entrance');
   });
 });

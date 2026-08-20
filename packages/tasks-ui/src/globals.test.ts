@@ -39,6 +39,11 @@ describe('task UI Tailwind source boundary', () => {
 
     expect(taskGlobals).toContain('@import "@tuturuuu/ui/globals.css";');
     expect(taskGlobals).toContain('@source "./**/*.{ts,tsx}";');
+    expect(taskGlobals).toContain('@keyframes kanban-stream-content');
+    expect(taskGlobals).toContain(
+      '@media (prefers-reduced-motion: no-preference)'
+    );
+    expect(taskGlobals).toContain('[data-kanban-entrance="active"]');
   });
 
   it.each([
