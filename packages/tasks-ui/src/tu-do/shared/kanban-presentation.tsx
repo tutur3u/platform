@@ -1,8 +1,19 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { KanbanSkeleton } from '../boards/boardId/kanban/rendering/kanban-skeleton';
+import {
+  getServerTaskBoardSwitchTransition,
+  getTaskBoardSwitchTransition,
+  subscribeToTaskBoardSwitchTransition,
+} from './board-switch-transition';
 import type { ViewType } from './board-views';
 import { TaskBoardHeaderSkeleton } from './task-board-loading-state';
 
@@ -16,6 +27,11 @@ interface KanbanPresentationProps {
 
 const KANBAN_ENTRANCE_WINDOW_MS = 1900;
 
+type EntranceRun = {
+  boardId: string;
+  run: number;
+};
+
 export function KanbanPresentation({
   boardId,
   children,
@@ -24,27 +40,45 @@ export function KanbanPresentation({
   initialLayoutReady,
 }: KanbanPresentationProps) {
   const [readyBoardId, setReadyBoardId] = useState<string | null>(null);
-  const [enteringBoardId, setEnteringBoardId] = useState<string | null>(null);
+  const [entranceRun, setEntranceRun] = useState<EntranceRun | null>(null);
+  const entranceRunRef = useRef(0);
+  const handledSwitchSequenceRef = useRef(0);
+  const boardSwitchTransition = useSyncExternalStore(
+    subscribeToTaskBoardSwitchTransition,
+    getTaskBoardSwitchTransition,
+    getServerTaskBoardSwitchTransition
+  );
 
   useLayoutEffect(() => {
-    if (!initialLayoutReady || readyBoardId === boardId) return;
-    setReadyBoardId(boardId);
-    setEnteringBoardId(boardId);
-  }, [boardId, initialLayoutReady, readyBoardId]);
+    if (!initialLayoutReady) return;
+
+    const isNewBoard = readyBoardId !== boardId;
+    const isTargetedSwitch =
+      boardSwitchTransition.boardId === boardId &&
+      boardSwitchTransition.sequence > handledSwitchSequenceRef.current;
+    if (!isNewBoard && !isTargetedSwitch) return;
+
+    if (isNewBoard) setReadyBoardId(boardId);
+    if (isTargetedSwitch) {
+      handledSwitchSequenceRef.current = boardSwitchTransition.sequence;
+    }
+    entranceRunRef.current += 1;
+    setEntranceRun({ boardId, run: entranceRunRef.current });
+  }, [boardId, boardSwitchTransition, initialLayoutReady, readyBoardId]);
 
   useEffect(() => {
-    if (enteringBoardId !== boardId) return;
+    if (entranceRun?.boardId !== boardId) return;
 
     const timeout = window.setTimeout(
-      () => setEnteringBoardId(null),
+      () => setEntranceRun(null),
       KANBAN_ENTRANCE_WINDOW_MS
     );
     return () => window.clearTimeout(timeout);
-  }, [boardId, enteringBoardId]);
+  }, [boardId, entranceRun]);
 
   const ready = readyBoardId === boardId;
   const showSkeleton = currentView === 'kanban' && !ready;
-  const entering = currentView === 'kanban' && enteringBoardId === boardId;
+  const entering = currentView === 'kanban' && entranceRun?.boardId === boardId;
 
   return (
     <div

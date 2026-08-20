@@ -26,6 +26,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 import { useTasksHref } from '../tasks-route-context';
+import { announceTaskBoardSwitch } from './board-switch-transition';
 
 interface BoardSwitcherProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'name' | 'ws_id' | 'ticket_prefix'> & {
@@ -139,6 +140,7 @@ export function BoardSwitcher({ board, translations }: BoardSwitcherProps) {
         });
       }
 
+      announceTaskBoardSwitch(boardId);
       router.push(`/${targetWorkspaceId}${tasksHref(`/boards/${boardId}`)}`);
     },
     [

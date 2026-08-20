@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { announceTaskBoardSwitch } from './board-switch-transition';
 import { KanbanPresentation } from './kanban-presentation';
 
 describe('KanbanPresentation', () => {
@@ -172,5 +173,29 @@ describe('KanbanPresentation', () => {
     expect(
       screen.getByTestId('board-2-view').closest('[data-kanban-entrance]')
     ).toHaveAttribute('data-kanban-entrance', 'active');
+  });
+
+  it('replays the entrance when a previously cached board becomes active', () => {
+    vi.useFakeTimers();
+    render(
+      <KanbanPresentation
+        boardId="cached-board"
+        currentView="kanban"
+        header={<div data-testid="cached-board-header" />}
+        initialLayoutReady
+      >
+        <div data-testid="cached-board-view" />
+      </KanbanPresentation>
+    );
+
+    const presentation = screen
+      .getByTestId('cached-board-view')
+      .closest('[data-kanban-layout-restored]');
+    act(() => vi.advanceTimersByTime(1900));
+    expect(presentation).not.toHaveAttribute('data-kanban-entrance');
+
+    act(() => announceTaskBoardSwitch('cached-board'));
+
+    expect(presentation).toHaveAttribute('data-kanban-entrance', 'active');
   });
 });

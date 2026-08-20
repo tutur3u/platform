@@ -2,6 +2,7 @@ import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getTaskBoardSwitchTransition } from '../board-switch-transition';
 import { BoardSwitcher } from '../board-switcher';
 
 const {
@@ -214,6 +215,7 @@ describe('BoardSwitcher', () => {
 
     fireEvent.click(screen.getByTestId('board-combobox'));
 
+    expect(getTaskBoardSwitchTransition().boardId).toBe('board-2');
     expect(pushMock).toHaveBeenCalledWith('/ws-1/tasks/boards/board-2');
     expect(useUserWorkspaceConfigMock).toHaveBeenCalledWith(
       'ws-1',

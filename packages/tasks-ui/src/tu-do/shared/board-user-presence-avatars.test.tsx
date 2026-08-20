@@ -23,7 +23,7 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
 }));
 
 describe('BoardUserPresenceAvatars', () => {
-  it('keeps the complete realtime avatar image visible inside its frame', () => {
+  it('fills the realtime avatar frame without clipping its presence ring', () => {
     const presenceState = {
       'user-1': [
         {
@@ -49,9 +49,9 @@ describe('BoardUserPresenceAvatars', () => {
       />
     );
 
-    expect(screen.getByLabelText('Ada Lovelace')).toHaveClass(
-      'object-contain',
-      'p-0.5'
-    );
+    const avatarImage = screen.getByLabelText('Ada Lovelace');
+    expect(avatarImage).toHaveClass('object-cover');
+    expect(avatarImage).not.toHaveClass('p-0.5');
+    expect(avatarImage.parentElement).toHaveClass('ring-inset');
   });
 });
