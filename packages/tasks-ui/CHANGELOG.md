@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.13.0...tasks-ui-v0.13.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **tasks:** refine task card hover glow ([37ad336](https://github.com/tutur3u/platform/commit/37ad336209156e897752708af2683e0b0c7a235f))
+* **tasks:** remove hover hotkey ring ([523223a](https://github.com/tutur3u/platform/commit/523223a323939b4f0685c59f2af6c579dcd40555))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.12.1...tasks-ui-v0.13.0) (2026-08-20)
 
 

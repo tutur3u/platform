@@ -1,5 +1,5 @@
 {
-  ".": "0.40.0",
+  ".": "0.40.1",
   "apps/ai": "0.11.0",
   "apps/apps": "0.18.0",
   "apps/calendar": "0.27.0",
@@ -62,7 +62,7 @@
   "packages/storage-core": "0.2.0",
   "packages/supabase": "0.5.0",
   "packages/tasks-api": "0.4.2",
-  "packages/tasks-ui": "0.13.0",
+  "packages/tasks-ui": "0.13.1",
   "packages/transactional": "1.1.0",
   "packages/trigger": "0.3.0",
   "packages/turnstile": "0.1.1",
