@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.0](https://github.com/tutur3u/platform/compare/track-v0.23.1...track-v0.24.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** add searchable quick assignment menus ([5bfb7fb](https://github.com/tutur3u/platform/commit/5bfb7fbe87feff9759688dbd196efacb8d3702f5))
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.23.1](https://github.com/tutur3u/platform/compare/track-v0.23.0...track-v0.23.1) (2026-08-15)
 
 

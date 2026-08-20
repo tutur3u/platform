@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.3](https://github.com/tutur3u/platform/compare/users-ui-v0.7.2...users-ui-v0.7.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* **contacts:** sync attendance with schedule updates ([113326e](https://github.com/tutur3u/platform/commit/113326e31ce50e6859df2858f9738ad3b930d2a9))
+
 ## [0.7.2](https://github.com/tutur3u/platform/compare/users-ui-v0.7.1...users-ui-v0.7.2) (2026-08-11)
 
 

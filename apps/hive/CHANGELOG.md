@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/tutur3u/platform/compare/hive-v0.19.0...hive-v0.20.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.19.0](https://github.com/tutur3u/platform/compare/hive-v0.18.2...hive-v0.19.0) (2026-08-14)
 
 

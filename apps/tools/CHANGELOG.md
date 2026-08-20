@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/tools-v0.15.0...tools-v0.16.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/tools-v0.14.2...tools-v0.15.0) (2026-08-14)
 
 

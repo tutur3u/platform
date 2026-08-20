@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/tutur3u/platform/compare/git-v0.7.0...git-v0.8.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.7.0](https://github.com/tutur3u/platform/compare/git-v0.6.2...git-v0.7.0) (2026-08-14)
 
 

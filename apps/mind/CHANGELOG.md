@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/mind-v0.18.0...mind-v0.19.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
 ## [0.18.0](https://github.com/tutur3u/platform/compare/mind-v0.17.2...mind-v0.18.0) (2026-08-14)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/contacts-v0.17.0...contacts-v0.18.0) (2026-08-20)
+
+
+### Features
+
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+
+
+### Bug Fixes
+
+* **contacts:** sync attendance with schedule updates ([113326e](https://github.com/tutur3u/platform/commit/113326e31ce50e6859df2858f9738ad3b930d2a9))
+
 ## [0.17.0](https://github.com/tutur3u/platform/compare/contacts-v0.16.0...contacts-v0.17.0) (2026-08-15)
 
 

@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.12.1...tasks-ui-v0.13.0) (2026-08-20)
+
+
+### Features
+
+* **editor:** add copy format menu ([389a6f0](https://github.com/tutur3u/platform/commit/389a6f02d822feef271409a9ab31e8fcbb6ef18e))
+* **tasks:** add numeric shortcuts and cached board hydration ([97857ed](https://github.com/tutur3u/platform/commit/97857ed8543d0bc0c0779378fff41e61be40e00b))
+* **tasks:** add searchable quick assignment menus ([5bfb7fb](https://github.com/tutur3u/platform/commit/5bfb7fbe87feff9759688dbd196efacb8d3702f5))
+* **tasks:** add task card hotkeys and resilient resume ([a764c4b](https://github.com/tutur3u/platform/commit/a764c4bb204e5f6a8e1d55af7a67c8f2746b1dfc))
+* **tasks:** explain sorted drag ordering ([49350ad](https://github.com/tutur3u/platform/commit/49350ad5160de432eca0d42e582f9e54816fae11))
+* **tasks:** improve resource picker keyboard UX ([ff10cdd](https://github.com/tutur3u/platform/commit/ff10cddb6a49e17bac8fd8e1a671ca70d5498529))
+* **tasks:** stream board content into view ([a6e6952](https://github.com/tutur3u/platform/commit/a6e695257c0854e61f6b12578d1f47101cf14a20))
+
+
+### Bug Fixes
+
+* **editor:** contain toolbar overflow ([6bda614](https://github.com/tutur3u/platform/commit/6bda61416cbd2e4d4d4af7c7337d7b4e905274ef))
+* **tasks:** align create ordering and hover focus ([053546c](https://github.com/tutur3u/platform/commit/053546c5287e28bb28840167569e044aff02f3dd))
+* **tasks:** animate board switches and restore avatars ([0dba090](https://github.com/tutur3u/platform/commit/0dba0909af692ede2806e6f2c407197bbcd7b2e9))
+* **tasks:** animate cached board switches ([cc61f98](https://github.com/tutur3u/platform/commit/cc61f985697a5a8562d2dcd2fe6c968e7a771b96))
+* **tasks:** avoid cache hydration mismatch ([33a9b87](https://github.com/tutur3u/platform/commit/33a9b873c1b5dd8158ea31c670ea3444a506f1ed))
+* **tasks:** clear resource search before closing ([b9b4fd7](https://github.com/tutur3u/platform/commit/b9b4fd7144141addf7d6a1767f05b705772be176))
+* **tasks:** compact description usage ([d8ece8b](https://github.com/tutur3u/platform/commit/d8ece8bdf5208f422c8a6274aeae8b14124ac6fd))
+* **tasks:** keep submenu search focus current ([3e47720](https://github.com/tutur3u/platform/commit/3e47720c88c3bdf92d0d38f3f844b8ccd432f4a7))
+* **tasks:** preserve cached ticket prefixes ([59a4b31](https://github.com/tutur3u/platform/commit/59a4b3109046f910bd586aee8af3200afffcd65f))
+* **tasks:** preserve list collapse preferences ([cec15d0](https://github.com/tutur3u/platform/commit/cec15d09608fda552bfc616a16a9e86ea8761496))
+* **tasks:** preserve searched resource menus on escape ([126eca6](https://github.com/tutur3u/platform/commit/126eca61f7f5a93e1e5ca3d58e8f1d8bec2ce4a6))
+* **tasks:** preserve virtualized drag ordering ([b6643da](https://github.com/tutur3u/platform/commit/b6643da9bf21541296b5c8645788edfabda817ae))
+* **tasks:** refine board loading motion ([4d93dd0](https://github.com/tutur3u/platform/commit/4d93dd061236a8bf44e2fc014024b509149e152d))
+* **tasks:** restore kanban layout state ([4a30bee](https://github.com/tutur3u/platform/commit/4a30bee56e4419e95cabb635c784103e720647ae))
+* **tasks:** retain settled kanban position ([66f08c2](https://github.com/tutur3u/platform/commit/66f08c2682064d3135f43294a569e0ab939d35bf))
+* **tasks:** retain submenu search focus ([2576778](https://github.com/tutur3u/platform/commit/2576778ffd4bfdc1ee3158b8fa6364183bc44078))
+* **tasks:** stabilize kanban initial layout ([3d8ccf1](https://github.com/tutur3u/platform/commit/3d8ccf181deba8f0e6bce435d8b6d0cb24cf2166))
+* **tasks:** stabilize kanban restoration ([5307df9](https://github.com/tutur3u/platform/commit/5307df90cebbbf70bb79ad87e3eb4e5086271a36))
+* **tasks:** stabilize reopened task interactions ([9947da2](https://github.com/tutur3u/platform/commit/9947da26424979fd24b1340adbfc25a860184bf3))
+* **tasks:** stabilize submenu search focus ([b0b10cf](https://github.com/tutur3u/platform/commit/b0b10cf8eb9a227e00de6aded070212b8fdb990f))
+
 ## [0.12.1](https://github.com/tutur3u/platform/compare/tasks-ui-v0.12.0...tasks-ui-v0.12.1) (2026-08-16)
 
 
