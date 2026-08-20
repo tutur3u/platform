@@ -1995,7 +1995,6 @@ function TaskCardInner({
           !isResolvedListStatus &&
           !(!!task.closed_at || !!task.completed_at) &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
-        'data-[task-hotkey-target=true]:ring-2 data-[task-hotkey-target=true]:ring-primary/35',
         // Selection state - layered list-color feedback without a harsh outer outline
         isSelected &&
           cn(TASK_CARD_SELECTED_STATE_BASE_CLASSES, selectedCardToneClassName),

@@ -65,4 +65,13 @@ describe('task UI Tailwind source boundary', () => {
       'tasks-ui'
     );
   });
+
+  it('keeps hovered task cards on their border-colored glow without a hotkey ring', () => {
+    const taskCardSource = readRepoFile(
+      'packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card.tsx'
+    );
+
+    expect(taskCardSource).toContain('getCardColorClasses()');
+    expect(taskCardSource).not.toContain('data-[task-hotkey-target=true]:ring');
+  });
 });
