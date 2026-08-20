@@ -114,7 +114,7 @@ import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
 import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
 import { useTasksHref } from '../../../tasks-route-context';
 import {
-  getCardColorClasses as getCardColorClassesUtil,
+  getCardColorClasses as cardClasses,
   getListTextColorClass,
   getTicketBadgeColorClasses,
 } from '../../../utils/taskColorUtils';
@@ -223,7 +223,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
     <Card
       className={cn(
         'relative overflow-hidden rounded-lg border border-l-4 bg-background p-3 shadow-xs',
-        getCardColorClassesUtil(taskList, task.priority),
+        cardClasses(taskList, task.priority),
         task.closed_at && 'opacity-60 saturate-50'
       )}
       data-task-card-id={task.id}
@@ -1081,7 +1081,7 @@ function TaskCardInner({
   );
 
   const getCardColorClasses = () =>
-    getCardColorClassesUtil(taskList, task.priority);
+    cardClasses(taskList, task.priority, !isDragging && !isSelected);
 
   const {
     handleArchiveToggle,
@@ -1995,8 +1995,6 @@ function TaskCardInner({
           !isResolvedListStatus &&
           !(!!task.closed_at || !!task.completed_at) &&
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
-        // Hover state (no transitions)
-        !isDragging && !isSelected && 'hover:ring-1 hover:ring-primary/15',
         'data-[task-hotkey-target=true]:ring-2 data-[task-hotkey-target=true]:ring-primary/35',
         // Selection state - layered list-color feedback without a harsh outer outline
         isSelected &&
