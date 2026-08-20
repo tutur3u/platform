@@ -7,7 +7,7 @@ import {
 import { getBoardRealtimeChannelName } from '@tuturuuu/tasks-ui/hooks/useBoardRealtime.types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useLayoutEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
 import type {
@@ -28,6 +28,10 @@ import {
   type KanbanDeadlineSection,
 } from './kanban-deadline-panels';
 import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
+import {
+  readKanbanScrollPosition,
+  saveKanbanScrollPosition,
+} from './kanban-scroll-position';
 
 const KANBAN_COLUMN_GAP = '0.75rem';
 const COLLAPSED_SPECIAL_LIST_WIDTH = '3.5rem';
@@ -160,7 +164,9 @@ export function KanbanColumns({
   onHoveredTaskListChange,
   readOnly = false,
 }: KanbanColumnsProps) {
-  const initialScrollAnchoredBoardRef = useRef<string | null>(null);
+  const restoredScrollLayoutRef = useRef<string | null>(null);
+  const latestScrollLeftRef = useRef<number | null>(null);
+  const saveScrollFrameRef = useRef<number | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const deadlineSectionOrder: KanbanDeadlineSection[] = ['overdue', 'upcoming'];
   const deadlinePanelsEnabled =
@@ -236,22 +242,30 @@ export function KanbanColumns({
   const hasLeftSpecialColumns =
     reservedDeadlineSections.length > 0 ||
     columns.some((column) => column.is_external_staging);
+  const scrollLayoutKey = `${boardId}:${columns
+    .map((column) => `${column.id}:${isKanbanColumnCollapsed(column)}`)
+    .join('|')}:${reservedDeadlineSections
+    .map(
+      (section) => `${section}:${deadlineSectionsCollapsed?.[section] === true}`
+    )
+    .join('|')}`;
 
   useLayoutEffect(() => {
-    if (!hasLeftSpecialColumns) return;
-    if (initialScrollAnchoredBoardRef.current === boardId) return;
+    if (restoredScrollLayoutRef.current === scrollLayoutKey) return;
 
     const container = boardRef.current;
     if (!container) return;
-
-    const target = container.querySelector<HTMLElement>(
-      '[data-kanban-real-column="true"]'
-    );
-    if (!target) return;
-
-    initialScrollAnchoredBoardRef.current = boardId;
-
-    const anchor = () => {
+    const storedScrollLeft = readKanbanScrollPosition(boardId);
+    const restore = () => {
+      if (storedScrollLeft !== null) {
+        container.scrollLeft = storedScrollLeft;
+        return;
+      }
+      if (!hasLeftSpecialColumns) return;
+      const target = container.querySelector<HTMLElement>(
+        '[data-kanban-real-column="true"]'
+      );
+      if (!target) return;
       const pinnedRailWidth = getPinnedSpecialRailWidth(container);
       container.scrollLeft = Math.max(
         0,
@@ -259,19 +273,63 @@ export function KanbanColumns({
       );
     };
 
-    anchor();
+    restoredScrollLayoutRef.current = scrollLayoutKey;
+    restore();
 
     if (typeof window.requestAnimationFrame !== 'function') {
       return;
     }
 
-    const frame = window.requestAnimationFrame(anchor);
+    const frame = window.requestAnimationFrame(restore);
     return () => window.cancelAnimationFrame?.(frame);
-  }, [boardId, boardRef, hasLeftSpecialColumns]);
+  }, [boardId, boardRef, hasLeftSpecialColumns, scrollLayoutKey]);
+
+  const handleKanbanScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const scrollLeft = event.currentTarget.scrollLeft;
+      latestScrollLeftRef.current = scrollLeft;
+      if (saveScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame?.(saveScrollFrameRef.current);
+      }
+      if (typeof window.requestAnimationFrame !== 'function') {
+        saveKanbanScrollPosition(boardId, scrollLeft);
+        return;
+      }
+      saveScrollFrameRef.current = window.requestAnimationFrame(() => {
+        saveScrollFrameRef.current = null;
+        saveKanbanScrollPosition(boardId, scrollLeft);
+        latestScrollLeftRef.current = null;
+      });
+    },
+    [boardId]
+  );
+
+  useEffect(() => {
+    const flushPendingScroll = () => {
+      if (latestScrollLeftRef.current === null) return;
+      saveKanbanScrollPosition(boardId, latestScrollLeftRef.current);
+      latestScrollLeftRef.current = null;
+    };
+    const flushWhenHidden = () => {
+      if (document.visibilityState === 'hidden') flushPendingScroll();
+    };
+    window.addEventListener('pagehide', flushPendingScroll);
+    document.addEventListener('visibilitychange', flushWhenHidden);
+
+    return () => {
+      if (saveScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame?.(saveScrollFrameRef.current);
+      }
+      flushPendingScroll();
+      window.removeEventListener('pagehide', flushPendingScroll);
+      document.removeEventListener('visibilitychange', flushWhenHidden);
+    };
+  }, [boardId]);
 
   return (
     <div
       ref={boardRef}
+      onScroll={handleKanbanScroll}
       onPointerLeave={() => onHoveredTaskListChange?.(null)}
       className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative flex h-full w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth"
       style={

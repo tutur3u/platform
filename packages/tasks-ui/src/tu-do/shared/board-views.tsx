@@ -43,10 +43,7 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
-import type {
-  KanbanDeadlineCollapsedState,
-  KanbanDeadlineSection,
-} from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
+import type { KanbanDeadlineCollapsedState } from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
@@ -66,6 +63,7 @@ import {
   normalizeTaskQuickCreateTargetList,
 } from './task-quick-create-target-list';
 import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
+import { useKanbanLayoutState } from './use-kanban-layout-state';
 import { useTaskBoardListPreferences } from './use-task-board-list-preferences';
 
 export type ViewType =
@@ -83,13 +81,6 @@ const HOTKEY_GO_TO_MY_TASKS: ['G', 'M'] = ['G', 'M'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
 const HOTKEY_GO_TO_DRAFTS: ['G', 'D'] = ['G', 'D'];
 const HOTKEY_GO_TO_RECYCLE_BIN: ['G', 'R'] = ['G', 'R'];
-const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
-  'personal-board-external-tasks-collapsed';
-const TASK_LIST_COLLAPSED_STORAGE_PREFIX = 'task-board-list-collapsed';
-const LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
-  'task-board-closed-list-collapsed';
-const DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX =
-  'task-board-deadline-section-collapsed';
 const DEFAULT_TASK_FILTERS: TaskFilters = {
   labels: [],
   assignees: [],
@@ -103,24 +94,6 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   sourceWorkspaceIds: [],
   sourceBoardIds: [],
 };
-
-function getTaskListCollapsedStorageKey(boardId: string, listId: string) {
-  return `${TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
-}
-
-function getLegacyClosedTaskListCollapsedStorageKey(
-  boardId: string,
-  listId: string
-) {
-  return `${LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
-}
-
-function getDeadlineSectionCollapsedStorageKey(
-  boardId: string,
-  section: KanbanDeadlineSection
-) {
-  return `${DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX}:${boardId}:${section}`;
-}
 
 function taskMatchesLocalFilters(
   task: Task,
@@ -291,12 +264,6 @@ export function BoardViews({
   const queryClient = useQueryClient();
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [externalTasksCollapsed, setExternalTasksCollapsed] = useState(false);
-  const [taskListsCollapsed, setTaskListsCollapsed] = useState<
-    Record<string, boolean>
-  >({});
-  const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
-    useState<KanbanDeadlineCollapsedState>({});
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
@@ -310,6 +277,9 @@ export function BoardViews({
     null
   );
   const previousHideEmptyPreferenceRef = useRef<boolean | null>(null);
+  const manualCollapseChangeRef = useRef<
+    (listId: string, collapsed: boolean) => void
+  >(() => undefined);
   const { createTask } = useTaskDialog();
   const localTaskState = readOnly || publicView;
   const { data: quickCreateTargetListRaw } = useUserConfig(
@@ -573,6 +543,23 @@ export function BoardViews({
     staleTime: Infinity,
   });
 
+  const {
+    deadlineSectionsCollapsed,
+    externalTasksCollapsed,
+    handleDeadlineSectionCollapsedChange,
+    handleExternalTasksCollapsedChange,
+    handleTaskListCollapsedChange,
+    kanbanLayoutRestored,
+    setTaskListsCollapsed,
+    taskListsCollapsed,
+  } = useKanbanLayoutState({
+    boardId: board.id,
+    lists: boardLists,
+    manualCollapseChangeRef,
+    persistCollapsedTaskLists,
+    personalWorkspace: workspace.personal,
+  });
+
   useEffect(() => {
     queryClient.setQueryData(['task_lists', board.id], initialTaskLists);
   }, [board.id, initialTaskLists, queryClient]);
@@ -647,149 +634,6 @@ export function BoardViews({
         : rest;
     });
   }, [hideEmptyTaskListsByDefault]);
-
-  useLayoutEffect(() => {
-    if (!workspace.personal || typeof window === 'undefined') {
-      setExternalTasksCollapsed(false);
-      return;
-    }
-
-    const storedValue = persistCollapsedTaskLists
-      ? window.localStorage.getItem(
-          `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`
-        )
-      : null;
-    const storedPreference =
-      storedValue === null ? null : storedValue === 'true';
-
-    setExternalTasksCollapsed(storedPreference ?? true);
-  }, [board.id, persistCollapsedTaskLists, workspace.personal]);
-
-  const handleExternalTasksCollapsedChange = useCallback(
-    (collapsed: boolean) => {
-      setExternalTasksCollapsed(collapsed);
-
-      if (
-        !persistCollapsedTaskLists ||
-        !workspace.personal ||
-        typeof window === 'undefined'
-      )
-        return;
-
-      window.localStorage.setItem(
-        `${EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX}:${board.id}`,
-        String(collapsed)
-      );
-    },
-    [board.id, persistCollapsedTaskLists, workspace.personal]
-  );
-
-  useLayoutEffect(() => {
-    const visibleLists = boardLists.filter((list) => !list.deleted);
-
-    if (visibleLists.length === 0) {
-      setTaskListsCollapsed({});
-      return;
-    }
-
-    setTaskListsCollapsed((previous) => {
-      const next: Record<string, boolean> = {};
-
-      for (const list of visibleLists) {
-        const storedValue =
-          persistCollapsedTaskLists && typeof window !== 'undefined'
-            ? (window.localStorage.getItem(
-                getTaskListCollapsedStorageKey(board.id, list.id)
-              ) ??
-              (list.status === 'closed'
-                ? window.localStorage.getItem(
-                    getLegacyClosedTaskListCollapsedStorageKey(
-                      board.id,
-                      list.id
-                    )
-                  )
-                : null))
-            : null;
-
-        next[list.id] =
-          storedValue === null
-            ? (previous[list.id] ?? list.status === 'closed')
-            : storedValue === 'true';
-      }
-
-      return next;
-    });
-  }, [board.id, boardLists, persistCollapsedTaskLists]);
-
-  const manualCollapseChangeRef = useRef<
-    (listId: string, collapsed: boolean) => void
-  >(() => undefined);
-  const handleTaskListCollapsedChange = useCallback(
-    (listId: string, collapsed: boolean) => {
-      manualCollapseChangeRef.current(listId, collapsed);
-      setTaskListsCollapsed((previous) => ({
-        ...previous,
-        [listId]: collapsed,
-      }));
-
-      if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
-
-      window.localStorage.setItem(
-        getTaskListCollapsedStorageKey(board.id, listId),
-        String(collapsed)
-      );
-      if (
-        boardLists.some(
-          (list) => list.id === listId && list.status === 'closed'
-        )
-      ) {
-        window.localStorage.setItem(
-          getLegacyClosedTaskListCollapsedStorageKey(board.id, listId),
-          String(collapsed)
-        );
-      }
-    },
-    [board.id, boardLists, persistCollapsedTaskLists]
-  );
-
-  useLayoutEffect(() => {
-    setDeadlineSectionsCollapsed((previous) => {
-      const next: KanbanDeadlineCollapsedState = {};
-
-      for (const section of ['overdue', 'upcoming'] as const) {
-        const storedValue =
-          !persistCollapsedTaskLists || typeof window === 'undefined'
-            ? null
-            : window.localStorage.getItem(
-                getDeadlineSectionCollapsedStorageKey(board.id, section)
-              );
-
-        next[section] =
-          storedValue === null
-            ? (previous[section] ?? true)
-            : storedValue === 'true';
-      }
-
-      return next;
-    });
-  }, [board.id, persistCollapsedTaskLists]);
-
-  const handleDeadlineSectionCollapsedChange = useCallback(
-    (section: KanbanDeadlineSection, collapsed: boolean) => {
-      setDeadlineSectionsCollapsed((previous) => ({
-        ...previous,
-        [section]: collapsed,
-      }));
-
-      if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
-
-      window.localStorage.setItem(
-        getDeadlineSectionCollapsedStorageKey(board.id, section),
-        String(collapsed)
-      );
-    },
-    [board.id, persistCollapsedTaskLists]
-  );
 
   const externalStagingList = useMemo<TaskList | null>(() => {
     if (!workspace.personal) return null;
@@ -1333,7 +1177,19 @@ export function BoardViews({
         readOnly={readOnly}
         titlePrefix={publicHeaderPrefix}
       />
-      <div className="h-full overflow-hidden">{renderView()}</div>
+      <div
+        className="h-full overflow-hidden"
+        data-kanban-layout-restored={
+          currentView === 'kanban' ? String(kanbanLayoutRestored) : undefined
+        }
+        style={
+          currentView === 'kanban' && !kanbanLayoutRestored
+            ? { visibility: 'hidden' }
+            : undefined
+        }
+      >
+        {renderView()}
+      </div>
       {showIdleBottomIsland ? idleBottomIsland : null}
     </div>
   );
