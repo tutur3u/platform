@@ -288,7 +288,11 @@ function PresenceAvatar({
                 )}
               >
                 {user.avatar_url ? (
-                  <AvatarImage src={user.avatar_url} alt={displayName} />
+                  <AvatarImage
+                    src={user.avatar_url}
+                    alt={displayName}
+                    className="bg-background object-contain p-0.5"
+                  />
                 ) : null}
                 <AvatarFallback
                   className={cn(
@@ -378,7 +382,11 @@ function PresenceAvatar({
             )}
           >
             {user.avatar_url ? (
-              <AvatarImage src={user.avatar_url} alt={displayName} />
+              <AvatarImage
+                src={user.avatar_url}
+                alt={displayName}
+                className="bg-background object-contain p-0.5"
+              />
             ) : null}
             <AvatarFallback className="font-semibold text-foreground text-xs">
               {user.display_name || user.email ? (

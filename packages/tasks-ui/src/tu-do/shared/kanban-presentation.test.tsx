@@ -129,4 +129,48 @@ describe('KanbanPresentation', () => {
 
     expect(presentation).not.toHaveAttribute('data-kanban-entrance');
   });
+
+  it('replaces the animated presentation nodes when switching boards', () => {
+    const { rerender } = render(
+      <KanbanPresentation
+        boardId="board-1"
+        currentView="kanban"
+        header={<div data-testid="board-1-header" />}
+        initialLayoutReady
+      >
+        <div data-testid="board-1-view" />
+      </KanbanPresentation>
+    );
+
+    const firstHeader = screen
+      .getByTestId('board-1-header')
+      .closest('[data-kanban-board-header]');
+    const firstBody = screen
+      .getByTestId('board-1-view')
+      .closest('[data-kanban-board-body]');
+
+    rerender(
+      <KanbanPresentation
+        boardId="board-2"
+        currentView="kanban"
+        header={<div data-testid="board-2-header" />}
+        initialLayoutReady
+      >
+        <div data-testid="board-2-view" />
+      </KanbanPresentation>
+    );
+
+    const secondHeader = screen
+      .getByTestId('board-2-header')
+      .closest('[data-kanban-board-header]');
+    const secondBody = screen
+      .getByTestId('board-2-view')
+      .closest('[data-kanban-board-body]');
+
+    expect(secondHeader).not.toBe(firstHeader);
+    expect(secondBody).not.toBe(firstBody);
+    expect(
+      screen.getByTestId('board-2-view').closest('[data-kanban-entrance]')
+    ).toHaveAttribute('data-kanban-entrance', 'active');
+  });
 });

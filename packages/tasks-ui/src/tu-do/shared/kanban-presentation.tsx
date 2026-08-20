@@ -57,9 +57,15 @@ export function KanbanPresentation({
       {showSkeleton ? (
         <TaskBoardHeaderSkeleton className="-mt-2" />
       ) : (
-        <div data-kanban-board-header="true">{header}</div>
+        <div key={boardId} data-kanban-board-header="true">
+          {header}
+        </div>
       )}
-      <div className="min-h-0 flex-1 overflow-hidden" data-kanban-board-body>
+      <div
+        key={`${boardId}-body`}
+        className="min-h-0 flex-1 overflow-hidden"
+        data-kanban-board-body
+      >
         {showSkeleton ? <KanbanSkeleton root /> : children}
       </div>
     </div>
