@@ -16,7 +16,6 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   getPersonalExternalStagingBoardId,
-  getPersonalExternalStagingListId,
   isPersonalExternalStagingListId,
 } from '@tuturuuu/utils/task-helper';
 import { hasDraggableData } from '@tuturuuu/utils/task-helpers';
@@ -29,6 +28,7 @@ import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
 import {
   applyTaskDropPreviewToCache,
+  getPersonalPlacementDropTask,
   hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   setBoardTaskCache,
@@ -77,6 +77,7 @@ import {
 export {
   applyTaskDropPreviewToCache,
   getTaskDropPreviewCacheTasks,
+  getTaskTerminalFieldsForList,
   hasTaskLocalMutationAt,
   mergePersonalPlacementMutationTask,
   mergeTaskIntoBoardTaskCache,
@@ -470,20 +471,14 @@ export function useKanbanDnd({
         targetList?.status === 'done' || targetList?.status === 'closed'
           ? targetList.status
           : undefined;
-      const nextTask = {
-        ...task,
-        list_id: isStagingTarget
-          ? getPersonalExternalStagingListId(targetBoardId)
-          : targetListId,
-        sort_key: isStagingTarget ? null : newSortKey,
-        personal_board_id: targetBoardId,
-        personal_list_id: isStagingTarget ? null : targetListId,
-        personal_sort_key: isStagingTarget ? null : newSortKey,
-        personal_placed_at: isStagingTarget ? null : new Date().toISOString(),
-        is_personal_external: true,
-        is_personal_external_default: isStagingTarget,
-        _localMutationAt: Date.now(),
-      } as Task & { _localMutationAt: number };
+      const nextTask = getPersonalPlacementDropTask({
+        isStagingTarget,
+        newSortKey,
+        targetBoardId,
+        targetList,
+        targetListId,
+        task,
+      });
 
       const previousTasks = queryClient.getQueryData<Task[]>([
         'tasks',

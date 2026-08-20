@@ -648,7 +648,7 @@ export function BoardViews({
     });
   }, [hideEmptyTaskListsByDefault]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!workspace.personal || typeof window === 'undefined') {
       setExternalTasksCollapsed(false);
       return;
@@ -684,7 +684,7 @@ export function BoardViews({
     [board.id, persistCollapsedTaskLists, workspace.personal]
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const visibleLists = boardLists.filter((list) => !list.deleted);
 
     if (visibleLists.length === 0) {
@@ -752,7 +752,7 @@ export function BoardViews({
     [board.id, boardLists, persistCollapsedTaskLists]
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setDeadlineSectionsCollapsed((previous) => {
       const next: KanbanDeadlineCollapsedState = {};
 

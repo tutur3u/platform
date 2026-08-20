@@ -156,6 +156,7 @@ import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
+import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
   getTaskCardHydratingOpenOptions,
@@ -381,6 +382,7 @@ function TaskCardInner({
     relationshipMenusOpen.dependencies ||
     relationshipMenusOpen.related;
   const cardElementRef = useRef<HTMLDivElement | null>(null);
+  const { armContextMenuGuard, handleMenuItemSelect } = useTaskCardMenuGuard();
   const handleHotkeyAction = useCallback((action: TaskCardHotkeyAction) => {
     setHotkeyAction(action);
     setMenuOpen(true);
@@ -394,11 +396,6 @@ function TaskCardInner({
   const { createSubtask } = useTaskDialogContext();
 
   const { openTask, openTaskById } = useTaskDialog();
-
-  const handleMenuItemSelect = useCallback(
-    (_event: Event, action: () => void) => action(),
-    []
-  );
 
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
@@ -1973,8 +1970,8 @@ function TaskCardInner({
         e.preventDefault();
         e.stopPropagation();
         // Open the context menu (actions dropdown) and guard first click briefly
+        setMenuGuardUntil(armContextMenuGuard());
         setMenuOpen(true);
-        setMenuGuardUntil(Date.now() + 300);
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
       {...(sortableDisabled ? {} : attributes)}
