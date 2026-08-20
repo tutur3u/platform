@@ -82,11 +82,12 @@ vi.mock('../progressive-loader-context', () => ({
     pagination: progressivePagination,
   }),
 }));
-
+vi.mock('../kanban-presentation', () => ({
+  KanbanPresentation: (p: any) => p.children,
+}));
 vi.mock('../board-header', () => ({
   BoardHeader: (props: any) => {
     boardHeaderProps = props;
-
     return (
       <div data-testid="board-header">
         <input data-testid="board-header-input" />
@@ -230,7 +231,6 @@ function renderBoardViews(overrides?: {
       },
     },
   });
-
   const result = render(
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>

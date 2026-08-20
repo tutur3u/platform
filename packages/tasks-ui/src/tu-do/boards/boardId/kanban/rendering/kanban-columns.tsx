@@ -257,12 +257,8 @@ export function KanbanColumns({
     const container = boardRef.current;
     if (!container) return;
     const previousScrollBehavior = container.style.scrollBehavior;
-    const previousOpacity = container.style.opacity;
-    const previousPointerEvents = container.style.pointerEvents;
     restoringScrollRef.current = true;
     container.style.scrollBehavior = 'auto';
-    container.style.opacity = '0';
-    container.style.pointerEvents = 'none';
     const storedScrollLeft = readKanbanScrollPosition(boardId);
     const restore = () => {
       if (storedScrollLeft !== null) {
@@ -283,36 +279,22 @@ export function KanbanColumns({
 
     restoredScrollLayoutRef.current = scrollLayoutKey;
     restore();
+    container.style.scrollBehavior = previousScrollBehavior;
 
     if (typeof window.requestAnimationFrame !== 'function') {
-      container.style.scrollBehavior = previousScrollBehavior;
-      container.style.opacity = previousOpacity;
-      container.style.pointerEvents = previousPointerEvents;
       restoringScrollRef.current = false;
       return;
     }
 
     const restoreFrame = window.requestAnimationFrame(() => {
+      container.style.scrollBehavior = 'auto';
       restore();
+      container.style.scrollBehavior = previousScrollBehavior;
+      restoringScrollRef.current = false;
     });
-    let finalFrame: number | null = null;
-    const settleTimer = window.setTimeout(() => {
-      restore();
-      finalFrame = window.requestAnimationFrame(() => {
-        restore();
-        container.style.scrollBehavior = previousScrollBehavior;
-        container.style.opacity = previousOpacity;
-        container.style.pointerEvents = previousPointerEvents;
-        restoringScrollRef.current = false;
-      });
-    }, 250);
     return () => {
       window.cancelAnimationFrame?.(restoreFrame);
-      window.clearTimeout(settleTimer);
-      if (finalFrame !== null) window.cancelAnimationFrame?.(finalFrame);
       container.style.scrollBehavior = previousScrollBehavior;
-      container.style.opacity = previousOpacity;
-      container.style.pointerEvents = previousPointerEvents;
       restoringScrollRef.current = false;
     };
   }, [boardId, boardRef, hasLeftSpecialColumns, scrollLayoutKey]);

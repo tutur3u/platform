@@ -53,6 +53,7 @@ import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
+import { KanbanPresentation } from './kanban-presentation';
 import {
   parseSpecialTaskListPins,
   type SpecialTaskListPin,
@@ -291,6 +292,7 @@ export function BoardViews({
     persistCollapsedTaskLists,
     hideEmptyTaskListsByDefault,
     autoCollapseEmptyTaskLists,
+    taskBoardListPreferencesReady,
   } = useTaskBoardListPreferences(localTaskState);
   const boardAssigneesEnabled =
     !workspace.personal ||
@@ -304,12 +306,13 @@ export function BoardViews({
           ? 'board'
           : 'workspace-and-board'
         : 'workspace';
-  const { data: pinnedSpecialListsRaw } = useUserWorkspaceConfig(
-    effectiveWorkspaceId,
-    TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
-    null,
-    { enabled: !localTaskState }
-  );
+  const { data: pinnedSpecialListsRaw, isPending: pinnedSpecialListsPending } =
+    useUserWorkspaceConfig(
+      effectiveWorkspaceId,
+      TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
+      null,
+      { enabled: !localTaskState }
+    );
   const updateUserWorkspaceConfig = useUpdateUserWorkspaceConfig();
   const specialTaskListPins = useMemo(
     () => parseSpecialTaskListPins(pinnedSpecialListsRaw),
@@ -520,7 +523,11 @@ export function BoardViews({
     ]
   );
 
-  const { data: fullTasks = [], isFetching: isFullTasksFetching } = useQuery({
+  const {
+    data: fullTasks = [],
+    isFetching: isFullTasksFetching,
+    isPending: isFullTasksPending,
+  } = useQuery({
     queryKey: ['tasks-full', board.id, taskFilterKey],
     enabled: !localTaskState && shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
@@ -688,29 +695,43 @@ export function BoardViews({
       [deadlineSectionsCollapsed.overdue, deadlineSectionsCollapsed.upcoming]
     );
 
-  const { data: filteredListCounts, isFetching: isFilteredListCountsFetching } =
-    useQuery({
-      queryKey: ['task-list-counts', board.id, taskFilterKey],
-      enabled:
-        !localTaskState &&
-        Boolean(
-          hasTaskFilters ||
-            filters.hideEmptyTaskLists ||
-            autoCollapseEmptyTaskLists
-        ),
-      queryFn: async () => {
-        const result = await listWorkspaceTasks(effectiveWorkspaceId, {
-          ...taskQueryOptions,
-          boardId: board.id,
-          includeListCounts: true,
-          includeRelationshipSummary: false,
-          limit: 0,
-          listStatuses: listStatusesForQuery,
-        });
-        return result.listCounts ?? [];
-      },
-      staleTime: 30_000,
-    });
+  const {
+    data: filteredListCounts,
+    isFetching: isFilteredListCountsFetching,
+    isPending: isFilteredListCountsPending,
+  } = useQuery({
+    queryKey: ['task-list-counts', board.id, taskFilterKey],
+    enabled:
+      !localTaskState &&
+      Boolean(
+        hasTaskFilters ||
+          filters.hideEmptyTaskLists ||
+          autoCollapseEmptyTaskLists
+      ),
+    queryFn: async () => {
+      const result = await listWorkspaceTasks(effectiveWorkspaceId, {
+        ...taskQueryOptions,
+        boardId: board.id,
+        includeListCounts: true,
+        includeRelationshipSummary: false,
+        limit: 0,
+        listStatuses: listStatusesForQuery,
+      });
+      return result.listCounts ?? [];
+    },
+    staleTime: 30_000,
+  });
+
+  const initialKanbanLayoutReady =
+    kanbanLayoutRestored &&
+    taskBoardListPreferencesReady &&
+    (localTaskState || !pinnedSpecialListsPending) &&
+    (localTaskState ||
+      ((!shouldEagerLoadTasks || !isFullTasksPending) &&
+        ((!hasTaskFilters &&
+          !filters.hideEmptyTaskLists &&
+          !autoCollapseEmptyTaskLists) ||
+          !isFilteredListCountsPending)));
 
   const recordManualCollapseChange = useAutoCollapseEmptyTaskLists({
     collapsed: taskListsCollapsed,
@@ -1111,37 +1132,6 @@ export function BoardViews({
             wsId={effectiveWorkspaceId}
           />
         );
-      default:
-        return (
-          <KanbanBoard
-            workspace={workspace}
-            workspaceTier={workspaceTier}
-            workspaceId={effectiveWorkspaceId}
-            boardId={board.id}
-            tasks={effectiveTasks}
-            lists={filteredLists}
-            isLoading={false}
-            disableSort={!!filters.sortBy}
-            onFiltersChange={setFilters}
-            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
-            listStatusFilter={listStatusFilter}
-            filters={filters}
-            isMultiSelectMode={readOnly ? false : isMultiSelectMode}
-            setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
-            onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
-            onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
-            onDeadlineSectionCollapsedChange={
-              handleDeadlineSectionCollapsedChange
-            }
-            specialTaskListPins={specialTaskListPins}
-            onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
-            onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
-            canUseBoardAssignees={boardAssigneesEnabled}
-            assigneeMemberSource={assigneeMemberSource}
-            readOnly={readOnly}
-          />
-        );
     }
   };
   const showIdleBottomIsland =
@@ -1177,19 +1167,13 @@ export function BoardViews({
         readOnly={readOnly}
         titlePrefix={publicHeaderPrefix}
       />
-      <div
-        className="h-full overflow-hidden"
-        data-kanban-layout-restored={
-          currentView === 'kanban' ? String(kanbanLayoutRestored) : undefined
-        }
-        style={
-          currentView === 'kanban' && !kanbanLayoutRestored
-            ? { visibility: 'hidden' }
-            : undefined
-        }
+      <KanbanPresentation
+        boardId={board.id}
+        currentView={currentView}
+        initialLayoutReady={initialKanbanLayoutReady}
       >
         {renderView()}
-      </div>
+      </KanbanPresentation>
       {showIdleBottomIsland ? idleBottomIsland : null}
     </div>
   );

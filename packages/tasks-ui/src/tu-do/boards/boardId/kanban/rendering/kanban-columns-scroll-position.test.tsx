@@ -69,7 +69,6 @@ describe('KanbanColumns scroll position', () => {
   beforeEach(() => window.localStorage.clear());
 
   it('restores and saves the last horizontal position for each board', () => {
-    vi.useFakeTimers();
     const frameCallbacks: FrameRequestCallback[] = [];
     const originalRequestAnimationFrame = window.requestAnimationFrame;
     const originalCancelAnimationFrame = window.cancelAnimationFrame;
@@ -85,28 +84,17 @@ describe('KanbanColumns scroll position', () => {
       const scrollContainer = container.firstElementChild as HTMLElement;
 
       expect(scrollContainer.scrollLeft).toBe(784);
-      expect(scrollContainer.style.scrollBehavior).toBe('auto');
-      expect(scrollContainer.style.opacity).toBe('0');
-      expect(scrollContainer.style.pointerEvents).toBe('none');
-      act(() => {
-        for (const callback of frameCallbacks.splice(0)) callback(0);
-      });
-      expect(scrollContainer.scrollLeft).toBe(784);
-      expect(scrollContainer.style.scrollBehavior).toBe('auto');
-      expect(scrollContainer.style.opacity).toBe('0');
-      expect(scrollContainer.style.pointerEvents).toBe('none');
+      expect(scrollContainer.style.scrollBehavior).toBe('');
+      expect(scrollContainer.style.opacity).toBe('');
+      expect(scrollContainer.style.pointerEvents).toBe('');
       scrollContainer.scrollLeft = 120;
       fireEvent.scroll(scrollContainer);
       expect(
         window.localStorage.getItem(getKanbanScrollStorageKey('board-1'))
       ).toBe('784');
-      act(() => vi.advanceTimersByTime(250));
       act(() => {
         for (const callback of frameCallbacks.splice(0)) callback(0);
       });
-      expect(scrollContainer.style.scrollBehavior).toBe('');
-      expect(scrollContainer.style.opacity).toBe('');
-      expect(scrollContainer.style.pointerEvents).toBe('');
 
       scrollContainer.scrollLeft = 1064;
       fireEvent.scroll(scrollContainer);
@@ -130,7 +118,6 @@ describe('KanbanColumns scroll position', () => {
     } finally {
       window.requestAnimationFrame = originalRequestAnimationFrame;
       window.cancelAnimationFrame = originalCancelAnimationFrame;
-      vi.useRealTimers();
     }
   });
 });
