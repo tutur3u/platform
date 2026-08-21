@@ -1,13 +1,13 @@
 import { Move } from '@tuturuuu/icons';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useState } from 'react';
 import { clearTaskCommandSearchOnEscape } from '../../../shared/task-command-search-input';
 import { TaskListPickerPanel } from '../../../shared/task-edit-dialog/components/task-list-picker-panel';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskMoveMenuProps {
   forceOpen?: boolean;
@@ -43,7 +43,7 @@ export function TaskMoveMenu({
   }
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="move" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <div className="h-4 w-4">
           <Move className="h-4 w-4 text-dynamic-blue" />
@@ -74,6 +74,6 @@ export function TaskMoveMenu({
           enableNumericShortcuts={!!forceOpen}
         />
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

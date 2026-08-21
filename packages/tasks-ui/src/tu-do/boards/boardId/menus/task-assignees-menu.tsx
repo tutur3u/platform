@@ -8,7 +8,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -23,6 +22,7 @@ import {
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
 import { memberMatchesSearchQuery } from '../../../shared/task-resource-search-filters';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface Member {
   id: string;
@@ -111,7 +111,7 @@ export function TaskAssigneesMenu({
     );
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="assignees" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <UserStar className="h-4 w-4 text-dynamic-yellow" />
         {t.assignees}
@@ -209,6 +209,6 @@ export function TaskAssigneesMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

@@ -17,7 +17,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
-import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-external';
 import { getTaskApiUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -259,15 +258,8 @@ export function TaskEditDialog({
 }: TaskEditDialogProps) {
   const isCreateMode = mode === 'create';
   const effectiveTaskWsId = !isCreateMode ? (taskWsId ?? wsId) : wsId;
-  const relationshipTask = task
-    ? ({ ...task, ...visibleTaskSnapshot } as Task)
-    : undefined;
   const relationshipWorkspaceId =
-    !isCreateMode &&
-    isPersonalWorkspace &&
-    isPersonalExternalOverlayTask(relationshipTask)
-      ? wsId
-      : effectiveTaskWsId;
+    !isCreateMode && isPersonalWorkspace ? wsId : effectiveTaskWsId;
   const pathname = usePathname();
   const locale = useLocale();
   const queryClient = useQueryClient();

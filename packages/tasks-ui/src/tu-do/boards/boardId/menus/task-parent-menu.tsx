@@ -10,7 +10,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -23,6 +22,7 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskParentMenuTranslations {
   parent_task: string;
@@ -114,7 +114,10 @@ export function TaskParentMenu({
   );
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="parent"
+      onOpenChange={handleSubContentOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <ArrowUpCircle className="h-4 w-4 text-dynamic-purple" />
         {translations.parent_task}
@@ -231,6 +234,6 @@ export function TaskParentMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

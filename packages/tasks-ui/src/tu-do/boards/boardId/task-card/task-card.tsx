@@ -45,7 +45,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -139,6 +138,7 @@ import {
   TaskRelatedMenu,
   TaskSchedulingMenu,
 } from '../menus';
+import { TaskSubmenuContent } from '../menus/task-submenu-controller';
 import { TaskActions } from '../task-actions';
 import { TaskCustomDateDialog } from '../task-dialogs/TaskCustomDateDialog';
 import { TaskDeleteDialog } from '../task-dialogs/TaskDeleteDialog';
@@ -412,6 +412,7 @@ function TaskCardInner({
   } = getTaskCardResourceContext({
     boardId,
     pageWorkspaceId,
+    preferPageWorkspaceResources: isPersonalWorkspace,
     propAvailableLists,
     task,
   });
@@ -483,7 +484,7 @@ function TaskCardInner({
         (!isSourceWorkspaceTask ||
           relationshipWorkspaceId !== effectiveWorkspaceId ||
           taskProjectIds.length > 0),
-      staleTime: 5 * 60 * 1000, // 5 minutes - projects rarely change
+      staleTime: 5 * 60 * 1000,
     }
   );
 
@@ -578,7 +579,6 @@ function TaskCardInner({
     isInViewport &&
     (isAnyRelationshipMenuOpen || relationshipSummary.blocked_by_count > 0);
 
-  // Use task relationships hook for managing parent/child/blocking/related tasks
   const {
     parentTask,
     childTasks,
@@ -1759,14 +1759,12 @@ function TaskCardInner({
   const showBlockedByUnderTitle =
     showBlockedByCallout && !showBlockedByInlineWithCheckbox;
 
-  // Get all tasks from query to subscribe to cache updates
   const { data: allTasksFromQuery } = useQuery({
     queryKey: ['tasks', boardId],
     queryFn: () => [], // No-op function - we only want to read from cache
     enabled: false, // Don't fetch, just subscribe to cache
   });
 
-  // Compute collective attributes for bulk operations
   const {
     displayLabels,
     displayProjects,
@@ -1861,9 +1859,11 @@ function TaskCardInner({
     allTasksFromQuery,
   ]);
 
-  const availableLabelsForMenu = useMemo(() => {
-    return mergeTaskCardLabelOptions(workspaceLabels, displayLabels);
-  }, [workspaceLabels, displayLabels]);
+  const availableLabelsForMenu = mergeTaskCardLabelOptions(
+    workspaceLabels,
+    displayLabels,
+    { includeTaskOnlyLabels: relationshipWorkspaceId === effectiveWorkspaceId }
+  );
 
   const blockedByCluster = (
     <div className="relative overflow-hidden rounded-md border border-dynamic-red/16 bg-dynamic-red/[0.045] px-2 py-1.5">
@@ -2101,7 +2101,8 @@ function TaskCardInner({
                     <MoreHorizontal className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
+                <TaskSubmenuContent
+                  requestedId={hotkeyAction}
                   align="end"
                   className="w-56"
                   sideOffset={5}
@@ -2523,7 +2524,7 @@ function TaskCardInner({
                       />
                     </>
                   )}
-                </DropdownMenuContent>
+                </TaskSubmenuContent>
               </DropdownMenu>
             )}
           </div>

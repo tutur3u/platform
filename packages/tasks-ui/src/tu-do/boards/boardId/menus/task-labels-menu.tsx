@@ -7,7 +7,6 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -23,6 +22,7 @@ import {
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
 import { labelNameMatchesQuery } from '../../../shared/task-resource-search-filters';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskLabelsMenuProps {
   forceOpen?: boolean;
@@ -75,7 +75,7 @@ export function TaskLabelsMenu({
     );
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="labels" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <Tag className="h-4 w-4 text-dynamic-cyan" />
         {t.labels}
@@ -167,6 +167,6 @@ export function TaskLabelsMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

@@ -6,7 +6,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -28,6 +27,7 @@ import {
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
 import { calculateDaysUntilEndOfWeek } from '../../../utils/weekDateUtils';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskDueDateMenuProps {
   forceOpen?: boolean;
@@ -175,7 +175,7 @@ export function TaskDueDateMenu({
       : t.none;
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="due_date" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Calendar className="h-4 w-4 text-dynamic-purple" />
@@ -272,6 +272,6 @@ export function TaskDueDateMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

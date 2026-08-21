@@ -7,7 +7,6 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -22,6 +21,7 @@ import {
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
 import { projectNameMatchesQuery } from '../../../shared/task-resource-search-filters';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskProject {
   id: string;
@@ -82,7 +82,7 @@ export function TaskProjectsMenu({
     );
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="projects" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <Box className="h-4 w-4 text-dynamic-sky" />
         {t.projects}
@@ -176,6 +176,6 @@ export function TaskProjectsMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

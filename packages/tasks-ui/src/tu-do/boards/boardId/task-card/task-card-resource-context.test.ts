@@ -139,6 +139,27 @@ describe('getTaskCardResourceContext', () => {
       taskBoardId: 'source-board',
     });
   });
+
+  it('uses personal workspace resources for source tasks even when overlay metadata is incomplete', () => {
+    expect(
+      getTaskCardResourceContext({
+        boardId: 'personal-board',
+        pageWorkspaceId: 'personal-workspace',
+        preferPageWorkspaceResources: true,
+        propAvailableLists: [pageList],
+        task: {
+          ...task,
+          list_id: 'personal-list',
+          source_board_id: 'source-board',
+          source_workspace_id: 'source-workspace',
+        },
+      })
+    ).toMatchObject({
+      effectiveWorkspaceId: 'source-workspace',
+      relationshipWorkspaceId: 'personal-workspace',
+      taskBoardId: 'source-board',
+    });
+  });
 });
 
 describe('getTaskCardActionLists', () => {

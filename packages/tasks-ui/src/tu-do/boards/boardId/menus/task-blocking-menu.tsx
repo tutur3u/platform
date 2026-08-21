@@ -10,7 +10,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -24,6 +23,7 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskBlockingMenuTranslations {
   dependencies: string;
@@ -129,7 +129,10 @@ export function TaskBlockingMenu({
     activeTab === 'blocks' ? onRemoveBlocking : onRemoveBlockedBy;
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubmenuOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="dependencies"
+      onOpenChange={handleSubmenuOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <Ban className="h-4 w-4 text-dynamic-red" />
         {translations.dependencies}
@@ -307,6 +310,6 @@ export function TaskBlockingMenu({
           </p>
         </div>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

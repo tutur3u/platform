@@ -6,7 +6,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -25,6 +24,7 @@ import {
   handleTaskOptionShortcut,
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskEstimationMenuProps {
   forceOpen?: boolean;
@@ -79,7 +79,7 @@ export function TaskEstimationMenu({
     });
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="estimation" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger>
         <Timer className="h-4 w-4 text-dynamic-pink" />
         Estimation
@@ -174,6 +174,6 @@ export function TaskEstimationMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

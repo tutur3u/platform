@@ -16,7 +16,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -31,6 +30,7 @@ import {
   handleTaskOptionShortcut,
   TaskOptionShortcutHint,
 } from '../../../shared/task-option-shortcuts';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskPriorityMenuProps {
   forceOpen?: boolean;
@@ -138,7 +138,7 @@ export function TaskPriorityMenu({
     });
 
   return (
-    <DropdownMenuSub open={forceOpen || undefined}>
+    <TaskControlledSubmenu submenuId="priority" forceOpen={forceOpen}>
       <DropdownMenuSubTrigger className="min-w-0">
         <div className="h-4 w-4 shrink-0">
           <Flag className="h-4 w-4 text-dynamic-orange" />
@@ -241,6 +241,6 @@ export function TaskPriorityMenu({
           </CommandList>
         </Command>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }

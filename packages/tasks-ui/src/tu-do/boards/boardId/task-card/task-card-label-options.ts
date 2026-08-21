@@ -6,7 +6,8 @@ interface TaskCardLabelOption {
 
 export function mergeTaskCardLabelOptions<TLabel extends TaskCardLabelOption>(
   workspaceLabels: TLabel[],
-  taskLabels: TLabel[]
+  taskLabels: TLabel[],
+  options: { includeTaskOnlyLabels?: boolean } = {}
 ) {
   const labelsById = new Map<string, TLabel>();
 
@@ -14,8 +15,10 @@ export function mergeTaskCardLabelOptions<TLabel extends TaskCardLabelOption>(
     labelsById.set(label.id, label);
   }
 
-  for (const label of taskLabels) {
-    labelsById.set(label.id, label);
+  if (options.includeTaskOnlyLabels !== false) {
+    for (const label of taskLabels) {
+      labelsById.set(label.id, label);
+    }
   }
 
   return Array.from(labelsById.values()).sort((a, b) =>

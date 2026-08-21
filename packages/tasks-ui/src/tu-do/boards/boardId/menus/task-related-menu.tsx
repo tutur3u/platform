@@ -10,7 +10,6 @@ import {
   CommandList,
 } from '@tuturuuu/ui/command';
 import {
-  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
@@ -24,6 +23,7 @@ import {
   clearTaskCommandSearchOnEscape,
   TaskCommandSearchInput,
 } from '../../../shared/task-command-search-input';
+import { TaskControlledSubmenu } from './task-submenu-controller';
 
 interface TaskRelatedMenuTranslations {
   related_tasks: string;
@@ -99,7 +99,10 @@ export function TaskRelatedMenu({
   );
 
   return (
-    <DropdownMenuSub onOpenChange={handleSubContentOpenChange}>
+    <TaskControlledSubmenu
+      submenuId="related"
+      onOpenChange={handleSubContentOpenChange}
+    >
       <DropdownMenuSubTrigger>
         <Link2 className="h-4 w-4 text-dynamic-blue" />
         {translations.related_tasks}
@@ -245,6 +248,6 @@ export function TaskRelatedMenu({
           </p>
         </div>
       </DropdownMenuSubContent>
-    </DropdownMenuSub>
+    </TaskControlledSubmenu>
   );
 }
