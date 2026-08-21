@@ -107,7 +107,7 @@ pub struct BackendResponse {
     pub allow: Option<&'static str>,
     pub body: Value,
     pub body_empty: bool,
-    pub body_text: Option<String>,
+    pub body_text: Option<Box<str>>,
     pub cache_control: Option<&'static str>,
     pub content_type: Option<&'static str>,
     pub headers: Vec<(&'static str, String)>,
@@ -116,4 +116,18 @@ pub struct BackendResponse {
 
 pub fn json_security_headers() -> &'static [(&'static str, &'static str)] {
     &JSON_SECURITY_HEADERS
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BackendResponse;
+
+    #[test]
+    fn backend_response_stays_below_clippys_large_error_threshold() {
+        assert!(
+            size_of::<BackendResponse>() <= 128,
+            "BackendResponse is {} bytes",
+            size_of::<BackendResponse>()
+        );
+    }
 }

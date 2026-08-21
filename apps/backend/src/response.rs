@@ -73,7 +73,7 @@ pub(crate) fn text_response(
         allow: None,
         body: Value::Null,
         body_empty: false,
-        body_text: Some(body.into()),
+        body_text: Some(body.into().into_boxed_str()),
         cache_control: None,
         content_type: Some(content_type),
         headers: Vec::new(),

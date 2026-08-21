@@ -100,7 +100,7 @@ pub(super) fn csv_response(form_id: &str, csv: String) -> BackendResponse {
         allow: None,
         body: Value::Null,
         body_empty: false,
-        body_text: Some(csv),
+        body_text: Some(csv.into_boxed_str()),
         cache_control: None,
         content_type: Some("text/csv; charset=utf-8"),
         headers: vec![(
