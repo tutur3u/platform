@@ -45,7 +45,7 @@
     },
     "apps/ai": {
       "name": "@tuturuuu/ai-studio",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@tanstack/react-query": "^5.101.4",
@@ -60,7 +60,7 @@
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "ai": "^7.0.73",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -83,14 +83,14 @@
     },
     "apps/apps": {
       "name": "@tuturuuu/apps",
-      "version": "0.17.0",
+      "version": "0.18.0",
       "dependencies": {
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -109,7 +109,7 @@
     },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
-      "version": "0.26.0",
+      "version": "0.27.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -139,7 +139,7 @@
         "framer-motion": "^13.1.1",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -171,7 +171,7 @@
     },
     "apps/chat": {
       "name": "@tuturuuu/chat",
-      "version": "0.20.0",
+      "version": "0.21.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@tanstack/react-query": "^5.101.4",
@@ -187,7 +187,7 @@
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "react": "^19.2.8",
@@ -214,7 +214,7 @@
     },
     "apps/cms": {
       "name": "@tuturuuu/cms",
-      "version": "0.30.0",
+      "version": "0.31.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -239,7 +239,7 @@
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -269,7 +269,7 @@
     },
     "apps/contacts": {
       "name": "@tuturuuu/contacts",
-      "version": "0.17.0",
+      "version": "0.18.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -299,7 +299,7 @@
         "lodash": "^4.18.1",
         "moment": "^2.30.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -341,7 +341,7 @@
     },
     "apps/drive": {
       "name": "@tuturuuu/drive",
-      "version": "0.25.0",
+      "version": "0.26.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -362,7 +362,7 @@
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -401,7 +401,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "tuturuuu": "workspace:*",
@@ -421,7 +421,7 @@
     },
     "apps/finance": {
       "name": "@tuturuuu/finance",
-      "version": "0.26.1",
+      "version": "0.27.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -447,7 +447,7 @@
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -477,7 +477,7 @@
     },
     "apps/forms": {
       "name": "@tuturuuu/forms",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -506,7 +506,7 @@
         "browser-image-compression": "^2.0.2",
         "isomorphic-dompurify": "^3.22.0",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -536,7 +536,7 @@
     },
     "apps/git": {
       "name": "@tuturuuu/git",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@octokit/auth-app": "^8.3.0",
@@ -554,7 +554,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -583,7 +583,7 @@
     },
     "apps/hive": {
       "name": "@tuturuuu/hive",
-      "version": "0.19.0",
+      "version": "0.20.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@formatjs/intl-localematcher": "^0.8.13",
@@ -607,7 +607,7 @@
         "@tuturuuu/vercel": "workspace:*",
         "@xyflow/react": "^12.11.3",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "postgres": "^3.4.9",
@@ -654,7 +654,7 @@
     },
     "apps/infrastructure": {
       "name": "@tuturuuu/infrastructure",
-      "version": "0.21.0",
+      "version": "0.22.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@aws-sdk/client-s3": "3.1115.0",
@@ -690,7 +690,7 @@
         "firebase-admin": "^14.3.0",
         "jose": "^6.2.9",
         "moment": "^2.30.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -723,7 +723,7 @@
     },
     "apps/inventory": {
       "name": "@tuturuuu/inventory",
-      "version": "0.28.0",
+      "version": "0.29.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@tanstack/react-query": "^5.101.4",
@@ -746,7 +746,7 @@
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
         "ai": "^7.0.73",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -758,7 +758,7 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@next/playwright": "^16.3.1",
+        "@next/playwright": "^16.3.2",
         "@playwright/test": "^1.62.1",
         "@tailwindcss/postcss": "^4.3.3",
         "@tuturuuu/typescript-config": "workspace:*",
@@ -773,7 +773,7 @@
     },
     "apps/learn": {
       "name": "@tuturuuu/learn",
-      "version": "0.19.0",
+      "version": "0.20.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@gsap/react": "^2.1.2",
@@ -793,7 +793,7 @@
         "@tuturuuu/vercel": "workspace:*",
         "gsap": "^3.15.0",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "postgres": "^3.4.9",
@@ -821,7 +821,7 @@
     },
     "apps/mail": {
       "name": "@tuturuuu/mail",
-      "version": "0.18.2",
+      "version": "0.19.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@aws-sdk/client-s3": "3.1115.0",
@@ -849,7 +849,7 @@
         "dayjs": "1.11.23",
         "isomorphic-dompurify": "^3.22.0",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -878,7 +878,7 @@
     },
     "apps/meet": {
       "name": "@tuturuuu/meet",
-      "version": "0.23.0",
+      "version": "0.24.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -900,7 +900,7 @@
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -926,7 +926,7 @@
     },
     "apps/mind": {
       "name": "@tuturuuu/mind",
-      "version": "0.18.0",
+      "version": "0.19.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@json-render/core": "^0.20.0",
@@ -953,7 +953,7 @@
         "@xyflow/react": "^12.11.3",
         "katex": "^0.18.4",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "postgres": "^3.4.9",
@@ -985,7 +985,7 @@
     },
     "apps/nova": {
       "name": "@tuturuuu/nova",
-      "version": "0.35.0",
+      "version": "0.36.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -1016,7 +1016,7 @@
         "lodash": "4.18.1",
         "moment": "^2.30.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "react": "^19.2.8",
@@ -1028,7 +1028,7 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@next/bundle-analyzer": "^16.3.1",
+        "@next/bundle-analyzer": "^16.3.2",
         "@tailwindcss/postcss": "^4.3.3",
         "@tanstack/react-query-devtools": "^5.101.4",
         "@testing-library/react": "^16.3.2",
@@ -1053,7 +1053,7 @@
     },
     "apps/pay": {
       "name": "@tuturuuu/pay",
-      "version": "0.14.0",
+      "version": "0.15.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@tanstack/react-query": "^5.101.4",
@@ -1070,7 +1070,7 @@
         "@tuturuuu/utils": "workspace:*",
         "date-fns": "^4.4.0",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "react": "^19.2.8",
@@ -1106,7 +1106,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.23",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "zod": "^4.4.3",
@@ -1132,7 +1132,7 @@
     },
     "apps/rewise": {
       "name": "@tuturuuu/rewise",
-      "version": "0.36.0",
+      "version": "0.37.0",
       "dependencies": {
         "@deepgram/sdk": "^5.8.0",
         "@emotion/react": "^11.14.0",
@@ -1161,7 +1161,7 @@
         "mermaid": "^11.17.0",
         "moment": "^2.30.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -1180,7 +1180,7 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@next/bundle-analyzer": "^16.3.1",
+        "@next/bundle-analyzer": "^16.3.2",
         "@tailwindcss/postcss": "^4.3.3",
         "@tanstack/react-query-devtools": "^5.101.4",
         "@testing-library/react": "^16.3.2",
@@ -1204,7 +1204,7 @@
     },
     "apps/shortener": {
       "name": "@tuturuuu/shortener",
-      "version": "0.17.0",
+      "version": "0.18.0",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
@@ -1217,7 +1217,7 @@
         "bcrypt": "^6.0.0",
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -1244,7 +1244,7 @@
     },
     "apps/storefront": {
       "name": "@tuturuuu/storefront",
-      "version": "0.24.1",
+      "version": "0.25.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.4",
         "@tuturuuu/auth": "workspace:*",
@@ -1255,7 +1255,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "nuqs": "^2.10.0",
         "react": "^19.2.8",
@@ -1282,7 +1282,7 @@
     },
     "apps/tanstack-web": {
       "name": "@tuturuuu/tanstack-web",
-      "version": "0.25.0",
+      "version": "0.25.1",
       "dependencies": {
         "@hookform/resolvers": "^5.9.1",
         "@react-email/render": "^2.1.0",
@@ -1336,7 +1336,7 @@
     },
     "apps/tasks": {
       "name": "@tuturuuu/tasks",
-      "version": "0.28.1",
+      "version": "0.29.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@formatjs/intl-localematcher": "^0.8.13",
@@ -1367,7 +1367,7 @@
         "dayjs": "^1.11.23",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -1395,7 +1395,7 @@
     },
     "apps/teach": {
       "name": "@tuturuuu/teach",
-      "version": "0.19.0",
+      "version": "0.20.0",
       "dependencies": {
         "@ai-sdk/google": "^4.0.49",
         "@dnd-kit/core": "^6.3.1",
@@ -1423,7 +1423,7 @@
         "gsap": "^3.15.0",
         "moment": "^2.30.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "postgres": "^3.4.9",
@@ -1451,7 +1451,7 @@
     },
     "apps/tools": {
       "name": "@tuturuuu/tools",
-      "version": "0.15.0",
+      "version": "0.16.0",
       "dependencies": {
         "@tanstack/react-query": "^5.101.4",
         "@tuturuuu/icons": "workspace:*",
@@ -1459,7 +1459,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -1483,7 +1483,7 @@
     },
     "apps/track": {
       "name": "@tuturuuu/track",
-      "version": "0.23.1",
+      "version": "0.24.0",
       "dependencies": {
         "@formatjs/intl-localematcher": "^0.8.13",
         "@hookform/resolvers": "^5.9.1",
@@ -1508,7 +1508,7 @@
         "date-fns": "^4.4.0",
         "dayjs": "^1.11.23",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -1655,7 +1655,7 @@
         "motion": "^13.1.1",
         "nanoid": "^6.0.1",
         "negotiator": "^1.1.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -1696,7 +1696,7 @@
         "zustand": "^5.0.15",
       },
       "devDependencies": {
-        "@next/bundle-analyzer": "^16.3.1",
+        "@next/bundle-analyzer": "^16.3.2",
         "@playwright/test": "^1.62.1",
         "@tailwindcss/postcss": "^4.3.3",
         "@tanstack/react-query-devtools": "^5.101.4",
@@ -1803,7 +1803,7 @@
         "chat-state-cloudflare-do": "^0.2.0",
         "chat-state-mysql": "^0.1.0",
         "dayjs": "^1.11.23",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "qrcode": "^1.5.4",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -1828,7 +1828,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.23",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "zod": "^4.4.3",
@@ -1855,7 +1855,7 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "zod": "^4.4.3",
       },
@@ -1916,7 +1916,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
       },
@@ -1958,7 +1958,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
       },
@@ -1975,7 +1975,7 @@
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "clsx": "^2.1.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
         "tailwind-merge": "^3.6.0",
@@ -2025,7 +2025,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@xyflow/react": "^12.11.3",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -2080,7 +2080,7 @@
     },
     "packages/internal-api": {
       "name": "@tuturuuu/internal-api",
-      "version": "0.31.0",
+      "version": "0.31.1",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -2103,7 +2103,7 @@
         "@tuturuuu/turnstile": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "postgres": "^3.4.9",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
@@ -2167,7 +2167,7 @@
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "postgres": "^3.4.9",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
@@ -2199,7 +2199,7 @@
         "@xyflow/react": "^12.11.3",
         "ai": "^7.0.73",
         "katex": "^0.18.4",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "react": "^19.2.8",
@@ -2230,7 +2230,7 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.2.0",
         "@types/react": "^19.2.18",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "typescript": "7.0.2",
         "vitest": "^4.1.11",
@@ -2250,7 +2250,7 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "typescript": "7.0.2",
       },
     },
@@ -2301,7 +2301,7 @@
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "cookies-next": "^6.1.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -2368,7 +2368,7 @@
         "@supabase/ssr": "^0.12.4",
         "@supabase/supabase-js": "^2.112.3",
         "@tuturuuu/types": "workspace:*",
-        "next": "^16.3.0",
+        "next": "^16.3.2",
         "react": "^19.2.7",
         "react-dom": "^19.2.7",
         "zod": "^4.4.3",
@@ -2391,14 +2391,14 @@
     },
     "packages/tasks-api": {
       "name": "@tuturuuu/tasks-api",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "dependencies": {
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -2410,7 +2410,7 @@
     },
     "packages/tasks-ui": {
       "name": "@tuturuuu/tasks-ui",
-      "version": "0.12.1",
+      "version": "0.13.1",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2433,7 +2433,7 @@
         "lodash": "4.18.1",
         "moment": "^2.30.1",
         "motion": "^13.1.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "react": "^19.2.8",
@@ -2527,7 +2527,7 @@
     },
     "packages/ui": {
       "name": "@tuturuuu/ui",
-      "version": "0.28.1",
+      "version": "0.29.0",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
@@ -2626,7 +2626,7 @@
         "lodash": "4.18.1",
         "moment": "^2.30.1",
         "motion": "^13.1.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -2707,7 +2707,7 @@
         "@tuturuuu/utils": "workspace:*",
         "date-fns": "^4.4.0",
         "dayjs": "^1.11.23",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "react": "^19.2.8",
         "server-only": "^0.0.1",
         "zod": "^4.4.3",
@@ -2722,7 +2722,7 @@
     },
     "packages/users-ui": {
       "name": "@tuturuuu/users-ui",
-      "version": "0.7.2",
+      "version": "0.7.3",
       "dependencies": {
         "@tanstack/react-query": "^5.101.4",
         "@tuturuuu/icons": "workspace:*",
@@ -2732,7 +2732,7 @@
         "@tuturuuu/users-core": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "date-fns": "^4.4.0",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "next-intl": "^4.13.7",
         "next-themes": "^0.4.6",
         "nuqs": "^2.10.0",
@@ -2754,7 +2754,7 @@
     },
     "packages/utils": {
       "name": "@tuturuuu/utils",
-      "version": "0.25.2",
+      "version": "0.25.3",
       "dependencies": {
         "@dnd-kit/core": "^6.3.1",
         "@noble/ciphers": "^2.3.0",
@@ -2774,7 +2774,7 @@
         "diff": "^9.0.0",
         "effect": "^3.22.1",
         "moment": "^2.30.1",
-        "next": "^16.3.1",
+        "next": "^16.3.2",
         "prosemirror-model": "^1.25.11",
         "react": "^19.2.8",
         "react-dom": "^19.2.8",
@@ -2841,7 +2841,7 @@
     "@polar-sh/sdk": "0.49.0",
     "google-auth-library": "11.0.2",
     "lodash": "4.18.1",
-    "next": "16.3.1",
+    "next": "16.3.2",
     "prosemirror-view": "1.42.2",
     "shiki": "4.4.3",
     "typescript": "7.0.2",
@@ -3484,27 +3484,27 @@
 
     "@napi-rs/canvas-win32-x64-msvc": ["@napi-rs/canvas-win32-x64-msvc@0.1.100", "", { "os": "win32", "cpu": "x64" }, "sha512-MyT1j3mHC2+Lu4pBi9mKyMJhtP6U7k7EldY7sj/uS5gJA65gTXt8MefJQXLJo5d/vZbuWmfxzkEUNc/urV3pHA=="],
 
-    "@next/bundle-analyzer": ["@next/bundle-analyzer@16.3.1", "", { "dependencies": { "webpack-bundle-analyzer": "4.10.1" } }, "sha512-/6XQeYPHM6jF1gTeJ82Mu6yXOHQIFVxzAn3DkPtHDp5v6SDXoCicBMTHloN+2h4WKFCQujSLCgLZHItJ3jN1uw=="],
+    "@next/bundle-analyzer": ["@next/bundle-analyzer@16.3.2", "", { "dependencies": { "webpack-bundle-analyzer": "4.10.1" } }, "sha512-1WSK3fjvlZzA3cpP6XsM9JW2/LDWWlldlYN5sL/h2kvAQCu2KeXLxNkqfI/0ac+ikOYFzWuuBpL9O0Cu3mrfww=="],
 
-    "@next/env": ["@next/env@16.3.1", "", {}, "sha512-35G3xwkQUb2oETSDjFXGrVugknoayLFBh7vSE+yAcl9IP2zT9wyGwq7297AYHR11kJld807t5f8AJBs6WBzXsQ=="],
+    "@next/env": ["@next/env@16.3.2", "", {}, "sha512-8k4YoG8cM7LWlkfzGNYCRBbFNlernLiMw4s0btVl+CmmWqn3VpYypA72/5Feb1UWdxe6tHqr5KHP4p4Y4m9luA=="],
 
-    "@next/playwright": ["@next/playwright@16.3.1", "", { "peerDependencies": { "@playwright/test": ">=1.0.0" }, "optionalPeers": ["@playwright/test"] }, "sha512-C5HQHjCg9clH66Zdvd860bOfXeBE45z4dBYxeDC3RpkG7H/7RvslVT8RkT62JqUASOqocJxo9cLyq7C4AI8MFQ=="],
+    "@next/playwright": ["@next/playwright@16.3.2", "", { "peerDependencies": { "@playwright/test": ">=1.0.0" }, "optionalPeers": ["@playwright/test"] }, "sha512-UpgLbbWMleUS1lrWAL/rp+yJETnKaGxDhtSYvj1QCKU3vS8EuoHVsA+28YLp2Ew/mkGciAzSsNoGVveMa9RomQ=="],
 
-    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@16.3.1", "", { "os": "darwin", "cpu": "arm64" }, "sha512-ABMIu2zQ7cnNIHm5ivKGwZwUrm0pAai3yiJ/gK/rF1c1VP9UOnj7XECbMKFdVKp9I9eMYq9NoDs1WXOoowxzJw=="],
+    "@next/swc-darwin-arm64": ["@next/swc-darwin-arm64@16.3.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-ib5Llm93YCKoKWDh6ZaHq6QWTuOZ2bRkSnUwMmX8dsRIOkBNL1vVlSiUKSfixPL9SSh9pvukzqajk/klkn5vqg=="],
 
-    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@16.3.1", "", { "os": "darwin", "cpu": "x64" }, "sha512-gNG21e/UnrroeScbY/QndUEdl0mF1FRibW7BBeYUz/5ABCepjqDdEdgr592vpzMtCn/m7FTjYq3TN4TpyDnutw=="],
+    "@next/swc-darwin-x64": ["@next/swc-darwin-x64@16.3.2", "", { "os": "darwin", "cpu": "x64" }, "sha512-qd98fX2+I5nYJDioW2o7nSjoxM5KvWdeDefM80igia4+C/qSIEhH4MhTE+hO/7qKM7W37/Mq+dOWp8UePSyLHw=="],
 
-    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@16.3.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-6B6Lw016iwNUQuaJoraMMTLh6TwHzFUtxipSScD1F3YyymcrRWkobodRS2ftIOkF5vrs4zNlyUrTC5YZQ9Lz5w=="],
+    "@next/swc-linux-arm64-gnu": ["@next/swc-linux-arm64-gnu@16.3.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-vqsgb6FAOzcrCccsLXiKtAy5t8EzO+uOazuFaSkQxeY0tNONG3vpHYy8pyBafcI5SNFPTeyard6yTr6SzNGo2A=="],
 
-    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@16.3.1", "", { "os": "linux", "cpu": "arm64" }, "sha512-JUiPXZKK9wOhjf4MgDiH29GZLxfqOesbLtHq2pDxwH/WwscTRV2ToymnOTh1egzaZf0ueUf8T2+CeYTGHjW0Iw=="],
+    "@next/swc-linux-arm64-musl": ["@next/swc-linux-arm64-musl@16.3.2", "", { "os": "linux", "cpu": "arm64" }, "sha512-xIe1eujfHUB2XcxHGddxJyu6TJRPjC5NpIkQYB/32ESkt5VkQyIAjmLRS38c+s6QY+qjtY/4KarVDzXRuD7lZQ=="],
 
-    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@16.3.1", "", { "os": "linux", "cpu": "x64" }, "sha512-Uog9jsrmIRIL/lfvIp9htmskSNC7JcQsMVucXL2V2YY1y/D9IUN3LPEafqy0zRJ2cIU1SQ0V6F6TlffQ+pLAGg=="],
+    "@next/swc-linux-x64-gnu": ["@next/swc-linux-x64-gnu@16.3.2", "", { "os": "linux", "cpu": "x64" }, "sha512-Fe0SA2j8X0kmc3aveuHD7UktO3AE2+mH3LguP60vGbz7u0z+MrDXbeb5iZFYAwR7EzzzXJ2Yk966w9mGTFMqfA=="],
 
-    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@16.3.1", "", { "os": "linux", "cpu": "x64" }, "sha512-6yy3FT13KgUFOj5H8bl8w/6nKiJwHIvbtwh1V+1acsu+7y4tJjnemSa6mhsh53BeoVrlozE+fMgZhXH46WmjMA=="],
+    "@next/swc-linux-x64-musl": ["@next/swc-linux-x64-musl@16.3.2", "", { "os": "linux", "cpu": "x64" }, "sha512-TFBipb+gyesI/2Ve4zVu7kGltBWN/R466G5/1gtt2lECfc22G1pjkTxu68Q9aFcOaXiRGTQfvDbQQFe7mYgxiQ=="],
 
-    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@16.3.1", "", { "os": "win32", "cpu": "arm64" }, "sha512-iOoN1QecUoGNZik536U/vtK43YwgyrCsGIkth52yIkl612n+0C9MjSnJbQAikISpb+WYRooBVhaDlUW7iZoKog=="],
+    "@next/swc-win32-arm64-msvc": ["@next/swc-win32-arm64-msvc@16.3.2", "", { "os": "win32", "cpu": "arm64" }, "sha512-rVtmnNpBYIosDnKD/96dKxFsJnwnn1WRGG/HioSe8XCm2ksSHNrd2R6+hSjvTBxeMNhJ9pYeu/90cWB1nQLuNA=="],
 
-    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@16.3.1", "", { "os": "win32", "cpu": "x64" }, "sha512-d/k+PpAriUPaeMJJOG7HUSdqfEX46FEPWU1p3/nm2ACmXhj9hFEWdFODUBIpkuijXYkfL90qZzTqVPRp4BW/hw=="],
+    "@next/swc-win32-x64-msvc": ["@next/swc-win32-x64-msvc@16.3.2", "", { "os": "win32", "cpu": "x64" }, "sha512-H4Y2o2/JcHu8LtwzD5CXfHhwxwz8gfsx2HXDEw46Mtev5xHnEmB7HNtZtmriw5ReUOjRtcDqo7XSbU01FT9NlA=="],
 
     "@noble/ciphers": ["@noble/ciphers@2.3.0", "", {}, "sha512-Clu/xdfgVTf9o7ngLOURaxePwR0j8sjclKEtVij10/jGulwFsPWCvvRgG/XjUVf8Nei+jLG6uwyXzUTGY1DQrw=="],
 
@@ -6012,7 +6012,7 @@
 
     "neverthrow": ["neverthrow@7.2.0", "", {}, "sha512-iGBUfFB7yPczHHtA8dksKTJ9E8TESNTAx1UQWW6TzMF280vo9jdPYpLUXrMN1BCkPdHFdNG3fxOt2CUad8KhAw=="],
 
-    "next": ["next@16.3.1", "", { "dependencies": { "@next/env": "16.3.1", "@swc/helpers": "0.5.23", "baseline-browser-mapping": "^2.9.19", "caniuse-lite": "^1.0.30001579", "postcss": "8.5.23", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "16.3.1", "@next/swc-darwin-x64": "16.3.1", "@next/swc-linux-arm64-gnu": "16.3.1", "@next/swc-linux-arm64-musl": "16.3.1", "@next/swc-linux-x64-gnu": "16.3.1", "@next/swc-linux-x64-musl": "16.3.1", "@next/swc-win32-arm64-msvc": "16.3.1", "@next/swc-win32-x64-msvc": "16.3.1", "sharp": "^0.35.3" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-hsAp0i7Rh+/dhe7DGIeN2YlpLM1DP4MNxti9EtDMtqcO612X81MvvEj388/oTce9U1EcEIOWDlGq0zRwrBKvuA=="],
+    "next": ["next@16.3.2", "", { "dependencies": { "@next/env": "16.3.2", "@swc/helpers": "0.5.23", "baseline-browser-mapping": "^2.9.19", "caniuse-lite": "^1.0.30001579", "postcss": "8.5.23", "styled-jsx": "5.1.6" }, "optionalDependencies": { "@next/swc-darwin-arm64": "16.3.2", "@next/swc-darwin-x64": "16.3.2", "@next/swc-linux-arm64-gnu": "16.3.2", "@next/swc-linux-arm64-musl": "16.3.2", "@next/swc-linux-x64-gnu": "16.3.2", "@next/swc-linux-x64-musl": "16.3.2", "@next/swc-win32-arm64-msvc": "16.3.2", "@next/swc-win32-x64-msvc": "16.3.2", "sharp": "^0.35.3" }, "peerDependencies": { "@opentelemetry/api": "^1.1.0", "@playwright/test": "^1.51.1", "babel-plugin-react-compiler": "*", "react": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "react-dom": "^18.2.0 || 19.0.0-rc-de68d2f4-20241204 || ^19.0.0", "sass": "^1.3.0" }, "optionalPeers": ["@opentelemetry/api", "@playwright/test", "babel-plugin-react-compiler", "sass"], "bin": { "next": "dist/bin/next" } }, "sha512-/ZCaubUy17Lld1SiPWxuPbCk2ihqAxF2QNQaPZeEaEb7t1I58qhsJN187D7AfpapHAqUPXH0f/thtdW9dWgWFg=="],
 
     "next-intl": ["next-intl@4.13.7", "", { "dependencies": { "@formatjs/intl-localematcher": "^0.8.1", "@parcel/watcher": "^2.4.1", "@swc/core": "~1.15.47", "icu-minify": "^4.13.7", "negotiator": "^1.0.0", "next-intl-swc-plugin-extractor": "4.13.7", "po-parser": "^2.1.1", "use-intl": "^4.13.7" }, "peerDependencies": { "next": "^12.0.0 || ^13.0.0 || ^14.0.0 || ^15.0.0 || ^16.0.0", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || >=19.0.0-rc <19.0.0 || ^19.0.0", "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-j7KnGWt4Ih6TnW1x714R8bX3H+DYP25fqLTYTfUzAFXh0Od57WuQYM/Sf58yalvIXhE6y8sBYHlrCFmr0jPy3g=="],
 

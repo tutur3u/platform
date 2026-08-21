@@ -2,6 +2,7 @@
 
 use crate::*;
 use serde_json::Value;
+use std::ops::Deref;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BackendConfig {
@@ -103,11 +104,43 @@ pub struct BackendRequest<'a> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+struct ResponseBodyTextInner(String);
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResponseBodyText(Box<ResponseBodyTextInner>);
+
+impl From<String> for ResponseBodyText {
+    fn from(value: String) -> Self {
+        Self(Box::new(ResponseBodyTextInner(value)))
+    }
+}
+
+impl From<&str> for ResponseBodyText {
+    fn from(value: &str) -> Self {
+        Self::from(value.to_owned())
+    }
+}
+
+impl From<ResponseBodyText> for String {
+    fn from(value: ResponseBodyText) -> Self {
+        value.0.0
+    }
+}
+
+impl Deref for ResponseBodyText {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.0.as_str()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BackendResponse {
     pub allow: Option<&'static str>,
     pub body: Value,
     pub body_empty: bool,
-    pub body_text: Option<Box<str>>,
+    pub body_text: Option<ResponseBodyText>,
     pub cache_control: Option<&'static str>,
     pub content_type: Option<&'static str>,
     pub headers: Vec<(&'static str, String)>,
@@ -125,7 +158,7 @@ mod tests {
     #[test]
     fn backend_response_stays_below_clippys_large_error_threshold() {
         assert!(
-            size_of::<BackendResponse>() <= 128,
+            size_of::<BackendResponse>() < 128,
             "BackendResponse is {} bytes",
             size_of::<BackendResponse>()
         );
