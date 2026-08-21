@@ -54,7 +54,7 @@ design context, not active ownership; do not edit or revive it.
 
 | Purpose | Command | Expected on success |
 | --- | --- | --- |
-| Add dev deps | `cd apps/chat-realtime && bun add --dev '@tuturuuu/typescript-config@workspace:*' 'bun-types@^1.3.14' 'typescript@7.0.2' 'vitest@^4.1.10'` and the same command in `apps/meet-realtime` | manifests and lockfile update through Bun only |
+| Add dev deps | `cd apps/chat-realtime && bun add --dev '@tuturuuu/typescript-config@workspace:*' 'bun-types@^1.4.0' 'typescript@7.0.2' 'vitest@^4.1.10'` and the same command in `apps/meet-realtime` | manifests and lockfile update through Bun only |
 | Add workspace dep | `cd apps/chat-realtime && bun add '@tuturuuu/realtime@workspace:*'` and the same command in `apps/meet-realtime` | runtime dependency recorded in both manifests |
 | Focused tests | `bun --cwd apps/chat-realtime vitest run tests/server.test.ts tests/token.test.ts && bun --cwd apps/meet-realtime vitest run tests/server.test.ts tests/token.test.ts` | transport/token suites pass without real ports |
 | Typechecks | `bun run --cwd apps/chat-realtime type-check && bun run --cwd apps/meet-realtime type-check` | both exit 0 |

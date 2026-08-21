@@ -13,7 +13,7 @@
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7822 --turbopack"
   },
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "portless": {
     "name": "storefront.tuturuuu",
     "script": "dev:app"
@@ -29,8 +29,8 @@
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",
     "next": "^16.3.1",
-    "next-intl": "^4.13.6",
-    "nuqs": "^2.9.5",
+    "next-intl": "^4.13.7",
+    "nuqs": "^2.10.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.4.3"

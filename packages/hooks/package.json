@@ -16,7 +16,7 @@
   "dependencies": {
     "@tuturuuu/types": "workspace:*",
     "browser-image-compression": "^2.0.2",
-    "dayjs": "^1.11.21"
+    "dayjs": "^1.11.23"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.101.4",
@@ -27,7 +27,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
-    "@vitejs/plugin-react": "^6.0.5",
+    "@vitejs/plugin-react": "^6.1.0",
     "typescript": "7.0.2"
   },
   "exports": {
@@ -36,5 +36,5 @@
     "./types/*": "./src/types/*.ts",
     "./utils/*": "./src/utils/*.ts"
   },
-  "packageManager": "bun@1.3.14"
+  "packageManager": "bun@1.4.0"
 }

@@ -33,7 +33,7 @@ production workloads.
   Hive/Hive Realtime, Meet Realtime, Supermemory, Discord Markitdown, and
   Storage Unzip Proxy, plus the blue/green watcher, Docker-control proxy, and
   cron runner from `compose.web.prod.ops.yml`. Examples include mutable
-  `oven/bun:1.3.14`, `node:24-bookworm-slim`, `rust:1-alpine`, and
+  `oven/bun:1.4.0`, `node:24-bookworm-slim`, `rust:1-alpine`, and
   `gcr.io/distroless/static-debian12:nonroot` bases.
 - Derive the authoritative Dockerfile set by parsing the `build.context` and
   optional `dockerfile` values from the root production Compose graph; do not

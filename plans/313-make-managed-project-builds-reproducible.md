@@ -43,12 +43,12 @@ unchanged source revision.
   `package.json`; if both declare `packageManager`, require equality. Accept an
   exact selector only (`name@full-semver`, optional supported integrity) and
   require its matching single lockfile. For legacy projects without a selector,
-  allow only `bun.lock`/`bun.lockb` with the platform fallback `bun@1.3.14`, or
+  allow only `bun.lock`/`bun.lockb` with the platform fallback `bun@1.4.0`, or
   `package-lock.json` with the npm version already contained in the pinned Node
   image. Legacy pnpm/Yarn projects must add an exact selector before deployment.
   Reject unsupported managers, conflicting lockfiles, and manager/lockfile
   mismatch before `docker compose up`.
-- Render exact installation/activation only: Bun uses `1.3.14`; pnpm
+- Render exact installation/activation only: Bun uses `1.4.0`; pnpm
   and Yarn use the exact Corepack selector; npm uses `npm ci` and the pinned
   image's recorded npm version. Never run an unversioned global install or
   silently choose newest. Preserve frozen-lockfile installs and existing
