@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/inventory-core",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "exports": {
     "./commerce/square": "./src/lib/inventory/commerce/square/index.ts",

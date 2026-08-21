@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.40.2](https://github.com/tutur3u/platform/compare/platform-v0.40.1...platform-v0.40.2) (2026-08-21)
+
+
+### Bug Fixes
+
+* **backend:** reduce response error size ([721ce8e](https://github.com/tutur3u/platform/commit/721ce8ee2cf1812d729c4a3a56d6398ec0b75591))
+* **backend:** satisfy Rust 1.98 Clippy ([829ed55](https://github.com/tutur3u/platform/commit/829ed559b6c051cf207b668f95ca53e0cc91af56))
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+* **finance:** restore invoice access ([dc9ea14](https://github.com/tutur3u/platform/commit/dc9ea1448550795f1bb9146ec6580069672e0750))
+* **tasks:** repair resource CRUD and sorting ([de345a4](https://github.com/tutur3u/platform/commit/de345a40e2948415eaec6f2965dfd83154d83935))
+* **tasks:** use board-local assignment context ([1f20216](https://github.com/tutur3u/platform/commit/1f202168f2ba50acb5a941a697b6cd1f2323e3ad))
+* **tooling:** make app type configs editor compatible ([c90ef48](https://github.com/tutur3u/platform/commit/c90ef48016a0493aee59254afeaccbf35da31354))
+
 ## [0.40.1](https://github.com/tutur3u/platform/compare/platform-v0.40.0...platform-v0.40.1) (2026-08-20)
 
 

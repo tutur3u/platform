@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.1](https://github.com/tutur3u/platform/compare/storefront-v0.25.0...storefront-v0.25.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
 ## [0.25.0](https://github.com/tutur3u/platform/compare/storefront-v0.24.1...storefront-v0.25.0) (2026-08-20)
 
 

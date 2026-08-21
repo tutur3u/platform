@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.3](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.2...tasks-api-v0.4.3) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+* **tasks:** repair resource CRUD and sorting ([de345a4](https://github.com/tutur3u/platform/commit/de345a40e2948415eaec6f2965dfd83154d83935))
+
 ## [0.4.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.4.1...tasks-api-v0.4.2) (2026-08-20)
 
 
