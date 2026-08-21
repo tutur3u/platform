@@ -29,7 +29,7 @@ import {
 } from '@tuturuuu/ui/hooks/use-user-workspace-config';
 import {
   getPersonalExternalStagingListId,
-  priorityCompare,
+  sortTasksByCriterion,
   type WorkspaceLabel,
 } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
@@ -183,41 +183,8 @@ function taskMatchesLocalFilters(
   return true;
 }
 
-function getTaskTimestamp(value: string | null | undefined) {
-  if (!value) return Number.MAX_SAFE_INTEGER;
-  const time = new Date(value).getTime();
-  return Number.isFinite(time) ? time : Number.MAX_SAFE_INTEGER;
-}
-
 function sortLocalTasks(tasks: Task[], sortBy: TaskFilters['sortBy']) {
-  if (!sortBy) return tasks;
-
-  return [...tasks].sort((a, b) => {
-    switch (sortBy) {
-      case 'name-asc':
-        return a.name.localeCompare(b.name);
-      case 'name-desc':
-        return b.name.localeCompare(a.name);
-      case 'priority-high':
-        return priorityCompare(a.priority ?? null, b.priority ?? null);
-      case 'priority-low':
-        return priorityCompare(b.priority ?? null, a.priority ?? null);
-      case 'due-date-asc':
-        return getTaskTimestamp(a.end_date) - getTaskTimestamp(b.end_date);
-      case 'due-date-desc':
-        return getTaskTimestamp(b.end_date) - getTaskTimestamp(a.end_date);
-      case 'created-date-asc':
-        return getTaskTimestamp(a.created_at) - getTaskTimestamp(b.created_at);
-      case 'created-date-desc':
-        return getTaskTimestamp(b.created_at) - getTaskTimestamp(a.created_at);
-      case 'estimation-high':
-        return (b.estimation_points ?? 0) - (a.estimation_points ?? 0);
-      case 'estimation-low':
-        return (a.estimation_points ?? 0) - (b.estimation_points ?? 0);
-      default:
-        return 0;
-    }
-  });
+  return sortTasksByCriterion(tasks, sortBy);
 }
 
 interface Props {
@@ -872,8 +839,8 @@ export function BoardViews({
 
     tasks = tasks.filter((task) => !task.deleted_at);
 
-    return tasks;
-  }, [filteredTasks, taskOverrides]);
+    return sortLocalTasks(tasks, filters.sortBy);
+  }, [filteredTasks, filters.sortBy, taskOverrides]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({

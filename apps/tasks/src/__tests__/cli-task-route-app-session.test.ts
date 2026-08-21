@@ -250,6 +250,54 @@ describe('workspace task API route app-session bridge', () => {
     );
   });
 
+  it('allows platform CLI and Tasks app-session auth on task project detail routes', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenCalledTimes(4);
+    for (const call of mocks.withSessionAuth.mock.calls) {
+      expect(call).toEqual([
+        expect.any(Function),
+        {
+          allowAppSessionAuth: {
+            targetApp: ['platform', 'tasks'],
+          },
+        },
+      ]);
+    }
+  });
+
+  it('allows platform CLI and Tasks app-session auth on project task links', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenCalledTimes(2);
+    for (const call of mocks.withSessionAuth.mock.calls) {
+      expect(call).toEqual([
+        expect.any(Function),
+        {
+          allowAppSessionAuth: {
+            targetApp: ['platform', 'tasks'],
+          },
+        },
+      ]);
+    }
+  });
+
+  it('allows platform CLI and Tasks app-session auth when unlinking project tasks', async () => {
+    await import(
+      '@/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks/[taskId]/route'
+    );
+
+    expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
+      allowAppSessionAuth: {
+        targetApp: ['platform', 'tasks'],
+      },
+    });
+  });
+
   it('allows platform CLI and Tasks app-session auth on task board viewable member routes', async () => {
     await import(
       '@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/viewable-members/route'

@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -12,7 +10,16 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { withSessionAuth } from '@/lib/api-auth';
+
+interface RouteParams {
+  wsId: string;
+  projectId: string;
+}
+
+const TASK_PROJECTS_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+} as const;
 
 const linkTaskSchema = z.object({
   taskId: z.guid('Task id must be a valid UUID'),
@@ -43,72 +50,64 @@ interface TaskAssigneeEntry {
   };
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  try {
-    const { wsId, projectId } = await params;
-    const supabase = await createClient(request);
-    let normalizedWorkspaceId: string;
+export const GET = withSessionAuth<RouteParams>(
+  async (_request: NextRequest, { supabase, user }, { wsId, projectId }) => {
     try {
-      normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
-    } catch {
-      return NextResponse.json(
-        { error: 'Workspace not found' },
-        { status: 404 }
-      );
-    }
+      let normalizedWorkspaceId: string;
+      try {
+        normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+      } catch {
+        return NextResponse.json(
+          { error: 'Workspace not found' },
+          { status: 404 }
+        );
+      }
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: normalizedWorkspaceId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      if (membership.error === 'membership_lookup_failed') {
+        console.error('Membership lookup failed:', membership.error);
+        return NextResponse.json(
+          { error: 'Membership lookup failed' },
+          { status: 500 }
+        );
+      }
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWorkspaceId,
-      userId: user.id,
-      supabase: supabase,
-    });
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    if (membership.error === 'membership_lookup_failed') {
-      console.error('Membership lookup failed:', membership.error);
-      return NextResponse.json(
-        { error: 'Membership lookup failed' },
-        { status: 500 }
-      );
-    }
+      const sbAdmin = await createAdminClient();
 
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+      const { data: projectRecord, error: projectRecordError } = await sbAdmin
+        .from('task_projects')
+        .select('ws_id')
+        .eq('id', projectId)
+        .maybeSingle();
 
-    const sbAdmin = await createAdminClient();
+      if (projectRecordError) {
+        console.error('Error loading project:', projectRecordError);
+        return NextResponse.json(
+          { error: 'Failed to load project' },
+          { status: 500 }
+        );
+      }
 
-    const { data: projectRecord, error: projectRecordError } = await sbAdmin
-      .from('task_projects')
-      .select('ws_id')
-      .eq('id', projectId)
-      .maybeSingle();
+      if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
 
-    if (projectRecordError) {
-      console.error('Error loading project:', projectRecordError);
-      return NextResponse.json(
-        { error: 'Failed to load project' },
-        { status: 500 }
-      );
-    }
-
-    if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    const { data: projectTasks, error: tasksError } = await sbAdmin
-      .from('task_project_tasks')
-      .select(
-        `
+      const { data: projectTasks, error: tasksError } = await sbAdmin
+        .from('task_project_tasks')
+        .select(
+          `
         task:tasks!inner(
           *,
           task_lists(
@@ -123,214 +122,208 @@ export async function GET(
           projects:task_project_tasks(project:task_projects(id, name, status))
         )
       `
-      )
-      .eq('project_id', projectId)
-      .is('task.deleted_at', null);
+        )
+        .eq('project_id', projectId)
+        .is('task.deleted_at', null);
 
-    if (tasksError) {
-      console.error('Error fetching project tasks:', tasksError);
+      if (tasksError) {
+        console.error('Error fetching project tasks:', tasksError);
+        return NextResponse.json(
+          { error: 'Failed to fetch project tasks' },
+          { status: 500 }
+        );
+      }
+
+      const rawTasks = (projectTasks ?? [])
+        .map((pt) => pt.task)
+        .filter((task): task is NonNullable<typeof task> => {
+          if (!task || task.deleted_at) {
+            return false;
+          }
+
+          const boardWorkspaceId = task.task_lists?.workspace_boards?.ws_id;
+          return boardWorkspaceId === normalizedWorkspaceId;
+        });
+
+      const workTasks = rawTasks.filter(
+        (task) => task.task_lists?.status !== 'documents'
+      );
+      const documentTasks = rawTasks.filter(
+        (task) => task.task_lists?.status === 'documents'
+      );
+
+      const listIds = [
+        ...new Set(
+          workTasks
+            .map((t) => t.list_id)
+            .filter((lid): lid is string => lid !== null)
+        ),
+      ];
+
+      let lists: Array<{
+        id: string;
+        name: string | null;
+        archived: boolean | null;
+        created_at: string | null;
+        board_id: string | null;
+        creator_id: string | null;
+        deleted: boolean | null;
+        position: number | null;
+        status: string | null;
+        color: string | null;
+      }> = [];
+      let listsError: { message?: string } | null = null;
+
+      if (listIds.length > 0) {
+        const listResult = await sbAdmin
+          .from('task_lists')
+          .select('*')
+          .in('id', listIds)
+          .eq('deleted', false);
+
+        lists = listResult.data ?? [];
+        listsError = listResult.error;
+      }
+
+      if (listsError) {
+        console.error('Error fetching task lists:', listsError);
+        return NextResponse.json(
+          { error: 'Failed to fetch task lists' },
+          { status: 500 }
+        );
+      }
+
+      const formatTask = (task: (typeof rawTasks)[number]): Task => {
+        const normalizedLabels =
+          (task.labels as TaskLabelEntry[] | null | undefined)
+            ?.map((entry) => entry.label)
+            .filter((label): label is NonNullable<Task['labels']>[number] =>
+              Boolean(label)
+            ) ?? [];
+
+        const normalizedProjects =
+          (task.projects as TaskProjectEntry[] | null | undefined)
+            ?.map((entry) => entry.project)
+            .filter((proj): proj is NonNullable<Task['projects']>[number] =>
+              Boolean(proj)
+            ) ?? [];
+
+        const normalizedAssignees =
+          (task.assignees as TaskAssigneeEntry[] | null | undefined)?.map(
+            (entry) => ({
+              id: entry.user.id,
+              display_name: entry.user.display_name ?? null,
+              avatar_url: entry.user.avatar_url ?? null,
+            })
+          ) ?? [];
+
+        return {
+          ...task,
+          source_list_name: task.task_lists?.name ?? null,
+          source_list_status: task.task_lists?.status ?? null,
+          assignees: normalizedAssignees,
+          labels: normalizedLabels,
+          projects: normalizedProjects,
+        } as Task;
+      };
+
+      const formattedTasks: Task[] = workTasks.map(formatTask);
+      const formattedDocuments: Task[] = documentTasks.map(formatTask);
+
+      const formattedLists: TaskList[] = (lists ?? []).map((list) => ({
+        ...list,
+        name: list.name ?? 'Untitled list',
+        archived: list.archived ?? false,
+        created_at: list.created_at ?? new Date().toISOString(),
+        board_id: list.board_id ?? '',
+        creator_id: list.creator_id ?? '',
+        deleted: list.deleted ?? false,
+        position: list.position ?? 0,
+        status: (list.status as TaskList['status']) ?? 'active',
+        color: (list.color as TaskList['color']) ?? 'gray',
+      }));
+
+      return NextResponse.json({
+        tasks: formattedTasks,
+        documents: formattedDocuments,
+        lists: formattedLists,
+      });
+    } catch (error) {
+      console.error(
+        'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks:',
+        error
+      );
       return NextResponse.json(
-        { error: 'Failed to fetch project tasks' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
+  },
+  { allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH }
+);
 
-    const rawTasks = (projectTasks ?? [])
-      .map((pt) => pt.task)
-      .filter((task): task is NonNullable<typeof task> => {
-        if (!task || task.deleted_at) {
-          return false;
-        }
-
-        const boardWorkspaceId = task.task_lists?.workspace_boards?.ws_id;
-        return boardWorkspaceId === normalizedWorkspaceId;
+export const POST = withSessionAuth<RouteParams>(
+  async (request: NextRequest, { supabase, user }, { wsId, projectId }) => {
+    try {
+      let normalizedWorkspaceId: string;
+      try {
+        normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+      } catch {
+        return NextResponse.json(
+          { error: 'Workspace not found' },
+          { status: 404 }
+        );
+      }
+      const membership = await verifyWorkspaceMembershipType({
+        wsId: normalizedWorkspaceId,
+        userId: user.id,
+        supabase,
       });
 
-    const workTasks = rawTasks.filter(
-      (task) => task.task_lists?.status !== 'documents'
-    );
-    const documentTasks = rawTasks.filter(
-      (task) => task.task_lists?.status === 'documents'
-    );
+      if (membership.error === 'membership_lookup_failed') {
+        console.error('Membership lookup failed:', membership.error);
+        return NextResponse.json(
+          { error: 'Membership lookup failed' },
+          { status: 500 }
+        );
+      }
 
-    const listIds = [
-      ...new Set(
-        workTasks
-          .map((t) => t.list_id)
-          .filter((lid): lid is string => lid !== null)
-      ),
-    ];
+      if (!membership.ok) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
 
-    let lists: Array<{
-      id: string;
-      name: string | null;
-      archived: boolean | null;
-      created_at: string | null;
-      board_id: string | null;
-      creator_id: string | null;
-      deleted: boolean | null;
-      position: number | null;
-      status: string | null;
-      color: string | null;
-    }> = [];
-    let listsError: { message?: string } | null = null;
+      const body = await request.json();
+      const { taskId } = linkTaskSchema.parse(body);
 
-    if (listIds.length > 0) {
-      const listResult = await sbAdmin
-        .from('task_lists')
-        .select('*')
-        .in('id', listIds)
-        .eq('deleted', false);
+      const sbAdmin = await createAdminClient();
 
-      lists = listResult.data ?? [];
-      listsError = listResult.error;
-    }
+      // Ensure the project exists in the same workspace
+      const { data: projectRecord, error: projectRecordError } = await sbAdmin
+        .from('task_projects')
+        .select('ws_id')
+        .eq('id', projectId)
+        .maybeSingle();
 
-    if (listsError) {
-      console.error('Error fetching task lists:', listsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch task lists' },
-        { status: 500 }
-      );
-    }
+      if (projectRecordError) {
+        console.error('Error loading project:', projectRecordError);
+        return NextResponse.json(
+          { error: 'Failed to load project' },
+          { status: 500 }
+        );
+      }
 
-    const formatTask = (task: (typeof rawTasks)[number]): Task => {
-      const normalizedLabels =
-        (task.labels as TaskLabelEntry[] | null | undefined)
-          ?.map((entry) => entry.label)
-          .filter((label): label is NonNullable<Task['labels']>[number] =>
-            Boolean(label)
-          ) ?? [];
+      if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
 
-      const normalizedProjects =
-        (task.projects as TaskProjectEntry[] | null | undefined)
-          ?.map((entry) => entry.project)
-          .filter((proj): proj is NonNullable<Task['projects']>[number] =>
-            Boolean(proj)
-          ) ?? [];
-
-      const normalizedAssignees =
-        (task.assignees as TaskAssigneeEntry[] | null | undefined)?.map(
-          (entry) => ({
-            id: entry.user.id,
-            display_name: entry.user.display_name ?? null,
-            avatar_url: entry.user.avatar_url ?? null,
-          })
-        ) ?? [];
-
-      return {
-        ...task,
-        source_list_name: task.task_lists?.name ?? null,
-        source_list_status: task.task_lists?.status ?? null,
-        assignees: normalizedAssignees,
-        labels: normalizedLabels,
-        projects: normalizedProjects,
-      } as Task;
-    };
-
-    const formattedTasks: Task[] = workTasks.map(formatTask);
-    const formattedDocuments: Task[] = documentTasks.map(formatTask);
-
-    const formattedLists: TaskList[] = (lists ?? []).map((list) => ({
-      ...list,
-      name: list.name ?? 'Untitled list',
-      archived: list.archived ?? false,
-      created_at: list.created_at ?? new Date().toISOString(),
-      board_id: list.board_id ?? '',
-      creator_id: list.creator_id ?? '',
-      deleted: list.deleted ?? false,
-      position: list.position ?? 0,
-      status: (list.status as TaskList['status']) ?? 'active',
-      color: (list.color as TaskList['color']) ?? 'gray',
-    }));
-
-    return NextResponse.json({
-      tasks: formattedTasks,
-      documents: formattedDocuments,
-      lists: formattedLists,
-    });
-  } catch (error) {
-    console.error(
-      'Error in GET /api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; projectId: string }> }
-) {
-  try {
-    const { wsId, projectId } = await params;
-    const supabase = await createClient(request);
-    let normalizedWorkspaceId: string;
-    try {
-      normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
-    } catch {
-      return NextResponse.json(
-        { error: 'Workspace not found' },
-        { status: 404 }
-      );
-    }
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWorkspaceId,
-      userId: user.id,
-      supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      console.error('Membership lookup failed:', membership.error);
-      return NextResponse.json(
-        { error: 'Membership lookup failed' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const { taskId } = linkTaskSchema.parse(body);
-
-    const sbAdmin = await createAdminClient();
-
-    // Ensure the project exists in the same workspace
-    const { data: projectRecord, error: projectRecordError } = await sbAdmin
-      .from('task_projects')
-      .select('ws_id')
-      .eq('id', projectId)
-      .maybeSingle();
-
-    if (projectRecordError) {
-      console.error('Error loading project:', projectRecordError);
-      return NextResponse.json(
-        { error: 'Failed to load project' },
-        { status: 500 }
-      );
-    }
-
-    if (!projectRecord || projectRecord.ws_id !== normalizedWorkspaceId) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    // Fetch the task and verify workspace ownership
-    const { data: taskRecord } = await sbAdmin
-      .from('tasks')
-      .select(
-        `
+      // Fetch the task and verify workspace ownership
+      const { data: taskRecord } = await sbAdmin
+        .from('tasks')
+        .select(
+          `
           id,
           name,
           completed,
@@ -343,73 +336,75 @@ export async function POST(
             name
           )
         `
-      )
-      .eq('id', taskId)
-      .single();
+        )
+        .eq('id', taskId)
+        .single();
 
-    if (
-      !taskRecord ||
-      taskRecord.task_lists?.workspace_boards?.ws_id !== normalizedWorkspaceId
-    ) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-    }
+      if (
+        !taskRecord ||
+        taskRecord.task_lists?.workspace_boards?.ws_id !== normalizedWorkspaceId
+      ) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
 
-    if (taskRecord.task_lists?.status === 'documents') {
-      return NextResponse.json(
-        { error: 'Document-list tasks cannot be linked as project tasks' },
-        { status: 400 }
-      );
-    }
-
-    const linkProjectPayload: TaskActorRpcArgs<'link_task_project_with_actor'> =
-      {
-        p_task_id: taskId,
-        p_project_id: projectId,
-        p_actor_user_id: user.id,
-      };
-    const { error: linkError } = await sbAdmin.rpc(
-      'link_task_project_with_actor',
-      linkProjectPayload
-    );
-
-    if (linkError) {
-      if ('code' in linkError && linkError.code === '23505') {
+      if (taskRecord.task_lists?.status === 'documents') {
         return NextResponse.json(
-          { error: 'Task already linked to this project' },
-          { status: 409 }
+          { error: 'Document-list tasks cannot be linked as project tasks' },
+          { status: 400 }
         );
       }
 
-      console.error('Error linking task to project:', linkError);
+      const linkProjectPayload: TaskActorRpcArgs<'link_task_project_with_actor'> =
+        {
+          p_task_id: taskId,
+          p_project_id: projectId,
+          p_actor_user_id: user.id,
+        };
+      const { error: linkError } = await sbAdmin.rpc(
+        'link_task_project_with_actor',
+        linkProjectPayload
+      );
+
+      if (linkError) {
+        if ('code' in linkError && linkError.code === '23505') {
+          return NextResponse.json(
+            { error: 'Task already linked to this project' },
+            { status: 409 }
+          );
+        }
+
+        console.error('Error linking task to project:', linkError);
+        return NextResponse.json(
+          { error: 'Failed to link task to project' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        linkedTask: {
+          id: taskRecord.id,
+          name: taskRecord.name,
+          completed: taskRecord.completed,
+          completed_at: taskRecord.completed_at,
+          closed_at: taskRecord.closed_at,
+          priority: taskRecord.priority,
+          listName: taskRecord.task_lists?.name ?? null,
+          listStatus: taskRecord.task_lists?.status ?? null,
+        },
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+      console.error(
+        'Error in POST /api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks:',
+        error
+      );
       return NextResponse.json(
-        { error: 'Failed to link task to project' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({
-      linkedTask: {
-        id: taskRecord.id,
-        name: taskRecord.name,
-        completed: taskRecord.completed,
-        completed_at: taskRecord.completed_at,
-        closed_at: taskRecord.closed_at,
-        priority: taskRecord.priority,
-        listName: taskRecord.task_lists?.name ?? null,
-        listStatus: taskRecord.task_lists?.status ?? null,
-      },
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-    console.error(
-      'Error in POST /api/v1/workspaces/[wsId]/task-projects/[projectId]/tasks:',
-      error
-    );
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: TASK_PROJECTS_APP_SESSION_AUTH }
+);

@@ -11,3 +11,4 @@ export * from './task-helper/sort-keys';
 export * from './task-helper/task-hooks-basic';
 export * from './task-helper/task-hooks-move';
 export * from './task-helper/task-operations';
+export * from './task-helper/task-sort';

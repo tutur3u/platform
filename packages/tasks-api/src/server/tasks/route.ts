@@ -18,6 +18,9 @@ import {
 import {
   getPersonalExternalStagingBoardId,
   getPersonalExternalStagingListId,
+  parseTaskSortBy,
+  sortTasksByCriterion,
+  type TaskSortBy,
 } from '@tuturuuu/utils/task-helper';
 import {
   isTaskBoardCompletedStatus,
@@ -187,17 +190,6 @@ type ExternalTaskSortBy =
   | 'due-asc'
   | 'name-asc'
   | 'source-asc';
-type TaskSortBy =
-  | 'name-asc'
-  | 'name-desc'
-  | 'priority-high'
-  | 'priority-low'
-  | 'due-date-asc'
-  | 'due-date-desc'
-  | 'created-date-desc'
-  | 'created-date-asc'
-  | 'estimation-high'
-  | 'estimation-low';
 type TaskSourceScope =
   | 'all_visible'
   | 'current_board'
@@ -344,24 +336,6 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
       return value;
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
-  }
-}
-
-function parseTaskSortBy(value: string | null): TaskSortBy | undefined {
-  switch (value) {
-    case 'name-asc':
-    case 'name-desc':
-    case 'priority-high':
-    case 'priority-low':
-    case 'due-date-asc':
-    case 'due-date-desc':
-    case 'created-date-desc':
-    case 'created-date-asc':
-    case 'estimation-high':
-    case 'estimation-low':
-      return value;
-    default:
-      return undefined;
   }
 }
 
@@ -1169,6 +1143,17 @@ export async function handleTaskRouteGET(
     }
 
     const isPersonalWorkspace = workspaceRow?.personal === true;
+    const shouldMergePersonalSort = !!(
+      sortBy &&
+      isPersonalWorkspace &&
+      memberCheck.ok &&
+      !forTimeTracking &&
+      sourceScope === 'all_visible' &&
+      (boardId || listId || virtualStagingBoardId)
+    );
+    const sourceSortPage = shouldMergePersonalSort
+      ? { limit: offset + limit, offset: 0 }
+      : { limit, offset };
     const personalExternalCountBoardId = virtualStagingBoardId ?? boardId;
     let personalExternalTaskCountByListId: Map<string, number> | null = null;
 
@@ -1478,8 +1463,7 @@ export async function handleTaskRouteGET(
           dueDateFrom,
           dueDateTo,
           includeUnassigned,
-          limit,
-          offset,
+          ...sourceSortPage,
         });
 
         sourceTaskCount = rpcCount;
@@ -1682,7 +1666,7 @@ export async function handleTaskRouteGET(
           })
           .order('personal_added_at', { ascending: true });
 
-        if (listId && !virtualStagingBoardId) {
+        if (listId && !virtualStagingBoardId && !sortBy) {
           placementQuery = placementQuery.range(offset, offset + limit - 1);
         }
 
@@ -2038,10 +2022,9 @@ export async function handleTaskRouteGET(
             break;
         }
 
-        const defaultExternalResult = await defaultExternalQuery.range(
-          0,
-          offset + limit - 1
-        );
+        const defaultExternalResult = sortBy
+          ? await defaultExternalQuery
+          : await defaultExternalQuery.range(0, offset + limit - 1);
 
         if (defaultExternalResult.error) {
           logTaskRouteError(
@@ -2156,6 +2139,9 @@ export async function handleTaskRouteGET(
         { status: 500 }
       );
     }
+
+    tasks = sortTasksByCriterion(tasks, sortBy);
+    if (shouldMergePersonalSort) tasks = tasks.slice(offset, offset + limit);
 
     const shouldIncludeRelationshipSummary =
       includeRelationshipSummary && !forTimeTracking;
