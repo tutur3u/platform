@@ -29,6 +29,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { FINANCE_INVOICE_ROUTE_POLICY } from './lib/api-route-policies';
+import { pinFinanceDeployment } from './lib/vercel-deployment-pin';
 
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
@@ -44,6 +45,9 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
+  const finish = (response: NextResponse) =>
+    pinFinanceDeployment(req, response);
+
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -58,9 +62,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return clearSupabaseAuthCookies(
-        req,
-        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return finish(
+        clearSupabaseAuthCookies(
+          req,
+          NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        )
       );
     }
 
@@ -72,12 +78,12 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return clearSupabaseAuthCookies(req, guardResponse);
+      return finish(clearSupabaseAuthCookies(req, guardResponse));
     }
 
-    return (
+    return finish(
       appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(req, NextResponse.next())
+        clearSupabaseAuthCookies(req, NextResponse.next())
     );
   }
 
@@ -85,7 +91,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     locales: supportedLocales,
   });
   if (verifyTokenResponse) {
-    return verifyTokenResponse;
+    return finish(verifyTokenResponse);
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -93,7 +99,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   // If the auth middleware returned a redirect response, return it
   if (authRes.headers.has('Location')) {
-    return authRes;
+    return finish(authRes);
   }
 
   const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
@@ -156,7 +162,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
-      return rootRedirect;
+      return finish(rootRedirect);
     }
   }
 
@@ -181,7 +187,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
-          return personalRedirect;
+          return finish(personalRedirect);
         }
       }
     } catch (error) {
@@ -222,14 +228,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
         const redirectUrl = new URL(`/${target}`, req.nextUrl);
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
-        return wsRedirect;
+        return finish(wsRedirect);
       }
 
       // Fallback to personal workspace if no default workspace found
       const redirectUrl = new URL('/personal', req.nextUrl);
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
-      return fallbackRedirect;
+      return finish(fallbackRedirect);
     } catch (error) {
       console.error('Error handling root path redirect:', error);
     }
@@ -238,7 +244,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // Continue with locale handling
   const localeRes = handleLocale({ req });
   propagateAuthCookies(authRes, localeRes);
-  return localeRes;
+  return finish(localeRes);
 }
 
 export const config = {

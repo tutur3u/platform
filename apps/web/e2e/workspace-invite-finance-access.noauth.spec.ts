@@ -66,10 +66,12 @@ test.describe('accepted workspace invitation Finance access', () => {
     const walletId = randomUUID();
     const categoryId = randomUUID();
     const transactionId = randomUUID();
+    const invoiceId = randomUUID();
     const notificationId = randomUUID();
     const suffix = workspaceId.slice(0, 8);
     const walletName = `Visible wallet ${suffix}`;
     const categoryName = `Visible expense ${suffix}`;
+    const invoiceNotice = `Visible invoice ${suffix}`;
     const notificationTitle = `Finance access restored ${suffix}`;
     let context: import('@playwright/test').BrowserContext | null = null;
 
@@ -93,7 +95,12 @@ test.describe('accepted workspace invitation Finance access', () => {
       await postRestRow({
         request,
         table: 'workspace_role_permissions',
-        data: ['view_transactions', 'view_finance_stats'].map((permission) => ({
+        data: [
+          'create_invoices',
+          'view_finance_stats',
+          'view_invoices',
+          'view_transactions',
+        ].map((permission) => ({
           enabled: true,
           permission,
           role_id: roleId,
@@ -155,6 +162,20 @@ test.describe('accepted workspace invitation Finance access', () => {
       });
       await postRestRow({
         request,
+        table: 'finance_invoices',
+        data: {
+          category_id: categoryId,
+          id: invoiceId,
+          notice: invoiceNotice,
+          paid_amount: 125_000,
+          platform_creator_id: TEST_USER.id,
+          price: 125_000,
+          wallet_id: walletId,
+          ws_id: workspaceId,
+        },
+      });
+      await postRestRow({
+        request,
         table: 'notifications',
         data: {
           description: 'Visible to an invited Finance member',
@@ -181,6 +202,19 @@ test.describe('accepted workspace invitation Finance access', () => {
         expect(body.length).toBeGreaterThan(0);
       }
 
+      const invoicesResponse = await request.get(
+        `${FINANCE_BASE_URL}/api/v1/workspaces/${workspaceId}/finance/invoices`,
+        { failOnStatusCode: false, headers }
+      );
+      const invoicesText = await invoicesResponse.text();
+      expect(invoicesResponse.status(), invoicesText).toBe(200);
+      const invoicesBody = JSON.parse(invoicesText) as {
+        data: Array<{ id: string }>;
+      };
+      expect(invoicesBody.data).toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: invoiceId })])
+      );
+
       context = await browser.newContext({
         extraHTTPHeaders: headers,
         ignoreHTTPSErrors: true,
@@ -193,6 +227,30 @@ test.describe('accepted workspace invitation Finance access', () => {
       );
       expect(navigation?.status(), '/analytics').toBeLessThan(400);
       await expect(page).not.toHaveURL(/\/404(?:\?|$)/u);
+
+      for (const invoicePath of [
+        `/${workspaceId}/invoices`,
+        `/${workspaceId}/invoices/${invoiceId}`,
+        `/${workspaceId}/invoices/new`,
+      ]) {
+        const invoiceNavigation = await page.goto(
+          `${FINANCE_BASE_URL}${invoicePath}`,
+          { waitUntil: 'domcontentloaded' }
+        );
+        expect(invoiceNavigation?.status(), invoicePath).toBeLessThan(400);
+        await expect(page).not.toHaveURL(/\/404(?:\?|$)/u);
+      }
+
+      await page.goto(
+        `${FINANCE_BASE_URL}/${workspaceId}/invoices/${invoiceId}`
+      );
+      await expect(page.getByText(invoiceNotice).first()).toBeVisible({
+        timeout: 30_000,
+      });
+
+      await page.goto(`${FINANCE_BASE_URL}/${workspaceId}/analytics`, {
+        waitUntil: 'domcontentloaded',
+      });
 
       const notificationTrigger = page.getByRole('button', {
         name: 'Notifications',
