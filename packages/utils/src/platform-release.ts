@@ -1,6 +1,6 @@
 import { PLATFORM_BUILD_METADATA } from './generated/platform-build-metadata';
 
-export const TUTURUUU_PLATFORM_VERSION = '0.40.2'; // x-release-please-version
+export const TUTURUUU_PLATFORM_VERSION = '0.40.3'; // x-release-please-version
 
 export type PlatformBuildMetadataInput = {
   /** ISO timestamp of the source commit used for the build, not deployment time. */
