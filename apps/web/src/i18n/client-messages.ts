@@ -6,6 +6,47 @@ export const ROOT_CLIENT_MESSAGE_NAMESPACES = [
   'marketing-nav',
 ] as const;
 
+// ClientProviders is mounted by the root layout, so its global rate-limit
+// toast and diagnostics dialog must remain translated on public/auth routes.
+// Keep this explicit to preserve the small root payload.
+export const RATE_LIMIT_COMMON_MESSAGE_KEYS = [
+  'close',
+  'rate_limited_appeal_description',
+  'rate_limited_appeal_failed',
+  'rate_limited_appeal_failed_description',
+  'rate_limited_appeal_message_label',
+  'rate_limited_appeal_message_placeholder',
+  'rate_limited_appeal_review_state',
+  'rate_limited_appeal_submit',
+  'rate_limited_appeal_submitting',
+  'rate_limited_appeal_success',
+  'rate_limited_appeal_title',
+  'rate_limited_appeal_turnstile_failed',
+  'rate_limited_appeal_turnstile_not_configured',
+  'rate_limited_clear_ip_block',
+  'rate_limited_clear_ip_block_failed',
+  'rate_limited_clear_ip_block_failed_description',
+  'rate_limited_clear_ip_block_loading',
+  'rate_limited_clear_ip_block_success',
+  'rate_limited_copied',
+  'rate_limited_copy_details',
+  'rate_limited_copy_failed',
+  'rate_limited_debug_warning_description',
+  'rate_limited_debug_warning_title',
+  'rate_limited_details_description',
+  'rate_limited_details_fields',
+  'rate_limited_details_sections',
+  'rate_limited_details_title',
+  'rate_limited_hard_block_copy_hint',
+  'rate_limited_hard_block_description',
+  'rate_limited_hard_block_notice_description',
+  'rate_limited_hard_block_notice_title',
+  'rate_limited_hard_block_title',
+  'rate_limited_retry',
+  'rate_limited_staff_debug_warning',
+  'rate_limited_view_details',
+] as const;
+
 export const ROOT_CLIENT_MESSAGE_PATHS = [
   'common.about',
   'common.acceptable-use',
@@ -35,6 +76,7 @@ export const ROOT_CLIENT_MESSAGE_PATHS = [
   'common.security',
   'common.terms',
   'common.ui',
+  ...RATE_LIMIT_COMMON_MESSAGE_KEYS.map((key) => `common.${key}`),
   'marketing-nav',
 ] as const;
 

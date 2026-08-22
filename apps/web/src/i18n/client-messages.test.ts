@@ -9,6 +9,7 @@ import {
   getPublicClientMessages,
   MARKETING_CLIENT_MESSAGE_NAMESPACES,
   PUBLIC_CLIENT_MESSAGE_NAMESPACES,
+  RATE_LIMIT_COMMON_MESSAGE_KEYS,
   ROOT_CLIENT_MESSAGE_NAMESPACES,
   ROOT_CLIENT_MESSAGE_PATHS,
   UI_CLIENT_MESSAGE_NAMESPACES,
@@ -80,6 +81,43 @@ describe('getPublicClientMessages', () => {
     for (const path of ROOT_CLIENT_MESSAGE_PATHS) {
       expect(getClientMessages(en, [path])).not.toEqual({});
       expect(getClientMessages(vi, [path])).not.toEqual({});
+    }
+  });
+
+  it('keeps the global rate-limit experience translated on public and auth pages', () => {
+    for (const messages of [en, vi]) {
+      const publicMessages = getPublicClientMessages(messages);
+
+      expect(publicMessages).toHaveProperty('common.rate_limited_retry');
+      expect(publicMessages).toHaveProperty('common.rate_limited_view_details');
+      expect(publicMessages).toHaveProperty(
+        'common.rate_limited_details_title'
+      );
+      expect(publicMessages).toHaveProperty(
+        'common.rate_limited_details_fields.request'
+      );
+      expect(publicMessages).toHaveProperty(
+        'common.rate_limited_details_sections.headers'
+      );
+      expect(publicMessages).toHaveProperty('common.close');
+    }
+  });
+
+  it('covers every literal common key used by the global rate-limit experience', () => {
+    const sources = [
+      join('src/components/client-providers.tsx'),
+      join('src/components/rate-limit-details-dialog.tsx'),
+      join('src/components/rate-limit-details-dialog-actions.tsx'),
+      join('src/components/rate-limit-details-dialog-parts.tsx'),
+    ];
+    const commonKeyPattern = /\bt\(['"]([^'"]+)['"]/g;
+
+    for (const source of sources) {
+      const contents = readFileSync(source, 'utf8');
+      for (const match of contents.matchAll(commonKeyPattern)) {
+        const topLevelKey = match[1]?.split('.')[0];
+        expect(RATE_LIMIT_COMMON_MESSAGE_KEYS).toContain(topLevelKey);
+      }
     }
   });
 
