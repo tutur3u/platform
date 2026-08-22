@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.1](https://github.com/tutur3u/platform/compare/rewise-v0.37.0...rewise-v0.37.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/rewise-v0.36.0...rewise-v0.37.0) (2026-08-20)
 
 

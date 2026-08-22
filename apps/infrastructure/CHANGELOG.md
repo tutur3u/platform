@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1](https://github.com/tutur3u/platform/compare/infra-v0.22.0...infra-v0.22.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **ci:** complete dependency and Rust validation ([61e4c12](https://github.com/tutur3u/platform/commit/61e4c12ec3c90707dde63ed7469854519b3688c8))
+
 ## [0.22.0](https://github.com/tutur3u/platform/compare/infra-v0.21.0...infra-v0.22.0) (2026-08-20)
 
 
