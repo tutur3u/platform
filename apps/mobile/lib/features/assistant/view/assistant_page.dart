@@ -831,11 +831,11 @@ class _AssistantPageState extends State<AssistantPage> {
 
   Future<void> _pickFiles(String wsId) async {
     final result = await FilePicker.pickFiles();
-    if (result == null || result.files.isEmpty) {
+    if (result.isEmpty) {
       return;
     }
 
-    await _chatCubit.addComposerAttachments(wsId: wsId, files: result.files);
+    await _chatCubit.addComposerAttachments(wsId: wsId, files: result);
   }
 
   Future<void> _toggleFullscreen(bool value) async {

@@ -9,17 +9,18 @@ class _TransactionAttachmentDraft {
   const _TransactionAttachmentDraft({
     required this.id,
     required this.file,
+    required this.size,
     this.status = _TransactionAttachmentStatus.pending,
   });
-
   final String id;
   final PlatformFile file;
+  final int size;
   final _TransactionAttachmentStatus status;
-
   _TransactionAttachmentDraft copyWith({_TransactionAttachmentStatus? status}) {
     return _TransactionAttachmentDraft(
       id: id,
       file: file,
+      size: size,
       status: status ?? this.status,
     );
   }
@@ -30,7 +31,6 @@ String _formatAttachmentSize(int bytes) {
     final value = bytes / (1024 * 1024);
     return '${value.toStringAsFixed(value >= 10 ? 0 : 1)} MB';
   }
-
   if (bytes >= 1024) {
     final value = bytes / 1024;
     return '${value.toStringAsFixed(value >= 10 ? 0 : 1)} KB';
@@ -194,7 +194,7 @@ class _TransactionAttachmentTile extends StatelessWidget {
     final theme = shad.Theme.of(context);
     final statusLabel = switch (attachment.status) {
       _TransactionAttachmentStatus.pending => _formatAttachmentSize(
-        attachment.file.size,
+        attachment.size,
       ),
       _TransactionAttachmentStatus.uploading =>
         context.l10n.financeAttachmentUploading,

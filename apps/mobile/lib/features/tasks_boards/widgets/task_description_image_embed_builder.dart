@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -129,15 +128,13 @@ class _TaskDescriptionImagePreview extends StatelessWidget {
   }
 
   void _openFullscreen(BuildContext context, String heroTag) {
-    unawaited(
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute<void>(
-          fullscreenDialog: true,
-          builder: (_) => _TaskDescriptionImageFullscreenPage(
-            heroTag: heroTag,
-            url: url,
-            headers: headers,
-          ),
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _TaskDescriptionImageFullscreenPage(
+          heroTag: heroTag,
+          url: url,
+          headers: headers,
         ),
       ),
     );

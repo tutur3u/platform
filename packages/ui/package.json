@@ -148,7 +148,7 @@
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.8",
     "react-dropzone": "^20.1.1",
-    "react-hook-form": "^7.85.0",
+    "react-hook-form": "^7.86.0",
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.5.0",

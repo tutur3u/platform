@@ -1,7 +1,7 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.5.9",
+    "@biomejs/biome": "^2.5.10",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.1.11",

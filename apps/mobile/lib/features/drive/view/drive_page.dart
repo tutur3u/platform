@@ -302,9 +302,9 @@ class _DrivePageState extends State<DrivePage> {
 
   Future<void> _uploadFiles() async {
     final result = await FilePicker.pickFiles();
-    if (result == null || result.files.isEmpty || _wsId == null) return;
+    if (result.isEmpty || _wsId == null) return;
 
-    for (final file in result.files) {
+    for (final file in result) {
       try {
         final bytes = await file.readAsBytes();
         final mimeType =

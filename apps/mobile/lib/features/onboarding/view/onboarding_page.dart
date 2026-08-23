@@ -65,11 +65,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   void _nextPage() {
     if (_currentPage < _pageCount - 1) {
-      unawaited(
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        ),
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
       );
     } else {
       unawaited(_completeOnboarding());

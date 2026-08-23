@@ -224,13 +224,11 @@ class _RequestImageThumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        unawaited(
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => _ImagePreviewPage(
-                imageUrls: imageUrls,
-                initialIndex: imageIndex,
-              ),
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => _ImagePreviewPage(
+              imageUrls: imageUrls,
+              initialIndex: imageIndex,
             ),
           ),
         );

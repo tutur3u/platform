@@ -230,7 +230,7 @@ class _Header extends StatelessWidget {
                     unawaited(shad.closeOverlay<void>(context));
                     return;
                   }
-                  unawaited(Navigator.of(context).maybePop());
+                  Navigator.of(context).maybePop();
                 },
                 icon: const Icon(Icons.close),
               ),

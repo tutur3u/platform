@@ -75,7 +75,7 @@ class _ChatSearchSheetState extends State<ChatSearchSheet> {
                                       forceRefresh: true,
                                     ),
                                   );
-                                  unawaited(Navigator.maybePop(context));
+                                  Navigator.maybePop(context);
                                 },
                               );
                             },

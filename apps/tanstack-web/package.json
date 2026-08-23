@@ -52,7 +52,7 @@
     "nuqs": "^2.10.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-hook-form": "^7.85.0",
+    "react-hook-form": "^7.86.0",
     "react-papaparse": "^4.4.0",
     "use-intl": "^4.13.7",
     "zod": "^4.4.3"

@@ -161,16 +161,14 @@ class _TaskDescriptionVideoPlayerState
     if (controller != null && controller.value.isPlaying) {
       unawaited(controller.pause());
     }
-    unawaited(
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute<void>(
-          fullscreenDialog: true,
-          builder: (_) => _TaskDescriptionVideoFullscreenPage(
-            url: widget.url,
-            headers: widget.headers,
-            initialPosition: initialPosition,
-            autoPlay: autoPlay,
-          ),
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (_) => _TaskDescriptionVideoFullscreenPage(
+          url: widget.url,
+          headers: widget.headers,
+          initialPosition: initialPosition,
+          autoPlay: autoPlay,
         ),
       ),
     );

@@ -58,14 +58,14 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
   void _startAnimation() {
     _delayTimer?.cancel();
     if (widget.delay == Duration.zero) {
-      unawaited(_controller.forward());
+      _controller.forward();
       return;
     }
     _delayTimer = Timer(widget.delay, () {
       if (!mounted) {
         return;
       }
-      unawaited(_controller.forward());
+      _controller.forward();
     });
   }
 

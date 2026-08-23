@@ -222,7 +222,7 @@ class _CreateCategorySheetState extends State<CreateCategorySheet> {
                       icon: const Icon(shad.LucideIcons.x, size: 18),
                       onPressed: _saving
                           ? null
-                          : () => unawaited(Navigator.maybePop(context)),
+                          : () => Navigator.maybePop(context),
                     ),
                   ],
                 ),

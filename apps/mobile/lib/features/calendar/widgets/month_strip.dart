@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 
@@ -67,12 +65,10 @@ class _MonthStripState extends State<MonthStrip> {
       final targetPage = _monthPageForMonth(widget.focusedMonth);
       if (_monthPageController.hasClients &&
           (_monthPageController.page?.round() ?? 0) != targetPage) {
-        unawaited(
-          _monthPageController.animateToPage(
-            targetPage,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          ),
+        _monthPageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
         );
       }
     }
@@ -82,12 +78,10 @@ class _MonthStripState extends State<MonthStrip> {
       final targetPage = _weekPageForDate(widget.selectedDate);
       if (_weekPageController.hasClients &&
           (_weekPageController.page?.round() ?? 0) != targetPage) {
-        unawaited(
-          _weekPageController.animateToPage(
-            targetPage,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          ),
+        _weekPageController.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
         );
       }
     }

@@ -19,7 +19,7 @@ PODS:
     - Flutter
   - device_info_plus (0.0.1):
     - Flutter
-  - file_picker (0.0.1):
+  - file_picker_darwin (1.0.0):
     - Flutter
     - FlutterMacOS
   - Firebase/CoreOnly (12.17.0):
@@ -252,7 +252,7 @@ DEPENDENCIES:
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
-  - file_picker (from `.symlinks/plugins/file_picker/darwin`)
+  - file_picker_darwin (from `.symlinks/plugins/file_picker_darwin/darwin`)
   - firebase_analytics (from `.symlinks/plugins/firebase_analytics/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_crashlytics (from `.symlinks/plugins/firebase_crashlytics/ios`)
@@ -318,8 +318,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
-  file_picker:
-    :path: ".symlinks/plugins/file_picker/darwin"
+  file_picker_darwin:
+    :path: ".symlinks/plugins/file_picker_darwin/darwin"
   firebase_analytics:
     :path: ".symlinks/plugins/firebase_analytics/ios"
   firebase_core:
@@ -382,7 +382,7 @@ SPEC CHECKSUMS:
   camera_avfoundation: 968a9a5323c79a99c166ad9d7866bfd2047b5a9b
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
-  file_picker: 70164d9778c42c47218d6cd79ce435de0856b11a
+  file_picker_darwin: 65c8ed1d70cc2ea0b81ae1840db93f8d9c051d19
   Firebase: e8400c058702940d53f31fc0653e4e7a06332326
   firebase_analytics: 4dc4986181e6f58d24f879716f175a53e837c914
   firebase_core: c94f9efeed0ded590b7eecaf6110a374eb865d7a
@@ -397,7 +397,7 @@ SPEC CHECKSUMS:
   FirebaseMessaging: 313d69fe6529c8846813d1660b65d7d38bc16954
   FirebaseRemoteConfigInterop: 785e617ae4cbc778eea97dde952b88fb934e11ff
   FirebaseSessions: 83cf567ddcef20303eb85e003dfdbe030343ef8d
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
   flutter_inappwebview_ios: b89ba3482b96fb25e00c967aae065701b66e9b99
   flutter_keyboard_visibility_temp_fork: 95b2d534bacf6ac62e7fcbe5c2a9e2c2a17ce06f
   flutter_local_notifications: 643a3eda1ce1c0599413ca31672536d423dee214
