@@ -7,7 +7,7 @@ import {
 
 describe('platform release metadata', () => {
   it('uses the centralized shared browser app version', () => {
-    expect(TUTURUUU_PLATFORM_VERSION).toBe('0.40.2'); // x-release-please-version
+    expect(TUTURUUU_PLATFORM_VERSION).toBe('0.40.3'); // x-release-please-version
   });
 
   it('preserves the source timestamp in builtAt and derives a short hash', () => {

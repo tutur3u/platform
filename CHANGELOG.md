@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.3](https://github.com/tutur3u/platform/compare/platform-v0.40.2...platform-v0.40.3) (2026-08-22)
+
+
+### Bug Fixes
+
+* **web:** keep rate-limit diagnostics translated ([6a5389f](https://github.com/tutur3u/platform/commit/6a5389fd0b68889d57e0b7bf1de77464cc04ad44))
+
 ## [0.40.2](https://github.com/tutur3u/platform/compare/platform-v0.40.1...platform-v0.40.2) (2026-08-21)
 
 
