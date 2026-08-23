@@ -38,7 +38,6 @@ vi.mock('@tuturuuu/ui/hooks/use-workspace-presence', () => ({
   },
 }));
 
-// Mock Next.js navigation (no longer needs useRouter/usePathname for URL manipulation)
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
@@ -184,7 +183,6 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
   })),
 }));
 
-// Mock the TaskEditDialog component since it's lazy-loaded
 vi.mock('../task-edit-dialog', () => ({
   TaskEditDialog: ({
     presentationPreferences,
@@ -241,7 +239,6 @@ vi.mock('../task-edit-dialog', () => ({
   },
 }));
 
-// Mock task data
 const mockTask: Task = {
   id: 'task-1',
   name: 'Test Task',
@@ -297,7 +294,6 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Spy on window.history methods for URL manipulation tests
 let pushStateSpy: ReturnType<typeof vi.spyOn>;
 let replaceStateSpy: ReturnType<typeof vi.spyOn>;
 const fetchMock = vi.fn();
@@ -349,7 +345,6 @@ beforeEach(() => {
     json: async () => ({ value: 'false' }),
   });
   global.fetch = fetchMock as typeof fetch;
-  // Set a known initial pathname for tests
   Object.defineProperty(window, 'location', {
     value: { ...window.location, pathname: '/workspace-1/tasks' },
     writable: true,
@@ -493,7 +488,6 @@ describe('TaskDialogManager', () => {
       expect(getByTestId('dialog-open-state')).toHaveTextContent('true');
     });
 
-    // Click close button
     const closeButton = getByTestId('close-button');
     fireEvent.click(closeButton);
 
@@ -675,7 +669,7 @@ describe('TaskDialogManager', () => {
     act(() => {
       window.dispatchEvent(
         new CustomEvent(REQUEST_OPEN_TASK_EVENT, {
-          detail: { taskId: 'task-42' },
+          detail: { taskId: 'task-42', wsId: 'notification-workspace' },
         })
       );
     });
@@ -687,6 +681,11 @@ describe('TaskDialogManager', () => {
       expect(
         document.querySelector('[data-testid="task-name"]')
       ).toHaveTextContent('Test Task');
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
+        'task-42',
+        expect.not.objectContaining({ taskWsId: expect.anything() }),
+        expect.any(Object)
+      );
     });
   });
 

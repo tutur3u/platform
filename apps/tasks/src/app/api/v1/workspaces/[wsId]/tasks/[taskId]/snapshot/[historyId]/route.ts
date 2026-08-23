@@ -1,8 +1,13 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import type { WorkspaceTask } from '@tuturuuu/types/db';
-import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+
+const TASK_SNAPSHOT_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
 
 type TaskRelationshipsSnapshot = {
   assignees?: { id: string; user_id: string }[];
@@ -10,12 +15,17 @@ type TaskRelationshipsSnapshot = {
   projects?: { id: string }[];
 };
 
+type SnapshotRpc = <T>(
+  functionName: string,
+  args: Record<string, unknown>
+) => PromiseLike<{ data: T | null; error: Error | null }>;
+
 /**
  * GET /api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]
  * Returns the reconstructed task state at a specific history point
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   {
     params,
   }: {
@@ -23,17 +33,15 @@ export async function GET(
   }
 ) {
   try {
-    const supabase = await createClient();
+    const auth = await resolveSessionAuthContext(req, {
+      allowAppSessionAuth: TASK_SNAPSHOT_ROUTE_APP_SESSION_AUTH,
+    });
+    if (!auth.ok) return auth.response;
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { supabase, user } = auth;
 
     const { wsId: rawWsId, taskId, historyId } = await params;
-    const wsId = resolveWorkspaceId(rawWsId);
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Validate UUIDs
     const uuidRegex =
@@ -46,14 +54,24 @@ export async function GET(
     }
 
     // Get task snapshot at history point
-    const { data: taskSnapshot, error: snapshotError } = (await supabase.rpc(
-      'get_task_snapshot_at_history',
-      {
-        p_ws_id: wsId,
-        p_task_id: taskId,
-        p_history_id: historyId,
-      }
-    )) as { data: WorkspaceTask | null; error: Error | null };
+    const isAppSession = Boolean(getAppSessionTokenFromRequest(req));
+    const snapshotArgs = {
+      p_ws_id: wsId,
+      p_task_id: taskId,
+      p_history_id: historyId,
+    };
+    // The actor wrappers land with this route. Keep this narrow escape local
+    // until generated database types are refreshed after the migration runs.
+    const snapshotRpc = supabase.rpc.bind(supabase) as unknown as SnapshotRpc;
+    const { data: taskSnapshot, error: snapshotError } =
+      await snapshotRpc<WorkspaceTask>(
+        isAppSession
+          ? 'get_task_snapshot_at_history_for_actor'
+          : 'get_task_snapshot_at_history',
+        isAppSession
+          ? { ...snapshotArgs, p_actor_user_id: user.id }
+          : snapshotArgs
+      );
 
     if (snapshotError) {
       console.error('Error fetching task snapshot:', snapshotError);
@@ -89,11 +107,14 @@ export async function GET(
 
     // Get relationships at snapshot point
     const { data: relationshipsSnapshot, error: relationshipsError } =
-      (await supabase.rpc('get_task_relationships_at_snapshot', {
-        p_ws_id: wsId,
-        p_task_id: taskId,
-        p_history_id: historyId,
-      })) as { data: TaskRelationshipsSnapshot | null; error: Error | null };
+      await snapshotRpc<TaskRelationshipsSnapshot>(
+        isAppSession
+          ? 'get_task_relationships_at_snapshot_for_actor'
+          : 'get_task_relationships_at_snapshot',
+        isAppSession
+          ? { ...snapshotArgs, p_actor_user_id: user.id }
+          : snapshotArgs
+      );
 
     if (relationshipsError) {
       console.error(

@@ -271,7 +271,6 @@ export function TaskDialogManager({
       }
       const taskId = customEvent.detail?.taskId;
       if (!taskId) return;
-      const requestedWsId = customEvent.detail?.wsId;
       const requestId = customEvent.detail?.requestId;
 
       const emitOpenResult = (opened: boolean) => {
@@ -280,12 +279,12 @@ export function TaskDialogManager({
       };
 
       void (async () => {
-        const opened = await openTaskById(taskId, {
-          taskWsId: requestedWsId,
-          taskWorkspacePersonal: requestedWsId
-            ? undefined
-            : isPersonalWorkspace,
-        });
+        // Event producers (notifications, sidebars, timers) only know the
+        // workspace in which the task was surfaced. That workspace is a hint,
+        // not necessarily the task's owner. Resolve through the current-user
+        // endpoint so external and cross-workspace tasks hydrate once with
+        // their canonical workspace and board context.
+        const opened = await openCanonicalTask(taskId);
         emitOpenResult(opened);
       })();
     };
@@ -301,7 +300,7 @@ export function TaskDialogManager({
         handleTaskOpenRequest as EventListener
       );
     };
-  }, [isPersonalWorkspace, openTaskById]);
+  }, [openCanonicalTask]);
 
   useEffect(() => {
     const canonicalTaskId = searchParams.get('task');
@@ -335,10 +334,7 @@ export function TaskDialogManager({
       return;
     }
 
-    void openTaskById(legacyTaskId, {
-      taskWsId: wsId,
-      taskWorkspacePersonal: isPersonalWorkspace,
-    });
+    void openCanonicalTask(legacyTaskId);
     const nextSearchParams = new URLSearchParams(searchParams.toString());
     nextSearchParams.delete('openTaskId');
 
@@ -348,7 +344,7 @@ export function TaskDialogManager({
       : window.location.pathname;
 
     window.history.replaceState(window.history.state, '', nextUrl);
-  }, [isPersonalWorkspace, openTaskById, searchParams, wsId]);
+  }, [openCanonicalTask, searchParams]);
 
   // Open subtask creation dialog for the current task
   const handleAddSubtask = useCallback(() => {

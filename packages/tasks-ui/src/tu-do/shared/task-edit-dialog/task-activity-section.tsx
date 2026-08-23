@@ -38,6 +38,7 @@ import { mapEstimationPoints } from '../estimation-mapping';
 import type { RecoverableTaskDescriptionVersion } from './description-versions';
 import { isTaskDescriptionHistoryEntry } from './description-versions';
 import { TaskDescriptionChangeDialog } from './task-description-change-dialog';
+import { TaskMoveHistoryDetails } from './task-move-history-details';
 import { TaskSnapshotDialog } from './task-snapshot-dialog';
 
 /** Represents a task history entry from the API */
@@ -88,8 +89,6 @@ interface TaskActivitySectionProps {
   restoringDescriptionVersionId?: string | null;
 }
 
-// Task history section for showing activity logs and snapshots
-
 export function TaskActivitySection({
   wsId,
   taskId,
@@ -115,7 +114,6 @@ export function TaskActivitySection({
     useState<TaskHistoryEntry | null>(null);
   const dateLocale = locale === 'vi' ? vi : enUS;
 
-  // Fetch task history
   const { data, isLoading, error } = useQuery({
     queryKey: ['task-history', wsId, taskId],
     queryFn: async () => {
@@ -139,7 +137,6 @@ export function TaskActivitySection({
 
   return (
     <div className={cn('border-t', className)}>
-      {/* Section Header - Collapsible */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -159,7 +156,6 @@ export function TaskActivitySection({
         )}
       </button>
 
-      {/* Expandable Content */}
       {isExpanded && (
         <div className="overflow-hidden">
           <div className="px-4 pb-4 md:px-8">
@@ -208,7 +204,6 @@ export function TaskActivitySection({
                   />
                 ))}
 
-                {/* Show more/less button */}
                 {hasMore && (
                   <Button
                     variant="ghost"
@@ -229,7 +224,6 @@ export function TaskActivitySection({
         </div>
       )}
 
-      {/* Snapshot Dialog */}
       {snapshotEntry && currentTask && boardId && (
         <TaskSnapshotDialog
           wsId={wsId}
@@ -324,7 +318,6 @@ function ActivityEntry({
 
   return (
     <div className="group flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-muted/30">
-      {/* Icon */}
       <div
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-full',
@@ -334,10 +327,8 @@ function ActivityEntry({
         {icon}
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1 text-sm">
-          {/* User avatar and name */}
           <div className="flex items-center gap-1">
             <Avatar className="h-4 w-4">
               <AvatarImage
@@ -351,10 +342,8 @@ function ActivityEntry({
             <span className="font-medium">{userName}</span>
           </div>
 
-          {/* Action */}
           <span className="text-muted-foreground">{description.action}</span>
 
-          {/* Details (inline) */}
           {description.details && (
             <span className="inline-flex items-center gap-1">
               {description.details}
@@ -362,13 +351,11 @@ function ActivityEntry({
           )}
         </div>
 
-        {/* Timestamp */}
         <p className="mt-0.5 text-muted-foreground text-xs">
           <span title={exactTime}>{timeAgo}</span>
         </p>
       </div>
 
-      {/* Action buttons - visible on hover */}
       {showActions && (
         <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <Tooltip>
@@ -506,7 +493,6 @@ function getChangeDescription(
   estimationType?: EstimationType,
   dateLocale?: typeof enUS | typeof vi
 ): ChangeDescription {
-  // Handle task_created - show metadata badges like the logs page
   if (entry.change_type === 'task_created') {
     const metadata = entry.metadata as Record<string, unknown> | null;
     const hasDescription = !!metadata?.description;
@@ -568,9 +554,9 @@ function getChangeDescription(
       action: t('created_task'),
       details:
         badges.length > 0 ? (
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="mt-1 inline-flex flex-wrap items-center gap-1.5">
             {badges}
-          </div>
+          </span>
         ) : undefined,
     };
   }
@@ -602,7 +588,6 @@ function getChangeDescription(
     const action =
       fieldLabels[entry.field_name || ''] || t('field_updated.unknown');
 
-    // Format values for display
     if (
       entry.field_name === 'priority' &&
       entry.old_value !== null &&
@@ -639,10 +624,23 @@ function getChangeDescription(
       };
     }
 
+    if (entry.field_name === 'list_id') {
+      return {
+        action,
+        details: (
+          <TaskMoveHistoryDetails
+            destinationLabel={t('destination_list')}
+            entry={entry}
+            sourceLabel={t('source_list')}
+            unknownListLabel={t('unknown_list')}
+          />
+        ),
+      };
+    }
+
     return { action };
   }
 
-  // Handle relationship changes
   switch (entry.change_type) {
     case 'assignee_added': {
       const newValueData =
