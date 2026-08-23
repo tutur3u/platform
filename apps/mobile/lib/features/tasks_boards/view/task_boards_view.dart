@@ -598,7 +598,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
                     if (isCompact) {
                       unawaited(shad.closeOverlay<void>(drawerContext));
                     } else {
-                      Navigator.maybePop(drawerContext);
+                      unawaited(Navigator.maybePop(drawerContext));
                     }
                   },
                   child: Padding(

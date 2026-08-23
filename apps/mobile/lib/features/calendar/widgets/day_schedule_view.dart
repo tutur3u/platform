@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -77,10 +79,12 @@ class _DayScheduleViewState extends State<DayScheduleView> {
     final targetHour = isToday ? (now.hour - 1).clamp(0, 20) : 8;
     final offset = targetHour * hourH;
 
-    _scrollController.animateTo(
-      offset.clamp(0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+    unawaited(
+      _scrollController.animateTo(
+        offset.clamp(0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      ),
     );
   }
 

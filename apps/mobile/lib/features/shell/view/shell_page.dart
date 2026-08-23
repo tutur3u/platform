@@ -165,7 +165,7 @@ class _ShellPageState extends State<ShellPage>
   }
 
   void _triggerAssistantTabSpin() {
-    _assistantSpinController.forward(from: 0);
+    unawaited(_assistantSpinController.forward(from: 0));
   }
 
   @override

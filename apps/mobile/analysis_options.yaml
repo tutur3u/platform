@@ -13,4 +13,5 @@ analyzer:
 linter:
   rules:
     public_member_api_docs: false
+    unnecessary_unawaited: false
     use_null_aware_elements: false

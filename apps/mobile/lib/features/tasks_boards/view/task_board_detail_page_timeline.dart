@@ -425,10 +425,12 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
       position.minScrollExtent,
       position.maxScrollExtent,
     );
-    widget.horizontalScrollController.animateTo(
-      targetOffset,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
+    unawaited(
+      widget.horizontalScrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      ),
     );
   }
 

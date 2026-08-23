@@ -445,7 +445,7 @@ class _StaggeredNavElementState extends State<_StaggeredNavElement>
       if (!mounted) {
         return;
       }
-      _controller.forward(from: 0);
+      unawaited(_controller.forward(from: 0));
     });
   }
 

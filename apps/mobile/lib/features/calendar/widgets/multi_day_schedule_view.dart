@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -116,10 +117,12 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
     final targetHour = hasTodayInRange ? (now.hour - 1).clamp(0, 20) : 8;
     final targetOffset = targetHour * hourHeight;
 
-    _verticalController.animateTo(
-      targetOffset.clamp(0, _verticalController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
+    unawaited(
+      _verticalController.animateTo(
+        targetOffset.clamp(0, _verticalController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      ),
     );
   }
 
