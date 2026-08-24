@@ -4,6 +4,7 @@ import type { WorkspaceTask } from '@tuturuuu/types/db';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { getSnapshotBeforeSelectedChange } from './snapshot-state';
 
 const TASK_SNAPSHOT_ROUTE_APP_SESSION_AUTH = {
   targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
@@ -127,13 +128,20 @@ export async function GET(
     // Get the history entry details for context
     const { data: historyEntry } = await supabase
       .from('task_history')
-      .select('id, changed_at, change_type, field_name, changed_by')
+      .select(
+        'id, changed_at, change_type, field_name, changed_by, old_value, new_value, metadata'
+      )
       .eq('id', historyId)
       .single();
 
+    const historicalTaskSnapshot = getSnapshotBeforeSelectedChange(
+      taskSnapshot as unknown as Record<string, unknown> | null,
+      historyEntry
+    );
+
     // Merge task snapshot with relationships
     const fullSnapshot = {
-      ...(taskSnapshot || {}),
+      ...(historicalTaskSnapshot || {}),
       assignees: relationshipsSnapshot?.assignees || [],
       labels: relationshipsSnapshot?.labels || [],
       projects: relationshipsSnapshot?.projects || [],

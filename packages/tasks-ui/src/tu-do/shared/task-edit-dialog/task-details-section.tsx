@@ -4,6 +4,7 @@ import {
   Calendar,
   ChevronDown,
   Flag,
+  History,
   Link2,
   Tag,
   Timer,
@@ -19,7 +20,11 @@ import { PRIORITY_BADGE_COLORS } from '../../utils/taskConstants';
 import { getPriorityIcon } from '../../utils/taskPriorityUtils';
 import { useTaskOverrides } from './hooks/use-task-overrides';
 
-export type TaskDetailsTab = 'properties' | 'personal' | 'relationships';
+export type TaskDetailsTab =
+  | 'properties'
+  | 'personal'
+  | 'relationships'
+  | 'activity';
 
 export interface TaskDetailsSectionProps {
   /** Rendered inside the Properties tab. */
@@ -28,6 +33,8 @@ export interface TaskDetailsSectionProps {
   personal?: ReactNode;
   /** Rendered inside the Relationships tab; omit to hide the tab entirely. */
   relationships?: ReactNode;
+  /** Rendered inside the Activity tab; omit for unsaved tasks. */
+  activity?: ReactNode;
   taskId?: string;
   priority?: TaskPriority | null;
   endDate?: Date;
@@ -70,6 +77,7 @@ function SummaryChip({ children, className, icon }: SummaryChipProps) {
  * one panel with a segmented control between the three groups.
  */
 export function TaskDetailsSection({
+  activity,
   properties,
   personal,
   relationships,
@@ -112,6 +120,15 @@ export function TaskDetailsSection({
             id: 'relationships' as const,
             count: relationshipCount,
             label: t('ws-task-boards.dialog.relationships'),
+          },
+        ]
+      : []),
+    ...(activity
+      ? [
+          {
+            content: activity,
+            id: 'activity' as const,
+            label: t('tasks-history.activity'),
           },
         ]
       : []),
@@ -242,6 +259,7 @@ export function TaskDetailsSection({
                     {tab.id === 'relationships' && (
                       <Link2 className="h-3 w-3" />
                     )}
+                    {tab.id === 'activity' && <History className="h-3 w-3" />}
                     {tab.label}
                     {'count' in tab && tab.count ? (
                       <span className="rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">

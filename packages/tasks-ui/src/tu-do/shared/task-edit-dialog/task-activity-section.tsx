@@ -71,22 +71,19 @@ interface TaskActivitySectionProps {
   wsId: string;
   taskId?: string;
   boardId?: string;
-  /** Current task state for comparison in snapshot dialog */
   currentTask?: CurrentTaskState;
   className?: string;
-  /** Maximum number of entries to show initially */
   initialLimit?: number;
-  /** Callback when task is updated (e.g., after revert) */
   onTaskUpdate?: () => void;
-  /** Estimation type for displaying points */
   estimationType?: EstimationType;
-  /** When true, disables the revert functionality (feature not stable) */
   revertDisabled?: boolean;
   /** Restores a tracked description version through the Yjs-safe description path. */
   onRestoreDescriptionVersion?: (
     version: RecoverableTaskDescriptionVersion
   ) => Promise<void> | void;
   restoringDescriptionVersionId?: string | null;
+  /** Render the history list directly inside the unified task Details tabs. */
+  embedded?: boolean;
 }
 
 export function TaskActivitySection({
@@ -101,6 +98,7 @@ export function TaskActivitySection({
   revertDisabled = false,
   onRestoreDescriptionVersion,
   restoringDescriptionVersionId,
+  embedded = false,
 }: TaskActivitySectionProps) {
   const t = useTranslations('tasks-history');
   const snapshotT = useTranslations('tasks.history');
@@ -125,7 +123,7 @@ export function TaskActivitySection({
         count: number;
       }>;
     },
-    enabled: !!taskId && !!wsId && isExpanded,
+    enabled: !!taskId && !!wsId && (embedded || isExpanded),
     staleTime: 30 * 1000, // 30 seconds
   });
 
@@ -136,29 +134,31 @@ export function TaskActivitySection({
   if (!taskId) return null;
 
   return (
-    <div className={cn('border-t', className)}>
-      <button
-        type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-muted/50 md:px-8"
-      >
-        <History className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium text-sm">{t('activity')}</span>
-        {data?.count !== undefined && data.count > 0 && (
-          <Badge variant="secondary" className="ml-1 text-xs">
-            {data.count}
-          </Badge>
-        )}
-        {isExpanded ? (
-          <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
-        )}
-      </button>
+    <div className={cn(!embedded && 'border-t', className)}>
+      {!embedded && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex w-full items-center gap-2 px-4 py-3 transition-colors hover:bg-muted/50 md:px-8"
+        >
+          <History className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-sm">{t('activity')}</span>
+          {data?.count !== undefined && data.count > 0 && (
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {data.count}
+            </Badge>
+          )}
+          {isExpanded ? (
+            <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+      )}
 
-      {isExpanded && (
+      {(embedded || isExpanded) && (
         <div className="overflow-hidden">
-          <div className="px-4 pb-4 md:px-8">
+          <div className={cn(!embedded && 'px-4 pb-4 md:px-8')}>
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

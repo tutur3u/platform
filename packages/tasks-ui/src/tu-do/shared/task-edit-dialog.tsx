@@ -2568,6 +2568,46 @@ export function TaskEditDialog({
     />
   );
 
+  const renderTaskActivitySection = () => {
+    if (isCreateMode || !task) return undefined;
+
+    const currentListId = formState.selectedListId || task.list_id || '';
+
+    return (
+      <TaskActivitySection
+        embedded
+        wsId={effectiveTaskWsId}
+        taskId={task.id}
+        boardId={boardId}
+        currentTask={{
+          id: task.id,
+          name: formState.name || task.name || '',
+          description: formState.description,
+          priority: formState.priority,
+          start_date: formState.startDate?.toISOString() || null,
+          end_date: formState.endDate?.toISOString() || null,
+          estimation_points: formState.estimationPoints ?? null,
+          list_id: currentListId,
+          list_name:
+            availableLists?.find((list) => list.id === currentListId)?.name ||
+            null,
+          completed: !!task.completed_at,
+          assignees: formState.selectedAssignees.map((assignee) => ({
+            id: assignee.id,
+            user_id: assignee.id,
+          })),
+          labels: formState.selectedLabels.map((label) => ({ id: label.id })),
+          projects: formState.selectedProjects.map((project) => ({
+            id: project.id,
+          })),
+        }}
+        onRestoreDescriptionVersion={handleRestoreDescriptionVersion}
+        revertDisabled
+        restoringDescriptionVersionId={restoringDescriptionVersionId}
+      />
+    );
+  };
+
   return (
     <>
       <TaskSuggestionMenus
@@ -2800,6 +2840,7 @@ export function TaskEditDialog({
 
                     {!disabled && (
                       <TaskDetailsSection
+                        activity={renderTaskActivitySection()}
                         assigneeCount={formState.selectedAssignees.length}
                         defaultTab={
                           parentTaskId || pendingRelationship?.relatedTaskId
@@ -3018,48 +3059,6 @@ export function TaskEditDialog({
                         scheduledEvents={localCalendarEvents}
                         onLockToggle={handleLockToggle}
                         isLocking={lockingEventId}
-                      />
-                    )}
-
-                    {!disabled && !isCreateMode && task && (
-                      <TaskActivitySection
-                        wsId={effectiveTaskWsId}
-                        taskId={task.id}
-                        boardId={boardId}
-                        currentTask={{
-                          id: task.id,
-                          name: formState.name || task.name || '',
-                          description: formState.description,
-                          priority: formState.priority,
-                          start_date:
-                            formState.startDate?.toISOString() || null,
-                          end_date: formState.endDate?.toISOString() || null,
-                          estimation_points: formState.estimationPoints ?? null,
-                          list_id:
-                            formState.selectedListId || task.list_id || '',
-                          list_name:
-                            availableLists?.find(
-                              (l) => l.id === formState.selectedListId
-                            )?.name || null,
-                          completed: !!task.completed_at,
-                          assignees: formState.selectedAssignees.map((a) => ({
-                            id: a.id,
-                            user_id: a.id,
-                          })),
-                          labels: formState.selectedLabels.map((l) => ({
-                            id: l.id,
-                          })),
-                          projects: formState.selectedProjects.map((p) => ({
-                            id: p.id,
-                          })),
-                        }}
-                        onRestoreDescriptionVersion={
-                          handleRestoreDescriptionVersion
-                        }
-                        revertDisabled={true}
-                        restoringDescriptionVersionId={
-                          restoringDescriptionVersionId
-                        }
                       />
                     )}
                   </div>

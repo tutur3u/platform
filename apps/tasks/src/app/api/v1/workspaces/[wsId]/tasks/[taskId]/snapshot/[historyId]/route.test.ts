@@ -58,6 +58,12 @@ describe('task snapshot route', () => {
         change_type: 'field_updated',
         field_name: 'list_id',
         changed_by: 'user-1',
+        old_value: 'list-before',
+        new_value: 'list-after',
+        metadata: {
+          old_list_name: 'Backlog',
+          new_list_name: 'Review',
+        },
       },
       error: null,
     });
@@ -82,7 +88,12 @@ describe('task snapshot route', () => {
         name === 'get_task_snapshot_at_history'
       ) {
         return Promise.resolve({
-          data: { id: taskId, name: 'Historical task', list_id: 'list-1' },
+          data: {
+            id: taskId,
+            name: 'Historical task',
+            list_id: 'list-after',
+            list_name: 'Review',
+          },
           error: null,
         });
       }
@@ -114,6 +125,8 @@ describe('task snapshot route', () => {
       snapshot: {
         id: taskId,
         name: 'Historical task',
+        list_id: 'list-before',
+        list_name: 'Backlog',
         assignees: [],
         labels: [],
         projects: [],
