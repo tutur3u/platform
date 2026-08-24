@@ -97,6 +97,7 @@ describe('inline task conversion toolbar', () => {
 
     expect(toolbar).toHaveClass(
       '@container',
+      '-top-px',
       'flex-nowrap',
       'max-w-full',
       'overflow-x-auto',

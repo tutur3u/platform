@@ -141,6 +141,7 @@ export async function moveExternalTaskToPersonalList({
   targetList,
   sourceStatus,
   placementPosition = 'end',
+  shouldApplyCacheUpdate = () => true,
 }: {
   boardId: string;
   markLocallyMutatedTask: (task: Task) => Task;
@@ -149,6 +150,7 @@ export async function moveExternalTaskToPersonalList({
   targetList: TaskList;
   sourceStatus?: TaskBoardStatus;
   placementPosition?: 'top' | 'end';
+  shouldApplyCacheUpdate?: () => boolean;
 }) {
   const personalBoardId = task.personal_board_id ?? boardId;
   const sourceWorkspaceId = task.source_workspace_id;
@@ -235,12 +237,14 @@ export async function moveExternalTaskToPersonalList({
       closed_at: isClosedTarget ? (task.closed_at ?? now) : null,
     } as Task;
 
-    upsertLocallyMutatedTask({
-      boardId,
-      markLocallyMutatedTask,
-      queryClient,
-      task: optimisticTask,
-    });
+    if (shouldApplyCacheUpdate()) {
+      upsertLocallyMutatedTask({
+        boardId,
+        markLocallyMutatedTask,
+        queryClient,
+        task: optimisticTask,
+      });
+    }
 
     const placementResponse = await upsertCurrentUserTaskPersonalPlacement(
       task.id,
@@ -268,43 +272,45 @@ export async function moveExternalTaskToPersonalList({
     }
 
     const placedTask = placementResponse.task as Task;
-    upsertLocallyMutatedTask({
-      boardId,
-      markLocallyMutatedTask,
-      queryClient,
-      task: {
-        ...optimisticTask,
-        ...placedTask,
-        list_id: targetList.id,
-        personal_board_id: personalBoardId,
-        personal_list_id: targetList.id,
-        personal_sort_key:
-          placedTask.personal_sort_key ?? optimisticTask.personal_sort_key,
-        sort_key: placedTask.sort_key ?? optimisticTask.sort_key,
-        completed_at: isCompletedTarget
-          ? (sourceTask?.completed_at ??
-            placedTask.completed_at ??
-            optimisticTask.completed_at)
-          : null,
-        closed_at: isClosedTarget
-          ? (sourceTask?.closed_at ??
-            placedTask.closed_at ??
-            optimisticTask.closed_at)
-          : null,
-        source_list_id:
-          sourceTargetList?.id ??
-          placedTask.source_list_id ??
-          task.source_list_id,
-        source_list_name:
-          sourceTargetList?.name ??
-          placedTask.source_list_name ??
-          task.source_list_name,
-        source_list_status:
-          sourceTargetList?.status ??
-          placedTask.source_list_status ??
-          task.source_list_status,
-      } as Task,
-    });
+    if (shouldApplyCacheUpdate()) {
+      upsertLocallyMutatedTask({
+        boardId,
+        markLocallyMutatedTask,
+        queryClient,
+        task: {
+          ...optimisticTask,
+          ...placedTask,
+          list_id: targetList.id,
+          personal_board_id: personalBoardId,
+          personal_list_id: targetList.id,
+          personal_sort_key:
+            placedTask.personal_sort_key ?? optimisticTask.personal_sort_key,
+          sort_key: placedTask.sort_key ?? optimisticTask.sort_key,
+          completed_at: isCompletedTarget
+            ? (sourceTask?.completed_at ??
+              placedTask.completed_at ??
+              optimisticTask.completed_at)
+            : null,
+          closed_at: isClosedTarget
+            ? (sourceTask?.closed_at ??
+              placedTask.closed_at ??
+              optimisticTask.closed_at)
+            : null,
+          source_list_id:
+            sourceTargetList?.id ??
+            placedTask.source_list_id ??
+            task.source_list_id,
+          source_list_name:
+            sourceTargetList?.name ??
+            placedTask.source_list_name ??
+            task.source_list_name,
+          source_list_status:
+            sourceTargetList?.status ??
+            placedTask.source_list_status ??
+            task.source_list_status,
+        } as Task,
+      });
+    }
 
     return {
       placementTask: placedTask,
@@ -312,7 +318,9 @@ export async function moveExternalTaskToPersonalList({
       sourceTargetList,
     };
   } catch (error) {
-    restoreVisibleTaskCaches(queryClient, previousCaches);
+    if (shouldApplyCacheUpdate()) {
+      restoreVisibleTaskCaches(queryClient, previousCaches);
+    }
     throw error;
   }
 }

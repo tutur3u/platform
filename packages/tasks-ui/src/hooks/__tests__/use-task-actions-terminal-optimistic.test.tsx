@@ -9,6 +9,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { isTaskMutationPending } from '../../tu-do/shared/task-cache-patches';
+import { resetTaskTerminalMutationQueueForTests } from '../task-terminal-mutation-queue';
 import { useTaskActions } from '../use-task-actions';
 
 const apiMocks = vi.hoisted(() => ({
@@ -113,6 +114,7 @@ describe('useTaskActions terminal optimistic caches', () => {
       },
     });
     vi.clearAllMocks();
+    resetTaskTerminalMutationQueueForTests();
   });
 
   it('updates full-board metadata immediately and exposes pending state', async () => {
@@ -230,4 +232,86 @@ describe('useTaskActions terminal optimistic caches', () => {
       await act(async () => actionPromise);
     }
   );
+
+  it('keeps the latest closed intent optimistic while an earlier done move settles', async () => {
+    const doneDeferred = createDeferred<{ task: Task }>();
+    const closedDeferred = createDeferred<{ task: Task }>();
+    apiMocks.updateWorkspaceTask
+      .mockReturnValueOnce(doneDeferred.promise)
+      .mockReturnValueOnce(closedDeferred.promise);
+    queryClient.setQueryData(['tasks', 'board-1'], [baseTask]);
+    const setIsLoading = vi.fn();
+
+    const { result } = renderHook(
+      () =>
+        useTaskActions({
+          task: baseTask,
+          boardId: 'board-1',
+          workspaceId: 'ws-1',
+          targetCompletionList: doneList,
+          targetClosedList: closedList,
+          availableLists: [doneList, closedList],
+          onUpdate: vi.fn(),
+          setIsLoading,
+          setMenuOpen: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    let donePromise!: Promise<void>;
+    let closedPromise!: Promise<void>;
+    act(() => {
+      donePromise = result.current.handleMoveToCompletion();
+      closedPromise = result.current.handleMoveToClose();
+    });
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]).toEqual(
+      expect.objectContaining({
+        list_id: 'closed-list',
+        closed_at: expect.any(String),
+        completed_at: undefined,
+      })
+    );
+    await waitFor(() =>
+      expect(apiMocks.updateWorkspaceTask).toHaveBeenCalledTimes(1)
+    );
+
+    doneDeferred.resolve({
+      task: {
+        ...baseTask,
+        list_id: 'done-list',
+        closed_at: '2026-08-13T08:00:00.000Z',
+        completed_at: '2026-08-13T08:00:00.000Z',
+      },
+    });
+    await waitFor(() =>
+      expect(apiMocks.updateWorkspaceTask).toHaveBeenCalledTimes(2)
+    );
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]).toEqual(
+      expect.objectContaining({
+        list_id: 'closed-list',
+        completed_at: undefined,
+      })
+    );
+
+    closedDeferred.resolve({
+      task: {
+        ...baseTask,
+        list_id: 'closed-list',
+        closed_at: '2026-08-13T08:00:01.000Z',
+        completed_at: undefined,
+      },
+    });
+    await act(async () => Promise.all([donePromise, closedPromise]));
+
+    expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]).toEqual(
+      expect.objectContaining({
+        list_id: 'closed-list',
+        closed_at: expect.any(String),
+        completed_at: undefined,
+      })
+    );
+    expect(setIsLoading).toHaveBeenLastCalledWith(false);
+  });
 });

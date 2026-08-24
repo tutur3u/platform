@@ -1085,7 +1085,7 @@ export function FixedToolbar({
     <div
       ref={ref}
       className={cn(
-        '@container scrollbar-hide sticky top-0 z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
+        '@container scrollbar-hide sticky -top-px z-40 flex w-full min-w-0 max-w-full flex-nowrap items-center gap-1 overflow-x-auto overflow-y-hidden overscroll-x-contain whitespace-nowrap rounded-t-md border-dynamic-border border-b bg-background/95 px-2 py-1.5 backdrop-blur-sm',
         className
       )}
     >

@@ -10,7 +10,10 @@ vi.mock('./description-diff-viewer', () => ({
   ),
 }));
 
-const t = (key: string, options?: { defaultValue?: string }) => {
+const t = (
+  key: string,
+  options?: { count?: number; defaultValue?: string }
+) => {
   const messages: Record<string, string> = {
     changed: 'Changed',
     'field.description': 'Description',
@@ -19,6 +22,7 @@ const t = (key: string, options?: { defaultValue?: string }) => {
     unchanged_fields: 'Unchanged fields',
   };
 
+  if (key === 'fields_changed') return `${options?.count} fields different`;
   return messages[key] ?? options?.defaultValue ?? key;
 };
 
@@ -74,6 +78,7 @@ describe('SelectiveRevertPanel', () => {
     );
 
     expect(screen.getByText('Core Fields')).toBeInTheDocument();
+    expect(screen.getByText('2 fields different')).toBeInTheDocument();
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Description')).toBeInTheDocument();
     expect(screen.getByText('view-description-diff')).toBeInTheDocument();

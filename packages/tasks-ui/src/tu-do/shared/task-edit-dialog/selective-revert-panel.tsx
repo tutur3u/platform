@@ -170,6 +170,7 @@ export function SelectiveRevertPanel({
           {hasChanges ? (
             <span>
               {t('fields_changed', {
+                count: changedFields.length,
                 defaultValue: `${changedFields.length} field(s) different`,
               })}
             </span>

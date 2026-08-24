@@ -6,6 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { describe, expect, it, vi } from 'vitest';
 import { CompactTaskCreatePopover } from './compact-task-create-popover';
+import { CompactTaskDescriptionPreview } from './compact-task-description-preview';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -211,6 +212,47 @@ describe('CompactTaskCreatePopover', () => {
     fireEvent.click(preview);
 
     expect(onDescriptionPreviewClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders legacy Markdown semantically in compact quick view', () => {
+    render(
+      <Dialog open={true}>
+        <CompactTaskCreatePopover
+          title="Edit task"
+          titleInput={<input aria-label="Task title" defaultValue="Existing" />}
+          propertyControls={null}
+          descriptionPreview={
+            <CompactTaskDescriptionPreview
+              content={{
+                type: 'doc',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [
+                      {
+                        type: 'text',
+                        text: '# Release notes\n\n- Keep the compact editor',
+                      },
+                    ],
+                  },
+                ],
+              }}
+            />
+          }
+          descriptionPreviewLabel="Open full task"
+          onDescriptionPreviewClick={vi.fn()}
+          onClose={vi.fn()}
+          onFullscreen={vi.fn()}
+        />
+      </Dialog>
+    );
+
+    const preview = screen.getByTestId('compact-task-description-preview');
+    expect(preview.querySelector('h1')).toHaveTextContent('Release notes');
+    expect(preview.querySelector('li')).toHaveTextContent(
+      'Keep the compact editor'
+    );
+    expect(preview).not.toHaveTextContent('# Release notes');
   });
 
   it('omits compact description preview when the caller does not provide one', () => {

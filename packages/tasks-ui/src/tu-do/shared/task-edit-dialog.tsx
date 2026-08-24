@@ -57,6 +57,7 @@ import {
   type TaskDialogPresentationPreferences,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
+import { CompactTaskDescriptionPreview } from './task-edit-dialog/components/compact-task-description-preview';
 import { MobileFloatingSaveButton } from './task-edit-dialog/components/mobile-floating-save-button';
 import {
   SmartTaskSuggestionsButton,
@@ -2389,7 +2390,9 @@ export function TaskEditDialog({
       formState.description
     ).trim();
 
-    return previewText || null;
+    return previewText ? (
+      <CompactTaskDescriptionPreview content={formState.description} />
+    ) : null;
   }, [formState.description, isCreateMode]);
   const taskHydrationNotice = taskLoadError ? (
     <div
