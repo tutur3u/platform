@@ -212,6 +212,11 @@
       "import": "./dist/tasks.js",
       "require": "./dist/tasks.js"
     },
+    "./task-history": {
+      "types": "./dist/task-history.d.ts",
+      "import": "./dist/task-history.js",
+      "require": "./dist/task-history.js"
+    },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",
       "import": "./dist/task-templates.js",

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SelectiveRevertPanel } from './selective-revert-panel';
 
@@ -82,6 +82,9 @@ describe('SelectiveRevertPanel', () => {
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Description')).toBeInTheDocument();
     expect(screen.getByText('view-description-diff')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Revert 2 field(s)' })
+    ).toBeEnabled();
 
     const unchangedButton = screen.getByRole('button', {
       name: /Unchanged fields/i,
@@ -92,5 +95,62 @@ describe('SelectiveRevertPanel', () => {
     fireEvent.click(unchangedButton);
 
     expect(screen.getByText('Priority')).toBeInTheDocument();
+  });
+
+  it('restores the complete selected version by default', async () => {
+    const onRevert = vi.fn().mockResolvedValue(undefined);
+    render(
+      <SelectiveRevertPanel
+        currentTask={currentTask}
+        isReverting={false}
+        onRevert={onRevert}
+        snapshot={snapshot}
+        t={t}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revert 2 field(s)' }));
+
+    await waitFor(() => {
+      expect(onRevert).toHaveBeenCalledWith(['name', 'description']);
+    });
+  });
+
+  it('supports restoring only a selected subset', async () => {
+    const onRevert = vi.fn().mockResolvedValue(undefined);
+    render(
+      <SelectiveRevertPanel
+        currentTask={currentTask}
+        isReverting={false}
+        onRevert={onRevert}
+        snapshot={snapshot}
+        t={t}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Description/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Revert 1 field(s)' }));
+
+    await waitFor(() => expect(onRevert).toHaveBeenCalledWith(['name']));
+  });
+
+  it('keeps restore controls hidden when explicitly disabled', () => {
+    render(
+      <SelectiveRevertPanel
+        currentTask={currentTask}
+        isReverting={false}
+        onRevert={vi.fn()}
+        revertDisabled
+        snapshot={snapshot}
+        t={t}
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: /Revert 2 field/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Snapshot reversion is currently disabled/i)
+    ).toBeInTheDocument();
   });
 });

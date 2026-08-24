@@ -2573,9 +2573,7 @@ export function TaskEditDialog({
 
   const renderTaskActivitySection = () => {
     if (isCreateMode || !task) return undefined;
-
     const currentListId = formState.selectedListId || task.list_id || '';
-
     return (
       <TaskActivitySection
         embedded
@@ -2604,13 +2602,15 @@ export function TaskEditDialog({
             id: project.id,
           })),
         }}
+        onTaskUpdate={() => {
+          onUpdate();
+          onClose();
+        }}
         onRestoreDescriptionVersion={handleRestoreDescriptionVersion}
-        revertDisabled
         restoringDescriptionVersionId={restoringDescriptionVersionId}
       />
     );
   };
-
   return (
     <>
       <TaskSuggestionMenus

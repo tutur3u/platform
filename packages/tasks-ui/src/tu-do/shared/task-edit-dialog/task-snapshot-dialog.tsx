@@ -88,6 +88,7 @@ export function TaskSnapshotDialog({
     await revertMutation.mutateAsync({
       historyId: historyEntry.id,
       fields,
+      snapshot: snapshotData!.snapshot,
     });
   };
 
@@ -142,6 +143,7 @@ export function TaskSnapshotDialog({
                 </div>
               ) : snapshotData?.snapshot ? (
                 <SelectiveRevertPanel
+                  key={historyEntry.id}
                   snapshot={snapshotData.snapshot}
                   currentTask={currentTask}
                   onRevert={handleRevert}

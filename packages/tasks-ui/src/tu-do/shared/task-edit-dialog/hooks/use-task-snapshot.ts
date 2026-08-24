@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { getWorkspaceTaskSnapshot } from '@tuturuuu/internal-api/task-history';
 import type {
   SnapshotAssignee,
   SnapshotLabel,
@@ -40,17 +41,8 @@ export function useTaskSnapshot({
   return useQuery({
     queryKey: ['task-snapshot', wsId, taskId, historyId],
     queryFn: async (): Promise<TaskSnapshotResponse> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/snapshot/${historyId}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch snapshot');
-      }
-
-      return response.json();
+      const response = await getWorkspaceTaskSnapshot(wsId, taskId, historyId!);
+      return response as unknown as TaskSnapshotResponse;
     },
     enabled: enabled && !!historyId && !!taskId && !!wsId,
     staleTime: 60 * 1000, // Cache for 1 minute

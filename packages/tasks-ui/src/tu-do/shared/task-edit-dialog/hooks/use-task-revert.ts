@@ -1,22 +1,27 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  type RevertibleTaskHistoryField,
+  revertWorkspaceTaskHistory,
+} from '@tuturuuu/internal-api/task-history';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import type { TaskSnapshot } from '@tuturuuu/utils/task-snapshot';
+import {
+  applyOptimisticTaskPatch,
+  patchTaskInVisibleCaches,
+  restoreTaskFieldsFromVisibleCacheSnapshot,
+  settleOptimisticTaskPatch,
+  snapshotVisibleTaskCaches,
+  type VisibleTaskCacheSnapshot,
+} from '../../task-cache-patches';
+import {
+  applyTaskHistorySnapshot,
+  restoreTaskHistoryFields,
+} from './task-revert-optimistic';
 
-/** Fields that can be reverted */
-export type RevertibleField =
-  | 'name'
-  | 'description'
-  | 'priority'
-  | 'start_date'
-  | 'end_date'
-  | 'estimation_points'
-  | 'list_id'
-  | 'completed'
-  | 'assignees'
-  | 'labels'
-  | 'projects';
+export type RevertibleField = RevertibleTaskHistoryField;
 
 export const CORE_FIELDS: RevertibleField[] = [
   'name',
@@ -35,23 +40,28 @@ export const RELATIONSHIP_FIELDS: RevertibleField[] = [
   'projects',
 ];
 
-interface RevertResponse {
-  success: boolean;
-  revertedFields: RevertibleField[];
-  task: Record<string, unknown>;
-}
-
 interface UseTaskRevertProps {
   wsId: string;
   taskId: string;
   boardId: string;
   onSuccess?: () => void;
-  t?: (key: string, options?: { defaultValue?: string }) => string;
+  t?: (
+    key: string,
+    options?: { count?: number; defaultValue?: string }
+  ) => string;
 }
 
-/**
- * Hook to revert task fields to a historical snapshot state
- */
+interface RevertVariables {
+  historyId: string;
+  fields: RevertibleField[];
+  snapshot: TaskSnapshot;
+}
+
+interface RevertContext {
+  cacheSnapshot: VisibleTaskCacheSnapshot;
+  mutationId: string;
+}
+
 export function useTaskRevert({
   wsId,
   taskId,
@@ -63,73 +73,100 @@ export function useTaskRevert({
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({
-      historyId,
-      fields,
-    }: {
-      historyId: string;
-      fields: RevertibleField[];
-    }): Promise<RevertResponse> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks/${taskId}/revert`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ historyId, fields }),
-        }
-      );
+    mutationFn: ({ historyId, fields }: RevertVariables) =>
+      revertWorkspaceTaskHistory(wsId, taskId, { historyId, fields }),
+    onMutate: async ({ fields, snapshot }): Promise<RevertContext> => {
+      await Promise.all([
+        queryClient.cancelQueries(
+          { queryKey: ['tasks', boardId] },
+          { revert: false }
+        ),
+        queryClient.cancelQueries(
+          { queryKey: ['tasks-full', boardId] },
+          { revert: false }
+        ),
+        queryClient.cancelQueries(
+          { queryKey: ['task', taskId] },
+          { revert: false }
+        ),
+      ]);
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to revert');
-      }
+      const cacheSnapshot = snapshotVisibleTaskCaches(queryClient, boardId, [
+        taskId,
+      ]);
+      const now = new Date().toISOString();
+      const mutationId = applyOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [taskId],
+        updater: (task) =>
+          applyTaskHistorySnapshot({ task, snapshot, fields, now }),
+      });
 
-      return response.json();
+      return { cacheSnapshot, mutationId };
     },
-    onSuccess: async (data) => {
-      // Update task cache directly with the reverted task data
-      // This avoids full-board refetch flickering and conflicts with realtime sync
-      if (data.task) {
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) =>
-              task.id === taskId
-                ? { ...task, ...(data.task as Partial<Task>) }
-                : task
-            );
-          }
-        );
-      }
-
-      // Only invalidate time tracking since task availability affects it
-      await queryClient.invalidateQueries({
-        queryKey: ['time-tracking-data'],
+    onSuccess: async (data, variables, context) => {
+      patchTaskInVisibleCaches({
+        queryClient,
+        boardId,
+        taskId,
+        updater: (task) => ({ ...task, ...(data.task as Partial<Task>) }),
+      });
+      settleOptimisticTaskPatch({
+        queryClient,
+        boardId,
+        taskIds: [taskId],
+        mutationId: context.mutationId,
+        clearLocalMutationAt: true,
       });
 
-      // Invalidate task history to show the revert action
-      await queryClient.invalidateQueries({
-        queryKey: ['task-history', wsId, taskId],
-      });
-
-      // Invalidate any cached snapshots
-      await queryClient.invalidateQueries({
-        queryKey: ['task-snapshot', wsId, taskId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['task', taskId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-history', wsId, taskId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-snapshot', wsId, taskId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] }),
+      ]);
 
       toast({
-        title: t('revert_success_title', { defaultValue: 'Changes reverted' }),
+        title: t('revert_success_title', { defaultValue: 'Version restored' }),
         description: t('revert_success_description', {
-          defaultValue: `Successfully reverted ${data.revertedFields.length} field(s)`,
+          count: variables.fields.length,
+          defaultValue: `Restored ${variables.fields.length} field(s)`,
         }),
       });
-
       onSuccess?.();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables, context) => {
+      if (context) {
+        restoreTaskFieldsFromVisibleCacheSnapshot({
+          queryClient,
+          boardId,
+          snapshot: context.cacheSnapshot,
+          taskIds: [taskId],
+          restore: (currentTask, previousTask) =>
+            restoreTaskHistoryFields({
+              currentTask,
+              previousTask,
+              fields: variables.fields,
+            }),
+        });
+        settleOptimisticTaskPatch({
+          queryClient,
+          boardId,
+          taskIds: [taskId],
+          mutationId: context.mutationId,
+          clearLocalMutationAt: true,
+        });
+      }
+
       toast({
-        title: t('revert_error_title', { defaultValue: 'Revert failed' }),
+        title: t('revert_error_title', { defaultValue: 'Restore failed' }),
         description:
           error.message ||
           t('revert_error_description', { defaultValue: 'Please try again' }),

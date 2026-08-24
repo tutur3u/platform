@@ -82,14 +82,13 @@ export function SelectiveRevertPanel({
   estimationType,
   revertDisabled = false,
 }: SelectiveRevertPanelProps) {
-  const [selectedFields, setSelectedFields] = useState<Set<ComparableField>>(
-    new Set()
-  );
-
   // Calculate which fields have changed
   const changedFields = useMemo(
     () => getChangedFields(snapshot, currentTask),
     [snapshot, currentTask]
+  );
+  const [selectedFields, setSelectedFields] = useState<Set<ComparableField>>(
+    () => new Set(changedFields)
   );
 
   // Get snapshot and current values for each field
@@ -287,6 +286,7 @@ export function SelectiveRevertPanel({
             {isReverting
               ? t('reverting', { defaultValue: 'Reverting...' })
               : t('revert_selected', {
+                  count: selectedFields.size,
                   defaultValue: `Revert ${selectedFields.size} field(s)`,
                 })}
           </Button>

@@ -98,8 +98,8 @@ export function FieldDiffViewer({
       )}
     >
       <div className="flex items-start gap-3">
-        {/* Checkbox for selection */}
         <Checkbox
+          aria-label={fieldInfo.label}
           checked={selected}
           onCheckedChange={onSelectionChange}
           disabled={!hasChanged}
