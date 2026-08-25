@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.14.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.13.2...tasks-ui-v0.14.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+
+### Bug Fixes
+
+* **tasks:** clarify activity history previews ([e64b54d](https://github.com/tutur3u/platform/commit/e64b54d6fca953fe4369ddf2c72981cc5a421e3c))
+* **tasks:** guard loading task snapshots ([eb86521](https://github.com/tutur3u/platform/commit/eb8652137d1e9c2fde792cdc415ddae8d1e78b98))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+* **tasks:** stabilize quick view and terminal actions ([380e7ea](https://github.com/tutur3u/platform/commit/380e7eafda2d7717a9356fc5f1f252e0aaddbdcf))
+
 ## [0.13.2](https://github.com/tutur3u/platform/compare/tasks-ui-v0.13.1...tasks-ui-v0.13.2) (2026-08-21)
 
 

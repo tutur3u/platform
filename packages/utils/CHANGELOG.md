@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.5](https://github.com/tutur3u/platform/compare/utils-v0.25.4...utils-v0.25.5) (2026-08-25)
+
+
+### Bug Fixes
+
+* **contacts:** proxy feedbacks before dynamic users ([910b79e](https://github.com/tutur3u/platform/commit/910b79ef5a53e31b865cb1290e2f2b29d19c1702))
+
 ## [0.25.4](https://github.com/tutur3u/platform/compare/utils-v0.25.3...utils-v0.25.4) (2026-08-21)
 
 

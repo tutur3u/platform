@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/tasks-v0.29.1...tasks-v0.30.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+
+### Bug Fixes
+
+* **tasks:** clarify activity history previews ([e64b54d](https://github.com/tutur3u/platform/commit/e64b54d6fca953fe4369ddf2c72981cc5a421e3c))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/tasks-v0.29.0...tasks-v0.29.1) (2026-08-21)
 
 

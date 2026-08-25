@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.2](https://github.com/tutur3u/platform/compare/ui-v0.29.1...ui-v0.29.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* **tasks:** stabilize quick view and terminal actions ([380e7ea](https://github.com/tutur3u/platform/commit/380e7eafda2d7717a9356fc5f1f252e0aaddbdcf))
+
 ## [0.29.1](https://github.com/tutur3u/platform/compare/ui-v0.29.0...ui-v0.29.1) (2026-08-21)
 
 

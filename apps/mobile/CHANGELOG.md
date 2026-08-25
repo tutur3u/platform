@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.1](https://github.com/tutur3u/platform/compare/mobile-v0.9.0...mobile-v0.9.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* **mobile:** preserve analyzer compatibility ([946f705](https://github.com/tutur3u/platform/commit/946f705bbe33c61a1835edc2bd23b9f249a1c420))
+* **mobile:** refresh Firebase iOS pods ([d30bc35](https://github.com/tutur3u/platform/commit/d30bc352fb9fadc7c83f0b2ef89a4f878e1e5a0e))
+
 ## [0.9.0](https://github.com/tutur3u/platform/compare/mobile-v0.8.1...mobile-v0.9.0) (2026-08-04)
 
 

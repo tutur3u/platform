@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.2](https://github.com/tutur3u/platform/compare/calendar-v0.27.1...calendar-v0.27.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* **tasks:** clarify activity history previews ([e64b54d](https://github.com/tutur3u/platform/commit/e64b54d6fca953fe4369ddf2c72981cc5a421e3c))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+
 ## [0.27.1](https://github.com/tutur3u/platform/compare/calendar-v0.27.0...calendar-v0.27.1) (2026-08-21)
 
 

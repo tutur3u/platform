@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.29.0](https://github.com/tutur3u/platform/compare/database-v1.28.0...database-v1.29.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+
+### Bug Fixes
+
+* **contacts:** restore long group post creation ([036b45e](https://github.com/tutur3u/platform/commit/036b45e22c475e7f797e8d4f7622ab79f1778144))
+* **database:** resolve task restore trigger tables ([28988fd](https://github.com/tutur3u/platform/commit/28988fd1c18bddf05763aa972b035394d4841933))
+* **database:** restore task snapshot schema path ([deddddf](https://github.com/tutur3u/platform/commit/deddddfb38901c76f1bee284d2e065f8c78a75f1))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+
 ## [1.28.0](https://github.com/tutur3u/platform/compare/database-v1.27.0...database-v1.28.0) (2026-08-15)
 
 

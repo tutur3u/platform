@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.18.2](https://github.com/tutur3u/platform/compare/contacts-v0.18.1...contacts-v0.18.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* **contacts:** proxy feedbacks before dynamic users ([910b79e](https://github.com/tutur3u/platform/commit/910b79ef5a53e31b865cb1290e2f2b29d19c1702))
+* **contacts:** restore long group post creation ([036b45e](https://github.com/tutur3u/platform/commit/036b45e22c475e7f797e8d4f7622ab79f1778144))
+
 ## [0.18.1](https://github.com/tutur3u/platform/compare/contacts-v0.18.0...contacts-v0.18.1) (2026-08-21)
 
 
