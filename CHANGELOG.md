@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/platform-v0.40.3...platform-v0.41.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
+
+### Bug Fixes
+
+* **ci:** normalize generated release formatting ([682f005](https://github.com/tutur3u/platform/commit/682f005bf2649cd5682a500bb324c0c30ea8d667))
+* **ci:** normalize generated release formatting ([#5141](https://github.com/tutur3u/platform/issues/5141)) ([5f78e0d](https://github.com/tutur3u/platform/commit/5f78e0d3bd9fc1372333be4a545cc9118ce0a9b4))
+* **ci:** pin release formatter action ([d996fbe](https://github.com/tutur3u/platform/commit/d996fbed122f1b3b1f6840581ffae7b942768ddc))
+* **contacts:** proxy feedbacks before dynamic users ([910b79e](https://github.com/tutur3u/platform/commit/910b79ef5a53e31b865cb1290e2f2b29d19c1702))
+* **contacts:** restore long group post creation ([036b45e](https://github.com/tutur3u/platform/commit/036b45e22c475e7f797e8d4f7622ab79f1778144))
+* **database:** resolve task restore trigger tables ([28988fd](https://github.com/tutur3u/platform/commit/28988fd1c18bddf05763aa972b035394d4841933))
+* **database:** restore task snapshot schema path ([deddddf](https://github.com/tutur3u/platform/commit/deddddfb38901c76f1bee284d2e065f8c78a75f1))
+* **mobile:** preserve analyzer compatibility ([946f705](https://github.com/tutur3u/platform/commit/946f705bbe33c61a1835edc2bd23b9f249a1c420))
+* **mobile:** refresh Firebase iOS pods ([d30bc35](https://github.com/tutur3u/platform/commit/d30bc352fb9fadc7c83f0b2ef89a4f878e1e5a0e))
+* **tasks:** clarify activity history previews ([e64b54d](https://github.com/tutur3u/platform/commit/e64b54d6fca953fe4369ddf2c72981cc5a421e3c))
+* **tasks:** guard loading task snapshots ([eb86521](https://github.com/tutur3u/platform/commit/eb8652137d1e9c2fde792cdc415ddae8d1e78b98))
+* **tasks:** restore cross-workspace task context ([0a8c6fa](https://github.com/tutur3u/platform/commit/0a8c6fa2c893da1fdbbc5e2421bbad3fa9513642))
+* **tasks:** stabilize quick view and terminal actions ([380e7ea](https://github.com/tutur3u/platform/commit/380e7eafda2d7717a9356fc5f1f252e0aaddbdcf))
+
 ## [0.40.3](https://github.com/tutur3u/platform/compare/platform-v0.40.2...platform-v0.40.3) (2026-08-22)
 
 

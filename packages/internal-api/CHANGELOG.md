@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/internal-api-v0.31.1...internal-api-v0.32.0) (2026-08-25)
+
+
+### Features
+
+* **tasks:** restore task history versions ([695afac](https://github.com/tutur3u/platform/commit/695afac81a6937c4dbe8148173b151a4654cd271))
+
 ## [0.31.1](https://github.com/tutur3u/platform/compare/internal-api-v0.31.0...internal-api-v0.31.1) (2026-08-20)
 
 

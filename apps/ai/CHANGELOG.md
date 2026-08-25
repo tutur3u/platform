@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.2](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.1...ai-studio-v0.11.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* **contacts:** proxy feedbacks before dynamic users ([910b79e](https://github.com/tutur3u/platform/commit/910b79ef5a53e31b865cb1290e2f2b29d19c1702))
+
 ## [0.11.1](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.0...ai-studio-v0.11.1) (2026-08-21)
 
 
