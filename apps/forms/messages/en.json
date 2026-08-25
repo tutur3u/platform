@@ -2860,7 +2860,10 @@
       "validation_constraint_real_range": "Enter a number between {min} and {max}",
       "validation_constraint_regex": "Must match the required pattern",
       "validation_fix_errors": "Please fix the errors above before submitting.",
-      "view_image_fullscreen": "View image fullscreen"
+      "view_image_fullscreen": "View image fullscreen",
+      "welcome_start": "Start",
+      "welcome_question_count": "{count, plural, =1 {1 question} other {# questions}}",
+      "step_progress": "{current} of {total}"
     },
     "settings": {
       "active": "Active",
@@ -2981,7 +2984,24 @@
       "embed_launcher_placeholder": "Open form",
       "embed_snippet": "Script embed (recommended)",
       "embed_iframe_snippet": "Plain iframe (no scripts)",
-      "embed_requires_share_link": "Publish this form and create a share link first — an embed points at that link."
+      "embed_requires_share_link": "Publish this form and create a share link first — an embed points at that link.",
+      "display_mode": "How questions are shown",
+      "display_modes": {
+        "sections": "All at once",
+        "one_question": "One at a time"
+      },
+      "display_mode_hints": {
+        "sections": "A whole section on one screen. Good for short forms people scan before answering.",
+        "one_question": "One question per screen. Keeps long forms from looking daunting and lifts completion."
+      },
+      "welcome_screen": "Show a welcome screen",
+      "welcome_screen_hint": "A cover screen before the first question, so people know what they are starting.",
+      "welcome_title": "Welcome title",
+      "welcome_title_placeholder": "Leave empty to use the form title",
+      "welcome_body": "Welcome message",
+      "welcome_body_placeholder": "Leave empty to use the form description",
+      "welcome_button": "Button label",
+      "welcome_button_placeholder": "Start"
     },
     "shared": {
       "metadata_fallback_description": "Open this shared form to review the questions and submit a response.",
@@ -3397,7 +3417,8 @@
           "fonts": "Nineteen headline and body faces, paired independently",
           "density": "Airy, balanced or compact spacing",
           "typography": "Separate display, heading and body sizes",
-          "cover": "Cover image and headline, plus per-section art"
+          "cover": "Cover image and headline, plus per-section art",
+          "pacing": "One question at a time, or a whole section per screen"
         }
       },
       "embed": {

@@ -22,6 +22,7 @@ import type { getRuntimeProgressStats } from '../runtime-progress';
 import type {
   FormAnswerValue,
   FormDefinition,
+  FormDefinitionQuestion,
   FormReadOnlyAnswerIssue,
 } from '../types';
 import type { FormDensityClasses } from './constants';
@@ -53,12 +54,15 @@ export function renderFormSectionCard({
   advanceSectionTitle,
   hasReadOnlyNextSection,
   shouldShowSectionNavigation,
+  canGoBack,
+  handleBack,
+  visibleQuestions,
+  stepIndex,
+  stepCount,
+  isLastStep,
   shouldShowTurnstile,
   isSubmitBlockedByTurnstile,
   isBusy,
-  sectionTrail,
-  setSectionTrail,
-  setCurrentSectionId,
   setError,
   responseCopyEmail,
   sendResponseCopy,
@@ -70,6 +74,25 @@ export function renderFormSectionCard({
   setCaptchaError,
   handleAdvance,
 }: {
+  /** True when there is a previous screen or section to return to. */
+  canGoBack: boolean;
+  /** Steps back a screen, or a section once the first screen is reached. */
+  handleBack: () => void;
+  /**
+   * Questions for the current screen. In `sections` mode this is the whole
+   * section; in `one_question` mode it is the current step.
+   */
+  visibleQuestions: FormDefinitionQuestion[];
+  /** Zero-based screen index within the section. */
+  stepIndex: number;
+  /** Number of screens the section is split into; 1 in `sections` mode. */
+  stepCount: number;
+  /**
+   * True on the section's final screen. Submit, the response-copy opt-in and
+   * the next-section hint all describe what happens after the *section*, so
+   * they must not appear while the respondent is still mid-section.
+   */
+  isLastStep: boolean;
   form: FormDefinition;
   t: FormsTranslator;
   mode: 'preview' | 'public';
@@ -100,9 +123,6 @@ export function renderFormSectionCard({
   shouldShowTurnstile: boolean;
   isSubmitBlockedByTurnstile: boolean;
   isBusy: boolean;
-  sectionTrail: string[];
-  setSectionTrail: Dispatch<SetStateAction<string[]>>;
-  setCurrentSectionId: Dispatch<SetStateAction<string>>;
   setError: Dispatch<SetStateAction<string | null>>;
   responseCopyEmail?: string | null;
   sendResponseCopy: boolean;
@@ -134,11 +154,24 @@ export function renderFormSectionCard({
               />
             </div>
           </div>
-          <Badge variant="outline" className="rounded-full px-3 py-1">
-            <Flag className="mr-1 h-3.5 w-3.5" />
-            {progressStats.currentSectionNumber} /{' '}
-            {progressStats.routeSectionCount}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Only meaningful once a section is split into screens; in
+                `sections` mode there is exactly one and the counter would
+                always read "1 / 1". */}
+            {stepCount > 1 ? (
+              <Badge className="rounded-full px-3 py-1" variant="secondary">
+                {t('runtime.step_progress', {
+                  current: stepIndex + 1,
+                  total: stepCount,
+                })}
+              </Badge>
+            ) : null}
+            <Badge variant="outline" className="rounded-full px-3 py-1">
+              <Flag className="mr-1 h-3.5 w-3.5" />
+              {progressStats.currentSectionNumber} /{' '}
+              {progressStats.routeSectionCount}
+            </Badge>
+          </div>
         </div>
         {currentSection.image.url ? (
           <div className="relative mt-4 aspect-16/6 overflow-hidden rounded-[1.4rem] border border-border/60 bg-background/70">
@@ -186,7 +219,7 @@ export function renderFormSectionCard({
           </div>
         ) : null}
         <div className={density.questionGap}>
-          {currentSection.questions.map((question) => (
+          {visibleQuestions.map((question) => (
             <QuestionBlock
               key={question.id}
               question={question}
@@ -200,10 +233,10 @@ export function renderFormSectionCard({
             />
           ))}
           {readOnly &&
-          currentSection.questions.some(
+          visibleQuestions.some(
             (question) => (answerIssueMap.get(question.id) ?? []).length > 0
           )
-            ? currentSection.questions.map((question) => {
+            ? visibleQuestions.map((question) => {
                 const issues = answerIssueMap.get(question.id) ?? [];
                 if (issues.length === 0) {
                   return null;
@@ -241,7 +274,10 @@ export function renderFormSectionCard({
           </div>
         ) : null}
 
-        {mode === 'public' && !readOnly && advanceTarget.type === 'submit' ? (
+        {mode === 'public' &&
+        !readOnly &&
+        isLastStep &&
+        advanceTarget.type === 'submit' ? (
           <div className="rounded-3xl border border-border/60 bg-linear-to-br from-background/90 via-background/70 to-background/45 p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="space-y-2">
@@ -354,22 +390,14 @@ export function renderFormSectionCard({
               type="button"
               variant="outline"
               className={toneClasses.secondaryButtonClassName}
-              onClick={() => {
-                const previousSectionId = sectionTrail[sectionTrail.length - 2];
-                if (!previousSectionId) {
-                  return;
-                }
-
-                setSectionTrail((currentTrail) => currentTrail.slice(0, -1));
-                setCurrentSectionId(previousSectionId);
-              }}
-              disabled={sectionTrail.length <= 1 || isBusy}
+              onClick={handleBack}
+              disabled={!canGoBack || isBusy}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('runtime.back')}
             </Button>
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
-              {advanceSectionTitle ? (
+              {isLastStep && advanceSectionTitle ? (
                 <div className="rounded-full border border-border/60 bg-background/60 px-3 py-1 text-[11px] text-muted-foreground uppercase tracking-[0.2em]">
                   {t('studio.target_section')}: {advanceSectionTitle}
                 </div>
@@ -381,7 +409,7 @@ export function renderFormSectionCard({
                   onClick={handleAdvance}
                   disabled={isBusy || isSubmitBlockedByTurnstile}
                 >
-                  {advanceTarget.type === 'submit' ? (
+                  {isLastStep && advanceTarget.type === 'submit' ? (
                     <>
                       <Check className="mr-2 h-4 w-4" />
                       {mode === 'preview'

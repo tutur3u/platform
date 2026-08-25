@@ -2860,7 +2860,10 @@
       "validation_constraint_real_range": "Nhập số từ {min} đến {max}",
       "validation_constraint_regex": "Phải khớp với mẫu yêu cầu",
       "validation_fix_errors": "Vui lòng sửa các lỗi ở trên trước khi gửi.",
-      "view_image_fullscreen": "Xem ảnh toàn màn hình"
+      "view_image_fullscreen": "Xem ảnh toàn màn hình",
+      "welcome_start": "Bắt đầu",
+      "welcome_question_count": "{count, plural, other {# câu hỏi}}",
+      "step_progress": "{current} / {total}"
     },
     "settings": {
       "active": "Đang dùng",
@@ -2981,7 +2984,24 @@
       "embed_launcher_placeholder": "Mở biểu mẫu",
       "embed_snippet": "Nhúng bằng script (khuyên dùng)",
       "embed_iframe_snippet": "Iframe thuần (không dùng script)",
-      "embed_requires_share_link": "Hãy đăng biểu mẫu và tạo liên kết chia sẻ trước — bản nhúng trỏ tới liên kết đó."
+      "embed_requires_share_link": "Hãy đăng biểu mẫu và tạo liên kết chia sẻ trước — bản nhúng trỏ tới liên kết đó.",
+      "display_mode": "Cách hiển thị câu hỏi",
+      "display_modes": {
+        "sections": "Hiện tất cả",
+        "one_question": "Từng câu một"
+      },
+      "display_mode_hints": {
+        "sections": "Cả một phần trên một màn hình. Hợp với biểu mẫu ngắn mà người ta muốn xem lướt trước khi trả lời.",
+        "one_question": "Mỗi màn hình một câu hỏi. Giúp biểu mẫu dài bớt ngợp và tăng tỉ lệ hoàn tất."
+      },
+      "welcome_screen": "Hiện màn hình chào",
+      "welcome_screen_hint": "Một màn hình mở đầu trước câu hỏi đầu tiên, để người trả lời biết họ sắp bắt đầu việc gì.",
+      "welcome_title": "Tiêu đề màn hình chào",
+      "welcome_title_placeholder": "Để trống để dùng tiêu đề biểu mẫu",
+      "welcome_body": "Lời chào",
+      "welcome_body_placeholder": "Để trống để dùng mô tả biểu mẫu",
+      "welcome_button": "Nhãn nút",
+      "welcome_button_placeholder": "Bắt đầu"
     },
     "shared": {
       "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",
@@ -3397,7 +3417,8 @@
           "fonts": "Mười chín phông tiêu đề và nội dung, ghép cặp độc lập",
           "density": "Khoảng cách thoáng, cân bằng hoặc gọn",
           "typography": "Cỡ chữ riêng cho tiêu đề lớn, tiêu đề và nội dung",
-          "cover": "Ảnh bìa và dòng tiêu đề, kèm ảnh cho từng phần"
+          "cover": "Ảnh bìa và dòng tiêu đề, kèm ảnh cho từng phần",
+          "pacing": "Từng câu một, hoặc cả một phần trên mỗi màn hình"
         }
       },
       "embed": {

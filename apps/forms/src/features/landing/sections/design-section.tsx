@@ -10,7 +10,13 @@ import {
 const SHOWCASE_PRESETS = FORM_THEME_PRESETS.slice(0, 10);
 
 const SURFACE_KEYS = ['paper', 'glass', 'panel'] as const;
-const CONTROL_KEYS = ['fonts', 'density', 'typography', 'cover'] as const;
+const CONTROL_KEYS = [
+  'fonts',
+  'density',
+  'typography',
+  'pacing',
+  'cover',
+] as const;
 
 /**
  * Theming.

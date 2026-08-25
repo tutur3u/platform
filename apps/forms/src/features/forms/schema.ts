@@ -27,6 +27,12 @@ export const FORM_ACCESS_MODE_VALUES = [
   'authenticated_email',
 ] as const;
 export const FORM_DENSITY_VALUES = ['airy', 'balanced', 'compact'] as const;
+/**
+ * `sections` shows a whole section per screen (the original behaviour);
+ * `one_question` gives each answerable question its own screen. Branching still
+ * runs at section boundaries in both.
+ */
+export const FORM_DISPLAY_MODE_VALUES = ['sections', 'one_question'] as const;
 export const FORM_SURFACE_STYLE_VALUES = ['paper', 'glass', 'panel'] as const;
 export const FORM_OPTION_LAYOUT_VALUES = ['list', 'grid'] as const;
 export const FORM_THEME_ACCENT_VALUES = [
@@ -275,7 +281,23 @@ export const formSeoSchema = z.object({
   noIndex: z.boolean().default(false),
 });
 
+export const FORM_WELCOME_TITLE_MAX_LENGTH = 120;
+export const FORM_WELCOME_DESCRIPTION_MAX_LENGTH = 600;
+export const FORM_WELCOME_BUTTON_MAX_LENGTH = 40;
+
 export const formSettingsSchema = z.object({
+  displayMode: z.enum(FORM_DISPLAY_MODE_VALUES).default('sections'),
+  /** Optional cover screen shown before the first question. */
+  welcomeEnabled: z.boolean().default(false),
+  welcomeTitle: z.string().max(FORM_WELCOME_TITLE_MAX_LENGTH).default(''),
+  welcomeDescription: z
+    .string()
+    .max(FORM_WELCOME_DESCRIPTION_MAX_LENGTH)
+    .default(''),
+  welcomeButtonLabel: z
+    .string()
+    .max(FORM_WELCOME_BUTTON_MAX_LENGTH)
+    .default(''),
   showProgressBar: z.boolean().default(true),
   allowMultipleSubmissions: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
@@ -434,6 +456,11 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       },
     },
     settings: {
+      displayMode: 'sections',
+      welcomeEnabled: false,
+      welcomeTitle: '',
+      welcomeDescription: '',
+      welcomeButtonLabel: '',
       showProgressBar: true,
       allowMultipleSubmissions: true,
       oneResponsePerUser: false,

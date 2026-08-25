@@ -96,6 +96,13 @@ export function buildDemoForm(
     shareCode: null,
     theme,
     settings: {
+      // Sections mode on the landing: a visitor skimming the page should see
+      // what the form asks, not have to click through four screens to find out.
+      displayMode: 'sections',
+      welcomeEnabled: false,
+      welcomeTitle: '',
+      welcomeDescription: '',
+      welcomeButtonLabel: '',
       showProgressBar: true,
       allowMultipleSubmissions: true,
       oneResponsePerUser: false,

@@ -7,6 +7,7 @@ import {
   MessageSquare,
 } from '@tuturuuu/icons';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -48,6 +49,15 @@ export function ExperienceSettingsSection({
 }) {
   const t = useTranslations('forms');
 
+  const displayMode = useWatch({
+    control: form.control,
+    name: 'settings.displayMode',
+  });
+  const welcomeEnabled = useWatch({
+    control: form.control,
+    name: 'settings.welcomeEnabled',
+  });
+
   return (
     <SettingsSection
       description={t('settings.responses_recorded')}
@@ -55,6 +65,98 @@ export function ExperienceSettingsSection({
       title={t('settings.experience_controls')}
       value="experience-controls"
     >
+      <div className="space-y-2">
+        <Label>{t('settings.display_mode')}</Label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(['sections', 'one_question'] as const).map((candidate) => (
+            <button
+              className={cn(
+                'rounded-2xl border px-4 py-3 text-left transition-colors',
+                candidate === displayMode
+                  ? 'border-foreground/25 bg-foreground/[0.04]'
+                  : 'border-border/60 bg-background/55 hover:border-foreground/20'
+              )}
+              key={candidate}
+              onClick={() =>
+                form.setValue('settings.displayMode', candidate, {
+                  shouldDirty: true,
+                })
+              }
+              type="button"
+            >
+              <span className="block font-medium text-sm">
+                {t(`settings.display_modes.${candidate}`)}
+              </span>
+              <span className="mt-1 block text-muted-foreground text-xs">
+                {t(`settings.display_mode_hints.${candidate}`)}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3 rounded-[1.35rem] border border-border/60 bg-background/55 p-4">
+        <button
+          className="flex w-full items-start gap-3 text-left"
+          onClick={() =>
+            form.setValue('settings.welcomeEnabled', !welcomeEnabled, {
+              shouldDirty: true,
+            })
+          }
+          type="button"
+        >
+          <Checkbox
+            checked={welcomeEnabled}
+            className="pointer-events-none mt-0.5"
+            tabIndex={-1}
+          />
+          <span className="space-y-1">
+            <span className="block font-medium text-sm">
+              {t('settings.welcome_screen')}
+            </span>
+            <span className="block text-muted-foreground text-xs">
+              {t('settings.welcome_screen_hint')}
+            </span>
+          </span>
+        </button>
+
+        {welcomeEnabled ? (
+          <div className="space-y-3 border-border/50 border-t pt-3">
+            <div className="space-y-2">
+              <Label htmlFor="welcome-title">
+                {t('settings.welcome_title')}
+              </Label>
+              <Input
+                id="welcome-title"
+                placeholder={t('settings.welcome_title_placeholder')}
+                {...form.register('settings.welcomeTitle')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="welcome-description">
+                {t('settings.welcome_body')}
+              </Label>
+              <Textarea
+                id="welcome-description"
+                placeholder={t('settings.welcome_body_placeholder')}
+                rows={3}
+                {...form.register('settings.welcomeDescription')}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="welcome-button">
+                {t('settings.welcome_button')}
+              </Label>
+              <Input
+                id="welcome-button"
+                placeholder={t('settings.welcome_button_placeholder')}
+                {...form.register('settings.welcomeButtonLabel')}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+
       <div className="rounded-[1.35rem] border border-border/60 bg-background/55 p-4">
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="rounded-2xl border border-border/60 bg-background/60 px-4 py-3">
