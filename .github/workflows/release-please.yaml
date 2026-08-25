@@ -42,6 +42,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: production
+          fetch-depth: 0
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
 
       - name: Recover overflow release notes
@@ -57,6 +58,57 @@ jobs:
           target-branch: production
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      # Release Please serializes package.json files independently of Biome.
+      # When those serializers disagree (for example, a short `files` array),
+      # the generated PR immediately goes red even though no authored source is
+      # malformed. Normalize only the files changed by the generated release,
+      # amend the release commit so the approval guard still sees one untouched
+      # release commit, and use the exact remote SHA as a force-with-lease gate.
+      - name: Setup Node.js for release formatting
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+
+      - name: Normalize generated release formatting
+        shell: bash
+        env:
+          RELEASE_BRANCH: release-please--branches--production
+        run: |
+          set -euo pipefail
+
+          if ! git ls-remote --exit-code --heads origin "${RELEASE_BRANCH}" >/dev/null 2>&1; then
+            echo "origin/${RELEASE_BRANCH} does not exist; there is no generated PR to format."
+            exit 0
+          fi
+
+          git fetch origin "+refs/heads/${RELEASE_BRANCH}:refs/remotes/origin/${RELEASE_BRANCH}"
+          release_sha="$(git rev-parse "origin/${RELEASE_BRANCH}")"
+          git switch --detach "${release_sha}"
+          trap 'git switch --detach origin/production >/dev/null' EXIT
+
+          changed_files=()
+          while IFS= read -r -d '' file; do
+            changed_files+=("${file}")
+          done < <(git diff --name-only -z origin/production...HEAD)
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "The generated release branch has no changed files."
+            exit 0
+          fi
+
+          npx --yes @biomejs/biome@2.5.10 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
+
+          if git diff --quiet -- "${changed_files[@]}"; then
+            echo "Generated release files already match Biome formatting."
+            exit 0
+          fi
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "${changed_files[@]}"
+          git commit --amend --no-edit
+          git push origin "HEAD:refs/heads/${RELEASE_BRANCH}" \
+            --force-with-lease="refs/heads/${RELEASE_BRANCH}:${release_sha}"
 
       # Overflow notes are still needed while the merged PR carries
       # `autorelease: pending`. Release Please has consumed them once it reports
