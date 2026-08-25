@@ -23,7 +23,15 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
+import { useEffect } from 'react';
 
+import {
+  CollaboratorAvatars,
+  type FormCollaboratorIdentity,
+  useFormCollaboration,
+  useRemoteSaveNotice,
+} from '../collaboration';
+import { normalizeMarkdownToText } from '../content';
 import { FORM_FONT_VARIABLES } from '../fonts';
 import { FormRuntime } from '../form-runtime';
 import { FormsMarkdown } from '../forms-markdown';
@@ -41,6 +49,7 @@ import { useFormStudioSave } from './form-studio-save';
 import { useFormStudioState } from './form-studio-state';
 import { ResponsesPanel } from './responses-panel';
 import { SettingsPanel } from './settings-panel';
+import { StudioSaveButton, type StudioSaveState } from './studio-save-button';
 import { ThemePickerPanel } from './theme-picker-panel';
 
 export function FormStudio({
@@ -48,6 +57,7 @@ export function FormStudio({
   workspaceSlug,
   mode,
   canManageForms = true,
+  currentUser,
   initialForm,
   initialResponses,
   initialResponsesTotal,
@@ -61,6 +71,11 @@ export function FormStudio({
   workspaceSlug: string;
   mode: 'create' | 'edit';
   canManageForms?: boolean;
+  /**
+   * Resolved server-side from the app session. Registered satellites must not
+   * read Supabase auth in the browser, so collaboration identity is passed in.
+   */
+  currentUser: FormCollaboratorIdentity | null;
   initialForm?: FormDefinition;
   initialResponses?: FormResponseRecord[];
   initialResponsesTotal?: number;
@@ -142,8 +157,68 @@ export function FormStudio({
     initialAnalytics,
   });
 
+  // Live collaboration is scoped to a saved form: a draft being created has no
+  // id yet, so there is no channel for anyone else to join.
+  const handleRemoteSave = useRemoteSaveNotice({
+    isDirty,
+    onReload: () => router.refresh(),
+  });
+  const {
+    broadcastSaved,
+    collaborators,
+    getBlockEditors,
+    isConnected: isCollaborationConnected,
+    setActiveBlock,
+  } = useFormCollaboration({
+    currentUser,
+    formId: initialForm?.id,
+    onRemoteSave: handleRemoteSave,
+  });
+
+  // Report which block this editor is on so collaborators see it on their copy.
+  // The question id is the finer signal; the section is the fallback while the
+  // editor is between questions.
+  useEffect(() => {
+    const activeQuestionId = resolvedActiveSectionId
+      ? activeQuestionIdsBySection[resolvedActiveSectionId]
+      : undefined;
+    const blockId = activeQuestionId ?? resolvedActiveSectionId ?? null;
+
+    if (!blockId) {
+      setActiveBlock(null);
+      return;
+    }
+
+    const section = values.sections.find(
+      (candidate) => candidate.id === resolvedActiveSectionId
+    );
+    const question = section?.questions.find(
+      (candidate) => candidate.id === activeQuestionId
+    );
+
+    setActiveBlock(
+      blockId,
+      normalizeMarkdownToText(question?.title ?? section?.title ?? '') || null
+    );
+  }, [
+    activeQuestionIdsBySection,
+    resolvedActiveSectionId,
+    setActiveBlock,
+    values.sections,
+  ]);
+
+  const saveState: StudioSaveState = {
+    autosaveEnabled,
+    autosaveStatus,
+    isDirty,
+    isPending: saveMutation.isPending,
+    mode,
+    secondsUntilAutosave,
+  };
+
   const { handleSave, saveButtonDisabled, handleSectionDragEnd } =
     useFormStudioSave({
+      onSaved: broadcastSaved,
       t,
       form,
       mode,
@@ -292,6 +367,10 @@ export function FormStudio({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <CollaboratorAvatars
+                collaborators={collaborators}
+                isConnected={isCollaborationConnected}
+              />
               {(mode === 'edit' && canManageForms) ||
               (mode === 'edit' && shareQuery?.shareLink?.code) ? (
                 <DropdownMenu>
@@ -331,58 +410,28 @@ export function FormStudio({
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : null}
-              <Button
-                ref={primarySaveButtonRef}
-                className={cn(
-                  'rounded-2xl px-5',
-                  studioToneClasses.primaryButtonClassName
-                )}
-                onClick={handleSave}
+              <StudioSaveButton
+                buttonRef={primarySaveButtonRef}
+                className={studioToneClasses.primaryButtonClassName}
                 disabled={saveButtonDisabled}
-              >
-                {saveMutation.isPending
-                  ? t('studio.saving')
-                  : autosaveStatus === 'error'
-                    ? t('studio.autosave_failed')
-                    : autosaveEnabled && isDirty && secondsUntilAutosave > 0
-                      ? t('studio.autosave_in_seconds', {
-                          seconds: secondsUntilAutosave,
-                        })
-                      : autosaveStatus === 'saved'
-                        ? t('studio.autosave_saved')
-                        : mode === 'create'
-                          ? t('studio.create_form')
-                          : t('studio.save_changes')}
-              </Button>
+                onClick={handleSave}
+                state={saveState}
+              />
             </div>
           </CardContent>
         </Card>
 
         {showFloatingSave && (mode === 'create' || isDirty) ? (
           <div className="pointer-events-none fixed right-6 bottom-6 z-50">
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={saveButtonDisabled}
+            <StudioSaveButton
               className={cn(
-                'pointer-events-auto rounded-2xl px-5 shadow-black/15 shadow-lg',
+                'pointer-events-auto shadow-black/15 shadow-lg',
                 studioToneClasses.primaryButtonClassName
               )}
-            >
-              {saveMutation.isPending
-                ? t('studio.saving')
-                : autosaveStatus === 'error'
-                  ? t('studio.autosave_failed')
-                  : autosaveEnabled && isDirty && secondsUntilAutosave > 0
-                    ? t('studio.autosave_in_seconds', {
-                        seconds: secondsUntilAutosave,
-                      })
-                    : autosaveStatus === 'saved'
-                      ? t('studio.autosave_saved')
-                      : mode === 'create'
-                        ? t('studio.create_form')
-                        : t('studio.save_changes')}
-            </Button>
+              disabled={saveButtonDisabled}
+              onClick={handleSave}
+              state={saveState}
+            />
           </div>
         ) : null}
 
@@ -479,6 +528,7 @@ export function FormStudio({
             addBlockToActiveSection,
             handleSectionDragEnd,
             SectionDivider,
+            getBlockEditors,
           })}
 
           <TabsContent value="preview" className="mt-0 min-w-0">

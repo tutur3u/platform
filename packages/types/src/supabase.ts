@@ -15592,6 +15592,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_join_form_realtime_topic: {
+        Args: { p_topic: string; p_user_id: string };
+        Returns: boolean;
+      };
       can_join_task_realtime_topic: {
         Args: { p_topic: string; p_user_id: string };
         Returns: boolean;

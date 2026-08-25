@@ -3562,6 +3562,17 @@
           "contact": "Contact"
         }
       }
+    },
+    "collaboration": {
+      "away": "Away",
+      "viewing": "Viewing the form",
+      "editing_block": "Editing “{block}”",
+      "editing_now": "{name} is editing this",
+      "editing_now_multiple": "{count} people are editing this",
+      "editor_count": "{count, plural, =1 {1 other editor} other {# other editors}}",
+      "remote_save_title": "{name} saved changes",
+      "remote_save_description": "You have unsaved edits, so this copy was left alone. Reload to take their version — your changes will be lost.",
+      "remote_save_reload": "Reload"
     }
   },
   "guest-lead-data-table": {

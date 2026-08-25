@@ -3562,6 +3562,17 @@
           "contact": "Liên hệ"
         }
       }
+    },
+    "collaboration": {
+      "away": "Đang vắng",
+      "viewing": "Đang xem biểu mẫu",
+      "editing_block": "Đang sửa “{block}”",
+      "editing_now": "{name} đang sửa mục này",
+      "editing_now_multiple": "{count} người đang sửa mục này",
+      "editor_count": "{count, plural, other {# người khác đang sửa}}",
+      "remote_save_title": "{name} vừa lưu thay đổi",
+      "remote_save_description": "Bạn đang có chỉnh sửa chưa lưu nên bản này được giữ nguyên. Tải lại để lấy bản của họ — thay đổi của bạn sẽ mất.",
+      "remote_save_reload": "Tải lại"
     }
   },
   "guest-lead-data-table": {
