@@ -32,6 +32,10 @@ test('Release Please normalizes generated files before approving the PR', () => 
   assert.ok(approveIndex > formatIndex);
   assert.match(releaseJob, /ref: production/);
   assert.match(releaseJob, /fetch-depth: 0/);
+  assert.match(
+    releaseJob,
+    /uses: actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7/
+  );
 });
 
 test('generated formatting is path-scoped and race-safe', () => {
