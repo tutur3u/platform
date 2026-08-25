@@ -375,6 +375,7 @@ export function toStudioInput(form?: FormDefinition): FormStudioInput {
     maxResponses: form.maxResponses,
     theme: form.theme,
     settings: form.settings,
+    seo: form.seo,
     sections: form.sections.map((section) => ({
       id: section.id,
       title: section.title,
@@ -439,6 +440,7 @@ export function toPreviewDefinition(
       sectionImages: resolvedSectionImages,
     },
     settings: values.settings,
+    seo: values.seo,
     sections: values.sections.map((section) => ({
       ...section,
       id: section.id ?? createClientId(),

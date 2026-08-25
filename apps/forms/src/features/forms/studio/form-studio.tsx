@@ -544,6 +544,7 @@ export function FormStudio({
             />
 
             <SettingsPanel
+              wsId={wsId}
               form={form}
               shareCode={shareQuery?.shareLink?.code}
               toneClasses={studioToneClasses}
