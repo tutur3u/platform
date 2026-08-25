@@ -1595,7 +1595,8 @@
     "write_something": "Hãy viết gì đó...",
     "years_old": "tuổi",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "copy": "Sao chép"
   },
   "course-data-table": {
     "modules": "Mô-đun"
@@ -2953,7 +2954,34 @@
       "seo_image": "Ảnh thẻ chia sẻ",
       "seo_image_hint": "Kích thước 1200×630 là hợp nhất. Để trống thì dùng thẻ được tạo từ giao diện và ảnh bìa của biểu mẫu.",
       "seo_no_index": "Ẩn khỏi công cụ tìm kiếm",
-      "seo_no_index_hint": "Phát tín hiệu noindex. Liên kết vẫn dùng được với những người bạn chia sẻ — chỉ là không được lập chỉ mục."
+      "seo_no_index_hint": "Phát tín hiệu noindex. Liên kết vẫn dùng được với những người bạn chia sẻ — chỉ là không được lập chỉ mục.",
+      "embed": "Nhúng",
+      "embed_description": "Đặt biểu mẫu này lên trang của bạn — nội tuyến, dạng popup, hoặc sau một nút mở.",
+      "embed_mode": "Kiểu nhúng",
+      "embed_modes": {
+        "inline": "Nội tuyến",
+        "fullpage": "Toàn trang",
+        "popup": "Popup",
+        "slider": "Trượt",
+        "popover": "Bong bóng",
+        "sidetab": "Tab bên"
+      },
+      "embed_mode_hints": {
+        "inline": "Nằm trong mạch nội dung trang và giãn theo biểu mẫu.",
+        "fullpage": "Chiếm toàn màn hình. Hợp nhất khi để ở một trang riêng.",
+        "popup": "Mở ra giữa màn hình, làm mờ mọi thứ phía sau.",
+        "slider": "Trượt vào từ mép phải, vẫn thấy trang bên cạnh.",
+        "popover": "Nút tròn ở góc màn hình, bấm vào là mở một thẻ gọn.",
+        "sidetab": "Tab cố định ở mép trang, bấm vào là mở bảng biểu mẫu."
+      },
+      "embed_height": "Chiều cao",
+      "embed_height_placeholder": "Để trống để tự động điều chỉnh",
+      "embed_height_hint": "Tự động điều chỉnh cần bản nhúng bằng script. Iframe thuần luôn cần chiều cao cố định.",
+      "embed_launcher_text": "Nhãn nút mở",
+      "embed_launcher_placeholder": "Mở biểu mẫu",
+      "embed_snippet": "Nhúng bằng script (khuyên dùng)",
+      "embed_iframe_snippet": "Iframe thuần (không dùng script)",
+      "embed_requires_share_link": "Hãy đăng biểu mẫu và tạo liên kết chia sẻ trước — bản nhúng trỏ tới liên kết đó."
     },
     "shared": {
       "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",

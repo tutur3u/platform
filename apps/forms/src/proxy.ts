@@ -121,8 +121,13 @@ function getNextValue(request: NextRequest) {
 }
 
 /**
- * `/f/<shareCode>` is the public form-filling surface. It must stay reachable
- * without any session, including for social/OG crawlers.
+ * Surfaces that must stay reachable with no session at all.
+ *
+ * `/f/<shareCode>` is the public form-filling page, and `/embed/<shareCode>` is
+ * the same form rendered chrome-less for a third-party iframe. Both are used by
+ * anonymous respondents and by social/OG crawlers, so requiring a session would
+ * redirect them to a login screen they have no way to complete — inside an
+ * iframe, silently.
  */
 function isPublicFormsPath(unlocalizedPath: string) {
   if (unlocalizedPath === '/') return true;
@@ -133,7 +138,12 @@ function isPublicFormsPath(unlocalizedPath: string) {
     return true;
   }
 
-  return unlocalizedPath === '/f' || unlocalizedPath.startsWith('/f/');
+  return (
+    unlocalizedPath === '/f' ||
+    unlocalizedPath.startsWith('/f/') ||
+    unlocalizedPath === '/embed' ||
+    unlocalizedPath.startsWith('/embed/')
+  );
 }
 
 function isPublicSharedFormApiRequest(request: NextRequest) {

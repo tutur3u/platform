@@ -1595,7 +1595,8 @@
     "write_something": "Write something",
     "years_old": "years old",
     "yellow": "Yellow",
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "copy": "Copy"
   },
   "course-data-table": {
     "modules": "Modules"
@@ -2953,7 +2954,34 @@
       "seo_image": "Social card image",
       "seo_image_hint": "1200×630 works best. Empty uses the card generated from your form's theme and cover.",
       "seo_no_index": "Hide from search engines",
-      "seo_no_index_hint": "Emits noindex. The link keeps working for anyone you share it with — it just will not be indexed."
+      "seo_no_index_hint": "Emits noindex. The link keeps working for anyone you share it with — it just will not be indexed.",
+      "embed": "Embed",
+      "embed_description": "Put this form on your own site — inline, as a popup, or behind a launcher.",
+      "embed_mode": "Embed style",
+      "embed_modes": {
+        "inline": "Inline",
+        "fullpage": "Full page",
+        "popup": "Popup",
+        "slider": "Slider",
+        "popover": "Popover",
+        "sidetab": "Side tab"
+      },
+      "embed_mode_hints": {
+        "inline": "Sits in the flow of your page and grows with the form.",
+        "fullpage": "Fills the viewport. Best on a page of its own.",
+        "popup": "Opens centered over the page, dimming everything behind it.",
+        "slider": "Slides in from the right edge, keeping the page visible.",
+        "popover": "A launcher bubble in the corner that opens a compact card.",
+        "sidetab": "A tab pinned to the edge that opens a panel on click."
+      },
+      "embed_height": "Height",
+      "embed_height_placeholder": "Leave empty to auto-size",
+      "embed_height_hint": "Auto-sizing needs the script embed. A plain iframe always needs a fixed height.",
+      "embed_launcher_text": "Launcher label",
+      "embed_launcher_placeholder": "Open form",
+      "embed_snippet": "Script embed (recommended)",
+      "embed_iframe_snippet": "Plain iframe (no scripts)",
+      "embed_requires_share_link": "Publish this form and create a share link first — an embed points at that link."
     },
     "shared": {
       "metadata_fallback_description": "Open this shared form to review the questions and submit a response.",

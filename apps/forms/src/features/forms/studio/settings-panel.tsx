@@ -19,6 +19,7 @@ import { useRef, useState } from 'react';
 import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 import type { FormResponseSummary } from '../types';
+import { EmbedSettingsSection } from './settings-embed-section';
 import { ExperienceSettingsSection } from './settings-experience-section';
 import { ImportExportSettingsSection } from './settings-import-export-section';
 import { PublishingSettingsSection } from './settings-publishing-section';
@@ -223,6 +224,8 @@ export function SettingsPanel({
           themePreset={themePreset}
           toneClasses={toneClasses}
         />
+
+        <EmbedSettingsSection shareCode={shareCode} toneClasses={toneClasses} />
 
         <SeoSettingsSection
           form={form}
