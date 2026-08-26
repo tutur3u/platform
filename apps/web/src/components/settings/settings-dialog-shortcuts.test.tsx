@@ -64,6 +64,10 @@ vi.mock('@tuturuuu/ui/avatar', () => ({
   AvatarImage: () => null,
 }));
 
+vi.mock('@tuturuuu/ui/custom/workspace-select', () => ({
+  WorkspaceSelect: () => null,
+}));
+
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   DialogContent: ({
@@ -455,6 +459,64 @@ describe('settings dialog shortcut', () => {
 
     await waitFor(() => {
       expect(globalCommandLauncherMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('disables workspace task search for guest-only workspace access', async () => {
+    render(
+      <UserNavClient
+        locale="en"
+        renderSettingsDialog={false}
+        user={user as any}
+        workspace={
+          {
+            id: 'workspace-1',
+            joined: false,
+            name: 'Guest workspace',
+          } as any
+        }
+      />
+    );
+
+    await waitFor(() => {
+      expect(globalCommandLauncherMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultTab: 'all',
+          enableTasks: false,
+          labels: expect.objectContaining({
+            placeholder: 'search_placeholder_navigation',
+          }),
+        })
+      );
+    });
+  });
+
+  it('keeps task-first search for joined workspaces', async () => {
+    render(
+      <UserNavClient
+        locale="en"
+        renderSettingsDialog={false}
+        user={user as any}
+        workspace={
+          {
+            id: 'workspace-1',
+            joined: true,
+            name: 'Member workspace',
+          } as any
+        }
+      />
+    );
+
+    await waitFor(() => {
+      expect(globalCommandLauncherMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          defaultTab: 'tasks',
+          enableTasks: true,
+          labels: expect.objectContaining({
+            placeholder: 'search_placeholder_tasks',
+          }),
+        })
+      );
     });
   });
 });

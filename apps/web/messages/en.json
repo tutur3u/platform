@@ -4300,6 +4300,7 @@
     "result_count": "{count} result",
     "result_count_plural": "{count} results",
     "search_placeholder": "Search commands, tasks, or navigate...",
+    "search_placeholder_navigation": "Find pages, apps, and actions — use /, @, or >",
     "search_placeholder_power": "Find tasks, pages, and actions — use #, /, or >",
     "search_placeholder_tasks": "Find tasks, apps, and actions — use #, @, or >",
     "searching_tasks": "Searching tasks...",

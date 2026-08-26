@@ -15,7 +15,7 @@ import type { NavLink } from '@/components/navigation';
 interface UserNavCommandLauncherProps {
   locale?: string;
   navLinks: (NavLink | null)[];
-  workspace?: Workspace | null;
+  workspace?: (Workspace & { joined?: boolean }) | null;
   wsId?: string;
 }
 
@@ -27,6 +27,7 @@ export function UserNavCommandLauncher({
 }: UserNavCommandLauncherProps) {
   const t = useTranslations('command_palette');
   const launcherT = useTranslations('command_launcher');
+  const canUseWorkspaceTasks = Boolean(wsId && workspace?.joined !== false);
   const commandNavItems = useMemo<CommandLauncherNavItem[]>(
     () =>
       flattenNavigation(navLinks).map((item) => ({
@@ -53,8 +54,8 @@ export function UserNavCommandLauncher({
     <GlobalCommandLauncher
       currentApp="platform"
       currentWorkspaceId={wsId}
-      defaultTab={wsId ? 'tasks' : 'all'}
-      enableTasks={Boolean(wsId)}
+      defaultTab={canUseWorkspaceTasks ? 'tasks' : 'all'}
+      enableTasks={canUseWorkspaceTasks}
       extraSections={({ activeTab, onClose, query, setQuery }) => (
         <PlatformCommandExtraSections
           activeTab={activeTab}
@@ -62,7 +63,7 @@ export function UserNavCommandLauncher({
           onApplySearch={setQuery}
           onClose={onClose}
           query={query}
-          workspaceId={wsId}
+          workspaceId={canUseWorkspaceTasks ? wsId : undefined}
           workspaceName={workspace?.name}
         />
       )}
@@ -84,9 +85,11 @@ export function UserNavCommandLauncher({
         openApp: launcherT('open_app'),
         openWorkspace: launcherT('open_workspace'),
         personal: launcherT('personal'),
-        placeholder: commandNavItems.length
-          ? t('search_placeholder_power')
-          : t('search_placeholder_tasks'),
+        placeholder: canUseWorkspaceTasks
+          ? commandNavItems.length
+            ? t('search_placeholder_power')
+            : t('search_placeholder_tasks')
+          : t('search_placeholder_navigation'),
         searchHint: launcherT('search_hint'),
         select: launcherT('select'),
         tasks: t('tabs.tasks'),

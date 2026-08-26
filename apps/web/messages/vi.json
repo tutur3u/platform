@@ -4300,6 +4300,7 @@
     "result_count": "{count} kết quả",
     "result_count_plural": "{count} kết quả",
     "search_placeholder": "Tìm lệnh, nhiệm vụ, hoặc điều hướng...",
+    "search_placeholder_navigation": "Tìm trang, ứng dụng và thao tác — dùng /, @ hoặc >",
     "search_placeholder_power": "Tìm nhiệm vụ, trang và thao tác — dùng #, / hoặc >",
     "search_placeholder_tasks": "Tìm nhiệm vụ, ứng dụng và thao tác — dùng #, @ hoặc >",
     "searching_tasks": "Đang tìm nhiệm vụ...",
