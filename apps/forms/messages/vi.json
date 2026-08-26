@@ -3225,7 +3225,11 @@
       "section_n": "Phần {index}",
       "build_layout": "Bố cục soạn thảo",
       "build_layout_stacked": "Xếp dọc",
-      "build_layout_three_pane": "Ba cột"
+      "build_layout_three_pane": "Ba cột",
+      "move_block_up": "Di chuyển khối lên",
+      "move_block_down": "Di chuyển khối xuống",
+      "duplicate_block": "Nhân bản khối",
+      "delete_block": "Xoá khối"
     },
     "tabs": {
       "analytics": "Analytics",

@@ -87,3 +87,53 @@ export function reorderSectionQuestions<T extends { id?: string | undefined }>(
 
   return reordered.length === questions.length ? reordered : null;
 }
+
+/**
+ * Removes one question from a section, returning `null` when the index does
+ * not exist rather than silently deleting the wrong one.
+ */
+export function removeSectionQuestion<T>(
+  questions: readonly T[],
+  index: number
+): T[] | null {
+  if (index < 0 || index >= questions.length) return null;
+
+  return questions.filter((_, position) => position !== index);
+}
+
+/**
+ * Inserts a question directly after `index`.
+ *
+ * The caller supplies the copy, because duplicating means re-keying ids and
+ * that belongs with the studio's own id helpers rather than here.
+ */
+export function insertSectionQuestionAfter<T>(
+  questions: readonly T[],
+  index: number,
+  question: T
+): T[] | null {
+  if (index < 0 || index >= questions.length) return null;
+
+  const next = [...questions];
+  next.splice(index + 1, 0, question);
+
+  return next;
+}
+
+/** Moves one question by a signed offset, clamped to a no-op at the ends. */
+export function moveSectionQuestion<T>(
+  questions: readonly T[],
+  index: number,
+  offset: number
+): T[] | null {
+  const target = index + offset;
+  if (index < 0 || index >= questions.length) return null;
+  if (target < 0 || target >= questions.length) return null;
+
+  const next = [...questions];
+  const [moved] = next.splice(index, 1);
+  if (moved === undefined) return null;
+  next.splice(target, 0, moved);
+
+  return next;
+}

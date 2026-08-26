@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { FormStudioInput } from '../../schema';
 import {
+  insertSectionQuestionAfter,
+  moveSectionQuestion,
+  removeSectionQuestion,
   reorderSectionQuestions,
   resolveThreePaneSelection,
 } from './selection';
@@ -134,5 +137,60 @@ describe('reorderSectionQuestions', () => {
     expect(
       reorderSectionQuestions(questions, ['q1', 'q2', 'ghost'])
     ).toBeNull();
+  });
+});
+
+describe('block actions', () => {
+  const questions = [question('q1'), question('q2'), question('q3')];
+  const ids = (list: typeof questions | null) =>
+    list?.map((entry) => entry.id) ?? null;
+
+  it('removes the question at an index', () => {
+    expect(ids(removeSectionQuestion(questions, 1))).toEqual(['q1', 'q3']);
+  });
+
+  it('refuses to remove an index that does not exist', () => {
+    // Returning the list unchanged would look like success; returning null
+    // lets the caller decline to write anything.
+    expect(removeSectionQuestion(questions, 3)).toBeNull();
+    expect(removeSectionQuestion(questions, -1)).toBeNull();
+  });
+
+  it('inserts a copy directly after the source', () => {
+    const copy = question('q2-copy');
+    expect(ids(insertSectionQuestionAfter(questions, 1, copy))).toEqual([
+      'q1',
+      'q2',
+      'q2-copy',
+      'q3',
+    ]);
+  });
+
+  it('appends when duplicating the last question', () => {
+    const copy = question('q3-copy');
+    expect(ids(insertSectionQuestionAfter(questions, 2, copy))).toEqual([
+      'q1',
+      'q2',
+      'q3',
+      'q3-copy',
+    ]);
+  });
+
+  it('moves a question by a signed offset', () => {
+    expect(ids(moveSectionQuestion(questions, 2, -1))).toEqual([
+      'q1',
+      'q3',
+      'q2',
+    ]);
+    expect(ids(moveSectionQuestion(questions, 0, 1))).toEqual([
+      'q2',
+      'q1',
+      'q3',
+    ]);
+  });
+
+  it('refuses a move that would fall off either end', () => {
+    expect(moveSectionQuestion(questions, 0, -1)).toBeNull();
+    expect(moveSectionQuestion(questions, 2, 1)).toBeNull();
   });
 });

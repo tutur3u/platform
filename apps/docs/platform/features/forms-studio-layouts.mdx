@@ -6,8 +6,9 @@ updatedAt: '2026-08-26'
 
 ## TL;DR
 
-The studio's build tab has two layouts. **Stacked** is the default and covers
-everything. **Three-pane** is opt-in, wide-screen only, and still a subset.
+The studio's build tab has two layouts. **Stacked** is the default.
+**Three-pane** is opt-in and wide-screen only. Both can now do the same things;
+three-pane stays opt-in because nobody has verified it in a browser.
 
 ## Stacked
 
@@ -47,10 +48,15 @@ Two implementation choices worth keeping:
 
 Three-pane now covers what stacked covers:
 
-- **Reordering** — drag blocks within a section from the outline. A `DndContext`
-  per section means a drag cannot cross a section boundary; moving a block
-  between sections would rewrite two arrays and re-key the branching rules that
-  reference it, so that stays stacked-only until it is designed properly.
+- **Reordering** — drag blocks within a section from the outline, or use the
+  move controls in the properties header. A `DndContext` per section means a
+  drag cannot cross a section boundary; moving a block between sections would
+  rewrite two arrays and re-key the branching rules that reference it, so that
+  stays stacked-only until it is designed properly.
+- **Duplicating and deleting a block** — in the properties pane header. They
+  are there rather than on each outline row because the outline is 240px wide
+  and a control per row would crowd out the labels. Duplicating selects the
+  copy, so the author edits what they just made rather than the original.
 - **Section fields** — selecting a section shows its title, description and
   cover in the properties pane, rendered by the same `SectionFields` component
   the stacked accordion uses.

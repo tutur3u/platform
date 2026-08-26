@@ -6,10 +6,14 @@ import type { FormCollaboratorPresence } from '../../collaboration';
 import type { FormQuestionInput } from '../../schema';
 import { FloatingBlockToolbar } from '../floating-block-toolbar';
 import type { FormStudioState } from '../form-studio-state';
+import { duplicateQuestionInput } from '../studio-utils';
 import { CanvasPane } from './canvas-pane';
 import { OutlinePane } from './outline-pane';
 import { PropertiesPane } from './properties-pane';
 import {
+  insertSectionQuestionAfter,
+  moveSectionQuestion,
+  removeSectionQuestion,
   reorderSectionQuestions,
   resolveThreePaneSelection,
 } from './selection';
@@ -136,6 +140,55 @@ export function ThreePaneBuild({
     });
   };
 
+  const sectionQuestions =
+    values.sections[selection.sectionIndex]?.questions ?? [];
+
+  /** Writes a new question list for the selected section, or does nothing. */
+  const commitQuestions = (next: typeof sectionQuestions | null) => {
+    if (!next) return;
+    form.setValue(`sections.${selection.sectionIndex}.questions`, next, {
+      shouldDirty: true,
+    });
+  };
+
+  const blockActions = {
+    canMoveUp: selection.questionId !== null && selection.questionIndex > 0,
+    canMoveDown:
+      selection.questionId !== null &&
+      selection.questionIndex < sectionQuestions.length - 1,
+    onMoveUp: () =>
+      commitQuestions(
+        moveSectionQuestion(sectionQuestions, selection.questionIndex, -1)
+      ),
+    onMoveDown: () =>
+      commitQuestions(
+        moveSectionQuestion(sectionQuestions, selection.questionIndex, 1)
+      ),
+    onDuplicate: () => {
+      const source = sectionQuestions[selection.questionIndex];
+      if (!source) return;
+
+      const copy = duplicateQuestionInput(source);
+      commitQuestions(
+        insertSectionQuestionAfter(
+          sectionQuestions,
+          selection.questionIndex,
+          copy
+        )
+      );
+      // Select the copy, so the author edits what they just made rather than
+      // the original they duplicated from.
+      selectQuestion(selection.sectionId, copy.id);
+    },
+    onRemove: () => {
+      commitQuestions(
+        removeSectionQuestion(sectionQuestions, selection.questionIndex)
+      );
+      // The deleted id would otherwise stay selected and resolve to nothing.
+      setActiveQuestionForSection(selection.sectionId, '');
+    },
+  };
+
   return (
     <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[72px_minmax(200px,240px)_minmax(0,1fr)_minmax(300px,360px)]">
       <FloatingBlockToolbar
@@ -177,6 +230,7 @@ export function ThreePaneBuild({
         questionIndex={selection.questionIndex}
         questionId={selection.questionId}
         sectionId={selection.sectionId}
+        actions={blockActions}
         toneClasses={studioToneClasses}
         t={translate}
       />

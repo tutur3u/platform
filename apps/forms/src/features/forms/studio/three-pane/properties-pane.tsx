@@ -1,5 +1,7 @@
 'use client';
 
+import { ChevronDown, ChevronUp, Copy, Trash } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import type { getFormToneClasses } from '../../theme';
 import { QuestionEditor } from '../question-editor';
@@ -25,6 +27,7 @@ export function PropertiesPane({
   questionId,
   sectionId,
   toneClasses,
+  actions,
   t,
 }: {
   wsId: string;
@@ -35,6 +38,20 @@ export function PropertiesPane({
   /** Empty when no section resolves; the pane then has nothing to edit. */
   sectionId: string;
   toneClasses: ReturnType<typeof getFormToneClasses>;
+  /**
+   * Reorder, duplicate and delete for the selected block. They live here
+   * rather than on each outline row: the outline is 240px wide and a control
+   * per row would crowd out the labels, and this pane is already "the selected
+   * block".
+   */
+  actions: {
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    onDuplicate: () => void;
+    onRemove: () => void;
+    canMoveUp: boolean;
+    canMoveDown: boolean;
+  };
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   return (
@@ -45,12 +62,65 @@ export function PropertiesPane({
         'rounded-[1.5rem] border border-border/60 bg-card/60'
       )}
     >
-      <h2
-        id="form-studio-properties-heading"
-        className="px-5 pt-4 pb-2 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.25em]"
-      >
-        {questionId ? t('studio.properties') : t('studio.section_details')}
-      </h2>
+      <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-2">
+        <h2
+          id="form-studio-properties-heading"
+          className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.25em]"
+        >
+          {questionId
+            ? t('studio.properties')
+            : sectionId
+              ? t('studio.section_details')
+              : t('studio.properties')}
+        </h2>
+
+        {questionId ? (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 rounded-full"
+              disabled={!actions.canMoveUp}
+              onClick={actions.onMoveUp}
+            >
+              <ChevronUp className="h-3.5 w-3.5" />
+              <span className="sr-only">{t('studio.move_block_up')}</span>
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 rounded-full"
+              disabled={!actions.canMoveDown}
+              onClick={actions.onMoveDown}
+            >
+              <ChevronDown className="h-3.5 w-3.5" />
+              <span className="sr-only">{t('studio.move_block_down')}</span>
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 rounded-full"
+              onClick={actions.onDuplicate}
+            >
+              <Copy className="h-3.5 w-3.5" />
+              <span className="sr-only">{t('studio.duplicate_block')}</span>
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 rounded-full text-dynamic-red hover:text-dynamic-red"
+              onClick={actions.onRemove}
+            >
+              <Trash className="h-3.5 w-3.5" />
+              <span className="sr-only">{t('studio.delete_block')}</span>
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
       {questionId ? (
         <QuestionEditor
@@ -68,9 +138,9 @@ export function PropertiesPane({
           onOpenChange={() => {
             // Always open in the panel; the outline controls what is shown.
           }}
-          // Reorder, duplicate and delete live in the editor's header, which
-          // the panel variant does not render — the outline owns those. They
-          // are required props, so they are satisfied and never called.
+          // The panel variant does not render the editor's own header, so
+          // these are never called from inside it — this pane's header owns
+          // them instead.
           onMoveUp={noop}
           onMoveDown={noop}
           onDuplicate={noop}
