@@ -3009,7 +3009,10 @@
       "metadata_protected_description": "This shared form is protected. Sign in or use the provided access path to continue.",
       "open_graph_alt": "Preview image for {title}",
       "unavailable_description": "This form may have been unpublished, closed, or removed.",
-      "unavailable_title": "Form unavailable"
+      "unavailable_title": "Form unavailable",
+      "sign_in_required_title": "Sign in to continue",
+      "sign_in_required_description": "This form asks who you are, which cannot be done inside an embedded frame.",
+      "open_in_new_tab": "Open the form in a new tab"
     },
     "status": {
       "closed": "Closed",

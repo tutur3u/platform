@@ -118,12 +118,18 @@
     panel.style.zIndex = '2147483001';
     panel.style.display = 'none';
 
+    // Every panel needs a DEFINITE height, not just a maxHeight. The iframe
+    // inside is `height: 100%`, and a percentage height resolves against an
+    // auto-height containing block as `auto` — which collapses the form to the
+    // iframe's ~150px intrinsic height. The slider gets it from pinning both
+    // `top` and `bottom`; the centred and anchored panels have to say it.
     if (mode === 'popup') {
       styleSurface(panel, {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: 'min(680px, calc(100vw - 32px))',
+        height: 'min(720px, calc(100vh - 64px))',
         maxHeight: 'calc(100vh - 64px)',
       });
     } else if (mode === 'slider' || mode === 'sidetab') {
@@ -140,6 +146,7 @@
         right: '20px',
         bottom: '92px',
         width: 'min(400px, calc(100vw - 32px))',
+        height: 'min(640px, calc(100vh - 140px))',
         maxHeight: 'min(640px, calc(100vh - 140px))',
       });
     }

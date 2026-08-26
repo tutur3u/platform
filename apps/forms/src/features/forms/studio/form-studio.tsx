@@ -58,6 +58,7 @@ export function FormStudio({
   mode,
   canManageForms = true,
   currentUser,
+  canRealtime = false,
   initialForm,
   initialResponses,
   initialResponsesTotal,
@@ -76,6 +77,12 @@ export function FormStudio({
    * read Supabase auth in the browser, so collaboration identity is passed in.
    */
   currentUser: FormCollaboratorIdentity | null;
+  /**
+   * Whether this browser holds a Supabase session. Realtime authenticates from
+   * Supabase cookies, and an app-session-only login has none — see
+   * `canJoinFormRealtime`.
+   */
+  canRealtime?: boolean;
   initialForm?: FormDefinition;
   initialResponses?: FormResponseRecord[];
   initialResponsesTotal?: number;
@@ -171,6 +178,11 @@ export function FormStudio({
     setActiveBlock,
   } = useFormCollaboration({
     currentUser,
+    // Subscribing without a Supabase session is not a degraded experience, it
+    // is a guaranteed refusal: the `realtime.messages` policies are
+    // `to authenticated`, and this browser would connect as `anon`. Skipping it
+    // avoids a channel error on every studio load for app-session logins.
+    enabled: canRealtime,
     formId: initialForm?.id,
     onRemoteSave: handleRemoteSave,
   });
