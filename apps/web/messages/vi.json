@@ -4229,7 +4229,7 @@
     "description": "Tìm kiếm, thao tác và di chuyển mà không ngắt mạch công việc.",
     "empty": {
       "description": "Nhập từ khóa, chọn một tab hoặc dùng tiền tố tìm kiếm nhanh.",
-      "no_matches": "Không có kết quả cho “{query}”. Hãy điều chỉnh bộ lọc hoặc tạo thành công việc.",
+      "no_matches": "Không có kết quả cho “{query}”. Hãy điều chỉnh bộ lọc hoặc tạo thành nhiệm vụ.",
       "title": "Chưa tìm thấy kết quả"
     },
     "filters": {
@@ -4241,6 +4241,7 @@
         "low": "Thấp",
         "normal": "Bình thường"
       },
+      "priority_label": "Lọc theo ưu tiên",
       "status": {
         "all": "Mọi trạng thái",
         "assigned": "Giao cho tôi",
@@ -4248,7 +4249,8 @@
         "due-soon": "Sắp đến hạn",
         "open": "Đang mở",
         "overdue": "Quá hạn"
-      }
+      },
+      "status_label": "Lọc theo trạng thái"
     },
     "generic_action_name_label": "Tên",
     "generic_action_name_placeholder": "Đặt tên cho mục {product} này",
@@ -4258,7 +4260,7 @@
     "inline_action_description": "Thêm nhanh thông tin tại đây, rồi tiếp tục trong {product} để hoàn tất các trường riêng của sản phẩm.",
     "keyboard_hints": {
       "clear_recent": "xóa gần đây",
-      "create": "tạo công việc",
+      "create": "tạo nhiệm vụ",
       "esc_to_close": "Nhấn Esc để đóng",
       "navigate": "điều hướng",
       "open": "mở",
@@ -4283,7 +4285,7 @@
     "power_hints": {
       "actions": "thao tác",
       "pages": "trang",
-      "tasks": "công việc"
+      "tasks": "nhiệm vụ"
     },
     "powered_by": "Được hỗ trợ bởi tìm kiếm ngữ nghĩa",
     "priority": {
@@ -4298,11 +4300,12 @@
     "result_count": "{count} kết quả",
     "result_count_plural": "{count} kết quả",
     "search_placeholder": "Tìm lệnh, nhiệm vụ, hoặc điều hướng...",
-    "search_placeholder_power": "Tìm công việc, trang và thao tác — dùng #, / hoặc >",
+    "search_placeholder_power": "Tìm nhiệm vụ, trang và thao tác — dùng #, / hoặc >",
     "searching_tasks": "Đang tìm nhiệm vụ...",
     "smart_actions": "Hành Động Thông Minh",
     "sort": {
       "due": "Hạn chót",
+      "label": "Sắp xếp nhiệm vụ",
       "newest": "Mới nhất",
       "priority": "Ưu tiên",
       "relevance": "Phù hợp nhất"
@@ -4313,21 +4316,21 @@
       "apps": "Ứng dụng",
       "label": "Danh mục tìm kiếm",
       "navigate": "Trang",
-      "tasks": "Công việc"
+      "tasks": "Nhiệm vụ"
     },
     "task_actions": {
-      "completed": "Đã hoàn thành công việc",
-      "copy_link": "Sao chép liên kết công việc",
+      "completed": "Đã hoàn thành nhiệm vụ",
+      "copy_link": "Sao chép liên kết nhiệm vụ",
       "due": "Đến hạn {date}",
-      "link_copied": "Đã sao chép liên kết công việc",
-      "link_copy_failed": "Không thể sao chép liên kết công việc",
-      "mark_complete": "Hoàn thành công việc",
-      "mark_open": "Mở lại công việc",
-      "reopened": "Đã mở lại công việc",
-      "update_failed": "Không thể cập nhật công việc này"
+      "link_copied": "Đã sao chép liên kết nhiệm vụ",
+      "link_copy_failed": "Không thể sao chép liên kết nhiệm vụ",
+      "mark_complete": "Hoàn thành nhiệm vụ",
+      "mark_open": "Mở lại nhiệm vụ",
+      "reopened": "Đã mở lại nhiệm vụ",
+      "update_failed": "Không thể cập nhật nhiệm vụ này"
     },
-    "task_first": "Ưu tiên công việc",
-    "task_results": "{count} công việc",
+    "task_first": "Ưu tiên nhiệm vụ",
+    "task_results": "{count} nhiệm vụ",
     "tasks": "Nhiệm Vụ",
     "title": "Trung Tâm Lệnh",
     "try_searching": "Thử tìm kiếm nhiệm vụ, trang, hoặc hành động",

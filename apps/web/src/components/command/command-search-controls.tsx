@@ -60,10 +60,9 @@ export function CommandSearchControls({
 
   return (
     <div className="border-b bg-muted/20">
-      <div
-        className="flex gap-1 overflow-x-auto px-3 pt-2"
-        role="tablist"
+      <fieldset
         aria-label={t('tabs.label')}
+        className="m-0 flex min-w-0 gap-1 overflow-x-auto border-0 px-3 pt-2"
       >
         {TABS.map(({ icon: Icon, key }, index) => {
           const selected = activeTab === key;
@@ -71,8 +70,7 @@ export function CommandSearchControls({
             <Button
               key={key}
               type="button"
-              role="tab"
-              aria-selected={selected}
+              aria-pressed={selected}
               variant="ghost"
               size="sm"
               onClick={() => onTabChange(key)}
@@ -95,7 +93,7 @@ export function CommandSearchControls({
             </Button>
           );
         })}
-      </div>
+      </fieldset>
 
       {showTaskControls ? (
         <div className="flex items-center gap-2 overflow-x-auto border-t px-3 py-2">
@@ -107,7 +105,10 @@ export function CommandSearchControls({
             value={status}
             onValueChange={(value) => onStatusChange(value as TaskStatusFilter)}
           >
-            <SelectTrigger className="h-8 w-auto min-w-32 border-border/70 bg-background/80 px-2.5 text-xs shadow-none">
+            <SelectTrigger
+              aria-label={t('filters.status_label')}
+              className="h-8 w-auto min-w-32 border-border/70 bg-background/80 px-2.5 text-xs shadow-none"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -133,7 +134,10 @@ export function CommandSearchControls({
               onPriorityChange(value as TaskPriorityFilter)
             }
           >
-            <SelectTrigger className="h-8 w-auto min-w-28 border-border/70 bg-background/80 px-2.5 text-xs shadow-none">
+            <SelectTrigger
+              aria-label={t('filters.priority_label')}
+              className="h-8 w-auto min-w-28 border-border/70 bg-background/80 px-2.5 text-xs shadow-none"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +156,10 @@ export function CommandSearchControls({
               value={sort}
               onValueChange={(value) => onSortChange(value as TaskSort)}
             >
-              <SelectTrigger className="h-8 w-auto min-w-28 border-border/70 bg-background/80 px-2.5 text-xs shadow-none">
+              <SelectTrigger
+                aria-label={t('sort.label')}
+                className="h-8 w-auto min-w-28 border-border/70 bg-background/80 px-2.5 text-xs shadow-none"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end">

@@ -4241,6 +4241,7 @@
         "low": "Low",
         "normal": "Normal"
       },
+      "priority_label": "Priority filter",
       "status": {
         "all": "Any status",
         "assigned": "Assigned to me",
@@ -4248,7 +4249,8 @@
         "due-soon": "Due soon",
         "open": "Open",
         "overdue": "Overdue"
-      }
+      },
+      "status_label": "Status filter"
     },
     "generic_action_name_label": "Name",
     "generic_action_name_placeholder": "Name this {product} item",
@@ -4303,6 +4305,7 @@
     "smart_actions": "Smart Actions",
     "sort": {
       "due": "Due date",
+      "label": "Sort tasks",
       "newest": "Newest",
       "priority": "Priority",
       "relevance": "Best match"
@@ -4327,7 +4330,7 @@
       "update_failed": "Could not update this task"
     },
     "task_first": "Task first",
-    "task_results": "{count} tasks",
+    "task_results": "{count, plural, one {# task} other {# tasks}}",
     "tasks": "Tasks",
     "title": "Command Center",
     "try_searching": "Try searching for tasks, pages, or actions",

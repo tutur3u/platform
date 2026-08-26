@@ -41,7 +41,10 @@ export function TaskSearchToolbar({
         value={status}
         onValueChange={(value) => onStatusChange(value as TaskStatusFilter)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-32 bg-background/80 px-2.5 text-xs shadow-none">
+        <SelectTrigger
+          aria-label={t('filters.status_label')}
+          className="h-8 w-auto min-w-32 bg-background/80 px-2.5 text-xs shadow-none"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -65,7 +68,10 @@ export function TaskSearchToolbar({
         value={priority}
         onValueChange={(value) => onPriorityChange(value as TaskPriorityFilter)}
       >
-        <SelectTrigger className="h-8 w-auto min-w-28 bg-background/80 px-2.5 text-xs shadow-none">
+        <SelectTrigger
+          aria-label={t('filters.priority_label')}
+          className="h-8 w-auto min-w-28 bg-background/80 px-2.5 text-xs shadow-none"
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -84,7 +90,10 @@ export function TaskSearchToolbar({
           value={sort}
           onValueChange={(value) => onSortChange(value as TaskSort)}
         >
-          <SelectTrigger className="h-8 w-auto min-w-28 bg-background/80 px-2.5 text-xs shadow-none">
+          <SelectTrigger
+            aria-label={t('sort.label')}
+            className="h-8 w-auto min-w-28 bg-background/80 px-2.5 text-xs shadow-none"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="end">

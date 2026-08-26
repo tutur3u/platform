@@ -12,11 +12,11 @@ export type CommandLauncherTab =
   | 'actions';
 
 const TAB_DEFINITIONS = [
-  { icon: ListTodo, key: 'tasks', shortcut: '1' },
-  { icon: Search, key: 'all', shortcut: '2' },
-  { icon: Compass, key: 'navigation', shortcut: '3' },
-  { icon: Boxes, key: 'apps', shortcut: '4' },
-  { icon: Sparkles, key: 'actions', shortcut: '5' },
+  { icon: ListTodo, key: 'tasks' },
+  { icon: Search, key: 'all' },
+  { icon: Compass, key: 'navigation' },
+  { icon: Boxes, key: 'apps' },
+  { icon: Sparkles, key: 'actions' },
 ] as const;
 
 export function parseLauncherQuery(query: string): {
@@ -55,17 +55,16 @@ export function CommandLauncherTabs({
   onChange: (tab: CommandLauncherTab) => void;
 }) {
   return (
-    <div
+    <fieldset
       aria-label={ariaLabel}
-      className="flex gap-1 overflow-x-auto border-b bg-muted/20 px-3 pt-2"
-      role="tablist"
+      className="m-0 flex min-w-0 gap-1 overflow-x-auto border-0 border-b bg-muted/20 px-3 pt-2"
     >
       {TAB_DEFINITIONS.filter(({ key }) => availableTabs.includes(key)).map(
         ({ icon: Icon, key }, index) => {
           const selected = activeTab === key;
           return (
             <Button
-              aria-selected={selected}
+              aria-pressed={selected}
               className={cn(
                 'h-9 shrink-0 gap-2 rounded-b-none border-transparent px-3 text-muted-foreground',
                 selected &&
@@ -73,7 +72,6 @@ export function CommandLauncherTabs({
               )}
               key={key}
               onClick={() => onChange(key)}
-              role="tab"
               size="sm"
               type="button"
               variant="ghost"
@@ -87,17 +85,12 @@ export function CommandLauncherTabs({
           );
         }
       )}
-    </div>
+    </fieldset>
   );
 }
 
-export const COMMAND_LAUNCHER_TABS: readonly CommandLauncherTab[] = [
-  'tasks',
-  'all',
-  'navigation',
-  'apps',
-  'actions',
-];
+export const COMMAND_LAUNCHER_TABS: readonly CommandLauncherTab[] =
+  TAB_DEFINITIONS.map((definition) => definition.key);
 
 export const COMMAND_LAUNCHER_TABS_WITHOUT_TASKS: readonly CommandLauncherTab[] =
-  ['all', 'navigation', 'apps', 'actions'];
+  COMMAND_LAUNCHER_TABS.filter((tab) => tab !== 'tasks');

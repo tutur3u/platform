@@ -26,6 +26,7 @@ export function UserNavCommandLauncher({
   wsId,
 }: UserNavCommandLauncherProps) {
   const t = useTranslations('command_palette');
+  const launcherT = useTranslations('command_launcher');
   const commandNavItems = useMemo<CommandLauncherNavItem[]>(
     () =>
       flattenNavigation(navLinks).map((item) => ({
@@ -70,13 +71,25 @@ export function UserNavCommandLauncher({
         all: t('tabs.all'),
         apps: t('tabs.apps'),
         categories: t('tabs.label'),
+        current: launcherT('current'),
         empty: t('no_results'),
         emptyDescription: t('try_searching'),
+        errorWorkspaces: launcherT('error_workspaces'),
+        guest: launcherT('guest'),
         loadingWorkspaces: t('loading_workspaces'),
+        match: launcherT('match'),
+        navigate: launcherT('navigate'),
         navigation: t('tabs.navigate'),
+        open: launcherT('open'),
+        openApp: launcherT('open_app'),
+        openWorkspace: launcherT('open_workspace'),
+        personal: launcherT('personal'),
         placeholder: t('search_placeholder_power'),
+        searchHint: launcherT('search_hint'),
+        select: launcherT('select'),
         tasks: t('tabs.tasks'),
         title: t('title'),
+        workspaces: launcherT('workspaces'),
       }}
       navItems={commandNavItems}
       workspacePathResolver={resolvePlatformWorkspacePath}

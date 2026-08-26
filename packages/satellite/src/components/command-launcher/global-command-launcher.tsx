@@ -313,6 +313,7 @@ export function GlobalCommandLauncher({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (!isActiveCommandLauncherInstance(currentApp, instanceId)) return;
+      if (event.isComposing) return;
 
       if (
         !event.repeat &&

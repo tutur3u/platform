@@ -75,7 +75,7 @@ export function useTaskSearch(
         limit: 30,
         sortBy: 'created-date-desc',
       });
-      return data.tasks.map((task) => normalizeCommandTask(task));
+      return (data.tasks ?? []).map((task) => normalizeCommandTask(task));
     },
     enabled: enabled && !hasQuery && isValidWorkspace,
     staleTime: 30000, // 30 seconds

@@ -151,6 +151,21 @@ describe('GlobalCommandLauncher', () => {
     });
   });
 
+  it('ignores Cmd/Ctrl+K while an input method is composing', () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+
+    fireEvent.keyDown(document, {
+      ctrlKey: true,
+      isComposing: true,
+      key: 'k',
+    });
+
+    expect(
+      screen.queryByPlaceholderText('Search apps, workspaces, and pages...')
+    ).toBeNull();
+  });
+
   it('opens only one same-app launcher from the global open event', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher({ duplicateCount: 2 });
@@ -210,23 +225,23 @@ describe('GlobalCommandLauncher', () => {
       'Search apps, workspaces, and pages...'
     );
 
-    fireEvent.click(screen.getByRole('tab', { name: /Navigation/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Navigation/ }));
     expect(screen.queryByText('Calendar')).toBeNull();
     expect(screen.getByText('Task Boards')).toBeTruthy();
 
     fireEvent.change(input, { target: { value: '@finance' } });
     expect(await screen.findByText('Finance')).toBeTruthy();
     expect(
-      screen.getByRole('tab', { name: /Apps/ }).getAttribute('aria-selected')
+      screen.getByRole('button', { name: /Apps/ }).getAttribute('aria-pressed')
     ).toBe('true');
 
-    expect(screen.queryByRole('tab', { name: /Tasks/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Tasks/ })).toBeNull();
 
     fireEvent.keyDown(input, { ctrlKey: true, key: '2' });
     expect(
       screen
-        .getByRole('tab', { name: /Navigation/ })
-        .getAttribute('aria-selected')
+        .getByRole('button', { name: /Navigation/ })
+        .getAttribute('aria-pressed')
     ).toBe('true');
   });
 
@@ -238,9 +253,9 @@ describe('GlobalCommandLauncher', () => {
     await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
 
     expect(
-      screen.getByRole('tab', { name: /Tasks/ }).getAttribute('aria-selected')
+      screen.getByRole('button', { name: /Tasks/ }).getAttribute('aria-pressed')
     ).toBe('true');
-    expect(screen.getByRole('tab', { name: /All/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /All/ })).toBeTruthy();
   });
 
   it('queries workspace search results beyond the initially loaded workspaces', async () => {

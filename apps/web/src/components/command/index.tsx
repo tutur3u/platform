@@ -75,7 +75,6 @@ export function CommandPalette(props: CommandPaletteProps & LegacyProps) {
       description={t('description')}
       commandProps={{ loop: true, shouldFilter: false }}
       contentClassName="command-palette-enter w-[min(96vw,1120px)] border-border/70 bg-background/95 shadow-2xl backdrop-blur-xl sm:max-w-5xl"
-      aria-label={t('title')}
     >
       <CommandMode
         wsId={workspaceId}
