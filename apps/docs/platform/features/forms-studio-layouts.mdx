@@ -43,22 +43,30 @@ Two implementation choices worth keeping:
   than a second editor. A field added to the accordion shows up here with no
   extra work; the alternative was two editors that drift.
 
-## Why it is opt-in
+## Why it is still opt-in
+
+Three-pane now covers what stacked covers:
+
+- **Reordering** — drag blocks within a section from the outline. A `DndContext`
+  per section means a drag cannot cross a section boundary; moving a block
+  between sections would rewrite two arrays and re-key the branching rules that
+  reference it, so that stays stacked-only until it is designed properly.
+- **Section fields** — selecting a section shows its title, description and
+  cover in the properties pane, rendered by the same `SectionFields` component
+  the stacked accordion uses.
+- **Form details and logic rules** — the same elements the stacked layout
+  builds, hoisted and rendered above and below the canvas.
 
 <Warning>
-  Three-pane is not yet a superset of stacked. Making it the default on wide
-  screens would take working features away from people who have them.
+  It stays opt-in anyway, for one reason: **nobody has verified it in a
+  browser.** It type-checks, passes `bun check` and builds clean, and the
+  selection and reorder logic are unit-tested — but a layout bug would not have
+  been caught by any of that. The toggle is what contains that risk.
 </Warning>
 
-Not covered yet:
-
-- **Reordering from the outline.** The outline selects; it does not drag.
-  Reordering still needs the stacked layout.
-- **Section fields.** Selecting a section highlights it, but the properties
-  pane only edits blocks. A section's own title, description and cover are
-  stacked-only.
-- **Form details and logic rules.** Both live below the block list in stacked
-  and have no place in three-pane yet.
+A reordering drop that would lose or duplicate a question is refused outright
+rather than written: silently dropping a block is far worse than ignoring the
+drag that caused it.
 
 The preference is stored per browser under
 `tuturuuu:form-studio:build-layout`, and a viewport below `1280px` always falls
@@ -66,6 +74,8 @@ back to stacked — three panes in 600px is three unusable columns.
 
 ## Changing the default
 
-Once the three gaps above are closed, flipping the default is a one-line change
-in `useStudioBuildLayout`. Until then, treat three-pane as a preview and keep
-new studio features working in stacked first.
+Flipping the default is a one-line change in `useStudioBuildLayout`. The
+remaining blocker is a person looking at it, not missing functionality.
+
+Until that happens, treat three-pane as a preview and keep new studio features
+working in stacked first.
