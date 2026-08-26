@@ -538,13 +538,13 @@ and the script reports `blocked` and leaves the run green rather than failing.
 Use `--dry-run` to see the decision without posting a review.
 
 `release-please-auto-merge.yaml` closes the loop on the generated release PR. It
-runs every third day at 06:00 UTC (`cron: "0 6 */3 * *"`) and on manual dispatch,
-and it does not reimplement the merge in YAML: it runs `bun git-release-please`
-and then `bun git-sync`, the same two commands the release flow uses locally, so
-the scheduled path and the manual path cannot drift. Those scripts own the merge
-rules — platform version sync, conflict detection, `bun check`, and
-fast-forward safety — and are covered by `scripts/git-release-please.test.js`
-and `scripts/git-sync.test.js`.
+runs daily at 00:00 UTC (`cron: "0 0 * * *"`), which is 07:00 in Vietnam
+(UTC+7), and on manual dispatch. It does not reimplement the merge in YAML: it
+runs `bun git-release-please` and then `bun git-sync`, the same two commands the
+release flow uses locally, so the scheduled path and the manual path cannot
+drift. Those scripts own the merge rules — platform version sync, conflict
+detection, `bun check`, and fast-forward safety — and are covered by
+`scripts/git-release-please.test.js` and `scripts/git-sync.test.js`.
 
 The workflow resolves what to do before it installs anything. It prefers
 `origin/release-please--branches--production`, ignores the companion
@@ -556,8 +556,9 @@ no merge, which is what makes the schedule self-healing. Every run that pushes
 ends by asserting the two refs resolve to the same commit and fails loudly if
 they do not.
 
-Day-of-month cron stepping restarts each month, so the 31st and the 1st can land
-a day apart. That is harmless here precisely because an empty run does nothing.
+An empty daily run remains harmless because the workflow exits cleanly when
+there is no generated release branch to merge and the protected branches are
+already aligned.
 
 The job checks out `main` with `fetch-depth: 0` and
 `secrets.RELEASE_PLEASE_TOKEN`, falling back to `github.token`. The fallback

@@ -13,13 +13,14 @@ const releasePleaseWorkflow = fs.readFileSync(
   'utf8'
 );
 
-test('release merge runs daily and can be triggered by hand', () => {
+test('release merge runs daily at 7 AM Vietnam time and can be triggered by hand', () => {
   assert.match(workflow, /^ {2}schedule:$/m);
   assert.match(
     workflow,
-    /- cron: "0 6 \* \* \*"/,
-    'the release merge must run daily'
+    /- cron: "0 0 \* \* \*"/,
+    'the release merge must run daily at 00:00 UTC (07:00 in Vietnam)'
   );
+  assert.match(workflow, /07:00 in Vietnam, UTC\+7/);
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);
 });
 
