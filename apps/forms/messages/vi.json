@@ -2726,7 +2726,13 @@
       "short_text": "Câu trả lời ngắn",
       "single_choice": "Một lựa chọn",
       "time": "Thời gian",
-      "youtube": "YouTube"
+      "youtube": "YouTube",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "number": "Số",
+      "url": "Liên kết",
+      "ranking": "Xếp hạng",
+      "nps": "NPS"
     },
     "question_type_description": {
       "date": "Chọn ngày trên lịch",
@@ -2742,7 +2748,13 @@
       "short_text": "Câu trả lời ngắn một dòng",
       "single_choice": "Chỉ chọn đúng một tùy chọn",
       "time": "Chọn một giờ cụ thể trong ngày",
-      "youtube": "Nhúng video YouTube"
+      "youtube": "Nhúng video YouTube",
+      "email": "Địa chỉ email, được kiểm tra và tự động điền từ trình duyệt.",
+      "phone": "Số điện thoại, hiển thị bàn phím số trên di động.",
+      "number": "Một con số, có thể đặt giá trị nhỏ nhất, lớn nhất và bước nhảy.",
+      "url": "Địa chỉ web, được kiểm tra là liên kết http(s) hợp lệ.",
+      "ranking": "Người trả lời kéo các lựa chọn theo thứ tự họ muốn.",
+      "nps": "Câu hỏi 0-10 tiêu chuẩn \"bạn sẵn sàng giới thiệu đến mức nào\"."
     },
     "responses": {
       "anonymous": "Ẩn danh",
@@ -2863,7 +2875,18 @@
       "view_image_fullscreen": "Xem ảnh toàn màn hình",
       "welcome_start": "Bắt đầu",
       "welcome_question_count": "{count, plural, other {# câu hỏi}}",
-      "step_progress": "{current} / {total}"
+      "step_progress": "{current} / {total}",
+      "placeholder_email": "ten@vidu.com",
+      "placeholder_phone": "+84 90 000 0000",
+      "placeholder_url": "https://vidu.com",
+      "placeholder_number": "Nhập một con số",
+      "nps_not_likely": "Hoàn toàn không",
+      "nps_very_likely": "Rất sẵn sàng",
+      "ranking_move_up": "Di chuyển lên",
+      "ranking_move_down": "Di chuyển xuống",
+      "ranking_drag_handle": "Kéo để sắp xếp lại",
+      "validation_constraint_step": "Phải là bội số của {step}.",
+      "validation_constraint_step_range": "Phải nằm trong khoảng {min} đến {max}, theo bước {step}."
     },
     "settings": {
       "active": "Đang dùng",
@@ -3186,7 +3209,15 @@
       "value": "Giá trị",
       "view_image_fullscreen": "Xem ảnh toàn màn hình",
       "youtube_block_description": "Nhúng video YouTube với phần ngữ cảnh tuỳ chọn trước câu trả lời tiếp theo.",
-      "youtube_url": "Liên kết YouTube"
+      "youtube_url": "Liên kết YouTube",
+      "placeholder_email": "ten@vidu.com",
+      "placeholder_phone": "+84 90 000 0000",
+      "placeholder_url": "https://vidu.com",
+      "nps_default_min_label": "Hoàn toàn không",
+      "nps_default_max_label": "Rất sẵn sàng",
+      "hint_nps": "NPS luôn được chấm theo thang 0-10 nên không thể đổi thang điểm. Bạn chỉ chỉnh được nhãn ở hai đầu.",
+      "validation_step": "Bước nhảy",
+      "validation_step_hint": "Số bất kỳ"
     },
     "tabs": {
       "analytics": "Analytics",

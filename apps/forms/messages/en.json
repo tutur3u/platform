@@ -2726,7 +2726,13 @@
       "short_text": "Short text",
       "single_choice": "Single choice",
       "time": "Time",
-      "youtube": "YouTube"
+      "youtube": "YouTube",
+      "email": "Email",
+      "phone": "Phone",
+      "number": "Number",
+      "url": "Link",
+      "ranking": "Ranking",
+      "nps": "NPS"
     },
     "question_type_description": {
       "date": "Pick a calendar date",
@@ -2742,7 +2748,13 @@
       "short_text": "Brief one-line response",
       "single_choice": "Select exactly one option",
       "time": "Pick a specific time of day",
-      "youtube": "Embed a YouTube video"
+      "youtube": "Embed a YouTube video",
+      "email": "An email address, validated and autofilled from the browser.",
+      "phone": "A phone number, with the dialling keypad on mobile.",
+      "number": "A number, with optional minimum, maximum and step.",
+      "url": "A web address, checked to be a real http(s) link.",
+      "ranking": "Respondents drag options into their preferred order.",
+      "nps": "The standard 0-10 \"how likely are you to recommend\" question."
     },
     "responses": {
       "anonymous": "Anonymous",
@@ -2863,7 +2875,18 @@
       "view_image_fullscreen": "View image fullscreen",
       "welcome_start": "Start",
       "welcome_question_count": "{count, plural, =1 {1 question} other {# questions}}",
-      "step_progress": "{current} of {total}"
+      "step_progress": "{current} of {total}",
+      "placeholder_email": "name@example.com",
+      "placeholder_phone": "+1 555 000 0000",
+      "placeholder_url": "https://example.com",
+      "placeholder_number": "Enter a number",
+      "nps_not_likely": "Not at all likely",
+      "nps_very_likely": "Extremely likely",
+      "ranking_move_up": "Move up",
+      "ranking_move_down": "Move down",
+      "ranking_drag_handle": "Drag to reorder",
+      "validation_constraint_step": "Must be a multiple of {step}.",
+      "validation_constraint_step_range": "Must be between {min} and {max}, in steps of {step}."
     },
     "settings": {
       "active": "Active",
@@ -3186,7 +3209,15 @@
       "value": "Value",
       "view_image_fullscreen": "View image fullscreen",
       "youtube_block_description": "Embed a YouTube video with optional context before the next answers.",
-      "youtube_url": "YouTube URL"
+      "youtube_url": "YouTube URL",
+      "placeholder_email": "name@example.com",
+      "placeholder_phone": "+1 555 000 0000",
+      "placeholder_url": "https://example.com",
+      "nps_default_min_label": "Not at all likely",
+      "nps_default_max_label": "Extremely likely",
+      "hint_nps": "NPS is always scored 0-10, so the scale itself cannot be changed. Only the labels at each end are yours.",
+      "validation_step": "Step",
+      "validation_step_hint": "Any number"
     },
     "tabs": {
       "analytics": "Analytics",

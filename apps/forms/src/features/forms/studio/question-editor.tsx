@@ -5,6 +5,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Calendar, Clock3 } from '@tuturuuu/icons';
 import { Collapsible, CollapsibleContent } from '@tuturuuu/ui/collapsible';
 import { useFieldArray, useWatch } from '@tuturuuu/ui/hooks/use-form';
+import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -25,11 +27,17 @@ import { createClientId, type StudioForm } from './studio-utils';
 const TITLE_PLACEHOLDER_MAP: Record<string, string> = {
   short_text: 'placeholder_title_text',
   long_text: 'placeholder_title_text',
+  email: 'placeholder_title_text',
+  phone: 'placeholder_title_text',
+  number: 'placeholder_title_text',
+  url: 'placeholder_title_text',
   single_choice: 'placeholder_title_choice',
   multiple_choice: 'placeholder_title_choice',
   dropdown: 'placeholder_title_choice',
+  ranking: 'placeholder_title_choice',
   linear_scale: 'placeholder_title_scale',
   rating: 'placeholder_title_scale',
+  nps: 'placeholder_title_scale',
   date: 'placeholder_title_date',
   time: 'placeholder_title_time',
   section_break: 'placeholder_title_section_break',
@@ -204,13 +212,22 @@ export function QuestionEditor({
     `studio.${titlePlaceholderKey}` as Parameters<typeof t>[0]
   );
 
-  const hasChoices = ['single_choice', 'multiple_choice', 'dropdown'].includes(
-    questionType
-  );
+  // Ranking authors the same list of options as the choice types; only the
+  // respondent's interaction differs, so it reuses the options editor.
+  const hasChoices = [
+    'single_choice',
+    'multiple_choice',
+    'dropdown',
+    'ranking',
+  ].includes(questionType);
   const hasCardChoiceLayout = ['single_choice', 'multiple_choice'].includes(
     questionType
   );
   const hasScale = ['linear_scale', 'rating'].includes(questionType);
+  // NPS deliberately does not use the scale editor: its bounds are fixed at
+  // 0-10 by the metric's definition, and exposing them as editable would let an
+  // author produce something labelled NPS that is not comparable to one.
+  const isNps = questionType === 'nps';
   const isRating = questionType === 'rating';
   const isDateOrTime = questionType === 'date' || questionType === 'time';
   const isSectionBreak = questionType === 'section_break';
@@ -411,6 +428,45 @@ export function QuestionEditor({
                   watchedOptions,
                 })
               : null}
+
+            {/* NPS anchor labels */}
+            {isNps ? (
+              <div className="grid gap-3 rounded-[1.35rem] border border-border/60 bg-muted/20 p-3 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>{t('studio.minimum_label')}</Label>
+                  <Input
+                    value={minLabel ?? ''}
+                    placeholder={t('studio.nps_default_min_label')}
+                    className={toneClasses.fieldClassName}
+                    onChange={(event) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.minLabel`,
+                        event.target.value,
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t('studio.maximum_label')}</Label>
+                  <Input
+                    value={maxLabel ?? ''}
+                    placeholder={t('studio.nps_default_max_label')}
+                    className={toneClasses.fieldClassName}
+                    onChange={(event) =>
+                      form.setValue(
+                        `sections.${sectionIndex}.questions.${questionIndex}.settings.maxLabel`,
+                        event.target.value,
+                        { shouldDirty: true }
+                      )
+                    }
+                  />
+                </div>
+                <p className="text-muted-foreground text-xs md:col-span-2">
+                  {t('studio.hint_nps')}
+                </p>
+              </div>
+            ) : null}
 
             {/* Date / Time hint */}
             {isDateOrTime ? (
