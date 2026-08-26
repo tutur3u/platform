@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.5](https://github.com/tutur3u/platform/compare/users-ui-v0.7.4...users-ui-v0.7.5) (2026-08-26)
+
+
+### Bug Fixes
+
+* **contacts:** sync daily report markers ([00c0e19](https://github.com/tutur3u/platform/commit/00c0e192b4ef3b6ffad9deefa0d268b69c7273b0))
+
 ## [0.7.4](https://github.com/tutur3u/platform/compare/users-ui-v0.7.3...users-ui-v0.7.4) (2026-08-21)
 
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/tanstack-web-v0.25.1...tanstack-web-v0.26.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **external-projects:** assign roles to invitations ([1cd04e8](https://github.com/tutur3u/platform/commit/1cd04e8dc0db419c2b1b7bc526012f7b7ee3f7dc))
+
+
+### Bug Fixes
+
+* **ci:** restore migration validation parity ([92413f2](https://github.com/tutur3u/platform/commit/92413f27761f2ad8bfa7f82218c4ebefeb7876bf))
+* **migration:** regenerate the stale tanstack route manifest ([8364332](https://github.com/tutur3u/platform/commit/83643321a0903fb4d02b99e2e743b39a0dee6be8))
+* **migration:** regenerate the stale tanstack route manifest ([#5149](https://github.com/tutur3u/platform/issues/5149)) ([acfa465](https://github.com/tutur3u/platform/commit/acfa46565e4fe0d127d81798dc2393adcf4e2859))
+* **web:** add the missing /products index page ([0ca1aca](https://github.com/tutur3u/platform/commit/0ca1aca3a8e173779cdefb5cb912641da36e3c97))
+* **web:** add the missing /products index page ([#5154](https://github.com/tutur3u/platform/issues/5154)) ([40568f8](https://github.com/tutur3u/platform/commit/40568f814700a2ee2f4beba26759b70a303337c2))
+
 ## [0.25.1](https://github.com/tutur3u/platform/compare/tanstack-web-v0.25.0...tanstack-web-v0.25.1) (2026-08-20)
 
 

@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.13.0](https://github.com/tutur3u/platform/compare/forms-v0.12.1...forms-v0.13.0) (2026-08-26)
+
+
+### Features
+
+* **forms:** add an opt-in three-pane studio build layout ([6ab68eb](https://github.com/tutur3u/platform/commit/6ab68ebded15932c8013b98de245677370cbac09))
+* **forms:** add an opt-in three-pane studio build layout ([#5148](https://github.com/tutur3u/platform/issues/5148)) ([8cda8fa](https://github.com/tutur3u/platform/commit/8cda8fa077a11f20182c7628f814e0d47a244001))
+* **forms:** add email, phone, number, url, NPS and ranking question types ([5375cfc](https://github.com/tutur3u/platform/commit/5375cfc97e940c061c42cf52916dbaf93d238e4c))
+* **forms:** add email, phone, number, url, NPS and ranking question types ([#5146](https://github.com/tutur3u/platform/issues/5146)) ([7a9eb9c](https://github.com/tutur3u/platform/commit/7a9eb9c8e9afec43c9e1676c6a37a672e968a284))
+* **forms:** add landing page and per-form SEO controls ([99c5fda](https://github.com/tutur3u/platform/commit/99c5fda3a7d15649a3571b9ccc72759cd815a7ec))
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+* **forms:** add one-question-at-a-time mode and a welcome screen ([286b6de](https://github.com/tutur3u/platform/commit/286b6de6df5e78feeac2b8814dd69c1bb8985788))
+* **forms:** add realtime studio collaboration ([1110c36](https://github.com/tutur3u/platform/commit/1110c36ef68081e6d181b32491f44ff814bc43e0))
+* **forms:** add six embed modes and a public embed SDK ([5d0b68b](https://github.com/tutur3u/platform/commit/5d0b68b3ca5ce3d4cd6cd119e2b0ad79b014aedd))
+* **forms:** advance automatically after a single-gesture answer ([a2c48ab](https://github.com/tutur3u/platform/commit/a2c48ab8d5ddbf3ebec9a6789bb8eb6960be34d5))
+* **forms:** advance automatically after a single-gesture answer ([#5158](https://github.com/tutur3u/platform/issues/5158)) ([094d48a](https://github.com/tutur3u/platform/commit/094d48a37942d7231f674829f9497130575a2a00))
+* **forms:** bring the three-pane studio to parity with the stacked layout ([6859578](https://github.com/tutur3u/platform/commit/685957866a8a6efa5c21497482e024e357e8ace8))
+* **forms:** bring the three-pane studio to parity with the stacked layout ([#5152](https://github.com/tutur3u/platform/issues/5152)) ([cdbf70a](https://github.com/tutur3u/platform/commit/cdbf70a7e1861382459510e24b1b18f11b02c884))
+* **forms:** make one question at a time the default, with real keyboard support ([19a804a](https://github.com/tutur3u/platform/commit/19a804a33aaffc50a07d9d2597a55c3d0a96f09c))
+* **forms:** make one question at a time the default, with real keyboard support ([#5156](https://github.com/tutur3u/platform/issues/5156)) ([bd8c0a0](https://github.com/tutur3u/platform/commit/bd8c0a08e5a4601556aacfe749aec8d602ffcc45))
+* **forms:** show the NPS and ranking results that were already being computed ([7e78503](https://github.com/tutur3u/platform/commit/7e7850355e0e216186aeb76a4d6e45390a3b0b09))
+* **forms:** show the NPS and ranking results that were already being computed ([#5157](https://github.com/tutur3u/platform/issues/5157)) ([34e6f36](https://github.com/tutur3u/platform/commit/34e6f3620cac86bdc53cf1570ccc6126acbb511f))
+
+
+### Bug Fixes
+
+* **forms:** address four review findings on embeds and collaboration ([6a1008e](https://github.com/tutur3u/platform/commit/6a1008e34a6c95c216a393dc30466fe12e892d13))
+* **forms:** make block duplicate and delete reachable in three-pane ([19a8351](https://github.com/tutur3u/platform/commit/19a8351c6f73848ebd44c78d7efe18acf7458bc8))
+* **forms:** make block duplicate and delete reachable in three-pane ([#5153](https://github.com/tutur3u/platform/issues/5153)) ([e8ab3da](https://github.com/tutur3u/platform/commit/e8ab3da9241a317c33d69c3dd1ce4689ba97094d))
+* **forms:** send /dashboard to a workspace instead of a dead end ([e13b001](https://github.com/tutur3u/platform/commit/e13b001e5b0bb079e7f54b9799b405875c890fa9))
+* **forms:** send /dashboard to a workspace instead of a dead end ([#5155](https://github.com/tutur3u/platform/issues/5155)) ([3cbbbee](https://github.com/tutur3u/platform/commit/3cbbbee7b4d3bfcc9496f1e0e7a4dfaef77dcf9d))
+* **forms:** survive the deploy window before the seo migration lands ([aef8a5a](https://github.com/tutur3u/platform/commit/aef8a5a839b0b20c551d4ad1a050b9a2cf4aa605))
+* **forms:** survive the deploy window before the seo migration lands ([#5151](https://github.com/tutur3u/platform/issues/5151)) ([8f9fb0b](https://github.com/tutur3u/platform/commit/8f9fb0b427df9dd5038046a7c31c7f86ca923906))
+
 ## [0.12.1](https://github.com/tutur3u/platform/compare/forms-v0.12.0...forms-v0.12.1) (2026-08-21)
 
 

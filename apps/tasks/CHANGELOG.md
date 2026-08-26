@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/tasks-v0.30.0...tasks-v0.31.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+
+
+### Bug Fixes
+
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/tasks-v0.29.1...tasks-v0.30.0) (2026-08-25)
 
 
