@@ -81,6 +81,22 @@ surface you are changing:
   the shared main checkout onto the PR branch. Run `bun setup` immediately after
   creating the worktree. After the PR is confirmed merged into `main`, remove
   the completed worktree and delete its local task branch.
+- When a change is large enough to review in stages, or when follow-up work
+  builds on a branch that is still open, split it into a stack of pull requests
+  instead of growing one branch or waiting for the first to merge. Base each PR
+  on the branch below it (`gh pr create --base <parent-branch>`), keep each one
+  independently green, and state the stack position and parent PR in the body.
+  Merge strictly bottom-up and never merge a PR whose parent is still open.
+  Merge a stack parent with a merge commit (`gh pr merge --merge`): squash and
+  rebase merges leave the parent's commits outside `main`'s ancestry, so the
+  retargeted child re-shows changes that already landed. Do not assume
+  retargeting happened — GitHub retargets children only when the merged parent
+  branch is deleted through the pull-request flow, and deleting it with `gh` or
+  `git push --delete` can close them instead. After each parent merge, check
+  every child's `baseRefName` and retarget with `gh pr edit <n> --base <base>`
+  before the parent branch is deleted, then re-run the child's gates. Do not
+  stack when the parts are genuinely independent — separate PRs off `main` are
+  simpler and can merge in any order.
 - When the user authorizes ongoing integration, periodically checkpoint verified
   work instead of leaving it indefinitely only in retained worktrees: create
   scoped commits, integrate them into `main`, wait for every workflow on the

@@ -292,6 +292,7 @@
               "build/development-tools/codex-plugin",
               "build/development-tools/monorepo-architecture",
               "build/development-tools/git-conventions",
+              "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
               "build/development-tools/remote-devboxes",
               "build/development-tools/ci-cd-pipelines",
