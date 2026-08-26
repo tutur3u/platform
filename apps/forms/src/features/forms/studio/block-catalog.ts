@@ -16,11 +16,17 @@ function createEmptyImage() {
 export const FIELD_BLOCK_TYPES: FormQuestionInput['type'][] = [
   'short_text',
   'long_text',
+  'email',
+  'phone',
+  'number',
+  'url',
   'single_choice',
   'multiple_choice',
   'dropdown',
+  'ranking',
   'linear_scale',
   'rating',
+  'nps',
   'date',
   'time',
   'section_break',
@@ -34,11 +40,12 @@ export const CONTENT_BLOCK_TYPES: FormQuestionInput['type'][] = [
 ];
 
 function createChoiceOptions(
-  translate: (key: string, values?: Record<string, string | number>) => string
+  translate: (key: string, values?: Record<string, string | number>) => string,
+  count = 2
 ) {
   const label = translate('studio.new_option');
 
-  return Array.from({ length: 2 }, (_, index) => ({
+  return Array.from({ length: count }, (_, index) => ({
     id: createClientId(),
     label: `${label} ${index + 1}`,
     value: deriveUniqueOptionValue(`${label} ${index + 1}`, []),
@@ -83,6 +90,46 @@ export function createQuestionInput(
     return {
       ...base,
       options: createChoiceOptions(translate),
+    };
+  }
+
+  // Ranking starts with three items rather than two: ordering two things is a
+  // binary choice the respondent can express faster as single choice, so a
+  // two-item default would model the question badly.
+  if (type === 'ranking') {
+    return {
+      ...base,
+      options: createChoiceOptions(translate, 3),
+      settings: {},
+    };
+  }
+
+  // The placeholder is the only useful hint on a bare text field, but on these
+  // the input type already tells the browser (and the respondent's keyboard)
+  // what is wanted, so a generic "Type your answer" adds noise.
+  if (type === 'email' || type === 'phone' || type === 'url') {
+    return {
+      ...base,
+      settings: { placeholder: translate(`studio.placeholder_${type}`) },
+    };
+  }
+
+  if (type === 'number') {
+    return {
+      ...base,
+      settings: { placeholder: '', numberStep: null },
+    };
+  }
+
+  // NPS is a fixed 0-10 question by definition, so the scale bounds are not
+  // author-editable; only the anchor labels are.
+  if (type === 'nps') {
+    return {
+      ...base,
+      settings: {
+        minLabel: translate('studio.nps_default_min_label'),
+        maxLabel: translate('studio.nps_default_max_label'),
+      },
     };
   }
 

@@ -9,29 +9,46 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock('@tuturuuu/icons', () => ({
-  Calendar: (props: any) => <svg {...props} />,
-  ChevronDown: (props: any) => <svg {...props} />,
-  ChevronUp: (props: any) => <svg {...props} />,
-  CircleCheckBig: (props: any) => <svg {...props} />,
-  ClipboardList: (props: any) => <svg {...props} />,
-  Clock3: (props: any) => <svg {...props} />,
-  Copy: (props: any) => <svg {...props} />,
-  FileText: (props: any) => <svg {...props} />,
-  Flag: (props: any) => <svg {...props} />,
-  GripVertical: (props: any) => <svg {...props} />,
-  Info: (props: any) => <svg {...props} />,
-  ImagePlus: (props: any) => <svg {...props} />,
-  ListChecks: (props: any) => <svg {...props} />,
-  MessageSquare: (props: any) => <svg {...props} />,
-  MoreHorizontal: (props: any) => <svg {...props} />,
-  Minus: (props: any) => <svg {...props} />,
-  Play: (props: any) => <svg {...props} />,
-  Plus: (props: any) => <svg {...props} />,
-  Shield: (props: any) => <svg {...props} />,
-  Star: (props: any) => <svg {...props} />,
-  Trash: (props: any) => <svg {...props} />,
-}));
+// Every icon renders as a bare <svg>. This used to be a hand-written list of
+// named exports, which broke the whole suite whenever a component started
+// using an icon nobody had added here — the failure surfaced as "No X export
+// is defined on the mock", far from the component that actually changed.
+vi.mock('@tuturuuu/icons', () => {
+  const iconStub = (props: any) => <svg {...props} />;
+
+  return new Proxy(
+    { __esModule: true },
+    {
+      get: (target: Record<string, unknown>, property: string | symbol) => {
+        // The module namespace is awaited during ESM interop; answering
+        // `then` with a component would make it look like a thenable.
+        if (typeof property !== 'string' || property === 'then') {
+          return Reflect.get(target, property);
+        }
+        if (property in target) return target[property];
+
+        return iconStub;
+      },
+      // Vitest checks each import against the mock with `in` before handing it
+      // over, so the proxy has to claim every name, not just answer `get`.
+      has: (target: Record<string, unknown>, property: string | symbol) =>
+        typeof property === 'string' && property !== 'then'
+          ? true
+          : Reflect.has(target, property),
+      getOwnPropertyDescriptor: (
+        target: Record<string, unknown>,
+        property: string | symbol
+      ) =>
+        typeof property === 'string' && property !== 'then'
+          ? {
+              configurable: true,
+              enumerable: true,
+              value: property in target ? target[property] : iconStub,
+            }
+          : Reflect.getOwnPropertyDescriptor(target, property),
+    }
+  );
+});
 
 vi.mock('@dnd-kit/sortable', () => ({
   useSortable: () => ({

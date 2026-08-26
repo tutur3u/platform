@@ -148,8 +148,24 @@ export function formatAnswerForQuestion(
       ...unresolvedValues.map((value) => stringifyFallback(value)),
     ];
 
+    if (allValues.length === 0) {
+      return { value: '—', unresolvedValues };
+    }
+
+    // A ranking's whole meaning is the order, which a bare comma-separated
+    // list hides — "B, A" and "A, B" read as the same answer in an export.
+    // Numbering makes the position explicit wherever the answer is shown.
+    if (question?.type === 'ranking') {
+      return {
+        value: allValues
+          .map((entry, index) => `${index + 1}. ${entry}`)
+          .join(', '),
+        unresolvedValues,
+      };
+    }
+
     return {
-      value: allValues.length > 0 ? allValues.join(', ') : '—',
+      value: allValues.join(', '),
       unresolvedValues,
     };
   }
@@ -196,7 +212,10 @@ export function restoreAnswerForQuestion(
     return { value: undefined, unresolvedValues: [] };
   }
 
-  if (question.type === 'multiple_choice') {
+  // Ranking restores exactly like multiple choice — resolve each entry to a
+  // known option — except that the surviving order is the answer, which
+  // filtering already preserves.
+  if (question.type === 'multiple_choice' || question.type === 'ranking') {
     const rawValues = Array.isArray(answer)
       ? answer
       : typeof answer === 'string'

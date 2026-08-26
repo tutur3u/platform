@@ -71,11 +71,17 @@ export const FORM_FONT_VALUES = [
 export const FORM_QUESTION_TYPE_VALUES = [
   'short_text',
   'long_text',
+  'email',
+  'phone',
+  'number',
+  'url',
   'single_choice',
   'multiple_choice',
   'dropdown',
+  'ranking',
   'linear_scale',
   'rating',
+  'nps',
   'date',
   'time',
   'section_break',
@@ -148,6 +154,12 @@ export const formQuestionSettingsSchema = z.object({
   validationMax: z.number().nullable().optional(),
   validationPattern: z.string().max(500).nullable().optional(),
   validationMessage: z.string().max(200).nullable().optional(),
+  /**
+   * Step for the `number` type's spinner and its "must be a multiple of"
+   * check. `null` leaves the input unconstrained rather than defaulting to 1,
+   * so decimals stay typeable unless the author asks for whole numbers.
+   */
+  numberStep: z.number().positive().nullable().optional(),
 });
 
 export const formQuestionSchema = z.object({
