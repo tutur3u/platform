@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
+import type { Workspace } from '@tuturuuu/types';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
@@ -467,13 +469,13 @@ describe('settings dialog shortcut', () => {
       <UserNavClient
         locale="en"
         renderSettingsDialog={false}
-        user={user as any}
+        user={user as unknown as WorkspaceUser}
         workspace={
           {
             id: 'workspace-1',
             joined: false,
             name: 'Guest workspace',
-          } as any
+          } as unknown as Workspace
         }
       />
     );
@@ -496,13 +498,13 @@ describe('settings dialog shortcut', () => {
       <UserNavClient
         locale="en"
         renderSettingsDialog={false}
-        user={user as any}
+        user={user as unknown as WorkspaceUser}
         workspace={
           {
             id: 'workspace-1',
             joined: true,
             name: 'Member workspace',
-          } as any
+          } as unknown as Workspace
         }
       />
     );
