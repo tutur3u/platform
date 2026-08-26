@@ -1,10 +1,8 @@
 import type { ReactNode } from 'react';
-import { createMarketingMetadata } from '@/lib/seo/marketing-metadata';
+import { createLocalizedMarketingMetadata } from '@/lib/seo/marketing-metadata';
 
-export const generateMetadata = createMarketingMetadata({
-  title: 'Shared Team Calendar',
-  description:
-    'Coordinate schedules with the shared Tuturuuu calendar experience.',
+export const generateMetadata = createLocalizedMarketingMetadata({
+  namespace: 'products.calendar.seo',
   pathname: '/products/calendar',
 });
 

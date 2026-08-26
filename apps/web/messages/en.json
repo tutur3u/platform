@@ -9431,6 +9431,12 @@
       "operate": "Run the business",
       "plan": "Plan & execute"
     },
+    "index": {
+      "seo": {
+        "description": "Every Tuturuuu app in one place — plan and execute, create and share, run the business.",
+        "title": "Products"
+      }
+    },
     "products": {
       "ai": {
         "description": "Mira and the assistants powering every surface.",
@@ -11165,6 +11171,10 @@
         "subtitle": "Each part does one job, and you only ever address one of them.",
         "title": "What is actually running"
       },
+      "seo": {
+        "description": "See how Tuturuuu AI accelerates automation and everyday workflows.",
+        "title": "AI Workspace"
+      },
       "title": "Five systems, one assistant you talk to",
       "useCases": {
         "eyebrow": "Where it fits",
@@ -11239,6 +11249,10 @@
           "title": "Time zones handled quietly"
         },
         "title": "Scheduling without the back and forth"
+      },
+      "seo": {
+        "description": "Coordinate schedules with the shared Tuturuuu calendar experience.",
+        "title": "Shared Team Calendar"
       },
       "title": "A calendar that defends your day",
       "useCases": {
@@ -11315,6 +11329,10 @@
           "title": "Personal and workspace side by side"
         }
       },
+      "seo": {
+        "description": "Channels, direct messages and files in the same workspace as your work.",
+        "title": "Team Chat and Channels"
+      },
       "title": "The conversation next to the work",
       "useCases": {
         "eyebrow": "In practice",
@@ -11389,6 +11407,10 @@
         },
         "subtitle": "Not another database to maintain. The customer record sits beside your tasks, calendar and invoices, so context arrives with the name.",
         "title": "The relationship, written down"
+      },
+      "seo": {
+        "description": "Track relationships and deals inside the connected Tuturuuu CRM.",
+        "title": "Customer Relationship Management"
       },
       "title": "Every customer, and everything you promised them",
       "useCases": {
@@ -11465,6 +11487,10 @@
           "title": "Nothing is lost by editing"
         }
       },
+      "seo": {
+        "description": "Collaborate on docs with AI-assisted workflows in Tuturuuu.",
+        "title": "Collaborative Documents"
+      },
       "title": "Write it down where the work already lives",
       "useCases": {
         "business": {
@@ -11539,6 +11565,10 @@
           "description": "Replacing a file does not erase it. Earlier versions stay available, so an overwrite is not a lost afternoon.",
           "title": "Every upload keeps the last one"
         }
+      },
+      "seo": {
+        "description": "Store, organize, and securely share files with Tuturuuu Drive.",
+        "title": "Secure Cloud Drive"
       },
       "title": "Your files, where the rest of the work is",
       "useCases": {
@@ -11615,6 +11645,10 @@
         "subtitle": "Every number lives next to the work that produced it, so you are not reconciling two versions of the truth.",
         "title": "The bookkeeping, mostly handled"
       },
+      "seo": {
+        "description": "Manage invoices, budgets, and spend control with Tuturuuu Finance.",
+        "title": "Finance and Expense Management"
+      },
       "title": "Know where the money went, without the spreadsheet",
       "useCases": {
         "business": {
@@ -11689,6 +11723,10 @@
           "title": "Looks like you sent it"
         },
         "title": "From question to answer without a detour"
+      },
+      "seo": {
+        "description": "Build a form, share a link, and read every response where it lands.",
+        "title": "Online Forms and Surveys"
       },
       "title": "Ask once, read the answers in one place",
       "useCases": {
@@ -11765,6 +11803,10 @@
           "title": "A world you build by hand"
         }
       },
+      "seo": {
+        "description": "Keep what your team knows searchable instead of scattered.",
+        "title": "Team Knowledge Hive"
+      },
       "title": "A lab for swarm agents",
       "useCases": {
         "design": {
@@ -11839,6 +11881,10 @@
           "description": "Track stock per site and every transfer between them, without a spreadsheet per warehouse.",
           "title": "Multiple locations, one picture"
         }
+      },
+      "seo": {
+        "description": "Monitor stock levels and fulfillment workflows with Tuturuuu Inventory.",
+        "title": "Inventory Management"
       },
       "title": "Stock counts that match the shelf",
       "useCases": {
@@ -11915,6 +11961,10 @@
         "subtitle": "Course material, submissions and progress in one system, on the same calendar as everything else your learners are juggling.",
         "title": "Teaching, with less admin around it"
       },
+      "seo": {
+        "description": "Deliver training and measure learning impact with Tuturuuu LMS.",
+        "title": "Learning Management System"
+      },
       "title": "Courses, assignments and where each learner stands",
       "useCases": {
         "centers": {
@@ -11989,6 +12039,10 @@
         },
         "subtitle": "Triage, drafting, scheduling and shared inboxes in one place.",
         "title": "Less inbox, more done"
+      },
+      "seo": {
+        "description": "Power outreach and shared inboxes with Tuturuuu Mail.",
+        "title": "Team Email and Shared Inboxes"
       },
       "title": "An inbox that hands work to the rest of your day",
       "useCases": {
@@ -12099,6 +12153,12 @@
         "title": "Whenever more than three people are involved"
       }
     },
+    "meet-together": {
+      "seo": {
+        "description": "Compare availability and settle on a meeting time without the back and forth.",
+        "title": "Find a Time Everyone Can Meet"
+      }
+    },
     "qr": {
       "closing": {
         "description": "Paste the link, set the colors, and download a file you can print.",
@@ -12139,6 +12199,10 @@
         },
         "subtitle": "Any value, three layouts, your colors, your logo, and a file large enough for print.",
         "title": "Enough control to print it once"
+      },
+      "seo": {
+        "description": "Generate and track QR codes tied to the work behind them.",
+        "title": "QR Codes for Your Workspace"
       },
       "title": "A code for the thing you keep repeating",
       "useCases": {
@@ -12215,6 +12279,10 @@
           "title": "Public or private"
         }
       },
+      "seo": {
+        "description": "Sell online with a storefront connected to your inventory and finance.",
+        "title": "Online Storefront"
+      },
       "title": "Your inventory, open to buyers",
       "useCases": {
         "buyers": {
@@ -12289,6 +12357,10 @@
           "description": "Switch the view without moving the work. The same tasks, arranged for planning, standups or delivery.",
           "title": "List, board or timeline"
         }
+      },
+      "seo": {
+        "description": "Keep projects on track with Tuturuuu Tasks and collaborative boards.",
+        "title": "Project and Task Management"
       },
       "title": "Work that stays where you left it",
       "useCases": {
@@ -12365,6 +12437,10 @@
         },
         "title": "A timer that stays close to the work"
       },
+      "seo": {
+        "description": "See where the hours actually went, per person and per project.",
+        "title": "Time Tracking"
+      },
       "title": "Hours you can account for",
       "useCases": {
         "eyebrow": "In practice",
@@ -12439,6 +12515,10 @@
           "description": "Versions are kept as the process evolves, so you can see what changed and go back if the new one is worse.",
           "title": "Changes you can trace"
         }
+      },
+      "seo": {
+        "description": "Automate cross-team processes with Tuturuuu Workflows.",
+        "title": "Workflow Automation"
       },
       "title": "The routine parts, handled without you",
       "useCases": {
