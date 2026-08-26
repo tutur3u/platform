@@ -6,10 +6,7 @@ import {
   useHotkeySequence,
 } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  type ListWorkspaceTasksOptions,
-  listWorkspaceTasks,
-} from '@tuturuuu/internal-api/tasks';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import {
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_LAST_BOARD_VIEW_CONFIG_ID,
@@ -53,6 +50,11 @@ import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
+import {
+  listBoardTaskCountsForSearch,
+  listBoardTasksForSearch,
+  taskMatchesBoardSearch,
+} from './board-task-search';
 import { KanbanPresentation } from './kanban-presentation';
 import {
   parseSpecialTaskListPins,
@@ -97,24 +99,11 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
 function taskMatchesLocalFilters(
   task: Task,
   filters: TaskFilters,
-  currentUserId?: string
+  currentUserId?: string,
+  boardTicketPrefix?: string | null
 ) {
-  const query = filters.searchQuery?.trim().toLowerCase();
-  if (query) {
-    const searchableText = [
-      task.name,
-      task.display_number ? String(task.display_number) : null,
-      ...(task.labels ?? []).map((label) => label.name),
-      ...(task.projects ?? []).map((project) => project.name),
-      ...(task.assignees ?? []).map(
-        (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
-      ),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    if (!searchableText.includes(query)) return false;
-  }
+  if (!taskMatchesBoardSearch(task, filters.searchQuery, boardTicketPrefix))
+    return false;
 
   if (
     filters.labels.length > 0 &&
@@ -425,16 +414,17 @@ export function BoardViews({
   );
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline' || hasServerTaskQuery;
-  const fetchBoardTasks = useCallback(async () => {
-    const result = await listWorkspaceTasks(effectiveWorkspaceId, {
-      ...taskQueryOptions,
-      boardId: board.id,
-      includeRelationshipSummary: false,
-      listStatuses: listStatusesForQuery,
-      limit: 200,
-    });
-    return result.tasks;
-  }, [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]);
+  const fetchBoardTasks = useCallback(
+    () =>
+      listBoardTasksForSearch(effectiveWorkspaceId, {
+        ...taskQueryOptions,
+        boardId: board.id,
+        includeRelationshipSummary: false,
+        listStatuses: listStatusesForQuery,
+        limit: 200,
+      }),
+    [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]
+  );
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
@@ -675,17 +665,15 @@ export function BoardViews({
           filters.hideEmptyTaskLists ||
           autoCollapseEmptyTaskLists
       ),
-    queryFn: async () => {
-      const result = await listWorkspaceTasks(effectiveWorkspaceId, {
+    queryFn: () =>
+      listBoardTaskCountsForSearch(effectiveWorkspaceId, {
         ...taskQueryOptions,
         boardId: board.id,
         includeListCounts: true,
         includeRelationshipSummary: false,
         limit: 0,
         listStatuses: listStatusesForQuery,
-      });
-      return result.listCounts ?? [];
-    },
+      }),
     staleTime: 30_000,
   });
 
@@ -714,11 +702,16 @@ export function BoardViews({
     () =>
       sortLocalTasks(
         tasks.filter((task) =>
-          taskMatchesLocalFilters(task, filters, currentUserId)
+          taskMatchesLocalFilters(
+            task,
+            filters,
+            currentUserId,
+            board.ticket_prefix
+          )
         ),
         filters.sortBy
       ),
-    [currentUserId, filters, tasks]
+    [board.ticket_prefix, currentUserId, filters, tasks]
   );
 
   const localListCounts = useMemo(() => {
