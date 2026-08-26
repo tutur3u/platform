@@ -285,11 +285,14 @@ export function GlobalCommandLauncher({
   workspacePathResolver,
 }: GlobalCommandLauncherProps) {
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
-  const availableTabs = enableTasks
+  const hostTabs = enableTasks
     ? COMMAND_LAUNCHER_TABS
     : extraSections
       ? COMMAND_LAUNCHER_TABS_WITHOUT_TASKS
       : (['all'] as const);
+  const availableTabs = hostTabs.filter(
+    (tab) => tab !== 'navigation' || navItems.length > 0
+  );
   const resolvedDefaultTab = availableTabs.includes(defaultTab)
     ? defaultTab
     : 'all';

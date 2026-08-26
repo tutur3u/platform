@@ -63,6 +63,13 @@ function renderLauncher({
   defaultTab = 'all',
   duplicateCount = 1,
   enableTasks = false,
+  navItems = [
+    {
+      href: '/personal/tasks',
+      keywords: ['Project boards'],
+      title: 'Task Boards',
+    },
+  ],
   onNavigate,
 }: Partial<Parameters<typeof GlobalCommandLauncher>[0]> & {
   duplicateCount?: number;
@@ -85,13 +92,7 @@ function renderLauncher({
           defaultTab={defaultTab}
           enableTasks={enableTasks}
           key={index}
-          navItems={[
-            {
-              href: '/personal/tasks',
-              keywords: ['Project boards'],
-              title: 'Task Boards',
-            },
-          ]}
+          navItems={navItems}
           onNavigate={onNavigate}
         />
       ))}
@@ -266,6 +267,23 @@ describe('GlobalCommandLauncher', () => {
       screen.getByRole('button', { name: /Tasks/ }).getAttribute('aria-pressed')
     ).toBe('true');
     expect(screen.getByRole('button', { name: /All/ })).toBeTruthy();
+  });
+
+  it('hides the navigation tab when a task-enabled host has no pages', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ enableTasks: true, navItems: [] });
+
+    openGlobalCommandLauncher();
+    const input = await screen.findByPlaceholderText(
+      'Search apps, workspaces, and pages...'
+    );
+
+    expect(screen.queryByRole('button', { name: /Navigation/ })).toBeNull();
+
+    fireEvent.keyDown(input, { ctrlKey: true, key: '3' });
+    expect(
+      screen.getByRole('button', { name: /Apps/ }).getAttribute('aria-pressed')
+    ).toBe('true');
   });
 
   it('queries workspace search results beyond the initially loaded workspaces', async () => {
