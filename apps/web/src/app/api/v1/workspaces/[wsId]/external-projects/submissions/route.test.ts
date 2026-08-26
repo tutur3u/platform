@@ -235,6 +235,8 @@ describe('POST submission Turnstile gate', () => {
   }
 
   beforeEach(() => {
+    delete process.env.TURNSTILE_SECRET_KEY;
+    delete process.env.TURNSTILE_SECRET_KEY_RICHFIELD;
     mocks.createAdminClient.mockResolvedValue(
       createAdmin({
         collection: { id: 'collection-1' },
@@ -286,10 +288,30 @@ describe('POST submission Turnstile gate', () => {
     expect(response.status).toBe(201);
     expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
       expect.anything(),
-      'token-abc'
+      'token-abc',
+      { secretKey: 'secret-key' }
     );
     expect(mocks.createWorkspaceExternalProjectEntry).toHaveBeenCalled();
     delete process.env.TURNSTILE_SECRET_KEY;
+  });
+
+  it('uses the Richfield-specific secret without changing other apps', async () => {
+    process.env.TURNSTILE_SECRET_KEY = 'global-secret';
+    process.env.TURNSTILE_SECRET_KEY_RICHFIELD = 'richfield-secret';
+    mocks.verifyTurnstileToken.mockResolvedValue(undefined);
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      postRequest({ ...body, turnstileToken: 'token-abc' }),
+      params
+    );
+
+    expect(response.status).toBe(201);
+    expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
+      expect.anything(),
+      'token-abc',
+      { secretKey: 'richfield-secret' }
+    );
   });
 });
 

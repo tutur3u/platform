@@ -21,6 +21,7 @@ import {
   logEmailAbuseEvent,
   updateAuditRecord,
 } from './email-audit';
+import { CredentialsError } from './errors';
 import { BlacklistChecker, EmailRateLimiter } from './protection/index';
 import { CloudflareEmailProvider } from './providers/cloudflare';
 import { SESEmailProvider } from './providers/ses';
@@ -683,8 +684,9 @@ export class EmailService {
           source_email: 'dev@tuturuuu.com',
         };
       } else {
-        throw new Error(
-          `No email credentials found for workspace ${credentialWorkspaceId}`
+        throw new CredentialsError(
+          `No email credentials found for workspace ${credentialWorkspaceId}`,
+          credentialWorkspaceId
         );
       }
     }

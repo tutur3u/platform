@@ -79,6 +79,13 @@ beforeEach(() => {
   mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
     adapter: 'richfield',
     enabled: true,
+    settings: {
+      outboundEmail: {
+        allowedRecipientDomains: ['richfield.test'],
+        enabled: true,
+        useRootWorkspaceCredentials: false,
+      },
+    },
   });
   mocks.sendWorkspaceEmail.mockResolvedValue({
     auditId: 'audit-1',
@@ -113,6 +120,38 @@ describe('POST external-project emails', () => {
     expect(mocks.sendWorkspaceEmail).not.toHaveBeenCalled();
   });
 
+  it('denies outbound email when the binding has no explicit grant', async () => {
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
+      adapter: 'richfield',
+      enabled: true,
+      settings: {},
+    });
+    const { POST } = await import('./route');
+
+    const response = await POST(request(validBody), params);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Outbound email is not enabled for this external app',
+    });
+    expect(mocks.sendWorkspaceEmail).not.toHaveBeenCalled();
+  });
+
+  it('rejects recipients outside the exact domain allowlist', async () => {
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      request({ ...validBody, to: ['ops@sub.richfield.test'] }),
+      params
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      disallowedDomains: ['sub.richfield.test'],
+    });
+    expect(mocks.sendWorkspaceEmail).not.toHaveBeenCalled();
+  });
+
   it('sends through the workspace mailer and attributes the calling app', async () => {
     const { POST } = await import('./route');
 
@@ -139,6 +178,29 @@ describe('POST external-project emails', () => {
     expect(sent.content.replyTo).toEqual(['sender@acme.test']);
     expect(sent.metadata.templateType).toBe('external-project:richfield');
     expect(sent.metadata.entityId).toBe('entry-1');
+    expect(mocks.sendWorkspaceEmail.mock.calls[0]?.[2]).toBeUndefined();
+  });
+
+  it('uses root credentials only when the workspace policy opts in', async () => {
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
+      adapter: 'richfield',
+      enabled: true,
+      settings: {
+        outboundEmail: {
+          allowedRecipientDomains: ['richfield.test'],
+          enabled: true,
+          useRootWorkspaceCredentials: true,
+        },
+      },
+    });
+    const { POST } = await import('./route');
+
+    const response = await POST(request(validBody), params);
+
+    expect(response.status).toBe(200);
+    expect(mocks.sendWorkspaceEmail.mock.calls[0]?.[2]).toEqual({
+      credentialWorkspaceId: '00000000-0000-0000-0000-000000000000',
+    });
   });
 
   it('escapes text when wrapping it into the html part', async () => {

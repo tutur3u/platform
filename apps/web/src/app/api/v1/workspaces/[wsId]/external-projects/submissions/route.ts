@@ -38,13 +38,29 @@ const submissionSchema = z.object({
  * mandatory; without one, submissions still flow, so turning Turnstile on is a
  * matter of setting the secret rather than redeploying every site.
  */
-async function verifySubmissionTurnstile(request: Request, token?: string) {
-  if (!process.env.TURNSTILE_SECRET_KEY) {
+function getSubmissionTurnstileSecret(appId: string) {
+  if (appId === 'richfield') {
+    return (
+      process.env.TURNSTILE_SECRET_KEY_RICHFIELD ??
+      process.env.TURNSTILE_SECRET_KEY
+    );
+  }
+
+  return process.env.TURNSTILE_SECRET_KEY;
+}
+
+async function verifySubmissionTurnstile(
+  request: Request,
+  token: string | undefined,
+  appId: string
+) {
+  const secretKey = getSubmissionTurnstileSecret(appId);
+  if (!secretKey) {
     return null;
   }
 
   try {
-    await verifyTurnstileToken(request, token);
+    await verifyTurnstileToken(request, token, { secretKey });
     return null;
   } catch (error) {
     if (isTurnstileError(error)) {
@@ -287,7 +303,8 @@ export async function POST(
     // Turnstile is on) but before anything is written.
     const turnstileFailure = await verifySubmissionTurnstile(
       request,
-      payload.turnstileToken
+      payload.turnstileToken,
+      payload.appId
     );
 
     if (turnstileFailure) return turnstileFailure;
