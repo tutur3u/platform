@@ -63,9 +63,11 @@ export function taskMatchesBoardSearch(
     getBoardTaskIdentifier(task, boardTicketPrefix),
     ...(task.labels ?? []).map((label) => label.name),
     ...(task.projects ?? []).map((project) => project.name),
-    ...(task.assignees ?? []).map(
-      (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
-    ),
+    ...(task.assignees ?? []).flatMap((assignee) => [
+      assignee.display_name,
+      assignee.email,
+      assignee.handle,
+    ]),
   ]
     .filter(Boolean)
     .join(' ')

@@ -17,7 +17,7 @@ test('fork package smoke builds use a secretless compatibility path', () => {
 
   assert.match(
     workflow,
-    /IS_FORK_PULL_REQUEST: \$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.repo\.full_name != github\.repository \}\}/
+    /IS_FORK_PULL_REQUEST:\s*\$\{\{\s*github\.event_name\s*==\s*'pull_request'\s*&&\s*github\.event\.pull_request\.head\.repo\.full_name\s*!=\s*github\.repository\s*\}\}/
   );
   assert.match(workflow, /permissions:\n {2}contents: read/);
   assert.match(

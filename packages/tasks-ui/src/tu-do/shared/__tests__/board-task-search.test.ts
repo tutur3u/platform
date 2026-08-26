@@ -104,7 +104,14 @@ describe('taskMatchesBoardSearch', () => {
 
   it('matches task metadata and ignores missing display numbers', () => {
     const task = buildTask({
-      assignees: [{ display_name: 'Ada Lovelace', id: 'user-1' }],
+      assignees: [
+        {
+          display_name: 'Ada Lovelace',
+          email: 'ada@example.com',
+          handle: 'countess-of-code',
+          id: 'user-1',
+        },
+      ],
       display_number: null as unknown as number,
       id: 'task-1',
       labels: [
@@ -118,6 +125,8 @@ describe('taskMatchesBoardSearch', () => {
     });
 
     expect(taskMatchesBoardSearch(task, 'ada', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'ada@example.com', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'countess-of-code', 'RD')).toBe(true);
     expect(taskMatchesBoardSearch(task, 'backend', 'RD')).toBe(true);
     expect(taskMatchesBoardSearch(task, 'rd-null', 'RD')).toBe(false);
   });
