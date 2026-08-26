@@ -76,6 +76,111 @@ export function renderBuildTab({
   getBlockEditors: (blockId: string) => FormCollaboratorPresence[];
   previewDefinition: FormStudioState['previewDefinition'];
 }) {
+  // Hoisted so both layouts render the same element rather than one of them
+  // simply not having it. Three-pane previously had no form details at all,
+  // which meant the form's own title, description and cover could not be
+  // edited in that layout.
+  const formDetails = (
+    <Collapsible open={isFormDetailsOpen} onOpenChange={setIsFormDetailsOpen}>
+      <Card className="border-border/60 bg-card/80 shadow-sm">
+        <CollapsibleTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start whitespace-normal rounded-3xl px-5 py-4 hover:bg-transparent"
+          >
+            <div className="flex w-full items-start gap-4 text-left">
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold text-base">
+                    {t('studio.form_details')}
+                  </p>
+                  <Badge
+                    variant="outline"
+                    className="rounded-full px-2 py-0.5 text-[11px]"
+                  >
+                    {values.theme.coverImage.url ||
+                    values.theme.coverImage.storagePath
+                      ? t('studio.cover_set')
+                      : t('studio.cover_not_set')}
+                  </Badge>
+                </div>
+                <div className="line-clamp-2 text-muted-foreground text-sm">
+                  <FormsMarkdown
+                    content={
+                      values.description?.trim() ||
+                      t('studio.first_impression_hint')
+                    }
+                    variant="inline"
+                    className="line-clamp-2"
+                  />
+                </div>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'mt-1 h-4 w-4 shrink-0 transition-transform',
+                  isFormDetailsOpen && 'rotate-180'
+                )}
+              />
+            </div>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+          <CardContent className="space-y-4 p-5">
+            <div className="space-y-2">
+              <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+                {t('studio.first_impression')}
+              </p>
+              <p className="max-w-2xl text-muted-foreground text-sm">
+                {t('studio.first_impression_hint')}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('studio.form_title')}</Label>
+              <FormsRichTextEditor
+                value={values.title}
+                onChange={(nextValue) =>
+                  form.setValue('title', nextValue, {
+                    shouldDirty: true,
+                  })
+                }
+                placeholder={t('studio.form_title_placeholder')}
+                toneClasses={studioToneClasses}
+                compact
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('studio.description')}</Label>
+              <FormsRichTextEditor
+                value={values.description}
+                onChange={(nextValue) =>
+                  form.setValue('description', nextValue, {
+                    shouldDirty: true,
+                  })
+                }
+                placeholder={t('studio.form_description_placeholder')}
+                toneClasses={studioToneClasses}
+              />
+            </div>
+            <FormMediaField
+              wsId={wsId}
+              scope="cover"
+              value={values.theme.coverImage}
+              onChange={(value) =>
+                form.setValue('theme.coverImage', value, {
+                  shouldDirty: true,
+                })
+              }
+              toneClasses={studioToneClasses}
+              label={t('studio.cover_image')}
+              hint={t('studio.cover_image_hint')}
+            />
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
+  );
+
   return (
     <TabsContent value="build" className="mt-0 min-w-0">
       <StudioBuildLayout
@@ -95,6 +200,10 @@ export function renderBuildTab({
             addSection={addSection}
             addBlockToActiveSection={addBlockToActiveSection}
             getBlockEditors={getBlockEditors}
+            formDetails={formDetails}
+            logicRules={
+              <LogicRulesEditor form={form} toneClasses={studioToneClasses} />
+            }
           />
         }
         stacked={
@@ -105,107 +214,7 @@ export function renderBuildTab({
               onAddBlock={addBlockToActiveSection}
             />
             <div className="min-w-0 space-y-6">
-              <Collapsible
-                open={isFormDetailsOpen}
-                onOpenChange={setIsFormDetailsOpen}
-              >
-                <Card className="border-border/60 bg-card/80 shadow-sm">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-auto w-full justify-start whitespace-normal rounded-3xl px-5 py-4 hover:bg-transparent"
-                    >
-                      <div className="flex w-full items-start gap-4 text-left">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-base">
-                              {t('studio.form_details')}
-                            </p>
-                            <Badge
-                              variant="outline"
-                              className="rounded-full px-2 py-0.5 text-[11px]"
-                            >
-                              {values.theme.coverImage.url ||
-                              values.theme.coverImage.storagePath
-                                ? t('studio.cover_set')
-                                : t('studio.cover_not_set')}
-                            </Badge>
-                          </div>
-                          <div className="line-clamp-2 text-muted-foreground text-sm">
-                            <FormsMarkdown
-                              content={
-                                values.description?.trim() ||
-                                t('studio.first_impression_hint')
-                              }
-                              variant="inline"
-                              className="line-clamp-2"
-                            />
-                          </div>
-                        </div>
-                        <ChevronDown
-                          className={cn(
-                            'mt-1 h-4 w-4 shrink-0 transition-transform',
-                            isFormDetailsOpen && 'rotate-180'
-                          )}
-                        />
-                      </div>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="border-border/60 border-t data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                    <CardContent className="space-y-4 p-5">
-                      <div className="space-y-2">
-                        <p className="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                          {t('studio.first_impression')}
-                        </p>
-                        <p className="max-w-2xl text-muted-foreground text-sm">
-                          {t('studio.first_impression_hint')}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t('studio.form_title')}</Label>
-                        <FormsRichTextEditor
-                          value={values.title}
-                          onChange={(nextValue) =>
-                            form.setValue('title', nextValue, {
-                              shouldDirty: true,
-                            })
-                          }
-                          placeholder={t('studio.form_title_placeholder')}
-                          toneClasses={studioToneClasses}
-                          compact
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t('studio.description')}</Label>
-                        <FormsRichTextEditor
-                          value={values.description}
-                          onChange={(nextValue) =>
-                            form.setValue('description', nextValue, {
-                              shouldDirty: true,
-                            })
-                          }
-                          placeholder={t('studio.form_description_placeholder')}
-                          toneClasses={studioToneClasses}
-                        />
-                      </div>
-                      <FormMediaField
-                        wsId={wsId}
-                        scope="cover"
-                        value={values.theme.coverImage}
-                        onChange={(value) =>
-                          form.setValue('theme.coverImage', value, {
-                            shouldDirty: true,
-                          })
-                        }
-                        toneClasses={studioToneClasses}
-                        label={t('studio.cover_image')}
-                        hint={t('studio.cover_image_hint')}
-                      />
-                    </CardContent>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
+              {formDetails}
 
               <DndContext
                 sensors={sectionSensors}

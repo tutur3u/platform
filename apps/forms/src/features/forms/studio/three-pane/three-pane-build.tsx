@@ -9,7 +9,10 @@ import type { FormStudioState } from '../form-studio-state';
 import { CanvasPane } from './canvas-pane';
 import { OutlinePane } from './outline-pane';
 import { PropertiesPane } from './properties-pane';
-import { resolveThreePaneSelection } from './selection';
+import {
+  reorderSectionQuestions,
+  resolveThreePaneSelection,
+} from './selection';
 import { useStudioBuildLayout } from './use-build-layout';
 
 /**
@@ -74,6 +77,8 @@ export function ThreePaneBuild({
   addSection,
   addBlockToActiveSection,
   getBlockEditors,
+  formDetails,
+  logicRules,
 }: {
   wsId: string;
   t: FormStudioState['t'];
@@ -88,6 +93,9 @@ export function ThreePaneBuild({
   addSection: () => void;
   addBlockToActiveSection: (type: FormQuestionInput['type']) => void;
   getBlockEditors: (blockId: string) => FormCollaboratorPresence[];
+  /** The form's own title, description and cover, shared with the stacked layout. */
+  formDetails: ReactNode;
+  logicRules: ReactNode;
 }) {
   const translate = t as (
     key: string,
@@ -107,6 +115,27 @@ export function ThreePaneBuild({
     setActiveQuestionForSection(sectionId, questionId);
   };
 
+  /**
+   * Commits a reordered section straight through `setValue` rather than a
+   * `useFieldArray`.
+   *
+   * A field array on `sections.<i>.questions` lives in `SectionEditor`, which
+   * only the stacked layout mounts — the two layouts never render together, so
+   * there is no array here to desync. Doing this while both were mounted would
+   * leave that array's own `fields` state pointing at the old order.
+   */
+  const reorderQuestions = (sectionIndex: number, order: string[]) => {
+    const section = values.sections[sectionIndex];
+    if (!section) return;
+
+    const reordered = reorderSectionQuestions(section.questions, order);
+    if (!reordered) return;
+
+    form.setValue(`sections.${sectionIndex}.questions`, reordered, {
+      shouldDirty: true,
+    });
+  };
+
   return (
     <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[72px_minmax(200px,240px)_minmax(0,1fr)_minmax(300px,360px)]">
       <FloatingBlockToolbar
@@ -121,12 +150,15 @@ export function ThreePaneBuild({
         activeQuestionId={activeQuestionId}
         onSelectSection={setActiveSectionId}
         onSelectQuestion={selectQuestion}
+        onReorderQuestions={reorderQuestions}
         onAddSection={addSection}
         getBlockEditors={getBlockEditors}
         t={translate}
       />
 
-      <div className="min-w-0 overflow-y-auto pb-8 xl:max-h-[calc(100vh-9rem)]">
+      <div className="min-w-0 space-y-6 overflow-y-auto pb-8 xl:max-h-[calc(100vh-9rem)]">
+        {formDetails}
+
         <CanvasPane
           definition={previewDefinition}
           activeSectionId={resolvedActiveSectionId}
@@ -134,6 +166,8 @@ export function ThreePaneBuild({
           onSelectQuestion={selectQuestion}
           t={translate}
         />
+
+        {logicRules}
       </div>
 
       <PropertiesPane
@@ -142,6 +176,7 @@ export function ThreePaneBuild({
         sectionIndex={selection.sectionIndex}
         questionIndex={selection.questionIndex}
         questionId={selection.questionId}
+        sectionId={selection.sectionId}
         toneClasses={studioToneClasses}
         t={translate}
       />

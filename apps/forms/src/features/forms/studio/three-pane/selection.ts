@@ -57,3 +57,33 @@ export function resolveThreePaneSelection(
     sectionId: section.id ?? '',
   };
 }
+
+/**
+ * Applies a new question order to one section.
+ *
+ * Returns `null` when the requested order does not describe exactly the same
+ * set of questions — a drop that lost or duplicated an entry must not be
+ * written, because silently dropping a question is far worse than ignoring
+ * the drag that caused it.
+ */
+export function reorderSectionQuestions<T extends { id?: string | undefined }>(
+  questions: readonly T[],
+  order: readonly string[]
+): T[] | null {
+  const byId = new Map(
+    questions.map((question) => [question.id ?? '', question])
+  );
+  const seen = new Set<string>();
+  const reordered: T[] = [];
+
+  for (const id of order) {
+    if (seen.has(id)) return null;
+    const question = byId.get(id);
+    if (!question) return null;
+
+    seen.add(id);
+    reordered.push(question);
+  }
+
+  return reordered.length === questions.length ? reordered : null;
+}

@@ -1,5 +1,21 @@
 'use client';
 
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -21,6 +37,7 @@ export function OutlinePane({
   activeQuestionId,
   onSelectSection,
   onSelectQuestion,
+  onReorderQuestions,
   onAddSection,
   getBlockEditors,
   t,
@@ -30,18 +47,23 @@ export function OutlinePane({
   activeQuestionId: string;
   onSelectSection: (sectionId: string) => void;
   onSelectQuestion: (sectionId: string, questionId: string) => void;
+  /** Commits a new question order for one section. */
+  onReorderQuestions: (sectionIndex: number, order: string[]) => void;
   onAddSection: () => void;
   getBlockEditors: (blockId: string) => FormCollaboratorPresence[];
   t: (key: string, values?: Record<string, string | number>) => string;
 }) {
   return (
     <nav
-      aria-label={t('studio.outline')}
+      aria-labelledby="form-studio-outline-heading"
       className="flex max-h-[calc(100vh-9rem)] min-w-0 flex-col gap-3 overflow-y-auto rounded-[1.5rem] border border-border/60 bg-card/60 p-3"
     >
-      <p className="px-2 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.25em]">
+      <h2
+        id="form-studio-outline-heading"
+        className="px-2 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.25em]"
+      >
         {t('studio.outline')}
-      </p>
+      </h2>
 
       <ol className="min-w-0 space-y-3">
         {sections.map((section, sectionIndex) => {
@@ -64,23 +86,17 @@ export function OutlinePane({
                   t('studio.section_n', { index: sectionIndex + 1 })}
               </button>
 
-              <ol className="min-w-0 space-y-0.5 border-border/60 border-l pl-2">
-                {section.questions.map((question, questionIndex) => (
-                  <OutlineBlockRow
-                    key={question.id ?? questionIndex}
-                    question={question}
-                    index={questionIndex}
-                    isSelected={
-                      isActiveSection && question.id === activeQuestionId
-                    }
-                    editors={getBlockEditors(question.id ?? '')}
-                    onSelect={() =>
-                      onSelectQuestion(sectionId, question.id ?? '')
-                    }
-                    t={t}
-                  />
-                ))}
-              </ol>
+              <OutlineBlockList
+                section={section}
+                sectionIndex={sectionIndex}
+                sectionId={sectionId}
+                isActiveSection={isActiveSection}
+                activeQuestionId={activeQuestionId}
+                onSelectQuestion={onSelectQuestion}
+                onReorderQuestions={onReorderQuestions}
+                getBlockEditors={getBlockEditors}
+                t={t}
+              />
             </li>
           );
         })}
@@ -104,6 +120,87 @@ export function OutlinePane({
   );
 }
 
+/**
+ * One section's blocks, reorderable within that section.
+ *
+ * A DndContext per section rather than one for the outline means a drag simply
+ * cannot cross a section boundary — moving a block between sections would have
+ * to rewrite two arrays and re-key branching rules that reference it, so it is
+ * left to the stacked layout until that is designed properly.
+ */
+function OutlineBlockList({
+  section,
+  sectionIndex,
+  sectionId,
+  isActiveSection,
+  activeQuestionId,
+  onSelectQuestion,
+  onReorderQuestions,
+  getBlockEditors,
+  t,
+}: {
+  section: FormStudioInput['sections'][number];
+  sectionIndex: number;
+  sectionId: string;
+  isActiveSection: boolean;
+  activeQuestionId: string;
+  onSelectQuestion: (sectionId: string, questionId: string) => void;
+  onReorderQuestions: (sectionIndex: number, order: string[]) => void;
+  getBlockEditors: (blockId: string) => FormCollaboratorPresence[];
+  t: (key: string, values?: Record<string, string | number>) => string;
+}) {
+  const sensors = useSensors(
+    // The same 8px threshold the rest of the studio uses, so a click to select
+    // is not swallowed as the start of a drag.
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const order = section.questions.map((question) => question.id ?? '');
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const from = order.indexOf(String(active.id));
+    const to = order.indexOf(String(over.id));
+    if (from < 0 || to < 0) return;
+
+    const next = [...order];
+    const [moved] = next.splice(from, 1);
+    if (moved === undefined) return;
+    next.splice(to, 0, moved);
+
+    onReorderQuestions(sectionIndex, next);
+  };
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        <ol className="min-w-0 space-y-0.5 border-border/60 border-l pl-2">
+          {section.questions.map((question, questionIndex) => (
+            <OutlineBlockRow
+              key={question.id ?? questionIndex}
+              question={question}
+              index={questionIndex}
+              isSelected={isActiveSection && question.id === activeQuestionId}
+              editors={getBlockEditors(question.id ?? '')}
+              onSelect={() => onSelectQuestion(sectionId, question.id ?? '')}
+              t={t}
+            />
+          ))}
+        </ol>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
 function OutlineBlockRow({
   question,
   index,
@@ -122,12 +219,26 @@ function OutlineBlockRow({
   const label =
     normalizeMarkdownToText(question.title) ||
     t(`question_type.${question.type}` as never);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: question.id ?? '' });
 
   return (
-    <li className="min-w-0">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn('min-w-0', isDragging && 'z-10 opacity-70')}
+    >
       <button
         type="button"
         onClick={onSelect}
+        {...attributes}
+        {...listeners}
         aria-current={isSelected ? 'true' : undefined}
         className={cn(
           'flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors',

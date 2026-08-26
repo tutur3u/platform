@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { FormStudioInput } from '../../schema';
-import { resolveThreePaneSelection } from './selection';
+import {
+  reorderSectionQuestions,
+  resolveThreePaneSelection,
+} from './selection';
 
 const emptyImage = { storagePath: '', url: '', alt: '' };
 
@@ -102,5 +105,34 @@ describe('resolveThreePaneSelection', () => {
       questionId: null,
       sectionId: '',
     });
+  });
+});
+
+describe('reorderSectionQuestions', () => {
+  const questions = [question('q1'), question('q2'), question('q3')];
+
+  it('applies a valid new order', () => {
+    const result = reorderSectionQuestions(questions, ['q3', 'q1', 'q2']);
+    expect(result?.map((entry) => entry.id)).toEqual(['q3', 'q1', 'q2']);
+  });
+
+  it('is a no-op order when nothing moved', () => {
+    const result = reorderSectionQuestions(questions, ['q1', 'q2', 'q3']);
+    expect(result?.map((entry) => entry.id)).toEqual(['q1', 'q2', 'q3']);
+  });
+
+  it('refuses an order that drops a question', () => {
+    // Writing this would delete a question the author never asked to remove.
+    expect(reorderSectionQuestions(questions, ['q1', 'q2'])).toBeNull();
+  });
+
+  it('refuses an order that duplicates a question', () => {
+    expect(reorderSectionQuestions(questions, ['q1', 'q1', 'q2'])).toBeNull();
+  });
+
+  it('refuses an order naming a question the section does not have', () => {
+    expect(
+      reorderSectionQuestions(questions, ['q1', 'q2', 'ghost'])
+    ).toBeNull();
   });
 });
