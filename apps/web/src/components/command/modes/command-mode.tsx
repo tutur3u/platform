@@ -65,7 +65,8 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   const { tasks, isLoading: isLoadingTasks } = useTaskSearch(
     wsId,
     searchQuery,
-    showTasks
+    showTasks,
+    { priority, sort, status }
   );
   const { workspaces, isLoading: isLoadingWorkspaces } = useWorkspaceSearch(
     routedTab === 'all' || routedTab === 'navigate'

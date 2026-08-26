@@ -1,10 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  type ListWorkspaceTasksOptions,
   listWorkspaceTasks,
   searchWorkspaceTasks,
   type WorkspaceTaskSearchResult,
 } from '@tuturuuu/internal-api/tasks';
 import * as React from 'react';
+import type {
+  TaskPriorityFilter,
+  TaskResultControls,
+  TaskSort,
+  TaskStatusFilter,
+} from './command-task-results';
 
 export type TaskSearchResult = WorkspaceTaskSearchResult;
 
@@ -51,33 +58,119 @@ export function normalizeCommandTask(
   };
 }
 
+function getServerSort(sort: TaskSort): ListWorkspaceTasksOptions['sortBy'] {
+  switch (sort) {
+    case 'due':
+      return 'due-date-asc';
+    case 'priority':
+      return 'priority-high';
+    default:
+      return 'created-date-desc';
+  }
+}
+
+function getStatusOptions(
+  status: TaskStatusFilter,
+  now: Date
+): ListWorkspaceTasksOptions {
+  switch (status) {
+    case 'open':
+      return { closed: 'exclude', completed: 'exclude' };
+    case 'assigned':
+      return {
+        assignedToMe: true,
+        closed: 'exclude',
+        completed: 'exclude',
+      };
+    case 'overdue':
+      return {
+        closed: 'exclude',
+        completed: 'exclude',
+        dueDateTo: now.toISOString(),
+      };
+    case 'due-soon': {
+      const dueSoonCutoff = new Date(now);
+      dueSoonCutoff.setDate(dueSoonCutoff.getDate() + 3);
+      return {
+        closed: 'exclude',
+        completed: 'exclude',
+        dueDateFrom: now.toISOString(),
+        dueDateTo: dueSoonCutoff.toISOString(),
+      };
+    }
+    case 'completed':
+      return { completed: 'only' };
+    default:
+      return {};
+  }
+}
+
+export function buildCommandTaskListOptions(
+  query: string,
+  controls: TaskResultControls,
+  now = new Date()
+): ListWorkspaceTasksOptions {
+  return {
+    ...getStatusOptions(controls.status, now),
+    limit: query ? 40 : 30,
+    priorities: controls.priority === 'all' ? undefined : [controls.priority],
+    q: query || undefined,
+    sortBy: getServerSort(controls.sort),
+  };
+}
+
+export function shouldUseFilteredTaskList(
+  query: string,
+  status: TaskStatusFilter,
+  priority: TaskPriorityFilter,
+  sort: TaskSort
+): boolean {
+  return Boolean(
+    query && (status !== 'all' || priority !== 'all' || sort !== 'relevance')
+  );
+}
+
 /**
  * Hook for searching tasks in the workspace
  */
 export function useTaskSearch(
   wsId: string | null,
   query: string,
-  enabled: boolean
+  enabled: boolean,
+  controls: TaskResultControls
 ) {
   const debouncedQuery = useDebounced(query.trim(), 300);
   const hasQuery = debouncedQuery.length > 0;
+  const useFilteredTaskList = shouldUseFilteredTaskList(
+    debouncedQuery,
+    controls.status,
+    controls.priority,
+    controls.sort
+  );
 
   // Only enable queries if wsId is a valid UUID (not legacy identifiers like "internal" or "personal")
   const isValidWorkspace = isValidUUID(wsId);
 
   // Fetch recent/all tasks when no query
   const recentTasksQuery = useQuery({
-    queryKey: [...commandTaskQueryKey(wsId), 'recent'],
+    queryKey: [
+      ...commandTaskQueryKey(wsId),
+      'list',
+      debouncedQuery,
+      controls.status,
+      controls.priority,
+      controls.sort,
+    ],
     queryFn: async () => {
       if (!wsId) return [];
 
-      const data = await listWorkspaceTasks(wsId, {
-        limit: 30,
-        sortBy: 'created-date-desc',
-      });
+      const data = await listWorkspaceTasks(
+        wsId,
+        buildCommandTaskListOptions(debouncedQuery, controls)
+      );
       return (data.tasks ?? []).map((task) => normalizeCommandTask(task));
     },
-    enabled: enabled && !hasQuery && isValidWorkspace,
+    enabled: enabled && (!hasQuery || useFilteredTaskList) && isValidWorkspace,
     staleTime: 30000, // 30 seconds
   });
 
@@ -95,12 +188,12 @@ export function useTaskSearch(
 
       return (data.tasks || []).map((task) => normalizeCommandTask(task));
     },
-    enabled: enabled && hasQuery && isValidWorkspace,
+    enabled: enabled && hasQuery && !useFilteredTaskList && isValidWorkspace,
     staleTime: 30000, // 30 seconds
   });
 
   // Return appropriate query based on whether there's a search query
-  if (hasQuery) {
+  if (hasQuery && !useFilteredTaskList) {
     return {
       tasks: searchTasksQuery.data || [],
       isLoading: searchTasksQuery.isLoading,

@@ -45,7 +45,8 @@ export function PlatformCommandExtraSections({
   const { isLoading: isLoadingTasks, tasks } = useTaskSearch(
     workspaceId ?? null,
     query,
-    Boolean(workspaceId && (activeTab === 'tasks' || activeTab === 'all'))
+    Boolean(workspaceId && (activeTab === 'tasks' || activeTab === 'all')),
+    { priority, sort, status }
   );
   const visibleTasks = useMemo(
     () => filterAndSortTasks(tasks, { priority, sort, status }),
