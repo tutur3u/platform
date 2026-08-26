@@ -9431,6 +9431,11 @@
       "operate": "Run the business",
       "plan": "Plan & execute"
     },
+    "index": {
+      "description": "One workspace, one login, one bill. Each app below works on its own and works better beside the others.",
+      "learn_more": "Learn more",
+      "title": "Every app your team needs"
+    },
     "products": {
       "ai": {
         "description": "Mira and the assistants powering every surface.",

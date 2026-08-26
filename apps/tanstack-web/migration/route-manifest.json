@@ -18,24 +18,24 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 50,
+        "legacyNext": 51,
         "migrated": 99,
-        "percentComplete": 66.89,
-        "remaining": 50,
+        "percentComplete": 66.45,
+        "remaining": 51,
         "terminal": 101,
-        "total": 151,
+        "total": 152,
         "unknownStatus": 0
       },
       {
         "acceptedRemoval": 0,
         "key": "layout",
         "label": "layout",
-        "legacyNext": 12,
+        "legacyNext": 13,
         "migrated": 47,
-        "percentComplete": 79.66,
-        "remaining": 12,
+        "percentComplete": 78.33,
+        "remaining": 13,
         "terminal": 47,
-        "total": 59,
+        "total": 60,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 64,
+        "legacyNext": 66,
         "migrated": 148,
-        "percentComplete": 70.09,
-        "remaining": 64,
+        "percentComplete": 69.44,
+        "remaining": 66,
         "terminal": 150,
-        "total": 214,
+        "total": 216,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 578,
+      "legacyNext": 580,
       "migrated": 215,
-      "percentComplete": 28.38,
-      "remaining": 578,
+      "percentComplete": 28.31,
+      "remaining": 580,
       "terminal": 229,
-      "total": 807,
+      "total": 809,
       "unknownStatus": 0
     }
   },
@@ -6045,6 +6045,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "layout:/:locale/products:apps/web/src/app/[locale]/(marketing)/products/layout.tsx",
+      "kind": "layout",
+      "methods": [],
+      "routePath": "/:locale/products",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/layout.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "layout:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/layout.tsx",
       "kind": "layout",
       "methods": [],
@@ -7224,6 +7233,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/products:apps/web/src/app/[locale]/(marketing)/products/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7704,8 +7722,8 @@
   "summary": {
     "apiRoutes": 580,
     "cronRoutes": 8,
-    "layouts": 59,
-    "pages": 151,
+    "layouts": 60,
+    "pages": 152,
     "routeHandlers": 593,
     "methodCounts": {
       "GET": 295,
@@ -7716,6 +7734,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 807
+    "total": 809
   }
 }

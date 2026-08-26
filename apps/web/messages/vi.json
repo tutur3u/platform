@@ -9431,6 +9431,11 @@
       "operate": "Vận hành doanh nghiệp",
       "plan": "Lên kế hoạch & thực thi"
     },
+    "index": {
+      "description": "Một không gian làm việc, một lần đăng nhập, một hoá đơn. Mỗi ứng dụng bên dưới dùng riêng được, và dùng cùng nhau thì tốt hơn.",
+      "learn_more": "Tìm hiểu thêm",
+      "title": "Mọi ứng dụng đội ngũ của bạn cần"
+    },
     "products": {
       "ai": {
         "description": "Mira và các trợ lý vận hành mọi bề mặt sản phẩm.",
