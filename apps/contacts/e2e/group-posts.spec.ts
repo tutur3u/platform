@@ -279,6 +279,63 @@ test.describe('Contacts group posts API', () => {
         .poll(async () => (await readChecks())[0]?.is_completed)
         .toBe(false);
 
+      const approvalResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Approve' })
+        .click();
+      expect((await approvalResponse).status()).toBe(200);
+      await expect(
+        recipientCard().getByRole('button', {
+          exact: true,
+          name: 'Remove approval',
+        })
+      ).toBeVisible();
+
+      const unapprovalResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Remove approval' })
+        .click();
+      expect((await unapprovalResponse).status()).toBe(200);
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Approve' })
+      ).toBeVisible();
+
+      await recipientCard()
+        .getByRole('button', { exact: true, name: 'Reject' })
+        .click();
+      const rejectDialog = page.getByRole('dialog');
+      await rejectDialog.getByLabel('Reason').fill('Needs another revision');
+      const rejectionResponse = page.waitForResponse(
+        (response) =>
+          response.request().method() === 'PUT' &&
+          response
+            .url()
+            .endsWith(`/api/v1/workspaces/${workspaceId}/users/approvals`)
+      );
+      await rejectDialog
+        .getByRole('button', { exact: true, name: 'Reject' })
+        .click();
+      expect((await rejectionResponse).status()).toBe(200);
+      await expect(rejectDialog).toBeHidden();
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Approve' })
+      ).toBeVisible();
+      await expect(
+        recipientCard().getByRole('button', { exact: true, name: 'Reject' })
+      ).toHaveCount(0);
+
       const historyResponse = await request.get(
         `/api/v1/workspaces/${workspaceId}/user-groups/${groupId}/group-checks/${postId}/logs`,
         { failOnStatusCode: false, headers: appHeaders }

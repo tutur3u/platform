@@ -15,7 +15,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
 
@@ -27,6 +27,7 @@ interface Props {
   canRemoveApproval?: boolean;
   compact?: boolean;
   onCompleted?: () => void | Promise<void>;
+  onStatusChange?: (status: ApprovalStatus) => void;
 }
 
 export function PostApprovalActions({
@@ -37,6 +38,7 @@ export function PostApprovalActions({
   canRemoveApproval = false,
   compact = false,
   onCompleted,
+  onStatusChange,
 }: Props) {
   const isSentOrProcessing =
     queueStatus === 'sent' || queueStatus === 'processing';
@@ -46,6 +48,15 @@ export function PostApprovalActions({
   const queryClient = useQueryClient();
   const [reason, setReason] = useState('');
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [displayStatus, setDisplayStatus] = useState(approvalStatus);
+  const [displayCanRemoveApproval, setDisplayCanRemoveApproval] =
+    useState(canRemoveApproval);
+
+  useEffect(() => {
+    if (!itemId) return;
+    setDisplayStatus(approvalStatus);
+    setDisplayCanRemoveApproval(canRemoveApproval);
+  }, [approvalStatus, canRemoveApproval, itemId]);
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -77,6 +88,16 @@ export function PostApprovalActions({
       }
     },
     onSuccess: async (_, variables) => {
+      const nextStatus =
+        variables.action === 'approve'
+          ? 'APPROVED'
+          : variables.action === 'reject'
+            ? 'REJECTED'
+            : 'PENDING';
+      setDisplayStatus(nextStatus);
+      setDisplayCanRemoveApproval(variables.action === 'approve');
+      onStatusChange?.(nextStatus);
+
       if (variables.action === 'approve') {
         toast.success(t('actions.approved'));
       } else if (variables.action === 'reject') {
@@ -113,7 +134,7 @@ export function PostApprovalActions({
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
-        {approvalStatus !== 'APPROVED' && (
+        {displayStatus !== 'APPROVED' && (
           <Button
             size={buttonSize}
             onClick={() => mutation.mutate({ action: 'approve' })}
@@ -128,8 +149,8 @@ export function PostApprovalActions({
           </Button>
         )}
 
-        {approvalStatus !== 'REJECTED' &&
-          !(approvalStatus === 'APPROVED' && isSentOrProcessing) && (
+        {displayStatus !== 'REJECTED' &&
+          !(displayStatus === 'APPROVED' && isSentOrProcessing) && (
             <Button
               size={buttonSize}
               variant="destructive"
@@ -141,7 +162,7 @@ export function PostApprovalActions({
             </Button>
           )}
 
-        {approvalStatus === 'APPROVED' && canRemoveApproval && (
+        {displayStatus === 'APPROVED' && displayCanRemoveApproval && (
           <Button
             size={buttonSize}
             variant="outline"
