@@ -50,13 +50,25 @@ jobs:
         run: node --test scripts/tanstack-cutover-gates.test.js
 
       # A passing gate on a stale manifest is possible if the generator itself
-      # changes, so regenerate and require the result to be identical. This is
-      # what tells an author to run `bun migration:tanstack:manifest`.
-      - name: Regenerate and require no diff
+      # changes, so regenerate and require the result to match.
+      #
+      # Compares parsed JSON rather than bytes, and writes the fresh copy to a
+      # temp path rather than over the committed one. `bun migration:tanstack:
+      # manifest` pipes through `bunx biome format`, and this job installs no
+      # dependencies — running the script here fails on `bunx: command not
+      # found`, and a byte comparison would flag formatting rather than drift.
+      - name: Regenerate and require no semantic diff
         run: |
-          bun migration:tanstack:manifest
-          if ! git diff --quiet -- apps/tanstack-web/migration/route-manifest.json; then
-            echo "::error::The route manifest is out of date. Run 'bun migration:tanstack:manifest' and commit the result."
-            git --no-pager diff --stat -- apps/tanstack-web/migration/route-manifest.json
-            exit 1
-          fi
+          node scripts/tanstack-migration-manifest.js generate \
+            --output "${RUNNER_TEMP}/route-manifest.check.json"
+          node -e '
+            const fs = require("node:fs");
+            const read = (p) => JSON.stringify(JSON.parse(fs.readFileSync(p, "utf8")));
+            const committed = read("apps/tanstack-web/migration/route-manifest.json");
+            const regenerated = read(process.env.RUNNER_TEMP + "/route-manifest.check.json");
+            if (committed !== regenerated) {
+              console.error("::error::The route manifest is out of date. Run `bun migration:tanstack:manifest` and commit the result.");
+              process.exit(1);
+            }
+            console.log("Route manifest is up to date.");
+          '
