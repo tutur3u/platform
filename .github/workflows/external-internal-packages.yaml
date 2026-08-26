@@ -33,6 +33,11 @@ concurrency:
 
 jobs:
   Build:
+    # Vercel and Supabase secrets are unavailable to fork pull requests. The
+    # same package changes are validated after merge by the protected main push.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
