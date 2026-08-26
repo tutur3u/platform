@@ -13,7 +13,11 @@ import { getFormFontStyle } from '../fonts';
 import { FormsImageDialog } from '../forms-image-dialog';
 import { getRuntimeProgressStats } from '../runtime-progress';
 import { getFormToneClasses } from '../theme';
-import type { FormAnswerValue, FormReadOnlyAnswerIssue } from '../types';
+import type {
+  FormAnswerValue,
+  FormDefinitionSection,
+  FormReadOnlyAnswerIssue,
+} from '../types';
 import {
   getBodyTypographyClassName,
   getDisplayTypographyClassName,
@@ -30,17 +34,39 @@ import {
   findMissingRequiredQuestions,
   scrollToQuestion,
 } from './step-validation';
+import {
+  describeSubmissionFailure,
+  scrollToFirstSubmissionError,
+} from './submission-errors';
 import { renderSubmittedScreen } from './submitted-screen';
 import type { FormRuntimeProps } from './types';
 import { useAutoAdvance } from './use-auto-advance';
 import { useBackNavigation } from './use-back-navigation';
+import { useFormAnswers } from './use-form-answers';
 import { useFormDraft } from './use-form-draft';
 import { useFormSteps } from './use-form-steps';
 import { useResponseCopy } from './use-response-copy';
 import { useRuntimeKeyboard } from './use-runtime-keyboard';
 import { WelcomeScreen } from './welcome-screen';
 
-export function FormRuntime({
+/**
+ * Guards the runtime on a prop, before any hook runs, so every hook in
+ * `FormRuntimeContent` is unconditional.
+ *
+ * The keyboard binding, auto-advance and back navigation were each added below
+ * the old mid-component `return null` and each became a conditional hook. Lint
+ * caught all three, but a structure that keeps producing the same bug is the
+ * bug.
+ */
+export function FormRuntime(props: FormRuntimeProps) {
+  if (props.form.sections.length === 0) {
+    return null;
+  }
+
+  return <FormRuntimeContent {...props} />;
+}
+
+function FormRuntimeContent({
   form,
   mode,
   initialAnswers,
@@ -58,12 +84,13 @@ export function FormRuntime({
   className,
 }: FormRuntimeProps) {
   const t = useTranslations('forms');
-  const [answers, setAnswers] = useState<Record<string, FormAnswerValue>>(
-    initialAnswers ?? {}
-  );
-  const answersRef = useRef<Record<string, FormAnswerValue>>(
-    initialAnswers ?? {}
-  );
+  // Breaks a real cycle: answers need auto-advance, auto-advance needs the
+  // keyboard's advance handler, and the keyboard reads answers. One of the
+  // three has to be late-bound, and this is the cheapest place to do it.
+  const maybeAutoAdvanceRef = useRef<
+    (questionId: string, value: FormAnswerValue) => void
+  >(() => {});
+
   const [currentSectionId, setCurrentSectionId] = useState(
     form.sections[0]?.id ?? ''
   );
@@ -79,6 +106,14 @@ export function FormRuntime({
   );
   const [validationErrorsByQuestionId, setValidationErrorsByQuestionId] =
     useState<Record<string, string>>({});
+
+  const { answers, answersRef, setAnswers, updateAnswer } = useFormAnswers({
+    initialAnswers: initialAnswers ?? {},
+    onAnswered: (questionId, value) =>
+      maybeAutoAdvanceRef.current(questionId, value),
+    setError,
+    setValidationErrorsByQuestionId,
+  });
   const [submitted, setSubmitted] = useState(false);
   // The welcome screen is skipped entirely when disabled, and also when the
   // respondent is reviewing an already-submitted response — there is nothing
@@ -146,7 +181,11 @@ export function FormRuntime({
   const currentSectionIndex = form.sections.findIndex(
     (section) => section.id === currentSectionId
   );
-  const currentSection = form.sections[currentSectionIndex] ?? form.sections[0];
+  // `FormRuntime` refuses to render this component without at least one
+  // section, so the fallback always resolves — TypeScript cannot see that
+  // across the boundary.
+  const currentSection = (form.sections[currentSectionIndex] ??
+    form.sections[0]) as FormDefinitionSection;
   const visibleSectionTitle =
     currentSection?.title ||
     t('studio.section_number', { count: currentSectionIndex + 1 });
@@ -290,10 +329,10 @@ export function FormRuntime({
   });
 
   useEffect(() => {
-    const nextAnswers = initialAnswers ?? {};
-    answersRef.current = nextAnswers;
-    setAnswers(nextAnswers);
-  }, [initialAnswers]);
+    // `setAnswers` keeps the ref in step now, so this no longer assigns it by
+    // hand — two writers to the same ref is how they drift.
+    setAnswers(initialAnswers ?? {});
+  }, [initialAnswers, setAnswers]);
 
   useEffect(() => {
     if (responseCopyEmail) {
@@ -357,7 +396,7 @@ export function FormRuntime({
     setStepDirection,
   });
 
-  const maybeAutoAdvance = useAutoAdvance({
+  maybeAutoAdvanceRef.current = useAutoAdvance({
     enabled:
       form.settings.displayMode === 'one_question' &&
       form.settings.autoAdvance &&
@@ -365,29 +404,6 @@ export function FormRuntime({
     onAdvance: () => keyboardHandlersRef.current.next(),
     step: currentStep,
   });
-
-  if (!currentSection) {
-    return null;
-  }
-
-  const updateAnswer = (questionId: string, value: FormAnswerValue) => {
-    const nextAnswers = {
-      ...answersRef.current,
-      [questionId]: value,
-    };
-
-    answersRef.current = nextAnswers;
-    setAnswers(nextAnswers);
-    setError(null);
-    setValidationErrorsByQuestionId((prev) => {
-      if (!(questionId in prev)) return prev;
-      const next = { ...prev };
-      delete next[questionId];
-      return next;
-    });
-
-    maybeAutoAdvance(questionId, value);
-  };
 
   const validateCurrentSection = (
     currentAnswers: Record<string, FormAnswerValue>
@@ -470,30 +486,8 @@ export function FormRuntime({
       if (!validation.valid) {
         const errors = validation.validationErrorsByQuestionId ?? {};
         setValidationErrorsByQuestionId(errors);
-
-        if (validation.missingRequired.length > 0) {
-          setError(
-            t('runtime.missing_required_answers', {
-              items: validation.missingRequired.join(', '),
-            })
-          );
-        } else if (validation.validationErrors.length > 0) {
-          setError(validation.validationErrors[0] ?? null);
-        } else {
-          setError(null);
-        }
-
-        // Scroll to the first error if it's in the current section
-        const firstErrorId = Object.keys(errors)[0];
-        if (firstErrorId) {
-          requestAnimationFrame(() => {
-            const element = document.getElementById(`question-${firstErrorId}`);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-          });
-        }
-
+        setError(describeSubmissionFailure(validation, t));
+        scrollToFirstSubmissionError(errors);
         return;
       }
 
