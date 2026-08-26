@@ -2886,7 +2886,9 @@
       "ranking_move_down": "Di chuyển xuống",
       "ranking_drag_handle": "Kéo để sắp xếp lại",
       "validation_constraint_step": "Phải là bội số của {step}.",
-      "validation_constraint_step_range": "Phải nằm trong khoảng {min} đến {max}, theo bước {step}."
+      "validation_constraint_step_range": "Phải nằm trong khoảng {min} đến {max}, theo bước {step}.",
+      "press": "Nhấn",
+      "enter_key": "Enter ↵"
     },
     "settings": {
       "active": "Đang dùng",

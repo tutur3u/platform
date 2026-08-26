@@ -25,11 +25,16 @@ import { FormBrandFooter } from './form-brand-footer';
 import { renderFormHeroCard } from './hero-card';
 import { renderEmailTrackedNotice, renderReadOnlyNotice } from './notices';
 import { renderFormSectionCard } from './section-card';
+import {
+  findMissingRequiredQuestions,
+  scrollToQuestion,
+} from './step-validation';
 import { renderSubmittedScreen } from './submitted-screen';
 import type { FormRuntimeProps } from './types';
 import { useFormDraft } from './use-form-draft';
 import { useFormSteps } from './use-form-steps';
 import { useResponseCopy } from './use-response-copy';
+import { useRuntimeKeyboard } from './use-runtime-keyboard';
 import { WelcomeScreen } from './welcome-screen';
 
 export function FormRuntime({
@@ -63,6 +68,12 @@ export function FormRuntime({
     form.sections[0]?.id ? [form.sections[0].id] : []
   );
   const [error, setError] = useState<string | null>(null);
+  // Drives the direction a new screen slides in from. Kept as state rather than
+  // derived from the step index, because moving between sections resets that
+  // index and would otherwise animate a forward move as a backward one.
+  const [stepDirection, setStepDirection] = useState<'forward' | 'backward'>(
+    'forward'
+  );
   const [validationErrorsByQuestionId, setValidationErrorsByQuestionId] =
     useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -313,6 +324,22 @@ export function FormRuntime({
     });
   }, [currentSectionId]);
 
+  // Bound above the early return below: a hook that runs on some renders and
+  // not others breaks React's hook order.
+  const { handlersRef: keyboardHandlersRef } = useRuntimeKeyboard({
+    // Off in `sections` mode: with a whole section on screen, Enter would
+    // advance past questions the respondent has not reached yet, and the
+    // number keys have no single question to apply to.
+    enabled:
+      form.settings.displayMode === 'one_question' &&
+      !isBusy &&
+      !submittedAt &&
+      hasStarted,
+    getAnswer: (questionId) => answersRef.current[questionId],
+    setAnswer: (questionId, value) => updateAnswer(questionId, value),
+    step: currentStep,
+  });
+
   if (!currentSection) {
     return null;
   }
@@ -337,49 +364,28 @@ export function FormRuntime({
   const validateCurrentSection = (
     currentAnswers: Record<string, FormAnswerValue>
   ) => {
-    const missingRequiredQuestions = currentStepQuestions.filter((question) => {
-      if (!requiredQuestionIds.has(question.id)) {
-        return false;
-      }
+    const missing = findMissingRequiredQuestions(
+      currentStepQuestions,
+      requiredQuestionIds,
+      currentAnswers
+    );
+    const firstMissing = missing[0];
+    if (!firstMissing) return true;
 
-      const value = currentAnswers[question.id];
-      if (Array.isArray(value)) {
-        return value.length === 0;
-      }
+    setError(
+      t('runtime.required_before_continue', {
+        title: normalizeMarkdownToText(firstMissing.title),
+      })
+    );
+    setValidationErrorsByQuestionId((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        missing.map((question) => [question.id, t('runtime.required')])
+      ),
+    }));
+    scrollToQuestion(firstMissing.id);
 
-      return value == null || value === '';
-    });
-
-    if (missingRequiredQuestions.length > 0) {
-      const firstMissing = missingRequiredQuestions[0]!;
-      setError(
-        t('runtime.required_before_continue', {
-          title: normalizeMarkdownToText(firstMissing.title),
-        })
-      );
-
-      const nextErrors: Record<string, string> = {};
-      for (const question of missingRequiredQuestions) {
-        nextErrors[question.id] = t('runtime.required');
-      }
-
-      setValidationErrorsByQuestionId((prev) => ({
-        ...prev,
-        ...nextErrors,
-      }));
-
-      // Scroll to the first missing required question
-      requestAnimationFrame(() => {
-        const element = document.getElementById(`question-${firstMissing.id}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      });
-
-      return false;
-    }
-
-    return true;
+    return false;
   };
 
   /**
@@ -389,10 +395,20 @@ export function FormRuntime({
    */
   const canGoBack = !isFirstStep || sectionTrail.length > 1;
 
+  // Assigned during render, like `answersRef` above: the keyboard is bound
+  // before these exist, and this is what connects the two.
+  keyboardHandlersRef.current = {
+    next: () => {
+      void handleAdvance();
+    },
+    previous: () => handleBack(),
+  };
+
   const handleBack = () => {
     if (isBusy) return;
 
     if (goToPreviousStep()) {
+      setStepDirection('backward');
       setError(null);
       return;
     }
@@ -402,6 +418,7 @@ export function FormRuntime({
 
     // Entering the previous section from the end, so its last screen is what
     // the respondent last saw.
+    setStepDirection('backward');
     resetSteps('last');
     setSectionTrail((currentTrail) => currentTrail.slice(0, -1));
     setCurrentSectionId(previousSectionId);
@@ -423,6 +440,7 @@ export function FormRuntime({
     // branching only applies once the section is exhausted, which keeps rule
     // evaluation defined per section exactly as it was.
     if (!isLastStep && goToNextStep()) {
+      setStepDirection('forward');
       setError(null);
       sectionCardRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -643,6 +661,7 @@ export function FormRuntime({
           handleBack,
           visibleQuestions: currentStepQuestions,
           stepIndex,
+          stepDirection,
           stepCount: steps.length,
           isLastStep,
           shouldShowTurnstile,

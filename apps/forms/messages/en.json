@@ -2886,7 +2886,9 @@
       "ranking_move_down": "Move down",
       "ranking_drag_handle": "Drag to reorder",
       "validation_constraint_step": "Must be a multiple of {step}.",
-      "validation_constraint_step_range": "Must be between {min} and {max}, in steps of {step}."
+      "validation_constraint_step_range": "Must be between {min} and {max}, in steps of {step}.",
+      "press": "Press",
+      "enter_key": "Enter ↵"
     },
     "settings": {
       "active": "Active",
