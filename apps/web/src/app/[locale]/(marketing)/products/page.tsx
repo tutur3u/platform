@@ -1,9 +1,10 @@
 import { ArrowRight } from '@tuturuuu/icons/lucide';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
+
 import { getTranslations } from 'next-intl/server';
 import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
 import { SectionShell } from '@/components/landing/shared/section-shell';
+import { Link } from '@/i18n/routing';
 import {
   MARKETING_PRODUCT_GROUPS,
   MARKETING_PRODUCT_ICONS,
@@ -18,6 +19,12 @@ import {
  *
  * Built from `MARKETING_PRODUCT_GROUPS`, the same source the mega-menu renders,
  * so a product added to the menu appears here without anyone remembering to.
+ *
+ * Links come from `@/i18n/routing`, not `next/link`. `localePrefix` is
+ * `as-needed`, so a bare `/products/calendar` carries no locale and would be
+ * resolved from the cookie or `Accept-Language` — a click from `/vi/products`
+ * could land in English. Every href here points at a sibling localized page,
+ * which is exactly where that goes wrong.
  */
 export default async function ProductsIndexPage() {
   const t = await getTranslations('marketing-nav');
