@@ -1,6 +1,6 @@
 ---
-title: 'Forms: embedding, SEO, and studio collaboration'
-description: 'Embed a Tuturuuu form in a third-party page, control its search and social metadata, and understand how the studio shares editing presence.'
+title: 'Forms: question types, embedding, SEO, and collaboration'
+description: 'The question types a form can ask, how to embed one in a third-party page, how to control its search and social metadata, and how the studio shares editing presence.'
 updatedAt: '2026-08-26'
 ---
 
@@ -9,12 +9,88 @@ updatedAt: '2026-08-26'
 `apps/forms` (`forms.tuturuuu.com`, port `7828`) owns the whole forms product.
 Three surfaces are worth knowing about before you touch it:
 
+- **Question types** — twenty block types, of which fifteen collect an answer.
 - **Embedding** — six modes driven by a dependency-free SDK at `/embed.js`,
   rendered by the `/embed/<shareCode>` route.
 - **SEO** — per-form overrides stored in `private.forms.seo`, applied to
   `/f/<shareCode>` metadata.
 - **Realtime collaboration** — presence and broadcast on a private
   `form-studio-<formId>` channel, never `postgres_changes`.
+
+## Question types
+
+Registered in `FORM_QUESTION_TYPE_VALUES` (`schema.ts`) and grouped in
+`block-utils.ts`. Adding a type means adding it to the enum, to the right
+grouping, to the icon map, and to the studio's block catalog — the type system
+enforces the icon map, but not the other three.
+
+### Text inputs
+
+`short_text`, `email`, `phone`, `number` and `url` render one line and differ
+only in what the browser is told. That mapping is most of the mobile
+experience: `inputMode` picks the on-screen keyboard and `autoComplete` decides
+whether the field can be filled from saved contact details.
+
+<Note>
+  `number` uses `inputMode="decimal"`, not `"numeric"`. `numeric` hides the
+  decimal point on iOS, which silently makes non-integer answers untypeable.
+</Note>
+
+These types validate themselves. `getIntrinsicValidationMode()` maps the type
+to a rule that applies whether or not the author opened the validation panel; an
+author-chosen `validationMode` layers on top rather than replacing it, so a
+`number` with a regex still has to be a number.
+
+A `url` must be `http(s)` with a dotted host. Bare `new URL()` accepts
+`javascript:` and `mailto:`, which are not links a respondent can follow.
+
+`number` also takes a `numberStep`, measured **from the minimum** rather than
+from zero, so a "1, 3, 5…" question works. The multiple-of check compares
+against both ends of the step because floating-point modulo is inexact —
+`0.3 % 0.1` is 0.0999…, and a naive check rejects a value the author considers
+exact.
+
+### NPS
+
+Fixed at 0-10 by the metric's definition, so unlike `linear_scale` the bounds
+are **not** author-editable — only the anchor labels are. A scale labelled NPS
+that runs 1-5 is not comparable to one that does not.
+
+Scores band the standard way: 0-6 detractor, 7-8 passive, 9-10 promoter.
+Analytics reports the real score — promoters minus detractors as a percentage
+of all responses, with passives counting toward the denominator only — under
+`analytics.nps`, separate from `meanScore` because it is not an average.
+
+The runtime renders a native `<fieldset>` of radios rather than styled buttons
+with ARIA roles, so arrow-key navigation, the group label and the disabled
+cascade come from the platform.
+
+### Ranking
+
+Reorderable options whose answer is the resulting order, stored as an ordered
+array of option values.
+
+<Warning>
+  The answer is written only once the respondent moves something. Seeding it
+  with the author's order would mark an untouched ranking as answered — a
+  required question would pass with nobody having ranked anything, and every
+  indifferent response would silently agree with the author.
+</Warning>
+
+Reordering uses dnd-kit (already the studio's idiom) rather than native HTML5
+drag, which does not fire on touch at all. Move up/down buttons sit alongside
+the drag handle so the question works by keyboard and screen reader, and only
+the handle is draggable so taps on those buttons are not swallowed.
+
+Stored answers survive the author editing the options later: unknown values are
+dropped and new options appended, so an old answer still renders instead of
+collapsing to an empty list.
+
+Analytics ranks by mean position, best first, and sorts an option nobody ranked
+to the bottom — reporting its average as `0` would float it to the top as if it
+were everyone's first choice. Formatted answers are numbered
+(`1. Price, 2. Speed`) because the order is the entire answer, and a plain
+comma-separated list renders "B, A" and "A, B" identically in an export.
 
 ## Embedding
 
