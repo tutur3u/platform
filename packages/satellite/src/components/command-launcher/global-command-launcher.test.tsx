@@ -218,7 +218,7 @@ describe('GlobalCommandLauncher', () => {
 
   it('switches result categories with tabs, prefixes, and keyboard shortcuts', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
-    renderLauncher();
+    renderLauncher({ enableTasks: true });
 
     openGlobalCommandLauncher();
     const input = await screen.findByPlaceholderText(
@@ -235,14 +235,24 @@ describe('GlobalCommandLauncher', () => {
       screen.getByRole('button', { name: /Apps/ }).getAttribute('aria-pressed')
     ).toBe('true');
 
-    expect(screen.queryByRole('button', { name: /Tasks/ })).toBeNull();
-
-    fireEvent.keyDown(input, { ctrlKey: true, key: '2' });
+    fireEvent.keyDown(input, { ctrlKey: true, key: '3' });
     expect(
       screen
         .getByRole('button', { name: /Navigation/ })
         .getAttribute('aria-pressed')
     ).toBe('true');
+  });
+
+  it('keeps capability-free satellite search unified without empty tabs', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
+
+    expect(screen.queryByRole('button', { name: /Tasks/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Actions/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /All/ })).toBeNull();
   });
 
   it('exposes task-first navigation only when the host enables tasks', async () => {

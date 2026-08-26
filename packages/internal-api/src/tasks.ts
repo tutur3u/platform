@@ -2105,10 +2105,10 @@ export async function updateWorkspaceTask(
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
-
 export async function deleteWorkspaceTask(
   workspaceId: string,
   taskId: string,

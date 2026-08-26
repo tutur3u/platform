@@ -287,7 +287,9 @@ export function GlobalCommandLauncher({
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
   const availableTabs = enableTasks
     ? COMMAND_LAUNCHER_TABS
-    : COMMAND_LAUNCHER_TABS_WITHOUT_TASKS;
+    : extraSections
+      ? COMMAND_LAUNCHER_TABS_WITHOUT_TASKS
+      : (['all'] as const);
   const resolvedDefaultTab = availableTabs.includes(defaultTab)
     ? defaultTab
     : 'all';
@@ -560,9 +562,14 @@ export function GlobalCommandLauncher({
                   <h2 className="truncate font-semibold text-sm">
                     {labels.title}
                   </h2>
-                  <Badge className="h-5 px-1.5 text-[10px]" variant="secondary">
-                    {activeTabLabel}
-                  </Badge>
+                  {availableTabs.length > 1 ? (
+                    <Badge
+                      className="h-5 px-1.5 text-[10px]"
+                      variant="secondary"
+                    >
+                      {activeTabLabel}
+                    </Badge>
+                  ) : null}
                 </div>
                 <p className="truncate text-muted-foreground text-xs">
                   {currentWorkspace?.name ?? currentAppTitle}
@@ -584,22 +591,24 @@ export function GlobalCommandLauncher({
               />
             </div>
 
-            <CommandLauncherTabs
-              activeTab={routedTab}
-              ariaLabel={labels.categories}
-              availableTabs={availableTabs}
-              labels={{
-                actions: labels.actions,
-                all: labels.all,
-                apps: labels.apps,
-                navigation: labels.navigation,
-                tasks: labels.tasks,
-              }}
-              onChange={(tab) => {
-                setActiveTab(tab);
-                if (parsedQuery.tab) setQuery(parsedQuery.query);
-              }}
-            />
+            {availableTabs.length > 1 ? (
+              <CommandLauncherTabs
+                activeTab={routedTab}
+                ariaLabel={labels.categories}
+                availableTabs={availableTabs}
+                labels={{
+                  actions: labels.actions,
+                  all: labels.all,
+                  apps: labels.apps,
+                  navigation: labels.navigation,
+                  tasks: labels.tasks,
+                }}
+                onChange={(tab) => {
+                  setActiveTab(tab);
+                  if (parsedQuery.tab) setQuery(parsedQuery.query);
+                }}
+              />
+            ) : null}
 
             <CommandList className="max-h-none min-h-0 flex-1 overflow-y-auto p-2">
               <CommandEmpty>
