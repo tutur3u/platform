@@ -116,6 +116,33 @@ export function useFormStudioState({
 
   const values = useWatch({ control: form.control }) as FormStudioInput;
   const isDirty = form.formState.isDirty;
+
+  // `router.refresh()` re-renders the server tree and hands this client
+  // component a new `initialForm`, but it does NOT remount it — and
+  // `defaultValues` is only read once, at mount. Without this the studio keeps
+  // editing the document it loaded with, and the next autosave writes that
+  // stale copy back over whatever the other editor just saved.
+  //
+  // Keyed on `updatedAt` rather than the object: `toStudioInput` builds a new
+  // object every render, so comparing identity would reset on every render and
+  // fight the user's typing.
+  const lastAppliedUpdatedAtRef = useRef(initialForm?.updatedAt ?? null);
+  const isDirtyRef = useRef(isDirty);
+  isDirtyRef.current = isDirty;
+
+  useEffect(() => {
+    const incomingUpdatedAt = initialForm?.updatedAt ?? null;
+    if (!initialForm || incomingUpdatedAt === null) return;
+    if (incomingUpdatedAt === lastAppliedUpdatedAtRef.current) return;
+
+    // A dirty form is never overwritten. `useRemoteSaveNotice` has already
+    // shown the editor a reload prompt in that case; taking their unsaved work
+    // away here would be the exact loss the prompt exists to prevent.
+    if (isDirtyRef.current) return;
+
+    lastAppliedUpdatedAtRef.current = incomingUpdatedAt;
+    form.reset(toStudioInput(initialForm));
+  }, [form, initialForm]);
   const questionCount = values.sections.reduce(
     (total, section) => total + section.questions.length,
     0
