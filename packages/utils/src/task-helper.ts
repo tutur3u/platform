@@ -6,7 +6,12 @@ export * from './task-helper/optimistic-task-cache';
 export * from './task-helper/personal-external-staging';
 export * from './task-helper/recycle-bin';
 export * from './task-helper/relationships';
-export { getTicketIdentifier } from './task-helper/shared';
+export {
+  getTaskIdentifierForSearch,
+  getTicketIdentifier,
+  isTicketIdentifierLikeQuery,
+  normalizeTaskSearchValue,
+} from './task-helper/shared';
 export * from './task-helper/sort-keys';
 export * from './task-helper/task-hooks-basic';
 export * from './task-helper/task-hooks-move';
