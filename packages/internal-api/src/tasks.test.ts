@@ -157,7 +157,6 @@ describe('workspace board internal-api helpers', () => {
       })
     );
   });
-
   it('searches workspace tasks through the semantic search route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       createJsonResponse({
@@ -190,6 +189,7 @@ describe('workspace board internal-api helpers', () => {
           mode: 'text',
         }),
         cache: 'no-store',
+        credentials: 'include',
       })
     );
   });
@@ -593,7 +593,7 @@ describe('workspace board internal-api helpers', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/ws-1/tasks?listStatuses=not_started%2Cactive&limit=50&completed=exclude&closed=exclude&forTimeTracking=true&includeArchivedBoards=true',
       expect.objectContaining({
-        cache: 'no-store',
+        credentials: 'include',
       })
     );
   });

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const RAW_WORKSPACE_ID = 'personal';
 const NORMALIZED_WORKSPACE_ID = '11111111-1111-4111-8111-111111111111';
@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
   return {
     createAdminClient: vi.fn(),
     createMeteredTextEmbedding: vi.fn(),
+    from: vi.fn(),
     normalizeWorkspaceId: vi.fn(),
     rpc: vi.fn(),
     serverLoggerError: vi.fn(),
@@ -88,7 +89,20 @@ describe('workspace task search route', () => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.createAdminClient.mockResolvedValue({
+      from: mocks.from,
+      rpc: mocks.rpc,
+    });
+    mocks.from.mockReturnValue({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          in: vi.fn().mockResolvedValue({
+            data: [{ task_id: 'task-1' }],
+            error: null,
+          }),
+        })),
+      })),
+    });
     mocks.normalizeWorkspaceId.mockResolvedValue(NORMALIZED_WORKSPACE_ID);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       membershipType: 'MEMBER',
@@ -102,10 +116,6 @@ describe('workspace task search route', () => {
       data: [{ id: 'task-1', name: 'Deadline review', similarity: 0.9 }],
       error: null,
     });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('allows CLI and Tasks app-session auth with read rate limiting', async () => {
@@ -163,7 +173,15 @@ describe('workspace task search route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      tasks: [{ id: 'task-1', name: 'Deadline review', similarity: 0.9 }],
+      tasks: [
+        {
+          completed: false,
+          id: 'task-1',
+          is_assigned_to_current_user: true,
+          name: 'Deadline review',
+          similarity: 0.9,
+        },
+      ],
     });
     expect(mocks.createMeteredTextEmbedding).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -264,7 +282,15 @@ describe('workspace task search route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Task hybrid search fell back to text search',
       reason: 'credits_unavailable',
-      tasks: [{ id: 'task-1', name: 'Deadline review', similarity: 0.9 }],
+      tasks: [
+        {
+          completed: false,
+          id: 'task-1',
+          is_assigned_to_current_user: true,
+          name: 'Deadline review',
+          similarity: 0.9,
+        },
+      ],
     });
     expect(consoleWarnSpy).toHaveBeenCalledWith(
       'Task hybrid search falling back to text search',
