@@ -3214,7 +3214,15 @@
       "nps_default_max_label": "Extremely likely",
       "hint_nps": "NPS is always scored 0-10, so the scale itself cannot be changed. Only the labels at each end are yours.",
       "validation_step": "Step",
-      "validation_step_hint": "Any number"
+      "validation_step_hint": "Any number",
+      "outline": "Outline",
+      "properties": "Properties",
+      "select_a_block": "Select a block in the outline or on the canvas to edit it.",
+      "select_block": "Select this block",
+      "section_n": "Section {index}",
+      "build_layout": "Build layout",
+      "build_layout_stacked": "Stacked",
+      "build_layout_three_pane": "Three-pane"
     },
     "tabs": {
       "analytics": "Analytics",

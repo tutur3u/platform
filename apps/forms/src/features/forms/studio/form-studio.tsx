@@ -529,6 +529,7 @@ export function FormStudio({
             handleSectionDragEnd,
             SectionDivider,
             getBlockEditors,
+            previewDefinition,
           })}
 
           <TabsContent value="preview" className="mt-0 min-w-0">

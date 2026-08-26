@@ -1,0 +1,71 @@
+---
+title: 'Forms studio: build layouts'
+description: 'The stacked and three-pane build layouts in the form studio, why three-pane is opt-in, and what it does not cover yet.'
+updatedAt: '2026-08-26'
+---
+
+## TL;DR
+
+The studio's build tab has two layouts. **Stacked** is the default and covers
+everything. **Three-pane** is opt-in, wide-screen only, and still a subset.
+
+## Stacked
+
+A block rail plus one column of accordion editors: click a block's header to
+expand it, edit in place, drag to reorder. This is the layout everything else
+in the studio is built around, and it is the only one at viewports below
+`1280px`.
+
+## Three-pane
+
+Four columns at `xl` and above: the block rail, an outline, the canvas, and
+properties.
+
+| Pane | Owns |
+| --- | --- |
+| Block rail | Adding a block, choosing its type |
+| Outline | Navigating and selecting; presence dots for other editors |
+| Canvas | The form as respondents see it; click a block to select it |
+| Properties | Every setting of the selected block |
+
+Selection lives in one place. The outline and the canvas both write to the
+studio's existing `activeSectionId` / `activeQuestionIdsBySection` state, and
+the properties pane reads it — so a block is never selected in two places at
+once, and the realtime "which block are they on" presence already tracks it.
+
+Two implementation choices worth keeping:
+
+- The canvas renders the **real** `QuestionBlock` from the runtime, not a
+  studio mock, so it cannot drift from the shipped product the way a parallel
+  preview implementation would. Every block is disabled — it is a canvas for
+  selecting, not answering.
+- The properties pane renders `QuestionEditor` in its `panel` variant rather
+  than a second editor. A field added to the accordion shows up here with no
+  extra work; the alternative was two editors that drift.
+
+## Why it is opt-in
+
+<Warning>
+  Three-pane is not yet a superset of stacked. Making it the default on wide
+  screens would take working features away from people who have them.
+</Warning>
+
+Not covered yet:
+
+- **Reordering from the outline.** The outline selects; it does not drag.
+  Reordering still needs the stacked layout.
+- **Section fields.** Selecting a section highlights it, but the properties
+  pane only edits blocks. A section's own title, description and cover are
+  stacked-only.
+- **Form details and logic rules.** Both live below the block list in stacked
+  and have no place in three-pane yet.
+
+The preference is stored per browser under
+`tuturuuu:form-studio:build-layout`, and a viewport below `1280px` always falls
+back to stacked — three panes in 600px is three unusable columns.
+
+## Changing the default
+
+Once the three gaps above are closed, flipping the default is a one-line change
+in `useStudioBuildLayout`. Until then, treat three-pane as a preview and keep
+new studio features working in stacked first.

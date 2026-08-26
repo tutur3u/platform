@@ -3214,7 +3214,15 @@
       "nps_default_max_label": "Rất sẵn sàng",
       "hint_nps": "NPS luôn được chấm theo thang 0-10 nên không thể đổi thang điểm. Bạn chỉ chỉnh được nhãn ở hai đầu.",
       "validation_step": "Bước nhảy",
-      "validation_step_hint": "Số bất kỳ"
+      "validation_step_hint": "Số bất kỳ",
+      "outline": "Dàn ý",
+      "properties": "Thuộc tính",
+      "select_a_block": "Chọn một khối trong dàn ý hoặc trên khung soạn thảo để chỉnh sửa.",
+      "select_block": "Chọn khối này",
+      "section_n": "Phần {index}",
+      "build_layout": "Bố cục soạn thảo",
+      "build_layout_stacked": "Xếp dọc",
+      "build_layout_three_pane": "Ba cột"
     },
     "tabs": {
       "analytics": "Analytics",
