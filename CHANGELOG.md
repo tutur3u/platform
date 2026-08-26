@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.42.0](https://github.com/tutur3u/platform/compare/platform-v0.41.0...platform-v0.42.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([cb29d33](https://github.com/tutur3u/platform/commit/cb29d33953745b1a61f09d8c8390459f983d30d7))
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **email:** secure external app sending policies ([e335e2d](https://github.com/tutur3u/platform/commit/e335e2d3847735a10ee26bf18aa2e5a1dab3abc3))
+* **external-projects:** assign roles to invitations ([1cd04e8](https://github.com/tutur3u/platform/commit/1cd04e8dc0db419c2b1b7bc526012f7b7ee3f7dc))
+* **forms:** add an opt-in three-pane studio build layout ([6ab68eb](https://github.com/tutur3u/platform/commit/6ab68ebded15932c8013b98de245677370cbac09))
+* **forms:** add an opt-in three-pane studio build layout ([#5148](https://github.com/tutur3u/platform/issues/5148)) ([8cda8fa](https://github.com/tutur3u/platform/commit/8cda8fa077a11f20182c7628f814e0d47a244001))
+* **forms:** add email, phone, number, url, NPS and ranking question types ([5375cfc](https://github.com/tutur3u/platform/commit/5375cfc97e940c061c42cf52916dbaf93d238e4c))
+* **forms:** add email, phone, number, url, NPS and ranking question types ([#5146](https://github.com/tutur3u/platform/issues/5146)) ([7a9eb9c](https://github.com/tutur3u/platform/commit/7a9eb9c8e9afec43c9e1676c6a37a672e968a284))
+* **forms:** add landing page and per-form SEO controls ([99c5fda](https://github.com/tutur3u/platform/commit/99c5fda3a7d15649a3571b9ccc72759cd815a7ec))
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+* **forms:** add one-question-at-a-time mode and a welcome screen ([286b6de](https://github.com/tutur3u/platform/commit/286b6de6df5e78feeac2b8814dd69c1bb8985788))
+* **forms:** add realtime studio collaboration ([1110c36](https://github.com/tutur3u/platform/commit/1110c36ef68081e6d181b32491f44ff814bc43e0))
+* **forms:** add six embed modes and a public embed SDK ([5d0b68b](https://github.com/tutur3u/platform/commit/5d0b68b3ca5ce3d4cd6cd119e2b0ad79b014aedd))
+* **forms:** advance automatically after a single-gesture answer ([a2c48ab](https://github.com/tutur3u/platform/commit/a2c48ab8d5ddbf3ebec9a6789bb8eb6960be34d5))
+* **forms:** advance automatically after a single-gesture answer ([#5158](https://github.com/tutur3u/platform/issues/5158)) ([094d48a](https://github.com/tutur3u/platform/commit/094d48a37942d7231f674829f9497130575a2a00))
+* **forms:** bring the three-pane studio to parity with the stacked layout ([6859578](https://github.com/tutur3u/platform/commit/685957866a8a6efa5c21497482e024e357e8ace8))
+* **forms:** bring the three-pane studio to parity with the stacked layout ([#5152](https://github.com/tutur3u/platform/issues/5152)) ([cdbf70a](https://github.com/tutur3u/platform/commit/cdbf70a7e1861382459510e24b1b18f11b02c884))
+* **forms:** make one question at a time the default, with real keyboard support ([19a804a](https://github.com/tutur3u/platform/commit/19a804a33aaffc50a07d9d2597a55c3d0a96f09c))
+* **forms:** make one question at a time the default, with real keyboard support ([#5156](https://github.com/tutur3u/platform/issues/5156)) ([bd8c0a0](https://github.com/tutur3u/platform/commit/bd8c0a08e5a4601556aacfe749aec8d602ffcc45))
+* **forms:** show the NPS and ranking results that were already being computed ([7e78503](https://github.com/tutur3u/platform/commit/7e7850355e0e216186aeb76a4d6e45390a3b0b09))
+* **forms:** show the NPS and ranking results that were already being computed ([#5157](https://github.com/tutur3u/platform/issues/5157)) ([34e6f36](https://github.com/tutur3u/platform/commit/34e6f3620cac86bdc53cf1570ccc6126acbb511f))
+* **tu-do:** search board tasks by ticket identifier ([e81891c](https://github.com/tutur3u/platform/commit/e81891c7424b530322e3250d917636a988e278fe))
+* **tu-do:** search board tasks by ticket identifier ([#5142](https://github.com/tutur3u/platform/issues/5142)) ([18c0e3e](https://github.com/tutur3u/platform/commit/18c0e3ea6a20522959a0b66ed8dfd5a5699daec4))
+
+
+### Bug Fixes
+
+* **ci:** align release merge Flutter toolchain ([47cfbd8](https://github.com/tutur3u/platform/commit/47cfbd87558b767e1c2a14469e163e4c27ff1ed7))
+* **ci:** restore migration validation parity ([92413f2](https://github.com/tutur3u/platform/commit/92413f27761f2ad8bfa7f82218c4ebefeb7876bf))
+* **ci:** run secretless fork package smoke ([b66712a](https://github.com/tutur3u/platform/commit/b66712a31ec10c5b2f316cdd88a2becbe6e490ba))
+* **ci:** skip secret build for fork pull requests ([9d406d5](https://github.com/tutur3u/platform/commit/9d406d571d8830c474efb1d90bc2c3deda5d0942))
+* **command:** align launcher capabilities ([e877328](https://github.com/tutur3u/platform/commit/e87732887d1dbb10177605d57c4942340669d310))
+* **command:** filter tasks before result limits ([943d514](https://github.com/tutur3u/platform/commit/943d514d5bfcbc36bf3ecce190813a9fc9ee5687))
+* **command:** gate task search on membership ([9c3386e](https://github.com/tutur3u/platform/commit/9c3386e3945d6375b7c8128166c247df44e0dfb1))
+* **command:** hide unavailable navigation tab ([39fb8cd](https://github.com/tutur3u/platform/commit/39fb8cd01cfe3c2497f49684075eb74ca36686d6))
+* **command:** polish command center accessibility ([5e0e797](https://github.com/tutur3u/platform/commit/5e0e7971a0af9c6935ae0d443bfd0d13d663c486))
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+* **command:** secure task mutations across apps ([cc71d3d](https://github.com/tutur3u/platform/commit/cc71d3daa82b05fd56f21446daac126cc2cd8d2e))
+* **command:** use shared toast module ([131419e](https://github.com/tutur3u/platform/commit/131419eb80622a00ce55f1c1be7b179ee3cb07d5))
+* **contacts:** sync daily report markers ([00c0e19](https://github.com/tutur3u/platform/commit/00c0e192b4ef3b6ffad9deefa0d268b69c7273b0))
+* **forms:** address four review findings on embeds and collaboration ([6a1008e](https://github.com/tutur3u/platform/commit/6a1008e34a6c95c216a393dc30466fe12e892d13))
+* **forms:** make block duplicate and delete reachable in three-pane ([19a8351](https://github.com/tutur3u/platform/commit/19a8351c6f73848ebd44c78d7efe18acf7458bc8))
+* **forms:** make block duplicate and delete reachable in three-pane ([#5153](https://github.com/tutur3u/platform/issues/5153)) ([e8ab3da](https://github.com/tutur3u/platform/commit/e8ab3da9241a317c33d69c3dd1ce4689ba97094d))
+* **forms:** send /dashboard to a workspace instead of a dead end ([e13b001](https://github.com/tutur3u/platform/commit/e13b001e5b0bb079e7f54b9799b405875c890fa9))
+* **forms:** send /dashboard to a workspace instead of a dead end ([#5155](https://github.com/tutur3u/platform/issues/5155)) ([3cbbbee](https://github.com/tutur3u/platform/commit/3cbbbee7b4d3bfcc9496f1e0e7a4dfaef77dcf9d))
+* **forms:** survive the deploy window before the seo migration lands ([aef8a5a](https://github.com/tutur3u/platform/commit/aef8a5a839b0b20c551d4ad1a050b9a2cf4aa605))
+* **forms:** survive the deploy window before the seo migration lands ([#5151](https://github.com/tutur3u/platform/issues/5151)) ([8f9fb0b](https://github.com/tutur3u/platform/commit/8f9fb0b427df9dd5038046a7c31c7f86ca923906))
+* **migration:** regenerate the stale tanstack route manifest ([8364332](https://github.com/tutur3u/platform/commit/83643321a0903fb4d02b99e2e743b39a0dee6be8))
+* **migration:** regenerate the stale tanstack route manifest ([#5149](https://github.com/tutur3u/platform/issues/5149)) ([acfa465](https://github.com/tutur3u/platform/commit/acfa46565e4fe0d127d81798dc2393adcf4e2859))
+* **review:** address PR feedback ([05580b9](https://github.com/tutur3u/platform/commit/05580b95d257e23df5d8fac98e1b7b319d83671e))
+* **test:** satisfy command launcher quality checks ([a903a89](https://github.com/tutur3u/platform/commit/a903a89249478d6bdb66ba63446a49b7abed7cca))
+* **tu-do:** keep board search within source limits ([4c5d8e3](https://github.com/tutur3u/platform/commit/4c5d8e3d3c284679bcbd2e222f3ea9b94eda4690))
+* **web:** add the missing /products index page ([0ca1aca](https://github.com/tutur3u/platform/commit/0ca1aca3a8e173779cdefb5cb912641da36e3c97))
+* **web:** add the missing /products index page ([#5154](https://github.com/tutur3u/platform/issues/5154)) ([40568f8](https://github.com/tutur3u/platform/commit/40568f814700a2ee2f4beba26759b70a303337c2))
+* **web:** keep the locale when linking between product pages ([7e7df47](https://github.com/tutur3u/platform/commit/7e7df470588caf4cf724c2ed0c70636280eb5b24))
+
 ## [0.41.0](https://github.com/tutur3u/platform/compare/platform-v0.40.3...platform-v0.41.0) (2026-08-25)
 
 

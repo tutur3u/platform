@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.30.0](https://github.com/tutur3u/platform/compare/ui-v0.29.2...ui-v0.30.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([cb29d33](https://github.com/tutur3u/platform/commit/cb29d33953745b1a61f09d8c8390459f983d30d7))
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **forms:** add landing page and per-form SEO controls ([99c5fda](https://github.com/tutur3u/platform/commit/99c5fda3a7d15649a3571b9ccc72759cd815a7ec))
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+
 ## [0.29.2](https://github.com/tutur3u/platform/compare/ui-v0.29.1...ui-v0.29.2) (2026-08-25)
 
 

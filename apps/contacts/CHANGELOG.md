@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.3](https://github.com/tutur3u/platform/compare/contacts-v0.18.2...contacts-v0.18.3) (2026-08-26)
+
+
+### Bug Fixes
+
+* **contacts:** sync daily report markers ([00c0e19](https://github.com/tutur3u/platform/commit/00c0e192b4ef3b6ffad9deefa0d268b69c7273b0))
+
 ## [0.18.2](https://github.com/tutur3u/platform/compare/contacts-v0.18.1...contacts-v0.18.2) (2026-08-25)
 
 
