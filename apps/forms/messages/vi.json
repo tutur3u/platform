@@ -2806,7 +2806,17 @@
       "unmatched_answer_hint": "Câu trả lời đã lưu không còn khớp với các lựa chọn hiện tại: {value}",
       "unmatched_answers_description": "{count} phản hồi đã lưu không còn khớp với các lựa chọn hiện tại, nên được hiển thị riêng khỏi biểu đồ đang hoạt động.",
       "unmatched_answers_title": "Câu trả lời đã lưu nằm ngoài các lựa chọn hiện tại",
-      "written_response_count": "{count} phản hồi ({percentage}%)"
+      "written_response_count": "{count} phản hồi ({percentage}%)",
+      "nps_score": "Điểm NPS",
+      "nps_promoter": "Người ủng hộ",
+      "nps_passive": "Người trung lập",
+      "nps_detractor": "Người phản đối",
+      "nps_distribution": "Phân bố điểm",
+      "nps_bar_title": "{score}: {count} phản hồi",
+      "ranking_results": "Kết quả xếp hạng",
+      "ranking_hint": "Tốt nhất trước, theo vị trí trung bình",
+      "ranking_average": "TB {average} · {first} hạng nhất",
+      "ranking_unranked": "Chưa được xếp hạng"
     },
     "runtime": {
       "already_responded": "Bạn đã gửi phản hồi cho biểu mẫu này. Bạn có thể xem lại bên dưới.",

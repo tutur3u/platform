@@ -2806,7 +2806,17 @@
       "unmatched_answer_hint": "Saved answer no longer matches the current choices: {value}",
       "unmatched_answers_description": "{count} saved response(s) no longer match the current choices, so they are shown separately from the live breakdown.",
       "unmatched_answers_title": "Saved answers outside the current choices",
-      "written_response_count": "{count} response(s) ({percentage}%)"
+      "written_response_count": "{count} response(s) ({percentage}%)",
+      "nps_score": "NPS score",
+      "nps_promoter": "Promoters",
+      "nps_passive": "Passives",
+      "nps_detractor": "Detractors",
+      "nps_distribution": "Score distribution",
+      "nps_bar_title": "{score}: {count} responses",
+      "ranking_results": "Ranking results",
+      "ranking_hint": "Best first, by average position",
+      "ranking_average": "avg {average} · {first} first",
+      "ranking_unranked": "Not ranked"
     },
     "runtime": {
       "already_responded": "You have already responded to this form. You can view your answers below.",
