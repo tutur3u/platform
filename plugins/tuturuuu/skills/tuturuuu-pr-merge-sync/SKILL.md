@@ -22,14 +22,23 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 
 ## Required Gates
 
-0. Check whether the PR is part of a stack (its base is a branch other than
-   `main`). If so, its parent must be merged first: merging a child while its
+0. Check whether the PR is part of a stack. A base other than `main` is not
+   proof: a PR can legitimately target `production`, a release branch, or a
+   maintenance branch with no parent PR at all, and treating those as stacked
+   blocks valid closeout work. It is a stack only when the base branch is the
+   head branch of an open pull request, or the PR body names its parent:
+
+       gh pr list --state open --json number,headRefName \
+         --jq '.[] | select(.headRefName == "<this-pr-base>") | .number'
+
+   When it is stacked, the parent must merge first — merging a child while its
    parent is open pulls the parent's unreviewed commits into `main` through the
-   child. Merge the stack bottom-up, one PR at a time, running every gate below
-   for each. GitHub retargets an open child onto the parent's base once the
-   parent merges, so do not retarget by hand unless the parent was closed
-   without merging. See
-   `/build/development-tools/stacked-pull-requests` in `apps/docs`.
+   child. Merge bottom-up, one PR at a time, running every gate below for each,
+   and merge stack parents with `gh pr merge --merge`: a squash or rebase merge
+   leaves the parent's commits outside `main`'s ancestry, so the retargeted
+   child re-shows changes that already landed. After each parent merge, confirm
+   each child's `baseRefName` actually moved and retarget by hand if it did
+   not. See `/build/development-tools/stacked-pull-requests` in `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
    `bun setup` immediately after creating it.
 2. Confirm GitHub auth and rate limits:

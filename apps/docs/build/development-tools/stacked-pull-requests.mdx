@@ -20,9 +20,9 @@ or when follow-up work builds on a branch that has not merged yet.
 gh pr create --base feat/parent-branch --head feat/child-branch
 ```
 
-Merge strictly bottom-up. GitHub retargets the child to the parent's base once
-the parent merges, so the chain survives on its own — but only if you merge in
-order.
+Merge strictly bottom-up, with a merge commit, and check afterwards that each
+child was actually retargeted. GitHub usually does it for you; "usually" is why
+you check.
 
 ## When to stack
 
@@ -83,8 +83,15 @@ Run the usual gates in the child's worktree, not just at the top of the stack:
 bun check
 ```
 
-`bun check` does not compile Next apps, so also run the affected app's real
-build when the slice touches routes, pages or dependencies.
+`bun check` does not compile Next apps, so a slice that touches routes, pages
+or dependencies also needs the affected app's real build before it can be
+called verified.
+
+<Warning>
+  Agents must not run `bun run build` on their own — the repo-wide prohibition
+  on long-running build commands applies inside a stack too. Report that the
+  build is required and ask; run it only once the user says so.
+</Warning>
 
 ## Merging the stack
 
@@ -92,17 +99,46 @@ Merge **bottom-up**, one at a time, and never merge a PR whose parent is still
 open — doing so pulls the parent's unreviewed commits into `main` through the
 child.
 
-When the parent merges and its branch is deleted, GitHub automatically
-retargets any open PR that had it as a base onto the parent's base. In
-practice: merge slice 1 into `main`, and slice 2's PR silently switches its base
-from `feat/slice-one` to `main`, with its diff shrinking to just its own
-changes.
+### Merge a stack parent with a merge commit
+
+```bash
+gh pr merge <parent-number> --merge
+```
+
+Not `--squash` and not `--rebase`. Both rewrite the parent's commits into new
+ones, so the originals never become part of `main`'s ancestry — and the
+retargeted child then shows the parent's changes all over again, as if they had
+never landed. A merge commit keeps the parent's commits reachable from `main`,
+which is what makes the child's diff shrink to its own work.
+
+If a stack parent has already been squash-merged, the fix is to rebase the
+child onto `main`, drop the duplicated commits, and re-run its gates.
+
+### Check the retargeting actually happened
+
+When a merged parent's branch is deleted through the pull-request flow — the
+merge button, or the repository's automatic head-branch deletion — GitHub
+retargets any open PR that had it as a base onto the parent's base. Slice 2's
+PR switches from `feat/slice-one` to `main` on its own.
 
 <Warning>
-  Automatic retargeting fires on merge, not on close. If you close a parent PR
-  without merging it, its children keep pointing at a dead branch and must be
-  retargeted by hand with `gh pr edit <number> --base main`.
+  Do not assume it happened. Deleting the branch another way — `gh` or
+  `git push origin --delete` — can **close** the dependent PRs instead of
+  retargeting them, and a closed PR whose base branch is gone is awkward to
+  reopen. Closing a parent PR without merging does not delete its branch at
+  all, so its children keep pointing at a live but abandoned base.
 </Warning>
+
+After every parent merge, check each child and retarget it by hand if needed,
+before the parent branch disappears:
+
+```bash
+gh pr view <child-number> --json baseRefName -q .baseRefName
+gh pr edit <child-number> --base main
+```
+
+Then re-run the child's gates: its merge base moved, so its diff is not the one
+that was last verified.
 
 Each PR in the stack still needs its own approving review from a code owner and
 its own resolved review threads — the repository ruleset applies per PR, not per
