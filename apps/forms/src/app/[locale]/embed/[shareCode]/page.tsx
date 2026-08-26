@@ -1,6 +1,5 @@
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { EmbedContent } from '@/features/forms/embed/embed-content';
@@ -36,10 +35,35 @@ export default async function EmbeddedFormPage({ params }: PageProps) {
   const { status, data } = await loadSharedFormForPage(shareCode);
 
   // A form requiring sign-in cannot complete an auth round trip inside someone
-  // else's iframe, so send the respondent to the hosted page in a new context
-  // rather than trapping them in a frame that can never authenticate.
+  // else's iframe, so offer the hosted page in a new tab.
+  //
+  // Redirecting here does not work: `redirect()` navigates the iframe itself,
+  // and `/f/<shareCode>` is not in `framablePathPatterns`, so it still carries
+  // `frame-ancestors 'none'` and `X-Frame-Options: DENY`. The browser blocks
+  // the load and the respondent gets a blank frame with no way forward.
   if (status === 401) {
-    redirect(`/f/${shareCode}`);
+    return (
+      <EmbedFrame shareCode={shareCode}>
+        <div className="flex items-center justify-center px-4 py-10">
+          <div className="max-w-sm space-y-3 text-center">
+            <h1 className="font-semibold text-lg">
+              {t('shared.sign_in_required_title')}
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              {t('shared.sign_in_required_description')}
+            </p>
+            <a
+              href={`/f/${shareCode}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-foreground px-4 py-2 font-medium text-background text-sm"
+            >
+              {t('shared.open_in_new_tab')}
+            </a>
+          </div>
+        </div>
+      </EmbedFrame>
+    );
   }
 
   // The unavailable state is wrapped too, not just the happy path: without a

@@ -3032,7 +3032,10 @@
       "metadata_protected_description": "Biểu mẫu chia sẻ này đang được bảo vệ. Hãy đăng nhập hoặc dùng đường truy cập phù hợp để tiếp tục.",
       "open_graph_alt": "Ảnh xem trước cho {title}",
       "unavailable_description": "Biểu mẫu này có thể đã bị gỡ xuất bản, đã đóng, hoặc đã bị xóa.",
-      "unavailable_title": "Không thể truy cập biểu mẫu"
+      "unavailable_title": "Không thể truy cập biểu mẫu",
+      "sign_in_required_title": "Đăng nhập để tiếp tục",
+      "sign_in_required_description": "Biểu mẫu này cần xác định danh tính của bạn, việc đó không thực hiện được bên trong khung nhúng.",
+      "open_in_new_tab": "Mở biểu mẫu trong tab mới"
     },
     "status": {
       "closed": "Đã đóng",

@@ -1,7 +1,28 @@
 import 'server-only';
 
+import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { FormCollaboratorIdentity } from './channel';
+
+/**
+ * Whether this request's browser will be able to join a private Realtime
+ * channel.
+ *
+ * `getSatelliteAppSessionUser` resolves an actor from either an app-session
+ * token or a Supabase session. Only the second leaves the browser with Supabase
+ * auth cookies, and the browser Realtime client authenticates from those — so
+ * on the app-session path the client connects as `anon` and both
+ * `realtime.messages` policies, which are `to authenticated`, refuse the topic.
+ *
+ * Resolved on the server because a registered satellite must not call
+ * `supabase.auth.*` in the browser, so the client cannot check for itself.
+ * Without this the studio subscribes, is silently refused, and shows an empty
+ * collaborator list that looks exactly like "nobody else is here".
+ */
+export async function canJoinFormRealtime(): Promise<boolean> {
+  const supabaseUser = await getSatelliteSupabaseSessionUser();
+  return Boolean(supabaseUser?.id);
+}
 
 /**
  * Resolves the collaborator identity handed to the studio.
