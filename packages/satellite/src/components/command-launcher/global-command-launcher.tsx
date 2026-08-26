@@ -47,6 +47,7 @@ import {
 } from './command-launcher-items';
 import {
   COMMAND_LAUNCHER_TABS,
+  COMMAND_LAUNCHER_TABS_WITHOUT_TASKS,
   type CommandLauncherTab,
   CommandLauncherTabs,
   parseLauncherQuery,
@@ -109,6 +110,7 @@ export type GlobalCommandLauncherProps = {
   currentApp: CommandLauncherHostApp;
   currentWorkspaceId?: string | null;
   defaultTab?: CommandLauncherTab;
+  enableTasks?: boolean;
   extraSections?:
     | ReactNode
     | ((context: CommandLauncherExtraSectionContext) => ReactNode);
@@ -275,6 +277,7 @@ export function GlobalCommandLauncher({
   currentApp,
   currentWorkspaceId,
   defaultTab = 'all',
+  enableTasks = false,
   extraSections,
   labels: labelOverrides,
   navItems = [],
@@ -282,13 +285,24 @@ export function GlobalCommandLauncher({
   workspacePathResolver,
 }: GlobalCommandLauncherProps) {
   const labels = { ...DEFAULT_LABELS, ...labelOverrides };
+  const availableTabs = enableTasks
+    ? COMMAND_LAUNCHER_TABS
+    : COMMAND_LAUNCHER_TABS_WITHOUT_TASKS;
+  const resolvedDefaultTab = availableTabs.includes(defaultTab)
+    ? defaultTab
+    : 'all';
   const instanceId = useMemo(() => Symbol('GlobalCommandLauncher'), []);
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<CommandLauncherTab>(defaultTab);
+  const [activeTab, setActiveTab] =
+    useState<CommandLauncherTab>(resolvedDefaultTab);
   const parsedQuery = useMemo(() => parseLauncherQuery(query), [query]);
-  const routedTab = parsedQuery.tab ?? activeTab;
+  const prefixedTab =
+    parsedQuery.tab && availableTabs.includes(parsedQuery.tab)
+      ? parsedQuery.tab
+      : null;
+  const routedTab = prefixedTab ?? activeTab;
   const trimmedQuery = trimQuery(parsedQuery.query);
   const deferredWorkspaceQuery = useDeferredValue(trimmedQuery);
 
@@ -342,9 +356,9 @@ export function GlobalCommandLauncher({
   useEffect(() => {
     if (!open) {
       setQuery('');
-      setActiveTab(defaultTab);
+      setActiveTab(resolvedDefaultTab);
     }
-  }, [defaultTab, open]);
+  }, [open, resolvedDefaultTab]);
 
   const {
     data: workspaces = [],
@@ -516,7 +530,7 @@ export function GlobalCommandLauncher({
 
   const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (!(event.metaKey || event.ctrlKey)) return;
-    const nextTab = COMMAND_LAUNCHER_TABS[Number(event.key) - 1];
+    const nextTab = availableTabs[Number(event.key) - 1];
     if (!nextTab) return;
     event.preventDefault();
     setActiveTab(nextTab);
@@ -572,6 +586,7 @@ export function GlobalCommandLauncher({
             <CommandLauncherTabs
               activeTab={routedTab}
               ariaLabel={labels.categories}
+              availableTabs={availableTabs}
               labels={{
                 actions: labels.actions,
                 all: labels.all,

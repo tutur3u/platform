@@ -42,6 +42,15 @@ export const commandTaskQueryKey = (wsId: string | null) => [
   wsId,
 ];
 
+export function normalizeCommandTask(
+  task: WorkspaceTaskSearchResult
+): TaskSearchResult {
+  return {
+    ...task,
+    completed: task.completed ?? Boolean(task.completed_at),
+  };
+}
+
 /**
  * Hook for searching tasks in the workspace
  */
@@ -66,7 +75,7 @@ export function useTaskSearch(
         limit: 30,
         sortBy: 'created-date-desc',
       });
-      return data.tasks as TaskSearchResult[];
+      return data.tasks.map((task) => normalizeCommandTask(task));
     },
     enabled: enabled && !hasQuery && isValidWorkspace,
     staleTime: 30000, // 30 seconds
@@ -84,7 +93,7 @@ export function useTaskSearch(
         mode: 'hybrid',
       });
 
-      return (data.tasks || []) as TaskSearchResult[];
+      return (data.tasks || []).map((task) => normalizeCommandTask(task));
     },
     enabled: enabled && hasQuery && isValidWorkspace,
     staleTime: 30000, // 30 seconds

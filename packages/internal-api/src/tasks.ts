@@ -463,6 +463,7 @@ export interface WorkspaceTaskSearchResult {
   }[];
   board_name?: string | null;
   completed?: boolean;
+  completed_at?: string | null;
   created_at?: string | null;
   description?: string | null;
   end_date?: string | null;
@@ -489,7 +490,6 @@ export interface SearchWorkspaceTasksResponse {
   reason?: string;
   tasks: WorkspaceTaskSearchResult[];
 }
-
 function joinQueryList(values?: string[]) {
   return values && values.length > 0 ? values.join(',') : undefined;
 }
@@ -1698,10 +1698,10 @@ export async function listWorkspaceTasks(
         includeListCounts: options?.includeListCounts,
       },
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
-
 export async function searchWorkspaceTasks(
   workspaceId: string,
   payload: SearchWorkspaceTasksPayload,
@@ -1717,10 +1717,10 @@ export async function searchWorkspaceTasks(
       },
       body: JSON.stringify(payload),
       cache: 'no-store',
+      credentials: 'include',
     }
   );
 }
-
 export async function listTaskBoardStatusTemplates(
   options?: InternalApiClientOptions
 ) {

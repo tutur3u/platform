@@ -60,7 +60,9 @@ const workspaces = [
 function renderLauncher({
   currentApp = 'calendar',
   currentWorkspaceId = 'personal-id',
+  defaultTab = 'all',
   duplicateCount = 1,
+  enableTasks = false,
   onNavigate,
 }: Partial<Parameters<typeof GlobalCommandLauncher>[0]> & {
   duplicateCount?: number;
@@ -80,6 +82,8 @@ function renderLauncher({
         <GlobalCommandLauncher
           currentApp={currentApp}
           currentWorkspaceId={currentWorkspaceId}
+          defaultTab={defaultTab}
+          enableTasks={enableTasks}
           key={index}
           navItems={[
             {
@@ -216,12 +220,27 @@ describe('GlobalCommandLauncher', () => {
       screen.getByRole('tab', { name: /Apps/ }).getAttribute('aria-selected')
     ).toBe('true');
 
-    fireEvent.keyDown(input, { ctrlKey: true, key: '3' });
+    expect(screen.queryByRole('tab', { name: /Tasks/ })).toBeNull();
+
+    fireEvent.keyDown(input, { ctrlKey: true, key: '2' });
     expect(
       screen
         .getByRole('tab', { name: /Navigation/ })
         .getAttribute('aria-selected')
     ).toBe('true');
+  });
+
+  it('exposes task-first navigation only when the host enables tasks', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ defaultTab: 'tasks', enableTasks: true });
+
+    openGlobalCommandLauncher();
+    await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
+
+    expect(
+      screen.getByRole('tab', { name: /Tasks/ }).getAttribute('aria-selected')
+    ).toBe('true');
+    expect(screen.getByRole('tab', { name: /All/ })).toBeTruthy();
   });
 
   it('queries workspace search results beyond the initially loaded workspaces', async () => {

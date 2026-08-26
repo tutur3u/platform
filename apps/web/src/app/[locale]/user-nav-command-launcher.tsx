@@ -53,6 +53,7 @@ export function UserNavCommandLauncher({
       currentApp="platform"
       currentWorkspaceId={wsId}
       defaultTab={wsId ? 'tasks' : 'all'}
+      enableTasks={Boolean(wsId)}
       extraSections={({ activeTab, onClose, query, setQuery }) => (
         <PlatformCommandExtraSections
           activeTab={activeTab}

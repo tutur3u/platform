@@ -2167,7 +2167,6 @@ export async function handleTaskRouteGET(
         );
       }
     }
-
     const tasksWithRelationshipSummary = tasks.map((task) => {
       const summary = relationshipSummaryByTaskId.get(task.id);
       const taskList = task.task_lists as
@@ -2182,6 +2181,7 @@ export async function handleTaskRouteGET(
         | undefined;
       return {
         ...task,
+        is_assigned_to_current_user: task.assignee_ids?.includes(user.id),
         board_id: task.board_id ?? taskList?.board_id ?? null,
         board_name: task.board_name ?? taskList?.workspace_boards?.name ?? null,
         ticket_prefix:
