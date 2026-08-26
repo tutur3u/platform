@@ -6,10 +6,7 @@ import {
   useHotkeySequence,
 } from '@tanstack/react-hotkeys';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  type ListWorkspaceTasksOptions,
-  listWorkspaceTasks,
-} from '@tuturuuu/internal-api/tasks';
+import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import {
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_LAST_BOARD_VIEW_CONFIG_ID,
@@ -54,11 +51,9 @@ import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 import {
-  buildTaskSearchQueryVariants,
-  getBoardTaskIdentifier,
-  mergeListCountsByListId,
-  mergeTasksById,
-  TICKET_IDENTIFIER_SEARCH_LIMIT,
+  listBoardTaskCountsForSearch,
+  listBoardTasksForSearch,
+  taskMatchesBoardSearch,
 } from './board-task-search';
 import { KanbanPresentation } from './kanban-presentation';
 import {
@@ -107,23 +102,8 @@ function taskMatchesLocalFilters(
   currentUserId?: string,
   boardTicketPrefix?: string | null
 ) {
-  const query = filters.searchQuery?.trim().toLowerCase();
-  if (query) {
-    const searchableText = [
-      task.name,
-      task.display_number ? String(task.display_number) : null,
-      getBoardTaskIdentifier(task, boardTicketPrefix),
-      ...(task.labels ?? []).map((label) => label.name),
-      ...(task.projects ?? []).map((project) => project.name),
-      ...(task.assignees ?? []).map(
-        (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
-      ),
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    if (!searchableText.includes(query)) return false;
-  }
+  if (!taskMatchesBoardSearch(task, filters.searchQuery, boardTicketPrefix))
+    return false;
 
   if (
     filters.labels.length > 0 &&
@@ -434,33 +414,17 @@ export function BoardViews({
   );
   const shouldEagerLoadTasks =
     currentView === 'list' || currentView === 'timeline' || hasServerTaskQuery;
-  const fetchBoardTasks = useCallback(async () => {
-    const { nameQuery, identifierQuery } = buildTaskSearchQueryVariants({
-      ...taskQueryOptions,
-      boardId: board.id,
-      includeRelationshipSummary: false,
-      listStatuses: listStatusesForQuery,
-      limit: 200,
-    });
-
-    if (!identifierQuery) {
-      const result = await listWorkspaceTasks(effectiveWorkspaceId, nameQuery);
-      return result.tasks;
-    }
-
-    // The API ands `q` with `identifier`, so matching a task by name or by
-    // ticket identifier takes one request each. Identifier hits come first:
-    // list view preserves result order while a search is active.
-    const [nameResult, identifierResult] = await Promise.all([
-      listWorkspaceTasks(effectiveWorkspaceId, nameQuery),
-      listWorkspaceTasks(effectiveWorkspaceId, {
-        ...identifierQuery,
-        limit: TICKET_IDENTIFIER_SEARCH_LIMIT,
+  const fetchBoardTasks = useCallback(
+    () =>
+      listBoardTasksForSearch(effectiveWorkspaceId, {
+        ...taskQueryOptions,
+        boardId: board.id,
+        includeRelationshipSummary: false,
+        listStatuses: listStatusesForQuery,
+        limit: 200,
       }),
-    ]);
-
-    return mergeTasksById(identifierResult.tasks, nameResult.tasks);
-  }, [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]);
+    [board.id, effectiveWorkspaceId, listStatusesForQuery, taskQueryOptions]
+  );
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
@@ -701,36 +665,15 @@ export function BoardViews({
           filters.hideEmptyTaskLists ||
           autoCollapseEmptyTaskLists
       ),
-    queryFn: async () => {
-      const { nameQuery, identifierQuery } = buildTaskSearchQueryVariants({
+    queryFn: () =>
+      listBoardTaskCountsForSearch(effectiveWorkspaceId, {
         ...taskQueryOptions,
         boardId: board.id,
         includeListCounts: true,
         includeRelationshipSummary: false,
         limit: 0,
         listStatuses: listStatusesForQuery,
-      });
-
-      if (!identifierQuery) {
-        const result = await listWorkspaceTasks(
-          effectiveWorkspaceId,
-          nameQuery
-        );
-        return result.listCounts ?? [];
-      }
-
-      // Counts gate list visibility, so they have to cover both search legs
-      // or an identifier-only match gets hidden with its list.
-      const [nameResult, identifierResult] = await Promise.all([
-        listWorkspaceTasks(effectiveWorkspaceId, nameQuery),
-        listWorkspaceTasks(effectiveWorkspaceId, identifierQuery),
-      ]);
-
-      return mergeListCountsByListId(
-        nameResult.listCounts ?? [],
-        identifierResult.listCounts ?? []
-      );
-    },
+      }),
     staleTime: 30_000,
   });
 

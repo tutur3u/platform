@@ -2,6 +2,7 @@ import type {
   ListWorkspaceTasksOptions,
   WorkspaceTaskListCount,
 } from '@tuturuuu/internal-api/tasks';
+import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   getTaskIdentifierForSearch,
@@ -43,6 +44,33 @@ export function getBoardTaskIdentifier(
     ticket_prefix: taskTicketPrefix ?? boardTicketPrefix ?? null,
     display_number: task.display_number,
   });
+}
+
+/** Returns whether a task matches the board's local free-text search. */
+export function taskMatchesBoardSearch(
+  task: Task,
+  searchQuery: string | null | undefined,
+  boardTicketPrefix?: string | null
+): boolean {
+  const query = searchQuery?.trim().toLowerCase();
+  if (!query) return true;
+
+  return [
+    task.name,
+    typeof task.display_number === 'number'
+      ? String(task.display_number)
+      : null,
+    getBoardTaskIdentifier(task, boardTicketPrefix),
+    ...(task.labels ?? []).map((label) => label.name),
+    ...(task.projects ?? []).map((project) => project.name),
+    ...(task.assignees ?? []).map(
+      (assignee) => assignee.display_name ?? assignee.email ?? assignee.handle
+    ),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .includes(query);
 }
 
 /**
@@ -101,4 +129,46 @@ export function mergeListCountsByListId(
   }
 
   return [...merged.entries()].map(([list_id, count]) => ({ list_id, count }));
+}
+
+/** Loads and merges the name and exact-identifier task-search legs. */
+export async function listBoardTasksForSearch(
+  workspaceId: string,
+  options: ListWorkspaceTasksOptions
+): Promise<Task[]> {
+  const { nameQuery, identifierQuery } = buildTaskSearchQueryVariants(options);
+  if (!identifierQuery) {
+    return (await listWorkspaceTasks(workspaceId, nameQuery)).tasks;
+  }
+
+  const [nameResult, identifierResult] = await Promise.all([
+    listWorkspaceTasks(workspaceId, nameQuery),
+    listWorkspaceTasks(workspaceId, {
+      ...identifierQuery,
+      limit: TICKET_IDENTIFIER_SEARCH_LIMIT,
+    }),
+  ]);
+
+  return mergeTasksById(identifierResult.tasks, nameResult.tasks);
+}
+
+/** Loads list visibility counts across both task-search legs. */
+export async function listBoardTaskCountsForSearch(
+  workspaceId: string,
+  options: ListWorkspaceTasksOptions
+): Promise<WorkspaceTaskListCount[]> {
+  const { nameQuery, identifierQuery } = buildTaskSearchQueryVariants(options);
+  if (!identifierQuery) {
+    return (await listWorkspaceTasks(workspaceId, nameQuery)).listCounts ?? [];
+  }
+
+  const [nameResult, identifierResult] = await Promise.all([
+    listWorkspaceTasks(workspaceId, nameQuery),
+    listWorkspaceTasks(workspaceId, identifierQuery),
+  ]);
+
+  return mergeListCountsByListId(
+    nameResult.listCounts ?? [],
+    identifierResult.listCounts ?? []
+  );
 }

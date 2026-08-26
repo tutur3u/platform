@@ -1,13 +1,22 @@
 import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildTaskSearchQueryVariants,
   getBoardTaskIdentifier,
   getTicketIdentifierSearchQuery,
+  listBoardTaskCountsForSearch,
+  listBoardTasksForSearch,
   mergeListCountsByListId,
   mergeTasksById,
+  taskMatchesBoardSearch,
 } from '../board-task-search';
+
+const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  listWorkspaceTasks: listWorkspaceTasksMock,
+}));
 
 function buildTask(overrides: Partial<Task> & { id: string }): Task {
   return {
@@ -24,6 +33,10 @@ function buildTask(overrides: Partial<Task> & { id: string }): Task {
     ...overrides,
   } as Task;
 }
+
+beforeEach(() => {
+  listWorkspaceTasksMock.mockReset();
+});
 
 describe('getTicketIdentifierSearchQuery', () => {
   it('accepts bare display numbers', () => {
@@ -77,6 +90,36 @@ describe('getBoardTaskIdentifier', () => {
     });
 
     expect(getBoardTaskIdentifier(task, 'RD')).toBeNull();
+  });
+});
+
+describe('taskMatchesBoardSearch', () => {
+  it('matches names, display numbers, and board ticket identifiers', () => {
+    const task = buildTask({ display_number: 115, id: 'task-1' });
+
+    expect(taskMatchesBoardSearch(task, 'timeline', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, '115', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'rd-115', 'RD')).toBe(true);
+  });
+
+  it('matches task metadata and ignores missing display numbers', () => {
+    const task = buildTask({
+      assignees: [{ display_name: 'Ada Lovelace', id: 'user-1' }],
+      display_number: null as unknown as number,
+      id: 'task-1',
+      labels: [
+        {
+          color: 'BLUE',
+          created_at: '2026-03-07T00:00:00.000Z',
+          id: 'label-1',
+          name: 'Backend',
+        },
+      ],
+    });
+
+    expect(taskMatchesBoardSearch(task, 'ada', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'backend', 'RD')).toBe(true);
+    expect(taskMatchesBoardSearch(task, 'rd-null', 'RD')).toBe(false);
   });
 });
 
@@ -170,5 +213,64 @@ describe('mergeListCountsByListId', () => {
     expect(
       mergeListCountsByListId([], [{ count: 1, list_id: 'list-1' }])
     ).toEqual([{ count: 1, list_id: 'list-1' }]);
+  });
+});
+
+describe('listBoardTasksForSearch', () => {
+  const ticketMatch = buildTask({ display_number: 115, id: 'task-ticket' });
+  const nameMatch = buildTask({ id: 'task-name', name: 'Sprint 115 planning' });
+
+  it('uses one request for a plain-text search', async () => {
+    listWorkspaceTasksMock.mockResolvedValue({ tasks: [nameMatch] });
+
+    await expect(
+      listBoardTasksForSearch('ws-1', { boardId: 'board-1', q: 'launch' })
+    ).resolves.toEqual([nameMatch]);
+    expect(listWorkspaceTasksMock).toHaveBeenCalledOnce();
+  });
+
+  it('merges identifier hits first without duplicates', async () => {
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) =>
+        options.identifier
+          ? { tasks: [ticketMatch] }
+          : { tasks: [ticketMatch, nameMatch] }
+    );
+
+    await expect(
+      listBoardTasksForSearch('ws-1', {
+        boardId: 'board-1',
+        limit: 200,
+        q: '115',
+      })
+    ).resolves.toEqual([ticketMatch, nameMatch]);
+    expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({ identifier: '115', limit: 50, q: undefined })
+    );
+  });
+});
+
+describe('listBoardTaskCountsForSearch', () => {
+  it('unions list visibility across name and identifier matches', async () => {
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => ({
+        listCounts: options.identifier
+          ? [{ count: 1, list_id: 'list-ticket' }]
+          : [{ count: 2, list_id: 'list-name' }],
+        tasks: [],
+      })
+    );
+
+    await expect(
+      listBoardTaskCountsForSearch('ws-1', {
+        boardId: 'board-1',
+        includeListCounts: true,
+        q: 'DEV-115',
+      })
+    ).resolves.toEqual([
+      { count: 2, list_id: 'list-name' },
+      { count: 1, list_id: 'list-ticket' },
+    ]);
   });
 });
