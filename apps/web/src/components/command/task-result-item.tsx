@@ -15,11 +15,11 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandItem } from '@tuturuuu/ui/command';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 import { isTaskDueSoon, isTaskOverdue } from './utils/command-task-results';
 import type { TaskSearchResult } from './utils/use-task-search';

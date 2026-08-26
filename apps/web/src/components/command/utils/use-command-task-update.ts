@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTask } from '@tuturuuu/internal-api/tasks';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
 import { commandTaskQueryKey, type TaskSearchResult } from './use-task-search';
 
 export function useCommandTaskUpdate(wsId: string | null) {
