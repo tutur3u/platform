@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import {
+  listWorkspaceTasks,
   searchWorkspaceTasks,
   type WorkspaceTaskSearchResult,
 } from '@tuturuuu/internal-api/tasks';
 import * as React from 'react';
-import { getTasksAppUrlClient } from '@/lib/tasks-app-url-client';
 
 export type TaskSearchResult = WorkspaceTaskSearchResult;
 
@@ -37,6 +37,11 @@ function useDebounced<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+export const commandTaskQueryKey = (wsId: string | null) => [
+  'command-center-tasks',
+  wsId,
+];
+
 /**
  * Hook for searching tasks in the workspace
  */
@@ -53,24 +58,15 @@ export function useTaskSearch(
 
   // Fetch recent/all tasks when no query
   const recentTasksQuery = useQuery({
-    queryKey: ['command-palette-recent-tasks', wsId],
+    queryKey: [...commandTaskQueryKey(wsId), 'recent'],
     queryFn: async () => {
       if (!wsId) return [];
 
-      const response = await fetch(
-        getTasksAppUrlClient(`/api/v1/workspaces/${wsId}/tasks?limit=20`),
-        {
-          cache: 'no-store',
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recent tasks');
-      }
-
-      const data = await response.json();
-      return (data.tasks || []) as TaskSearchResult[];
+      const data = await listWorkspaceTasks(wsId, {
+        limit: 30,
+        sortBy: 'created-date-desc',
+      });
+      return data.tasks as TaskSearchResult[];
     },
     enabled: enabled && !hasQuery && isValidWorkspace,
     staleTime: 30000, // 30 seconds
@@ -78,13 +74,14 @@ export function useTaskSearch(
 
   // Semantic search when query exists
   const searchTasksQuery = useQuery({
-    queryKey: ['command-palette-search-tasks', wsId, debouncedQuery],
+    queryKey: [...commandTaskQueryKey(wsId), 'search', debouncedQuery],
     queryFn: async () => {
       if (!wsId || !debouncedQuery) return [];
 
       const data = await searchWorkspaceTasks(wsId, {
         query: debouncedQuery,
-        matchCount: 20,
+        matchCount: 40,
+        mode: 'hybrid',
       });
 
       return (data.tasks || []) as TaskSearchResult[];

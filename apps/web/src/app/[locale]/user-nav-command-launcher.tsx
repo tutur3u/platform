@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/satellite/command-launcher';
 import type { Workspace } from '@tuturuuu/types';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { useTranslations } from 'next-intl';
 import { useCallback, useMemo } from 'react';
 import { PlatformCommandExtraSections } from '@/components/command/platform-extra-sections';
 import { flattenNavigation } from '@/components/command/utils/use-navigation-data';
@@ -24,6 +25,7 @@ export function UserNavCommandLauncher({
   workspace,
   wsId,
 }: UserNavCommandLauncherProps) {
+  const t = useTranslations('command_palette');
   const commandNavItems = useMemo<CommandLauncherNavItem[]>(
     () =>
       flattenNavigation(navLinks).map((item) => ({
@@ -50,8 +52,10 @@ export function UserNavCommandLauncher({
     <GlobalCommandLauncher
       currentApp="platform"
       currentWorkspaceId={wsId}
-      extraSections={({ onClose, query, setQuery }) => (
+      defaultTab={wsId ? 'tasks' : 'all'}
+      extraSections={({ activeTab, onClose, query, setQuery }) => (
         <PlatformCommandExtraSections
+          activeTab={activeTab}
           navLinks={navLinks}
           onApplySearch={setQuery}
           onClose={onClose}
@@ -60,6 +64,19 @@ export function UserNavCommandLauncher({
           workspaceName={workspace?.name}
         />
       )}
+      labels={{
+        actions: t('tabs.actions'),
+        all: t('tabs.all'),
+        apps: t('tabs.apps'),
+        categories: t('tabs.label'),
+        empty: t('no_results'),
+        emptyDescription: t('try_searching'),
+        loadingWorkspaces: t('loading_workspaces'),
+        navigation: t('tabs.navigate'),
+        placeholder: t('search_placeholder_power'),
+        tasks: t('tabs.tasks'),
+        title: t('title'),
+      }}
       navItems={commandNavItems}
       workspacePathResolver={resolvePlatformWorkspacePath}
     />

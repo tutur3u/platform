@@ -4220,11 +4220,36 @@
     "clear_recent_title": "Clear Recent Items",
     "commands": "Commands",
     "continue": "Continue",
+    "create_from_query": "Create “{query}”",
     "create_in_product": "Create in {product}",
     "create_in_product_description": "Start a new {product} workflow from the command palette.",
     "create_task": "Create task \"{taskName}\"",
     "create_task_tip": "Tip: Press ⌘↵ to quickly create a task",
     "current_theme": "Current",
+    "description": "Search, act, and move without leaving your flow.",
+    "empty": {
+      "description": "Start typing, choose a tab, or use a power prefix.",
+      "no_matches": "No matches for “{query}”. Refine the filters or create it as a task.",
+      "title": "Nothing surfaced yet"
+    },
+    "filters": {
+      "label": "Filter",
+      "priority": {
+        "all": "Any priority",
+        "critical": "Critical",
+        "high": "High",
+        "low": "Low",
+        "normal": "Normal"
+      },
+      "status": {
+        "all": "Any status",
+        "assigned": "Assigned to me",
+        "completed": "Completed",
+        "due-soon": "Due soon",
+        "open": "Open",
+        "overdue": "Overdue"
+      }
+    },
     "generic_action_name_label": "Name",
     "generic_action_name_placeholder": "Name this {product} item",
     "generic_action_notes_label": "Notes",
@@ -4233,8 +4258,10 @@
     "inline_action_description": "Add the quick details here, then continue in {product} to finish the product-specific fields.",
     "keyboard_hints": {
       "clear_recent": "clear recent",
+      "create": "create task",
       "esc_to_close": "Press Esc to close",
       "navigate": "navigate",
+      "open": "open",
       "select": "select",
       "to_close": "to close",
       "to_toggle": "to toggle"
@@ -4253,6 +4280,11 @@
     "open_item_description": "Navigate to {item}.",
     "overdue": "Overdue",
     "personal": "Personal",
+    "power_hints": {
+      "actions": "actions",
+      "pages": "pages",
+      "tasks": "tasks"
+    },
     "powered_by": "Powered by Tuturuuu Search",
     "priority": {
       "critical": "Critical",
@@ -4266,8 +4298,36 @@
     "result_count": "{count} result",
     "result_count_plural": "{count} results",
     "search_placeholder": "Search commands, tasks, or navigate...",
+    "search_placeholder_power": "Find tasks, pages, and actions — use #, /, or >",
     "searching_tasks": "Searching tasks...",
     "smart_actions": "Smart Actions",
+    "sort": {
+      "due": "Due date",
+      "newest": "Newest",
+      "priority": "Priority",
+      "relevance": "Best match"
+    },
+    "tabs": {
+      "actions": "Actions",
+      "all": "All",
+      "apps": "Apps",
+      "label": "Search category",
+      "navigate": "Pages",
+      "tasks": "Tasks"
+    },
+    "task_actions": {
+      "completed": "Task completed",
+      "copy_link": "Copy task link",
+      "due": "Due {date}",
+      "link_copied": "Task link copied",
+      "link_copy_failed": "Could not copy the task link",
+      "mark_complete": "Complete task",
+      "mark_open": "Reopen task",
+      "reopened": "Task reopened",
+      "update_failed": "Could not update this task"
+    },
+    "task_first": "Task first",
+    "task_results": "{count} tasks",
     "tasks": "Tasks",
     "title": "Command Center",
     "try_searching": "Try searching for tasks, pages, or actions",

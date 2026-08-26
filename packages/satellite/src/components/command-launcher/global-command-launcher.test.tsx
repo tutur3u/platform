@@ -197,6 +197,33 @@ describe('GlobalCommandLauncher', () => {
     expect(await screen.findByText('Task Boards')).toBeTruthy();
   });
 
+  it('switches result categories with tabs, prefixes, and keyboard shortcuts', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    const input = await screen.findByPlaceholderText(
+      'Search apps, workspaces, and pages...'
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: /Navigation/ }));
+    expect(screen.queryByText('Calendar')).toBeNull();
+    expect(screen.getByText('Task Boards')).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: '@finance' } });
+    expect(await screen.findByText('Finance')).toBeTruthy();
+    expect(
+      screen.getByRole('tab', { name: /Apps/ }).getAttribute('aria-selected')
+    ).toBe('true');
+
+    fireEvent.keyDown(input, { ctrlKey: true, key: '3' });
+    expect(
+      screen
+        .getByRole('tab', { name: /Navigation/ })
+        .getAttribute('aria-selected')
+    ).toBe('true');
+  });
+
   it('queries workspace search results beyond the initially loaded workspaces', async () => {
     const remoteWorkspace = {
       access_type: 'owner',
@@ -274,12 +301,12 @@ describe('GlobalCommandLauncher', () => {
     const commandList = document.querySelector('[data-slot="command-list"]');
 
     expect(dialogContent?.className).toContain(
-      'h-[min(760px,calc(100dvh-2rem))]'
+      'h-[min(820px,calc(100dvh-2rem))]'
     );
     expect(dialogContent?.className).toContain(
       'grid-rows-[auto_minmax(0,1fr)]'
     );
-    expect(dialogContent?.className).toContain('w-[min(760px,96vw)]');
+    expect(dialogContent?.className).toContain('w-[min(1040px,96vw)]');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(commandList?.className).toContain('min-h-0');
     expect(commandList?.className).toContain('flex-1');
