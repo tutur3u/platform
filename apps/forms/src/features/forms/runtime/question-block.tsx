@@ -52,6 +52,7 @@ export function QuestionBlock({
   validationError,
   toneClasses,
   typography,
+  optionShortcuts = false,
 }: {
   question: FormDefinitionQuestion;
   value: FormAnswerValue | undefined;
@@ -61,6 +62,8 @@ export function QuestionBlock({
   validationError?: string;
   toneClasses: ReturnType<typeof getFormToneClasses>;
   typography: FormDefinition['theme']['typography'];
+  /** Whether the number/letter option shortcuts are bound for this screen. */
+  optionShortcuts?: boolean;
 }) {
   const t = useTranslations('forms');
   const settings = question.settings ?? {};
@@ -337,6 +340,7 @@ export function QuestionBlock({
         t,
         choiceLayoutClassName,
         interactionStateClassName,
+        optionShortcuts,
       })}
 
       {renderMultipleChoiceField({
@@ -350,6 +354,7 @@ export function QuestionBlock({
         t,
         choiceLayoutClassName,
         interactionStateClassName,
+        optionShortcuts,
       })}
 
       {renderDropdownField({

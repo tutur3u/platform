@@ -297,8 +297,24 @@ export const FORM_WELCOME_TITLE_MAX_LENGTH = 120;
 export const FORM_WELCOME_DESCRIPTION_MAX_LENGTH = 600;
 export const FORM_WELCOME_BUTTON_MAX_LENGTH = 40;
 
+/**
+ * The display mode every form gets unless its author chose otherwise.
+ *
+ * One question at a time: a long scroll of fields reads as paperwork, and
+ * answering one thing at a time is what makes a form feel like a conversation.
+ */
+export const FORM_DEFAULT_DISPLAY_MODE = 'one_question' as const;
+
 export const formSettingsSchema = z.object({
-  displayMode: z.enum(FORM_DISPLAY_MODE_VALUES).default('sections'),
+  // `settings` is jsonb, so a form saved before this field existed has no key
+  // for it and is backfilled here on read. That means this default reaches
+  // EXISTING forms too, not just new ones — a deliberate product decision, so
+  // the one-question experience is what a Tuturuuu form is rather than
+  // something each author has to find and switch on. An author who wants the
+  // old scroll sets `sections` explicitly and it sticks.
+  displayMode: z
+    .enum(FORM_DISPLAY_MODE_VALUES)
+    .default(FORM_DEFAULT_DISPLAY_MODE),
   /** Optional cover screen shown before the first question. */
   welcomeEnabled: z.boolean().default(false),
   welcomeTitle: z.string().max(FORM_WELCOME_TITLE_MAX_LENGTH).default(''),
@@ -468,8 +484,10 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       },
     },
     settings: {
-      displayMode: 'sections',
-      welcomeEnabled: false,
+      displayMode: FORM_DEFAULT_DISPLAY_MODE,
+      // A cover screen is the natural opening for a one-question form: it says
+      // what the form is before the first question arrives with no context.
+      welcomeEnabled: true,
       welcomeTitle: '',
       welcomeDescription: '',
       welcomeButtonLabel: '',

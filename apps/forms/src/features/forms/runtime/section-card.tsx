@@ -16,6 +16,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import type { Dispatch, RefObject, SetStateAction } from 'react';
+import { isAnswerableQuestionType } from '../block-utils';
 import { normalizeMarkdownToText } from '../content';
 import { FormsMarkdown } from '../forms-markdown';
 import type { getRuntimeProgressStats } from '../runtime-progress';
@@ -58,6 +59,7 @@ export function renderFormSectionCard({
   handleBack,
   visibleQuestions,
   stepIndex,
+  stepDirection,
   stepCount,
   isLastStep,
   shouldShowTurnstile,
@@ -85,6 +87,8 @@ export function renderFormSectionCard({
   visibleQuestions: FormDefinitionQuestion[];
   /** Zero-based screen index within the section. */
   stepIndex: number;
+  /** Which way the last move went, so the screen enters from that side. */
+  stepDirection: 'forward' | 'backward';
   /** Number of screens the section is split into; 1 in `sections` mode. */
   stepCount: number;
   /**
@@ -134,6 +138,23 @@ export function renderFormSectionCard({
   setCaptchaError: Dispatch<SetStateAction<string | undefined>>;
   handleAdvance: () => void;
 }) {
+  // The shortcut is only bound when a single answerable question owns the
+  // screen — with two on screen, "press 2" has no single meaning. Computed here
+  // rather than passed down, because this is the only place that knows both the
+  // display mode and what is actually on screen.
+  // The Enter hint follows the keyboard binding rather than the shortcut
+  // badges: Enter advances on every one-question screen, including ones with
+  // no options to press a letter for.
+  const isKeyboardAdvanceHintVisible =
+    form.settings.displayMode === 'one_question' && !readOnly && !isBusy;
+
+  const hasOptionShortcuts =
+    form.settings.displayMode === 'one_question' &&
+    !readOnly &&
+    visibleQuestions.filter((question) =>
+      isAnswerableQuestionType(question.type)
+    ).length === 1;
+
   return (
     <Card
       ref={sectionCardRef}
@@ -218,10 +239,24 @@ export function renderFormSectionCard({
             />
           </div>
         ) : null}
-        <div className={density.questionGap}>
+        <div
+          // Re-keyed per screen so each question mounts fresh and plays its
+          // entrance. `motion-safe:` rather than a JS media query, so a
+          // respondent who asked for reduced motion simply never gets the
+          // classes — no animation to interrupt, nothing to clean up.
+          key={`${currentSection.id}:${stepIndex}`}
+          className={cn(
+            density.questionGap,
+            'motion-safe:fade-in motion-safe:animate-in motion-safe:duration-300 motion-safe:ease-out',
+            stepDirection === 'forward'
+              ? 'motion-safe:slide-in-from-bottom-3'
+              : 'motion-safe:slide-in-from-top-3'
+          )}
+        >
           {visibleQuestions.map((question) => (
             <QuestionBlock
               key={question.id}
+              optionShortcuts={hasOptionShortcuts}
               question={question}
               value={answers[question.id]}
               onChange={(value) => updateAnswer(question.id, value)}
@@ -423,6 +458,17 @@ export function renderFormSectionCard({
                     </>
                   )}
                 </Button>
+              ) : null}
+              {/* The keyboard handler is bound whether or not anyone knows, so
+                  say so. Hidden on touch, where there is no Enter key to press
+                  and the hint would be a small lie. */}
+              {isKeyboardAdvanceHintVisible ? (
+                <span className="hidden items-center gap-1 text-[11px] text-muted-foreground sm:inline-flex">
+                  {t('runtime.press')}
+                  <kbd className="rounded border border-border/60 bg-background/60 px-1.5 py-0.5 font-medium font-mono text-[10px]">
+                    {t('runtime.enter_key')}
+                  </kbd>
+                </span>
               ) : null}
             </div>
           </div>
