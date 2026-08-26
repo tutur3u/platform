@@ -67,3 +67,17 @@ if (
     },
   });
 }
+
+// jsdom implements no layout, so `scrollIntoView` does not exist on elements.
+// The runtime calls it whenever it moves between screens or points at a
+// validation error, and an unimplemented method there surfaces as an unhandled
+// error from a passing test — noise that hides real ones.
+if (
+  typeof Element !== 'undefined' &&
+  typeof Element.prototype.scrollIntoView !== 'function'
+) {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    value: () => {},
+  });
+}
