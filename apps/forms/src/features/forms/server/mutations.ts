@@ -21,6 +21,66 @@ function buildFormTimestamps(existing: FormRow | null, input: FormStudioInput) {
   return { publishedAt, closedAt };
 }
 
+/**
+ * Postgres error for a column the schema does not have. Supabase surfaces it
+ * as-is through PostgREST.
+ */
+const UNDEFINED_COLUMN = '42703';
+
+/**
+ * The slice of the forms client this needs. Narrowed so the retry can be
+ * tested without standing up a Supabase client.
+ */
+type UpsertCapableClient = {
+  from: (table: 'forms') => {
+    upsert: (payload: Record<string, unknown>) => PromiseLike<{
+      error: { code?: string; message: string } | null;
+    }>;
+  };
+};
+
+/**
+ * Upserts the form row, retrying once without `seo` if the column is not there
+ * yet.
+ *
+ * Production migrations are applied AFTER the deployment, not before it, so
+ * there is a window on every release where this code is live against the old
+ * schema. Reads already survive it — the row is fetched with `select('*')` and
+ * `parseFormSeo` falls back to defaults — but the write named the column
+ * explicitly, so saving any form during that window failed outright.
+ *
+ * Dropping `seo` from the retry loses only the SEO overrides for that one save,
+ * and only until the migration lands. Failing the whole save instead loses the
+ * author's entire edit.
+ */
+export async function upsertFormRow(
+  formsClient: UpsertCapableClient,
+  payload: Record<string, unknown>
+) {
+  const first = await formsClient.from('forms').upsert(payload);
+
+  if (first.error?.code !== UNDEFINED_COLUMN) {
+    return first;
+  }
+
+  if (!('seo' in payload)) {
+    return first;
+  }
+
+  // Only retry when `seo` is the column being complained about; any other
+  // missing column is a real bug and must surface.
+  if (!first.error.message.includes('seo')) {
+    return first;
+  }
+
+  const { seo: _omitted, ...withoutSeo } = payload;
+  console.warn(
+    'forms: private.forms.seo is missing; saving without SEO overrides until the migration is applied.'
+  );
+
+  return formsClient.from('forms').upsert(withoutSeo);
+}
+
 export async function saveFormDefinition({
   supabase,
   wsId,
@@ -82,9 +142,7 @@ export async function saveFormDefinition({
     closed_at: timestamps.closedAt,
   };
 
-  const { error: formError } = await formsClient
-    .from('forms')
-    .upsert(upsertPayload);
+  const { error: formError } = await upsertFormRow(formsClient, upsertPayload);
 
   if (formError) {
     throw new Error(formError.message);
