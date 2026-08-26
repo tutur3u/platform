@@ -6,12 +6,12 @@
         "acceptedRemoval": 12,
         "key": "api",
         "label": "api",
-        "legacyNext": 505,
+        "legacyNext": 506,
         "migrated": 62,
-        "percentComplete": 12.78,
-        "remaining": 505,
+        "percentComplete": 12.76,
+        "remaining": 506,
         "terminal": 74,
-        "total": 579,
+        "total": 580,
         "unknownStatus": 0
       },
       {
@@ -116,12 +116,12 @@
         "acceptedRemoval": 12,
         "key": "rust-backend",
         "label": "Rust backend",
-        "legacyNext": 513,
+        "legacyNext": 514,
         "migrated": 67,
-        "percentComplete": 13.34,
-        "remaining": 513,
+        "percentComplete": 13.32,
+        "remaining": 514,
         "terminal": 79,
-        "total": 592,
+        "total": 593,
         "unknownStatus": 0
       },
       {
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 577,
+      "legacyNext": 578,
       "migrated": 215,
-      "percentComplete": 28.41,
-      "remaining": 577,
+      "percentComplete": 28.38,
+      "remaining": 578,
       "terminal": 229,
-      "total": 806,
+      "total": 807,
       "unknownStatus": 0
     }
   },
@@ -3188,6 +3188,15 @@
       "methods": ["GET"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/delivery",
       "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/delivery/route.ts",
+      "status": "legacy-next",
+      "targetOwner": "rust-backend"
+    },
+    {
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/email-policy:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/email-policy/route.ts",
+      "kind": "api",
+      "methods": ["GET", "PUT"],
+      "routePath": "/api/v1/workspaces/:wsId/external-projects/email-policy",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/email-policy/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7693,20 +7702,20 @@
     }
   ],
   "summary": {
-    "apiRoutes": 579,
+    "apiRoutes": 580,
     "cronRoutes": 8,
     "layouts": 59,
     "pages": 151,
-    "routeHandlers": 592,
+    "routeHandlers": 593,
     "methodCounts": {
-      "GET": 294,
+      "GET": 295,
       "HEAD": 4,
       "POST": 292,
-      "PUT": 53,
+      "PUT": 54,
       "PATCH": 62,
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 806
+    "total": 807
   }
 }
