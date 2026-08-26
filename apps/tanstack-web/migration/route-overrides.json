@@ -69,6 +69,11 @@
       "targetOwner": "rust-backend",
       "note": "First-class Next.js setup route for adapter-neutral CMS site manifests and templates; Rust parity remains pending."
     },
+    "api:/api/v1/workspaces/:wsId/external-projects/members/invite:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/members/invite/route.ts": {
+      "status": "legacy-next",
+      "targetOwner": "rust-backend",
+      "note": "First-class Next.js external-project invitation route supports workspace-scoped access levels at invite time and editable pending invitation roles. Rust parity remains pending."
+    },
     "api:/api/v1/workspaces/:wsId/chat/conversations:apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts": {
       "methods": {
         "GET": {

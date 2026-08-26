@@ -3336,11 +3336,11 @@
       "targetOwner": "rust-backend"
     },
     {
-      "id": "api:/api/v1/workspaces/:wsId/external-projects/members/invite:apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/invite/route.ts",
+      "id": "api:/api/v1/workspaces/:wsId/external-projects/members/invite:apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/members/invite/route.ts",
       "kind": "api",
-      "methods": ["POST"],
+      "methods": ["POST", "PATCH"],
       "routePath": "/api/v1/workspaces/:wsId/external-projects/members/invite",
-      "sourceFile": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/members/invite/route.ts",
+      "sourceFile": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/members/invite/route.ts",
       "status": "legacy-next",
       "targetOwner": "rust-backend"
     },
@@ -7712,7 +7712,7 @@
       "HEAD": 4,
       "POST": 292,
       "PUT": 54,
-      "PATCH": 62,
+      "PATCH": 63,
       "DELETE": 99,
       "OPTIONS": 23
     },
