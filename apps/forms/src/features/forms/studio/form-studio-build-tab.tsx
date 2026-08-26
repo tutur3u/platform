@@ -18,7 +18,8 @@ import { Label } from '@tuturuuu/ui/label';
 import { TabsContent } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import type { ComponentType } from 'react';
-
+import type { FormCollaboratorPresence } from '../collaboration';
+import { BlockEditingBadge } from '../collaboration';
 import { FormsMarkdown } from '../forms-markdown';
 import { FormsRichTextEditor } from '../forms-rich-text-editor';
 import { FloatingBlockToolbar } from './floating-block-toolbar';
@@ -48,6 +49,7 @@ export function renderBuildTab({
   addBlockToActiveSection,
   handleSectionDragEnd,
   SectionDivider,
+  getBlockEditors,
 }: {
   wsId: string;
   t: FormStudioState['t'];
@@ -68,6 +70,8 @@ export function renderBuildTab({
   addBlockToActiveSection: FormStudioState['addBlockToActiveSection'];
   handleSectionDragEnd: (event: DragEndEvent) => void;
   SectionDivider: ComponentType<{ onClick: () => void }>;
+  /** Collaborators currently focused on a given block id. */
+  getBlockEditors: (blockId: string) => FormCollaboratorPresence[];
 }) {
   return (
     <TabsContent value="build" className="mt-0 min-w-0">
@@ -202,8 +206,15 @@ export function renderBuildTab({
                     const sectionFormId =
                       values.sections[sectionIndex]?.id ?? field.id;
 
+                    const sectionEditors = getBlockEditors(sectionFormId);
+
                     return (
                       <div key={field.id} className="space-y-4">
+                        {sectionEditors.length > 0 ? (
+                          <div className="flex justify-end">
+                            <BlockEditingBadge editors={sectionEditors} />
+                          </div>
+                        ) : null}
                         <SectionEditor
                           index={sectionIndex}
                           wsId={wsId}

@@ -203,6 +203,7 @@
   },
   "exports": {
     "./globals.css": "./src/globals.css",
+    "./marketing": "./src/components/ui/marketing/index.ts",
     "./postcss.config": "./postcss.config.mjs",
     "./badge": {
       "types": "./src/components/ui/badge.tsx",

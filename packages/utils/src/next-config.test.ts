@@ -500,4 +500,35 @@ describe('trimTrailingSlashes', () => {
       'https://example.com/path'
     );
   });
+
+  it('excludes opted-in paths from the anti-framing rule', async () => {
+    const config = createTuturuuuNextConfig({
+      framablePathPatterns: ['embed/[^/]+'],
+    });
+
+    const headers = await config.headers?.();
+    const source = headers?.[0]?.source ?? '';
+
+    expect(source).toContain('embed/[^/]+(?:/|$)');
+    // The platform default must survive an app adding its own patterns.
+    expect(source).toContain('external-projects/assets/[^/]+/webgl(?:/|$)');
+
+    // The `source` is a path-to-regexp pattern, so assert the lookahead does
+    // what it claims: opted-in paths must not match the deny rule, and
+    // everything else still must.
+    const lookahead = new RegExp(`^${source.slice('/:path('.length, -1)}$`);
+    expect(lookahead.test('embed/abc123')).toBe(false);
+    expect(lookahead.test('embed/abc123/preview')).toBe(false);
+    expect(lookahead.test('embedded-elsewhere')).toBe(true);
+    expect(lookahead.test('f/abc123')).toBe(true);
+    expect(lookahead.test('personal/forms')).toBe(true);
+  });
+
+  it('does not leak framablePathPatterns into the Next config object', () => {
+    const config = createTuturuuuNextConfig({
+      framablePathPatterns: ['embed/[^/]+'],
+    });
+
+    expect(config).not.toHaveProperty('framablePathPatterns');
+  });
 });

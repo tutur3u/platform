@@ -72,6 +72,12 @@ export async function saveFormDefinition({
       ...input.settings,
       requireTurnstile: true,
     },
+    seo: {
+      ...input.seo,
+      // The signed URL on an uploaded card expires; only the storage path is
+      // durable, so it is re-signed on read the same way cover art is.
+      image: sanitizeFormMediaForStorage(input.seo.image),
+    },
     published_at: timestamps.publishedAt,
     closed_at: timestamps.closedAt,
   };

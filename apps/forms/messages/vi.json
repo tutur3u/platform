@@ -1595,7 +1595,8 @@
     "write_something": "Hãy viết gì đó...",
     "years_old": "tuổi",
     "yellow": "Vàng",
-    "yesterday": "Hôm qua"
+    "yesterday": "Hôm qua",
+    "copy": "Sao chép"
   },
   "course-data-table": {
     "modules": "Mô-đun"
@@ -2859,7 +2860,10 @@
       "validation_constraint_real_range": "Nhập số từ {min} đến {max}",
       "validation_constraint_regex": "Phải khớp với mẫu yêu cầu",
       "validation_fix_errors": "Vui lòng sửa các lỗi ở trên trước khi gửi.",
-      "view_image_fullscreen": "Xem ảnh toàn màn hình"
+      "view_image_fullscreen": "Xem ảnh toàn màn hình",
+      "welcome_start": "Bắt đầu",
+      "welcome_question_count": "{count, plural, other {# câu hỏi}}",
+      "step_progress": "{current} / {total}"
     },
     "settings": {
       "active": "Đang dùng",
@@ -2933,7 +2937,71 @@
       "turnstile_always_on": "Turnstile luôn bật cho biểu mẫu công khai",
       "turnstile_always_on_hint": "Mọi lượt gửi công khai đều phải vượt qua bước xác minh. Người tạo biểu mẫu không thể tắt lớp bảo vệ này.",
       "typography_scale": "Tỷ lệ typography",
-      "unlimited": "Không giới hạn"
+      "unlimited": "Không giới hạn",
+      "seo": "Tìm kiếm & chia sẻ",
+      "seo_description": "Kiểm soát cách biểu mẫu này hiển thị trong kết quả tìm kiếm và bản xem trước liên kết.",
+      "seo_preview": "Xem trước kết quả tìm kiếm",
+      "seo_preview_unpublished_url": "forms.tuturuuu.com/f/… (đăng biểu mẫu để có liên kết)",
+      "seo_preview_truncated": "Công cụ tìm kiếm sẽ cắt bớt phần này — rút ngắn lại để kiểm soát nội dung hiển thị.",
+      "seo_title": "Tiêu đề tìm kiếm",
+      "seo_title_placeholder": "Để trống để dùng tiêu đề biểu mẫu",
+      "seo_title_hint": "Khoảng 60 ký tự sẽ hiện đầy đủ. Để trống thì lấy dòng tiêu đề bìa, rồi tới tiêu đề biểu mẫu.",
+      "seo_meta_description": "Mô tả tìm kiếm",
+      "seo_meta_description_placeholder": "Để trống để dùng mô tả biểu mẫu",
+      "seo_meta_description_hint": "Khoảng 160 ký tự sẽ hiện đầy đủ. Để trống thì lấy mô tả biểu mẫu, rồi tới mô tả của phần đầu tiên.",
+      "seo_keywords": "Từ khoá",
+      "seo_keywords_placeholder": "tuyển dụng, ứng tuyển, kỹ thuật",
+      "seo_keywords_hint": "Ngăn cách bằng dấu phẩy, tối đa {max}. Để trống thì dùng từ khoá suy ra từ tiêu đề.",
+      "seo_canonical": "URL chuẩn (canonical)",
+      "seo_canonical_hint": "Trỏ trình thu thập dữ liệu tới trang khác khi biểu mẫu được nhúng ở nơi khác. Để trống thì dùng chính liên kết của biểu mẫu.",
+      "seo_image": "Ảnh thẻ chia sẻ",
+      "seo_image_hint": "Kích thước 1200×630 là hợp nhất. Để trống thì dùng thẻ được tạo từ giao diện và ảnh bìa của biểu mẫu.",
+      "seo_no_index": "Ẩn khỏi công cụ tìm kiếm",
+      "seo_no_index_hint": "Phát tín hiệu noindex. Liên kết vẫn dùng được với những người bạn chia sẻ — chỉ là không được lập chỉ mục.",
+      "embed": "Nhúng",
+      "embed_description": "Đặt biểu mẫu này lên trang của bạn — nội tuyến, dạng popup, hoặc sau một nút mở.",
+      "embed_mode": "Kiểu nhúng",
+      "embed_modes": {
+        "inline": "Nội tuyến",
+        "fullpage": "Toàn trang",
+        "popup": "Popup",
+        "slider": "Trượt",
+        "popover": "Bong bóng",
+        "sidetab": "Tab bên"
+      },
+      "embed_mode_hints": {
+        "inline": "Nằm trong mạch nội dung trang và giãn theo biểu mẫu.",
+        "fullpage": "Chiếm toàn màn hình. Hợp nhất khi để ở một trang riêng.",
+        "popup": "Mở ra giữa màn hình, làm mờ mọi thứ phía sau.",
+        "slider": "Trượt vào từ mép phải, vẫn thấy trang bên cạnh.",
+        "popover": "Nút tròn ở góc màn hình, bấm vào là mở một thẻ gọn.",
+        "sidetab": "Tab cố định ở mép trang, bấm vào là mở bảng biểu mẫu."
+      },
+      "embed_height": "Chiều cao",
+      "embed_height_placeholder": "Để trống để tự động điều chỉnh",
+      "embed_height_hint": "Tự động điều chỉnh cần bản nhúng bằng script. Iframe thuần luôn cần chiều cao cố định.",
+      "embed_launcher_text": "Nhãn nút mở",
+      "embed_launcher_placeholder": "Mở biểu mẫu",
+      "embed_snippet": "Nhúng bằng script (khuyên dùng)",
+      "embed_iframe_snippet": "Iframe thuần (không dùng script)",
+      "embed_requires_share_link": "Hãy đăng biểu mẫu và tạo liên kết chia sẻ trước — bản nhúng trỏ tới liên kết đó.",
+      "display_mode": "Cách hiển thị câu hỏi",
+      "display_modes": {
+        "sections": "Hiện tất cả",
+        "one_question": "Từng câu một"
+      },
+      "display_mode_hints": {
+        "sections": "Cả một phần trên một màn hình. Hợp với biểu mẫu ngắn mà người ta muốn xem lướt trước khi trả lời.",
+        "one_question": "Mỗi màn hình một câu hỏi. Giúp biểu mẫu dài bớt ngợp và tăng tỉ lệ hoàn tất."
+      },
+      "welcome_screen": "Hiện màn hình chào",
+      "welcome_screen_hint": "Một màn hình mở đầu trước câu hỏi đầu tiên, để người trả lời biết họ sắp bắt đầu việc gì.",
+      "welcome_title": "Tiêu đề màn hình chào",
+      "welcome_title_placeholder": "Để trống để dùng tiêu đề biểu mẫu",
+      "welcome_body": "Lời chào",
+      "welcome_body_placeholder": "Để trống để dùng mô tả biểu mẫu",
+      "welcome_button": "Nhãn nút",
+      "welcome_button_placeholder": "Bắt đầu"
     },
     "shared": {
       "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",
@@ -2941,7 +3009,10 @@
       "metadata_protected_description": "Biểu mẫu chia sẻ này đang được bảo vệ. Hãy đăng nhập hoặc dùng đường truy cập phù hợp để tiếp tục.",
       "open_graph_alt": "Ảnh xem trước cho {title}",
       "unavailable_description": "Biểu mẫu này có thể đã bị gỡ xuất bản, đã đóng, hoặc đã bị xóa.",
-      "unavailable_title": "Không thể truy cập biểu mẫu"
+      "unavailable_title": "Không thể truy cập biểu mẫu",
+      "sign_in_required_title": "Đăng nhập để tiếp tục",
+      "sign_in_required_description": "Biểu mẫu này cần xác định danh tính của bạn, việc đó không thực hiện được bên trong khung nhúng.",
+      "open_in_new_tab": "Mở biểu mẫu trong tab mới"
     },
     "status": {
       "closed": "Đã đóng",
@@ -3148,6 +3219,412 @@
       "responses_cleared": "Đã xóa phản hồi",
       "section_needs_question": "Phần {section} phải có ít nhất một câu hỏi.",
       "share_link_copied": "Đã sao chép liên kết chia sẻ"
+    },
+    "landing": {
+      "app_name": "Tuturuuu Forms",
+      "meta": {
+        "title": "Biểu mẫu mà người ta thật sự điền xong",
+        "social_title": "Tuturuuu Forms — tạo, phối màu, nhúng, phân tích",
+        "description": "Tạo biểu mẫu và khảo sát đẹp mắt trong vài phút. Logic điều kiện, giao diện chỉnh được, sáu kiểu nhúng, đồng chỉnh sửa thời gian thực và phân tích phản hồi — trong cùng một workspace."
+      },
+      "nav": {
+        "workflow": "Cách hoạt động",
+        "build": "Khối câu hỏi",
+        "design": "Giao diện",
+        "embed": "Nhúng",
+        "insights": "Phân tích",
+        "get_started": "Bắt đầu miễn phí",
+        "workspace": "Mở workspace",
+        "sign_in": "Đăng nhập"
+      },
+      "hero": {
+        "eyebrow": "Forms",
+        "title": "Biểu mẫu mà người ta thật sự điền xong",
+        "description": "Thiết kế biểu mẫu trong vài phút, đăng ở bất cứ đâu và xem câu trả lời về theo thời gian thực. Không bị khoá vào mẫu có sẵn, không tính tiền theo lượt phản hồi, không có dữ liệu nào bạn không xuất được.",
+        "primary": "Bắt đầu miễn phí",
+        "primary_authed": "Mở workspace của bạn",
+        "secondary": "Xem cách hoạt động",
+        "reassurance": "Miễn phí để bắt đầu · Không cần thẻ · Luôn xuất được toàn bộ dữ liệu"
+      },
+      "stats": {
+        "blocks": {
+          "value": "14",
+          "label": "Khối câu hỏi & nội dung"
+        },
+        "themes": {
+          "value": "12",
+          "label": "Giao diện, chỉnh được hết"
+        },
+        "embeds": {
+          "value": "6",
+          "label": "Cách nhúng"
+        },
+        "languages": {
+          "value": "2",
+          "label": "Ngôn ngữ giao diện"
+        }
+      },
+      "demo": {
+        "theme_label": "Thử một giao diện",
+        "title": "Góp ý sản phẩm",
+        "description": "Biểu mẫu thật, chạy bằng trình kết xuất thật. Cứ điền thử — không có gì được lưu lại.",
+        "confirmation_title": "Toàn bộ luồng là như vậy",
+        "confirmation_message": "Bản demo này không lưu gì cả. Biểu mẫu của bạn sẽ thu phản hồi, theo dõi tỉ lệ bỏ dở và xuất ra CSV.",
+        "section_title": "Kể cho chúng tôi về đội của bạn",
+        "section_description": "Bốn câu hỏi. Khoảng ba mươi giây.",
+        "role_title": "Vai trò nào mô tả đúng bạn nhất?",
+        "role_option_1": "Nhà sáng lập",
+        "role_option_2": "Vận hành",
+        "role_option_3": "Sản phẩm",
+        "role_option_4": "Khác",
+        "priority_title": "Bạn sẽ dùng cái nào trước?",
+        "priority_description": "Chọn bao nhiêu tuỳ bạn.",
+        "priority_option_1": "Góp ý khách hàng",
+        "priority_option_2": "Đăng ký sự kiện",
+        "priority_option_3": "Hồ sơ ứng tuyển",
+        "priority_option_4": "Yêu cầu nội bộ",
+        "satisfaction_title": "Bạn hài lòng đến đâu với công cụ biểu mẫu hiện tại?",
+        "satisfaction_min": "Không hài lòng",
+        "satisfaction_max": "Rất hài lòng",
+        "notes_title": "Còn điều gì chúng tôi nên biết không?",
+        "notes_placeholder": "Không bắt buộc — viết nhiều hay ít tuỳ bạn"
+      },
+      "workflow": {
+        "eyebrow": "Từ đầu đến cuối",
+        "title": "Từ trang trắng đến phản hồi đầu tiên, không cần rời tab",
+        "subtitle": "Dựng, phối màu, chia sẻ và phân tích là bốn thẻ của cùng một trình soạn thảo — không phải bốn công cụ bạn phải tự ghép lại.",
+        "steps": {
+          "build": {
+            "title": "Dựng",
+            "description": "Kéo khối vào từng phần, viết câu hỏi bằng Markdown và thêm nhánh để bỏ qua những gì không liên quan."
+          },
+          "design": {
+            "title": "Phối màu",
+            "description": "Chọn một giao diện, rồi chỉnh màu nhấn, phông chữ, độ thoáng và ảnh bìa cho tới khi nó ra chất của bạn."
+          },
+          "share": {
+            "title": "Chia sẻ",
+            "description": "Đăng một liên kết, hoặc đặt biểu mẫu vào trang của bạn dạng khung nội tuyến, popup, trượt, tab bên hoặc toàn trang."
+          },
+          "learn": {
+            "title": "Đo lường",
+            "description": "Xem phản hồi về theo thời gian thực, biết người ta bỏ dở ở đâu và xuất mọi thứ ra CSV bất cứ lúc nào."
+          }
+        }
+      },
+      "build": {
+        "eyebrow": "Trình dựng",
+        "title": "Đủ mọi khối bạn cần, và không phải cấu hình lại lần hai",
+        "subtitle": "Các loại câu hỏi và khối nội dung dùng chung một trình soạn thảo. Đặt gợi ý nhập, đánh dấu bắt buộc, thêm kiểm tra hợp lệ, kéo thả để sắp xếp lại.",
+        "footnote": "Phần, ngắt trang, đường phân cách và văn bản có định dạng cũng là khối — nên biểu mẫu có thể đọc như một tài liệu khi cần.",
+        "blocks": {
+          "short_text": {
+            "title": "Văn bản ngắn",
+            "description": "Câu trả lời một dòng, có gợi ý nhập và giới hạn độ dài."
+          },
+          "long_text": {
+            "title": "Văn bản dài",
+            "description": "Câu trả lời nhiều dòng cho bối cảnh và chi tiết."
+          },
+          "choice": {
+            "title": "Lựa chọn",
+            "description": "Chọn một hoặc nhiều, dạng danh sách hoặc lưới ảnh."
+          },
+          "dropdown": {
+            "title": "Danh sách thả xuống",
+            "description": "Danh sách lựa chọn dài mà không chiếm hết trang."
+          },
+          "scale": {
+            "title": "Thang tuyến tính",
+            "description": "Thang 1–10 với nhãn ở hai đầu."
+          },
+          "rating": {
+            "title": "Chấm sao",
+            "description": "Chấm điểm từ hai đến mười sao."
+          },
+          "date": {
+            "title": "Ngày & giờ",
+            "description": "Ô chọn lịch và giờ, có kiểm tra hợp lệ."
+          },
+          "media": {
+            "title": "Hình ảnh",
+            "description": "Minh hoạ cho câu hỏi, hoặc để chính các lựa chọn là ảnh."
+          },
+          "video": {
+            "title": "Video",
+            "description": "Nhúng video YouTube ngay trong biểu mẫu, có mốc bắt đầu."
+          },
+          "rich_text": {
+            "title": "Văn bản có định dạng",
+            "description": "Khối Markdown cho hướng dẫn, điều khoản đồng ý và bối cảnh."
+          }
+        }
+      },
+      "logic": {
+        "eyebrow": "Logic",
+        "title": "Chỉ hỏi những gì liên quan",
+        "subtitle": "Quy tắc đưa người trả lời tới đúng phần dựa trên câu họ đã chọn — hoặc kết thúc sớm khi không còn gì để hỏi.",
+        "diagram": {
+          "source_label": "Khi có người trả lời",
+          "source_question": "Đội của bạn lớn cỡ nào?",
+          "if": "Nếu",
+          "note": "Quy tắc có thể kích hoạt theo một câu trả lời hoặc ở cuối cả một phần, và có thể nhảy tới bất kỳ phần nào hoặc gửi luôn.",
+          "rules": {
+            "enterprise": {
+              "answer": "Hơn 200 người",
+              "destination": "Câu hỏi mua sắm"
+            },
+            "startup": {
+              "answer": "10 đến 200 người",
+              "destination": "Thiết lập đội"
+            },
+            "individual": {
+              "answer": "Chỉ mình tôi",
+              "destination": "Gửi"
+            }
+          }
+        },
+        "features": {
+          "branching": {
+            "title": "Rẽ nhánh theo câu trả lời",
+            "description": "Đưa người trả lời đi hướng khác tuỳ theo lựa chọn của họ."
+          },
+          "section_end": {
+            "title": "Quy tắc theo phần",
+            "description": "Quyết định đi đâu khi một phần đã hoàn tất."
+          },
+          "validation": {
+            "title": "Kiểm tra hợp lệ",
+            "description": "Số, email, URL, khoảng giá trị và mẫu tuỳ chỉnh, kèm thông báo lỗi của riêng bạn."
+          },
+          "scheduling": {
+            "title": "Mở & đóng",
+            "description": "Hẹn khung thời gian, giới hạn tổng phản hồi, hoặc mỗi người một lần."
+          }
+        }
+      },
+      "design": {
+        "eyebrow": "Giao diện",
+        "title": "Giao diện mà bạn chỉnh được thật",
+        "subtitle": "Bắt đầu từ một mẫu có sẵn, rồi đổi mọi thứ. Bản xem trước chính là biểu mẫu — thứ bạn thấy khi chỉnh đúng bằng thứ người trả lời nhận được.",
+        "surface_heading": "Ba kiểu bề mặt",
+        "surface_description": "Paper phẳng như in trên giấy. Glass nổi trên nền. Panel có viền và dày dặn. Mọi giao diện đều chạy được ở chế độ sáng và tối.",
+        "controls_heading": "Chỉnh tới từng chi tiết",
+        "controls_description": "Mẫu có sẵn chỉ là điểm bắt đầu, không phải cái lồng — mỗi mục dưới đây là một tuỳ chỉnh độc lập.",
+        "surfaces": {
+          "paper": "Paper",
+          "glass": "Glass",
+          "panel": "Panel"
+        },
+        "controls": {
+          "fonts": "Mười chín phông tiêu đề và nội dung, ghép cặp độc lập",
+          "density": "Khoảng cách thoáng, cân bằng hoặc gọn",
+          "typography": "Cỡ chữ riêng cho tiêu đề lớn, tiêu đề và nội dung",
+          "cover": "Ảnh bìa và dòng tiêu đề, kèm ảnh cho từng phần",
+          "pacing": "Từng câu một, hoặc cả một phần trên mỗi màn hình"
+        }
+      },
+      "embed": {
+        "eyebrow": "Nhúng",
+        "title": "Sáu cách đặt biểu mẫu ngay nơi người dùng đang ở",
+        "subtitle": "Một mã chia sẻ, một thẻ script. Đổi kiểu hiển thị bằng một thuộc tính dữ liệu — không cần build lại, không cần deploy lại.",
+        "snippet_heading": "Một thẻ, mọi kiểu",
+        "snippet_description": "Chèn script một lần, rồi khai báo bao nhiêu biểu mẫu tuỳ bạn. Chuyển giữa nội tuyến, popup, trượt, bong bóng, tab bên và toàn trang chỉ bằng một thuộc tính.",
+        "modes": {
+          "inline": {
+            "title": "Nội tuyến",
+            "description": "Biểu mẫu nằm trong mạch nội dung trang và giãn theo nội dung của nó."
+          },
+          "fullpage": {
+            "title": "Toàn trang",
+            "description": "Một trang riêng — trên màn hình không có gì ngoài biểu mẫu."
+          },
+          "popup": {
+            "title": "Popup",
+            "description": "Mở ra giữa màn hình, làm mờ mọi thứ phía sau."
+          },
+          "slider": {
+            "title": "Trượt",
+            "description": "Trượt vào từ mép màn hình, vẫn thấy trang ở bên cạnh."
+          },
+          "popover": {
+            "title": "Bong bóng",
+            "description": "Nút tròn ở góc màn hình, bấm vào là mở ra một thẻ gọn."
+          },
+          "sidetab": {
+            "title": "Tab bên",
+            "description": "Một tab cố định ở mép trang, bấm vào là mở bảng biểu mẫu."
+          }
+        }
+      },
+      "collaborate": {
+        "eyebrow": "Cộng tác",
+        "title": "Cùng chỉnh sửa mà không ghi đè lên nhau",
+        "subtitle": "Mọi người trong workspace thấy cùng một biểu mẫu khi nó thay đổi. Hiện diện trực tuyến, chỉ báo theo từng khối và tự động lưu đều bật sẵn.",
+        "presence_label": "3 đồng đội đang chỉnh sửa",
+        "features": {
+          "presence": {
+            "title": "Hiện diện trực tuyến",
+            "description": "Thấy ai đang mở biểu mẫu và họ đang ở khối nào."
+          },
+          "locks": {
+            "title": "Khoá mềm",
+            "description": "Khối đang được người khác chỉnh sẽ được báo trước khi bạn gõ vào, không phải sau."
+          },
+          "autosave": {
+            "title": "Tự động lưu",
+            "description": "Thay đổi tự lưu, và vẫn có nút lưu thủ công khi bạn muốn."
+          }
+        }
+      },
+      "insights": {
+        "eyebrow": "Phân tích",
+        "title": "Biết chuyện gì đã xảy ra, không chỉ biết bao nhiêu",
+        "subtitle": "Mỗi biểu mẫu đều theo dõi lượt xem, lượt bắt đầu, lượt hoàn tất và tỉ lệ bỏ dở theo từng câu — để bạn phân biệt được biểu mẫu ế và biểu mẫu hỏng.",
+        "funnel": {
+          "label": "Phễu phản hồi",
+          "note": "Số liệu minh hoạ. Phễu của bạn được tính từ phiên thật, chia theo thiết bị, nguồn giới thiệu và quốc gia.",
+          "steps": {
+            "views": {
+              "label": "Đã xem",
+              "value": "1.000"
+            },
+            "starts": {
+              "label": "Đã bắt đầu",
+              "value": "740"
+            },
+            "completed": {
+              "label": "Đã hoàn tất",
+              "value": "520"
+            }
+          }
+        },
+        "features": {
+          "live": {
+            "title": "Phản hồi trực tiếp",
+            "description": "Câu trả lời hiện lên ngay khi về, nhóm theo người trả lời."
+          },
+          "dropoff": {
+            "title": "Tỉ lệ bỏ dở",
+            "description": "Tìm đúng câu hỏi khiến người ta ngừng trả lời."
+          },
+          "export": {
+            "title": "Xuất dữ liệu",
+            "description": "Tải phản hồi dạng CSV, hoặc cả biểu mẫu dạng JSON di động."
+          },
+          "receipts": {
+            "title": "Bản sao phản hồi",
+            "description": "Cho phép người trả lời tự gửi email bản sao những gì họ đã gửi."
+          }
+        }
+      },
+      "trust": {
+        "eyebrow": "Tin cậy",
+        "title": "Phản hồi của bạn vẫn là của bạn",
+        "subtitle": "Biểu mẫu và câu trả lời được lưu ngoài Data API công khai, và chỉ truy cập được sau khi quyền workspace đã được kiểm tra.",
+        "developer_heading": "Sinh ra để tích hợp",
+        "developer_description": "Mọi thứ studio làm được đều gọi được từ mã của bạn, và không có cánh cửa nào một chiều.",
+        "features": {
+          "private_schema": {
+            "title": "Lưu trữ riêng tư",
+            "description": "Định nghĩa và câu trả lời nằm ngoài bề mặt API công khai."
+          },
+          "access": {
+            "title": "Kiểm soát truy cập",
+            "description": "Ẩn danh, đã đăng nhập, hoặc đã đăng nhập kèm email đã xác minh."
+          },
+          "spam": {
+            "title": "Chống spam",
+            "description": "Turnstile cùng giới hạn tần suất trên mọi lượt gửi công khai."
+          },
+          "portable": {
+            "title": "Không khoá dữ liệu",
+            "description": "Xuất bất kỳ biểu mẫu nào ra JSON và nhập vào workspace khác."
+          }
+        },
+        "developer": {
+          "sdk": {
+            "title": "SDK nhúng",
+            "description": "Một script duy nhất, dựng mọi kiểu nhúng từ thuộc tính dữ liệu."
+          },
+          "share_link": {
+            "title": "Liên kết chia sẻ",
+            "description": "Đổi hoặc thu hồi liên kết công khai mà không đụng vào biểu mẫu."
+          },
+          "portable": {
+            "title": "Định dạng di động",
+            "description": "JSON có đánh phiên bản, xem khác biệt, review và đưa vào git được."
+          }
+        }
+      },
+      "faq": {
+        "eyebrow": "Câu hỏi",
+        "title": "Trước khi bắt đầu",
+        "subtitle": "Những điều được hỏi nhiều nhất.",
+        "items": {
+          "free": {
+            "question": "Có miễn phí không?",
+            "answer": "Có — tạo biểu mẫu, thu phản hồi và xuất dữ liệu đều miễn phí để bắt đầu. Không tính tiền theo lượt phản hồi và không có giới hạn nào âm thầm giấu đi những câu trả lời bạn đã thu."
+          },
+          "anonymous": {
+            "question": "Người trả lời có cần tài khoản không?",
+            "answer": "Không. Biểu mẫu có thể nhận phản hồi hoàn toàn ẩn danh. Bạn cũng có thể yêu cầu tài khoản Tuturuuu đã đăng nhập, hoặc tài khoản đã đăng nhập kèm email đã xác minh, nếu cần biết ai đã trả lời."
+          },
+          "embed": {
+            "question": "Tôi đặt biểu mẫu lên trang của mình được không?",
+            "answer": "Được, theo sáu cách: nội tuyến, toàn trang, popup, trượt, bong bóng và tab bên. Tất cả đều dùng chung một thẻ script và một mã chia sẻ, nên đổi qua lại chỉ là đổi một thuộc tính."
+          },
+          "realtime": {
+            "question": "Đội của tôi có chỉnh cùng lúc được không?",
+            "answer": "Được. Mọi người có quyền vào workspace đều thấy hiện diện trực tuyến, chỉ báo trên khối mà đồng đội đang chỉnh, và thay đổi của nhau ngay khi được lưu."
+          },
+          "export": {
+            "question": "Tôi lấy dữ liệu ra được không?",
+            "answer": "Luôn luôn. Phản hồi xuất ra CSV, và bản thân biểu mẫu xuất ra tệp JSON có đánh phiên bản để nhập vào bất kỳ workspace nào khác."
+          },
+          "languages": {
+            "question": "Hỗ trợ những ngôn ngữ nào?",
+            "answer": "Giao diện có tiếng Anh và tiếng Việt, còn nội dung biểu mẫu viết bằng ngôn ngữ nào cũng được. Phông chữ hiển thị đúng dấu tiếng Việt thay vì rơi sang phông khác giữa câu."
+          }
+        }
+      },
+      "closing": {
+        "title": "Dựng biểu mẫu đầu tiên trong năm phút tới",
+        "description": "Bắt đầu từ trang trắng hoặc nhập một biểu mẫu bạn đã có. Kiểu gì bạn cũng sẽ có một liên kết chia sẻ được trước khi ly cà phê nguội.",
+        "secondary": "Đọc câu hỏi thường gặp"
+      },
+      "footer": {
+        "tagline": "Dựng, phối màu, nhúng và phân tích biểu mẫu — một phần của workspace Tuturuuu.",
+        "product": "Sản phẩm",
+        "platform": "Nền tảng",
+        "legal": "Pháp lý",
+        "legal_line": "© {year} Tuturuuu. Bảo lưu mọi quyền.",
+        "links": {
+          "workflow": "Cách hoạt động",
+          "build": "Khối câu hỏi",
+          "design": "Giao diện",
+          "embed": "Nhúng",
+          "tuturuuu": "Tuturuuu",
+          "products": "Tất cả sản phẩm",
+          "pricing": "Bảng giá",
+          "docs": "Tài liệu",
+          "terms": "Điều khoản",
+          "privacy": "Quyền riêng tư",
+          "security": "Bảo mật",
+          "contact": "Liên hệ"
+        }
+      }
+    },
+    "collaboration": {
+      "away": "Đang vắng",
+      "viewing": "Đang xem biểu mẫu",
+      "editing_block": "Đang sửa “{block}”",
+      "editing_now": "{name} đang sửa mục này",
+      "editing_now_multiple": "{count} người đang sửa mục này",
+      "editor_count": "{count, plural, other {# người khác đang sửa}}",
+      "remote_save_title": "{name} vừa lưu thay đổi",
+      "remote_save_description": "Bạn đang có chỉnh sửa chưa lưu nên bản này được giữ nguyên. Tải lại để lấy bản của họ — thay đổi của bạn sẽ mất.",
+      "remote_save_reload": "Tải lại"
     }
   },
   "guest-lead-data-table": {

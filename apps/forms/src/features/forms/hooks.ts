@@ -167,6 +167,12 @@ export function usePublicFormResponseCopy(shareCode: string) {
   });
 }
 
+/**
+ * Upload scopes double as the storage folder under `<wsId>/forms/`, so a new
+ * scope has to be added to the route's enum as well as here.
+ */
+export type FormMediaScope = 'cover' | 'section' | 'option' | 'social';
+
 export function useFormMediaUploadMutation({ wsId }: { wsId: string }) {
   const t = useTranslations('forms');
 
@@ -176,7 +182,7 @@ export function useFormMediaUploadMutation({ wsId }: { wsId: string }) {
       scope,
     }: {
       file: File;
-      scope: 'cover' | 'section' | 'option';
+      scope: FormMediaScope;
     }) => {
       const upload = await apiFetch<{
         signedUrl: string;

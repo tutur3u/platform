@@ -9,6 +9,16 @@ export const FORM_QUESTION_DESCRIPTION_MAX_LENGTH = 16000;
 export const FORM_RESPONSE_ANSWER_MAX_LENGTH = 16000;
 export const FORM_CONFIRMATION_TITLE_MAX_LENGTH = 120;
 export const FORM_CONFIRMATION_MESSAGE_MAX_LENGTH = 1000;
+/**
+ * SEO limits track what search engines and social cards actually render, not
+ * what the column can hold: titles are truncated around 60 characters in a
+ * result listing and descriptions around 160, so allowing more would only let
+ * someone write copy that silently gets cut.
+ */
+export const FORM_SEO_TITLE_MAX_LENGTH = 120;
+export const FORM_SEO_DESCRIPTION_MAX_LENGTH = 320;
+export const FORM_SEO_KEYWORD_MAX_LENGTH = 60;
+export const FORM_SEO_KEYWORDS_MAX_COUNT = 12;
 
 export const FORM_STATUS_VALUES = ['draft', 'published', 'closed'] as const;
 export const FORM_ACCESS_MODE_VALUES = [
@@ -17,6 +27,12 @@ export const FORM_ACCESS_MODE_VALUES = [
   'authenticated_email',
 ] as const;
 export const FORM_DENSITY_VALUES = ['airy', 'balanced', 'compact'] as const;
+/**
+ * `sections` shows a whole section per screen (the original behaviour);
+ * `one_question` gives each answerable question its own screen. Branching still
+ * runs at section boundaries in both.
+ */
+export const FORM_DISPLAY_MODE_VALUES = ['sections', 'one_question'] as const;
 export const FORM_SURFACE_STYLE_VALUES = ['paper', 'glass', 'panel'] as const;
 export const FORM_OPTION_LAYOUT_VALUES = ['list', 'grid'] as const;
 export const FORM_THEME_ACCENT_VALUES = [
@@ -243,7 +259,45 @@ export const formThemeSchema = z.object({
     }),
 });
 
+export const formSeoSchema = z.object({
+  /** Overrides the title derived from the form's cover headline or title. */
+  title: z.string().trim().max(FORM_SEO_TITLE_MAX_LENGTH).default(''),
+  /** Overrides the description derived from the form or its first section. */
+  description: z
+    .string()
+    .trim()
+    .max(FORM_SEO_DESCRIPTION_MAX_LENGTH)
+    .default(''),
+  /** Replaces the generated Open Graph card with an uploaded image. */
+  image: formMediaSchema.default(defaultFormMediaValue),
+  /** Replaces the derived keyword list. Empty means "derive". */
+  keywords: z
+    .array(z.string().trim().min(1).max(FORM_SEO_KEYWORD_MAX_LENGTH))
+    .max(FORM_SEO_KEYWORDS_MAX_COUNT)
+    .default([]),
+  /** Points crawlers at a different canonical URL for this form. */
+  canonicalUrl: z.union([z.literal(''), z.url().max(2000)]).default(''),
+  /** Emits `noindex, nofollow` for the public page. */
+  noIndex: z.boolean().default(false),
+});
+
+export const FORM_WELCOME_TITLE_MAX_LENGTH = 120;
+export const FORM_WELCOME_DESCRIPTION_MAX_LENGTH = 600;
+export const FORM_WELCOME_BUTTON_MAX_LENGTH = 40;
+
 export const formSettingsSchema = z.object({
+  displayMode: z.enum(FORM_DISPLAY_MODE_VALUES).default('sections'),
+  /** Optional cover screen shown before the first question. */
+  welcomeEnabled: z.boolean().default(false),
+  welcomeTitle: z.string().max(FORM_WELCOME_TITLE_MAX_LENGTH).default(''),
+  welcomeDescription: z
+    .string()
+    .max(FORM_WELCOME_DESCRIPTION_MAX_LENGTH)
+    .default(''),
+  welcomeButtonLabel: z
+    .string()
+    .max(FORM_WELCOME_BUTTON_MAX_LENGTH)
+    .default(''),
   showProgressBar: z.boolean().default(true),
   allowMultipleSubmissions: z.boolean().default(true),
   oneResponsePerUser: z.boolean().default(false),
@@ -320,6 +374,14 @@ export const formStudioSchema = z.object({
   maxResponses: z.number().int().positive().nullable().optional(),
   theme: formThemeSchema,
   settings: formSettingsSchema,
+  seo: formSeoSchema.default({
+    title: '',
+    description: '',
+    image: defaultFormMediaValue,
+    keywords: [],
+    canonicalUrl: '',
+    noIndex: false,
+  }),
   sections: z.array(formSectionSchema).min(1),
   logicRules: z.array(formLogicRuleSchema).default([]),
 });
@@ -361,6 +423,7 @@ export type FormQuestionInput = z.infer<typeof formQuestionSchema>;
 export type FormLogicRuleInput = z.infer<typeof formLogicRuleSchema>;
 export type FormThemeInput = z.infer<typeof formThemeSchema>;
 export type FormSettingsInput = z.infer<typeof formSettingsSchema>;
+export type FormSeoInput = z.infer<typeof formSeoSchema>;
 export type FormSubmitInput = z.infer<typeof formSubmitSchema>;
 
 export function createDefaultFormStudioInput(): FormStudioInput {
@@ -393,12 +456,29 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       },
     },
     settings: {
+      displayMode: 'sections',
+      welcomeEnabled: false,
+      welcomeTitle: '',
+      welcomeDescription: '',
+      welcomeButtonLabel: '',
       showProgressBar: true,
       allowMultipleSubmissions: true,
       oneResponsePerUser: false,
       requireTurnstile: true,
       confirmationTitle: 'Response received',
       confirmationMessage: 'Thanks for taking the time to respond.',
+    },
+    seo: {
+      title: '',
+      description: '',
+      image: {
+        storagePath: '',
+        url: '',
+        alt: '',
+      },
+      keywords: [],
+      canonicalUrl: '',
+      noIndex: false,
     },
     sections: [
       {

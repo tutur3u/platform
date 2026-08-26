@@ -22,7 +22,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 
 import { FormsImageDialog } from '../forms-image-dialog';
-import { useFormMediaUploadMutation } from '../hooks';
+import { type FormMediaScope, useFormMediaUploadMutation } from '../hooks';
 import type { FormStudioInput } from '../schema';
 import type { getFormToneClasses } from '../theme';
 
@@ -38,7 +38,7 @@ export function FormMediaField({
   hint,
 }: {
   wsId: string;
-  scope: 'cover' | 'section' | 'option';
+  scope: FormMediaScope;
   value: FormMediaValue;
   onChange: (value: FormMediaValue) => void;
   toneClasses: ReturnType<typeof getFormToneClasses>;
@@ -47,7 +47,7 @@ export function FormMediaField({
 }) {
   const t = useTranslations('forms');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(scope === 'cover');
+  const [open, setOpen] = useState(scope === 'cover' || scope === 'social');
   const [previewOpen, setPreviewOpen] = useState(false);
   const uploadMutation = useFormMediaUploadMutation({ wsId });
   const hasImage = Boolean(value.url || value.storagePath);

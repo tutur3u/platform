@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  canJoinFormRealtime,
+  resolveCollaboratorIdentity,
+} from '@/features/forms/collaboration/identity';
 import { FormStudio } from '@/features/forms/form-studio';
 import {
   fetchFormDefinition,
@@ -38,6 +42,12 @@ export default async function FormDetailPage({
           notFound();
         }
 
+        const canRealtime = await canJoinFormRealtime();
+        const collaboratorIdentity = await resolveCollaboratorIdentity({
+          adminClient: context.adminClient,
+          user: context.user,
+        });
+
         const { adminClient, canManageForms, canViewAnalytics } = context;
 
         if (!canManageForms && !canViewAnalytics) {
@@ -73,6 +83,8 @@ export default async function FormDetailPage({
 
         return (
           <FormStudio
+            currentUser={collaboratorIdentity}
+            canRealtime={canRealtime}
             wsId={wsId}
             workspaceSlug={resolvedParams.wsId}
             mode="edit"

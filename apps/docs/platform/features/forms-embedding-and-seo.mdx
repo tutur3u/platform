@@ -1,0 +1,155 @@
+---
+title: 'Forms: embedding, SEO, and studio collaboration'
+description: 'Embed a Tuturuuu form in a third-party page, control its search and social metadata, and understand how the studio shares editing presence.'
+updatedAt: '2026-08-26'
+---
+
+## TL;DR
+
+`apps/forms` (`forms.tuturuuu.com`, port `7828`) owns the whole forms product.
+Three surfaces are worth knowing about before you touch it:
+
+- **Embedding** — six modes driven by a dependency-free SDK at `/embed.js`,
+  rendered by the `/embed/<shareCode>` route.
+- **SEO** — per-form overrides stored in `private.forms.seo`, applied to
+  `/f/<shareCode>` metadata.
+- **Realtime collaboration** — presence and broadcast on a private
+  `form-studio-<formId>` channel, never `postgres_changes`.
+
+## Embedding
+
+The studio's embed panel generates the snippet; this is what it emits and why.
+
+### Script SDK (preferred)
+
+```html
+<script src="https://forms.tuturuuu.com/embed.js" async></script>
+<div data-tuturuuu-form="<shareCode>" data-mode="inline"></div>
+```
+
+The SDK scans for `data-tuturuuu-form` elements, mounts an iframe pointed at
+`/embed/<shareCode>`, and marks the container `data-tuturuuu-form-mounted` so a
+re-run cannot double-mount it.
+
+| Attribute | Applies to | Default | Meaning |
+| --- | --- | --- | --- |
+| `data-tuturuuu-form` | all | — | The form's share code. Required. |
+| `data-mode` | all | `inline` | `inline`, `fullpage`, `popup`, `slider`, `popover`, or `sidetab`. |
+| `data-height` | inline modes | `520` | Fixed pixel height. Omit to let the embed auto-size. |
+| `data-title` | all | — | `title` on the generated iframe, for screen readers. |
+| `data-launcher-text` | overlay modes | localized default | Launcher button label. |
+| `data-launcher-color` | overlay modes | `#6d28d9` | Launcher button background. |
+| `data-open` | overlay modes | `false` | `true` opens the overlay on load. |
+| `data-close-on-submit` | overlay modes | `true` | `false` keeps the overlay open after submit. |
+
+`inline` and `fullpage` render in place. `popup`, `slider`, `popover`, and
+`sidetab` are overlay modes: they render a launcher and only mount the form when
+it opens.
+
+### Iframe fallback
+
+Hosts that forbid third-party scripts (locked-down CMSes, most email-adjacent
+tools) can use a plain iframe. It loses auto-resize, so give it a height:
+
+```html
+<iframe src="https://forms.tuturuuu.com/embed/<shareCode>"
+  title="Form" width="100%" height="640" style="border:0"></iframe>
+```
+
+### The framing exception
+
+Framing is denied platform-wide by `createTuturuuuNextConfig`
+(`frame-ancestors 'none'` plus `X-Frame-Options: DENY`). `X-Frame-Options` has no
+"allow from any origin" value, so a later permissive header cannot override the
+deny — the header has to be **absent** instead.
+
+`createTuturuuuNextConfig` therefore accepts `framablePathPatterns`, and builds
+the anti-framing `source` as a negative lookahead over every framable path:
+
+```ts
+// apps/forms/next.config.ts
+createTuturuuuNextConfig({
+  framablePathPatterns: ['embed/[^/]+'],
+});
+```
+
+Opt in per route, never per app. Everything not listed stays denied.
+
+`apps/forms/src/proxy.ts` must also treat `/embed/` as public, or the embed
+redirects to login *inside the host's iframe*.
+
+### Host-page messages
+
+The embed posts `window.postMessage` events the SDK listens for. The contract
+lives in `apps/forms/src/features/forms/embed/protocol.ts` and is shared by the
+React page and `public/embed.js` so the two cannot drift.
+
+Every message carries `source: 'tuturuuu-forms'`; verify it before acting, since
+a host page may run other iframes.
+
+| `type` | Payload | Meaning |
+| --- | --- | --- |
+| `ready` | — | The embed mounted and can be shown. |
+| `resize` | `height` (CSS px) | Content height changed; resize the iframe. |
+| `submitted` | — | The respondent submitted; overlay modes may auto-dismiss. |
+
+## Per-form SEO
+
+`private.forms.seo` is a `jsonb` column (constrained to an object) holding
+optional overrides. Every key is optional, and an empty string or `false` means
+"fall back to the value derived from the form's content":
+
+- `title`, `description` — override the derived page and social title/description
+- `image` — `{ storagePath, url, alt }` for the social card
+- `keywords` — `text[]`, replaces the derived list
+- `canonicalUrl` — points crawlers at a different canonical
+- `noIndex` — emits `noindex,nofollow`
+
+It is a single `jsonb` column, matching the existing `settings` and `theme`
+columns on the same table, so adding a field later needs no migration.
+
+The studio's SEO panel renders a live search-result preview showing where Google
+truncates each field.
+
+## Studio collaboration
+
+The studio joins a **private** Supabase Realtime channel per form, topic
+`form-studio-<formId>`, carrying presence (who is here, which block they are on)
+and broadcasts (someone saved).
+
+It uses broadcast and presence rather than `postgres_changes` because the forms
+tables live in the Postgres `private` schema with service-role-only access. They
+are deliberately off the public Data API, so a browser client cannot subscribe to
+row changes on them at all.
+
+Access is authorized by `private.can_join_form_realtime_topic(topic, user_id)`,
+which resolves the form from the topic suffix and defers to
+`public.has_workspace_permission(ws_id, user_id, 'manage_forms')`. Presence is
+gated on the same permission the studio itself requires: analysts who can only
+read responses have no reason to appear in an editing session, and would leak
+their identity to editors if they did.
+
+<Warning>
+`apps/forms` is a registered satellite app, so the `internal-app-auth` guard
+forbids `supabase.auth.*` inside it. Resolve identity server-side with
+`getSatelliteAppSessionUser('forms')` and pass the id down as a prop, and take
+the realtime client from `@tuturuuu/supabase/next/realtime-browser`.
+</Warning>
+
+When a remote save arrives, the studio refetches immediately **only if your copy
+is clean**. If you have unsaved edits it raises a reload prompt instead —
+refetching blindly would discard your work.
+
+## Gotchas worth carrying elsewhere
+
+<Warning>
+`packages/satellite` is **not** in Tailwind's content scan set. Classes used only
+from that package emit no CSS at all, so the markup renders unstyled and
+invisible rather than failing loudly. Shared presentational code that needs
+Tailwind belongs in `packages/ui` — that is why the marketing kit lives at
+`@tuturuuu/ui/marketing`.
+</Warning>
+
+Calling `connection()` at the root of a marketing page forces the entire page
+dynamic. Scope it to the session-dependent subtree instead, so the static shell
+still prerenders.

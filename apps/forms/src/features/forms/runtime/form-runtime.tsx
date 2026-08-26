@@ -28,6 +28,9 @@ import { renderFormSectionCard } from './section-card';
 import { renderSubmittedScreen } from './submitted-screen';
 import type { FormRuntimeProps } from './types';
 import { useFormDraft } from './use-form-draft';
+import { useFormSteps } from './use-form-steps';
+import { useResponseCopy } from './use-response-copy';
+import { WelcomeScreen } from './welcome-screen';
 
 export function FormRuntime({
   form,
@@ -63,6 +66,12 @@ export function FormRuntime({
   const [validationErrorsByQuestionId, setValidationErrorsByQuestionId] =
     useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  // The welcome screen is skipped entirely when disabled, and also when the
+  // respondent is reviewing an already-submitted response — there is nothing
+  // left to introduce.
+  const [hasStarted, setHasStarted] = useState(
+    () => !form.settings.welcomeEnabled || readOnly || Boolean(submittedAt)
+  );
   const [sendResponseCopy, setSendResponseCopy] = useState(false);
   const [submittedResponseCopyEmail, setSubmittedResponseCopyEmail] = useState<
     string | null
@@ -71,11 +80,6 @@ export function FormRuntime({
     useState<'sent' | 'rate_limited' | 'failed' | null>(null);
   const [submittedResponseCopyRequested, setSubmittedResponseCopyRequested] =
     useState(false);
-  const [isRequestingResponseCopy, setIsRequestingResponseCopy] =
-    useState(false);
-  const [readOnlyResponseCopySentTo, setReadOnlyResponseCopySentTo] = useState<
-    string | null
-  >(responseCopyAlreadySent ? (responseCopyEmail ?? null) : null);
   const [captchaToken, setCaptchaToken] = useState<string>();
   const [captchaError, setCaptchaError] = useState<string>();
   const [previewImage, setPreviewImage] = useState<{
@@ -106,6 +110,25 @@ export function FormRuntime({
   const turnstileSiteKey = turnstileClientState.siteKey;
   const requiresTurnstile =
     mode === 'public' && turnstileClientState.isRequired;
+  const {
+    isRequestingResponseCopy,
+    requestResponseCopy: handleReadOnlyResponseCopy,
+    responseCopySentTo: readOnlyResponseCopySentTo,
+  } = useResponseCopy({
+    captchaRef,
+    captchaToken,
+    isBusy: isSubmitting,
+    onRequestResponseCopy,
+    readOnlyResponseId,
+    readOnlyResponseSessionId,
+    requiresTurnstile,
+    initialSentTo: responseCopyAlreadySent ? responseCopyEmail : null,
+    responseCopyEmail,
+    setCaptchaToken,
+    setError,
+    t,
+    turnstileSiteKey,
+  });
   const currentSectionIndex = form.sections.findIndex(
     (section) => section.id === currentSectionId
   );
@@ -113,6 +136,22 @@ export function FormRuntime({
   const visibleSectionTitle =
     currentSection?.title ||
     t('studio.section_number', { count: currentSectionIndex + 1 });
+  const {
+    currentStep,
+    goToNextStep,
+    goToPreviousStep,
+    isFirstStep,
+    isLastStep,
+    resetSteps,
+    stepIndex,
+    steps,
+  } = useFormSteps({
+    displayMode: form.settings.displayMode,
+    section: currentSection,
+  });
+  // In `sections` mode this is the whole section, so every downstream consumer
+  // can treat the step as the unit of work without branching on the mode.
+  const currentStepQuestions = currentStep?.questions ?? [];
   const activeAnswers = answersRef.current;
   const progressStats = useMemo(
     () =>
@@ -125,17 +164,19 @@ export function FormRuntime({
     [answers, currentSection?.id, form, sectionTrail]
   );
 
+  // Scoped to the visible step: in one-question mode, blocking on a required
+  // answer the respondent has not been shown yet would strand them.
   const requiredQuestionIds = useMemo(
     () =>
       new Set(
-        currentSection?.questions
+        currentStepQuestions
           .filter(
             (question) =>
               question.required && isAnswerableQuestionType(question.type)
           )
           .map((question) => question.id)
       ),
-    [currentSection]
+    [currentStepQuestions]
   );
   const advanceTarget = currentSection
     ? readOnly
@@ -249,12 +290,6 @@ export function FormRuntime({
   }, [responseCopyEmail]);
 
   useEffect(() => {
-    setReadOnlyResponseCopySentTo(
-      responseCopyAlreadySent ? (responseCopyEmail ?? null) : null
-    );
-  }, [responseCopyAlreadySent, responseCopyEmail]);
-
-  useEffect(() => {
     if (shouldShowTurnstile) {
       return;
     }
@@ -302,19 +337,18 @@ export function FormRuntime({
   const validateCurrentSection = (
     currentAnswers: Record<string, FormAnswerValue>
   ) => {
-    const missingRequiredQuestions =
-      currentSection?.questions.filter((question) => {
-        if (!requiredQuestionIds.has(question.id)) {
-          return false;
-        }
+    const missingRequiredQuestions = currentStepQuestions.filter((question) => {
+      if (!requiredQuestionIds.has(question.id)) {
+        return false;
+      }
 
-        const value = currentAnswers[question.id];
-        if (Array.isArray(value)) {
-          return value.length === 0;
-        }
+      const value = currentAnswers[question.id];
+      if (Array.isArray(value)) {
+        return value.length === 0;
+      }
 
-        return value == null || value === '';
-      }) ?? [];
+      return value == null || value === '';
+    });
 
     if (missingRequiredQuestions.length > 0) {
       const firstMissing = missingRequiredQuestions[0]!;
@@ -348,6 +382,32 @@ export function FormRuntime({
     return true;
   };
 
+  /**
+   * Back walks screens before sections, so a respondent in one-question mode
+   * returns to the previous question rather than jumping over the whole
+   * section they are partway through.
+   */
+  const canGoBack = !isFirstStep || sectionTrail.length > 1;
+
+  const handleBack = () => {
+    if (isBusy) return;
+
+    if (goToPreviousStep()) {
+      setError(null);
+      return;
+    }
+
+    const previousSectionId = sectionTrail[sectionTrail.length - 2];
+    if (!previousSectionId) return;
+
+    // Entering the previous section from the end, so its last screen is what
+    // the respondent last saw.
+    resetSteps('last');
+    setSectionTrail((currentTrail) => currentTrail.slice(0, -1));
+    setCurrentSectionId(previousSectionId);
+    setError(null);
+  };
+
   const handleAdvance = async () => {
     if (isBusy) {
       return;
@@ -359,12 +419,25 @@ export function FormRuntime({
       return;
     }
 
+    // One-question mode splits a section into screens. Walk those first;
+    // branching only applies once the section is exhausted, which keeps rule
+    // evaluation defined per section exactly as it was.
+    if (!isLastStep && goToNextStep()) {
+      setError(null);
+      sectionCardRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+      return;
+    }
+
     const target = readOnly
       ? advanceTarget
       : getNextSectionTarget(form, currentSection.id, currentAnswers);
 
     if (readOnly) {
       if (target.targetSectionId) {
+        resetSteps('first');
         setCurrentSectionId(target.targetSectionId);
         setSectionTrail((currentTrail) =>
           currentTrail.at(-1) === target.targetSectionId
@@ -451,6 +524,7 @@ export function FormRuntime({
     }
 
     if (target.targetSectionId) {
+      resetSteps('first');
       setCurrentSectionId(target.targetSectionId);
       setSectionTrail((currentTrail) =>
         currentTrail.at(-1) === target.targetSectionId
@@ -459,46 +533,6 @@ export function FormRuntime({
       );
       setError(null);
       setValidationErrorsByQuestionId({});
-    }
-  };
-
-  const handleReadOnlyResponseCopy = async () => {
-    if (
-      isBusy ||
-      !onRequestResponseCopy ||
-      !readOnlyResponseId ||
-      !readOnlyResponseSessionId
-    ) {
-      return;
-    }
-
-    if (requiresTurnstile && !turnstileSiteKey) {
-      setError(t('runtime.turnstile_not_configured'));
-      return;
-    }
-
-    if (requiresTurnstile && !captchaToken) {
-      setError(t('runtime.turnstile_required'));
-      return;
-    }
-
-    setIsRequestingResponseCopy(true);
-    setError(null);
-
-    try {
-      const result = await onRequestResponseCopy({
-        responseId: readOnlyResponseId,
-        sessionId: readOnlyResponseSessionId,
-        turnstileToken: captchaToken,
-      });
-
-      setReadOnlyResponseCopySentTo(
-        result?.responseCopySentTo ?? responseCopyEmail ?? null
-      );
-      captchaRef.current?.reset();
-      setCaptchaToken(undefined);
-    } finally {
-      setIsRequestingResponseCopy(false);
     }
   };
 
@@ -516,6 +550,33 @@ export function FormRuntime({
       submittedResponseCopyRequested,
       submittedResponseCopyStatus,
     });
+  }
+
+  if (!hasStarted) {
+    return (
+      <div
+        className={cn(
+          'min-h-screen py-10',
+          FORM_FONT_VARIABLES,
+          toneClasses.pageClassName,
+          className
+        )}
+        style={bodyFontStyle}
+      >
+        <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4">
+          <WelcomeScreen
+            bodyTypographyClassName={bodyTypographyClassName}
+            displayTypographyClassName={displayTypographyClassName}
+            form={form}
+            headlineFontStyle={headlineFontStyle}
+            onStart={() => setHasStarted(true)}
+            t={t}
+            toneClasses={toneClasses}
+          />
+          <FormBrandFooter />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -578,12 +639,15 @@ export function FormRuntime({
           advanceSectionTitle,
           hasReadOnlyNextSection,
           shouldShowSectionNavigation,
+          canGoBack,
+          handleBack,
+          visibleQuestions: currentStepQuestions,
+          stepIndex,
+          stepCount: steps.length,
+          isLastStep,
           shouldShowTurnstile,
           isSubmitBlockedByTurnstile,
           isBusy,
-          sectionTrail,
-          setSectionTrail,
-          setCurrentSectionId,
           setError,
           responseCopyEmail,
           sendResponseCopy,

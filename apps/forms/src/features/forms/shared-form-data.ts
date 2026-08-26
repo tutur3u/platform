@@ -1,6 +1,8 @@
+import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { siteConfig } from '@/constants/configs';
 import { normalizeMarkdownToText } from '@/features/forms/content';
+import { resolveFormSeo } from '@/features/forms/shared-form-seo';
 import type {
   FormAnswerValue,
   FormDefinition,
@@ -78,6 +80,15 @@ export function getSharedFormPresentation(
       accentColor: 'dynamic-green' as const,
       sectionCount: 0,
       itemCount: 0,
+      // A form that could not be loaded must never be indexed: the page the
+      // crawler sees is an error state, not the form.
+      seo: {
+        canonicalUrl: null,
+        imageAlt: strings.openGraphAlt,
+        imageUrl: null,
+        keywords: [],
+        noIndex: true,
+      },
     };
   }
 
@@ -103,14 +114,31 @@ export function getSharedFormPresentation(
     0
   );
 
+  const resolved = resolveFormSeo({
+    derived: {
+      description,
+      keywords: [title, strings.brand, 'form', 'survey', 'shared form'],
+      title,
+    },
+    fallbackImageAlt: strings.openGraphAlt,
+    seo: form.seo,
+  });
+
   return {
-    title: clampSocialText(title, 90),
-    description: clampSocialText(description, 160),
+    title: clampSocialText(resolved.title, 90),
+    description: clampSocialText(resolved.description, 160),
     coverImageUrl: form.theme.coverImage.url || '',
     coverImagePath: form.theme.coverImage.storagePath || '',
     accentColor: form.theme.accentColor,
     sectionCount: form.sections.length,
     itemCount,
+    seo: {
+      canonicalUrl: resolved.canonicalUrl,
+      imageAlt: resolved.imageAlt,
+      imageUrl: resolved.imageUrl,
+      keywords: resolved.keywords,
+      noIndex: resolved.noIndex,
+    },
   };
 }
 
@@ -126,12 +154,19 @@ export function buildSharedFormMetadata({
   status?: number;
 }): Metadata {
   const pageUrl = buildSharedFormUrl(shareCode);
-  const imageUrl = `${pageUrl}/opengraph-image`;
-  const twitterImageUrl = `${pageUrl}/twitter-image`;
   const presentation = getSharedFormPresentation(form, strings, status);
+  // An uploaded card replaces both the Open Graph and Twitter images. Falling
+  // back per-network would show two different previews for the same link.
+  const imageUrl = presentation.seo.imageUrl ?? `${pageUrl}/opengraph-image`;
+  const twitterImageUrl =
+    presentation.seo.imageUrl ?? `${pageUrl}/twitter-image`;
 
-  const title =
-    presentation.itemCount > 0
+  // An author-supplied title is used verbatim. The item count and brand suffix
+  // exist to make a derived title informative; appending them to deliberate
+  // copy would just eat the characters a social card has room for.
+  const title = form?.seo?.title?.trim()
+    ? presentation.title
+    : presentation.itemCount > 0
       ? `${presentation.title} (${presentation.itemCount} items) | ${strings.brand}`
       : `${presentation.title} | ${strings.brand}`;
 
@@ -139,15 +174,10 @@ export function buildSharedFormMetadata({
     title,
     description: presentation.description,
     alternates: {
-      canonical: pageUrl,
+      canonical: presentation.seo.canonicalUrl ?? pageUrl,
     },
-    keywords: [
-      presentation.title,
-      strings.brand,
-      'form',
-      'survey',
-      'shared form',
-    ],
+    keywords: presentation.seo.keywords,
+    ...(presentation.seo.noIndex ? { robots: NO_INDEX_ROBOTS } : {}),
     openGraph: {
       type: 'website',
       url: pageUrl,
@@ -159,7 +189,7 @@ export function buildSharedFormMetadata({
           url: imageUrl,
           width: 1200,
           height: 630,
-          alt: strings.openGraphAlt,
+          alt: presentation.seo.imageAlt || strings.openGraphAlt,
         },
       ],
     },
