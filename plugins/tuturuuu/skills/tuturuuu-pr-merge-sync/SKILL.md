@@ -22,6 +22,14 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 
 ## Required Gates
 
+0. Check whether the PR is part of a stack (its base is a branch other than
+   `main`). If so, its parent must be merged first: merging a child while its
+   parent is open pulls the parent's unreviewed commits into `main` through the
+   child. Merge the stack bottom-up, one PR at a time, running every gate below
+   for each. GitHub retargets an open child onto the parent's base once the
+   parent merges, so do not retarget by hand unless the parent was closed
+   without merging. See
+   `/build/development-tools/stacked-pull-requests` in `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
    `bun setup` immediately after creating it.
 2. Confirm GitHub auth and rate limits:

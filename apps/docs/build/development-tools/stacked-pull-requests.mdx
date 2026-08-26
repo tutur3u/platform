@@ -1,0 +1,148 @@
+---
+title: "Stacked Pull Requests"
+description: "Split large work into a stack of dependent pull requests so each one stays reviewable, and merge the stack bottom-up without losing the chain."
+updatedAt: "2026-08-26"
+---
+
+<Info>
+  **Prerequisite**: You should be comfortable with [Git
+  Conventions](/build/development-tools/git-conventions) and with creating
+  worktrees, since every PR in a stack gets its own.
+</Info>
+
+## TL;DR
+
+A stack is a chain of pull requests where each one targets the branch below it
+instead of `main`. Use it when a change is too large to review in one sitting,
+or when follow-up work builds on a branch that has not merged yet.
+
+```bash
+gh pr create --base feat/parent-branch --head feat/child-branch
+```
+
+Merge strictly bottom-up. GitHub retargets the child to the parent's base once
+the parent merges, so the chain survives on its own — but only if you merge in
+order.
+
+## When to stack
+
+Stack when the parts are **genuinely dependent**:
+
+- A large feature that splits into reviewable slices, where slice 2 imports
+  code slice 1 introduces.
+- Follow-up work on a branch that is still waiting for review — stacking lets
+  you keep building instead of idling or piling more into a PR someone has
+  already started reviewing.
+- A refactor that must land before the change that depends on it, where you
+  want them reviewed separately but merged together.
+
+**Do not stack when the parts are independent.** Two unrelated fixes should be
+two PRs off `main`: they can merge in any order, neither blocks the other, and
+neither needs a rebase when the other lands. A stack buys ordering at the cost
+of rebasing, so only pay it when you need the ordering.
+
+## Creating a stack
+
+Each PR gets its own worktree, per the repo-wide rule that PR work never
+switches the shared checkout:
+
+```bash
+git worktree add -b feat/slice-one .worktrees/slice-one origin/main
+git worktree add -b feat/slice-two .worktrees/slice-two feat/slice-one
+```
+
+Then open each PR against the branch below it. The first targets `main`; every
+later one targets its parent:
+
+```bash
+gh pr create --base main --head feat/slice-one
+gh pr create --base feat/slice-one --head feat/slice-two
+```
+
+Basing the child on the parent is what keeps the diff honest: GitHub diffs
+against the merge base, so the child PR shows only its own commits rather than
+re-displaying everything in the parent.
+
+### Say where each PR sits
+
+Reviewers cannot see the stack from the PR page alone. Put the position and the
+parent in the body of every PR above the base:
+
+```markdown
+**Stack**: 2 of 3 — based on #5145, which must merge first.
+```
+
+## Keeping each PR green
+
+Every PR in the stack must pass on its own. A child that only compiles once its
+parent is merged is not reviewable, and CI will say so.
+
+Run the usual gates in the child's worktree, not just at the top of the stack:
+
+```bash
+bun check
+```
+
+`bun check` does not compile Next apps, so also run the affected app's real
+build when the slice touches routes, pages or dependencies.
+
+## Merging the stack
+
+Merge **bottom-up**, one at a time, and never merge a PR whose parent is still
+open — doing so pulls the parent's unreviewed commits into `main` through the
+child.
+
+When the parent merges and its branch is deleted, GitHub automatically
+retargets any open PR that had it as a base onto the parent's base. In
+practice: merge slice 1 into `main`, and slice 2's PR silently switches its base
+from `feat/slice-one` to `main`, with its diff shrinking to just its own
+changes.
+
+<Warning>
+  Automatic retargeting fires on merge, not on close. If you close a parent PR
+  without merging it, its children keep pointing at a dead branch and must be
+  retargeted by hand with `gh pr edit <number> --base main`.
+</Warning>
+
+Each PR in the stack still needs its own approving review from a code owner and
+its own resolved review threads — the repository ruleset applies per PR, not per
+stack. Follow the normal merge closeout (quiet window, main-green verification,
+`bun git-sync`, production verification) for each one.
+
+## Rebasing a stack
+
+If you rebase or amend a parent branch, every branch above it still points at
+the old commits and must be rebased too, from the bottom up:
+
+```bash
+git -C .worktrees/slice-one rebase origin/main
+git -C .worktrees/slice-two rebase --onto feat/slice-one <old-parent-sha> feat/slice-two
+```
+
+Both then need a force-push. Use `--force-with-lease` so a push is refused if
+someone else moved the branch:
+
+```bash
+git push --force-with-lease origin feat/slice-one
+```
+
+<Warning>
+  Force-pushing rewrites published history. It is routine for a branch only you
+  are working on, but confirm with the owner before rewriting a branch anyone
+  else has pulled or reviewed.
+</Warning>
+
+Rebasing a whole stack is the main cost of stacking, and it grows with depth.
+Three PRs is comfortable; much beyond that, prefer merging the lower slices
+sooner so the stack stays shallow.
+
+## Cleaning up
+
+Remove a worktree and delete its local branch only after that PR is confirmed
+merged into `main`. Never remove a worktree that is dirty, blocked, unmerged, or
+owned by someone else.
+
+```bash
+git worktree remove .worktrees/slice-one
+git branch -d feat/slice-one
+```
