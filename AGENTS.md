@@ -86,17 +86,18 @@ surface you are changing:
   instead of growing one branch or waiting for the first to merge. Base each PR
   on the branch below it (`gh pr create --base <parent-branch>`), keep each one
   independently green, and state the stack position and parent PR in the body.
-  Merge strictly bottom-up and never merge a PR whose parent is still open.
-  Merge a stack parent with a merge commit (`gh pr merge --merge`): squash and
-  rebase merges leave the parent's commits outside `main`'s ancestry, so the
-  retargeted child re-shows changes that already landed. Do not assume
-  retargeting happened — GitHub retargets children only when the merged parent
-  branch is deleted through the pull-request flow, and deleting it with `gh` or
-  `git push --delete` can close them instead. After each parent merge, check
-  every child's `baseRefName` and retarget with `gh pr edit <n> --base <base>`
-  before the parent branch is deleted, then re-run the child's gates. Do not
-  stack when the parts are genuinely independent — separate PRs off `main` are
-  simpler and can merge in any order.
+  Merge strictly bottom-up — GitHub requires it — and never merge a PR whose
+  parent is still open. Know which kind of stack you have: a native stack
+  (`gh stack`, public preview) rebases and retargets the rest on merge and
+  accepts any merge method, while a base-chained stack (`gh pr create --base`)
+  has no such guarantee. On a base-chained stack, merge the parent with
+  `gh pr merge --merge` — squash and rebase leave its commits outside `main`'s
+  ancestry so the child re-shows them — then confirm each child's `baseRefName`
+  actually moved, retarget with `gh pr edit <n> --base <base>` if it did not,
+  and re-run the child's gates. Merging a mid-stack or top PR also merges
+  everything below it, so merge the one you actually mean to land. Do not stack
+  when the parts are genuinely independent — separate PRs off `main` are simpler
+  and can merge in any order.
 - When the user authorizes ongoing integration, periodically checkpoint verified
   work instead of leaving it indefinitely only in retained worktrees: create
   scoped commits, integrate them into `main`, wait for every workflow on the

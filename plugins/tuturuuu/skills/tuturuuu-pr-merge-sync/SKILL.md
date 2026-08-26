@@ -33,12 +33,17 @@ comments: quiet-window watching, merge, mandatory main-green verification,
 
    When it is stacked, the parent must merge first — merging a child while its
    parent is open pulls the parent's unreviewed commits into `main` through the
-   child. Merge bottom-up, one PR at a time, running every gate below for each,
-   and merge stack parents with `gh pr merge --merge`: a squash or rebase merge
-   leaves the parent's commits outside `main`'s ancestry, so the retargeted
-   child re-shows changes that already landed. After each parent merge, confirm
-   each child's `baseRefName` actually moved and retarget by hand if it did
-   not. See `/build/development-tools/stacked-pull-requests` in `apps/docs`.
+   child, and merging a mid-stack or top PR merges everything below it. Merge
+   bottom-up, one PR at a time, running every gate below for each.
+
+   A native stack (`gh stack`) rebases and retargets the rest on merge and
+   accepts any merge method. A base-chained stack (`gh pr create --base`) does
+   not: merge its parents with `gh pr merge --merge`, because a squash or
+   rebase merge leaves the parent's commits outside `main`'s ancestry and the
+   retargeted child re-shows changes that already landed. Either way, confirm
+   each child's `baseRefName` actually moved before treating the stack as
+   advanced. See `/build/development-tools/stacked-pull-requests` in
+   `apps/docs`.
 1. Perform all open-PR work in an isolated `.worktrees/` checkout and run
    `bun setup` immediately after creating it.
 2. Confirm GitHub auth and rate limits:

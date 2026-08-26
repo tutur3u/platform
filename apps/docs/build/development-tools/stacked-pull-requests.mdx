@@ -16,13 +16,44 @@ A stack is a chain of pull requests where each one targets the branch below it
 instead of `main`. Use it when a change is too large to review in one sitting,
 or when follow-up work builds on a branch that has not merged yet.
 
+GitHub has a first-class feature for this, currently **in public preview**. It
+tracks the chain as a unit, and merging one pull request rebases and retargets
+the rest. Use it when you can:
+
 ```bash
-gh pr create --base feat/parent-branch --head feat/child-branch
+gh extension install github/gh-stack
 ```
 
-Merge strictly bottom-up, with a merge commit, and check afterwards that each
-child was actually retargeted. GitHub usually does it for you; "usually" is why
-you check.
+Everything still merges bottom-up — that is GitHub's rule, not a convention:
+"pull requests must merge from the bottom up."
+
+<Warning>
+  Merging the **top** pull request merges the whole stack: "Every pull request
+  below it comes with it." If you only mean to land the bottom one, merge the
+  bottom one.
+</Warning>
+
+## Native stacks vs. base chaining
+
+Two things get called "stacked PRs", and they behave differently on merge.
+
+**Native stacks** — created with `gh stack` or the web UI. GitHub knows the
+chain exists. Merging a mid-stack pull request merges everything below it, and
+"the pull requests above stay open and automatically re-target the stack's base
+branch." All three merge methods work: "Stacks support merge commit, squash,
+and rebase merge methods, and they are merge-queue aware."
+
+**Base chaining** — plain `gh pr create --base <parent-branch>`, with no stack
+object behind it. This is what you get by default, and what the rest of this
+page's manual steps describe. It mostly works, but the merge-time guarantees
+above do **not** apply to it; see [Base chaining without a native
+stack](#base-chaining-without-a-native-stack).
+
+Limits on the native feature, both from GitHub: it "is in public preview and
+subject to change", and it "require[s] all branches to be in the same
+repository. Cross-fork stacks are not supported." It is also "not supported in
+GitHub Desktop", so a contributor working from a fork is on the base-chaining
+path whether they want to be or not.
 
 ## When to stack
 
@@ -95,55 +126,75 @@ called verified.
 
 ## Merging the stack
 
-Merge **bottom-up**, one at a time, and never merge a PR whose parent is still
-open — doing so pulls the parent's unreviewed commits into `main` through the
-child.
+Merge **bottom-up**, always. GitHub states it as a requirement, not a
+preference: "pull requests must merge from the bottom up." Never merge a pull
+request whose parent is still open and unmerged — that pulls the parent's
+unreviewed commits into `main` through the child.
 
-### Merge a stack parent with a merge commit
+How much lands depends on which one you merge:
+
+| You merge | What lands | What stays open |
+| --- | --- | --- |
+| The bottom PR | Just it | Everything above, retargeted |
+| A mid-stack PR | It **and everything below it** | Everything above, retargeted |
+| The top PR | The **whole stack** | Nothing |
+
+<Warning>
+  "Merge the entire stack at once by merging the top pull request. Every pull
+  request below it comes with it." If you meant to land one slice and clicked
+  merge on the top of the stack, you have merged all of it.
+</Warning>
+
+On a native stack that is the whole procedure. The merge method is free —
+"Stacks support merge commit, squash, and rebase merge methods, and they are
+merge-queue aware" — and the branches above are rebased and retargeted for you.
+
+### Base chaining without a native stack
+
+A chain built with `gh pr create --base` has no stack object behind it, so none
+of the guarantees above apply. Two extra rules:
+
+**Merge the parent with a merge commit.**
 
 ```bash
 gh pr merge <parent-number> --merge
 ```
 
 Not `--squash` and not `--rebase`. Both rewrite the parent's commits into new
-ones, so the originals never become part of `main`'s ancestry — and the
-retargeted child then shows the parent's changes all over again, as if they had
-never landed. A merge commit keeps the parent's commits reachable from `main`,
-which is what makes the child's diff shrink to its own work.
+ones, so the originals never enter `main`'s ancestry — and the child, once
+retargeted, shows the parent's changes all over again as if they had never
+landed. A merge commit keeps them reachable from `main`, which is what makes
+the child's diff shrink to its own work. If a parent has already been
+squash-merged, rebase the child onto `main`, drop the duplicated commits, and
+re-run its gates.
 
-If a stack parent has already been squash-merged, the fix is to rebase the
-child onto `main`, drop the duplicated commits, and re-run its gates.
-
-### Check the retargeting actually happened
-
-When a merged parent's branch is deleted through the pull-request flow — the
-merge button, or the repository's automatic head-branch deletion — GitHub
-retargets any open PR that had it as a base onto the parent's base. Slice 2's
-PR switches from `feat/slice-one` to `main` on its own.
+**Check the retargeting actually happened.** When a merged parent's branch is
+deleted through the pull-request flow — the merge button, or the repository's
+automatic head-branch deletion — GitHub retargets any open PR that had it as a
+base onto the parent's base.
 
 <Warning>
-  Do not assume it happened. Deleting the branch another way — `gh` or
-  `git push origin --delete` — can **close** the dependent PRs instead of
-  retargeting them, and a closed PR whose base branch is gone is awkward to
-  reopen. Closing a parent PR without merging does not delete its branch at
-  all, so its children keep pointing at a live but abandoned base.
+  Do not assume it did. Deleting the branch another way — `gh` or
+  `git push origin --delete` — can **close** the dependent pull requests
+  instead of retargeting them, and a closed PR whose base branch is gone is
+  awkward to reopen. Closing a parent without merging does not delete its
+  branch at all, so its children keep pointing at a live but abandoned base.
 </Warning>
-
-After every parent merge, check each child and retarget it by hand if needed,
-before the parent branch disappears:
 
 ```bash
 gh pr view <child-number> --json baseRefName -q .baseRefName
 gh pr edit <child-number> --base main
 ```
 
-Then re-run the child's gates: its merge base moved, so its diff is not the one
-that was last verified.
+Then re-run the child's gates: its merge base moved, so its diff is no longer
+the one that was last verified.
 
-Each PR in the stack still needs its own approving review from a code owner and
-its own resolved review threads — the repository ruleset applies per PR, not per
-stack. Follow the normal merge closeout (quiet window, main-green verification,
-`bun git-sync`, production verification) for each one.
+### Either way
+
+Each pull request needs its own approving review from a code owner and its own
+resolved review threads — the repository ruleset applies per PR, not per stack.
+Follow the normal merge closeout (quiet window, main-green verification,
+`bun git-sync`, production verification) for each one that lands.
 
 ## Rebasing a stack
 
