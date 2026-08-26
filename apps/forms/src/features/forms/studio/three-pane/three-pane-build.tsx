@@ -9,6 +9,7 @@ import type { FormStudioState } from '../form-studio-state';
 import { CanvasPane } from './canvas-pane';
 import { OutlinePane } from './outline-pane';
 import { PropertiesPane } from './properties-pane';
+import { resolveThreePaneSelection } from './selection';
 import { useStudioBuildLayout } from './use-build-layout';
 
 /**
@@ -93,17 +94,13 @@ export function ThreePaneBuild({
     values?: Record<string, string | number>
   ) => string;
 
-  const activeSectionIndex = values.sections.findIndex(
-    (section) => section.id === resolvedActiveSectionId
+  const selection = resolveThreePaneSelection(
+    values.sections,
+    resolvedActiveSectionId,
+    activeQuestionIdsBySection
   );
-  const activeSection =
-    activeSectionIndex >= 0 ? values.sections[activeSectionIndex] : undefined;
   const activeQuestionId =
     activeQuestionIdsBySection[resolvedActiveSectionId] ?? '';
-  const activeQuestionIndex =
-    activeSection?.questions.findIndex(
-      (question) => question.id === activeQuestionId
-    ) ?? -1;
 
   const selectQuestion = (sectionId: string, questionId: string) => {
     setActiveSectionId(sectionId);
@@ -142,12 +139,9 @@ export function ThreePaneBuild({
       <PropertiesPane
         wsId={wsId}
         form={form}
-        sectionIndex={Math.max(activeSectionIndex, 0)}
-        questionIndex={Math.max(activeQuestionIndex, 0)}
-        // Guarding on the index rather than the id: a stale id that no longer
-        // resolves would render the editor bound to question 0 and silently
-        // edit the wrong block.
-        questionId={activeQuestionIndex >= 0 ? activeQuestionId : null}
+        sectionIndex={selection.sectionIndex}
+        questionIndex={selection.questionIndex}
+        questionId={selection.questionId}
         toneClasses={studioToneClasses}
         t={translate}
       />
