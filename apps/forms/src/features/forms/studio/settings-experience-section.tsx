@@ -57,6 +57,10 @@ export function ExperienceSettingsSection({
     control: form.control,
     name: 'settings.welcomeEnabled',
   });
+  const autoAdvance = useWatch({
+    control: form.control,
+    name: 'settings.autoAdvance',
+  });
 
   return (
     <SettingsSection
@@ -94,6 +98,36 @@ export function ExperienceSettingsSection({
           ))}
         </div>
       </div>
+
+      {/* Only meaningful one question at a time: with a whole section on
+          screen there is nothing to advance to. */}
+      {displayMode === 'one_question' ? (
+        <div className="space-y-3 rounded-[1.35rem] border border-border/60 bg-background/55 p-4">
+          <button
+            className="flex w-full items-start gap-3 text-left"
+            onClick={() =>
+              form.setValue('settings.autoAdvance', !autoAdvance, {
+                shouldDirty: true,
+              })
+            }
+            type="button"
+          >
+            <Checkbox
+              checked={autoAdvance}
+              className="pointer-events-none mt-0.5"
+              tabIndex={-1}
+            />
+            <span className="space-y-1">
+              <span className="block font-medium text-sm">
+                {t('settings.auto_advance')}
+              </span>
+              <span className="block text-muted-foreground text-xs">
+                {t('settings.auto_advance_hint')}
+              </span>
+            </span>
+          </button>
+        </div>
+      ) : null}
 
       <div className="space-y-3 rounded-[1.35rem] border border-border/60 bg-background/55 p-4">
         <button

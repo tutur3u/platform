@@ -322,6 +322,22 @@ export const formSettingsSchema = z.object({
     .string()
     .max(FORM_WELCOME_DESCRIPTION_MAX_LENGTH)
     .default(''),
+  /**
+   * Move to the next question automatically once a single-answer question is
+   * answered. Only meaningful in `one_question` mode.
+   *
+   * On by default: picking an option and then reaching for a Continue button
+   * is the click a one-question form exists to remove. Types where the
+   * respondent may still be composing — text, multi-select, ranking — never
+   * auto-advance, because leaving mid-thought is the one thing worse than an
+   * extra click.
+   */
+  autoAdvance: z.boolean().default(true),
+  /**
+   * Where to send the respondent after they submit. Empty keeps them on the
+   * confirmation screen.
+   */
+  redirectUrl: z.string().max(2000).default(''),
   welcomeButtonLabel: z
     .string()
     .max(FORM_WELCOME_BUTTON_MAX_LENGTH)
@@ -487,6 +503,8 @@ export function createDefaultFormStudioInput(): FormStudioInput {
       displayMode: FORM_DEFAULT_DISPLAY_MODE,
       // A cover screen is the natural opening for a one-question form: it says
       // what the form is before the first question arrives with no context.
+      autoAdvance: true,
+      redirectUrl: '',
       welcomeEnabled: true,
       welcomeTitle: '',
       welcomeDescription: '',

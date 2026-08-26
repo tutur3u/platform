@@ -3036,7 +3036,9 @@
       "welcome_body": "Lời chào",
       "welcome_body_placeholder": "Để trống để dùng mô tả biểu mẫu",
       "welcome_button": "Nhãn nút",
-      "welcome_button_placeholder": "Bắt đầu"
+      "welcome_button_placeholder": "Bắt đầu",
+      "auto_advance": "Tự động chuyển tiếp",
+      "auto_advance_hint": "Chuyển sang câu hỏi kế tiếp ngay khi chọn xong đánh giá hoặc một lựa chọn. Câu nhập chữ, chọn nhiều và xếp hạng luôn chờ nút Tiếp tục."
     },
     "shared": {
       "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",
