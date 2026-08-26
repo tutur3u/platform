@@ -310,6 +310,7 @@ export function GlobalCommandLauncher({
   const routedTab = prefixedTab ?? activeTab;
   const trimmedQuery = trimQuery(parsedQuery.query);
   const deferredWorkspaceQuery = useDeferredValue(trimmedQuery);
+  const showApps = routedTab === 'all' || routedTab === 'apps';
 
   const closeLauncher = useCallback(() => setOpen(false), []);
 
@@ -381,7 +382,7 @@ export function GlobalCommandLauncher({
   const launcherWorkspaces = workspaces as LauncherWorkspace[];
   const { data: remoteWorkspaces = [], isFetching: isSearchingWorkspaces } =
     useQuery({
-      enabled: open && deferredWorkspaceQuery.length > 0,
+      enabled: open && showApps && deferredWorkspaceQuery.length > 0,
       queryFn: () =>
         listWorkspaces({
           limit: REMOTE_WORKSPACE_SEARCH_LIMIT,
@@ -524,7 +525,6 @@ export function GlobalCommandLauncher({
         })
       : extraSections;
 
-  const showApps = routedTab === 'all' || routedTab === 'apps';
   const showNavigation = routedTab === 'all' || routedTab === 'navigation';
   const showExtraSections =
     routedTab === 'tasks' || routedTab === 'all' || routedTab === 'actions';

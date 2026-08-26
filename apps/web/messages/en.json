@@ -4301,6 +4301,7 @@
     "result_count_plural": "{count} results",
     "search_placeholder": "Search commands, tasks, or navigate...",
     "search_placeholder_power": "Find tasks, pages, and actions — use #, /, or >",
+    "search_placeholder_tasks": "Find tasks, apps, and actions — use #, @, or >",
     "searching_tasks": "Searching tasks...",
     "smart_actions": "Smart Actions",
     "sort": {

@@ -271,7 +271,7 @@ describe('GlobalCommandLauncher', () => {
 
   it('hides the navigation tab when a task-enabled host has no pages', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
-    renderLauncher({ enableTasks: true, navItems: [] });
+    renderLauncher({ defaultTab: 'tasks', enableTasks: true, navItems: [] });
 
     openGlobalCommandLauncher();
     const input = await screen.findByPlaceholderText(
@@ -284,6 +284,22 @@ describe('GlobalCommandLauncher', () => {
     expect(
       screen.getByRole('button', { name: /Apps/ }).getAttribute('aria-pressed')
     ).toBe('true');
+  });
+
+  it('does not search remote workspaces from a task-only category', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher({ defaultTab: 'tasks', enableTasks: true, navItems: [] });
+
+    openGlobalCommandLauncher();
+    const input = await screen.findByPlaceholderText(
+      'Search apps, workspaces, and pages...'
+    );
+
+    await waitFor(() => expect(listWorkspaces).toHaveBeenCalledTimes(1));
+    fireEvent.change(input, { target: { value: 'launch' } });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(listWorkspaces).toHaveBeenCalledTimes(1);
   });
 
   it('queries workspace search results beyond the initially loaded workspaces', async () => {

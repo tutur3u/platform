@@ -84,7 +84,9 @@ export function UserNavCommandLauncher({
         openApp: launcherT('open_app'),
         openWorkspace: launcherT('open_workspace'),
         personal: launcherT('personal'),
-        placeholder: t('search_placeholder_power'),
+        placeholder: commandNavItems.length
+          ? t('search_placeholder_power')
+          : t('search_placeholder_tasks'),
         searchHint: launcherT('search_hint'),
         select: launcherT('select'),
         tasks: t('tabs.tasks'),
