@@ -657,7 +657,6 @@ export class EmailService {
       '@tuturuuu/supabase/next/server'
     );
     const sbAdmin = (await createAdminClient()) as SupabaseClient<Database>;
-
     const credentialWorkspaceId = options?.credentialWorkspaceId ?? wsId;
     const { data: dbCredentials, error } = await sbAdmin
       .from('workspace_email_credentials')
@@ -690,7 +689,6 @@ export class EmailService {
         );
       }
     }
-
     const workspaceRateLimits = await getWorkspaceEmailRateLimitOverrides(
       sbAdmin,
       wsId
