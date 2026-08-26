@@ -138,6 +138,15 @@ test('release merge installs the Flutter toolchain bun check:mobile needs', () =
 });
 
 test('release merge pins the same Flutter version as the mobile workflow', () => {
+  const workflowsDir = path.join(repoRoot, '.github', 'workflows');
+  const flutterWorkflows = fs
+    .readdirSync(workflowsDir)
+    .filter((workflowName) => /\.ya?ml$/u.test(workflowName))
+    .map((workflowName) => ({
+      source: fs.readFileSync(path.join(workflowsDir, workflowName), 'utf8'),
+      workflowName,
+    }))
+    .filter(({ source }) => source.includes('subosito/flutter-action@'));
   const mobileWorkflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'mobile.yaml'),
     'utf8'
@@ -145,6 +154,25 @@ test('release merge pins the same Flutter version as the mobile workflow', () =>
   const mobileVersion = mobileWorkflow.match(/flutter-version: "([^"]+)"/)?.[1];
 
   assert.ok(mobileVersion, 'mobile.yaml must pin a Flutter version');
+  assert.equal(
+    mobileVersion,
+    '3.47.x',
+    'Flutter 3.44.9 rewrites the Dart 3.13-resolved mobile lockfile before release merging'
+  );
+  assert.ok(flutterWorkflows.length > 0, 'expected Flutter workflows');
+
+  for (const { source, workflowName } of flutterWorkflows) {
+    const pins = [...source.matchAll(/flutter-version: "([^"]+)"/gu)].map(
+      ([, version]) => version
+    );
+
+    assert.ok(pins.length > 0, `${workflowName} must pin Flutter`);
+    assert.deepEqual(
+      [...new Set(pins)],
+      [mobileVersion],
+      `${workflowName} must use the canonical mobile Flutter toolchain`
+    );
+  }
   assert.match(
     workflow,
     new RegExp(`flutter-version: "${mobileVersion.replaceAll('.', '\\.')}"`),

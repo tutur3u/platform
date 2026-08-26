@@ -575,12 +575,17 @@ stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
 `bun check`.
 
-The job also installs Flutter (`3.44.x`, the same pin as `mobile.yaml`) and runs
+The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. Release Please bumps
 `apps/mobile/pubspec.yaml` on every release, so `touchesMobile()` in
 `scripts/git-release-please.js` is always true and `bun check` is always
 followed by `bun check:mobile`; without a toolchain `dart-format`,
 `flutter-analyze` and `flutter-test` all exit `127`.
+
+Keep every mobile build/deploy workflow on that same Flutter minor. The mobile
+lockfile is resolved with Dart 3.13; Flutter 3.44.9 bundles Dart 3.12.2 and
+downgrades 16 locked packages during `flutter pub get`, which dirties the
+checkout before `bun git-release-please` can begin.
 
 Top-level `permissions` is `{}` and
 `contents: write` is granted on the job alone, and `concurrency` is grouped with
