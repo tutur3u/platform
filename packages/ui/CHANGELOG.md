@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.30.1](https://github.com/tutur3u/platform/compare/ui-v0.30.0...ui-v0.30.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **forms:** repair the landing demo, the brand lockup and two analytics labels ([3f16968](https://github.com/tutur3u/platform/commit/3f16968f5802ebbd518ee27025c61a759839fd4e))
+* **forms:** repair the landing demo, the brand lockup and two analytics labels ([#5164](https://github.com/tutur3u/platform/issues/5164)) ([56d7f62](https://github.com/tutur3u/platform/commit/56d7f62325a8ec0caa5bb3ccd76b050dd66b1e53))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/ui-v0.29.2...ui-v0.30.0) (2026-08-26)
 
 

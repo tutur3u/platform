@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/utils-v0.26.0...utils-v0.27.0) (2026-08-27)
+
+
+### Features
+
+* **web:** localize metadata for every product page ([#5159](https://github.com/tutur3u/platform/issues/5159)) ([2862e0c](https://github.com/tutur3u/platform/commit/2862e0c771495fa7f2f7a6cc83937272d68336b5))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/utils-v0.25.5...utils-v0.26.0) (2026-08-26)
 
 

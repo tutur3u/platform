@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.13.1](https://github.com/tutur3u/platform/compare/forms-v0.13.0...forms-v0.13.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **forms:** repair the landing demo, the brand lockup and two analytics labels ([3f16968](https://github.com/tutur3u/platform/commit/3f16968f5802ebbd518ee27025c61a759839fd4e))
+* **forms:** repair the landing demo, the brand lockup and two analytics labels ([#5164](https://github.com/tutur3u/platform/issues/5164)) ([56d7f62](https://github.com/tutur3u/platform/commit/56d7f62325a8ec0caa5bb3ccd76b050dd66b1e53))
+* **forms:** update the answers ref synchronously so auto-advance can see the answer ([fde019f](https://github.com/tutur3u/platform/commit/fde019fbd3e7035c94e44e2cd58593eb66aa20be))
+
 ## [0.13.0](https://github.com/tutur3u/platform/compare/forms-v0.12.1...forms-v0.13.0) (2026-08-26)
 
 
