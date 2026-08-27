@@ -282,6 +282,7 @@
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/github-actions-runbook",
+                  "build/devops/vercel-cost-controls",
                   "build/devops/mobile-store-deployment",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide",
