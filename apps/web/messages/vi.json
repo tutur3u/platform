@@ -9434,6 +9434,10 @@
     "index": {
       "description": "Một không gian làm việc, một lần đăng nhập, một hoá đơn. Mỗi ứng dụng bên dưới dùng riêng được, và dùng cùng nhau thì tốt hơn.",
       "learn_more": "Tìm hiểu thêm",
+      "seo": {
+        "description": "Mọi ứng dụng Tuturuuu ở cùng một nơi — lập kế hoạch, sáng tạo và vận hành doanh nghiệp.",
+        "title": "Sản phẩm"
+      },
       "title": "Mọi ứng dụng đội ngũ của bạn cần"
     },
     "products": {
@@ -11170,6 +11174,10 @@
         "subtitle": "Mỗi phần làm một việc, còn bạn chỉ cần nói chuyện với một trong số đó.",
         "title": "Thứ đang thật sự chạy bên dưới"
       },
+      "seo": {
+        "description": "Xem cách Tuturuuu AI tăng tốc tự động hoá và công việc hằng ngày.",
+        "title": "Không gian làm việc AI"
+      },
       "title": "Năm hệ thống, một trợ lý để bạn trò chuyện",
       "useCases": {
         "eyebrow": "Dùng vào việc gì",
@@ -11244,6 +11252,10 @@
           "title": "Múi giờ được xử lý lặng lẽ"
         },
         "title": "Xếp lịch mà không phải hỏi tới hỏi lui"
+      },
+      "seo": {
+        "description": "Sắp xếp lịch làm việc cùng nhau với lịch chia sẻ của Tuturuuu.",
+        "title": "Lịch chung cho đội ngũ"
       },
       "title": "Cuốn lịch biết giữ ngày của bạn",
       "useCases": {
@@ -11320,6 +11332,10 @@
           "title": "Cá nhân và không gian làm việc cạnh nhau"
         }
       },
+      "seo": {
+        "description": "Kênh, tin nhắn riêng và tệp nằm chung không gian với công việc của bạn.",
+        "title": "Trò chuyện và kênh nhóm"
+      },
       "title": "Cuộc trò chuyện nằm cạnh công việc",
       "useCases": {
         "eyebrow": "Trong thực tế",
@@ -11394,6 +11410,10 @@
         },
         "subtitle": "Không phải thêm một cơ sở dữ liệu để chăm. Hồ sơ khách hàng nằm cạnh công việc, lịch và hoá đơn, nên ngữ cảnh đến cùng với cái tên.",
         "title": "Mối quan hệ, được ghi lại"
+      },
+      "seo": {
+        "description": "Theo dõi quan hệ và cơ hội bán hàng ngay trong CRM liên thông của Tuturuuu.",
+        "title": "Quản lý quan hệ khách hàng"
       },
       "title": "Mọi khách hàng, và mọi điều bạn đã hứa với họ",
       "useCases": {
@@ -11470,6 +11490,10 @@
           "title": "Sửa mà không mất gì"
         }
       },
+      "seo": {
+        "description": "Cùng soạn tài liệu với quy trình có AI hỗ trợ trong Tuturuuu.",
+        "title": "Tài liệu cộng tác"
+      },
       "title": "Viết ngay tại nơi công việc đang diễn ra",
       "useCases": {
         "business": {
@@ -11544,6 +11568,10 @@
           "description": "Thay thế một tệp không xoá mất bản trước. Các phiên bản cũ vẫn còn, nên ghi đè không còn là một buổi chiều mất trắng.",
           "title": "Mỗi lần tải lên đều giữ bản cũ"
         }
+      },
+      "seo": {
+        "description": "Lưu trữ, sắp xếp và chia sẻ tệp an toàn với Tuturuuu Drive.",
+        "title": "Lưu trữ đám mây an toàn"
       },
       "title": "Tệp của bạn, ở nơi công việc đang diễn ra",
       "useCases": {
@@ -11620,6 +11648,10 @@
         "subtitle": "Mỗi con số nằm cạnh công việc đã tạo ra nó, nên bạn không phải đối chiếu hai phiên bản sự thật.",
         "title": "Phần sổ sách, gần như đã có người lo"
       },
+      "seo": {
+        "description": "Quản lý hoá đơn, ngân sách và kiểm soát chi tiêu với Tuturuuu Finance.",
+        "title": "Quản lý tài chính và chi phí"
+      },
       "title": "Biết tiền đã đi đâu, không cần bảng tính",
       "useCases": {
         "business": {
@@ -11694,6 +11726,10 @@
           "title": "Nhìn ra là của bạn"
         },
         "title": "Từ câu hỏi tới câu trả lời, không vòng vèo"
+      },
+      "seo": {
+        "description": "Tạo biểu mẫu, chia sẻ liên kết và đọc mọi phản hồi ngay tại nơi chúng đến.",
+        "title": "Biểu mẫu và khảo sát trực tuyến"
       },
       "title": "Hỏi một lần, đọc câu trả lời ở một chỗ",
       "useCases": {
@@ -11770,6 +11806,10 @@
           "title": "Thế giới bạn tự dựng"
         }
       },
+      "seo": {
+        "description": "Giữ những gì đội ngũ bạn biết ở nơi tìm được, thay vì rải rác khắp nơi.",
+        "title": "Kho tri thức đội ngũ"
+      },
       "title": "Phòng thí nghiệm cho bầy tác nhân",
       "useCases": {
         "design": {
@@ -11844,6 +11884,10 @@
           "description": "Theo dõi tồn kho từng địa điểm và mọi lần điều chuyển, không cần mỗi kho một bảng tính.",
           "title": "Nhiều kho, một bức tranh"
         }
+      },
+      "seo": {
+        "description": "Theo dõi tồn kho và quy trình giao hàng với Tuturuuu Inventory.",
+        "title": "Quản lý kho hàng"
       },
       "title": "Số liệu tồn kho khớp với hàng trên kệ",
       "useCases": {
@@ -11920,6 +11964,10 @@
         "subtitle": "Tài liệu, bài nộp và tiến độ trong một hệ thống, trên cùng cuốn lịch với mọi thứ khác người học đang xoay xở.",
         "title": "Dạy học, với ít việc hành chính xung quanh hơn"
       },
+      "seo": {
+        "description": "Tổ chức đào tạo và đo lường hiệu quả học tập với Tuturuuu LMS.",
+        "title": "Hệ thống quản lý học tập"
+      },
       "title": "Khoá học, bài tập và vị trí của từng người học",
       "useCases": {
         "centers": {
@@ -11994,6 +12042,10 @@
         },
         "subtitle": "Phân loại, soạn thư, hẹn giờ và hộp thư dùng chung ở cùng một nơi.",
         "title": "Ít hộp thư hơn, xong việc nhiều hơn"
+      },
+      "seo": {
+        "description": "Vận hành liên hệ khách hàng và hộp thư chung với Tuturuuu Mail.",
+        "title": "Email nhóm và hộp thư chung"
       },
       "title": "Hộp thư biết chuyển việc sang phần còn lại của ngày",
       "useCases": {
@@ -12104,6 +12156,12 @@
         "title": "Bất cứ khi nào có hơn ba người"
       }
     },
+    "meet-together": {
+      "seo": {
+        "description": "So lịch rảnh và chốt giờ họp mà không cần hỏi qua hỏi lại.",
+        "title": "Tìm giờ họp hợp cho tất cả"
+      }
+    },
     "qr": {
       "closing": {
         "description": "Dán đường liên kết, chọn màu, và tải về tệp bạn có thể đem in.",
@@ -12144,6 +12202,10 @@
         },
         "subtitle": "Mọi nội dung, ba kiểu bố cục, màu của bạn, logo của bạn, và tệp đủ lớn để in.",
         "title": "Đủ tùy chỉnh để in một lần là xong"
+      },
+      "seo": {
+        "description": "Tạo và theo dõi mã QR gắn với chính công việc phía sau chúng.",
+        "title": "Mã QR cho không gian làm việc"
       },
       "title": "Một mã cho thứ bạn phải lặp đi lặp lại",
       "useCases": {
@@ -12220,6 +12282,10 @@
           "title": "Công khai hoặc riêng tư"
         }
       },
+      "seo": {
+        "description": "Bán hàng trực tuyến với gian hàng nối liền kho hàng và tài chính của bạn.",
+        "title": "Gian hàng trực tuyến"
+      },
       "title": "Kho hàng của bạn, mở ra cho người mua",
       "useCases": {
         "buyers": {
@@ -12294,6 +12360,10 @@
           "description": "Đổi cách xem mà không phải dời công việc. Vẫn là những việc đó, sắp xếp cho lập kế hoạch, họp nhanh hoặc bàn giao.",
           "title": "Danh sách, bảng hoặc dòng thời gian"
         }
+      },
+      "seo": {
+        "description": "Giữ dự án đúng tiến độ với Tuturuuu Tasks và bảng cộng tác.",
+        "title": "Quản lý dự án và công việc"
       },
       "title": "Công việc nằm đúng chỗ bạn để lại",
       "useCases": {
@@ -12370,6 +12440,10 @@
         },
         "title": "Bộ đếm giờ nằm ngay cạnh công việc"
       },
+      "seo": {
+        "description": "Biết thời gian thực sự đã đi đâu, theo từng người và từng dự án.",
+        "title": "Theo dõi thời gian"
+      },
       "title": "Số giờ bạn có thể giải trình",
       "useCases": {
         "eyebrow": "Trong thực tế",
@@ -12444,6 +12518,10 @@
           "description": "Các phiên bản được giữ lại khi quy trình thay đổi, nên bạn thấy được cái gì đã đổi và quay về nếu bản mới tệ hơn.",
           "title": "Thay đổi có thể truy lại"
         }
+      },
+      "seo": {
+        "description": "Tự động hoá quy trình liên phòng ban với Tuturuuu Workflows.",
+        "title": "Tự động hoá quy trình"
       },
       "title": "Phần lặp đi lặp lại, chạy mà không cần bạn",
       "useCases": {
