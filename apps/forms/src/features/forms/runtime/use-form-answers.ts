@@ -44,11 +44,20 @@ export function useFormAnswers({
   const setAnswers = useCallback<
     Dispatch<SetStateAction<Record<string, FormAnswerValue>>>
   >((update) => {
+    // A direct value updates the ref BEFORE scheduling the state change.
+    // `updateAnswer` calls `onAnswered` in the same tick, and auto-advance
+    // validates against `answersRef` — reading it after only queueing the
+    // update would see the answer that was just given as still missing.
+    if (typeof update !== 'function') {
+      answersRef.current = update;
+      setAnswersState(update);
+      return;
+    }
+
+    // The functional form has to stay queued so concurrent updaters compose
+    // instead of overwriting each other; the ref catches up inside it.
     setAnswersState((previous) => {
-      const next = typeof update === 'function' ? update(previous) : update;
-      // The ref must track every path into the state, including the
-      // updater-function form, or a synchronous read after a draft restore
-      // still sees the pre-restore answers.
+      const next = update(previous);
       answersRef.current = next;
       return next;
     });
