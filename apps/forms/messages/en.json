@@ -3243,7 +3243,12 @@
       "move_block_up": "Move block up",
       "move_block_down": "Move block down",
       "duplicate_block": "Duplicate block",
-      "delete_block": "Delete block"
+      "delete_block": "Delete block",
+      "preview_width": "Preview width",
+      "preview_desktop": "Desktop",
+      "preview_tablet": "Tablet",
+      "preview_mobile": "Mobile",
+      "preview_restart": "Restart"
     },
     "tabs": {
       "analytics": "Analytics",
