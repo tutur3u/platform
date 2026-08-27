@@ -30,6 +30,7 @@ import {
   renderDropoffSectionCard,
 } from './analytics-dropoff-cards';
 import { formatDuration, formatPercent } from './analytics-format';
+import { AnalyticsRevealGrid } from './analytics-reveal';
 import { DestructiveActionDialog } from './destructive-action-dialog';
 
 export function AnalyticsPanel({
@@ -225,7 +226,7 @@ export function AnalyticsPanel({
         </CardContent>
       </Card>
 
-      <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
+      <AnalyticsRevealGrid className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
         <StatCard
           label={t('analytics.views')}
           value={analytics.totalViews}
@@ -265,7 +266,7 @@ export function AnalyticsPanel({
           value={formatDuration(analytics.avgCompletionSeconds)}
           icon={Clock}
         />
-      </div>
+      </AnalyticsRevealGrid>
 
       <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         {renderEngagementCard({ t, analytics, activityChartData })}
@@ -340,7 +341,7 @@ export function AnalyticsPanel({
         </Card>
       </div>
 
-      <div className="grid items-start gap-3 xl:grid-cols-2">
+      <AnalyticsRevealGrid className="grid items-start gap-3 xl:grid-cols-2">
         <DistributionCard
           title={t('analytics.responder_modes')}
           items={responderMix}
@@ -351,15 +352,15 @@ export function AnalyticsPanel({
           items={deviceMix}
           emptyLabel={t('analytics.no_data')}
         />
-      </div>
+      </AnalyticsRevealGrid>
 
-      <div className="grid items-start gap-3 xl:grid-cols-2">
+      <AnalyticsRevealGrid className="grid items-start gap-3 xl:grid-cols-2">
         {renderDropoffSectionCard({ t, analytics, maxDropoffSection })}
 
         {renderDropoffQuestionCard({ t, analytics, maxDropoffQuestion })}
-      </div>
+      </AnalyticsRevealGrid>
 
-      <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <AnalyticsRevealGrid className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
         <BreakdownCard
           title={t('analytics.top_referrers')}
           icon={Globe}
@@ -422,7 +423,7 @@ export function AnalyticsPanel({
             )}
           </CardContent>
         </Card>
-      </div>
+      </AnalyticsRevealGrid>
     </div>
   );
 }

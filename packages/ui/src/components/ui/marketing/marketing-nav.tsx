@@ -3,7 +3,7 @@
 import { Menu, X } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useEffect, useState } from 'react';
-import { TuturuuLogo } from '../custom/tuturuuu-logo';
+import { TuturuuuWordmark } from '../custom/tuturuuu-wordmark';
 
 export interface MarketingNavLink {
   /** In-page anchor (`#pricing`) or absolute URL. */
@@ -13,7 +13,14 @@ export interface MarketingNavLink {
 
 interface MarketingNavProps {
   /** App name shown next to the logo, e.g. "Forms". */
+  /** Full name, used for the accessible landmark label. */
   appName: string;
+  /**
+   * The product line of the lockup — "Forms", not "Tuturuuu Forms". Defaults
+   * to `appName` with a leading "Tuturuuu " stripped, so callers that already
+   * pass the full name keep working.
+   */
+  productName?: string;
   /** Where the wordmark links back to. Defaults to the landing root. */
   homeHref?: string;
   links: MarketingNavLink[];
@@ -38,6 +45,7 @@ interface MarketingNavProps {
  */
 export function MarketingNav({
   appName,
+  productName,
   homeHref = '/',
   links,
   action,
@@ -79,13 +87,13 @@ export function MarketingNav({
         className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
       >
         <a
-          className="flex shrink-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex shrink-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           href={homeHref}
         >
-          <TuturuuLogo className="h-7 w-7" height={28} width={28} />
-          <span className="font-display font-semibold text-[0.95rem] tracking-[-0.01em]">
-            {appName}
-          </span>
+          <TuturuuuWordmark
+            product={productName ?? appName.replace(/^Tuturuuu\s+/i, '')}
+            size="sm"
+          />
         </a>
 
         <div className="hidden items-center gap-1 md:flex">

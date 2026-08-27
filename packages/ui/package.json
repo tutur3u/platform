@@ -331,6 +331,10 @@
       "types": "./src/components/ui/custom/system-language-wrapper.tsx",
       "import": "./src/components/ui/custom/system-language-wrapper.tsx"
     },
+    "./custom/tuturuuu-wordmark": {
+      "types": "./src/components/ui/custom/tuturuuu-wordmark.tsx",
+      "import": "./src/components/ui/custom/tuturuuu-wordmark.tsx"
+    },
     "./custom/tuturuuu-logo": {
       "types": "./src/components/ui/custom/tuturuuu-logo.tsx",
       "import": "./src/components/ui/custom/tuturuuu-logo.tsx"
