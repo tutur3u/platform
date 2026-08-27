@@ -210,7 +210,12 @@ describe('FormRuntime in one-question mode', () => {
       />
     );
 
-    // The cover owns the screen; the first question has not arrived yet.
+    // Asserting the start button, not just the question's absence: a runtime
+    // that rendered nothing at all would satisfy the absence on its own, so
+    // the negative assertion alone proves nothing.
+    expect(
+      screen.getByRole('button', { name: 'runtime.welcome_start' })
+    ).toBeDefined();
     expect(screen.queryByText('First question')).toBeNull();
   });
 
@@ -272,26 +277,46 @@ describe('auto-advance', () => {
   });
 
   it('advances once when the answer is changed several times', () => {
-    // Each change reschedules rather than queues, so a respondent who tries
-    // three options lands on the next question, not three questions on.
-    renderChoiceForm(true);
+    // Three questions, not two: with two, a duplicate advance would land on
+    // the terminal question and the assertions would pass anyway. The third
+    // is what makes a second advance observable.
+    render(
+      <FormRuntime
+        form={buildForm(
+          [
+            choiceQuestion('q1', 'Pick one'),
+            textQuestion('q2', 'Second question'),
+            textQuestion('q3', 'Third question'),
+          ],
+          { autoAdvance: true }
+        )}
+        mode="public"
+      />
+    );
 
     fireEvent.click(screen.getByRole('radio', { name: /Alpha/ }));
     act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    // The first timer's original deadline passes here without firing, because
+    // changing the answer rescheduled it rather than queueing a second one.
+    fireEvent.click(screen.getByRole('radio', { name: /Beta/ }));
+    act(() => {
       vi.advanceTimersByTime(100);
     });
-    fireEvent.click(screen.getByRole('radio', { name: /Beta/ }));
+    expect(screen.getByText('Pick one')).toBeDefined();
 
     act(() => {
       vi.advanceTimersByTime(400);
     });
-
     expect(screen.getByText('Second question')).toBeDefined();
-    // A second pending advance would have carried past the end of the section.
+
+    // A surviving second timer would carry straight on to the third.
     act(() => {
-      vi.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(2000);
     });
     expect(screen.getByText('Second question')).toBeDefined();
+    expect(screen.queryByText('Third question')).toBeNull();
   });
 
   it('does not advance from a free-text answer', () => {
