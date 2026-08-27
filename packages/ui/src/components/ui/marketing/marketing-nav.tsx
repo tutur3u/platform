@@ -3,7 +3,7 @@
 import { Menu, X } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { type ReactNode, useEffect, useState } from 'react';
-import { TuturuuuWordmark } from '../custom/tuturuuu-wordmark';
+import { TuturuuuWordmark, toProductName } from '../custom/tuturuuu-wordmark';
 
 export interface MarketingNavLink {
   /** In-page anchor (`#pricing`) or absolute URL. */
@@ -12,8 +12,10 @@ export interface MarketingNavLink {
 }
 
 interface MarketingNavProps {
-  /** App name shown next to the logo, e.g. "Forms". */
-  /** Full name, used for the accessible landmark label. */
+  /**
+   * The full app name, e.g. "Tuturuuu Forms". Used for the accessible landmark
+   * label, and as the fallback source for `productName`.
+   */
   appName: string;
   /**
    * The product line of the lockup — "Forms", not "Tuturuuu Forms". Defaults
@@ -91,7 +93,7 @@ export function MarketingNav({
           href={homeHref}
         >
           <TuturuuuWordmark
-            product={productName ?? appName.replace(/^Tuturuuu\s+/i, '')}
+            product={productName ?? toProductName(appName)}
             size="sm"
           />
         </a>

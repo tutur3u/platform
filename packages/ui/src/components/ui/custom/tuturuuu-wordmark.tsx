@@ -55,3 +55,18 @@ export function TuturuuuWordmark({
     </span>
   );
 }
+
+/**
+ * The product line of a full app name: "Tuturuuu Forms" -> "Forms".
+ *
+ * Exists so the nav and the footer cannot disagree. They derive the same label
+ * from the same prop, and two copies of one regex is exactly the kind of
+ * duplication that drifts when only one of them is updated.
+ *
+ * A name that is only "Tuturuuu" is returned unchanged rather than reduced to
+ * an empty string, which would render a lockup with a blank second line.
+ */
+export function toProductName(appName: string): string {
+  const stripped = appName.replace(/^Tuturuuu\s+/i, '').trim();
+  return stripped || appName;
+}

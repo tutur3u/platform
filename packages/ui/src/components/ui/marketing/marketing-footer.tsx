@@ -1,6 +1,6 @@
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
-import { TuturuuuWordmark } from '../custom/tuturuuu-wordmark';
+import { TuturuuuWordmark, toProductName } from '../custom/tuturuuu-wordmark';
 
 export interface MarketingFooterLink {
   href: string;
@@ -48,7 +48,7 @@ export function MarketingFooter({
       <div className="mx-auto grid w-full max-w-6xl gap-12 lg:grid-cols-[1.5fr_repeat(3,1fr)]">
         <div className="max-w-sm">
           <TuturuuuWordmark
-            product={productName ?? appName.replace(/^Tuturuuu\s+/i, '')}
+            product={productName ?? toProductName(appName)}
             size="sm"
           />
           <p className="mt-4 text-foreground/50 text-sm leading-relaxed">
