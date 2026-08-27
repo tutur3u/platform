@@ -6,6 +6,11 @@ export interface EmbedSnippetOptions {
   mode: EmbedMode;
   /** Fixed pixel height; omit to let inline embeds auto-size. */
   height?: number | null;
+  /**
+   * Floor for an auto-sizing embed. Omit to use the SDK's default, which is
+   * the smallest height a single question stays answerable at.
+   */
+  minHeight?: number | null;
   /** Launcher label for the overlay modes. */
   launcherText?: string | null;
 }
@@ -37,6 +42,7 @@ export function buildEmbedSnippet({
   shareCode,
   mode,
   height,
+  minHeight,
   launcherText,
 }: EmbedSnippetOptions) {
   const attributes = [
@@ -46,6 +52,18 @@ export function buildEmbedSnippet({
 
   if (height && height > 0 && !isOverlayEmbedMode(mode)) {
     attributes.push(`data-height="${Math.round(height)}"`);
+  }
+
+  // A floor is meaningless next to a fixed height, and meaningless on an
+  // overlay, whose panel is sized by its own CSS. Emitting it there would
+  // advertise a control that does nothing.
+  if (
+    minHeight &&
+    minHeight > 0 &&
+    !isOverlayEmbedMode(mode) &&
+    !(height && height > 0)
+  ) {
+    attributes.push(`data-min-height="${Math.round(minHeight)}"`);
   }
 
   if (launcherText?.trim() && isOverlayEmbedMode(mode)) {

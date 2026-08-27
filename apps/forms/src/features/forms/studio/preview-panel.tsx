@@ -14,6 +14,14 @@ type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
  * Widths chosen to match where forms are actually filled in, not to be round
  * numbers: 390px is an iPhone 15/16, 834px an iPad in portrait.
  */
+/**
+ * The same floor the embed SDK applies, for the same reason: a short form
+ * should not collapse the frame to a sliver. Kept in step deliberately — a
+ * preview that can be shorter than the embed shows authors a layout their
+ * respondents will never see.
+ */
+const PREVIEW_MIN_HEIGHT = 320;
+
 const DEVICE_WIDTH: Record<PreviewDevice, string> = {
   desktop: '100%',
   tablet: '834px',
@@ -96,7 +104,10 @@ export function PreviewPanel({
             'min-w-0 transition-[max-width] duration-300 ease-out',
             device === 'desktop' ? 'w-full' : 'w-full'
           )}
-          style={{ maxWidth: DEVICE_WIDTH[device] }}
+          style={{
+            maxWidth: DEVICE_WIDTH[device],
+            minHeight: `${PREVIEW_MIN_HEIGHT}px`,
+          }}
         >
           <FormRuntime
             className={cn('rounded-xl border', toneClasses.tabTriggerClassName)}

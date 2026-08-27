@@ -18,6 +18,19 @@
   const MODES = ['inline', 'fullpage', 'popup', 'slider', 'popover', 'sidetab'];
   const OVERLAY_MODES = ['popup', 'slider', 'popover', 'sidetab'];
   const DEFAULT_HEIGHT = 520;
+  /**
+   * Floor for auto-sized embeds.
+   *
+   * The old floor was 120px, which predates one-question-at-a-time forms. A
+   * single question needs room for its title, its input and the continue
+   * button; at 120px the host page shows a sliver and the respondent scrolls
+   * inside a box the size of a banner. 320px is the smallest height where a
+   * short question is still answerable without scrolling the frame.
+   *
+   * Overridable per embed with `data-min-height`, because a host that has
+   * reserved space knows better than this default does.
+   */
+  const DEFAULT_MIN_HEIGHT = 320;
 
   /**
    * Resolve the origin from this script's own src, so a self-hosted or staging
@@ -263,6 +276,22 @@
       entry.iframe.style.height = `${height}px`;
     }
 
+    const minHeight = parseInt(
+      element.getAttribute('data-min-height') || '',
+      10
+    );
+    entry.minHeight =
+      !Number.isNaN(minHeight) && minHeight > 0
+        ? minHeight
+        : DEFAULT_MIN_HEIGHT;
+
+    // Applied to the iframe as well as used in the resize clamp, so the embed
+    // never renders shorter than its floor even before the first resize
+    // message arrives.
+    if (!entry.fixedHeight) {
+      entry.iframe.style.minHeight = `${entry.minHeight}px`;
+    }
+
     if (mode === 'inline') {
       mountInline(element, entry);
     } else if (mode === 'fullpage') {
@@ -292,7 +321,7 @@
       // Overlay panels are sized by their own CSS; only flow-positioned
       // embeds grow with their content.
       if (entry.mode === 'inline') {
-        entry.iframe.style.height = `${Math.max(data.height || 0, 120)}px`;
+        entry.iframe.style.height = `${Math.max(data.height || 0, entry.minHeight || DEFAULT_MIN_HEIGHT)}px`;
       }
       return;
     }

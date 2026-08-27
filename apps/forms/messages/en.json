@@ -3038,7 +3038,10 @@
       "welcome_button": "Button label",
       "welcome_button_placeholder": "Start",
       "auto_advance": "Advance automatically",
-      "auto_advance_hint": "Move to the next question once a rating or single choice is picked. Typing, multi-select and ranking always wait for Continue."
+      "auto_advance_hint": "Move to the next question once a rating or single choice is picked. Typing, multi-select and ranking always wait for Continue.",
+      "embed_min_height": "Minimum height",
+      "embed_min_height_placeholder": "320",
+      "embed_min_height_hint": "The shortest the embed will shrink to while auto-sizing. Leave blank for the default of 320px, which keeps a single question answerable without scrolling inside the frame."
     },
     "shared": {
       "metadata_fallback_description": "Open this shared form to review the questions and submit a response.",

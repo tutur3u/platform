@@ -83,28 +83,33 @@ export function EmbedSettingsSection({
   const t = useTranslations('forms');
   const [mode, setMode] = useState<EmbedMode>('inline');
   const [height, setHeight] = useState('');
+  const [minHeight, setMinHeight] = useState('');
   const [launcherText, setLauncherText] = useState('');
 
   const snippets = useMemo(() => {
     if (!shareCode) return null;
 
     const parsedHeight = Number.parseInt(height, 10);
+    const parsedMinHeight = Number.parseInt(minHeight, 10);
 
     return {
       embed: buildEmbedSnippet({
         baseUrl: BASE_URL,
         height: Number.isNaN(parsedHeight) ? null : parsedHeight,
+        minHeight: Number.isNaN(parsedMinHeight) ? null : parsedMinHeight,
         launcherText,
         mode,
         shareCode,
       }),
+      // The iframe fallback has no auto-resize — it takes an explicit height
+      // and keeps it — so a floor would control nothing there.
       iframe: buildIframeSnippet({
         baseUrl: BASE_URL,
         height: Number.isNaN(parsedHeight) ? null : parsedHeight,
         shareCode,
       }),
     };
-  }, [height, launcherText, mode, shareCode]);
+  }, [height, launcherText, minHeight, mode, shareCode]);
 
   return (
     <SettingsSection
@@ -170,6 +175,27 @@ export function EmbedSettingsSection({
                 <p className="text-muted-foreground text-xs">
                   {t('settings.embed_height_hint')}
                 </p>
+
+                {/* Only meaningful while the embed auto-sizes: a fixed height
+                    already decides the size, so a floor beside it does
+                    nothing. */}
+                {height.trim() ? null : (
+                  <div className="space-y-2 pt-1">
+                    <Label htmlFor="embed-min-height">
+                      {t('settings.embed_min_height')}
+                    </Label>
+                    <Input
+                      id="embed-min-height"
+                      inputMode="numeric"
+                      onChange={(event) => setMinHeight(event.target.value)}
+                      placeholder={t('settings.embed_min_height_placeholder')}
+                      value={minHeight}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      {t('settings.embed_min_height_hint')}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
