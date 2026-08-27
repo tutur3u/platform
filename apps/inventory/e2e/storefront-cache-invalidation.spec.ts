@@ -66,15 +66,14 @@ test('invalidates cached availability and preserves the shared storefront shell'
     ).toBeVisible();
     const storefrontShell = page.locator('[data-storefront-shell]');
     await storefrontShell.evaluate((element) => {
-      element.dataset.navigationProbe = 'persistent';
+      Reflect.set(element, '__storefrontNavigationProbe', 'persistent');
     });
     await instant(page, async () => {
       await page.getByRole('link', { name: 'Browse' }).click();
-      await expect(
-        page.locator(
-          '[data-storefront-shell][data-navigation-probe="persistent"]'
-        )
-      ).toBeVisible();
+      await expect(storefrontShell).toHaveJSProperty(
+        '__storefrontNavigationProbe',
+        'persistent'
+      );
       await expect(page.locator('main[aria-busy="true"]')).toBeVisible();
     });
     await expect(page).toHaveURL(new RegExp(`/${fixture.slug}/?$`, 'u'));
