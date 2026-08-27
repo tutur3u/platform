@@ -15,7 +15,7 @@
     },
     {
       "path": "/api/cron/infrastructure/docker-recovery-alerts",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/infrastructure/sync-trust-cache",
