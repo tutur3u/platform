@@ -3038,7 +3038,10 @@
       "welcome_button": "Nhãn nút",
       "welcome_button_placeholder": "Bắt đầu",
       "auto_advance": "Tự động chuyển tiếp",
-      "auto_advance_hint": "Chuyển sang câu hỏi kế tiếp ngay khi chọn xong đánh giá hoặc một lựa chọn. Câu nhập chữ, chọn nhiều và xếp hạng luôn chờ nút Tiếp tục."
+      "auto_advance_hint": "Chuyển sang câu hỏi kế tiếp ngay khi chọn xong đánh giá hoặc một lựa chọn. Câu nhập chữ, chọn nhiều và xếp hạng luôn chờ nút Tiếp tục.",
+      "embed_min_height": "Chiều cao tối thiểu",
+      "embed_min_height_placeholder": "320",
+      "embed_min_height_hint": "Mức thấp nhất mà khung nhúng co lại khi tự động điều chỉnh. Để trống để dùng mặc định 320px, đủ chỗ trả lời một câu hỏi mà không phải cuộn bên trong khung."
     },
     "shared": {
       "metadata_fallback_description": "Mở biểu mẫu chia sẻ này để xem các câu hỏi và gửi phản hồi.",

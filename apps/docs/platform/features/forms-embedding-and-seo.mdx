@@ -112,11 +112,17 @@ re-run cannot double-mount it.
 | `data-tuturuuu-form` | all | — | The form's share code. Required. |
 | `data-mode` | all | `inline` | `inline`, `fullpage`, `popup`, `slider`, `popover`, or `sidetab`. |
 | `data-height` | inline modes | `520` | Fixed pixel height. Omit to let the embed auto-size. |
+| `data-min-height` | auto-sizing inline | `320` | Shortest the embed shrinks to while auto-sizing. Ignored when `data-height` is set. |
 | `data-title` | all | — | `title` on the generated iframe, for screen readers. |
 | `data-launcher-text` | overlay modes | localized default | Launcher button label. |
 | `data-launcher-color` | overlay modes | `#6d28d9` | Launcher button background. |
 | `data-open` | overlay modes | `false` | `true` opens the overlay on load. |
 | `data-close-on-submit` | overlay modes | `true` | `false` keeps the overlay open after submit. |
+
+An auto-sizing embed never renders shorter than `data-min-height`. The default
+of 320px is the smallest height at which a single question stays answerable
+without scrolling inside the frame — the previous floor was 120px, which
+predates one-question-at-a-time forms and left the host page showing a sliver.
 
 `inline` and `fullpage` render in place. `popup`, `slider`, `popover`, and
 `sidetab` are overlay modes: they render a launcher and only mount the form when

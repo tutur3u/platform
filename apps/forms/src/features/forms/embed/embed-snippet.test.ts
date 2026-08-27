@@ -100,3 +100,52 @@ describe('isOverlayEmbedMode', () => {
     expect(isOverlayEmbedMode(mode)).toBe(false)
   );
 });
+
+describe('buildEmbedSnippet min-height', () => {
+  const base = { baseUrl: 'https://forms.tuturuuu.com', shareCode: 'abc' };
+
+  it('emits a floor for an auto-sizing inline embed', () => {
+    const snippet = buildEmbedSnippet({
+      ...base,
+      mode: 'inline',
+      minHeight: 480,
+    });
+    expect(snippet).toContain('data-min-height="480"');
+  });
+
+  it('omits the floor when a fixed height is set', () => {
+    // A floor beside a fixed height controls nothing; emitting it would
+    // advertise a knob that does not turn.
+    const snippet = buildEmbedSnippet({
+      ...base,
+      mode: 'inline',
+      height: 600,
+      minHeight: 480,
+    });
+    expect(snippet).toContain('data-height="600"');
+    expect(snippet).not.toContain('data-min-height');
+  });
+
+  it('omits the floor on overlay modes, which size themselves', () => {
+    const snippet = buildEmbedSnippet({
+      ...base,
+      mode: 'popup',
+      minHeight: 480,
+    });
+    expect(snippet).not.toContain('data-min-height');
+  });
+
+  it('omits the floor when unset, so the SDK default applies', () => {
+    const snippet = buildEmbedSnippet({ ...base, mode: 'inline' });
+    expect(snippet).not.toContain('data-min-height');
+  });
+
+  it('rounds a fractional floor', () => {
+    const snippet = buildEmbedSnippet({
+      ...base,
+      mode: 'inline',
+      minHeight: 480.6,
+    });
+    expect(snippet).toContain('data-min-height="481"');
+  });
+});
