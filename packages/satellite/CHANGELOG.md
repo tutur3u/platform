@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/satellite-v0.15.1...satellite-v0.16.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([cb29d33](https://github.com/tutur3u/platform/commit/cb29d33953745b1a61f09d8c8390459f983d30d7))
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+
+
+### Bug Fixes
+
+* **command:** align launcher capabilities ([e877328](https://github.com/tutur3u/platform/commit/e87732887d1dbb10177605d57c4942340669d310))
+* **command:** hide unavailable navigation tab ([39fb8cd](https://github.com/tutur3u/platform/commit/39fb8cd01cfe3c2497f49684075eb74ca36686d6))
+* **command:** polish command center accessibility ([5e0e797](https://github.com/tutur3u/platform/commit/5e0e7971a0af9c6935ae0d443bfd0d13d663c486))
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+* **command:** secure task mutations across apps ([cc71d3d](https://github.com/tutur3u/platform/commit/cc71d3daa82b05fd56f21446daac126cc2cd8d2e))
+
 ## [0.15.1](https://github.com/tutur3u/platform/compare/satellite-v0.15.0...satellite-v0.15.1) (2026-08-21)
 
 

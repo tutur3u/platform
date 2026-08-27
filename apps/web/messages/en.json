@@ -9432,10 +9432,13 @@
       "plan": "Plan & execute"
     },
     "index": {
+      "description": "One workspace, one login, one bill. Each app below works on its own and works better beside the others.",
+      "learn_more": "Learn more",
       "seo": {
         "description": "Every Tuturuuu app in one place — plan and execute, create and share, run the business.",
         "title": "Products"
-      }
+      },
+      "title": "Every app your team needs"
     },
     "products": {
       "ai": {

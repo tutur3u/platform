@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.26.0](https://github.com/tutur3u/platform/compare/utils-v0.25.5...utils-v0.26.0) (2026-08-26)
+
+
+### Features
+
+* **forms:** add landing page, per-form SEO, realtime collaboration, and embeds ([#5145](https://github.com/tutur3u/platform/issues/5145)) ([6896515](https://github.com/tutur3u/platform/commit/6896515b099b28bbebc873f98733879bf108ef89))
+* **forms:** add six embed modes and a public embed SDK ([5d0b68b](https://github.com/tutur3u/platform/commit/5d0b68b3ca5ce3d4cd6cd119e2b0ad79b014aedd))
+* **tu-do:** search board tasks by ticket identifier ([e81891c](https://github.com/tutur3u/platform/commit/e81891c7424b530322e3250d917636a988e278fe))
+* **tu-do:** search board tasks by ticket identifier ([#5142](https://github.com/tutur3u/platform/issues/5142)) ([18c0e3e](https://github.com/tutur3u/platform/commit/18c0e3ea6a20522959a0b66ed8dfd5a5699daec4))
+
 ## [0.25.5](https://github.com/tutur3u/platform/compare/utils-v0.25.4...utils-v0.25.5) (2026-08-25)
 
 

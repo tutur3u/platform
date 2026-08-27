@@ -18,12 +18,12 @@
         "acceptedRemoval": 2,
         "key": "page",
         "label": "page",
-        "legacyNext": 50,
+        "legacyNext": 51,
         "migrated": 99,
-        "percentComplete": 66.89,
-        "remaining": 50,
+        "percentComplete": 66.45,
+        "remaining": 51,
         "terminal": 101,
-        "total": 151,
+        "total": 152,
         "unknownStatus": 0
       },
       {
@@ -128,12 +128,12 @@
         "acceptedRemoval": 2,
         "key": "tanstack-start",
         "label": "TanStack Start",
-        "legacyNext": 72,
+        "legacyNext": 73,
         "migrated": 148,
-        "percentComplete": 67.57,
-        "remaining": 72,
+        "percentComplete": 67.26,
+        "remaining": 73,
         "terminal": 150,
-        "total": 222,
+        "total": 223,
         "unknownStatus": 0
       }
     ],
@@ -323,12 +323,12 @@
       "acceptedRemoval": 14,
       "key": "total",
       "label": "All route artifacts",
-      "legacyNext": 586,
+      "legacyNext": 587,
       "migrated": 215,
-      "percentComplete": 28.1,
-      "remaining": 586,
+      "percentComplete": 28.06,
+      "remaining": 587,
       "terminal": 229,
-      "total": 815,
+      "total": 816,
       "unknownStatus": 0
     }
   },
@@ -7296,6 +7296,15 @@
       "targetOwner": "tanstack-start"
     },
     {
+      "id": "page:/:locale/products:apps/web/src/app/[locale]/(marketing)/products/page.tsx",
+      "kind": "page",
+      "methods": [],
+      "routePath": "/:locale/products",
+      "sourceFile": "apps/web/src/app/[locale]/(marketing)/products/page.tsx",
+      "status": "legacy-next",
+      "targetOwner": "tanstack-start"
+    },
+    {
       "id": "page:/:locale/products/ai:apps/web/src/app/[locale]/(marketing)/products/ai/page.tsx",
       "kind": "page",
       "methods": [],
@@ -7777,7 +7786,7 @@
     "apiRoutes": 580,
     "cronRoutes": 8,
     "layouts": 67,
-    "pages": 151,
+    "pages": 152,
     "routeHandlers": 593,
     "methodCounts": {
       "GET": 295,
@@ -7788,6 +7797,6 @@
       "DELETE": 99,
       "OPTIONS": 23
     },
-    "total": 815
+    "total": 816
   }
 }

@@ -326,7 +326,7 @@ describe('application metadata coverage', () => {
       )
       .map((entry) => resolve(entry.parentPath, entry.name));
 
-    expect(marketingLayouts).toHaveLength(37);
+    expect(marketingLayouts).toHaveLength(45);
     for (const layoutPath of marketingLayouts) {
       expect(readFileSync(layoutPath, 'utf8')).toMatch(/pathname:\s*['`]/);
     }

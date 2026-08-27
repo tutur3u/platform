@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.15.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.14.0...tasks-ui-v0.15.0) (2026-08-26)
+
+
+### Features
+
+* **tu-do:** search board tasks by ticket identifier ([e81891c](https://github.com/tutur3u/platform/commit/e81891c7424b530322e3250d917636a988e278fe))
+* **tu-do:** search board tasks by ticket identifier ([#5142](https://github.com/tutur3u/platform/issues/5142)) ([18c0e3e](https://github.com/tutur3u/platform/commit/18c0e3ea6a20522959a0b66ed8dfd5a5699daec4))
+
+
+### Bug Fixes
+
+* **review:** address PR feedback ([05580b9](https://github.com/tutur3u/platform/commit/05580b95d257e23df5d8fac98e1b7b319d83671e))
+* **tu-do:** keep board search within source limits ([4c5d8e3](https://github.com/tutur3u/platform/commit/4c5d8e3d3c284679bcbd2e222f3ea9b94eda4690))
+
 ## [0.14.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.13.2...tasks-ui-v0.14.0) (2026-08-25)
 
 

@@ -2,14 +2,14 @@
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 import { resolveTurnstileClientState } from '@tuturuuu/turnstile/client';
-import { cn } from '@tuturuuu/utils/format';
+
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEV_MODE } from '@/constants/common';
 import { isAnswerableQuestionType } from '../block-utils';
 import { getNextSectionTarget } from '../branching';
 import { normalizeMarkdownToText } from '../content';
-import { FORM_FONT_VARIABLES, getFormFontStyle } from '../fonts';
+import { getFormFontStyle } from '../fonts';
 import { FormsImageDialog } from '../forms-image-dialog';
 import { getRuntimeProgressStats } from '../runtime-progress';
 import { getFormToneClasses } from '../theme';
@@ -24,6 +24,7 @@ import { densityClasses } from './constants';
 import { FormBrandFooter } from './form-brand-footer';
 import { renderFormHeroCard } from './hero-card';
 import { renderEmailTrackedNotice, renderReadOnlyNotice } from './notices';
+import { RuntimeShell } from './runtime-shell';
 import { renderFormSectionCard } from './section-card';
 import {
   findMissingRequiredQuestions,
@@ -31,6 +32,8 @@ import {
 } from './step-validation';
 import { renderSubmittedScreen } from './submitted-screen';
 import type { FormRuntimeProps } from './types';
+import { useAutoAdvance } from './use-auto-advance';
+import { useBackNavigation } from './use-back-navigation';
 import { useFormDraft } from './use-form-draft';
 import { useFormSteps } from './use-form-steps';
 import { useResponseCopy } from './use-response-copy';
@@ -340,6 +343,29 @@ export function FormRuntime({
     step: currentStep,
   });
 
+  // Reuses the keyboard's late-bound handler ref: advancing is the same action
+  // whether a key or an answer triggered it, and a second ref for it would be
+  // one more thing to keep pointed at the right function.
+  const handleBack = useBackNavigation({
+    goToPreviousStep,
+    isBusy,
+    resetSteps,
+    sectionTrail,
+    setCurrentSectionId,
+    setError,
+    setSectionTrail,
+    setStepDirection,
+  });
+
+  const maybeAutoAdvance = useAutoAdvance({
+    enabled:
+      form.settings.displayMode === 'one_question' &&
+      form.settings.autoAdvance &&
+      !readOnly,
+    onAdvance: () => keyboardHandlersRef.current.next(),
+    step: currentStep,
+  });
+
   if (!currentSection) {
     return null;
   }
@@ -359,6 +385,8 @@ export function FormRuntime({
       delete next[questionId];
       return next;
     });
+
+    maybeAutoAdvance(questionId, value);
   };
 
   const validateCurrentSection = (
@@ -394,36 +422,6 @@ export function FormRuntime({
    * section they are partway through.
    */
   const canGoBack = !isFirstStep || sectionTrail.length > 1;
-
-  // Assigned during render, like `answersRef` above: the keyboard is bound
-  // before these exist, and this is what connects the two.
-  keyboardHandlersRef.current = {
-    next: () => {
-      void handleAdvance();
-    },
-    previous: () => handleBack(),
-  };
-
-  const handleBack = () => {
-    if (isBusy) return;
-
-    if (goToPreviousStep()) {
-      setStepDirection('backward');
-      setError(null);
-      return;
-    }
-
-    const previousSectionId = sectionTrail[sectionTrail.length - 2];
-    if (!previousSectionId) return;
-
-    // Entering the previous section from the end, so its last screen is what
-    // the respondent last saw.
-    setStepDirection('backward');
-    resetSteps('last');
-    setSectionTrail((currentTrail) => currentTrail.slice(0, -1));
-    setCurrentSectionId(previousSectionId);
-    setError(null);
-  };
 
   const handleAdvance = async () => {
     if (isBusy) {
@@ -554,6 +552,15 @@ export function FormRuntime({
     }
   };
 
+  // Assigned during render, like `answersRef` above: the keyboard is bound
+  // before these exist, and this is what connects the two.
+  keyboardHandlersRef.current = {
+    next: () => {
+      void handleAdvance();
+    },
+    previous: () => handleBack(),
+  };
+
   if (submitted) {
     return renderSubmittedScreen({
       form,
@@ -572,126 +579,115 @@ export function FormRuntime({
 
   if (!hasStarted) {
     return (
-      <div
-        className={cn(
-          'min-h-screen py-10',
-          FORM_FONT_VARIABLES,
-          toneClasses.pageClassName,
-          className
-        )}
-        style={bodyFontStyle}
+      <RuntimeShell
+        bodyFontStyle={bodyFontStyle}
+        className={className}
+        toneClasses={toneClasses}
+        width="narrow"
       >
-        <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4">
-          <WelcomeScreen
-            bodyTypographyClassName={bodyTypographyClassName}
-            displayTypographyClassName={displayTypographyClassName}
-            form={form}
-            headlineFontStyle={headlineFontStyle}
-            onStart={() => setHasStarted(true)}
-            t={t}
-            toneClasses={toneClasses}
-          />
-          <FormBrandFooter />
-        </div>
-      </div>
+        <WelcomeScreen
+          bodyTypographyClassName={bodyTypographyClassName}
+          displayTypographyClassName={displayTypographyClassName}
+          form={form}
+          headlineFontStyle={headlineFontStyle}
+          onStart={() => setHasStarted(true)}
+          t={t}
+          toneClasses={toneClasses}
+        />
+        <FormBrandFooter />
+      </RuntimeShell>
     );
   }
 
   return (
-    <div
-      className={cn(
-        'min-h-screen py-10',
-        FORM_FONT_VARIABLES,
-        toneClasses.pageClassName,
-        className
-      )}
-      style={bodyFontStyle}
+    <RuntimeShell
+      bodyFontStyle={bodyFontStyle}
+      className={className}
+      toneClasses={toneClasses}
     >
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4">
-        {renderFormHeroCard({
-          form,
-          t,
-          toneClasses,
-          headlineFontStyle,
-          displayTypographyClassName,
-          progressStats,
-          setPreviewImage,
-        })}
+      {renderFormHeroCard({
+        form,
+        t,
+        toneClasses,
+        headlineFontStyle,
+        displayTypographyClassName,
+        progressStats,
+        setPreviewImage,
+      })}
 
-        {renderEmailTrackedNotice({ form, t })}
+      {renderEmailTrackedNotice({ form, t })}
 
-        {renderReadOnlyNotice({
-          t,
-          readOnly,
-          toneClasses,
-          submittedAt,
-          responseCopyEmail,
-          readOnlyResponseCopySentTo,
-          canTriggerReadOnlyResponseCopy,
-          isBusy,
-          isResponseCopyBlockedByTurnstile,
-          handleReadOnlyResponseCopy,
-          missingQuestionIssues,
-        })}
+      {renderReadOnlyNotice({
+        t,
+        readOnly,
+        toneClasses,
+        submittedAt,
+        responseCopyEmail,
+        readOnlyResponseCopySentTo,
+        canTriggerReadOnlyResponseCopy,
+        isBusy,
+        isResponseCopyBlockedByTurnstile,
+        handleReadOnlyResponseCopy,
+        missingQuestionIssues,
+      })}
 
-        {renderFormSectionCard({
-          form,
-          t,
-          mode,
-          readOnly,
-          toneClasses,
-          density,
-          bodyTypographyClassName,
-          headingTypographyClassName,
-          sectionCardRef,
-          currentSection,
-          visibleSectionTitle,
-          progressStats,
-          answers,
-          answerIssueMap,
-          validationErrorsByQuestionId,
-          updateAnswer,
-          setPreviewImage,
-          error,
-          advanceTarget,
-          advanceSectionTitle,
-          hasReadOnlyNextSection,
-          shouldShowSectionNavigation,
-          canGoBack,
-          handleBack,
-          visibleQuestions: currentStepQuestions,
-          stepIndex,
-          stepDirection,
-          stepCount: steps.length,
-          isLastStep,
-          shouldShowTurnstile,
-          isSubmitBlockedByTurnstile,
-          isBusy,
-          setError,
-          responseCopyEmail,
-          sendResponseCopy,
-          setSendResponseCopy,
-          turnstileSiteKey,
-          captchaRef,
-          captchaError,
-          setCaptchaToken,
-          setCaptchaError,
-          handleAdvance,
-        })}
-        <FormBrandFooter className="pb-2" />
-        {previewImage ? (
-          <FormsImageDialog
-            open={!!previewImage}
-            onOpenChange={(open) => {
-              if (!open) {
-                setPreviewImage(null);
-              }
-            }}
-            src={previewImage.src}
-            alt={previewImage.alt}
-          />
-        ) : null}
-      </div>
-    </div>
+      {renderFormSectionCard({
+        form,
+        t,
+        mode,
+        readOnly,
+        toneClasses,
+        density,
+        bodyTypographyClassName,
+        headingTypographyClassName,
+        sectionCardRef,
+        currentSection,
+        visibleSectionTitle,
+        progressStats,
+        answers,
+        answerIssueMap,
+        validationErrorsByQuestionId,
+        updateAnswer,
+        setPreviewImage,
+        error,
+        advanceTarget,
+        advanceSectionTitle,
+        hasReadOnlyNextSection,
+        shouldShowSectionNavigation,
+        canGoBack,
+        handleBack,
+        visibleQuestions: currentStepQuestions,
+        stepIndex,
+        stepDirection,
+        stepCount: steps.length,
+        isLastStep,
+        shouldShowTurnstile,
+        isSubmitBlockedByTurnstile,
+        isBusy,
+        setError,
+        responseCopyEmail,
+        sendResponseCopy,
+        setSendResponseCopy,
+        turnstileSiteKey,
+        captchaRef,
+        captchaError,
+        setCaptchaToken,
+        setCaptchaError,
+        handleAdvance,
+      })}
+      <FormBrandFooter className="pb-2" />
+      {previewImage ? (
+        <FormsImageDialog
+          open={!!previewImage}
+          onOpenChange={(open) => {
+            if (!open) {
+              setPreviewImage(null);
+            }
+          }}
+          src={previewImage.src}
+          alt={previewImage.alt}
+        />
+      ) : null}
+    </RuntimeShell>
   );
 }

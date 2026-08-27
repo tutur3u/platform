@@ -98,7 +98,9 @@ export function buildDemoForm(
     settings: {
       // Sections mode on the landing: a visitor skimming the page should see
       // what the form asks, not have to click through four screens to find out.
+      autoAdvance: true,
       displayMode: 'sections',
+      redirectUrl: '',
       welcomeEnabled: false,
       welcomeTitle: '',
       welcomeDescription: '',

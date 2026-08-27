@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/internal-api-v0.32.0...internal-api-v0.33.0) (2026-08-26)
+
+
+### Features
+
+* **command:** build task-first command center ([#5144](https://github.com/tutur3u/platform/issues/5144)) ([292c739](https://github.com/tutur3u/platform/commit/292c7398e2abc3097c2b4ab85522370c302fb030))
+* **external-projects:** assign roles to invitations ([1cd04e8](https://github.com/tutur3u/platform/commit/1cd04e8dc0db419c2b1b7bc526012f7b7ee3f7dc))
+
+
+### Bug Fixes
+
+* **command:** resolve task search review feedback ([2a300fe](https://github.com/tutur3u/platform/commit/2a300fea33781841dfd3ae604592bec4c96afcfb))
+* **command:** secure task mutations across apps ([cc71d3d](https://github.com/tutur3u/platform/commit/cc71d3daa82b05fd56f21446daac126cc2cd8d2e))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/internal-api-v0.31.1...internal-api-v0.32.0) (2026-08-25)
 
 
