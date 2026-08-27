@@ -33,7 +33,6 @@ import {
 } from '../collaboration';
 import { normalizeMarkdownToText } from '../content';
 import { FORM_FONT_VARIABLES } from '../fonts';
-import { FormRuntime } from '../form-runtime';
 import { FormsMarkdown } from '../forms-markdown';
 import type {
   FormAnalytics,
@@ -47,6 +46,7 @@ import { FontPreviewPanel } from './font-preview-panel';
 import { renderBuildTab } from './form-studio-build-tab';
 import { useFormStudioSave } from './form-studio-save';
 import { useFormStudioState } from './form-studio-state';
+import { PreviewPanel } from './preview-panel';
 import { ResponsesPanel } from './responses-panel';
 import { SettingsPanel } from './settings-panel';
 import { StudioSaveButton, type StudioSaveState } from './studio-save-button';
@@ -545,14 +545,15 @@ export function FormStudio({
           })}
 
           <TabsContent value="preview" className="mt-0 min-w-0">
-            <FormRuntime
-              data-active="true"
+            <PreviewPanel
               form={previewDefinition}
-              mode="preview"
-              className={cn(
-                'rounded-xl border',
-                studioToneClasses.tabTriggerClassName
-              )}
+              t={
+                t as (
+                  key: string,
+                  values?: Record<string, string | number>
+                ) => string
+              }
+              toneClasses={studioToneClasses}
             />
           </TabsContent>
 

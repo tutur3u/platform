@@ -3243,7 +3243,12 @@
       "move_block_up": "Di chuyển khối lên",
       "move_block_down": "Di chuyển khối xuống",
       "duplicate_block": "Nhân bản khối",
-      "delete_block": "Xoá khối"
+      "delete_block": "Xoá khối",
+      "preview_width": "Chiều rộng xem thử",
+      "preview_desktop": "Máy tính",
+      "preview_tablet": "Máy tính bảng",
+      "preview_mobile": "Điện thoại",
+      "preview_restart": "Bắt đầu lại"
     },
     "tabs": {
       "analytics": "Analytics",
