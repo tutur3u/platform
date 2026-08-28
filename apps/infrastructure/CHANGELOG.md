@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.22.3](https://github.com/tutur3u/platform/compare/infra-v0.22.2...infra-v0.22.3) (2026-08-27)
+
+
+### Performance Improvements
+
+* **infrastructure:** stop alerting Docker recovery every minute ([e0b96b3](https://github.com/tutur3u/platform/commit/e0b96b3f9654be3921e28737b2284a4ad42639dc))
+* **infrastructure:** stop alerting Docker recovery every minute ([#5167](https://github.com/tutur3u/platform/issues/5167)) ([07fa6d2](https://github.com/tutur3u/platform/commit/07fa6d2e6a5f42e54eef23d1000b64710067bf61))
+
 ## [0.22.2](https://github.com/tutur3u/platform/compare/infra-v0.22.1...infra-v0.22.2) (2026-08-25)
 
 
