@@ -91,8 +91,9 @@ correct region; the lever is **sending fewer bytes from it**, not relocating it.
 
 The reviewable question is region *count*, not region choice.
 
-Every app that deploys from this repo now pins `"regions": ["sin1"]` in its
-`vercel.json`. Previously most listed three (for example `platform` used
+Every app that deploys from this repo pins `"regions": ["sin1"]` in its
+`vercel.json`, and every other project on the team is set to `sin1` through the
+API. Previously most listed three (for example `platform` used
 `['sin1', 'iad1', 'fra1']`), which cost on two fronts:
 
 - **Provisioned memory.** Fluid bills memory per *instance*, and each region
@@ -101,14 +102,17 @@ Every app that deploys from this repo now pins `"regions": ["sin1"]` in its
 - **Latency.** A request served from `iad1` or `fra1` still reaches a Singapore
   database, so the extra regions were slower *and* billed.
 
-`teach` is deliberately left on `iad1`: it is already single-region, and moving
-it to `sin1` would raise its origin-transfer rate 4.5x without consolidating
-anything. Consolidate multi-region apps; do not relocate single-region ones.
+**Exactly four projects keep three regions: `exocorpse`, `richfield`, `kendra`,
+and `yashie`.** These are client sites with their own audiences and their own
+backends, so the `sin1` argument — which rests on *this* platform's database
+being in `ap-southeast-1` — does not apply to them. Everything else on the team
+is single-region `sin1`, including projects that were previously single-region on
+`iad1`.
 
-External client projects — `exocorpse`, `richfield`, `kendra`, `yashie`, `noah`
-and the rest — **keep their three regions on purpose**. The argument for `sin1`
-rests on this platform's database being in `ap-southeast-1`; a client site with
-its own audience and its own backend does not inherit that reasoning.
+Moving an already-single-region project from `iad1` to `sin1` does raise its
+origin-transfer rate ($0.06 -> $0.27/GB), so it is not a saving on its own; it is
+chosen for latency and for having one predictable region across the fleet.
+Consolidation is where the money is; relocation is a consistency call.
 
 ## Instance Size
 
