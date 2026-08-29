@@ -13,6 +13,10 @@ import {
 import { createWorkspaceExternalProjectEntry } from '@/lib/external-projects/store';
 
 const CONTACT_SUBMISSIONS_COLLECTION_SLUG = 'contact-submissions';
+const ENTRY_SLUG_MAX_LENGTH = 80;
+const SUBMISSION_SLUG_SUFFIX_LENGTH = 8;
+const SUBMISSION_SLUG_BASE_MAX_LENGTH =
+  ENTRY_SLUG_MAX_LENGTH - SUBMISSION_SLUG_SUFFIX_LENGTH - 1;
 
 const submissionSchema = z.object({
   appId: z.string().trim().toLowerCase().default('richfield'),
@@ -201,7 +205,7 @@ function slugifySubmission(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
+    .slice(0, SUBMISSION_SLUG_BASE_MAX_LENGTH);
 }
 
 const EMAIL_NOTIFICATION_STATUSES = ['pending', 'sent', 'failed'] as const;
