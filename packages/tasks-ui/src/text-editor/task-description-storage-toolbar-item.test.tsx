@@ -7,17 +7,16 @@ describe('TaskDescriptionStorageToolbarItem', () => {
     render(
       <TaskDescriptionStorageToolbarItem
         counterText="99% left"
-        currentLength={120}
         isOverLimit={false}
-        limit={10_000}
-        liveMessage="Room left in your description. 99% left (120/10000)"
+        liveMessage="Room left in your description. 99% left. 120 of 10,000 used"
         percentLeft={99}
         statusText="Room left in your description. Formatting, mentions, and embeds count too."
+        usageText="120 of 10,000 used"
       />
     );
 
     const indicator = screen.getByRole('button', {
-      name: 'Room left in your description. 99% left (120/10000)',
+      name: 'Room left in your description. 99% left. 120 of 10,000 used',
     });
     expect(indicator).toHaveClass('h-8', 'shrink-0');
     const percentage = within(indicator).getByText('99%');
@@ -33,7 +32,7 @@ describe('TaskDescriptionStorageToolbarItem', () => {
       )
     ).toBeInTheDocument();
     expect(
-      within(screen.getByRole('tooltip')).getByText(/120\/10000/)
+      within(screen.getByRole('tooltip')).getByText('120 of 10,000 used')
     ).toBeInTheDocument();
   });
 
@@ -41,18 +40,17 @@ describe('TaskDescriptionStorageToolbarItem', () => {
     render(
       <TaskDescriptionStorageToolbarItem
         counterText="0% left"
-        currentLength={10_100}
         isOverLimit
-        limit={10_000}
-        liveMessage="Description is over 10000 characters. 0% left (10100/10000)"
+        liveMessage="Description is over 10,000 characters. 0% left. 10,100 of 10,000 used"
         percentLeft={0}
-        statusText="Description is over 10000 characters."
+        statusText="Description is over 10,000 characters."
+        usageText="10,100 of 10,000 used"
       />
     );
 
     expect(
       screen.getByRole('button', {
-        name: 'Description is over 10000 characters. 0% left (10100/10000)',
+        name: 'Description is over 10,000 characters. 0% left. 10,100 of 10,000 used',
       })
     ).toHaveClass('border-destructive/40');
     expect(screen.getByText('0%')).toHaveClass(

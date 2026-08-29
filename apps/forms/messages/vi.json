@@ -8431,6 +8431,7 @@
       "description_storage_counter": "Còn {percent}%",
       "description_storage_helper": "Còn chỗ trong mô tả. Định dạng, nhắc tên và nội dung nhúng cũng được tính.",
       "description_storage_over_limit": "Mô tả quá dài và sẽ không đồng bộ. Hãy rút gọn để tiếp tục.",
+      "description_storage_usage": "Đã dùng {used} trên {limit}",
       "description_storage_warning": "Gần hết chỗ trong mô tả — còn {percent}%.",
       "description_too_long_description": "Hãy rút gọn mô tả xuống dưới {max} ký tự trước khi lưu.",
       "description_too_long_title": "Mô tả quá dài",

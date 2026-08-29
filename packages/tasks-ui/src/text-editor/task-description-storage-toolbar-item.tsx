@@ -5,22 +5,20 @@ import { cn } from '@tuturuuu/utils/format';
 
 interface TaskDescriptionStorageToolbarItemProps {
   counterText: string;
-  currentLength: number;
   isOverLimit: boolean;
-  limit: number;
   liveMessage: string;
   percentLeft: number;
   statusText: string;
+  usageText: string;
 }
 
 export function TaskDescriptionStorageToolbarItem({
   counterText,
-  currentLength,
   isOverLimit,
-  limit,
   liveMessage,
   percentLeft,
   statusText,
+  usageText,
 }: TaskDescriptionStorageToolbarItemProps) {
   const remainingPercent = Math.max(0, Math.min(100, Math.round(percentLeft)));
   const percentageText = `${remainingPercent}%`;
@@ -95,7 +93,10 @@ export function TaskDescriptionStorageToolbarItem({
         <TooltipContent side="bottom" className="max-w-xs space-y-1">
           <p>{statusText}</p>
           <p className={cn('font-medium tabular-nums', toneClass)}>
-            {counterText} ({currentLength}/{limit})
+            {counterText}
+          </p>
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {usageText}
           </p>
         </TooltipContent>
       </Tooltip>

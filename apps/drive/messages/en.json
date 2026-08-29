@@ -13338,6 +13338,7 @@
       "description_storage_counter": "{percent}% left",
       "description_storage_helper": "Room left in your description. Formatting, mentions, and embeds count too.",
       "description_storage_over_limit": "Description is too long and won't sync. Shorten it to continue.",
+      "description_storage_usage": "{used} of {limit} used",
       "description_storage_warning": "Running low on description space — {percent}% left.",
       "description_too_long_description": "Trim the description below {max} characters before saving.",
       "description_too_long_title": "Description is too long",

@@ -7,7 +7,7 @@ import { getBoardRealtimeChannelName } from '@tuturuuu/tasks-ui/hooks/useBoardRe
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import type * as Y from 'yjs';
 import { TaskDescriptionStorageToolbarItem } from '../../../../text-editor/task-description-storage-toolbar-item';
@@ -124,6 +124,9 @@ export function TaskDescriptionEditor({
 }: TaskDescriptionEditorProps) {
   const t = useTranslations('ws-task-boards.dialog');
   const tCommon = useTranslations('ws-task-boards.dialog.editor_copy');
+  const format = useFormatter();
+  const formattedCurrentLength = format.number(descriptionStorageLength);
+  const formattedLimit = format.number(descriptionLimit);
   // Yjs sync is enabled for all tiers (realtimeEnabled), but cursor labels only for paid tiers (collaborationMode)
   const allowYjsSync = isOpen && !isCreateMode && realtimeEnabled;
   const showCollaborationCursors = isOpen && !isCreateMode && collaborationMode;
@@ -133,7 +136,7 @@ export function TaskDescriptionEditor({
   const editorInstanceRef = useRef<Editor | null>(null);
   const storageStatusText = isDescriptionOverLimit
     ? t('description_storage_over_limit', {
-        max: descriptionLimit,
+        max: formattedLimit,
       })
     : descriptionStorageLength >= descriptionLimit * 0.85
       ? t('description_storage_warning', {
@@ -143,7 +146,11 @@ export function TaskDescriptionEditor({
   const storageCounterText = t('description_storage_counter', {
     percent: descriptionPercentLeft,
   });
-  const storageLiveMessage = `${storageStatusText} ${storageCounterText} (${descriptionStorageLength}/${descriptionLimit})`;
+  const storageUsageText = t('description_storage_usage', {
+    limit: formattedLimit,
+    used: formattedCurrentLength,
+  });
+  const storageLiveMessage = `${storageStatusText} ${storageCounterText}. ${storageUsageText}`;
 
   // Store editor instance when it becomes available
   const handleEditorReady = (editor: Editor) => {
@@ -309,12 +316,11 @@ export function TaskDescriptionEditor({
           toolbarLeadingContent={
             <TaskDescriptionStorageToolbarItem
               counterText={storageCounterText}
-              currentLength={descriptionStorageLength}
               isOverLimit={isDescriptionOverLimit}
-              limit={descriptionLimit}
               liveMessage={storageLiveMessage}
               percentLeft={descriptionPercentLeft}
               statusText={storageStatusText}
+              usageText={storageUsageText}
             />
           }
           boardId={boardId}
