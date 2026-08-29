@@ -289,7 +289,7 @@ describe('POST submission Turnstile gate', () => {
     expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
       expect.anything(),
       'token-abc',
-      { secretKey: 'secret-key' }
+      { includeRemoteIp: false, secretKey: 'secret-key' }
     );
     expect(mocks.createWorkspaceExternalProjectEntry).toHaveBeenCalled();
     delete process.env.TURNSTILE_SECRET_KEY;
@@ -310,7 +310,7 @@ describe('POST submission Turnstile gate', () => {
     expect(mocks.verifyTurnstileToken).toHaveBeenCalledWith(
       expect.anything(),
       'token-abc',
-      { secretKey: 'richfield-secret' }
+      { includeRemoteIp: false, secretKey: 'richfield-secret' }
     );
   });
 });
