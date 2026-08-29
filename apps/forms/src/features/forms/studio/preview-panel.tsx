@@ -114,6 +114,7 @@ export function PreviewPanel({
             data-active="true"
             form={form}
             key={runId}
+            layout="inline"
             mode="preview"
           />
         </div>

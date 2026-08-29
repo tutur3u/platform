@@ -344,3 +344,41 @@ describe('auto-advance', () => {
     expect(screen.getByText('Type here')).toBeDefined();
   });
 });
+
+describe('layout', () => {
+  function renderWithLayout(layout: 'page' | 'inline') {
+    return render(
+      <FormRuntime
+        form={buildForm([textQuestion('q1', 'First question')])}
+        layout={layout}
+        mode="public"
+      />
+    );
+  }
+
+  it('claims the viewport on the hosted page', () => {
+    const { container } = renderWithLayout('page');
+    expect(container.querySelector('.min-h-screen')).not.toBeNull();
+  });
+
+  it('does not claim the viewport when embedded', () => {
+    // The bug this guards: the runtime kept `min-h-screen` inside the embed,
+    // the studio preview and the landing demo. `EmbedFrame` measures this
+    // subtree and posts the height to the host, so every embed reported at
+    // least a full viewport no matter how little the form contained — and the
+    // landing demo showed one short question above a screen of blank space.
+    const { container } = renderWithLayout('inline');
+    expect(container.querySelector('.min-h-screen')).toBeNull();
+  });
+
+  it('defaults to claiming the viewport', () => {
+    // The hosted form is the common case and must not change silently.
+    const { container } = render(
+      <FormRuntime
+        form={buildForm([textQuestion('q1', 'First question')])}
+        mode="public"
+      />
+    );
+    expect(container.querySelector('.min-h-screen')).not.toBeNull();
+  });
+});
