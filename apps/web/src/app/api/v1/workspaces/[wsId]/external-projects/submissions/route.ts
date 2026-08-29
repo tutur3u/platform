@@ -60,7 +60,15 @@ async function verifySubmissionTurnstile(
   }
 
   try {
-    await verifyTurnstileToken(request, token, { secretKey });
+    // This request is relayed by the authenticated external app's server, so
+    // its forwarding headers describe the relay rather than the browser that
+    // completed the challenge. Cloudflare treats remoteip as optional; omit it
+    // here and verify the signed token itself instead of binding it to the
+    // wrong machine.
+    await verifyTurnstileToken(request, token, {
+      includeRemoteIp: false,
+      secretKey,
+    });
     return null;
   } catch (error) {
     if (isTurnstileError(error)) {

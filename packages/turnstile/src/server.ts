@@ -111,6 +111,7 @@ export interface VerifyTurnstileTokenOptions {
   devMode?: boolean;
   secretKey?: string | null;
   remoteIp?: string | null;
+  includeRemoteIp?: boolean;
   fetch?: typeof fetch;
   timeoutMs?: number;
 }
@@ -139,7 +140,10 @@ export async function verifyTurnstileToken(
   }
 
   const remoteIp =
-    normalizeEnvValue(options.remoteIp) ?? extractTurnstileRemoteIp(request);
+    options.includeRemoteIp === false
+      ? undefined
+      : (normalizeEnvValue(options.remoteIp) ??
+        extractTurnstileRemoteIp(request));
   const body = new URLSearchParams({
     secret: secretKey,
     response: normalizedToken,
