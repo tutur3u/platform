@@ -314,6 +314,20 @@ describe('POST submission Turnstile gate', () => {
     expect(entry.slug).toHaveLength(80);
   });
 
+  it('stores a bounded summary without losing the full submission message', async () => {
+    const { POST } = await import('./route');
+    const message = '🌱 Long-form distribution enquiry. '.repeat(140);
+
+    const response = await POST(postRequest({ ...body, message }), params);
+
+    expect(response.status).toBe(201);
+    const [entry] = mocks.createWorkspaceExternalProjectEntry.mock.calls[0] as [
+      { profile_data: { message: string }; summary: string },
+    ];
+    expect(Array.from(entry.summary)).toHaveLength(512);
+    expect(entry.profile_data.message).toBe(message.trim());
+  });
+
   it('uses the Richfield-specific secret without changing other apps', async () => {
     process.env.TURNSTILE_SECRET_KEY = 'global-secret';
     process.env.TURNSTILE_SECRET_KEY_RICHFIELD = 'richfield-secret';

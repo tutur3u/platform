@@ -14,6 +14,7 @@ import { createWorkspaceExternalProjectEntry } from '@/lib/external-projects/sto
 
 const CONTACT_SUBMISSIONS_COLLECTION_SLUG = 'contact-submissions';
 const ENTRY_SLUG_MAX_LENGTH = 80;
+const ENTRY_SUMMARY_MAX_LENGTH = 512;
 const SUBMISSION_SLUG_SUFFIX_LENGTH = 8;
 const SUBMISSION_SLUG_BASE_MAX_LENGTH =
   ENTRY_SLUG_MAX_LENGTH - SUBMISSION_SLUG_SUFFIX_LENGTH - 1;
@@ -208,6 +209,10 @@ function slugifySubmission(value: string) {
     .slice(0, SUBMISSION_SLUG_BASE_MAX_LENGTH);
 }
 
+function summarizeSubmissionMessage(message: string) {
+  return Array.from(message).slice(0, ENTRY_SUMMARY_MAX_LENGTH).join('');
+}
+
 const EMAIL_NOTIFICATION_STATUSES = ['pending', 'sent', 'failed'] as const;
 const DEFAULT_SUBMISSION_PAGE_SIZE = 50;
 const MAX_SUBMISSION_PAGE_SIZE = 200;
@@ -345,6 +350,7 @@ export async function POST(
           email: payload.email,
           emailNotificationStatus: 'pending',
           inquiryType: payload.inquiryType,
+          message: payload.message,
           name: payload.name,
           receivedAt,
           submissionStatus: 'new',
@@ -353,7 +359,7 @@ export async function POST(
         slug,
         status: 'draft',
         subtitle: payload.email,
-        summary: payload.message,
+        summary: summarizeSubmissionMessage(payload.message),
         title: `${payload.company} - ${payload.name}`,
         workspaceId: wsId,
       },
