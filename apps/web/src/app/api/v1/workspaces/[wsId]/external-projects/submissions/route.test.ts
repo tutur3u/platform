@@ -295,6 +295,25 @@ describe('POST submission Turnstile gate', () => {
     delete process.env.TURNSTILE_SECRET_KEY;
   });
 
+  it('keeps generated submission slugs within the database limit', async () => {
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      postRequest({
+        ...body,
+        company: 'Richfield Group QA '.repeat(7),
+        name: 'Production delivery verification '.repeat(4),
+      }),
+      params
+    );
+
+    expect(response.status).toBe(201);
+    const [entry] = mocks.createWorkspaceExternalProjectEntry.mock.calls[0] as [
+      { slug: string },
+    ];
+    expect(entry.slug).toHaveLength(80);
+  });
+
   it('uses the Richfield-specific secret without changing other apps', async () => {
     process.env.TURNSTILE_SECRET_KEY = 'global-secret';
     process.env.TURNSTILE_SECRET_KEY_RICHFIELD = 'richfield-secret';
