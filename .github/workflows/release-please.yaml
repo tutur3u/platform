@@ -96,7 +96,7 @@ jobs:
             exit 0
           fi
 
-          npx --yes @biomejs/biome@2.5.10 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
+          npx --yes @biomejs/biome@2.5.11 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
 
           if git diff --quiet -- "${changed_files[@]}"; then
             echo "Generated release files already match Biome formatting."

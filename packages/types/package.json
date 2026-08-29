@@ -21,14 +21,14 @@
     "prepublishOnly": "bun run clean && bun run build"
   },
   "dependencies": {
-    "@tiptap/react": "3.30.2",
+    "@tiptap/react": "3.30.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "typescript": "7.0.2"
   },
