@@ -43,7 +43,19 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const parsed = updateSchema.safeParse(await request.json());
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      // A malformed payload is the caller's error, not a server fault, so it
+      // must not fall through to the 500 handler below.
+      return NextResponse.json(
+        { error: 'Malformed JSON payload' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = updateSchema.safeParse(body);
     if (!parsed.success || !isContactsFeatureSecretValue(parsed.data.value)) {
       return NextResponse.json(
         { error: 'Invalid request body' },

@@ -143,6 +143,9 @@ export function WorkspacePersonPicker({
       emptyText={emptyText}
       onChange={(next) => {
         const nextValue = next as string;
+        // The popover unmounts on select; drop the stale term so the next open
+        // starts from the full list rather than the previous search.
+        comboboxProps.onSearchChange('');
         onChange(
           nextValue,
           comboboxProps.options.find((option) => option.value === nextValue)

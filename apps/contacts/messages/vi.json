@@ -179,7 +179,7 @@
       "reports": "Báo cáo"
     },
     "title": "Phê duyệt",
-    "no_access_description": "Phê duyệt cần quyền duyệt báo cáo hoặc duyệt bài đăng. Hãy nhờ quản trị viên cấp quyền.",
+    "no_access_description": "Bạn cần quyền duyệt báo cáo hoặc duyệt bài đăng để mở phê duyệt. Hãy nhờ quản trị viên cấp quyền.",
     "no_access_title": "Bạn không có quyền truy cập phê duyệt",
     "unavailable_description": "Không xác định được hồ sơ của bạn trong không gian làm việc. Hãy tải lại hoặc nhờ quản trị viên mời lại.",
     "unavailable_title": "Không tải được không gian làm việc này"
@@ -8721,7 +8721,7 @@
     "mark_pending": "Đặt lại chờ xử lý",
     "marked": "Đã cập nhật trạng thái buổi học",
     "minutes_short": "{count} phút",
-    "no_access_description": "Phụ đạo cần quyền xem nhóm người dùng. Hãy nhờ quản trị viên cấp quyền.",
+    "no_access_description": "Bạn cần quyền xem nhóm người dùng để mở phụ đạo. Hãy nhờ quản trị viên cấp quyền.",
     "no_access_title": "Bạn không có quyền truy cập phụ đạo",
     "no_queue": "Không có ai cần hỗ trợ thêm",
     "no_queue_description": "Học viên sẽ xuất hiện ở đây khi vắng buổi hoặc được đánh dấu trong nhận xét nhóm.",
@@ -8768,7 +8768,8 @@
     "stat_today_hint": "Số buổi trong hôm nay",
     "unavailable_description": "Không xác định được hồ sơ của bạn trong không gian làm việc. Hãy tải lại hoặc nhờ quản trị viên mời lại.",
     "unavailable_title": "Không tải được không gian làm việc này",
-    "when": "Thời gian"
+    "when": "Thời gian",
+    "no_reasons": "Không tìm thấy lý do"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",
@@ -9686,7 +9687,7 @@
     "highlight_capture_description": "Ghi lại diễn biến của buổi học cho từng học viên.",
     "highlight_followup": "Chuyển sang phụ đạo",
     "highlight_followup_description": "Học viên được đánh dấu sẽ xuất hiện trong danh sách cần hỗ trợ của phụ đạo.",
-    "no_access_description": "Nhận xét cần quyền xem nhóm người dùng. Hãy nhờ quản trị viên cấp quyền.",
+    "no_access_description": "Bạn cần quyền xem nhóm người dùng để mở nhận xét. Hãy nhờ quản trị viên cấp quyền.",
     "no_access_title": "Bạn không có quyền truy cập nhận xét",
     "unavailable_description": "Không xác định được hồ sơ của bạn trong không gian làm việc. Hãy tải lại hoặc nhờ quản trị viên mời lại.",
     "unavailable_title": "Không tải được không gian làm việc này"
@@ -9704,7 +9705,7 @@
     "highlight_delivery_description": "Mỗi lần gửi đều có hàng đợi và lịch sử riêng.",
     "highlight_templates": "Chủ đề dùng lại",
     "highlight_templates_description": "Soạn thông báo một lần và dùng lại nhiều lần.",
-    "no_access_description": "Thông báo chủ đề cần quyền quản lý người dùng. Hãy nhờ quản trị viên cấp quyền.",
+    "no_access_description": "Bạn cần quyền quản lý người dùng để mở thông báo chủ đề. Hãy nhờ quản trị viên cấp quyền.",
     "no_access_title": "Bạn không có quyền truy cập thông báo chủ đề",
     "unavailable_description": "Không xác định được hồ sơ của bạn trong không gian làm việc. Hãy tải lại hoặc nhờ quản trị viên mời lại.",
     "unavailable_title": "Không tải được không gian làm việc này"

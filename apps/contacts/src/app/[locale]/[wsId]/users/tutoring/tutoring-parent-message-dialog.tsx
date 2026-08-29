@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Copy, Loader2, RefreshCw } from '@tuturuuu/icons';
 import {
   generateTutoringMessagePreview,
@@ -18,13 +18,17 @@ import {
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
 import { getDisplayName } from './tutoring-types';
 
 /**
  * Surfaces the `message-preview` endpoint that has existed since tutoring
  * shipped but was never reachable from the UI: it renders the parent-facing
  * note for a session and stores it back on the row.
+ *
+ * Keyed by session id on purpose. Reopening the dialog for another learner
+ * while a preview is still in flight must not let the earlier response land in
+ * the new dialog — React Query drops results for a superseded key, which a
+ * mutation would not.
  */
 export function TutoringParentMessageDialog({
   onOpenChange,
@@ -36,42 +40,25 @@ export function TutoringParentMessageDialog({
   wsId: string;
 }) {
   const t = useTranslations('ws-tutoring');
-  const [preview, setPreview] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const sessionId = session?.id ?? null;
 
-  const previewMutation = useMutation({
-    mutationFn: (sessionId: string) =>
-      generateTutoringMessagePreview(wsId, sessionId),
-    onSuccess: (result) => setPreview(result.preview),
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : t('parent_message_failed')
-      );
-    },
+  const previewQuery = useQuery({
+    enabled: Boolean(sessionId),
+    gcTime: 0,
+    queryFn: () => generateTutoringMessagePreview(wsId, sessionId as string),
+    queryKey: ['tutoring-parent-message', wsId, sessionId],
+    retry: false,
+    staleTime: 0,
   });
 
-  const sessionId = session?.id ?? null;
-  const { mutate } = previewMutation;
+  const copyMutation = useMutation({
+    mutationFn: (preview: string) => navigator.clipboard.writeText(preview),
+    onSuccess: () => toast.success(t('parent_message_copied')),
+    onError: () => toast.error(t('parent_message_copy_failed')),
+  });
 
-  useEffect(() => {
-    if (!sessionId) {
-      setPreview(null);
-      return;
-    }
-
-    setPreview(null);
-    mutate(sessionId);
-  }, [mutate, sessionId]);
-
-  const copy = async () => {
-    if (!preview) return;
-
-    try {
-      await navigator.clipboard.writeText(preview);
-      toast.success(t('parent_message_copied'));
-    } catch {
-      toast.error(t('parent_message_copy_failed'));
-    }
-  };
+  const preview = previewQuery.data?.preview ?? null;
 
   return (
     <Dialog onOpenChange={onOpenChange} open={Boolean(session)}>
@@ -87,7 +74,7 @@ export function TutoringParentMessageDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {previewMutation.isPending || (!preview && !previewMutation.isError) ? (
+        {previewQuery.isPending || previewQuery.isFetching ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-11/12" />
@@ -105,18 +92,25 @@ export function TutoringParentMessageDialog({
 
         <DialogFooter className="gap-2 sm:justify-between">
           <Button
-            disabled={!sessionId || previewMutation.isPending}
-            onClick={() => sessionId && previewMutation.mutate(sessionId)}
+            disabled={!sessionId || previewQuery.isFetching}
+            onClick={() =>
+              queryClient.invalidateQueries({
+                queryKey: ['tutoring-parent-message', wsId, sessionId],
+              })
+            }
             variant="outline"
           >
-            {previewMutation.isPending ? (
+            {previewQuery.isFetching ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
             {t('regenerate')}
           </Button>
-          <Button disabled={!preview} onClick={() => void copy()}>
+          <Button
+            disabled={!preview || copyMutation.isPending}
+            onClick={() => preview && copyMutation.mutate(preview)}
+          >
             <Copy className="h-4 w-4" />
             {t('copy')}
           </Button>

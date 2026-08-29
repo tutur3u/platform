@@ -150,6 +150,7 @@ export function TutoringSessionFiltersBar({
       <div className="flex flex-wrap items-center gap-2">
         <Combobox
           className="w-full sm:w-52"
+          emptyText={t('no_groups')}
           onChange={(value) => onChange({ groupId: value as string })}
           options={groupOptions}
           placeholder={t('all_groups')}
@@ -178,6 +179,7 @@ export function TutoringSessionFiltersBar({
         />
         <Combobox
           className="w-full sm:w-44"
+          emptyText={t('no_reasons')}
           onChange={(value) => onChange({ reasonType: value as string })}
           options={REASON_OPTIONS.map((reason) => ({
             label: reasonLabels[reason],

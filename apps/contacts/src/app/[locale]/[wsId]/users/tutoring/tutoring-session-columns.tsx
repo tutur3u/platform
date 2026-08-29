@@ -145,9 +145,13 @@ export function buildTutoringSessionColumns(
 ) {
   const { locale, t, tableT } = actions;
 
+  // Every column is server-ordered and server-paginated: client-side sorting
+  // would silently reorder only the page in hand. Order is chosen through the
+  // date-range preset, which drives `sortOrder` on the request.
   return [
     {
       accessorKey: 'session_date',
+      enableSorting: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} t={tableT} title={t('when')} />
       ),
@@ -173,6 +177,7 @@ export function buildTutoringSessionColumns(
     },
     {
       id: 'student',
+      enableSorting: false,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -191,6 +196,7 @@ export function buildTutoringSessionColumns(
     },
     {
       id: 'teacher',
+      enableSorting: false,
       header: ({ column }) => (
         <DataTableColumnHeader
           column={column}
@@ -202,6 +208,7 @@ export function buildTutoringSessionColumns(
     },
     {
       accessorKey: 'reason_type',
+      enableSorting: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} t={tableT} title={t('reason')} />
       ),
@@ -218,6 +225,7 @@ export function buildTutoringSessionColumns(
     },
     {
       accessorKey: 'attendance_status',
+      enableSorting: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} t={tableT} title={t('status')} />
       ),

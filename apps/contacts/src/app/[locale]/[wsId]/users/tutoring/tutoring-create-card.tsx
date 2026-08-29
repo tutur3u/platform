@@ -207,6 +207,7 @@ export function TutoringCreateCard({
         <div className="space-y-2">
           <Label>{t('reason')}</Label>
           <Combobox
+            emptyText={t('no_reasons')}
             onChange={(value) =>
               onChange({ ...form, reasonType: value as TutoringReasonType })
             }

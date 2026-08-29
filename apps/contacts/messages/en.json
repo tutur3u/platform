@@ -179,7 +179,7 @@
       "reports": "Reports"
     },
     "title": "Approvals",
-    "no_access_description": "Approvals needs the approve reports or approve posts permission. Ask a workspace admin to grant it.",
+    "no_access_description": "You need the approve reports or approve posts permission to open approvals. Ask a workspace admin to grant it.",
     "no_access_title": "You don't have access to approvals",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
     "unavailable_title": "We couldn't load this workspace"
@@ -8721,7 +8721,7 @@
     "mark_pending": "Reset to pending",
     "marked": "Session status updated",
     "minutes_short": "{count} min",
-    "no_access_description": "Tutoring needs the user groups permission. Ask a workspace admin to grant it.",
+    "no_access_description": "You need the user groups permission to open tutoring. Ask a workspace admin to grant it.",
     "no_access_title": "You don't have access to tutoring",
     "no_queue": "Nobody needs extra support",
     "no_queue_description": "Learners appear here when they miss sessions or get flagged in group feedback.",
@@ -8768,7 +8768,8 @@
     "stat_today_hint": "Sessions scheduled today",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
     "unavailable_title": "We couldn't load this workspace",
-    "when": "When"
+    "when": "When",
+    "no_reasons": "No reasons found"
   },
   "ws-user-attendance": {
     "absent": "Absent",
@@ -9686,7 +9687,7 @@
     "highlight_capture_description": "Record what happened in a session, per learner.",
     "highlight_followup": "Tutoring hand-off",
     "highlight_followup_description": "Flagged learners appear in the tutoring support queue.",
-    "no_access_description": "Feedbacks needs the user groups permission. Ask a workspace admin to grant it.",
+    "no_access_description": "You need the user groups permission to open feedbacks. Ask a workspace admin to grant it.",
     "no_access_title": "You don't have access to feedbacks",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
     "unavailable_title": "We couldn't load this workspace"
@@ -9704,7 +9705,7 @@
     "highlight_delivery_description": "Every send keeps its own queue and history.",
     "highlight_templates": "Reusable topics",
     "highlight_templates_description": "Write an announcement once and reuse it.",
-    "no_access_description": "Topic announcements needs the manage users permission. Ask a workspace admin to grant it.",
+    "no_access_description": "You need the manage users permission to open topic announcements. Ask a workspace admin to grant it.",
     "no_access_title": "You don't have access to topic announcements",
     "unavailable_description": "Your workspace profile could not be resolved. Refresh to try again, or ask an admin to re-invite you.",
     "unavailable_title": "We couldn't load this workspace"

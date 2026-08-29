@@ -40,9 +40,23 @@ export function toDetailedExportRows(rows: TutoringDetailedExportRow[]) {
 
 function writeCsv(rows: object[], filename: string) {
   downloadBlob(
-    new Blob([jsonToCSV(rows)], { type: 'text/csv;charset=utf-8;' }),
+    new Blob(
+      // Session content and learner names are operator-supplied, so a cell
+      // starting with `=`, `+`, `-` or `@` would execute as a formula when the
+      // export is opened in Excel or LibreOffice.
+      [jsonToCSV(rows, { escapeFormulae: true })],
+      { type: 'text/csv;charset=utf-8;' }
+    ),
     filename
   );
+}
+
+export function toPayrollExportRows(rows: TutoringPayrollExportRow[]) {
+  return rows.map((row) => ({
+    CompletedSessions: row.completed_sessions,
+    Teacher: row.teacher_name,
+    TotalMinutes: row.total_minutes,
+  }));
 }
 
 function writeXlsx(rows: object[], sheetName: string, filename: string) {
@@ -71,7 +85,7 @@ export async function runTutoringExport({
     if (response.mode !== 'payroll') {
       throw new Error('Unexpected export mode');
     }
-    const rows: TutoringPayrollExportRow[] = response.data;
+    const rows = toPayrollExportRows(response.data);
     if (format === 'payroll-csv') {
       writeCsv(rows, 'tutoring-payroll.csv');
       return rows.length;

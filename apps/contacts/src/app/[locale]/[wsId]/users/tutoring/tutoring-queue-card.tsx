@@ -134,6 +134,8 @@ export function TutoringQueueCard({
   const columns = ({ t: tableT }: { t: ReturnType<typeof useTranslations> }) =>
     [
       {
+        // Server-paginated: client-side sorting would only reorder this page.
+        enableSorting: false,
         id: 'student_name',
         header: ({ column }) => (
           <DataTableColumnHeader
@@ -152,6 +154,7 @@ export function TutoringQueueCard({
         ),
       },
       {
+        enableSorting: false,
         accessorKey: 'reason_type',
         header: ({ column }) => (
           <DataTableColumnHeader
@@ -165,6 +168,7 @@ export function TutoringQueueCard({
         ),
       },
       {
+        enableSorting: false,
         accessorKey: 'absence_deficit',
         header: ({ column }) => (
           <DataTableColumnHeader
@@ -186,6 +190,7 @@ export function TutoringQueueCard({
           ),
       },
       {
+        enableSorting: false,
         accessorKey: 'feedback_content',
         header: ({ column }) => (
           <DataTableColumnHeader
@@ -260,6 +265,7 @@ export function TutoringQueueCard({
 
         <Combobox
           className="w-full sm:w-44"
+          emptyText={t('no_reasons')}
           onChange={(value) => actions.onReasonTypeChange(value as string)}
           options={REASON_FILTERS.map((reason) => ({
             label: reasonLabels[reason] ?? reason,
@@ -272,6 +278,7 @@ export function TutoringQueueCard({
 
         <Combobox
           className="w-full sm:w-52"
+          emptyText={t('no_groups')}
           onChange={(value) => actions.onGroupIdChange(value as string)}
           options={groupOptions}
           placeholder={t('all_groups')}

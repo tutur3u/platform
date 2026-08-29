@@ -22,7 +22,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   buildTutoringSessionQuery,
   buildTutoringStatQuery,
@@ -51,9 +51,36 @@ export function TutoringClient({ wsId, canManage }: Props) {
   const locale = useLocale();
   const queryClient = useQueryClient();
 
-  // Pinned on mount so every range preset, stat window, and refetch in this
-  // view agrees on "today" even when the tab stays open across midnight.
-  const [today] = useState(() => toIsoDate(new Date()));
+  // One shared "today" so every range preset, stat window, and export agrees.
+  // A dashboard is routinely left open overnight, so roll it over at the next
+  // local midnight instead of pinning it until the component remounts.
+  const [today, setToday] = useState(() => toIsoDate(new Date()));
+
+  useEffect(() => {
+    const now = new Date();
+    const current = toIsoDate(now);
+
+    // Re-runs on every rollover so the *next* midnight gets armed too. Reading
+    // the current date here also corrects the state when a suspended tab wakes
+    // up on a later day than the one the timer was scheduled for.
+    if (current !== today) {
+      setToday(current);
+      return;
+    }
+
+    const nextMidnight = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + 1
+    );
+    const timer = setTimeout(
+      () => setToday(toIsoDate(new Date())),
+      // +1s of slack so the timer never fires a hair before the day flips.
+      nextMidnight.getTime() - now.getTime() + 1000
+    );
+
+    return () => clearTimeout(timer);
+  }, [today]);
 
   const [tab, setTab] = useQueryState(
     'tab',
