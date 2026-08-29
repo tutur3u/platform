@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.2](https://github.com/tutur3u/platform/compare/teach-v0.20.1...teach-v0.20.2) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** pin teach to sin1 and correct the region policy ([c8a2d63](https://github.com/tutur3u/platform/commit/c8a2d633df56173b284fe1f87f888d0cf2a9d106))
+* **vercel:** pin teach to sin1 and correct the region policy ([#5173](https://github.com/tutur3u/platform/issues/5173)) ([ccf0cc8](https://github.com/tutur3u/platform/commit/ccf0cc894cec048bf6e4264630bf688bdc214097))
+
 ## [0.20.1](https://github.com/tutur3u/platform/compare/teach-v0.20.0...teach-v0.20.1) (2026-08-21)
 
 

@@ -1,6 +1,6 @@
 {
   "name": "@tuturuuu/infrastructure",
-  "version": "0.22.3",
+  "version": "0.22.4",
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.43.1](https://github.com/tutur3u/platform/compare/platform-v0.43.0...platform-v0.43.1) (2026-08-29)
+
+
+### Bug Fixes
+
+* **forms:** stop the runtime claiming a viewport it does not own ([0ca19aa](https://github.com/tutur3u/platform/commit/0ca19aa6fcaf0749d837dd15c2639b30efdbd7f8))
+* **forms:** stop the runtime claiming a viewport it does not own ([#5170](https://github.com/tutur3u/platform/issues/5170)) ([7e774f1](https://github.com/tutur3u/platform/commit/7e774f13e8c356219dbeabd00976dc791637bfac))
+
+
+### Performance Improvements
+
+* **vercel:** pin teach to sin1 and correct the region policy ([c8a2d63](https://github.com/tutur3u/platform/commit/c8a2d633df56173b284fe1f87f888d0cf2a9d106))
+* **vercel:** pin teach to sin1 and correct the region policy ([#5173](https://github.com/tutur3u/platform/issues/5173)) ([ccf0cc8](https://github.com/tutur3u/platform/commit/ccf0cc894cec048bf6e4264630bf688bdc214097))
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
 ## [0.43.0](https://github.com/tutur3u/platform/compare/platform-v0.42.0...platform-v0.43.0) (2026-08-27)
 
 
