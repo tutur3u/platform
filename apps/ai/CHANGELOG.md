@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.3](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.2...ai-studio-v0.11.3) (2026-08-29)
+
+
+### Performance Improvements
+
+* **vercel:** serve every monorepo app from one function region ([4f0bf52](https://github.com/tutur3u/platform/commit/4f0bf52450899267b4ac9cd2bdecfcf07e3ea427))
+* **vercel:** serve every monorepo app from one function region ([#5172](https://github.com/tutur3u/platform/issues/5172)) ([b09d4bd](https://github.com/tutur3u/platform/commit/b09d4bd520a7543d6b88140715d8cc0b5c461711))
+
 ## [0.11.2](https://github.com/tutur3u/platform/compare/ai-studio-v0.11.1...ai-studio-v0.11.2) (2026-08-25)
 
 
