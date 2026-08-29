@@ -28,6 +28,7 @@ export function EmbedContent({
         answerIssues={data.answerIssues}
         canRequestResponseCopy={data.canRequestResponseCopy}
         form={data.form}
+        layout="inline"
         initialAnswers={data.initialAnswers}
         onSubmitted={() => setSubmitted(true)}
         readOnly={data.readOnly}

@@ -117,8 +117,19 @@ export function LiveDemo({ copy, themeLabel, className }: LiveDemoProps) {
           aria-hidden
           className="pointer-events-none absolute inset-x-10 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--foreground)_22%,transparent),transparent)]"
         />
-        <div className="max-h-[34rem] overflow-y-auto overscroll-contain p-3 sm:p-5">
-          <FormRuntime form={form} key={presetId} mode="preview" />
+        {/* Grows with the question rather than scrolling inside a fixed box.
+            The runtime is `inline` here, so it no longer claims a viewport —
+            a 34rem scroller around content that is usually one short question
+            produced a pane of empty space with its own scrollbar, and reading
+            the demo meant scrolling a second time inside the page. The floor
+            keeps the frame from snapping between question heights. */}
+        <div className="min-h-[26rem] p-3 sm:p-5">
+          <FormRuntime
+            form={form}
+            key={presetId}
+            layout="inline"
+            mode="preview"
+          />
         </div>
       </div>
     </div>

@@ -80,6 +80,7 @@ function FormRuntimeContent({
   onSubmit,
   onRequestResponseCopy,
   isSubmitting = false,
+  layout = 'page',
   readOnly = false,
   className,
 }: FormRuntimeProps) {
@@ -558,6 +559,7 @@ function FormRuntimeContent({
   if (submitted) {
     return renderSubmittedScreen({
       form,
+      layout,
       t,
       className,
       toneClasses,
@@ -575,6 +577,7 @@ function FormRuntimeContent({
     return (
       <RuntimeShell
         bodyFontStyle={bodyFontStyle}
+        layout={layout}
         className={className}
         toneClasses={toneClasses}
         width="narrow"
@@ -597,6 +600,7 @@ function FormRuntimeContent({
     <RuntimeShell
       bodyFontStyle={bodyFontStyle}
       className={className}
+      layout={layout}
       toneClasses={toneClasses}
     >
       {renderFormHeroCard({

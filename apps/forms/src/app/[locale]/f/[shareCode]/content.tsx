@@ -25,8 +25,11 @@ export default function SharedFormContent({
   canRequestResponseCopy,
   responseCopyAlreadySent,
   onSubmitted,
+  layout = 'page',
 }: {
   form: FormDefinition;
+  /** `inline` when this is embedded rather than the whole page. */
+  layout?: 'page' | 'inline';
   shareCode: string;
   sessionId?: string;
   readOnly?: boolean;
@@ -47,6 +50,7 @@ export default function SharedFormContent({
   return (
     <FormRuntime
       form={form}
+      layout={layout}
       mode="public"
       readOnly={readOnly}
       initialAnswers={initialAnswers}
