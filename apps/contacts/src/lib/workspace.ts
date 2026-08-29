@@ -77,6 +77,34 @@ export async function getContactsWorkspaceUserLink(
   });
 }
 
+/**
+ * Read one `workspace_configs` row with the admin client.
+ *
+ * Satellite pages cannot reach the workspace-config HTTP route during render,
+ * and a missing row is a legitimate "never configured" answer rather than an
+ * error, so both the missing row and a read failure resolve to `null` and let
+ * the caller apply its own default.
+ */
+export async function getContactsWorkspaceConfigValue(
+  wsId: string,
+  configId: string
+): Promise<string | null> {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', wsId)
+    .eq('id', configId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Failed to read workspace config', { configId, error, wsId });
+    return null;
+  }
+
+  return data?.value ?? null;
+}
+
 async function resolveContactsWorkspaceAccess(wsId: string) {
   const actor = await getSatelliteAppSessionUser('contacts');
   if (!actor?.id) return null;

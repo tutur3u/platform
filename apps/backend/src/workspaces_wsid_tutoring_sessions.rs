@@ -75,6 +75,9 @@ struct SessionListQuery {
     student_user_id: Option<String>,
     reason_type: Option<String>,
     attendance_status: Option<String>,
+    /// `false` (the default) keeps the legacy newest-first listing; `true`
+    /// lists the nearest session first for forward-looking date ranges.
+    sort_ascending: bool,
     page: u32,
     page_size: u32,
 }
@@ -88,6 +91,7 @@ enum QueryParseError {
     InvalidAttendanceStatus,
     InvalidPage,
     InvalidPageSize,
+    InvalidSortOrder,
 }
 
 // ---------------------------------------------------------------------------
@@ -200,7 +204,14 @@ async fn tutoring_sessions_get(
     let mut params: Vec<(&str, String)> = vec![
         ("select", SESSION_SELECT.to_owned()),
         ("ws_id", format!("eq.{ws_id}")),
-        ("order", "session_date.desc,start_time.desc".to_owned()),
+        (
+            "order",
+            if query.sort_ascending {
+                "session_date.asc,start_time.asc".to_owned()
+            } else {
+                "session_date.desc,start_time.desc".to_owned()
+            },
+        ),
     ];
     if let Some(from_date) = &query.from_date {
         params.push(("session_date", format!("gte.{from_date}")));
@@ -547,6 +558,17 @@ fn parse_query(request_url: Option<&str>) -> Result<SessionListQuery, QueryParse
                 }
                 query.attendance_status = Some(value);
             }
+            "sortOrder" => {
+                let v = value.trim();
+                if v.is_empty() {
+                    continue;
+                }
+                query.sort_ascending = match v {
+                    "asc" => true,
+                    "desc" => false,
+                    _ => return Err(QueryParseError::InvalidSortOrder),
+                };
+            }
             "page" => {
                 query.page = parse_int_min(&value, 1).ok_or(QueryParseError::InvalidPage)?;
             }
@@ -634,6 +656,9 @@ fn invalid_query_response(error: QueryParseError) -> BackendResponse {
         QueryParseError::InvalidPageSize => {
             json!({ "path": ["pageSize"], "message": "Invalid input" })
         }
+        QueryParseError::InvalidSortOrder => {
+            json!({ "path": ["sortOrder"], "message": "Invalid enum value" })
+        }
     };
 
     no_store_response(json_response(
@@ -647,122 +672,4 @@ fn invalid_query_response(error: QueryParseError) -> BackendResponse {
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    // --- path extraction ---
-
-    #[test]
-    fn extracts_ws_id_from_valid_path() {
-        let ws_id = extract_ws_id("/api/v1/workspaces/abc-123/tutoring/sessions");
-        assert_eq!(ws_id, Some("abc-123"));
-    }
-
-    #[test]
-    fn returns_none_for_wrong_prefix() {
-        assert!(extract_ws_id("/api/v2/workspaces/abc-123/tutoring/sessions").is_none());
-    }
-
-    #[test]
-    fn returns_none_for_wrong_suffix() {
-        assert!(extract_ws_id("/api/v1/workspaces/abc-123/tutoring/queue").is_none());
-    }
-
-    #[test]
-    fn returns_none_for_extra_segment() {
-        assert!(extract_ws_id("/api/v1/workspaces/abc/extra/tutoring/sessions").is_none());
-    }
-
-    #[test]
-    fn returns_none_for_empty_ws_id() {
-        assert!(extract_ws_id("/api/v1/workspaces//tutoring/sessions").is_none());
-    }
-
-    // --- Content-Range parsing ---
-
-    #[test]
-    fn parses_content_range_count() {
-        assert_eq!(parse_content_range_count(Some("0-19/57")), 57);
-        assert_eq!(parse_content_range_count(Some("*/100")), 100);
-        assert_eq!(parse_content_range_count(Some("0-0/1")), 1);
-        assert_eq!(parse_content_range_count(None), 0);
-        assert_eq!(parse_content_range_count(Some("garbage")), 0);
-    }
-
-    // --- UUID validation ---
-
-    #[test]
-    fn accepts_valid_uuid() {
-        assert!(is_uuid("550e8400-e29b-41d4-a716-446655440000"));
-    }
-
-    #[test]
-    fn rejects_short_uuid() {
-        assert!(!is_uuid("550e8400-e29b-41d4-a716"));
-    }
-
-    // --- date validation ---
-
-    #[test]
-    fn accepts_valid_date() {
-        assert!(is_date_str("2025-01-15"));
-    }
-
-    #[test]
-    fn rejects_invalid_date_format() {
-        assert!(!is_date_str("25-01-15"));
-        assert!(!is_date_str("2025/01/15"));
-        assert!(!is_date_str("not-a-date"));
-    }
-
-    // --- int parsing ---
-
-    #[test]
-    fn parse_int_min_rejects_below_minimum() {
-        assert!(parse_int_min("0", 1).is_none());
-    }
-
-    #[test]
-    fn parse_int_min_accepts_valid() {
-        assert_eq!(parse_int_min("5", 1), Some(5));
-    }
-
-    // --- query parsing ---
-
-    #[test]
-    fn parse_query_defaults() {
-        let q = parse_query(None).unwrap();
-        assert_eq!(q.page, 1);
-        assert_eq!(q.page_size, 20);
-        assert!(q.from_date.is_none());
-    }
-
-    #[test]
-    fn parse_query_with_filters() {
-        let q = parse_query(Some(
-            "https://example.com/api/v1/workspaces/ws/tutoring/sessions\
-             ?fromDate=2025-01-01&toDate=2025-06-30\
-             &reasonType=ABSENT_RECOVERY&attendanceStatus=DONE\
-             &page=2&pageSize=10",
-        ))
-        .unwrap();
-        assert_eq!(q.from_date.as_deref(), Some("2025-01-01"));
-        assert_eq!(q.to_date.as_deref(), Some("2025-06-30"));
-        assert_eq!(q.reason_type.as_deref(), Some("ABSENT_RECOVERY"));
-        assert_eq!(q.attendance_status.as_deref(), Some("DONE"));
-        assert_eq!(q.page, 2);
-        assert_eq!(q.page_size, 10);
-    }
-
-    #[test]
-    fn parse_query_rejects_invalid_reason_type() {
-        let result = parse_query(Some("https://example.com/?reasonType=UNKNOWN"));
-        assert!(matches!(result, Err(QueryParseError::InvalidReasonType)));
-    }
-
-    #[test]
-    fn parse_query_rejects_page_size_over_max() {
-        let result = parse_query(Some("https://example.com/?pageSize=101"));
-        assert!(matches!(result, Err(QueryParseError::InvalidPageSize)));
-    }
-}
+mod tests;
