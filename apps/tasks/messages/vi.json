@@ -2249,7 +2249,41 @@
     "result_count": "{count} kết quả",
     "result_count_plural": "{count} kết quả",
     "search_placeholder": "Tìm lệnh, nhiệm vụ, hoặc điều hướng...",
+    "search_placeholder_power": "Tìm công việc hoặc chạy lệnh… Thử #, /, @ hoặc >",
     "searching_tasks": "Đang tìm nhiệm vụ...",
+    "tabs": {
+      "actions": "Thao tác",
+      "all": "Tất cả",
+      "apps": "Ứng dụng",
+      "label": "Phạm vi tìm kiếm",
+      "navigate": "Trang",
+      "tasks": "Công việc"
+    },
+    "task_actions": {
+      "completed": "Đã hoàn thành công việc",
+      "mark_complete": "Hoàn thành công việc",
+      "mark_open": "Mở lại công việc",
+      "reopened": "Đã mở lại công việc",
+      "update_failed": "Không thể cập nhật công việc này"
+    },
+    "task_command": {
+      "actions": {
+        "boards": "Mở bảng công việc",
+        "completed": "Công việc đã hoàn thành",
+        "mine": "Công việc đang mở của tôi",
+        "open": "Tất cả công việc đang mở",
+        "overdue": "Công việc quá hạn",
+        "soon": "Đến hạn trong 3 ngày tới"
+      },
+      "choose_board": "Chọn một bảng trước khi tạo công việc đầu tiên.",
+      "create": "Tạo công việc",
+      "create_failed": "Không thể bắt đầu tạo công việc",
+      "create_hint": "Dùng bảng hiện tại khi có thể, sau đó mở trình chỉnh sửa đầy đủ.",
+      "create_named": "Tạo “{name}”",
+      "create_named_hint": "Tạo ngay và thêm chi tiết mà không ngắt mạch công việc.",
+      "results": "{count} công việc",
+      "syntax_hint": "Bộ lọc: assignee:me, is:open, due:overdue, priority:high"
+    },
     "tasks": "Nhiệm Vụ",
     "title": "Trung Tâm Lệnh",
     "try_searching": "Thử tìm kiếm nhiệm vụ, trang, hoặc hành động",

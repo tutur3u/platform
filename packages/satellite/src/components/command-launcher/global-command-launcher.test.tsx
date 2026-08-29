@@ -152,6 +152,33 @@ describe('GlobalCommandLauncher', () => {
     });
   });
 
+  it('gives a product-native launcher priority over the generic host launcher', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <GlobalCommandLauncher
+          currentApp="tasks"
+          labels={{ placeholder: 'Generic search' }}
+        />
+        <GlobalCommandLauncher
+          currentApp="tasks"
+          instancePriority={10}
+          labels={{ placeholder: 'Task-first search' }}
+        />
+      </QueryClientProvider>
+    );
+
+    fireEvent.keyDown(document, { ctrlKey: true, key: 'k' });
+
+    expect(
+      await screen.findByPlaceholderText('Task-first search')
+    ).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Generic search')).toBeNull();
+  });
+
   it('ignores Cmd/Ctrl+K while an input method is composing', () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher();
@@ -180,20 +207,21 @@ describe('GlobalCommandLauncher', () => {
     });
   });
 
-  it('does not render the visible helper footer or current context panel', async () => {
+  it('renders compact keyboard guidance without a redundant context panel', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher();
 
     openGlobalCommandLauncher();
     await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
 
-    const searchHints = screen.getAllByText(
-      'Type a workspace, app, page, acronym, or close spelling.'
-    );
-    expect(searchHints.every((node) => node.closest('.sr-only'))).toBe(true);
-    expect(screen.queryByText('navigate')).toBeNull();
-    expect(screen.queryByText('select')).toBeNull();
-    expect(screen.queryByText('close')).toBeNull();
+    expect(screen.getByText('navigate')).toBeTruthy();
+    expect(screen.getByText('select')).toBeTruthy();
+    expect(screen.getByText('close')).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        'Type a workspace, app, page, acronym, or close spelling.'
+      ).length
+    ).toBeGreaterThan(0);
     expect(screen.queryByText('Current app')).toBeNull();
     expect(screen.queryByText('Current workspace')).toBeNull();
   });
@@ -379,12 +407,12 @@ describe('GlobalCommandLauncher', () => {
     const commandList = document.querySelector('[data-slot="command-list"]');
 
     expect(dialogContent?.className).toContain(
-      'h-[min(820px,calc(100dvh-2rem))]'
+      'h-[min(680px,calc(100dvh-1.5rem))]'
     );
+    expect(dialogContent?.className).toContain('grid-rows-[minmax(0,1fr)]');
     expect(dialogContent?.className).toContain(
-      'grid-rows-[auto_minmax(0,1fr)]'
+      'w-[min(760px,calc(100vw-1.5rem))]'
     );
-    expect(dialogContent?.className).toContain('w-[min(1040px,96vw)]');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(commandList?.className).toContain('min-h-0');
     expect(commandList?.className).toContain('flex-1');

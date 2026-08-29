@@ -2249,7 +2249,41 @@
     "result_count": "{count} result",
     "result_count_plural": "{count} results",
     "search_placeholder": "Search commands, tasks, or navigate...",
+    "search_placeholder_power": "Search tasks or run a command… Try #, /, @, or >",
     "searching_tasks": "Searching tasks...",
+    "tabs": {
+      "actions": "Actions",
+      "all": "All",
+      "apps": "Apps",
+      "label": "Search scope",
+      "navigate": "Pages",
+      "tasks": "Tasks"
+    },
+    "task_actions": {
+      "completed": "Task completed",
+      "mark_complete": "Complete task",
+      "mark_open": "Reopen task",
+      "reopened": "Task reopened",
+      "update_failed": "Could not update this task"
+    },
+    "task_command": {
+      "actions": {
+        "boards": "Open task boards",
+        "completed": "Completed tasks",
+        "mine": "My open tasks",
+        "open": "All open tasks",
+        "overdue": "Overdue tasks",
+        "soon": "Due in the next 3 days"
+      },
+      "choose_board": "Choose a board before creating your first task.",
+      "create": "Create a task",
+      "create_failed": "Could not start task creation",
+      "create_hint": "Uses this board when available, then opens the full task editor.",
+      "create_named": "Create “{name}”",
+      "create_named_hint": "Create it now and add details without leaving your flow.",
+      "results": "{count, plural, one {# task} other {# tasks}}",
+      "syntax_hint": "Filters: assignee:me, is:open, due:overdue, priority:high"
+    },
     "tasks": "Tasks",
     "title": "Command Center",
     "try_searching": "Try searching for tasks, pages, or actions",
