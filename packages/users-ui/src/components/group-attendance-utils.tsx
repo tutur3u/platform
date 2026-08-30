@@ -65,8 +65,9 @@ export function sessionAttendanceDate(session: WorkspaceUserGroupSession) {
 
 /**
  * Cancelled sessions remain useful as immutable attendance history once their
- * local date arrives. Future cancellations, however, are obsolete occurrences
- * left behind by a schedule change and must not appear as upcoming classes.
+ * local date arrives. Future cancellations and occurrences beyond their
+ * recurrence end are obsolete rows left behind by a schedule change and must
+ * not appear as attendance classes.
  */
 export function filterAttendanceSessions(
   sessions: WorkspaceUserGroupSession[],
@@ -74,6 +75,16 @@ export function filterAttendanceSessions(
 ) {
   return sessions.filter((session) => {
     if (session.status !== 'cancelled') return true;
+
+    const recurrenceUntilDate = session.recurrence?.untilDate;
+    if (
+      recurrenceUntilDate &&
+      session.recurrenceInstanceDate &&
+      session.recurrenceInstanceDate > recurrenceUntilDate
+    ) {
+      return false;
+    }
+
     const timezone = session.startTimezone || DEFAULT_ATTENDANCE_TIMEZONE;
     return sessionAttendanceDate(session) <= localIsoDate(asOf, timezone);
   });

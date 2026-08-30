@@ -83,6 +83,41 @@ describe('group attendance state helpers', () => {
     ).toEqual(['past-cancelled', 'today-cancelled', 'future-scheduled']);
   });
 
+  it('keeps superseded cancellations hidden after their calendar date passes', () => {
+    const superseded = session(
+      'superseded-cancelled',
+      '2026-08-30T10:30:00.000Z',
+      'cancelled'
+    );
+    superseded.recurrence = {
+      daysOfWeek: [0, 6],
+      intervalWeeks: 1,
+      startDate: '2026-07-01',
+      untilDate: '2026-08-21',
+    };
+    superseded.recurrenceInstanceDate = '2026-08-30';
+
+    const historical = session(
+      'historical-cancelled',
+      '2026-08-20T10:30:00.000Z',
+      'cancelled'
+    );
+    historical.recurrence = {
+      daysOfWeek: [4],
+      intervalWeeks: 1,
+      startDate: '2026-07-01',
+      untilDate: '2026-08-21',
+    };
+    historical.recurrenceInstanceDate = '2026-08-20';
+
+    expect(
+      filterAttendanceSessions(
+        [superseded, historical],
+        new Date('2026-08-30T12:00:00.000Z')
+      ).map(({ id }) => id)
+    ).toEqual(['historical-cancelled']);
+  });
+
   it('uses each session timezone when deciding whether a cancellation is historical', () => {
     const asOf = new Date('2026-08-20T00:30:00.000Z');
     const sessions = [
