@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.5](https://github.com/tutur3u/platform/compare/contacts-v0.18.4...contacts-v0.18.5) (2026-08-31)
+
+
+### Bug Fixes
+
+* **tasks:** restore description checklist controls ([7976f78](https://github.com/tutur3u/platform/commit/7976f78292237e8047509e4243dafa14acea1b54))
+
 ## [0.18.4](https://github.com/tutur3u/platform/compare/contacts-v0.18.3...contacts-v0.18.4) (2026-08-29)
 
 

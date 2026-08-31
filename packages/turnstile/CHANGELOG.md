@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/tutur3u/platform/compare/turnstile-v0.1.1...turnstile-v0.1.2) (2026-08-31)
+
+
+### Bug Fixes
+
+* **turnstile:** support trusted server relays ([#5174](https://github.com/tutur3u/platform/issues/5174)) ([fe14df8](https://github.com/tutur3u/platform/commit/fe14df8cc0d7559593cb96859d8d22c434abf192))
+
 ## [0.1.1](https://github.com/tutur3u/platform/compare/turnstile-v0.1.0...turnstile-v0.1.1) (2026-06-08)
 
 

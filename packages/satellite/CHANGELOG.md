@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/tutur3u/platform/compare/satellite-v0.16.0...satellite-v0.17.0) (2026-08-31)
+
+
+### Features
+
+* **command:** make Tasks launcher task-first ([aa899f8](https://github.com/tutur3u/platform/commit/aa899f846496799adf744a2fe61ddf035025d340))
+
 ## [0.16.0](https://github.com/tutur3u/platform/compare/satellite-v0.15.1...satellite-v0.16.0) (2026-08-26)
 
 

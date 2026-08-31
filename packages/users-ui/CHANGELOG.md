@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.6](https://github.com/tutur3u/platform/compare/users-ui-v0.7.5...users-ui-v0.7.6) (2026-08-31)
+
+
+### Bug Fixes
+
+* **contacts:** hide superseded attendance sessions ([3fd0615](https://github.com/tutur3u/platform/commit/3fd0615f838d7bf63f32eda868d0a028200f3170))
+* **contacts:** hide superseded attendance sessions ([#5180](https://github.com/tutur3u/platform/issues/5180)) ([962690c](https://github.com/tutur3u/platform/commit/962690c8d19560f841effafa9204fd1f4dd59e02))
+
 ## [0.7.5](https://github.com/tutur3u/platform/compare/users-ui-v0.7.4...users-ui-v0.7.5) (2026-08-26)
 
 
