@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ColumnDef } from '@tuturuuu/ui/custom/tables/data-table';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderToString } from 'react-dom/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { transactionColumns } from './columns';
 
 vi.mock('next-intl', () => ({
@@ -82,6 +83,10 @@ describe('transactionColumns', () => {
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;Secure';
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('masks the amount column when finance numbers are globally hidden', () => {
     render(<TransactionAmountCell amount={123} />);
 
@@ -115,5 +120,24 @@ describe('transactionColumns', () => {
 
     expect(screen.getByText('Cash')).toBeVisible();
     expect(screen.getByText('Food & Beverage')).toBeVisible();
+  });
+
+  it('keeps server-rendered transaction dates stable as time advances', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime('2026-08-31T00:59:00.000Z');
+
+    const transaction = {
+      taken_at: '2026-08-31T00:00:00.000Z',
+    };
+    const firstRender = renderToString(
+      <TransactionColumnCell accessorKey="taken_at" original={transaction} />
+    );
+
+    vi.setSystemTime('2026-08-31T02:01:00.000Z');
+    const laterRender = renderToString(
+      <TransactionColumnCell accessorKey="taken_at" original={transaction} />
+    );
+
+    expect(laterRender).toBe(firstRender);
   });
 });

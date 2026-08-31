@@ -579,7 +579,8 @@ export default function LoginForm({
       : resolvedReturnUrlFailure;
   const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
   const canRenderAuthSurface =
-    readyForAuth || (!initialized && !deferAuthSurfaceUntilSessionCheck);
+    readyForAuth ||
+    (!deferAuthSurfaceUntilSessionCheck && (!initialized || user === null));
   const authStageTransitionClassName = `space-y-6 animate-in fade-in-0 duration-200 ${
     transitionDirection > 0 ? 'slide-in-from-right-4' : 'slide-in-from-left-4'
   }`;
