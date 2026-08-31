@@ -30,15 +30,28 @@ const testState = vi.hoisted(() => {
 
   return {
     InvoicePaymentSettings: vi.fn(),
+    SubscriptionAttendanceSummary: vi.fn(),
     categories: [] as Array<{ id: string; name: string }>,
     groupIds: ['group-1'],
     month: '2026-07',
+    setMonth: vi.fn(),
     productSelectionInjected: false,
     products: [product],
     selectedProducts: [{ inventory, product, quantity: 1 }],
     useCategories: vi.fn(),
     useWallets: vi.fn(),
     userId: 'user-1',
+    userGroups: [
+      {
+        workspace_user_groups: {
+          ending_date: null as string | null,
+          id: 'group-1',
+          name: 'Group 1',
+          sessions: ['2026-07-05'],
+          starting_date: '2026-07-01',
+        },
+      },
+    ],
     wallets: [] as Array<{
       currency: string;
       id: string;
@@ -67,7 +80,7 @@ vi.mock('nuqs', () => ({
   useQueryState: (key: string, options?: { defaultValue?: unknown }) => {
     if (key === 'user_id') return [testState.userId, vi.fn()];
     if (key === 'group_ids') return [testState.groupIds, vi.fn()];
-    if (key === 'month') return [testState.month, vi.fn()];
+    if (key === 'month') return [testState.month, testState.setMonth];
     return [options?.defaultValue ?? '', vi.fn()];
   },
 }));
@@ -113,7 +126,10 @@ vi.mock('./components/invoice-products-permission-warning', () => ({
 }));
 
 vi.mock('./components/subscription-attendance-summary', () => ({
-  SubscriptionAttendanceSummary: () => null,
+  SubscriptionAttendanceSummary: (props: unknown) => {
+    testState.SubscriptionAttendanceSummary(props);
+    return null;
+  },
 }));
 
 vi.mock('./components/subscription-group-selector', () => ({
@@ -178,17 +194,7 @@ vi.mock('./hooks', () => ({
     isLoading: false,
   }),
   useUserGroups: () => ({
-    data: [
-      {
-        workspace_user_groups: {
-          ending_date: null,
-          id: 'group-1',
-          name: 'Group 1',
-          sessions: ['2026-07-05'],
-          starting_date: '2026-07-01',
-        },
-      },
-    ],
+    data: testState.userGroups,
     isLoading: false,
   }),
   useUserLinkedPromotions: () => ({ data: [] }),
@@ -262,9 +268,14 @@ function renderSubscriptionInvoice(
 describe('SubscriptionInvoice checkout defaults', () => {
   beforeEach(() => {
     testState.InvoicePaymentSettings.mockClear();
+    testState.SubscriptionAttendanceSummary.mockClear();
     testState.useCategories.mockClear();
     testState.useWallets.mockClear();
     testState.productSelectionInjected = false;
+    testState.month = '2026-07';
+    testState.setMonth.mockClear();
+    testState.userGroups[0]!.workspace_user_groups.ending_date = null;
+    testState.userGroups[0]!.workspace_user_groups.sessions = ['2026-07-05'];
     testState.products[0]!.finance_category_id = null;
     testState.wallets = [];
     testState.categories = [];
@@ -327,5 +338,30 @@ describe('SubscriptionInvoice checkout defaults', () => {
         })
       )
     );
+  });
+
+  it('keeps an advance month selected after the group schedule end', async () => {
+    testState.month = '2026-09';
+    testState.userGroups[0]!.workspace_user_groups.ending_date = '2026-08-31';
+    testState.userGroups[0]!.workspace_user_groups.sessions = [
+      '2026-07-05',
+      '2026-08-05',
+      '2026-09-05',
+    ];
+
+    renderSubscriptionInvoice();
+
+    await waitFor(() =>
+      expect(testState.SubscriptionAttendanceSummary).toHaveBeenCalledWith(
+        expect.objectContaining({
+          availableMonths: expect.arrayContaining([
+            expect.objectContaining({ value: '2026-09' }),
+          ]),
+          selectedMonth: '2026-09',
+        })
+      )
+    );
+    expect(testState.setMonth).not.toHaveBeenCalledWith('2026-07');
+    expect(testState.setMonth).not.toHaveBeenCalledWith('2026-08');
   });
 });

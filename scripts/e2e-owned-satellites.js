@@ -31,6 +31,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
     port: '7808',
     routeName: 'finance.tuturuuu',
     specs: [
+      'finance-subscription-advance-month.noauth.spec.ts',
       'finance-permission-boundaries.noauth.spec.ts',
       'workspace-invite-account-shapes.noauth.spec.ts',
       'workspace-invite-finance-access.noauth.spec.ts',

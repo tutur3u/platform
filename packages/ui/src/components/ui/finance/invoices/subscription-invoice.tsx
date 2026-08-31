@@ -728,30 +728,22 @@ export function SubscriptionInvoice({
     }
     lastMonthSyncRef.current = null;
 
-    const { earliestStart, latestEnd } = getGroupsDateRange(
-      userGroups,
-      selectedGroupIds
-    );
+    const { earliestStart } = getGroupsDateRange(userGroups, selectedGroupIds);
 
-    if (!earliestStart || !latestEnd) return;
+    if (!earliestStart) return;
 
     const currentMonth = getMonthStartDate(selectedMonth);
     if (Number.isNaN(currentMonth.getTime())) return;
 
     const earliestMonthStart = getMonthStartDate(earliestStart);
-    const latestMonthStart = getMonthStartDate(latestEnd);
 
-    if (currentMonth < earliestMonthStart || currentMonth > latestMonthStart) {
+    if (currentMonth < earliestMonthStart) {
       // Only correct once per groups-selection to avoid update loops
       if (lastValidatedKeyRef.current === monthValidationKey) return;
       lastValidatedKeyRef.current = monthValidationKey;
 
       const now = getCurrentBillingDate(workspaceTimezone);
-      let defaultMonth: Date;
-
-      if (now >= earliestStart && now <= latestEnd) defaultMonth = now;
-      else if (now > latestEnd) defaultMonth = latestEnd;
-      else defaultMonth = earliestStart;
+      const defaultMonth = now >= earliestStart ? now : earliestStart;
 
       const nextMonth = formatMonthValue(defaultMonth);
       if (nextMonth !== selectedMonth) {
